@@ -5,9 +5,10 @@ import numpy as np
 import exact_solver
 from obj import *
 
-elocalex = 2.67
+elocalex = 2.67/27.211
 dipole_abs = 15.45
 nmols = 1
+# eV
 #J = np.diag([0.096435, 0.096435, 0.096435, 0.096435, 0.096435, 0.096435, \
 #    0.096435, 0.096435], k=-1)
 #J += np.diag([0.030193, 0.088265, 0.030452, 0.041970, 0.030193, 0.096435, \
@@ -22,18 +23,30 @@ nmols = 1
 #J = J + np.transpose(J)
 J = np.zeros((1))
 
+# cm^-1
 omega1 = np.array([102.50, 106.51, 1487.35, 1555.55, 1570.37])
 
+# a.u.
 D1 = np.array([-0.2274, 30.1370, -0.0948, 8.7729, 8.6450])
 
+# 1
 S1 = np.array([0.0000, 0.2204, 0.0000, 0.2727, 0.2674])
 
-omega1 = omega1 / 8065.73
-nphcoup1 = np.sqrt(S1)
+# transfer all these parameters to a.u
+# ev to a.u.
+J = J/27.2107
+# cm^-1 to a.u.
+omega1 = omega1 / 219474.63
+print "omega1", omega1*27.211
+
+nphcoup1 = np.sqrt(omega1/2.0)*D1
+
+print "Huang", S1
+print nphcoup1**2
 
 
 nphs = 5
-nlevels =  [1,2,2,2,1]
+nlevels =  [2,4,2,4,4]
 
 phinfo = [list(a) for a in zip(omega1, nphcoup1, nlevels)]
 

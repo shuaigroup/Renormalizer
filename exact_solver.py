@@ -10,6 +10,7 @@ import configidx
 import scipy.constants
 from pyscf.ftsolver.utils import ftlanczos
 from pyscf.ftsolver.utils import rsmpl
+from pyscf.ftsolver.utils import smpl_ep
 
 
 def Exact_Diagonalization_Solver(nexciton, mol, J):
@@ -136,18 +137,18 @@ def Exact_Diagonalization_Solver(nexciton, mol, J):
   
 
     print "nconfig",len(data),nconfigs
-    for i in range(len(rowidx)):
-        print rowidx[i],colidx[i],data[i]
+    #for i in range(len(rowidx)):
+    #    print rowidx[i],colidx[i],data[i]
 
     Hmat =  csr_matrix( (data,(rowidx,colidx)), shape=(nconfigs,nconfigs) )
 
-    print Hmat.todense()
+    #print Hmat.todense()
     w, v =scipy.sparse.linalg.eigsh(Hmat,k=1, which="SA")
     print "arpack Arnoldi method"
     print w
     #print 
     
-    print diags
+    #print diags
     precond = lambda x, e, *args: x/(diags-e+1e-4)
     initialc = np.zeros((nconfigs))
     initialc[0] = 1.0
@@ -159,9 +160,9 @@ def Exact_Diagonalization_Solver(nexciton, mol, J):
     print "pyscf davidson method"
     print e
 
-    e = ftlanczos.ftlan_E(hop,initialc,m=50,norm=np.linalg.norm,Min_b=1e-10,Min_m=3)
-    print "ftlanzos lanczos method"
-    print e
+    #e = ftlanczos.ftlan_E(hop,initialc,m=50,norm=np.linalg.norm,Min_b=1e-10,Min_m=3)
+    #print "ftlanzos lanczos method"
+    #print e
 
     e, c = scipy.linalg.eigh(a=Hmat.todense())
     
@@ -178,7 +179,7 @@ def Exact_Diagonalization_Solver(nexciton, mol, J):
     #    print "finite T lanczos method"
     #    print nsamp, e_T
 
-    return x, y, e, c, ph_dof_list, nconfigs
+    return x, y, e, c, ph_dof_list, nconfigs, Hmat
 
 
 def dipoleC(mol, c, nconfigs_1, ph_dof_list_1, x_1, y_1, nconfigs_2, ph_dof_list_2, x_2, y_2):
@@ -201,6 +202,38 @@ def dipoleC(mol, c, nconfigs_1, ph_dof_list_1, x_1, y_1, nconfigs_2, ph_dof_list
     return AC
 
 
+def dyn_lanczos(T, AC, dipolemat, Hgsmat, Hexmat, omega, e_ref, eta=0.00005):
+    
+    def hexop(c):
+        return Hexmat.dot(c)
+    def hgsop(c):
+        return Hgsmat.dot(c)
+    def dipoleop(c):
+        return dipolemat.dot(c)
+    
+    if T == 0.0:
+        norm = np.linalg.norm(AC)
+        print norm
+        a, b = ftlanczos.lan_Krylov(hexop,AC,m=40,norm=np.linalg.norm,Min_b=1e-10,Min_m=3)
+        e, w = ftlanczos.Tri_diag(a, b)
+        print "lanczos energy = ", e[0]
+
+        # calculate the dynamic correlation function
+        npoints = omega.shape[0]
+        dyn_corr = np.zeros(npoints)
+        nlans = e.shape[0]
+        for ipoint in range(0,npoints):
+            for ilanc in range(0,nlans):
+                dyn_corr[ipoint] += w[0,ilanc]*w[0,ilanc]*eta / ((omega[ipoint]+e_ref-e[ilanc])**2+eta*eta)
+        
+        dyn_corr *= norm**2
+    else:
+        dyn_corr = smpl_ep.smpl_freq(hgsop, hexop, dipoleop, T/3.1577464E5, omega, \
+                Hgsmat.shape[0], nsamp=20, M=50, eta = eta)
+
+    return dyn_corr
+
+
 def full_diagonalization_spectrum(ic,ie,ix,iy,fc,fe,fx,fy,ph_dof_list,mol):
     '''
         initial/final state c,e
@@ -216,21 +249,20 @@ def full_diagonalization_spectrum(ic,ie,ix,iy,fc,fe,fx,fy,ph_dof_list,mol):
     for fstate in xrange(nfstates):
         for istate in xrange(nistates):
             dipdip[1, istate, fstate] = fe[fstate] - ie[istate]
-            print istate, fstate, dipdip[:, istate, fstate]
-
-    absorption(dipdip, 278, ie)
-    absorption(dipdip, 0, ie)
-    #emission(dipdip, 10.0E25, fe)
-    #emission(dipdip, 0, fe)
+            #print istate, fstate, dipdip[:, istate, fstate]
+    
+    return dipdip
 
 def partition_function(e, temperature): 
     print "temp", temperature
     #beta = 1.0 / scipy.constants.k / temperature
-    beta = 1.0 / 8.6173303E-5 / temperature
+    beta = 3.1577464E5 / temperature
     print "beta=", beta
     P = np.exp( -1.0 * beta * e)
+    print "P=", P
     Z = np.sum(P)
     P = P/Z
+    print "partition", P
     return P 
 
 def ft_energy(c, e, temperature):
@@ -264,10 +296,10 @@ def absorption(dipdip, temperature, ie):
         f.close()
 
         f = open("absgammaT.out", "w")
-        omega_1 = 0.0
-        delta_omega = 0.01
-        npoints = 300
-        eta = 0.001
+        omega_1 = 2.5/27.211
+        delta_omega = 0.001/27.211
+        npoints = 500
+        eta = 0.00005
 
         for ipoint in xrange(npoints):
             omega = omega_1 + ipoint * delta_omega
@@ -300,10 +332,10 @@ def emission(dipdip, temperature, fe):
     
 
         f = open("emigammaT.out", "w")
-        omega_1 = 0.0
-        delta_omega = 0.1
-        npoints = 1000
-        eta = 0.1
+        omega_1 = 2.5/27.211
+        delta_omega = 0.001/27.211
+        npoints = 500
+        eta = 0.00001
 
         for ipoint in xrange(npoints):
             omega = omega_1 + ipoint * delta_omega
@@ -317,38 +349,60 @@ def emission(dipdip, temperature, fe):
             f.write("%f %f \n" % (omega, result))
         f.close()
 
-'''
-non efficient code
+#'''
+#non efficient code
+#
+#def dip2(nfexs, fx, fc, niexs, ix, ic, ph_dof_list, mol):
+#    # get each eigenstate pair dipole**2
+#    nmols = len(mol)
+#    dip = 0.0
+#    for fexidx in xrange(nfexs):
+#        fexconfig = configidx.idx2exconfig(fexidx, fx)
+#        for iexidx in xrange(niexs):
+#            iexconfig = configidx.idx2exconfig(iexidx, ix)
+#            
+#            excitedsite = []
+#            accept = True
+#            for imol in xrange(nmols):
+#                fiminus = fexconfig[imol]-iexconfig[imol]
+#                if fiminus == 1:
+#                    excitedsite.append(imol)
+#                elif fiminus == -1:
+#                    accept = False
+#                    break
+#            if accept == True and len(excitedsite) == 1:
+#                # with the same phonon config
+#                for phidx in xrange(ph_dof_list[0]):
+#                    fidx = fexidx * ph_dof_list[0] + phidx
+#                    iidx = iexidx * ph_dof_list[0] + phidx
+#
+#                    dip += mol[excitedsite[0]].dipole * fc[fidx] * ic[iidx] 
+#
+#    return dip*dip
+#'''
 
-def dip2(nfexs, fx, fc, niexs, ix, ic, ph_dof_list, mol):
-    # get each eigenstate pair dipole**2
-    nmols = len(mol)
-    dip = 0.0
-    for fexidx in xrange(nfexs):
-        fexconfig = configidx.idx2exconfig(fexidx, fx)
-        for iexidx in xrange(niexs):
-            iexconfig = configidx.idx2exconfig(iexidx, ix)
-            
-            excitedsite = []
-            accept = True
-            for imol in xrange(nmols):
-                fiminus = fexconfig[imol]-iexconfig[imol]
-                if fiminus == 1:
-                    excitedsite.append(imol)
-                elif fiminus == -1:
-                    accept = False
-                    break
-            if accept == True and len(excitedsite) == 1:
-                # with the same phonon config
-                for phidx in xrange(ph_dof_list[0]):
-                    fidx = fexidx * ph_dof_list[0] + phidx
-                    iidx = iexidx * ph_dof_list[0] + phidx
 
-                    dip += mol[excitedsite[0]].dipole * fc[fidx] * ic[iidx] 
 
-    return dip*dip
-'''
-
+def construct_dipoleMat(inconfigs,ix,iy,fnconfigs,fx,fy,ph_dof_list,mol):
+    
+    rowidx = []
+    colidx = []
+    data = []
+    
+    for idx in xrange(inconfigs):
+        iconfig = configidx.idx2config(idx, ph_dof_list, ix, iy)
+        for imol in xrange(len(mol)):
+            iconfig2 = copy.deepcopy(iconfig)
+            if iconfig2[0][imol] != 1:
+                iconfig2[0][imol] = 1
+                idx2 = configidx.config2idx(iconfig2, ph_dof_list, fx, fy)
+                rowidx.append(idx2)
+                colidx.append(idx)
+                data.append(mol[imol].dipole)
+    
+    dipolemat =  csr_matrix( (data,(rowidx,colidx)), shape=(fnconfigs,inconfigs) )
+    
+    return dipolemat
 
 def init_dip_final(ic,ix,iy,fc,fx,fy,ph_dof_list,mol):
     '''
@@ -358,20 +412,13 @@ def init_dip_final(ic,ix,iy,fc,fx,fy,ph_dof_list,mol):
     # construct the dipole operator matrix representation in Fock space
     inconfigs = len(ic)
     fnconfigs = len(fc)
+    
     bradipket = np.zeros((inconfigs,fnconfigs))
-
-    nmols = len(mol)
-
-    for idx in xrange(inconfigs):
-        iconfig = configidx.idx2config(idx, ph_dof_list, ix, iy)
-        for imol in xrange(nmols):
-            iconfig2 = copy.deepcopy(iconfig)
-            if iconfig2[0][imol] != 1:
-                iconfig2[0][imol] = 1
-                idx2 = configidx.config2idx(iconfig2, ph_dof_list, fx, fy)
-                bradipket[idx, idx2] =  mol[imol].dipole  
-    tmp1 = np.dot(bradipket, fc)
-    bradipket = np.dot(np.transpose(ic), tmp1)
+    
+    dipolemat = construct_dipoleMat(inconfigs,ix,iy,fnconfigs,fx,fy,ph_dof_list,mol)
+    
+    tmp1 = dipolemat.transpose().dot(fc)
+    bradipket = np.dot(np.transpose(ic),tmp1)
     '''
     can return the dipole operator matrix representation to get AC
     '''

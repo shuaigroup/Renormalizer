@@ -6,15 +6,15 @@ import exact_solver
 from obj import *
 
 
-nmols = 2
+nmols = 3
 mol = []
 elocalex = 0.0
-nphs = 1
+nphs = 2
 dipole = 2.0
 #phinfo = [[2.0,3.0,2],[4.0,5.0,2]]
-phinfo = [[1.1,2.0,4]]
+phinfo = [[1.1,0.5/1.1,3],[1.1,0.5/1.1,3]]
 #phinfo = [[3,3,3]]
-J = -1.0*np.ones((nmols,nmols))
+J = -1.1*np.ones((nmols,nmols))
 
 for imol in xrange(nmols):
     mol_local = Mol(elocalex, nphs, dipole)
