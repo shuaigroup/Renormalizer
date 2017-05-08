@@ -11,9 +11,12 @@ import benchmark
 
 elocalex = 2.67/au2ev
 dipole_abs = 15.45
-nmols = 1
+nmols = 2
 # eV
-J = np.zeros((1))
+J = np.zeros((2,2))
+J += np.diag([0.1],k=1)
+J += np.diag([0.1],k=-1)
+print "J=", J
 
 # cm^-1
 omega1 = np.array([106.51])
@@ -41,11 +44,9 @@ print nphcoup1**2
 
 
 nphs = 1
-nlevels =  [10]
+nlevels =  [7]
 
 phinfo = [list(a) for a in zip(omega1, nphcoup1, nlevels)]
-
-print phinfo
 
 mol = []
 for imol in xrange(nmols):
@@ -54,6 +55,7 @@ for imol in xrange(nmols):
     mol.append(mol_local)
 
 
-dyn_omega = np.linspace(2.6, 2.8, num=1000)
-benchmark.benchmark(mol, J, dyn_omega, T=298.0, eta=0.00005, nsamp=100, M=100,  outfile="1mol_1mode.eps")
+dyn_omega = np.linspace(2.4, 2.9, num=500)
+benchmark.benchmark(mol, J, dyn_omega, T=298.0, eta=0.00005, nsamp=200, M=100, \
+        outfile="2mol_1mode.eps")
 

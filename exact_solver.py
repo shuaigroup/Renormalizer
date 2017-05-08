@@ -1,7 +1,9 @@
-#//!/usr/bin/env python
+#!/usr/bin/env python
 # -*- coding: utf-8 -*-
-import copy
+# Author: Jiajun Ren <jiajunren0522@gmail.com>
+
 import numpy as np
+import copy
 from scipy.sparse import csr_matrix
 import scipy.sparse.linalg 
 import scipy.linalg
@@ -11,76 +13,59 @@ import scipy.constants
 from pyscf.ftsolver.utils import ftlanczos
 from pyscf.ftsolver.utils import rsmpl
 from pyscf.ftsolver.utils import smpl_ep
+from constant import *
 
+np.set_printoptions(threshold=np.nan)
 
-def Exact_Diagonalization_Solver(nexciton, mol, J):
+def get_diag(iconfig, mol):
     '''
-    The structure of the string is [0/1,0/1] nexciton items
-    ((el1ph1,el1ph2,...),(el2ph1,el2ph2,...)...)
-    the full dimension is Nmols * (nlevels^nphs)^Nmols
+    get the diagonal element of Hmat
     '''
     nmols = len(mol)
-    
-    nphtot = 0
+    # electronic part
+    e = 0.0
     for imol in xrange(nmols):
-        nphtot += mol[imol].nphs
+        if iconfig[0][imol] == 1:
+            e += mol[imol].elocalex
 
-    ph_dof_list = np.zeros((nphtot), dtype=np.int32)
-    
+    # phonon part
     index = 0
-    divisor = 1
-    for imol in xrange(nmols-1,-1,-1):
-        for iph in xrange(mol[imol].nphs-1,-1,-1):
-            print divisor
-            divisor *= mol[imol].ph[iph].nlevels
-            print index
-            ph_dof_list[index] = divisor
+    for imol in xrange(nmols):
+        for iph in xrange(mol[imol].nphs):
+            e += iconfig[1][index]*mol[imol].ph[iph].omega
             index += 1
 
-    ph_dof_list = ph_dof_list[::-1]
-    
-    #print ph_dof_list
-    
-    def get_diag(iconfig):
-        # electronic part
-        e = 0.0
-        for imol in xrange(nmols):
-            if iconfig[0][imol] == 1:
-                e += mol[imol].elocalex
-        # phonon part
-        index = 0
-        for imol in xrange(nmols):
+    # constant part reorganization energy omega*g^2
+    for imol in xrange(nmols):
+        if iconfig[0][imol] == 1:
             for iph in xrange(mol[imol].nphs):
-                e += iconfig[1][index]*mol[imol].ph[iph].omega
-                index += 1
-        return e
-    
-    # the last molecule phonon is in the inner loop
-    # the electronic part is in the outer loop
-    # get the Hamiltonian matrix
-    
-    nconfigs = 1
-    for i in xrange(nmols,nmols-nexciton,-1):
-        nconfigs *= i 
-    for i in xrange(1,1+nexciton):
-        nconfigs /= i
-    nconfigs *= ph_dof_list[0]
+                e += mol[imol].ph[iph].omega * mol[imol].ph[iph].ephcoup**2
+    return e
 
-    diags = np.zeros((nconfigs))
+
+def construct_Hmat(nconfigs, x, y, ph_dof_list, mol, J, diag=False):
+    
+    nmols = len(mol)
+    # construct the sparse Hmat explicitly
     rowidx = []
     colidx = []
     data = []
-    
-    x, y = configidx.exciton_string(nmols, nexciton) 
+    if diag == True:
+        diags = np.zeros(nconfigs)
 
     for idx in xrange(nconfigs):
+        
         iconfig = configidx.idx2config(idx, ph_dof_list, x, y)
-        print "iconfig = ",idx,  iconfig
+        #print iconfig
+
         # diagonal part
-        diags[idx] = get_diag(iconfig)
-        data.append(diags[idx])
+        element = get_diag(iconfig, mol)
+        data.append(element)
         rowidx.append(idx)
         colidx.append(idx)
+        
+        if diag == True:
+            diags[idx] = element
 
         # non-diagonal part 
         # electronic part
@@ -136,73 +121,111 @@ def Exact_Diagonalization_Solver(nexciton, mol, J):
                         colidx.append(idx)
   
 
-    print "nconfig",len(data),nconfigs
-    #for i in range(len(rowidx)):
-    #    print rowidx[i],colidx[i],data[i]
-
+    print "nconfig",nconfigs,"nonzero element",len(data)
+    
     Hmat =  csr_matrix( (data,(rowidx,colidx)), shape=(nconfigs,nconfigs) )
-
-    #print Hmat.todense()
-    w, v =scipy.sparse.linalg.eigsh(Hmat,k=1, which="SA")
-    print "arpack Arnoldi method"
-    print w
-    #print 
     
-    #print diags
-    precond = lambda x, e, *args: x/(diags-e+1e-4)
-    initialc = np.zeros((nconfigs))
-    initialc[0] = 1.0
+    if diag == False:
+        return Hmat
+    else:
+        return Hmat, diags
+
+
+def pre_Hmat(nexciton, mol):
     
-    def hop(c):
-        return Hmat.dot(c)
-
-    e, c = lib.davidson(hop, initialc, precond)
-    print "pyscf davidson method"
-    print e
-
-    #e = ftlanczos.ftlan_E(hop,initialc,m=50,norm=np.linalg.norm,Min_b=1e-10,Min_m=3)
-    #print "ftlanzos lanczos method"
-    #print e
-
-    e, c = scipy.linalg.eigh(a=Hmat.todense())
-    
-    print "e=",e
-    #print "c=",c
-
-
-    #e_T =  ft_energy(c, e, 1.0e23)
-    #print "full-diagonaliztion e_T"
-    #print e_T
-    
-    #for nsamp in xrange(1000,10000,1000):
-    #    e_T = rsmpl.ft_smpl_E(hop, initialc, scipy.constants.k*1.0e23, nsamp)
-    #    print "finite T lanczos method"
-    #    print nsamp, e_T
-
-    return x, y, e, c, ph_dof_list, nconfigs, Hmat
-
-
-def dipoleC(mol, c, nconfigs_1, ph_dof_list_1, x_1, y_1, nconfigs_2, ph_dof_list_2, x_2, y_2):
     '''
-        do the dipole * c
+    The structure of the string is [0/1,0/1] nexciton items
+    ((el1ph1,el1ph2,...),(el2ph1,el2ph2,...)...)
+    1. exact diagonalization
+    '''
+    nmols = len(mol)
+    
+    nphtot = 0
+    for imol in xrange(nmols):
+        nphtot += mol[imol].nphs
+    
+    # the phonon degree of freedom lookup table
+    # mol1(ph1, ph2, ph3), mol2(ph1, ph2, ph3), ...
+    ph_dof_list = np.zeros((nphtot), dtype=np.int32)
+    
+    index = 0
+    divisor = 1
+    for imol in xrange(nmols-1,-1,-1):
+        for iph in xrange(mol[imol].nphs-1,-1,-1):
+            divisor *= mol[imol].ph[iph].nlevels
+            ph_dof_list[index] = divisor
+            index += 1
+
+    ph_dof_list = ph_dof_list[::-1]
+    
+    print "ph_dof_list", ph_dof_list
+    
+    # get the number of configurations
+    nconfigs = 1
+    for i in xrange(nmols,nmols-nexciton,-1):
+        nconfigs *= i 
+    for i in xrange(1,1+nexciton):
+        nconfigs /= i
+    nconfigs *= ph_dof_list[0]
+    
+    # graphic method get the configuration address map
+    x, y = configidx.exciton_string(nmols, nexciton) 
+    
+    return x, y, ph_dof_list, nconfigs
+
+
+def Hmat_diagonalization(Hmat, method="full", diags=None):
+    
+    if method == "Arnoldi": 
+
+        print "arpack Arnoldi method"
+        e, c =scipy.sparse.linalg.eigsh(Hmat,k=1, which="SA")
+
+    elif method == "Davidson":
+        
+        print "pyscf davidson method"
+        precond = lambda x, e, *args: x/(diags-e+1e-4)
+        nconfigs = Hmat.shape[0]
+        initialc = np.zeros((nconfigs))
+        initialc[0] = 1.0
+        
+        def hop(c):
+            return Hmat.dot(c)
+
+        e, c = lib.davidson(hop, initialc, precond)
+    
+    elif method == "full":
+
+        print "full diagonalization"
+        e, c = scipy.linalg.eigh(a=Hmat.todense())
+
+    return e, c
+
+
+def dipoleC(mol, c, nconfigs_1, ph_dof_list_1, x_1, y_1, nconfigs_2, \
+        ph_dof_list_2, x_2, y_2, mode):
+    '''
+        do the dipole * c, initial state 1, final state 2 \mu |1><2| + \mu |2><1|
     '''
     nmols = len(mol)
     AC = np.zeros(nconfigs_2)
+    assert(mode=="+" or mode =="-")
 
     for idx in xrange(nconfigs_1):
         iconfig = configidx.idx2config(idx, ph_dof_list_1, x_1, y_1)
         for imol in xrange(nmols):
             iconfig2 = copy.deepcopy(iconfig)
-            if iconfig2[0][imol] != 1:
-                iconfig2[0][imol] = 1
+            if (mode == "+" and iconfig2[0][imol] != 1) or \
+                (mode == "-" and iconfig2[0][imol] != 0):
+                iconfig2[0][imol] = 1 - iconfig[0][imol]
                 idx2 = configidx.config2idx(iconfig2, ph_dof_list_2, x_2, y_2)
                 AC[idx2] +=  mol[imol].dipole * c[idx] 
-
 
     return AC
 
 
-def dyn_lanczos(T, AC, dipolemat, Hgsmat, Hexmat, omega, e_ref, eta=0.00005):
+def dyn_lanczos(T, AC, dipolemat, Hgsmat, Hexmat, omega, e_ref, eta=0.00005, \
+        nsamp=20, M=50):
     
     def hexop(c):
         return Hexmat.dot(c)
@@ -213,10 +236,9 @@ def dyn_lanczos(T, AC, dipolemat, Hgsmat, Hexmat, omega, e_ref, eta=0.00005):
     
     if T == 0.0:
         norm = np.linalg.norm(AC)
-        print norm
-        a, b = ftlanczos.lan_Krylov(hexop,AC,m=40,norm=np.linalg.norm,Min_b=1e-10,Min_m=3)
-        e, w = ftlanczos.Tri_diag(a, b)
-        print "lanczos energy = ", e[0]
+        a, b = ftlanczos.lan_Krylov(hexop,AC,m=M,norm=np.linalg.norm,Min_b=1e-10,Min_m=3)
+        e, c = ftlanczos.Tri_diag(a, b)
+        print "lanczos energy = ", e[0] * au2ev
 
         # calculate the dynamic correlation function
         npoints = omega.shape[0]
@@ -224,167 +246,89 @@ def dyn_lanczos(T, AC, dipolemat, Hgsmat, Hexmat, omega, e_ref, eta=0.00005):
         nlans = e.shape[0]
         for ipoint in range(0,npoints):
             for ilanc in range(0,nlans):
-                dyn_corr[ipoint] += w[0,ilanc]*w[0,ilanc]*eta / ((omega[ipoint]+e_ref-e[ilanc])**2+eta*eta)
-        
+                dyn_corr[ipoint] += c[0,ilanc]*c[0,ilanc]*eta / ((omega[ipoint]+e_ref-e[ilanc])**2+eta*eta)
         dyn_corr *= norm**2
+    
     else:
-        dyn_corr = smpl_ep.smpl_freq(hgsop, hexop, dipoleop, T/3.1577464E5, omega, \
-                Hgsmat.shape[0], nsamp=20, M=50, eta = eta)
+        dyn_corr = smpl_ep.smpl_freq(hgsop, hexop, dipoleop, \
+                T*scipy.constants.physical_constants["kelvin-hartree relationship"][0], omega, \
+                Hgsmat.shape[0], nsamp=nsamp, M=M, eta = eta)
 
     return dyn_corr
 
 
-def full_diagonalization_spectrum(ic,ie,ix,iy,fc,fe,fx,fy,ph_dof_list,mol):
+def full_diagonalization_spectrum(ic,ie,ix,iy,fc,fe,fx,fy,ph_dof_list,mol,dipolemat):
     '''
-        initial/final state c,e
-        each mol dipole
+       transition energy and dipole moment ** 2 
     '''
     nistates = len(ie)
     nfstates = len(fe)
     nfexs = nfstates/ph_dof_list[0]
     niexs = nistates/ph_dof_list[0]
-    dipdip = np.zeros((2,nistates,nfstates))
+    dipdip = np.zeros((2,nfstates,nistates))
 
-    dipdip[0, :, :] =  (init_dip_final(ic, ix, iy, fc, fx, fy, ph_dof_list, mol)) ** 2
-    for fstate in xrange(nfstates):
-        for istate in xrange(nistates):
-            dipdip[1, istate, fstate] = fe[fstate] - ie[istate]
-            #print istate, fstate, dipdip[:, istate, fstate]
-    
+    dipdip[1, :, :] =  (init_dip_final(ic, ix, iy, fc, fx, fy, ph_dof_list, mol, dipolemat)) ** 2
+    dipdip[0,:,:] = fe.reshape(nfstates,1) - ie
+
     return dipdip
 
+
 def partition_function(e, temperature): 
-    print "temp", temperature
-    #beta = 1.0 / scipy.constants.k / temperature
-    beta = 3.1577464E5 / temperature
-    print "beta=", beta
+    
+    beta = 1.0 / temperature / \
+    scipy.constants.physical_constants["kelvin-hartree relationship"][0]
     P = np.exp( -1.0 * beta * e)
-    print "P=", P
     Z = np.sum(P)
     P = P/Z
+    print "partition sum", Z
     print "partition", P
+    
     return P 
 
-def ft_energy(c, e, temperature):
+
+def dyn_exact(dipdip, temperature, ie, omega=None, eta=0.00005):
     '''
-    finite T energy
+        absorption ~ omega
     '''
-    nstates = len(e)
-    P = partition_function(e, temperature)
-    e_T = 0.0
-    for istate in xrange(nstates):
-        e_T += e[istate] * P[istate]
-
-    return e_T
-
-
-def absorption(dipdip, temperature, ie):
-    
     if temperature == 0:
         f = open("abssharp0.out","w")
-        for fstate in xrange(dipdip.shape[2]):
-            f.write("%d %d %f %f \n" % (0, fstate, dipdip[1,0,fstate], \
-                dipdip[1,0,fstate]*dipdip[0,0,fstate]))
+        for fstate in xrange(dipdip.shape[1]):
+            f.write("%d %d %f %f \n" % (0, fstate, dipdip[0,fstate,0], \
+                dipdip[1,fstate,0]*dipdip[0,fstate,0]))
         f.close()
+
+        return dipdip[:,:,0]
     else:
         P = partition_function(ie, temperature)
-        f = open("abssharpT.out","w")
-        for istate in xrange(dipdip.shape[1]):
-            for fstate in xrange(dipdip.shape[2]):
-                f.write("%d %d %f %f \n" % (istate, fstate, dipdip[1,istate,fstate], \
-                    P[istate]*dipdip[1,istate,fstate]*dipdip[0,istate,fstate]))
-        f.close()
+#        f = open("abssharpT.out","w")
+#        for fstate in xrange(dipdip.shape[1]):
+#            for istate in xrange(dipdip.shape[2]):
+#                f.write("%d %d %f %f \n" % (istate, fstate, dipdip[0,fstate,istate], \
+#                    P[istate]*dipdip[1,fstate,istate]*dipdip[0,fstate,istate]))
+#        f.close()
 
         f = open("absgammaT.out", "w")
-        omega_1 = 2.5/27.211
-        delta_omega = 0.001/27.211
-        npoints = 500
-        eta = 0.00005
-
+        npoints = np.prod(omega.shape)
+        dyn_corr = np.zeros(npoints)
         for ipoint in xrange(npoints):
-            omega = omega_1 + ipoint * delta_omega
-            result = 0.0
-            for istate in xrange(dipdip.shape[1]):
-                for fstate in xrange(dipdip.shape[2]):
-                    result += P[istate] * eta  \
-                    / ((dipdip[1,istate,fstate]-omega)**2 + eta**2) \
-                    * dipdip[0,istate,fstate]
-            result *= omega
-            f.write("%f %f \n" % (omega, result))
+#            result = 0.0
+#            for fstate in xrange(dipdip.shape[1]):
+#                for istate in xrange(dipdip.shape[2]):
+#                    result += P[istate] * eta  \
+#                    / ((dipdip[0,fstate,istate]-omega[ipoint])**2 + eta**2) \
+#                    * dipdip[1,fstate,istate]
+            dyn_corr[ipoint] = np.einsum('i,fi,fi->', P, \
+                    1.0/((dipdip[0]-omega[ipoint])**2+eta**2), dipdip[1]) * \
+                     eta / np.pi
+            f.write("%f %f \n" % (omega[ipoint], dyn_corr[ipoint]))
         f.close()
-
-def emission(dipdip, temperature, fe):
-
-    if temperature == 0:
-        f = open("emisharp0.out","w")
-        for istate in xrange(dipdip.shape[1]):
-            f.write("%d %d %f %f \n" % (0, istate, dipdip[1,istate,0], \
-                dipdip[1,istate,0]**3 * dipdip[0,istate,0]))
-        f.close()
-    else:
-        P = partition_function(fe, temperature)
-        f = open("emisharpT.out","w")
-        for fstate in xrange(dipdip.shape[2]):
-            for istate in xrange(dipdip.shape[1]):
-                f.write("%d %d %f %f \n" % (fstate, istate, dipdip[1,istate,fstate], \
-                    P[fstate] * dipdip[1,istate,fstate]**3 * dipdip[0,istate,fstate]))
-        f.close()
-    
-
-        f = open("emigammaT.out", "w")
-        omega_1 = 2.5/27.211
-        delta_omega = 0.001/27.211
-        npoints = 500
-        eta = 0.00001
-
-        for ipoint in xrange(npoints):
-            omega = omega_1 + ipoint * delta_omega
-            result = 0.0
-            for fstate in xrange(dipdip.shape[2]):
-                for istate in xrange(dipdip.shape[1]):
-                    result += P[fstate] * eta \
-                    / ((dipdip[1,istate,fstate]-omega)**2 + eta**2) \
-                    * dipdip[0,istate,fstate]
-            result *= omega**3
-            f.write("%f %f \n" % (omega, result))
-        f.close()
-
-#'''
-#non efficient code
-#
-#def dip2(nfexs, fx, fc, niexs, ix, ic, ph_dof_list, mol):
-#    # get each eigenstate pair dipole**2
-#    nmols = len(mol)
-#    dip = 0.0
-#    for fexidx in xrange(nfexs):
-#        fexconfig = configidx.idx2exconfig(fexidx, fx)
-#        for iexidx in xrange(niexs):
-#            iexconfig = configidx.idx2exconfig(iexidx, ix)
-#            
-#            excitedsite = []
-#            accept = True
-#            for imol in xrange(nmols):
-#                fiminus = fexconfig[imol]-iexconfig[imol]
-#                if fiminus == 1:
-#                    excitedsite.append(imol)
-#                elif fiminus == -1:
-#                    accept = False
-#                    break
-#            if accept == True and len(excitedsite) == 1:
-#                # with the same phonon config
-#                for phidx in xrange(ph_dof_list[0]):
-#                    fidx = fexidx * ph_dof_list[0] + phidx
-#                    iidx = iexidx * ph_dof_list[0] + phidx
-#
-#                    dip += mol[excitedsite[0]].dipole * fc[fidx] * ic[iidx] 
-#
-#    return dip*dip
-#'''
-
+        return dyn_corr
 
 
 def construct_dipoleMat(inconfigs,ix,iy,fnconfigs,fx,fy,ph_dof_list,mol):
-    
+    '''
+        dipole operator matrix fnconfigs * inconfigs
+    '''
     rowidx = []
     colidx = []
     data = []
@@ -399,12 +343,13 @@ def construct_dipoleMat(inconfigs,ix,iy,fnconfigs,fx,fy,ph_dof_list,mol):
                 rowidx.append(idx2)
                 colidx.append(idx)
                 data.append(mol[imol].dipole)
-    
+
+    print "dipoleMat nonzeroelement:", len(data)
     dipolemat =  csr_matrix( (data,(rowidx,colidx)), shape=(fnconfigs,inconfigs) )
     
     return dipolemat
 
-def init_dip_final(ic,ix,iy,fc,fx,fy,ph_dof_list,mol):
+def init_dip_final(ic,ix,iy,fc,fx,fy,ph_dof_list,mol,dipolemat):
     '''
     bra is the final state
     ket is the initial state
@@ -413,17 +358,19 @@ def init_dip_final(ic,ix,iy,fc,fx,fy,ph_dof_list,mol):
     inconfigs = len(ic)
     fnconfigs = len(fc)
     
-    bradipket = np.zeros((inconfigs,fnconfigs))
+    bradipket = np.zeros((fnconfigs,inconfigs))
     
-    dipolemat = construct_dipoleMat(inconfigs,ix,iy,fnconfigs,fx,fy,ph_dof_list,mol)
+    tmp1 = dipolemat.dot(ic)
+    bradipket = np.dot(np.transpose(fc),tmp1)
     
-    tmp1 = dipolemat.transpose().dot(fc)
-    bradipket = np.dot(np.transpose(ic),tmp1)
-    '''
-    can return the dipole operator matrix representation to get AC
-    '''
     return bradipket
 
+
+def spectra_normalize(spectra):
+    spectraabs = np.absolute(spectra)
+    top = np.amax(spectraabs)
+
+    return spectraabs/top
 
 
 if __name__ == '__main__':

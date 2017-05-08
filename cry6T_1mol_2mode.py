@@ -16,13 +16,13 @@ nmols = 1
 J = np.zeros((1))
 
 # cm^-1
-omega1 = np.array([106.51])
+omega1 = np.array([106.51, 1555.55])
 
 # a.u.
-D1 = np.array([30.1370])
+D1 = np.array([30.1370, 8.7729])
 
 # 1
-S1 = np.array([0.2204])
+S1 = np.array([0.2204, 0.2727])
 
 # transfer all these parameters to a.u
 # ev to a.u.
@@ -40,8 +40,8 @@ print "Huang", S1
 print nphcoup1**2
 
 
-nphs = 1
-nlevels =  [10]
+nphs = 2
+nlevels =  [4,4]
 
 phinfo = [list(a) for a in zip(omega1, nphcoup1, nlevels)]
 
@@ -53,7 +53,6 @@ for imol in xrange(nmols):
     mol_local.create_ph(phinfo)
     mol.append(mol_local)
 
-
-dyn_omega = np.linspace(2.6, 2.8, num=1000)
-benchmark.benchmark(mol, J, dyn_omega, T=298.0, eta=0.00005, nsamp=100, M=100,  outfile="1mol_1mode.eps")
-
+dyn_omega = np.linspace(2.2, 3.1, num=500)
+benchmark.benchmark(mol, J, dyn_omega, T=298.0, eta=0.00005, nsamp=300, M=100,
+        outfile="1mol_2mode.eps")
