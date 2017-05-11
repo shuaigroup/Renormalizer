@@ -85,7 +85,7 @@ B(k) =
 \begin{gather}
 C(k) = 
 \begin{bmatrix}
-    I  \\ 
+    I & 0 & 0 \\ 
 \end{bmatrix}
 \end{gather}
 
@@ -147,7 +147,7 @@ When the temperature is high, then the phonon level should be increased, because
 high level phonon excitation is probable. One the other hand, the emission
 spectrum is not accurate, because without LF transformation, high level excited
 state(high phonon level) is not discribed well, so when they are populated, the
-result is probablly wrong. You can see in 1mol_1mode, the high level excited
+result is probablly wrong. You can see in 1mol1mode, the high level excited
 states energy difference is wrong, not the phonon energy
 
 
@@ -158,5 +158,98 @@ if there is many molecules.
 
 even in the zero temperature, J-aggregates 0-0 is much larger than the 0-1 peak.
 Is it due to the addition of the dipole moment?
+
+White's swap algorithm METTS
+
+In the MPSsolver, the left most
+\begin{gather}
+MPO(1) = 
+\begin{bmatrix}
+    e_k a^\dagger_k a_k &  a^\dagger_k a_k & a^\dagger_k & a_k & 1 
+\end{bmatrix}
+\end{gather}
+
+The electronic site MPO is that
+\begin{gather}
+MPO(k) = 
+\begin{bmatrix}
+    1 & 0 & 0  \\
+    A_k & C_k & 0  \\
+    B_k & D_k & 1  \\
+\end{bmatrix}
+\end{gather}
+
+\begin{gather}
+A(k) = 
+\begin{bmatrix}
+    J_{0k} a_k  \\
+    J_{0k} a^\dagger_k \\
+    ...  \\
+    J_{k-1,k} a_k  \\
+    J_{k-1,k} a^\dagger_k \\
+\end{bmatrix}
+\end{gather}
+
+\begin{gather}
+B(k) = 
+\begin{bmatrix}
+    e_k a^\dagger_k a_k \\
+\end{bmatrix}
+\end{gather}
+
+\begin{gather}
+C(k) = 
+\begin{bmatrix}
+    0 & I & 0 & 0 \\ 
+\end{bmatrix}
+\end{gather}
+
+\begin{gather}
+D(k) = 
+\begin{bmatrix}
+    a^\dagger_k a_k & 0 & ... & 0 & a^\dagger_k & a_k  \\ 
+\end{bmatrix}
+\end{gather}
+
+The phonon site MPO is that
+\begin{gather}
+A(k) = 
+\begin{bmatrix}
+    g_{in} \omega_{in}(b^\dagger_{in}+b_{in})  \\
+    0 \\
+    0 \\
+\end{bmatrix}
+\end{gather}
+
+\begin{gather}
+B(k) = 
+\begin{bmatrix}
+    \omega_{in} b^\dagger_{in}b_{in}   \\
+\end{bmatrix}
+\end{gather}
+
+\begin{gather}
+C(k) = 
+\begin{bmatrix}
+    I \\ 
+\end{bmatrix}
+\end{gather}
+
+\begin{gather}
+D(k) = 
+\begin{bmatrix}
+     0 \\ 
+\end{bmatrix}
+\end{gather}
+
+the right most phonon is that
+\begin{gather}
+C(k) = 
+\begin{bmatrix}
+    0 \\
+    I \\ 
+\end{bmatrix}
+\end{gather}
+
 
 \end{document}

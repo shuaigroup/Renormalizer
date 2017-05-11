@@ -131,27 +131,6 @@ for imol in xrange(nmols):
 print "phMPOdim",phMPOdim
 
 
-# phMPO
-def PhElementOpera(op, bra, ket):
-    if op == "b_n^\dagger b_n":
-        if bra == ket:
-            return float(ket)
-        else:
-            return 0.0
-    elif op == "b_n^\dagger + b_n":
-        if bra == ket + 1 : 
-            return np.sqrt(bra)
-        elif bra == ket - 1:
-            return np.sqrt(float(ket))
-        else:
-            return 0.0
-    elif op == "Iden":
-        if bra == ket:
-            return 1.0
-        else:
-            return 0.0
-    else:
-        sys.exit("wrong op in PhElementOpera")
 
 
 def create_phMPO(ph):
@@ -172,34 +151,6 @@ for imol in xrange(nmols):
     phMPO.append([])      
     for iph in xrange(mol[imol].nphs):
         phMPO[imol].append(create_phMPO(mol[imol].ph[iph]))
-
-
-# eMPO
-
-
-def EElementOpera(op, bra, ket):
-    if (op == "a^\dagger"):
-        if bra == ket + 1:
-            return 1.0
-        else:
-            return 0.0
-    elif (op == "a"):
-        if bra == ket - 1:
-            return 1.0
-        else:
-            return 0.0
-    elif (op == "a^\dagger a"):
-        if bra == ket and ket == 1:
-            return 1.0
-        else:
-            return 0.0
-    elif (op == "Iden"):
-        if bra == ket:
-            return 1.0
-        else:
-            return 0.0
-    else:
-        sys.exit("wrong op in EElementOpera")
 
 
 def create_eMPO(mollocal):
