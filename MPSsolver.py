@@ -23,7 +23,7 @@ def construct_qnmat(QN, ephtable, pbond, addlist):
         if ephtable[idx] == 1:
             qnsigma = np.array([0,1])
         else:
-            qnsigma = np.zeros([pbond[idx]])
+            qnsigma = np.zeros([pbond[idx]],dtype=qnl.dtype)
         
         qnmat = np.add.outer(qnmat,qnsigma)
         qnsigmalist.append(qnsigma)
@@ -247,6 +247,104 @@ def construct_MPO(mol, J, pbond):
     
     return  MPO, MPOdim 
 
+def clean_MPS(system, MPS, ephtable, nexciton):
+    '''
+        clean MPS to good quantum number(nexciton) subseciton
+        if time step is too large it quantum number would not conserve
+    '''
+
+    assert system in ["L","R"]
+    nMPS = len(MPS)
+    if system == 'L':
+        start = 0
+        end = nMPS-1
+        step = 1
+    else:
+        start = nMPS-1
+        end = 0
+        step = -1
+    
+    MPSQN = [None] * (nMPS + 1)
+    MPSQN[0] = [0]
+    MPSQN[-1] = [0]
+
+    for imps in xrange(start, end, step):
+        
+        if system == "L":
+            qn = np.array(MPSQN[imps])
+        else:
+            qn = np.array(MPSQN[imps+1])
+
+        if ephtable[imps] == 1:
+            # e site
+            sigmaqn = np.array([0,1])
+        else:
+            # ph site 
+            sigmaqn = np.array([0]*MPS[imps].shape[1])
+        
+        if system == "L":
+            qnbig = np.add.outer(qn,sigmaqn).ravel()
+            Gamma = MPS[imps].reshape(-1, MPS[imps].shape[-1])
+        else:
+            qnbig = np.add.outer(sigmaqn,qn).ravel()
+            Gamma = MPS[imps].reshape(MPS[imps].shape[0],-1)
+        
+        qnset = []
+        Uset = []
+        Vset = []
+        Sset = []
+        for iblock in xrange(nexciton+1):
+            idxset = [i for i, x in enumerate(qnbig.tolist()) if x == iblock]
+            if len(idxset) != 0:
+                if system == "L":
+                    Gamma_block = Gamma[np.ix_(idxset,range(Gamma.shape[1]))]
+                else:
+                    Gamma_block = Gamma[np.ix_(range(Gamma.shape[0]),idxset)]
+                
+                U, S, Vt = scipy.linalg.svd(Gamma_block, full_matrices=False)
+                dim = S.shape[0]
+                Sset.append(S)
+                
+                def blockappend(vset, qnset, v, n, dim, indice, shape):
+                    vset.append(blockrecover(indice, v[:,:dim], shape))
+                    qnset += [n] * dim
+                    
+                    return vset, qnset
+
+                if system == "L":
+                    Uset, qnset = blockappend(Uset, qnset, U, iblock, dim, idxset, Gamma.shape[0])
+                    Vset.append(Vt.T)
+                else:
+                    Vset, qnset = blockappend(Vset, qnset, Vt.T, iblock, dim, idxset, Gamma.shape[1])
+                    Uset.append(U)
+                
+        Uset = np.concatenate(Uset,axis=1)
+        Vset = np.concatenate(Vset,axis=1)
+        Sset = np.concatenate(Sset)
+        
+        if system == "L":
+            MPS[imps] = Uset.reshape([MPS[imps].shape[0],MPS[imps].shape[1],len(Sset)])
+            Vset =  np.einsum('ij,j -> ij', Vset, Sset)
+            MPS[imps+1] = np.einsum('ij, jkl -> ikl', Vset.T, MPS[imps+1])
+            MPSQN[imps+1] = qnset
+        else:
+            MPS[imps] = Vset.T.reshape([len(Sset),MPS[imps].shape[1],MPS[imps].shape[-1]])
+            Uset =  np.einsum('ij,j -> ij', Uset, Sset)
+            MPS[imps-1] = np.einsum('ijk, kl -> ijl', MPS[imps-1], Uset)
+            MPSQN[imps] = qnset
+        
+    # clean the extreme mat
+    
+    pbond = [mps.shape[1] for mps in MPS]
+    if system == "L":
+        idx = nMPS-1
+    else:
+        idx = 0
+    cshape = MPS[idx].shape
+    qnmat, qnl, qnr, qnsigmalist = construct_qnmat(MPSQN, ephtable, pbond, [idx])
+    c = MPS[idx][qnmat==nexciton]
+    MPS[idx] = c1d2cmat(cshape, c, qnmat, nexciton)
+
 
 def construct_MPS(domain, ephtable, pbond, nexciton, Mmax):
     
@@ -257,7 +355,7 @@ def construct_MPS(domain, ephtable, pbond, nexciton, Mmax):
     MPS = []
     MPSQN = [[0],]
     MPSdim = [1,]
-
+ 
     nmps = len(pbond)
 
     for imps in xrange(nmps-1):
@@ -593,9 +691,9 @@ def updatemps(vset, sset, qnset, compset, nexciton, Mmax):
     '''
     sidx = select_basis(qnset,sset,range(nexciton+1))
     mpsdim = min(len(sidx),Mmax)
-    mps = np.zeros((vset.shape[0], mpsdim))
+    mps = np.zeros((vset.shape[0], mpsdim),dtype=vset.dtype)
     
-    compmps = np.zeros((compset.shape[0],mpsdim))
+    compmps = np.zeros((compset.shape[0],mpsdim), dtype=compset.dtype)
 
     mpsqn = []
     stot = 0.0
@@ -612,11 +710,14 @@ def updatemps(vset, sset, qnset, compset, nexciton, Mmax):
     
 
 def c1d2cmat(cshape, c, qnmat, nexciton):
-    cstruct = np.zeros(cshape)
+    cstruct = np.zeros(cshape,dtype=c.dtype)
     np.place(cstruct, qnmat==nexciton, c)
 
     return cstruct
 
+def printMPSdim(MPS,idx):
+    
+    print [mps.shape[idx] for mps in MPS] + [1] 
 
 if __name__ == '__main__':
     import numpy as np
@@ -657,7 +758,7 @@ if __name__ == '__main__':
     print "Huang", S1
     
     nphs = 2
-    nlevels =  [7,7]
+    nlevels =  [4,4]
     
     phinfo = [list(a) for a in zip(omega1, nphcoup1, nlevels)]
     
@@ -667,7 +768,7 @@ if __name__ == '__main__':
         mol_local.create_ph(phinfo)
         mol.append(mol_local)
     
-    Mmax = 100
+    Mmax = 4
     nexciton = 1
     
     MPS, MPSdim, MPSQN, MPO, MPOdim, ephtable, pbond = construct_MPS_MPO_2(mol, J,\
@@ -676,7 +777,15 @@ if __name__ == '__main__':
     optimization(MPS, MPSdim, MPSQN, MPO, MPOdim, ephtable, pbond, nexciton, Mmax,\
             nsweeps=4, method="1site")
 
+    MPS = [mps.transpose(1,0,2) for mps in MPS]
     print "MPS output left canonical:", mpslib.is_left_canonical(MPS)
     
     print "MPSdim",[i.shape[1] for i in MPS]
     
+    printMPSdim(MPS,0)
+    MPS1 = mpslib.add(MPS,None)
+    print "MPS output right canonical:", mpslib.is_right_canonical(MPS1)
+    printMPSdim(MPS1,0)
+    
+        
+    print mpslib.dot(MPS1, MPS)

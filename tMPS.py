@@ -4,7 +4,7 @@
 import mpo as mpolib
 import mps as mpslib
 import numpy as np
-
+import MPSsolver
 
 def construct_NumMPO(mol,pbond):
     '''
@@ -47,7 +47,6 @@ def construct_NumMPO(mol,pbond):
 
             MPO.append(mpo)
             impo += 1
-
     return MPOdim, MPO 
 
 
@@ -137,11 +136,14 @@ def tMPS(MPS, MPO, dt, thresh=0):
     e^-iHdt \Psi
     input L-canonical MPS; output R-canonical MPS
     '''
-    
-    H1MPS = mpolib.contract(MPO, MPS, 'l', thresh, ncanonical=1)
-    H2MPS = mpolib.contract(MPO, H1MPS, 'l', thresh, ncanonical=1)
-    H3MPS = mpolib.contract(MPO, H2MPS, 'l', thresh, ncanonical=1)
-    H4MPS = mpolib.contract(MPO, H3MPS, 'l', thresh, ncanonical=1)
+    H1MPS = mpolib.contract(MPO, MPS, 'l', thresh)
+    MPSsolver.clean_MPS('L', H1MPS, ephtable, 0)
+    H2MPS = mpolib.contract(MPO, H1MPS, 'l', thresh)
+    MPSsolver.clean_MPS('L', H2MPS, ephtable, 0)
+    H3MPS = mpolib.contract(MPO, H2MPS, 'l', thresh)
+    MPSsolver.clean_MPS('L', H3MPS, ephtable, 0)
+    H4MPS = mpolib.contract(MPO, H3MPS, 'l', thresh)
+    MPSsolver.clean_MPS('L', H4MPS, ephtable, 0)
 
     H1MPS = mpslib.scale(H1MPS, -1.0j*dt)
     H2MPS = mpslib.scale(H2MPS, -0.5*dt**2)
@@ -155,6 +157,12 @@ def tMPS(MPS, MPO, dt, thresh=0):
     
     MPSnew = mpslib.canonicalise(MPSnew, 'l')
     MPSnew = mpslib.compress(MPSnew, 'l', trunc=thresh)
+    
+    MPSsolver.clean_MPS('L', MPSnew, ephtable, 0)
+    
+    # check the number of particle
+    NumMPS = mpolib.contract(numMPO, MPSnew, 'l', thresh)
+    print "particle", mpslib.dot(mpslib.conj(NumMPS),MPSnew) / mpslib.dot(mpslib.conj(MPSnew), MPSnew)
 
     return MPSnew
 
@@ -222,14 +230,8 @@ def ZeroTTDomainCorr(iMPS, HMPO, dipoleMPO, nsteps, dt, thresh=0):
         if istep != 0:
             t += dt
             AketMPS = tMPS(AketMPS, HMPO, dt, thresh=thresh)
-            
-            # check the quantum number
-            #newMPS = mpolib.contract(numMPO, AketMPS, 'l', 0, ncanonical=1)
-            #print "quantum number=", mpslib.dot(mpslib.conj(newMPS),\
-            #        AketMPS)/mpslib.dot(mpslib.conj(AketMPS), AketMPS)
-            
-            #print [ mps.shape[0] for mps in AketMPS]
-
+            print [ mps.shape[0] for mps in AketMPS]
+        
         ft = mpslib.dot(mpslib.conj(AbraMPS),AketMPS)
         autocorr.append(ft)
     
@@ -295,8 +297,8 @@ if __name__ == '__main__':
         mol_local.create_ph(phinfo)
         mol.append(mol_local)
     
-    Mmax = 1
-    nexciton = 0
+    Mmax = 10
+    nexciton = 1
     
     MPS, MPSdim, MPSQN, MPO, MPOdim, ephtable, pbond = construct_MPS_MPO_2(mol, J, Mmax, nexciton)
     
@@ -306,7 +308,7 @@ if __name__ == '__main__':
     print mpslib.is_left_canonical(MPS)
     
 
-    dipoleMPOdim, dipoleMPO = construct_dipoleMPO(mol, pbond, "abs")
+    dipoleMPOdim, dipoleMPO = construct_dipoleMPO(mol, pbond, "emi")
     
     # if in the EX space, MPO minus E_e to reduce osillation
     if nexciton == 0:
@@ -327,25 +329,32 @@ if __name__ == '__main__':
     numMPO = MPSdtype_convert(numMPO)
 
     nsteps = 500
-    dt = 40.0
+    dt = 30.0
     print "energy dE", 1.0/dt/nsteps * au2ev * 2.0 * np.pi
     print "energy E", 1.0/dt * au2ev * 2.0 * np.pi
     
 
-    autocorr = ZeroTTDomainCorr(iMPS, HMPO, dipoleMPO, nsteps, dt, thresh=1.0e-4)
-    #autocorr = EmiExactPropagator(iMPS, dipoleMPO, nsteps, dt, mol, pbond)
-    
+    autocorr = ZeroTTDomainCorr(iMPS, HMPO, dipoleMPO, nsteps, dt, thresh=1.0e-6)
     autocorr = np.array(autocorr)
     
-    yf = fft.fft(autocorr)
-    yplot = fft.fftshift(yf)
-    xf = fft.fftfreq(nsteps,dt)
-    # in FFT the frequency unit is cycle/s, but in QM we use radian/s,
-    # hbar omega = h nu   omega = 2pi nu   
-    xplot = fft.fftshift(xf) * au2ev * 2.0 * np.pi
+    autocorrexact = EmiExactPropagator(iMPS, dipoleMPO, nsteps, dt, mol, pbond)
+    autocorrexact = np.array(autocorrexact)
     
-    plt.xlim(-0.3,0.3)
-    plt.plot(xplot, np.abs(yplot))
+    xplot = [i*dt for i in range(nsteps)]
+    plt.plot(xplot, np.real(autocorrexact))
+    plt.plot(xplot, np.imag(autocorrexact))
+    plt.plot(xplot, np.real(autocorr))
+    plt.plot(xplot, np.imag(autocorr))
+
+    #yf = fft.fft(autocorr)
+    #yplot = fft.fftshift(yf)
+    #xf = fft.fftfreq(nsteps,dt)
+    ## in FFT the frequency unit is cycle/s, but in QM we use radian/s,
+    ## hbar omega = h nu   omega = 2pi nu   
+    #xplot = fft.fftshift(xf) * au2ev * 2.0 * np.pi
+    #
+    #plt.xlim(-0.3,0.3)
+    #plt.plot(xplot, np.abs(yplot))
     #plt.plot(xplot, np.real(yplot))
     #plt.plot(xplot, np.imag(yplot))
     plt.show()
