@@ -42,7 +42,7 @@ print nphcoup1**2
 
 
 nphs = 2
-nlevels =  [8,8]
+nlevels =  [4,4]
 
 phinfo = [list(a) for a in zip(omega1, nphcoup1, nlevels)]
 

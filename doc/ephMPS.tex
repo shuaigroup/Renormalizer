@@ -251,5 +251,34 @@ C(k) =
 \end{bmatrix}
 \end{gather}
 
+时间步长的确定应该有两个标准，
+一个是对最后光谱的精确性要求，因为信号的频率太大，那么就要求时间的间隔要很小，解
+决这个的办法是H-H0，这样相当于先抽出已知光谱中的高频的部分，做一个整体的平移，剩
+下的低频的部分，就可以用时间间隔比较大的来采样。同样的omega部分的分辨率，那么步
+数就会少，计算量就小。
+
+当时这是建立在每一个时间点都能算对的情况下。这就是另外一个对时间步长的要求，即每
+个点都要算对。在Runge-Kutta下，时间步长不能太大，即使已经做了H-H0。对H做一个
+scale是没用的，因为H是小了，t是大了，但是omega部分的分辨率要求也高了，所以要求整个步数
+没变，计算量没变。这一点可以从发射光谱的精确演化和Rungekutta的步长看出来。精确演
+化，$e^iHt$，每一步都是精确的，但是Runge-kutta他总是按照(1-iHt)变得化总是有误差
+。
+
+In the zero temperature case, the time correlaiton function we calculate is that
+\begin{gather}
+    \langle i | e^{iHt} \hat{A} e^{-iHt} \hat{A} | i \rangle 
+    = e^{iE_{i0} t} \langle \hat{A}i | e^{-iHt} | \hat{A} i \rangle 
+    = e^{i(E_{i0}-E_{f0}) t} \langle \hat{A}i | e^{-i(H-E_{f0})t} | \hat{A} i \rangle
+\end{gather}
+if FFT the whole expression, then the exact pole should be
+$\omega_{exact} = E_{f0}-E_{fm} + E_{i0}-E_{f0}$
+if FFT the braket part, the calculated pole is 
+$\omega_{calc} = E_{f0}-E_{fm}$
+so the recover final result should be 
+$\omega_{exact} = \omega_{calc} + E_{i0}-E_{f0}$
+
+
+
+
 
 \end{document}

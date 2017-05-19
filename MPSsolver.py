@@ -2,11 +2,108 @@
 # -*- coding: utf-8 -*-
 
 import numpy as np
-import mps
 import scipy.linalg
 from elementop import *
 from pyscf import lib
+import mps as mpslib
 from constant import *
+
+def construct_qnmat(QN, ephtable, pbond, addlist):
+    '''
+        construct the qn pattern, the structure is as the coefficient
+    '''
+    qnl = np.array(QN[addlist[0]])
+    qnr = np.array(QN[addlist[-1]+1])
+    qnsigmalist = []
+
+    qnmat = qnl.copy()
+
+    for idx in addlist:
+
+        if ephtable[idx] == 1:
+            qnsigma = np.array([0,1])
+        else:
+            qnsigma = np.zeros([pbond[idx]])
+        
+        qnmat = np.add.outer(qnmat,qnsigma)
+        qnsigmalist.append(qnsigma)
+
+    qnmat = np.add.outer(qnmat,qnr)
+
+    return qnmat, qnl, qnr, qnsigmalist
+
+
+def Csvd(cstruct, qnbigl, qnbigr, nexciton, full_matrices=True):
+    '''
+        block svd the coefficient matrix (l, sigmal, sigmar, r) or (l,sigma,r)
+    '''
+    Gamma = cstruct.reshape(np.prod(qnbigl.shape),np.prod(qnbigr.shape))
+    localqnl = qnbigl.ravel()
+    localqnr = qnbigr.ravel()
+    
+    Uset = []
+    Uset0 = []
+    Vset = []
+    Vset0 = []
+    Sset = []
+    SUset0 = []
+    SVset0 = []
+    qnlset = []
+    qnlset0 = []
+    qnrset = []
+    qnrset0 = []
+
+    # different combination
+    combine = [[x, nexciton-x] for x in xrange(nexciton+1)]
+    for nl, nr in combine:
+        lset = [i for i, x in enumerate(localqnl) if x == nl]
+        rset = [i for i, x in enumerate(localqnr) if x == nr]
+        if len(lset) != 0 and len(rset) != 0:
+            Gamma_block = Gamma[np.ix_(lset, rset)]
+            U, S, Vt = scipy.linalg.svd(Gamma_block)
+            dim = S.shape[0]
+            Sset.append(S)
+            
+            def blockappend(vset, vset0, qnset, qnset0, svset0, v, n, dim, indice, shape):
+                vset.append(blockrecover(indice, v[:,:dim], shape))
+                qnset += [n] * dim
+                vset0.append(blockrecover(indice, v[:,dim:],shape))
+                qnset0 += [n] * (v.shape[0]-dim)
+                svset0.append(np.zeros(v.shape[0]-dim))
+                
+                return vset, vset0, qnset, qnset0, svset0
+            
+            Uset, Uset0, qnlset, qnlset0, SUset0 = blockappend(Uset, Uset0, qnlset, \
+                    qnlset0, SUset0, U, nl, dim, lset, Gamma.shape[0])
+            Vset, Vset0, qnrset, qnrset0, SVset0 = blockappend(Vset, Vset0, qnrset, \
+                    qnrset0, SVset0, Vt.T, nr, dim, rset, Gamma.shape[1])
+    
+    if full_matrices == True:
+        Uset = np.concatenate(Uset + Uset0,axis=1)
+        Vset = np.concatenate(Vset + Vset0,axis=1)
+        SUset = np.concatenate(Sset + SUset0)
+        SVset = np.concatenate(Sset + SVset0)
+        qnlset = qnlset + qnlset0
+        qnrset = qnrset + qnrset0
+        
+        return Uset, SUset, qnlset, Vset, SVset, qnrset
+    else:
+        Uset = np.concatenate(Uset,axis=1)
+        Vset = np.concatenate(Vset,axis=1)
+        Sset = np.concatenate(Sset)
+        
+        return Uset, Sset, qnlset, Vset, Sset, qnrset
+
+
+def blockrecover(indices, U, dim):
+    '''
+        recover the block element to its original position
+    '''
+    resortU = np.zeros([dim, U.shape[1]],dtype=U.dtype)
+    for i in xrange(len(indices)):
+        resortU[indices[i],:] = np.copy(U[i,:])
+
+    return resortU
 
 
 def construct_MPS_MPO_1():
@@ -19,15 +116,15 @@ def construct_MPS_MPO_1():
     MPSdim = []
     MPOdim = []
     
-
     return MPS, MPO, MPSdim, MPOdim
 
 
-def construct_MPS_MPO_2(mol, Mmax, nexciton):
+def construct_MPS_MPO_2(mol, J, Mmax, nexciton):
     '''
     MPO/MPS structure 2
     e1,ph11,ph12,..e2,ph21,ph22,...en,phn1,phn2...
     '''
+    
     # e-ph table: e site 1, ph site 0
     ephtable = []
     # physical bond dimension
@@ -46,24 +143,24 @@ def construct_MPS_MPO_2(mol, Mmax, nexciton):
     
     '''
     initialize MPS according to quantum number
-    QN: mps quantum number list
+    MPSQN: mps quantum number list
     MPSdim: mps dimension list
     MPS: mps list
     '''
-    QN, MPSdim, MPS = construct_MPS('L', ephtable, pbond, nexciton, Mmax)
-    print "left-canonical:", mps.is_left_canonical(MPS)
+    MPS, MPSdim, MPSQN = construct_MPS('L', ephtable, pbond, nexciton, Mmax)
+    print "initialize left-canonical:", mpslib.is_left_canonical(MPS)
     
     '''
     initialize MPO
     MPOdim: mpo dimension list
     MPO: mpo list
     '''
-    MPOdim, MPO = construct_MPO(mol, pbond)
+    MPO, MPOdim = construct_MPO(mol, J, pbond)
     
-    return MPS, MPSdim, QN, MPO, MPOdim, ephtable, pbond
+    return MPS, MPSdim, MPSQN, MPO, MPOdim, ephtable, pbond
 
 
-def construct_MPO(mol, pbond):
+def construct_MPO(mol, J, pbond):
     '''
     many ways to construct MPO
     scheme 1: l to r
@@ -73,7 +170,7 @@ def construct_MPO(mol, pbond):
     MPOdim = []
     MPO = []
     nmols = len(mol)
-
+    
     # scheme 1: see doc
     # MPOdim  
     for imol in xrange(nmols):
@@ -146,9 +243,9 @@ def construct_MPO(mol, pbond):
             MPO.append(mpo)
             impo += 1
                     
-
     print "MPOdim", MPOdim
-    return MPOdim, MPO
+    
+    return  MPO, MPOdim 
 
 
 def construct_MPS(domain, ephtable, pbond, nexciton, Mmax):
@@ -158,7 +255,7 @@ def construct_MPS(domain, ephtable, pbond, nexciton, Mmax):
     '''
     
     MPS = []
-    QN = [[0],]
+    MPSQN = [[0],]
     MPSdim = [1,]
 
     nmps = len(pbond)
@@ -167,10 +264,10 @@ def construct_MPS(domain, ephtable, pbond, nexciton, Mmax):
         
         if ephtable[imps] == 1:
             # e site
-            qnbig = QN[imps] + [x + 1 for x in QN[imps]]
+            qnbig = MPSQN[imps] + [x + 1 for x in MPSQN[imps]]
         else:
             # ph site 
-            qnbig = QN[imps] * pbond[imps]
+            qnbig = MPSQN[imps] * pbond[imps]
         
         Uset = []
         Sset = []
@@ -190,22 +287,20 @@ def construct_MPS(domain, ephtable, pbond, nexciton, Mmax):
 
         Uset = np.concatenate(Uset,axis=1)
         Sset = np.concatenate(Sset)
-    
         mps, mpsdim, mpsqn, nouse = updatemps(Uset, Sset, qnset, Uset, nexciton, Mmax)
-        
         # add the next mpsdim 
         MPSdim.append(mpsdim)
         MPS.append(mps.reshape(pbond[imps], MPSdim[imps], MPSdim[imps+1]))
-        QN.append(mpsqn)
+        MPSQN.append(mpsqn)
 
     # the last site, nouse in initialization
-    QN.append([0])
+    MPSQN.append([0])
     MPSdim.append(1)
     MPS.append(np.random.random([pbond[-1],MPSdim[-2],MPSdim[-1]])-0.5)
     
-    #print "QN", QN
     print "MPSdim", MPSdim
-    return QN, MPSdim, MPS
+
+    return MPS, MPSdim, MPSQN 
 
 
 def select_basis(qnset,Sset,qnlist):
@@ -215,22 +310,6 @@ def select_basis(qnset,Sset,qnlist):
     svaluefilter = [s for s,num in zip(Sset,qnset) if (num in qnlist)]  
     sidx = np.argsort(svaluefilter)[::-1]
     return sidx
-
-
-def blockrecover(indices, U, dim):
-    '''
-        recover the block element to its original position
-    '''
-    resortU = np.zeros([dim, U.shape[1]])
-    for i in xrange(len(indices)):
-        resortU[indices[i],:] = np.copy(U[i,:])
-
-    return resortU
-
-
-def random_MPS(pbond, lbond, rbond):
-    # physical bond, left bond, right bond 
-    return 2.0*np.random.random((pbond,lbond,rbond))-1.0
 
 
 def GetLR(domain, siteidx, MPS, MPO, itensor=np.ones((1,1,1)), method="Scratch"):
@@ -266,7 +345,7 @@ def GetLR(domain, siteidx, MPS, MPO, itensor=np.ones((1,1,1)), method="Scratch")
     
     return itensor
 
-#@profile
+
 def addone(intensor, MPS, MPO, isite, domain):
     '''
     add one MPO/MPS site 
@@ -311,9 +390,10 @@ def addone(intensor, MPS, MPO, isite, domain):
 
     return outtensor
 
+
 def construct_enviro(MPS, MPO):
     tensor = np.ones((1,1,1))
-    for idx in xrange(len(MPS)-2):
+    for idx in xrange(len(MPS)-1):
         tensor = addone(tensor, MPS, MPO, idx, "L")
         Enviro_write("L",idx,tensor)    
 
@@ -328,18 +408,27 @@ def Enviro_read(domain, siteidx):
         return np.load(f)
 
 
-#@profile
-def optimization(MPS, MPSdim, QN, MPO, MPOdim, ephtable, pbond, nexciton, Mmax, nsweeps=1):
+def optimization(MPS, MPSdim, MPSQN, MPO, MPOdim, ephtable, pbond, nexciton, Mmax, nsweeps=1, method="2site"):
     '''
-        optimization MPS 
+        1/2 site optimization MPS 
     '''
-
-    nMPS = len(MPS)
-    loop = [['R',i] for i in xrange(nMPS-1,0,-1)] + [['L',i] for i in xrange(1,nMPS)]
     
+    assert method in ["2site", "1site"]
+    print "optimization method", method
+    
+    # construct the environment matrix
+    construct_enviro(MPS, MPO)
+
+ 
+    nMPS = len(MPS)
+    if method == "1site":
+        loop = [['R',i] for i in xrange(nMPS-1,-1,-1)] + [['L',i] for i in xrange(0,nMPS)]
+    else:
+        loop = [['R',i] for i in xrange(nMPS-1,0,-1)] + [['L',i] for i in xrange(1,nMPS)]
+
     ltensor = np.ones((1,1,1))
     rtensor = np.ones((1,1,1))
-    construct_enviro(MPS, MPO)
+    energy = []
 
     for isweep in xrange(nsweeps):
         for system, imps in loop:
@@ -347,136 +436,139 @@ def optimization(MPS, MPSdim, QN, MPO, MPOdim, ephtable, pbond, nexciton, Mmax, 
                 lmethod, rmethod = "Enviro", "System"
             else:
                 lmethod, rmethod = "System", "Enviro"
-            ltensor = GetLR('L', imps-2, MPS, MPO, itensor=ltensor, method=lmethod)
+            
+            if method == "1site":
+                lsite = imps-1
+                addlist = [imps]
+            else:
+                lsite= imps-2
+                addlist = [imps-1, imps]
+            
+            ltensor = GetLR('L', lsite, MPS, MPO, itensor=ltensor, method=lmethod)
             rtensor = GetLR('R', imps+1, MPS, MPO, itensor=rtensor, method=rmethod)
             
-            # reconstruct the tensor every step opt, very slow in princple
-            #ltensor = GetLR('L', imps-2, MPS, MPO)
-            #rtensor = GetLR('R', imps+1, MPS, MPO)
-
             # get the quantum number pattern
-            qnmat, qnbigl, qnbigr = construct_qnmat(QN, ephtable, pbond, imps-1, imps)
+            qnmat, qnl, qnr, qnsigmalist = construct_qnmat(MPSQN, ephtable,\
+                    pbond, addlist)
             cshape = qnmat.shape
             
-            # hdiag
-            #   S-a c   d f-S
-            #   O-b-O-e-O-g-O
-            #   S-a c   d f-S
-            hdiag = np.einsum("aba,ccbe,ddeg,fgf -> cadf", ltensor, MPO[imps-1],
-                    MPO[imps],rtensor)[(qnmat==nexciton)]
-            
+            if method == "1site":
+                # hdiag
+                #   S-a c f-S
+                #   O-b-O-g-O
+                #   S-a c f-S
+                hdiag = np.einsum("aba,ccbg,fgf -> acf",ltensor,MPO[imps],rtensor)[(qnmat==nexciton)]
+                # the result is more stable to use good initial guess
+                # b-S-c
+                #   a  
+                cguess = MPS[imps].transpose((1,0,2))[qnmat==nexciton]
+            else:
+                # hdiag
+                #   S-a c   d f-S
+                #   O-b-O-e-O-g-O
+                #   S-a c   d f-S
+                hdiag = np.einsum("aba,ccbe,ddeg,fgf -> acdf", ltensor, MPO[imps-1],
+                        MPO[imps],rtensor)[(qnmat==nexciton)]
+                # the result is more stable to use good initial guess
+                # b-S-c-S-e
+                #   a   d
+                cguess = np.einsum("abc,dce -> bade", MPS[imps-1], MPS[imps])[qnmat==nexciton]
 
             nonzeros = np.sum(qnmat==nexciton)
             print "Hmat dim", nonzeros
             
-            # the result is more stable to use good initial guess
-            # b-S-c-S-e
-            #   a   d
-            cguess = np.einsum("abc,dce -> abde", MPS[imps-1], MPS[imps])[qnmat==nexciton]
-            #cguess = np.random.random(nonzeros)-0.5
+            count = [0]
             
-            #@profile
             def hop(c):
                 # convert c to initial structure according to qn patter
                 cstruct = c1d2cmat(cshape, c, qnmat, nexciton)
+                count[0] += 1
+                
+                if method == "1site":
+                    #S-a   l-S
+                    #    d  
+                    #O-b-O-f-O
+                    #    e 
+                    #S-c   k-S
+                    
+                    tmp1 = np.einsum("abc,debf -> acdef", ltensor, MPO[imps])
+                    tmp2 = np.einsum("acdef, adl -> cefl", tmp1, cstruct) 
+                    cout = np.einsum("cefl, lfk-> cek", tmp2, rtensor)
+                else:
+                    #S-a       l-S
+                    #    d   g 
+                    #O-b-O-f-O-j-O
+                    #    e   h
+                    #S-c       k-S
+                    
+                    tmp1 = np.einsum("abc,debf -> acdef", ltensor, MPO[imps-1])
+                    tmp2 = np.einsum("acdef, adgl -> cefgl", tmp1, cstruct) 
+                    tmp3 = np.einsum("cefgl, ghfj -> celhj", tmp2, MPO[imps])
+                    cout = np.einsum("celhj, ljk -> cehk", tmp3, rtensor)
 
-                #S-a       l-S
-                #    d   g 
-                #O-b-O-f-O-j-O
-                #    e   h
-                #S-c       k-S
-                
-                # very slow
-                #cout = np.einsum("abc,debf,ghfj,ljk,dagl -> echk ", ltensor, MPO[imps-1], \
-                #    MPO[imps],rtensor,cstruct)
-                
-                tmp1 = np.einsum("abc,debf -> acdef", ltensor, MPO[imps-1])
-                tmp2 = np.einsum("acdef, dagl -> cefgl", tmp1, cstruct) 
-                tmp3 = np.einsum("cefgl, ghfj -> celhj", tmp2, MPO[imps])
-                cout = np.einsum("celhj, ljk -> echk", tmp3, rtensor)
-                
-                # almost the same
-                #tmp3 = np.einsum("cefgl, ljk -> cefgjk", tmp2, rtensor)
-                #cout = np.einsum("cefgjk, ghfj -> echk", tmp3, MPO[imps])
-                
                 # convert structure c to 1d according to qn 
                 return cout[qnmat==nexciton]
-            
+
             precond = lambda x, e, *args: x/(hdiag-e+1e-4)
             e, c = lib.davidson(hop, cguess, precond)
+            print "HC loops:", count[0]
 
             print "isweep, imps, e=", isweep, imps, e*au2ev
-            
+            energy.append(e)
             
             cstruct = c1d2cmat(cshape, c, qnmat, nexciton)
             
             # update the mps
+            if method == "1site":
+                if system == "R":
+                    qnbigl = qnl
+                    qnbigr = np.add.outer(qnsigmalist[-1],qnr)
+                else:
+                    qnbigl = np.add.outer(qnl,qnsigmalist[0])
+                    qnbigr = qnr
+            else:
+                qnbigl = np.add.outer(qnl,qnsigmalist[0])
+                qnbigr = np.add.outer(qnsigmalist[-1],qnr)
+
             mps, mpsdim, mpsqn, compmps = Renormalization(cstruct, qnbigl, qnbigr,\
                     system, nexciton, Mmax)
-            if system == "L":
-                MPS[imps-1] = mps
-                MPS[imps] = compmps
-            else:
+            
+            if method == "1site":
                 MPS[imps] = mps
-                MPS[imps-1] = compmps
+                if system == "L":
+                    if imps != len(MPS)-1:
+                        MPS[imps+1] = np.einsum("ab,cbd -> cad", compmps, MPS[imps+1])
+                        MPSdim[imps+1] = mpsdim
+                        MPSQN[imps+1] = mpsqn
+                    else:
+                        MPS[imps] = np.einsum("cdb,ba -> cda", MPS[imps],compmps)
+                        MPSdim[imps+1] = 1
+                        MPSQN[imps+1] = [0]
 
-            MPSdim[imps] = mpsdim
-            QN[imps] = mpsqn
-            
+                else:
+                    if imps != 0:
+                        MPS[imps-1] = np.einsum("cdb,ba -> cda", MPS[imps-1],compmps)
+                        MPSdim[imps] = mpsdim
+                        MPSQN[imps] = mpsqn
+                    else:
+                        MPS[imps] = np.einsum("ab,cbd -> cad", compmps, MPS[imps])
+                        MPSdim[imps] = 1
+                        MPSQN[imps] = [0]
+            else:
+                if system == "L":
+                    MPS[imps-1] = mps
+                    MPS[imps] = compmps
+                else:
+                    MPS[imps] = mps
+                    MPS[imps-1] = compmps
 
-def Csvd(cstruct, qnbigl, qnbigr):
-    '''
-        block svd the coefficient matrix (sigmal, l, sigmar, r)
-    '''
-    Gamma = cstruct.reshape(cstruct.shape[0]*cstruct.shape[1],-1)
-    localqnl = qnbigl.ravel()
-    localqnr = qnbigr.ravel()
-    
-    Uset = []
-    Uset0 = []
-    Vset = []
-    Vset0 = []
-    Sset = []
-    SUset0 = []
-    SVset0 = []
-    qnlset = []
-    qnlset0 = []
-    qnrset = []
-    qnrset0 = []
+                MPSdim[imps] = mpsdim
+                MPSQN[imps] = mpsqn
 
-    # different combination
-    combine = [[x, nexciton-x] for x in xrange(nexciton+1)]
-    for nl, nr in combine:
-        lset = [i for i, x in enumerate(localqnl) if x == nl]
-        rset = [i for i, x in enumerate(localqnr) if x == nr]
-        if len(lset) != 0 and len(rset) != 0:
-            Gamma_block = Gamma[np.ix_(lset, rset)]
-            U, S, V = scipy.linalg.svd(Gamma_block)
-            dim = S.shape[0]
-            Sset.append(S)
-            
-            def blockappend(vset, vset0, qnset, qnset0, svset0, v, n, dim, indice, shape):
-                vset.append(blockrecover(indice, v[:,:dim], shape))
-                qnset += [n] * dim
-                vset0.append(blockrecover(indice, v[:,dim:],shape))
-                qnset0 += [n] * (v.shape[0]-dim)
-                svset0.append(np.zeros(v.shape[0]-dim))
-                
-                return vset, vset0, qnset, qnset0, svset0
-            
-            Uset, Uset0, qnlset, qnlset0, SUset0 = blockappend(Uset, Uset0, qnlset, \
-                    qnlset0, SUset0, U, nl, dim, lset, Gamma.shape[0])
-            Vset, Vset0, qnrset, qnrset0, SVset0 = blockappend(Vset, Vset0, qnrset, \
-                    qnrset0, SVset0, V.T, nr, dim, rset, Gamma.shape[1])
+    lowestenergy = np.min(energy)
+    print "lowest energy = ", lowestenergy * au2ev
 
-    Uset = np.concatenate(Uset + Uset0,axis=1)
-    Vset = np.concatenate(Vset + Vset0,axis=1)
-    SUset = np.concatenate(Sset + SUset0)
-    SVset = np.concatenate(Sset + SVset0)
-    qnlset = qnlset + qnlset0
-    qnrset = qnrset + qnrset0
-    
-    return Uset, SUset, qnlset, Vset, SVset, qnrset
+    return energy
 
 
 def Renormalization(cstruct, qnbigl, qnbigr, domain, nexciton, Mmax):
@@ -484,16 +576,15 @@ def Renormalization(cstruct, qnbigl, qnbigr, domain, nexciton, Mmax):
         get the new mps, mpsdim, mpdqn, complementary mps to get the next guess
     '''
     assert domain=="R" or domain=="L"
-    Uset, SUset, qnlnew, Vset, SVset, qnrnew = Csvd(cstruct, qnbigl, qnbigr)
+    Uset, SUset, qnlnew, Vset, SVset, qnrnew = Csvd(cstruct, qnbigl, qnbigr, nexciton)
     if domain == "R":
         mps, mpsdim, mpsqn, compmps = updatemps(Vset, SVset, qnrnew, Uset, nexciton, Mmax)
-        return mps.reshape(cstruct.shape[2],cstruct.shape[3], \
-            mpsdim).transpose((0,2,1)), mpsdim, mpsqn,\
-        compmps.reshape(cstruct.shape[0], cstruct.shape[1], mpsdim)
+        return np.moveaxis(mps.reshape(list(qnbigr.shape)+[mpsdim]),-1,-2), mpsdim, mpsqn,\
+        np.moveaxis(compmps.reshape(list(qnbigl.shape) + [mpsdim]),qnbigl.ndim-1,0)
     else:    
         mps, mpsdim, mpsqn, compmps = updatemps(Uset, SUset, qnlnew, Vset, nexciton, Mmax)
-        return mps.reshape(cstruct.shape[0], cstruct.shape[1], mpsdim), mpsdim, mpsqn,\
-                compmps.reshape(cstruct.shape[2],cstruct.shape[3],mpsdim).transpose((0,2,1))
+        return np.moveaxis(mps.reshape(list(qnbigl.shape) + [mpsdim]),qnbigl.ndim-1,0), mpsdim, mpsqn,\
+                np.moveaxis(compmps.reshape(list(qnbigr.shape)+[mpsdim]),-1,-2)
     
 
 def updatemps(vset, sset, qnset, compset, nexciton, Mmax):
@@ -525,36 +616,6 @@ def c1d2cmat(cshape, c, qnmat, nexciton):
     np.place(cstruct, qnmat==nexciton, c)
 
     return cstruct
-
-
-def construct_qnmat(QN, ephtable, pbond, lidx, ridx):
-    '''
-        construct the qn pattern, the structure is as the coefficient (4d tensor)
-    '''
-    qnl = QN[lidx] 
-    qnr = QN[ridx+1]
-    
-    if ephtable[lidx] == 1:
-        qnsigmal = [0,1]
-    else:
-        qnsigmal = [0] * pbond[lidx]
-
-    if ephtable[ridx] == 1:
-        qnsigmar = [0,1]
-    else:
-        qnsigmar = [0] * pbond[ridx]
-    
-    qnl = np.array(qnl)
-    qnr = np.array(qnr)
-    qnsigmal = np.array(qnsigmal)
-    qnsigmar = np.array(qnsigmar)
-    
-    qnbigl = np.add.outer(qnsigmal,qnl)
-    qnbigr = np.add.outer(qnsigmar,qnr)
-    
-    qnmat = np.add.outer(qnbigl,qnbigr)
-
-    return qnmat, qnbigl, qnbigr
 
 
 if __name__ == '__main__':
@@ -594,15 +655,11 @@ if __name__ == '__main__':
     nphcoup1 = np.sqrt(omega1/2.0)*D1
     
     print "Huang", S1
-    print nphcoup1**2
-    
     
     nphs = 2
     nlevels =  [7,7]
     
     phinfo = [list(a) for a in zip(omega1, nphcoup1, nlevels)]
-    
-    print phinfo
     
     mol = []
     for imol in xrange(nmols):
@@ -610,13 +667,16 @@ if __name__ == '__main__':
         mol_local.create_ph(phinfo)
         mol.append(mol_local)
     
-    Mmax = 20
+    Mmax = 100
     nexciton = 1
     
-    MPS, MPSdim, QN, MPO, MPOdim, ephtable, pbond = construct_MPS_MPO_2(mol, \
+    MPS, MPSdim, MPSQN, MPO, MPOdim, ephtable, pbond = construct_MPS_MPO_2(mol, J,\
             Mmax, nexciton)
     
-    optimization(MPS, MPSdim, QN, MPO, MPOdim, ephtable, pbond, nexciton, Mmax,\
-            nsweeps=4)
-    print MPS
-    print mps.is_left_canonical(MPS[0:len(MPS)-2])
+    optimization(MPS, MPSdim, MPSQN, MPO, MPOdim, ephtable, pbond, nexciton, Mmax,\
+            nsweeps=4, method="1site")
+
+    print "MPS output left canonical:", mpslib.is_left_canonical(MPS)
+    
+    print "MPSdim",[i.shape[1] for i in MPS]
+    

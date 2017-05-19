@@ -26,25 +26,46 @@ def PhElementOpera(op, bra, ket):
 
 # eMPO
 def EElementOpera(op, bra, ket):
-    if (op == "a^\dagger"):
+    if op == "a^\dagger":
         if bra == ket + 1:
             return 1.0
         else:
             return 0.0
-    elif (op == "a"):
+    elif op == "a":
         if bra == ket - 1:
             return 1.0
         else:
             return 0.0
-    elif (op == "a^\dagger a"):
+    elif op == "a^\dagger a":
         if bra == ket and ket == 1:
             return 1.0
         else:
             return 0.0
-    elif (op == "Iden"):
+    elif op == "Iden":
         if bra == ket:
             return 1.0
         else:
             return 0.0
     else:
         sys.exit("wrong op in EElementOpera")
+
+# dipole MPO
+def dipoleOpera(op, bra, ket):
+    if op == "abs":
+        if bra == 1 and ket == 0:
+            return 1.0
+        else:
+            return 0.0
+    elif op == "emi":
+        if bra == 0 and ket == 1:
+            return 1.0
+        else:
+            return 0.0
+    elif op == "Iden":
+        if bra == ket:
+            return 1.0
+        else:
+            return 0.0
+    else:
+        sys.exit("wrong op in EElementOpera")
+
