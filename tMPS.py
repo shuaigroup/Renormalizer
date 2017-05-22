@@ -5,10 +5,11 @@ import mpo as mpolib
 import mps as mpslib
 import numpy as np
 import MPSsolver
+import exact_solver
 
-def construct_NumMPO(mol,pbond):
+def construct_onsiteMPO(mol,pbond,opera):
     '''
-        construct the number operator MPO
+        construct the electronic operator \sum_i opera_i MPO
     '''
 
     nmols = len(mol)
@@ -24,18 +25,19 @@ def construct_NumMPO(mol,pbond):
     
     MPOdim[0] = 1
     MPOdim.append(1)
-    print "Number operator MPOdim", MPOdim
+    print opera, "operator MPOdim", MPOdim
 
     MPO = []
     impo = 0
     for imol in xrange(nmols):
         mpo = np.zeros([pbond[impo],pbond[impo],MPOdim[impo],MPOdim[impo+1]])
         for ibra in xrange(pbond[impo]):
-            mpo[ibra,ibra,-1,0] = float(ibra)
-            if imol != 0:
-                mpo[ibra,ibra,0,0] = 1.0
-            if imol != nmols-1:
-                mpo[ibra,ibra,-1,-1] = 1.0
+            for iket in xrange(pbond[impo]):
+                mpo[ibra,iket,-1,0] = EElementOpera(opera,ibra,iket)
+                if imol != 0:
+                    mpo[ibra,iket,0,0] = EElementOpera("Iden",ibra,iket)
+                if imol != nmols-1:
+                    mpo[ibra,iket,-1,-1] = EElementOpera("Iden",ibra,iket)
         MPO.append(mpo)
         impo += 1
 
@@ -47,7 +49,7 @@ def construct_NumMPO(mol,pbond):
 
             MPO.append(mpo)
             impo += 1
-    return MPOdim, MPO 
+    return MPO, MPOdim  
 
 
 def GSPropagatorMPO(mol, pbond, x):
@@ -137,13 +139,13 @@ def tMPS(MPS, MPO, dt, thresh=0):
     input L-canonical MPS; output R-canonical MPS
     '''
     H1MPS = mpolib.contract(MPO, MPS, 'l', thresh)
-    MPSsolver.clean_MPS('L', H1MPS, ephtable, 0)
+    #MPSsolver.clean_MPS('L', H1MPS, ephtable, 0)
     H2MPS = mpolib.contract(MPO, H1MPS, 'l', thresh)
-    MPSsolver.clean_MPS('L', H2MPS, ephtable, 0)
+    #MPSsolver.clean_MPS('L', H2MPS, ephtable, 0)
     H3MPS = mpolib.contract(MPO, H2MPS, 'l', thresh)
-    MPSsolver.clean_MPS('L', H3MPS, ephtable, 0)
+    #MPSsolver.clean_MPS('L', H3MPS, ephtable, 0)
     H4MPS = mpolib.contract(MPO, H3MPS, 'l', thresh)
-    MPSsolver.clean_MPS('L', H4MPS, ephtable, 0)
+    #MPSsolver.clean_MPS('L', H4MPS, ephtable, 0)
 
     H1MPS = mpslib.scale(H1MPS, -1.0j*dt)
     H2MPS = mpslib.scale(H2MPS, -0.5*dt**2)
@@ -158,11 +160,11 @@ def tMPS(MPS, MPO, dt, thresh=0):
     MPSnew = mpslib.canonicalise(MPSnew, 'l')
     MPSnew = mpslib.compress(MPSnew, 'l', trunc=thresh)
     
-    MPSsolver.clean_MPS('L', MPSnew, ephtable, 0)
+    #MPSsolver.clean_MPS('L', MPSnew, ephtable, 0)
     
     # check the number of particle
-    NumMPS = mpolib.contract(numMPO, MPSnew, 'l', thresh)
-    print "particle", mpslib.dot(mpslib.conj(NumMPS),MPSnew) / mpslib.dot(mpslib.conj(MPSnew), MPSnew)
+    #NumMPS = mpolib.contract(numMPO, MPSnew, 'l', thresh)
+    #print "particle", mpslib.dot(mpslib.conj(NumMPS),MPSnew) / mpslib.dot(mpslib.conj(MPSnew), MPSnew)
 
     return MPSnew
 
@@ -238,6 +240,135 @@ def ZeroTTDomainCorr(iMPS, HMPO, dipoleMPO, nsteps, dt, thresh=0):
     return autocorr   
 
 
+def Max_Entangled_GS_MPS(mol, pbond):
+    '''
+    T = \infty maximum entangled GS state
+    '''
+    MPSdim = [1] * (len(pbond)+1)
+    
+    MPS = []
+    imps = 0
+    for imol in xrange(len(mol)):
+        mps = np.zeros([pbond[imps],MPSdim[imps],MPSdim[imps+1]])
+        for ibra in xrange(pbond[imps]):
+            if ibra == 0:
+                mps[ibra,0,0] = 1.0
+            else:
+                mps[ibra,0,0] = 0.0
+
+
+        MPS.append(mps)
+        imps += 1
+
+        for iph in xrange(mol[imol].nphs):
+            mps = np.zeros([pbond[imps],MPSdim[imps],MPSdim[imps+1]])
+            mps[:,0,0] = 1.0/np.sqrt(pbond[imps])
+            
+            MPS.append(mps)
+            imps += 1
+
+    return MPS, MPSdim
+
+
+def hilbert_to_liouville(MPS):
+    '''
+        from hilbert MPS to Liouville MPO, the up and down physical bond is
+        diagonal
+        Garnet's format
+    '''
+
+    MPO = []
+    for imps in MPS:
+        mpo = np.zeros([imps.shape[0]] + [imps.shape[1]]*2 + [imps.shape[2]],dtype=imps.dtype)
+        for iaxis in xrange(imps.shape[1]):
+            mpo[:,iaxis,iaxis,:] = imps[:,iaxis,:].copy()
+        MPO.append(mpo)
+
+    return MPO
+
+
+def Max_Entangled_EX_MPO(MPS, creationMPO, mol):
+    assert len(MPS) == len(creationMPO)
+
+    EXMPS =  mpolib.mapply(creationMPO, MPS)
+    EXMPS = mpslib.scale(EXMPS, np.sqrt(float(len(mol))))
+    
+    MPO = hilbert_to_liouville(EXMPS)
+
+    return MPO
+
+
+def FiniteT_abs(mol, pbond, iMPO, HMPO, dipoleMPO, nsteps, dt, thresh=0, temperature=298):
+
+    beta = exact_solver.T2beta(temperature)
+    
+    # GS space thermal operator 
+    thermalMPOdim, thermalMPO = GSPropagatorMPO(mol, pbond, -beta/2.0)
+    thermalMPO = MPSorder_convert(thermalMPO)
+    
+    # e^{\-beta H/2} \Psi
+    MPOket = mpolib.mapply(thermalMPO,iMPO)
+    MPObra = mpslib.add(MPOket, None)
+    #\Psi e^{\-beta H} \Psi
+    ZMPO = mpolib.mapply(mpolib.conj(MPObra),MPOket)
+    Z = mpolib.trace(ZMPO)
+    
+    AMPOket = mpolib.contract(dipoleMPO, MPOket, 'l', thresh)
+    
+    autocorr = []
+    t = 0.0
+    brapropMPOdim, brapropMPO = GSPropagatorMPO(mol, pbond, -1.0j*dt)
+    brapropMPO = MPSorder_convert(brapropMPO)
+    for istep in xrange(nsteps):
+        if istep != 0:
+            t += dt
+            AMPOket = tMPS(AMPOket, HMPO, dt, thresh=thresh)
+            MPObra = mpolib.mapply(brapropMPO,MPObra) 
+            print [ mpo.shape[0] for mpo in AMPOket]
+        
+        AMPObra = mpolib.contract(dipoleMPO, MPObra, 'l', thresh)
+        MPOt = mpolib.mapply(mpolib.conj(AMPObra),AMPOket)
+        ft = mpolib.trace(MPOt)
+        autocorr.append(ft/Z)
+    
+    return autocorr   
+
+
+def FiniteT_emi(mol, pbond, iMPO, HMPO, dipoleMPO, nsteps, dt, thresh=0, temperature=298):
+
+    beta = exact_solver.T2beta(temperature)
+    
+    # GS space thermal operator 
+    thermalMPOdim, thermalMPO = GSPropagatorMPO(mol, pbond, -beta/2.0)
+    thermalMPO = MPSorder_convert(thermalMPO)
+    
+    # e^{\-beta H/2} \Psi
+    MPOket = mpolib.mapply(thermalMPO,iMPO)
+    MPObra = mpslib.add(MPOket, None)
+    #\Psi e^{\-beta H} \Psi
+    ZMPO = mpolib.mapply(mpolib.conj(MPObra),MPOket)
+    Z = mpolib.trace(ZMPO)
+    
+    AMPOket = mpolib.contract(dipoleMPO, MPOket, 'l', thresh)
+    
+    autocorr = []
+    t = 0.0
+    brapropMPOdim, brapropMPO = GSPropagatorMPO(mol, pbond, -1.0j*dt)
+    brapropMPO = MPSorder_convert(brapropMPO)
+    for istep in xrange(nsteps):
+        if istep != 0:
+            t += dt
+            AMPOket = tMPS(AMPOket, HMPO, dt, thresh=thresh)
+            MPObra = mpolib.mapply(brapropMPO,MPObra) 
+            print [ mpo.shape[0] for mpo in AMPOket]
+        
+        AMPObra = mpolib.contract(dipoleMPO, MPObra, 'l', thresh)
+        MPOt = mpolib.mapply(mpolib.conj(AMPObra),AMPOket)
+        ft = mpolib.trace(MPOt)
+        autocorr.append(ft/Z)
+    
+    return autocorr   
+
 if __name__ == '__main__':
 
     import numpy as np
@@ -248,6 +379,7 @@ if __name__ == '__main__':
     import scipy.fftpack as fft
     import matplotlib.pyplot as plt
     import time
+    
 
     starttime = time.time()
     elocalex = 2.67/au2ev
@@ -285,7 +417,7 @@ if __name__ == '__main__':
     
     
     nphs = 2
-    nlevels =  [7,7]
+    nlevels =  [2,2]
     
     phinfo = [list(a) for a in zip(omega1, nphcoup1, nlevels)]
     
@@ -298,7 +430,7 @@ if __name__ == '__main__':
         mol.append(mol_local)
     
     Mmax = 10
-    nexciton = 1
+    nexciton = 0
     
     MPS, MPSdim, MPSQN, MPO, MPOdim, ephtable, pbond = construct_MPS_MPO_2(mol, J, Mmax, nexciton)
     
@@ -308,7 +440,7 @@ if __name__ == '__main__':
     print mpslib.is_left_canonical(MPS)
     
 
-    dipoleMPOdim, dipoleMPO = construct_dipoleMPO(mol, pbond, "emi")
+    dipoleMPOdim, dipoleMPO = construct_dipoleMPO(mol, pbond, "abs")
     
     # if in the EX space, MPO minus E_e to reduce osillation
     if nexciton == 0:
@@ -324,37 +456,57 @@ if __name__ == '__main__':
     dipoleMPO = MPSorder_convert(dipoleMPO)
     dipoleMPO = MPSdtype_convert(dipoleMPO)
     
-    numMPOdim, numMPO = construct_NumMPO(mol,pbond)
+    numMPO,numMPOdim = construct_onsiteMPO(mol,pbond,"a^\dagger a")
     numMPO = MPSorder_convert(numMPO)
     numMPO = MPSdtype_convert(numMPO)
 
-    nsteps = 500
-    dt = 30.0
+    nsteps = 1000
+    dt = 20.0
     print "energy dE", 1.0/dt/nsteps * au2ev * 2.0 * np.pi
     print "energy E", 1.0/dt * au2ev * 2.0 * np.pi
     
-
-    autocorr = ZeroTTDomainCorr(iMPS, HMPO, dipoleMPO, nsteps, dt, thresh=1.0e-6)
-    autocorr = np.array(autocorr)
-    
-    autocorrexact = EmiExactPropagator(iMPS, dipoleMPO, nsteps, dt, mol, pbond)
-    autocorrexact = np.array(autocorrexact)
-    
-    xplot = [i*dt for i in range(nsteps)]
-    plt.plot(xplot, np.real(autocorrexact))
-    plt.plot(xplot, np.imag(autocorrexact))
-    plt.plot(xplot, np.real(autocorr))
-    plt.plot(xplot, np.imag(autocorr))
-
-    #yf = fft.fft(autocorr)
-    #yplot = fft.fftshift(yf)
-    #xf = fft.fftfreq(nsteps,dt)
-    ## in FFT the frequency unit is cycle/s, but in QM we use radian/s,
-    ## hbar omega = h nu   omega = 2pi nu   
-    #xplot = fft.fftshift(xf) * au2ev * 2.0 * np.pi
+    # zero temperature
+    #autocorr = ZeroTTDomainCorr(iMPS, HMPO, dipoleMPO, nsteps, dt, thresh=1.0e-6)
+    #autocorr = np.array(autocorr)
     #
-    #plt.xlim(-0.3,0.3)
-    #plt.plot(xplot, np.abs(yplot))
+    #autocorrexact = EmiExactPropagator(iMPS, dipoleMPO, nsteps, dt, mol, pbond)
+    #autocorrexact = np.array(autocorrexact)
+    
+    # finite T
+    creationMPO, creationMPOdim = construct_onsiteMPO(mol, pbond, "a^\dagger")
+    GSMPS, GSMPSdim = Max_Entangled_GS_MPS(mol, pbond)
+    
+    GSMPS = MPSorder_convert(GSMPS)
+    GSMPS = MPSdtype_convert(GSMPS)
+    
+    creationMPO = MPSorder_convert(creationMPO)
+    creationMPO = MPSdtype_convert(creationMPO)
+    
+    GSMPO = hilbert_to_liouville(GSMPS)
+    EXMPO = Max_Entangled_EX_MPO(GSMPS, creationMPO, mol)
+
+    #print GSMPO
+    autocorr = FiniteT_abs(mol, pbond, GSMPO, HMPO, dipoleMPO, nsteps, dt, \
+            thresh=0, temperature=298)
+
+
+
+
+    #xplot = [i*dt for i in range(nsteps)]
+    #plt.plot(xplot, np.real(autocorrexact))
+    #plt.plot(xplot, np.imag(autocorrexact))
+    #plt.plot(xplot, np.real(autocorr))
+    #plt.plot(xplot, np.imag(autocorr))
+
+    yf = fft.fft(autocorr)
+    yplot = fft.fftshift(yf)
+    xf = fft.fftfreq(nsteps,dt)
+    # in FFT the frequency unit is cycle/s, but in QM we use radian/s,
+    # hbar omega = h nu   omega = 2pi nu   
+    xplot = fft.fftshift(xf) * au2ev * 2.0 * np.pi
+    #
+    plt.xlim(-0.3,0.3)
+    plt.plot(xplot, np.abs(yplot))
     #plt.plot(xplot, np.real(yplot))
     #plt.plot(xplot, np.imag(yplot))
     plt.show()

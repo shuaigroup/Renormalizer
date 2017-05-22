@@ -275,8 +275,7 @@ def full_diagonalization_spectrum(ic,ie,ix,iy,fc,fe,fx,fy,ph_dof_list,mol,dipole
 
 def partition_function(e, temperature): 
     
-    beta = 1.0 / temperature / \
-    scipy.constants.physical_constants["kelvin-hartree relationship"][0]
+    beta = T2beta(temperature)
     P = np.exp( -1.0 * beta * e)
     Z = np.sum(P)
     P = P/Z
@@ -285,6 +284,15 @@ def partition_function(e, temperature):
     
     return P 
 
+
+def T2beta(temperature):
+    '''
+        temperature to beta
+    '''
+    beta = 1.0 / temperature / \
+    scipy.constants.physical_constants["kelvin-hartree relationship"][0]
+    
+    return beta
 
 def dyn_exact(dipdip, temperature, ie, omega=None, eta=0.00005):
     '''
