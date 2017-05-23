@@ -249,19 +249,26 @@ def construct_MPO(mol, J, pbond):
 
 def clean_MPS(system, MPS, ephtable, nexciton):
     '''
-        clean MPS to good quantum number(nexciton) subseciton
+        clean MPSnew (or maximum entangled MPSnew  MPO)to good quantum number(nexciton) subseciton 
         if time step is too large it quantum number would not conserve
+            libmps format (lbond, physical bond, rbond)
     '''
+    # if a MPO convert to MPSnew   
+    
+    if MPS[0].ndim == 4:
+        MPSnew = mpslib.to_mps(MPS)
+    elif MPS[0].ndim == 3:
+        MPSnew = mpslib.add(MPS, None)
 
     assert system in ["L","R"]
-    nMPS = len(MPS)
+    nMPS = len(MPSnew)
     if system == 'L':
         start = 0
-        end = nMPS-1
+        end = nMPS
         step = 1
     else:
         start = nMPS-1
-        end = 0
+        end = -1
         step = -1
     
     MPSQN = [None] * (nMPS + 1)
@@ -277,74 +284,82 @@ def clean_MPS(system, MPS, ephtable, nexciton):
 
         if ephtable[imps] == 1:
             # e site
-            sigmaqn = np.array([0,1])
+            if MPS[0].ndim == 3:
+                sigmaqn = np.array([0,1])
+            else:
+                sigmaqn = np.array([0,1]*2)
         else:
             # ph site 
-            sigmaqn = np.array([0]*MPS[imps].shape[1])
+            sigmaqn = np.array([0]*MPSnew[imps].shape[1])
         
         if system == "L":
-            qnbig = np.add.outer(qn,sigmaqn).ravel()
-            Gamma = MPS[imps].reshape(-1, MPS[imps].shape[-1])
+            qnmat = np.add.outer(qn,sigmaqn)
+            Gamma = MPSnew[imps].reshape(-1, MPSnew[imps].shape[-1])
         else:
-            qnbig = np.add.outer(sigmaqn,qn).ravel()
-            Gamma = MPS[imps].reshape(MPS[imps].shape[0],-1)
+            qnmat = np.add.outer(sigmaqn,qn)
+            Gamma = MPSnew[imps].reshape(MPSnew[imps].shape[0],-1)
         
-        qnset = []
-        Uset = []
-        Vset = []
-        Sset = []
-        for iblock in xrange(nexciton+1):
-            idxset = [i for i, x in enumerate(qnbig.tolist()) if x == iblock]
-            if len(idxset) != 0:
-                if system == "L":
-                    Gamma_block = Gamma[np.ix_(idxset,range(Gamma.shape[1]))]
-                else:
-                    Gamma_block = Gamma[np.ix_(range(Gamma.shape[0]),idxset)]
-                
-                U, S, Vt = scipy.linalg.svd(Gamma_block, full_matrices=False)
-                dim = S.shape[0]
-                Sset.append(S)
-                
-                def blockappend(vset, qnset, v, n, dim, indice, shape):
-                    vset.append(blockrecover(indice, v[:,:dim], shape))
-                    qnset += [n] * dim
+        if imps != end-1:  # last site clean at last
+            qnbig = qnmat.ravel()
+            qnset = []
+            Uset = []
+            Vset = []
+            Sset = []
+            for iblock in xrange(nexciton+1):
+                idxset = [i for i, x in enumerate(qnbig.tolist()) if x == iblock]
+                if len(idxset) != 0:
+                    if system == "L":
+                        Gamma_block = Gamma[np.ix_(idxset,range(Gamma.shape[1]))]
+                    else:
+                        Gamma_block = Gamma[np.ix_(range(Gamma.shape[0]),idxset)]
                     
-                    return vset, qnset
+                    U, S, Vt = scipy.linalg.svd(Gamma_block, full_matrices=False)
+                    dim = S.shape[0]
+                    Sset.append(S)
+                    
+                    def blockappend(vset, qnset, v, n, dim, indice, shape):
+                        vset.append(blockrecover(indice, v[:,:dim], shape))
+                        qnset += [n] * dim
+                        
+                        return vset, qnset
 
-                if system == "L":
-                    Uset, qnset = blockappend(Uset, qnset, U, iblock, dim, idxset, Gamma.shape[0])
-                    Vset.append(Vt.T)
-                else:
-                    Vset, qnset = blockappend(Vset, qnset, Vt.T, iblock, dim, idxset, Gamma.shape[1])
-                    Uset.append(U)
-                
-        Uset = np.concatenate(Uset,axis=1)
-        Vset = np.concatenate(Vset,axis=1)
-        Sset = np.concatenate(Sset)
+                    if system == "L":
+                        Uset, qnset = blockappend(Uset, qnset, U, iblock, dim, idxset, Gamma.shape[0])
+                        Vset.append(Vt.T)
+                    else:
+                        Vset, qnset = blockappend(Vset, qnset, Vt.T, iblock, dim, idxset, Gamma.shape[1])
+                        Uset.append(U)
+                    
+            Uset = np.concatenate(Uset,axis=1)
+            Vset = np.concatenate(Vset,axis=1)
+            Sset = np.concatenate(Sset)
+            
+            if system == "L":
+                MPSnew[imps] = Uset.reshape([MPSnew[imps].shape[0],MPSnew[imps].shape[1],len(Sset)])
+                Vset =  np.einsum('ij,j -> ij', Vset, Sset)
+                MPSnew[imps+1] = np.einsum('ij, jkl -> ikl', Vset.T, MPSnew[imps+1])
+                MPSQN[imps+1] = qnset
+            else:
+                MPSnew[imps] = Vset.T.reshape([len(Sset),MPSnew[imps].shape[1],MPSnew[imps].shape[-1]])
+                Uset =  np.einsum('ij,j -> ij', Uset, Sset)
+                MPSnew[imps-1] = np.einsum('ijk, kl -> ijl', MPSnew[imps-1], Uset)
+                MPSQN[imps] = qnset
         
-        if system == "L":
-            MPS[imps] = Uset.reshape([MPS[imps].shape[0],MPS[imps].shape[1],len(Sset)])
-            Vset =  np.einsum('ij,j -> ij', Vset, Sset)
-            MPS[imps+1] = np.einsum('ij, jkl -> ikl', Vset.T, MPS[imps+1])
-            MPSQN[imps+1] = qnset
+        # clean the extreme mat
         else:
-            MPS[imps] = Vset.T.reshape([len(Sset),MPS[imps].shape[1],MPS[imps].shape[-1]])
-            Uset =  np.einsum('ij,j -> ij', Uset, Sset)
-            MPS[imps-1] = np.einsum('ijk, kl -> ijl', MPS[imps-1], Uset)
-            MPSQN[imps] = qnset
-        
-    # clean the extreme mat
+            if system == "L":
+                qnmat = np.add.outer(qnmat,np.array([0]))
+            else:
+                qnmat = np.add.outer(np.array([0]), qnmat)
+            cshape = MPSnew[imps].shape
+            assert cshape == qnmat.shape
+            c = MPSnew[imps][qnmat==nexciton]
+            MPSnew[imps] = c1d2cmat(cshape, c, qnmat, nexciton)
+            
+    if MPS[0].ndim == 4:
+        MPSnew = mpslib.from_mps(MPSnew)
     
-    pbond = [mps.shape[1] for mps in MPS]
-    if system == "L":
-        idx = nMPS-1
-    else:
-        idx = 0
-    cshape = MPS[idx].shape
-    qnmat, qnl, qnr, qnsigmalist = construct_qnmat(MPSQN, ephtable, pbond, [idx])
-    c = MPS[idx][qnmat==nexciton]
-    MPS[idx] = c1d2cmat(cshape, c, qnmat, nexciton)
-
+    return MPSnew
 
 def construct_MPS(domain, ephtable, pbond, nexciton, Mmax):
     

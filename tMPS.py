@@ -131,7 +131,7 @@ def construct_dipoleMPO(mol, pbond, spectra):
     return MPOdim, MPO 
 
 
-#@profile
+@profile
 def tMPS(MPS, MPO, dt, thresh=0):
     '''
     classical 4th order Runge Kutta
@@ -160,7 +160,7 @@ def tMPS(MPS, MPO, dt, thresh=0):
     MPSnew = mpslib.canonicalise(MPSnew, 'l')
     MPSnew = mpslib.compress(MPSnew, 'l', trunc=thresh)
     
-    #MPSsolver.clean_MPS('L', MPSnew, ephtable, 0)
+    #MPSnew = MPSsolver.clean_MPS('L', MPSnew, ephtable, 0)
     
     # check the number of particle
     #NumMPS = mpolib.contract(numMPO, MPSnew, 'l', thresh)
@@ -297,7 +297,7 @@ def Max_Entangled_EX_MPO(MPS, creationMPO, mol):
 
     return MPO
 
-
+@profile
 def FiniteT_abs(mol, pbond, iMPO, HMPO, dipoleMPO, nsteps, dt, thresh=0, temperature=298):
 
     beta = exact_solver.T2beta(temperature)
@@ -333,34 +333,48 @@ def FiniteT_abs(mol, pbond, iMPO, HMPO, dipoleMPO, nsteps, dt, thresh=0, tempera
     
     return autocorr   
 
+def thermal_prop(iMPO, HMPO, nsteps, thresh=0, temperature=298):
+    '''
+        classical 4th order Runge-Kutta to do imaginary propagation
+    '''
+    beta = exact_solver.T2beta(temperature)
+    print "beta=", beta
+    dbeta = beta/float(nsteps)
+    
+    it = 0.0
+    MPOket = mpslib.add(iMPO, None)
+
+    for istep in xrange(nsteps):
+        it += dbeta
+        MPOket = tMPS(MPOket, HMPO, -0.5j*dbeta, thresh=thresh)
+        print [ mpo.shape[0] for mpo in MPOket]
+    
+    return MPOket
 
 def FiniteT_emi(mol, pbond, iMPO, HMPO, dipoleMPO, nsteps, dt, thresh=0, temperature=298):
 
     beta = exact_solver.T2beta(temperature)
+    MPOket = thermal_prop(iMPO, HMPO, 200, thresh=thresh, temperature=temperature)
     
-    # GS space thermal operator 
-    thermalMPOdim, thermalMPO = GSPropagatorMPO(mol, pbond, -beta/2.0)
-    thermalMPO = MPSorder_convert(thermalMPO)
-    
-    # e^{\-beta H/2} \Psi
-    MPOket = mpolib.mapply(thermalMPO,iMPO)
     MPObra = mpslib.add(MPOket, None)
     #\Psi e^{\-beta H} \Psi
     ZMPO = mpolib.mapply(mpolib.conj(MPObra),MPOket)
     Z = mpolib.trace(ZMPO)
     
+    print Z
+
     AMPOket = mpolib.contract(dipoleMPO, MPOket, 'l', thresh)
     
     autocorr = []
     t = 0.0
-    brapropMPOdim, brapropMPO = GSPropagatorMPO(mol, pbond, -1.0j*dt)
-    brapropMPO = MPSorder_convert(brapropMPO)
+    ketpropMPOdim, ketpropMPO = GSPropagatorMPO(mol, pbond, -1.0j*dt)
+    ketpropMPO = MPSorder_convert(ketpropMPO)
     for istep in xrange(nsteps):
         if istep != 0:
             t += dt
-            AMPOket = tMPS(AMPOket, HMPO, dt, thresh=thresh)
-            MPObra = mpolib.mapply(brapropMPO,MPObra) 
-            print [ mpo.shape[0] for mpo in AMPOket]
+            AMPOket = mpolib.mapply(ketpropMPO,AMPOket) 
+            MPObra = tMPS(MPObra, HMPO, dt, thresh=thresh)
+            print [ mpo.shape[0] for mpo in MPObra]
         
         AMPObra = mpolib.contract(dipoleMPO, MPObra, 'l', thresh)
         MPOt = mpolib.mapply(mpolib.conj(AMPObra),AMPOket)
@@ -417,7 +431,7 @@ if __name__ == '__main__':
     
     
     nphs = 2
-    nlevels =  [2,2]
+    nlevels =  [4,4]
     
     phinfo = [list(a) for a in zip(omega1, nphcoup1, nlevels)]
     
@@ -430,7 +444,7 @@ if __name__ == '__main__':
         mol.append(mol_local)
     
     Mmax = 10
-    nexciton = 0
+    nexciton = 1
     
     MPS, MPSdim, MPSQN, MPO, MPOdim, ephtable, pbond = construct_MPS_MPO_2(mol, J, Mmax, nexciton)
     
@@ -440,7 +454,7 @@ if __name__ == '__main__':
     print mpslib.is_left_canonical(MPS)
     
 
-    dipoleMPOdim, dipoleMPO = construct_dipoleMPO(mol, pbond, "abs")
+    dipoleMPOdim, dipoleMPO = construct_dipoleMPO(mol, pbond, "emi")
     
     # if in the EX space, MPO minus E_e to reduce osillation
     if nexciton == 0:
@@ -460,7 +474,7 @@ if __name__ == '__main__':
     numMPO = MPSorder_convert(numMPO)
     numMPO = MPSdtype_convert(numMPO)
 
-    nsteps = 1000
+    nsteps = 3
     dt = 20.0
     print "energy dE", 1.0/dt/nsteps * au2ev * 2.0 * np.pi
     print "energy E", 1.0/dt * au2ev * 2.0 * np.pi
@@ -485,31 +499,32 @@ if __name__ == '__main__':
     GSMPO = hilbert_to_liouville(GSMPS)
     EXMPO = Max_Entangled_EX_MPO(GSMPS, creationMPO, mol)
 
-    #print GSMPO
-    autocorr = FiniteT_abs(mol, pbond, GSMPO, HMPO, dipoleMPO, nsteps, dt, \
-            thresh=0, temperature=298)
+    #autocorr = FiniteT_abs(mol, pbond, GSMPO, HMPO, dipoleMPO, nsteps, dt, \
+    #        thresh=0, temperature=298)
+    autocorr = FiniteT_emi(mol, pbond, EXMPO, HMPO, dipoleMPO, nsteps, dt, \
+            thresh=50, temperature=298)
 
 
 
 
-    #xplot = [i*dt for i in range(nsteps)]
+    xplot = [i*dt for i in range(nsteps)]
     #plt.plot(xplot, np.real(autocorrexact))
     #plt.plot(xplot, np.imag(autocorrexact))
-    #plt.plot(xplot, np.real(autocorr))
-    #plt.plot(xplot, np.imag(autocorr))
+    plt.plot(xplot, np.real(autocorr))
+    plt.plot(xplot, np.imag(autocorr))
 
-    yf = fft.fft(autocorr)
-    yplot = fft.fftshift(yf)
-    xf = fft.fftfreq(nsteps,dt)
+    #yf = fft.fft(autocorr)
+    #yplot = fft.fftshift(yf)
+    #xf = fft.fftfreq(nsteps,dt)
     # in FFT the frequency unit is cycle/s, but in QM we use radian/s,
     # hbar omega = h nu   omega = 2pi nu   
-    xplot = fft.fftshift(xf) * au2ev * 2.0 * np.pi
+    #xplot = fft.fftshift(xf) * au2ev * 2.0 * np.pi
     #
-    plt.xlim(-0.3,0.3)
-    plt.plot(xplot, np.abs(yplot))
+    #plt.xlim(-0.3,0.3)
+    #plt.plot(xplot, np.abs(yplot))
     #plt.plot(xplot, np.real(yplot))
     #plt.plot(xplot, np.imag(yplot))
-    plt.show()
+    #plt.show()
     
     endtime = time.time()
     print "Running time=", endtime-starttime

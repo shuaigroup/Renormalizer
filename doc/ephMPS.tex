@@ -278,7 +278,67 @@ so the recover final result should be
 $\omega_{exact} = \omega_{calc} + E_{i0}-E_{f0}$
 
 
+\section{calculate the finite temperature dynamic property}
+We use the so-called purification method.
+In principle, the mixed states density operator can be expressed as a enlarged
+space pure state density operator by trace out the enviroment
+\begin{gather}
+    \sum_i s_i | i \rangle \langle i | = \textrm{Tr}_Q  | \Psi \rangle \langle \Psi |
+\end{gather}
+$\Psi$ can be expressed as (many expression, because P,Q space rotation do not
+change it)
+\begin{gather}
+    | \Psi \rangle =  \sum_i s_i^{1/2} | i \rangle_P | i \rangle_Q 
+\end{gather}
 
+
+So, the density operator is 
+\begin{gather}
+    \frac{e^{-\beta \hat{H}}}{Z(\beta)} = \frac{1}{Z(\beta)} e^{-\beta
+    \hat{H}/2} \hat{I}  e^{-\beta \hat{H}/2}
+\end{gather}
+The identity operator can be expressed as reduced density
+operator of a maximum entangled state $| \Psi \rangle$ at $T=\infty$
+\begin{gather}
+    \hat{I} = \sum_i | i \rangle \langle i | = N \sum_{i=1}^N  \frac{1}{N} | i
+    \rangle \langle i | = Z(0) \textrm{Tr}_Q | \Psi \rangle \langle \Psi |
+\end{gather}
+
+So, 
+\begin{gather}
+    \frac{e^{-\beta \hat{H}}}{Z(\beta)} = \frac{Z(0)}{Z(\beta)} \textrm{Tr}_Q
+    e^{-\beta \hat{H}/2}| \Psi \rangle \langle \Psi |e^{-\beta \hat{H}/2} 
+\end{gather}
+
+Since
+\begin{gather}
+    \textrm{Tr}_P\frac{e^{-\beta \hat{H}}}{Z(\beta)} = 1
+\end{gather}
+So, 
+\begin{gather}
+    \frac{Z(\beta)}{Z(0)} = \langle \Psi | e^{-\beta \hat{H}} | \Psi
+    \rangle  
+\end{gather}
+
+So, the dynamic correlaiton function is that
+\begin{gather}
+    \textrm{Tr}_P \frac{e^{-\beta \hat{H}}}{Z(\beta)} e^{i\hat{H}t} \hat{A}
+    e^{-i\hat{H}t} \hat{A} =  \frac{
+    \langle \Psi | e^{-\beta \hat{H} /2 } e^{i\hat{H}t} \hat{A} e^{-i\hat{H}t}
+    \hat{A}
+   e^{-\beta \hat{H} /2 } | \Psi \rangle  }{\langle \Psi | e^{-\beta \hat{H}} | \Psi \rangle}
+\end{gather}
+
+$\Psi$ is the initial maximum correlated state in a enlarged space. It is
+actually a MPO, but only when the up and down physical bond index equals the MPO
+is nonzero, when nonequal, it is zeros.
+
+The GS state is very simple, the bond dimension is 1. electron site is 0 when
+physical index is 1, 1 when physical index is 0. The phonon site is 1.
+
+The EX state is a little bit complicated, we can imagine applying a operator
+$\sum_i a^\dagger_i$ to a GS maximum correlation state, so the bond dimension is
+2 at most.
 
 
 \end{document}
