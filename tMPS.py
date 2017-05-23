@@ -184,6 +184,13 @@ def ZeroTExactEmi(mol, pbond, iMPS, dipoleMPO, nsteps, dt):
     return autocorr
 
 
+def autocorr_store(autocorr, istep):
+    if istep % 10 == 0:
+        autocorr = np.array(autocorr)
+        with open("autocorr"+".npy", 'wb') as f:
+            np.save(f,autocorr)
+
+
 def ZeroTCorr(iMPS, HMPO, dipoleMPO, nsteps, dt, thresh=0, cleanexciton=None):
     '''
         the bra part e^iEt is negected to reduce the oscillation
@@ -202,7 +209,8 @@ def ZeroTCorr(iMPS, HMPO, dipoleMPO, nsteps, dt, thresh=0, cleanexciton=None):
         
         ft = mpslib.dot(mpslib.conj(AbraMPS),AketMPS)
         autocorr.append(ft)
-    
+        autocorr_store(autocorr, istep)
+
     return autocorr   
 
 
@@ -306,6 +314,7 @@ def FiniteT_abs(mol, pbond, iMPO, HMPO, dipoleMPO, nsteps, dt, thresh=0, tempera
         AbraMPO = mpolib.mapply(dipoleMPO, braMPO)
         ft = mpslib.dot(mpslib.conj(AbraMPO),AketMPO)
         autocorr.append(ft/Z)
+        autocorr_store(autocorr, istep)
     
     return autocorr   
 
@@ -357,6 +366,7 @@ def FiniteT_emi(mol, pbond, iMPO, HMPO, dipoleMPO, nsteps, dt, insteps, thresh=0
         AAketMPO = mpolib.mapply(dipoleMPOdagger,AketMPO) 
         ft = mpslib.dot(mpslib.conj(braMPO),AAketMPO)
         autocorr.append(ft/Z)
+        autocorr_store(autocorr, istep)
     
     return autocorr   
 
