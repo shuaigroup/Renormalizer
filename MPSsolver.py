@@ -6,6 +6,7 @@ import scipy.linalg
 from elementop import *
 from pyscf import lib
 import mps as mpslib
+import mpo as mpolib
 from constant import *
 
 def construct_qnmat(QN, ephtable, pbond, addlist):
@@ -256,7 +257,7 @@ def clean_MPS(system, MPS, ephtable, nexciton):
     # if a MPO convert to MPSnew   
     
     if MPS[0].ndim == 4:
-        MPSnew = mpslib.to_mps(MPS)
+        MPSnew = mpolib.to_mps(MPS)
     elif MPS[0].ndim == 3:
         MPSnew = mpslib.add(MPS, None)
 
@@ -287,7 +288,7 @@ def clean_MPS(system, MPS, ephtable, nexciton):
             if MPS[0].ndim == 3:
                 sigmaqn = np.array([0,1])
             else:
-                sigmaqn = np.array([0,1]*2)
+                sigmaqn = np.array([0,0,1,1])
         else:
             # ph site 
             sigmaqn = np.array([0]*MPSnew[imps].shape[1])
@@ -357,7 +358,7 @@ def clean_MPS(system, MPS, ephtable, nexciton):
             MPSnew[imps] = c1d2cmat(cshape, c, qnmat, nexciton)
             
     if MPS[0].ndim == 4:
-        MPSnew = mpslib.from_mps(MPSnew)
+        MPSnew = mpolib.from_mps(MPSnew)
     
     return MPSnew
 
@@ -783,7 +784,7 @@ if __name__ == '__main__':
         mol_local.create_ph(phinfo)
         mol.append(mol_local)
     
-    Mmax = 4
+    Mmax = 10
     nexciton = 1
     
     MPS, MPSdim, MPSQN, MPO, MPOdim, ephtable, pbond = construct_MPS_MPO_2(mol, J,\
