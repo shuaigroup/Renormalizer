@@ -113,7 +113,7 @@ def benchmark(mol, J, dyn_omega, T=298.0, eta=0.00005, nsamp=100, M=100, outfile
             spectra3, 'r--', linewidth=1.0, label="lanczosT_abs")
     
     # emission
-    dyn_omega = np.flip(dyn_omega,0) * -1.0
+    dyn_omega = dyn_omega[::-1] * -1.0
     # T=0
     AfC = exact_solver.dipoleC(mol, fc[:,0], fnconfigs, fph_dof_list, fx, fy, \
             inconfigs, iph_dof_list, ix, iy, '-')
