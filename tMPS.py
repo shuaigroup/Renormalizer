@@ -89,7 +89,7 @@ def GSPropagatorMPO(mol, pbond, x):
 
 
 #@profile
-def tMPS(MPS, MPO, dt, thresh=0, cleanexciton=None):
+def tMPS(MPS, MPO, dt, ephtable, thresh=0, cleanexciton=None):
     '''
     classical 4th order Runge Kutta
     e^-iHdt \Psi
@@ -122,8 +122,8 @@ def tMPS(MPS, MPO, dt, thresh=0, cleanexciton=None):
         MPSnew = mpslib.compress(MPSnew, 'l', trunc=thresh)
         
         # check the number of particle
-        NumMPS = mpolib.mapply(numMPO, MPSnew)
-        print "particle", mpslib.dot(mpslib.conj(NumMPS),MPSnew) / mpslib.dot(mpslib.conj(MPSnew), MPSnew)
+        # NumMPS = mpolib.mapply(numMPO, MPSnew)
+        # print "particle", mpslib.dot(mpslib.conj(NumMPS),MPSnew) / mpslib.dot(mpslib.conj(MPSnew), MPSnew)
     
     print "tMPS dim:", [mps.shape[0] for mps in MPSnew] + [1]
 
@@ -191,7 +191,7 @@ def autocorr_store(autocorr, istep):
             np.save(f,autocorr)
 
 
-def ZeroTCorr(iMPS, HMPO, dipoleMPO, nsteps, dt, thresh=0, cleanexciton=None):
+def ZeroTCorr(iMPS, HMPO, dipoleMPO, nsteps, dt, ephtable, thresh=0, cleanexciton=None):
     '''
         the bra part e^iEt is negected to reduce the oscillation
     '''
@@ -204,7 +204,7 @@ def ZeroTCorr(iMPS, HMPO, dipoleMPO, nsteps, dt, thresh=0, cleanexciton=None):
     for istep in xrange(nsteps):
         if istep != 0:
             t += dt
-            AketMPS = tMPS(AketMPS, HMPO, dt, thresh=thresh, \
+            AketMPS = tMPS(AketMPS, HMPO, dt, ephtable, thresh=thresh, \
                     cleanexciton=cleanexciton)
         
         ft = mpslib.dot(mpslib.conj(AbraMPS),AketMPS)
@@ -281,7 +281,7 @@ def Max_Entangled_EX_MPO(MPS, mol, pbond):
 
 
 #@profile
-def FiniteT_abs(mol, pbond, iMPO, HMPO, dipoleMPO, nsteps, dt, thresh=0, temperature=298):
+def FiniteT_abs(mol, pbond, iMPO, HMPO, dipoleMPO, nsteps, dt, ephtable, thresh=0, temperature=298):
 
     beta = exact_solver.T2beta(temperature)
     print "beta=", beta
@@ -308,7 +308,7 @@ def FiniteT_abs(mol, pbond, iMPO, HMPO, dipoleMPO, nsteps, dt, thresh=0, tempera
     for istep in xrange(nsteps):
         if istep != 0:
             t += dt
-            AketMPO = tMPS(AketMPO, HMPO, dt, thresh=thresh, cleanexciton=1)
+            AketMPO = tMPS(AketMPO, HMPO, dt, ephtable, thresh=thresh, cleanexciton=1)
             braMPO = mpolib.mapply(brapropMPO,braMPO) 
         
         AbraMPO = mpolib.mapply(dipoleMPO, braMPO)
@@ -319,7 +319,7 @@ def FiniteT_abs(mol, pbond, iMPO, HMPO, dipoleMPO, nsteps, dt, thresh=0, tempera
     return autocorr   
 
 
-def thermal_prop(iMPO, HMPO, nsteps, thresh=0, temperature=298):
+def thermal_prop(iMPO, HMPO, nsteps, ephtable, thresh=0, temperature=298):
     '''
         classical 4th order Runge-Kutta to do imaginary propagation
     '''
@@ -332,15 +332,15 @@ def thermal_prop(iMPO, HMPO, nsteps, thresh=0, temperature=298):
 
     for istep in xrange(nsteps):
         it += dbeta
-        ketMPO = tMPS(ketMPO, HMPO, -0.5j*dbeta, thresh=thresh, cleanexciton=1)
+        ketMPO = tMPS(ketMPO, HMPO, -0.5j*dbeta, ephtable,thresh=thresh, cleanexciton=1)
     
     return ketMPO
 
 #@profile
-def FiniteT_emi(mol, pbond, iMPO, HMPO, dipoleMPO, nsteps, dt, insteps, thresh=0, temperature=298):
+def FiniteT_emi(mol, pbond, iMPO, HMPO, dipoleMPO, nsteps, dt, insteps, ephtable, thresh=0, temperature=298):
 
     beta = exact_solver.T2beta(temperature)
-    ketMPO = thermal_prop(iMPO, HMPO, insteps, thresh=thresh, temperature=temperature)
+    ketMPO = thermal_prop(iMPO, HMPO, insteps, ephtable, thresh=thresh, temperature=temperature)
     
     braMPO = mpslib.add(ketMPO, None)
     
@@ -361,7 +361,7 @@ def FiniteT_emi(mol, pbond, iMPO, HMPO, dipoleMPO, nsteps, dt, insteps, thresh=0
         if istep != 0:
             t += dt
             AketMPO = mpolib.mapply(ketpropMPO,AketMPO) 
-            braMPO = tMPS(braMPO, HMPO, dt, thresh=thresh,cleanexciton=1)
+            braMPO = tMPS(braMPO, HMPO, dt, ephtable, thresh=thresh, cleanexciton=1)
         
         AAketMPO = mpolib.mapply(dipoleMPOdagger,AketMPO) 
         ft = mpslib.dot(mpslib.conj(braMPO),AAketMPO)
@@ -465,7 +465,7 @@ if __name__ == '__main__':
     print "energy E", 1.0/dt * au2ev * 2.0 * np.pi
     
     # zero temperature
-    #autocorr = ZeroTCorr(iMPS, HMPO, dipoleMPO, nsteps, dt, thresh=1.0e-6,
+    #autocorr = ZeroTCorr(iMPS, HMPO, dipoleMPO, nsteps, dt, thresh=1.0e-6, ephtable, 
     #        cleanexciton=1-nexciton)
     #autocorr = np.array(autocorr)
     #
@@ -481,10 +481,10 @@ if __name__ == '__main__':
     
 
     #autocorr = FiniteT_abs(mol, pbond, GSMPO, HMPO, dipoleMPO, nsteps, dt, \
-    #        thresh=1.0e-6, temperature=298)
+    #        ephtable, thresh=1.0e-6, temperature=298)
     insteps = 50
     autocorr = FiniteT_emi(mol, pbond, EXMPO, HMPO, dipoleMPO, nsteps, dt, insteps, \
-            thresh=1.0e-4, temperature=298)
+            ephtable, thresh=1.0e-4, temperature=298)
     
     with open('autocorr.out','w') as f_handle:
         f_handle.write('%f \n' % dt)
