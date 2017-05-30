@@ -1,8 +1,8 @@
 #!/usr/bin/env python
 # -*- coding: utf-8 -*-
 
-import mpo as mpolib
-import mps as mpslib
+from lib import mpo as mpolib
+from lib import mps as mpslib
 import numpy as np
 import MPSsolver
 import exact_solver

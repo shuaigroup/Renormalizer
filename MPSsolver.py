@@ -5,8 +5,8 @@ import numpy as np
 import scipy.linalg
 from elementop import *
 from pyscf import lib
-import mps as mpslib
-import mpo as mpolib
+from lib import mps as mpslib
+from lib import mpo as mpolib
 from constant import *
 
 def construct_qnmat(QN, ephtable, pbond, addlist):
