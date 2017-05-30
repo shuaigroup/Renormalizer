@@ -6,7 +6,7 @@ import mps as mpslib
 import numpy as np
 import MPSsolver
 import exact_solver
-
+from elementop import *
 
 def construct_onsiteMPO(mol,pbond,opera,dipole=False):
     '''
@@ -350,7 +350,7 @@ def FiniteT_emi(mol, pbond, iMPO, HMPO, dipoleMPO, nsteps, dt, insteps, thresh=0
 
 
     AketMPO = mpolib.mapply(dipoleMPO, ketMPO)
-    
+
     autocorr = []
     t = 0.0
     ketpropMPO, ketpropMPOdim  = GSPropagatorMPO(mol, pbond, -1.0j*dt)
@@ -433,24 +433,24 @@ if __name__ == '__main__':
         mol.append(mol_local)
     
 
-    Mmax = 1
-    nexciton = 0
+    nexciton = 1
     
-    iMPS, iMPSdim, iMPSQN, HMPO, HMPOdim, ephtable, pbond = construct_MPS_MPO_2(mol, J, Mmax, nexciton)
+    procedure = [[10,0.4],[10,0]]
+    iMPS, iMPSdim, iMPSQN, HMPO, HMPOdim, ephtable, pbond = construct_MPS_MPO_2(mol, J, procedure[0][0], nexciton)
     
-    optimization(iMPS, iMPSdim, iMPSQN, HMPO, HMPOdim, ephtable, pbond, nexciton, Mmax,\
-            nsweeps=4, method="2site")
+    optimization(iMPS, iMPSdim, iMPSQN, HMPO, HMPOdim, ephtable, pbond,\
+            nexciton, procedure, method="2site")
     
     print mpslib.is_left_canonical(iMPS)
     
 
     # if in the EX space, MPO minus E_e to reduce osillation
-    if nexciton == 0:
-        for ibra in xrange(pbond[0]):
-            HMPO[0][ibra,ibra,0,0] -=  2.58958060935/au2ev
-    
-    #dipoleMPO, dipoleMPOdim = construct_onsiteMPO(mol, pbond, "a", dipole=True)
-    dipoleMPO, dipoleMPOdim = construct_onsiteMPO(mol, pbond, "a^\dagger", dipole=True)
+    #if nexciton == 0:
+    for ibra in xrange(pbond[0]):
+        HMPO[0][ibra,ibra,0,0] -=  2.58958060935/au2ev
+
+    dipoleMPO, dipoleMPOdim = construct_onsiteMPO(mol, pbond, "a", dipole=True)
+    #dipoleMPO, dipoleMPOdim = construct_onsiteMPO(mol, pbond, "a^\dagger", dipole=True)
     
     iMPS = MPS_convert(iMPS)
     HMPO = MPS_convert(HMPO)
@@ -460,7 +460,7 @@ if __name__ == '__main__':
     numMPO = MPS_convert(numMPO)
 
     nsteps = 100
-    dt = 50.0
+    dt = 20.0
     print "energy dE", 1.0/dt/nsteps * au2ev * 2.0 * np.pi
     print "energy E", 1.0/dt * au2ev * 2.0 * np.pi
     
@@ -481,7 +481,7 @@ if __name__ == '__main__':
     
 
     #autocorr = FiniteT_abs(mol, pbond, GSMPO, HMPO, dipoleMPO, nsteps, dt, \
-    #        thresh=1.0e-4, temperature=298)
+    #        thresh=1.0e-6, temperature=298)
     insteps = 50
     autocorr = FiniteT_emi(mol, pbond, EXMPO, HMPO, dipoleMPO, nsteps, dt, insteps, \
             thresh=1.0e-4, temperature=298)
@@ -507,7 +507,7 @@ if __name__ == '__main__':
     # hbar omega = h nu   omega = 2pi nu   
     xplot = fft.fftshift(xf) * au2ev * 2.0 * np.pi
     #
-    plt.xlim(-0.3,0.3)
+    #plt.xlim(-0.3,0.3)
     plt.plot(xplot, np.abs(yplot))
     #plt.plot(xplot, np.real(yplot))
     #plt.plot(xplot, np.imag(yplot))

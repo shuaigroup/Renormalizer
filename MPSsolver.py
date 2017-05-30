@@ -148,7 +148,7 @@ def construct_MPS_MPO_2(mol, J, Mmax, nexciton):
     MPSdim: mps dimension list
     MPS: mps list
     '''
-    MPS, MPSdim, MPSQN = construct_MPS('L', ephtable, pbond, nexciton, Mmax)
+    MPS, MPSdim, MPSQN = construct_MPS('L', ephtable, pbond, nexciton, Mmax, percent=1.0)
     print "initialize left-canonical:", mpslib.is_left_canonical(MPS)
     
     '''
@@ -313,8 +313,14 @@ def clean_MPS(system, MPS, ephtable, nexciton):
                         Gamma_block = Gamma[np.ix_(idxset,range(Gamma.shape[1]))]
                     else:
                         Gamma_block = Gamma[np.ix_(range(Gamma.shape[0]),idxset)]
-                    
-                    U, S, Vt = scipy.linalg.svd(Gamma_block, full_matrices=False)
+                    try:
+                        U, S, Vt = scipy.linalg.svd(Gamma_block,\
+                                full_matrices=False, lapack_driver='gesdd')
+                    except:
+                        print "clean part gesdd converge failed"
+                        U, S, Vt = scipy.linalg.svd(Gamma_block,\
+                                full_matrices=False, lapack_driver='gesvd')
+
                     dim = S.shape[0]
                     Sset.append(S)
                     
@@ -362,7 +368,7 @@ def clean_MPS(system, MPS, ephtable, nexciton):
     
     return MPSnew
 
-def construct_MPS(domain, ephtable, pbond, nexciton, Mmax):
+def construct_MPS(domain, ephtable, pbond, nexciton, Mmax, percent=0):
     
     '''
         construct 'domain' canonical MPS according to quantum number
@@ -401,7 +407,8 @@ def construct_MPS(domain, ephtable, pbond, nexciton, Mmax):
 
         Uset = np.concatenate(Uset,axis=1)
         Sset = np.concatenate(Sset)
-        mps, mpsdim, mpsqn, nouse = updatemps(Uset, Sset, qnset, Uset, nexciton, Mmax)
+        mps, mpsdim, mpsqn, nouse = updatemps(Uset, Sset, qnset, Uset, nexciton,\
+                Mmax, percent=percent)
         # add the next mpsdim 
         MPSdim.append(mpsdim)
         MPS.append(mps.reshape(pbond[imps], MPSdim[imps], MPSdim[imps+1]))
@@ -417,12 +424,50 @@ def construct_MPS(domain, ephtable, pbond, nexciton, Mmax):
     return MPS, MPSdim, MPSQN 
 
 
-def select_basis(qnset,Sset,qnlist):
+def select_basis(qnset,Sset,qnlist,Mmax,percent=0):
     '''
         select basis according to qnlist requirement
     '''
-    svaluefilter = [s for s,num in zip(Sset,qnset) if (num in qnlist)]  
-    sidx = np.argsort(svaluefilter)[::-1]
+
+    # convert to dict
+    basdic = {}
+    for i in xrange(len(qnset)):
+        basdic[i] = [qnset[i],Sset[i]]
+    
+    # clean quantum number
+    for ibas in basdic.iterkeys():
+        if basdic[ibas][0] not in qnlist:
+            del basdic[ibas]
+    assert len(qnset)==len(basdic)
+
+    # each good quantum number block equally get percent/nblocks
+    def block_select(basdic, qn, n):
+        block_basdic = {i:basdic[i] for i in basdic if basdic[i][0]==qn}
+        sort_block_basdic = sorted(block_basdic.items(), key=lambda x: x[1][1], reverse=True)
+        nget = min(n, len(sort_block_basdic))
+        print "nget", nget, qn
+        sidx = [i[0] for i in sort_block_basdic[0:nget]]
+        for idx in sidx:
+            del basdic[idx]
+
+        return sidx
+
+    nbasis = min(len(basdic), Mmax)
+    print "nbasis", nbasis
+    sidx = []
+    
+    if percent != 0:
+        nbas_block = int(nbasis * percent / len(qnlist))
+        for iqn in qnlist:
+            sidx += block_select(basdic, iqn, nbas_block)
+    
+    # others 
+    nbasis = nbasis - len(sidx)
+    
+    sortbasdic = sorted(basdic.items(), key=lambda x: x[1][1], reverse=True)
+    sidx += [i[0] for i in sortbasdic[0:nbasis]]
+    assert len(sidx) == len(set(sidx))  # there must be no duplicated
+
     return sidx
 
 
@@ -522,7 +567,7 @@ def Enviro_read(domain, siteidx):
         return np.load(f)
 
 
-def optimization(MPS, MPSdim, MPSQN, MPO, MPOdim, ephtable, pbond, nexciton, Mmax, nsweeps=1, method="2site"):
+def optimization(MPS, MPSdim, MPSQN, MPO, MPOdim, ephtable, pbond, nexciton, procedure, method="2site"):
     '''
         1/2 site optimization MPS 
     '''
@@ -543,8 +588,10 @@ def optimization(MPS, MPSdim, MPSQN, MPO, MPOdim, ephtable, pbond, nexciton, Mma
     ltensor = np.ones((1,1,1))
     rtensor = np.ones((1,1,1))
     energy = []
+    
+    for isweep in xrange(len(procedure)):
+        print "Procedure", procedure[isweep]
 
-    for isweep in xrange(nsweeps):
         for system, imps in loop:
             if system == "R":
                 lmethod, rmethod = "Enviro", "System"
@@ -590,9 +637,9 @@ def optimization(MPS, MPSdim, MPSQN, MPO, MPOdim, ephtable, pbond, nexciton, Mma
 
             nonzeros = np.sum(qnmat==nexciton)
             print "Hmat dim", nonzeros
-            
+            #cguess = np.random.random(nonzeros)-0.5
             count = [0]
-            
+                
             def hop(c):
                 # convert c to initial structure according to qn patter
                 cstruct = c1d2cmat(cshape, c, qnmat, nexciton)
@@ -624,12 +671,21 @@ def optimization(MPS, MPSdim, MPSQN, MPO, MPOdim, ephtable, pbond, nexciton, Mma
                 return cout[qnmat==nexciton]
 
             precond = lambda x, e, *args: x/(hdiag-e+1e-4)
-            e, c = lib.davidson(hop, cguess, precond)
+            e, c = lib.davidson(hop, cguess, precond) #max_cycle=100, max_space=30)
+            #A = scipy.sparse.linalg.LinearOperator((nonzeros,nonzeros), matvec=hop)
+            #e, c = scipy.sparse.linalg.eigsh(A,k=1, which="SA",v0=cguess)
             print "HC loops:", count[0]
 
             print "isweep, imps, e=", isweep, imps, e*au2ev
             energy.append(e)
             
+
+            # add noise
+            # crandom = np.random.random(c.shape[0])-0.5
+            # crandom = crandom/np.linalg.norm(crandom)*np.sqrt(1.0e-5)
+            # c += crandom
+            # c = c/np.linalg.norm(c)
+
             cstruct = c1d2cmat(cshape, c, qnmat, nexciton)
             
             # update the mps
@@ -645,7 +701,7 @@ def optimization(MPS, MPSdim, MPSQN, MPO, MPOdim, ephtable, pbond, nexciton, Mma
                 qnbigr = np.add.outer(qnsigmalist[-1],qnr)
 
             mps, mpsdim, mpsqn, compmps = Renormalization(cstruct, qnbigl, qnbigr,\
-                    system, nexciton, Mmax)
+                    system, nexciton, procedure[isweep][0], percent=procedure[isweep][1])
             
             if method == "1site":
                 MPS[imps] = mps
@@ -685,28 +741,30 @@ def optimization(MPS, MPSdim, MPSQN, MPO, MPOdim, ephtable, pbond, nexciton, Mma
     return energy
 
 
-def Renormalization(cstruct, qnbigl, qnbigr, domain, nexciton, Mmax):
+def Renormalization(cstruct, qnbigl, qnbigr, domain, nexciton, Mmax, percent=0):
     '''
         get the new mps, mpsdim, mpdqn, complementary mps to get the next guess
     '''
     assert domain=="R" or domain=="L"
     Uset, SUset, qnlnew, Vset, SVset, qnrnew = Csvd(cstruct, qnbigl, qnbigr, nexciton)
     if domain == "R":
-        mps, mpsdim, mpsqn, compmps = updatemps(Vset, SVset, qnrnew, Uset, nexciton, Mmax)
+        mps, mpsdim, mpsqn, compmps = updatemps(Vset, SVset, qnrnew, Uset, \
+                nexciton, Mmax, percent=percent)
         return np.moveaxis(mps.reshape(list(qnbigr.shape)+[mpsdim]),-1,-2), mpsdim, mpsqn,\
         np.moveaxis(compmps.reshape(list(qnbigl.shape) + [mpsdim]),qnbigl.ndim-1,0)
     else:    
-        mps, mpsdim, mpsqn, compmps = updatemps(Uset, SUset, qnlnew, Vset, nexciton, Mmax)
+        mps, mpsdim, mpsqn, compmps = updatemps(Uset, SUset, qnlnew, Vset,\
+                nexciton, Mmax, percent=percent)
         return np.moveaxis(mps.reshape(list(qnbigl.shape) + [mpsdim]),qnbigl.ndim-1,0), mpsdim, mpsqn,\
                 np.moveaxis(compmps.reshape(list(qnbigr.shape)+[mpsdim]),-1,-2)
     
 
-def updatemps(vset, sset, qnset, compset, nexciton, Mmax):
+def updatemps(vset, sset, qnset, compset, nexciton, Mmax, percent=0):
     '''
         select basis to construct new mps, and complementary mps
     '''
-    sidx = select_basis(qnset,sset,range(nexciton+1))
-    mpsdim = min(len(sidx),Mmax)
+    sidx = select_basis(qnset,sset,range(nexciton+1), Mmax, percent=percent)
+    mpsdim = len(sidx)
     mps = np.zeros((vset.shape[0], mpsdim),dtype=vset.dtype)
     
     compmps = np.zeros((compset.shape[0],mpsdim), dtype=compset.dtype)
@@ -784,15 +842,16 @@ if __name__ == '__main__':
         mol_local.create_ph(phinfo)
         mol.append(mol_local)
     
-    Mmax = 10
+
     nexciton = 1
     
+    procedure = [[10,0.4],[10,0]]
     MPS, MPSdim, MPSQN, MPO, MPOdim, ephtable, pbond = construct_MPS_MPO_2(mol, J,\
-            Mmax, nexciton)
-    
-    optimization(MPS, MPSdim, MPSQN, MPO, MPOdim, ephtable, pbond, nexciton, Mmax,\
-            nsweeps=4, method="1site")
+            procedure[0][0], nexciton)
 
+    optimization(MPS, MPSdim, MPSQN, MPO, MPOdim, ephtable, pbond, nexciton, procedure ,\
+            method="1site")
+    
     MPS = [mps.transpose(1,0,2) for mps in MPS]
     print "MPS output left canonical:", mpslib.is_left_canonical(MPS)
     

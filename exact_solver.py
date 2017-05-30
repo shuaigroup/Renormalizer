@@ -71,26 +71,17 @@ def construct_Hmat(nconfigs, x, y, ph_dof_list, mol, J, diag=False):
         # electronic part
         for imol in xrange(nmols):
             if iconfig[0][imol] == 1:
-                if imol != 0 and iconfig[0][imol-1] == 0:
-                    iconfigbra = copy.deepcopy(iconfig)
-                    iconfigbra[0][imol-1] = 1
-                    iconfigbra[0][imol] = 0
-                    idxbra = configidx.config2idx(iconfigbra, ph_dof_list, x, y)
-                    data.append(J[imol,imol-1])
-                    rowidx.append(idxbra)
-                    colidx.append(idx)
-                    assert idxbra != idx
-                if imol != nmols-1 and iconfig[0][imol+1] == 0:
-                    iconfigbra = copy.deepcopy(iconfig)
-                    iconfigbra[0][imol+1] = 1
-                    iconfigbra[0][imol] = 0
-                    idxbra = configidx.config2idx(iconfigbra, ph_dof_list, x, y)
-                    data.append(J[imol,imol+1])
-                    rowidx.append(idxbra)
-                    colidx.append(idx)
-                    assert idxbra != idx
-
-
+                for jmol in xrange(nmols):
+                    if iconfig[0][jmol] == 0:
+                        iconfigbra = copy.deepcopy(iconfig)
+                        iconfigbra[0][jmol] = 1
+                        iconfigbra[0][imol] = 0
+                        idxbra = configidx.config2idx(iconfigbra, ph_dof_list, x, y)
+                        data.append(J[imol,jmol])
+                        rowidx.append(idxbra)
+                        colidx.append(idx)
+                        assert idxbra != idx
+                        
         # electron-phonon coupling part
         for imol in xrange(nmols):
             if iconfig[0][imol] == 1:
@@ -174,25 +165,28 @@ def pre_Hmat(nexciton, mol):
     return x, y, ph_dof_list, nconfigs
 
 
-def Hmat_diagonalization(Hmat, method="full", diags=None):
+def Hmat_diagonalization(Hmat, method="full", nroots=1, diags=None):
     
     if method == "Arnoldi": 
 
         print "arpack Arnoldi method"
-        e, c =scipy.sparse.linalg.eigsh(Hmat,k=1, which="SA")
+        e, c = scipy.sparse.linalg.eigsh(Hmat,k=nroots, which="SA")
 
     elif method == "Davidson":
         
         print "pyscf davidson method"
         precond = lambda x, e, *args: x/(diags-e+1e-4)
         nconfigs = Hmat.shape[0]
-        initialc = np.zeros((nconfigs))
-        initialc[0] = 1.0
+        initialc = []
+        for iroot in xrange(nroots):
+            ic = np.zeros((nconfigs))
+            ic[iroot] = 1.0
+            initialc.append(ic)
         
         def hop(c):
             return Hmat.dot(c)
 
-        e, c = lib.davidson(hop, initialc, precond)
+        e, c = lib.davidson(hop, initialc, precond, nroots=nroots)
     
     elif method == "full":
 
