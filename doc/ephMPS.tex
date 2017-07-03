@@ -344,5 +344,47 @@ The EX state is a little bit complicated, we can imagine applying a operator
 $\sum_i a^\dagger_i$ to a GS maximum correlation state, so the bond dimension is
 2 at most.
 
+For the 0T abs case, we use two different algorithms to calculate the
+correlation function. One is only propagating the ket, the other is propagating
+the ket and bra the same time. The second one is more accurate with same bond
+dimension, because the ket and bra are both huge correlated, MPS take effect in
+both bra and ket. The first one only ket MPS take effect. The bra takes less
+effect.
+1. Nstep: 0, dt, 2dt ... Nsteps*dt
+2. -Nsteps/2*dt,...0,... Nsteps/2, the negative part propagator in bra, positive
+part propagator in ket.
+
+because of the commucate between dipole operator and GS state H.
+
+if emi:
+\begin{gather}
+    \textrm{Tr}_P \frac{e^{-\beta \hat{H}}}{Z(\beta)} e^{i\hat{H}t} \hat{A}
+    e^{-i\hat{H}t} \hat{A} =  \frac{
+        \langle \Psi | e^{-\beta \hat{H}_{EX} /2 } e^{i\hat{H}_{EX}t}
+        e^{-i\hat{H}_{GS}t} \hat{A} 
+    \hat{A}
+    e^{-\beta \hat{H}_{EX} /2 } | \Psi \rangle  }{\langle \Psi | e^{-\beta \hat{H}} | \Psi \rangle}
+\end{gather}
+
+if abs:
+\begin{gather}
+    \textrm{Tr}_P \frac{e^{-\beta \hat{H}}}{Z(\beta)} e^{i\hat{H}t} \hat{A}
+    e^{-i\hat{H}t} \hat{A} =  \frac{
+        \langle \Psi | e^{-\beta \hat{H}_{GS} /2 } \hat{A} e^{i\hat{H}_{GS}t}
+        e^{-i\hat{H}_{EX}t}
+    \hat{A}
+    e^{-\beta \hat{H}_{GS} /2 } | \Psi \rangle  }{\langle \Psi | e^{-\beta \hat{H}} | \Psi \rangle}
+\end{gather}
+when considering propagating both sides of the bra and ket, only emission is
+probable:
+\begin{gather}
+    \textrm{Tr}_P \frac{e^{-\beta \hat{H}}}{Z(\beta)} e^{i\hat{H}t} \hat{A}
+    e^{-i\hat{H}t} \hat{A} =  \frac{
+        \langle \Psi | e^{-\beta \hat{H}_{EX} /2 } e^{i\hat{H}_{EX}t/2}
+        \hat{A} e^{-i\hat{H}_{GS}t}  
+    \hat{A} e^{i\hat{H}_{EX}t/2}
+    e^{-\beta \hat{H}_{EX} /2 } | \Psi \rangle  }{\langle \Psi | e^{-\beta \hat{H}} | \Psi \rangle}
+\end{gather}
+
 
 \end{document}

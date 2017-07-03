@@ -191,9 +191,14 @@ def autocorr_store(autocorr, istep):
             np.save(f,autocorr)
 
 
-def ZeroTCorr(iMPS, HMPO, dipoleMPO, nsteps, dt, ephtable, thresh=0, cleanexciton=None):
+def ZeroTCorr(iMPS, HMPO, dipoleMPO, nsteps, dt, ephtable, thresh=0,
+        cleanexciton=None, algorithm=1):
     '''
         the bra part e^iEt is negected to reduce the oscillation
+        algorithm 1 is the only propagte ket in 0, dt, 2dt
+        algorithm 2 is propagte bra and ket in 0, dt, 2dt (in principle, with
+        same calculation cost, more accurate, because the bra is also entangled,
+        the entanglement is not only in ket)
     '''
     
     AketMPS = mpolib.mapply(dipoleMPO, iMPS)
@@ -201,20 +206,42 @@ def ZeroTCorr(iMPS, HMPO, dipoleMPO, nsteps, dt, ephtable, thresh=0, cleanexcito
     
     autocorr = []
     t = 0.0
+    
     for istep in xrange(nsteps):
         if istep != 0:
             t += dt
-            AketMPS = tMPS(AketMPS, HMPO, dt, ephtable, thresh=thresh, \
+            if algorithm == 1:
+                AketMPS = tMPS(AketMPS, HMPO, dt, ephtable, thresh=thresh, \
                     cleanexciton=cleanexciton)
-        
+            if algorithm == 2:
+                if istep % 2 == 1:
+                    AketMPS = tMPS(AketMPS, HMPO, dt, ephtable, thresh=thresh, \
+                        cleanexciton=cleanexciton)
+                else:
+                    AbraMPS = tMPS(AbraMPS, HMPO, -dt, ephtable, thresh=thresh, \
+                        cleanexciton=cleanexciton)
+
         ft = mpslib.dot(mpslib.conj(AbraMPS),AketMPS)
         autocorr.append(ft)
         autocorr_store(autocorr, istep)
 
     return autocorr   
 
+def Max_Entangled_MPS(mol, pbond):
+    '''
+    Identity operator
+    '''
 
-def Max_Entangled_GS_MPS(mol, pbond):
+    MPSdim = [1] * (len(pbond)+1)
+
+    MPS = []
+    for imps in xrange(len(pbond)):
+        mps = np.ones([pbond[imps],MPSdim[imps],MPSdim[imps+1]])
+        MPS.append(mps)
+
+    return MPS, MPSdim
+
+def Max_Entangled_GS_MPS(mol, pbond, norm=True):
     '''
     T = \infty maximum entangled GS state
     electronic site: pbond 0 element 1.0
@@ -239,7 +266,10 @@ def Max_Entangled_GS_MPS(mol, pbond):
 
         for iph in xrange(mol[imol].nphs):
             mps = np.zeros([pbond[imps],MPSdim[imps],MPSdim[imps+1]])
-            mps[:,0,0] = 1.0/np.sqrt(pbond[imps])
+            if norm == True:
+                mps[:,0,0] = 1.0/np.sqrt(pbond[imps])
+            else:
+                mps[:,0,0] = 1.0
             
             MPS.append(mps)
             imps += 1
@@ -264,7 +294,7 @@ def hilbert_to_liouville(MPS):
     return MPO
 
 
-def Max_Entangled_EX_MPO(MPS, mol, pbond):
+def Max_Entangled_EX_MPO(MPS, mol, pbond, norm=True):
     '''
     T = \infty maximum entangled EX state
     '''
@@ -273,8 +303,9 @@ def Max_Entangled_EX_MPO(MPS, mol, pbond):
     creationMPO = MPS_convert(creationMPO)
 
     EXMPS =  mpolib.mapply(creationMPO, MPS)
-    EXMPS = mpslib.scale(EXMPS, 1.0/np.sqrt(float(len(mol)))) # normalize
-    
+    if norm == True:
+        EXMPS = mpslib.scale(EXMPS, 1.0/np.sqrt(float(len(mol)))) # normalize
+
     MPO = hilbert_to_liouville(EXMPS)
 
     return MPO
@@ -371,6 +402,97 @@ def FiniteT_emi(mol, pbond, iMPO, HMPO, dipoleMPO, nsteps, dt, insteps, ephtable
     return autocorr   
 
 
+#@profile
+def FiniteT_spectra(spectratype, mol, pbond, iMPO, HMPO, dipoleMPO, nsteps, dt,
+        ephtable, insteps=0, thresh=0, temperature=298, algorithm=1):
+    
+    assert spectratype in ["emi","abs"]
+
+    beta = exact_solver.T2beta(temperature)
+    print "beta=", beta
+    
+
+    if spectratype == "emi":
+        ketMPO = thermal_prop(iMPO, HMPO, insteps, ephtable, thresh=thresh, temperature=temperature)
+    elif spectratype == "abs":
+        # GS space thermal operator 
+        thermalMPO, thermalMPOdim = GSPropagatorMPO(mol, pbond, -beta/2.0)
+        thermalMPO = MPS_convert(thermalMPO)
+        
+        # e^{\-beta H/2} \Psi
+        ketMPO = mpolib.mapply(thermalMPO,iMPO)
+    
+    #\Psi e^{\-beta H} \Psi
+    Z = mpslib.dot(mpslib.conj(ketMPO),ketMPO)
+    print "partition function Z(beta)/Z(0)", Z
+
+    autocorr = []
+    t = 0.0
+    exactpropMPO, exactpropMPOdim  = GSPropagatorMPO(mol, pbond, -1.0j*dt)
+    exactpropMPO = MPS_convert(exactpropMPO)
+    
+    if spectratype == "emi" :
+        braMPO = mpslib.add(ketMPO, None)
+        if algorithm == 1 :
+            dipoleMPOdagger = mpslib.conj(dipoleMPO)
+            ketMPO = mpolib.mapply(dipoleMPO, ketMPO)
+            ketMPO = mpolib.mapply(dipoleMPOdagger, ketMPO)
+    elif spectratype == "abs":
+        ketMPO = mpolib.mapply(dipoleMPO, ketMPO)
+        braMPO = mpslib.add(ketMPO, None)
+    
+    for istep in xrange(nsteps):
+        if istep != 0:
+            t += dt
+            if spectratype == "emi":
+                if algorithm == 1:
+                    ketMPO = mpolib.mapply(exactpropMPO,ketMPO) 
+                    braMPO = tMPS(braMPO, HMPO, dt, ephtable, thresh=thresh, cleanexciton=1)
+                elif algorithm == 2:
+                    if istep % 2 == 0:
+                        braMPO = tMPS(braMPO, HMPO, dt, ephtable, thresh=thresh, cleanexciton=1)
+                    else:
+                        ketMPO = tMPS(ketMPO, HMPO, -1.0*dt, ephtable, thresh=thresh, cleanexciton=1)
+
+
+            elif spectratype == "abs":
+                ketMPO = tMPS(ketMPO, HMPO, dt, ephtable, thresh=thresh, cleanexciton=1)
+                braMPO = mpolib.mapply(exactpropMPO,braMPO) 
+        
+        if algorithm == 1:
+            ft = mpslib.dot(mpslib.conj(braMPO),ketMPO)
+        elif algorithm == 2 and spectratype == "emi":
+            exactpropMPO, exactpropMPOdim  = GSPropagatorMPO(mol, pbond, -1.0j*dt*istep)
+            exactpropMPO = MPS_convert(exactpropMPO)
+            AketMPO = mpolib.mapply(dipoleMPO, ketMPO)
+            AketMPO = mpolib.mapply(exactpropMPO, AketMPO)
+            AbraMPO = mpolib.mapply(dipoleMPO, braMPO)
+            ft = mpslib.dot(mpslib.conj(AbraMPO),AketMPO)
+
+        autocorr.append(ft/Z)
+        autocorr_store(autocorr, istep)
+    
+    return autocorr   
+
+
+
+def MPOprop(iMPS, HMPO, nsteps, dt, ephtable, thresh=0, cleanexciton=None):
+    '''
+        In principle, We can directly do MPO propagation and then trace it do
+        get the correlation function. But it seems that the bond dimension
+        increase much faster than propgation based on MPS. (Maybe DMRG is
+        suited for wavefunction not operator)
+        If this works, then every dynamic correlation function is solved if
+        e^{iHt} is known. So, this may not work.
+
+        ###
+        doesn't work based on some simple test
+    '''
+    for istep in xrange(1,nsteps):
+        iMPS = tMPS(iMPS, HMPO, dt, ephtable, thresh=thresh, cleanexciton=cleanexciton)
+
+
+
 if __name__ == '__main__':
 
     import numpy as np
@@ -433,9 +555,9 @@ if __name__ == '__main__':
         mol.append(mol_local)
     
 
-    nexciton = 1
+    nexciton = 0
     
-    procedure = [[10,0.4],[10,0]]
+    procedure = [[10,0.0],[10,0.0]]
     iMPS, iMPSdim, iMPSQN, HMPO, HMPOdim, ephtable, pbond = construct_MPS_MPO_2(mol, J, procedure[0][0], nexciton)
     
     optimization(iMPS, iMPSdim, iMPSQN, HMPO, HMPOdim, ephtable, pbond,\
@@ -449,8 +571,8 @@ if __name__ == '__main__':
     for ibra in xrange(pbond[0]):
         HMPO[0][ibra,ibra,0,0] -=  2.58958060935/au2ev
 
-    dipoleMPO, dipoleMPOdim = construct_onsiteMPO(mol, pbond, "a", dipole=True)
-    #dipoleMPO, dipoleMPOdim = construct_onsiteMPO(mol, pbond, "a^\dagger", dipole=True)
+    #dipoleMPO, dipoleMPOdim = construct_onsiteMPO(mol, pbond, "a", dipole=True)
+    dipoleMPO, dipoleMPOdim = construct_onsiteMPO(mol, pbond, "a^\dagger", dipole=True)
     
     iMPS = MPS_convert(iMPS)
     HMPO = MPS_convert(HMPO)
@@ -460,37 +582,54 @@ if __name__ == '__main__':
     numMPO = MPS_convert(numMPO)
 
     nsteps = 100
-    dt = 20.0
+    dt = 30.0
     print "energy dE", 1.0/dt/nsteps * au2ev * 2.0 * np.pi
     print "energy E", 1.0/dt * au2ev * 2.0 * np.pi
     
     # zero temperature
-    #autocorr = ZeroTCorr(iMPS, HMPO, dipoleMPO, nsteps, dt, thresh=1.0e-6, ephtable, 
-    #        cleanexciton=1-nexciton)
-    #autocorr = np.array(autocorr)
+    autocorr = ZeroTCorr(iMPS, HMPO, dipoleMPO, nsteps, dt, ephtable,
+            thresh=1.e-4, cleanexciton=1-nexciton, algorithm=1)
     #
     #autocorrexact = ZeroTExactEmi(mol, pbond, iMPS, dipoleMPO, nsteps, dt)
     #autocorrexact = np.array(autocorrexact)
     
     # finite T
-    GSMPS, GSMPSdim = Max_Entangled_GS_MPS(mol, pbond)
+    GSMPS, GSMPSdim = Max_Entangled_GS_MPS(mol, pbond, norm=True)
     GSMPS = MPS_convert(GSMPS)
     
+    
     GSMPO = hilbert_to_liouville(GSMPS)
-    EXMPO = Max_Entangled_EX_MPO(GSMPS, mol, pbond)
+    EXMPO = Max_Entangled_EX_MPO(GSMPS, mol, pbond, norm=True)
     
-
+    #print mpslib.canonicalise(GSMPO, 'l')
+    #print  mpolib.contract(GSMPO, GSMPO, 'r', 0)
+    
+    #print mpslib.canonicalise(EXMPO, 'l')
+    #print  mpolib.contract(EXMPO, EXMPO, 'r', 1.0e-6)
+    
+    
+    #IdenMPS, IdenMPSdim = Max_Entangled_MPS(mol, pbond)
+    #IdenMPS = MPS_convert(IdenMPS)
+    #IdenMPO = hilbert_to_liouville(IdenMPS)
+    #MPOprop(IdenMPO, HMPO, nsteps, dt, ephtable, thresh=1.0e-6, cleanexciton=None)
+    
     #autocorr = FiniteT_abs(mol, pbond, GSMPO, HMPO, dipoleMPO, nsteps, dt, \
-    #        ephtable, thresh=1.0e-6, temperature=298)
-    insteps = 50
-    autocorr = FiniteT_emi(mol, pbond, EXMPO, HMPO, dipoleMPO, nsteps, dt, insteps, \
-            ephtable, thresh=1.0e-4, temperature=298)
+    #        ephtable, thresh=1.0e-4, temperature=298)
+    #autocorr = FiniteT_spectra("abs", mol, pbond, GSMPO, HMPO, dipoleMPO, nsteps, dt, \
+    #        ephtable, thresh=1.0e-4, temperature=298)
+    #insteps = 30
+    #autocorr = FiniteT_emi(mol, pbond, EXMPO, HMPO, dipoleMPO, nsteps, dt, insteps, \
+    #        ephtable, thresh=1.0e-4, temperature=298)
+    #autocorr = FiniteT_spectra("emi", mol, pbond, EXMPO, HMPO, dipoleMPO, nsteps, dt, \
+    #        ephtable, insteps=insteps, thresh=5,
+    #        temperature=298, algorithm=1)
     
-    with open('autocorr.out','w') as f_handle:
-        f_handle.write('%f \n' % dt)
-        f_handle.write('%d \n' % nsteps)
-        np.savetxt(f_handle,autocorr)
-
+    autocorr = np.array(autocorr)
+    with open('autocorrabs1.npy','wb') as f_handle:
+        np.save(f_handle,autocorr)
+    
+    nsteps = len(autocorr)
+    print "nsteps", nsteps
 
     xplot = [i*dt for i in range(nsteps)]
     #plt.plot(xplot, np.real(autocorrexact))
@@ -498,7 +637,7 @@ if __name__ == '__main__':
     plt.plot(xplot, np.real(autocorr))
     plt.plot(xplot, np.imag(autocorr))
     
-    plt.figure()
+    #plt.figure()
     
     yf = fft.fft(autocorr)
     yplot = fft.fftshift(yf)
@@ -511,7 +650,7 @@ if __name__ == '__main__':
     plt.plot(xplot, np.abs(yplot))
     #plt.plot(xplot, np.real(yplot))
     #plt.plot(xplot, np.imag(yplot))
-    plt.show()
+    #plt.show()
     
     endtime = time.time()
     print "Running time=", endtime-starttime
