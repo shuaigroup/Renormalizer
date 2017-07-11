@@ -14,8 +14,52 @@ from pyscf.ftsolver.utils import ftlanczos
 from pyscf.ftsolver.utils import rsmpl
 from pyscf.ftsolver.utils import smpl_ep
 from constant import *
+import itertools
+from obj import *
 
 np.set_printoptions(threshold=np.nan)
+
+
+def exciton0H(mol, temperature, ratio):
+    
+
+    beta = T2beta(temperature)
+    
+    nmols = len(mol)
+    phlist = []
+    omegalist = []
+    for imol in xrange(nmols):
+        for iph in xrange(mol[imol].nphs):
+            phlist.append(range(mol[imol].ph[iph].nlevels)) 
+            omegalist.append(mol[imol].ph[iph].omega)
+
+    omegalist = np.array(omegalist)
+    partitionfunc = 0.0
+    for phiconfig in itertools.product(*phlist):
+        phiconfignp = np.array(phiconfig)
+        partitionfunc += np.exp(-beta * np.dot(omegalist,phiconfignp))
+        
+    config_dic = bidict({}) 
+    config_dic_key = -1
+
+    problist = []
+    energylist = []
+
+    for phiconfig in itertools.product(*phlist):
+        phiconfignp = np.array(phiconfig)
+        energy = np.dot(omegalist,phiconfignp)
+        prob = np.exp(-beta * energy)/partitionfunc 
+        if prob > ratio:
+            problist.append(prob)
+            energylist.append(energy)
+            config_dic_key += 1
+            config_dic[config_dic_key] = (0,)*nmols + phiconfig
+
+    
+    print partitionfunc, sum(problist), len(problist)
+         
+    return config_dic, np.array(energylist)       
+
 
 def get_diag(iconfig, mol):
     '''
@@ -43,7 +87,7 @@ def get_diag(iconfig, mol):
     return e
 
 
-def construct_Hmat(nconfigs, x, y, ph_dof_list, mol, J, diag=False):
+def construct_Hmat(nconfigs, mol, J, direct=None, indirect=None, diag=False):
     
     nmols = len(mol)
     # construct the sparse Hmat explicitly
@@ -55,7 +99,8 @@ def construct_Hmat(nconfigs, x, y, ph_dof_list, mol, J, diag=False):
 
     for idx in xrange(nconfigs):
         
-        iconfig = configidx.idx2config(idx, ph_dof_list, x, y)
+        iconfig = configidx.idx2config(idx, direct=direct, indirect=indirect)
+        assert iconfig != None
         #print iconfig
 
         # diagonal part
@@ -76,11 +121,12 @@ def construct_Hmat(nconfigs, x, y, ph_dof_list, mol, J, diag=False):
                         iconfigbra = copy.deepcopy(iconfig)
                         iconfigbra[0][jmol] = 1
                         iconfigbra[0][imol] = 0
-                        idxbra = configidx.config2idx(iconfigbra, ph_dof_list, x, y)
-                        data.append(J[imol,jmol])
-                        rowidx.append(idxbra)
-                        colidx.append(idx)
-                        assert idxbra != idx
+                        idxbra = configidx.config2idx(iconfigbra, direct=direct, indirect=indirect)
+                        if idxbra != None:
+                            data.append(J[imol,jmol])
+                            rowidx.append(idxbra)
+                            colidx.append(idx)
+                            assert idxbra != idx
                         
         # electron-phonon coupling part
         for imol in xrange(nmols):
@@ -94,22 +140,24 @@ def construct_Hmat(nconfigs, x, y, ph_dof_list, mol, J, diag=False):
                     iconfigbra = copy.deepcopy(iconfig)
                     if iconfigbra[1][offset+iph] != mol[imol].ph[iph].nlevels-1:
                         iconfigbra[1][offset+iph] += 1
-                        idxbra = configidx.config2idx(iconfigbra, ph_dof_list, x, y)
-                        data.append(mol[imol].ph[iph].omega * \
-                                mol[imol].ph[iph].ephcoup * \
-                                np.sqrt(float(iconfigbra[1][offset+iph])))
-                        rowidx.append(idxbra)
-                        colidx.append(idx)
+                        idxbra = configidx.config2idx(iconfigbra, direct=direct, indirect=indirect)
+                        if idxbra != None:
+                            data.append(mol[imol].ph[iph].omega * \
+                                    mol[imol].ph[iph].ephcoup * \
+                                    np.sqrt(float(iconfigbra[1][offset+iph])))
+                            rowidx.append(idxbra)
+                            colidx.append(idx)
                     # b
                     iconfigbra = copy.deepcopy(iconfig)
                     if iconfigbra[1][offset+iph] != 0:
                         iconfigbra[1][offset+iph] -= 1
-                        idxbra = configidx.config2idx(iconfigbra, ph_dof_list, x, y)
-                        data.append(mol[imol].ph[iph].omega * \
-                                mol[imol].ph[iph].ephcoup * \
-                                np.sqrt(float(iconfigbra[1][offset+iph]+1)))
-                        rowidx.append(idxbra)
-                        colidx.append(idx)
+                        idxbra = configidx.config2idx(iconfigbra, direct=direct, indirect=indirect)
+                        if idxbra != None:
+                            data.append(mol[imol].ph[iph].omega * \
+                                    mol[imol].ph[iph].ephcoup * \
+                                    np.sqrt(float(iconfigbra[1][offset+iph]+1)))
+                            rowidx.append(idxbra)
+                            colidx.append(idx)
   
 
     print "nconfig",nconfigs,"nonzero element",len(data)
@@ -196,8 +244,8 @@ def Hmat_diagonalization(Hmat, method="full", nroots=1, diags=None):
     return e, c
 
 
-def dipoleC(mol, c, nconfigs_1, ph_dof_list_1, x_1, y_1, nconfigs_2, \
-        ph_dof_list_2, x_2, y_2, mode):
+def dipoleC(mol, c, nconfigs_1, nconfigs_2,  mode,\
+        direct1=None, indirect1=None, direct2=None, indirect2=None):
     '''
         do the dipole * c, initial state 1, final state 2 \mu |1><2| + \mu |2><1|
     '''
@@ -206,14 +254,17 @@ def dipoleC(mol, c, nconfigs_1, ph_dof_list_1, x_1, y_1, nconfigs_2, \
     assert(mode=="+" or mode =="-")
 
     for idx in xrange(nconfigs_1):
-        iconfig = configidx.idx2config(idx, ph_dof_list_1, x_1, y_1)
+        iconfig = configidx.idx2config(idx, direct=direct1, indirect=indirect1)
+        assert iconfig != None
         for imol in xrange(nmols):
             iconfig2 = copy.deepcopy(iconfig)
             if (mode == "+" and iconfig2[0][imol] != 1) or \
                 (mode == "-" and iconfig2[0][imol] != 0):
                 iconfig2[0][imol] = 1 - iconfig[0][imol]
-                idx2 = configidx.config2idx(iconfig2, ph_dof_list_2, x_2, y_2)
-                AC[idx2] +=  mol[imol].dipole * c[idx] 
+                idx2 = configidx.config2idx(iconfig2, direct=direct2,
+                        indirect=indirect2)
+                if idx2 != None:
+                    AC[idx2] +=  mol[imol].dipole * c[idx] 
 
     return AC
 
@@ -251,17 +302,15 @@ def dyn_lanczos(T, AC, dipolemat, Hgsmat, Hexmat, omega, e_ref, eta=0.00005, \
     return dyn_corr
 
 
-def full_diagonalization_spectrum(ic,ie,ix,iy,fc,fe,fx,fy,ph_dof_list,mol,dipolemat):
+def full_diagonalization_spectrum(ic,ie,fc,fe,dipolemat):
     '''
        transition energy and dipole moment ** 2 
     '''
     nistates = len(ie)
     nfstates = len(fe)
-    nfexs = nfstates/ph_dof_list[0]
-    niexs = nistates/ph_dof_list[0]
     dipdip = np.zeros((2,nfstates,nistates))
 
-    dipdip[1, :, :] =  (init_dip_final(ic, ix, iy, fc, fx, fy, ph_dof_list, mol, dipolemat)) ** 2
+    dipdip[1, :, :] =  (init_dip_final(ic, fc, dipolemat)) ** 2
     dipdip[0,:,:] = fe.reshape(nfstates,1) - ie
 
     return dipdip
@@ -275,7 +324,6 @@ def partition_function(e, temperature):
     P = P/Z
     print "partition sum", Z
     print "partition", P
-    
     return P 
 
 
@@ -327,7 +375,8 @@ def dyn_exact(dipdip, temperature, ie, omega=None, eta=0.00005):
         return dyn_corr
 
 
-def construct_dipoleMat(inconfigs,ix,iy,fnconfigs,fx,fy,ph_dof_list,mol):
+def construct_dipoleMat(inconfigs, fnconfigs, mol, directi=None, indirecti=None,
+        directf=None, indirectf=None):
     '''
         dipole operator matrix fnconfigs * inconfigs
     '''
@@ -336,29 +385,34 @@ def construct_dipoleMat(inconfigs,ix,iy,fnconfigs,fx,fy,ph_dof_list,mol):
     data = []
     
     for idx in xrange(inconfigs):
-        iconfig = configidx.idx2config(idx, ph_dof_list, ix, iy)
+        iconfig = configidx.idx2config(idx, direct=directi, indirect=indirecti)
+        assert iconfig != None
         for imol in xrange(len(mol)):
             iconfig2 = copy.deepcopy(iconfig)
             if iconfig2[0][imol] != 1:
                 iconfig2[0][imol] = 1
-                idx2 = configidx.config2idx(iconfig2, ph_dof_list, fx, fy)
-                rowidx.append(idx2)
-                colidx.append(idx)
-                data.append(mol[imol].dipole)
+                idx2 = configidx.config2idx(iconfig2, direct=directf,
+                        indirect=indirectf)
+                if idx2 != None: 
+                    rowidx.append(idx2)
+                    colidx.append(idx)
+                    data.append(mol[imol].dipole)
 
     print "dipoleMat nonzeroelement:", len(data)
     dipolemat =  csr_matrix( (data,(rowidx,colidx)), shape=(fnconfigs,inconfigs) )
     
     return dipolemat
 
-def init_dip_final(ic,ix,iy,fc,fx,fy,ph_dof_list,mol,dipolemat):
+def init_dip_final(ic,fc,dipolemat):
     '''
     bra is the final state
     ket is the initial state
     '''
     # construct the dipole operator matrix representation in Fock space
-    inconfigs = len(ic)
-    fnconfigs = len(fc)
+    assert ic.shape[0] == ic.shape[1]
+    assert fc.shape[0] == fc.shape[1]
+    inconfigs = ic.shape[0]
+    fnconfigs = fc.shape[0]
     
     bradipket = np.zeros((fnconfigs,inconfigs))
     
@@ -371,32 +425,149 @@ def init_dip_final(ic,ix,iy,fc,fx,fy,ph_dof_list,mol,dipolemat):
 def spectra_normalize(spectra):
     spectraabs = np.absolute(spectra)
     top = np.amax(spectraabs)
+    print "normalize spectra", top
 
     return spectraabs/top
 
 
 if __name__ == '__main__':
     
-    e = np.array([0.0, 1.0, 2.0])
 
+    import numpy as np
+    from obj import *
+    import scipy.constants 
+    from constant import * 
+    import exact_solver
+    import nparticle
+    import time
+    import matplotlib.pyplot as plt
 
-    print partition_function(e, 10) 
+    starttime = time.time()
+    
+    elocalex = 2.67/au2ev
+    dipole_abs = 15.45
+    nmols = 2
+    # eV
+    J = np.zeros((2,2))
+    #J += np.diag([0.0],k=1)
+    #J += np.diag([0.0],k=-1)
+    J += np.diag([-1.0],k=1)
+    J += np.diag([-1.0],k=-1)
+    print "J=", J
+    
+    # cm^-1
+    #omega1 = np.array([106.51, 1555.55])
+    
+    # a.u.
+    #D1 = np.array([30.1370, 8.7729])
+    
+    # 1
+    #S1 = np.array([0.2204, 0.2727])
+    
+    # cm^-1
+    omega1 = np.array([106.51])
+    
+    # a.u.
+    D1 = np.array([30.1370])
+    
+    # 1
+    S1 = np.array([0.2204])
+    
+    # transfer all these parameters to a.u
+    # ev to a.u.
+    J = J/au2ev
+    # cm^-1 to a.u.
+    omega1 = omega1 * 1.0E2 * \
+    scipy.constants.physical_constants["inverse meter-hertz relationship"][0] / \
+    scipy.constants.physical_constants["hartree-hertz relationship"][0]
+    
+    print "omega1", omega1*au2ev
+    
+    nphcoup1 = -np.sqrt(omega1/2.0)*D1
+    
+    print "Huang", S1
+    print nphcoup1**2
+    print "mat element", omega1*nphcoup1*au2ev
+    
+    nphs = 1
+    nlevels =  [10]
+    
+    phinfo = [list(a) for a in zip(omega1, nphcoup1, nlevels)]
+    
+    print phinfo
+    
 
+    mol = []
+    for imol in xrange(nmols):
+        mol_local = Mol(elocalex, nphs, dipole_abs)
+        mol_local.create_ph(phinfo)
+        mol.append(mol_local)
+    
+    
+    #ix, iy, iph_dof_list, inconfigs = exact_solver.pre_Hmat(0, mol)
+    #iHmat = exact_solver.construct_Hmat(inconfigs, mol, J,
+    #        indirect=[iph_dof_list, ix, iy])
+    #fx, fy, fph_dof_list, fnconfigs = exact_solver.pre_Hmat(1, mol)
+    #fHmat = exact_solver.construct_Hmat(fnconfigs, mol, J, indirect=[fph_dof_list, fx, fy])
+    
+    configi_dic = nparticle.construct_config_dic(mol, 0, nparticle=nmols)
+    iHmat = exact_solver.construct_Hmat(len(configi_dic), mol, J, direct=[nmols, configi_dic])
+    ie, ic =  exact_solver.Hmat_diagonalization(iHmat, method="full")
+    
+    #configi_dic, ie = exciton0H(mol, 298, 0.00001)
+    #ic = np.diag([1.0]*len(ie))
+    print "ie:", ie * au2ev
+    #print configi_dic
+    
+    configf_dic = nparticle.construct_config_dic(mol, 1, nparticle=2)
+    fHmat = exact_solver.construct_Hmat(len(configf_dic), mol, J, direct=[nmols, configf_dic])
+    fe, fc =  exact_solver.Hmat_diagonalization(fHmat, method="full")
+    print "fe:", fe * au2ev
+    print fc
 
+    for i in xrange(len(fe)-1):
+        print (fe[i+1]-fe[i])*au2ev
 
+    dyn_omega = np.linspace(0.8, 2.5, num=500)
+    plt.xlim(dyn_omega[0], dyn_omega[-1])
+    dyn_omega /=  au2ev
+    T=1000
+    eta=0.00005
+    
+    #dipolemat = exact_solver.construct_dipoleMat(inconfigs,fnconfigs,mol,
+    #        indirecti=[iph_dof_list,ix,iy],indirectf=[fph_dof_list,fx,fy])
+    dipolemat = exact_solver.construct_dipoleMat(len(configi_dic),len(configf_dic),
+            mol, directi=[nmols, configi_dic], directf=[nmols, configf_dic])
+    
+    dipdip = exact_solver.full_diagonalization_spectrum(ic,ie,fc,fe, dipolemat)
+    dyn_corr1 = exact_solver.dyn_exact(dipdip, T, ie, omega=dyn_omega, eta=eta)
+    spectra1 = exact_solver.spectra_normalize(dyn_corr1*dyn_omega)
+    
+    plt.plot(dyn_omega * au2ev, \
+            spectra1, 'orange', linewidth=1.0, label='exactT_abs')
+    
+    # absorption
+    # T = 0
+    dyn_corr_absexact = exact_solver.dyn_exact(dipdip, 0, ie)
+    spectra_absexact = exact_solver.spectra_normalize(dyn_corr_absexact[0,:]*dyn_corr_absexact[1,:])
+    
+    plt.bar(dyn_corr_absexact[0,:]*au2ev, spectra_absexact, width=0.001, color='r')
+    
+    plt.show()
 
-
-
-
-
-
-
-
-
-
-
-
-
-
+    endtime = time.time()
+    print "Running time=", endtime-starttime
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
 
 

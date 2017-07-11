@@ -9,6 +9,7 @@ def exciton_string(no, ne):
      An Introduction to Configuration Interaction Theory 
      C. David Sherrill
      Figure 2(a)
+     x is the vertex weight, y is the arc weight
     '''
     x = np.zeros((no+1, ne+1), dtype=np.int32)
     y = np.zeros((no+1, ne+1), dtype=np.int32)
@@ -75,22 +76,39 @@ def phconfig2idx(config, ph_dof_list):
     return idx
 
 # e-ph configuration to idx
-def config2idx(config, ph_dof_list, x, y):
+def config2idx(config, direct=None, indirect=None):
 
-    exidx = exconfig2idx(config[0], y)
-    phidx = phconfig2idx(config[1], ph_dof_list)
+    if indirect != None:
+        ph_dof_list, x, y = indirect
+        exidx = exconfig2idx(config[0], y)
+        phidx = phconfig2idx(config[1], ph_dof_list)
 
-    idx = exidx * ph_dof_list[0] + phidx
+        idx = exidx * ph_dof_list[0] + phidx
+    
+    elif direct != None:
+        nmols, config_dic = direct
+        totconfig = tuple(config[0])+tuple(config[1])
+        if totconfig not in config_dic.inverse:
+            return None
+        idx = config_dic.inverse[totconfig]
 
     return idx
 
 # idx to e-ph configuration
-def idx2config(idx, ph_dof_list, x, y):
+def idx2config(idx, direct=None, indirect=None):
     
-    exidx, phidx = divmod(idx, ph_dof_list[0])
-    exconfig = idx2exconfig(exidx, x)
-    
-    phconfig = idx2phconfig(phidx, ph_dof_list)
+    if indirect != None:
+        ph_dof_list, x, y = indirect
+        exidx, phidx = divmod(idx, ph_dof_list[0])
+        exconfig = idx2exconfig(exidx, x)
+        phconfig = idx2phconfig(phidx, ph_dof_list)
+    elif direct != None:
+        nmols, config_dic = direct
+        if idx not in config_dic:
+            return None
+        config = config_dic[idx]
+        exconfig = list(config[0:nmols])
+        phconfig = list(config[nmols:])
 
     return [exconfig, phconfig]
 

@@ -33,3 +33,16 @@ class Mol(object):
         for iph in xrange(self.nphs):
             ph_local = Phonon(*phinfo[iph])
             self.ph.append(ph_local) 
+
+class bidict(dict):
+    def __init__(self, *args, **kwargs):
+        self.inverse = {}
+        super(bidict, self).__init__(*args, **kwargs)
+
+    def __setitem__(self, key, value):
+        super(bidict, self).__setitem__(key, value)
+        self.inverse[value] = key
+
+    def __delitem__(self, key):
+        del self.inverse[self[key]]
+        super(bidict, self).__delitem__(key)
