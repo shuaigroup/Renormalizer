@@ -8,6 +8,9 @@ from pyscf import lib
 from lib import mps as mpslib
 from lib import mpo as mpolib
 from constant import *
+import itertools
+from mpompsmat import *
+
 
 def construct_qnmat(QN, ephtable, pbond, addlist):
     '''
@@ -161,28 +164,55 @@ def construct_MPS_MPO_2(mol, J, Mmax, nexciton):
     return MPS, MPSdim, MPSQN, MPO, MPOdim, ephtable, pbond
 
 
-def construct_MPO(mol, J, pbond):
+def construct_MPO(mol, J, pbond, scheme=2):
     '''
     many ways to construct MPO
     scheme 1: l to r
-    scheme 2: r to l
-    scheme 3: l,r to middle
+    scheme 2: l,r to middle
     '''
     MPOdim = []
     MPO = []
     nmols = len(mol)
     
-    # scheme 1: see doc
     # MPOdim  
-    for imol in xrange(nmols):
-        MPOdim.append((imol+1)*2)
-        for iph in xrange(mol[imol].nphs):
-            if imol != nmols-1:
-                MPOdim.append((imol+1)*2+3)
+    if scheme == 1:
+        # scheme 1: see doc
+        for imol in xrange(nmols):
+            MPOdim.append((imol+1)*2)
+            for iph in xrange(mol[imol].nphs):
+                if imol != nmols-1:
+                    MPOdim.append((imol+1)*2+3)
+                else:
+                    MPOdim.append(3)
+        MPOdim.append(1)
+        MPOdim[0]=1
+    elif scheme == 2:
+        # 0,1,2,3,4,5      3 is the middle 
+        # dim is 1*4, 4*6, 6*8, 8*6, 6*4, 4*1 
+        # 0,1,2,3,4,5,6    3 is the middle 
+        # dim is 1*4, 4*6, 6*8, 8*8, 8*6, 6*4, 4*1 
+        mididx = nmols/2
+
+        def elecdim(imol):
+            if imol <= mididx:
+                dim = (imol+1)*2
             else:
-                MPOdim.append(3)
-    MPOdim.append(1)
-    MPOdim[0]=1
+                dim = (nmols-imol+1)*2
+            return dim
+
+        for imol in xrange(nmols):
+            ldim = elecdim(imol)
+            rdim = elecdim(imol+1)
+
+            MPOdim.append(ldim)
+        
+            for iph in xrange(mol[imol].nphs):
+                MPOdim.append(rdim+1)
+        
+        MPOdim[0]=1
+        MPOdim.append(1)
+    
+    print "MPOdim", MPOdim
     
     # MPO
     impo = 0
@@ -192,61 +222,83 @@ def construct_MPO(mol, J, pbond):
         for iph in xrange(mol[imol].nphs):
             e0 += mol[imol].ph[iph].omega * mol[imol].ph[iph].ephcoup**2
         
-        # electronic part
-        mpo = np.zeros([pbond[impo],pbond[impo],MPOdim[impo],MPOdim[impo+1]])
+        mididx = nmols/2
         
+        # electronic part
+        mpo = np.zeros([MPOdim[impo],pbond[impo],pbond[impo],MPOdim[impo+1]])
         for ibra in xrange(pbond[impo]):
             for iket in xrange(pbond[impo]):
-                mpo[ibra,iket,-1,0]  = EElementOpera("a^\dagger a", ibra, iket) * (mol[imol].elocalex +  e0)
-                mpo[ibra,iket,-1,-1] = EElementOpera("Iden", ibra, iket)
-                mpo[ibra,iket,-1,1]  = EElementOpera("a^\dagger a", ibra, iket)
+                mpo[-1,ibra,iket,0]  = EElementOpera("a^\dagger a", ibra, iket) * (mol[imol].elocalex +  e0)
+                mpo[-1,ibra,iket,-1] = EElementOpera("Iden", ibra, iket)
+                mpo[-1,ibra,iket,1]  = EElementOpera("a^\dagger a", ibra, iket)
                 
                 # first column operator
                 if imol != 0 :
-                    mpo[ibra,iket,0,0] = EElementOpera("Iden", ibra, iket)
-                    for ileft in xrange(1,2*imol+1):
-                        if ileft % 2 == 1:
-                            mpo[ibra,iket,ileft,0] = EElementOpera("a", ibra, iket) * J[(ileft-1)/2,imol]
-                        else:
-                            mpo[ibra,iket,ileft,0] = EElementOpera("a^\dagger", ibra, iket) * J[(ileft-1)/2,imol]
+                    mpo[0,ibra,iket,0] = EElementOpera("Iden", ibra, iket)
+                    if (scheme==1) or (scheme==2 and imol<=mididx):
+                        for ileft in xrange(1,MPOdim[impo]-1):
+                            if ileft % 2 == 1:
+                                mpo[ileft,ibra,iket,0] = EElementOpera("a", ibra, iket) * J[(ileft-1)/2,imol]
+                            else:
+                                mpo[ileft,ibra,iket,0] = EElementOpera("a^\dagger", ibra, iket) * J[(ileft-1)/2,imol]
+                    elif scheme == 2 and imol > mididx:
+                         mpo[-3,ibra,iket,0] = EElementOpera("a", ibra, iket) 
+                         mpo[-2,ibra,iket,0] = EElementOpera("a^\dagger", ibra, iket)
+
                 # last row operator
                 if imol != nmols-1 :
-                    mpo[ibra,iket,-1,-2] = EElementOpera("a", ibra, iket)
-                    mpo[ibra,iket,-1,-3] = EElementOpera("a^\dagger", ibra, iket)
+                    if (scheme==1) or (scheme==2 and imol<mididx):
+                        mpo[-1,ibra,iket,-2] = EElementOpera("a", ibra, iket)
+                        mpo[-1,ibra,iket,-3] = EElementOpera("a^\dagger", ibra, iket)
+                    elif scheme == 2 and imol >= mididx:
+                        for jmol in xrange(imol+1,nmols):
+                            mpo[-1,ibra,iket,(nmols-jmol)*2] = EElementOpera("a^\dagger", ibra, iket) * J[imol,jmol]
+                            mpo[-1,ibra,iket,(nmols-jmol)*2+1] = EElementOpera("a", ibra, iket) * J[imol,jmol]
+
                 # mat body
                 if imol != nmols-1 and imol != 0:    
-                    for ileft in xrange(2,2*(imol+1)):
-                        mpo[ibra,iket,ileft-1,ileft] = EElementOpera("Iden", ibra, iket)
+                    if (scheme==1) or (scheme==2 and (imol < mididx)):
+                        for ileft in xrange(2,2*(imol+1)):
+                            mpo[ileft-1,ibra,iket,ileft] = EElementOpera("Iden", ibra, iket)
+                    elif (scheme==1) or (scheme==2 and (imol > mididx)):
+                        for ileft in xrange(2,2*(nmols-imol)):
+                            mpo[ileft-1,ibra,iket,ileft] = EElementOpera("Iden", ibra, iket)
+                    elif (scheme==1) or (scheme==2 and imol==mididx):
+                        for jmol in xrange(imol+1,nmols):
+                            for ileft in xrange(imol):
+                                mpo[ileft*2+1,ibra,iket,(nmols-jmol)*2] = EElementOpera("Iden", ibra, iket) * J[ileft,jmol]
+                                mpo[ileft*2+2,ibra,iket,(nmols-jmol)*2+1] = EElementOpera("Iden", ibra, iket) * J[ileft,jmol]
+
+        
         MPO.append(mpo)
         impo += 1
         
         # phonon part
         for iph in xrange(mol[imol].nphs):
-            mpo = np.zeros([pbond[impo],pbond[impo],MPOdim[impo],MPOdim[impo+1]])
+            mpo = np.zeros([MPOdim[impo],pbond[impo],pbond[impo],MPOdim[impo+1]])
             for ibra in xrange(pbond[impo]):
                 for iket in xrange(pbond[impo]):
                     # first column
-                    mpo[ibra,iket,0,0] = PhElementOpera("Iden", ibra, iket)
-                    mpo[ibra,iket,1,0] = PhElementOpera("b_n^\dagger + b_n",ibra, iket) * \
+                    mpo[0,ibra,iket,0] = PhElementOpera("Iden", ibra, iket)
+                    mpo[1,ibra,iket,0] = PhElementOpera("b_n^\dagger + b_n",ibra, iket) * \
                                          mol[imol].ph[iph].omega * mol[imol].ph[iph].ephcoup
-                    mpo[ibra,iket,-1,0] = PhElementOpera("b_n^\dagger b_n", ibra, iket) * mol[imol].ph[iph].omega
+                    mpo[-1,ibra,iket,0] = PhElementOpera("b_n^\dagger b_n", ibra, iket) * mol[imol].ph[iph].omega
                     
                     if imol != nmols-1 or iph != mol[imol].nphs-1:
-                        mpo[ibra,iket,-1,-1] = PhElementOpera("Iden", ibra, iket)
+                        mpo[-1,ibra,iket,-1] = PhElementOpera("Iden", ibra, iket)
                         
                         if iph != mol[imol].nphs-1: 
                             for icol in xrange(1,MPOdim[impo+1]-1):
-                                mpo[ibra,iket,icol,icol] = PhElementOpera("Iden", ibra, iket)
+                                mpo[icol,ibra,iket,icol] = PhElementOpera("Iden", ibra, iket)
                         else:
                             for icol in xrange(1,MPOdim[impo+1]-1):
-                                mpo[ibra,iket,icol+1,icol] = PhElementOpera("Iden", ibra, iket)
+                                mpo[icol+1,ibra,iket,icol] = PhElementOpera("Iden", ibra, iket)
 
             MPO.append(mpo)
             impo += 1
                     
-    print "MPOdim", MPOdim
-    
     return  MPO, MPOdim 
+
 
 def clean_MPS(system, MPS, ephtable, nexciton):
     '''
@@ -368,6 +420,7 @@ def clean_MPS(system, MPS, ephtable, nexciton):
     
     return MPSnew
 
+
 def construct_MPS(domain, ephtable, pbond, nexciton, Mmax, percent=0):
     
     '''
@@ -384,10 +437,11 @@ def construct_MPS(domain, ephtable, pbond, nexciton, Mmax, percent=0):
         
         if ephtable[imps] == 1:
             # e site
-            qnbig = MPSQN[imps] + [x + 1 for x in MPSQN[imps]]
+            qnbig = list(itertools.chain.from_iterable([x, x+1] for x in MPSQN[imps]))
+
         else:
             # ph site 
-            qnbig = MPSQN[imps] * pbond[imps]
+            qnbig = list(itertools.chain.from_iterable([x]*pbond[imps] for x in MPSQN[imps]))
         
         Uset = []
         Sset = []
@@ -411,13 +465,13 @@ def construct_MPS(domain, ephtable, pbond, nexciton, Mmax, percent=0):
                 Mmax, percent=percent)
         # add the next mpsdim 
         MPSdim.append(mpsdim)
-        MPS.append(mps.reshape(pbond[imps], MPSdim[imps], MPSdim[imps+1]))
+        MPS.append(mps.reshape(MPSdim[imps], pbond[imps], MPSdim[imps+1]))
         MPSQN.append(mpsqn)
 
     # the last site, nouse in initialization
     MPSQN.append([0])
     MPSdim.append(1)
-    MPS.append(np.random.random([pbond[-1],MPSdim[-2],MPSdim[-1]])-0.5)
+    MPS.append(np.random.random([MPSdim[-2],pbond[-1],MPSdim[-1]])-0.5)
     
     print "MPSdim", MPSdim
 
@@ -445,7 +499,7 @@ def select_basis(qnset,Sset,qnlist,Mmax,percent=0):
         block_basdic = {i:basdic[i] for i in basdic if basdic[i][0]==qn}
         sort_block_basdic = sorted(block_basdic.items(), key=lambda x: x[1][1], reverse=True)
         nget = min(n, len(sort_block_basdic))
-        print "nget", nget, qn
+        print qn, "block # of retained basis", nget
         sidx = [i[0] for i in sort_block_basdic[0:nget]]
         for idx in sidx:
             del basdic[idx]
@@ -471,102 +525,6 @@ def select_basis(qnset,Sset,qnlist,Mmax,percent=0):
     return sidx
 
 
-def GetLR(domain, siteidx, MPS, MPO, itensor=np.ones((1,1,1)), method="Scratch"):
-    
-    '''
-    get the L/R Hamiltonian matrix at a random site: 3d tensor
-    S-
-    O-
-    S-
-    enviroment part from disc,  system part from one step calculation
-    support from scratch calculation: from two open boundary
-    '''
-    
-    assert domain == "L" or domain == "R"
-    assert method == "Enviro" or method == "System" or method == "Scratch"
-    
-    if siteidx not in range(len(MPS)):
-        return np.ones((1,1,1))
-
-    if method == "Scratch":
-        itensor = np.ones((1,1,1))
-        if domain == "L":
-            sitelist = range(siteidx+1)
-        else:
-            sitelist = range(len(MPS)-1,siteidx-1,-1)
-        for imps in sitelist:
-            itensor = addone(itensor, MPS, MPO, imps, domain)
-    elif method == "Enviro" :
-        itensor = Enviro_read(domain, siteidx)
-    elif method == "System" :
-        itensor = addone(itensor, MPS, MPO, siteidx, domain)
-        Enviro_write(domain,siteidx,itensor)
-    
-    return itensor
-
-
-def addone(intensor, MPS, MPO, isite, domain):
-    '''
-    add one MPO/MPS site 
-    S-S-
-    O-O-
-    S-S-
-    '''
-    assert domain == "L" or domain == "R"
-    
-    if domain == "L":
-        assert intensor.shape[0] == MPS[isite].shape[1] 
-        assert intensor.shape[1] == MPO[isite].shape[2] 
-        '''
-        S-a-S-f
-            d
-        O-b-O-g
-            e
-        S-c-S-h
-        '''
-        # very slow
-        #outtensor = np.einsum("abc, daf, debg, ech -> fgh", intensor, MPS[isite],
-        #        MPO[isite], MPS[isite]) 
-        tmp1 = np.einsum("abc, debg -> acdeg", intensor,  MPO[isite]) 
-        tmp2 = np.einsum("acdeg, daf -> cegf", tmp1,  MPS[isite]) 
-        outtensor = np.einsum("cegf, ech -> fgh", tmp2,  MPS[isite]) 
-    else:
-        assert intensor.shape[0] == MPS[isite].shape[2] 
-        assert intensor.shape[1] == MPO[isite].shape[3]
-        '''
-        -f-S-a-S
-           d
-        -g-O-b-O
-           e
-        -h-S-c-S
-        '''
-        # very slow
-        #outtensor = np.einsum("abc, dfa, degb, ehc -> fgh", intensor, MPS[isite],
-        #        MPO[isite], MPS[isite]) 
-        tmp1 = np.einsum("abc, degb -> acdeg", intensor,  MPO[isite]) 
-        tmp2 = np.einsum("acdeg, dfa -> cegf", tmp1,  MPS[isite]) 
-        outtensor = np.einsum("cegf, ehc -> fgh", tmp2,  MPS[isite]) 
-
-    return outtensor
-
-
-def construct_enviro(MPS, MPO):
-    tensor = np.ones((1,1,1))
-    for idx in xrange(len(MPS)-1):
-        tensor = addone(tensor, MPS, MPO, idx, "L")
-        Enviro_write("L",idx,tensor)    
-
-
-def Enviro_write(domain, siteidx, tensor):
-    with open(domain+str(siteidx)+".npy", 'wb') as f:
-        np.save(f,tensor)
-
-
-def Enviro_read(domain, siteidx):
-    with open(domain + str(siteidx)+".npy", 'rb') as f:
-        return np.load(f)
-
-
 def optimization(MPS, MPSdim, MPSQN, MPO, MPOdim, ephtable, pbond, nexciton, procedure, method="2site"):
     '''
         1/2 site optimization MPS 
@@ -576,7 +534,8 @@ def optimization(MPS, MPSdim, MPSQN, MPO, MPOdim, ephtable, pbond, nexciton, pro
     print "optimization method", method
     
     # construct the environment matrix
-    construct_enviro(MPS, MPO)
+    MPSconj = mpslib.conj(MPS)
+    construct_enviro(MPS, MPSconj, MPO, "L")
 
  
     nMPS = len(MPS)
@@ -605,8 +564,9 @@ def optimization(MPS, MPSdim, MPSQN, MPO, MPOdim, ephtable, pbond, nexciton, pro
                 lsite= imps-2
                 addlist = [imps-1, imps]
             
-            ltensor = GetLR('L', lsite, MPS, MPO, itensor=ltensor, method=lmethod)
-            rtensor = GetLR('R', imps+1, MPS, MPO, itensor=rtensor, method=rmethod)
+            MPSconj = mpslib.conj(MPS)
+            ltensor = GetLR('L', lsite, MPS, MPSconj, MPO, itensor=ltensor, method=lmethod)
+            rtensor = GetLR('R', imps+1, MPS, MPSconj, MPO, itensor=rtensor, method=rmethod)
             
             # get the quantum number pattern
             qnmat, qnl, qnr, qnsigmalist = construct_qnmat(MPSQN, ephtable,\
@@ -618,28 +578,28 @@ def optimization(MPS, MPSdim, MPSQN, MPO, MPOdim, ephtable, pbond, nexciton, pro
                 #   S-a c f-S
                 #   O-b-O-g-O
                 #   S-a c f-S
-                hdiag = np.einsum("aba,ccbg,fgf -> acf",ltensor,MPO[imps],rtensor)[(qnmat==nexciton)]
+                hdiag = np.einsum("aba,bccg,fgf -> acf",ltensor,MPO[imps],rtensor)[(qnmat==nexciton)]
                 # the result is more stable to use good initial guess
                 # b-S-c
                 #   a  
-                cguess = MPS[imps].transpose((1,0,2))[qnmat==nexciton]
+                cguess = MPS[imps][qnmat==nexciton]
             else:
                 # hdiag
                 #   S-a c   d f-S
                 #   O-b-O-e-O-g-O
                 #   S-a c   d f-S
-                hdiag = np.einsum("aba,ccbe,ddeg,fgf -> acdf", ltensor, MPO[imps-1],
+                hdiag = np.einsum("aba,bcce,eddg,fgf -> acdf", ltensor, MPO[imps-1],
                         MPO[imps],rtensor)[(qnmat==nexciton)]
                 # the result is more stable to use good initial guess
                 # b-S-c-S-e
                 #   a   d
-                cguess = np.einsum("abc,dce -> bade", MPS[imps-1], MPS[imps])[qnmat==nexciton]
+                cguess = np.einsum("bac,cde -> bade", MPS[imps-1], MPS[imps])[qnmat==nexciton]
 
             nonzeros = np.sum(qnmat==nexciton)
             print "Hmat dim", nonzeros
             #cguess = np.random.random(nonzeros)-0.5
             count = [0]
-                
+             
             def hop(c):
                 # convert c to initial structure according to qn patter
                 cstruct = c1d2cmat(cshape, c, qnmat, nexciton)
@@ -652,9 +612,12 @@ def optimization(MPS, MPSdim, MPSQN, MPO, MPOdim, ephtable, pbond, nexciton, pro
                     #    e 
                     #S-c   k-S
                     
-                    tmp1 = np.einsum("abc,debf -> acdef", ltensor, MPO[imps])
-                    tmp2 = np.einsum("acdef, adl -> cefl", tmp1, cstruct) 
-                    cout = np.einsum("cefl, lfk-> cek", tmp2, rtensor)
+                    #tmp1 = np.einsum("abc,bdef -> acdef", ltensor, MPO[imps])
+                    #tmp2 = np.einsum("acdef, adl -> cefl", tmp1, cstruct) 
+                    #cout = np.einsum("cefl, lfk-> cek", tmp2, rtensor)
+                    tmp1 = np.tensordot(ltensor,MPO[imps],axes=([1],[0]))
+                    tmp2 = np.tensordot(tmp1,cstruct,axes=([0,2],[0,1]))
+                    cout = np.tensordot(tmp2,rtensor,axes=([2,3],[1,0]))
                 else:
                     #S-a       l-S
                     #    d   g 
@@ -662,10 +625,14 @@ def optimization(MPS, MPSdim, MPSQN, MPO, MPOdim, ephtable, pbond, nexciton, pro
                     #    e   h
                     #S-c       k-S
                     
-                    tmp1 = np.einsum("abc,debf -> acdef", ltensor, MPO[imps-1])
-                    tmp2 = np.einsum("acdef, adgl -> cefgl", tmp1, cstruct) 
-                    tmp3 = np.einsum("cefgl, ghfj -> celhj", tmp2, MPO[imps])
-                    cout = np.einsum("celhj, ljk -> cehk", tmp3, rtensor)
+                    #tmp1 = np.einsum("abc,bdef -> acdef", ltensor, MPO[imps-1])
+                    #tmp2 = np.einsum("acdef, adgl -> cefgl", tmp1, cstruct) 
+                    #tmp3 = np.einsum("cefgl, fghj -> celhj", tmp2, MPO[imps])
+                    #cout = np.einsum("celhj, ljk -> cehk", tmp3, rtensor)
+                    tmp1 = np.tensordot(ltensor, MPO[imps-1], axes=([1],[0]))
+                    tmp2 = np.tensordot(tmp1, cstruct, axes=([0,2],[0,1])) 
+                    tmp3 = np.tensordot(tmp2, MPO[imps], axes=([2,3],[0,1]))
+                    cout = np.tensordot(tmp3, rtensor, axes=([2,4],[0,1]))
 
                 # convert structure c to 1d according to qn 
                 return cout[qnmat==nexciton]
@@ -679,13 +646,6 @@ def optimization(MPS, MPSdim, MPSQN, MPO, MPOdim, ephtable, pbond, nexciton, pro
             print "isweep, imps, e=", isweep, imps, e*au2ev
             energy.append(e)
             
-
-            # add noise
-            # crandom = np.random.random(c.shape[0])-0.5
-            # crandom = crandom/np.linalg.norm(crandom)*np.sqrt(1.0e-5)
-            # c += crandom
-            # c = c/np.linalg.norm(c)
-
             cstruct = c1d2cmat(cshape, c, qnmat, nexciton)
             
             # update the mps
@@ -707,21 +667,21 @@ def optimization(MPS, MPSdim, MPSQN, MPO, MPOdim, ephtable, pbond, nexciton, pro
                 MPS[imps] = mps
                 if system == "L":
                     if imps != len(MPS)-1:
-                        MPS[imps+1] = np.einsum("ab,cbd -> cad", compmps, MPS[imps+1])
+                        MPS[imps+1] = np.einsum("ab,bcd -> acd", compmps, MPS[imps+1])
                         MPSdim[imps+1] = mpsdim
                         MPSQN[imps+1] = mpsqn
                     else:
-                        MPS[imps] = np.einsum("cdb,ba -> cda", MPS[imps],compmps)
+                        MPS[imps] = np.einsum("dcb,ba -> dca", MPS[imps],compmps)
                         MPSdim[imps+1] = 1
                         MPSQN[imps+1] = [0]
 
                 else:
                     if imps != 0:
-                        MPS[imps-1] = np.einsum("cdb,ba -> cda", MPS[imps-1],compmps)
+                        MPS[imps-1] = np.einsum("dcb,ba -> dca", MPS[imps-1],compmps)
                         MPSdim[imps] = mpsdim
                         MPSQN[imps] = mpsqn
                     else:
-                        MPS[imps] = np.einsum("ab,cbd -> cad", compmps, MPS[imps])
+                        MPS[imps] = np.einsum("ab,bcd -> acd", compmps, MPS[imps])
                         MPSdim[imps] = 1
                         MPSQN[imps] = [0]
             else:
@@ -750,13 +710,13 @@ def Renormalization(cstruct, qnbigl, qnbigr, domain, nexciton, Mmax, percent=0):
     if domain == "R":
         mps, mpsdim, mpsqn, compmps = updatemps(Vset, SVset, qnrnew, Uset, \
                 nexciton, Mmax, percent=percent)
-        return np.moveaxis(mps.reshape(list(qnbigr.shape)+[mpsdim]),-1,-2), mpsdim, mpsqn,\
-        np.moveaxis(compmps.reshape(list(qnbigl.shape) + [mpsdim]),qnbigl.ndim-1,0)
+        return np.moveaxis(mps.reshape(list(qnbigr.shape)+[mpsdim]),-1,0), mpsdim, mpsqn,\
+            compmps.reshape(list(qnbigl.shape) + [mpsdim])
     else:    
         mps, mpsdim, mpsqn, compmps = updatemps(Uset, SUset, qnlnew, Vset,\
                 nexciton, Mmax, percent=percent)
-        return np.moveaxis(mps.reshape(list(qnbigl.shape) + [mpsdim]),qnbigl.ndim-1,0), mpsdim, mpsqn,\
-                np.moveaxis(compmps.reshape(list(qnbigr.shape)+[mpsdim]),-1,-2)
+        return mps.reshape(list(qnbigl.shape) + [mpsdim]), mpsdim, mpsqn,\
+                np.moveaxis(compmps.reshape(list(qnbigr.shape)+[mpsdim]),-1,0)
     
 
 def updatemps(vset, sset, qnset, compset, nexciton, Mmax, percent=0):
@@ -789,9 +749,6 @@ def c1d2cmat(cshape, c, qnmat, nexciton):
 
     return cstruct
 
-def printMPSdim(MPS,idx):
-    
-    print [mps.shape[idx] for mps in MPS] + [1] 
 
 if __name__ == '__main__':
     import numpy as np

@@ -31,25 +31,25 @@ def construct_onsiteMPO(mol,pbond,opera,dipole=False):
     MPO = []
     impo = 0
     for imol in xrange(nmols):
-        mpo = np.zeros([pbond[impo],pbond[impo],MPOdim[impo],MPOdim[impo+1]])
+        mpo = np.zeros([MPOdim[impo],pbond[impo],pbond[impo],MPOdim[impo+1]])
         for ibra in xrange(pbond[impo]):
             for iket in xrange(pbond[impo]):
                 if dipole == False:
-                    mpo[ibra,iket,-1,0] = EElementOpera(opera,ibra,iket)
+                    mpo[-1,ibra,iket,0] = EElementOpera(opera,ibra,iket)
                 else:
-                    mpo[ibra,iket,-1,0] = EElementOpera(opera, ibra, iket) * mol[imol].dipole
+                    mpo[-1,ibra,iket,0] = EElementOpera(opera, ibra, iket) * mol[imol].dipole
                 if imol != 0:
-                    mpo[ibra,iket,0,0] = EElementOpera("Iden",ibra,iket)
+                    mpo[0,ibra,iket,0] = EElementOpera("Iden",ibra,iket)
                 if imol != nmols-1:
-                    mpo[ibra,iket,-1,-1] = EElementOpera("Iden",ibra,iket)
+                    mpo[-1,ibra,iket,-1] = EElementOpera("Iden",ibra,iket)
         MPO.append(mpo)
         impo += 1
 
         for iph in xrange(mol[imol].nphs):
-            mpo = np.zeros([pbond[impo],pbond[impo],MPOdim[impo],MPOdim[impo+1]])
+            mpo = np.zeros([MPOdim[impo],pbond[impo],pbond[impo],MPOdim[impo+1]])
             for ibra in xrange(pbond[impo]):
                 for idiag in xrange(MPOdim[impo]):
-                    mpo[ibra,ibra,idiag,idiag] = 1.0
+                    mpo[idiag,ibra,ibra,idiag] = 1.0
 
             MPO.append(mpo)
             impo += 1
@@ -71,17 +71,17 @@ def GSPropagatorMPO(mol, pbond, x):
     MPO = []
     impo = 0
     for imol in xrange(nmols):
-        mpo = np.zeros([pbond[impo],pbond[impo],MPOdim[impo],MPOdim[impo+1]],dtype=np.complex128)
+        mpo = np.zeros([MPOdim[impo],pbond[impo],pbond[impo],MPOdim[impo+1]],dtype=np.complex128)
         for ibra in xrange(pbond[impo]):
-            mpo[ibra,ibra,0,0] = 1.0
+            mpo[0,ibra,ibra,0] = 1.0
         MPO.append(mpo)
         impo += 1
 
         for iph in xrange(mol[imol].nphs):
-            mpo = np.zeros([pbond[impo],pbond[impo],MPOdim[impo],MPOdim[impo+1]],dtype=np.complex128)
+            mpo = np.zeros([MPOdim[impo],pbond[impo],pbond[impo],MPOdim[impo+1]],dtype=np.complex128)
 
             for ibra in xrange(pbond[impo]):
-                mpo[ibra,ibra,0,0] = np.exp(x*mol[imol].ph[iph].omega*float(ibra))
+                mpo[0,ibra,ibra,0] = np.exp(x*mol[imol].ph[iph].omega*float(ibra))
             MPO.append(mpo)
             impo += 1
     
@@ -89,16 +89,21 @@ def GSPropagatorMPO(mol, pbond, x):
 
 
 #@profile
-def tMPS(MPS, MPO, dt, ephtable, thresh=0, cleanexciton=None):
+def tMPS(MPS, MPO, dt, ephtable, thresh=0, cleanexciton=None, compress_method="svd"):
     '''
     classical 4th order Runge Kutta
     e^-iHdt \Psi
     '''
+    print "compression method:", compress_method
 
-    H1MPS = mpolib.contract(MPO, MPS, 'l', thresh)
-    H2MPS = mpolib.contract(MPO, H1MPS, 'l', thresh)
-    H3MPS = mpolib.contract(MPO, H2MPS, 'l', thresh)
-    H4MPS = mpolib.contract(MPO, H3MPS, 'l', thresh)
+    H1MPS = mpolib.contract(MPO, MPS, 'l', thresh,   compress_method=compress_method)
+    #print "H1MPS dim:", [mps.shape[0] for mps in H1MPS] + [1]
+    H2MPS = mpolib.contract(MPO, H1MPS, 'l', thresh, compress_method=compress_method)
+    #print "H2MPS dim:", [mps.shape[0] for mps in H2MPS] + [1]
+    H3MPS = mpolib.contract(MPO, H2MPS, 'l', thresh, compress_method=compress_method)
+    #print "H3MPS dim:", [mps.shape[0] for mps in H3MPS] + [1]
+    H4MPS = mpolib.contract(MPO, H3MPS, 'l', thresh, compress_method=compress_method)
+    #print "H4MPS dim:", [mps.shape[0] for mps in H4MPS] + [1]
 
     H1MPS = mpslib.scale(H1MPS, -1.0j*dt)
     H2MPS = mpslib.scale(H2MPS, -0.5*dt**2)
@@ -128,13 +133,6 @@ def tMPS(MPS, MPO, dt, ephtable, thresh=0, cleanexciton=None):
     print "tMPS dim:", [mps.shape[0] for mps in MPSnew] + [1]
 
     return MPSnew
-
-
-def MPS_convert(MPS):
-    MPS = MPSdtype_convert(MPS)
-    MPS = MPSorder_convert(MPS)
-
-    return MPS
 
 
 def MPSdtype_convert(MPS):
@@ -171,7 +169,6 @@ def ZeroTExactEmi(mol, pbond, iMPS, dipoleMPO, nsteps, dt):
     t = 0.0
     autocorr = []
     propMPO, propMPOdim = GSPropagatorMPO(mol, pbond, -1.0j*dt)
-    propMPO = MPS_convert(propMPO)
 
     # we can reconstruct the propagator each time if there is accumulated error
     
@@ -192,7 +189,7 @@ def autocorr_store(autocorr, istep):
 
 
 def ZeroTCorr(iMPS, HMPO, dipoleMPO, nsteps, dt, ephtable, thresh=0,
-        cleanexciton=None, algorithm=1):
+        cleanexciton=None, algorithm=1, compress_method="svd"):
     '''
         the bra part e^iEt is negected to reduce the oscillation
         algorithm 1 is the only propagte ket in 0, dt, 2dt
@@ -212,20 +209,21 @@ def ZeroTCorr(iMPS, HMPO, dipoleMPO, nsteps, dt, ephtable, thresh=0,
             t += dt
             if algorithm == 1:
                 AketMPS = tMPS(AketMPS, HMPO, dt, ephtable, thresh=thresh, \
-                    cleanexciton=cleanexciton)
+                    cleanexciton=cleanexciton, compress_method=compress_method)
             if algorithm == 2:
                 if istep % 2 == 1:
                     AketMPS = tMPS(AketMPS, HMPO, dt, ephtable, thresh=thresh, \
-                        cleanexciton=cleanexciton)
+                        cleanexciton=cleanexciton, compress_method=compress_method)
                 else:
                     AbraMPS = tMPS(AbraMPS, HMPO, -dt, ephtable, thresh=thresh, \
-                        cleanexciton=cleanexciton)
+                        cleanexciton=cleanexciton, compress_method=compress_method)
 
         ft = mpslib.dot(mpslib.conj(AbraMPS),AketMPS)
         autocorr.append(ft)
         autocorr_store(autocorr, istep)
 
     return autocorr   
+
 
 def Max_Entangled_MPS(mol, pbond):
     '''
@@ -236,10 +234,11 @@ def Max_Entangled_MPS(mol, pbond):
 
     MPS = []
     for imps in xrange(len(pbond)):
-        mps = np.ones([pbond[imps],MPSdim[imps],MPSdim[imps+1]])
+        mps = np.ones([MPSdim[imps],pbond[imps],MPSdim[imps+1]])
         MPS.append(mps)
 
     return MPS, MPSdim
+
 
 def Max_Entangled_GS_MPS(mol, pbond, norm=True):
     '''
@@ -253,23 +252,23 @@ def Max_Entangled_GS_MPS(mol, pbond, norm=True):
     MPS = []
     imps = 0
     for imol in xrange(len(mol)):
-        mps = np.zeros([pbond[imps],MPSdim[imps],MPSdim[imps+1]])
+        mps = np.zeros([MPSdim[imps],pbond[imps],MPSdim[imps+1]])
         for ibra in xrange(pbond[imps]):
             if ibra == 0:
-                mps[ibra,0,0] = 1.0
+                mps[0,ibra,0] = 1.0
             else:
-                mps[ibra,0,0] = 0.0
+                mps[0,ibra,0] = 0.0
 
 
         MPS.append(mps)
         imps += 1
 
         for iph in xrange(mol[imol].nphs):
-            mps = np.zeros([pbond[imps],MPSdim[imps],MPSdim[imps+1]])
+            mps = np.zeros([MPSdim[imps],pbond[imps],MPSdim[imps+1]])
             if norm == True:
-                mps[:,0,0] = 1.0/np.sqrt(pbond[imps])
+                mps[0,:,0] = 1.0/np.sqrt(pbond[imps])
             else:
-                mps[:,0,0] = 1.0
+                mps[0,:,0] = 1.0
             
             MPS.append(mps)
             imps += 1
@@ -300,7 +299,6 @@ def Max_Entangled_EX_MPO(MPS, mol, pbond, norm=True):
     '''
     # the creation operator \sum_i a^\dagger_i
     creationMPO, creationMPOdim = construct_onsiteMPO(mol, pbond, "a^\dagger")
-    creationMPO = MPS_convert(creationMPO)
 
     EXMPS =  mpolib.mapply(creationMPO, MPS)
     if norm == True:
@@ -311,15 +309,14 @@ def Max_Entangled_EX_MPO(MPS, mol, pbond, norm=True):
     return MPO
 
 
-#@profile
-def FiniteT_abs(mol, pbond, iMPO, HMPO, dipoleMPO, nsteps, dt, ephtable, thresh=0, temperature=298):
+def FiniteT_abs(mol, pbond, iMPO, HMPO, dipoleMPO, nsteps, dt, ephtable,
+        thresh=0, temperature=298, compress_method="svd"):
 
     beta = exact_solver.T2beta(temperature)
     print "beta=", beta
     
     # GS space thermal operator 
     thermalMPO, thermalMPOdim = GSPropagatorMPO(mol, pbond, -beta/2.0)
-    thermalMPO = MPS_convert(thermalMPO)
     
     # e^{\-beta H/2} \Psi
     ketMPO = mpolib.mapply(thermalMPO,iMPO)
@@ -335,11 +332,11 @@ def FiniteT_abs(mol, pbond, iMPO, HMPO, dipoleMPO, nsteps, dt, ephtable, thresh=
     autocorr = []
     t = 0.0
     brapropMPO, brapropMPOdim = GSPropagatorMPO(mol, pbond, -1.0j*dt)
-    brapropMPO = MPS_convert(brapropMPO)
     for istep in xrange(nsteps):
         if istep != 0:
             t += dt
-            AketMPO = tMPS(AketMPO, HMPO, dt, ephtable, thresh=thresh, cleanexciton=1)
+            AketMPO = tMPS(AketMPO, HMPO, dt, ephtable, thresh=thresh,
+                    cleanexciton=1, compress_method=compress_method)
             braMPO = mpolib.mapply(brapropMPO,braMPO) 
         
         AbraMPO = mpolib.mapply(dipoleMPO, braMPO)
@@ -350,7 +347,8 @@ def FiniteT_abs(mol, pbond, iMPO, HMPO, dipoleMPO, nsteps, dt, ephtable, thresh=
     return autocorr   
 
 
-def thermal_prop(iMPO, HMPO, nsteps, ephtable, thresh=0, temperature=298):
+def thermal_prop(iMPO, HMPO, nsteps, ephtable, thresh=0, temperature=298,
+        compress_method="svd"):
     '''
         classical 4th order Runge-Kutta to do imaginary propagation
     '''
@@ -363,12 +361,13 @@ def thermal_prop(iMPO, HMPO, nsteps, ephtable, thresh=0, temperature=298):
 
     for istep in xrange(nsteps):
         it += dbeta
-        ketMPO = tMPS(ketMPO, HMPO, -0.5j*dbeta, ephtable,thresh=thresh, cleanexciton=1)
+        ketMPO = tMPS(ketMPO, HMPO, -0.5j*dbeta, ephtable,thresh=thresh,
+                cleanexciton=1, compress_method=compress_method)
     
     return ketMPO
 
-#@profile
-def FiniteT_emi(mol, pbond, iMPO, HMPO, dipoleMPO, nsteps, dt, insteps, ephtable, thresh=0, temperature=298):
+def FiniteT_emi(mol, pbond, iMPO, HMPO, dipoleMPO, nsteps, dt, insteps,
+        ephtable, thresh=0, temperature=298, compress_method="svd"):
 
     beta = exact_solver.T2beta(temperature)
     ketMPO = thermal_prop(iMPO, HMPO, insteps, ephtable, thresh=thresh, temperature=temperature)
@@ -385,14 +384,14 @@ def FiniteT_emi(mol, pbond, iMPO, HMPO, dipoleMPO, nsteps, dt, insteps, ephtable
     autocorr = []
     t = 0.0
     ketpropMPO, ketpropMPOdim  = GSPropagatorMPO(mol, pbond, -1.0j*dt)
-    ketpropMPO = MPS_convert(ketpropMPO)
     
-    dipoleMPOdagger = mpslib.conj(dipoleMPO)
+    dipoleMPOdagger = mpolib.conjtrans(dipoleMPO)
     for istep in xrange(nsteps):
         if istep != 0:
             t += dt
             AketMPO = mpolib.mapply(ketpropMPO,AketMPO) 
-            braMPO = tMPS(braMPO, HMPO, dt, ephtable, thresh=thresh, cleanexciton=1)
+            braMPO = tMPS(braMPO, HMPO, dt, ephtable, thresh=thresh,
+                    cleanexciton=1, compress_method=compress_method)
         
         AAketMPO = mpolib.mapply(dipoleMPOdagger,AketMPO) 
         ft = mpslib.dot(mpslib.conj(braMPO),AAketMPO)
@@ -402,9 +401,9 @@ def FiniteT_emi(mol, pbond, iMPO, HMPO, dipoleMPO, nsteps, dt, insteps, ephtable
     return autocorr   
 
 
-#@profile
 def FiniteT_spectra(spectratype, mol, pbond, iMPO, HMPO, dipoleMPO, nsteps, dt,
-        ephtable, insteps=0, thresh=0, temperature=298, algorithm=1):
+        ephtable, insteps=0, thresh=0, temperature=298,
+        algorithm=1,compress_method="svd"):
     
     assert spectratype in ["emi","abs"]
 
@@ -417,7 +416,6 @@ def FiniteT_spectra(spectratype, mol, pbond, iMPO, HMPO, dipoleMPO, nsteps, dt,
     elif spectratype == "abs":
         # GS space thermal operator 
         thermalMPO, thermalMPOdim = GSPropagatorMPO(mol, pbond, -beta/2.0)
-        thermalMPO = MPS_convert(thermalMPO)
         
         # e^{\-beta H/2} \Psi
         ketMPO = mpolib.mapply(thermalMPO,iMPO)
@@ -429,12 +427,11 @@ def FiniteT_spectra(spectratype, mol, pbond, iMPO, HMPO, dipoleMPO, nsteps, dt,
     autocorr = []
     t = 0.0
     exactpropMPO, exactpropMPOdim  = GSPropagatorMPO(mol, pbond, -1.0j*dt)
-    exactpropMPO = MPS_convert(exactpropMPO)
     
     if spectratype == "emi" :
         braMPO = mpslib.add(ketMPO, None)
         if algorithm == 1 :
-            dipoleMPOdagger = mpslib.conj(dipoleMPO)
+            dipoleMPOdagger = mpolib.conjtrans(dipoleMPO)
             ketMPO = mpolib.mapply(dipoleMPO, ketMPO)
             ketMPO = mpolib.mapply(dipoleMPOdagger, ketMPO)
     elif spectratype == "abs":
@@ -447,23 +444,26 @@ def FiniteT_spectra(spectratype, mol, pbond, iMPO, HMPO, dipoleMPO, nsteps, dt,
             if spectratype == "emi":
                 if algorithm == 1:
                     ketMPO = mpolib.mapply(exactpropMPO,ketMPO) 
-                    braMPO = tMPS(braMPO, HMPO, dt, ephtable, thresh=thresh, cleanexciton=1)
+                    braMPO = tMPS(braMPO, HMPO, dt, ephtable, thresh=thresh,
+                            cleanexciton=1, compress_method=compress_method)
                 elif algorithm == 2:
                     if istep % 2 == 0:
-                        braMPO = tMPS(braMPO, HMPO, dt, ephtable, thresh=thresh, cleanexciton=1)
+                        braMPO = tMPS(braMPO, HMPO, dt, ephtable, thresh=thresh,
+                                cleanexciton=1, compress_method=compress_method)
                     else:
-                        ketMPO = tMPS(ketMPO, HMPO, -1.0*dt, ephtable, thresh=thresh, cleanexciton=1)
+                        ketMPO = tMPS(ketMPO, HMPO, -1.0*dt, ephtable,
+                                thresh=thresh, cleanexciton=1, compress_method=compress_method)
 
 
             elif spectratype == "abs":
-                ketMPO = tMPS(ketMPO, HMPO, dt, ephtable, thresh=thresh, cleanexciton=1)
+                ketMPO = tMPS(ketMPO, HMPO, dt, ephtable, thresh=thresh,
+                        cleanexciton=1, compress_method=compress_method)
                 braMPO = mpolib.mapply(exactpropMPO,braMPO) 
         
         if algorithm == 1:
             ft = mpslib.dot(mpslib.conj(braMPO),ketMPO)
         elif algorithm == 2 and spectratype == "emi":
             exactpropMPO, exactpropMPOdim  = GSPropagatorMPO(mol, pbond, -1.0j*dt*istep)
-            exactpropMPO = MPS_convert(exactpropMPO)
             AketMPO = mpolib.mapply(dipoleMPO, ketMPO)
             AketMPO = mpolib.mapply(exactpropMPO, AketMPO)
             AbraMPO = mpolib.mapply(dipoleMPO, braMPO)
@@ -473,7 +473,6 @@ def FiniteT_spectra(spectratype, mol, pbond, iMPO, HMPO, dipoleMPO, nsteps, dt,
         autocorr_store(autocorr, istep)
     
     return autocorr   
-
 
 
 def MPOprop(iMPS, HMPO, nsteps, dt, ephtable, thresh=0, cleanexciton=None):
@@ -569,17 +568,12 @@ if __name__ == '__main__':
     # if in the EX space, MPO minus E_e to reduce osillation
     #if nexciton == 0:
     for ibra in xrange(pbond[0]):
-        HMPO[0][ibra,ibra,0,0] -=  2.58958060935/au2ev
+        HMPO[0][0,ibra,ibra,0] -=  2.58958060935/au2ev
 
     #dipoleMPO, dipoleMPOdim = construct_onsiteMPO(mol, pbond, "a", dipole=True)
     dipoleMPO, dipoleMPOdim = construct_onsiteMPO(mol, pbond, "a^\dagger", dipole=True)
     
-    iMPS = MPS_convert(iMPS)
-    HMPO = MPS_convert(HMPO)
-    dipoleMPO = MPS_convert(dipoleMPO)
-
-    numMPO,numMPOdim = construct_onsiteMPO(mol,pbond,"a^\dagger a")
-    numMPO = MPS_convert(numMPO)
+    #numMPO,numMPOdim = construct_onsiteMPO(mol,pbond,"a^\dagger a")
 
     nsteps = 100
     dt = 30.0
@@ -588,14 +582,14 @@ if __name__ == '__main__':
     
     # zero temperature
     autocorr = ZeroTCorr(iMPS, HMPO, dipoleMPO, nsteps, dt, ephtable,
-            thresh=1.e-4, cleanexciton=1-nexciton, algorithm=1)
+            thresh=1.e-6, cleanexciton=1-nexciton, algorithm=1,
+            compress_method="variational")
     #
     #autocorrexact = ZeroTExactEmi(mol, pbond, iMPS, dipoleMPO, nsteps, dt)
     #autocorrexact = np.array(autocorrexact)
     
     # finite T
     GSMPS, GSMPSdim = Max_Entangled_GS_MPS(mol, pbond, norm=True)
-    GSMPS = MPS_convert(GSMPS)
     
     
     GSMPO = hilbert_to_liouville(GSMPS)
@@ -609,7 +603,6 @@ if __name__ == '__main__':
     
     
     #IdenMPS, IdenMPSdim = Max_Entangled_MPS(mol, pbond)
-    #IdenMPS = MPS_convert(IdenMPS)
     #IdenMPO = hilbert_to_liouville(IdenMPS)
     #MPOprop(IdenMPO, HMPO, nsteps, dt, ephtable, thresh=1.0e-6, cleanexciton=None)
     
@@ -625,7 +618,7 @@ if __name__ == '__main__':
     #        temperature=298, algorithm=1)
     
     autocorr = np.array(autocorr)
-    with open('autocorrabs1.npy','wb') as f_handle:
+    with open('autocorrabs2.npy','wb') as f_handle:
         np.save(f_handle,autocorr)
     
     nsteps = len(autocorr)

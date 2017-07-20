@@ -251,6 +251,62 @@ C(k) =
 \end{bmatrix}
 \end{gather}
 
+
+\section{MPO schema2}
+We construct the complementary operator in the middle of the MPO.
+On the left hand, the construction is the same as the schema1.
+On the right hand, then construct the complementary operator
+The middle MPO is the key point,A(k),B(k) is the same,
+\begin{gather}
+C(k) = 
+\begin{bmatrix}
+    J_{0,n}   &  0         \\
+    0         &  J_{0,n}   \\
+    J_{1,n}   &  0         \\
+    0         &  J_{1,n}   \\
+    ...       &  ...       \\
+    J_{k-1,n} &  0         \\
+    0         &  J_{k-1,n} \\
+\end{bmatrix}
+\end{gather}
+
+\begin{gather}
+D(k) = 
+\begin{bmatrix}
+    J_{k,n}a^\dagger_k  & J_{k,n}a_k & ... \\ 
+\end{bmatrix}
+\end{gather}
+The complementary operator we construct is
+\begin{gather}
+\Omega(k) = 
+\begin{bmatrix}
+    E & Com_n^\dagger & Com_n & ... & Com_{k+1}^\dagger & Com_{k+1} & 1\\ 
+\end{bmatrix}
+\end{gather}
+
+After the middle MPO, the dim is shrinked.
+
+\begin{gather}
+A(k) = 
+\begin{bmatrix}
+    0 \\
+    a_k  \\
+    a^\dagger_k \\
+\end{bmatrix}
+\end{gather}
+
+\begin{gather}
+C(k) = 
+\begin{bmatrix}
+    I  \\
+\end{bmatrix}
+\end{gather}
+
+D(k) is the same as the above.
+The phonon part is the same. We add $a^\dagger_k a_k$ in the electronic part.
+
+
+
 时间步长的确定应该有两个标准，
 一个是对最后光谱的精确性要求，因为信号的频率太大，那么就要求时间的间隔要很小，解
 决这个的办法是H-H0，这样相当于先抽出已知光谱中的高频的部分，做一个整体的平移，剩

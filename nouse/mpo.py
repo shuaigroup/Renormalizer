@@ -3,6 +3,16 @@ import numpy as N
 import math
 import mps
 
+def conjtrans(mpo):
+    """
+    conjugated transpose of MPO
+    a[lbond,upbond,downbond,rbond] -> a[lbond,downbond,upbond,rbond]*
+    """
+
+    assert mps[0].ndim == 4
+
+    return [impo.transpose(0,2,1,3).conj() for impo in mpo]
+
 def create(ops):
     """
     Create MPO operator from a
@@ -36,18 +46,32 @@ def from_mps(mps):
 
     return MPO
 
-
-def contract(mpo,mpsb,side,thresh,ncanonical=1):
-    """
-    mapply->canonicalise->compress
-    """
-    ret=mapply(mpo,mpsb)
-    # roundoff can cause problems, 
-    # so do multiple canonicalisations
-    for i in xrange(ncanonical):
-        ret=mps.canonicalise(ret,side)
-    ret=mps.compress(ret,side,thresh)
+#@profile
+def contract(mpo,mpsb,side,thresh,mpsa=None,ncanonical=1,compress_method="svd"):
+    
+    assert compress_method in ["svd","variational"]
+    
+    if compress_method == "svd":
+        """
+        mapply->canonicalise->compress
+        """
+        ret=mapply(mpo,mpsb)
+        # roundoff can cause problems, 
+        # so do multiple canonicalisations
+        for i in xrange(ncanonical):
+            ret=mps.canonicalise(ret,side)
+        ret=mps.compress(ret,side,thresh)
+    
+    elif compress_method == "variational":
+        if mpsa == None:
+            #mpsa = mps.add(mpsb,None)
+            mpox = mps.canonicalise(mpo,side)
+            mpsa = mapply(mpox, mpsb)
+            nloops = 1
+        ret=mps.variational_compress(mpsb,mpsa,mpo,side,nloops,trunc=thresh,method="1site")
+    
     return ret
+
 
 def mapply(mpo,mps):
     """
@@ -62,7 +86,8 @@ def mapply(mpo,mps):
         # mpo x mps
         for i in xrange(nsites):
             assert mpo[i].shape[2]==mps[i].shape[1]
-            mt=N.einsum("apqb,cqd->acpbd",mpo[i],mps[i])
+            #mt=N.einsum("apqb,cqd->acpbd",mpo[i],mps[i])
+            mt=N.moveaxis(N.tensordot(mpo[i],mps[i],axes=([2],[1])),3,1)
             mt=N.reshape(mt,[mpo[i].shape[0]*mps[i].shape[0],mpo[i].shape[1],
                              mpo[i].shape[-1]*mps[i].shape[-1]])
             ret[i]=mt
@@ -70,7 +95,8 @@ def mapply(mpo,mps):
         # mpo x mpo
         for i in xrange(nsites):
             assert mpo[i].shape[2]==mps[i].shape[1]
-            mt=N.einsum("apqb,cqrd->acprbd",mpo[i],mps[i])
+            #mt=N.einsum("apqb,cqrd->acprbd",mpo[i],mps[i])
+            mt=N.moveaxis(N.tensordot(mpo[i],mps[i],axes=([2],[1])),[-3,-2],[1,3])
             mt=N.reshape(mt,[mpo[i].shape[0]*mps[i].shape[0],
                              mpo[i].shape[1],mps[i].shape[2],
                              mpo[i].shape[-1]*mps[i].shape[-1]])
