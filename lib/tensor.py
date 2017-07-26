@@ -1,5 +1,5 @@
-#!/usr/bin/env python
 # -*- coding: utf-8 -*-
+# Author: Jiajun Ren <jiajunren0522@gmail.com>
 
 '''
 automatic construct tensordot string with einsum style
