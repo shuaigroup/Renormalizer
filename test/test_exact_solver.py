@@ -7,6 +7,7 @@ from ephMPS import exact_solver
 from parameter import *
 from ephMPS.constant import *
 from ephMPS import nparticle
+import scipy.sparse
 
 T = 298.0
 eta = 0.00005
@@ -30,12 +31,16 @@ class Test_exact_solver(unittest.TestCase):
                 mol, indirecti=[iph_dof_list, ix, iy], indirectf=[fph_dof_list, fx, fy])
         dipdip = exact_solver.full_diagonalization_spectrum(ic,ie,fc,fe,dipolemat)
         
-        basic_std = np.load("std_data/exact_solver/exact_solver_basic.npz")
-        self.assertTrue(np.allclose(ie, basic_std['ie']))
-        self.assertTrue(np.allclose(fe, basic_std['fe']))
-        self.assertTrue(np.allclose(iHmat.todense(), basic_std['iHmat'].todense()))
-        self.assertTrue(np.allclose(fHmat.todense(), basic_std['fHmat'].todense()))
-        self.assertTrue(np.allclose(dipolemat.todense(), basic_std['dipolemat'].todense()))
+        iefe_std = np.load("std_data/exact_solver/iefe.npz")
+        iHmat_std = np.load("std_data/exact_solver/iHmat.npz")
+        fHmat_std = np.load("std_data/exact_solver/fHmat.npz")
+        dipolemat_std = np.load("std_data/exact_solver/dipolemat.npz")
+        
+        self.assertTrue(np.allclose(ie, iefe_std['ie']))
+        self.assertTrue(np.allclose(fe, iefe_std['fe']))
+        self.assertTrue(np.allclose(iHmat.todense(), iHmat_std.todense()))
+        self.assertTrue(np.allclose(fHmat.todense(), fHmat_std.todense()))
+        self.assertTrue(np.allclose(dipolemat.todense(), dipolemat_std.todense()))
 
         
         # absorption
