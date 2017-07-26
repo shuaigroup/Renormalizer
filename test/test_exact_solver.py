@@ -8,13 +8,13 @@ from parameter import *
 from ephMPS.constant import *
 from ephMPS import nparticle
 
-dyn_omega = np.linspace(1.4, 3.0, num=1000)/au2ev
 T = 298.0
 eta = 0.00005
 
 class Test_exact_solver(unittest.TestCase):
     
     def test_full_diagonalization(self):
+        dyn_omega = np.linspace(1.4, 3.0, num=1000)/au2ev
         
         ix, iy, iph_dof_list, inconfigs = exact_solver.pre_Hmat(0, mol)
         iHmat = exact_solver.construct_Hmat(inconfigs,mol, J,
@@ -30,8 +30,7 @@ class Test_exact_solver(unittest.TestCase):
                 mol, indirecti=[iph_dof_list, ix, iy], indirectf=[fph_dof_list, fx, fy])
         dipdip = exact_solver.full_diagonalization_spectrum(ic,ie,fc,fe,dipolemat)
         
-        with open("std_data/exact_solver/exact_solver_basic.npz", 'rb') as f:
-            basic_std = np.load(f)
+        basic_std = np.load("std_data/exact_solver/exact_solver_basic.npz")
         self.assertTrue(np.allclose(ie, basic_std['ie']))
         self.assertTrue(np.allclose(fe, basic_std['fe']))
         self.assertTrue(np.allclose(iHmat.todense(), basic_std['iHmat'].todense()))
@@ -72,6 +71,7 @@ class Test_exact_solver(unittest.TestCase):
     
 
     def test_lanczos(self):
+        dyn_omega = np.linspace(1.4, 3.0, num=1000)/au2ev
         nsamp = 500
         M = 100
         ix, iy, iph_dof_list, inconfigs = exact_solver.pre_Hmat(0, mol)
@@ -80,6 +80,8 @@ class Test_exact_solver(unittest.TestCase):
         fx, fy, fph_dof_list, fnconfigs = exact_solver.pre_Hmat(1, mol)
         fHmat = exact_solver.construct_Hmat(fnconfigs, mol, J,
                 indirect=[fph_dof_list, fx, fy])
+        dipolemat = exact_solver.construct_dipoleMat(inconfigs,fnconfigs,
+                mol, indirecti=[iph_dof_list, ix, iy], indirectf=[fph_dof_list, fx, fy])
         
         # lanczos method
         ie, ic =  exact_solver.Hmat_diagonalization(iHmat, method="Arnoldi")
@@ -129,6 +131,7 @@ class Test_exact_solver(unittest.TestCase):
     
 
     def test_n_particle(self):
+        dyn_omega = np.linspace(1.4, 3.0, num=1000)/au2ev
         configi_dict, ie = exact_solver.exciton0H(mol, T, 0.00001)
         ic = np.diag([1.0]*len(ie))
         
