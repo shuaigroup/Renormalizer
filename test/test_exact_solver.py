@@ -32,9 +32,9 @@ class Test_exact_solver(unittest.TestCase):
         dipdip = exact_solver.full_diagonalization_spectrum(ic,ie,fc,fe,dipolemat)
         
         iefe_std = np.load("std_data/exact_solver/iefe.npz")
-        iHmat_std = np.load("std_data/exact_solver/iHmat.npz")
-        fHmat_std = np.load("std_data/exact_solver/fHmat.npz")
-        dipolemat_std = np.load("std_data/exact_solver/dipolemat.npz")
+        iHmat_std = scipy.sparse.load_npz("std_data/exact_solver/iHmat.npz")
+        fHmat_std = scipy.sparse.load_npz("std_data/exact_solver/fHmat.npz")
+        dipolemat_std = scipy.sparse.load_npz("std_data/exact_solver/dipolemat.npz")
         
         self.assertTrue(np.allclose(ie, iefe_std['ie']))
         self.assertTrue(np.allclose(fe, iefe_std['fe']))

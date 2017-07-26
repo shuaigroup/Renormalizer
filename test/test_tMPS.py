@@ -31,7 +31,7 @@ class Test_tMPS(unittest.TestCase):
         autocorr = np.array(autocorr)
         with open("std_data/tMPS/ZeroExactEmi.npy", 'rb') as f:
             ZeroExactEmi_std = np.load(f)
-        self.assertTrue(np.allclose(autocorr,ZeroExactEmi_std))
+        self.assertTrue(np.allclose(autocorr,ZeroExactEmi_std,rtol=1e-4))
 
 
     @data([1,"svd"],[2,"svd"],[1,"variational"],[2,"variational"])
@@ -60,7 +60,7 @@ class Test_tMPS(unittest.TestCase):
 
         with open("std_data/tMPS/""ZeroTabs_"+str(value[0])+str(value[1])+".npy", 'rb') as f:
             ZeroTabs_std = np.load(f)
-        self.assertTrue(np.allclose(autocorr,ZeroTabs_std))
+        self.assertTrue(np.allclose(autocorr,ZeroTabs_std,rtol=1e-4))
     
 
     @data([1,"svd"],[2,"svd"],[1,"variational"],[2,"variational"])
@@ -88,7 +88,7 @@ class Test_tMPS(unittest.TestCase):
         
         with open("std_data/tMPS/TTemi_"+str(value[0])+str(value[1])+".npy", 'rb') as f:
             TTemi_std = np.load(f)
-        self.assertTrue(np.allclose(autocorr,TTemi_std[0:nsteps]))
+        self.assertTrue(np.allclose(autocorr,TTemi_std[0:nsteps],rtol=1e-4))
 
 
     @data([1,"svd"],[1,"variational"])
@@ -118,7 +118,7 @@ class Test_tMPS(unittest.TestCase):
         with open("std_data/tMPS/TTabs_"+str(value[1]+".npy"), 'rb') as f:
             TTabs_std = np.load(f)
 
-        self.assertTrue(np.allclose(autocorr,TTabs_std[0:nsteps]))
+        self.assertTrue(np.allclose(autocorr,TTabs_std[0:nsteps],rtol=1e-4))
 
 
     @data(["svd"],["variational"])
@@ -146,7 +146,7 @@ class Test_tMPS(unittest.TestCase):
         
         with open("std_data/tMPS/TTemi_"+str(1)+str(value[0])+".npy", 'rb') as f:
             TTemi_std = np.load(f)
-        self.assertTrue(np.allclose(autocorr,TTemi_std[0:nsteps]))
+        self.assertTrue(np.allclose(autocorr,TTemi_std[0:nsteps],rtol=1e-4))
 
 
     @data(["svd"],["variational"])
@@ -176,7 +176,7 @@ class Test_tMPS(unittest.TestCase):
         with open("std_data/tMPS/TTabs_"+str(value[0]+".npy"), 'rb') as f:
             TTabs_std = np.load(f)
 
-        self.assertTrue(np.allclose(autocorr,TTabs_std[0:nsteps]))
+        self.assertTrue(np.allclose(autocorr,TTabs_std[0:nsteps],rtol=1e-4))
 
 
 if __name__ == "__main__":
