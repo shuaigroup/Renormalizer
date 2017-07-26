@@ -1,21 +1,27 @@
-#!/usr/bin/env python
 # -*- coding: utf-8 -*-
+# Author: Jiajun Ren <jiajunren0522@gmail.com>
+
+'''
+construct the operator matrix in the MPS sweep procedure
+'''
 
 import numpy as np
+from lib import tensor as tensorlib
+
 
 def GetLR(domain, siteidx, MPS, MPSconj, MPO, itensor=np.ones((1,1,1)), method="Scratch"):
     
     '''
-    get the L/R Hamiltonian matrix at a random site: 3d tensor
-    S-
-    O-
-    S-
+    get the L/R Hamiltonian matrix at a random site(siteidx): 3d tensor
+    S-     -S     MPSconj
+    O- or  -O     MPO      
+    S-     -S     MPS
     enviroment part from disc,  system part from one step calculation
-    support from scratch calculation: from two open boundary
+    support from scratch calculation: from two open boundary np.ones((1,1,1))
     '''
     
-    assert domain == "L" or domain == "R"
-    assert method == "Enviro" or method == "System" or method == "Scratch"
+    assert domain in ["L", "R"]
+    assert method in ["Enviro", "System", "Scratch"]
     
     if siteidx not in range(len(MPS)):
         return np.ones((1,1,1))
@@ -23,7 +29,7 @@ def GetLR(domain, siteidx, MPS, MPSconj, MPO, itensor=np.ones((1,1,1)), method="
     if method == "Scratch":
         itensor = np.ones((1,1,1))
         if domain == "L":
-            sitelist = range(siteidx+1)
+            sitelist = range(siteidx+1)  
         else:
             sitelist = range(len(MPS)-1,siteidx-1,-1)
         for imps in sitelist:
@@ -39,10 +45,13 @@ def GetLR(domain, siteidx, MPS, MPSconj, MPO, itensor=np.ones((1,1,1)), method="
 
 def addone(intensor, MPS, MPSconj, MPO, isite, domain):
     '''
-    add one MPO/MPS(MPO) site 
-    S-S-
-    O-O-
-    S-S-
+    add one MPO/MPS(MPO) site
+             _   _
+            | | | |
+    S-S-    | S-|-S-
+    O-O- or | O-|-O- (the ancillary bond is traced)
+    S-S-    | S-|-S-
+            |_| |_|
     '''
     assert domain in ["L","R","l","r"]
     
@@ -59,23 +68,18 @@ def addone(intensor, MPS, MPSconj, MPO, isite, domain):
         S-c-S-h    O-c-O-h
                        l  
         '''
-        tmp1 = np.tensordot(intensor,  MPO[isite], axes=([1],[0])) 
-        tmp2 = np.tensordot(tmp1,  MPSconj[isite], axes=([0,2],[0,1])) 
         
         if MPS[isite].ndim == 3:
-            # version 1: very slow
-            #outtensor = np.einsum("abc, daf, debg, ech -> fgh", intensor, MPS[isite],
-            #        MPO[isite], MPS[isite]) 
-            # version 2: not bad
-            #tmp1 = np.einsum("abc, bdeg -> acdeg", intensor,  MPO[isite]) 
-            #tmp2 = np.einsum("acdeg, adf -> cegf", tmp1,  MPSconj[isite]) 
-            #outtensor = np.einsum("cegf, ceh -> fgh", tmp2,  MPS[isite]) 
-            outtensor = np.tensordot(tmp2,  MPS[isite],axes=([0,1],[0,1]))
+            path = [([0, 1],"abc, adf -> bcdf")   ,\
+                    ([2, 0],"bcdf, bdeg -> cfeg") ,\
+                    ([1, 0],"cfeg, ceh -> fgh")]
         elif MPS[isite].ndim == 4:
-            #tmp1 = np.einsum("abc, bdeg -> acdeg", intensor,  MPO[isite]) 
-            #tmp2 = np.einsum("acdeg, adlf -> ceglf", tmp1,  MPSconj[isite]) 
-            #outtensor = np.einsum("ceglf, celh -> fgh", tmp2,  MPS[isite]) 
-            outtensor = np.tensordot(tmp2,  MPS[isite],axes=([0,1,3],[0,1,2]))
+            path = [([0, 1],"abc, adlf -> bcdlf")   ,\
+                    ([2, 0],"bcdlf, bdeg -> clfeg") ,\
+                    ([1, 0],"clfeg, celh -> fgh")]
+        outtensor = tensorlib.multi_tensor_contract(path, intensor, MPSconj[isite],
+                MPO[isite], MPS[isite])
+    
     else:
         assert intensor.shape[0] == MPSconj[isite].shape[-1] 
         assert intensor.shape[1] == MPO[isite].shape[-1]
@@ -89,25 +93,18 @@ def addone(intensor, MPS, MPSconj, MPO, isite, domain):
         -h-S-c-S    -h-S-c-S
                        l
         '''
-        tmp1 = np.tensordot(intensor,  MPO[isite], axes=([1],[-1])) 
-        tmp2 = np.tensordot(tmp1,  MPSconj[isite], axes=([0,3],[-1,1])) 
+        
         if MPS[isite].ndim == 3:
-            # version 1: very slow
-            #outtensor = np.einsum("abc, dfa, degb, ehc -> fgh", intensor, MPS[isite],
-            #        MPO[isite], MPS[isite]) 
-            # version 2: not bad
-            #tmp1 = np.einsum("abc, gdeb -> acgde", intensor,  MPO[isite]) 
-            #tmp2 = np.einsum("acgde, fda -> cgef", tmp1,  MPSconj[isite]) 
-            #outtensor = np.einsum("cgef, hec -> fgh", tmp2,  MPS[isite]) 
-
-            outtensor = np.tensordot(tmp2,  MPS[isite], axes=([0,2],[2,1])) 
+            path = [([0, 1],"fda, abc -> fdbc")   ,\
+                    ([2, 0],"fdbc, gdeb -> fcge") ,\
+                    ([1, 0],"fcge, hec -> fgh")]
         elif MPS[isite].ndim == 4:
-            #tmp1 = np.einsum("abc, gdeb -> acgde", intensor,  MPO[isite]) 
-            #tmp2 = np.einsum("acgde, fdla -> cgefl", tmp1,  MPSconj[isite]) 
-            #outtensor = np.einsum("cgefl;, helc -> fgh", tmp2,  MPS[isite]) 
-            outtensor = np.tensordot(tmp2,  MPS[isite], axes=([0,2,4],[-1,1,2])) 
-            
-    outtensor = np.moveaxis(outtensor,1,0)
+            path = [([0, 1],"fdla, abc -> fdlbc")   ,\
+                    ([2, 0],"fdlbc, gdeb -> flcge") ,\
+                    ([1, 0],"flcge, helc -> fgh")]
+        outtensor = tensorlib.multi_tensor_contract(path, MPSconj[isite], intensor, 
+                MPO[isite], MPS[isite])
+
     return outtensor
 
 

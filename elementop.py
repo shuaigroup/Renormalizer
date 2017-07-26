@@ -1,71 +1,70 @@
-#!/usr/bin/env python
 # -*- coding: utf-8 -*-
+# Author: Jiajun Ren <jiajunren0522@gmail.com>
+
+'''
+some electronic and phonon operator (second quantization) matrix element,
+written in Latex format. <bra|op|ket>
+'''
+
 import numpy as np
 
-# phMPO
 def PhElementOpera(op, bra, ket):
-    if op == "b_n^\dagger b_n":
+    '''
+    phonon operator
+    '''
+    assert op in ["b^\dagger b", "b^\dagger + b", "Iden"]
+    assert bra >= 0
+    assert ket >= 0
+
+    if op == "b^\dagger b":
         if bra == ket:
             return float(ket)
         else:
             return 0.0
-    elif op == "b_n^\dagger + b_n":
+
+    elif op == "b^\dagger + b":
         if bra == ket + 1 : 
-            return np.sqrt(bra)
+            return np.sqrt(float(bra))
         elif bra == ket - 1:
             return np.sqrt(float(ket))
         else:
             return 0.0
+
     elif op == "Iden":
         if bra == ket:
             return 1.0
         else:
             return 0.0
-    else:
-        sys.exit("wrong op in PhElementOpera")
 
-# eMPO
+
 def EElementOpera(op, bra, ket):
+    '''
+    electronic operator
+    '''
+    assert op in ["a^\dagger", "a", "a^\dagger a", "Iden"]
+    assert bra in [0, 1]
+    assert ket in [0, 1]
+
     if op == "a^\dagger":
         if bra == ket + 1:
             return 1.0
         else:
             return 0.0
+
     elif op == "a":
         if bra == ket - 1:
             return 1.0
         else:
             return 0.0
+
     elif op == "a^\dagger a":
-        if bra == ket and ket == 1:
+        if bra == 1 and ket == 1:
             return 1.0
         else:
             return 0.0
+
     elif op == "Iden":
         if bra == ket:
             return 1.0
         else:
             return 0.0
-    else:
-        sys.exit("wrong op in EElementOpera")
-
-# dipole MPO
-def dipoleOpera(op, bra, ket):
-    if op == "abs":
-        if bra == 1 and ket == 0:
-            return 1.0
-        else:
-            return 0.0
-    elif op == "emi":
-        if bra == 0 and ket == 1:
-            return 1.0
-        else:
-            return 0.0
-    elif op == "Iden":
-        if bra == ket:
-            return 1.0
-        else:
-            return 0.0
-    else:
-        sys.exit("wrong op in EElementOpera")
-

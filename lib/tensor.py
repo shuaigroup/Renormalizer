@@ -1,12 +1,23 @@
 #!/usr/bin/env python
 # -*- coding: utf-8 -*-
 
+'''
+automatic construct tensordot string with einsum style
+'''
 import numpy as np
 
 def multi_tensor_contract(path, *operands):
     '''
-        ipath[0] is the index of the mat
-        ipaht[1] is the contraction index
+    ipath[0] is the index of the mat
+    ipaht[1] is the contraction index
+    oeprands is the arrays
+
+    For example:  in mpompsmat.py
+    path = [([0, 1],"fdla, abc -> fdlbc")   ,\
+            ([2, 0],"fdlbc, gdeb -> flcge") ,\
+            ([1, 0],"flcge, helc -> fgh")]
+    outtensor = tensorlib.multi_tensor_contract(path, MPSconj[isite], intensor, 
+            MPO[isite], MPS[isite])
     '''
     
     operands = list(operands)
@@ -37,7 +48,6 @@ def pair_tensor_contract(view_left, input_left, view_right, input_right, idx_rem
     for s in idx_removed:
         left_pos += (input_left.find(s),)
         right_pos += (input_right.find(s),)
-    #print left_pos, right_pos, input_left, input_right
     new_view = np.tensordot(view_left, view_right, axes=(left_pos, right_pos))
 
     return new_view

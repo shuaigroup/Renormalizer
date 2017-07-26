@@ -1,8 +1,14 @@
-#!/usr/bin/env python
 # -*- coding: utf-8 -*-
+# Author: Jiajun Ren <jiajunren0522@gmail.com>
+
 
 class Phonon(object):
-
+    '''
+    phonon class has property: 
+    frequency : omega
+    electron-phonon coupling : ephcoup
+    highest occupation levels: nlevels
+    '''
     def __init__(self, omega, ephcoup, nlevels):
         self.omega = omega
         self.ephcoup = ephcoup
@@ -15,7 +21,13 @@ class Phonon(object):
 
 
 class Mol(object):
-
+    '''
+    molecule class property:
+    local excitation energy :  elocalex
+    # of phonons : nphs
+    condon dipole moment : dipole
+    phonon information : ph
+    '''
     def __init__(self, elocalex, nphs, dipole):
         self.elocalex = elocalex
         self.nphs = nphs
@@ -34,7 +46,11 @@ class Mol(object):
             ph_local = Phonon(*phinfo[iph])
             self.ph.append(ph_local) 
 
+
 class bidict(dict):
+    '''
+    bi-dictionary class, doule-way hash table
+    '''
     def __init__(self, *args, **kwargs):
         self.inverse = {}
         super(bidict, self).__init__(*args, **kwargs)

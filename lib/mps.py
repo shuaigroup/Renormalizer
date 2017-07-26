@@ -1,24 +1,38 @@
+# -*- coding: utf-8 -*-
+'''
+This mps/mpo lib is downloaded from https://github.com/gkc1000/PrimeRib
+developed by Garnet Chan <gkc1000@gmail.com>
+and changed by Jiajun Ren <jiajunren0522@gmail.com>
+'''
+
 import numpy as N
 import numpy.random
 import scipy.linalg
 import utils
 import copy
 import fci
-import time
 from mpompsmat import *
-import opt_einsum
 from tensor import *
 import math
 
+
 def check_lortho(tens):
+    '''
+    check L-orthogonal 
+    '''
     tensm=N.reshape(tens,[N.prod(tens.shape[:-1]),tens.shape[-1]])
     s=N.dot(N.conj(tensm.T),tensm)
     return scipy.linalg.norm(s-N.eye(s.shape[0]))
 
+
 def check_rortho(tens):
+    '''
+    check R-orthogonal 
+    '''
     tensm=N.reshape(tens,[tens.shape[0],N.prod(tens.shape[1:])])
     s=N.dot(tensm,N.conj(tensm.T))
     return scipy.linalg.norm(s-N.eye(s.shape[0]))
+
 
 def conj(mps):
     """
@@ -26,25 +40,43 @@ def conj(mps):
     """
     return [N.conj(mt) for mt in mps]
 
+
+def conjtrans(mpo):
+    """
+    conjugated transpose of MPO
+    a[lbond,upbond,downbond,rbond] -> a[lbond,downbond,upbond,rbond]*
+    """
+
+    assert mpo[0].ndim == 4
+    return [impo.transpose(0,2,1,3).conj() for impo in mpo]
+
+
 def is_left_canonical(mps,thresh=1.e-8):
+    '''
+    check L-canonical
+    '''
     ret=True
     for mt in mps[:-1]:
-        #print check_lortho(mt)
         ret*=check_lortho(mt)<thresh
     return ret
 
+
 def is_right_canonical(mps,thresh=1.e-8):
+    '''
+    check R-canonical
+    '''
     ret=True
     for mt in mps[1:]:
-        #print check_rortho(mt)
         ret*=check_rortho(mt)<thresh
     return ret
+
 
 def shape(mps):
     """
     shapes of tensors
     """
     return [mt.shape for mt in mps]
+
 
 def zeros(nsites,pdim,m):
     mps=[None]*nsites
@@ -53,7 +85,8 @@ def zeros(nsites,pdim,m):
     for i in xrange(1,nsites-1):
         mps[i]=numpy.zeros([m,pdim,m])
     return mps
-    
+ 
+
 def random(nsites,pdim,m):
     """
     create random MPS for nsites, with m states,
@@ -65,6 +98,7 @@ def random(nsites,pdim,m):
     for i in xrange(1,nsites-1):
         mps[i]=numpy.random.random([m,pdim,m])
     return mps
+
 
 # get each config's coefficient
 def ceval(mps,config):
@@ -84,6 +118,7 @@ def ceval(mps,config):
     # turn into scalar
     return N.trace(val)
 
+
 def create(pdim,config):
     """
     Create dim=1 MPS
@@ -94,41 +129,103 @@ def create(pdim,config):
     for i,p in enumerate(config):
         mps[i][0,p,0]=1.
     return mps
-        
+ 
+
 def canonicalise(mps,side):
     """
-    create canonical MPS
+    canonicalise MPS
     """
     if side=='l':
         return compress(mps,'r',0, QR=True)
     else:
         return compress(mps,'l',0, QR=True)
 
+
+def contract(mpo,mpsb,side,thresh,mpsa=None,ncanonical=1,compress_method="svd"):
+    '''
+    contract a MPO times MPS
+    '''
+
+    assert compress_method in ["svd","variational"]
+    
+    if compress_method == "svd":
+        """
+        mapply->canonicalise->compress
+        """
+        ret=mapply(mpo,mpsb)
+        # roundoff can cause problems, 
+        # so do multiple canonicalisations
+        for i in xrange(ncanonical):
+            ret=canonicalise(ret,side)
+        ret=compress(ret,side,thresh)
+    
+    elif compress_method == "variational":
+        if mpsa == None:
+            # this initial guess method is from
+            # "The density-matrix renormalization group in the age of matrix
+            # product states"
+            # make sure the mpsb is side-canonical
+            mpox = canonicalise(mpo,side)
+            mpsa = mapply(mpox, mpsb)
+            nloops = 1
+        ret=variational_compress(mpsb,mpsa,mpo,side,nloops,trunc=thresh,method="1site")
+    
+    return ret
+
+
+def mapply(mpo,mps):
+    """
+    apply mpo to mps, or apply mpo to mpo
+    """
+    nsites=len(mpo)
+    assert len(mps)==nsites
+
+    ret=[None]*nsites
+
+    if len(mps[0].shape)==3: 
+        # mpo x mps
+        for i in xrange(nsites):
+            assert mpo[i].shape[2]==mps[i].shape[1]
+            #mt=N.einsum("apqb,cqd->acpbd",mpo[i],mps[i])
+            mt=N.moveaxis(N.tensordot(mpo[i],mps[i],axes=([2],[1])),3,1)
+            mt=N.reshape(mt,[mpo[i].shape[0]*mps[i].shape[0],mpo[i].shape[1],
+                             mpo[i].shape[-1]*mps[i].shape[-1]])
+            ret[i]=mt
+    elif len(mps[0].shape)==4: 
+        # mpo x mpo
+        for i in xrange(nsites):
+            assert mpo[i].shape[2]==mps[i].shape[1]
+            #mt=N.einsum("apqb,cqrd->acprbd",mpo[i],mps[i])
+            mt=N.moveaxis(N.tensordot(mpo[i],mps[i],axes=([2],[1])),[-3,-2],[1,3])
+            mt=N.reshape(mt,[mpo[i].shape[0]*mps[i].shape[0],
+                             mpo[i].shape[1],mps[i].shape[2],
+                             mpo[i].shape[-1]*mps[i].shape[-1]])
+            ret[i]=mt
+    
+    return ret
+
+
 #@profile
 def variational_compress(MPS,aMPS,MPO,side,nloops,trunc=1.e-12,method="1site"):
     """
-    aMPS inp: canonicalise approximate MPS (or MPO)
+    aMPS : canonicalised approximate MPS (or MPO)
 
     0<trunc<1: sigma threshold
     trunc>1: number of renormalised vectors to keep
 
     side='l': compress LEFT-canonicalised MPS 
-              by sweeping from RIGHT to LEFT
-              output MPS is right canonicalised i.e. CRRR
-
+              by sweeping from RIGHT to LEFT and then LEFT to RIGHT
+              output MPS is left canonicalised i.e. LLLLC
     side='r': reverse of 'l'
    
     returns:
-         truncated or canonicalised MPS
+         truncated MPS
     """
+
     #assert side in ["l","r"]
     assert side in ["l"]
     assert method in ["2site", "1site"]
-    print "optimization method", method
-    if side == "l":
-        side = "L"
-    else:
-        side = "R"
+    side = side.upper()
 
     # construct the environment matrix
     aMPSconj = conj(aMPS)
@@ -224,9 +321,7 @@ def variational_compress(MPS,aMPS,MPO,side,nloops,trunc=1.e-12,method="1site"):
                 print "variational mps compress converge failed"
                 u, sigma, vt = scipy.linalg.svd(res,full_matrices=False,lapack_driver='gesvd')
 
-            if trunc==0:
-                m_trunc=len(sigma)
-            elif trunc<1.:
+            if trunc<1.:
                 # count how many sing vals < trunc            
                 normed_sigma=sigma/scipy.linalg.norm(sigma)
                 m_trunc=len([s for s in normed_sigma if s >trunc])
@@ -277,7 +372,8 @@ def variational_compress(MPS,aMPS,MPO,side,nloops,trunc=1.e-12,method="1site"):
     
     return aMPS
 
-@profile
+
+#@profile
 def compress(mps,side,trunc=1.e-12,check_canonical=False,QR=False):
     """
     inp: canonicalise MPS (or MPO)
@@ -325,19 +421,7 @@ def compress(mps,side,trunc=1.e-12,check_canonical=False,QR=False):
         
         if QR == False:
             try:
-                #RANK = 50
-                print "svd shape", res.shape
-                #starttime = time.time()
-                #if min(res.shape) > RANK:
-                #    u, sigma, vt = randomized_svd(res, n_components=RANK,
-                #        n_iter=7, random_state=None)
-                #    print "error", N.mean(N.abs(res-N.dot(u, N.dot(N.diag(sigma),
-                #        vt))))/N.mean(N.abs(res))
-                #else:
                 u,sigma,vt=scipy.linalg.svd(res,full_matrices=False,lapack_driver='gesdd')
-                #    print "error2", N.mean(N.abs(res-N.dot(u, N.dot(N.diag(sigma),
-                #        vt))))/N.mean(N.abs(res))
-                #print res.shape,"svdtime",time.time()-starttime
             except:
                 print "mps compress converge failed"
                 u,sigma,vt=scipy.linalg.svd(res,full_matrices=False,lapack_driver='gesvd')
@@ -353,17 +437,12 @@ def compress(mps,side,trunc=1.e-12,check_canonical=False,QR=False):
                 m_trunc=min(m_trunc,len(sigma))
 
             u=u[:,0:m_trunc]
-            #sigma=N.diag(sigma[0:m_trunc])
             sigma=sigma[0:m_trunc]
             vt=vt[0:m_trunc,:]
             
             if side == "l":
-                #u=N.dot(u,sigma)
-                #res=N.dot(mps[nsites-i-1],u)
                 u = N.einsum('ji, i -> ji', u, sigma)
             else:
-                #vt=N.dot(sigma,vt)
-                #res=N.tensordot(mps[i].T, vt.T, axes=([-1],[0])).T
                 vt = N.einsum('i, ij -> ij', sigma, vt)
         else:
             if side == "l":
@@ -391,6 +470,7 @@ def compress(mps,side,trunc=1.e-12,check_canonical=False,QR=False):
     #     dddd
     return ret_mps
 
+
 def mps_fci(mps):
     """
     convert MPS into a fci vector
@@ -403,6 +483,7 @@ def mps_fci(mps):
         fvec[conf]=ceval(mps,conf)
     return fvec
 
+
 def scale(mps,val):
     """
     Multiply MPS by scalar
@@ -410,6 +491,7 @@ def scale(mps,val):
     ret=[mt.copy() for mt in mps]
     ret[-1]*=val
     return ret
+
 
 def add(mpsa,mpsb):
     """
@@ -456,7 +538,8 @@ def add(mpsa,mpsb):
         mpsab[-1]=N.concatenate((mpsa[-1],mpsb[-1]), axis=0)
 
     return mpsab
-        
+ 
+
 def dot(mpsa,mpsb):
     """
     dot product of two mps / mpo 
@@ -477,11 +560,13 @@ def dot(mpsa,mpsb):
 
     return e0[0,0]
 
+
 def distance(mpsa,mpsb):
     """
     ||mpsa-mpsb||
     """
-    return dot(mpsa,mpsa)-2*dot(mpsa,mpsb)+dot(mpsb,mpsb)
+    return dot(conj(mpsa),mpsa)-dot(conj(mpsa),mpsb)-dot(conj(mpsb),mpsa)+dot(conj(mpsb),mpsb)
+
 
 def liouville_to_hilbert(mpsl,basis):
     """
@@ -499,17 +584,6 @@ def liouville_to_hilbert(mpsl,basis):
                     tens[r,:,:,s]+=mt[r,p,s]*basis[p]
         mpoh[i]=tens
     return mpoh
-
-
-def conjtrans(mpo):
-    """
-    conjugated transpose of MPO
-    a[lbond,upbond,downbond,rbond] -> a[lbond,downbond,upbond,rbond]*
-    """
-
-    assert mps[0].ndim == 4
-
-    return [impo.transpose(0,2,1,3).conj() for impo in mpo]
 
 
 def create(ops):
@@ -545,63 +619,6 @@ def from_mps(mps):
 
     return MPO
 
-#@profile
-def contract(mpo,mpsb,side,thresh,mpsa=None,ncanonical=1,compress_method="svd"):
-    
-    assert compress_method in ["svd","variational"]
-    
-    if compress_method == "svd":
-        """
-        mapply->canonicalise->compress
-        """
-        ret=mapply(mpo,mpsb)
-        # roundoff can cause problems, 
-        # so do multiple canonicalisations
-        for i in xrange(ncanonical):
-            ret=canonicalise(ret,side)
-        ret=compress(ret,side,thresh)
-    
-    elif compress_method == "variational":
-        if mpsa == None:
-            #mpsa = add(mpsb,None)
-            mpox = canonicalise(mpo,side)
-            mpsa = mapply(mpox, mpsb)
-            nloops = 1
-        ret=variational_compress(mpsb,mpsa,mpo,side,nloops,trunc=thresh,method="1site")
-    
-    return ret
-
-
-def mapply(mpo,mps):
-    """
-    apply mpo to mps, or apply mpo to mpo
-    """
-    nsites=len(mpo)
-    assert len(mps)==nsites
-
-    ret=[None]*nsites
-
-    if len(mps[0].shape)==3: 
-        # mpo x mps
-        for i in xrange(nsites):
-            assert mpo[i].shape[2]==mps[i].shape[1]
-            #mt=N.einsum("apqb,cqd->acpbd",mpo[i],mps[i])
-            mt=N.moveaxis(N.tensordot(mpo[i],mps[i],axes=([2],[1])),3,1)
-            mt=N.reshape(mt,[mpo[i].shape[0]*mps[i].shape[0],mpo[i].shape[1],
-                             mpo[i].shape[-1]*mps[i].shape[-1]])
-            ret[i]=mt
-    elif len(mps[0].shape)==4: 
-        # mpo x mpo
-        for i in xrange(nsites):
-            assert mpo[i].shape[2]==mps[i].shape[1]
-            #mt=N.einsum("apqb,cqrd->acprbd",mpo[i],mps[i])
-            mt=N.moveaxis(N.tensordot(mpo[i],mps[i],axes=([2],[1])),[-3,-2],[1,3])
-            mt=N.reshape(mt,[mpo[i].shape[0]*mps[i].shape[0],
-                             mpo[i].shape[1],mps[i].shape[2],
-                             mpo[i].shape[-1]*mps[i].shape[-1]])
-            ret[i]=mt
-    
-    return ret
 
 def trace(mpo):
     """
@@ -614,5 +631,11 @@ def trace(mpo):
         val=N.dot(val,traced_mts[i])
     return N.trace(val)#[0,0]
 
+
+def MPSdtype_convert(MPS):
+    '''
+    float64 to complex128
+    '''
+    return [mps.astype(np.complex128) for mps in MPS]
 
 

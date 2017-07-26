@@ -1,5 +1,5 @@
-#!/usr/bin/env python
 # -*- coding: utf-8 -*-
+# Author: Jiajun Ren <jiajunren0522@gmail.com>
 
 # MPS/MPO structure
 epb = 2
@@ -141,8 +141,8 @@ def create_phMPO(ph):
             mpo[ibra,iket,0,0] = PhElementOpera("Iden", ibra, iket)
             mpo[ibra,iket,1,1] = PhElementOpera("Iden", ibra, iket)
             mpo[ibra,iket,2,2] = PhElementOpera("Iden", ibra, iket)
-            mpo[ibra,iket,1,0] = PhElementOpera("b_n^\dagger + b_n", ibra, iket) * ph.omega * ph.ephcoup
-            mpo[ibra,iket,2,0] = PhElementOpera("b_n^\dagger b_n", ibra, iket) * ph.omega
+            mpo[ibra,iket,1,0] = PhElementOpera("b^\dagger + b", ibra, iket) * ph.omega * ph.ephcoup
+            mpo[ibra,iket,2,0] = PhElementOpera("b^\dagger b", ibra, iket) * ph.omega
 
     return mpo
 
