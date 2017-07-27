@@ -104,7 +104,7 @@ class Test_exact_solver(unittest.TestCase):
         spectra5 = exact_solver.spectra_normalize(dyn_corr5)
         with open("std_data/exact_solver/lanc_T0abs.npy", 'rb') as f:
             spectra5_std = np.load(f)
-        self.assertTrue(np.allclose(spectra5, spectra5_std, atol=1e-04))
+        self.assertTrue(np.allclose(spectra5, spectra5_std, atol=1e-03))
         
         # T>0
         dyn_corr3 = exact_solver.dyn_lanczos(T, dipolemat, iHmat, fHmat,\
@@ -124,7 +124,7 @@ class Test_exact_solver(unittest.TestCase):
         spectra6 = exact_solver.spectra_normalize(dyn_corr6)
         with open("std_data/exact_solver/lanc_T0emi.npy", 'rb') as f:
             spectra6_std = np.load(f)
-        self.assertTrue(np.allclose(spectra6, spectra6_std, atol=1e-04))
+        self.assertTrue(np.allclose(spectra6, spectra6_std, atol=1e-03))
         
         # T>0
         dyn_corr4 = exact_solver.dyn_lanczos(T, dipolemat.T, fHmat, iHmat,\
@@ -154,7 +154,7 @@ class Test_exact_solver(unittest.TestCase):
         spectra1 = exact_solver.spectra_normalize(dyn_corr1)
         with open("std_data/exact_solver/1-p.npy", 'rb') as f:
             spectra1_std = np.load(f)
-        self.assertTrue(np.allclose(spectra1, spectra1_std, atol=1e-04))
+        self.assertTrue(np.allclose(spectra1, spectra1_std, atol=1e-03))
 
         # 2-p
         configf_dict = nparticle.construct_config_dict(mol, 1, nparticle=2)
@@ -167,7 +167,7 @@ class Test_exact_solver(unittest.TestCase):
         spectra2 = exact_solver.spectra_normalize(dyn_corr2)
         with open("std_data/exact_solver/2-p.npy", 'rb') as f:
             spectra2_std = np.load(f)
-        self.assertTrue(np.allclose(spectra2, spectra2_std, atol=1e-04))
+        self.assertTrue(np.allclose(spectra2, spectra2_std, atol=1e-03))
 
         # 3-p
         configf_dict = nparticle.construct_config_dict(mol, 1, nparticle=3)
@@ -180,7 +180,7 @@ class Test_exact_solver(unittest.TestCase):
         spectra3 = exact_solver.spectra_normalize(dyn_corr3)
         with open("std_data/exact_solver/TTabs.npy", 'rb') as f:
             spectra3_std = np.load(f)
-        self.assertTrue(np.allclose(spectra3, spectra3_std, atol=1e-04))
+        self.assertTrue(np.allclose(spectra3, spectra3_std, atol=1e-03))
 
 
 if __name__ == "__main__":
