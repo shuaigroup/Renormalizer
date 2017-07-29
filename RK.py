@@ -27,7 +27,8 @@ def runge_kutta_explicit_tableau(RK_method):
             ----------------------------
                    1/2   1/2
     '''
-    assert RK_method in ["Forward_Euler","midpoint_RK2","Heun_RK2","Ralston_RK2","Kutta_RK3","C_RK4","3/8_RK4"]
+    assert RK_method in
+    ["Forward_Euler","midpoint_RK2","Heun_RK2","Ralston_RK2","Kutta_RK3","C_RK4","38rule_RK4"]
    
     print "Runge Kutta method", RK_method
 
