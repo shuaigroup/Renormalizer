@@ -14,6 +14,7 @@ from constant import *
 from mpompsmat import *
 from elementop import *
 from lib import tensor as tensorlib
+from ephMPS import svd_qn
 
 def construct_MPS_MPO_1():
     '''
@@ -65,9 +66,9 @@ def construct_MPS_MPO_2(mol, J, Mmax, nexciton, MPOscheme=2):
     MPOdim: mpo dimension list
     MPO: mpo list
     '''
-    MPO, MPOdim = construct_MPO(mol, J, pbond, scheme=MPOscheme)
+    MPO, MPOdim, MPOQN, MPOQNidx, MPOQNtot = construct_MPO(mol, J, pbond, scheme=MPOscheme)
     
-    return MPS, MPSdim, MPSQN, MPO, MPOdim, ephtable, pbond
+    return MPS, MPSdim, MPSQN, MPO, MPOdim, MPOQN, MPOQNidx, MPOQNtot, ephtable, pbond
 
 
 def construct_MPS(domain, ephtable, pbond, nexciton, Mmax, percent=0):
@@ -103,7 +104,7 @@ def construct_MPS(domain, ephtable, pbond, nexciton, Mmax, percent=0):
                 a = np.random.random([len(indices),len(indices)])-0.5
                 a = a + a.T
                 S, U = scipy.linalg.eigh(a=a)
-                Uset.append(blockrecover(indices, U, len(qnbig)))
+                Uset.append(svd_qn.blockrecover(indices, U, len(qnbig)))
                 Sset.append(S)
                 qnset +=  [iblock]*len(indices)
 
@@ -124,17 +125,6 @@ def construct_MPS(domain, ephtable, pbond, nexciton, Mmax, percent=0):
     print "MPSdim", MPSdim
 
     return MPS, MPSdim, MPSQN 
-
-
-def blockrecover(indices, U, dim):
-    '''
-    recover the block element to its original position
-    '''
-    resortU = np.zeros([dim, U.shape[1]],dtype=U.dtype)
-    for i in xrange(len(indices)):
-        resortU[indices[i],:] = np.copy(U[i,:])
-
-    return resortU
 
 
 def updatemps(vset, sset, qnset, compset, nexciton, Mmax, percent=0):
@@ -220,16 +210,20 @@ def construct_MPO(mol, J, pbond, scheme=2):
     MPOdim = []
     MPO = []
     nmols = len(mol)
-    
+    MPOQN = []
+
     # MPOdim  
     if scheme == 1:
         for imol in xrange(nmols):
             MPOdim.append((imol+1)*2)
+            MPOQN.append([0]+[1,-1]*imol+[0])
             for iph in xrange(mol[imol].nphs):
                 if imol != nmols-1:
                     MPOdim.append((imol+1)*2+3)
+                    MPOQN.append([0,0]+[1,-1]*(imol+1)+[0])
                 else:
                     MPOdim.append(3)
+                    MPOQN.append([0,0,0])
     elif scheme == 2:
         # 0,1,2,3,4,5      3 is the middle 
         # dim is 1*4, 4*6, 6*8, 8*6, 6*4, 4*1 
@@ -249,13 +243,18 @@ def construct_MPO(mol, J, pbond, scheme=2):
             rdim = elecdim(imol+1)
 
             MPOdim.append(ldim)
-        
+            MPOQN.append([0]+[1,-1]*(ldim/2-1)+[0])   
             for iph in xrange(mol[imol].nphs):
                 MPOdim.append(rdim+1)
+                MPOQN.append([0,0]+[1,-1]*(rdim/2-1)+[0])   
         
     MPOdim[0]=1
     MPOdim.append(1)
-    
+    MPOQN[0] = [0]
+    MPOQN.append([0])
+    MPOQNidx = len(MPOQN)-2 # the boundary side of L/R side quantum number
+    MPOQNtot = 0     # the total quantum number of each bond, for Hamiltonian it's 0              
+
     # MPO
     impo = 0
     for imol in xrange(nmols):
@@ -341,8 +340,7 @@ def construct_MPO(mol, J, pbond, scheme=2):
             impo += 1
     
     print "MPOdim", MPOdim
-                    
-    return  MPO, MPOdim 
+    return  MPO, MPOdim, MPOQN, MPOQNidx, MPOQNtot
 
 
 def optimization(MPS, MPSdim, MPSQN, MPO, MPOdim, ephtable, pbond, nexciton, procedure, method="2site"):
@@ -567,7 +565,7 @@ def Renormalization(cstruct, qnbigl, qnbigr, domain, nexciton, Mmax, percent=0):
     '''
     assert domain in ["R", "L"]
 
-    Uset, SUset, qnlnew, Vset, SVset, qnrnew = Csvd(cstruct, qnbigl, qnbigr, nexciton)
+    Uset, SUset, qnlnew, Vset, SVset, qnrnew = svd_qn.Csvd(cstruct, qnbigl, qnbigr, nexciton)
     if domain == "R":
         mps, mpsdim, mpsqn, compmps = updatemps(Vset, SVset, qnrnew, Uset, \
                 nexciton, Mmax, percent=percent)
@@ -578,69 +576,6 @@ def Renormalization(cstruct, qnbigl, qnbigr, domain, nexciton, Mmax, percent=0):
                 nexciton, Mmax, percent=percent)
         return mps.reshape(list(qnbigl.shape) + [mpsdim]), mpsdim, mpsqn,\
                 np.moveaxis(compmps.reshape(list(qnbigr.shape)+[mpsdim]),-1,0)
-
-
-def Csvd(cstruct, qnbigl, qnbigr, nexciton, full_matrices=True):
-    '''
-    block svd the coefficient matrix (l, sigmal, sigmar, r) or (l,sigma,r)
-    according to the quantum number 
-    '''
-    Gamma = cstruct.reshape(np.prod(qnbigl.shape),np.prod(qnbigr.shape))
-    localqnl = qnbigl.ravel()
-    localqnr = qnbigr.ravel()
-    
-    Uset = []     # corresponse to nonzero svd value
-    Uset0 = []    # corresponse to zero svd value
-    Vset = []
-    Vset0 = []
-    Sset = []
-    SUset0 = []
-    SVset0 = []
-    qnlset = []
-    qnlset0 = []
-    qnrset = []
-    qnrset0 = []
-
-    # different combination
-    combine = [[x, nexciton-x] for x in xrange(nexciton+1)]
-    for nl, nr in combine:
-        lset = [i for i, x in enumerate(localqnl) if x == nl]
-        rset = [i for i, x in enumerate(localqnr) if x == nr]
-        if len(lset) != 0 and len(rset) != 0:
-            Gamma_block = Gamma[np.ix_(lset, rset)]
-            U, S, Vt = scipy.linalg.svd(Gamma_block)
-            dim = S.shape[0]
-            Sset.append(S)
-            
-            def blockappend(vset, vset0, qnset, qnset0, svset0, v, n, dim, indice, shape):
-                vset.append(blockrecover(indice, v[:,:dim], shape))
-                qnset += [n] * dim
-                vset0.append(blockrecover(indice, v[:,dim:],shape))
-                qnset0 += [n] * (v.shape[0]-dim)
-                svset0.append(np.zeros(v.shape[0]-dim))
-                
-                return vset, vset0, qnset, qnset0, svset0
-            
-            Uset, Uset0, qnlset, qnlset0, SUset0 = blockappend(Uset, Uset0, qnlset, \
-                    qnlset0, SUset0, U, nl, dim, lset, Gamma.shape[0])
-            Vset, Vset0, qnrset, qnrset0, SVset0 = blockappend(Vset, Vset0, qnrset, \
-                    qnrset0, SVset0, Vt.T, nr, dim, rset, Gamma.shape[1])
-    
-    if full_matrices == True:
-        Uset = np.concatenate(Uset + Uset0,axis=1)
-        Vset = np.concatenate(Vset + Vset0,axis=1)
-        SUset = np.concatenate(Sset + SUset0)
-        SVset = np.concatenate(Sset + SVset0)
-        qnlset = qnlset + qnlset0
-        qnrset = qnrset + qnrset0
-        
-        return Uset, SUset, qnlset, Vset, SVset, qnrset
-    else:
-        Uset = np.concatenate(Uset,axis=1)
-        Vset = np.concatenate(Vset,axis=1)
-        Sset = np.concatenate(Sset)
-        
-        return Uset, Sset, qnlset, Vset, Sset, qnrset
 
 
 def clean_MPS(system, MPS, ephtable, nexciton):
@@ -719,7 +654,7 @@ def clean_MPS(system, MPS, ephtable, nexciton):
                     Sset.append(S)
                     
                     def blockappend(vset, qnset, v, n, dim, indice, shape):
-                        vset.append(blockrecover(indice, v[:,:dim], shape))
+                        vset.append(svd_qn.blockrecover(indice, v[:,:dim], shape))
                         qnset += [n] * dim
                         
                         return vset, qnset

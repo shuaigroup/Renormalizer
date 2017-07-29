@@ -5,50 +5,61 @@ developed by Garnet Chan <gkc1000@gmail.com>
 and changed by Jiajun Ren <jiajunren0522@gmail.com>
 '''
 
-import numpy as N
+import numpy as np
 import numpy.random
+import copy
 import scipy.linalg
 import utils
-import copy
-import fci
-from mpompsmat import *
-from tensor import *
 import math
+import fci
+from ephMPS import mpompsmat
+from ephMPS.lib import tensor
+from ephMPS import svd_qn 
 
 
 def check_lortho(tens):
     '''
     check L-orthogonal 
     '''
-    tensm=N.reshape(tens,[N.prod(tens.shape[:-1]),tens.shape[-1]])
-    s=N.dot(N.conj(tensm.T),tensm)
-    return scipy.linalg.norm(s-N.eye(s.shape[0]))
+    tensm=np.reshape(tens,[np.prod(tens.shape[:-1]),tens.shape[-1]])
+    s=np.dot(np.conj(tensm.T),tensm)
+    return scipy.linalg.norm(s-np.eye(s.shape[0]))
 
 
 def check_rortho(tens):
     '''
     check R-orthogonal 
     '''
-    tensm=N.reshape(tens,[tens.shape[0],N.prod(tens.shape[1:])])
-    s=N.dot(tensm,N.conj(tensm.T))
-    return scipy.linalg.norm(s-N.eye(s.shape[0]))
+    tensm=np.reshape(tens,[tens.shape[0],np.prod(tens.shape[1:])])
+    s=np.dot(tensm,np.conj(tensm.T))
+    return scipy.linalg.norm(s-np.eye(s.shape[0]))
 
 
-def conj(mps):
+def conj(mps, QNargs=None):
     """
     complex conjugate
     """
-    return [N.conj(mt) for mt in mps]
+    if QNargs == None:
+        return [np.conj(mt) for mt in mps]
+    else:
+        return [[np.conj(mt) for mt in mps[0]]] + copy.deepcopy(mps[1:])
 
 
-def conjtrans(mpo):
+def conjtrans(mpo, QNargs=None):
     """
     conjugated transpose of MPO
     a[lbond,upbond,downbond,rbond] -> a[lbond,downbond,upbond,rbond]*
     """
-
-    assert mpo[0].ndim == 4
-    return [impo.transpose(0,2,1,3).conj() for impo in mpo]
+    if QNargs == None:
+        assert mpo[0].ndim == 4
+        return [impo.transpose(0,2,1,3).conj() for impo in mpo]
+    else:
+        assert mpo[0][0].ndim == 4
+        mponew = [impo.transpose(0,2,1,3).conj() for impo in mpo[0]]
+        mpoQN = []
+        for mpoqn in mpo[1]:
+            mpoQN.append([-i for i in mpoqn])
+        return [mponew, mpoQN] + copy.deepcopy(mpo[2:])
 
 
 def is_left_canonical(mps,thresh=1.e-8):
@@ -113,10 +124,10 @@ def ceval(mps,config):
     # multiply "backwards" from right to left
     val=mps_mats[0]
     for i in xrange(1,nsites):
-        val=N.dot(val,mps_mats[i])
+        val=np.dot(val,mps_mats[i])
 
     # turn into scalar
-    return N.trace(val)
+    return np.trace(val)
 
 
 def create(pdim,config):
@@ -131,17 +142,17 @@ def create(pdim,config):
     return mps
  
 
-def canonicalise(mps,side):
+def canonicalise(mps,side,QNargs=None):
     """
     canonicalise MPS
     """
     if side=='l':
-        return compress(mps,'r',0, QR=True)
+        return compress(mps,'r',0, QR=True, QNargs=QNargs)
     else:
-        return compress(mps,'l',0, QR=True)
+        return compress(mps,'l',0, QR=True, QNargs=QNargs)
 
 
-def contract(mpo,mpsb,side,thresh,mpsa=None,ncanonical=1,compress_method="svd"):
+def contract(mpo,mpsb,side,thresh,mpsa=None,ncanonical=1,compress_method="svd",QNargs=None):
     '''
     contract a MPO times MPS
     '''
@@ -152,12 +163,12 @@ def contract(mpo,mpsb,side,thresh,mpsa=None,ncanonical=1,compress_method="svd"):
         """
         mapply->canonicalise->compress
         """
-        ret=mapply(mpo,mpsb)
+        ret=mapply(mpo,mpsb,QNargs=QNargs)
         # roundoff can cause problems, 
         # so do multiple canonicalisations
         for i in xrange(ncanonical):
-            ret=canonicalise(ret,side)
-        ret=compress(ret,side,thresh)
+            ret=canonicalise(ret,side, QNargs=QNargs)
+        ret=compress(ret,side,thresh, QNargs=QNargs)
     
     elif compress_method == "variational":
         if mpsa == None:
@@ -173,10 +184,14 @@ def contract(mpo,mpsb,side,thresh,mpsa=None,ncanonical=1,compress_method="svd"):
     return ret
 
 
-def mapply(mpo,mps):
+def mapply(mpo,mps,QNargs=None):
     """
     apply mpo to mps, or apply mpo to mpo
     """
+    if QNargs != None:
+        mpo, mpoQN, mpoQNidx, mpotot = mpo
+        mps, mpsQN, mpsQNidx, mpstot = mps
+    
     nsites=len(mpo)
     assert len(mps)==nsites
 
@@ -186,26 +201,33 @@ def mapply(mpo,mps):
         # mpo x mps
         for i in xrange(nsites):
             assert mpo[i].shape[2]==mps[i].shape[1]
-            #mt=N.einsum("apqb,cqd->acpbd",mpo[i],mps[i])
-            mt=N.moveaxis(N.tensordot(mpo[i],mps[i],axes=([2],[1])),3,1)
-            mt=N.reshape(mt,[mpo[i].shape[0]*mps[i].shape[0],mpo[i].shape[1],
+            #mt=np.einsum("apqb,cqd->acpbd",mpo[i],mps[i])
+            mt=np.moveaxis(np.tensordot(mpo[i],mps[i],axes=([2],[1])),3,1)
+            mt=np.reshape(mt,[mpo[i].shape[0]*mps[i].shape[0],mpo[i].shape[1],
                              mpo[i].shape[-1]*mps[i].shape[-1]])
             ret[i]=mt
     elif len(mps[0].shape)==4: 
         # mpo x mpo
         for i in xrange(nsites):
             assert mpo[i].shape[2]==mps[i].shape[1]
-            #mt=N.einsum("apqb,cqrd->acprbd",mpo[i],mps[i])
-            mt=N.moveaxis(N.tensordot(mpo[i],mps[i],axes=([2],[1])),[-3,-2],[1,3])
-            mt=N.reshape(mt,[mpo[i].shape[0]*mps[i].shape[0],
+            #mt=np.einsum("apqb,cqrd->acprbd",mpo[i],mps[i])
+            mt=np.moveaxis(np.tensordot(mpo[i],mps[i],axes=([2],[1])),[-3,-2],[1,3])
+            mt=np.reshape(mt,[mpo[i].shape[0]*mps[i].shape[0],
                              mpo[i].shape[1],mps[i].shape[2],
                              mpo[i].shape[-1]*mps[i].shape[-1]])
             ret[i]=mt
     
+    if QNargs != None:
+        mpsQNnew = svd_qn.QN_construct(mpsQN, mpsQNidx, mpoQNidx, mpstot)
+        mpompsQN = []
+        for i in xrange(len(mpoQN)):
+            mpompsqn = np.add.outer(np.array(mpoQN[i]),np.array(mpsQNnew[i]))
+            mpompsQN.append(mpompsqn.ravel().tolist())
+        ret = [ret, mpompsQN, mpoQNidx, mpstot+mpotot]
+
     return ret
 
 
-#@profile
 def variational_compress(MPS,aMPS,MPO,side,nloops,trunc=1.e-12,method="1site"):
     """
     aMPS : canonicalised approximate MPS (or MPO)
@@ -229,7 +251,7 @@ def variational_compress(MPS,aMPS,MPO,side,nloops,trunc=1.e-12,method="1site"):
 
     # construct the environment matrix
     aMPSconj = conj(aMPS)
-    construct_enviro(MPS, aMPSconj, MPO, side)
+    mpompsmat.construct_enviro(MPS, aMPSconj, MPO, side)
 
     nMPS = len(MPS)
     if method == "1site":
@@ -238,8 +260,8 @@ def variational_compress(MPS,aMPS,MPO,side,nloops,trunc=1.e-12,method="1site"):
         loop = [['R',i] for i in xrange(nMPS-1,0,-1)] + [['L',i] for i in xrange(1,nMPS)]
     
 
-    ltensor = N.ones((1,1,1))
-    rtensor = N.ones((1,1,1))
+    ltensor = np.ones((1,1,1))
+    rtensor = np.ones((1,1,1))
 
     for isweep in xrange(nloops):
         for system, imps in loop:
@@ -252,8 +274,8 @@ def variational_compress(MPS,aMPS,MPO,side,nloops,trunc=1.e-12,method="1site"):
                 lsite = imps-1
             else:
                 lsite= imps-2
-            ltensor = GetLR('L', lsite, MPS, aMPSconj, MPO, itensor=ltensor, method=lmethod)
-            rtensor = GetLR('R', imps+1, MPS, aMPSconj, MPO, itensor=rtensor, method=rmethod)
+            ltensor = mpompsmat.GetLR('L', lsite, MPS, aMPSconj, MPO, itensor=ltensor, method=lmethod)
+            rtensor = mpompsmat.GetLR('R', imps+1, MPS, aMPSconj, MPO, itensor=rtensor, method=rmethod)
             if method == "1site":
 
                 #S-a   l-S    #S-a   l-S
@@ -263,27 +285,27 @@ def variational_compress(MPS,aMPS,MPO,side,nloops,trunc=1.e-12,method="1site"):
                 #S-c-S-k-S    #S-c-S-k-S
                 #                  m
 
-                #tmp1 = N.einsum("abc,bdef -> acdef", ltensor, MPO[imps])
-                #tmp2 = N.einsum("acdef, cek -> adfk", tmp1, MPS[imps]) 
-                #res = N.einsum("adfk, lfk-> adl", tmp2, rtensor)
-                tmp1 = N.tensordot(ltensor,MPO[imps],axes=([1],[0]))
-                tmp2 = N.tensordot(tmp1,MPS[imps],axes=([1,3],[0,1]))
                 if MPS[imps].ndim == 3:
-                    res = N.tensordot(tmp2,rtensor,axes=([-2,-1],[-2,-1]))
+                    path = [([0, 1],"abc,cek -> abek")   ,\
+                            ([2, 0],"abek,bdef -> akdf") ,\
+                            ([1, 0],"akdf, lfk -> adl")] 
+                    res = tensor.multi_tensor_contract(path,
+                            ltensor, MPS[imps], MPO[imps], rtensor)
                 elif MPS[imps].ndim == 4: 
-                    #tmp1 = N.einsum("abc,bdef -> acdef", ltensor, MPO[imps])
-                    #tmp2 = N.einsum("acdef, cemk -> adfmk", tmp1, MPSp[imps]) 
-                    #res = N.einsum("adfmk, lfk-> adml", tmp2, rtensor)
-                    res = N.tensordot(tmp2,rtensor,axes=([-3,-1],[-2,-1]))
-                
+                    path = [([0, 1],"abc,cemk -> abemk")   ,\
+                            ([2, 0],"abemk,bdef -> amkdf") ,\
+                            ([1, 0],"amkdf, lfk -> amdl")] 
+                    res = tensor.multi_tensor_contract(path,
+                            ltensor, MPS[imps], MPO[imps], rtensor)
+                    res = np.moveaxis(res,2,1)
                 if system == "R":
                     ushape = [res.shape[0]]
                     vshape = list(res.shape[1:])
-                    res=N.reshape(res,(res.shape[0],N.prod(res.shape[1:])))
+                    res=np.reshape(res,(res.shape[0],np.prod(res.shape[1:])))
                 else:
                     vshape = [res.shape[-1]]
                     ushape = list(res.shape[:-1])
-                    res=N.reshape(res,(N.prod(res.shape[:-1]),res.shape[-1]))
+                    res=np.reshape(res,(np.prod(res.shape[:-1]),res.shape[-1]))
             else:
             
                 #S-a       l-S      S-a       l-S
@@ -299,7 +321,7 @@ def variational_compress(MPS,aMPS,MPO,side,nloops,trunc=1.e-12,method="1site"):
                                 ([1, 2],"mhk, ljk -> mhlj")  ,\
                                 ([0, 2],"fghj, mhlj -> fgml"),\
                                 ([0, 1],"amdf, fgml -> adgl")]
-                    res = multi_tensor_contract(path,
+                    res = tensor.multi_tensor_contract(path,
                             ltensor, MPO[imps-1], MPO[imps], MPS[imps-1], MPS[imps], rtensor)
 
                 elif MPS[imps].ndim == 4:
@@ -308,13 +330,13 @@ def variational_compress(MPS,aMPS,MPO,side,nloops,trunc=1.e-12,method="1site"):
                                 ([1, 2],"mhok, ljk -> mholj")  ,\
                                 ([0, 2],"fghj, mholj -> fgmol"),\
                                 ([0, 1],"anmdf, fgmol -> andgol")]
-                    res = multi_tensor_contract(path,
+                    res = tensor.multi_tensor_contract(path,
                             ltensor, MPO[imps-1], MPO[imps], MPS[imps-1], MPS[imps], rtensor)
                     res = np.moveaxis(res,2,1)
 
                 ushape = list(res.shape[0:res.ndim/2])
                 vshape = list(res.shape[res.ndim/2:])
-                res=N.reshape(res,(N.prod(res.shape[0:res.ndim/2]),N.prod(res.shape[res.ndim/2:])))
+                res=np.reshape(res,(np.prod(res.shape[0:res.ndim/2]),np.prod(res.shape[res.ndim/2:])))
             try:
                 u, sigma, vt = scipy.linalg.svd(res,full_matrices=False,lapack_driver='gesdd')
             except:
@@ -333,28 +355,28 @@ def variational_compress(MPS,aMPS,MPO,side,nloops,trunc=1.e-12,method="1site"):
             vt=vt[0:m_trunc,:]
             
             if  system == "R":
-                u = N.einsum('ji, i -> ji', u, sigma)
-                mps = N.reshape(vt,[m_trunc]+vshape)
-                compmps = N.reshape(u,ushape+[m_trunc])
+                u = np.einsum('ji, i -> ji', u, sigma)
+                mps = np.reshape(vt,[m_trunc]+vshape)
+                compmps = np.reshape(u,ushape+[m_trunc])
             else:
-                vt = N.einsum('i, ij -> ij', sigma, vt)
-                compmps = N.reshape(vt,[m_trunc]+vshape)
-                mps = N.reshape(u,ushape+[m_trunc])
+                vt = np.einsum('i, ij -> ij', sigma, vt)
+                compmps = np.reshape(vt,[m_trunc]+vshape)
+                mps = np.reshape(u,ushape+[m_trunc])
 
             if method == "1site":
                 aMPS[imps] = mps
                 if system == "L":
                     if imps != len(aMPS)-1:
-                        aMPS[imps+1] = N.tensordot(compmps, aMPS[imps+1], axes=1)
-                        aMPSconj[imps+1] = N.conj(aMPS[imps+1])
+                        aMPS[imps+1] = np.tensordot(compmps, aMPS[imps+1], axes=1)
+                        aMPSconj[imps+1] = np.conj(aMPS[imps+1])
                     else:
-                        aMPS[imps] = N.tensordot(aMPS[imps],compmps, axes=1)
+                        aMPS[imps] = np.tensordot(aMPS[imps],compmps, axes=1)
                 else:
                     if imps != 0:
-                        aMPS[imps-1] = N.tensordot(aMPS[imps-1],compmps,axes=1)
-                        aMPSconj[imps-1] = N.conj(aMPS[imps-1])
+                        aMPS[imps-1] = np.tensordot(aMPS[imps-1],compmps,axes=1)
+                        aMPSconj[imps-1] = np.conj(aMPS[imps-1])
                     else:
-                        aMPS[imps] = N.tensordot(compmps, aMPS[imps],axes=1)
+                        aMPS[imps] = np.tensordot(compmps, aMPS[imps],axes=1)
             else:
                 if system == "L":
                     aMPS[imps-1] = mps
@@ -362,19 +384,18 @@ def variational_compress(MPS,aMPS,MPO,side,nloops,trunc=1.e-12,method="1site"):
                 else:
                     aMPS[imps] = mps
                     aMPS[imps-1] = compmps
-                aMPSconj[imps-1] = N.conj(aMPS[imps-1])
+                aMPSconj[imps-1] = np.conj(aMPS[imps-1])
             
-            aMPSconj[imps] = N.conj(aMPS[imps])
+            aMPSconj[imps] = np.conj(aMPS[imps])
 
-    ret=mapply(MPO,MPS)
-    fidelity = dot(conj(aMPS), ret)/dot(conj(ret), ret)
-    print "compression fidelity:: ", fidelity
+    #ret=mapply(MPO,MPS)
+    #fidelity = dot(conj(aMPS), ret)/dot(conj(ret), ret)
+    #print "compression fidelity:: ", fidelity
     
     return aMPS
 
 
-#@profile
-def compress(mps,side,trunc=1.e-12,check_canonical=False,QR=False):
+def compress(mps,side,trunc=1.e-12,check_canonical=False,QR=False,QNargs=None):
     """
     inp: canonicalise MPS (or MPO)
 
@@ -393,6 +414,13 @@ def compress(mps,side,trunc=1.e-12,check_canonical=False,QR=False):
     """
     assert side in ["l","r"]
 
+    if QNargs != None:
+        ephtable = QNargs[0]
+        mps, MPSQN, MPSQNidx, MPSQNtot = mps
+        if side == "l":
+            MPSQNnew = svd_qn.QN_construct(MPSQN, MPSQNidx, len(mps)-1, MPSQNtot)
+        else:
+            MPSQNnew = svd_qn.QN_construct(MPSQN, MPSQNidx, 0, MPSQNtot)
     # if trunc==0, we are just doing a canonicalisation,
     # so skip check, otherwise, ensure mps is canonicalised
     if trunc != 0 and check_canonical:
@@ -403,28 +431,55 @@ def compress(mps,side,trunc=1.e-12,check_canonical=False,QR=False):
 
     ret_mps=[]
     nsites=len(mps)
-
     if side=="l":
         res=mps[-1]
     else:
         res=mps[0]
 
     for i in xrange(1,nsites):
+        if side == "l":
+            idx = nsites-i
+        else:
+            idx = i-1
+
         # physical indices exclude first and last indices
         pdim=list(res.shape[1:-1])
 
         if side=="l":
-            res=N.reshape(res,(res.shape[0],N.prod(res.shape[1:])))
+            res=np.reshape(res,(res.shape[0],np.prod(res.shape[1:])))
         else:
-            res=N.reshape(res,(N.prod(res.shape[:-1]),res.shape[-1]))
-
+            res=np.reshape(res,(np.prod(res.shape[:-1]),res.shape[-1]))
         
+        if QNargs != None:
+            if ephtable[idx] == 1:
+                # e site
+                if mps[0].ndim == 3:
+                    sigmaqn = np.array([0,1])
+                else:
+                    sigmaqn = np.array([0,0,1,1])
+            else:
+                # ph site 
+                sigmaqn = np.array([0]*np.prod(pdim))
+            qnl = np.array(MPSQNnew[idx])
+            qnr = np.array(MPSQNnew[idx+1])
+            if side == "l":
+                qnbigl = qnl
+                qnbigr = np.add.outer(sigmaqn,qnr)
+            else:
+                qnbigl = np.add.outer(qnl,sigmaqn)
+                qnbigr = qnr
+
         if QR == False:
-            try:
-                u,sigma,vt=scipy.linalg.svd(res,full_matrices=False,lapack_driver='gesdd')
-            except:
-                print "mps compress converge failed"
-                u,sigma,vt=scipy.linalg.svd(res,full_matrices=False,lapack_driver='gesvd')
+            if QNargs != None:
+                u, sigma, qnlset, v, sigma, qnrset = svd_qn.Csvd(res, qnbigl,
+                        qnbigr, MPSQNtot, full_matrices=False)
+                vt = v.T
+            else:
+                try:
+                    u,sigma,vt=scipy.linalg.svd(res,full_matrices=False,lapack_driver='gesdd')
+                except:
+                    print "mps compress converge failed"
+                    u,sigma,vt=scipy.linalg.svd(res,full_matrices=False,lapack_driver='gesvd')
 
             if trunc==0:
                 m_trunc=len(sigma)
@@ -441,22 +496,35 @@ def compress(mps,side,trunc=1.e-12,check_canonical=False,QR=False):
             vt=vt[0:m_trunc,:]
             
             if side == "l":
-                u = N.einsum('ji, i -> ji', u, sigma)
+                u = np.einsum('ji, i -> ji', u, sigma)
             else:
-                vt = N.einsum('i, ij -> ij', sigma, vt)
+                vt = np.einsum('i, ij -> ij', sigma, vt)
         else:
-            if side == "l":
-                u,vt = scipy.linalg.rq(res, mode='economic')
+            if QNargs != None:
+                if side == "l":
+                    system = "R"
+                else:
+                    system = "L"
+                u, qnlset, v, qnrset = svd_qn.Csvd(res, qnbigl, qnbigr, MPSQNtot,
+                        QR=True, system=system, full_matrices=False)
+                vt = v.T
             else:
-                u,vt = scipy.linalg.qr(res, mode='economic')
+                if side == "l":
+                    u,vt = scipy.linalg.rq(res, mode='economic')
+                else:
+                    u,vt = scipy.linalg.qr(res, mode='economic')
             m_trunc = u.shape[1]
 
         if side=="l":
-            res=N.tensordot(mps[nsites-i-1],u,axes=([-1],[0]))
-            ret_mpsi=N.reshape(vt,[m_trunc]+pdim+[vt.shape[1]/N.prod(pdim)])
+            res=np.tensordot(mps[nsites-i-1],u,axes=1)
+            ret_mpsi=np.reshape(vt,[m_trunc]+pdim+[vt.shape[1]/np.prod(pdim)])
+            if QNargs != None:
+                MPSQNnew[idx] = qnrset[:m_trunc]
         else:
-            res=N.tensordot(vt,mps[i],axes=([-1],[0]))
-            ret_mpsi=N.reshape(u,[u.shape[0]/N.prod(pdim)]+pdim+[m_trunc])
+            res=np.tensordot(vt,mps[i],axes=1)
+            ret_mpsi=np.reshape(u,[u.shape[0]/np.prod(pdim)]+pdim+[m_trunc])
+            if QNargs != None:
+                MPSQNnew[idx+1] = qnlset[:m_trunc]
         
         ret_mps.append(ret_mpsi)
 
@@ -466,8 +534,15 @@ def compress(mps,side,trunc=1.e-12,check_canonical=False,QR=False):
 
     #fidelity = dot(conj(ret_mps), mps)/dot(conj(mps), mps)
     #print "compression fidelity:: ", fidelity
-    # if N.isnan(fidelity):
+    # if np.isnan(fidelity):
     #     dddd
+
+    if QNargs != None:
+        if side == "l":
+            MPSQNnewidx = 0
+        else:
+            MPSQNnewidx = len(mps)-1
+        ret_mps = [ret_mps, MPSQNnew, MPSQNnewidx, MPSQNtot]
     return ret_mps
 
 
@@ -484,23 +559,34 @@ def mps_fci(mps):
     return fvec
 
 
-def scale(mps,val):
+def scale(mps,val,QNargs=None):
     """
     Multiply MPS by scalar
-    """
-    ret=[mt.copy() for mt in mps]
-    ret[-1]*=val
-    return ret
+    """    
+    if QNargs == None:
+        ret=[mt.copy() for mt in mps]
+        ret[-1]*=val
+        return ret
+    else:
+        ret=[mt.copy() for mt in mps[0]]
+        ret[-1]*=val
+        return [ret] + copy.deepcopy(mps[1:])
 
 
-def add(mpsa,mpsb):
+def add(mpsa,mpsb,QNargs=None):
     """
     add two mps / mpo 
     """
+
     if mpsa==None:
-        return [mt.copy() for mt in mpsb]
+        return copy.deepcopy(mpsb)
     elif mpsb==None:
-        return [mt.copy() for mt in mpsa]
+        return copy.deepcopy(mpsa)
+    
+    if QNargs != None:
+        mpsa, mpsaQN, mpsaQNidx, mpsaQNtot = mpsa
+        mpsb, mpsbQN, mpsbQNidx, mpsbQNtot = mpsb
+        assert mpsaQNtot == mpsbQNtot
 
     assert len(mpsa)==len(mpsb)
     nsites=len(mpsa)
@@ -508,7 +594,7 @@ def add(mpsa,mpsb):
     mpsab=[None]*nsites
     
     if mpsa[0].ndim == 3:  # MPS
-        mpsab[0]=N.dstack([mpsa[0],mpsb[0]])
+        mpsab[0]=np.dstack([mpsa[0],mpsb[0]])
         for i in xrange(1,nsites-1):
             mta=mpsa[i]
             mtb=mpsb[i]
@@ -519,9 +605,9 @@ def add(mpsa,mpsb):
             mpsab[i][:mta.shape[0],:,:mta.shape[2]]=mta[:,:,:]
             mpsab[i][mta.shape[0]:,:,mta.shape[2]:]=mtb[:,:,:]
 
-        mpsab[-1]=N.vstack([mpsa[-1],mpsb[-1]])
+        mpsab[-1]=np.vstack([mpsa[-1],mpsb[-1]])
     elif mpsa[0].ndim == 4: # MPO
-        mpsab[0]=N.concatenate((mpsa[0],mpsb[0]), axis=3)
+        mpsab[0]=np.concatenate((mpsa[0],mpsb[0]), axis=3)
         for i in xrange(1,nsites-1):
             mta=mpsa[i]
             mtb=mpsb[i]
@@ -535,28 +621,39 @@ def add(mpsa,mpsb):
             mpsab[i][:mta.shape[0],:,:,:mta.shape[3]]=mta[:,:,:,:]
             mpsab[i][mta.shape[0]:,:,:,mta.shape[3]:]=mtb[:,:,:,:]
 
-        mpsab[-1]=N.concatenate((mpsa[-1],mpsb[-1]), axis=0)
+        mpsab[-1]=np.concatenate((mpsa[-1],mpsb[-1]), axis=0)
+    
+    if QNargs != None:
+        mpsbQNnew = svd_qn.QN_construct(mpsbQN, mpsbQNidx, mpsaQNidx, mpsbQNtot)
+        mpsabQN = [mpsaQN[i]+mpsbQNnew[i] for i in range(len(mpsbQNnew))]
+        mpsabQN[0], mpsabQN[-1] = [0], [0]
+        mpsab = [mpsab, mpsabQN, mpsaQNidx, mpsaQNtot]
 
     return mpsab
+
  
 
-def dot(mpsa,mpsb):
+def dot(mpsa,mpsb, QNargs=None):
     """
     dot product of two mps / mpo 
     """
+    if QNargs != None:
+        mpsa = mpsa[0]
+        mpsb = mpsb[0]
+
     assert len(mpsa)==len(mpsb)
     nsites=len(mpsa)
-    e0=N.eye(1,1)
+    e0=np.eye(1,1)
     for i in xrange(nsites):
         # sum_x e0[:,x].m[x,:,:]
-        e0=N.tensordot(e0,mpsb[i],1)
+        e0=np.tensordot(e0,mpsb[i],1)
         # sum_ij e0[i,p,:] mpsa[i,p,:]
         # note, need to flip a (:) index onto top,
         # therefore take transpose
         if mpsa[i].ndim == 3:
-            e0=N.tensordot(e0,mpsa[i],([0,1],[0,1])).T
+            e0=np.tensordot(e0,mpsa[i],([0,1],[0,1])).T
         if mpsa[i].ndim == 4:
-            e0 = N.tensordot(e0, mpsa[i], ([0,1,2],[0,1,2])).T
+            e0 = np.tensordot(e0, mpsa[i], ([0,1,2],[0,1,2])).T
 
     return e0[0,0]
 
@@ -595,7 +692,7 @@ def create(ops):
     pdim=ops[0].shape[0]
     assert ops[0].shape[1]==pdim
 
-    return [N.reshape(op,[1,pdim,pdim,1]) for op in ops]
+    return [np.reshape(op,[1,pdim,pdim,1]) for op in ops]
 
 def to_mps(mpo):
     """
@@ -604,7 +701,7 @@ def to_mps(mpo):
     pdim=mpo[0].shape[1]
     assert pdim==mpo[0].shape[2]
     
-    return [N.reshape(mt,[mt.shape[0],mt.shape[1]*mt.shape[2],mt.shape[3]]) for mt in mpo]
+    return [np.reshape(mt,[mt.shape[0],mt.shape[1]*mt.shape[2],mt.shape[3]]) for mt in mpo]
 
 
 def from_mps(mps):
@@ -615,7 +712,7 @@ def from_mps(mps):
     for imps in mps:
         pdim=int(math.sqrt(imps.shape[1]))
         assert pdim*pdim==imps.shape[1]
-        MPO.append(N.reshape(imps,[imps.shape[0],pdim,pdim,imps.shape[2]]))
+        MPO.append(np.reshape(imps,[imps.shape[0],pdim,pdim,imps.shape[2]]))
 
     return MPO
 
@@ -624,18 +721,22 @@ def trace(mpo):
     """
     \sum_{n1n2...} A[n1n1] A[n2n2] A[nknk]
     """
-    traced_mts=[N.einsum("innj",mt) for mt in mpo]
+    traced_mts=[np.einsum("innj",mt) for mt in mpo]
     val=traced_mts[0]
     nsites=len(mpo)
     for i in xrange(1,nsites):
-        val=N.dot(val,traced_mts[i])
-    return N.trace(val)#[0,0]
+        val=np.dot(val,traced_mts[i])
+    return np.trace(val)#[0,0]
 
 
-def MPSdtype_convert(MPS):
+def MPSdtype_convert(MPS, QNargs=None):
     '''
     float64 to complex128
     '''
-    return [mps.astype(np.complex128) for mps in MPS]
+    if  QNargs == None:
+        return [mps.astype(np.complex128) for mps in MPS]
+    else:
+        return [[mps.astype(np.complex128) for mps in MPS[0]]] + MPS[1:]
+
 
 
