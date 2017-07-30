@@ -64,7 +64,7 @@ def runge_kutta_explicit_tableau(RK_method):
         b = np.array([1.0/6.0,1.0/3.0,1.0/3.0,1.0/6.0])
         c = np.array([0,0.5,0.5,1.0])
         Nstage = 4
-    elif RK_method == "3/8_RK4":
+    elif RK_method == "38rule_RK4":
         # 3/8 rule fourth-order method
         a = np.array([[0,0,0,0],\
                       [1.0/3.0,0,0,0],\
@@ -92,6 +92,9 @@ def runge_kutta_explicit_coefficient(tableau):
     v1
     v2
     v3
+    Though, each order has different versions of RK methods, if f is time
+    independent, the coefficient is the same. For example, Classical 4th order
+    Runge Kutta and 3/8 rule Runge Kutta has some coefficient.
     '''
 
     a, b, c, Nstage = tableau
