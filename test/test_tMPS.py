@@ -71,6 +71,71 @@ class Test_tMPS(unittest.TestCase):
             ZeroTabs_std = np.load(f)
         self.assertTrue(np.allclose(autocorr,ZeroTabs_std,rtol=1e-3))
     
+    
+    @data([1,"svd",True],[2,"svd",True],[1,"svd",None],[2,"svd",None],[1,"variational",None],[2,"variational",None])
+    def test_ZeroTcorr_MPOscheme3(self,value):
+        J = np.array([[0.0,-0.1,0.0],[-0.1,0.0,-0.3],[0.0,-0.3,0.0]])/constant.au2ev
+        nexciton = 0
+        procedure = [[1,0],[1,0],[1,0]]
+        iMPS, iMPSdim, iMPSQN, HMPO, HMPOdim, HMPOQN, HMPOQNidx, HMPOQNtot, ephtable, pbond = \
+        MPSsolver.construct_MPS_MPO_2(mol, J, procedure[0][0], nexciton, MPOscheme=2)
+
+        MPSsolver.optimization(iMPS, iMPSdim, iMPSQN, HMPO, HMPOdim, ephtable, pbond,\
+                        nexciton, procedure, method="2site")
+        # if in the EX space, MPO minus E_e to reduce osillation
+        for ibra in xrange(pbond[0]):
+            HMPO[0][0,ibra,ibra,0] -=  2.28614053/constant.au2ev
+        
+        if value[2] != None:
+            iMPS = [iMPS, iMPSQN, len(iMPS)-1, 0]
+            QNargs = [ephtable]
+            HMPO = [HMPO, HMPOQN, HMPOQNidx, HMPOQNtot]
+        else:
+            QNargs = None
+
+        dipoleMPO, dipoleMPOdim = tMPS.construct_onsiteMPO(mol, pbond,
+                "a^\dagger", dipole=True, QNargs=QNargs)
+        iMPS = mpslib.MPSdtype_convert(iMPS, QNargs=QNargs)
+
+        nsteps = 50
+        dt = 30.0
+
+        autocorr = tMPS.ZeroTCorr(iMPS, HMPO, dipoleMPO, nsteps, dt, ephtable,
+                thresh=1.0e-4, cleanexciton=1-nexciton, algorithm=value[0],
+                compress_method=value[1], QNargs=QNargs)
+        autocorr = np.array(autocorr)
+
+        # scheme3
+        iMPS3, iMPSdim3, iMPSQN3, HMPO3, HMPOdim3, HMPOQN3, HMPOQNidx3, HMPOQNtot3, ephtable3, pbond3 = \
+        MPSsolver.construct_MPS_MPO_2(mol, J, procedure[0][0], nexciton, MPOscheme=3)
+        MPSsolver.optimization(iMPS3, iMPSdim3, iMPSQN3, HMPO3, HMPOdim3, ephtable3, pbond3,\
+                        nexciton, procedure, method="2site")
+        # if in the EX space, MPO minus E_e to reduce osillation
+        for ibra in xrange(pbond3[0]):
+            HMPO3[0][0,ibra,ibra,0] -=  2.28614053/constant.au2ev
+        
+        if value[2] != None:
+            iMPS3 = [iMPS3, iMPSQN3, len(iMPS3)-1, 0]
+            QNargs3 = [ephtable3]
+            HMPO3 = [HMPO3, HMPOQN3, HMPOQNidx3, HMPOQNtot3]
+        else:
+            QNargs3 = None
+        
+        dipoleMPO, dipoleMPOdim = tMPS.construct_onsiteMPO(mol, pbond,
+                "a^\dagger", dipole=True, QNargs=QNargs3)
+
+        iMPS3 = mpslib.MPSdtype_convert(iMPS3, QNargs=QNargs)
+
+        nsteps = 50
+        dt = 30.0
+
+        autocorr3 = tMPS.ZeroTCorr(iMPS3, HMPO3, dipoleMPO, nsteps, dt, ephtable3,\
+                thresh=1.0e-4, cleanexciton=1-nexciton, algorithm=value[0],
+                compress_method=value[1], QNargs=QNargs3)
+        autocorr3 = np.array(autocorr3)
+
+        self.assertTrue(np.allclose(autocorr,autocorr3,rtol=1e-3))
+
 
     @data([1,"svd",True],[2,"svd",True],[1,"svd",None],[2,"svd",None],[1,"variational",None],[2,"variational",None])
     def test_FiniteT_spectra_emi(self,value):
