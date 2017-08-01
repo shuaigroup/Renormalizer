@@ -30,6 +30,23 @@ class Test_MPSsolver(unittest.TestCase):
             mpslib.dot(MPO2, mpslib.conj(MPO2)) - \
             mpslib.dot(MPO1, mpslib.conj(MPO2)) - \
             mpslib.dot(MPO2, mpslib.conj(MPO1)), 0.0)
+    
+        
+    def test_construct_MPO_scheme3(self):
+        Mmax = 10
+        J = np.array([[0.0,-0.1,0.0],[-0.1,0.0,-0.3],[0.0,-0.3,0.0]])/constant.au2ev
+        MPS2, MPSdim2, MPSQN2, MPO2, MPOdim2, MPOQN2, MPOQNidx2, MPOQNtot2, ephtable2, pbond2 = \
+            MPSsolver.construct_MPS_MPO_2(mol, J, Mmax, nexciton, MPOscheme=2)
+        MPS3, MPSdim3, MPSQN3, MPO3, MPOdim3, MPOQN3, MPOQNidx3, MPOQNtot3, ephtable3, pbond3 = \
+            MPSsolver.construct_MPS_MPO_2(mol, J, Mmax, nexciton, MPOscheme=3)
+        self.assertEqual(ephtable3, ephtable2)
+        self.assertEqual(pbond3, pbond2)
+        self.assertAlmostEqual( \
+            mpslib.dot(MPO3, mpslib.conj(MPO3)) + \
+            mpslib.dot(MPO2, mpslib.conj(MPO2)) - \
+            mpslib.dot(MPO3, mpslib.conj(MPO2)) - \
+            mpslib.dot(MPO2, mpslib.conj(MPO3)), 0.0)
+
 
     @data([1],[2])
     def test_optimization(self, value):

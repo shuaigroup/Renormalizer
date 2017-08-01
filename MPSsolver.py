@@ -246,7 +246,21 @@ def construct_MPO(mol, J, pbond, scheme=2):
             MPOQN.append([0]+[1,-1]*(ldim/2-1)+[0])   
             for iph in xrange(mol[imol].nphs):
                 MPOdim.append(rdim+1)
-                MPOQN.append([0,0]+[1,-1]*(rdim/2-1)+[0])   
+                MPOQN.append([0,0]+[1,-1]*(rdim/2-1)+[0]) 
+    elif scheme == 3:
+        # electronic nearest neighbor hopping
+        # the electronic dimension is
+        # 1*4, 4*4, 4*4,...,4*1
+        for imol in xrange(nmols):
+            MPOdim.append(4)
+            MPOQN.append([0,1,-1,0])
+            for iph in xrange(mol[imol].nphs):
+                if imol != nmols-1:
+                    MPOdim.append(5)
+                    MPOQN.append([0,0,1,-1,0])
+                else:
+                    MPOdim.append(3)
+                    MPOQN.append([0,0,0])
         
     MPOdim[0]=1
     MPOdim.append(1)
@@ -283,13 +297,17 @@ def construct_MPO(mol, J, pbond, scheme=2):
                                 mpo[ileft,ibra,iket,0] = EElementOpera("a", ibra, iket) * J[(ileft-1)/2,imol]
                             else:
                                 mpo[ileft,ibra,iket,0] = EElementOpera("a^\dagger", ibra, iket) * J[(ileft-1)/2,imol]
-                    elif scheme == 2 and imol > mididx:
+                    elif (scheme == 2 and imol > mididx):
                          mpo[-3,ibra,iket,0] = EElementOpera("a", ibra, iket) 
                          mpo[-2,ibra,iket,0] = EElementOpera("a^\dagger", ibra, iket)
+                    elif scheme == 3:
+                         mpo[-3,ibra,iket,0] = EElementOpera("a", ibra, iket) * J[imol-1,imol]
+                         mpo[-2,ibra,iket,0] = EElementOpera("a^\dagger", ibra, iket) * J[imol-1,imol]
+
 
                 # last row operator
                 if imol != nmols-1 :
-                    if (scheme==1) or (scheme==2 and imol<mididx):
+                    if (scheme==1) or (scheme==2 and imol<mididx) or (scheme==3):
                         mpo[-1,ibra,iket,-2] = EElementOpera("a", ibra, iket)
                         mpo[-1,ibra,iket,-3] = EElementOpera("a^\dagger", ibra, iket)
                     elif scheme == 2 and imol >= mididx:
@@ -302,16 +320,16 @@ def construct_MPO(mol, J, pbond, scheme=2):
                     if (scheme==1) or (scheme==2 and (imol < mididx)):
                         for ileft in xrange(2,2*(imol+1)):
                             mpo[ileft-1,ibra,iket,ileft] = EElementOpera("Iden", ibra, iket)
-                    elif (scheme==1) or (scheme==2 and (imol > mididx)):
+                    elif (scheme==2 and (imol > mididx)):
                         for ileft in xrange(2,2*(nmols-imol)):
                             mpo[ileft-1,ibra,iket,ileft] = EElementOpera("Iden", ibra, iket)
-                    elif (scheme==1) or (scheme==2 and imol==mididx):
+                    elif (scheme==2 and imol==mididx):
                         for jmol in xrange(imol+1,nmols):
                             for ileft in xrange(imol):
                                 mpo[ileft*2+1,ibra,iket,(nmols-jmol)*2] = EElementOpera("Iden", ibra, iket) * J[ileft,jmol]
                                 mpo[ileft*2+2,ibra,iket,(nmols-jmol)*2+1] = EElementOpera("Iden", ibra, iket) * J[ileft,jmol]
+                    # scheme 3 no body mat
 
-        
         MPO.append(mpo)
         impo += 1
         

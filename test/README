@@ -1,0 +1,12 @@
+efficiency
+export MKL_NUM_THREADS=1
+
+test_tMPS.py runtime
+                                                                1 core      2core      4core     8core
+                 Intel(R) Core(TM) i5-6440HQ CPU @ 2.60GHz     537.655s
+Pauling          Intel(R) Xeon(R) CPU E5-2680 v4 @ 2.40GHz     676.606s
+dirac    X16Cv3  Intel(R) Xeon(R) CPU E5-2640 v3 @ 2.60GHz     832.020s   724.601s   639.392s   593.995s
+dirac    X56q    Intel(R) Xeon(R) CPU E5-2620 v2 @ 2.10GHz    1366.026s
+dirac    X55q    Intel(R) Xeon(R) CPU E5520      @ 2.27GHz    2069.387s
+quantum  X16Cv3  Intel(R) Xeon(R) CPU E5-2640 v3 @ 2.60GHza    835.313s
+quantum  X12Cv2  Intel(R) Xeon(R) CPU E5-2620 v2 @ 2.10GHz                           935.805s
