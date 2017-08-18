@@ -9,16 +9,19 @@ class Phonon(object):
     electron-phonon coupling : ephcoup
     highest occupation levels: nlevels
     '''
-    def __init__(self, omega, ephcoup, nlevels):
+    def __init__(self, omega, ephcoup, nlevels, nqboson=1, qbtrunc=0.0):
         self.omega = omega
         self.ephcoup = ephcoup
         self.nlevels = nlevels
+        self.nqboson = nqboson
+        self.qbtrunc = qbtrunc
 
     def printinfo(self):
         print "omega   = ", self.omega
         print "ephcoup = ", self.ephcoup
         print "nlevels = ", self.nlevels
-
+        print "nqboson = ", self.nqboson
+        print "qbtrunc = ", self.qbtrunc
 
 class Mol(object):
     '''

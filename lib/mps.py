@@ -739,4 +739,20 @@ def MPSdtype_convert(MPS, QNargs=None):
         return [[mps.astype(np.complex128) for mps in MPS[0]]] + MPS[1:]
 
 
+def truncate_MPS(MPS,trphbo):
+    '''
+    truncte physical bond in MPS/MPO
+    trphbo is the remaining # of physical bonds in each site
+    '''
+    assert len(MPS) == len(trphbo)
+    
+    MPSnew = []
+    for idx, imps in enumerate(MPS):
+        impsnew = np.delete(imps, np.s_[trphbo[idx]:], 1)
+        # for MPO
+        if imps.ndim == 4:
+            impsnew = np.delete(impsnew, np.s_[trphbo[idx]:], 2)
 
+        MPSnew.append(impsnew)
+    
+    return MPSnew

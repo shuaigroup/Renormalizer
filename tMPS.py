@@ -64,13 +64,17 @@ def GSPropagatorMPO(mol, pbond, x, QNargs=None):
         impo += 1
 
         for iph in xrange(mol[imol].nphs):
-            mpo = np.zeros([MPOdim[impo],pbond[impo],pbond[impo],MPOdim[impo+1]],dtype=np.complex128)
 
-            for ibra in xrange(pbond[impo]):
-                mpo[0,ibra,ibra,0] = np.exp(x*mol[imol].ph[iph].omega*float(ibra))
-            MPO.append(mpo)
-            impo += 1
+            for iboson in xrange(mol[imol].ph[iph].nqboson):
+                mpo = np.zeros([MPOdim[impo],pbond[impo],pbond[impo],MPOdim[impo+1]],dtype=np.complex128)
 
+                for ibra in xrange(pbond[impo]):
+                    mpo[0,ibra,ibra,0] = \
+                        np.exp(x*mol[imol].ph[iph].omega*2.**(mol[imol].ph[iph].nqboson-iboson-1)*float(ibra))
+
+                MPO.append(mpo)
+                impo += 1
+                    
     if QNargs != None:
         MPO = [MPO, MPOQN, MPOQNidx, MPOQNtot]
 
@@ -385,10 +389,11 @@ def construct_onsiteMPO(mol,pbond,opera,dipole=False,QNargs=None):
     for imol in xrange(nmols):
         MPOdim.append(2)
         for iph in xrange(mol[imol].nphs):
-            if imol != nmols-1:
-                MPOdim.append(2)
-            else:
-                MPOdim.append(1)
+            for iboson in xrange(mol[imol].ph[iph].nqboson):
+                if imol != nmols-1:
+                    MPOdim.append(2)
+                else:
+                    MPOdim.append(1)
     
     MPOdim[0] = 1
     MPOdim.append(1)
@@ -412,24 +417,30 @@ def construct_onsiteMPO(mol,pbond,opera,dipole=False,QNargs=None):
         impo += 1
 
         for iph in xrange(mol[imol].nphs):
-            mpo = np.zeros([MPOdim[impo],pbond[impo],pbond[impo],MPOdim[impo+1]])
-            for ibra in xrange(pbond[impo]):
-                for idiag in xrange(MPOdim[impo]):
-                    mpo[idiag,ibra,ibra,idiag] = 1.0
+            for iboson in xrange(mol[imol].ph[iph].nqboson):
+                mpo = np.zeros([MPOdim[impo],pbond[impo],pbond[impo],MPOdim[impo+1]])
+                for ibra in xrange(pbond[impo]):
+                    for idiag in xrange(MPOdim[impo]):
+                        mpo[idiag,ibra,ibra,idiag] = 1.0
 
-            MPO.append(mpo)
-            impo += 1
+                MPO.append(mpo)
+                impo += 1
     
     # quantum number part
     MPOQNidx = len(MPO)-1
+    
+    totnqboson = 0
+    for iph in xrange(mol[-1].nphs):
+        totnqboson += mol[-1].ph[iph].nqboson
+
     if opera == "a":
-        MPOQN = [[0]] + [[-1,0]]*(len(MPO)-mol[-1].nphs-1) + [[-1]]*(mol[-1].nphs+1)
+        MPOQN = [[0]] + [[-1,0]]*(len(MPO)-totnqboson-1) + [[-1]]*(totnqboson+1)
         MPOQNtot = -1
     elif opera == "a^\dagger":
-        MPOQN = [[0]] + [[1,0]]*(len(MPO)-mol[-1].nphs-1) + [[1]]*(mol[-1].nphs+1)
+        MPOQN = [[0]] + [[1,0]]*(len(MPO)-totnqboson-1) + [[1]]*(totnqboson+1)
         MPOQNtot = 1
     elif opera == "a^\dagger a":
-        MPOQN = [[0]] + [[0,0]]*(len(MPO)-mol[-1].nphs-1) + [[0]]*(mol[-1].nphs+1)
+        MPOQN = [[0]] + [[0,0]]*(len(MPO)-totnqboson-1) + [[0]]*(totnqboson+1)
         MPOQNtot = 0
     MPOQN[-1] = [0]
     
@@ -481,14 +492,15 @@ def Max_Entangled_GS_MPS(mol, pbond, norm=True, QNargs=None):
         imps += 1
 
         for iph in xrange(mol[imol].nphs):
-            mps = np.zeros([MPSdim[imps],pbond[imps],MPSdim[imps+1]])
-            if norm == True:
-                mps[0,:,0] = 1.0/np.sqrt(pbond[imps])
-            else:
-                mps[0,:,0] = 1.0
-            
-            MPS.append(mps)
-            imps += 1
+            for iboson in xrange(mol[imol].ph[iph].nqboson):
+                mps = np.zeros([MPSdim[imps],pbond[imps],MPSdim[imps+1]])
+                if norm == True:
+                    mps[0,:,0] = 1.0/np.sqrt(pbond[imps])
+                else:
+                    mps[0,:,0] = 1.0
+                
+                MPS.append(mps)
+                imps += 1
     
     if QNargs == None:
         return MPS, MPSdim

@@ -12,14 +12,22 @@ from ddt import ddt, data
 
 @ddt
 class Test_tMPS(unittest.TestCase):
-    
-    def test_ZeroExactEmi(self):
+
+    @data([[[4,4]], 1e-3],\
+            [[[4,4],[2,2],[1.e-7,1.e-7]], 1e-3])
+    def test_ZeroExactEmi(self, value):
+        
+        print "data", value
         nexciton = 1
         procedure = [[10,0.4],[20,0.2],[30,0.1],[40,0],[40,0]]
+        
+        mol = construct_mol(*value[0])
+        
         iMPS, iMPSdim, iMPSQN, HMPO, HMPOdim, HMPOQN, HMPOQNidx, HMPOQNtot, ephtable, pbond = MPSsolver.construct_MPS_MPO_2(mol, J, procedure[0][0], nexciton)
         
         MPSsolver.optimization(iMPS, iMPSdim, iMPSQN, HMPO, HMPOdim, ephtable, pbond,\
                 nexciton, procedure, method="2site")
+
         # if in the EX space, MPO minus E_e to reduce osillation
         for ibra in xrange(pbond[0]):
             HMPO[0][0,ibra,ibra,0] -=  2.28614053/constant.au2ev
@@ -31,13 +39,31 @@ class Test_tMPS(unittest.TestCase):
         autocorr = np.array(autocorr)
         with open("std_data/tMPS/ZeroExactEmi.npy", 'rb') as f:
             ZeroExactEmi_std = np.load(f)
-        self.assertTrue(np.allclose(autocorr,ZeroExactEmi_std,rtol=1e-3))
+        
+        self.assertTrue(np.allclose(autocorr,ZeroExactEmi_std,rtol=value[1]))
 
 
-    @data([1,"svd",True],[2,"svd",True],[1,"svd",None],[2,"svd",None],[1,"variational",None],[2,"variational",None])
+    @data(\
+            [1,"svd",True,[[4,4]],1e-3],\
+            [2,"svd",True,[[4,4]],1e-3],\
+            [1,"svd",None,[[4,4]],1e-3],\
+            [2,"svd",None,[[4,4]],1e-3],\
+            [1,"variational",None,[[4,4]],1e-3],\
+            [2,"variational",None,[[4,4]],1e-3],\
+            [1,"svd",True,[[4,4],[2,2],[1.e-7,1.e-7]],1e-2],\
+            [2,"svd",True,[[4,4],[2,2],[1.e-7,1.e-7]],1e-2],\
+            [1,"svd",None,[[4,4],[2,2],[1.e-7,1.e-7]],1e-2],\
+            [2,"svd",None,[[4,4],[2,2],[1.e-7,1.e-7]],1e-2],\
+            [1,"variational",None,[[4,4],[2,2],[1.e-7,1.e-7]],1e-2],\
+            [2,"variational",None,[[4,4],[2,2],[1.e-7,1.e-7]],1e-2])
     def test_ZeroTcorr(self,value):
+        
+        print "data", value
         nexciton = 0
         procedure = [[1,0],[1,0],[1,0]]
+        
+        mol = construct_mol(*value[3])
+        
         iMPS, iMPSdim, iMPSQN, HMPO, HMPOdim, HMPOQN, HMPOQNidx, HMPOQNtot, ephtable, pbond = \
         MPSsolver.construct_MPS_MPO_2(mol, J, procedure[0][0], nexciton)
 
@@ -69,14 +95,29 @@ class Test_tMPS(unittest.TestCase):
 
         with open("std_data/tMPS/""ZeroTabs_"+str(value[0])+str(value[1])+".npy", 'rb') as f:
             ZeroTabs_std = np.load(f)
-        self.assertTrue(np.allclose(autocorr,ZeroTabs_std,rtol=1e-3))
+        self.assertTrue(np.allclose(autocorr,ZeroTabs_std,rtol=value[4]))
     
     
-    @data([1,"svd",True],[2,"svd",True],[1,"svd",None],[2,"svd",None],[1,"variational",None],[2,"variational",None])
+    @data(\
+            [1,"svd",True,[[4,4]],1e-3],\
+            [2,"svd",True,[[4,4]],1e-3],\
+            [1,"svd",None,[[4,4]],1e-3],\
+            [2,"svd",None,[[4,4]],1e-3],\
+            [1,"variational",None,[[4,4]],1e-3],\
+            [2,"variational",None,[[4,4]],1e-3],\
+            [1,"svd",True,[[4,4],[2,2],[1.e-7,1.e-7]],1e-2],\
+            [2,"svd",True,[[4,4],[2,2],[1.e-7,1.e-7]],1e-2],\
+            [1,"svd",None,[[4,4],[2,2],[1.e-7,1.e-7]],1e-2],\
+            [2,"svd",None,[[4,4],[2,2],[1.e-7,1.e-7]],1e-2],\
+            [1,"variational",None,[[4,4],[2,2],[1.e-7,1.e-7]],1e-2],\
+            [2,"variational",None,[[4,4],[2,2],[1.e-7,1.e-7]],1e-2])
     def test_ZeroTcorr_MPOscheme3(self,value):
+        print "data", value
         J = np.array([[0.0,-0.1,0.0],[-0.1,0.0,-0.3],[0.0,-0.3,0.0]])/constant.au2ev
         nexciton = 0
         procedure = [[1,0],[1,0],[1,0]]
+        mol = construct_mol(*value[3])
+        
         iMPS, iMPSdim, iMPSQN, HMPO, HMPOdim, HMPOQN, HMPOQNidx, HMPOQNtot, ephtable, pbond = \
         MPSsolver.construct_MPS_MPO_2(mol, J, procedure[0][0], nexciton, MPOscheme=2)
 
@@ -134,13 +175,28 @@ class Test_tMPS(unittest.TestCase):
                 compress_method=value[1], QNargs=QNargs3)
         autocorr3 = np.array(autocorr3)
 
-        self.assertTrue(np.allclose(autocorr,autocorr3,rtol=1e-3))
+        self.assertTrue(np.allclose(autocorr,autocorr3,rtol=value[4]))
 
 
-    @data([1,"svd",True],[2,"svd",True],[1,"svd",None],[2,"svd",None],[1,"variational",None],[2,"variational",None])
+    @data(\
+            [1,"svd",True,[[4,4]],1e-3],\
+            [2,"svd",True,[[4,4]],1e-3],\
+            [1,"svd",None,[[4,4]],1e-3],\
+            [2,"svd",None,[[4,4]],1e-3],\
+            [1,"variational",None,[[4,4]],1e-3],\
+            [2,"variational",None,[[4,4]],1e-3],\
+            [1,"svd",True,[[4,4],[2,2],[1.e-7,1.e-7]],1e-2],\
+            [2,"svd",True,[[4,4],[2,2],[1.e-7,1.e-7]],1e-2],\
+            [1,"svd",None,[[4,4],[2,2],[1.e-7,1.e-7]],1e-2],\
+            [2,"svd",None,[[4,4],[2,2],[1.e-7,1.e-7]],1e-2],\
+            [1,"variational",None,[[4,4],[2,2],[1.e-7,1.e-7]],1e-2],\
+            [2,"variational",None,[[4,4],[2,2],[1.e-7,1.e-7]],1e-2])
     def test_FiniteT_spectra_emi(self,value):
+        print "data", value
         nexciton = 1
         procedure = [[10,0.4],[20,0.2],[30,0.1],[40,0],[40,0]]
+        mol = construct_mol(*value[3])
+        
         iMPS, iMPSdim, iMPSQN, HMPO, HMPOdim, HMPOQN, HMPOQNidx, HMPOQNtot, ephtable, pbond = \
             MPSsolver.construct_MPS_MPO_2(mol, J, procedure[0][0], nexciton)
         
@@ -171,13 +227,21 @@ class Test_tMPS(unittest.TestCase):
         
         with open("std_data/tMPS/TTemi_"+str(value[0])+str(value[1])+".npy", 'rb') as f:
             TTemi_std = np.load(f)
-        self.assertTrue(np.allclose(autocorr,TTemi_std[0:nsteps],rtol=1e-3))
+        self.assertTrue(np.allclose(autocorr,TTemi_std[0:nsteps],rtol=value[4]))
 
 
-    @data([1,"svd",True],[1,"svd",None],[1,"variational",None])
+    @data(\
+            [1,"svd",True,[[4,4]],1e-3],\
+            [1,"svd",None,[[4,4]],1e-3],\
+            [1,"variational",None,[[4,4]],1e-3],\
+            [1,"svd",True,[[4,4],[2,2],[1.e-7,1.e-7]],1e-2],\
+            [1,"svd",None,[[4,4],[2,2],[1.e-7,1.e-7]],1e-2],\
+            [1,"variational",None,[[4,4],[2,2],[1.e-7,1.e-7]],1e-2])
     def test_FiniteT_spectra_abs(self,value):
+        print "data", value
         nexciton = 0
         procedure = [[1,0],[1,0],[1,0]]
+        mol = construct_mol(*value[3])
         iMPS, iMPSdim, iMPSQN, HMPO, HMPOdim, HMPOQN, HMPOQNidx, HMPOQNtot, ephtable, pbond = MPSsolver.construct_MPS_MPO_2(mol, J, procedure[0][0], nexciton)
         
         # if in the EX space, MPO minus E_e to reduce osillation
@@ -208,7 +272,7 @@ class Test_tMPS(unittest.TestCase):
         with open("std_data/tMPS/TTabs_"+str(value[1]+".npy"), 'rb') as f:
             TTabs_std = np.load(f)
 
-        self.assertTrue(np.allclose(autocorr,TTabs_std[0:nsteps],rtol=1e-3))
+        self.assertTrue(np.allclose(autocorr,TTabs_std[0:nsteps],rtol=value[4]))
 
 
     @data(["svd",True],["svd",None],["variational",None])

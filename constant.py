@@ -18,6 +18,9 @@ scipy.constants.physical_constants["hartree-hertz relationship"][0]
 # 1 cm^-1 = cm2ev eV
 cm2ev = cm2au * au2ev
 
+# 1 fs = fs2au a.u
+fs2au =  1.0e-15 / scipy.constants.physical_constants["atomic unit of time"][0]
+
 # kelvin to beta  au^-1 
 def T2beta(temperature):
     '''
@@ -27,3 +30,11 @@ def T2beta(temperature):
     scipy.constants.physical_constants["kelvin-hartree relationship"][0]
     
     return beta
+
+# nm to au
+def nm2au(l):
+    return 1.e7/l*cm2au
+
+def au2nm(e):
+    return 1.e7/(e/cm2au)
+

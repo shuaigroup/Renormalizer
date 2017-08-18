@@ -15,6 +15,7 @@ from mpompsmat import *
 from elementop import *
 from lib import tensor as tensorlib
 from ephMPS import svd_qn
+from ephMPS import quasiboson
 
 def construct_MPS_MPO_1():
     '''
@@ -46,12 +47,18 @@ def construct_MPS_MPO_2(mol, J, Mmax, nexciton, MPOscheme=2):
         ephtable.append(1)
         pbond.append(2)
         for iph in xrange(mol[imol].nphs):
-            ephtable.append(0)
-            pbond.append(mol[imol].ph[iph].nlevels)
+            if mol[imol].ph[iph].nqboson == 1:
+                ephtable.append(0)
+                pbond.append(mol[imol].ph[iph].nlevels)
+            else:
+                ephtable += [0] * mol[imol].ph[iph].nqboson
+                pbond += [2] * mol[imol].ph[iph].nqboson
+
     
     print "# of MPS,", len(pbond)
     print "physical bond,", pbond
-    
+    print "ephtable", ephtable
+
     '''
     initialize MPS according to quantum number
     MPSQN: mps quantum number list
@@ -66,7 +73,8 @@ def construct_MPS_MPO_2(mol, J, Mmax, nexciton, MPOscheme=2):
     MPOdim: mpo dimension list
     MPO: mpo list
     '''
-    MPO, MPOdim, MPOQN, MPOQNidx, MPOQNtot = construct_MPO(mol, J, pbond, scheme=MPOscheme)
+    MPO, MPOdim, MPOQN, MPOQNidx, MPOQNtot = construct_MPO(mol, J, pbond, \
+            scheme=MPOscheme)
     
     return MPS, MPSdim, MPSQN, MPO, MPOdim, MPOQN, MPOQNidx, MPOQNtot, ephtable, pbond
 
@@ -204,6 +212,7 @@ def construct_MPO(mol, J, pbond, scheme=2):
     '''
     scheme 1: l to r
     scheme 2: l,r to middle, the bond dimension is smaller than scheme 1
+    scheme 3: l to r, nearest neighbour exciton interaction 
     please see doc
     '''
 
@@ -211,6 +220,7 @@ def construct_MPO(mol, J, pbond, scheme=2):
     MPO = []
     nmols = len(mol)
     MPOQN = []
+
 
     # MPOdim  
     if scheme == 1:
@@ -261,13 +271,49 @@ def construct_MPO(mol, J, pbond, scheme=2):
                 else:
                     MPOdim.append(3)
                     MPOQN.append([0,0,0])
-        
+    
     MPOdim[0]=1
+    
+    # quasi boson MPO dim
+    qbopera = []   # b+b^\dagger MPO in quasi boson representation
+    MPOdimnew = []   
+    MPOQNnew = []
+    impo = 0
+    for imol in xrange(nmols):
+        qbopera.append({})
+        MPOdimnew.append(MPOdim[impo])
+        MPOQNnew.append(MPOQN[impo]) 
+        impo += 1
+        for iph in xrange(mol[imol].nphs):
+            nqb = mol[imol].ph[iph].nqboson
+            if nqb != 1:
+                bpbdagger = quasiboson.Quasi_Boson_MPO("b + b^\dagger", nqb,\
+                        mol[imol].ph[iph].qbtrunc)
+                qbopera[imol][iph] = bpbdagger
+                addmpodim = [i.shape[0] for i in bpbdagger]
+                addmpodim[0] -= 1   # the first quasi boson MPO the row dim is as before
+            else:
+                addmpodim = [0]
+            
+            # new MPOdim
+            MPOdimnew += [i + MPOdim[impo] for i in addmpodim]
+            # new MPOQN
+            for iqb in xrange(nqb):
+                MPOQNnew.append(MPOQN[impo][0:1] + [0]* addmpodim[iqb] + MPOQN[impo][1:])
+            impo += 1
+
+    print "original MPOdim", MPOdim + [1]
+    
+    MPOdim = MPOdimnew
+    MPOQN = MPOQNnew
+
     MPOdim.append(1)
     MPOQN[0] = [0]
     MPOQN.append([0])
     MPOQNidx = len(MPOQN)-2 # the boundary side of L/R side quantum number
     MPOQNtot = 0     # the total quantum number of each bond, for Hamiltonian it's 0              
+        
+    print "MPOdim", MPOdim
 
     # MPO
     impo = 0
@@ -335,29 +381,59 @@ def construct_MPO(mol, J, pbond, scheme=2):
         
         # phonon part
         for iph in xrange(mol[imol].nphs):
-            mpo = np.zeros([MPOdim[impo],pbond[impo],pbond[impo],MPOdim[impo+1]])
-            for ibra in xrange(pbond[impo]):
-                for iket in xrange(pbond[impo]):
-                    # first column
-                    mpo[0,ibra,iket,0] = PhElementOpera("Iden", ibra, iket)
-                    mpo[1,ibra,iket,0] = PhElementOpera("b^\dagger + b",ibra, iket) * \
-                                         mol[imol].ph[iph].omega * mol[imol].ph[iph].ephcoup
-                    mpo[-1,ibra,iket,0] = PhElementOpera("b^\dagger b", ibra, iket) * mol[imol].ph[iph].omega
-                    
-                    if imol != nmols-1 or iph != mol[imol].nphs-1:
-                        mpo[-1,ibra,iket,-1] = PhElementOpera("Iden", ibra, iket)
+            nqb = mol[imol].ph[iph].nqboson 
+            if nqb == 1:
+                mpo = np.zeros([MPOdim[impo],pbond[impo],pbond[impo],MPOdim[impo+1]])
+                for ibra in xrange(pbond[impo]):
+                    for iket in xrange(pbond[impo]):
+                        # first column
+                        mpo[0,ibra,iket,0] = PhElementOpera("Iden", ibra, iket)
+                        mpo[1,ibra,iket,0] = PhElementOpera("b^\dagger + b",ibra, iket) * \
+                                             mol[imol].ph[iph].omega * mol[imol].ph[iph].ephcoup
+                        mpo[-1,ibra,iket,0] = PhElementOpera("b^\dagger b", ibra, iket) * mol[imol].ph[iph].omega
                         
-                        if iph != mol[imol].nphs-1: 
-                            for icol in xrange(1,MPOdim[impo+1]-1):
-                                mpo[icol,ibra,iket,icol] = PhElementOpera("Iden", ibra, iket)
-                        else:
-                            for icol in xrange(1,MPOdim[impo+1]-1):
-                                mpo[icol+1,ibra,iket,icol] = PhElementOpera("Iden", ibra, iket)
+                        if imol != nmols-1 or iph != mol[imol].nphs-1:
+                            mpo[-1,ibra,iket,-1] = PhElementOpera("Iden", ibra, iket)
+                            
+                            if iph != mol[imol].nphs-1: 
+                                for icol in xrange(1,MPOdim[impo+1]-1):
+                                    mpo[icol,ibra,iket,icol] = PhElementOpera("Iden", ibra, iket)
+                            else:
+                                for icol in xrange(1,MPOdim[impo+1]-1):
+                                    mpo[icol+1,ibra,iket,icol] = PhElementOpera("Iden", ibra, iket)
+                MPO.append(mpo)
+                impo += 1
+            else:
+                # b + b^\dagger in quasiboson representation
+                for iqb in xrange(nqb):
+                    mpo = np.zeros([MPOdim[impo],pbond[impo],pbond[impo],MPOdim[impo+1]])
+                    bpbdagger = qbopera[imol][iph][iqb]
+                    for ibra in xrange(2):
+                        for iket in xrange(2):
+                            mpo[0,ibra,iket,0] = PhElementOpera("Iden", ibra, iket)
+                            mpo[-1,ibra,iket,0] = PhElementOpera("b^\dagger b", \
+                                    ibra, iket) * mol[imol].ph[iph].omega * 2.**(nqb-iqb-1)
+                            
+                            #  the # of identity operator 
+                            if iqb != nqb-1:
+                                nI = MPOdim[impo+1]-bpbdagger.shape[-1]-1   
+                            else:
+                                nI = MPOdim[impo+1]-1
 
-            MPO.append(mpo)
-            impo += 1
+                            for iset in xrange(1,nI+1):
+                                mpo[-iset,ibra,iket,-iset] = PhElementOpera("Iden", ibra, iket)
+                    
+                    # b + b^\dagger 
+                    if iqb != nqb-1:
+                        mpo[1:bpbdagger.shape[0]+1,:,:,1:bpbdagger.shape[-1]+1] = bpbdagger
+                    else:
+                        mpo[1:bpbdagger.shape[0]+1,:,:,0:bpbdagger.shape[-1]] = \
+                        bpbdagger * mol[imol].ph[iph].omega * mol[imol].ph[iph].ephcoup
+                    
+                    MPO.append(mpo)
+                    impo += 1
+                
     
-    print "MPOdim", MPOdim
     return  MPO, MPOdim, MPOQN, MPOQNidx, MPOQNtot
 
 
