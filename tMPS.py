@@ -69,8 +69,8 @@ def GSPropagatorMPO(mol, pbond, x, QNargs=None):
                 mpo = np.zeros([MPOdim[impo],pbond[impo],pbond[impo],MPOdim[impo+1]],dtype=np.complex128)
 
                 for ibra in xrange(pbond[impo]):
-                    mpo[0,ibra,ibra,0] = \
-                        np.exp(x*mol[imol].ph[iph].omega*2.**(mol[imol].ph[iph].nqboson-iboson-1)*float(ibra))
+                    mpo[0,ibra,ibra,0] = np.exp(x*mol[imol].ph[iph].omega * \
+                                float(mol[imol].ph[iph].base)**(mol[imol].ph[iph].nqboson-iboson-1)*float(ibra))
 
                 MPO.append(mpo)
                 impo += 1

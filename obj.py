@@ -15,6 +15,7 @@ class Phonon(object):
         self.nlevels = nlevels
         self.nqboson = nqboson
         self.qbtrunc = qbtrunc
+        self.base = int(round(nlevels**(1./nqboson)))
 
     def printinfo(self):
         print "omega   = ", self.omega
@@ -22,6 +23,7 @@ class Phonon(object):
         print "nlevels = ", self.nlevels
         print "nqboson = ", self.nqboson
         print "qbtrunc = ", self.qbtrunc
+        print "base =", self.base
 
 class Mol(object):
     '''

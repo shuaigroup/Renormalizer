@@ -52,7 +52,7 @@ def construct_MPS_MPO_2(mol, J, Mmax, nexciton, MPOscheme=2):
                 pbond.append(mol[imol].ph[iph].nlevels)
             else:
                 ephtable += [0] * mol[imol].ph[iph].nqboson
-                pbond += [2] * mol[imol].ph[iph].nqboson
+                pbond += [mol[imol].ph[iph].base] * mol[imol].ph[iph].nqboson
 
     
     print "# of MPS,", len(pbond)
@@ -288,7 +288,7 @@ def construct_MPO(mol, J, pbond, scheme=2):
             nqb = mol[imol].ph[iph].nqboson
             if nqb != 1:
                 bpbdagger = quasiboson.Quasi_Boson_MPO("b + b^\dagger", nqb,\
-                        mol[imol].ph[iph].qbtrunc)
+                        mol[imol].ph[iph].qbtrunc, base=mol[imol].ph[iph].base)
                 qbopera[imol][iph] = bpbdagger
                 addmpodim = [i.shape[0] for i in bpbdagger]
                 addmpodim[0] -= 1   # the first quasi boson MPO the row dim is as before
@@ -408,11 +408,12 @@ def construct_MPO(mol, J, pbond, scheme=2):
                 for iqb in xrange(nqb):
                     mpo = np.zeros([MPOdim[impo],pbond[impo],pbond[impo],MPOdim[impo+1]])
                     bpbdagger = qbopera[imol][iph][iqb]
-                    for ibra in xrange(2):
-                        for iket in xrange(2):
+                    for ibra in xrange(mol[imol].ph[iph].base):
+                        for iket in xrange(mol[imol].ph[iph].base):
                             mpo[0,ibra,iket,0] = PhElementOpera("Iden", ibra, iket)
                             mpo[-1,ibra,iket,0] = PhElementOpera("b^\dagger b", \
-                                    ibra, iket) * mol[imol].ph[iph].omega * 2.**(nqb-iqb-1)
+                                    ibra, iket) * mol[imol].ph[iph].omega * \
+                                    float(mol[imol].ph[iph].base)**(nqb-iqb-1)
                             
                             #  the # of identity operator 
                             if iqb != nqb-1:
