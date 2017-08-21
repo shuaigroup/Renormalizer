@@ -346,7 +346,8 @@ def variational_compress(MPS,aMPS,MPO,side,nloops,trunc=1.e-12,method="1site"):
             if trunc<1.:
                 # count how many sing vals < trunc            
                 normed_sigma=sigma/scipy.linalg.norm(sigma)
-                m_trunc=len([s for s in normed_sigma if s >trunc])
+                #m_trunc=len([s for s in normed_sigma if s >trunc])
+                m_trunc = np.count_nonzero(normed_sigma>trunc)
             else:
                 m_trunc=int(trunc)
                 m_trunc=min(m_trunc,len(sigma))
@@ -444,6 +445,7 @@ def compress(mps,side,trunc=1.e-12,check_canonical=False,QR=False,QNargs=None):
 
         # physical indices exclude first and last indices
         pdim=list(res.shape[1:-1])
+        npdim = np.prod(pdim)
 
         if side=="l":
             res=np.reshape(res,(res.shape[0],np.prod(res.shape[1:])))
@@ -459,7 +461,7 @@ def compress(mps,side,trunc=1.e-12,check_canonical=False,QR=False,QNargs=None):
                     sigmaqn = np.array([0,0,1,1])
             else:
                 # ph site 
-                sigmaqn = np.array([0]*np.prod(pdim))
+                sigmaqn = np.array([0]*npdim)
             qnl = np.array(MPSQNnew[idx])
             qnr = np.array(MPSQNnew[idx+1])
             if side == "l":
@@ -486,7 +488,8 @@ def compress(mps,side,trunc=1.e-12,check_canonical=False,QR=False,QNargs=None):
             elif trunc<1.:
                 # count how many sing vals < trunc            
                 normed_sigma=sigma/scipy.linalg.norm(sigma)
-                m_trunc=len([s for s in normed_sigma if s >trunc])
+                #m_trunc=len([s for s in normed_sigma if s >trunc])
+                m_trunc = np.count_nonzero(normed_sigma>trunc)
             else:
                 m_trunc=int(trunc)
                 m_trunc=min(m_trunc,len(sigma))
@@ -517,12 +520,12 @@ def compress(mps,side,trunc=1.e-12,check_canonical=False,QR=False,QNargs=None):
 
         if side=="l":
             res=np.tensordot(mps[nsites-i-1],u,axes=1)
-            ret_mpsi=np.reshape(vt,[m_trunc]+pdim+[vt.shape[1]/np.prod(pdim)])
+            ret_mpsi=np.reshape(vt,[m_trunc]+pdim+[vt.shape[1]/npdim])
             if QNargs != None:
                 MPSQNnew[idx] = qnrset[:m_trunc]
         else:
             res=np.tensordot(vt,mps[i],axes=1)
-            ret_mpsi=np.reshape(u,[u.shape[0]/np.prod(pdim)]+pdim+[m_trunc])
+            ret_mpsi=np.reshape(u,[u.shape[0]/npdim]+pdim+[m_trunc])
             if QNargs != None:
                 MPSQNnew[idx+1] = qnlset[:m_trunc]
         
