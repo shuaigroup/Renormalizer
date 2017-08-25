@@ -12,7 +12,7 @@ def PhElementOpera(op, bra, ket):
     '''
     phonon operator
     '''
-    assert op in ["b^\dagger b", "b^\dagger + b", "Iden"]
+    assert op in ["b", "b^\dagger", "b^\dagger b", "b^\dagger + b", "Iden"]
     assert bra >= 0
     assert ket >= 0
 
@@ -21,7 +21,16 @@ def PhElementOpera(op, bra, ket):
             return float(ket)
         else:
             return 0.0
-
+    elif op == "b":
+        if bra == ket - 1 : 
+            return np.sqrt(float(ket))
+        else:
+            return 0.0
+    elif op == "b^\dagger":
+        if bra == ket + 1 : 
+            return np.sqrt(float(bra))
+        else:
+            return 0.0
     elif op == "b^\dagger + b":
         if bra == ket + 1 : 
             return np.sqrt(float(bra))

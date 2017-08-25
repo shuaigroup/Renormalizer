@@ -1,6 +1,8 @@
 # -*- coding: utf-8 -*-
 # Author: Jiajun Ren <jiajunren0522@gmail.com>
 
+import numpy as np
+
 
 class Phonon(object):
     '''
@@ -25,6 +27,7 @@ class Phonon(object):
         print "qbtrunc = ", self.qbtrunc
         print "base =", self.base
 
+
 class Mol(object):
     '''
     molecule class property:
@@ -38,6 +41,11 @@ class Mol(object):
         self.nphs = nphs
         self.dipole = dipole
         self.ph = []
+        self.phhop = np.zeros([nphs, nphs])
+        self.e0 = 0.0
+
+    def create_phhop(self, phhopmat):
+        self.phhop = phhopmat.copy()
 
     def printinfo(self):
         print "local excitation energy = ", self.elocalex
@@ -46,11 +54,15 @@ class Mol(object):
     
     def create_ph(self, phinfo):
         assert len(phinfo) == self.nphs
-
         for iph in xrange(self.nphs):
             ph_local = Phonon(*phinfo[iph])
             self.ph.append(ph_local) 
-
+        
+        # omega*coupling**2: a constant for single mol 
+        self.e0 = 0.0
+        for iph in xrange(self.nphs):
+            self.e0 += self.ph[iph].omega * self.ph[iph].ephcoup**2
+           
 
 class bidict(dict):
     '''

@@ -31,7 +31,7 @@ def construct_MPS_MPO_1():
     return MPS, MPO, MPSdim, MPOdim
 
 
-def construct_MPS_MPO_2(mol, J, Mmax, nexciton, MPOscheme=2):
+def construct_MPS_MPO_2(mol, J, Mmax, nexciton, MPOscheme=2, rep="star"):
     '''
     MPO/MPS structure 2
     e1,ph11,ph12,..e2,ph21,ph22,...en,phn1,phn2...
@@ -74,7 +74,7 @@ def construct_MPS_MPO_2(mol, J, Mmax, nexciton, MPOscheme=2):
     MPO: mpo list
     '''
     MPO, MPOdim, MPOQN, MPOQNidx, MPOQNtot = construct_MPO(mol, J, pbond, \
-            scheme=MPOscheme)
+            scheme=MPOscheme, rep=rep)
     
     return MPS, MPSdim, MPSQN, MPO, MPOdim, MPOQN, MPOQNidx, MPOQNtot, ephtable, pbond
 
@@ -208,13 +208,15 @@ def select_basis(qnset,Sset,qnlist,Mmax,percent=0):
     return sidx
 
 
-def construct_MPO(mol, J, pbond, scheme=2):
+def construct_MPO(mol, J, pbond, scheme=2, rep="star"):
     '''
     scheme 1: l to r
     scheme 2: l,r to middle, the bond dimension is smaller than scheme 1
     scheme 3: l to r, nearest neighbour exciton interaction 
+    rep (representation) has "star" or "chain"
     please see doc
     '''
+    assert rep in ["star", "chain"]
 
     MPOdim = []
     MPO = []
@@ -255,8 +257,17 @@ def construct_MPO(mol, J, pbond, scheme=2):
             MPOdim.append(ldim)
             MPOQN.append([0]+[1,-1]*(ldim/2-1)+[0])   
             for iph in xrange(mol[imol].nphs):
-                MPOdim.append(rdim+1)
-                MPOQN.append([0,0]+[1,-1]*(rdim/2-1)+[0]) 
+                if rep == "chain":
+                    if iph == 0:
+                        MPOdim.append(rdim+1)
+                        MPOQN.append([0,0]+[1,-1]*(rdim/2-1)+[0]) 
+                    else:
+                        # replace the initial a^+a to b^+ and b
+                        MPOdim.append(rdim+2)  
+                        MPOQN.append([0,0,0]+[1,-1]*(rdim/2-1)+[0]) 
+                else:
+                    MPOdim.append(rdim+1)
+                    MPOQN.append([0,0]+[1,-1]*(rdim/2-1)+[0]) 
     elif scheme == 3:
         # electronic nearest neighbor hopping
         # the electronic dimension is
@@ -318,10 +329,6 @@ def construct_MPO(mol, J, pbond, scheme=2):
     # MPO
     impo = 0
     for imol in xrange(nmols):
-        # omega*coupling**2: a constant for single mol 
-        e0 = 0.0
-        for iph in xrange(mol[imol].nphs):
-            e0 += mol[imol].ph[iph].omega * mol[imol].ph[iph].ephcoup**2
         
         mididx = nmols/2
         
@@ -330,7 +337,8 @@ def construct_MPO(mol, J, pbond, scheme=2):
         for ibra in xrange(pbond[impo]):
             for iket in xrange(pbond[impo]):
                 # last row operator
-                mpo[-1,ibra,iket,0]  = EElementOpera("a^\dagger a", ibra, iket) * (mol[imol].elocalex +  e0)
+                mpo[-1,ibra,iket,0]  = EElementOpera("a^\dagger a", ibra, iket)\
+                    * (mol[imol].elocalex + mol[imol].e0)
                 mpo[-1,ibra,iket,-1] = EElementOpera("Iden", ibra, iket)
                 mpo[-1,ibra,iket,1]  = EElementOpera("a^\dagger a", ibra, iket)
                 
@@ -388,19 +396,43 @@ def construct_MPO(mol, J, pbond, scheme=2):
                     for iket in xrange(pbond[impo]):
                         # first column
                         mpo[0,ibra,iket,0] = PhElementOpera("Iden", ibra, iket)
-                        mpo[1,ibra,iket,0] = PhElementOpera("b^\dagger + b",ibra, iket) * \
-                                             mol[imol].ph[iph].omega * mol[imol].ph[iph].ephcoup
                         mpo[-1,ibra,iket,0] = PhElementOpera("b^\dagger b", ibra, iket) * mol[imol].ph[iph].omega
+                        if rep == "chain" and iph != 0:
+                            mpo[1,ibra,iket,0] = PhElementOpera("b",ibra, iket) * \
+                                             mol[imol].phhop[iph,iph-1]
+                            mpo[2,ibra,iket,0] = PhElementOpera("b^\dagger",ibra, iket) * \
+                                             mol[imol].phhop[iph,iph-1]
+                        else:
+                            mpo[1,ibra,iket,0] = PhElementOpera("b^\dagger + b",ibra, iket) * \
+                                             mol[imol].ph[iph].omega * mol[imol].ph[iph].ephcoup
+
                         
                         if imol != nmols-1 or iph != mol[imol].nphs-1:
                             mpo[-1,ibra,iket,-1] = PhElementOpera("Iden", ibra, iket)
                             
-                            if iph != mol[imol].nphs-1: 
-                                for icol in xrange(1,MPOdim[impo+1]-1):
-                                    mpo[icol,ibra,iket,icol] = PhElementOpera("Iden", ibra, iket)
-                            else:
-                                for icol in xrange(1,MPOdim[impo+1]-1):
-                                    mpo[icol+1,ibra,iket,icol] = PhElementOpera("Iden", ibra, iket)
+                            if rep == "chain":
+                                #print "MPO1", mpo.transpose(1,2,0,3)
+                                if iph == 0:
+                                    mpo[-1,ibra,iket,1] = PhElementOpera("b^\dagger",ibra, iket) 
+                                    mpo[-1,ibra,iket,2] = PhElementOpera("b",ibra, iket) 
+                                    for icol in xrange(3,MPOdim[impo+1]-1):
+                                        mpo[icol-1,ibra,iket,icol] = PhElementOpera("Iden", ibra, iket)
+                                elif iph == mol[imol].nphs-1:
+                                    for icol in xrange(1,MPOdim[impo+1]-1):
+                                        mpo[icol+2,ibra,iket,icol] = PhElementOpera("Iden", ibra, iket)
+                                else:
+                                    mpo[-1,ibra,iket,1] = PhElementOpera("b^\dagger",ibra, iket) 
+                                    mpo[-1,ibra,iket,2] = PhElementOpera("b",ibra, iket) 
+                                    for icol in xrange(3,MPOdim[impo+1]-1):
+                                        mpo[icol,ibra,iket,icol] = PhElementOpera("Iden", ibra, iket)
+
+                            elif rep == "star":
+                                if iph != mol[imol].nphs-1: 
+                                    for icol in xrange(1,MPOdim[impo+1]-1):
+                                        mpo[icol,ibra,iket,icol] = PhElementOpera("Iden", ibra, iket)
+                                else:
+                                    for icol in xrange(1,MPOdim[impo+1]-1):
+                                        mpo[icol+1,ibra,iket,icol] = PhElementOpera("Iden", ibra, iket)
                 MPO.append(mpo)
                 impo += 1
             else:

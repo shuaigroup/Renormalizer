@@ -10,3 +10,25 @@ dirac    X56q    Intel(R) Xeon(R) CPU E5-2620 v2 @ 2.10GHz    1366.026s
 dirac    X55q    Intel(R) Xeon(R) CPU E5520      @ 2.27GHz    2069.387s
 quantum  X16Cv3  Intel(R) Xeon(R) CPU E5-2640 v3 @ 2.60GHza    835.313s
 quantum  X12Cv2  Intel(R) Xeon(R) CPU E5-2620 v2 @ 2.10GHz                           935.805s
+
+Chain and Star representation energy of discrete bath
+phonon cutoff     star energy          chain energy
+    1            0.0871978346722   0.0871978346722
+    2            0.0852833528666   0.0854204513654
+    3            0.0851167372267   0.0851460929449
+    4            0.0851050117559   0.0851088645396
+    5            0.0851043506643   0.0851047324181
+    6            0.0851043191653   0.0851043504669
+    7            0.0851043178489   0.0851043200767
+    8            0.0851043178      0.0851043179403
+    9            0.0851043177983   0.0851043178057
+
+It seems that the star representation easy to converge, 
+becasue we should cutoff the phonon levels, then the chain and star representation space
+are different.
+if two mode, 
+each cutoff 0
+Then star is |00>, chain is |00> same
+each cutoff 1
+star is |00>,|10>,|01>,|11>
+chain is |00>, |10>-|01>, |10>+|01>, |20>-|02>

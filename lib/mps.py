@@ -9,7 +9,7 @@ import numpy as np
 import numpy.random
 import copy
 import scipy.linalg
-import utils
+import mathutils
 import math
 import fci
 from ephMPS import mpompsmat
@@ -136,7 +136,7 @@ def create(pdim,config):
     pdim: physical dimension
     """
     nsites=len(config)
-    mps=[utils.zeros([1,pdim,1]) for i in xrange(nsites)]
+    mps=[mathutils.zeros([1,pdim,1]) for i in xrange(nsites)]
     for i,p in enumerate(config):
         mps[i][0,p,0]=1.
     return mps
@@ -556,7 +556,7 @@ def mps_fci(mps):
     pdim=mps[0].shape[1]
     nsites=len(mps)
     confs=fci.fci_configs(nsites,pdim)
-    fvec=utils.zeros((pdim,)*nsites)
+    fvec=mathutils.zeros((pdim,)*nsites)
     for conf in confs:
         fvec[conf]=ceval(mps,conf)
     return fvec
@@ -603,7 +603,7 @@ def add(mpsa,mpsb,QNargs=None):
             mtb=mpsb[i]
             pdim = mta.shape[1]
             assert pdim==mtb.shape[1]
-            mpsab[i]=utils.zeros([mta.shape[0]+mtb.shape[0],pdim,
+            mpsab[i]=mathutils.zeros([mta.shape[0]+mtb.shape[0],pdim,
                                   mta.shape[2]+mtb.shape[2]])
             mpsab[i][:mta.shape[0],:,:mta.shape[2]]=mta[:,:,:]
             mpsab[i][mta.shape[0]:,:,mta.shape[2]:]=mtb[:,:,:]
@@ -619,7 +619,7 @@ def add(mpsa,mpsb,QNargs=None):
             assert pdimu==mtb.shape[1]
             assert pdimd==mtb.shape[2]
 
-            mpsab[i]=utils.zeros([mta.shape[0]+mtb.shape[0],pdimu,pdimd,
+            mpsab[i]=mathutils.zeros([mta.shape[0]+mtb.shape[0],pdimu,pdimd,
                                   mta.shape[3]+mtb.shape[3]])
             mpsab[i][:mta.shape[0],:,:,:mta.shape[3]]=mta[:,:,:,:]
             mpsab[i][mta.shape[0]:,:,:,mta.shape[3]:]=mtb[:,:,:,:]
@@ -677,7 +677,7 @@ def liouville_to_hilbert(mpsl,basis):
     nsites=len(mpsl)
     mpoh=[None]*nsites
     for i, mt in enumerate(mpsl):
-        tens=utils.zeros([mt.shape[0],sdim,sdim,mt.shape[2]])
+        tens=mathutils.zeros([mt.shape[0],sdim,sdim,mt.shape[2]])
         for r in xrange(mt.shape[0]):
             for s in xrange(mt.shape[2]):
                 for p in xrange(pdim):
