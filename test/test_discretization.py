@@ -79,7 +79,7 @@ class Test_discretization(unittest.TestCase):
         with open("std_data/discretization/mean.npy", 'rb') as f:
             mean_std = np.load(f)
 
-        self.assertTrue(np.allclose(autocorr,mean_std))
+        self.assertTrue(np.allclose(autocorr,mean_std,rtol=1.e-3))
 
 
     def test_discrete_Legendre(self):

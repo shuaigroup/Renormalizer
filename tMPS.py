@@ -11,42 +11,85 @@ for QNargs!=None: MPO/MPS objects are lists of[MPO/MPS matrices, MPO/MPS Quantum
 import copy
 import numpy as np
 from lib import mps as mpslib
+import scipy.linalg
 import MPSsolver
 from elementop import *
 import constant
 from ephMPS import RK
 
-def ZeroTExactEmi(mol, pbond, iMPS, dipoleMPO, nsteps, dt):
+def Exact_Spectra(spectratype, mol, pbond, iMPS, dipoleMPO, nsteps, dt, temperature):
     '''
     0T emission spectra exact propagator
     the bra part e^iEt is negected to reduce the osillation
+    and 
+    for single molecule, the EX space propagator e^iHt is local, and so exact
+    
+    support:
+    all cases: 0Temi
+    1mol case: 0Temi, TTemi, 0Tabs, TTabs
     '''
-
-    AketMPS = mpslib.mapply(dipoleMPO, iMPS)
-    AbraMPS = mpslib.add(AketMPS,None)
+    
+    assert spectratype in ["emi","abs"]
+    
+    if spectratype == "emi":
+        space1 = "EX"
+        space2 = "GS"
+        if temperature != 0:
+            assert len(mol) == 1
+    else:
+        assert len(mol) == 1
+        space1 = "GS"
+        space2 = "EX"
+    
+    if temperature != 0:
+        beta = constant.T2beta(temperature)
+        print "beta=", beta
+        thermalMPO, thermalMPOdim = ExactPropagatorMPO(mol, pbond, -beta/2.0, space=space1)
+        ketMPS = mpslib.mapply(thermalMPO, iMPS)
+        Z = mpslib.dot(mpslib.conj(ketMPS),ketMPS)
+        print "partition function Z(beta)/Z(0)", Z
+    else:
+        ketMPS = iMPS
+        Z = 1.0
+    
+    AketMPS = mpslib.mapply(dipoleMPO, ketMPS)
+    
+    if temperature != 0:
+        braMPS = mpslib.add(ketMPS, None)
+    else:
+        AbraMPS = mpslib.add(AketMPS, None)
 
     t = 0.0
     autocorr = []
-    propMPO, propMPOdim = GSPropagatorMPO(mol, pbond, -1.0j*dt)
+    propMPO1, propMPOdim1 = ExactPropagatorMPO(mol, pbond, -1.0j*dt, space=space1)
+    propMPO2, propMPOdim2 = ExactPropagatorMPO(mol, pbond, -1.0j*dt, space=space2)
 
     # we can reconstruct the propagator each time if there is accumulated error
     
     for istep in xrange(nsteps):
         if istep !=0:
-            AketMPS = mpslib.mapply(propMPO, AketMPS)
+            AketMPS = mpslib.mapply(propMPO2, AketMPS)
+            if temperature != 0:
+                braMPS = mpslib.mapply(propMPO1, braMPS)
+        
+        if temperature != 0:
+            AbraMPS = mpslib.mapply(dipoleMPO, braMPS)
+        
         ft = mpslib.dot(mpslib.conj(AbraMPS),AketMPS)
-        autocorr.append(ft)
+        autocorr.append(ft/Z)
+        autocorr_store(autocorr, istep)
 
     return autocorr
 
 
-def GSPropagatorMPO(mol, pbond, x, QNargs=None):
+def ExactPropagatorMPO(mol, pbond, x, space="GS", QNargs=None):
     '''
     construct the GS space propagator e^{xH} exact MPO 
     H=\sum_{in} \omega_{in} b^\dagger_{in} b_{in}
     fortunately, the H is local. so e^{xH} = e^{xh1}e^{xh2}...e^{xhn}
     the bond dimension is 1
     '''
+    assert space in ["GS","EX"]
 
     nmols = len(mol)
     MPOdim = [1] *(len(pbond)+1)
@@ -64,16 +107,38 @@ def GSPropagatorMPO(mol, pbond, x, QNargs=None):
         impo += 1
 
         for iph in xrange(mol[imol].nphs):
-
-            for iboson in xrange(mol[imol].ph[iph].nqboson):
-                mpo = np.zeros([MPOdim[impo],pbond[impo],pbond[impo],MPOdim[impo+1]],dtype=np.complex128)
-
+            if space == "EX":
+                # for the EX space, with quasiboson algorithm, the b^\dagger + b
+                # operator is not local anymore.
+                assert mol[imol].ph[iph].nqboson == 1
+                # construct the matrix exponential by diagonalize the matrix first
+                Hmpo = np.zeros([pbond[impo],pbond[impo]])
+                
                 for ibra in xrange(pbond[impo]):
-                    mpo[0,ibra,ibra,0] = np.exp(x*mol[imol].ph[iph].omega * \
-                                float(mol[imol].ph[iph].base)**(mol[imol].ph[iph].nqboson-iboson-1)*float(ibra))
+                    for iket in xrange(pbond[impo]):
+                        Hmpo[ibra,iket] = PhElementOpera("b^\dagger b", ibra, iket) \
+                                    + PhElementOpera("b^\dagger + b",ibra, iket) * mol[imol].ph[iph].ephcoup
+                w, v = scipy.linalg.eigh(Hmpo)
+                Hmpo = np.diag(np.exp(x*mol[imol].ph[iph].omega*w))
+                Hmpo = v.dot(Hmpo)
+                Hmpo = Hmpo.dot(v.T)
 
+                mpo = np.zeros([MPOdim[impo],pbond[impo],pbond[impo],MPOdim[impo+1]],dtype=np.complex128)
+                mpo[0,:,:,0] = Hmpo
+                
                 MPO.append(mpo)
                 impo += 1
+
+            elif space == "GS":
+                for iboson in xrange(mol[imol].ph[iph].nqboson):
+                    mpo = np.zeros([MPOdim[impo],pbond[impo],pbond[impo],MPOdim[impo+1]],dtype=np.complex128)
+
+                    for ibra in xrange(pbond[impo]):
+                        mpo[0,ibra,ibra,0] = np.exp(x*mol[imol].ph[iph].omega * \
+                                    float(mol[imol].ph[iph].base)**(mol[imol].ph[iph].nqboson-iboson-1)*float(ibra))
+
+                    MPO.append(mpo)
+                    impo += 1
                     
     if QNargs != None:
         MPO = [MPO, MPOQN, MPOQNidx, MPOQNtot]
@@ -200,7 +265,7 @@ def FiniteT_spectra(spectratype, mol, pbond, iMPO, HMPO, dipoleMPO, nsteps, dt,
                 prop_method=prop_method, thresh=thresh,
                 temperature=temperature, compress_method=compress_method, QNargs=QNargs)
     elif spectratype == "abs":
-        thermalMPO, thermalMPOdim = GSPropagatorMPO(mol, pbond, -beta/2.0, QNargs=QNargs)
+        thermalMPO, thermalMPOdim = ExactPropagatorMPO(mol, pbond, -beta/2.0, QNargs=QNargs)
         ketMPO = mpslib.mapply(thermalMPO,iMPO, QNargs=QNargs)
     
     #\Psi e^{\-beta H} \Psi
@@ -209,7 +274,7 @@ def FiniteT_spectra(spectratype, mol, pbond, iMPO, HMPO, dipoleMPO, nsteps, dt,
 
     autocorr = []
     t = 0.0
-    exactpropMPO, exactpropMPOdim = GSPropagatorMPO(mol, pbond, -1.0j*dt, QNargs=QNargs)
+    exactpropMPO, exactpropMPOdim = ExactPropagatorMPO(mol, pbond, -1.0j*dt, QNargs=QNargs)
     
     if spectratype == "emi" :
         braMPO = mpslib.add(ketMPO, None, QNargs=QNargs)
@@ -252,7 +317,7 @@ def FiniteT_spectra(spectratype, mol, pbond, iMPO, HMPO, dipoleMPO, nsteps, dt,
         if algorithm == 1:
             ft = mpslib.dot(mpslib.conj(braMPO, QNargs=QNargs),ketMPO, QNargs=QNargs)
         elif algorithm == 2 and spectratype == "emi":
-            exactpropMPO, exactpropMPOdim  = GSPropagatorMPO(mol, pbond, -1.0j*dt*istep, QNargs=QNargs)
+            exactpropMPO, exactpropMPOdim  = ExactPropagatorMPO(mol, pbond, -1.0j*dt*istep, QNargs=QNargs)
             AketMPO = mpslib.mapply(dipoleMPO, ketMPO, QNargs=QNargs)
             AketMPO = mpslib.mapply(exactpropMPO, AketMPO, QNargs=QNargs)
             AbraMPO = mpslib.mapply(dipoleMPO, braMPO, QNargs=QNargs)
@@ -310,7 +375,7 @@ def FiniteT_emi(mol, pbond, iMPO, HMPO, dipoleMPO, nsteps, dt, \
 
     autocorr = []
     t = 0.0
-    ketpropMPO, ketpropMPOdim  = GSPropagatorMPO(mol, pbond, -1.0j*dt, QNargs=QNargs)
+    ketpropMPO, ketpropMPOdim  = ExactPropagatorMPO(mol, pbond, -1.0j*dt, QNargs=QNargs)
     
     dipoleMPOdagger = mpslib.conjtrans(dipoleMPO, QNargs=QNargs)
     
@@ -345,7 +410,7 @@ def FiniteT_abs(mol, pbond, iMPO, HMPO, dipoleMPO, nsteps, dt, ephtable,
     print "beta=", beta
     
     # GS space thermal operator 
-    thermalMPO, thermalMPOdim = GSPropagatorMPO(mol, pbond, -beta/2.0, QNargs=QNargs)
+    thermalMPO, thermalMPOdim = ExactPropagatorMPO(mol, pbond, -beta/2.0, QNargs=QNargs)
     
     # e^{\-beta H/2} \Psi
     ketMPO = mpslib.mapply(thermalMPO,iMPO, QNargs=QNargs)
@@ -359,7 +424,7 @@ def FiniteT_abs(mol, pbond, iMPO, HMPO, dipoleMPO, nsteps, dt, ephtable,
     
     autocorr = []
     t = 0.0
-    brapropMPO, brapropMPOdim = GSPropagatorMPO(mol, pbond, -1.0j*dt, QNargs=QNargs)
+    brapropMPO, brapropMPOdim = ExactPropagatorMPO(mol, pbond, -1.0j*dt, QNargs=QNargs)
     if compress_method == "variational":
         AketMPO = mpslib.canonicalise(AketMPO, 'l', QNargs=QNargs)
     
@@ -427,6 +492,7 @@ def construct_onsiteMPO(mol,pbond,opera,dipole=False,QNargs=None):
                 impo += 1
     
     # quantum number part
+    # len(MPO)-1 = len(MPOQN)-2, the L-most site is R-qn
     MPOQNidx = len(MPO)-1
     
     totnqboson = 0

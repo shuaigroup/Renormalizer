@@ -321,7 +321,10 @@ def construct_MPO(mol, J, pbond, scheme=2, rep="star"):
     MPOdim.append(1)
     MPOQN[0] = [0]
     MPOQN.append([0])
-    MPOQNidx = len(MPOQN)-2 # the boundary side of L/R side quantum number
+    # the boundary side of L/R side quantum number
+    # MPOQN[:MPOQNidx] is L side
+    # MPOQN[MPOQNidx+1:] is R side
+    MPOQNidx = len(MPOQN)-2 
     MPOQNtot = 0     # the total quantum number of each bond, for Hamiltonian it's 0              
         
     print "MPOdim", MPOdim

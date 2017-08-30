@@ -35,7 +35,9 @@ class Test_tMPS(unittest.TestCase):
         dipoleMPO, dipoleMPOdim = tMPS.construct_onsiteMPO(mol, pbond, "a", dipole=True)
         nsteps = 3000
         dt = 30.0
-        autocorr = tMPS.ZeroTExactEmi(mol, pbond, iMPS, dipoleMPO, nsteps, dt)
+        temperature = 0
+        autocorr = tMPS.Exact_Spectra("emi", mol, pbond, iMPS, dipoleMPO, \
+                nsteps, dt, temperature)
         autocorr = np.array(autocorr)
         with open("std_data/tMPS/ZeroExactEmi.npy", 'rb') as f:
             ZeroExactEmi_std = np.load(f)
