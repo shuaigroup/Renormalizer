@@ -298,11 +298,35 @@ def construct_MPO(mol, J, pbond, scheme=2, rep="star"):
         for iph in xrange(mol[imol].nphs):
             nqb = mol[imol].ph[iph].nqboson
             if nqb != 1:
-                bpbdagger = quasiboson.Quasi_Boson_MPO("b + b^\dagger", nqb,\
-                        mol[imol].ph[iph].qbtrunc, base=mol[imol].ph[iph].base)
-                qbopera[imol][iph] = bpbdagger
-                addmpodim = [i.shape[0] for i in bpbdagger]
-                addmpodim[0] -= 1   # the first quasi boson MPO the row dim is as before
+                if rep == "chain":
+                    b = quasiboson.Quasi_Boson_MPO("b", nqb,\
+                            mol[imol].ph[iph].qbtrunc, base=mol[imol].ph[iph].base)
+                    bdagger = quasiboson.Quasi_Boson_MPO("b^\dagger", nqb,\
+                            mol[imol].ph[iph].qbtrunc, base=mol[imol].ph[iph].base)
+                    bpbdagger = quasiboson.Quasi_Boson_MPO("b + b^\dagger", nqb,\
+                            mol[imol].ph[iph].qbtrunc, base=mol[imol].ph[iph].base)
+                    qbopera[imol]["b"+str(iph)] = b
+                    qbopera[imol]["bdagger"+str(iph)] = bdagger
+                    qbopera[imol]["bpbdagger"+str(iph)] = bpbdagger
+
+                    if iph == 0:
+                        if iph != mol[imol].nphs-1:
+                            addmpodim = [b[i].shape[0]+bdagger[i].shape[0]+bpbdagger[i].shape[0]-1 for i in range(nqb)]
+                        else:
+                            addmpodim = [bpbdagger[i].shape[0]-1 for i in range(nqb)]
+                        addmpodim[0] = 0
+                    else:
+                        addmpodim = [(b[i].shape[0]+bdagger[i].shape[0])*2-2 for i in range((nqb))]
+                        addmpodim[0] = 0
+
+                else:
+                    bpbdagger = quasiboson.Quasi_Boson_MPO("b + b^\dagger", nqb,\
+                            mol[imol].ph[iph].qbtrunc, base=mol[imol].ph[iph].base)
+                    qbopera[imol]["bpbdagger"+str(iph)] = bpbdagger
+                    addmpodim = [i.shape[0] for i in bpbdagger]
+                    addmpodim[0] = 0  
+                    # the first quasi boson MPO the row dim is as before, while
+                    # the others the a_i^\dagger a_i should exist
             else:
                 addmpodim = [0]
             
@@ -390,6 +414,12 @@ def construct_MPO(mol, J, pbond, scheme=2, rep="star"):
         MPO.append(mpo)
         impo += 1
         
+        # # of electronic operators retained in the phonon part, only used in
+        # quasiboson algorithm
+        if rep == "chain":
+            # except E and a^\dagger a
+            nIe = MPOdim[impo]-2
+
         # phonon part
         for iph in xrange(mol[imol].nphs):
             nqb = mol[imol].ph[iph].nqboson 
@@ -414,7 +444,6 @@ def construct_MPO(mol, J, pbond, scheme=2, rep="star"):
                             mpo[-1,ibra,iket,-1] = PhElementOpera("Iden", ibra, iket)
                             
                             if rep == "chain":
-                                #print "MPO1", mpo.transpose(1,2,0,3)
                                 if iph == 0:
                                     mpo[-1,ibra,iket,1] = PhElementOpera("b^\dagger",ibra, iket) 
                                     mpo[-1,ibra,iket,2] = PhElementOpera("b",ibra, iket) 
@@ -442,34 +471,100 @@ def construct_MPO(mol, J, pbond, scheme=2, rep="star"):
                 # b + b^\dagger in quasiboson representation
                 for iqb in xrange(nqb):
                     mpo = np.zeros([MPOdim[impo],pbond[impo],pbond[impo],MPOdim[impo+1]])
-                    bpbdagger = qbopera[imol][iph][iqb]
-                    for ibra in xrange(mol[imol].ph[iph].base):
-                        for iket in xrange(mol[imol].ph[iph].base):
-                            mpo[0,ibra,iket,0] = PhElementOpera("Iden", ibra, iket)
-                            mpo[-1,ibra,iket,0] = PhElementOpera("b^\dagger b", \
-                                    ibra, iket) * mol[imol].ph[iph].omega * \
-                                    float(mol[imol].ph[iph].base)**(nqb-iqb-1)
-                            
-                            #  the # of identity operator 
-                            if iqb != nqb-1:
-                                nI = MPOdim[impo+1]-bpbdagger.shape[-1]-1   
-                            else:
-                                nI = MPOdim[impo+1]-1
-
-                            for iset in xrange(1,nI+1):
-                                mpo[-iset,ibra,iket,-iset] = PhElementOpera("Iden", ibra, iket)
                     
-                    # b + b^\dagger 
-                    if iqb != nqb-1:
-                        mpo[1:bpbdagger.shape[0]+1,:,:,1:bpbdagger.shape[-1]+1] = bpbdagger
-                    else:
-                        mpo[1:bpbdagger.shape[0]+1,:,:,0:bpbdagger.shape[-1]] = \
-                        bpbdagger * mol[imol].ph[iph].omega * mol[imol].ph[iph].ephcoup
+                    if rep == "star":
+                        bpbdagger = qbopera[imol]["bpbdagger"+str(iph)][iqb]
+                        
+                        for ibra in xrange(mol[imol].ph[iph].base):
+                            for iket in xrange(mol[imol].ph[iph].base):
+                                mpo[0,ibra,iket,0] = PhElementOpera("Iden", ibra, iket)
+                                mpo[-1,ibra,iket,0] = PhElementOpera("b^\dagger b", \
+                                        ibra, iket) * mol[imol].ph[iph].omega * \
+                                        float(mol[imol].ph[iph].base)**(nqb-iqb-1)
+                                
+                                #  the # of identity operator 
+                                if iqb != nqb-1:
+                                    nI = MPOdim[impo+1]-bpbdagger.shape[-1]-1   
+                                else:
+                                    nI = MPOdim[impo+1]-1
+                                
+                                for iset in xrange(1,nI+1):
+                                    mpo[-iset,ibra,iket,-iset] = PhElementOpera("Iden", ibra, iket)
+                        
+                        # b + b^\dagger 
+                        if iqb != nqb-1:
+                            mpo[1:bpbdagger.shape[0]+1,:,:,1:bpbdagger.shape[-1]+1] = bpbdagger
+                        else:
+                            mpo[1:bpbdagger.shape[0]+1,:,:,0:bpbdagger.shape[-1]] = \
+                            bpbdagger * mol[imol].ph[iph].omega * mol[imol].ph[iph].ephcoup
+                    
+                    elif rep == "chain":
+
+                        b = qbopera[imol]["b"+str(iph)][iqb]
+                        bdagger = qbopera[imol]["bdagger"+str(iph)][iqb]
+                        bpbdagger = qbopera[imol]["bpbdagger"+str(iph)][iqb]
+                        
+                        for ibra in xrange(mol[imol].ph[iph].base):
+                            for iket in xrange(mol[imol].ph[iph].base):
+                                mpo[0,ibra,iket,0] = PhElementOpera("Iden", ibra, iket)
+                                mpo[-1,ibra,iket,0] = PhElementOpera("b^\dagger b", \
+                                        ibra, iket) * mol[imol].ph[iph].omega * \
+                                        float(mol[imol].ph[iph].base)**(nqb-iqb-1)
+                                
+                                #  the # of identity operator 
+                                if impo == len(MPOdim)-2:
+                                    nI = nIe-1
+                                else:
+                                    nI = nIe
+                                
+                                print "nI", nI
+                                for iset in xrange(1,nI+1):
+                                    mpo[-iset,ibra,iket,-iset] = PhElementOpera("Iden", ibra, iket)
+                        
+                        if iph == 0:
+                            # b + b^\dagger 
+                            if iqb != nqb-1:
+                                mpo[1:bpbdagger.shape[0]+1,:,:,1:bpbdagger.shape[-1]+1] = bpbdagger
+                            else:
+                                mpo[1:bpbdagger.shape[0]+1,:,:,0:1] = \
+                                bpbdagger * mol[imol].ph[iph].omega * mol[imol].ph[iph].ephcoup
+                        else:
+                            # b^\dagger, b
+                            if iqb != nqb-1:
+                                mpo[1:b.shape[0]+1,:,:,1:b.shape[-1]+1] = b
+                                mpo[b.shape[0]+1:b.shape[0]+1+bdagger.shape[0],:,:,\
+                                        b.shape[-1]+1:b.shape[-1]+1+bdagger.shape[-1]] = bdagger
+                            else:
+                                mpo[1:b.shape[0]+1,:,:,0:1] = b*mol[imol].phhop[iph,iph-1]
+                                mpo[b.shape[0]+1:b.shape[0]+1+bdagger.shape[0],:,:,0:1]\
+                                        = bdagger*mol[imol].phhop[iph,iph-1]
+                        
+                        if iph != mol[imol].nphs-1:
+                            if iph == 0:
+                                loffset = bpbdagger.shape[0]
+                                roffset = bpbdagger.shape[-1]
+                            else:
+                                loffset = b.shape[0] + bdagger.shape[0] 
+                                roffset = b.shape[-1] + bdagger.shape[-1] 
+                            # b^\dagger, b     
+                            if iqb == 0:
+                                mpo[-1:,:,:,roffset+1:roffset+1+bdagger.shape[-1]] = bdagger
+                                mpo[-1:,:,:,roffset+1+bdagger.shape[-1]:roffset+1+bdagger.shape[-1]+b.shape[-1]] = b
+                            elif iqb == nqb-1:
+                                print "He",loffset+1,\
+                                loffset+1+bdagger.shape[0],loffset+1+bdagger.shape[0]+b.shape[0],
+                                mpo[loffset+1:loffset+1+bdagger.shape[0],:,:,1:2] = bdagger
+                                mpo[loffset+1+bdagger.shape[0]:loffset+1+bdagger.shape[0]+b.shape[0],:,:,2:3] = b
+                            else:
+                                mpo[loffset+1:loffset+1+bdagger.shape[0],:,:,\
+                                        roffset+1:roffset+1+bdagger.shape[-1]] = bdagger
+                                mpo[loffset+1+bdagger.shape[0]:loffset+1+bdagger.shape[0]+b.shape[0],:,:,\
+                                        roffset+1+bdagger.shape[-1]:roffset+1+bdagger.shape[-1]+b.shape[-1]] = b
+                                
                     
                     MPO.append(mpo)
                     impo += 1
                 
-    
     return  MPO, MPOdim, MPOQN, MPOQNidx, MPOQNtot
 
 

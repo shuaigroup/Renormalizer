@@ -31,26 +31,28 @@ def Quasi_Boson_MPO(opera, nqb, trunc, base=2):
     opera : operator to be decomposed
             "b + b^\dagger"
     '''
-    assert opera in ["b + b^\dagger","b^\dagger b"]
+    assert opera in ["b + b^\dagger","b^\dagger b", "b", "b^\dagger"]
     
     # the structure is [bra_highest_bit, ket_highest_bit,..., bra_lowest_bit,
     # ket_lowest_bit]
     mat = np.zeros([base,]*nqb*2) 
     
-    if opera == "b + b^\dagger":
-        for i in xrange(1,base**nqb):
-            # b^+
-            lstring = np.array(map(int, baseConvert(i, base).zfill(nqb)))
-            rstring = np.array(map(int, baseConvert(i-1, base).zfill(nqb)))
-            pos = tuple(roundrobin(lstring,rstring))
-            mat[pos] = np.sqrt(i)
-        
-        for i in xrange(0,base**nqb-1):
-            # b
-            lstring = np.array(map(int, baseConvert(i, base).zfill(nqb)))
-            rstring = np.array(map(int, baseConvert(i+1, base).zfill(nqb)))
-            pos = tuple(roundrobin(lstring,rstring))
-            mat[pos] = np.sqrt(i+1)
+    if opera == "b + b^\dagger" or opera == "b^\dagger" or opera == "b":
+        if opera == "b + b^\dagger" or opera == "b^\dagger":
+            for i in xrange(1,base**nqb):
+                # b^+
+                lstring = np.array(map(int, baseConvert(i, base).zfill(nqb)))
+                rstring = np.array(map(int, baseConvert(i-1, base).zfill(nqb)))
+                pos = tuple(roundrobin(lstring,rstring))
+                mat[pos] = np.sqrt(i)
+
+        if opera == "b + b^\dagger" or opera == "b":
+            for i in xrange(0,base**nqb-1):
+                # b
+                lstring = np.array(map(int, baseConvert(i, base).zfill(nqb)))
+                rstring = np.array(map(int, baseConvert(i+1, base).zfill(nqb)))
+                pos = tuple(roundrobin(lstring,rstring))
+                mat[pos] = np.sqrt(i+1)
 
     elif opera == "b^\dagger b":
         # actually Identity operator can be constructed directly
