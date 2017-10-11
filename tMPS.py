@@ -16,6 +16,7 @@ import MPSsolver
 from elementop import *
 import constant
 from ephMPS import RK
+from ephMPS.utils.utils import *
 
 def Exact_Spectra(spectratype, mol, pbond, iMPS, dipoleMPO, nsteps, dt, temperature):
     '''
@@ -303,11 +304,6 @@ def tMPS(MPS, MPO, dt, ephtable, propagation_c, thresh=0, \
     return MPSnew
 
 
-def autocorr_store(autocorr, istep, freq=10):
-    if istep % freq == 0:
-        autocorr = np.array(autocorr)
-        with open("autocorr"+".npy", 'wb') as f:
-            np.save(f,autocorr)
 
 
 def FiniteT_spectra(spectratype, mol, pbond, iMPO, HMPO, dipoleMPO, nsteps, dt,\
