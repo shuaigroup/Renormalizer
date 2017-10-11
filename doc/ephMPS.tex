@@ -453,5 +453,27 @@ What we ignore here is that the diagonal part of the J Hamiltonian is not the
 phonon state is ground state equilibrium position. So the diagonal term is 0-0
 excitation energy plus the reorganization energy. Say, $\omega g^2$
 
+\section{ED time autocorrelation function}
+Zero temperature
+\begin{align}
+    \mu | \psi(0) \rangle  =  \sum_m a_m | \psi_m \rangle
+\end{align} 
+\begin{align}
+    C(t) =  \langle \psi(0) | e^{iHt} \mu e^{-iHt} \mu | \psi(0) \rangle \\
+    =  e^{iE_0t} \langle \psi(0) | \mu e^{-iHt} \mu | \psi(0) \rangle \\
+    =  e^{iE_0t} \sum_m a_m^2 e^{-iE_mt}
+\end{align} 
+
+Finite temperature
+\begin{align}
+    \mu | \psi_n \rangle  =  \sum_m a_{nm} | \psi_m \rangle
+\end{align} 
+\begin{align}
+    C(t) = \sum_n \langle \psi_n | e^{iHt} \mu e^{-iHt} \mu | \psi_n \rangle \\
+    =  \sum_n e^{iE_nt} \langle \psi_n | \mu e^{-iHt} \mu | \psi_n \rangle \\
+    =  \sum_n e^{iE_nt} \sum_m a_{nm}^2 e^{-iE_mt}
+\end{align} 
+
+
 
 \end{document}

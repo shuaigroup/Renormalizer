@@ -396,3 +396,53 @@ def spectra_normalize(spectra):
 
     return spectraabs/top
 
+
+def ZT_time_autocorr(dipolemat, c1, c2, e1, e2, mode, nsteps, dt):
+    '''
+    c1/e1 initial state eigenvector/eigenvalue
+    c2/e2 final  state eigenvector/eigenvalue
+    '''
+    assert mode in ["+","-"]
+
+    if mode == "+":
+        AC = dipolemat.dot(c1[:,0])
+    elif mode == "-":
+        AC = dipolemat.transpose().dot(c1[:,0])
+    
+    # decompose coefficient
+    a = np.tensordot(AC, c2, axes=1) 
+    
+    autocorr = []
+    t = np.arange(nsteps)*dt
+    for it in t:
+        autocorr.append(np.dot(a*a,np.exp(-1.0j*(e2-e2[0])*it)))
+    autocorr = np.array(autocorr)    
+        
+    return autocorr
+
+
+def FT_time_autocorr(T, dipolemat, c1, c2, e1, e2, mode, nsteps, dt):
+    '''
+    c1/e1 initial state eigenvector/eigenvalue
+    c2/e2 final  state eigenvector/eigenvalue
+    '''
+    
+    AC = np.zeros([e1.shape[0], e2.shape[0]])
+    for ic1 in xrange(e1.shape[0]):
+        if mode == "+":
+            AC[ic1,:] = dipolemat.dot(c1[:,ic1])
+        elif mode == "-":
+            AC[ic1,:] = dipolemat.transpose().dot(c1[:,ic1])
+        
+    # decompose coefficient
+    a = np.tensordot(AC, c2, axes=1) 
+    P = partition_function(e1, T) 
+        
+    autocorr = []
+    t = np.arange(nsteps)*dt
+    for it in t:
+        tmp = np.tensordot(np.exp(1.0j*(e1-e1[0])*it)*P, a*a, axes=1)
+        autocorr.append(np.dot(tmp, np.exp(-1.0j*(e2-e2[0])*it)))
+    autocorr = np.array(autocorr)    
+    
+    return autocorr

@@ -19,6 +19,8 @@ def construct_config_dict(mol, nexciton,  nparticle=False):
     The structure of the configuration string is a tuple (1,0,1...,7,8,9...)
     the first nmols terms are electronic config: mol1,mol2,mol3...
     term is the phonon config mol1ph1, mol1ph2,...mol2ph1....
+    
+    also support ground state n-particle approximation
     '''
     
     nmols = len(mol)
