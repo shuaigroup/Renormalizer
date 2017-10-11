@@ -119,7 +119,7 @@ class Test_quasiboson(unittest.TestCase):
             HMPO[0][0,ibra,ibra,0] -=  2.28614053/constant.au2ev
         
         if value[2] != None:
-            QNargs = [ephtable]
+            QNargs = [ephtable, False]
             HMPO = [HMPO, HMPOQN, HMPOQNidx, HMPOQNtot]
         else:
             QNargs = None
@@ -168,7 +168,7 @@ class Test_quasiboson(unittest.TestCase):
         
         if value[2] != None:
             iMPS = [iMPS, iMPSQN, len(iMPS)-1, 0]
-            QNargs = [ephtable]
+            QNargs = [ephtable, False]
             HMPO = [HMPO, HMPOQN, HMPOQNidx, HMPOQNtot]
         else:
             QNargs = None

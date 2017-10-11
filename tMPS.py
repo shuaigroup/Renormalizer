@@ -146,8 +146,9 @@ def ExactPropagatorMPO(mol, pbond, x, space="GS", QNargs=None):
     return MPO, MPOdim 
 
 
-def ZeroTCorr(iMPS, HMPO, dipoleMPO, nsteps, dt, ephtable, thresh=0,
-        cleanexciton=None, algorithm=1, prop_method="C_RK4", compress_method="svd", QNargs=None):
+def ZeroTCorr(iMPS, HMPO, dipoleMPO, nsteps, dt, ephtable, thresh=0, \
+        cleanexciton=None, algorithm=1, prop_method="C_RK4",\
+        compress_method="svd", QNargs=None, approxeiHt=None):
     '''
     the bra part e^iEt is negected to reduce the oscillation
     algorithm:
@@ -161,6 +162,7 @@ def ZeroTCorr(iMPS, HMPO, dipoleMPO, nsteps, dt, ephtable, thresh=0,
     thresh: the svd threshold in svd or variational compress
     '''
     
+
     AketMPS = mpslib.mapply(dipoleMPO, iMPS, QNargs=QNargs)
     if compress_method == "variational":
         AketMPS = mpslib.canonicalise(AketMPS, 'l', QNargs=QNargs)
@@ -172,20 +174,34 @@ def ZeroTCorr(iMPS, HMPO, dipoleMPO, nsteps, dt, ephtable, thresh=0,
     tableau =  RK.runge_kutta_explicit_tableau(prop_method)
     propagation_c = RK.runge_kutta_explicit_coefficient(tableau)
 
+    if approxeiHt != None:
+        approxeiHpt = ApproxPropagatorMPO(HMPO, dt, ephtable, propagation_c,\
+                thresh=approxeiHt, compress_method=compress_method, QNargs=QNargs)
+        approxeiHmt = ApproxPropagatorMPO(HMPO, -dt, ephtable, propagation_c,\
+                thresh=approxeiHt, compress_method=compress_method, QNargs=QNargs)
+    else:
+        approxeiHpt = None
+        approxeiHmt = None
+    
+
 
     for istep in xrange(nsteps):
         if istep != 0:
             t += dt
             if algorithm == 1:
                 AketMPS = tMPS(AketMPS, HMPO, dt, ephtable, propagation_c, thresh=thresh, \
-                    cleanexciton=cleanexciton, compress_method=compress_method, QNargs=QNargs)
+                    cleanexciton=cleanexciton, compress_method=compress_method, \
+                    QNargs=QNargs, approxeiHt=approxeiHpt)
             if algorithm == 2:
                 if istep % 2 == 1:
                     AketMPS = tMPS(AketMPS, HMPO, dt, ephtable, propagation_c, thresh=thresh, \
-                        cleanexciton=cleanexciton, compress_method=compress_method, QNargs=QNargs)
+                        cleanexciton=cleanexciton, compress_method=compress_method, QNargs=QNargs,\
+                        approxeiHt=approxeiHpt)
                 else:
                     AbraMPS = tMPS(AbraMPS, HMPO, -dt, ephtable, propagation_c, thresh=thresh, \
-                        cleanexciton=cleanexciton, compress_method=compress_method, QNargs=QNargs)
+                        cleanexciton=cleanexciton, compress_method=compress_method, QNargs=QNargs,\
+                        approxeiHt=approxeiHmt)
+        
         ft = mpslib.dot(mpslib.conj(AbraMPS,QNargs=QNargs),AketMPS, QNargs=QNargs)
         autocorr.append(ft)
         autocorr_store(autocorr, istep)
@@ -193,31 +209,84 @@ def ZeroTCorr(iMPS, HMPO, dipoleMPO, nsteps, dt, ephtable, thresh=0,
     return autocorr   
 
 
+def ApproxPropagatorMPO(HMPO, dt, ephtable, propagation_c, thresh=0, \
+        compress_method="svd", QNargs=None):
+    '''
+    e^-iHdt : approximate propagator MPO from Runge-Kutta methods
+    '''
+
+    # Identity operator 
+    if QNargs != None:
+        nmpo = len(HMPO[0])
+    else:
+        nmpo = len(HMPO)
+
+    MPOdim = [1] * (nmpo+1)
+    MPOQN = [[0]] * (nmpo+1)
+    MPOQNidx = nmpo-1
+    MPOQNtot = 0
+    
+    IMPO = []
+    for impo in xrange(nmpo):
+        if QNargs != None:
+            mpo = np.ones([1,HMPO[0][impo].shape[1],1], dtype=np.complex128)
+        else:
+            mpo = np.ones([1,HMPO[impo].shape[1],1], dtype=np.complex128)
+        IMPO.append(mpo)
+    IMPO = hilbert_to_liouville(IMPO)
+    
+    QNargslocal = copy.deepcopy(QNargs)
+    
+    if QNargs != None:
+        IMPO = [IMPO, MPOQN, MPOQNidx, MPOQNtot]
+        # a real MPO compression
+        QNargslocal[1] = True
+
+    approxMPO = tMPS(IMPO, HMPO, dt, ephtable, propagation_c, thresh=thresh, \
+        compress_method=compress_method, QNargs=QNargslocal)
+    
+    print "approx propagator thresh:", thresh
+    if QNargs != None:
+        print "approx propagator dim:", [mpo.shape[0] for mpo in approxMPO[0]]
+    else:
+        print "approx propagator dim:", [mpo.shape[0] for mpo in approxMPO]
+
+    chkIden = mpslib.mapply(mpslib.conj(approxMPO,QNargs=QNargs), approxMPO, QNargs=QNargs)
+    print "approx propagator Identity error", np.sqrt(mpslib.distance(chkIden, IMPO, QNargs=QNargs) /\
+        mpslib.dot(IMPO, IMPO, QNargs=QNargs))
+    
+    return approxMPO
+        
+
 def tMPS(MPS, MPO, dt, ephtable, propagation_c, thresh=0, \
-        cleanexciton=None, compress_method="svd", QNargs=None):
+        cleanexciton=None, compress_method="svd", QNargs=None, approxeiHt=None):
     '''
         core function to do time propagation
     '''
+    if approxeiHt == None:
 
-    termlist = [MPS]
-    for iterm in xrange(len(propagation_c)-1):
-        # when using variational method, the input MPS is L-canonicalise
-        # (in principle doesn't matter whether L-canonicalise, in practice, about
-        # the initial guess of the compress wfn)
-        termlist.append(mpslib.contract(MPO, termlist[iterm], 'l', thresh, compress_method=compress_method, QNargs=QNargs))
+        termlist = [MPS]
+        for iterm in xrange(len(propagation_c)-1):
+            # when using variational method, the input MPS is L-canonicalise
+            # (in principle doesn't matter whether L-canonicalise, in practice, about
+            # the initial guess of the compress wfn)
+            termlist.append(mpslib.contract(MPO, termlist[iterm], 'l', thresh, compress_method=compress_method, QNargs=QNargs))
+        
+        scaletermlist = []
+        for iterm in xrange(len(propagation_c)):
+            scaletermlist.append(mpslib.scale(termlist[iterm],
+                (-1.0j*dt)**iterm*propagation_c[iterm], QNargs=QNargs))
+        MPSnew = scaletermlist[0]
+        for iterm in xrange(1,len(propagation_c)):
+            MPSnew = mpslib.add(MPSnew, scaletermlist[iterm], QNargs=QNargs)
     
-    scaletermlist = []
-    for iterm in xrange(len(propagation_c)):
-        scaletermlist.append(mpslib.scale(termlist[iterm],
-            (-1.0j*dt)**iterm*propagation_c[iterm], QNargs=QNargs))
+        MPSnew = mpslib.canonicalise(MPSnew, 'r', QNargs=QNargs)
+        MPSnew = mpslib.compress(MPSnew, 'r', trunc=thresh, QNargs=QNargs)
     
-    MPSnew = scaletermlist[0]
-    for iterm in xrange(1,len(propagation_c)):
-        MPSnew = mpslib.add(MPSnew, scaletermlist[iterm], QNargs=QNargs)
+    else:
+        MPSnew = mpslib.contract(approxeiHt, MPS, 'r', thresh, compress_method=compress_method, QNargs=QNargs)
     
-    MPSnew = mpslib.canonicalise(MPSnew, 'r', QNargs=QNargs)
-    MPSnew = mpslib.compress(MPSnew, 'r', trunc=thresh, QNargs=QNargs)
-    
+
     if cleanexciton != None and QNargs == None:
         # clean the MPS according to quantum number constrain
         MPSnew = MPSsolver.clean_MPS('R', MPSnew, ephtable, cleanexciton)
@@ -241,9 +310,10 @@ def autocorr_store(autocorr, istep, freq=10):
             np.save(f,autocorr)
 
 
-def FiniteT_spectra(spectratype, mol, pbond, iMPO, HMPO, dipoleMPO, nsteps, dt,
-        ephtable, insteps=0, thresh=0, temperature=298,
-        algorithm=1, prop_method="C_RK4", compress_method="svd", QNargs=None):
+def FiniteT_spectra(spectratype, mol, pbond, iMPO, HMPO, dipoleMPO, nsteps, dt,\
+        ephtable, insteps=0, thresh=0, temperature=298,\
+        algorithm=1, prop_method="C_RK4", compress_method="svd", QNargs=None, \
+        approxeiHt=None):
     '''
     finite temperature propagation
     abs only has algorithm 1
@@ -261,9 +331,10 @@ def FiniteT_spectra(spectratype, mol, pbond, iMPO, HMPO, dipoleMPO, nsteps, dt,
 
     # e^{\-beta H/2} \Psi
     if spectratype == "emi":
-        ketMPO = thermal_prop(iMPO, HMPO, insteps, ephtable,
-                prop_method=prop_method, thresh=thresh,
-                temperature=temperature, compress_method=compress_method, QNargs=QNargs)
+        ketMPO = thermal_prop(iMPO, HMPO, insteps, ephtable,\
+                prop_method=prop_method, thresh=thresh,\
+                temperature=temperature, compress_method=compress_method,\
+                QNargs=QNargs, approxeiHt=approxeiHt)
     elif spectratype == "abs":
         thermalMPO, thermalMPOdim = ExactPropagatorMPO(mol, pbond, -beta/2.0, QNargs=QNargs)
         ketMPO = mpslib.mapply(thermalMPO,iMPO, QNargs=QNargs)
@@ -292,26 +363,44 @@ def FiniteT_spectra(spectratype, mol, pbond, iMPO, HMPO, dipoleMPO, nsteps, dt,
         ketMPO = mpslib.canonicalise(ketMPO, 'l', QNargs=QNargs)
         braMPO = mpslib.canonicalise(braMPO, 'l', QNargs=QNargs)
 
+    if approxeiHt != None:
+        approxeiHpt = ApproxPropagatorMPO(HMPO, dt, ephtable, propagation_c,\
+                thresh=approxeiHt, compress_method=compress_method, QNargs=QNargs)
+        approxeiHmt = ApproxPropagatorMPO(HMPO, -dt, ephtable, propagation_c,\
+                thresh=approxeiHt, compress_method=compress_method, QNargs=QNargs)
+    else:
+        approxeiHpt = None
+        approxeiHmt = None
+
+
     for istep in xrange(nsteps):
         if istep != 0:
             t += dt
             if spectratype == "emi":
                 if algorithm == 1:
                     ketMPO = mpslib.mapply(exactpropMPO,ketMPO, QNargs=QNargs) 
-                    braMPO = tMPS(braMPO, HMPO, dt, ephtable, propagation_c, thresh=thresh,
-                            cleanexciton=1, compress_method=compress_method, QNargs=QNargs)
+                    braMPO = tMPS(braMPO, HMPO, dt, ephtable, propagation_c,\
+                            thresh=thresh, cleanexciton=1,\
+                            compress_method=compress_method,\
+                            QNargs=QNargs, approxeiHt=approxeiHpt)
                 elif algorithm == 2:
                     if istep % 2 == 0:
-                        braMPO = tMPS(braMPO, HMPO, dt, ephtable, propagation_c, thresh=thresh,
-                                cleanexciton=1, compress_method=compress_method, QNargs=QNargs)
+                        braMPO = tMPS(braMPO, HMPO, dt, ephtable, propagation_c,\
+                                thresh=thresh, cleanexciton=1, \
+                                compress_method=compress_method, \
+                                QNargs=QNargs, approxeiHt=approxeiHpt)
                     else:
-                        ketMPO = tMPS(ketMPO, HMPO, -1.0*dt, ephtable, propagation_c,
-                                thresh=thresh, cleanexciton=1, compress_method=compress_method, QNargs=QNargs)
+                        ketMPO = tMPS(ketMPO, HMPO, -1.0*dt, ephtable, propagation_c, \
+                                thresh=thresh, cleanexciton=1, \
+                                compress_method=compress_method, \
+                                QNargs=QNargs, approxeiHt=approxeiHmt)
 
 
             elif spectratype == "abs":
-                ketMPO = tMPS(ketMPO, HMPO, dt, ephtable, propagation_c, thresh=thresh,
-                        cleanexciton=1, compress_method=compress_method, QNargs=QNargs)
+                ketMPO = tMPS(ketMPO, HMPO, dt, ephtable, propagation_c, \
+                        thresh=thresh, cleanexciton=1, \
+                        compress_method=compress_method, \
+                        QNargs=QNargs, approxeiHt=approxeiHpt)
                 braMPO = mpslib.mapply(exactpropMPO,braMPO, QNargs=QNargs) 
         
         if algorithm == 1:
@@ -330,7 +419,7 @@ def FiniteT_spectra(spectratype, mol, pbond, iMPO, HMPO, dipoleMPO, nsteps, dt,
 
 
 def thermal_prop(iMPO, HMPO, nsteps, ephtable, thresh=0, temperature=298,
-       prop_method="C_RK4", compress_method="svd", QNargs=None):
+       prop_method="C_RK4", compress_method="svd", QNargs=None, approxeiHt=None):
     '''
     do imaginary propagation
     '''
@@ -341,13 +430,19 @@ def thermal_prop(iMPO, HMPO, nsteps, ephtable, thresh=0, temperature=298,
     print "beta=", beta
     dbeta = beta/float(nsteps)
     
+    if approxeiHt != None:
+        approxeiHpt = ApproxPropagatorMPO(HMPO, -0.5j*dbeta, ephtable, propagation_c,\
+                thresh=approxeiHt, compress_method=compress_method, QNargs=QNargs)
+    else:
+        approxeiHpt = None
+    
     ketMPO = mpslib.add(iMPO, None, QNargs=QNargs)
 
     it = 0.0
     for istep in xrange(nsteps):
         it += dbeta
         ketMPO = tMPS(ketMPO, HMPO, -0.5j*dbeta, ephtable, propagation_c, thresh=thresh,
-                cleanexciton=1, compress_method=compress_method, QNargs=QNargs)
+                cleanexciton=1, compress_method=compress_method, QNargs=QNargs, approxeiHt=approxeiHpt)
     
     return ketMPO
 

@@ -86,7 +86,7 @@ class Test_chainmap(unittest.TestCase):
             HMPO[0][0,ibra,ibra,0] -=  2.28614053/constant.au2ev
         
         iMPS = [iMPS, iMPSQN, len(iMPS)-1, 0]
-        QNargs = [ephtable]
+        QNargs = [ephtable, False]
         HMPO = [HMPO, HMPOQN, HMPOQNidx, HMPOQNtot]
 
         dipoleMPO, dipoleMPOdim = tMPS.construct_onsiteMPO(mol, pbond,

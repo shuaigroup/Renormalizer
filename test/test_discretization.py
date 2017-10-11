@@ -63,7 +63,7 @@ class Test_discretization(unittest.TestCase):
             HMPO[0][0,ibra,ibra,0] -=  elocalex
         
         iMPS = [iMPS, iMPSQN, len(iMPS)-1, 0]
-        QNargs = [ephtable]
+        QNargs = [ephtable, False]
         HMPO = [HMPO, HMPOQN, HMPOQNidx, HMPOQNtot]
         
         dipoleMPO, dipoleMPOdim = tMPS.construct_onsiteMPO(mol, pbond, \
@@ -122,7 +122,7 @@ class Test_discretization(unittest.TestCase):
             HMPO[0][0,ibra,ibra,0] -=  elocalex
         
         iMPS = [iMPS, iMPSQN, len(iMPS)-1, 0]
-        QNargs = [ephtable]
+        QNargs = [ephtable, False]
         HMPO = [HMPO, HMPOQN, HMPOQNidx, HMPOQNtot]
         
         dipoleMPO, dipoleMPOdim = tMPS.construct_onsiteMPO(mol, pbond,

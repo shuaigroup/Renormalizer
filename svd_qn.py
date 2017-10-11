@@ -6,7 +6,8 @@ import numpy as np
 import scipy.linalg
 import copy
 
-def Csvd(cstruct, qnbigl, qnbigr, nexciton, QR=False, system=None, full_matrices=True):
+def Csvd(cstruct, qnbigl, qnbigr, nexciton, QR=False, system=None,\
+        full_matrices=True, IfMPO=False):
     '''
     block svd the coefficient matrix (l, sigmal, sigmar, r) or (l,sigma,r)
     according to the quantum number 
@@ -28,7 +29,12 @@ def Csvd(cstruct, qnbigl, qnbigr, nexciton, QR=False, system=None, full_matrices
     qnrset0 = []
 
     # different combination
-    combine = [[x, nexciton-x] for x in xrange(nexciton+1)]
+    if IfMPO == False:
+        combine = [[x, nexciton-x] for x in xrange(nexciton+1)]
+    else:
+        min0 = min(np.min(localqnl),np.min(localqnr))
+        max0 = max(np.max(localqnl),np.max(localqnr))
+        combine = [[x, nexciton-x] for x in xrange(min0, max0+1)]
     for nl, nr in combine:
         #lset = [i for i, x in enumerate(localqnl) if x == nl]
         #rset = [i for i, x in enumerate(localqnr) if x == nr]

@@ -21,7 +21,7 @@ class Test_svd_qn(unittest.TestCase):
         
         MPSnew1 = mpslib.compress(MPS,'l',trunc=1.e-6,check_canonical=False,QR=False,QNargs=None)
 
-        QNargs = [ephtable]
+        QNargs = [ephtable, False]
         MPS = [MPS, MPSQN, len(MPS)-1, 1]
         MPSnew2 = mpslib.compress(MPS,'l',trunc=1.e-6,check_canonical=False,QR=False,QNargs=QNargs)
         self.assertAlmostEqual(mpslib.distance(MPSnew1,MPSnew2[0]),0.0)

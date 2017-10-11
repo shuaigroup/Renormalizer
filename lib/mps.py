@@ -224,7 +224,6 @@ def mapply(mpo,mps,QNargs=None):
             mpompsqn = np.add.outer(np.array(mpoQN[i]),np.array(mpsQNnew[i]))
             mpompsQN.append(mpompsqn.ravel().tolist())
         ret = [ret, mpompsQN, mpoQNidx, mpstot+mpotot]
-
     return ret
 
 
@@ -416,7 +415,8 @@ def compress(mps,side,trunc=1.e-12,check_canonical=False,QR=False,QNargs=None):
     assert side in ["l","r"]
 
     if QNargs != None:
-        ephtable = QNargs[0]
+        ephtable, ifMPO = QNargs[:]
+
         mps, MPSQN, MPSQNidx, MPSQNtot = mps
         if side == "l":
             MPSQNnew = svd_qn.QN_construct(MPSQN, MPSQNidx, len(mps)-1, MPSQNtot)
@@ -458,7 +458,12 @@ def compress(mps,side,trunc=1.e-12,check_canonical=False,QR=False,QNargs=None):
                 if mps[0].ndim == 3:
                     sigmaqn = np.array([0,1])
                 else:
-                    sigmaqn = np.array([0,0,1,1])
+                    # if MPS is a real MPO, then bra and ket are both important
+                    # if MPS is a MPS or density operator MPO, then only bra is important
+                    if ifMPO == False:
+                        sigmaqn = np.array([0,0,1,1])
+                    elif ifMPO == True:
+                        sigmaqn = np.array([0,-1,1,0])
             else:
                 # ph site 
                 sigmaqn = np.array([0]*npdim)
@@ -473,8 +478,8 @@ def compress(mps,side,trunc=1.e-12,check_canonical=False,QR=False,QNargs=None):
 
         if QR == False:
             if QNargs != None:
-                u, sigma, qnlset, v, sigma, qnrset = svd_qn.Csvd(res, qnbigl,
-                        qnbigr, MPSQNtot, full_matrices=False)
+                u, sigma, qnlset, v, sigma, qnrset = svd_qn.Csvd(res, qnbigl, \
+                        qnbigr, MPSQNtot, full_matrices=False, IfMPO=ifMPO)
                 vt = v.T
             else:
                 try:
@@ -508,8 +513,8 @@ def compress(mps,side,trunc=1.e-12,check_canonical=False,QR=False,QNargs=None):
                     system = "R"
                 else:
                     system = "L"
-                u, qnlset, v, qnrset = svd_qn.Csvd(res, qnbigl, qnbigr, MPSQNtot,
-                        QR=True, system=system, full_matrices=False)
+                u, qnlset, v, qnrset = svd_qn.Csvd(res, qnbigl, qnbigr, MPSQNtot, \
+                        QR=True, system=system, full_matrices=False, IfMPO=ifMPO)
                 vt = v.T
             else:
                 if side == "l":
@@ -661,11 +666,14 @@ def dot(mpsa,mpsb, QNargs=None):
     return e0[0,0]
 
 
-def distance(mpsa,mpsb):
+def distance(mpsa,mpsb,QNargs=None):
     """
     ||mpsa-mpsb||
     """
-    return dot(conj(mpsa),mpsa)-dot(conj(mpsa),mpsb)-dot(conj(mpsb),mpsa)+dot(conj(mpsb),mpsb)
+    return dot(conj(mpsa, QNargs=QNargs),mpsa, QNargs=QNargs) \
+            -dot(conj(mpsa, QNargs=QNargs),mpsb, QNargs=QNargs) \
+            -dot(conj(mpsb, QNargs=QNargs),mpsa, QNargs=QNargs) \
+            +dot(conj(mpsb, QNargs=QNargs),mpsb, QNargs=QNargs)
 
 
 def liouville_to_hilbert(mpsl,basis):

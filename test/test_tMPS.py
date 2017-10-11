@@ -13,8 +13,7 @@ from ddt import ddt, data
 @ddt
 class Test_tMPS(unittest.TestCase):
 
-    @data([[[4,4]], 1e-3],\
-            [[[4,4],[2,2],[1.e-7,1.e-7]], 1e-3])
+    @data([[[4,4]], 1e-3])
     def test_ZeroExactEmi(self, value):
         
         print "data", value
@@ -77,7 +76,7 @@ class Test_tMPS(unittest.TestCase):
         
         if value[2] != None:
             iMPS = [iMPS, iMPSQN, len(iMPS)-1, 0]
-            QNargs = [ephtable]
+            QNargs = [ephtable, False]
             HMPO = [HMPO, HMPOQN, HMPOQNidx, HMPOQNtot]
         else:
             QNargs = None
@@ -131,7 +130,7 @@ class Test_tMPS(unittest.TestCase):
         
         if value[2] != None:
             iMPS = [iMPS, iMPSQN, len(iMPS)-1, 0]
-            QNargs = [ephtable]
+            QNargs = [ephtable, False]
             HMPO = [HMPO, HMPOQN, HMPOQNidx, HMPOQNtot]
         else:
             QNargs = None
@@ -159,7 +158,7 @@ class Test_tMPS(unittest.TestCase):
         
         if value[2] != None:
             iMPS3 = [iMPS3, iMPSQN3, len(iMPS3)-1, 0]
-            QNargs3 = [ephtable3]
+            QNargs3 = [ephtable3, False]
             HMPO3 = [HMPO3, HMPOQN3, HMPOQNidx3, HMPOQNtot3]
         else:
             QNargs3 = None
@@ -207,7 +206,7 @@ class Test_tMPS(unittest.TestCase):
             HMPO[0][0,ibra,ibra,0] -=  2.28614053/constant.au2ev
         
         if value[2] != None:
-            QNargs = [ephtable]
+            QNargs = [ephtable, False]
             HMPO = [HMPO, HMPOQN, HMPOQNidx, HMPOQNtot]
         else:
             QNargs = None
@@ -251,7 +250,7 @@ class Test_tMPS(unittest.TestCase):
             HMPO[0][0,ibra,ibra,0] -=  2.28614053/constant.au2ev
         
         if value[2] != None:
-            QNargs = [ephtable]
+            QNargs = [ephtable, False]
             HMPO = [HMPO, HMPOQN, HMPOQNidx, HMPOQNtot]
         else:
             QNargs = None
@@ -288,7 +287,7 @@ class Test_tMPS(unittest.TestCase):
             HMPO[0][0,ibra,ibra,0] -=  2.28614053/constant.au2ev
         
         if value[1] != None:
-            QNargs = [ephtable]
+            QNargs = [ephtable, False]
             HMPO = [HMPO, HMPOQN, HMPOQNidx, HMPOQNtot]
         else:
             QNargs = None
@@ -322,7 +321,7 @@ class Test_tMPS(unittest.TestCase):
             HMPO[0][0,ibra,ibra,0] -=  2.28614053/constant.au2ev
         
         if value[1] != None:
-            QNargs = [ephtable]
+            QNargs = [ephtable, False]
             HMPO = [HMPO, HMPOQN, HMPOQNidx, HMPOQNtot]
         else:
             QNargs = None
