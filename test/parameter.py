@@ -9,11 +9,12 @@ nmols = 3
 # eV
 J = np.array([[0.0,-0.1,-0.2],[-0.1,0.0,-0.3],[-0.2,-0.3,0.0]])/constant.au2ev
 # cm^-1
-omega = np.array([106.51, 1555.55])*constant.cm2au
+omega_value = np.array([106.51, 1555.55])*constant.cm2au
+omega = [{0:omega_value[0],1:omega_value[0]},{0:omega_value[1],1:omega_value[1]}]
 # a.u.
 D = np.array([30.1370, 8.7729])
 
-nphcoup = np.sqrt(omega/2.0)*D
+nphcoup = np.sqrt(omega_value/2.0)*D
 nphs = 2
 nlevels =  [4,4]
 

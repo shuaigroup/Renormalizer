@@ -21,13 +21,14 @@ def Chain_Map_discrete(mol):
         v0 = np.zeros(mol[imol].nphs)
         tot = 0.0
         for iph in xrange(mol[imol].nphs):
-            Vcoup = mol[imol].ph[iph].ephcoup * mol[imol].ph[iph].omega
+            Vcoup = mol[imol].ph[iph].ephcoup *\
+            mol[imol].ph[iph].omega[1]**2/mol[imol].ph[iph].omega[0]
             tot += Vcoup**2
             v0[iph] = Vcoup  
         
         tot = np.sqrt(tot)
         v0 /= tot
-        Omega = np.array([mol[imol].ph[iph].omega for iph in xrange(mol[imol].nphs)])
+        Omega = np.array([mol[imol].ph[iph].omega[0] for iph in xrange(mol[imol].nphs)])
         
         Alpha, Beta = tri_lanczos(Omega, v0)
         Chain.append((Alpha, Beta, tot))
@@ -67,7 +68,10 @@ def Chain_Mol(Chain, mol):
                 np.diag(np.array(Beta[1:]),k=-1)
         
         for iph in xrange(molnew[imol].nphs):
-            molnew[imol].ph[iph].omega = Alpha[iph]
+            # only linear e-ph coupling is possible in chain mapping
+            for key in molnew[imol].ph[iph].omega.keys():
+                molnew[imol].ph[iph].omega[key] = Alpha[iph]
+            
             if iph == 0:
                 molnew[imol].ph[iph].ephcoup= tot / Alpha[iph]
             else:

@@ -15,4 +15,7 @@ python test_chainmap.py
 python test_tMPS.py
 python test_tMPS_eiHt.py
 
+python test_nonlinearephcoupling.py
+python test_exact_solver.py
 
+python test_exactsolver_timeautocorr.py

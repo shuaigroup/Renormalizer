@@ -475,5 +475,35 @@ Finite temperature
 \end{align} 
 
 
+\section{Supported Feature}
+
+\begin{enumerate}
+\item Multi-Mode Holstein Model
+    \begin{itemize}
+        \item displacement harmonic oscillator
+        \item both nearest neighbour electron hopping (MPOscheme=2) or long-range hopping
+            (MPOscheme=3)
+        \item simple nonlinear electron-phonon coupling: the frequency of excited state and ground state PES can be different.
+        \item zero, finite temperature dipole-dipole autocorrelation function.
+            (absorption and fluoresence spectrum)
+    \end{itemize}
+
+\item technical tricks
+    \begin{itemize}
+        \item two way propagation for zero temperature absorption and
+            fluoresence and finite temperature fluoresence
+        \item ground state space exact propagation (MPO bond dimension = 1) or
+            single molecule ground and excited state space (except quasiboson
+            algorithm for excited state space)
+        \item exact zero temperature fluoresence
+        \item quasiboson algorithm
+        \item chain representation only for displacement harmonic oscillator
+            (linear electron-phonon coupling)
+        \item direct compress propagator $e^{iHt}$ (not efficient in common cases)
+        \item discretization of spectral density 
+    \end{itemize}
+
+\end{enumerate}
+
 
 \end{document}

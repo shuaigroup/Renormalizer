@@ -119,7 +119,7 @@ def construct_Hmat(nconfigs, mol, J, direct=None, indirect=None, diag=False):
                         iconfigbra[1][offset+iph] += 1
                         idxbra = configidx.config2idx(iconfigbra, direct=direct, indirect=indirect)
                         if idxbra != None:
-                            data.append(mol[imol].ph[iph].omega * \
+                            data.append(mol[imol].ph[iph].omega[1]**2/mol[imol].ph[iph].omega[0] * \
                                     mol[imol].ph[iph].ephcoup * \
                                     np.sqrt(float(iconfigbra[1][offset+iph])))
                             rowidx.append(idxbra)
@@ -130,12 +130,34 @@ def construct_Hmat(nconfigs, mol, J, direct=None, indirect=None, diag=False):
                         iconfigbra[1][offset+iph] -= 1
                         idxbra = configidx.config2idx(iconfigbra, direct=direct, indirect=indirect)
                         if idxbra != None:
-                            data.append(mol[imol].ph[iph].omega * \
+                            data.append(mol[imol].ph[iph].omega[1]**2/mol[imol].ph[iph].omega[0] * \
                                     mol[imol].ph[iph].ephcoup * \
                                     np.sqrt(float(iconfigbra[1][offset+iph]+1)))
                             rowidx.append(idxbra)
                             colidx.append(idx)
-  
+
+                    # different omega PES part 
+                    # b^\dagger b^\dagger
+                    iconfigbra = copy.deepcopy(iconfig)
+                    if iconfigbra[1][offset+iph] < mol[imol].ph[iph].nlevels-2:
+                        iconfigbra[1][offset+iph] += 2
+                        idxbra = configidx.config2idx(iconfigbra, direct=direct, indirect=indirect)
+                        if idxbra != None:
+                            data.append(0.25*(mol[imol].ph[iph].omega[1]**2-mol[imol].ph[iph].omega[0]**2)/mol[imol].ph[iph].omega[0]\
+                                    *np.sqrt(float(iconfigbra[1][offset+iph]*(iconfigbra[1][offset+iph]-1))))
+                            rowidx.append(idxbra)
+                            colidx.append(idx)
+                    
+                    # b b
+                    iconfigbra = copy.deepcopy(iconfig)
+                    if iconfigbra[1][offset+iph] >= 2:
+                        iconfigbra[1][offset+iph] -= 2
+                        idxbra = configidx.config2idx(iconfigbra, direct=direct, indirect=indirect)
+                        if idxbra != None:
+                            data.append(0.25*(mol[imol].ph[iph].omega[1]**2-mol[imol].ph[iph].omega[0]**2)/mol[imol].ph[iph].omega[0]\
+                                    *np.sqrt(float((iconfigbra[1][offset+iph]+2)*(iconfigbra[1][offset+iph]+1))))
+                            rowidx.append(idxbra)
+                            colidx.append(idx)
 
     print "nconfig",nconfigs,"nonzero element",len(data)
     
@@ -162,14 +184,19 @@ def get_diag(iconfig, mol):
     index = 0
     for imol in xrange(nmols):
         for iph in xrange(mol[imol].nphs):
-            e += iconfig[1][index]*mol[imol].ph[iph].omega
+            e += iconfig[1][index]*mol[imol].ph[iph].omega[0]
+            
+            # different omega part
+            if iconfig[0][imol] == 1:
+                e += 0.25*(mol[imol].ph[iph].omega[1]**2-mol[imol].ph[iph].omega[0]**2)/mol[imol].ph[iph].omega[0]*float(iconfig[1][index]*2+1)
+            
             index += 1
 
     # constant part reorganization energy omega*g^2
     for imol in xrange(nmols):
         if iconfig[0][imol] == 1:
             for iph in xrange(mol[imol].nphs):
-                e += mol[imol].ph[iph].omega * mol[imol].ph[iph].ephcoup**2
+                e += mol[imol].ph[iph].omega[1]**2/mol[imol].ph[iph].omega[0] * mol[imol].ph[iph].ephcoup**2
     return e
 
 
@@ -355,7 +382,7 @@ def exciton0H(mol, temperature, ratio):
     for imol in xrange(nmols):
         for iph in xrange(mol[imol].nphs):
             phlist.append(range(mol[imol].ph[iph].nlevels)) 
-            omegalist.append(mol[imol].ph[iph].omega)
+            omegalist.append(mol[imol].ph[iph].omega[0])
 
     omegalist = np.array(omegalist)
     partitionfunc = 0.0

@@ -12,6 +12,7 @@ class Phonon(object):
     highest occupation levels: nlevels
     '''
     def __init__(self, omega, ephcoup, nlevels, nqboson=1, qbtrunc=0.0):
+        # omega is a dictionary for different PES omega[0], omega[1]...
         self.omega = omega
         self.ephcoup = ephcoup
         self.nlevels = nlevels
@@ -61,8 +62,8 @@ class Mol(object):
         # omega*coupling**2: a constant for single mol 
         self.e0 = 0.0
         for iph in xrange(self.nphs):
-            self.e0 += self.ph[iph].omega * self.ph[iph].ephcoup**2
-           
+            # only consider two PES
+            self.e0 += self.ph[iph].omega[1]**2/self.ph[iph].omega[0] * self.ph[iph].ephcoup**2
 
 class bidict(dict):
     '''
