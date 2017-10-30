@@ -23,9 +23,11 @@ class Test_chainmap(unittest.TestCase):
         nmols = 3
         # eV
         J = np.array([[0.0,-0.1,-0.2],[-0.1,0.0,-0.3],[-0.2,-0.3,0.0]])/constant.au2ev
-        omega = np.array([106.51, 1555.55, 1200.0])*constant.cm2au
+        omega_value = np.array([106.51, 1555.55, 1200.0])*constant.cm2au
         D = np.array([30.1370, 8.7729, 20.0])
-        nphcoup = np.sqrt(omega/2.0)*D
+        nphcoup = np.sqrt(omega_value/2.0)*D
+        omega = [{0:omega_value[0], 1:omega_value[0]},{0:omega_value[1], \
+            1:omega_value[1]},{0:omega_value[2], 1:omega_value[2]}]
         nexciton=1
         nphs = 3
         
@@ -49,7 +51,7 @@ class Test_chainmap(unittest.TestCase):
         
         Chain = chainmap.Chain_Map_discrete(mol)
         molnew = chainmap.Chain_Mol(Chain, mol)
-
+        
         MPS, MPSdim, MPSQN, MPO, MPOdim, MPOQN, MPOQNidx, MPOQNtot, ephtable, pbond = \
                     MPSsolver.construct_MPS_MPO_2(molnew, J, procedure[0][0], nexciton, \
                     MPOscheme=2, rep="chain")

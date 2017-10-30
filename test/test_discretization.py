@@ -36,8 +36,9 @@ class Test_discretization(unittest.TestCase):
         nmols = 1
         elocalex = 100000.* constant.cm2au
         J = np.array([[0.]]) * constant.cm2au
-        omega = xpos * constant.cm2au
-        
+        omega_value = xpos * constant.cm2au
+        omega = [{0:x,1:x} for x in omega_value]
+
         nphs = len(xpos)
         nlevels =  [10]*nphs
         
@@ -95,7 +96,8 @@ class Test_discretization(unittest.TestCase):
         nmols = 1
         elocalex = 100000.* constant.cm2au
         J = np.array([[0.]]) * constant.cm2au
-        omega = xpos * constant.cm2au
+        omega_value = xpos * constant.cm2au
+        omega = [{0:x,1:x} for x in omega_value]
         
         nphs = npoly
         

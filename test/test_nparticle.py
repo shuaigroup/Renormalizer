@@ -14,7 +14,8 @@ nmols = 3
 nphs = 1
 elocalex = 1.0
 dipole_abs = 1.0
-omega = np.array([1.0])
+omega_value = np.array([1.0])
+omega = [{0:omega_value[0],1:omega_value[0]}]
 nphcoup = np.array([1.0])
 nlevels =  [2]
 

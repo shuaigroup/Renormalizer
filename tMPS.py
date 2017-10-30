@@ -117,10 +117,11 @@ def ExactPropagatorMPO(mol, pbond, x, space="GS", QNargs=None):
                 
                 for ibra in xrange(pbond[impo]):
                     for iket in xrange(pbond[impo]):
-                        Hmpo[ibra,iket] = PhElementOpera("b^\dagger b", ibra, iket) \
-                                    + PhElementOpera("b^\dagger + b",ibra, iket) * mol[imol].ph[iph].ephcoup
+                        Hmpo[ibra,iket] = PhElementOpera("b^\dagger b", ibra, iket) *mol[imol].ph[iph].omega[0] \
+                            + PhElementOpera("b^\dagger + b",ibra, iket) * mol[imol].ph[iph].ephcoup * mol[imol].ph[iph].omega[1]**2/mol[imol].ph[iph].omega[0]\
+                            + PhElementOpera("(b^\dagger + b)^2",ibra, iket) * 0.25*(mol[imol].ph[iph].omega[1]**2-mol[imol].ph[iph].omega[0]**2)/mol[imol].ph[iph].omega[0] 
                 w, v = scipy.linalg.eigh(Hmpo)
-                Hmpo = np.diag(np.exp(x*mol[imol].ph[iph].omega*w))
+                Hmpo = np.diag(np.exp(x*w))
                 Hmpo = v.dot(Hmpo)
                 Hmpo = Hmpo.dot(v.T)
 
@@ -135,7 +136,7 @@ def ExactPropagatorMPO(mol, pbond, x, space="GS", QNargs=None):
                     mpo = np.zeros([MPOdim[impo],pbond[impo],pbond[impo],MPOdim[impo+1]],dtype=np.complex128)
 
                     for ibra in xrange(pbond[impo]):
-                        mpo[0,ibra,ibra,0] = np.exp(x*mol[imol].ph[iph].omega * \
+                        mpo[0,ibra,ibra,0] = np.exp(x*mol[imol].ph[iph].omega[0] * \
                                     float(mol[imol].ph[iph].base)**(mol[imol].ph[iph].nqboson-iboson-1)*float(ibra))
 
                     MPO.append(mpo)

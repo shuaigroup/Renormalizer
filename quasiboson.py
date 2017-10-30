@@ -25,13 +25,14 @@ def baseConvert(n, base):
             n = tup[0]
 
 
-def Quasi_Boson_MPO(opera, nqb, trunc, base=2):
+def Quasi_Boson_MPO(opera, nqb, trunc, base=2, C1=1.0, C2=1.0):
     '''
     nqb : # of quasi boson sites
     opera : operator to be decomposed
             "b + b^\dagger"
     '''
-    assert opera in ["b + b^\dagger","b^\dagger b", "b", "b^\dagger"]
+    assert opera in ["b + b^\dagger","b^\dagger b", "b", "b^\dagger", \
+            "C1(b + b^\dagger) + C2(b + b^\dagger)^2"]
     
     # the structure is [bra_highest_bit, ket_highest_bit,..., bra_lowest_bit,
     # ket_lowest_bit]
@@ -53,6 +54,38 @@ def Quasi_Boson_MPO(opera, nqb, trunc, base=2):
                 rstring = np.array(map(int, baseConvert(i+1, base).zfill(nqb)))
                 pos = tuple(roundrobin(lstring,rstring))
                 mat[pos] = np.sqrt(i+1)
+    
+    elif opera == "C1(b + b^\dagger) + C2(b + b^\dagger)^2":
+            # b^+
+            for i in xrange(1,base**nqb):
+                lstring = np.array(map(int, baseConvert(i, base).zfill(nqb)))
+                rstring = np.array(map(int, baseConvert(i-1, base).zfill(nqb)))
+                pos = tuple(roundrobin(lstring,rstring))
+                mat[pos] = C1 * np.sqrt(i)
+            # b
+            for i in xrange(0,base**nqb-1):
+                lstring = np.array(map(int, baseConvert(i, base).zfill(nqb)))
+                rstring = np.array(map(int, baseConvert(i+1, base).zfill(nqb)))
+                pos = tuple(roundrobin(lstring,rstring))
+                mat[pos] = C1 * np.sqrt(i+1)
+            # bb
+            for i in xrange(0,base**nqb-2):
+                lstring = np.array(map(int, baseConvert(i, base).zfill(nqb)))
+                rstring = np.array(map(int, baseConvert(i+2, base).zfill(nqb)))
+                pos = tuple(roundrobin(lstring,rstring))
+                mat[pos] = C2 * np.sqrt(i+2) * np.sqrt(i+1)
+            # b^\dagger b^\dagger
+            for i in xrange(2,base**nqb):
+                lstring = np.array(map(int, baseConvert(i, base).zfill(nqb)))
+                rstring = np.array(map(int, baseConvert(i-2, base).zfill(nqb)))
+                pos = tuple(roundrobin(lstring,rstring))
+                mat[pos] = C2 * np.sqrt(i) * np.sqrt(i-1)
+            # b^\dagger b + b b^\dagger
+            for i in xrange(0,base**nqb):
+                lstring = np.array(map(int, baseConvert(i, base).zfill(nqb)))
+                rstring = np.array(map(int, baseConvert(i, base).zfill(nqb)))
+                pos = tuple(roundrobin(lstring,rstring))
+                mat[pos] = C2 * float(i*2+1)
 
     elif opera == "b^\dagger b":
         # actually Identity operator can be constructed directly
