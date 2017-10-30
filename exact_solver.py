@@ -439,13 +439,14 @@ def ZT_time_autocorr(dipolemat, c1, c2, e1, e2, mode, nsteps, dt):
     
     # decompose coefficient
     a = np.tensordot(AC, c2, axes=1) 
-    
+    aa = a*a
+
     autocorr = []
     t = np.arange(nsteps)*dt
     for istep, it in enumerate(t):
         # discard the lowest level energy
-        autocorr.append(np.dot(a*a,np.exp(-1.0j*(e2-e2[0])*it)))
-        autocorr_store(autocorr, istep)
+        autocorr.append(np.dot(aa,np.exp(-1.0j*(e2-e2[0])*it)))
+        autocorr_store(autocorr, istep, freq=1000)
     
     autocorr = np.array(autocorr)    
         
@@ -467,15 +468,16 @@ def FT_time_autocorr(T, dipolemat, c1, c2, e1, e2, mode, nsteps, dt):
         
     # decompose coefficient
     a = np.tensordot(AC, c2, axes=1) 
+    aa = a*a
     P = partition_function(e1, T) 
         
     autocorr = []
     t = np.arange(nsteps)*dt
     for istep, it in enumerate(t):
         # discard the lowest level energy
-        tmp = np.tensordot(np.exp(1.0j*(e1-e1[0])*it)*P, a*a, axes=1)
+        tmp = np.tensordot(np.exp(1.0j*(e1-e1[0])*it)*P, aa, axes=1)
         autocorr.append(np.dot(tmp, np.exp(-1.0j*(e2-e2[0])*it)))
-        autocorr_store(autocorr, istep)
+        autocorr_store(autocorr, istep, freq=1000)
     
     autocorr = np.array(autocorr)    
     
