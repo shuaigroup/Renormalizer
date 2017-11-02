@@ -17,12 +17,13 @@ dipole_abs = 1.0
 omega_value = np.array([1.0])
 omega = [{0:omega_value[0],1:omega_value[0]}]
 nphcoup = np.array([1.0])
+D = [{0:0.0, 1:nphcoup*np.sqrt(2./omega_value[0])}]
 nlevels =  [2]
 
 mol = []
 for imol in xrange(nmols):
     mol_local = obj.Mol(elocalex, nphs, dipole_abs)
-    mol_local.create_ph(zip(omega, nphcoup, nlevels))
+    mol_local.create_ph(zip(omega, D, nlevels))
     mol.append(mol_local)
 
 def construct_config_dict_std(nex,nparticle,config_dict):

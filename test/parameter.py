@@ -12,13 +12,13 @@ J = np.array([[0.0,-0.1,-0.2],[-0.1,0.0,-0.3],[-0.2,-0.3,0.0]])/constant.au2ev
 omega_value = np.array([106.51, 1555.55])*constant.cm2au
 omega = [{0:omega_value[0],1:omega_value[0]},{0:omega_value[1],1:omega_value[1]}]
 # a.u.
-D = np.array([30.1370, 8.7729])
+D_value = np.array([30.1370, 8.7729])
 
-nphcoup = np.sqrt(omega_value/2.0)*D
+D = [{0:0.0,1:D_value[0]},{0:0.0,1:D_value[1]}]
 nphs = 2
 nlevels =  [4,4]
 
-phinfo = [list(a) for a in zip(omega, nphcoup, nlevels)]
+phinfo = [list(a) for a in zip(omega, D, nlevels)]
 
 mol = []
 for imol in xrange(nmols):
@@ -29,7 +29,7 @@ for imol in xrange(nmols):
 
 def construct_mol(nlevels, nqboson=[1,1], qbtrunc=[0.0,0.0]):
     
-    phinfo = [list(a) for a in zip(omega, nphcoup, nlevels, nqboson, qbtrunc)]
+    phinfo = [list(a) for a in zip(omega, D, nlevels, nqboson, qbtrunc)]
     mol = []
     for imol in xrange(nmols):
         mol_local = obj.Mol(elocalex, nphs, dipole_abs)

@@ -21,8 +21,8 @@ def Chain_Map_discrete(mol):
         v0 = np.zeros(mol[imol].nphs)
         tot = 0.0
         for iph in xrange(mol[imol].nphs):
-            Vcoup = mol[imol].ph[iph].ephcoup *\
-            mol[imol].ph[iph].omega[1]**2/mol[imol].ph[iph].omega[0]
+            Vcoup = mol[imol].ph[iph].dis[1] *\
+            mol[imol].ph[iph].omega[1]**2/np.sqrt(2.*mol[imol].ph[iph].omega[0])
             tot += Vcoup**2
             v0[iph] = Vcoup  
         
@@ -73,8 +73,8 @@ def Chain_Mol(Chain, mol):
                 molnew[imol].ph[iph].omega[key] = Alpha[iph]
             
             if iph == 0:
-                molnew[imol].ph[iph].ephcoup= tot / Alpha[iph]
+                molnew[imol].ph[iph].dis[1] = tot / Alpha[iph] * np.sqrt(2/Alpha[iph])
             else:
-                molnew[imol].ph[iph].ephcoup= 0.0
+                molnew[imol].ph[iph].dis[1] = 0.0
     
     return molnew

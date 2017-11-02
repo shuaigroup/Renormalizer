@@ -38,11 +38,12 @@ class Test_discretization(unittest.TestCase):
         J = np.array([[0.]]) * constant.cm2au
         omega_value = xpos * constant.cm2au
         omega = [{0:x,1:x} for x in omega_value]
+        D = [{0:0.0,1:ephcoup[i]*np.sqrt(2./omega_value[i])} for i in range(len(ephcoup))]
 
         nphs = len(xpos)
         nlevels =  [10]*nphs
         
-        phinfo = [list(a) for a in zip(omega, ephcoup, nlevels)]
+        phinfo = [list(a) for a in zip(omega, D, nlevels)]
         
         mol = []
         for imol in xrange(nmols):
@@ -102,8 +103,9 @@ class Test_discretization(unittest.TestCase):
         nphs = npoly
         
         nlevels =  [10]*nphs
+        D = [{0:0.0,1:ephcoup[i]*np.sqrt(2./omega_value[i])} for i in range(len(ephcoup))]
         
-        phinfo = [list(a) for a in zip(omega, ephcoup, nlevels)]
+        phinfo = [list(a) for a in zip(omega, D, nlevels)]
         
         mol = []
         for imol in xrange(nmols):

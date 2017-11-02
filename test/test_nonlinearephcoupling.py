@@ -28,7 +28,7 @@ class Test_nonlinearephcoupling(unittest.TestCase):
         J = np.zeros([1,1])
         nlevels =  [10,10]
         mol = []
-        phinfo = [list(a) for a in zip(omega, nphcoup, nlevels)]
+        phinfo = [list(a) for a in zip(omega, D, nlevels)]
         for imol in xrange(nmols):
             mol_local = obj.Mol(elocalex, nphs, dipole_abs)
             mol_local.create_ph(phinfo)
@@ -50,7 +50,7 @@ class Test_nonlinearephcoupling(unittest.TestCase):
 
         nlevels =  [5,5]
         mol = []
-        phinfo = [list(a) for a in zip(omega, nphcoup, nlevels)]
+        phinfo = [list(a) for a in zip(omega, D, nlevels)]
         for imol in xrange(nmols):
             mol_local = obj.Mol(elocalex, nphs, dipole_abs)
             mol_local.create_ph(phinfo)

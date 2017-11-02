@@ -323,7 +323,7 @@ def construct_MPO(mol, J, pbond, scheme=2, rep="star"):
                     bpbdagger = quasiboson.Quasi_Boson_MPO("C1(b + b^\dagger) + C2(b + b^\dagger)^2", nqb,\
                             mol[imol].ph[iph].qbtrunc, \
                             base=mol[imol].ph[iph].base,\
-                            C1=mol[imol].ph[iph].omega[1]**2/mol[imol].ph[iph].omega[0]*mol[imol].ph[iph].ephcoup, \
+                            C1=mol[imol].ph[iph].omega[1]**2/np.sqrt(2.*mol[imol].ph[iph].omega[0])*mol[imol].ph[iph].dis[1], \
                             C2=0.25*(mol[imol].ph[iph].omega[1]**2-mol[imol].ph[iph].omega[0]**2)/mol[imol].ph[iph].omega[0])
 
                     qbopera[imol]["bpbdagger"+str(iph)] = bpbdagger
@@ -442,7 +442,8 @@ def construct_MPO(mol, J, pbond, scheme=2, rep="star"):
                                              mol[imol].phhop[iph,iph-1]
                         else:
                             mpo[1,ibra,iket,0] = PhElementOpera("b^\dagger + b",ibra, iket) * \
-                                             mol[imol].ph[iph].omega[1]**2 / mol[imol].ph[iph].omega[0] * mol[imol].ph[iph].ephcoup \
+                                             mol[imol].ph[iph].omega[1]**2 / \
+                                             np.sqrt(2.*mol[imol].ph[iph].omega[0]) * mol[imol].ph[iph].dis[1] \
                                              + PhElementOpera("(b^\dagger + b)^2",ibra, iket) * \
                                              0.25*(mol[imol].ph[iph].omega[1]**2-mol[imol].ph[iph].omega[0]**2)/mol[imol].ph[iph].omega[0] 
 
@@ -533,8 +534,9 @@ def construct_MPO(mol, J, pbond, scheme=2, rep="star"):
                                 mpo[1:bpbdagger.shape[0]+1,:,:,1:bpbdagger.shape[-1]+1] = bpbdagger
                             else:
                                 mpo[1:bpbdagger.shape[0]+1,:,:,0:1] = \
-                                bpbdagger * \
-                                mol[imol].ph[iph].omega[1]**2/mol[imol].ph[iph].omega[0] * mol[imol].ph[iph].ephcoup
+                                    bpbdagger * \
+                                    mol[imol].ph[iph].omega[1]**2/np.sqrt(2.*mol[imol].ph[iph].omega[0])\
+                                    * mol[imol].ph[iph].dis[1]
                         else:
                             # b^\dagger, b
                             if iqb != nqb-1:

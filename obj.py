@@ -7,14 +7,15 @@ import numpy as np
 class Phonon(object):
     '''
     phonon class has property: 
-    frequency : omega
-    electron-phonon coupling : ephcoup
+    frequency : omega{}
+    PES displacement: dis
     highest occupation levels: nlevels
     '''
-    def __init__(self, omega, ephcoup, nlevels, nqboson=1, qbtrunc=0.0):
+    def __init__(self, omega, displacement, nlevels, nqboson=1, qbtrunc=0.0):
         # omega is a dictionary for different PES omega[0], omega[1]...
         self.omega = omega
-        self.ephcoup = ephcoup
+        # dis is a dictionary for different PES dis[0]=0.0, dis[1]...
+        self.dis = displacement
         self.nlevels = nlevels
         self.nqboson = nqboson
         self.qbtrunc = qbtrunc
@@ -22,7 +23,7 @@ class Phonon(object):
 
     def printinfo(self):
         print "omega   = ", self.omega
-        print "ephcoup = ", self.ephcoup
+        print "displacement = ", self.dis
         print "nlevels = ", self.nlevels
         print "nqboson = ", self.nqboson
         print "qbtrunc = ", self.qbtrunc
@@ -63,7 +64,7 @@ class Mol(object):
         self.e0 = 0.0
         for iph in xrange(self.nphs):
             # only consider two PES
-            self.e0 += self.ph[iph].omega[1]**2/self.ph[iph].omega[0] * self.ph[iph].ephcoup**2
+            self.e0 += 0.5*self.ph[iph].omega[1]**2 * self.ph[iph].dis[1]**2
 
 class bidict(dict):
     '''

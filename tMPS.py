@@ -118,7 +118,9 @@ def ExactPropagatorMPO(mol, pbond, x, space="GS", QNargs=None):
                 for ibra in xrange(pbond[impo]):
                     for iket in xrange(pbond[impo]):
                         Hmpo[ibra,iket] = PhElementOpera("b^\dagger b", ibra, iket) *mol[imol].ph[iph].omega[0] \
-                            + PhElementOpera("b^\dagger + b",ibra, iket) * mol[imol].ph[iph].ephcoup * mol[imol].ph[iph].omega[1]**2/mol[imol].ph[iph].omega[0]\
+                            + PhElementOpera("b^\dagger + b",ibra, iket) * \
+                            mol[imol].ph[iph].dis[1] *\
+                            mol[imol].ph[iph].omega[1]**2/np.sqrt(2.0*mol[imol].ph[iph].omega[0])\
                             + PhElementOpera("(b^\dagger + b)^2",ibra, iket) * 0.25*(mol[imol].ph[iph].omega[1]**2-mol[imol].ph[iph].omega[0]**2)/mol[imol].ph[iph].omega[0] 
                 w, v = scipy.linalg.eigh(Hmpo)
                 Hmpo = np.diag(np.exp(x*w))

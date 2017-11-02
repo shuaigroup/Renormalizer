@@ -119,8 +119,8 @@ def construct_Hmat(nconfigs, mol, J, direct=None, indirect=None, diag=False):
                         iconfigbra[1][offset+iph] += 1
                         idxbra = configidx.config2idx(iconfigbra, direct=direct, indirect=indirect)
                         if idxbra != None:
-                            data.append(mol[imol].ph[iph].omega[1]**2/mol[imol].ph[iph].omega[0] * \
-                                    mol[imol].ph[iph].ephcoup * \
+                            data.append(mol[imol].ph[iph].omega[1]**2/np.sqrt(2.*mol[imol].ph[iph].omega[0]) * \
+                                    mol[imol].ph[iph].dis[1] * \
                                     np.sqrt(float(iconfigbra[1][offset+iph])))
                             rowidx.append(idxbra)
                             colidx.append(idx)
@@ -130,8 +130,8 @@ def construct_Hmat(nconfigs, mol, J, direct=None, indirect=None, diag=False):
                         iconfigbra[1][offset+iph] -= 1
                         idxbra = configidx.config2idx(iconfigbra, direct=direct, indirect=indirect)
                         if idxbra != None:
-                            data.append(mol[imol].ph[iph].omega[1]**2/mol[imol].ph[iph].omega[0] * \
-                                    mol[imol].ph[iph].ephcoup * \
+                            data.append(mol[imol].ph[iph].omega[1]**2/np.sqrt(2.*mol[imol].ph[iph].omega[0]) * \
+                                    mol[imol].ph[iph].dis[1] * \
                                     np.sqrt(float(iconfigbra[1][offset+iph]+1)))
                             rowidx.append(idxbra)
                             colidx.append(idx)
@@ -196,7 +196,7 @@ def get_diag(iconfig, mol):
     for imol in xrange(nmols):
         if iconfig[0][imol] == 1:
             for iph in xrange(mol[imol].nphs):
-                e += mol[imol].ph[iph].omega[1]**2/mol[imol].ph[iph].omega[0] * mol[imol].ph[iph].ephcoup**2
+                e += 0.5 * mol[imol].ph[iph].omega[1]**2 * mol[imol].ph[iph].dis[1]**2
     return e
 
 

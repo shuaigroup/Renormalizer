@@ -24,8 +24,8 @@ class Test_chainmap(unittest.TestCase):
         # eV
         J = np.array([[0.0,-0.1,-0.2],[-0.1,0.0,-0.3],[-0.2,-0.3,0.0]])/constant.au2ev
         omega_value = np.array([106.51, 1555.55, 1200.0])*constant.cm2au
-        D = np.array([30.1370, 8.7729, 20.0])
-        nphcoup = np.sqrt(omega_value/2.0)*D
+        D_value = np.array([30.1370, 8.7729, 20.0])
+        D = [{0:0.0,1:x} for x in D_value]
         omega = [{0:omega_value[0], 1:omega_value[0]},{0:omega_value[1], \
             1:omega_value[1]},{0:omega_value[2], 1:omega_value[2]}]
         nexciton=1
@@ -36,7 +36,7 @@ class Test_chainmap(unittest.TestCase):
         nlevels =  [8]*nphs
         nqboson = [value[0]]*nphs
         qbtrunc = [1e-7]*nphs
-        phinfo = [list(a) for a in zip(omega, nphcoup, nlevels, nqboson, qbtrunc)]
+        phinfo = [list(a) for a in zip(omega, D, nlevels, nqboson, qbtrunc)]
         mol = []
         for imol in xrange(nmols):
             mol_local = obj.Mol(elocalex, nphs, dipole_abs)
