@@ -323,7 +323,7 @@ def construct_MPO(mol, J, pbond, scheme=2, rep="star"):
                     bpbdagger = quasiboson.Quasi_Boson_MPO("C1(b + b^\dagger) + C2(b + b^\dagger)^2", nqb,\
                             mol[imol].ph[iph].qbtrunc, \
                             base=mol[imol].ph[iph].base,\
-                            C1=mol[imol].ph[iph].omega[1]**2/np.sqrt(2.*mol[imol].ph[iph].omega[0])*mol[imol].ph[iph].dis[1], \
+                            C1=mol[imol].ph[iph].omega[1]**2/np.sqrt(2.*mol[imol].ph[iph].omega[0])*-mol[imol].ph[iph].dis[1], \
                             C2=0.25*(mol[imol].ph[iph].omega[1]**2-mol[imol].ph[iph].omega[0]**2)/mol[imol].ph[iph].omega[0])
 
                     qbopera[imol]["bpbdagger"+str(iph)] = bpbdagger
@@ -434,7 +434,9 @@ def construct_MPO(mol, J, pbond, scheme=2, rep="star"):
                         # first column
                         mpo[0,ibra,iket,0] = PhElementOpera("Iden", ibra, iket)
                         mpo[-1,ibra,iket,0] = PhElementOpera("b^\dagger b",\
-                                ibra, iket) * mol[imol].ph[iph].omega[0]
+                                ibra, iket) * mol[imol].ph[iph].omega[0]  \
+                                + PhElementOpera("(b^\dagger + b)^3",ibra, iket)*\
+                                mol[imol].ph[iph].force3rd[0] * (0.5/mol[imol].ph[iph].omega[0])**1.5
                         if rep == "chain" and iph != 0:
                             mpo[1,ibra,iket,0] = PhElementOpera("b",ibra, iket) * \
                                              mol[imol].phhop[iph,iph-1]
@@ -442,10 +444,15 @@ def construct_MPO(mol, J, pbond, scheme=2, rep="star"):
                                              mol[imol].phhop[iph,iph-1]
                         else:
                             mpo[1,ibra,iket,0] = PhElementOpera("b^\dagger + b",ibra, iket) * \
-                                             mol[imol].ph[iph].omega[1]**2 / \
-                                             np.sqrt(2.*mol[imol].ph[iph].omega[0]) * mol[imol].ph[iph].dis[1] \
-                                             + PhElementOpera("(b^\dagger + b)^2",ibra, iket) * \
-                                             0.25*(mol[imol].ph[iph].omega[1]**2-mol[imol].ph[iph].omega[0]**2)/mol[imol].ph[iph].omega[0] 
+                                             (mol[imol].ph[iph].omega[1]**2 /\
+                                                     np.sqrt(2.*mol[imol].ph[iph].omega[0]) * -mol[imol].ph[iph].dis[1] \
+                                              + 3.0*mol[imol].ph[iph].dis[1]**2*mol[imol].ph[iph].force3rd[1]/\
+                                              np.sqrt(2.*mol[imol].ph[iph].omega[0])) \
+                                              + PhElementOpera("(b^\dagger + b)^2",ibra, iket) * \
+                                             (0.25*(mol[imol].ph[iph].omega[1]**2-mol[imol].ph[iph].omega[0]**2)/mol[imol].ph[iph].omega[0]\
+                                              - 1.5*mol[imol].ph[iph].dis[1]*mol[imol].ph[iph].force3rd[1]/mol[imol].ph[iph].omega[0])\
+                                              + PhElementOpera("(b^\dagger + b)^3",ibra, iket) * \
+                                              (mol[imol].ph[iph].force3rd[1]-mol[imol].ph[iph].force3rd[0])*(0.5/mol[imol].ph[iph].omega[0])**1.5
 
                         
                         if imol != nmols-1 or iph != mol[imol].nphs-1:
@@ -536,7 +543,7 @@ def construct_MPO(mol, J, pbond, scheme=2, rep="star"):
                                 mpo[1:bpbdagger.shape[0]+1,:,:,0:1] = \
                                     bpbdagger * \
                                     mol[imol].ph[iph].omega[1]**2/np.sqrt(2.*mol[imol].ph[iph].omega[0])\
-                                    * mol[imol].ph[iph].dis[1]
+                                    * -mol[imol].ph[iph].dis[1]
                         else:
                             # b^\dagger, b
                             if iqb != nqb-1:

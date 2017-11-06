@@ -36,7 +36,8 @@ class Test_chainmap(unittest.TestCase):
         nlevels =  [8]*nphs
         nqboson = [value[0]]*nphs
         qbtrunc = [1e-7]*nphs
-        phinfo = [list(a) for a in zip(omega, D, nlevels, nqboson, qbtrunc)]
+        force3rd = [None]*nphs
+        phinfo = [list(a) for a in zip(omega, D, nlevels, force3rd, nqboson, qbtrunc)]
         mol = []
         for imol in xrange(nmols):
             mol_local = obj.Mol(elocalex, nphs, dipole_abs)

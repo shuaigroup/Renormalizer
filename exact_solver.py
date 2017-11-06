@@ -120,7 +120,7 @@ def construct_Hmat(nconfigs, mol, J, direct=None, indirect=None, diag=False):
                         idxbra = configidx.config2idx(iconfigbra, direct=direct, indirect=indirect)
                         if idxbra != None:
                             data.append(mol[imol].ph[iph].omega[1]**2/np.sqrt(2.*mol[imol].ph[iph].omega[0]) * \
-                                    mol[imol].ph[iph].dis[1] * \
+                                    -mol[imol].ph[iph].dis[1] * \
                                     np.sqrt(float(iconfigbra[1][offset+iph])))
                             rowidx.append(idxbra)
                             colidx.append(idx)
@@ -131,7 +131,7 @@ def construct_Hmat(nconfigs, mol, J, direct=None, indirect=None, diag=False):
                         idxbra = configidx.config2idx(iconfigbra, direct=direct, indirect=indirect)
                         if idxbra != None:
                             data.append(mol[imol].ph[iph].omega[1]**2/np.sqrt(2.*mol[imol].ph[iph].omega[0]) * \
-                                    mol[imol].ph[iph].dis[1] * \
+                                    -mol[imol].ph[iph].dis[1] * \
                                     np.sqrt(float(iconfigbra[1][offset+iph]+1)))
                             rowidx.append(idxbra)
                             colidx.append(idx)

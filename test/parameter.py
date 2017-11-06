@@ -27,9 +27,9 @@ for imol in xrange(nmols):
     mol.append(mol_local)
 
 
-def construct_mol(nlevels, nqboson=[1,1], qbtrunc=[0.0,0.0]):
+def construct_mol(nlevels, nqboson=[1,1], qbtrunc=[0.0,0.0], force3rd=[None, None]):
     
-    phinfo = [list(a) for a in zip(omega, D, nlevels, nqboson, qbtrunc)]
+    phinfo = [list(a) for a in zip(omega, D, nlevels, force3rd, nqboson, qbtrunc)]
     mol = []
     for imol in xrange(nmols):
         mol_local = obj.Mol(elocalex, nphs, dipole_abs)

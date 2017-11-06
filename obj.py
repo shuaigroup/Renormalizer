@@ -11,11 +11,19 @@ class Phonon(object):
     PES displacement: dis
     highest occupation levels: nlevels
     '''
-    def __init__(self, omega, displacement, nlevels, nqboson=1, qbtrunc=0.0):
+    def __init__(self, omega, displacement, nlevels, force3rd=None, nqboson=1, qbtrunc=0.0):
         # omega is a dictionary for different PES omega[0], omega[1]...
         self.omega = omega
         # dis is a dictionary for different PES dis[0]=0.0, dis[1]...
         self.dis = displacement
+        
+        if force3rd == None:
+            self.force3rd = {}
+            for i in xrange(len(omega)):
+                self.force3rd[i] = 0.0
+        else:
+            self.force3rd = force3rd
+
         self.nlevels = nlevels
         self.nqboson = nqboson
         self.qbtrunc = qbtrunc
@@ -64,7 +72,8 @@ class Mol(object):
         self.e0 = 0.0
         for iph in xrange(self.nphs):
             # only consider two PES
-            self.e0 += 0.5*self.ph[iph].omega[1]**2 * self.ph[iph].dis[1]**2
+            self.e0 += 0.5*self.ph[iph].omega[1]**2 * self.ph[iph].dis[1]**2 - \
+                    self.ph[iph].dis[1]**3 * self.ph[iph].force3rd[1]
 
 class bidict(dict):
     '''
