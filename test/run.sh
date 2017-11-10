@@ -19,3 +19,4 @@ python test_nonlinearephcoupling.py
 python test_exact_solver.py
 
 python test_exactsolver_timeautocorr.py
+python test_force3rd.py
