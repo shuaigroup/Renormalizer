@@ -74,6 +74,20 @@ class Test_MPSsolver(unittest.TestCase):
             mpslib.dot(MPSnew, mpslib.conj(MPSnew)) - \
             mpslib.dot(MPS, mpslib.conj(MPSnew)) - \
             mpslib.dot(MPSnew, mpslib.conj(MPS)), 0.0)
+    
+
+    def test_multistate(self):
+        MPS, MPSdim, MPSQN, MPO, MPOdim, MPOQN, MPOQNidx, MPOQNtot, ephtable, pbond = \
+            MPSsolver.construct_MPS_MPO_2(mol, J, procedure[0][0], nexciton,
+                    MPOscheme=2)
+        energy1 = MPSsolver.optimization(MPS, MPSdim, MPSQN, MPO, MPOdim,
+                ephtable, pbond, nexciton, procedure, method="1site", nroots=5)
+        energy2 = MPSsolver.optimization(MPS, MPSdim, MPSQN, MPO, MPOdim, 
+                ephtable, pbond, nexciton, procedure, method="2site", nroots=5)
+        print energy1[-1], energy2[-1]
+        energy_std = [0.08401412, 0.08449771, 0.08449801, 0.08449945]
+        self.assertTrue(np.allclose(energy1[-1][:4], energy_std))
+        self.assertTrue(np.allclose(energy2[-1][:4], energy_std))
 
 
 if __name__ == "__main__":

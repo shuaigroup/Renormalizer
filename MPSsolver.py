@@ -144,13 +144,16 @@ def updatemps(vset, sset, qnset, compset, nexciton, Mmax, percent=0):
     mpsdim = len(sidx)
     mps = np.zeros((vset.shape[0], mpsdim),dtype=vset.dtype)
     
-    compmps = np.zeros((compset.shape[0],mpsdim), dtype=compset.dtype)
+    if compset is not None:
+        compmps = np.zeros((compset.shape[0],mpsdim), dtype=compset.dtype)
+    else:
+        compmps = None
 
     mpsqn = []
     stot = 0.0
     for idim in xrange(mpsdim):
         mps[:, idim] = vset[:, sidx[idim]].copy()
-        if sidx[idim] < compset.shape[1]:
+        if (compset is not None) and sidx[idim]<compset.shape[1]:
             compmps[:,idim] = compset[:, sidx[idim]].copy() * sset[sidx[idim]]
         mpsqn.append(qnset[sidx[idim]])
         stot += sset[sidx[idim]]**2
@@ -584,7 +587,8 @@ def construct_MPO(mol, J, pbond, scheme=2, rep="star"):
     return  MPO, MPOdim, MPOQN, MPOQNidx, MPOQNtot
 
 
-def optimization(MPS, MPSdim, MPSQN, MPO, MPOdim, ephtable, pbond, nexciton, procedure, method="2site"):
+def optimization(MPS, MPSdim, MPSQN, MPO, MPOdim, ephtable, pbond, nexciton,\
+        procedure, method="2site", nroots=1):
     '''
     1 or 2 site optimization procedure
     '''
@@ -695,23 +699,34 @@ def optimization(MPS, MPSdim, MPSQN, MPO, MPOdim, ephtable, pbond, nexciton, pro
                             cstruct, MPO[imps-1], MPO[imps], rtensor)
                 # convert structure c to 1d according to qn 
                 return cout[qnmat==nexciton]
-
+            
+            if nroots != 1:
+                cguess = [cguess]
+                for iroot in xrange(nroots-1):
+                    cguess += [np.random.random([nonzeros])-0.5]
+            
             precond = lambda x, e, *args: x/(hdiag-e+1e-4)
-            e, c = lib.davidson(hop, cguess, precond, max_cycle=100) 
+            e, c = lib.davidson(hop, cguess, precond, max_cycle=100,\
+                    nroots=nroots) 
             # scipy arpack solver : much slower than davidson
             #A = scipy.sparse.linalg.LinearOperator((nonzeros,nonzeros), matvec=hop)
             #e, c = scipy.sparse.linalg.eigsh(A,k=1, which="SA",v0=cguess)
             print "HC loops:", count[0]
-
             print "isweep, imps, e=", isweep, imps, e
+            
             energy.append(e)
             
-            cstruct = c1d2cmat(cshape, c, qnmat, nexciton)
+            cstruct = c1d2cmat(cshape, c, qnmat, nexciton, nroots=nroots)
 
-            # update the mps
-            mps, mpsdim, mpsqn, compmps = Renormalization(cstruct, qnbigl, qnbigr,\
-                    system, nexciton, procedure[isweep][0], percent=procedure[isweep][1])
-            
+            if nroots == 1:
+                # direct svd the coefficient matrix
+                mps, mpsdim, mpsqn, compmps = Renormalization_svd(cstruct, qnbigl, qnbigr,\
+                        system, nexciton, procedure[isweep][0], percent=procedure[isweep][1])
+            else:
+                # diagonalize the reduced density matrix
+                mps, mpsdim, mpsqn, compmps = Renormalization_ddm(cstruct, qnbigl, qnbigr,\
+                        system, nexciton, procedure[isweep][0], percent=procedure[isweep][1])
+                
             if method == "1site":
                 MPS[imps] = mps
                 if system == "L":
@@ -743,9 +758,10 @@ def optimization(MPS, MPSdim, MPSQN, MPO, MPOdim, ephtable, pbond, nexciton, pro
 
                 MPSdim[imps] = mpsdim
                 MPSQN[imps] = mpsqn
-
-    lowestenergy = np.min(energy)
-    print "lowest energy = ", lowestenergy
+    
+    if nroots == 1:
+        lowestenergy = np.min(energy)
+        print "lowest energy = ", lowestenergy
 
     return energy
 
@@ -792,17 +808,25 @@ def construct_qnmat(QN, ephtable, pbond, addlist, method, system):
     return qnmat, qnbigl, qnbigr
 
 
-def c1d2cmat(cshape, c, qnmat, nexciton):
+def c1d2cmat(cshape, c, qnmat, nexciton, nroots=1):
     # recover good quantum number vector c to matrix format
-    cstruct = np.zeros(cshape,dtype=c.dtype)
-    np.place(cstruct, qnmat==nexciton, c)
-
+    if nroots == 1:
+        cstruct = np.zeros(cshape,dtype=c.dtype)
+        np.place(cstruct, qnmat==nexciton, c)
+    else:
+        cstruct = []
+        for ic in c:
+            icstruct = np.zeros(cshape,dtype=ic.dtype)
+            np.place(icstruct, qnmat==nexciton, ic)
+            cstruct.append(icstruct)
+    
     return cstruct
 
 
-def Renormalization(cstruct, qnbigl, qnbigr, domain, nexciton, Mmax, percent=0):
+def Renormalization_svd(cstruct, qnbigl, qnbigr, domain, nexciton, Mmax, percent=0):
     '''
         get the new mps, mpsdim, mpdqn, complementary mps to get the next guess
+        with singular value decomposition method (1 root)
     '''
     assert domain in ["R", "L"]
 
@@ -817,6 +841,39 @@ def Renormalization(cstruct, qnbigl, qnbigr, domain, nexciton, Mmax, percent=0):
                 nexciton, Mmax, percent=percent)
         return mps.reshape(list(qnbigl.shape) + [mpsdim]), mpsdim, mpsqn,\
                 np.moveaxis(compmps.reshape(list(qnbigr.shape)+[mpsdim]),-1,0)
+
+
+def Renormalization_ddm(cstruct, qnbigl, qnbigr, domain, nexciton, Mmax, percent=0):
+    '''
+        get the new mps, mpsdim, mpdqn, complementary mps to get the next guess
+        with diagonalize reduced density matrix method (> 1 root)
+    '''
+    nroots = len(cstruct)
+    ddm = 0.0
+    for iroot in xrange(nroots):
+        if domain == "R":
+            ddm += np.tensordot(cstruct[iroot], cstruct[iroot],\
+                    axes=(range(qnbigl.ndim),range(qnbigl.ndim)))
+        else:
+            ddm += np.tensordot(cstruct[iroot], cstruct[iroot],\
+                    axes=(range(qnbigl.ndim,cstruct[0].ndim),\
+                        range(qnbigl.ndim,cstruct[0].ndim)))
+    ddm /= float(nroots)
+    if domain == "L":
+        Uset, Sset, qnnew = svd_qn.Csvd(ddm, qnbigl, qnbigl, nexciton, ddm=True)
+    else:
+        Uset, Sset, qnnew = svd_qn.Csvd(ddm, qnbigr, qnbigr, nexciton, ddm=True)
+    mps, mpsdim, mpsqn, compmps = updatemps(Uset, Sset, qnnew, None, \
+            nexciton, Mmax, percent=percent)
+    
+    if domain == "R":
+        return np.moveaxis(mps.reshape(list(qnbigr.shape)+[mpsdim]),-1,0),mpsdim, mpsqn,\
+            np.tensordot(cstruct[0],mps.reshape(list(qnbigr.shape)+[mpsdim]),\
+                axes=(range(qnbigl.ndim,cstruct[0].ndim),range(qnbigr.ndim)))
+    else:    
+        return mps.reshape(list(qnbigl.shape) + [mpsdim]), mpsdim, mpsqn,\
+            np.tensordot(mps.reshape(list(qnbigl.shape)+[mpsdim]),cstruct[0],\
+                axes=(range(qnbigl.ndim),range(qnbigl.ndim)))
 
 
 def clean_MPS(system, MPS, ephtable, nexciton):

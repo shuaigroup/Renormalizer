@@ -180,7 +180,7 @@ def ExactPropagatorMPO(mol, pbond, x, space="GS", QNargs=None):
                     MPO.append(mpo)
                     impo += 1
 
-    if QNargs != None:
+    if QNargs is not None:
         MPO = [MPO, MPOQN, MPOQNidx, MPOQNtot]
 
     return MPO, MPOdim 
@@ -214,7 +214,7 @@ def ZeroTCorr(iMPS, HMPO, dipoleMPO, nsteps, dt, ephtable, thresh=0, \
     tableau =  RK.runge_kutta_explicit_tableau(prop_method)
     propagation_c = RK.runge_kutta_explicit_coefficient(tableau)
 
-    if approxeiHt != None:
+    if approxeiHt is not None:
         approxeiHpt = ApproxPropagatorMPO(HMPO, dt, ephtable, propagation_c,\
                 thresh=approxeiHt, compress_method=compress_method, QNargs=QNargs)
         approxeiHmt = ApproxPropagatorMPO(HMPO, -dt, ephtable, propagation_c,\
@@ -256,7 +256,7 @@ def ApproxPropagatorMPO(HMPO, dt, ephtable, propagation_c, thresh=0, \
     '''
 
     # Identity operator 
-    if QNargs != None:
+    if QNargs is not None:
         nmpo = len(HMPO[0])
     else:
         nmpo = len(HMPO)
@@ -268,7 +268,7 @@ def ApproxPropagatorMPO(HMPO, dt, ephtable, propagation_c, thresh=0, \
     
     IMPO = []
     for impo in xrange(nmpo):
-        if QNargs != None:
+        if QNargs is not None:
             mpo = np.ones([1,HMPO[0][impo].shape[1],1], dtype=np.complex128)
         else:
             mpo = np.ones([1,HMPO[impo].shape[1],1], dtype=np.complex128)
@@ -277,7 +277,7 @@ def ApproxPropagatorMPO(HMPO, dt, ephtable, propagation_c, thresh=0, \
     
     QNargslocal = copy.deepcopy(QNargs)
     
-    if QNargs != None:
+    if QNargs is not None:
         IMPO = [IMPO, MPOQN, MPOQNidx, MPOQNtot]
         # a real MPO compression
         QNargslocal[1] = True
@@ -286,7 +286,7 @@ def ApproxPropagatorMPO(HMPO, dt, ephtable, propagation_c, thresh=0, \
         compress_method=compress_method, QNargs=QNargslocal)
     
     print "approx propagator thresh:", thresh
-    if QNargs != None:
+    if QNargs is not None:
         print "approx propagator dim:", [mpo.shape[0] for mpo in approxMPO[0]]
     else:
         print "approx propagator dim:", [mpo.shape[0] for mpo in approxMPO]
@@ -303,7 +303,7 @@ def tMPS(MPS, MPO, dt, ephtable, propagation_c, thresh=0, \
     '''
         core function to do time propagation
     '''
-    if approxeiHt == None:
+    if approxeiHt is None:
 
         termlist = [MPS]
         for iterm in xrange(len(propagation_c)-1):
@@ -327,13 +327,13 @@ def tMPS(MPS, MPO, dt, ephtable, propagation_c, thresh=0, \
         MPSnew = mpslib.contract(approxeiHt, MPS, 'r', thresh, compress_method=compress_method, QNargs=QNargs)
     
 
-    if cleanexciton != None and QNargs == None:
+    if cleanexciton is not None and QNargs is None:
         # clean the MPS according to quantum number constrain
         MPSnew = MPSsolver.clean_MPS('R', MPSnew, ephtable, cleanexciton)
         # compress the clean MPS
         MPSnew = mpslib.compress(MPSnew, 'r', trunc=thresh)
     
-    if QNargs == None:
+    if QNargs is None:
         print "tMPS dim:", [mps.shape[0] for mps in MPSnew] + [1]
     else:
         print "tMPS dim:", [mps.shape[0] for mps in MPSnew[0]] + [1]
@@ -398,7 +398,7 @@ def FiniteT_spectra(spectratype, mol, pbond, iMPO, HMPO, dipoleMPO, nsteps, dt,\
         ketMPO = mpslib.canonicalise(ketMPO, 'l', QNargs=QNargs)
         braMPO = mpslib.canonicalise(braMPO, 'l', QNargs=QNargs)
 
-    if approxeiHt != None:
+    if approxeiHt is not None:
         approxeiHpt = ApproxPropagatorMPO(HMPO, dt, ephtable, propagation_c,\
                 thresh=approxeiHt, compress_method=compress_method, QNargs=QNargs)
         approxeiHmt = ApproxPropagatorMPO(HMPO, -dt, ephtable, propagation_c,\
@@ -465,7 +465,7 @@ def thermal_prop(iMPO, HMPO, nsteps, ephtable, thresh=0, temperature=298,
     print "beta=", beta
     dbeta = beta/float(nsteps)
     
-    if approxeiHt != None:
+    if approxeiHt is not None:
         approxeiHpt = ApproxPropagatorMPO(HMPO, -0.5j*dbeta, ephtable, propagation_c,\
                 thresh=approxeiHt, compress_method=compress_method, QNargs=QNargs)
     else:
@@ -640,7 +640,7 @@ def construct_onsiteMPO(mol,pbond,opera,dipole=False,QNargs=None):
         MPOQNtot = 0
     MPOQN[-1] = [0]
     
-    if QNargs == None:
+    if QNargs is None:
         return MPO, MPOdim
     else:
         return [MPO, MPOQN, MPOQNidx, MPOQNtot], MPOdim
@@ -698,7 +698,7 @@ def Max_Entangled_GS_MPS(mol, pbond, norm=True, QNargs=None):
                 MPS.append(mps)
                 imps += 1
     
-    if QNargs == None:
+    if QNargs is None:
         return MPS, MPSdim
     else:
         return [MPS, MPSQN, MPSQNidx, MPSQNtot], MPSdim 
@@ -709,7 +709,7 @@ def hilbert_to_liouville(MPS, QNargs=None):
     from hilbert MPS to Liouville MPO, the up and down physical bond is
     diagonal, for ancillary finite temperature propagation
     '''
-    if QNargs != None:
+    if QNargs is not None:
         MPSmat = MPS[0]
     else:
         MPSmat = MPS
@@ -721,7 +721,7 @@ def hilbert_to_liouville(MPS, QNargs=None):
             mpo[:,iaxis,iaxis,:] = imps[:,iaxis,:].copy()
         MPO.append(mpo)
     
-    if QNargs != None:
+    if QNargs is not None:
         MPO = [MPO] + copy.deepcopy(MPS[1:])
 
     return MPO

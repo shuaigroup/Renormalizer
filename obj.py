@@ -17,7 +17,7 @@ class Phonon(object):
         # dis is a dictionary for different PES dis[0]=0.0, dis[1]...
         self.dis = displacement
         
-        if force3rd == None:
+        if force3rd is None:
             self.force3rd = {}
             for i in xrange(len(omega)):
                 self.force3rd[i] = 0.0

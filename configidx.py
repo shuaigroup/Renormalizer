@@ -145,14 +145,14 @@ def config2idx(config, direct=None, indirect=None):
     config[1] is ph config
     '''
 
-    if indirect != None:
+    if indirect is not None:
         ph_dof_list, x, y = indirect
         exidx = exconfig2idx(config[0], y)
         phidx = phconfig2idx(config[1], ph_dof_list)
 
         idx = exidx * ph_dof_list[0] + phidx
     
-    elif direct != None:
+    elif direct is not None:
         nmols, config_dic = direct
         totconfig = tuple(config[0])+tuple(config[1])
         if totconfig not in config_dic.inverse:
@@ -167,13 +167,13 @@ def idx2config(idx, direct=None, indirect=None):
     '''
     index to e-ph configuration
     '''
-    if indirect != None:
+    if indirect is not None:
         ph_dof_list, x, y = indirect
         exidx, phidx = divmod(idx, ph_dof_list[0])
         exconfig = idx2exconfig(exidx, x)
         phconfig = idx2phconfig(phidx, ph_dof_list)
 
-    elif direct != None:
+    elif direct is not None:
         nmols, config_dic = direct
         if idx not in config_dic:
             return None

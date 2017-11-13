@@ -77,7 +77,7 @@ def construct_Hmat(nconfigs, mol, J, direct=None, indirect=None, diag=False):
     for idx in xrange(nconfigs):
         
         iconfig = configidx.idx2config(idx, direct=direct, indirect=indirect)
-        assert iconfig != None
+        assert iconfig is not None
 
         # diagonal part
         element = get_diag(iconfig, mol)
@@ -99,7 +99,7 @@ def construct_Hmat(nconfigs, mol, J, direct=None, indirect=None, diag=False):
                         iconfigbra[0][imol] = 0
                         idxbra = configidx.config2idx(iconfigbra, direct=direct, indirect=indirect)
                         # it is possible to be None in the n-particle approx.
-                        if idxbra != None:  
+                        if idxbra is not None:  
                             data.append(J[imol,jmol])
                             rowidx.append(idxbra)
                             colidx.append(idx)
@@ -118,7 +118,7 @@ def construct_Hmat(nconfigs, mol, J, direct=None, indirect=None, diag=False):
                     if iconfigbra[1][offset+iph] != mol[imol].ph[iph].nlevels-1:
                         iconfigbra[1][offset+iph] += 1
                         idxbra = configidx.config2idx(iconfigbra, direct=direct, indirect=indirect)
-                        if idxbra != None:
+                        if idxbra is not None:
                             data.append(mol[imol].ph[iph].omega[1]**2/np.sqrt(2.*mol[imol].ph[iph].omega[0]) * \
                                     -mol[imol].ph[iph].dis[1] * \
                                     np.sqrt(float(iconfigbra[1][offset+iph])))
@@ -129,7 +129,7 @@ def construct_Hmat(nconfigs, mol, J, direct=None, indirect=None, diag=False):
                     if iconfigbra[1][offset+iph] != 0:
                         iconfigbra[1][offset+iph] -= 1
                         idxbra = configidx.config2idx(iconfigbra, direct=direct, indirect=indirect)
-                        if idxbra != None:
+                        if idxbra is not None:
                             data.append(mol[imol].ph[iph].omega[1]**2/np.sqrt(2.*mol[imol].ph[iph].omega[0]) * \
                                     -mol[imol].ph[iph].dis[1] * \
                                     np.sqrt(float(iconfigbra[1][offset+iph]+1)))
@@ -142,7 +142,7 @@ def construct_Hmat(nconfigs, mol, J, direct=None, indirect=None, diag=False):
                     if iconfigbra[1][offset+iph] < mol[imol].ph[iph].nlevels-2:
                         iconfigbra[1][offset+iph] += 2
                         idxbra = configidx.config2idx(iconfigbra, direct=direct, indirect=indirect)
-                        if idxbra != None:
+                        if idxbra is not None:
                             data.append(0.25*(mol[imol].ph[iph].omega[1]**2-mol[imol].ph[iph].omega[0]**2)/mol[imol].ph[iph].omega[0]\
                                     *np.sqrt(float(iconfigbra[1][offset+iph]*(iconfigbra[1][offset+iph]-1))))
                             rowidx.append(idxbra)
@@ -153,7 +153,7 @@ def construct_Hmat(nconfigs, mol, J, direct=None, indirect=None, diag=False):
                     if iconfigbra[1][offset+iph] >= 2:
                         iconfigbra[1][offset+iph] -= 2
                         idxbra = configidx.config2idx(iconfigbra, direct=direct, indirect=indirect)
-                        if idxbra != None:
+                        if idxbra is not None:
                             data.append(0.25*(mol[imol].ph[iph].omega[1]**2-mol[imol].ph[iph].omega[0]**2)/mol[imol].ph[iph].omega[0]\
                                     *np.sqrt(float((iconfigbra[1][offset+iph]+2)*(iconfigbra[1][offset+iph]+1))))
                             rowidx.append(idxbra)
@@ -242,14 +242,14 @@ def construct_dipoleMat(inconfigs, fnconfigs, mol, directi=None, indirecti=None,
     
     for idx in xrange(inconfigs):
         iconfig = configidx.idx2config(idx, direct=directi, indirect=indirecti)
-        assert iconfig != None
+        assert iconfig is not None
         for imol in xrange(len(mol)):
             iconfig2 = copy.deepcopy(iconfig)
             if iconfig2[0][imol] != 1:
                 iconfig2[0][imol] = 1
                 idx2 = configidx.config2idx(iconfig2, direct=directf,
                         indirect=indirectf)
-                if idx2 != None: 
+                if idx2 is not None: 
                     rowidx.append(idx2)
                     colidx.append(idx)
                     data.append(mol[imol].dipole)
@@ -353,7 +353,7 @@ def dipoleC(mol, c, nconfigs_1, nconfigs_2,  mode,\
 
     for idx in xrange(nconfigs_1):
         iconfig = configidx.idx2config(idx, direct=direct1, indirect=indirect1)
-        assert iconfig != None
+        assert iconfig is not None
         for imol in xrange(nmols):
             if (mode == "+" and iconfig[0][imol] != 1) or \
                 (mode == "-" and iconfig[0][imol] != 0):
@@ -361,7 +361,7 @@ def dipoleC(mol, c, nconfigs_1, nconfigs_2,  mode,\
                 iconfig2[0][imol] = 1 - iconfig[0][imol]
                 idx2 = configidx.config2idx(iconfig2, direct=direct2,
                         indirect=indirect2)
-                if idx2 != None:
+                if idx2 is not None:
                     AC[idx2] +=  mol[imol].dipole * c[idx] 
 
     return AC

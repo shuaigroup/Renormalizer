@@ -39,7 +39,7 @@ def conj(mps, QNargs=None):
     """
     complex conjugate
     """
-    if QNargs == None:
+    if QNargs is None:
         return [np.conj(mt) for mt in mps]
     else:
         return [[np.conj(mt) for mt in mps[0]]] + copy.deepcopy(mps[1:])
@@ -50,7 +50,7 @@ def conjtrans(mpo, QNargs=None):
     conjugated transpose of MPO
     a[lbond,upbond,downbond,rbond] -> a[lbond,downbond,upbond,rbond]*
     """
-    if QNargs == None:
+    if QNargs is None:
         assert mpo[0].ndim == 4
         return [impo.transpose(0,2,1,3).conj() for impo in mpo]
     else:
@@ -171,7 +171,7 @@ def contract(mpo,mpsb,side,thresh,mpsa=None,ncanonical=1,compress_method="svd",Q
         ret=compress(ret,side,thresh, QNargs=QNargs)
     
     elif compress_method == "variational":
-        if mpsa == None:
+        if mpsa is None:
             # this initial guess method is from
             # "The density-matrix renormalization group in the age of matrix
             # product states"
@@ -188,7 +188,7 @@ def mapply(mpo,mps,QNargs=None):
     """
     apply mpo to mps, or apply mpo to mpo
     """
-    if QNargs != None:
+    if QNargs is not None:
         mpo, mpoQN, mpoQNidx, mpotot = mpo
         mps, mpsQN, mpsQNidx, mpstot = mps
     
@@ -217,7 +217,7 @@ def mapply(mpo,mps,QNargs=None):
                              mpo[i].shape[-1]*mps[i].shape[-1]])
             ret[i]=mt
     
-    if QNargs != None:
+    if QNargs is not None:
         mpsQNnew = svd_qn.QN_construct(mpsQN, mpsQNidx, mpoQNidx, mpstot)
         mpompsQN = []
         for i in xrange(len(mpoQN)):
@@ -414,7 +414,7 @@ def compress(mps,side,trunc=1.e-12,check_canonical=False,QR=False,QNargs=None):
     """
     assert side in ["l","r"]
 
-    if QNargs != None:
+    if QNargs is not None:
         ephtable, ifMPO = QNargs[:]
 
         mps, MPSQN, MPSQNidx, MPSQNtot = mps
@@ -452,7 +452,7 @@ def compress(mps,side,trunc=1.e-12,check_canonical=False,QR=False,QNargs=None):
         else:
             res=np.reshape(res,(np.prod(res.shape[:-1]),res.shape[-1]))
         
-        if QNargs != None:
+        if QNargs is not None:
             if ephtable[idx] == 1:
                 # e site
                 if mps[0].ndim == 3:
@@ -477,7 +477,7 @@ def compress(mps,side,trunc=1.e-12,check_canonical=False,QR=False,QNargs=None):
                 qnbigr = qnr
 
         if QR == False:
-            if QNargs != None:
+            if QNargs is not None:
                 u, sigma, qnlset, v, sigma, qnrset = svd_qn.Csvd(res, qnbigl, \
                         qnbigr, MPSQNtot, full_matrices=False, IfMPO=ifMPO)
                 vt = v.T
@@ -508,7 +508,7 @@ def compress(mps,side,trunc=1.e-12,check_canonical=False,QR=False,QNargs=None):
             else:
                 vt = np.einsum('i, ij -> ij', sigma, vt)
         else:
-            if QNargs != None:
+            if QNargs is not None:
                 if side == "l":
                     system = "R"
                 else:
@@ -526,12 +526,12 @@ def compress(mps,side,trunc=1.e-12,check_canonical=False,QR=False,QNargs=None):
         if side=="l":
             res=np.tensordot(mps[nsites-i-1],u,axes=1)
             ret_mpsi=np.reshape(vt,[m_trunc]+pdim+[vt.shape[1]/npdim])
-            if QNargs != None:
+            if QNargs is not None:
                 MPSQNnew[idx] = qnrset[:m_trunc]
         else:
             res=np.tensordot(vt,mps[i],axes=1)
             ret_mpsi=np.reshape(u,[u.shape[0]/npdim]+pdim+[m_trunc])
-            if QNargs != None:
+            if QNargs is not None:
                 MPSQNnew[idx+1] = qnlset[:m_trunc]
         
         ret_mps.append(ret_mpsi)
@@ -545,7 +545,7 @@ def compress(mps,side,trunc=1.e-12,check_canonical=False,QR=False,QNargs=None):
     # if np.isnan(fidelity):
     #     dddd
 
-    if QNargs != None:
+    if QNargs is not None:
         if side == "l":
             MPSQNnewidx = 0
         else:
@@ -571,7 +571,7 @@ def scale(mps,val,QNargs=None):
     """
     Multiply MPS by scalar
     """    
-    if QNargs == None:
+    if QNargs is None:
         ret=[mt.copy() for mt in mps]
         ret[-1]*=val
         return ret
@@ -586,12 +586,12 @@ def add(mpsa,mpsb,QNargs=None):
     add two mps / mpo 
     """
 
-    if mpsa==None:
+    if mpsa is None:
         return copy.deepcopy(mpsb)
-    elif mpsb==None:
+    elif mpsb is None:
         return copy.deepcopy(mpsa)
     
-    if QNargs != None:
+    if QNargs is not None:
         mpsa, mpsaQN, mpsaQNidx, mpsaQNtot = mpsa
         mpsb, mpsbQN, mpsbQNidx, mpsbQNtot = mpsb
         assert mpsaQNtot == mpsbQNtot
@@ -631,7 +631,7 @@ def add(mpsa,mpsb,QNargs=None):
 
         mpsab[-1]=np.concatenate((mpsa[-1],mpsb[-1]), axis=0)
     
-    if QNargs != None:
+    if QNargs is not None:
         mpsbQNnew = svd_qn.QN_construct(mpsbQN, mpsbQNidx, mpsaQNidx, mpsbQNtot)
         mpsabQN = [mpsaQN[i]+mpsbQNnew[i] for i in range(len(mpsbQNnew))]
         mpsabQN[0], mpsabQN[-1] = [0], [0]
@@ -645,7 +645,7 @@ def dot(mpsa,mpsb, QNargs=None):
     """
     dot product of two mps / mpo 
     """
-    if QNargs != None:
+    if QNargs is not None:
         mpsa = mpsa[0]
         mpsb = mpsb[0]
 
@@ -744,7 +744,7 @@ def MPSdtype_convert(MPS, QNargs=None):
     '''
     float64 to complex128
     '''
-    if  QNargs == None:
+    if  QNargs is None:
         return [mps.astype(np.complex128) for mps in MPS]
     else:
         return [[mps.astype(np.complex128) for mps in MPS[0]]] + MPS[1:]
