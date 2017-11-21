@@ -440,6 +440,9 @@ def ZT_time_autocorr(dipolemat, c1, c2, e1, e2, mode, nsteps, dt):
     # decompose coefficient
     a = np.tensordot(AC, c2, axes=1) 
     aa = a*a
+    
+    del AC
+    del a
 
     autocorr = []
     t = np.arange(nsteps)*dt
@@ -454,32 +457,46 @@ def ZT_time_autocorr(dipolemat, c1, c2, e1, e2, mode, nsteps, dt):
     return autocorr
 
 
-def FT_time_autocorr(T, dipolemat, c1, c2, e1, e2, mode, nsteps, dt):
+def FT_time_autocorr(T, dipolemat, c1, c2, e1, e2, mode, nsteps, dt, nset=1):
     '''
     c1/e1 initial state eigenvector/eigenvalue
     c2/e2 final  state eigenvector/eigenvalue
     '''
     
     AC = np.zeros([e1.shape[0], e2.shape[0]])
-    for ic1 in xrange(e1.shape[0]):
-        if mode == "+":
-            AC[ic1,:] = dipolemat.dot(c1[:,ic1])
-        elif mode == "-":
-            AC[ic1,:] = dipolemat.transpose().dot(c1[:,ic1])
-        
+    if mode == "+":
+        AC = dipolemat.dot(c1)
+    elif mode == "-":
+        AC = dipolemat.transpose().dot(c1)
+    AC = AC.T
+     
     # decompose coefficient
     a = np.tensordot(AC, c2, axes=1) 
     aa = a*a
     P = partition_function(e1, T) 
-        
+    aa = np.einsum("ij,i -> ij",aa,P)
+    
+    del AC
+    del a
+
     autocorr = []
     t = np.arange(nsteps)*dt
-    for istep, it in enumerate(t):
-        # discard the lowest level energy
-        print "istep=", istep
-        tmp = np.tensordot(np.exp(1.0j*(e1-e1[0])*it)*P, aa, axes=1)
-        autocorr.append(np.dot(tmp, np.exp(-1.0j*(e2-e2[0])*it)))
-        autocorr_store(autocorr, istep, freq=1000)
+    
+    #for istep, it in enumerate(t):
+    #    
+    #    # discard the lowest level energy
+    #    print "istep=", istep
+    #    tmp = np.tensordot(np.exp(1.0j*(e1-e1[0])*it), aa, axes=1)
+    #    autocorr.append(np.dot(tmp, np.exp(-1.0j*(e2-e2[0])*it)))
+    #    autocorr_store(autocorr, istep, freq=1000)
+    
+    # nset is the # of step set treated together
+    for istep in xrange(0,nsteps,nset):
+        tset = t[istep:min(nsteps,istep+nset)]
+        factor1 = np.tensordot(e1-e1[0], tset, axes=0)
+        tmp = np.tensordot(np.exp(1.0j*factor1), aa, axes=([0],[0]))
+        factor2 = np.tensordot(e2-e2[0], tset, axes=0)
+        autocorr += list(np.einsum("ji, ij -> j", tmp, np.exp(-1.0j*factor2)))
     
     autocorr = np.array(autocorr)    
     

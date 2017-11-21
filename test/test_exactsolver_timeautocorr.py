@@ -76,7 +76,8 @@ class Test_exactsolver_timeautocorr(unittest.TestCase):
         absZT2 = np.load("std_data/exact_solver_timeautocorr/absZT2.npy")
         self.assertTrue(np.allclose(autocorr,absZT2))
         
-        autocorr = exact_solver.FT_time_autocorr(T, dipolemat, ic, fc, ie, fe, "+", nsteps, dt)
+        autocorr = exact_solver.FT_time_autocorr(T, dipolemat, ic, fc, ie, fe,\
+                "+", nsteps, dt, nset=100)
         #np.save("absFT2",autocorr)
         absFT2 = np.load("std_data/exact_solver_timeautocorr/absFT2.npy")
         self.assertTrue(np.allclose(autocorr,absFT2))
@@ -87,7 +88,8 @@ class Test_exactsolver_timeautocorr(unittest.TestCase):
         emiZT2 = np.load("std_data/exact_solver_timeautocorr/emiZT2.npy")
         self.assertTrue(np.allclose(autocorr,emiZT2))
         
-        autocorr = exact_solver.FT_time_autocorr(T, dipolemat, fc, ic, fe, ie, "-", nsteps, dt)
+        autocorr = exact_solver.FT_time_autocorr(T, dipolemat, fc, ic, fe, ie,\
+                "-", nsteps, dt, nset=100)
         #np.save("emiFT2",autocorr)
         emiFT2 = np.load("std_data/exact_solver_timeautocorr/emiFT2.npy")
         self.assertTrue(np.allclose(autocorr,emiFT2))
