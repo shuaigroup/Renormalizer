@@ -7,6 +7,7 @@ useful utilities
 
 from itertools import islice, cycle
 import numpy as np
+import cPickle as pickle
 
 def roundrobin(*iterables):
     "roundrobin('ABC', 'D', 'EF') --> A D E B F C"
@@ -27,3 +28,9 @@ def autocorr_store(autocorr, istep, freq=10):
         autocorr = np.array(autocorr)
         with open("autocorr"+".npy", 'wb') as f:
             np.save(f,autocorr)
+
+
+def wfn_store(MPS, istep, filename, freq=100):
+    if istep % freq == 0:
+        with open(filename, 'wb') as f:
+            pickle.dump(MPS,f,-1)

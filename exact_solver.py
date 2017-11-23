@@ -492,6 +492,7 @@ def FT_time_autocorr(T, dipolemat, c1, c2, e1, e2, mode, nsteps, dt, nset=1):
     
     # nset is the # of step set treated together
     for istep in xrange(0,nsteps,nset):
+        print "istep", istep
         tset = t[istep:min(nsteps,istep+nset)]
         factor1 = np.tensordot(e1-e1[0], tset, axes=0)
         tmp = np.tensordot(np.exp(1.0j*factor1), aa, axes=([0],[0]))

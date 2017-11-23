@@ -243,6 +243,8 @@ def ZeroTCorr(iMPS, HMPO, dipoleMPO, nsteps, dt, ephtable, thresh=0, \
                         approxeiHt=approxeiHmt)
         
         ft = mpslib.dot(mpslib.conj(AbraMPS,QNargs=QNargs),AketMPS, QNargs=QNargs)
+        wfn_store(AbraMPS, istep, "AbraMPS.pkl")
+        wfn_store(AketMPS, istep, "AketMPS.pkl")
         autocorr.append(ft)
         autocorr_store(autocorr, istep)
 
@@ -341,8 +343,6 @@ def tMPS(MPS, MPO, dt, ephtable, propagation_c, thresh=0, \
     # get R-canonicalise MPS
     
     return MPSnew
-
-
 
 
 def FiniteT_spectra(spectratype, mol, pbond, iMPO, HMPO, dipoleMPO, nsteps, dt,\
@@ -447,6 +447,8 @@ def FiniteT_spectra(spectratype, mol, pbond, iMPO, HMPO, dipoleMPO, nsteps, dt,\
             AbraMPO = mpslib.mapply(dipoleMPO, braMPO, QNargs=QNargs)
             ft = mpslib.dot(mpslib.conj(AbraMPO, QNargs=QNargs),AketMPO, QNargs=QNargs)
 
+        wfn_store(braMPO, istep, "braMPO.pkl")
+        wfn_store(ketMPO, istep, "ketMPO.pkl")
         autocorr.append(ft/Z)
         autocorr_store(autocorr, istep)
     
