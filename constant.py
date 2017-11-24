@@ -20,6 +20,9 @@ cm2ev = cm2au * au2ev
 
 # 1 fs = fs2au a.u
 fs2au =  1.0e-15 / scipy.constants.physical_constants["atomic unit of time"][0]
+K2au = scipy.constants.physical_constants["kelvin-hartree relationship"][0]
+au2K = scipy.constants.physical_constants["hartree-kelvin relationship"][0]
+
 
 # kelvin to beta  au^-1 
 def T2beta(temperature):
