@@ -75,9 +75,9 @@ class Test_force3rd(unittest.TestCase):
         autocorr = tMPS.Exact_Spectra(value[0], mol, pbond, iMPS, dipoleMPO, nsteps, dt, temperature)
         autocorr = np.array(autocorr)
         print mol[0].e0
-        
+        np.save(value[0]+value[1],autocorr)
         autocorr_std = np.load("std_data/force3rd/"+value[0]+str(value[1])+".npy")
-        self.assertTrue(np.allclose(autocorr,autocorr_std,rtol=1e-2))
+        self.assertTrue(np.allclose(autocorr,autocorr_std,rtol=1e-2, atol=1e-03))
         
 if __name__ == "__main__":
     print("Test force3rd")

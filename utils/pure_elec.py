@@ -8,14 +8,15 @@ nearest neighbour interaction
 import itertools
 import numpy as np
 import scipy.linalg
-import matplotlib.pyplot as plt
 
 periodic = True
-dim1 = 4
-dim2 = 4
-dim3 = 1
-Nsites =  2
 # interaction term 0: on unit, 1: dim1, 2: dim2, 3: dim3
+# periodic length
+dim1 = 2
+dim2 = 2
+dim3 = 1
+# # of mols in each unit cell
+Nsites =  2
 
 V = np.zeros([Nsites, Nsites, 4])
 V[0,1,0] = 114.8
@@ -23,6 +24,8 @@ V[1,0,0] = 114.8
 V[0,1,1] = 114.8
 V[0,0,2] = 82.6
 V[1,1,2] = 82.6
+# V[i,j,k] the first digit i is the next mol's site,
+# the second digit j is this mol's site
 
 #V[0,0,1] = 114.8
 #def pure_electronic(V):
@@ -55,14 +58,15 @@ for idim1, idim2, idim3, jdim1, jdim2, jdim3 in \
             continue
 
         for isite, jsite in itertools.product(range(Nsites), range(Nsites)):
-            H[isite, idim1, idim2, idim3, jsite, jdim1, jdim2, jdim3] = V[isite, jsite, V_dim]
-            H[jsite, jdim1, jdim2, jdim3, isite, idim1, idim2, idim3] = V[isite, jsite, V_dim]
+            # if really linked, than neglect
+            if H[isite, idim1, idim2, idim3, jsite, jdim1, jdim2, jdim3] == 0: 
+                H[isite, idim1, idim2, idim3, jsite, jdim1, jdim2, jdim3] = V[isite, jsite, V_dim]
+                H[jsite, jdim1, jdim2, jdim3, isite, idim1, idim2, idim3] = V[isite, jsite, V_dim]
 
-w, v = scipy.linalg.eigh(H.reshape(Nsites*dim1*dim2*dim3,Nsites*dim1*dim2*dim3))
-print w
-
-transdip = np.sum(v, axis=0)
-plt.plot(w, transdip**2)
-plt.show()
+#w, v = scipy.linalg.eigh(H.reshape(Nsites*dim1*dim2*dim3,Nsites*dim1*dim2*dim3))
+#print w
+#transdip = np.sum(v, axis=0)
+#plt.plot(w, transdip**2)
+#plt.show()
 
 

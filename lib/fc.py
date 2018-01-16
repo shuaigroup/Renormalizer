@@ -15,7 +15,10 @@ def FC_integral_dho(w1, w2, v1, v2, Q):
     Franck-Condon Integral between
     vibratioanl wavefunction of displaced hamonic oscillator
     See Chih-Kai Lin, Phys. Chem. Chem. Phys., 2010, 12, 11432–11444
+    
+    The unit of w1, w2 and Q should be in the same framwork, e.g atomic unit
     '''
+    
     def Pr(x):
         if x%2 == 0:
             return 0

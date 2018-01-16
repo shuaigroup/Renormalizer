@@ -66,13 +66,9 @@ class Test_tMPS_eiHt(unittest.TestCase):
         self.assertTrue(np.allclose(autocorr0,autocorr1,rtol=value[4]))
 
     @data(\
-            [1,"svd",True,[[4,4]],1e-2],\
             [2,"svd",True,[[4,4]],1e-2],\
-            [1,"svd",None,[[4,4]],1e-2],\
             [2,"svd",None,[[4,4]],1e-2],\
-            [1,"svd",True,[[4,4],[2,2],[1.e-7,1.e-7]],1e-2],\
             [2,"svd",True,[[4,4],[2,2],[1.e-7,1.e-7]],1e-2],\
-            [1,"svd",None,[[4,4],[2,2],[1.e-7,1.e-7]],1e-2],\
             [2,"svd",None,[[4,4],[2,2],[1.e-7,1.e-7]],1e-2])
     def test_FiniteT_spectra_emi_eiHt(self,value):
         print "data", value
@@ -120,10 +116,10 @@ class Test_tMPS_eiHt(unittest.TestCase):
 
 
     @data(\
-            [1,"svd",True,[[4,4]],1e-2],\
-            [1,"svd",None,[[4,4]],1e-2],\
-            [1,"svd",True,[[4,4],[2,2],[1.e-7,1.e-7]],1e-2],\
-            [1,"svd",None,[[4,4],[2,2],[1.e-7,1.e-7]],1e-2])
+            [2,"svd",True,[[4,4]],1e-2],\
+            [2,"svd",None,[[4,4]],1e-2],\
+            [2,"svd",True,[[4,4],[2,2],[1.e-7,1.e-7]],1e-2],\
+            [2,"svd",None,[[4,4],[2,2],[1.e-7,1.e-7]],1e-2])
     def test_FiniteT_spectra_abs_eiHt(self,value):
         print "data", value
         nexciton = 0

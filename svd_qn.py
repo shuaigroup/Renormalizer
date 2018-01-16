@@ -11,6 +11,7 @@ def Csvd(cstruct, qnbigl, qnbigr, nexciton, QR=False, system=None,\
     '''
     block svd the coefficient matrix (l, sigmal, sigmar, r) or (l,sigma,r)
     according to the quantum number 
+    ddm is the direct diagonalization the reduced density matrix
     '''
     Gamma = cstruct.reshape(np.prod(qnbigl.shape),np.prod(qnbigr.shape))
     localqnl = qnbigl.ravel()

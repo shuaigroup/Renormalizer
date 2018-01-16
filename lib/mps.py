@@ -341,7 +341,7 @@ def variational_compress(MPS,aMPS,MPO,side,nloops,trunc=1.e-12,method="1site"):
             except:
                 print "variational mps compress converge failed"
                 u, sigma, vt = scipy.linalg.svd(res,full_matrices=False,lapack_driver='gesvd')
-
+            
             if trunc<1.:
                 # count how many sing vals < trunc            
                 normed_sigma=sigma/scipy.linalg.norm(sigma)
@@ -350,8 +350,10 @@ def variational_compress(MPS,aMPS,MPO,side,nloops,trunc=1.e-12,method="1site"):
             else:
                 m_trunc=int(trunc)
                 m_trunc=min(m_trunc,len(sigma))
+            
             u=u[:,0:m_trunc]
             sigma=sigma[0:m_trunc]
+
             vt=vt[0:m_trunc,:]
             
             if  system == "R":
@@ -395,7 +397,7 @@ def variational_compress(MPS,aMPS,MPO,side,nloops,trunc=1.e-12,method="1site"):
     return aMPS
 
 
-def compress(mps,side,trunc=1.e-12,check_canonical=False,QR=False,QNargs=None):
+def compress(mps,side,trunc=1.e-12,check_canonical=False,QR=False,QNargs=None,normalize=None):
     """
     inp: canonicalise MPS (or MPO)
 
@@ -408,7 +410,7 @@ def compress(mps,side,trunc=1.e-12,check_canonical=False,QR=False,QNargs=None):
               output MPS is right canonicalised i.e. CRRR
 
     side='r': reverse of 'l'
-   
+    
     returns:
          truncated or canonicalised MPS
     """
@@ -535,8 +537,13 @@ def compress(mps,side,trunc=1.e-12,check_canonical=False,QR=False,QNargs=None):
                 MPSQNnew[idx+1] = qnlset[:m_trunc]
         
         ret_mps.append(ret_mpsi)
-
+    
+    # normalize is the norm of the MPS
+    if normalize is not None:
+        res = res / np.linalg.norm(np.ravel(res)) * normalize
+    
     ret_mps.append(res)
+    
     if side=="l":
         ret_mps.reverse()
 
@@ -554,18 +561,30 @@ def compress(mps,side,trunc=1.e-12,check_canonical=False,QR=False,QNargs=None):
     return ret_mps
 
 
-def mps_fci(mps):
+def mps_fci(mps,pbond=None,direct=False):
     """
     convert MPS into a fci vector
+    direct=True is tensor product of the MPS directly
     """
-    pdim=mps[0].shape[1]
-    nsites=len(mps)
-    confs=fci.fci_configs(nsites,pdim)
-    fvec=mathutils.zeros((pdim,)*nsites)
-    for conf in confs:
-        fvec[conf]=ceval(mps,conf)
-    return fvec
+    if direct == False:
+        if pbond is None:
+            pdim=mps[0].shape[1]
+            nsites=len(mps)
+            confs=fci.fci_configs(nsites,pdim)
+            fvec=mathutils.zeros((pdim,)*nsites)
+        else:
+            confs=fci.fci_configs(None,None,pbond=pbond)
+            fvec=mathutils.zeros(pbond)
+        
+        for conf in confs:
+            fvec[conf]=ceval(mps,conf)
+    else:
+        fvec = np.ones([1],dtype=mps[0].dtype)
+        for imps in mps:
+            fvec = np.tensordot(fvec, imps, axes=1)
+        fvec = np.tensordot(fvec,np.ones([1],dtype=mps[0].dtype),axes=1)
 
+    return fvec
 
 def scale(mps,val,QNargs=None):
     """

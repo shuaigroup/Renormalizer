@@ -505,5 +505,33 @@ Finite temperature
 
 \end{enumerate}
 
+for the zero temperature case, the two way propagation is no problem, 
+for the finite temperature case, the two way propagation can be formulated as 
+\begin{gather}
+   \textrm{Tr} (e^{-\beta H} e^{iHt} \mu e^{-iHt} \mu) \\ 
+   = \textrm{Tr} (e^{iHt/2} e^{-\beta/2 H}  \mu e^{-iHt} \mu e^{-\beta/2 H}
+   e^{iHt/2})
+\end{gather}
+So the propagation $e^{iHt/2}$ is in the outside of the density operator $\mu
+e^{-\beta/2 H}$, or in the inside $e^{-iHt/2}$ of the density operator.
+The problem is that we only consider quantum number inside propagation, maybe
+the algorithm will be unstable.
+So this is for abs
+for emi
+\begin{gather}
+   \textrm{Tr} (e^{-\beta H} e^{iHt} \mu e^{-iHt} \mu) \\ 
+   = \textrm{Tr} (e^{iHt/2} e^{-\beta/2 H}  \mu e^{-iHt} \mu e^{-\beta/2 H}
+   e^{iHt/2}) \\
+   = \textrm{Tr} (e^{-iHt/2} \mu e^{-\beta/2 H} e^{iHt} e^{-\beta/2 H} \mu 
+   e^{-iHt/2})
+\end{gather}
+
+
+我们先在采用的quantum number算法，对与MPS来说是没有问题的，对于普通的MPO来说，因
+为是算符，也不存在问题，QNargs里面的ifMPO就是做的这个事情，就是我们一开始想的先
+做$e^{iH\tau}$这个算符。但是对于密度算符，原则上他也是一个算符，所以只需要按照
+MPO的好量子数的算法就可以了。但是因为对于密度算符，我们要求它每一边的量子数都是
+守恒的，不像$a^\dagger$算符，只需要左边比右边加1就可以。密度算符，要求左边就是1,
+右边就是0（比如说加一个dipole算符作用到基态空间的情况）
 
 \end{document}

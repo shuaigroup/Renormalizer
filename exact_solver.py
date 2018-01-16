@@ -21,6 +21,7 @@ from constant import *
 from obj import *
 import configidx
 from ephMPS.utils.utils import *
+from ephMPS.lib import fci
 
 np.set_printoptions(threshold=np.nan)
 
@@ -208,6 +209,7 @@ def Hmat_diagonalization(Hmat, method="full", nroots=1, diags=None):
 
         print "arpack Arnoldi method"
         e, c = scipy.sparse.linalg.eigsh(Hmat, k=nroots, which="SA")
+        print "e=",e
 
     elif method == "Davidson":
         
@@ -441,6 +443,10 @@ def ZT_time_autocorr(dipolemat, c1, c2, e1, e2, mode, nsteps, dt):
     a = np.tensordot(AC, c2, axes=1) 
     aa = a*a
     
+    E2 = np.dot(aa,e2)/np.sum(aa)
+    print "subspace GS energy", e2[0]
+    print "reference energy", E2
+
     del AC
     del a
 
@@ -449,9 +455,10 @@ def ZT_time_autocorr(dipolemat, c1, c2, e1, e2, mode, nsteps, dt):
     for istep, it in enumerate(t):
         # discard the lowest level energy
         print "istep=", istep
-        autocorr.append(np.dot(aa,np.exp(-1.0j*(e2-e2[0])*it)))
+        autocorr.append(np.dot(aa,np.exp(-1.0j*(e2-E2)*it)))
         autocorr_store(autocorr, istep, freq=1000)
     
+
     autocorr = np.array(autocorr)    
         
     return autocorr
@@ -474,6 +481,13 @@ def FT_time_autocorr(T, dipolemat, c1, c2, e1, e2, mode, nsteps, dt, nset=1):
     a = np.tensordot(AC, c2, axes=1) 
     aa = a*a
     P = partition_function(e1, T) 
+
+    E1 = np.dot(P,e1)
+    norm2 = np.sum(aa,axis=1)
+    E2 = np.dot(np.einsum("ij,j->i",aa,e2)/norm2,P)
+    print "subspace GS energy", e1[0],e2[0]
+    print "reference energy", E1, E2
+    
     aa = np.einsum("ij,i -> ij",aa,P)
     
     del AC
@@ -494,11 +508,108 @@ def FT_time_autocorr(T, dipolemat, c1, c2, e1, e2, mode, nsteps, dt, nset=1):
     for istep in xrange(0,nsteps,nset):
         print "istep", istep
         tset = t[istep:min(nsteps,istep+nset)]
-        factor1 = np.tensordot(e1-e1[0], tset, axes=0)
+        factor1 = np.tensordot(e1-E1, tset, axes=0)
         tmp = np.tensordot(np.exp(1.0j*factor1), aa, axes=([0],[0]))
-        factor2 = np.tensordot(e2-e2[0], tset, axes=0)
+        factor2 = np.tensordot(e2-E2, tset, axes=0)
         autocorr += list(np.einsum("ji, ij -> j", tmp, np.exp(-1.0j*factor2)))
     
     autocorr = np.array(autocorr)    
     
     return autocorr
+
+# only for debug reason
+def runge_kutta_vs_exact(Hmat, c0, nsteps, dt, prop_method="C_RK4"):
+    # exact
+    e, c = scipy.linalg.eigh(a=Hmat)
+    c0_project = c.T.dot(c0)
+    
+    # runge-kutta
+    from ephMPS import RK
+    tableau =  RK.runge_kutta_explicit_tableau(prop_method)
+    propagation_c = RK.runge_kutta_explicit_coefficient(tableau)
+
+    t = 0.0
+    overlap = []
+    normalize = []
+    Hset = []
+    for istep in xrange(nsteps):
+        t = istep * dt
+        ct_exact = c0_project*np.exp(-1.0j*e*t)
+        ct_exact = ct_exact.dot(c.T)
+
+        if istep == 0:
+            ct_rk = c0
+        else:
+            termlist = [ct_rk]
+            for iterm in xrange(len(propagation_c)-1):
+                termlist.append(np.einsum("ij,j->i",Hmat,termlist[iterm]))
+            
+            ct_rk_new = np.zeros(c0.shape, dtype=np.complex128)
+            for iterm in xrange(len(propagation_c)):
+                ct_rk_new += termlist[iterm]*(-1.0j*dt)**iterm*propagation_c[iterm]
+            
+            ct_rk = ct_rk_new
+            ct_rk = ct_rk / np.linalg.norm(ct_rk) * np.sqrt(4.0)
+        
+        Hset.append(np.conj(ct_rk).dot(np.einsum("ij,j->i", Hmat,ct_rk)))
+        overlap.append(ct_rk.dot(np.conj(ct_exact)))
+        #overlap.append(np.linalg.norm(ct_rk-ct_exact))
+        normalize.append(ct_rk.dot(np.conj(ct_rk)))
+    
+    return overlap, normalize, Hset
+
+
+# only for debug reason
+def MPS_vs_exact(Hmat, c0, nsteps, dt, pbond, trunc, lookuptable, prop_method="C_RK4"):
+    # exact
+    c0 /= np.linalg.norm(c0)
+    #e, c = scipy.linalg.eigh(a=Hmat)
+    #np.save("teste.npy",e)
+    #np.save("testc.npy",c)
+    e = np.load("teste.npy")
+    c = np.load("testc.npy")
+    e -= 0.446162207909
+
+    c0_project = c.T.dot(c0)
+    
+    # runge-kutta
+    from ephMPS import RK
+    tableau =  RK.runge_kutta_explicit_tableau(prop_method)
+    propagation_c = RK.runge_kutta_explicit_coefficient(tableau)
+    
+    from ephMPS import exact2mps
+    from ephMPS.lib import mps as mpslib
+
+    t = 0.0
+    overlap = []
+    normalize = []
+    Hset = []
+    for istep in xrange(nsteps):
+        t = istep * dt
+        ct_exact = c0_project*np.exp(-1.0j*e*t)
+        ct_exact = ct_exact.dot(c.T)
+        
+        if istep == 0:
+            ct_mps = c0
+        else:
+            #termlist = [ct_rk]
+            #for iterm in xrange(len(propagation_c)-1):
+            #    termlist.append(np.einsum("ij,j->i",Hmat,termlist[iterm]))
+            #
+            #ct_rk_new = np.zeros(c0.shape, dtype=np.complex128)
+            #for iterm in xrange(len(propagation_c)):
+            #    ct_rk_new += termlist[iterm]*(-1.0j*dt)**iterm*propagation_c[iterm]
+            ct_mps = c.T.dot(ct_mps)
+            ct_mps = ct_mps*np.exp(-1.0j*e*dt)
+            ct_mps = ct_mps.dot(c.T)
+            mpsfci = exact2mps.exactfci2mpsfci(lookuptable, ct_mps, pbond)
+            MPS = fci.fci_mps(mpsfci,trunc=trunc,pbond=pbond,normalize=1.0)
+            ct_mps = mpslib.mps_fci(MPS,pbond=pbond,direct=True)
+            ct_mps = exact2mps.mpsfci2exactfci(lookuptable, ct_mps, len(c0))
+
+        Hset.append(np.conj(ct_mps).dot(np.einsum("ij,j->i", Hmat, ct_mps)))
+        overlap.append(ct_mps.dot(np.conj(ct_exact)))
+        normalize.append(ct_mps.dot(np.conj(ct_mps)))
+    
+    return overlap, normalize, Hset
+

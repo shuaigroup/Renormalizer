@@ -17,12 +17,17 @@ class Test_exactsolver_timeautocorr(unittest.TestCase):
         iHmat = exact_solver.construct_Hmat(inconfigs,mol, J,
                 indirect=[iph_dof_list, ix, iy])
         ie, ic =  exact_solver.Hmat_diagonalization(iHmat, method="full")
-        
+
         fx, fy, fph_dof_list, fnconfigs = exact_solver.pre_Hmat(1, mol)
         fHmat = exact_solver.construct_Hmat(fnconfigs, mol, J,
                 indirect=[fph_dof_list, fx, fy])
         fe, fc =  exact_solver.Hmat_diagonalization(fHmat, method="full")
         
+        #ic = np.load("std_data/exact_solver_timeautocorr/ic.npy")
+        #fc = np.load("std_data/exact_solver_timeautocorr/fc.npy")
+        #ie = np.load("std_data/exact_solver_timeautocorr/ie.npy")
+        #fe = np.load("std_data/exact_solver_timeautocorr/fe.npy")
+
         dipolemat = exact_solver.construct_dipoleMat(inconfigs,fnconfigs,
                 mol, indirecti=[iph_dof_list, ix, iy], indirectf=[fph_dof_list, fx, fy])
         

@@ -588,9 +588,11 @@ def construct_MPO(mol, J, pbond, scheme=2, rep="star"):
 
 
 def optimization(MPS, MPSdim, MPSQN, MPO, MPOdim, ephtable, pbond, nexciton,\
-        procedure, method="2site", nroots=1):
+        procedure, method="2site", nroots=1, inverse=1.0):
     '''
     1 or 2 site optimization procedure
+    inverse = 1.0 / -1.0 
+    -1.0 to get the largest eigenvalue
     '''
     
     assert method in ["2site", "1site"]
@@ -663,7 +665,8 @@ def optimization(MPS, MPSdim, MPSQN, MPO, MPOdim, ephtable, pbond, nexciton,\
                 # initial guess b-S-c-S-e
                 #                 a   d
                 cguess = np.tensordot(MPS[imps-1], MPS[imps], axes=1)[qnmat==nexciton]
-
+            
+            hdiag *= inverse
             nonzeros = np.sum(qnmat==nexciton)
             print "Hmat dim", nonzeros
             
@@ -698,7 +701,7 @@ def optimization(MPS, MPSdim, MPSQN, MPO, MPOdim, ephtable, pbond, nexciton,\
                     cout = tensorlib.multi_tensor_contract(path, ltensor,
                             cstruct, MPO[imps-1], MPO[imps], rtensor)
                 # convert structure c to 1d according to qn 
-                return cout[qnmat==nexciton]
+                return inverse*cout[qnmat==nexciton]
             
             if nroots != 1:
                 cguess = [cguess]

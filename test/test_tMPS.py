@@ -49,8 +49,8 @@ class Test_tMPS(unittest.TestCase):
             [2,"svd",True,[[4,4]],1e-3],\
             [1,"svd",None,[[4,4]],1e-3],\
             [2,"svd",None,[[4,4]],1e-3],\
-            [1,"variational",None,[[4,4]],1e-3],\
-            [2,"variational",None,[[4,4]],1e-3],\
+            [1,"variational",None,[[4,4]],1e-2],\
+            [2,"variational",None,[[4,4]],1e-2],\
             [1,"svd",True,[[4,4],[2,2],[1.e-7,1.e-7]],1e-2],\
             [2,"svd",True,[[4,4],[2,2],[1.e-7,1.e-7]],1e-2],\
             [1,"svd",None,[[4,4],[2,2],[1.e-7,1.e-7]],1e-2],\
@@ -93,8 +93,7 @@ class Test_tMPS(unittest.TestCase):
                 thresh=1.0e-3, cleanexciton=1-nexciton, algorithm=value[0],
                 compress_method=value[1], QNargs=QNargs)
         autocorr = np.array(autocorr)
-
-        with open("std_data/tMPS/""ZeroTabs_"+str(value[0])+str(value[1])+".npy", 'rb') as f:
+        with open("std_data/tMPS/ZeroTabs_"+str(value[0])+str(value[1])+".npy", 'rb') as f:
             ZeroTabs_std = np.load(f)
         self.assertTrue(np.allclose(autocorr,ZeroTabs_std,rtol=value[4]))
     
@@ -180,17 +179,11 @@ class Test_tMPS(unittest.TestCase):
 
 
     @data(\
-            [1,"svd",True,[[4,4]],1e-3],\
             [2,"svd",True,[[4,4]],1e-3],\
-            [1,"svd",None,[[4,4]],1e-3],\
             [2,"svd",None,[[4,4]],1e-3],\
-            [1,"variational",None,[[4,4]],1e-3],\
             [2,"variational",None,[[4,4]],1e-3],\
-            [1,"svd",True,[[4,4],[2,2],[1.e-7,1.e-7]],1e-2],\
             [2,"svd",True,[[4,4],[2,2],[1.e-7,1.e-7]],1e-2],\
-            [1,"svd",None,[[4,4],[2,2],[1.e-7,1.e-7]],1e-2],\
             [2,"svd",None,[[4,4],[2,2],[1.e-7,1.e-7]],1e-2],\
-            [1,"variational",None,[[4,4],[2,2],[1.e-7,1.e-7]],1e-2],\
             [2,"variational",None,[[4,4],[2,2],[1.e-7,1.e-7]],1e-2])
     def test_FiniteT_spectra_emi(self,value):
         print "data", value
@@ -225,19 +218,18 @@ class Test_tMPS(unittest.TestCase):
                 QNargs=QNargs)
         
         autocorr = np.array(autocorr)
-        
         with open("std_data/tMPS/TTemi_"+str(value[0])+str(value[1])+".npy", 'rb') as f:
             TTemi_std = np.load(f)
         self.assertTrue(np.allclose(autocorr,TTemi_std[0:nsteps],rtol=value[4]))
 
 
     @data(\
-            [1,"svd",True,[[4,4]],1e-3],\
-            [1,"svd",None,[[4,4]],1e-3],\
-            [1,"variational",None,[[4,4]],1e-3],\
-            [1,"svd",True,[[4,4],[2,2],[1.e-7,1.e-7]],1e-2],\
-            [1,"svd",None,[[4,4],[2,2],[1.e-7,1.e-7]],1e-2],\
-            [1,"variational",None,[[4,4],[2,2],[1.e-7,1.e-7]],1e-2])
+            [2,"svd",True,[[4,4]],1e-3],\
+            [2,"svd",None,[[4,4]],1e-3],\
+            [2,"variational",None,[[4,4]],1e-3],\
+            [2,"svd",True,[[4,4],[2,2],[1.e-7,1.e-7]],1e-2],\
+            [2,"svd",None,[[4,4],[2,2],[1.e-7,1.e-7]],1e-2],\
+            [2,"variational",None,[[4,4],[2,2],[1.e-7,1.e-7]],1e-2])
     def test_FiniteT_spectra_abs(self,value):
         print "data", value
         nexciton = 0
@@ -305,9 +297,9 @@ class Test_tMPS(unittest.TestCase):
         
         autocorr = np.array(autocorr)
         
-        with open("std_data/tMPS/TTemi_"+str(1)+str(value[0])+".npy", 'rb') as f:
+        with open("std_data/tMPS/TTemi_"+str(2)+str(value[0])+".npy", 'rb') as f:
             TTemi_std = np.load(f)
-        self.assertTrue(np.allclose(autocorr,TTemi_std[0:nsteps],rtol=1e-3))
+        self.assertTrue(np.allclose(autocorr,TTemi_std[0:nsteps],rtol=1e-2))
 
 
     @data(["svd",True],["svd",None],["variational",None])
