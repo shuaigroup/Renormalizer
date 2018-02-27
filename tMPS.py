@@ -344,7 +344,16 @@ def ApproxPropagatorMPO(HMPO, dt, ephtable, propagation_c, thresh=0, \
         mpslib.dot(IMPO, IMPO, QNargs=QNargs))
     
     return approxMPO
-        
+
+
+def ML_tMPS():
+    '''
+    The procedure is 
+    (1) MPS -> ML-MPS -> ML + new MPS
+    (2) MPO -> ML-MPO-ML -> new MPO
+    (3) new MPO +  new MPS -> propagated MPS
+    (4) ML + propagated MPS -> MPS in original basis
+    '''
 
 def tMPS(MPS, MPO, dt, ephtable, propagation_c, thresh=0, \
         cleanexciton=None, compress_method="svd", QNargs=None, approxeiHt=None,\
