@@ -6,3 +6,5 @@
 *.aux
 *.odg
 *.eps
+
+.idea/

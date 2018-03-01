@@ -3,7 +3,7 @@
 
 import numpy as np
 import unittest
-from ephMPS import RK
+from .. import RK
 
 class Test_RK(unittest.TestCase):
 

@@ -7,15 +7,16 @@ MPS/MPO structure ground state calculation solver
 
 import numpy as np
 import scipy.linalg
+from scipy.sparse import linalg as spslinalg
+from lib.davidson import davidson
 import itertools
-from pyscf import lib
 from lib import mps as mpslib
 from constant import *
 from mpompsmat import *
 from elementop import *
 from lib import tensor as tensorlib
-from ephMPS import svd_qn
-from ephMPS import quasiboson
+from . import svd_qn
+from . import quasiboson
 
 def construct_MPS_MPO_1():
     '''
@@ -709,11 +710,12 @@ def optimization(MPS, MPSdim, MPSQN, MPO, MPOdim, ephtable, pbond, nexciton,\
                     cguess += [np.random.random([nonzeros])-0.5]
             
             precond = lambda x, e, *args: x/(hdiag-e+1e-4)
-            e, c = lib.davidson(hop, cguess, precond, max_cycle=100,\
-                    nroots=nroots) 
+
+            e, c = davidson(hop, cguess, precond, max_cycle=100,\
+                    nroots=nroots)
             # scipy arpack solver : much slower than davidson
-            #A = scipy.sparse.linalg.LinearOperator((nonzeros,nonzeros), matvec=hop)
-            #e, c = scipy.sparse.linalg.eigsh(A,k=1, which="SA",v0=cguess)
+            #A = spslinalg.LinearOperator((nonzeros,nonzeros), matvec=hop)
+            #e, c = spslinalg.eigsh(A,k=1, which="SA",v0=cguess)
             print "HC loops:", count[0]
             print "isweep, imps, e=", isweep, imps, e
             

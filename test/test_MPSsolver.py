@@ -3,11 +3,11 @@
 
 import numpy as np
 import unittest
-from ephMPS import MPSsolver
-from ephMPS.lib import mps as mpslib
-from ephMPS import constant
-from ephMPS import obj
-from parameter import *
+from .. import MPSsolver
+from ..lib import mps as mpslib
+from .. import constant
+from .. import obj
+from .parameter import *
 from ddt import ddt, data
 
 nexciton=1
