@@ -518,9 +518,12 @@ def FT_time_autocorr(T, dipolemat, c1, c2, e1, e2, mode, nsteps, dt, nset=1):
     return autocorr
 
 # only for debug reason
-def runge_kutta_vs_exact(Hmat, c0, nsteps, dt, prop_method="C_RK4"):
+def runge_kutta_vs_exact(Hmat, e, c, c0, nsteps, dt, prop_method="C_RK4"):
+    '''
+    e, c are the eigenvalue and eigenvector of Hmat, c0 is normalized to 1
+    '''
     # exact
-    e, c = scipy.linalg.eigh(a=Hmat)
+    #e, c = scipy.linalg.eigh(a=Hmat)
     c0_project = c.T.dot(c0)
     
     # runge-kutta
@@ -529,12 +532,10 @@ def runge_kutta_vs_exact(Hmat, c0, nsteps, dt, prop_method="C_RK4"):
     propagation_c = RK.runge_kutta_explicit_coefficient(tableau)
 
     t = 0.0
-    overlap = []
-    normalize = []
-    Hset = []
+    distance = []
     for istep in xrange(nsteps):
         t = istep * dt
-        ct_exact = c0_project*np.exp(-1.0j*e*t)
+        ct_exact = c0_project*np.exp(-1.0j*(e-e[0])*t)
         ct_exact = ct_exact.dot(c.T)
 
         if istep == 0:
@@ -542,21 +543,18 @@ def runge_kutta_vs_exact(Hmat, c0, nsteps, dt, prop_method="C_RK4"):
         else:
             termlist = [ct_rk]
             for iterm in xrange(len(propagation_c)-1):
-                termlist.append(np.einsum("ij,j->i",Hmat,termlist[iterm]))
+                termlist.append(Hmat.dot(termlist[iterm])-e[0]*termlist[iterm])
             
             ct_rk_new = np.zeros(c0.shape, dtype=np.complex128)
             for iterm in xrange(len(propagation_c)):
                 ct_rk_new += termlist[iterm]*(-1.0j*dt)**iterm*propagation_c[iterm]
             
             ct_rk = ct_rk_new
-            ct_rk = ct_rk / np.linalg.norm(ct_rk) * np.sqrt(4.0)
+            ct_rk = ct_rk / np.linalg.norm(ct_rk)
         
-        Hset.append(np.conj(ct_rk).dot(np.einsum("ij,j->i", Hmat,ct_rk)))
-        overlap.append(ct_rk.dot(np.conj(ct_exact)))
-        #overlap.append(np.linalg.norm(ct_rk-ct_exact))
-        normalize.append(ct_rk.dot(np.conj(ct_rk)))
-    
-    return overlap, normalize, Hset
+        distance.append(np.linalg.norm(ct_rk-ct_exact))
+
+    return distance
 
 
 # only for debug reason
