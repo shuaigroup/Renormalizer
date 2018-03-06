@@ -558,16 +558,10 @@ def runge_kutta_vs_exact(Hmat, e, c, c0, nsteps, dt, prop_method="C_RK4"):
 
 
 # only for debug reason
-def MPS_vs_exact(Hmat, c0, nsteps, dt, pbond, trunc, lookuptable, prop_method="C_RK4"):
+def MPS_vs_exact(e, c, c0, nsteps, dt, pbond, trunc, lookuptable,\
+        prop_method="C_RK4",scheme=1):
     # exact
     c0 /= np.linalg.norm(c0)
-    #e, c = scipy.linalg.eigh(a=Hmat)
-    #np.save("teste.npy",e)
-    #np.save("testc.npy",c)
-    e = np.load("teste.npy")
-    c = np.load("testc.npy")
-    e -= 0.446162207909
-
     c0_project = c.T.dot(c0)
     
     # runge-kutta
@@ -579,35 +573,32 @@ def MPS_vs_exact(Hmat, c0, nsteps, dt, pbond, trunc, lookuptable, prop_method="C
     from ephMPS.lib import mps as mpslib
 
     t = 0.0
-    overlap = []
-    normalize = []
-    Hset = []
+    distance = []
+    change = []
     for istep in xrange(nsteps):
         t = istep * dt
-        ct_exact = c0_project*np.exp(-1.0j*e*t)
+        ct_exact = c0_project*np.exp(-1.0j*(e-e[0])*t)
         ct_exact = ct_exact.dot(c.T)
         
         if istep == 0:
             ct_mps = c0
         else:
-            #termlist = [ct_rk]
-            #for iterm in xrange(len(propagation_c)-1):
-            #    termlist.append(np.einsum("ij,j->i",Hmat,termlist[iterm]))
-            #
-            #ct_rk_new = np.zeros(c0.shape, dtype=np.complex128)
-            #for iterm in xrange(len(propagation_c)):
-            #    ct_rk_new += termlist[iterm]*(-1.0j*dt)**iterm*propagation_c[iterm]
+            
             ct_mps = c.T.dot(ct_mps)
-            ct_mps = ct_mps*np.exp(-1.0j*e*dt)
+            ct_mps = ct_mps*np.exp(-1.0j*(e-e[0])*dt)
             ct_mps = ct_mps.dot(c.T)
+            
+            ct_mps_old = ct_mps
+            
             mpsfci = exact2mps.exactfci2mpsfci(lookuptable, ct_mps, pbond)
-            MPS = fci.fci_mps(mpsfci,trunc=trunc,pbond=pbond,normalize=1.0)
+            MPS = fci.fci_mps(mpsfci,trunc=trunc,pbond=pbond,normalize=1.0,scheme=scheme)
             ct_mps = mpslib.mps_fci(MPS,pbond=pbond,direct=True)
             ct_mps = exact2mps.mpsfci2exactfci(lookuptable, ct_mps, len(c0))
+            # normalize
+            ct_mps = ct_mps / np.linalg.norm(ct_mps)
+            change.append(np.linalg.norm(ct_mps-ct_mps_old))
+            #print "change", np.linalg.norm(ct_mps-ct_mps_old)
+        distance.append(np.linalg.norm(ct_mps-ct_exact))
 
-        Hset.append(np.conj(ct_mps).dot(np.einsum("ij,j->i", Hmat, ct_mps)))
-        overlap.append(ct_mps.dot(np.conj(ct_exact)))
-        normalize.append(ct_mps.dot(np.conj(ct_mps)))
-    
-    return overlap, normalize, Hset
+    return distance,change
 
