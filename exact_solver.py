@@ -276,22 +276,30 @@ def full_diagonalization_spectrum(ic,ie,fc,fe,dipolemat):
     return dipdip
 
 
-def dyn_exact(dipdip, temperature, ie, omega=None, eta=0.00005):
+def dyn_exact(dipdip, temperature, ie, omega=None, eta=0):
     '''
     full diagonalization dynamic correlation function 
     '''
-    if temperature == 0:
+    if eta == 0:
+        assert temperature == 0
         # sharpe peak
         return dipdip[:,:,0]  
-    else:
+    elif eta != 0:
         # Lorentz broaden
-        P = partition_function(ie, temperature)
         npoints = np.prod(omega.shape)
         dyn_corr = np.zeros(npoints)
-        for ipoint in xrange(npoints):
-            dyn_corr[ipoint] = np.einsum('i,fi,fi->', P, \
-                    1.0/((dipdip[0]-omega[ipoint])**2+eta**2), dipdip[1]) * \
-                     eta / np.pi
+        
+        if temperature == 0:
+            for ipoint in xrange(npoints):
+                dyn_corr[ipoint] = np.einsum('f,f->', \
+                        1.0/((dipdip[0,:,0]-omega[ipoint])**2+eta**2), dipdip[1,:,0]) * \
+                        eta / np.pi
+        else:
+            P = partition_function(ie, temperature)
+            for ipoint in xrange(npoints):
+                dyn_corr[ipoint] = np.einsum('i,fi,fi->', P, \
+                        1.0/((dipdip[0]-omega[ipoint])**2+eta**2), dipdip[1]) * \
+                         eta / np.pi
         return dyn_corr
 
 
