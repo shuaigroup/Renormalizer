@@ -10,7 +10,6 @@ nmols = 3
 J = np.array([[0.0,-0.1,-0.2],[-0.1,0.0,-0.3],[-0.2,-0.3,0.0]])/constant.au2ev
 w, v = scipy.linalg.eigh(a=J)
 print J, v, w
-
 # cm^-1
 omega_value = np.array([106.51, 1555.55])*constant.cm2au
 omega = [{0:omega_value[0],1:omega_value[0]},{0:omega_value[1],1:omega_value[1]}]
@@ -18,15 +17,18 @@ omega = [{0:omega_value[0],1:omega_value[0]},{0:omega_value[1],1:omega_value[1]}
 D_value = np.array([30.1370, 8.7729])
 
 D = [{0:0.0,1:D_value[0]},{0:0.0,1:D_value[1]}]
-nphs = 2
 nlevels =  [4,4]
 
-phinfo = [list(a) for a in zip(omega, D, nlevels)]
+nphs = 1
+nphs_hybrid = 1
+phinfo_hybrid = [list(a) for a in zip(omega[:nphs], D[:nphs], nlevels[:nphs])]
+phinfo = [list(a) for a in zip(omega[nphs:], D[nphs:], nlevels[nphs:])]
 
 mol = []
 for imol in xrange(nmols):
-    mol_local = obj.Mol(elocalex, nphs, dipole_abs)
+    mol_local = obj.Mol(elocalex, nphs, dipole_abs, nphs_hybrid=nphs_hybrid)
     mol_local.create_ph(phinfo)
+    mol_local.create_ph(phinfo_hybrid, phtype="hybrid")
     mol.append(mol_local)
 
 

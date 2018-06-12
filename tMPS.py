@@ -113,7 +113,11 @@ def ExactPropagatorMPO(mol, pbond, x, space="GS", QNargs=None, shift=0.0):
     for imol in xrange(nmols):
         mpo = np.zeros([MPOdim[impo],pbond[impo],pbond[impo],MPOdim[impo+1]],dtype=np.complex128)
         for ibra in xrange(pbond[impo]):
-            mpo[0,ibra,ibra,0] = 1.0
+            # caution: there is problem here, for EX sapce a^\dagger a, only
+            # ibra == 1, mpo[0,1,1,0] = 1.0, so the MPO is still dim = 2. But
+            # practically, ibra=0 is not used at all, so mpo[0,0,0,0] is not
+            # important.
+            mpo[0,ibra,ibra,0] = 1.0   
         MPO.append(mpo)
         impo += 1
 
@@ -284,7 +288,10 @@ def ZeroTCorr(iMPS, HMPO, dipoleMPO, nsteps, dt, ephtable, thresh=0, \
                     AbraMPS = tMPS(AbraMPS, HMPO, -dt, ephtable, propagation_c, thresh=thresh, \
                         cleanexciton=cleanexciton, compress_method=compress_method, QNargs=QNargs,\
                         approxeiHt=approxeiHmt, normalize=1.)
-        
+        print "eket", mpslib.dot(mpslib.conj(AketMPS,QNargs=QNargs),\
+                mpslib.mapply(HMPO,AketMPS,QNargs=QNargs), QNargs=QNargs)
+        print "ebra", mpslib.dot(mpslib.conj(AbraMPS,QNargs=QNargs),\
+                mpslib.mapply(HMPO,AbraMPS,QNargs=QNargs), QNargs=QNargs)
 #        AketMPS_list.append(AketMPS)
 #        wfn_store(AketMPS_list, istep, str(dt)+str(thresh)+"AketMPSlist.pkl")
         ft = mpslib.dot(mpslib.conj(AbraMPS,QNargs=QNargs),AketMPS, QNargs=QNargs)*factor**2
@@ -618,12 +625,14 @@ def FiniteT_abs(mol, pbond, iMPO, HMPO, dipoleMPO, nsteps, dt, ephtable,
     return autocorr   
 
 
-def construct_onsiteMPO(mol,pbond,opera,dipole=False,QNargs=None):
+def construct_onsiteMPO(mol,pbond,opera,dipole=False,QNargs=None,sitelist=None):
     '''
     construct the electronic onsite operator \sum_i opera_i MPO
     '''
     assert opera in ["a", "a^\dagger", "a^\dagger a"]
     nmols = len(mol)
+    if sitelist is None:
+        sitelist = np.arange(nmols)
 
     MPOdim = []
     for imol in xrange(nmols):
@@ -645,10 +654,15 @@ def construct_onsiteMPO(mol,pbond,opera,dipole=False,QNargs=None):
         mpo = np.zeros([MPOdim[impo],pbond[impo],pbond[impo],MPOdim[impo+1]])
         for ibra in xrange(pbond[impo]):
             for iket in xrange(pbond[impo]):
-                if dipole == False:
-                    mpo[-1,ibra,iket,0] = EElementOpera(opera,ibra,iket)
+                if imol in sitelist:
+                    if dipole == True:
+                        factor = mol[imol].dipole
+                    else:
+                        factor = 1.0
                 else:
-                    mpo[-1,ibra,iket,0] = EElementOpera(opera, ibra, iket) * mol[imol].dipole
+                    factor = 0.0
+                
+                mpo[-1,ibra,iket,0] = EElementOpera(opera, ibra, iket) * factor
                 if imol != 0:
                     mpo[0,ibra,iket,0] = EElementOpera("Iden",ibra,iket)
                 if imol != nmols-1:
@@ -689,6 +703,18 @@ def construct_onsiteMPO(mol,pbond,opera,dipole=False,QNargs=None):
         return MPO, MPOdim
     else:
         return [MPO, MPOQN, MPOQNidx, MPOQNtot], MPOdim
+
+
+def random_MPS(mol, pbond, M):
+    '''
+    random entangled MPS
+    '''
+    MPSdim = [1] + [M] * (len(pbond)-1) + [1]
+    MPS = []
+    for imps in xrange(len(pbond)):
+        mps = np.random.random([MPSdim[imps],pbond[imps],MPSdim[imps+1]])-0.5
+        MPS.append(mps)
+    return MPS, MPSdim
 
 
 def Max_Entangled_MPS(mol, pbond):

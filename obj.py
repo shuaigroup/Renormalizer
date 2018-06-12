@@ -46,13 +46,18 @@ class Mol(object):
     condon dipole moment : dipole
     phonon information : ph
     '''
-    def __init__(self, elocalex, nphs, dipole):
+    def __init__(self, elocalex, nphs, dipole, nphs_hybrid=0):
         self.elocalex = elocalex
-        self.nphs = nphs
         self.dipole = dipole
+        
+        self.nphs = nphs
         self.ph = []
         self.phhop = np.zeros([nphs, nphs])
         self.e0 = 0.0
+        
+        self.nphs_hybrid = nphs_hybrid
+        self.ph_hybrid = []
+        self.e0_hybrid = 0.0
 
     def create_phhop(self, phhopmat):
         self.phhop = phhopmat.copy()
@@ -60,20 +65,35 @@ class Mol(object):
     def printinfo(self):
         print "local excitation energy = ", self.elocalex
         print "nphs = ", self.nphs
+        print "nphs_hybrid = ", self.nphs_hybrid
         print "dipole = ", self.dipole
     
-    def create_ph(self, phinfo):
-        assert len(phinfo) == self.nphs
-        for iph in xrange(self.nphs):
+    def create_ph(self, phinfo, phtype="normal"):
+        assert phtype in ["normal","hybrid"]
+        if phtype == "normal":
+            dst_nphs = self.nphs
+            dst_ph = self.ph
+        elif phtype == "hybrid":
+            dst_nphs = self.nphs_hybrid
+            dst_ph = self.ph_hybrid
+        
+        assert len(phinfo) == dst_nphs
+        
+        for iph in xrange(dst_nphs):
             ph_local = Phonon(*phinfo[iph])
-            self.ph.append(ph_local) 
+            dst_ph.append(ph_local) 
         
         # omega*coupling**2: a constant for single mol 
-        self.e0 = 0.0
-        for iph in xrange(self.nphs):
+        dst_e0 = 0.0
+        for iph in xrange(dst_nphs):
             # only consider two PES
-            self.e0 += 0.5*self.ph[iph].omega[1]**2 * self.ph[iph].dis[1]**2 - \
-                    self.ph[iph].dis[1]**3 * self.ph[iph].force3rd[1]
+            dst_e0 += 0.5*dst_ph[iph].omega[1]**2 * dst_ph[iph].dis[1]**2 - \
+                    dst_ph[iph].dis[1]**3 * dst_ph[iph].force3rd[1]
+        
+        if phtype == "normal":
+            self.e0 = dst_e0 
+        elif phtype == "hybrid":
+            self.e0_hybrid = dst_e0 
 
 class bidict(dict):
     '''

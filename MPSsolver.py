@@ -211,7 +211,7 @@ def select_basis(qnset,Sset,qnlist,Mmax,percent=0):
     return sidx
 
 
-def construct_MPO(mol, J, pbond, scheme=2, rep="star"):
+def construct_MPO(mol, J, pbond, scheme=2, rep="star", elocal_offset=None):
     '''
     scheme 1: l to r
     scheme 2: l,r to middle, the bond dimension is smaller than scheme 1
@@ -225,7 +225,10 @@ def construct_MPO(mol, J, pbond, scheme=2, rep="star"):
     MPO = []
     nmols = len(mol)
     MPOQN = []
-
+    
+    # used in the hybrid TDDMRG/TDH algorithm
+    if elocal_offset is not None:
+        assert len(elocal_offset) == nmols
 
     # MPOdim  
     if scheme == 1:
@@ -371,8 +374,11 @@ def construct_MPO(mol, J, pbond, scheme=2, rep="star"):
         for ibra in xrange(pbond[impo]):
             for iket in xrange(pbond[impo]):
                 # last row operator
+                elocal = mol[imol].elocalex 
+                if elocal_offset is not None:
+                    elocal += elocal_offset[imol]
                 mpo[-1,ibra,iket,0]  = EElementOpera("a^\dagger a", ibra, iket)\
-                    * (mol[imol].elocalex + mol[imol].e0)
+                    * (elocal + mol[imol].e0)
                 mpo[-1,ibra,iket,-1] = EElementOpera("Iden", ibra, iket)
                 mpo[-1,ibra,iket,1]  = EElementOpera("a^\dagger a", ibra, iket)
                 
@@ -761,7 +767,8 @@ def optimization(MPS, MPSdim, MPSQN, MPO, MPOdim, ephtable, pbond, nexciton,\
 
                 MPSdim[imps] = mpsdim
                 MPSQN[imps] = mpsqn
-    
+        
+
     if nroots == 1:
         lowestenergy = np.min(energy)
         print "lowest energy = ", lowestenergy

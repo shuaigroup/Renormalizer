@@ -20,3 +20,6 @@ python test_exact_solver.py
 
 python test_exactsolver_timeautocorr.py
 python test_force3rd.py
+
+python test_TDH.py
+python test_hybrid_TDDMRG_TDH.py

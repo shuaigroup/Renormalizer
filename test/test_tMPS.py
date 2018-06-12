@@ -338,6 +338,37 @@ class Test_tMPS(unittest.TestCase):
         self.assertTrue(np.allclose(autocorr,TTabs_std[0:nsteps],rtol=1e-3))
 
 
+    def test_1mol_ZTabs(self):
+        nmols = 1
+        J = np.zeros([1,1])
+        
+        mol = []
+        for imol in xrange(nmols):
+            mol_local = obj.Mol(elocalex, nphs, dipole_abs)
+            mol_local.create_ph(phinfo)
+            mol.append(mol_local)
+        
+        nexciton = 0
+        procedure = [[10,0.4],[20,0.2],[30,0.1],[40,0],[40,0]]
+        
+        MPS, MPSdim, MPSQN, HMPO, HMPOdim, HMPOQN, HMPOQNidx, HMPOQNtot, ephtable, pbond \
+                = MPSsolver.construct_MPS_MPO_2(mol, J, procedure[0][0], nexciton)
+        
+        MPSsolver.optimization(MPS, MPSdim, MPSQN, HMPO, HMPOdim, ephtable, pbond,\
+                nexciton, procedure, method="2site")
+        
+        dipoleMPO, dipoleMPOdim = tMPS.construct_onsiteMPO(mol, pbond, "a^\dagger", dipole=True)
+
+        nsteps = 1000
+        dt = 30.0
+        temperature = 0
+        autocorr = tMPS.Exact_Spectra("abs", mol, pbond, MPS, dipoleMPO, nsteps, dt, temperature)
+        with open("std_data/tMPS/1mol_ZTabs.npy", 'rb') as f:
+            mol1_ZTabs_std = np.load(f)
+
+        self.assertTrue(np.allclose(autocorr,mol1_ZTabs_std))
+        
+
 if __name__ == "__main__":
     print("Test tMPS")
     unittest.main()
