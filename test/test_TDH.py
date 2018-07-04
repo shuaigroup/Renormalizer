@@ -83,13 +83,13 @@ class Test_TDH(unittest.TestCase):
         WFN = [wfn.astype(np.complex128) for wfn in WFN[:-1]]+[WFN[-1]]
         
         WFN0 = copy.deepcopy(WFN)
-        autocorr = TDH.ZT_linear_spectra("emi", mol, J, nexciton, WFN0, dt, nsteps, fe, fv, prop_method="exact")
+        autocorr = TDH.linear_spectra("emi", mol, J, nexciton, WFN0, dt, nsteps, fe, fv, prop_method="unitary")
         with open("std_data/TDH/TDH_ZT_emi_prop1.npy", 'rb') as f:
             TDH_ZT_emi_prop1_std = np.load(f)
         self.assertTrue(np.allclose(autocorr,TDH_ZT_emi_prop1_std))
         
         WFN0 = copy.deepcopy(WFN)
-        autocorr = TDH.ZT_linear_spectra("emi", mol, J, nexciton, WFN0, dt, nsteps, fe, fv, prop_method="C_RK4")
+        autocorr = TDH.linear_spectra("emi", mol, J, nexciton, WFN0, dt, nsteps, fe, fv, prop_method="C_RK4")
         with open("std_data/TDH/TDH_ZT_emi_RK4.npy", 'rb') as f:
             TDH_ZT_emi_RK4_std = np.load(f)
         self.assertTrue(np.allclose(autocorr,TDH_ZT_emi_RK4_std))
@@ -108,13 +108,13 @@ class Test_TDH(unittest.TestCase):
         E_offset = -2.28614053/constant.au2ev
 
         WFN0 = copy.deepcopy(WFN)
-        autocorr = TDH.ZT_linear_spectra("abs", mol, J, nexciton, WFN0, dt, nsteps, fe, fv, E_offset=E_offset, prop_method="exact")
+        autocorr = TDH.linear_spectra("abs", mol, J, nexciton, WFN0, dt, nsteps, fe, fv, E_offset=E_offset, prop_method="unitary")
         with open("std_data/TDH/TDH_ZT_abs_prop1.npy", 'rb') as f:
             TDH_ZT_abs_prop1_std = np.load(f)
         self.assertTrue(np.allclose(autocorr,TDH_ZT_abs_prop1_std))
         
         WFN0 = copy.deepcopy(WFN)
-        autocorr = TDH.ZT_linear_spectra("abs", mol, J, nexciton, WFN0, dt, nsteps, fe, fv, E_offset=E_offset, prop_method="C_RK4")
+        autocorr = TDH.linear_spectra("abs", mol, J, nexciton, WFN0, dt, nsteps, fe, fv, E_offset=E_offset, prop_method="C_RK4")
         with open("std_data/TDH/TDH_ZT_abs_RK4.npy", 'rb') as f:
             TDH_ZT_abs_RK4_std = np.load(f)
         self.assertTrue(np.allclose(autocorr,TDH_ZT_abs_RK4_std))
@@ -143,7 +143,7 @@ class Test_TDH(unittest.TestCase):
         E_offset = -mol[0].elocalex-mol[0].e0
 
         WFN0 = copy.deepcopy(WFN)
-        autocorr = TDH.ZT_linear_spectra("abs", mol, J, nexciton, WFN0, dt, nsteps, fe, fv, E_offset=E_offset, prop_method="exact")
+        autocorr = TDH.linear_spectra("abs", mol, J, nexciton, WFN0, dt, nsteps, fe, fv, E_offset=E_offset, prop_method="unitary")
         
         with open("std_data/tMPS/1mol_ZTabs.npy", 'rb') as f:
             mol1_ZTabs_std = np.load(f)

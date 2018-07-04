@@ -2,7 +2,7 @@
 # Author: Jiajun Ren <jiajunren0522@gmail.com>
 
 '''
-Time dependent Hartree (TDH) solver 
+Time dependent Hartree (TDH) solver for vibronic coupling problem
 '''
 
 import numpy as np
@@ -12,7 +12,8 @@ from ephMPS.elementop import *
 from ephMPS import RK
 from ephMPS import configidx
 from ephMPS.utils.utils import *
-
+from ephMPS import constant
+from ephMPS.lib import mf as mflib
 
 def SCF(mol, J, nexciton, niterations=20, thresh=1e-5, particle="hardcore boson"):
     '''
@@ -28,6 +29,7 @@ def SCF(mol, J, nexciton, niterations=20, thresh=1e-5, particle="hardcore boson"
     WFN = []
     fe = 0
     fv = 0
+    
     # electronic part
     H_el_indep, H_el_dep = Ham_elec(mol, J, nexciton, particle=particle)
     ew, ev = scipy.linalg.eigh(a=H_el_indep)
@@ -35,6 +37,8 @@ def SCF(mol, J, nexciton, niterations=20, thresh=1e-5, particle="hardcore boson"
         WFN.append(ev[:,0])
         fe += 1
     elif particle == "fermion":
+        # for the fermion, maybe we can directly use one particle density matrix for
+        # both zero and finite temperature
         if nexciton == 0:
             WFN.append(ev[:,0])
             fe += 1
@@ -42,6 +46,7 @@ def SCF(mol, J, nexciton, niterations=20, thresh=1e-5, particle="hardcore boson"
             for iexciton in xrange(nexciton):
                 WFN.append(ev[:,iexciton])
                 fe += 1
+    
     # vibrational part
     for imol in xrange(nmols):
         for iph in xrange(mol[imol].nphs):
@@ -52,6 +57,7 @@ def SCF(mol, J, nexciton, niterations=20, thresh=1e-5, particle="hardcore boson"
 
     for itera in xrange(niterations):
         print "Loop:", itera
+        # mean field Hamiltonian and energy
         HAM, Etot = construct_H_Ham(mol, J, nexciton, WFN, fe, fv, particle=particle)
         print "Etot=", Etot
         
@@ -176,7 +182,7 @@ def construct_H_Ham(mol, J, nexciton, WFN, fe, fv, particle="hardcore boson", de
     H_el_indep, H_el_dep = Ham_elec(mol, J, nexciton, particle=particle)
     
     for ife in xrange(fe):
-        A_el[:,ife] = np.array([np.conj(WFN[ife]).dot(iH_el_dep).dot(WFN[ife]) for iH_el_dep in H_el_dep]).real
+        A_el[:,ife] = np.array([mflib.exp_value(WFN[ife], iH_el_dep, WFN[ife]) for iH_el_dep in H_el_dep]).real
         if debug == True:
             print ife, "state electronic occupation", A_el[:, ife]
     
@@ -186,7 +192,7 @@ def construct_H_Ham(mol, J, nexciton, WFN, fe, fv, particle="hardcore boson", de
         B_vib.append([])
         for iph in xrange(mol[imol].nphs):
             H_vib_indep, H_vib_dep = Ham_vib(mol[imol].ph[iph])
-            B_vib[imol].append(np.conj(WFN[iwfn]).dot(H_vib_dep).dot(WFN[iwfn]))
+            B_vib[imol].append( mflib.exp_value(WFN[iwfn], H_vib_dep, WFN[iwfn]) )
             iwfn += 1
     B_vib_mol = [np.sum(np.array(i)) for i in B_vib]
     
@@ -194,7 +200,7 @@ def construct_H_Ham(mol, J, nexciton, WFN, fe, fv, particle="hardcore boson", de
     HAM = []
     for ife in xrange(fe):
         # the mean field energy of ife state
-        e_mean = np.conj(WFN[ife]).dot(H_el_indep).dot(WFN[ife])+A_el[:,ife].dot(B_vib_mol)
+        e_mean = mflib.exp_value(WFN[ife], H_el_indep, WFN[ife])+A_el[:,ife].dot(B_vib_mol)
         ham = H_el_indep - np.diag([e_mean]*H_el_indep.shape[0]) 
         for imol in xrange(nmols):
             ham += H_el_dep[imol]*B_vib_mol[imol]
@@ -205,7 +211,7 @@ def construct_H_Ham(mol, J, nexciton, WFN, fe, fv, particle="hardcore boson", de
     for imol in xrange(nmols):
         for iph in xrange(mol[imol].nphs):
             H_vib_indep, H_vib_dep = Ham_vib(mol[imol].ph[iph])
-            e_mean = np.conj(WFN[iwfn]).dot(H_vib_indep).dot(WFN[iwfn])
+            e_mean = mflib.exp_value(WFN[iwfn], H_vib_indep, WFN[iwfn])
             Etot += e_mean  # no double counting of e-ph coupling energy
             e_mean += np.sum(A_el[imol,:])*B_vib[imol][iph]
             HAM.append(H_vib_indep + H_vib_dep*np.sum(A_el[imol,:])-np.diag([e_mean]*WFN[iwfn].shape[0]))
@@ -217,7 +223,21 @@ def construct_H_Ham(mol, J, nexciton, WFN, fe, fv, particle="hardcore boson", de
         return HAM, Etot, A_el
 
 
-def TDH(mol, J, nexciton, WFN, dt, fe, fv, prop_method="exact", particle="hardcore boson"):
+def unitary_propagation(HAM, WFN, dt):
+    '''
+    unitary propagation e^-iHdt * wfn(dm)
+    '''
+    ndim = WFN[0].ndim 
+    for iham, ham in enumerate(HAM):
+        w,v = scipy.linalg.eigh(ham)
+        if ndim == 1:
+            WFN[iham] = v.dot(np.exp(-1.0j*w*dt) * v.T.dot(WFN[iham]))
+        elif ndim == 2:
+            WFN[iham] = v.dot(np.diag(np.exp(-1.0j*w*dt)).dot(v.T.dot(WFN[iham])))
+        #print iham, "norm", scipy.linalg.norm(WFN[iham])
+
+
+def TDH(mol, J, nexciton, WFN, dt, fe, fv, prop_method="unitary", particle="hardcore boson"):
     '''
     time dependent Hartree solver
     1. gauge is g_k = 0
@@ -229,12 +249,9 @@ def TDH(mol, J, nexciton, WFN, dt, fe, fv, prop_method="exact", particle="hardco
     f = fe+fv
     
     # EOM of wfn
-    if prop_method == "exact":
+    if prop_method == "unitary":
         HAM, Etot = construct_H_Ham(mol, J, nexciton, WFN, fe, fv, particle=particle)
-        for iham, ham in enumerate(HAM):
-            w,v = scipy.linalg.eigh(ham)
-            WFN[iham] = v.dot(np.exp(-1.0j*w*dt) * v.T.dot(WFN[iham]))
-        
+        unitary_propagation(HAM, WFN, dt)
     else:
         [RK_a,RK_b,RK_c,Nstage] =  RK.runge_kutta_explicit_tableau(prop_method)
         
@@ -260,50 +277,71 @@ def TDH(mol, J, nexciton, WFN, dt, fe, fv, prop_method="exact", particle="hardco
     return WFN
 
 
-def ZT_linear_spectra(spectratype, mol, J, nexciton, WFN , dt, nsteps, fe, fv,\
-        E_offset=0.0, prop_method="exact", particle="hardcore boson"):
+def linear_spectra(spectratype, mol, J, nexciton, WFN, dt, nsteps, fe, fv,\
+        E_offset=0.0, prop_method="unitary", particle="hardcore boson", T=0):
     
     '''
-    zero temperature linear spectra by TDH
+    ZT/FT linear spectra by TDH
     '''
 
     assert spectratype in ["abs","emi"]
     assert particle in ["hardcore boson","fermion"]
     
     nmols = len(mol)
-    dipolemat = np.zeros([1,nmols])
     
+    dipole = np.zeros([nmols])
     for imol in xrange(nmols):
-        dipolemat[0,imol] = mol[imol].dipole
-
+        dipole[imol] = mol[imol].dipole
+    
     if spectratype == "abs":
-        WFN[0] = WFN[0].dot(dipolemat)
+        dipolemat = np.zeros([nmols, 1])
+        dipolemat[:,0] = dipole
         nexciton += 1
     elif spectratype == "emi":
-        WFN[0] = WFN[0].dot(dipolemat.T)
+        dipolemat = np.zeros([1,nmols])
+        dipolemat[0,:] = dipole
         nexciton -= 1
-
-    # normalize
-    norm = scipy.linalg.norm(WFN[0])
-    WFN[-1] *= norm
-    WFN[0] /= norm
-
-    WFNbra = copy.deepcopy(WFN)
     
+    WFNket = copy.deepcopy(WFN)
+    WFNket[0] = dipolemat.dot(WFNket[0])
+
+    # normalize ket
+    mflib.normalize(WFNket)
+
+    if T == 0:
+        WFNbra = copy.deepcopy(WFNket)
+    else:
+        WFNbra = copy.deepcopy(WFN)
+
+    # normalize bra
+    mflib.normalize(WFNbra)
+
     autocorr = []
     t = 0.0
     for istep in xrange(nsteps):
         if istep != 0:
             t += dt
-            if istep % 2 == 1:
-                WFN = TDH(mol, J, nexciton, WFN, dt, fe, fv, prop_method=prop_method, particle=particle)
+            if T == 0:
+                if istep % 2 == 1:
+                    WFNket = TDH(mol, J, nexciton, WFNket, dt, fe, fv, prop_method=prop_method, particle=particle)
+                else:
+                    WFNbra = TDH(mol, J, nexciton, WFNbra, -dt, fe, fv, prop_method=prop_method, particle=particle)
             else:
-                WFNbra = TDH(mol, J, nexciton, WFNbra, -dt, fe, fv, prop_method=prop_method, particle=particle)
+                # FT
+                WFNket = TDH(mol, J, nexciton, WFNket, dt, fe, fv, prop_method=prop_method, particle=particle)
+                WFNbra = TDH(mol, J, 1-nexciton, WFNbra, dt, fe, fv, prop_method=prop_method, particle=particle)
         
-        # E_offset to reduce really known osillation
-        ft = np.conj(WFNbra[-1])*WFN[-1] * np.exp(-1.0j*E_offset*t) 
+        # E_offset to add a prefactor
+        ft = np.conj(WFNbra[-1])*WFNket[-1] * np.exp(-1.0j*E_offset*t) 
         for iwfn in xrange(fe+fv):
-            ft *= np.conj(WFNbra[iwfn]).dot(WFN[iwfn])
+            if T == 0:
+                ft *= np.vdot(WFNbra[iwfn], WFNket[iwfn])
+            else:
+                # FT
+                if iwfn == 0:
+                    ft *= mflib.exp_value(WFNbra[iwfn], dipolemat.T, WFNket[iwfn])
+                else:
+                    ft *= np.vdot(WFNbra[iwfn], WFNket[iwfn])
 
         autocorr.append(ft)
         autocorr_store(autocorr, istep)
@@ -311,3 +349,44 @@ def ZT_linear_spectra(spectratype, mol, J, nexciton, WFN , dt, nsteps, fe, fv,\
     return autocorr
 
 
+def FT_DM(mol, J, nexciton, T, nsteps, particle="hardcore boson", prop_method="unitary"):
+    '''
+    finite temperature thermal equilibrium density matrix by imaginary time TDH
+    '''
+    
+    DM = []
+    fe = 1
+    fv = 0
+    
+    # initial state infinite T density matrix
+    H_el_indep, H_el_dep = Ham_elec(mol, J, nexciton, particle=particle)
+    dim = H_el_indep.shape[0]
+    DM.append( np.diag([1.0]*dim,k=0) )
+    
+    nmols = len(mol)
+    for imol in xrange(nmols):
+        for iph in xrange(mol[imol].nphs):
+            H_vib_indep, H_vib_dep = Ham_vib(mol[imol].ph[iph])
+            dim = H_vib_indep.shape[0]
+            DM.append( np.diag([1.0]*dim,k=0) )
+            fv += 1
+    # the coefficent a
+    DM.append(1.0)
+    
+    # normalize the dm (physical \otimes ancilla)
+    mflib.normalize(DM)
+
+    beta = constant.T2beta(T) / 2.0
+    dbeta = beta / float(nsteps)
+
+    for istep in xrange(nsteps):
+        DM = TDH(mol, J, nexciton, DM, dbeta/1.0j, fe, fv, prop_method=prop_method, particle=particle)
+        mflib.normalize(DM)
+    
+    Z = DM[-1]**2
+    print "partition function Z=", Z
+    
+    # divide by np.sqrt(partition function)
+    DM[-1] = 1.0
+    
+    return DM

@@ -23,3 +23,5 @@ python test_force3rd.py
 
 python test_TDH.py
 python test_hybrid_TDDMRG_TDH.py
+python test_FT_TDH.py
+python test_FT_hybrid_TDDMRG_TDH.py

@@ -505,8 +505,8 @@ def FiniteT_spectra(spectratype, mol, pbond, iMPO, HMPO, dipoleMPO, nsteps, dt,\
     return autocorr  
 
 
-def thermal_prop(iMPO, HMPO, nsteps, ephtable, thresh=0, temperature=298,
-       prop_method="C_RK4", compress_method="svd", QNargs=None, approxeiHt=None):
+def thermal_prop(iMPO, HMPO, nsteps, ephtable, thresh=0, temperature=298, \
+       prop_method="C_RK4", compress_method="svd", QNargs=None, approxeiHt=None, normalize=None):
     '''
     do imaginary propagation
     '''
@@ -528,8 +528,9 @@ def thermal_prop(iMPO, HMPO, nsteps, ephtable, thresh=0, temperature=298,
     it = 0.0
     for istep in xrange(nsteps):
         it += dbeta
-        ketMPO = tMPS(ketMPO, HMPO, -0.5j*dbeta, ephtable, propagation_c, thresh=thresh,
-                cleanexciton=1, compress_method=compress_method, QNargs=QNargs, approxeiHt=approxeiHpt)
+        ketMPO = tMPS(ketMPO, HMPO, -0.5j*dbeta, ephtable, propagation_c,thresh=thresh,\
+                cleanexciton=1, compress_method=compress_method, QNargs=QNargs,\
+                approxeiHt=approxeiHpt, normalize=normalize)
     
     return ketMPO
 

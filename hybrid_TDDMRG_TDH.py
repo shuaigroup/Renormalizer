@@ -11,12 +11,14 @@ import scipy.linalg
 from ephMPS import RK
 from ephMPS import MPSsolver
 from ephMPS import tMPS
-from ephMPS.lib import mps as mpslib
 from ephMPS.utils.utils import *
 from ephMPS import TDH
+from ephMPS import constant
+from ephMPS.lib import mps as mpslib
+from ephMPS.lib import mf as mflib
 
 
-def construct_hybrid_Ham(mol, J, MPS, WFN):
+def construct_hybrid_Ham(mol, J, MPS, WFN, debug=False):
     '''
     construct hybrid DMRG and Hartree(-Fock) Hamiltonian
     '''
@@ -38,7 +40,7 @@ def construct_hybrid_Ham(mol, J, MPS, WFN):
         B_vib.append([])
         for iph in xrange(mol[imol].nphs_hybrid):
             H_vib_indep, H_vib_dep = TDH.Ham_vib(mol[imol].ph_hybrid[iph])
-            B_vib[imol].append(np.conj(WFN[iwfn]).dot(H_vib_dep).dot(WFN[iwfn]))
+            B_vib[imol].append( mflib.exp_value(WFN[iwfn], H_vib_dep, WFN[iwfn]) )
             iwfn += 1
     B_vib_mol = [np.sum(np.array(i)) for i in B_vib]
 
@@ -60,18 +62,18 @@ def construct_hybrid_Ham(mol, J, MPS, WFN):
     for imol in xrange(nmols):
         for iph in xrange(mol[imol].nphs_hybrid):
             H_vib_indep, H_vib_dep = TDH.Ham_vib(mol[imol].ph_hybrid[iph])
-            e_mean = np.conj(WFN[iwfn]).dot(H_vib_indep).dot(WFN[iwfn])
+            e_mean = mflib.exp_value(WFN[iwfn], H_vib_indep, WFN[iwfn])
             Etot += e_mean
             e_mean += A_el[imol]*B_vib[imol][iph]
             HAM.append(H_vib_indep + H_vib_dep*A_el[imol]-np.diag([e_mean]*WFN[iwfn].shape[0]))
             iwfn += 1
-    
-    
-    return MPO, MPOdim, MPOQN, MPOQNidx, MPOQNtot, HAM, Etot
+    if debug == False:
+        return MPO, MPOdim, MPOQN, MPOQNidx, MPOQNtot, HAM, Etot
+    else:
+        return MPO, MPOdim, MPOQN, MPOQNidx, MPOQNtot, HAM, Etot, A_el
 
 
-def hybrid_DMRG_H_SCF(mol, J, nexciton, dmrg_procedure, niterations,\
-        DMRGthresh=1e-5, Hthresh=1e-5):
+def hybrid_DMRG_H_SCF(mol, J, nexciton, dmrg_procedure, niterations, DMRGthresh=1e-5, Hthresh=1e-5):
     '''
     The ground state SCF procedure of hybrid DMRG and Hartree(-Fock) approach
     '''
@@ -116,7 +118,8 @@ def hybrid_DMRG_H_SCF(mol, J, nexciton, dmrg_procedure, niterations,\
 
         res = [scipy.linalg.norm(np.tensordot(WFN[iwfn],WFN[iwfn],axes=0) \
         	-np.tensordot(WFN_old[iwfn], WFN_old[iwfn], axes=0)) for iwfn in xrange(len(WFN))]
-	if np.all(np.array(res) < Hthresh) and abs(angle-1.) < DMRGthresh:
+	
+        if np.all(np.array(res) < Hthresh) and abs(angle-1.) < DMRGthresh:
     	    print "SCF converge!" 
    	    break 
 
@@ -127,7 +130,8 @@ def hybrid_DMRG_H_SCF(mol, J, nexciton, dmrg_procedure, niterations,\
 
 
 def hybrid_TDDMRG_TDH(mol, J, MPS, WFN, dt, ephtable, thresh=0.,\
-        QNargs=None, TDDMRG_prop_method="C_RK4", TDH_prop_method="exact"):
+        cleanexciton=None, QNargs=None, TDDMRG_prop_method="C_RK4", TDH_prop_method="unitary",
+        normalize=1.0):
     '''
     hybrid TDDMRG and TDH solver
     1.gauge is g_k = 0
@@ -146,28 +150,26 @@ def hybrid_TDDMRG_TDH(mol, J, MPS, WFN, dt, ephtable, thresh=0.,\
     # EOM of TDDMRG
     tableau =  RK.runge_kutta_explicit_tableau(TDDMRG_prop_method)
     propagation_c = RK.runge_kutta_explicit_coefficient(tableau)
-    MPS = tMPS.tMPS(MPS, MPO, dt, ephtable, propagation_c, thresh=thresh, QNargs=QNargs, normalize=1.0)
+    MPS = tMPS.tMPS(MPS, MPO, dt, ephtable, propagation_c, thresh=thresh, \
+           cleanexciton=cleanexciton, QNargs=QNargs, normalize=normalize)
     
     # EOM of TDH 
     # here if TDH also use RK4, then the TDDMRG part should be changed to get
     # t=t_1, t=t_2... wfn and slope k
-    if TDH_prop_method == "exact":
-        for iham, ham in enumerate(HAM):
-            w,v = scipy.linalg.eigh(ham)
-            WFN[iham] = v.dot(np.exp(-1.0j*w*dt) * v.T.dot(WFN[iham]))
+    if TDH_prop_method == "unitary":
+        TDH.unitary_propagation(HAM, WFN, dt)
     
     return MPS, WFN
 
 
 def ZeroTcorr_hybrid_TDDMRG_TDH(mol, J, iMPS, dipoleMPO, WFN0, nsteps, dt, ephtable,\
-        thresh=0., TDDMRG_prop_method="C_RK4", E_offset=0., QNargs=None):
+        thresh=0., TDDMRG_prop_method="C_RK4", E_offset=0., cleanexciton=None, QNargs=None):
     '''
     ZT linear spectra
     '''
 
     AketMPS = mpslib.mapply(dipoleMPO, iMPS, QNargs=QNargs)
-    factor = mpslib.dot(mpslib.conj(AketMPS,QNargs=QNargs),AketMPS, QNargs=QNargs)
-    factor = np.sqrt(np.absolute(factor))
+    factor = mpslib.norm(AketMPS, QNargs=QNargs)
     AketMPS = mpslib.scale(AketMPS, 1./factor, QNargs=QNargs)
     AbraMPS = mpslib.add(AketMPS,None, QNargs=QNargs)
 
@@ -182,24 +184,101 @@ def ZeroTcorr_hybrid_TDDMRG_TDH(mol, J, iMPS, dipoleMPO, WFN0, nsteps, dt, ephta
             t += dt
             if istep % 2 == 1:
                 AketMPS, WFNket = hybrid_TDDMRG_TDH(mol, J, AketMPS, WFNket,\
-                        dt, ephtable, thresh=thresh, QNargs=QNargs, \
-                        TDDMRG_prop_method=TDDMRG_prop_method, TDH_prop_method="exact")
+                        dt, ephtable, thresh=thresh, cleanexciton=cleanexciton, QNargs=QNargs, \
+                        TDDMRG_prop_method=TDDMRG_prop_method, TDH_prop_method="unitary")
             else:
                 AbraMPS, WFNbra = hybrid_TDDMRG_TDH(mol, J, AbraMPS, WFNbra,\
-                        -dt, ephtable, thresh=thresh, QNargs=QNargs, \
-                        TDDMRG_prop_method=TDDMRG_prop_method, TDH_prop_method="exact")
+                        -dt, ephtable, thresh=thresh, cleanexciton=cleanexciton, QNargs=QNargs, \
+                        TDDMRG_prop_method=TDDMRG_prop_method, TDH_prop_method="unitary")
 
         ft = mpslib.dot(mpslib.conj(AbraMPS,QNargs=QNargs),AketMPS, QNargs=QNargs)
         ft *= np.conj(WFNbra[-1])*WFNket[-1] * np.exp(-1.0j*E_offset*t)
         for iwfn in xrange(len(WFN0)-1):
-            ft *= np.conj(WFNbra[iwfn]).dot(WFNket[iwfn])
+            ft *= np.vdot(WFNbra[iwfn], WFNket[iwfn])
+
         autocorr.append(ft)
         autocorr_store(autocorr, istep)
 
     return autocorr
 
 
-def ExactPropagator_hybrid_TDDMRG_TDH(mol, J, MPS, WFN, x, space="GS"):
+def FiniteT_spectra_TDDMRG_TDH(spectratype, T, mol, J, nsteps, dt, insteps, pbond, ephtable,\
+        thresh=0., TDDMRG_prop_method="C_RK4", E_offset=0., QNargs=None):
+    '''
+    FT linear spectra
+    '''
+
+    assert spectratype in ["abs","emi"]
+
+    dipoleMPO, dipoleMPOdim = tMPS.construct_onsiteMPO(mol, pbond, "a^\dagger", dipole=True, QNargs=QNargs)
+    
+    # construct initial thermal equilibrium density matrix and apply dipole matrix
+    if spectratype == "abs":
+        nexciton = 0
+        DMMPO, DMH = FT_DM_hybrid_TDDMRG_TDH(mol, J, nexciton, T, insteps, pbond, ephtable, \
+        thresh=thresh, TDDMRG_prop_method=TDDMRG_prop_method, QNargs=QNargs, space="GS")
+        DMMPOket = mpslib.mapply(dipoleMPO, DMMPO, QNargs=QNargs)
+    else:
+        nexciton = 1
+        DMMPO, DMH = FT_DM_hybrid_TDDMRG_TDH(mol, J, nexciton, T, insteps, pbond, ephtable, \
+        thresh=thresh, TDDMRG_prop_method=TDDMRG_prop_method, QNargs=QNargs, space=None)
+        if QNargs is not None:
+            dipoleMPO[1] = [[0]*len(impsdim) for impsdim in dipoleMPO[1]]
+            dipoleMPO[3] = 0
+        DMMPOket = mpslib.mapply(DMMPO, dipoleMPO, QNargs=QNargs)
+
+    factor = mpslib.norm(DMMPOket, QNargs=QNargs)
+    DMMPOket = mpslib.scale(DMMPOket, 1./factor, QNargs=QNargs)
+    DMMPObra = mpslib.add(DMMPOket,None, QNargs=QNargs)
+
+    DMH[-1] *= factor
+    DMHket = copy.deepcopy(DMH)
+    DMHbra = copy.deepcopy(DMH)
+    
+    autocorr = []
+    t = 0.0
+    
+    def prop(DMMPO, DMH, dt):
+        MPOprop, HAM, Etot = ExactPropagator_hybrid_TDDMRG_TDH(mol, J, \
+                DMMPO,  DMH, -1.0j*dt, space="GS", QNargs=QNargs)
+        DMMPO = mpslib.mapply(DMMPO, MPOprop, QNargs=QNargs) 
+        
+        DMH[-1] *= np.exp(-1.0j*Etot*dt)
+        for iham, hamprop in enumerate(HAM):
+            w, v = scipy.linalg.eigh(hamprop)
+            DMH[iham] = DMH[iham].dot(v).dot(np.diag(np.exp(-1.0j*dt*w))).dot(v.T)
+        
+        DMMPO, DMH = hybrid_TDDMRG_TDH(mol, J, DMMPO, DMH, \
+                -dt, ephtable, thresh=thresh, QNargs=QNargs, TDDMRG_prop_method=TDDMRG_prop_method, normalize=1.0)
+        
+        return DMMPO, DMH
+
+    for istep in xrange(nsteps):
+        if istep != 0:
+            t += dt
+            if istep % 2 == 0:
+                DMMPObra, DMHbra = prop(DMMPObra, DMHbra, dt)
+            else:
+                DMMPOket, DMHket = prop(DMMPOket, DMHket, -dt)
+
+        ft = mpslib.dot(mpslib.conj(DMMPObra, QNargs=QNargs), DMMPOket, QNargs=QNargs)
+        ft *= np.conj(DMHbra[-1])*DMHket[-1] 
+        for idm in xrange(len(DMH)-1):
+            ft *= np.vdot(DMHbra[idm], DMHket[idm])
+        
+        if spectratype == "emi":
+            ft = np.conj(ft)
+
+        # for emi bra and ket is conjugated
+        ft *= np.exp(-1.0j*E_offset*t)
+        
+        autocorr.append(ft)
+        autocorr_store(autocorr, istep)
+    
+    return autocorr  
+
+
+def ExactPropagator_hybrid_TDDMRG_TDH(mol, J, MPS, WFN, x, space="GS", QNargs=None):
     '''
     construct the exact propagator in the GS space or single molecule
     '''
@@ -209,26 +288,36 @@ def ExactPropagator_hybrid_TDDMRG_TDH(mol, J, MPS, WFN, x, space="GS"):
         assert nmols == 1
 
     # TDDMRG propagator
-    pbond = [mps.shape[1] for mps in MPS]
+    if QNargs is None:
+        pbond = [mps.shape[1] for mps in MPS]
+    else:
+        pbond = [mps.shape[1] for mps in MPS[0]]
+
     MPO_indep, MPOdim, MPOQN, MPOQNidx, MPOQNtot = MPSsolver.construct_MPO(mol, J, pbond)
-    e_mean = mpslib.dot(mpslib.conj(MPS),mpslib.mapply(MPO_indep,MPS))
+    if QNargs is not None:
+        MPO_indep = [MPO_indep, MPOQN, MPOQNidx, MPOQNtot]
+    
+    e_mean = mpslib.dot(mpslib.conj(MPS, QNargs=QNargs),mpslib.mapply(MPO_indep, \
+        MPS, QNargs=QNargs), QNargs=QNargs)
+    
     if space == "EX":
         # the DMRG part exact propagator has no elocalex and e0
         e_mean -= mol[0].e0+mol[0].elocalex
 
-    MPOprop, MPOpropdim = tMPS.ExactPropagatorMPO(mol, pbond, x, space=space, shift=-e_mean)
+    MPOprop, MPOpropdim = tMPS.ExactPropagatorMPO(mol, pbond, x, space=space,
+            QNargs=QNargs, shift=-e_mean)
     
     Etot = e_mean
     
     # TDH propagator
     iwfn = 0
-    HAMprop = []
+    HAM = []
     for imol in xrange(nmols):
         for iph in xrange(mol[imol].nphs_hybrid):
             H_vib_indep, H_vib_dep = TDH.Ham_vib(mol[imol].ph_hybrid[iph])
-            e_mean = np.conj(WFN[iwfn]).dot(H_vib_indep).dot(WFN[iwfn])
+            e_mean = mflib.exp_value(WFN[iwfn], H_vib_indep, WFN[iwfn])
             if space == "EX":
-                e_mean += np.conj(WFN[iwfn]).dot(H_vib_dep).dot(WFN[iwfn]) 
+                e_mean += mflib.exp_value(WFN[iwfn], H_vib_dep, WFN[iwfn])
             Etot += e_mean
 
             if space == "GS":
@@ -236,13 +325,13 @@ def ExactPropagator_hybrid_TDDMRG_TDH(mol, J, MPS, WFN, x, space="GS"):
             elif space == "EX":
                 ham = H_vib_indep + H_vib_dep - np.diag([e_mean]*H_vib_indep.shape[0],k=0)
 
-            HAMprop.append(ham)
+            HAM.append(ham)
             iwfn += 1
     
     if space == "EX":
         Etot += mol[0].elocalex + mol[0].e0 + mol[0].e0_hybrid
     
-    return MPOprop, HAMprop, Etot
+    return MPOprop, HAM, Etot
 
 
 def Exact_Spectra_hybrid_TDDMRG_TDH(spectratype, mol, J, MPS, dipoleMPO, WFN, \
@@ -258,16 +347,14 @@ def Exact_Spectra_hybrid_TDDMRG_TDH(spectratype, mol, J, MPS, dipoleMPO, WFN, \
         space = "EX"
     
     AketMPS = mpslib.mapply(dipoleMPO, MPS)
-    factor = mpslib.dot(mpslib.conj(AketMPS),AketMPS)
-    factor = np.sqrt(np.absolute(factor))
+    factor = mpslib.norm(AketMPS)
     AketMPS = mpslib.scale(AketMPS, 1./factor)
     AbraMPS = mpslib.add(AketMPS,None)
 
     WFN[-1] *= factor
     WFNbra = copy.deepcopy(WFN)
 
-
-    MPOprop, HAMprop, Etot = ExactPropagator_hybrid_TDDMRG_TDH(mol, J, AketMPS, WFN, -1.0j*dt, space=space)
+    MPOprop, HAM, Etot = ExactPropagator_hybrid_TDDMRG_TDH(mol, J, AketMPS, WFN, -1.0j*dt, space=space)
     print "TD Etot", Etot
     
     autocorr = []
@@ -277,17 +364,71 @@ def Exact_Spectra_hybrid_TDDMRG_TDH(spectratype, mol, J, MPS, dipoleMPO, WFN, \
             t += dt
             WFN[-1] *= np.exp(-1.0j*Etot*dt)
             AketMPS = mpslib.mapply(MPOprop, AketMPS)
-            for iham, hamprop in enumerate(HAMprop):
-                w, v = scipy.linalg.eigh(hamprop)
-                WFN[iham] =  v.dot(np.exp(-1.0j*dt*w)*v.T.dot(WFN[iham]))
+            TDH.unitary_propagation(HAM, WFN, dt)
         
         ft = mpslib.dot(mpslib.conj(AbraMPS),AketMPS)
         ft *= np.conj(WFNbra[-1])*WFN[-1] * np.exp(-1.0j*E_offset*t)
         for iwfn in xrange(len(WFN)-1):
-            ft *= np.conj(WFNbra[iwfn]).dot(WFN[iwfn])
+            ft *= np.vdot(WFNbra[iwfn], WFN[iwfn])
         autocorr.append(ft)
         autocorr_store(autocorr, istep)
     
     return autocorr
 
 
+def FT_DM_hybrid_TDDMRG_TDH(mol, J, nexciton, T, nsteps, pbond, ephtable, \
+        thresh=0., TDDMRG_prop_method="C_RK4", cleanexciton=None, QNargs=None, space=None):
+    '''
+    construct the finite temperature density matrix by hybrid TDDMRG/TDH method
+    '''
+    # initial state infinite T density matrix
+    # TDDMRG
+    if nexciton == 0:
+        DMMPS, DMMPSdim = tMPS.Max_Entangled_GS_MPS(mol, pbond, norm=True, QNargs=QNargs)
+        DMMPO = tMPS.hilbert_to_liouville(DMMPS, QNargs=QNargs)
+    elif nexciton == 1:
+        DMMPO, DMMPOdim = tMPS.Max_Entangled_EX_MPO(mol, pbond, norm=True, QNargs=QNargs)
+    DMMPO = mpslib.MPSdtype_convert(DMMPO, QNargs=QNargs)
+
+    # TDH
+    DMH = []
+    
+    nmols = len(mol)
+    for imol in xrange(nmols):
+        for iph in xrange(mol[imol].nphs_hybrid):
+            H_vib_indep, H_vib_dep = TDH.Ham_vib(mol[imol].ph_hybrid[iph])
+            dim = H_vib_indep.shape[0]
+            DMH.append( np.diag([1.0]*dim,k=0) )
+    # the coefficent a
+    DMH.append(1.0)
+
+    mflib.normalize(DMH)
+    
+    beta = constant.T2beta(T) / 2.0
+    dbeta = beta / float(nsteps)
+    
+    for istep in xrange(nsteps):
+        if space is None:
+            DMMPO, DMH = hybrid_TDDMRG_TDH(mol, J, DMMPO, DMH, dbeta/1.0j, ephtable, \
+                    thresh=thresh, cleanexciton=cleanexciton, QNargs=QNargs, \
+                    TDDMRG_prop_method=TDDMRG_prop_method, normalize=1.0)
+        else:
+            MPOprop, HAM, Etot = ExactPropagator_hybrid_TDDMRG_TDH(mol, J, \
+                    DMMPO, DMH, -1.0*dbeta, space=space, QNargs=QNargs)
+            DMH[-1] *= np.exp(-1.0*Etot*dbeta)
+            TDH.unitary_propagation(HAM, DMH, dbeta/1.0j)
+            
+            DMMPO = mpslib.mapply(MPOprop, DMMPO, QNargs=QNargs)
+            # DMMPO is not normalize in the imaginary time domain
+            MPOnorm = mpslib.norm(DMMPO, QNargs=QNargs)
+            DMMPO = mpslib.scale(DMMPO, 1./MPOnorm, QNargs=QNargs)
+            
+            DMH[-1] *= MPOnorm
+
+        # normlize the dm (physical \otimes ancilla)
+        mflib.normalize(DMH)
+    
+    # divided by np.sqrt(partition function)
+    DMH[-1] = 1.0
+
+    return DMMPO, DMH

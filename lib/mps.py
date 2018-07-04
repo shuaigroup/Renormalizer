@@ -786,3 +786,12 @@ def truncate_MPS(MPS,trphbo):
         MPSnew.append(impsnew)
     
     return MPSnew
+
+
+def norm(MPS, QNargs=None):
+    '''
+    normalize the MPS(MPO) wavefunction(density matrix)
+    '''
+    norm2 = dot(conj(MPS, QNargs=QNargs), MPS, QNargs=QNargs).real
+
+    return np.sqrt(norm2)
