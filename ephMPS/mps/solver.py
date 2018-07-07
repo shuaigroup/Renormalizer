@@ -301,7 +301,7 @@ def construct_qnmat(QN, ephtable, pbond, addlist, method, system):
 
     for idx in addlist:
 
-        if ephtable[idx] is electron:
+        if ephtable.is_electron(idx):
             qnsigma = np.array([0, 1])
         else:
             qnsigma = np.zeros([pbond[idx]], dtype=qnl.dtype)

@@ -1,6 +1,6 @@
 import numpy as np
 
-from ephMPS import obj
+from ephMPS.model import Phonon, Mol
 from ephMPS import constant
 
 
@@ -17,24 +17,9 @@ D_value = np.array([30.1370, 8.7729])
 
 D = [{0:0.0,1:D_value[0]},{0:0.0,1:D_value[1]}]
 nphs = 2
-nlevels =  [4,4]
+nlevels = [4,4]
 
-phinfo = [list(a) for a in zip(omega, D, nlevels)]
+ph_list = [Phonon(*args) for args in zip(omega, D, nlevels)]
 
-mol = []
-for imol in range(nmols):
-    mol_local = obj.Mol(elocalex, nphs, dipole_abs)
-    mol_local.create_ph(phinfo)
-    mol.append(mol_local)
+mol = [Mol(elocalex, dipole_abs, ph_list)] * nmols
 
-
-def construct_mol(nlevels, nqboson=[1,1], qbtrunc=[0.0,0.0], force3rd=[None, None]):
-    
-    phinfo = [list(a) for a in zip(omega, D, nlevels, force3rd, nqboson, qbtrunc)]
-    mol = []
-    for imol in range(nmols):
-        mol_local = obj.Mol(elocalex, nphs, dipole_abs)
-        mol_local.create_ph(phinfo)
-        mol.append(mol_local)
-    
-    return mol

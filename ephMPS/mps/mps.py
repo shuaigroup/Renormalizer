@@ -33,7 +33,7 @@ class Mps(MatrixProduct):
         for imps in range(nmps - 1):
 
             # quantum number
-            if self.ephtable[imps] is electron:
+            if self.ephtable.is_electron(imps):
                 # e site
                 qnbig = list(itertools.chain.from_iterable([x, x + 1] for x in self.qn[imps]))
             else:

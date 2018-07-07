@@ -1,13 +1,13 @@
 # -*- coding: utf-8 -*-
 # Author: Jiajun Ren <jiajunren0522@gmail.com>
 
-import numpy as np
 import unittest
-from ephMPS.mps.solver import construct_MPS_MPO_2, optimization
-from ephMPS import constant
-from ephMPS import obj
-from ephMPS.tests.parameter import *
+
 from ddt import ddt, data
+
+from ephMPS.mps.solver import construct_MPS_MPO_2, optimization
+from ephMPS.tests.parameter import *
+
 
 nexciton=1
 procedure = [[10,0.4],[20,0.2],[30,0.1],[40,0],[40,0]]

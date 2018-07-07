@@ -141,7 +141,7 @@ class MatrixProduct(list):
             else:
                 mt = mt.l_combine()
             if self.enable_qn:
-                if self.ephtable[idx] == electron:
+                if self.ephtable.is_electron(idx):
                     # e site
                     sigmaqn = mt.elec_sigmaqn
                 else:
