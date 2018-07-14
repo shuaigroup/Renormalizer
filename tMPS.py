@@ -270,8 +270,6 @@ def ZeroTCorr(iMPS, HMPO, dipoleMPO, nsteps, dt, ephtable, thresh=0, \
         approxeiHpt = None
         approxeiHmt = None
 
-#   for debug reason
-#    AketMPS_list = []
     for istep in xrange(nsteps):
         if istep != 0:
             t += dt
@@ -288,12 +286,6 @@ def ZeroTCorr(iMPS, HMPO, dipoleMPO, nsteps, dt, ephtable, thresh=0, \
                     AbraMPS = tMPS(AbraMPS, HMPO, -dt, ephtable, propagation_c, thresh=thresh, \
                         cleanexciton=cleanexciton, compress_method=compress_method, QNargs=QNargs,\
                         approxeiHt=approxeiHmt, normalize=1.)
-        print "eket", mpslib.dot(mpslib.conj(AketMPS,QNargs=QNargs),\
-                mpslib.mapply(HMPO,AketMPS,QNargs=QNargs), QNargs=QNargs)
-        print "ebra", mpslib.dot(mpslib.conj(AbraMPS,QNargs=QNargs),\
-                mpslib.mapply(HMPO,AbraMPS,QNargs=QNargs), QNargs=QNargs)
-#        AketMPS_list.append(AketMPS)
-#        wfn_store(AketMPS_list, istep, str(dt)+str(thresh)+"AketMPSlist.pkl")
         ft = mpslib.dot(mpslib.conj(AbraMPS,QNargs=QNargs),AketMPS, QNargs=QNargs)*factor**2
         wfn_store(AbraMPS, istep, str(dt)+str(thresh)+"AbraMPS.pkl")
         wfn_store(AketMPS, istep, str(dt)+str(thresh)+"AketMPS.pkl")

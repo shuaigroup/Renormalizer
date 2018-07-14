@@ -16,7 +16,10 @@ class Phonon(object):
         self.omega = omega
         # dis is a dictionary for different PES dis[0]=0.0, dis[1]...
         self.dis = displacement
-        
+        # Hamiltonian of vibration used in TDh
+        self.H_vib_dep = None
+        self.H_vib_indep = None
+
         if force3rd is None:
             self.force3rd = {}
             for i in xrange(len(omega)):

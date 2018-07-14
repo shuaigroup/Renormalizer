@@ -39,8 +39,7 @@ def construct_hybrid_Ham(mol, J, MPS, WFN, debug=False):
     for imol in xrange(nmols):
         B_vib.append([])
         for iph in xrange(mol[imol].nphs_hybrid):
-            H_vib_indep, H_vib_dep = TDH.Ham_vib(mol[imol].ph_hybrid[iph])
-            B_vib[imol].append( mflib.exp_value(WFN[iwfn], H_vib_dep, WFN[iwfn]) )
+            B_vib[imol].append( mflib.exp_value(WFN[iwfn], mol[imol].ph_hybrid[iph].H_vib_dep, WFN[iwfn]) )
             iwfn += 1
     B_vib_mol = [np.sum(np.array(i)) for i in B_vib]
 
@@ -61,11 +60,11 @@ def construct_hybrid_Ham(mol, J, MPS, WFN, debug=False):
     HAM = []
     for imol in xrange(nmols):
         for iph in xrange(mol[imol].nphs_hybrid):
-            H_vib_indep, H_vib_dep = TDH.Ham_vib(mol[imol].ph_hybrid[iph])
-            e_mean = mflib.exp_value(WFN[iwfn], H_vib_indep, WFN[iwfn])
+            e_mean = mflib.exp_value(WFN[iwfn], mol[imol].ph_hybrid[iph].H_vib_indep, WFN[iwfn])
             Etot += e_mean
             e_mean += A_el[imol]*B_vib[imol][iph]
-            HAM.append(H_vib_indep + H_vib_dep*A_el[imol]-np.diag([e_mean]*WFN[iwfn].shape[0]))
+            HAM.append(mol[imol].ph_hybrid[iph].H_vib_indep + \
+                    mol[imol].ph_hybrid[iph].H_vib_dep*A_el[imol]-np.diag([e_mean]*WFN[iwfn].shape[0]))
             iwfn += 1
     if debug == False:
         return MPO, MPOdim, MPOQN, MPOQNidx, MPOQNtot, HAM, Etot
@@ -93,8 +92,7 @@ def hybrid_DMRG_H_SCF(mol, J, nexciton, dmrg_procedure, niterations, DMRGthresh=
     WFN = []
     for imol in xrange(nmols):
         for iph in xrange(mol[imol].nphs_hybrid):
-            H_vib_indep, H_vib_dep = TDH.Ham_vib(mol[imol].ph_hybrid[iph])
-            vw, vv = scipy.linalg.eigh(a=H_vib_indep)
+            vw, vv = scipy.linalg.eigh(a=mol[imol].ph_hybrid[iph].H_vib_indep)
             WFN.append(vv[:,0])
             fv += 1
 
@@ -314,7 +312,8 @@ def ExactPropagator_hybrid_TDDMRG_TDH(mol, J, MPS, WFN, x, space="GS", QNargs=No
     HAM = []
     for imol in xrange(nmols):
         for iph in xrange(mol[imol].nphs_hybrid):
-            H_vib_indep, H_vib_dep = TDH.Ham_vib(mol[imol].ph_hybrid[iph])
+            H_vib_indep = mol[imol].ph_hybrid[iph].H_vib_indep
+            H_vib_dep = mol[imol].ph_hybrid[iph].H_vib_dep
             e_mean = mflib.exp_value(WFN[iwfn], H_vib_indep, WFN[iwfn])
             if space == "EX":
                 e_mean += mflib.exp_value(WFN[iwfn], H_vib_dep, WFN[iwfn])
@@ -396,8 +395,7 @@ def FT_DM_hybrid_TDDMRG_TDH(mol, J, nexciton, T, nsteps, pbond, ephtable, \
     nmols = len(mol)
     for imol in xrange(nmols):
         for iph in xrange(mol[imol].nphs_hybrid):
-            H_vib_indep, H_vib_dep = TDH.Ham_vib(mol[imol].ph_hybrid[iph])
-            dim = H_vib_indep.shape[0]
+            dim = mol[imol].ph_hybrid[iph].H_vib_indep.shape[0]
             DMH.append( np.diag([1.0]*dim,k=0) )
     # the coefficent a
     DMH.append(1.0)

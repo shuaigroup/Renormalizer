@@ -25,6 +25,8 @@ class Test_hybrid_TDDMRG_TDH(unittest.TestCase):
             [mol_hybrid,0.084015672468],\
             [mol_pure,0.08401411562239858])
     def test_hybrid_DMRG_H_SCF(self,value):
+        
+        TDH.construct_Ham_vib(value[0], hybrid=True)
         nexciton = 1
         niterations = 20
         MPS, MPSQN, WFN, Etot = hybrid_TDDMRG_TDH.hybrid_DMRG_H_SCF(value[0], J, \
@@ -44,6 +46,8 @@ class Test_hybrid_TDDMRG_TDH(unittest.TestCase):
             [mol_hybrid,"std_data/hybrid_TDDMRG_TDH/hybrid_ZTabs.npy",1e-5],\
             [mol_pure,"std_data/tMPS/ZeroTabs_2svd.npy",1e-2])
     def test_ZeroTcorr_hybrid_TDDMRG_TDH_abs(self,value):
+        
+        TDH.construct_Ham_vib(value[0], hybrid=True)
         
         nexciton = 0
         niterations = 20
@@ -74,6 +78,7 @@ class Test_hybrid_TDDMRG_TDH(unittest.TestCase):
             [mol_pure,"std_data/tMPS/ZeroExactEmi.npy",1e-3])
     def test_ZeroTcorr_hybrid_TDDMRG_TDH_emi(self,value):
         
+        TDH.construct_Ham_vib(value[0], hybrid=True)
         nexciton = 1
         niterations = 20
         
@@ -102,6 +107,7 @@ class Test_hybrid_TDDMRG_TDH(unittest.TestCase):
             [mol_pure,"std_data/tMPS/ZeroExactEmi.npy",1e-3])
     def test_Exact_Spectra_hybrid_TDDMRG_TDH(self,value):
         
+        TDH.construct_Ham_vib(value[0], hybrid=True)
         nexciton = 1
         niterations = 20
         
@@ -154,6 +160,7 @@ class Test_hybrid_TDDMRG_TDH(unittest.TestCase):
                 mol_local.create_ph(phinfo_hybrid, phtype="hybrid")
                 mol.append(mol_local)
         
+        TDH.construct_Ham_vib(mol, hybrid=True)
         nexciton = 0
         dmrg_procedure = [[10,0.4],[20,0.2],[30,0.1],[40,0],[40,0]]
         

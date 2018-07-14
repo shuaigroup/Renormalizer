@@ -678,7 +678,7 @@ def optimization(MPS, MPSdim, MPSQN, MPO, MPOdim, ephtable, pbond, nexciton,\
             
             count = [0]
             def hop(c):
-                # convert c to initial structure according to qn patter
+                # convert c to initial structure according to qn pattern
                 cstruct = c1d2cmat(cshape, c, qnmat, nexciton)
                 count[0] += 1
                 

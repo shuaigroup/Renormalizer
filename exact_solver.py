@@ -469,7 +469,7 @@ def ZT_time_autocorr(dipolemat, c1, c2, e1, e2, mode, nsteps, dt):
 
     autocorr = np.array(autocorr)    
         
-    return autocorr
+    return autocorr, E2
 
 
 def FT_time_autocorr(T, dipolemat, c1, c2, e1, e2, mode, nsteps, dt, nset=1):
@@ -523,7 +523,7 @@ def FT_time_autocorr(T, dipolemat, c1, c2, e1, e2, mode, nsteps, dt, nset=1):
     
     autocorr = np.array(autocorr)    
     
-    return autocorr
+    return autocorr, E1, E2
 
 # only for debug reason
 def runge_kutta_vs_exact(Hmat, e, c, c0, nsteps, dt, prop_method="C_RK4"):

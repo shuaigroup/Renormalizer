@@ -25,7 +25,8 @@ class Test_FT_hybrid_TDDMRG_TDH(unittest.TestCase):
             [mol_hybrid,0.0853441664951,[0.20881609,0.35239430,0.43878960]],\
             [mol_pure,0.0853413581416,[0.20881782,0.35239674,0.43878545]])
     def test_DM_hybrid_TDDMRG_TDH(self,value):
-        
+
+        TDH.construct_Ham_vib(value[0], hybrid=True)
         T = 298.
         nexciton = 1
         nsteps = 100
@@ -57,6 +58,7 @@ class Test_FT_hybrid_TDDMRG_TDH(unittest.TestCase):
             [mol_hybrid,"emi","std_data/hybrid_TDDMRG_TDH/hybrid_FT_emi_hybrid.npy"])
     def test_FiniteT_spectra_TDDMRG_TDH(self,value):
         
+        TDH.construct_Ham_vib(value[0], hybrid=True)
         T = 298.
         insteps = 50
         dt = 30.

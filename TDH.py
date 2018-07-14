@@ -50,8 +50,7 @@ def SCF(mol, J, nexciton, niterations=20, thresh=1e-5, particle="hardcore boson"
     # vibrational part
     for imol in xrange(nmols):
         for iph in xrange(mol[imol].nphs):
-            H_vib_indep, H_vib_dep = Ham_vib(mol[imol].ph[iph])
-            vw, vv = scipy.linalg.eigh(a=H_vib_indep)
+            vw, vv = scipy.linalg.eigh(a=mol[imol].ph[iph].H_vib_indep)
             WFN.append(vv[:,0])
             fv += 1
 
@@ -191,8 +190,7 @@ def construct_H_Ham(mol, J, nexciton, WFN, fe, fv, particle="hardcore boson", de
     for imol in xrange(nmols):
         B_vib.append([])
         for iph in xrange(mol[imol].nphs):
-            H_vib_indep, H_vib_dep = Ham_vib(mol[imol].ph[iph])
-            B_vib[imol].append( mflib.exp_value(WFN[iwfn], H_vib_dep, WFN[iwfn]) )
+            B_vib[imol].append( mflib.exp_value(WFN[iwfn], mol[imol].ph[iph].H_vib_dep, WFN[iwfn]) )
             iwfn += 1
     B_vib_mol = [np.sum(np.array(i)) for i in B_vib]
     
@@ -210,8 +208,9 @@ def construct_H_Ham(mol, J, nexciton, WFN, fe, fv, particle="hardcore boson", de
     iwfn = fe
     for imol in xrange(nmols):
         for iph in xrange(mol[imol].nphs):
-            H_vib_indep, H_vib_dep = Ham_vib(mol[imol].ph[iph])
-            e_mean = mflib.exp_value(WFN[iwfn], H_vib_indep, WFN[iwfn])
+            H_vib_indep = mol[imol].ph[iph].H_vib_indep
+            H_vib_dep = mol[imol].ph[iph].H_vib_dep
+            e_mean = mflib.exp_value(WFN[iwfn], H_vib_indep , WFN[iwfn])
             Etot += e_mean  # no double counting of e-ph coupling energy
             e_mean += np.sum(A_el[imol,:])*B_vib[imol][iph]
             HAM.append(H_vib_indep + H_vib_dep*np.sum(A_el[imol,:])-np.diag([e_mean]*WFN[iwfn].shape[0]))
@@ -366,8 +365,7 @@ def FT_DM(mol, J, nexciton, T, nsteps, particle="hardcore boson", prop_method="u
     nmols = len(mol)
     for imol in xrange(nmols):
         for iph in xrange(mol[imol].nphs):
-            H_vib_indep, H_vib_dep = Ham_vib(mol[imol].ph[iph])
-            dim = H_vib_indep.shape[0]
+            dim = mol[imol].ph[iph].H_vib_indep.shape[0]
             DM.append( np.diag([1.0]*dim,k=0) )
             fv += 1
     # the coefficent a
@@ -390,3 +388,19 @@ def FT_DM(mol, J, nexciton, T, nsteps, particle="hardcore boson", prop_method="u
     DM[-1] = 1.0
     
     return DM
+
+
+def construct_Ham_vib(mol,hybrid=False):
+    if hybrid == False:
+        for imol in xrange(len(mol)):
+            for iph in xrange(mol[imol].nphs):
+                H_vib_indep, H_vib_dep = Ham_vib(mol[imol].ph[iph])
+                mol[imol].ph[iph].H_vib_indep = H_vib_indep
+                mol[imol].ph[iph].H_vib_dep = H_vib_dep
+    else:
+        for imol in xrange(len(mol)):
+            for iph in xrange(mol[imol].nphs_hybrid):
+                H_vib_indep, H_vib_dep = Ham_vib(mol[imol].ph_hybrid[iph])
+                mol[imol].ph_hybrid[iph].H_vib_indep = H_vib_indep
+                mol[imol].ph_hybrid[iph].H_vib_dep = H_vib_dep
+

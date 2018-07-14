@@ -17,6 +17,7 @@ from ephMPS import constant
 class Test_FT_TDH(unittest.TestCase):
     
     def test_FT_DM(self):
+        TDH.construct_Ham_vib(mol)
         # TDH
         nexciton = 1
         T = 298
@@ -54,6 +55,8 @@ class Test_FT_TDH(unittest.TestCase):
         
         D_value = np.array(value[0])
         mol = construct_mol(nlevels, D_value=D_value)
+        
+        TDH.construct_Ham_vib(mol)
         
         DM = TDH.FT_DM(mol, J, nexciton, T, insteps)
         autocorr = TDH.linear_spectra(value[1], mol, J, nexciton, DM, dt, nsteps, fe, fv, E_offset=E_offset, T=T)

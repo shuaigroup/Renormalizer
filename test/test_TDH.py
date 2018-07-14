@@ -18,6 +18,8 @@ class Test_TDH(unittest.TestCase):
     
     def test_SCF(self):
         
+        TDH.construct_Ham_vib(mol)
+
         #  EX   
         nexciton= 1
         WFN, Etot = TDH.SCF(mol, J, nexciton)
@@ -46,6 +48,7 @@ class Test_TDH(unittest.TestCase):
         nexciton= 1
         D_value = np.array([0.0, 0.0])
         mol = construct_mol(nlevels, D_value=D_value)
+        TDH.construct_Ham_vib(mol)
         # DMRG calculation
         procedure = [[40,0.4],[40,0.2],[40,0.1],[40,0],[40,0]]
         
@@ -73,6 +76,7 @@ class Test_TDH(unittest.TestCase):
     
     def test_TDH_ZT_emi(self):
         
+        TDH.construct_Ham_vib(mol)
         nexciton= 1
         WFN, Etot = TDH.SCF(mol, J, nexciton)
 
@@ -97,6 +101,7 @@ class Test_TDH(unittest.TestCase):
 
     def test_TDH_ZT_abs(self):
         
+        TDH.construct_Ham_vib(mol)
         nexciton= 0
         WFN, Etot = TDH.SCF(mol, J, nexciton)
 
@@ -130,6 +135,7 @@ class Test_TDH(unittest.TestCase):
             mol_local.create_ph(phinfo)
             mol.append(mol_local)
         
+        TDH.construct_Ham_vib(mol)
         nexciton = 0
         
         # TDH
