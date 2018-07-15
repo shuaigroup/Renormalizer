@@ -53,6 +53,9 @@ def SCF(mol, J, nexciton, niterations=20, thresh=1e-5, particle="hardcore boson"
             vw, vv = scipy.linalg.eigh(a=mol[imol].ph[iph].H_vib_indep)
             WFN.append(vv[:,0])
             fv += 1
+    
+    # append the coefficient a
+    WFN.append(1.0)
 
     for itera in xrange(niterations):
         print "Loop:", itera
@@ -69,16 +72,15 @@ def SCF(mol, J, nexciton, niterations=20, thresh=1e-5, particle="hardcore boson"
             else:
                 WFN.append(v[:,0])
         
+        WFN.append(1.0)
+
         # density matrix residual
         res = [scipy.linalg.norm(np.tensordot(WFN[iwfn],WFN[iwfn],axes=0) \
-                -np.tensordot(WFN_old[iwfn], WFN_old[iwfn], axes=0)) for iwfn in xrange(len(WFN))]
+                -np.tensordot(WFN_old[iwfn], WFN_old[iwfn], axes=0)) for iwfn in xrange(len(WFN)-1)]
         if np.all(np.array(res) < thresh):
             print "SCF converge!"
             break
 
-    # append the coefficient a
-    WFN.append(1.0)
-    
     return WFN, Etot
 
 
@@ -174,7 +176,8 @@ def construct_H_Ham(mol, J, nexciton, WFN, fe, fv, particle="hardcore boson", de
     the many body terms are A*B, A(B) is the electronic(vibrational) part mean field
     '''
     assert particle in ["hardcore boson","fermion"]
-    
+    assert (fe + fv) == (len(WFN)-1) 
+
     nmols = len(mol)
     
     A_el = np.zeros((nmols,fe))
@@ -246,6 +249,7 @@ def TDH(mol, J, nexciton, WFN, dt, fe, fv, prop_method="unitary", particle="hard
     if dt_exact < 1/4 dt_RK4, exact is definitely better than RK4.
     '''
     f = fe+fv
+    assert (fe + fv) == (len(WFN)-1) 
     
     # EOM of wfn
     if prop_method == "unitary":
@@ -285,6 +289,7 @@ def linear_spectra(spectratype, mol, J, nexciton, WFN, dt, nsteps, fe, fv,\
 
     assert spectratype in ["abs","emi"]
     assert particle in ["hardcore boson","fermion"]
+    assert (fe + fv) == (len(WFN)-1) 
     
     nmols = len(mol)
     
@@ -405,6 +410,7 @@ def dynamics_TDH(mol, J, nexciton, WFN, dt, nsteps, fe, fv,\
     ZT/FT dynamics to calculate the expectation value of a list of operators
     the operators are only related to electronic part
     '''
+    assert (fe + fv) == (len(WFN)-1) 
     
     data = [[] for i in xrange(len(property_Os))]
     for istep in xrange(nsteps):

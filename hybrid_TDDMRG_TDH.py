@@ -85,16 +85,12 @@ def hybrid_DMRG_H_SCF(mol, J, nexciton, dmrg_procedure, niterations, DMRGthresh=
     energy = MPSsolver.optimization(MPS, MPSdim, MPSQN, MPO, MPOdim,\
         ephtable, pbond, nexciton, dmrg_procedure)
     
-    fe = 1
-
     # Hartre part
-    fv = 0
     WFN = []
     for imol in xrange(nmols):
         for iph in xrange(mol[imol].nphs_hybrid):
             vw, vv = scipy.linalg.eigh(a=mol[imol].ph_hybrid[iph].H_vib_indep)
             WFN.append(vv[:,0])
-            fv += 1
 
     # loop to optimize both parts 
     for itera in xrange(niterations):

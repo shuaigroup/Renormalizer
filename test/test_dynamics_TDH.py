@@ -29,9 +29,8 @@ class Test_dynamics_TDH(unittest.TestCase):
 
         nsteps = 100
         dt = 10.0
-        fe, fv = 1, 20
+        fe, fv = 1, 40
         data = TDH.dynamics_TDH(mol, J, 1, WFN, dt, nsteps, fe, fv, property_Os=Os)
-        
         with open("std_data/TDH/ZT_occ10.npy", 'rb') as f:
             std = np.load(f)
         self.assertTrue(np.allclose(data,std))
@@ -58,7 +57,7 @@ class Test_dynamics_TDH(unittest.TestCase):
 
         nsteps = 300
         dt = 10.0
-        fe, fv = 1, 20
+        fe, fv = 1, 40
         data = TDH.dynamics_TDH(mol, J, 1, DM, dt, nsteps, fe, fv, property_Os=Os)
         
         with open("std_data/TDH/FT_occ10.npy", 'rb') as f:
