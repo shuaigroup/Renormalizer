@@ -430,3 +430,33 @@ def FT_DM_hybrid_TDDMRG_TDH(mol, J, nexciton, T, nsteps, pbond, ephtable, \
     DMH[-1] = 1.0
 
     return DMMPO, DMH
+
+
+def dynamics_hybrid_TDDMRG_TDH(mol, J, MPS, WFN, nsteps, dt, ephtable, thresh=0.,\
+        TDDMRG_prop_method="C_RK4", cleanexciton=None, QNargs=None, \
+        property_MPOs=[]):
+    '''
+    ZT/FT dynamics to calculate the expectation value of a list of MPOs
+    the MPOs in only related to the MPS part (usually electronic part)
+    '''
+    
+    data = [[] for i in xrange(len(property_MPOs))]
+    for istep in xrange(nsteps):
+        if istep != 0:
+            MPS, WFN = hybrid_TDDMRG_TDH(mol, J, MPS, WFN,\
+                    dt, ephtable, thresh=thresh, cleanexciton=cleanexciton, QNargs=QNargs, \
+                    TDDMRG_prop_method=TDDMRG_prop_method, TDH_prop_method="unitary")
+        
+        # calculate the expectation value
+        for iMPO, MPO in enumerate(property_MPOs):
+            ft = mpslib.dot(mpslib.conj(MPS,QNargs=QNargs), \
+                    mpslib.mapply(MPO, MPS, QNargs=QNargs), QNargs=QNargs)
+            ft *= np.conj(WFN[-1])*WFN[-1]
+            data[iMPO].append(ft)
+        
+        wfn_store(MPS, istep, "MPS.pkl")
+        wfn_store(WFN, istep, "WFN.pkl")
+        autocorr_store(data, istep)
+    
+    return data
+    

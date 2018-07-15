@@ -288,17 +288,11 @@ def linear_spectra(spectratype, mol, J, nexciton, WFN, dt, nsteps, fe, fv,\
     
     nmols = len(mol)
     
-    dipole = np.zeros([nmols])
-    for imol in xrange(nmols):
-        dipole[imol] = mol[imol].dipole
-    
     if spectratype == "abs":
-        dipolemat = np.zeros([nmols, 1])
-        dipolemat[:,0] = dipole
+        dipolemat = construct_onsiteO(mol, "a^\dagger", dipole=True)
         nexciton += 1
     elif spectratype == "emi":
-        dipolemat = np.zeros([1,nmols])
-        dipolemat[0,:] = dipole
+        dipolemat = construct_onsiteO(mol, "a", dipole=True)
         nexciton -= 1
     
     WFNket = copy.deepcopy(WFN)
@@ -403,4 +397,58 @@ def construct_Ham_vib(mol,hybrid=False):
                 H_vib_indep, H_vib_dep = Ham_vib(mol[imol].ph_hybrid[iph])
                 mol[imol].ph_hybrid[iph].H_vib_indep = H_vib_indep
                 mol[imol].ph_hybrid[iph].H_vib_dep = H_vib_dep
+
+
+def dynamics_TDH(mol, J, nexciton, WFN, dt, nsteps, fe, fv,\
+        prop_method="unitary", particle="hardcore boson", property_Os=[]):
+    '''
+    ZT/FT dynamics to calculate the expectation value of a list of operators
+    the operators are only related to electronic part
+    '''
+    
+    data = [[] for i in xrange(len(property_Os))]
+    for istep in xrange(nsteps):
+        if istep != 0:
+            WFN = TDH(mol, J, nexciton, WFN, dt, fe, fv, prop_method=prop_method, particle=particle)
+        
+        # calculate the expectation value
+        for iO, O in enumerate(property_Os):
+            ft = mflib.exp_value(WFN[0], O, WFN[0])
+            ft *= np.conj(WFN[-1]) * WFN[-1] 
+            data[iO].append(ft)
+        
+        wfn_store(WFN, istep, "WFN.pkl")
+        autocorr_store(data, istep)
+
+    return data
+
+
+def construct_onsiteO(mol,opera,dipole=False,sitelist=None):
+    '''
+    construct the electronic onsite operator \sum_i opera_i MPO
+    '''
+    
+    assert opera in ["a", "a^\dagger", "a^\dagger a"]
+    nmols = len(mol)
+    if sitelist is None:
+        sitelist = np.arange(nmols)
+    
+    element = np.zeros(nmols)
+    for site in sitelist:
+        if dipole == False:
+            element[site] = 1.0
+        else:
+            element[site] = mol[site].dipole
+    
+    if opera == "a":
+        O = np.zeros([1, nmols])
+        O[0,:] = element
+    elif opera == "a^\dagger":
+        O = np.zeros([nmols,1])
+        O[:,0] = element
+    elif opera == "a^\dagger a":
+        O = np.diag(element)
+
+    return O
+        
 
