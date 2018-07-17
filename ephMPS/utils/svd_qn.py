@@ -32,7 +32,7 @@ def Csvd(cstruct, qnbigl, qnbigr, nexciton, QR=False, system=None,
     
     if ddm == False:
         # different combination
-        if cstruct.is_virtual:
+        if not cstruct.is_virtual:
             combine = [[x, nexciton-x] for x in range(nexciton+1)]
         else:
             min0 = min(np.min(localqnl),np.min(localqnr))
@@ -62,8 +62,8 @@ def Csvd(cstruct, qnbigl, qnbigr, nexciton, QR=False, system=None,
                 
                 return vset, vset0, qnset, qnset0, svset0
             
-            if ddm == False:
-                if QR == False:
+            if not ddm:
+                if not QR:
                     try:
                         U, S, Vt = scipy.linalg.svd(Gamma_block,
                                 full_matrices=full_matrices,lapack_driver='gesdd')
@@ -74,7 +74,7 @@ def Csvd(cstruct, qnbigl, qnbigr, nexciton, QR=False, system=None,
                     dim = S.shape[0]
                     Sset.append(S)
                 else:
-                    if full_matrices== True:
+                    if full_matrices:
                         mode = "full"
                     else:
                         mode = "economic"
@@ -102,8 +102,8 @@ def Csvd(cstruct, qnbigl, qnbigr, nexciton, QR=False, system=None,
                         qnlset0, SUset0, U, nl, dim, lset, Gamma.shape[0], full_matrices=False)
                 
     
-    if ddm == False:
-        if full_matrices == True:
+    if not ddm:
+        if full_matrices:
             Uset = np.concatenate(Uset + Uset0,axis=1)
             Vset = np.concatenate(Vset + Vset0,axis=1)
             qnlset = qnlset + qnlset0
@@ -144,22 +144,4 @@ def blockrecover(indices, U, dim):
     resortU[indices,:] = U
     
     return resortU
-
-
-def QN_construct(QN, isite, fsite, tot):
-    '''
-    Quantum number has a boundary side, left hand of the side is L system qn,
-    right hand of the side is R system qn, the sum of quantum number of L system
-    and R system is tot.
-    '''
-    QNnew = [i[:] for i in QN] 
-    # construct the L system qn
-    for idx in range(isite+1,len(QNnew)-1):
-        QNnew[idx] = [tot-i for i in QNnew[idx]]
-
-    # set boundary to fsite:
-    for idx in range(len(QNnew)-2,fsite,-1):
-        QNnew[idx] = [tot-i for i in QNnew[idx]]
-
-    return QNnew
 

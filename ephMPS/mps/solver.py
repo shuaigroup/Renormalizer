@@ -7,11 +7,10 @@ from ephMPS.utils import svd_qn
 from ephMPS.lib import tensor as tensorlib
 from ephMPS.lib.davidson import davidson
 from ephMPS.mps import Mpo, Mps
-from ephMPS.mps.ephtable import electron
 from ephMPS.mps.lib import construct_enviro, GetLR, updatemps
 
 
-def construct_MPS_MPO_2(mol, J_matrix, Mmax, nexciton, MPOscheme=2, rep="star"):
+def construct_MPS_MPO_2(mol, J_matrix, Mmax, nexciton, thresh=1e-3, MPOscheme=2, rep="star"):
     '''
     MPO/MPS structure 2
     e1,ph11,ph12,..e2,ph21,ph22,...en,phn1,phn2...
@@ -25,7 +24,7 @@ def construct_MPS_MPO_2(mol, J_matrix, Mmax, nexciton, MPOscheme=2, rep="star"):
     '''
     initialize MPS according to quantum number
     '''
-    mps = Mps('#domain', mpo, nexciton, Mmax, percent=1)
+    mps = Mps.from_mpo(mpo, nexciton, Mmax, thresh, percent=1)
     # print("initialize left-canonical:", mps.check_left_canonical())
 
     return mps, mpo
@@ -63,9 +62,9 @@ def optimization(mps, mpo, procedure, method="2site", nroots=1, inverse=1.0):
 
         for system, imps in loop:
             if system == "R":
-                lmethod, rmethod = "Enviro", "System"
+                lmethod, rmethod = 'Enviro', 'System'
             else:
-                lmethod, rmethod = "System", "Enviro"
+                lmethod, rmethod = 'System', 'Enviro'
 
             if method == "1site":
                 lsite = imps - 1
@@ -151,7 +150,7 @@ def optimization(mps, mpo, procedure, method="2site", nroots=1, inverse=1.0):
             if nroots != 1:
                 cguess = [cguess]
                 for iroot in range(nroots - 1):
-                    cguess += [np.random.random([nonzeros]) - 0.5]
+                    cguess.append(np.complex128(np.random.random([nonzeros])) - 0.5)
 
             precond = lambda x, e, *args: x / (hdiag - e + 1e-4)
 
@@ -169,8 +168,8 @@ def optimization(mps, mpo, procedure, method="2site", nroots=1, inverse=1.0):
 
             if nroots == 1:
                 # direct svd the coefficient matrix
-                mt, mpsdim, mpsqn, compmps = Renormalization_svd(cstruct, qnbigl, qnbigr,
-                                                                  system, nexciton, Mmax=mmax, percent=percent)
+                mt, mpsdim, mpsqn, compmps = renormalization_svd(cstruct, qnbigl, qnbigr,
+                                                                 system, nexciton, Mmax=mmax, percent=percent)
             else:
                 # diagonalize the reduced density matrix
                 mt, mpsdim, mpsqn, compmps = Renormalization_ddm(cstruct, qnbigl, qnbigr,
@@ -181,21 +180,21 @@ def optimization(mps, mpo, procedure, method="2site", nroots=1, inverse=1.0):
                 if system == "L":
                     if imps != len(mps) - 1:
                         mps[imps + 1] = np.tensordot(compmps, mps[imps + 1], axes=1)
-                        mps.dim[imps + 1] = mpsdim
+                        mps.dim_list[imps + 1] = mpsdim
                         mps.qn[imps + 1] = mpsqn
                     else:
                         mps[imps] = np.tensordot(mps[imps], compmps, axes=1)
-                        mps.dim[imps + 1] = 1
+                        mps.dim_list[imps + 1] = 1
                         mps.qn[imps + 1] = [0]
 
                 else:
                     if imps != 0:
                         mps[imps - 1] = np.tensordot(mps[imps - 1], compmps, axes=1)
-                        mps.dim[imps] = mpsdim
+                        mps.dim_list[imps] = mpsdim
                         mps.qn[imps] = mpsqn
                     else:
                         mps[imps] = np.tensordot(compmps, mps[imps], axes=1)
-                        mps.dim[imps] = 1
+                        mps.dim_list[imps] = 1
                         mps.qn[imps] = [0]
             else:
                 if system == "L":
@@ -205,7 +204,7 @@ def optimization(mps, mpo, procedure, method="2site", nroots=1, inverse=1.0):
                     mps[imps] = mt
                     mps[imps - 1] = compmps
 
-                mps.dim[imps] = mpsdim
+                mps.dim_list[imps] = mpsdim
                 mps.qn[imps] = mpsqn
 
     if nroots == 1:
@@ -215,7 +214,7 @@ def optimization(mps, mpo, procedure, method="2site", nroots=1, inverse=1.0):
     return energy
 
 
-def Renormalization_svd(cstruct, qnbigl, qnbigr, domain, nexciton, Mmax, percent=0):
+def renormalization_svd(cstruct, qnbigl, qnbigr, domain, nexciton, Mmax, percent=0):
     '''
         get the new mps, mpsdim, mpdqn, complementary mps to get the next guess
         with singular value decomposition method (1 root)

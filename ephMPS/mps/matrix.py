@@ -6,8 +6,10 @@ import numpy as np
 
 class Matrix(np.ndarray):
 
+    npdtype = np.complex128
+
     def __new__(cls, array):
-        obj = np.array(array).view(cls)
+        obj = np.array(array, dtype=cls.npdtype).view(cls)
         obj.original_shape = obj.shape
         return obj
 
@@ -74,6 +76,8 @@ class MatrixState(Matrix):
 
 
 class MatrixOp(Matrix):
+
+    npdtype = np.complex128
 
     @property
     def elec_sigmaqn(self):
