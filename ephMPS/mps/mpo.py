@@ -103,20 +103,21 @@ class Mpo(MatrixProduct):
         # print mat.reshape(base**nqb,base**nqb)
 
         # decompose canonicalise
-        MPO = cls()
+        mpo = cls()
+        mpo.thresh = trunc
         mat = mat.reshape(1, -1)
         for idx in range(nqb - 1):
             U, S, Vt = scipy.linalg.svd(mat.reshape(mat.shape[0] * base ** 2, -1),
                                         full_matrices=False)
             U = U.reshape(mat.shape[0], base, base, -1)
-            MPO.append(U)
+            mpo.append(U)
             mat = np.einsum("i, ij -> ij", S, Vt)
 
-        MPO.append(mat.reshape(-1, base, base, 1))
+        mpo.append(mat.reshape(-1, base, base, 1))
         # print "original MPO shape:", [i.shape[0] for i in MPO] + [1]
 
         # compress
-        MPOnew = MPO.compress(thresh=trunc)
+        MPOnew = mpo.compress()
         # print "trunc", trunc, "distance", mpslib.distance(MPO,MPOnew)
         # fidelity = mpslib.dot(mpslib.conj(MPOnew), MPO) / mpslib.dot(mpslib.conj(MPO), MPO)
         # print "compression fidelity:: ", fidelity
@@ -262,8 +263,7 @@ class Mpo(MatrixProduct):
             mps.append(ms)
         approx_mpo_t0 = Mpo.from_mps(mps)
 
-        approx_mpo = approx_mpo_t0.evolve(mpo, dt, prop_method=prop_method, thresh=thresh,
-                                          compress_method=compress_method)
+        approx_mpo = approx_mpo_t0.evolve(mpo, dt, prop_method=prop_method, compress_method=compress_method)
 
         #print"approx propagator thresh:", thresh
         #if QNargs is not None:
@@ -344,7 +344,6 @@ class Mpo(MatrixProduct):
         mpo.qn[-1] = [0]
 
         return mpo
-
 
     def __init__(self, mol_list=None, J_matrix=None, scheme=2, rep="star", elocal_offset=None):
         '''
@@ -795,13 +794,12 @@ class Mpo(MatrixProduct):
                 new_mps[i] = mt
         else:
             assert False
-        if self.enable_qn and mp.enable_qn:
-            orig_idx = new_mps.qnidx
-            new_mps.move_qnidx(self.qnidx)
-            new_mps.qn = [np.add.outer(np.array(qn_o), np.array(qn_m)).ravel().tolist()
-                          for qn_o, qn_m in zip(self.qn, new_mps.qn)]
-            new_mps.move_qnidx(orig_idx)
-            new_mps.qntot += self.qntot
+        orig_idx = new_mps.qnidx
+        new_mps.move_qnidx(self.qnidx)
+        new_mps.qn = [np.add.outer(np.array(qn_o), np.array(qn_m)).ravel().tolist()
+                      for qn_o, qn_m in zip(self.qn, new_mps.qn)]
+        new_mps.move_qnidx(orig_idx)
+        new_mps.qntot += self.qntot
         return new_mps
 
     def contract(self, mps, ncanonical=1, compress_method='svd'):

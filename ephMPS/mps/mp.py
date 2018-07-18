@@ -14,14 +14,13 @@ from ephMPS.tdmps import rk
 
 class MatrixProduct(list):
 
-    def __init__(self, enable_qn=True):
+    def __init__(self):
         super(MatrixProduct, self).__init__()
         self.mtype = Matrix
         self._left_canon = None
 
         self.ephtable = None
 
-        self.enable_qn = enable_qn
         self.qn = None
         self.qnidx = None
         self.qntot = None
@@ -186,11 +185,11 @@ class MatrixProduct(list):
         else:
             assert False
 
-        if self.enable_qn and other.enable_qn:
-            new_mps.move_qnidx(self.qnidx)
-            new_mps.qn = [qn1 + qn2 for qn1, qn2 in zip(self.qn, new_mps.qn)]
-            new_mps.qn[0] = [0]
-            new_mps.qn[-1] = [0]
+
+        new_mps.move_qnidx(self.qnidx)
+        new_mps.qn = [qn1 + qn2 for qn1, qn2 in zip(self.qn, new_mps.qn)]
+        new_mps.qn[0] = [0]
+        new_mps.qn[-1] = [0]
         return new_mps
 
     def dot(self, other):
@@ -220,7 +219,6 @@ class MatrixProduct(list):
         else:
             ms_idx = 0
 
-        # ms_idx = -1
         if inplace:
             self[ms_idx] *= val
         else:
@@ -279,17 +277,10 @@ class MatrixProduct(list):
                 mt = mt.r_combine()
             else:
                 mt = mt.l_combine()
-            if self.enable_qn:
-                qnbigl, qnbigr = self.get_big_qn(idx)
-                u, sigma, qnlset, v, sigma, qnrset = svd_qn.Csvd(mt, qnbigl, qnbigr, self.qntot, full_matrices=False)
-                vt = v.T
-            else:
-                qnlset = qnrset = None
-                try:
-                    u, sigma, vt = scipy.linalg.svd(mt, full_matrices=False, lapack_driver='gesdd')
-                except:
-                    # print "mps compress converge failed"
-                    u, sigma, vt = scipy.linalg.svd(mt, full_matrices=False, lapack_driver='gesvd')
+
+            qnbigl, qnbigr = self.get_big_qn(idx)
+            u, sigma, qnlset, v, sigma, qnrset = svd_qn.Csvd(mt, qnbigl, qnbigr, self.qntot, full_matrices=False)
+            vt = v.T
 
             if self.thresh < 1.:
                 # count how many sing vals < trunc
@@ -304,11 +295,11 @@ class MatrixProduct(list):
 
         self.switch_domain()
 
-        if self.enable_qn:
-            if self.is_left_canon:
-                self.qnidx = len(self) - 1
-            else:
-                self.qnidx = 0
+
+        if self.is_left_canon:
+            self.qnidx = len(self) - 1
+        else:
+            self.qnidx = 0
         if normalize is not None:
             self.scale(normalize / self.norm(), inplace=True)
 
@@ -320,29 +311,20 @@ class MatrixProduct(list):
                 mt = mt.r_combine()
             else:
                 mt = mt.l_combine()
-            if self.enable_qn:
-                qnbigl, qnbigr = self.get_big_qn(idx)
-                if self.is_left_canon:
-                    system = "R"
-                else:
-                    system = "L"
-                u, qnlset, v, qnrset = svd_qn.Csvd(mt, qnbigl, qnbigr, self.qntot,
-                                                   QR=True, system=system, full_matrices=False)
-                vt = v.T
+            qnbigl, qnbigr = self.get_big_qn(idx)
+            if self.is_left_canon:
+                system = "R"
             else:
-                qnlset = qnrset = None
-                if self.is_left_canon:
-                    u, vt = scipy.linalg.rq(mt, mode='economic')
-                else:
-                    u, vt = scipy.linalg.qr(mt, mode='economic')
+                system = "L"
+            u, qnlset, v, qnrset = svd_qn.Csvd(mt, qnbigl, qnbigr, self.qntot,
+                                               QR=True, system=system, full_matrices=False)
+            vt = v.T
             self.update_ms(idx, u, vt, sigma=None, qnlset=qnlset, qnrset=qnrset)
         self.switch_domain()
-
-        if self.enable_qn:
-            if self.is_left_canon:
-                self.qnidx = len(self) - 1
-            else:
-                self.qnidx = 0
+        if self.is_left_canon:
+            self.qnidx = len(self) - 1
+        else:
+            self.qnidx = 0
 
     def evolve(self, mpo, evolve_dt, prop_method='C_RK4', compress_method='svd', approx_eiht=None):
         if approx_eiht:

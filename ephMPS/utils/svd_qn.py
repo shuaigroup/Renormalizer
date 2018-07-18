@@ -43,8 +43,6 @@ def Csvd(cstruct, qnbigl, qnbigr, nexciton, QR=False, system=None,
         combine = [[x, x] for x in range(nexciton+1)]
 
     for nl, nr in combine:
-        #lset = [i for i, x in enumerate(localqnl) if x == nl]
-        #rset = [i for i, x in enumerate(localqnr) if x == nr]
         lset = np.where(localqnl == nl)[0]
         rset = np.where(localqnr == nr)[0]
         if len(lset) != 0 and len(rset) != 0:
