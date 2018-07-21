@@ -30,9 +30,9 @@ def Csvd(cstruct, qnbigl, qnbigr, nexciton, QR=False, system=None,
     qnrset = []
     qnrset0 = []
     
-    if ddm == False:
+    if not ddm:
         # different combination
-        if not cstruct.is_virtual:
+        if cstruct.is_virtual:
             combine = [[x, nexciton-x] for x in range(nexciton+1)]
         else:
             min0 = min(np.min(localqnl),np.min(localqnr))
@@ -53,7 +53,7 @@ def Csvd(cstruct, qnbigl, qnbigr, nexciton, QR=False, system=None,
                     indice, shape, full_matrices=True):
                 vset.append(blockrecover(indice, v[:,:dim], shape))
                 qnset += [n] * dim
-                if full_matrices == True:
+                if full_matrices:
                     vset0.append(blockrecover(indice, v[:,dim:],shape))
                     qnset0 += [n] * (v.shape[0]-dim)
                     svset0.append(np.zeros(v.shape[0]-dim))
@@ -98,8 +98,7 @@ def Csvd(cstruct, qnbigl, qnbigr, nexciton, QR=False, system=None,
                 Sset.append(S)
                 Uset, Uset0, qnlset, qnlset0, SUset0 = blockappend(Uset, Uset0, qnlset,
                         qnlset0, SUset0, U, nl, dim, lset, Gamma.shape[0], full_matrices=False)
-                
-    
+
     if not ddm:
         if full_matrices:
             Uset = np.concatenate(Uset + Uset0,axis=1)

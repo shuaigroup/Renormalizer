@@ -8,23 +8,25 @@ useful utilities
 from itertools import islice, cycle
 import sys
 
-if sys.version_info[0] == 3:
-    import pickle
-else:
-    import cPickle as pickle
-
 import numpy as np
+
+from ephMPS.utils import pickle
 
 
 def roundrobin(*iterables):
+    """
     "roundrobin('ABC', 'D', 'EF') --> A D E B F C"
     # Recipe credited to George Sakkis
+    """
     pending = len(iterables)
-    nexts = cycle(iter(it).next for it in iterables)
+    if sys.version_info[0] == 3:
+        nexts = cycle(iter(it).__next__ for it in iterables)
+    else:
+        nexts = cycle(iter(it).next for it in iterables)
     while pending:
         try:
-            for next in nexts:
-                yield next()
+            for next_func in nexts:
+                yield next_func()
         except StopIteration:
             pending -= 1
             nexts = cycle(islice(nexts, pending))
@@ -37,7 +39,7 @@ def autocorr_store(autocorr, istep, freq=10):
             np.save(f, autocorr)
 
 
-def wfn_store(MPS, istep, filename, freq=100):
+def wfn_store(mps, istep, filename, freq=100):
     if istep % freq == 0:
         with open(filename, 'wb') as f:
-            pickle.dump(MPS, f, -1)
+            pickle.dump(mps, f, -1)

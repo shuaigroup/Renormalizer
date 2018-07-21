@@ -5,6 +5,8 @@ from __future__ import absolute_import, print_function, unicode_literals
 
 import numpy as np
 
+from ephMPS.mps.elementop import construct_e_op_dict
+
 
 class Mol(object):
     '''
@@ -25,7 +27,6 @@ class Mol(object):
             self.phs.append(ph)
             self.e0 += 0.5 * ph.omega[1] ** 2 * ph.dis[1] ** 2 - ph.dis[1] ** 3 * ph.force3rd[1]
         self.phhop = np.zeros([self.nphs, self.nphs])
-
 
     def create_phhop(self, phhopmat):
         self.phhop = phhopmat.copy()

@@ -1,20 +1,37 @@
 # -*- coding: utf-8 -*-
 # Author: Jiajun Ren <jiajunren0522@gmail.com>
 
-'''
+"""
 some electronic and phonon operator (second quantization) matrix element,
 written in Latex format. <bra|op|ket>
-'''
+"""
 
 import numpy as np
 
 
-def PhElementOpera(op, bra, ket):
-    '''
+def op_matrix(op, size, type):
+    assert type in ['e', 'ph']
+    if type == 'e':
+        element_func = e_element_op
+    else:
+        element_func = ph_element_op
+    op_matrix = np.zeros((size, size))
+    for ibra in range(size):
+        for iket in range(size):
+            op_matrix[ibra][iket] = element_func(op, ibra, iket)
+    return op_matrix
+
+
+
+
+ph_op_list = ["b", "b^\dagger", "b^\dagger b", "b^\dagger + b", "Iden", "(b^\dagger + b)^2", "(b^\dagger + b)^3"]
+
+
+def ph_element_op(op, bra, ket):
+    """
     phonon operator
-    '''
-    assert op in ["b", "b^\dagger", "b^\dagger b", "b^\dagger + b", "Iden",
-            "(b^\dagger + b)^2", "(b^\dagger + b)^3"]
+    """
+    assert op in ph_op_list
     assert bra >= 0
     assert ket >= 0
 
@@ -24,17 +41,17 @@ def PhElementOpera(op, bra, ket):
         else:
             return 0.0
     elif op == "b":
-        if bra == ket - 1 : 
+        if bra == ket - 1:
             return np.sqrt(float(ket))
         else:
             return 0.0
     elif op == "b^\dagger":
-        if bra == ket + 1 : 
+        if bra == ket + 1:
             return np.sqrt(float(bra))
         else:
             return 0.0
     elif op == "b^\dagger + b":
-        if bra == ket + 1 : 
+        if bra == ket + 1:
             return np.sqrt(float(bra))
         elif bra == ket - 1:
             return np.sqrt(float(ket))
@@ -71,11 +88,14 @@ def PhElementOpera(op, bra, ket):
             return 0.0 
 
 
-def EElementOpera(op, bra, ket):
-    '''
+e_op_list = ["a^\dagger", "a", "a^\dagger a", "Iden"]
+
+
+def e_element_op(op, bra, ket):
+    """
     electronic operator
-    '''
-    assert op in ["a^\dagger", "a", "a^\dagger a", "Iden"]
+    """
+    assert op in e_op_list
     assert bra in [0, 1]
     assert ket in [0, 1]
 
@@ -102,3 +122,17 @@ def EElementOpera(op, bra, ket):
             return 1.0
         else:
             return 0.0
+
+
+def construct_e_op_dict(pbond):
+    e_op_dict = {}
+    for op in e_op_list:
+        e_op_dict[op] = op_matrix(op, pbond, 'e')
+    return e_op_dict
+
+
+def construct_ph_op_dict(pbond):
+    ph_op_dict = {}
+    for op in ph_op_list:
+        ph_op_dict[op] = op_matrix(op, pbond, 'ph')
+    return ph_op_dict

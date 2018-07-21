@@ -10,7 +10,7 @@ import numpy as np
 method_list =  ["Forward_Euler","midpoint_RK2","Heun_RK2","Ralston_RK2","Kutta_RK3","C_RK4","38rule_RK4"]
 
 
-def tableau(RK_method):
+def tableau(rk_method):
     '''
     Butcher tableau of the explicit Runge-Kutta methods.
 
@@ -29,44 +29,44 @@ def tableau(RK_method):
             ----------------------------
                    1/2   1/2
     '''
-    assert RK_method in method_list
+    assert rk_method in method_list
 
     # print "Runge Kutta method", RK_method
 
-    if RK_method == "Forward_Euler":
+    if rk_method == "Forward_Euler":
         # Euler explicit
         a = np.array([[0]])
         b = np.array([1])
         c = np.array([0])
         Nstage = 1
-    elif RK_method in ["midpoint_RK2","Heun_RK2","Ralston_RK2"]:
-        if RK_method == "midpoint_RK2":
+    elif rk_method in ["midpoint_RK2", "Heun_RK2", "Ralston_RK2"]:
+        if rk_method == "midpoint_RK2":
         # if alpha == 1, midpoint method
             alpha = 1.0
-        elif RK_method == "Heun_RK2":
+        elif rk_method == "Heun_RK2":
         # if alpha == 0.5, heun's method
             alpha = 0.5
-        elif RK_method == "Ralston_RK2":
+        elif rk_method == "Ralston_RK2":
             alpha = 2.0/3.0
 
         a = np.array([[0,0],[alpha,0]])
         b = np.array([1-0.5/alpha,0.5/alpha])
         c = np.array([0,alpha])
         Nstage = 2
-    elif RK_method == "Kutta_RK3":
+    elif rk_method == "Kutta_RK3":
         # Kutta's third-order method
         a = np.array([[0,0,0],[0.5,0,0],[-1,2,0]])
         b = np.array([1.0/6.0,2.0/3.0,1.0/6.0])
         c = np.array([0,0.5,1])
         Nstage = 3
-    elif RK_method == "C_RK4":
+    elif rk_method == "C_RK4":
         # Classic fourth-order method
         a = np.array([[0,0,0,0],[0.5,0,0,0],
                       [0,0.5,0,0],[0,0,1,0]])
         b = np.array([1.0/6.0,1.0/3.0,1.0/3.0,1.0/6.0])
         c = np.array([0,0.5,0.5,1.0])
         Nstage = 4
-    elif RK_method == "38rule_RK4":
+    elif rk_method == "38rule_RK4":
         # 3/8 rule fourth-order method
         a = np.array([[0,0,0,0],\
                       [1.0/3.0,0,0,0],\

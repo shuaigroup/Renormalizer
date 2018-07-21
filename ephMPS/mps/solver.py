@@ -10,7 +10,7 @@ from ephMPS.mps import Mpo, Mps
 from ephMPS.mps.lib import construct_enviro, GetLR, updatemps
 
 
-def construct_MPS_MPO_2(mol, J_matrix, Mmax, nexciton, thresh=1e-3, MPOscheme=2, rep="star"):
+def construct_mps_mpo_2(mol, J_matrix, Mmax, nexciton, thresh=1e-3, scheme=2, rep="star"):
     '''
     MPO/MPS structure 2
     e1,ph11,ph12,..e2,ph21,ph22,...en,phn1,phn2...
@@ -19,7 +19,7 @@ def construct_MPS_MPO_2(mol, J_matrix, Mmax, nexciton, thresh=1e-3, MPOscheme=2,
     '''
     initialize MPO
     '''
-    mpo = Mpo(mol, J_matrix, scheme=MPOscheme, rep=rep)
+    mpo = Mpo(mol, J_matrix, scheme=scheme, rep=rep)
 
     '''
     initialize MPS according to quantum number
@@ -30,7 +30,7 @@ def construct_MPS_MPO_2(mol, J_matrix, Mmax, nexciton, thresh=1e-3, MPOscheme=2,
     return mps, mpo
 
 
-def optimization(mps, mpo, procedure, method="2site", nroots=1, inverse=1.0):
+def optimize_mps(mps, mpo, procedure, method="2site", nroots=1, inverse=1.0):
     '''
     1 or 2 site optimization procedure
     inverse = 1.0 / -1.0 
@@ -117,7 +117,7 @@ def optimization(mps, mpo, procedure, method="2site", nroots=1, inverse=1.0):
 
             def hop(c):
                 # convert c to initial structure according to qn patter
-                cstruct = c1d2cmat(cshape, c, qnmat, nexciton)
+                cstruct = cvec2cmat(cshape, c, qnmat, nexciton)
                 count[0] += 1
 
                 if method == "1site":
@@ -146,16 +146,14 @@ def optimization(mps, mpo, procedure, method="2site", nroots=1, inverse=1.0):
                                                            cstruct, mpo[imps - 1], mpo[imps], rtensor)
                 # convert structure c to 1d according to qn 
                 return inverse * cout[qnmat == nexciton]
-
             if nroots != 1:
                 cguess = [cguess]
                 for iroot in range(nroots - 1):
-                    cguess.append(np.complex128(np.random.random([nonzeros])) - 0.5)
+                    cguess.append(mps.dtype(np.random.random([nonzeros]) - 0.5))
 
             precond = lambda x, e, *args: x / (hdiag - e + 1e-4)
 
-            e, c = davidson(hop, cguess, precond, max_cycle=100,
-                            nroots=nroots)
+            e, c = davidson(hop, cguess, precond, max_cycle=100, nroots=nroots, max_memory=64000)
             # scipy arpack solver : much slower than davidson
             # A = spslinalg.LinearOperator((nonzeros,nonzeros), matvec=hop)
             # e, c = spslinalg.eigsh(A,k=1, which="SA",v0=cguess)
@@ -164,7 +162,7 @@ def optimization(mps, mpo, procedure, method="2site", nroots=1, inverse=1.0):
 
             energy.append(e)
 
-            cstruct = mps.mtype(c1d2cmat(cshape, c, qnmat, nexciton, nroots=nroots))
+            cstruct = mps.mtype(cvec2cmat(cshape, c, qnmat, nexciton, nroots=nroots))
 
             if nroots == 1:
                 # direct svd the coefficient matrix
@@ -172,8 +170,8 @@ def optimization(mps, mpo, procedure, method="2site", nroots=1, inverse=1.0):
                                                                  system, nexciton, Mmax=mmax, percent=percent)
             else:
                 # diagonalize the reduced density matrix
-                mt, mpsdim, mpsqn, compmps = Renormalization_ddm(cstruct, qnbigl, qnbigr,
-                                                                  system, nexciton, Mmax=mmax, percent=percent)
+                mt, mpsdim, mpsqn, compmps = renormalization_ddm(cstruct, qnbigl, qnbigr,
+                                                                 system, nexciton, Mmax=mmax, percent=percent)
 
             if method == "1site":
                 mps[imps] = mt
@@ -234,7 +232,7 @@ def renormalization_svd(cstruct, qnbigl, qnbigr, domain, nexciton, Mmax, percent
                np.moveaxis(compmps.reshape(list(qnbigr.shape) + [mpsdim]), -1, 0)
 
 
-def Renormalization_ddm(cstruct, qnbigl, qnbigr, domain, nexciton, Mmax, percent=0):
+def renormalization_ddm(cstruct, qnbigl, qnbigr, domain, nexciton, Mmax, percent=0):
     '''
         get the new mps, mpsdim, mpdqn, complementary mps to get the next guess
         with diagonalize reduced density matrix method (> 1 root)
@@ -267,7 +265,7 @@ def Renormalization_ddm(cstruct, qnbigl, qnbigr, domain, nexciton, Mmax, percent
                             axes=(range(qnbigl.ndim), range(qnbigl.ndim)))
 
 
-def c1d2cmat(cshape, c, qnmat, nexciton, nroots=1):
+def cvec2cmat(cshape, c, qnmat, nexciton, nroots=1):
     # recover good quantum number vector c to matrix format
     if nroots == 1:
         cstruct = np.zeros(cshape, dtype=c.dtype)

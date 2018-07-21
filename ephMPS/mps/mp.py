@@ -7,16 +7,26 @@ from functools import reduce
 import numpy as np
 import scipy
 
-from ephMPS.mps.matrix import Matrix, MatrixState, MatrixOp, VirtualMatrixOp
+from ephMPS.mps import rk
+from ephMPS.mps.matrix import Matrix
 from ephMPS.utils import svd_qn
-from ephMPS.tdmps import rk
 
 
 class MatrixProduct(list):
+    @classmethod
+    def from_raw_list(cls, raw_list):
+        new_mp = cls()
+        if not raw_list:
+            return new_mp
+        new_mp.dtype = raw_list[0].dtype.type
+        for mt in raw_list:
+            new_mp.append(mt)
+        return new_mp
 
     def __init__(self):
         super(MatrixProduct, self).__init__()
         self.mtype = Matrix
+        self.dtype = np.float64
         self._left_canon = None
 
         self.ephtable = None
@@ -25,8 +35,10 @@ class MatrixProduct(list):
         self.qnidx = None
         self.qntot = None
 
-        self.thresh = None
+        self._compress_method = 'svd'
+        self.thresh = 1e-3
 
+        self._prop_method = 'C_RK4'
 
     def check_left_canonical(self):
         """
@@ -47,24 +59,46 @@ class MatrixProduct(list):
         return True
 
     @property
+    def compress_method(self):
+        return self._compress_method
+
+    @compress_method.setter
+    def compress_method(self, value):
+        assert value in ['svd', 'variational']
+        self._compress_method = value
+
+    @property
+    def prop_method(self):
+        return self._prop_method
+
+    @prop_method.setter
+    def prop_method(self, value):
+        assert value in rk.method_list
+        self._prop_method = value
+
+    @property
     def site_num(self):
         return len(self)
 
     @property
     def is_left_canon(self):
         return self._left_canon
-    
+
     @property
     def is_right_canon(self):
         return not self.is_left_canon
 
     @property
     def is_mps(self):
-        return self.mtype == MatrixState
+        return self.mtype.is_ms
 
     @property
     def is_mpo(self):
-        return self.mtype == MatrixOp or self.mtype == VirtualMatrixOp
+        return self.mtype.is_mo
+
+    @property
+    def is_complex(self):
+        return self.dtype == np.complex128
 
     @property
     def iter_idx_list(self):
@@ -82,6 +116,16 @@ class MatrixProduct(list):
             prod = np.tensordot(prod, ms, axes=1)
             prod = prod.reshape((prod.shape[0], -1, prod.shape[-1]))
         return {'var': prod.var(), 'mean': prod.mean(), 'ptp': prod.ptp()}
+
+    @property
+    def bond_dims(self):
+        bond_dims = [mt.bond_dim[0] for mt in self] + [self[-1].bond_dim[-1]] if self.site_num else []
+        return bond_dims
+
+    def build_empty_qn(self):
+        self.qntot = 0
+        self.qnidx = 0
+        self.qn = [[0] * dim for dim in self.bond_dims]
 
     def update_ms(self, idx, u, vt, sigma=None, qnlset=None, qnrset=None, m_trunc=None):
         if m_trunc is None:
@@ -105,7 +149,7 @@ class MatrixProduct(list):
             if qnlset is not None:
                 self.qn[idx + 1] = qnlset[:m_trunc]
         self[idx] = ret_mpsi
-    
+
     def switch_domain(self):
         self._left_canon = not self._left_canon
 
@@ -161,7 +205,7 @@ class MatrixProduct(list):
                 pdim = mta.shape[1]
                 assert pdim == mtb.shape[1]
                 new_mps[i] = np.zeros([mta.shape[0] + mtb.shape[0], pdim,
-                                            mta.shape[2] + mtb.shape[2]], dtype=np.complex128)
+                                       mta.shape[2] + mtb.shape[2]], dtype=np.complex128)
                 new_mps[i][:mta.shape[0], :, :mta.shape[2]] = mta[:, :, :]
                 new_mps[i][mta.shape[0]:, :, mta.shape[2]:] = mtb[:, :, :]
 
@@ -177,14 +221,13 @@ class MatrixProduct(list):
                 assert pdimd == mtb.shape[2]
 
                 new_mps[i] = np.zeros([mta.shape[0] + mtb.shape[0], pdimu, pdimd,
-                                            mta.shape[3] + mtb.shape[3]], dtype=np.complex128)
+                                       mta.shape[3] + mtb.shape[3]], dtype=np.complex128)
                 new_mps[i][:mta.shape[0], :, :, :mta.shape[3]] = mta[:, :, :, :]
                 new_mps[i][mta.shape[0]:, :, :, mta.shape[3]:] = mtb[:, :, :, :]
 
                 new_mps[-1] = np.concatenate((self[-1], other[-1]), axis=0)
         else:
             assert False
-
 
         new_mps.move_qnidx(self.qnidx)
         new_mps.qn = [qn1 + qn2 for qn1, qn2 in zip(self.qn, new_mps.qn)]
@@ -213,21 +256,38 @@ class MatrixProduct(list):
         return e0[0, 0]
 
     def scale(self, val, inplace=False):
-
-        if self.is_left_canon:
+        if True:
+        #if self.is_left_canon:
             ms_idx = -1
         else:
             ms_idx = 0
-
         if inplace:
-            self[ms_idx] *= val
+            new_mp = self
         else:
             new_mp = self.copy()
-            new_mp[ms_idx] *= val
-            return new_mp
+        if np.iscomplexobj(val):
+            new_mp.to_complex()
+        new_mp[ms_idx] *= val
+        return new_mp
+
+    def to_complex(self, inplace=True):
+        if inplace:
+            new_mp = self
+        else:
+            new_mp = self.copy()
+        new_mp.dtype = np.complex128
+        for i in range(new_mp.site_num):
+            new_mp[i] = new_mp.dtype(new_mp[i])
+        return new_mp
+
+    def to_raw_list(self):
+        return [np.array(mt) for mt in self]
 
     def distance(self, other):
-        return self.conj().dot(self) - self.conj().dot(other) - other.conj().dot(self) + other.conj().dot(other)
+        if not hasattr(other, 'conj'):
+            other = self.__class__.from_raw_list(other)
+        return self.conj().dot(self) - np.abs(self.conj().dot(other)) - np.abs(
+            other.conj().dot(self)) + other.conj().dot(other)
 
     def move_qnidx(self, dstidx):
         """
@@ -244,7 +304,7 @@ class MatrixProduct(list):
             self.qn[idx] = [self.qntot - i for i in self.qn[idx]]
         self.qnidx = dstidx
 
-    def compress(self, check_canonical=False, normalize=None):
+    def compress(self, check_canonical=False):
         """
         inp: canonicalise MPS (or MPO)
 
@@ -295,13 +355,10 @@ class MatrixProduct(list):
 
         self.switch_domain()
 
-
         if self.is_left_canon:
             self.qnidx = len(self) - 1
         else:
             self.qnidx = 0
-        if normalize is not None:
-            self.scale(normalize / self.norm(), inplace=True)
 
     def canonicalise(self):
         self.calibrate_qnidx()
@@ -326,14 +383,17 @@ class MatrixProduct(list):
         else:
             self.qnidx = 0
 
-    def evolve(self, mpo, evolve_dt, prop_method='C_RK4', compress_method='svd', approx_eiht=None):
+    def normalize(self, norm=1.0):
+        self.scale(norm / self.norm(), inplace=True)
+
+    def evolve(self, mpo, evolve_dt, approx_eiht=None, norm=None):
         if approx_eiht:
-            new_mps = approx_eiht.contract(self, compress_method=compress_method)
+            new_mps = approx_eiht.contract(self)
         else:
-            propagation_c = rk.coefficient_dict[prop_method]
+            propagation_c = rk.coefficient_dict[self.prop_method]
             termlist = [self]
             while len(termlist) < len(propagation_c):
-                termlist.append(mpo.contract(termlist[-1], compress_method=compress_method))
+                termlist.append(mpo.contract(termlist[-1]))
             scaletermlist = []
             for idx, (mps_term, c_term) in enumerate(zip(termlist, propagation_c)):
                 scaletermlist.append(mps_term.scale((-1.0j * evolve_dt) ** idx * c_term))
@@ -341,12 +401,16 @@ class MatrixProduct(list):
             if new_mps.is_right_canon:
                 new_mps.switch_domain()
             new_mps.canonicalise()
-            new_mps.compress(normalize=1.0)
+            new_mps.compress()
+            if norm is not None:
+                new_mps.normalize(norm)
         return new_mps
 
     def copy(self):
         return copy.deepcopy(self)
 
+    def array2mt(self, array):
+        return self.mtype(self.dtype(array))
 
     def __eq__(self, other):
         for m1, m2 in zip(self, other):
@@ -361,7 +425,7 @@ class MatrixProduct(list):
         return '%s with %d sites' % (self.__class__, len(self))
 
     def __setitem__(self, key, array):
-        super(MatrixProduct, self).__setitem__(key, self.mtype(array))
+        super(MatrixProduct, self).__setitem__(key, self.array2mt(array))
 
     def append(self, array):
-        super(MatrixProduct, self).append(self.mtype(array))
+        super(MatrixProduct, self).append(self.array2mt(array))

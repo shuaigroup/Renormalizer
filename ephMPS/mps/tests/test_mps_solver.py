@@ -5,7 +5,7 @@ import unittest
 
 from ddt import ddt, data
 
-from ephMPS.mps.solver import construct_MPS_MPO_2, optimization
+from ephMPS.mps.solver import construct_mps_mpo_2, optimize_mps
 from ephMPS.tests.parameter import *
 
 
@@ -17,8 +17,8 @@ class TestMpsSolver(unittest.TestCase):
     
     def test_construct_MPO(self):
         Mmax = 10
-        mps1, mpo1 = construct_MPS_MPO_2(mol_list, j_matrix, Mmax, nexciton, MPOscheme=1)
-        mps2, mpo2 = construct_MPS_MPO_2(mol_list, j_matrix, Mmax, nexciton, MPOscheme=2)
+        mps1, mpo1 = construct_mps_mpo_2(mol_list, j_matrix, Mmax, nexciton, scheme=1)
+        mps2, mpo2 = construct_mps_mpo_2(mol_list, j_matrix, Mmax, nexciton, scheme=2)
         
         self.assertEqual(mpo1.ephtable, mpo2.ephtable)
         self.assertEqual(mpo1.pbond_list, mpo2.pbond_list)
@@ -28,8 +28,8 @@ class TestMpsSolver(unittest.TestCase):
     def test_construct_MPO_scheme3(self):
         Mmax = 10
         J = np.array([[0.0,-0.1,0.0],[-0.1,0.0,-0.3],[0.0,-0.3,0.0]])/constant.au2ev
-        mps2, mpo2 = construct_MPS_MPO_2(mol_list, J, Mmax, nexciton, MPOscheme=2)
-        mps3, mpo3 = construct_MPS_MPO_2(mol_list, J, Mmax, nexciton, MPOscheme=3)
+        mps2, mpo2 = construct_mps_mpo_2(mol_list, J, Mmax, nexciton, scheme=2)
+        mps3, mpo3 = construct_mps_mpo_2(mol_list, J, Mmax, nexciton, scheme=3)
         self.assertEqual(mpo2.ephtable, mpo3.ephtable)
         self.assertEqual(mpo2.pbond_list, mpo3.pbond_list)
         self.assertAlmostEqual(mpo3.dot(mpo3.conj()) + mpo2.dot(mpo2.conj())
@@ -37,17 +37,17 @@ class TestMpsSolver(unittest.TestCase):
 
     @data([1],[2])
     def test_optimization(self, value):
-        mps, mpo = construct_MPS_MPO_2(mol_list, j_matrix, procedure[0][0], nexciton, MPOscheme=value[0])
-        energy = optimization(mps, mpo, procedure, method="2site")
+        mps, mpo = construct_mps_mpo_2(mol_list, j_matrix, procedure[0][0], nexciton, scheme=value[0])
+        energy = optimize_mps(mps, mpo, procedure, method="2site")
         self.assertAlmostEqual(np.min(energy)*constant.au2ev, 2.28614053133)
 
-        energy = optimization(mps, mpo, procedure, method="1site")
+        energy = optimize_mps(mps, mpo, procedure, method="1site")
         self.assertAlmostEqual(np.min(energy)*constant.au2ev, 2.28614053133)
 
     def test_multistate(self):
-        mps, mpo = construct_MPS_MPO_2(mol_list, j_matrix, procedure[0][0], nexciton, MPOscheme=2)
-        energy1 = optimization(mps, mpo, procedure, method="1site", nroots=5)
-        energy2 = optimization(mps, mpo, procedure, method="2site", nroots=5)
+        mps, mpo = construct_mps_mpo_2(mol_list, j_matrix, procedure[0][0], nexciton, scheme=2)
+        energy1 = optimize_mps(mps, mpo, procedure, method="1site", nroots=5)
+        energy2 = optimize_mps(mps, mpo, procedure, method="2site", nroots=5)
         # print energy1[-1], energy2[-1]
         energy_std = [0.08401412, 0.08449771, 0.08449801, 0.08449945]
         self.assertTrue(np.allclose(energy1[-1][:4], energy_std))

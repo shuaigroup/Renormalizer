@@ -25,7 +25,7 @@ au2K = scipy.constants.physical_constants["hartree-kelvin relationship"][0]
 
 
 # kelvin to beta  au^-1 
-def T2beta(temperature):
+def t2beta(temperature):
     '''
     temperature to beta
     '''

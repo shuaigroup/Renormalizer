@@ -8,12 +8,19 @@ phonon = 'ph'
 
 class EphTable(list):
 
-    def __init__(self, mol_list):
-        super(EphTable, self).__init__()
+    @classmethod
+    def all_phonon(cls, site_num):
+        return cls([phonon] * site_num)
+
+    @classmethod
+    def from_mol_list(cls, mol_list):
+        ephtable = cls()
         for mol in mol_list:
-            self.append(electron)
+            ephtable.append(electron)
             for ph in mol.phs:
-                self.extend([phonon] * ph.nqboson)
+                ephtable.extend([phonon] * ph.nqboson)
+        return ephtable
+
 
     def is_electron(self, idx):
         return self[idx] == electron

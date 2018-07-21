@@ -3,13 +3,10 @@
 
 import numpy as np
 
-
 class Matrix(np.ndarray):
 
-    npdtype = np.complex128
-
     def __new__(cls, array):
-        obj = np.array(array, dtype=cls.npdtype).view(cls)
+        obj = np.array(array).view(cls)
         obj.original_shape = obj.shape
         return obj
 
@@ -26,6 +23,10 @@ class Matrix(np.ndarray):
     @property
     def pdim_prod(self):
         return np.prod(self.pdim)
+
+    @property
+    def bond_dim(self):
+        return self.original_shape[0], self.original_shape[-1]
 
     @property
     def elec_sigmaqn(self):
@@ -49,7 +50,6 @@ class Matrix(np.ndarray):
     def l_combine(self):
         return self.reshape(self.l_combine_shape)
 
-
     def check_lortho(self):
         """
         check L-orthogonal
@@ -58,17 +58,19 @@ class Matrix(np.ndarray):
         s = np.dot(np.conj(tensm.T), tensm)
         return np.allclose(s, np.eye(s.shape[0]))
 
-
     def check_rortho(self):
-        '''
+        """
         check R-orthogonal
-        '''
+        """
         tensm = np.reshape(self, [self.shape[0], np.prod(self.shape[1:])])
         s = np.dot(tensm, np.conj(tensm.T))
         return np.allclose(s, np.eye(s.shape[0]))
 
 
 class MatrixState(Matrix):
+
+    is_ms = True
+    is_mo = False
 
     @property
     def elec_sigmaqn(self):
@@ -77,14 +79,15 @@ class MatrixState(Matrix):
 
 class MatrixOp(Matrix):
 
-    npdtype = np.complex128
+    is_mo = True
+    is_ms = False
 
     @property
     def elec_sigmaqn(self):
         return np.array([0, -1, 1, 0])
 
 
-class VirtualMatrixOp(Matrix):
+class VirtualMatrixOp(MatrixOp):
 
     @property
     def elec_sigmaqn(self):
