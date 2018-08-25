@@ -5,6 +5,7 @@ from __future__ import absolute_import, print_function, unicode_literals
 
 import numpy as np
 
+
 class Phonon(object):
     '''
     phonon class has property:
@@ -13,7 +14,13 @@ class Phonon(object):
     highest occupation levels: nlevels
     '''
 
-    def __init__(self, omega, displacement, nlevels, force3rd=None, nqboson=1, qbtrunc=0.0):
+    @classmethod
+    def simple_phonon(cls, omega, displacement, n_phys_dim):
+        complete_omega = [omega, omega]
+        complete_displacement = [0, displacement]
+        return cls(complete_omega, complete_displacement, n_phys_dim)
+
+    def __init__(self, omega, displacement, n_phys_dim, force3rd=None, nqboson=1, qbtrunc=0.0):
         # omega is a dictionary for different PES omega[0], omega[1]...
         self.omega = omega
         # dis is a dictionary for different PES dis[0]=0.0, dis[1]...
@@ -26,17 +33,30 @@ class Phonon(object):
         else:
             self.force3rd = force3rd
 
-        self.nlevels = nlevels
+        self.n_phys_dim = n_phys_dim
         self.nqboson = nqboson
         self.qbtrunc = qbtrunc
-        self.base = int(round(nlevels ** (1. / nqboson)))
+        self.base = int(round(n_phys_dim ** (1. / nqboson)))
 
     @property
     def pbond(self):
         return [self.base] * self.nqboson
 
+    @property
+    def nlevels(self):
+        return self.n_phys_dim
+
+    def gs_mps(self, max_entangled=False):
+        for iboson in range(self.nqboson):
+            ms = np.zeros((1, self.base, 1))
+            if max_entangled:
+                ms[0, :, 0] = 1.0 / np.sqrt(self.base)
+            else:
+                ms[0, 1, 0] = 1.0
+            yield ms
+
     """
-    todo: These "term"s should be named by their phsycial meanings
+    todo: These "term"s should be renamed by their physical meanings
     """
     @property
     def term10(self):
@@ -66,7 +86,7 @@ class Phonon(object):
     def printinfo(self):
         print("omega   = ", self.omega)
         print("displacement = ", self.dis)
-        print("nlevels = ", self.nlevels)
+        print("nlevels = ", self.n_phys_dim)
         print("nqboson = ", self.nqboson)
         print("qbtrunc = ", self.qbtrunc)
         print("base =", self.base)

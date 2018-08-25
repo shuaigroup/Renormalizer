@@ -22,8 +22,6 @@ def op_matrix(op, size, type):
     return op_matrix
 
 
-
-
 ph_op_list = ["b", "b^\dagger", "b^\dagger b", "b^\dagger + b", "Iden", "(b^\dagger + b)^2", "(b^\dagger + b)^3"]
 
 

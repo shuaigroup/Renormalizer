@@ -1,6 +1,6 @@
 import numpy as np
 
-from ephMPS.model import Phonon, Mol
+from ephMPS.model import Phonon, Mol, MolList
 from ephMPS import constant
 
 elocalex = 2.67 / constant.au2ev
@@ -16,19 +16,19 @@ D_value = np.array([30.1370, 8.7729])
 
 D = [{0: 0.0, 1: D_value[0]}, {0: 0.0, 1: D_value[1]}]
 nphs = 2
-nlevels = [4, 4]
+ph_phys_dim = [4, 4]
 
-ph_list = [Phonon(*args) for args in zip(omega, D, nlevels)]
+ph_list = [Phonon(*args) for args in zip(omega, D, ph_phys_dim)]
 
-mol_list = [Mol(elocalex, dipole_abs, ph_list)] * nmols
+mol_list = MolList([Mol(elocalex, ph_list, dipole_abs)] * nmols)
 
 
-def custom_mol_list(nlevels, nqboson=None, qbtrunc=None, force3rd=None):
+def custom_mol_list(n_phys_dim, nqboson=None, qbtrunc=None, force3rd=None):
     if nqboson is None:
         nqboson = [1, 1]
     if qbtrunc is None:
         qbtrunc = [0.0, 0.0]
     if force3rd is None:
         force3rd = [None, None]
-    ph_list = [Phonon(*args) for args in zip(omega, D, nlevels, force3rd, nqboson, qbtrunc)]
-    return [Mol(elocalex, dipole_abs, ph_list)] * nmols
+    ph_list = [Phonon(*args) for args in zip(omega, D, n_phys_dim, force3rd, nqboson, qbtrunc)]
+    return MolList([Mol(elocalex, ph_list, dipole_abs)] * nmols)

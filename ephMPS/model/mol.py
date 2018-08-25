@@ -17,7 +17,7 @@ class Mol(object):
     phonon information : ph
     '''
 
-    def __init__(self, elocalex, dipole, ph_list):
+    def __init__(self, elocalex, ph_list, dipole=None):
         self.elocalex = elocalex
         self.dipole = dipole
         self.nphs = len(ph_list)
@@ -42,3 +42,11 @@ class Mol(object):
         for ph in self.phs:
             pbond += ph.pbond
         return pbond
+
+    def gs_mps(self, max_entangled=False):
+        # electron mps
+        yield np.array([1, 0]).reshape(1, 2, 1)
+        # ph mps
+        for ph in self.phs:
+            for ms in ph.gs_mps(max_entangled=max_entangled):
+                yield ms

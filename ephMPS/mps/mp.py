@@ -7,9 +7,8 @@ from functools import reduce
 import numpy as np
 import scipy
 
-from ephMPS.mps import rk
+from ephMPS.mps import rk, svd_qn
 from ephMPS.mps.matrix import Matrix
-from ephMPS.utils import svd_qn
 
 
 class MatrixProduct(list):
@@ -27,9 +26,9 @@ class MatrixProduct(list):
         super(MatrixProduct, self).__init__()
         self.mtype = Matrix
         self.dtype = np.float64
-        self._left_canon = None
 
-        self.ephtable = None
+        self.mol_list = None
+        self._ephtable = None
 
         self.qn = None
         self.qnidx = None
@@ -81,12 +80,16 @@ class MatrixProduct(list):
         return len(self)
 
     @property
+    def mol_num(self):
+        return self.mol_list.mol_num
+
+    @property
     def is_left_canon(self):
-        return self._left_canon
+        return self.qnidx == self.site_num - 1
 
     @property
     def is_right_canon(self):
-        return not self.is_left_canon
+        return self.qnidx == 0
 
     @property
     def is_mps(self):
@@ -108,26 +111,31 @@ class MatrixProduct(list):
             return range(0, self.site_num - 1)
 
     @property
-    def digest(self):
-        if 10 < self.site_num:
-            return None
-        prod = np.eye(1).reshape(1, 1, 1)
-        for ms in self:
-            prod = np.tensordot(prod, ms, axes=1)
-            prod = prod.reshape((prod.shape[0], -1, prod.shape[-1]))
-        return {'var': prod.var(), 'mean': prod.mean(), 'ptp': prod.ptp()}
-
-    @property
     def bond_dims(self):
         bond_dims = [mt.bond_dim[0] for mt in self] + [self[-1].bond_dim[-1]] if self.site_num else []
         return bond_dims
+
+    @property
+    def ephtable(self):
+        if self._ephtable is not None:
+            return self._ephtable
+        else:
+            return self.mol_list.ephtable
+
+    @ephtable.setter
+    def ephtable(self, ephtable):
+        self._ephtable = ephtable
+
+    @property
+    def pbond_list(self):
+        return self.mol_list.pbond_list
 
     def build_empty_qn(self):
         self.qntot = 0
         self.qnidx = 0
         self.qn = [[0] * dim for dim in self.bond_dims]
 
-    def update_ms(self, idx, u, vt, sigma=None, qnlset=None, qnrset=None, m_trunc=None):
+    def _update_ms(self, idx, u, vt, sigma=None, qnlset=None, qnrset=None, m_trunc=None):
         if m_trunc is None:
             m_trunc = u.shape[1]
         u = u[:, :m_trunc]
@@ -150,10 +158,13 @@ class MatrixProduct(list):
                 self.qn[idx + 1] = qnlset[:m_trunc]
         self[idx] = ret_mpsi
 
-    def switch_domain(self):
-        self._left_canon = not self._left_canon
+    def _switch_domain(self):
+        if self.is_left_canon:
+            self.qnidx = 0
+        else:
+            self.qnidx = self.site_num - 1
 
-    def get_big_qn(self, idx):
+    def _get_big_qn(self, idx):
         mt = self[idx]
         if self.ephtable.is_electron(idx):
             # e site
@@ -170,12 +181,6 @@ class MatrixProduct(list):
             qnbigl = np.add.outer(qnl, sigmaqn)
             qnbigr = qnr
         return qnbigl, qnbigr
-
-    def calibrate_qnidx(self):
-        if self.is_left_canon:
-            self.move_qnidx(self.site_num - 1)
-        else:
-            self.move_qnidx(0)
 
     def norm(self):
         if self.is_left_canon:
@@ -195,6 +200,8 @@ class MatrixProduct(list):
     def add(self, other):
         assert self.qntot == other.qntot
         assert self.site_num == other.site_num
+        assert self.is_left_canon ^ other.is_right_canon
+
         new_mps = other.copy()
 
         if self.is_mps:  # MPS
@@ -256,21 +263,16 @@ class MatrixProduct(list):
         return e0[0, 0]
 
     def scale(self, val, inplace=False):
-        if True:
-        #if self.is_left_canon:
-            ms_idx = -1
-        else:
-            ms_idx = 0
-        if inplace:
-            new_mp = self
-        else:
-            new_mp = self.copy()
+        new_mp = self if inplace else self.copy()
         if np.iscomplexobj(val):
-            new_mp.to_complex()
-        new_mp[ms_idx] *= val
+            new_mp.to_complex(inplace=True)
+        new_mp[self.qnidx] *= val
         return new_mp
 
-    def to_complex(self, inplace=True):
+    def expectation(self, mpo):
+        return self.conj().dot(mpo.apply(self)).real
+
+    def to_complex(self, inplace=False):
         if inplace:
             new_mp = self
         else:
@@ -304,7 +306,7 @@ class MatrixProduct(list):
             self.qn[idx] = [self.qntot - i for i in self.qn[idx]]
         self.qnidx = dstidx
 
-    def compress(self, check_canonical=False):
+    def compress(self, check_canonical=True):
         """
         inp: canonicalise MPS (or MPO)
 
@@ -329,17 +331,18 @@ class MatrixProduct(list):
                 assert self.check_left_canonical()
             else:
                 assert self.check_right_canonical()
-        self.calibrate_qnidx()
+        system = 'R' if self.is_left_canon else 'L'
 
         for idx in self.iter_idx_list:
             mt = self[idx]
+            assert mt.any()
             if self.is_left_canon:
                 mt = mt.r_combine()
             else:
                 mt = mt.l_combine()
-
-            qnbigl, qnbigr = self.get_big_qn(idx)
-            u, sigma, qnlset, v, sigma, qnrset = svd_qn.Csvd(mt, qnbigl, qnbigr, self.qntot, full_matrices=False)
+            qnbigl, qnbigr = self._get_big_qn(idx)
+            u, sigma, qnlset, v, sigma, qnrset = svd_qn.Csvd(mt, qnbigl, qnbigr, self.qntot,
+                                                             system=system, full_matrices=False)
             vt = v.T
 
             if self.thresh < 1.:
@@ -350,60 +353,46 @@ class MatrixProduct(list):
             else:
                 m_trunc = int(self.thresh)
                 m_trunc = min(m_trunc, len(sigma))
+            assert m_trunc != 0
+            self._update_ms(idx, u, vt, sigma, qnlset, qnrset, m_trunc)
 
-            self.update_ms(idx, u, vt, sigma, qnlset, qnrset, m_trunc)
-
-        self.switch_domain()
-
-        if self.is_left_canon:
-            self.qnidx = len(self) - 1
-        else:
-            self.qnidx = 0
+        self._switch_domain()
 
     def canonicalise(self):
-        self.calibrate_qnidx()
+        # ensure qn is in agreement with canonicalise direction
+        # self.calibrate_qnidx()
         for idx in self.iter_idx_list:
             mt = self[idx]
             if self.is_left_canon:
                 mt = mt.r_combine()
             else:
                 mt = mt.l_combine()
-            qnbigl, qnbigr = self.get_big_qn(idx)
-            if self.is_left_canon:
-                system = "R"
-            else:
-                system = "L"
+            qnbigl, qnbigr = self._get_big_qn(idx)
+            system = 'R' if self.is_left_canon else 'L'
             u, qnlset, v, qnrset = svd_qn.Csvd(mt, qnbigl, qnbigr, self.qntot,
                                                QR=True, system=system, full_matrices=False)
             vt = v.T
-            self.update_ms(idx, u, vt, sigma=None, qnlset=qnlset, qnrset=qnrset)
-        self.switch_domain()
-        if self.is_left_canon:
-            self.qnidx = len(self) - 1
-        else:
-            self.qnidx = 0
+            self._update_ms(idx, u, vt, sigma=None, qnlset=qnlset, qnrset=qnrset)
+        self._switch_domain()
 
     def normalize(self, norm=1.0):
         self.scale(norm / self.norm(), inplace=True)
 
-    def evolve(self, mpo, evolve_dt, approx_eiht=None, norm=None):
-        if approx_eiht:
-            new_mps = approx_eiht.contract(self)
-        else:
-            propagation_c = rk.coefficient_dict[self.prop_method]
-            termlist = [self]
-            while len(termlist) < len(propagation_c):
-                termlist.append(mpo.contract(termlist[-1]))
-            scaletermlist = []
-            for idx, (mps_term, c_term) in enumerate(zip(termlist, propagation_c)):
-                scaletermlist.append(mps_term.scale((-1.0j * evolve_dt) ** idx * c_term))
-            new_mps = reduce(lambda mps1, mps2: mps1.add(mps2), scaletermlist)
-            if new_mps.is_right_canon:
-                new_mps.switch_domain()
-            new_mps.canonicalise()
-            new_mps.compress()
-            if norm is not None:
-                new_mps.normalize(norm)
+    def evolve(self, mpo, evolve_dt, norm=None, approx_eiht=None):
+        if approx_eiht is not None:
+            return approx_eiht.contract(self)
+        propagation_c = rk.coefficient_dict[self.prop_method]
+        termlist = [self]
+        while len(termlist) < len(propagation_c):
+            termlist.append(mpo.contract(termlist[-1]))
+        scaletermlist = []
+        for idx, (mps_term, c_term) in enumerate(zip(termlist, propagation_c)):
+            scaletermlist.append(mps_term.scale((-1.0j * evolve_dt) ** idx * c_term))
+        new_mps = reduce(lambda mps1, mps2: mps1.add(mps2), scaletermlist)
+        new_mps.canonicalise()
+        new_mps.compress()
+        if norm is not None:
+            new_mps.normalize(norm)
         return new_mps
 
     def copy(self):

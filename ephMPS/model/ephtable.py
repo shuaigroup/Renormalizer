@@ -6,7 +6,7 @@ electron = 'e'
 phonon = 'ph'
 
 
-class EphTable(list):
+class EphTable(tuple):
 
     @classmethod
     def all_phonon(cls, site_num):
@@ -14,13 +14,12 @@ class EphTable(list):
 
     @classmethod
     def from_mol_list(cls, mol_list):
-        ephtable = cls()
+        eph_list = []
         for mol in mol_list:
-            ephtable.append(electron)
+            eph_list.append(electron)
             for ph in mol.phs:
-                ephtable.extend([phonon] * ph.nqboson)
-        return ephtable
-
+                eph_list.extend([phonon] * ph.nqboson)
+        return cls(eph_list)
 
     def is_electron(self, idx):
         return self[idx] == electron

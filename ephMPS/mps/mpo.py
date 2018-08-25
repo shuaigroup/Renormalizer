@@ -5,11 +5,12 @@ import copy
 import numpy as np
 import scipy
 
+from ephMPS import constant
+from ephMPS.model.ephtable import EphTable
+from ephMPS.mps.elementop import construct_ph_op_dict, construct_e_op_dict
 from ephMPS.mps.matrix import MatrixOp, VirtualMatrixOp
 from ephMPS.mps.mp import MatrixProduct
 from ephMPS.mps.mps import Mps
-from ephMPS.mps.ephtable import EphTable
-from ephMPS.mps.elementop import construct_ph_op_dict, construct_e_op_dict
 from ephMPS.utils.utils import roundrobin
 
 
@@ -237,6 +238,7 @@ class Mpo(MatrixProduct):
         mpo.build_empty_qn()
         mpo.ephtable = EphTable.all_phonon(mpo.site_num)
         # compress
+        mpo.canonicalise()
         mpo.compress()
         # print "trunc", trunc, "distance", mpslib.distance(MPO,MPOnew)
         # fidelity = mpslib.dot(mpslib.conj(MPOnew), MPO) / mpslib.dot(mpslib.conj(MPO), MPO)
@@ -254,7 +256,7 @@ class Mpo(MatrixProduct):
             for iaxis in range(ms.shape[1]):
                 mo[:, iaxis, iaxis, :] = ms[:, iaxis, :].copy()
             mpo.append(mo)
-        mpo.ephtable = mps.ephtable
+        mpo.mol_list = mps.mol_list
         mpo.qn = copy.deepcopy(mps.qn)
         mpo.qntot = mps.qntot
         mpo.qnidx = mps.qnidx
@@ -272,9 +274,8 @@ class Mpo(MatrixProduct):
         '''
         assert space in ["GS", "EX"]
 
-        mpo = cls()
-        mpo.to_complex()
-        mpo.ephtable = EphTable.from_mol_list(mol_list)
+        mpo = cls().to_complex()
+        mpo.mol_list = mol_list
 
         for imol, mol in enumerate(mol_list):
             e_pbond = mol.pbond[0]
@@ -345,29 +346,29 @@ class Mpo(MatrixProduct):
 
         # shift the H by plus a constant
 
-        mpo = mpo.scale(np.exp(shift * x))
+
 
         mpo.qn = [[0]] * (len(mpo) + 1)
         mpo.qnidx = len(mpo) - 1
         mpo.qntot = 0
 
+        mpo = mpo.scale(np.exp(shift * x))
+
         return mpo
 
     @classmethod
-    def approx_propagator(cls, mpo, dt, prop_method='C_RK4', thresh=0, compress_method="svd"):
+    def approx_propagator(cls, mpo, dt, thresh=0):
         """
         e^-iHdt : approximate propagator MPO from Runge-Kutta methods
         """
 
         mps = Mps()
-        mps.ephtable = mpo.ephtable
+        mps.mol_list = mpo.mol_list
         mps.dim = [1] * (mpo.site_num + 1)
         mps.qn = [[0]] * (mpo.site_num + 1)
         mps.qnidx = mpo.site_num - 1
         mps.qntot = 0
-        mps.compress_method = compress_method
         mps.thresh = thresh
-        mps.prop_method = prop_method
 
         for impo in range(mpo.site_num):
             ms = np.ones([1, mpo[impo].shape[1], 1], dtype=np.complex128)
@@ -389,9 +390,11 @@ class Mpo(MatrixProduct):
         return approx_mpo
 
     @classmethod
-    def onsite(cls, mol_list, pbond_list, opera, dipole=False):
+    def onsite(cls, mol_list, opera, dipole=False, site_idx_set=None):
         assert opera in ["a", "a^\dagger", "a^\dagger a"]
         nmols = len(mol_list)
+        if site_idx_set is None:
+            site_idx_set = set(np.arange(nmols))
         mpo_dim = []
         for imol in range(nmols):
             mpo_dim.append(2)
@@ -407,18 +410,25 @@ class Mpo(MatrixProduct):
         # print opera, "operator MPOdim", MPOdim
 
         mpo = cls()
-        mpo.ephtable = EphTable.from_mol_list(mol_list)
+        mpo.mol_list = mol_list
         impo = 0
         for imol in range(nmols):
-            pbond = pbond_list[impo]
+            pbond = mol_list.pbond_list[impo]
             eop = construct_e_op_dict(pbond)
             mo = np.zeros([mpo_dim[impo], pbond, pbond, mpo_dim[impo + 1]])
-            if not dipole:
-                mo[-1, :, :, 0]  = eop[opera]
+
+            if imol in site_idx_set:
+                if dipole:
+                    factor = mol_list[imol].dipole
+                else:
+                    factor = 1.0
             else:
-                mo[-1, :, :, 0]  = eop[opera] * mol_list[imol].dipole
+                factor = 0.0
+
+            mo[-1, :, :, 0] = factor * eop[opera]
+
             if imol != 0:
-                mo[0, :, :, 0]   = eop['Iden']
+                mo[0, :, :, 0] = eop['Iden']
             if imol != nmols - 1:
                 mo[-1, :, :, -1] = eop['Iden']
             mpo.append(mo)
@@ -426,7 +436,7 @@ class Mpo(MatrixProduct):
 
             for ph in mol_list[imol].phs:
                 for iboson in range(ph.nqboson):
-                    pbond = pbond_list[impo]
+                    pbond = mol_list.pbond_list[impo]
                     mo = np.zeros([mpo_dim[impo], pbond, pbond, mpo_dim[impo + 1]])
                     for ibra in range(pbond):
                         for idiag in range(mpo_dim[impo]):
@@ -457,13 +467,13 @@ class Mpo(MatrixProduct):
         return mpo
 
     @classmethod
-    def max_entangled_ex(cls, mol_list, pbond, normalize=True):
+    def max_entangled_ex(cls, mol_list, normalize=True):
         '''
         T = \infty maximum entangled EX state
         '''
-        mps = Mps.max_entangled_gs(mol_list, pbond, normalize=normalize)
+        mps = Mps.gs(mol_list, max_entangled=True)
         # the creation operator \sum_i a^\dagger_i
-        ex_mps = Mpo.onsite(mol_list, pbond, "a^\dagger").apply(mps)
+        ex_mps = Mpo.onsite(mol_list, "a^\dagger").apply(mps)
         if normalize:
             ex_mps.scale(1.0 / np.sqrt(float(len(mol_list))), inplace=True)  # normalize
         return Mpo.from_mps(ex_mps)
@@ -483,15 +493,8 @@ class Mpo(MatrixProduct):
         if mol_list is None or j_matrix is None:
             return
 
-
+        self.mol_list = mol_list
         nmols = len(mol_list)
-
-
-        self.ephtable = EphTable.from_mol_list(mol_list)
-
-        pbond_list = []
-        for mol in mol_list:
-            pbond_list += mol.pbond
 
         # used in the hybrid TDDMRG/TDH algorithm
         if elocal_offset is not None:
@@ -508,12 +511,12 @@ class Mpo(MatrixProduct):
 
         # MPO
         impo = 0
-        for imol in range(nmols):
+        for imol, mol in enumerate(mol_list):
 
             mididx = nmols // 2
 
             # electronic part
-            pbond = pbond_list[impo]
+            pbond = mol_list.pbond_list[impo]
             mo = np.zeros([mpo_dim[impo], pbond, pbond, mpo_dim[impo + 1]])
             eop = construct_e_op_dict(pbond)
             # last row operator
@@ -578,7 +581,7 @@ class Mpo(MatrixProduct):
             for iph, ph in enumerate(mol.phs):
                 nqb = mol.phs[iph].nqboson
                 if nqb == 1:
-                    pbond = pbond_list[impo]
+                    pbond = mol_list.pbond_list[impo]
                     phop = construct_ph_op_dict(pbond)
                     mo = np.zeros([mpo_dim[impo], pbond, pbond, mpo_dim[impo + 1]])
                     # first column
@@ -619,7 +622,7 @@ class Mpo(MatrixProduct):
                 else:
                     # b + b^\dagger in Mpo representation
                     for iqb in range(nqb):
-                        pbond = pbond_list[impo]
+                        pbond = mol_list.pbond_list[impo]
                         phop = construct_ph_op_dict(pbond)
                         mo = np.zeros([mpo_dim[impo], pbond, pbond, mpo_dim[impo + 1]])
 
@@ -711,13 +714,16 @@ class Mpo(MatrixProduct):
                         self.append(mo)
                         impo += 1
 
-        self.pbond_list = pbond_list
+    @property
+    def digest(self):
+        return np.array([mt.var() for mt in self]).var()
+
 
     def promote_mt_type(self, mp):
         if self.mtype == VirtualMatrixOp:
             mp.mtype = VirtualMatrixOp
         if self.is_complex and not mp.is_complex:
-            mp.to_complex()
+            mp.to_complex(inplace=True)
         return mp
 
     def apply(self, mp):
@@ -752,6 +758,12 @@ class Mpo(MatrixProduct):
         return new_mps
 
     def contract(self, mps, ncanonical=1):
+        """
+        a wrapper for apply. Include compress
+        :param mps:
+        :param ncanonical:
+        :return:
+        """
         if self.compress_method == 'svd':
             return self.contract_svd(mps, ncanonical)
         else:
@@ -779,3 +791,23 @@ class Mpo(MatrixProduct):
             new_mpo[i] = self[i].transpose(0, 2, 1, 3).conj()
         new_mpo.qn = [[-i for i in mt_qn] for mt_qn in new_mpo.qn]
         return new_mpo
+
+    def thermal_prop(self, h_mpo, nsteps, temperature=298, approx_eiht=None, inplace=False):
+        '''
+        do imaginary propagation
+        '''
+
+        beta = constant.t2beta(temperature)
+        # print "beta=", beta
+        dbeta = beta / float(nsteps)
+
+        ket_mpo = self if inplace else self.copy()
+
+        if approx_eiht is not None:
+            approx_eihpt = Mpo.approx_propagator(h_mpo, -0.5j * dbeta, thresh=approx_eiht)
+            ket_mpo = ket_mpo.approx_evolve(approx_eihpt)
+        else:
+            for istep in range(nsteps):
+                ket_mpo = ket_mpo.evolve(h_mpo, -0.5j * dbeta)
+
+        return ket_mpo

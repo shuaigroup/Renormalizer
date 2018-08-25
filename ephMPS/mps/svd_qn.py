@@ -14,6 +14,7 @@ def Csvd(cstruct, qnbigl, qnbigr, nexciton, QR=False, system=None,
     according to the quantum number 
     ddm is the direct diagonalization the reduced density matrix
     '''
+
     Gamma = cstruct.reshape(np.prod(qnbigl.shape),np.prod(qnbigr.shape))
     localqnl = qnbigl.ravel()
     localqnr = qnbigr.ravel()
@@ -78,8 +79,10 @@ def Csvd(cstruct, qnbigl, qnbigr, nexciton, QR=False, system=None,
                         mode = "economic"
                     if system == "R":
                         U,Vt = scipy.linalg.rq(Gamma_block, mode=mode)
-                    else:
+                    elif system == 'L':
                         U,Vt = scipy.linalg.qr(Gamma_block, mode=mode)
+                    else:
+                        assert False
                     dim = min(Gamma_block.shape)
                 
                 Uset, Uset0, qnlset, qnlset0, SUset0 = blockappend(Uset, Uset0, qnlset,
@@ -105,7 +108,7 @@ def Csvd(cstruct, qnbigl, qnbigr, nexciton, QR=False, system=None,
             Vset = np.concatenate(Vset + Vset0,axis=1)
             qnlset = qnlset + qnlset0
             qnrset = qnrset + qnrset0
-            if QR == False:
+            if not QR:
                 # not sorted
                 SUset = np.concatenate(Sset + SUset0)
                 SVset = np.concatenate(Sset + SVset0)
@@ -115,7 +118,7 @@ def Csvd(cstruct, qnbigl, qnbigr, nexciton, QR=False, system=None,
         else:
             Uset = np.concatenate(Uset,axis=1)
             Vset = np.concatenate(Vset,axis=1)
-            if QR == False:
+            if not QR:
                 Sset = np.concatenate(Sset)
                 # sort the singular value in descending order
                 order = np.argsort(Sset)[::-1]

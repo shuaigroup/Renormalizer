@@ -3,14 +3,13 @@
 
 import numpy as np
 
-from ephMPS.utils import svd_qn
 from ephMPS.lib import tensor as tensorlib
 from ephMPS.lib.davidson import davidson
-from ephMPS.mps import Mpo, Mps
+from ephMPS.mps import Mpo, Mps, svd_qn
 from ephMPS.mps.lib import construct_enviro, GetLR, updatemps
 
 
-def construct_mps_mpo_2(mol, J_matrix, Mmax, nexciton, thresh=1e-3, scheme=2, rep="star"):
+def construct_mps_mpo_2(mol_list, J_matrix, Mmax, nexciton, scheme, rep="star"):
     '''
     MPO/MPS structure 2
     e1,ph11,ph12,..e2,ph21,ph22,...en,phn1,phn2...
@@ -19,12 +18,12 @@ def construct_mps_mpo_2(mol, J_matrix, Mmax, nexciton, thresh=1e-3, scheme=2, re
     '''
     initialize MPO
     '''
-    mpo = Mpo(mol, J_matrix, scheme=scheme, rep=rep)
+    mpo = Mpo(mol_list, J_matrix, scheme=scheme, rep=rep)
 
     '''
     initialize MPS according to quantum number
     '''
-    mps = Mps.from_mpo(mpo, nexciton, Mmax, thresh, percent=1)
+    mps = Mps.random(mpo, nexciton, Mmax, percent=1)
     # print("initialize left-canonical:", mps.check_left_canonical())
 
     return mps, mpo
@@ -178,21 +177,21 @@ def optimize_mps(mps, mpo, procedure, method="2site", nroots=1, inverse=1.0):
                 if system == "L":
                     if imps != len(mps) - 1:
                         mps[imps + 1] = np.tensordot(compmps, mps[imps + 1], axes=1)
-                        mps.dim_list[imps + 1] = mpsdim
+                        #mps.dim_list[imps + 1] = mpsdim
                         mps.qn[imps + 1] = mpsqn
                     else:
                         mps[imps] = np.tensordot(mps[imps], compmps, axes=1)
-                        mps.dim_list[imps + 1] = 1
+                        #mps.dim_list[imps + 1] = 1
                         mps.qn[imps + 1] = [0]
 
                 else:
                     if imps != 0:
                         mps[imps - 1] = np.tensordot(mps[imps - 1], compmps, axes=1)
-                        mps.dim_list[imps] = mpsdim
+                        #mps.dim_list[imps] = mpsdim
                         mps.qn[imps] = mpsqn
                     else:
                         mps[imps] = np.tensordot(compmps, mps[imps], axes=1)
-                        mps.dim_list[imps] = 1
+                        #mps.dim_list[imps] = 1
                         mps.qn[imps] = [0]
             else:
                 if system == "L":
@@ -202,7 +201,7 @@ def optimize_mps(mps, mpo, procedure, method="2site", nroots=1, inverse=1.0):
                     mps[imps] = mt
                     mps[imps - 1] = compmps
 
-                mps.dim_list[imps] = mpsdim
+                #mps.dim_list[imps] = mpsdim
                 mps.qn[imps] = mpsqn
 
     if nroots == 1:
@@ -219,7 +218,7 @@ def renormalization_svd(cstruct, qnbigl, qnbigr, domain, nexciton, Mmax, percent
     '''
     assert domain in ["R", "L"]
 
-    Uset, SUset, qnlnew, Vset, SVset, qnrnew = svd_qn.Csvd(cstruct, qnbigl, qnbigr, nexciton)
+    Uset, SUset, qnlnew, Vset, SVset, qnrnew = svd_qn.Csvd(cstruct, qnbigl, qnbigr, nexciton, system=domain)
     if domain == "R":
         mps, mpsdim, mpsqn, compmps = updatemps(Vset, SVset, qnrnew, Uset,
                                                 nexciton, Mmax, percent=percent)
