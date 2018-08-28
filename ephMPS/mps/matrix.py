@@ -33,7 +33,7 @@ class Matrix(np.ndarray):
         raise NotImplementedError
 
     @property
-    def is_virtual(self):
+    def is_density_matrix(self):
         return False
 
     @property
@@ -87,12 +87,12 @@ class MatrixOp(Matrix):
         return np.array([0, -1, 1, 0])
 
 
-class VirtualMatrixOp(MatrixOp):
+class DensityMatrixOp(MatrixOp):
 
     @property
     def elec_sigmaqn(self):
         return np.array([0, 0, 1, 1])
 
     @property
-    def is_virtual(self):
+    def is_density_matrix(self):
         return True

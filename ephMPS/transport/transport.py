@@ -1,90 +1,75 @@
 # -*- coding: utf-8 -*-
 # Author: Jiajun Ren <jiajunren0522@gmail.com>
+#         Weitang Li <liwt31@163.com>
 
 from __future__ import division, print_function, absolute_import
 
 import logging
-import datetime
 
 import numpy as np
-try:
-    import seaborn as sns
-except ImportError:
-    logging.warn('Seaborn not installed, draw module down')
-    sns = None
-try:
-    from matplotlib import pyplot as plt
-except ImportError:
-    logging.warn('Matplotlib not installed, draw module down')
-    plt = None
 
-from ephMPS.utils import pickle, MpAdaptor, TdMpsJob
+from ephMPS.utils import TdMpsJob
 from ephMPS import constant
-from ephMPS.mps import Mps, Mpo
-
+from ephMPS.mps import solver
+from ephMPS.mps.mpo import Mpo
+from ephMPS.mps.mps import Mps
 
 logger = logging.getLogger(__name__)
 
 
-class CtMps(MpAdaptor):
-
-    def __init__(self, mps):
-        super(CtMps, self).__init__(mps)
-        self.e_occupations = [self.calc_e_occupation(i) for i in range(self.mol_num)]
-        self.ph_occupations = None
-        self.r_square = self.calc_r_square()
-
-    def calc_e_occupation(self, idx):
-        return self.expectation(Mpo.onsite(self.mol_list, 'a^\dagger a', site_idx_set={idx}))
-
-    def calc_ph_occupation(self, idx):
-        pass
-
-    def calc_r_square(self):
-        r_list = np.arange(0, self.mol_num)
-        r_square = np.average(r_list ** 2, weights=self.e_occupations) - np.average(r_list, weights=self.e_occupations) ** 2
-        return r_square
-
-    def __str__(self):
-        return 'ct'
-
-
 class ChargeTransport(TdMpsJob):
-
     def __init__(self, mol_list, j_constant, temperature=0):
         self.mol_list = mol_list
         self.j_constant = j_constant
         self.temperature = temperature
         self.mpo = None
         super(ChargeTransport, self).__init__()
+        self.energies = [self.tdmps_list[0].expectation(self.mpo)]
 
     @property
     def mol_num(self):
         return self.mol_list.mol_num
 
     def create_electron(self, gs_mp):
-        creation_operator = Mpo.onsite(self.mol_list, 'a^\dagger', site_idx_set={self.mol_num // 2})
+        creation_operator = Mpo.onsite(self.mol_list, 'a^\dagger', mol_idx_set={self.mol_num // 2})
         return creation_operator.apply(gs_mp)
 
     def init_mps(self):
         j_matrix = construct_j_matrix(self.mol_num, self.j_constant)
         self.mpo = Mpo(self.mol_list, j_matrix, scheme=3)
-        gs_mp = Mps.gs(self.mol_list)
-        if 0 < self.temperature:
-            gs_mp = Mpo.from_mps(gs_mp).thermal_prop(inplace=True)
-        init_mp = CtMps(self.create_electron(gs_mp))
+        logger.debug('Energy of the Hamiltonian: %g' % solver.find_eigen_energy(self.mpo, 1, 20))
+        if self.temperature == 0:
+            gs_mp = Mps.gs(self.mol_list, max_entangled=False)
+        else:
+            gs_mp = Mpo.from_mps(Mps.gs(self.mol_list, max_entangled=True))
+            beta = constant.t2beta(self.temperature)
+            thermal_prop = Mpo.exact_propagator(self.mol_list, - beta / 2, 'GS')
+            gs_mp = thermal_prop.apply(gs_mp)
+            #gs_mp = gs_mp.thermal_prop(h_mpo=self.mpo, nsteps=100, temperature=self.temperature, approx_eiht=1e-3)
+            gs_mp.normalize()
+        init_mp = self.create_electron(gs_mp)
+        # init_mp.invalidate_cache()
         return init_mp
 
     def evolve_single_step(self, evolve_dt):
-        return self.latest_mps.evolve(self.mpo, evolve_dt)
+        new_mps = self.latest_mps.evolve(self.mpo, evolve_dt, norm=1.0)
+        new_energy = new_mps.expectation(self.mpo)
+        percentile = self.energies[-1] / self.energies[0] * 100
+        self.energies.append(new_energy)
+        logger.info('Energy of the new mps: %g, %.5f%% of initial energy preserved' % (new_energy, percentile))
+        return new_mps
 
     @property
     def r_square_array(self):
         return np.array([mps.r_square for mps in self.tdmps_list])
 
     @property
-    def occupations_array(self):
-        return np.array([mps.occupations for mps in self.tdmps_list])
+    def e_occupations_array(self):
+        return np.array([mps.e_occupations for mps in self.tdmps_list])
+
+    @property
+    def ph_occupations_array(self):
+        return np.array([mps.ph_occupations for mps in self.tdmps_list])
 
 
 def construct_j_matrix(mol_num, j_constant):

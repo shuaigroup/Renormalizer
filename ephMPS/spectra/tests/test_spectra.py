@@ -98,6 +98,7 @@ class TestFiniteTSpectraEmi(unittest.TestCase):
           )
     @unpack
     def test_finite_t_spectra_emi(self, algorithm, compress_method, ph_info, rtol):
+        np.random.seed(0)
         # print "data", value
         nexciton = 1
         procedure = [[10, 0.4], [20, 0.2], [30, 0.1], [40, 0], [40, 0]]
@@ -138,6 +139,6 @@ class TestFiniteTSpectraAbs(unittest.TestCase):
 
 
 if __name__ == "__main__":
-    suite = unittest.TestLoader().loadTestsFromTestCase(TestZeroExactEmi)
+    suite = unittest.TestLoader().loadTestsFromTestCase(TestFiniteTSpectraEmi)
     unittest.TextTestRunner().run(suite)
     #unittest.main()

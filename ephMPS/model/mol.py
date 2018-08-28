@@ -42,11 +42,3 @@ class Mol(object):
         for ph in self.phs:
             pbond += ph.pbond
         return pbond
-
-    def gs_mps(self, max_entangled=False):
-        # electron mps
-        yield np.array([1, 0]).reshape(1, 2, 1)
-        # ph mps
-        for ph in self.phs:
-            for ms in ph.gs_mps(max_entangled=max_entangled):
-                yield ms

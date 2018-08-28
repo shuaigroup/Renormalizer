@@ -33,7 +33,7 @@ def Csvd(cstruct, qnbigl, qnbigr, nexciton, QR=False, system=None,
     
     if not ddm:
         # different combination
-        if cstruct.is_virtual:
+        if cstruct.is_density_matrix:
             combine = [[x, nexciton-x] for x in range(nexciton+1)]
         else:
             min0 = min(np.min(localqnl),np.min(localqnr))

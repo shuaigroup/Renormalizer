@@ -1,5 +1,6 @@
 # -*- coding: utf-8 -*-
 # Author: Jiajun Ren <jiajunren0522@gmail.com>
+from __future__ import absolute_import, division
 
 import copy
 from functools import reduce
@@ -148,7 +149,7 @@ class MatrixProduct(list):
                 vt = np.einsum('i, ij -> ij', sigma, vt)
         if self.is_left_canon:
             self[idx - 1] = np.tensordot(self[idx - 1], u, axes=1)
-            ret_mpsi = np.reshape(vt, [m_trunc] + list(self[idx].pdim) + [vt.shape[1] / self[idx].pdim_prod])
+            ret_mpsi = np.reshape(vt, [m_trunc] + list(self[idx].pdim) + [vt.shape[1] // self[idx].pdim_prod])
             if qnrset is not None:
                 self.qn[idx] = qnrset[:m_trunc]
         else:
@@ -156,6 +157,7 @@ class MatrixProduct(list):
             ret_mpsi = np.reshape(u, [u.shape[0] // self[idx].pdim_prod] + list(self[idx].pdim) + [m_trunc])
             if qnlset is not None:
                 self.qn[idx + 1] = qnlset[:m_trunc]
+        assert ret_mpsi.any()
         self[idx] = ret_mpsi
 
     def _switch_domain(self):
@@ -182,11 +184,17 @@ class MatrixProduct(list):
             qnbigr = qnr
         return qnbigl, qnbigr
 
+    @property
     def norm(self):
+        ''' Fast version yet not safe. Needs further testing
         if self.is_left_canon:
+            assert self.check_left_canonical()
             return np.linalg.norm(np.ravel(self[-1]))
         else:
+            assert self.check_right_canonical()
             return np.linalg.norm(np.ravel(self[0]))
+        '''
+        return np.sqrt(self.conj().dot(self).real)
 
     def conj(self):
         """
@@ -200,7 +208,7 @@ class MatrixProduct(list):
     def add(self, other):
         assert self.qntot == other.qntot
         assert self.site_num == other.site_num
-        assert self.is_left_canon ^ other.is_right_canon
+        assert self.is_left_canon == other.is_left_canon
 
         new_mps = other.copy()
 
@@ -240,6 +248,7 @@ class MatrixProduct(list):
         new_mps.qn = [qn1 + qn2 for qn1, qn2 in zip(self.qn, new_mps.qn)]
         new_mps.qn[0] = [0]
         new_mps.qn[-1] = [0]
+        #new_mps.canonicalise()
         return new_mps
 
     def dot(self, other):
@@ -270,7 +279,9 @@ class MatrixProduct(list):
         return new_mp
 
     def expectation(self, mpo):
-        return self.conj().dot(mpo.apply(self)).real
+        # todo: might cause performance problem when calculating a lot of expectations
+        #       use dynamic programing to improve the performance.
+        return self.conj().dot(mpo.apply(self)).real / self.norm ** 2
 
     def to_complex(self, inplace=False):
         if inplace:
@@ -324,8 +335,7 @@ class MatrixProduct(list):
              truncated or canonicalised MPS
         """
 
-        # if trunc==0, we are just doing a canonicalisation,
-        # so skip check, otherwise, ensure mps is canonicalised
+        # ensure mps is canonicalised
         if check_canonical:
             if self.is_left_canon:
                 assert self.check_left_canonical()
@@ -359,10 +369,9 @@ class MatrixProduct(list):
         self._switch_domain()
 
     def canonicalise(self):
-        # ensure qn is in agreement with canonicalise direction
-        # self.calibrate_qnidx()
         for idx in self.iter_idx_list:
             mt = self[idx]
+            assert mt.any()
             if self.is_left_canon:
                 mt = mt.r_combine()
             else:
@@ -376,9 +385,10 @@ class MatrixProduct(list):
         self._switch_domain()
 
     def normalize(self, norm=1.0):
-        self.scale(norm / self.norm(), inplace=True)
+        return self.scale(norm / self.norm, inplace=True)
 
-    def evolve(self, mpo, evolve_dt, norm=None, approx_eiht=None):
+    # todo: separate the 2 methods
+    def evolve(self, mpo=None, evolve_dt=None, norm=None, approx_eiht=None):
         if approx_eiht is not None:
             return approx_eiht.contract(self)
         propagation_c = rk.coefficient_dict[self.prop_method]

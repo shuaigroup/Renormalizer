@@ -11,6 +11,16 @@ import logging
 from datetime import datetime
 
 import numpy as np
+try:
+    import seaborn as sns
+except ImportError:
+    logging.warn('Seaborn not installed, draw module down')
+    sns = None
+try:
+    from matplotlib import pyplot as plt
+except ImportError:
+    logging.warn('Matplotlib not installed, draw module down')
+    plt = None
 
 
 logger = logging.getLogger(__name__)
@@ -19,10 +29,13 @@ logger = logging.getLogger(__name__)
 class TdMpsJob(object):
 
     def __init__(self):
+        logger.info('Creating TDMPS job.')
+        logger.info('Step 1/?. Preparing MPS in the intial state.')
         init_mps = self.init_mps()
         self.evolve_times = [0]
         self.tdmps_list = [init_mps]
         self.real_times = [datetime.now()]
+        logger.info('TDMPS job created.')
 
     def init_mps(self):
         """
@@ -31,13 +44,18 @@ class TdMpsJob(object):
         raise NotImplementedError
 
     def evolve(self, evolve_dt, nsteps):
+        target_steps = len(self.tdmps_list) + nsteps - 1
         for i in range(nsteps - 1):
+            step_str = 'step %d/%d' % (len(self.tdmps_list) + 1, target_steps)
+            logger.info('%s begin' % step_str)
             new_mps = self.evolve_single_step(evolve_dt=evolve_dt)
             new_real_time = datetime.now()
-            logger.info('step %d, time cost %s, %s' % (i, new_real_time - self.latest_real_time, new_mps))
+            time_cost = new_real_time - self.latest_real_time
             self.tdmps_list.append(new_mps)
+            logger.info('%s complete, time cost %s, %s' % (step_str, time_cost, new_mps))
             self.evolve_times.append(self.latest_evolve_time + evolve_dt)
             self.real_times.append(new_real_time)
+        logger.info('%d steps of evolution with delta t = %g complete!' % (nsteps, evolve_dt))
         return self
 
     def evolve_single_step(self, evolve_dt):
@@ -57,4 +75,8 @@ class TdMpsJob(object):
     @property
     def latest_real_time(self):
         return self.real_times[-1]
+
+    @property
+    def evolve_times_array(self):
+        return np.array(self.evolve_times)
 

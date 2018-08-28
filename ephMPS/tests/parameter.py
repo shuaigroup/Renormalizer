@@ -10,11 +10,11 @@ nmols = 3
 j_matrix = np.array([[0.0, -0.1, -0.2], [-0.1, 0.0, -0.3], [-0.2, -0.3, 0.0]]) / constant.au2ev
 # cm^-1
 omega_value = np.array([106.51, 1555.55]) * constant.cm2au
-omega = [{0: omega_value[0], 1: omega_value[0]}, {0: omega_value[1], 1: omega_value[1]}]
+omega = [[omega_value[0], omega_value[0]], [omega_value[1], omega_value[1]]]
 # a.u.
 D_value = np.array([30.1370, 8.7729])
 
-D = [{0: 0.0, 1: D_value[0]}, {0: 0.0, 1: D_value[1]}]
+D = [[0.0, D_value[0]], [0.0, D_value[1]]]
 nphs = 2
 ph_phys_dim = [4, 4]
 

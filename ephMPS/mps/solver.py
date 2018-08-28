@@ -1,12 +1,23 @@
 # -*- coding: utf-8 -*-
 # Author: Jiajun Ren <jiajunren0522@gmail.com>
 
+import logging
+
 import numpy as np
 
 from ephMPS.lib import tensor as tensorlib
 from ephMPS.lib.davidson import davidson
 from ephMPS.mps import Mpo, Mps, svd_qn
 from ephMPS.mps.lib import construct_enviro, GetLR, updatemps
+
+
+logger = logging.getLogger(__name__)
+
+
+def find_eigen_energy(h_mpo, nexciton, Mmax):
+    mps = Mps.random(h_mpo, nexciton, Mmax)
+    energy = optimize_mps(mps, h_mpo, [[20, 0]] * 10)
+    return energy.min()
 
 
 def construct_mps_mpo_2(mol_list, J_matrix, Mmax, nexciton, scheme, rep="star"):
@@ -204,9 +215,10 @@ def optimize_mps(mps, mpo, procedure, method="2site", nroots=1, inverse=1.0):
                 #mps.dim_list[imps] = mpsdim
                 mps.qn[imps] = mpsqn
 
+    energy = np.array(energy)
     if nroots == 1:
-        lowestenergy = np.min(energy)
-        # print("lowest energy = ", lowestenergy)
+        lowestenergy = energy.min()
+        logger.debug("Optimization complete, lowest energy = %g", lowestenergy)
 
     return energy
 

@@ -46,15 +46,6 @@ class Phonon(object):
     def nlevels(self):
         return self.n_phys_dim
 
-    def gs_mps(self, max_entangled=False):
-        for iboson in range(self.nqboson):
-            ms = np.zeros((1, self.base, 1))
-            if max_entangled:
-                ms[0, :, 0] = 1.0 / np.sqrt(self.base)
-            else:
-                ms[0, 1, 0] = 1.0
-            yield ms
-
     """
     todo: These "term"s should be renamed by their physical meanings
     """

@@ -22,6 +22,14 @@ def op_matrix(op, size, type):
     return op_matrix
 
 
+def e_op_matrix(op, size):
+    return op_matrix(op, size, 'e')
+
+
+def ph_op_matrix(op, size):
+    return op_matrix(op, size, 'ph')
+
+
 ph_op_list = ["b", "b^\dagger", "b^\dagger b", "b^\dagger + b", "Iden", "(b^\dagger + b)^2", "(b^\dagger + b)^3"]
 
 
@@ -125,12 +133,12 @@ def e_element_op(op, bra, ket):
 def construct_e_op_dict(pbond):
     e_op_dict = {}
     for op in e_op_list:
-        e_op_dict[op] = op_matrix(op, pbond, 'e')
+        e_op_dict[op] = e_op_matrix(op, pbond)
     return e_op_dict
 
 
 def construct_ph_op_dict(pbond):
     ph_op_dict = {}
     for op in ph_op_list:
-        ph_op_dict[op] = op_matrix(op, pbond, 'ph')
+        ph_op_dict[op] = ph_op_matrix(op, pbond)
     return ph_op_dict

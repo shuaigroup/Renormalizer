@@ -10,5 +10,5 @@ if sys.version_info[0] == 3:
 else:
     import cPickle as pickle
 
-from ephMPS.utils.adaptor import MpAdaptor
 from ephMPS.utils.tdmps import TdMpsJob
+from ephMPS.utils.log import logger
