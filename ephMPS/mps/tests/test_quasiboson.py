@@ -4,13 +4,13 @@ from __future__ import absolute_import, print_function, division
 
 import unittest
 
-from ddt import ddt, data
 import numpy as np
+from ddt import ddt, data
 
-from ephMPS.tests import parameter
-from ephMPS.mps import solver
 from ephMPS.mps import Mpo
-from ephMPS import constant
+from ephMPS.mps import solver
+from ephMPS.tests import parameter
+from ephMPS.utils import constant
 
 nexciton = 1
 procedure = [[10, 0.4], [20, 0.2], [30, 0.1], [40, 0], [40, 0]]

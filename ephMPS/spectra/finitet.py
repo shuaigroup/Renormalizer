@@ -2,9 +2,9 @@
 # Author: Jiajun Ren <jiajunren0522@gmail.com>
 import numpy as np
 
-from ephMPS import constant
 from ephMPS.mps import Mpo, Mps
 from ephMPS.spectra.base import SpectraTdMpsJobBase, BraKetPair
+from ephMPS.utils import constant
 
 
 class BraKetPairEmiFiniteT(BraKetPair):

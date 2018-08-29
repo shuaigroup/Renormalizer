@@ -6,12 +6,12 @@ import logging
 import numpy as np
 import scipy
 
-from ephMPS import constant
 from ephMPS.model.ephtable import EphTable
 from ephMPS.mps.elementop import construct_ph_op_dict, construct_e_op_dict, ph_op_matrix
 from ephMPS.mps.matrix import MatrixOp, DensityMatrixOp
 from ephMPS.mps.mp import MatrixProduct
 from ephMPS.mps.mpsbase import MpsBase
+from ephMPS.utils import constant
 from ephMPS.utils.utils import roundrobin
 
 logger = logging.getLogger(__name__)
@@ -480,13 +480,13 @@ class MpoBase(MatrixProduct):
             iph = 0
             for ph in mol.phs:
                 for iqph in range(ph.nqboson):
-                    iph += 1
                     ph_pbond = ph.pbond[iqph]
                     if imol == mol_idx and iph == ph_idx:
                         mt = ph_op_matrix('b^\dagger b', ph_pbond)
                     else:
                         mt = ph_op_matrix('Iden', ph_pbond)
                     mpo.append(mt.reshape(1, ph_pbond, ph_pbond, 1))
+                    iph += 1
         mpo.build_empty_qn()
         return mpo
 

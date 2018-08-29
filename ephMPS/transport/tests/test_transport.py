@@ -4,12 +4,12 @@
 
 import unittest
 
-from ddt import ddt, data, unpack
 import numpy as np
+from ddt import ddt, data, unpack
 
-from ephMPS.transport import ChargeTransport
 from ephMPS.model import Phonon, Mol, MolList
-from ephMPS import constant
+from ephMPS.transport import ChargeTransport
+from ephMPS.utils import constant, Quantity
 
 
 @ddt
@@ -19,13 +19,15 @@ class TestBandLimitZeroT(unittest.TestCase):
         [13, 0.8, 3.87e-3, [[1e-10, 1e-10]], 4, 2, 15]
     )
     @unpack
-    def test(self, mol_num, j_constant, elocalex, ph_info, ph_phys_dim, evolve_dt, nsteps):
-        ph_list = [Phonon.simple_phonon(omega * constant.cm2au, displacement, ph_phys_dim)
+    def test(self, mol_num, j_constant_value, elocalex_value, ph_info, ph_phys_dim, evolve_dt, nsteps):
+        ph_list = [Phonon.simple_phonon(Quantity(omega, 'cm^{-1}'), Quantity(displacement, 'a.u.'), ph_phys_dim)
                    for omega, displacement in ph_info]
-        mol_list = MolList([Mol(elocalex, ph_list)] * mol_num)
+        mol_list = MolList([Mol(Quantity(elocalex_value, 'a.u.'), ph_list)] * mol_num)
+        j_constant = Quantity(j_constant_value, 'eV')
         ct = ChargeTransport(mol_list, j_constant).evolve(evolve_dt, nsteps)
-        analytical_r_square = 2 * (j_constant / constant.au2ev) ** 2 * ct.evolve_times_array ** 2
+        analytical_r_square = 2 * (j_constant.as_au()) ** 2 * ct.evolve_times_array ** 2
         self.assertTrue(np.allclose(analytical_r_square, ct.r_square_array, rtol=1e-3))
+
 
 @ddt
 class TestBandLimitFiniteT(unittest.TestCase):
@@ -34,13 +36,15 @@ class TestBandLimitFiniteT(unittest.TestCase):
         [13, 0.8, 3.87e-3, [[1e-10, 1e-10]], 4, 2, 15]
     )
     @unpack
-    def test(self, mol_num, j_constant, elocalex, ph_info, ph_phys_dim, evolve_dt, nsteps):
-        ph_list = [Phonon.simple_phonon(omega * constant.cm2au, displacement, ph_phys_dim)
+    def test(self, mol_num, j_constant_value, elocalex_value, ph_info, ph_phys_dim, evolve_dt, nsteps):
+        ph_list = [Phonon.simple_phonon(Quantity(omega, 'cm^{-1}'), Quantity(displacement, 'a.u.'), ph_phys_dim)
                    for omega, displacement in ph_info]
-        mol_list = MolList([Mol(elocalex, ph_list)] * mol_num)
+        mol_list = MolList([Mol(Quantity(elocalex_value, 'a.u.'), ph_list)] * mol_num)
+        j_constant = Quantity(j_constant_value, 'eV')
         ct = ChargeTransport(mol_list, j_constant, temperature=298).evolve(evolve_dt, nsteps)
-        analytical_r_square = 2 * (j_constant / constant.au2ev) ** 2 * ct.evolve_times_array ** 2
+        analytical_r_square = 2 * (j_constant.as_au() / constant.au2ev) ** 2 * ct.evolve_times_array ** 2
         self.assertTrue(np.allclose(analytical_r_square, ct.r_square_array, rtol=1e-3))
+
 
 @ddt
 class TestHoppingLimitZeroT(unittest.TestCase):
@@ -48,10 +52,11 @@ class TestHoppingLimitZeroT(unittest.TestCase):
         [13, 0.02, 3.87e-3, [[1345.6738910804488, 16.274571056529368]], 10, 20, 100]
     )
     @unpack
-    def test(self, mol_num, j_constant, elocalex, ph_info, ph_phys_dim, evolve_dt, nsteps):
-        ph_list = [Phonon.simple_phonon(omega * constant.cm2au, displacement, ph_phys_dim)
+    def test(self, mol_num, j_constant_value, elocalex_value, ph_info, ph_phys_dim, evolve_dt, nsteps):
+        ph_list = [Phonon.simple_phonon(Quantity(omega, 'cm^{-1}'), Quantity(displacement, 'a.u.'), ph_phys_dim)
                    for omega, displacement in ph_info]
-        mol_list = MolList([Mol(elocalex, ph_list)] * mol_num)
+        mol_list = MolList([Mol(Quantity(elocalex_value, 'a.u.'), ph_list)] * mol_num)
+        j_constant = Quantity(j_constant_value, 'eV')
         ct = ChargeTransport(mol_list, j_constant).evolve(evolve_dt, nsteps)
         pass
 
@@ -62,15 +67,16 @@ class TestHoppingLimitFiniteT(unittest.TestCase):
         [13, 0.02, 3.87e-3, [[1345.6738910804488, 16.274571056529368]], 10, 20, 100]
     )
     @unpack
-    def test(self, mol_num, j_constant, elocalex, ph_info, ph_phys_dim, evolve_dt, nsteps):
-        ph_list = [Phonon.simple_phonon(omega * constant.cm2au, displacement, ph_phys_dim)
+    def test(self, mol_num, j_constant_value, elocalex_value, ph_info, ph_phys_dim, evolve_dt, nsteps):
+        ph_list = [Phonon.simple_phonon(Quantity(omega, 'cm^{-1}'), Quantity(displacement, 'a.u.'), ph_phys_dim)
                    for omega, displacement in ph_info]
-        mol_list = MolList([Mol(elocalex, ph_list)] * mol_num)
-        ct = ChargeTransport(mol_list, j_constant, temperature=100).evolve(evolve_dt, nsteps)
+        mol_list = MolList([Mol(Quantity(elocalex_value, 'a.u.'), ph_list)] * mol_num)
+        j_constant = Quantity(j_constant_value, 'eV')
+        ct = ChargeTransport(mol_list, j_constant, temperature=298).evolve(evolve_dt, nsteps)
         pass
 
 
 if __name__ == '__main__':
-    suite = unittest.TestLoader().loadTestsFromTestCase(TestHoppingLimitZeroT)
+    suite = unittest.TestLoader().loadTestsFromTestCase(TestBandLimitZeroT)
     unittest.TextTestRunner().run(suite)
     #unittest.main()

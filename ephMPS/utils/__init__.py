@@ -11,4 +11,4 @@ else:
     import cPickle as pickle
 
 from ephMPS.utils.tdmps import TdMpsJob
-from ephMPS.utils.log import logger
+from ephMPS.utils.quantity import Quantity

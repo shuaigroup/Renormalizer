@@ -1,6 +1,8 @@
 # -*- coding: utf-8 -*-
 # Author: Jiajun Ren <jiajunren0522@gmail.com>
 
+from collections import OrderedDict
+
 from ephMPS.model.ephtable import EphTable
 
 
@@ -22,5 +24,14 @@ class MolList(object):
 
     def __len__(self):
         return len(self.mol_list)
+
+    def to_dict(self):
+        info_dict = OrderedDict()
+        info_dict['mol num'] = len(self)
+        info_dict['electron phonon table'] = self.ephtable
+        info_dict['physical bond list'] = self.pbond_list
+        info_dict['mol list'] = [mol.to_dict() for mol in self.mol_list]
+        return info_dict
+
 
 

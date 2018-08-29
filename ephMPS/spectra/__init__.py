@@ -1,11 +1,10 @@
 # -*- coding: utf-8 -*-
 # Author: Jiajun Ren <jiajunren0522@gmail.com>
-from ephMPS import constant
 from ephMPS.mps import solver
-
-from ephMPS.spectra.zerot import SpectraOneWayPropZeroT, SpectraTwoWayPropZeroT
-from ephMPS.spectra.finitet import SpectraAbsFiniteT, SpectraEmiFiniteT
 from ephMPS.spectra.exact import SpectraExact
+from ephMPS.spectra.finitet import SpectraAbsFiniteT, SpectraEmiFiniteT
+from ephMPS.spectra.zerot import SpectraOneWayPropZeroT, SpectraTwoWayPropZeroT
+from ephMPS.utils import constant
 
 
 def prepare_init_mps(mol_list, j_matrix, procedure, nexciton, mpo_scheme, compress_method=None, offset=0, optimize=False):

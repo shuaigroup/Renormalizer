@@ -2,6 +2,7 @@
 # Author: Jiajun Ren <jiajunren0522@gmail.com>
 from __future__ import absolute_import, print_function, unicode_literals
 
+from collections import OrderedDict
 
 import numpy as np
 
@@ -18,7 +19,7 @@ class Mol(object):
     '''
 
     def __init__(self, elocalex, ph_list, dipole=None):
-        self.elocalex = elocalex
+        self.elocalex = elocalex.as_au()
         self.dipole = dipole
         self.nphs = len(ph_list)
         self.phs = []
@@ -42,3 +43,11 @@ class Mol(object):
         for ph in self.phs:
             pbond += ph.pbond
         return pbond
+
+    def to_dict(self):
+        info_dict = OrderedDict()
+        info_dict['elocalex'] = self.elocalex
+        info_dict['dipole'] = self.dipole
+        info_dict['num of phonons'] = self.nphs
+        info_dict['phonon list'] = [ph.to_dict() for ph in self.phs]
+        return info_dict

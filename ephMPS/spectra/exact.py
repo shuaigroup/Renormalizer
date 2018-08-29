@@ -1,9 +1,9 @@
 # -*- coding: utf-8 -*-
 # Author: Jiajun Ren <jiajunren0522@gmail.com>
 
-from ephMPS.spectra.base import SpectraTdMpsJobBase, BraKetPair
-from ephMPS import constant
 from ephMPS.mps import Mpo
+from ephMPS.spectra.base import SpectraTdMpsJobBase, BraKetPair
+from ephMPS.utils import constant
 
 
 class SpectraExact(SpectraTdMpsJobBase):

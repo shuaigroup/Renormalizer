@@ -7,6 +7,8 @@ todo: a wrapper for tdmps. make it a framework to deal with io and info dump and
 resume from a pickle file
 """
 
+import json
+import os
 import logging
 from datetime import datetime
 
@@ -35,6 +37,8 @@ class TdMpsJob(object):
         self.evolve_times = [0]
         self.tdmps_list = [init_mps]
         self.real_times = [datetime.now()]
+        self.dump_dir = None
+        self.job_name = None
         logger.info('TDMPS job created.')
 
     def init_mps(self):
@@ -52,9 +56,11 @@ class TdMpsJob(object):
             new_real_time = datetime.now()
             time_cost = new_real_time - self.latest_real_time
             self.tdmps_list.append(new_mps)
-            logger.info('%s complete, time cost %s, %s' % (step_str, time_cost, new_mps))
             self.evolve_times.append(self.latest_evolve_time + evolve_dt)
             self.real_times.append(new_real_time)
+            if self.dump_dir is not None and self.job_name is not None:
+                self.dump_dict()
+            logger.info('%s complete, time cost %s, %s' % (step_str, time_cost, new_mps))
         logger.info('%d steps of evolution with delta t = %g complete!' % (nsteps, evolve_dt))
         return self
 
@@ -63,6 +69,28 @@ class TdMpsJob(object):
         :return: new mps after the evolution
         """
         raise NotImplementedError
+
+    def get_dump_dict(self):
+        """
+
+        :return: return a (ordered) dict to dump as json
+        """
+        raise NotImplementedError
+
+    def dump_dict(self):
+        if self.dump_dir is None or self.job_name is None:
+            raise ValueError('Dump dir or job name not set')
+        file_path = os.path.join(self.dump_dir, self.job_name + '.json')
+        bak_path = file_path + '.bak'
+        if os.path.exists(file_path):
+            # in case of shutdown while dumping
+            if os.path.exists(bak_path):
+                os.remove(bak_path)
+            os.rename(file_path, bak_path)
+        with open(file_path, 'w') as fout:
+            json.dump(self.get_dump_dict(), fout, indent=2)
+        if os.path.exists(bak_path):
+            os.remove(bak_path)
 
     @property
     def latest_mps(self):

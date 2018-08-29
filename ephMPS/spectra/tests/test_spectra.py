@@ -2,17 +2,17 @@
 # Author: Jiajun Ren <jiajunren0522@gmail.com>
 from __future__ import absolute_import, print_function, division
 
-import unittest
 import os
+import unittest
 
 import numpy as np
 from ddt import ddt, data, unpack
 
 from ephMPS.spectra import SpectraExact, SpectraOneWayPropZeroT, SpectraTwoWayPropZeroT, \
     SpectraEmiFiniteT, SpectraAbsFiniteT, prepare_init_mps
-from ephMPS.tests import parameter
-from ephMPS import constant
 from ephMPS.spectra.tests import cur_dir
+from ephMPS.tests import parameter
+from ephMPS.utils import constant
 
 
 @ddt
@@ -139,6 +139,6 @@ class TestFiniteTSpectraAbs(unittest.TestCase):
 
 
 if __name__ == "__main__":
-    suite = unittest.TestLoader().loadTestsFromTestCase(TestFiniteTSpectraEmi)
+    suite = unittest.TestLoader().loadTestsFromTestCase(TestFiniteTSpectraAbs)
     unittest.TextTestRunner().run(suite)
     #unittest.main()

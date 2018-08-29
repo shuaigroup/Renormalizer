@@ -3,7 +3,11 @@
 
 from __future__ import absolute_import, print_function, unicode_literals
 
+from collections import OrderedDict
+
 import numpy as np
+
+from ephMPS.utils import Quantity
 
 
 class Phonon(object):
@@ -17,14 +21,14 @@ class Phonon(object):
     @classmethod
     def simple_phonon(cls, omega, displacement, n_phys_dim):
         complete_omega = [omega, omega]
-        complete_displacement = [0, displacement]
+        complete_displacement = [Quantity.zero(), displacement]
         return cls(complete_omega, complete_displacement, n_phys_dim)
 
     def __init__(self, omega, displacement, n_phys_dim, force3rd=None, nqboson=1, qbtrunc=0.0):
         # omega is a dictionary for different PES omega[0], omega[1]...
-        self.omega = omega
+        self.omega = [o.as_au() for o in omega]
         # dis is a dictionary for different PES dis[0]=0.0, dis[1]...
-        self.dis = displacement
+        self.dis = [d.as_au() for d in displacement]
 
         if force3rd is None:
             self.force3rd = {}
@@ -37,6 +41,13 @@ class Phonon(object):
         self.nqboson = nqboson
         self.qbtrunc = qbtrunc
         self.base = int(round(n_phys_dim ** (1. / nqboson)))
+
+    def to_dict(self):
+        info_dict = OrderedDict()
+        info_dict['omega'] = self.omega
+        info_dict['displacement'] = self.dis
+        info_dict['num physical dimension'] = self.n_phys_dim
+        return info_dict
 
     @property
     def pbond(self):
