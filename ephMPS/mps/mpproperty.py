@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 # Author: Jiajun Ren <jiajunren0522@gmail.com>
-#         Weitang Li <liwt31@!63.com>
+#         Weitang Li <liwt31@163.com>
 
 from cached_property import cached_property
 import numpy as np

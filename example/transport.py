@@ -8,7 +8,7 @@ import yaml
 
 from ephMPS.model import Phonon, Mol, MolList
 from ephMPS.transport import ChargeTransport
-from ephMPS.utils import log, constant, Quantity
+from ephMPS.utils import log, Quantity
 
 if __name__ == '__main__':
     if len(sys.argv) != 2:
@@ -23,7 +23,9 @@ if __name__ == '__main__':
     mol_list = MolList([Mol(Quantity(param['elocalex'], param['elocalex unit']), ph_list)] * param['mol num'])
     j_constant = Quantity(param['j constant'], param['j constant unit'])
     ct = ChargeTransport(mol_list, j_constant, temperature=param['temperature'])
+    ct.stop_at_edge = True
     ct.dump_dir = param['output dir']
     ct.job_name = param['fname']
     ct.custom_dump_info['comment'] = param['comment']
+    ct.set_threshold(1e-4)
     ct.evolve(param['evolve dt'], param['nsteps'])

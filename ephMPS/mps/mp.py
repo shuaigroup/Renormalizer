@@ -36,7 +36,7 @@ class MatrixProduct(list):
         self.qntot = None
 
         self._compress_method = 'svd'
-        self.thresh = 1e-3
+        self.threshold = 1e-3
 
         self._prop_method = 'C_RK4'
 
@@ -136,6 +136,11 @@ class MatrixProduct(list):
         self.qnidx = 0
         self.qn = [[0] * dim for dim in self.bond_dims]
 
+    def build_none_qn(self):
+        self.qntot = None
+        self.qnidx = None
+        self.qn = None
+
     def _update_ms(self, idx, u, vt, sigma=None, qnlset=None, qnrset=None, m_trunc=None):
         if m_trunc is None:
             m_trunc = u.shape[1]
@@ -186,6 +191,7 @@ class MatrixProduct(list):
 
     @property
     def norm(self):
+        # todo: get the fast version in the comment working
         ''' Fast version yet not safe. Needs further testing
         if self.is_left_canon:
             assert self.check_left_canonical()
@@ -271,6 +277,15 @@ class MatrixProduct(list):
 
         return e0[0, 0]
 
+    def _dot(self, other):
+        raise NotImplementedError
+        contracted_matrices = []
+        for mt1, mt2 in zip(self, other):
+            if mt1.ndim == 3:
+                contracted_matrices.append(np.tensordot(mt1, mt2, [1, 1]).reshape())
+            if mt1.ndim == 4:
+                pass
+
     def scale(self, val, inplace=False):
         new_mp = self if inplace else self.copy()
         if np.iscomplexobj(val):
@@ -355,13 +370,13 @@ class MatrixProduct(list):
                                                              system=system, full_matrices=False)
             vt = v.T
 
-            if self.thresh < 1.:
+            if self.threshold < 1.:
                 # count how many sing vals < trunc
                 normed_sigma = sigma / scipy.linalg.norm(sigma)
                 # m_trunc=len([s for s in normed_sigma if s >trunc])
-                m_trunc = np.count_nonzero(normed_sigma > self.thresh)
+                m_trunc = np.count_nonzero(normed_sigma > self.threshold)
             else:
-                m_trunc = int(self.thresh)
+                m_trunc = int(self.threshold)
                 m_trunc = min(m_trunc, len(sigma))
             assert m_trunc != 0
             self._update_ms(idx, u, vt, sigma, qnlset, qnrset, m_trunc)
@@ -387,7 +402,7 @@ class MatrixProduct(list):
     def normalize(self, norm=1.0):
         return self.scale(norm / self.norm, inplace=True)
 
-    # todo: separate the 2 methods
+    # todo: separate the 2 methods (approx_eiht), because their parameters are contradictory
     def evolve(self, mpo=None, evolve_dt=None, norm=None, approx_eiht=None):
         if approx_eiht is not None:
             return approx_eiht.contract(self)

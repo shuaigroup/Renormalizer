@@ -29,10 +29,7 @@ def t2beta(temperature):
     '''
     temperature to beta
     '''
-    beta = 1.0 / temperature / \
-    scipy.constants.physical_constants["kelvin-hartree relationship"][0]
-    
-    return beta
+    return  1.0 / temperature.as_au()
 
 # nm to au
 def nm2au(l):

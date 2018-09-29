@@ -2,8 +2,6 @@
 # Author: Jiajun Ren <jiajunren0522@gmail.com>
 
 import sys
-import logging
-import os
 
 if sys.version_info[0] == 3:
     import pickle

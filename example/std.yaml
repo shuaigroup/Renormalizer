@@ -1,0 +1,32 @@
+# Define all parameters used in the transport model
+
+# number of molecules
+mol num: 33
+
+# local excitation energy
+elocalex: 3.87e-3
+elocalex unit: a.u.
+
+# transfer integral
+j constant: 3.0e-2
+j constant unit: a.u. 
+
+# phonon info
+
+#           omega, displacement
+ph modes: [[[6.128e-3, a.u.], [16.274571056529368, a.u.]]]
+ph phys dim: 10
+
+# temperature
+temperature: 298
+
+# simulation parameters
+nsteps: 800
+
+evolve dt: 0.4
+
+# output parameters
+output dir: ./
+fname: transport
+comment: omega=6.128e-3
+

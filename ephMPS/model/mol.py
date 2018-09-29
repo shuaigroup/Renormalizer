@@ -6,7 +6,7 @@ from collections import OrderedDict
 
 import numpy as np
 
-from ephMPS.mps.elementop import construct_e_op_dict
+from ephMPS.utils import Quantity
 
 
 class Mol(object):
@@ -44,10 +44,15 @@ class Mol(object):
             pbond += ph.pbond
         return pbond
 
+    @property
+    def reorganization_energy(self):
+        return Quantity(sum([ph.reorganization_energy.as_au() for ph in self.phs]))
+
     def to_dict(self):
         info_dict = OrderedDict()
         info_dict['elocalex'] = self.elocalex
         info_dict['dipole'] = self.dipole
-        info_dict['num of phonons'] = self.nphs
+        info_dict['reorganization energy in a.u.'] = self.reorganization_energy.as_au()
+        info_dict['num of phonon modes'] = self.nphs
         info_dict['phonon list'] = [ph.to_dict() for ph in self.phs]
         return info_dict

@@ -21,7 +21,7 @@ class Phonon(object):
     @classmethod
     def simple_phonon(cls, omega, displacement, n_phys_dim):
         complete_omega = [omega, omega]
-        complete_displacement = [Quantity.zero(), displacement]
+        complete_displacement = [Quantity(0), displacement]
         return cls(complete_omega, complete_displacement, n_phys_dim)
 
     def __init__(self, omega, displacement, n_phys_dim, force3rd=None, nqboson=1, qbtrunc=0.0):
@@ -56,6 +56,11 @@ class Phonon(object):
     @property
     def nlevels(self):
         return self.n_phys_dim
+
+    @property
+    def reorganization_energy(self):
+        dis_diff = self.dis[1] - self.dis[0]
+        return Quantity(dis_diff ** 2 / 2 * (self.omega[0] ** 2 + self.omega[1] ** 2))
 
     """
     todo: These "term"s should be renamed by their physical meanings

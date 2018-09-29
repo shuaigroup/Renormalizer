@@ -229,7 +229,7 @@ class MpoBase(MatrixProduct):
 
         # decompose canonicalise
         mpo = cls()
-        mpo.thresh = trunc
+        mpo.threshold = trunc
         mat = mat.reshape(1, -1)
         for idx in range(nqb - 1):
             u, s, vt = scipy.linalg.svd(mat.reshape(mat.shape[0] * base ** 2, -1),
@@ -265,7 +265,7 @@ class MpoBase(MatrixProduct):
         mpo.qn = copy.deepcopy(mps.qn)
         mpo.qntot = mps.qntot
         mpo.qnidx = mps.qnidx
-        mpo.thresh = mps.thresh
+        mpo.threshold = mps.threshold
         return mpo
 
     @classmethod
@@ -316,6 +316,7 @@ class MpoBase(MatrixProduct):
                     mpo.append(mo)
 
                 elif space == "GS":
+                    anharmo = False
                     # for the ground state space, yet doesn't support 3rd force
                     # potential quasiboson algorithm
                     ph_pbond = ph.pbond[0]
@@ -371,7 +372,7 @@ class MpoBase(MatrixProduct):
         mps.qn = [[0]] * (mpo.site_num + 1)
         mps.qnidx = mpo.site_num - 1
         mps.qntot = 0
-        mps.thresh = thresh
+        mps.threshold = thresh
 
         for impo in range(mpo.site_num):
             ms = np.ones([1, mpo[impo].shape[1], 1], dtype=np.complex128)
@@ -765,7 +766,7 @@ class MpoBase(MatrixProduct):
             # mpo x mpo
             for i, (mt_self, mt_other) in enumerate(zip(self, mp)):
                 assert mt_self.shape[2] == mt_other.shape[1]
-                # mt=np.einsum("apqb,cqrd->acprbd",mt_o,mt_s)
+                # mt=np.einsum("apqb,cqrd->acprbd",mt_s,mt_o)
                 mt = np.moveaxis(np.tensordot(mt_self, mt_other, axes=([2], [1])), [-3, -2], [1, 3])
                 mt = np.reshape(mt, [mt_self.shape[0] * mt_other.shape[0],
                                      mt_self.shape[1], mt_other.shape[2],
@@ -786,7 +787,6 @@ class MpoBase(MatrixProduct):
         """
         a wrapper for apply. Include compress
         :param mps:
-        :param ncanonical:
         :return:
         """
         if self.compress_method == 'svd':
@@ -832,5 +832,39 @@ class MpoBase(MatrixProduct):
         for istep in range(nsteps):
             logger.debug('Thermal propagating %d/%d' % (istep + 1, nsteps))
             ket_mpo = ket_mpo.evolve(h_mpo, -0.5j * dbeta, approx_eiht=approx_eihpt)
-        ket_mpo.ph_occupations
         return ket_mpo
+
+    def get_reduced_density_matrix(self):
+        assert self.mtype == DensityMatrixOp
+        reduced_density_matrix_product = list()
+        # ensure there is a first matrix in the new mps/mpo
+        assert self.ephtable.is_electron(0)
+        for idx, mt in enumerate(self):
+            if self.ephtable.is_electron(idx):
+                reduced_density_matrix_product.append(mt)
+            else:  # phonon site
+                reduced_mt = mt.trace(axis1=1, axis2=2)
+                prev_mt = reduced_density_matrix_product[-1]
+                new_mt = np.tensordot(prev_mt, reduced_mt, 1)
+                reduced_density_matrix_product[-1] = new_mt
+        reduced_density_matrix = np.zeros((self.mol_list.mol_num, self.mol_list.mol_num), dtype=np.complex128)
+        for i in range(self.mol_list.mol_num):
+            for j in range(self.mol_list.mol_num):
+                elem = np.array([1]).reshape(1, 1)
+                for mt_idx, mt in enumerate(reduced_density_matrix_product):
+                    axis_idx1 = int(mt_idx == i)
+                    axis_idx2 = int(mt_idx == j)
+                    sub_mt = mt[:, axis_idx1, axis_idx2, :]
+                    elem = np.tensordot(elem, sub_mt, 1)
+                reduced_density_matrix[i][j] = elem.flatten()[0]
+        return reduced_density_matrix
+
+    def trace(self):
+        assert self.mtype == DensityMatrixOp
+        traced_product = []
+        for mt in self:
+            traced_product.append(mt.trace(axis1=1, axis2=2))
+        ret = np.array([1]).reshape((1, 1))
+        for mt in traced_product:
+            ret = np.tensordot(ret, mt, 1)
+        return ret.flatten()[0]

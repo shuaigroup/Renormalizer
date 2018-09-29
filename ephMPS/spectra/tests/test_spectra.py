@@ -13,6 +13,7 @@ from ephMPS.spectra import SpectraExact, SpectraOneWayPropZeroT, SpectraTwoWayPr
 from ephMPS.spectra.tests import cur_dir
 from ephMPS.tests import parameter
 from ephMPS.utils import constant
+from ephMPS.utils.quantity import Quantity
 
 
 @ddt
@@ -28,7 +29,7 @@ class TestZeroExactEmi(unittest.TestCase):
                                         optimize=True)
         nsteps = 3000
         dt = 30.0
-        temperature = 0
+        temperature = Quantity(0, 'K')
         exact_emi = SpectraExact(i_mps, h_mpo, spectratype='emi', temperature=temperature)
         exact_emi.evolve(dt, nsteps)
         with open(os.path.join(cur_dir, 'ZeroExactEmi.npy'), 'rb') as fin:
@@ -108,7 +109,7 @@ class TestFiniteTSpectraEmi(unittest.TestCase):
         insteps = 50
         i_mps, h_mpo = prepare_init_mps(mol_list, parameter.j_matrix, procedure, nexciton, 2, compress_method,
                                         2.28614053)
-        finite_t_emi = SpectraEmiFiniteT(i_mps, h_mpo, temperature=298, insteps=insteps)
+        finite_t_emi = SpectraEmiFiniteT(i_mps, h_mpo, temperature=Quantity(298, 'K'), insteps=insteps)
         finite_t_emi.evolve(dt, nsteps)
         with open(os.path.join(cur_dir, 'TTemi_' + str(algorithm) + str(compress_method) + ".npy"), 'rb') as fin:
             std = np.load(fin)
@@ -131,7 +132,7 @@ class TestFiniteTSpectraAbs(unittest.TestCase):
         insteps = 50
         i_mps, h_mpo = prepare_init_mps(mol_list, parameter.j_matrix, procedure, nexciton, 2, compress_method,
                                         2.28614053)
-        finite_t_abs = SpectraAbsFiniteT(i_mps, h_mpo, temperature=298, insteps=insteps)
+        finite_t_abs = SpectraAbsFiniteT(i_mps, h_mpo, temperature=Quantity(298, 'K'), insteps=insteps)
         finite_t_abs.evolve(dt, nsteps)
         with open(os.path.join(cur_dir, "TTabs_" + str(compress_method) + ".npy"), 'rb') as fin:
             std = np.load(fin)
