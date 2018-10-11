@@ -34,6 +34,46 @@ class TestBandLimitZeroT(unittest.TestCase):
         self.assertTrue(np.allclose(analytical_r_square, ct.r_square_array, rtol=1e-3))
 
 @ddt
+class TestEconomicMode(unittest.TestCase):
+
+    @data(
+        [5, 0.8, 3.87e-3, [[1345.6738910804488, 16.274571056529368]], 4, 2, 25],
+        [5, 0.8, 3.87e-3, [[1e-10, 1e-10]], 4, 2, 25]
+    )
+    @unpack
+    def test(self, mol_num, j_constant_value, elocalex_value, ph_info, ph_phys_dim, evolve_dt, nsteps):
+        ph_list = [Phonon.simple_phonon(Quantity(omega, 'cm^{-1}'), Quantity(displacement, 'a.u.'), ph_phys_dim)
+                   for omega, displacement in ph_info]
+        mol_list = MolList([Mol(Quantity(elocalex_value, 'a.u.'), ph_list)] * mol_num)
+        j_constant = Quantity(j_constant_value, 'eV')
+        ct1 = ChargeTransport(mol_list, j_constant)
+        ct1.evolve(evolve_dt, nsteps)
+        ct2 = ChargeTransport(mol_list, j_constant)
+        ct2.economic_mode = True
+        ct2.evolve(evolve_dt, nsteps)
+        self.assertTrue(ct1.is_similar(ct2))
+        self.assertAlmostEqual(ct1.get_dump_dict(), ct2.get_dump_dict())
+
+@ddt
+class TestMemoryLimit(unittest.TestCase):
+
+    @data(
+        [5, 0.8, 3.87e-3, [[1345.6738910804488, 16.274571056529368]], 4, 2, 25]
+    )
+    @unpack
+    def test(self, mol_num, j_constant_value, elocalex_value, ph_info, ph_phys_dim, evolve_dt, nsteps):
+        ph_list = [Phonon.simple_phonon(Quantity(omega, 'cm^{-1}'), Quantity(displacement, 'a.u.'), ph_phys_dim)
+                   for omega, displacement in ph_info]
+        mol_list = MolList([Mol(Quantity(elocalex_value, 'a.u.'), ph_list)] * mol_num)
+        j_constant = Quantity(j_constant_value, 'eV')
+        ct1 = ChargeTransport(mol_list, j_constant)
+        ct1.evolve(evolve_dt, nsteps)
+        ct2 = ChargeTransport(mol_list, j_constant)
+        ct2.memory_limit = 2 ** 20 / 6
+        ct2.evolve(evolve_dt, nsteps)
+        self.assertTrue(ct1.is_similar(ct2, rtol=1e-2))
+
+@ddt
 class TestSimilar(unittest.TestCase):
 
     @data(
@@ -51,6 +91,26 @@ class TestSimilar(unittest.TestCase):
         ct2.evolve(evolve_dt + 1e-5, nsteps)
         self.assertTrue(ct1.is_similar(ct2))
 
+@ddt
+class TestEvolve(unittest.TestCase):
+
+    @data(
+        [5, 0.8, 3.87e-3, [[1400, 17]], 4, 2, 50]
+    )
+    @unpack
+    def test(self, mol_num, j_constant_value, elocalex_value, ph_info, ph_phys_dim, evolve_dt, nsteps):
+        ph_list = [Phonon.simple_phonon(Quantity(omega, 'cm^{-1}'), Quantity(displacement, 'a.u.'), ph_phys_dim)
+                   for omega, displacement in ph_info]
+        mol_list = MolList([Mol(Quantity(elocalex_value, 'a.u.'), ph_list)] * mol_num)
+        j_constant = Quantity(j_constant_value, 'eV')
+        ct1 = ChargeTransport(mol_list, j_constant)
+        half_nsteps = nsteps // 2
+        ct1.evolve(evolve_dt, half_nsteps)
+        ct1.evolve(evolve_dt, nsteps - half_nsteps)
+        ct2 = ChargeTransport(mol_list, j_constant)
+        ct2.evolve(evolve_dt, nsteps)
+        self.assertTrue(ct1.is_similar(ct2))
+        self.assertAlmostEqual(ct1.get_dump_dict(), ct2.get_dump_dict())
 
 @ddt
 class TestBandLimitFiniteT(unittest.TestCase):
@@ -86,22 +146,9 @@ class TestHoppingLimitZeroT(unittest.TestCase):
         pass
 
 
-@ddt
-class TestHoppingLimitFiniteT(unittest.TestCase):
-    @data(
-        [13, 0.02, 3.87e-3, [[1345.6738910804488, 16.274571056529368]], 10, 20, 100]
-    )
-    @unpack
-    def test(self, mol_num, j_constant_value, elocalex_value, ph_info, ph_phys_dim, evolve_dt, nsteps):
-        ph_list = [Phonon.simple_phonon(Quantity(omega, 'cm^{-1}'), Quantity(displacement, 'a.u.'), ph_phys_dim)
-                   for omega, displacement in ph_info]
-        mol_list = MolList([Mol(Quantity(elocalex_value, 'a.u.'), ph_list)] * mol_num)
-        j_constant = Quantity(j_constant_value, 'eV')
-        ct = ChargeTransport(mol_list, j_constant, temperature=298).evolve(evolve_dt, nsteps)
-        pass
 
 
 if __name__ == '__main__':
-    suite = unittest.TestLoader().loadTestsFromTestCase(TestBandLimitFiniteT)
+    suite = unittest.TestLoader().loadTestsFromTestCase(TestMemoryLimit)
     unittest.TextTestRunner().run(suite)
     #unittest.main()

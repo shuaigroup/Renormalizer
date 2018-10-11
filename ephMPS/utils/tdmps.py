@@ -15,7 +15,6 @@ from datetime import datetime, timedelta
 
 import numpy as np
 
-
 logger = logging.getLogger(__name__)
 
 
@@ -34,7 +33,7 @@ class TdMpsJob(object):
 
     def __init__(self):
         logger.info('Creating TDMPS job.')
-        logger.info('Step 1/?. Preparing MPS in the intial state.')
+        logger.info('Step 0/?. Preparing MPS in the intial state.')
         init_mps = self.init_mps()
         self.evolve_times = [0]
         self.tdmps_list = [init_mps]
@@ -48,19 +47,28 @@ class TdMpsJob(object):
         """
         raise NotImplementedError
 
-    def _evolve(self, evolve_dt, nsteps):
+    def evolve(self, evolve_dt, nsteps=None, evolve_time=None):
+        if nsteps is None and evolve_time is None:
+            raise ValueError('Must provided either number of steps or target evolution time')
+        if nsteps is None:
+            nsteps = int(evolve_time / evolve_dt) + 1 # round up
+        elif evolve_time is None:
+            evolve_time = nsteps * evolve_dt
+        else:
+            logger.warning('Both nsteps and evolve_time is defined for evolution. The result may be unexpected.')
         target_steps = len(self.tdmps_list) + nsteps - 1
+        target_time = self.evolve_times[-1] + evolve_time
         real_times = [datetime.now()]
-        for i in range(nsteps - 1):
-            step_str = 'step %d/%d' % (len(self.tdmps_list) + 1, target_steps)
-            logger.info('%s begin.' % step_str)
+        for i in range(nsteps):
+            new_evolve_time = self.latest_evolve_time + evolve_dt
+            step_str = 'step {}/{}, time {:.2f}/{}'.format(len(self.tdmps_list), target_steps, new_evolve_time, target_time)
+            logger.info('{} begin.'.format(step_str))
             new_mps = self.evolve_single_step(evolve_dt=evolve_dt)
             new_real_time = datetime.now()
             time_cost = new_real_time - real_times[-1]
             self.tdmps_list.append(new_mps)
-            self.evolve_times.append(self.latest_evolve_time + evolve_dt)
-            logger.info('%s complete, time cost %s, evolve time %g. %s'
-                        % (step_str, time_cost, self.latest_evolve_time, new_mps))
+            self.evolve_times.append(new_evolve_time)
+            logger.info('%s complete, time cost %s. %s' % (step_str, time_cost, new_mps))
             real_times.append(new_real_time)
             if 10 < i:  # otherwise samples too small to make a prediction
                 predict_step, predicted_time = predict_time(real_times, nsteps)
@@ -71,14 +79,7 @@ class TdMpsJob(object):
                 logger.info('Criteria to stop the evolution has met. Stop the evolution')
                 break
         logger.info('%d steps of evolution with delta t = %g complete!' % (nsteps, evolve_dt))
-        logger.info('Time cost: %s' % (real_times[-1] - real_times[0]))
-
-    def evolve(self, evolve_dt, nsteps):
-        try:
-            self._evolve(evolve_dt, nsteps)
-        except:
-            # todo: find common exceptions and state explicitly here
-            logger.exception('An exception occurs during the evolution')
+        logger.info('Normal termination. Time cost: %s' % (real_times[-1] - real_times[0]))
         return self
 
     def evolve_single_step(self, evolve_dt):

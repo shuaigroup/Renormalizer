@@ -21,12 +21,13 @@ class Mol(object):
     def __init__(self, elocalex, ph_list, dipole=None):
         self.elocalex = elocalex.as_au()
         self.dipole = dipole
-        self.nphs = len(ph_list)
-        self.phs = []
+        phs = []
         self.e0 = 0.0
         for ph in ph_list:
-            self.phs.append(ph)
+            phs.append(ph)
             self.e0 += 0.5 * ph.omega[1] ** 2 * ph.dis[1] ** 2 - ph.dis[1] ** 3 * ph.force3rd[1]
+        self.phs = tuple(phs)
+        self.nphs = len(ph_list)
         self.phhop = np.zeros([self.nphs, self.nphs])
 
     def create_phhop(self, phhopmat):

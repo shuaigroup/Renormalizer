@@ -30,9 +30,9 @@ class SpectraExact(SpectraTdMpsJobBase):
             self.shift1 = ex_shift
             self.shift2 = gs_shift
             if self.temperature != 0:
-                assert len(self.mol_list) == 1
+                assert len(h_mpo.mol_list) == 1
         else:
-            assert len(self.mol_list) == 1
+            assert len(h_mpo.mol_list) == 1
             self.space1 = "GS"
             self.space2 = "EX"
             self.shift1 = gs_shift

@@ -4,30 +4,29 @@
 mol num: 33
 
 # local excitation energy
-elocalex: 3.87e-3
+elocalex: 0.0
 elocalex unit: a.u.
 
 # transfer integral
-j constant: 0.8
-j constant unit: eV
+j constant: 1.0
+j constant unit: a.u.
 
 # phonon info
 
 #           omega, displacement
-#           cm-1,   au
-ph modes: [[[1345.6738910804488, 'cm^{-1}'], [16.274571056529368, a.u.]]]
-ph phys dim: 4
+ph modes: [[[1, a.u.], [1, a.u.]]]
+ph phys dim: 10
 
 # temperature
-temperature: 298
+temperature: [0, a.u.]
 
 # simulation parameters
-nsteps: 200
-
-evolve dt: 0.4
+# nsteps: 20
+evolve dt: auto
+evolve time: 6
 
 # output parameters
 output dir: ./
 fname: transport
-comment: linspace 1 mode
+comment: test
 

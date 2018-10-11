@@ -19,6 +19,10 @@ class MolList(object):
     def mol_num(self):
         return len(self.mol_list)
 
+    @property
+    def ph_modes_num(self):
+        return sum([mol.nphs for mol in self.mol_list])
+
     def __getitem__(self, item):
         return self.mol_list[item]
 

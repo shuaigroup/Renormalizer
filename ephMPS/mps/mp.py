@@ -40,6 +40,8 @@ class MatrixProduct(list):
 
         self._prop_method = 'C_RK4'
 
+        self.peak_bytes = 0
+
     def check_left_canonical(self):
         """
         check L-canonical
@@ -414,6 +416,7 @@ class MatrixProduct(list):
         for idx, (mps_term, c_term) in enumerate(zip(termlist, propagation_c)):
             scaletermlist.append(mps_term.scale((-1.0j * evolve_dt) ** idx * c_term))
         new_mps = reduce(lambda mps1, mps2: mps1.add(mps2), scaletermlist)
+        new_mps.peak_bytes = max(new_mps.peak_bytes, new_mps.total_bytes)
         new_mps.canonicalise()
         new_mps.compress()
         if norm is not None:
@@ -425,6 +428,10 @@ class MatrixProduct(list):
 
     def array2mt(self, array):
         return self.mtype(self.dtype(array))
+
+    @property
+    def total_bytes(self):
+        return sum([array.nbytes for array in self])
 
     def __eq__(self, other):
         for m1, m2 in zip(self, other):

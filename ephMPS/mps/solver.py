@@ -14,10 +14,16 @@ from ephMPS.mps.lib import construct_enviro, GetLR, updatemps
 logger = logging.getLogger(__name__)
 
 
-def find_eigen_energy(h_mpo, nexciton, Mmax):
+def find_lowest_energy(h_mpo, nexciton, Mmax):
     mps = Mps.random(h_mpo, nexciton, Mmax)
     energy = optimize_mps(mps, h_mpo, [[20, 0]] * 10)
     return energy.min()
+
+
+def find_highest_energy(h_mpo, nexciton, Mmax):
+    mps = Mps.random(h_mpo, nexciton, Mmax)
+    energy = optimize_mps(mps, h_mpo, [[20, 0]] * 10, inverse=-1.0)
+    return - energy.min()
 
 
 def construct_mps_mpo_2(mol_list, J_matrix, Mmax, nexciton, scheme, rep="star"):

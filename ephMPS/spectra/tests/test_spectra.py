@@ -12,8 +12,7 @@ from ephMPS.spectra import SpectraExact, SpectraOneWayPropZeroT, SpectraTwoWayPr
     SpectraEmiFiniteT, SpectraAbsFiniteT, prepare_init_mps
 from ephMPS.spectra.tests import cur_dir
 from ephMPS.tests import parameter
-from ephMPS.utils import constant
-from ephMPS.utils.quantity import Quantity
+from ephMPS.utils import constant, Quantity
 
 
 @ddt
@@ -35,7 +34,7 @@ class TestZeroExactEmi(unittest.TestCase):
         with open(os.path.join(cur_dir, 'ZeroExactEmi.npy'), 'rb') as fin:
             std = np.load(fin)
 
-        self.assertTrue(np.allclose(exact_emi.autocorr, std, rtol=rtol))
+        self.assertTrue(np.allclose(exact_emi.autocorr[:nsteps], std[:nsteps], rtol=rtol))
 
 
 @ddt
@@ -64,7 +63,7 @@ class TestZeroTCorr(unittest.TestCase):
         zero_t_corr.evolve(dt, nsteps)
         with open(os.path.join(cur_dir, 'ZeroTabs_' + str(algorithm) + str(compress_method) + '.npy'), 'rb') as f:
             std = np.load(f)
-        self.assertTrue(np.allclose(zero_t_corr.autocorr, std, rtol=rtol))
+        self.assertTrue(np.allclose(zero_t_corr.autocorr[:nsteps], std[:nsteps], rtol=rtol))
 
     @data([1, "svd", [[4, 4]], 1e-3],
           [2, "svd", [[4, 4]], 1e-3],
@@ -113,7 +112,7 @@ class TestFiniteTSpectraEmi(unittest.TestCase):
         finite_t_emi.evolve(dt, nsteps)
         with open(os.path.join(cur_dir, 'TTemi_' + str(algorithm) + str(compress_method) + ".npy"), 'rb') as fin:
             std = np.load(fin)
-        self.assertTrue(np.allclose(finite_t_emi.autocorr, std[0:nsteps], rtol=rtol))
+        self.assertTrue(np.allclose(finite_t_emi.autocorr[:nsteps], std[:nsteps], rtol=rtol))
 
 
 @ddt
@@ -136,7 +135,7 @@ class TestFiniteTSpectraAbs(unittest.TestCase):
         finite_t_abs.evolve(dt, nsteps)
         with open(os.path.join(cur_dir, "TTabs_" + str(compress_method) + ".npy"), 'rb') as fin:
             std = np.load(fin)
-        self.assertTrue(np.allclose(finite_t_abs.autocorr, std[0:nsteps], rtol=rtol))
+        self.assertTrue(np.allclose(finite_t_abs.autocorr[:nsteps], std[:nsteps], rtol=rtol))
 
 
 if __name__ == "__main__":

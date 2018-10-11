@@ -13,7 +13,7 @@ import numpy as np
 from ephMPS.mps import solver
 from ephMPS.mps.mpo import Mpo
 from ephMPS.mps.mps import Mps
-from ephMPS.utils import TdMpsJob, constant
+from ephMPS.utils import TdMpsJob, constant, sizeof_fmt
 from ephMPS.mps.matrix import MatrixState, DensityMatrixOp
 
 logger = logging.getLogger(__name__)
@@ -25,7 +25,7 @@ def calc_reduced_density_matrix(mp):
     if mp.mtype == DensityMatrixOp:
         density_matrix_product = mp.apply(mp.conj_trans())
         #density_matrix_product = mp
-    elif mp.mtype == MatrixState:
+    elif mp.mtype == MatrixState:  # this step is memory consuming
         density_matrix_product = Mpo()
         density_matrix_product.mtype = DensityMatrixOp
         # todo: not elegant! figure out a better way to deal with data type
@@ -40,6 +40,7 @@ def calc_reduced_density_matrix(mp):
         density_matrix_product.build_empty_qn()
     else:
         assert False
+    mp.peak_bytes = max(mp.peak_bytes, density_matrix_product.total_bytes)
     return density_matrix_product.get_reduced_density_matrix()
 
 
@@ -54,6 +55,8 @@ class ChargeTransport(TdMpsJob):
         self.reduced_density_matrices = [calc_reduced_density_matrix(self.tdmps_list[0])]
         self.custom_dump_info = OrderedDict()
         self.stop_at_edge = False
+        self.memory_limit = None
+        self.economic_mode = False   # if set True, only save full information of the latest mps and discard previous ones
 
     @property
     def mol_num(self):
@@ -66,7 +69,6 @@ class ChargeTransport(TdMpsJob):
     def init_mps(self):
         j_matrix = construct_j_matrix(self.mol_num, self.j_constant)
         self.mpo = Mpo(self.mol_list, j_matrix, scheme=3)
-        logger.debug('Energy of the Hamiltonian: %g' % solver.find_eigen_energy(self.mpo, 1, 20))
         if self.temperature == 0:
             gs_mp = Mps.gs(self.mol_list, max_entangled=False)
         else:
@@ -80,12 +82,21 @@ class ChargeTransport(TdMpsJob):
         return init_mp
 
     def evolve_single_step(self, evolve_dt):
-        new_mps = self.latest_mps.evolve(self.mpo, evolve_dt, norm=1.0)
+        old_mps = self.latest_mps
+        new_mps = old_mps.evolve(self.mpo, evolve_dt, norm=1.0)
+        if self.memory_limit is not None:
+            while self.memory_limit < new_mps.peak_bytes:
+                old_mps.threshold *= 1.2
+                logger.debug('Set threshold to {:g}'.format(old_mps.threshold))
+                old_mps.peak_bytes = 0
+                new_mps = old_mps.evolve(self.mpo, evolve_dt, norm=1.0)
+        if self.economic_mode:
+            old_mps.clear_memory()
         new_energy = new_mps.expectation(self.mpo)
         self.energies.append(new_energy)
-        self.reduced_density_matrices.append(calc_reduced_density_matrix(new_mps))
         logger.info('Energy of the new mps: %g, %.5f%% of initial energy preserved'
                     % (new_energy, self.latest_energy_ratio * 100))
+        self.reduced_density_matrices.append(calc_reduced_density_matrix(new_mps))
         return new_mps
 
     def stop_evolve_criteria(self):
@@ -97,6 +108,7 @@ class ChargeTransport(TdMpsJob):
         dump_dict['mol list'] = self.mol_list.to_dict()
         dump_dict['J constant'] = str(self.j_constant)
         dump_dict['total steps'] = len(self.tdmps_list)
+        dump_dict['total time'] = self.evolve_times[-1]
         dump_dict['diffusion'] = self.latest_mps.r_square / self.evolve_times[-1]
         dump_dict['delta energy (%)'] = (self.latest_energy_ratio - 1) * 100
         dump_dict['thresholds'] = [tdmps.threshold for tdmps in self.tdmps_list]
@@ -113,11 +125,11 @@ class ChargeTransport(TdMpsJob):
 
     @property
     def initial_energy(self):
-        return self.energies[0]
+        return float(self.energies[0])
 
     @property
     def latest_energy(self):
-        return self.energies[-1]
+        return float(self.energies[-1])
 
     @property
     def latest_energy_ratio(self):
@@ -145,15 +157,15 @@ class ChargeTransport(TdMpsJob):
         def my_assert(condition):
             if not condition:
                 raise FalseFlag
-        my_allclose = partial(np.allclose, rtol=rtol)
+        all_close_with_tol = partial(np.allclose, rtol=rtol)
         try:
             my_assert(len(self.tdmps_list) == len(other.tdmps_list))
-            my_assert(my_allclose(self.evolve_times, other.evolve_times))
-            my_assert(my_allclose(self.r_square_array, other.r_square_array))
-            my_assert(my_allclose(self.energies, other.energies))
-            my_assert(my_allclose(self.e_occupations_array, other.e_occupations_array))
-            my_assert(my_allclose(self.ph_occupations_array, other.ph_occupations_array))
-            my_assert(my_allclose(self.coherent_length_array, other.coherent_length_array))
+            my_assert(all_close_with_tol(self.evolve_times, other.evolve_times))
+            my_assert(all_close_with_tol(self.r_square_array, other.r_square_array))
+            my_assert(all_close_with_tol(self.energies, other.energies))
+            my_assert(np.allclose(self.e_occupations_array, other.e_occupations_array, atol=1e-3))
+            my_assert(np.allclose(self.ph_occupations_array, other.ph_occupations_array, atol=1e-3))
+            my_assert(all_close_with_tol(self.coherent_length_array, other.coherent_length_array))
         except FalseFlag:
             return False
         else:
