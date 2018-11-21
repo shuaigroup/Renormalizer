@@ -29,7 +29,7 @@ def construct_hybrid_Ham(mol, J, MPS, WFN, debug=False):
     # many-body electronic part 
     A_el = np.zeros((nmols))
     for imol in xrange(nmols):
-        MPO, MPOdim = tMPS.construct_onsiteMPO(mol,pbond,"a^\dagger a",dipole=False,sitelist=[imol])
+        MPO, MPOdim = MPSsolver.construct_onsiteMPO(mol,pbond,"a^\dagger a",dipole=False,sitelist=[imol])
         A_el[imol] = mpslib.dot(mpslib.conj(MPS),mpslib.mapply(MPO,MPS)).real
     print "dmrg_occ", A_el
     
@@ -204,7 +204,7 @@ def FiniteT_spectra_TDDMRG_TDH(spectratype, T, mol, J, nsteps, dt, insteps, pbon
 
     assert spectratype in ["abs","emi"]
 
-    dipoleMPO, dipoleMPOdim = tMPS.construct_onsiteMPO(mol, pbond, "a^\dagger", dipole=True, QNargs=QNargs)
+    dipoleMPO, dipoleMPOdim = MPSsolver.construct_onsiteMPO(mol, pbond, "a^\dagger", dipole=True, QNargs=QNargs)
     
     # construct initial thermal equilibrium density matrix and apply dipole matrix
     if spectratype == "abs":

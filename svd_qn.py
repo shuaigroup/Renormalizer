@@ -147,8 +147,8 @@ def blockrecover(indices, U, dim):
 
 def QN_construct(QN, isite, fsite, tot):
     '''
-    Quantum number has a boundary side, left hand of the side is L system qn,
-    right hand of the side is R system qn, the sum of quantum number of L system
+    Quantum number has a boundary site, left hand of the site is L system qn,
+    right hand of the site is R system qn, the sum of quantum number of L system
     and R system is tot.
     '''
     QNnew = [i[:] for i in QN] 

@@ -61,7 +61,7 @@ class Test_TDH(unittest.TestCase):
         # print occupation
         dmrg_occ = []
         for i in [0,1,2]:
-            MPO, MPOdim = tMPS.construct_onsiteMPO(mol,pbond,"a^\dagger a",dipole=False,sitelist=[i])
+            MPO, MPOdim = MPSsolver.construct_onsiteMPO(mol,pbond,"a^\dagger a",dipole=False,sitelist=[i])
             dmrg_occ.append(mpslib.dot(MPS, mpslib.mapply(MPO, MPS)))
         print "dmrg_occ", dmrg_occ
 

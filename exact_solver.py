@@ -526,25 +526,17 @@ def FT_time_autocorr(T, dipolemat, c1, c2, e1, e2, mode, nsteps, dt, nset=1):
     return autocorr, E1, E2
 
 # only for debug reason
-def runge_kutta_vs_exact(Hmat, e, c, c0, nsteps, dt, prop_method="C_RK4"):
+def runge_kutta_vs_exact(Hmat, e, c0, nsteps, dt, prop_method="C_RK4",store_freq=500):
     '''
     e, c are the eigenvalue and eigenvector of Hmat, c0 is normalized to 1
     '''
-    # exact
-    #e, c = scipy.linalg.eigh(a=Hmat)
-    c0_project = c.T.dot(c0)
-    
     # runge-kutta
     from ephMPS import RK
     tableau =  RK.runge_kutta_explicit_tableau(prop_method)
     propagation_c = RK.runge_kutta_explicit_coefficient(tableau)
 
-    t = 0.0
-    distance = []
+    ct_rk_list = []
     for istep in xrange(nsteps):
-        t = istep * dt
-        ct_exact = c0_project*np.exp(-1.0j*(e-e[0])*t)
-        ct_exact = ct_exact.dot(c.T)
 
         if istep == 0:
             ct_rk = c0
@@ -560,53 +552,52 @@ def runge_kutta_vs_exact(Hmat, e, c, c0, nsteps, dt, prop_method="C_RK4"):
             ct_rk = ct_rk_new
             ct_rk = ct_rk / np.linalg.norm(ct_rk)
         
-        distance.append(np.linalg.norm(ct_rk-ct_exact))
+        ct_rk_list.append(ct_rk)
 
-    return distance
+        if (istep+1) % store_freq == 0:
+            autocorr_store(ct_rk_list, istep+1, index=(istep+1), freq=store_freq)
+            ct_rk_list = []            
+
+    return ct_rk_list
 
 
 # only for debug reason
-def MPS_vs_exact(e, c, c0, nsteps, dt, pbond, trunc, lookuptable,\
-        prop_method="C_RK4",scheme=1):
-    # exact
+def MPS_vs_exact(e, c, c0, nsteps, dt, pbond, trunc, lookuptable, scheme=1, store_freq=500):
     c0 /= np.linalg.norm(c0)
-    c0_project = c.T.dot(c0)
     
-    # runge-kutta
-    from ephMPS import RK
-    tableau =  RK.runge_kutta_explicit_tableau(prop_method)
-    propagation_c = RK.runge_kutta_explicit_coefficient(tableau)
+    # exact solver
+    # c0_project = c.T.dot(c0)
+    # ct_exact = c0_project*np.exp(-1.0j*(e-e[0])*t)
     
     from ephMPS import exact2mps
     from ephMPS.lib import mps as mpslib
 
     t = 0.0
-    distance = []
-    change = []
-    for istep in xrange(nsteps):
-        t = istep * dt
-        ct_exact = c0_project*np.exp(-1.0j*(e-e[0])*t)
-        ct_exact = ct_exact.dot(c.T)
+    ct_mps = c0
+    ct_mps_list = [ct_mps]
+    M = []
+    
+    for istep in xrange(1, nsteps):
+            
+        ct_mps = c.T.dot(ct_mps)
+        ct_mps = ct_mps*np.exp(-1.0j*(e-e[0])*dt)
+        ct_mps = ct_mps.dot(c.T)
         
-        if istep == 0:
-            ct_mps = c0
-        else:
-            
-            ct_mps = c.T.dot(ct_mps)
-            ct_mps = ct_mps*np.exp(-1.0j*(e-e[0])*dt)
-            ct_mps = ct_mps.dot(c.T)
-            
-            ct_mps_old = ct_mps
-            
-            mpsfci = exact2mps.exactfci2mpsfci(lookuptable, ct_mps, pbond)
-            MPS = fci.fci_mps(mpsfci,trunc=trunc,pbond=pbond,normalize=1.0,scheme=scheme)
-            ct_mps = mpslib.mps_fci(MPS,pbond=pbond,direct=True)
-            ct_mps = exact2mps.mpsfci2exactfci(lookuptable, ct_mps, len(c0))
-            # normalize
-            ct_mps = ct_mps / np.linalg.norm(ct_mps)
-            change.append(np.linalg.norm(ct_mps-ct_mps_old))
-            #print "change", np.linalg.norm(ct_mps-ct_mps_old)
-        distance.append(np.linalg.norm(ct_mps-ct_exact))
-
-    return distance,change
+        mpsfci = exact2mps.exactfci2mpsfci(lookuptable, ct_mps, pbond)
+        MPS = fci.fci_mps(mpsfci,trunc=trunc,pbond=pbond,normalize=1.0,scheme=scheme)
+        # the largest bond dimension
+        M.append(np.amax([mps.shape[0] for mps in MPS]))
+        ct_mps = mpslib.mps_fci(MPS,pbond=pbond,direct=True)
+        ct_mps = exact2mps.mpsfci2exactfci(lookuptable, ct_mps, len(c0))
+        # normalize
+        ct_mps = ct_mps / np.linalg.norm(ct_mps)
+        
+        ct_mps_list.append(ct_mps)
+        
+        if (istep+1) % store_freq == 0:
+            autocorr_store(ct_mps_list, istep+1, index=(istep+1), freq=store_freq)
+            autocorr_store(M, istep+1, index="M", freq=store_freq)
+            ct_mps_list = []            
+        
+    return np.array(ct_mps_list), np.array(M)
 

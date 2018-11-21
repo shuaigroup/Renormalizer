@@ -759,6 +759,23 @@ def trace(mpo):
     return np.trace(val)#[0,0]
 
 
+def transferMat(mps, mpsconj, domain, siteidx):
+    '''
+    calculate the transfer matrix from the left hand or the right hand
+    '''
+    val = np.ones([1,1])
+    if domain == "R":
+        for imps in range(len(mps)-1,siteidx-1,-1):
+            val = np.tensordot(mpsconj[imps], val, axes=(2,0))
+            val = np.tensordot(val, mps[imps], axes=([1,2],[1,2]))
+    elif domain == "L":
+        for imps in range(0,siteidx+1,1):
+            val = np.tensordot(mpsconj[imps], val, axes=(0,0))
+            val = np.tensordot(val, mps[imps], axes=([0,2],[1,0]))
+        
+    return val
+
+
 def MPSdtype_convert(MPS, QNargs=None):
     '''
     float64 to complex128

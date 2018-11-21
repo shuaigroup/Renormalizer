@@ -65,7 +65,7 @@ class Test_force3rd(unittest.TestCase):
         for ibra in xrange(pbond[0]):
             HMPO[0][0,ibra,ibra,0] -=  elocalex 
         
-        dipoleMPO, dipoleMPOdim = tMPS.construct_onsiteMPO(mol, pbond, opera, dipole=True)
+        dipoleMPO, dipoleMPOdim = MPSsolver.construct_onsiteMPO(mol, pbond, opera, dipole=True)
         nsteps = 10000
         dt = 30.0
         print "energy dE", 1.0/dt/ nsteps / constant.cm2au * 2.0 * np.pi

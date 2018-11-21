@@ -7,9 +7,10 @@ construct the operator matrix in the MPS sweep procedure
 
 import numpy as np
 from lib import tensor as tensorlib
+import os
 
-
-def GetLR(domain, siteidx, MPS, MPSconj, MPO, itensor=np.ones((1,1,1)), method="Scratch"):
+def GetLR(domain, siteidx, MPS, MPSconj, MPO, itensor=np.ones((1,1,1)),\
+        method="Scratch", prefix=""):
     
     '''
     get the L/R Hamiltonian matrix at a random site(siteidx): 3d tensor
@@ -35,10 +36,10 @@ def GetLR(domain, siteidx, MPS, MPSconj, MPO, itensor=np.ones((1,1,1)), method="
         for imps in sitelist:
             itensor = addone(itensor, MPS, MPSconj, MPO, imps, domain)
     elif method == "Enviro" :
-        itensor = Enviro_read(domain, siteidx)
+        itensor = Enviro_read(domain, siteidx,prefix=prefix)
     elif method == "System" :
         itensor = addone(itensor, MPS, MPSconj, MPO, siteidx, domain)
-        Enviro_write(domain,siteidx,itensor)
+        Enviro_write(domain,siteidx,itensor,prefix=prefix)
     
     return itensor
 
@@ -108,7 +109,7 @@ def addone(intensor, MPS, MPSconj, MPO, isite, domain):
     return outtensor
 
 
-def construct_enviro(MPS, MPSconj, MPO, domain):
+def construct_enviro(MPS, MPSconj, MPO, domain, prefix=""):
     tensor = np.ones((1,1,1))
     assert domain in ["L", "R", "l", "r"]
     if domain == "L" or domain == "l":
@@ -118,14 +119,23 @@ def construct_enviro(MPS, MPSconj, MPO, domain):
 
     for idx in xrange(start, end, inc):
         tensor = addone(tensor, MPS, MPSconj, MPO, idx, domain)
-        Enviro_write(domain,idx,tensor)    
+        Enviro_write(domain,idx,tensor,prefix=prefix)    
 
 
-def Enviro_write(domain, siteidx, tensor):
-    with open(domain+str(siteidx)+".npy", 'wb') as f:
+def Enviro_write(domain, siteidx, tensor, prefix=""):
+    with open(prefix+domain+str(siteidx)+".npy", 'wb') as f:
         np.save(f,tensor)
 
 
-def Enviro_read(domain, siteidx):
-    with open(domain + str(siteidx)+".npy", 'rb') as f:
+def Enviro_read(domain, siteidx, prefix=""):
+    with open(prefix+domain + str(siteidx)+".npy", 'rb') as f:
         return np.load(f)
+
+
+def Enviro_check(domain, siteidxlist, prefix=""):
+    exist = True
+    for siteidx in siteidxlist:
+        fname = prefix+domain+str(siteidx)+".npy"
+        exist *= os.path.isfile(fname)
+        
+    return exist

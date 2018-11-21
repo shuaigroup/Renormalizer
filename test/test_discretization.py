@@ -68,7 +68,7 @@ class Test_discretization(unittest.TestCase):
         QNargs = [ephtable, False]
         HMPO = [HMPO, HMPOQN, HMPOQNidx, HMPOQNtot]
         
-        dipoleMPO, dipoleMPOdim = tMPS.construct_onsiteMPO(mol, pbond, \
+        dipoleMPO, dipoleMPOdim = MPSsolver.construct_onsiteMPO(mol, pbond, \
                 "a^\dagger", dipole=True, QNargs=QNargs)
         iMPS = mpslib.MPSdtype_convert(iMPS, QNargs=QNargs)
         
@@ -129,7 +129,7 @@ class Test_discretization(unittest.TestCase):
         QNargs = [ephtable, False]
         HMPO = [HMPO, HMPOQN, HMPOQNidx, HMPOQNtot]
         
-        dipoleMPO, dipoleMPOdim = tMPS.construct_onsiteMPO(mol, pbond,
+        dipoleMPO, dipoleMPOdim = MPSsolver.construct_onsiteMPO(mol, pbond,
                 "a^\dagger", dipole=True, QNargs=QNargs)
         iMPS = mpslib.MPSdtype_convert(iMPS, QNargs=QNargs)
         

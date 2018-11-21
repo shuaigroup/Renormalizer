@@ -458,3 +458,9 @@ def construct_onsiteO(mol,opera,dipole=False,sitelist=None):
     return O
         
 
+def construct_intersiteO(mol, idxmol, jdxmol):
+    '''
+    construct the electronic inter site operator \sum_i a_i^\dagger a_j
+    '''
+    pass
+

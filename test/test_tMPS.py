@@ -31,7 +31,7 @@ class Test_tMPS(unittest.TestCase):
         for ibra in xrange(pbond[0]):
             HMPO[0][0,ibra,ibra,0] -=  2.28614053/constant.au2ev
         
-        dipoleMPO, dipoleMPOdim = tMPS.construct_onsiteMPO(mol, pbond, "a", dipole=True)
+        dipoleMPO, dipoleMPOdim = MPSsolver.construct_onsiteMPO(mol, pbond, "a", dipole=True)
         nsteps = 3000
         dt = 30.0
         temperature = 0
@@ -81,7 +81,7 @@ class Test_tMPS(unittest.TestCase):
         else:
             QNargs = None
 
-        dipoleMPO, dipoleMPOdim = tMPS.construct_onsiteMPO(mol, pbond,
+        dipoleMPO, dipoleMPOdim = MPSsolver.construct_onsiteMPO(mol, pbond,
                 "a^\dagger", dipole=True, QNargs=QNargs)
         iMPS = mpslib.MPSdtype_convert(iMPS, QNargs=QNargs)
         
@@ -134,7 +134,7 @@ class Test_tMPS(unittest.TestCase):
         else:
             QNargs = None
 
-        dipoleMPO, dipoleMPOdim = tMPS.construct_onsiteMPO(mol, pbond,
+        dipoleMPO, dipoleMPOdim = MPSsolver.construct_onsiteMPO(mol, pbond,
                 "a^\dagger", dipole=True, QNargs=QNargs)
         iMPS = mpslib.MPSdtype_convert(iMPS, QNargs=QNargs)
 
@@ -162,7 +162,7 @@ class Test_tMPS(unittest.TestCase):
         else:
             QNargs3 = None
         
-        dipoleMPO, dipoleMPOdim = tMPS.construct_onsiteMPO(mol, pbond,
+        dipoleMPO, dipoleMPOdim = MPSsolver.construct_onsiteMPO(mol, pbond,
                 "a^\dagger", dipole=True, QNargs=QNargs3)
 
         iMPS3 = mpslib.MPSdtype_convert(iMPS3, QNargs=QNargs)
@@ -204,7 +204,7 @@ class Test_tMPS(unittest.TestCase):
         else:
             QNargs = None
         
-        dipoleMPO, dipoleMPOdim = tMPS.construct_onsiteMPO(mol, pbond,
+        dipoleMPO, dipoleMPOdim = MPSsolver.construct_onsiteMPO(mol, pbond,
                 "a", dipole=True, QNargs=QNargs)
         nsteps = 30
         dt = 30.0
@@ -248,7 +248,7 @@ class Test_tMPS(unittest.TestCase):
             QNargs = None
         
         
-        dipoleMPO, dipoleMPOdim = tMPS.construct_onsiteMPO(mol, pbond,
+        dipoleMPO, dipoleMPOdim = MPSsolver.construct_onsiteMPO(mol, pbond,
                 "a^\dagger", dipole=True, QNargs=QNargs)
         GSMPS, GSMPSdim = tMPS.Max_Entangled_GS_MPS(mol, pbond, QNargs=QNargs)
         GSMPO = tMPS.hilbert_to_liouville(GSMPS, QNargs=QNargs)
@@ -284,7 +284,7 @@ class Test_tMPS(unittest.TestCase):
         else:
             QNargs = None
         
-        dipoleMPO, dipoleMPOdim = tMPS.construct_onsiteMPO(mol, pbond, "a", dipole=True, QNargs=QNargs)
+        dipoleMPO, dipoleMPOdim = MPSsolver.construct_onsiteMPO(mol, pbond, "a", dipole=True, QNargs=QNargs)
         nsteps = 30
         dt = 30.0
         EXMPO, EXMPOdim = tMPS.Max_Entangled_EX_MPO(mol, pbond, norm=True, QNargs=QNargs)
@@ -318,7 +318,7 @@ class Test_tMPS(unittest.TestCase):
         else:
             QNargs = None
         
-        dipoleMPO, dipoleMPOdim = tMPS.construct_onsiteMPO(mol, pbond,
+        dipoleMPO, dipoleMPOdim = MPSsolver.construct_onsiteMPO(mol, pbond,
                 "a^\dagger", dipole=True, QNargs=QNargs)
         GSMPS, GSMPSdim = tMPS.Max_Entangled_GS_MPS(mol, pbond, QNargs=QNargs)
         GSMPO = tMPS.hilbert_to_liouville(GSMPS, QNargs=QNargs)
@@ -357,7 +357,7 @@ class Test_tMPS(unittest.TestCase):
         MPSsolver.optimization(MPS, MPSdim, MPSQN, HMPO, HMPOdim, ephtable, pbond,\
                 nexciton, procedure, method="2site")
         
-        dipoleMPO, dipoleMPOdim = tMPS.construct_onsiteMPO(mol, pbond, "a^\dagger", dipole=True)
+        dipoleMPO, dipoleMPOdim = MPSsolver.construct_onsiteMPO(mol, pbond, "a^\dagger", dipole=True)
 
         nsteps = 1000
         dt = 30.0

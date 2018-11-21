@@ -17,7 +17,10 @@ from elementop import *
 import constant
 from ephMPS import RK
 from ephMPS.utils.utils import *
-
+from ephMPS import mpompsmat
+from lib import tensor as tensorlib
+import numpy.linalg
+import scipy.integrate
 def Exact_Spectra(spectratype, mol, pbond, iMPS, dipoleMPO, nsteps, dt,\
         temperature, GSshift=0.0, EXshift=0.0):
     '''
@@ -230,7 +233,7 @@ def wfnPropagation(iMPS, HMPO, nsteps, dt, ephtable, thresh=0, \
 
 def ZeroTCorr(iMPS, HMPO, dipoleMPO, nsteps, dt, ephtable, thresh=0, \
         cleanexciton=None, algorithm=1, prop_method="C_RK4",\
-        compress_method="svd", QNargs=None, approxeiHt=None):
+        compress_method="svd", QNargs=None, approxeiHt=None, scheme="P&C"):
     '''
     the bra part e^iEt is negected to reduce the oscillation
     algorithm:
@@ -250,7 +253,7 @@ def ZeroTCorr(iMPS, HMPO, dipoleMPO, nsteps, dt, ephtable, thresh=0, \
     factor = np.sqrt(np.absolute(factor))
     print "factor",factor
     AketMPS = mpslib.scale(AketMPS, 1./factor, QNargs=QNargs)
-
+    
     if compress_method == "variational":
         AketMPS = mpslib.canonicalise(AketMPS, 'l', QNargs=QNargs)
     AbraMPS = mpslib.add(AketMPS,None, QNargs=QNargs)
@@ -276,16 +279,19 @@ def ZeroTCorr(iMPS, HMPO, dipoleMPO, nsteps, dt, ephtable, thresh=0, \
             if algorithm == 1:
                 AketMPS = tMPS(AketMPS, HMPO, dt, ephtable, propagation_c, thresh=thresh, \
                     cleanexciton=cleanexciton, compress_method=compress_method, \
-                    QNargs=QNargs, approxeiHt=approxeiHpt, normalize=1.)
+                    QNargs=QNargs, approxeiHt=approxeiHpt, normalize=1., \
+                    scheme=scheme, prefix=scheme)
             if algorithm == 2:
                 if istep % 2 == 1:
                     AketMPS = tMPS(AketMPS, HMPO, dt, ephtable, propagation_c, thresh=thresh, \
                         cleanexciton=cleanexciton, compress_method=compress_method, QNargs=QNargs,\
-                        approxeiHt=approxeiHpt, normalize=1.)
+                        approxeiHt=approxeiHpt, normalize=1., scheme=scheme, \
+                        prefix=scheme+"1")
                 else:
                     AbraMPS = tMPS(AbraMPS, HMPO, -dt, ephtable, propagation_c, thresh=thresh, \
                         cleanexciton=cleanexciton, compress_method=compress_method, QNargs=QNargs,\
-                        approxeiHt=approxeiHmt, normalize=1.)
+                        approxeiHt=approxeiHmt, normalize=1., scheme=scheme,\
+                        prefix=scheme+"2")
         ft = mpslib.dot(mpslib.conj(AbraMPS,QNargs=QNargs),AketMPS, QNargs=QNargs)*factor**2
         wfn_store(AbraMPS, istep, str(dt)+str(thresh)+"AbraMPS.pkl")
         wfn_store(AketMPS, istep, str(dt)+str(thresh)+"AketMPS.pkl")
@@ -356,60 +362,399 @@ def ML_tMPS():
 
 def tMPS(MPS, MPO, dt, ephtable, propagation_c, thresh=0, \
         cleanexciton=None, compress_method="svd", QNargs=None, approxeiHt=None,\
-        normalize=None, swap=False):
+        normalize=None, swap=False, scheme="P&C",prefix=""):
     '''
         core function to do time propagation
         swap = False  e^-iHt MPO
         swap = True   MPO * e^-iHt
     '''
-    if approxeiHt is None:
 
-        termlist = [MPS]
-        for iterm in xrange(len(propagation_c)-1):
-            # when using variational method, the input MPS is L-canonicalise
-            # (in principle doesn't matter whether L-canonicalise, in practice, about
-            # the initial guess of the compress wfn)
-            if swap == False:
-                termlist.append(mpslib.contract(MPO, termlist[iterm], 'l', thresh, compress_method=compress_method, QNargs=QNargs))
-            else:    
-                termlist.append(mpslib.contract(termlist[iterm], MPO, 'l', thresh, compress_method=compress_method, QNargs=QNargs))
+    if scheme == "P&C":
+        # propagate and compress
         
-        scaletermlist = []
-        for iterm in xrange(len(propagation_c)):
-            scaletermlist.append(mpslib.scale(termlist[iterm],
-                (-1.0j*dt)**iterm*propagation_c[iterm], QNargs=QNargs))
+        if approxeiHt is None:
 
-        MPSnew = scaletermlist[0]
-        for iterm in xrange(1,len(propagation_c)):
-            MPSnew = mpslib.add(MPSnew, scaletermlist[iterm], QNargs=QNargs)
-    
-        MPSnew = mpslib.canonicalise(MPSnew, 'r', QNargs=QNargs)
-        MPSnew = mpslib.compress(MPSnew, 'r', trunc=thresh, QNargs=QNargs, normalize=normalize)
-    else:
-        if swap == False:
-            MPSnew = mpslib.contract(approxeiHt, MPS, 'r', thresh, compress_method=compress_method, QNargs=QNargs)
-        else: 
-            MPSnew = mpslib.contract(MPS, approxeiHt, 'r', thresh, compress_method=compress_method, QNargs=QNargs)
+            termlist = [MPS]
+            for iterm in xrange(len(propagation_c)-1):
+                # when using variational method, the input MPS is L-canonicalise
+                # (in principle doesn't matter whether L-canonicalise, in practice, about
+                # the initial guess of the compress wfn)
+                if swap == False:
+                    termlist.append(mpslib.contract(MPO, termlist[iterm], 'l', thresh, compress_method=compress_method, QNargs=QNargs))
+                else:    
+                    termlist.append(mpslib.contract(termlist[iterm], MPO, 'l', thresh, compress_method=compress_method, QNargs=QNargs))
+            
+            scaletermlist = []
+            for iterm in xrange(len(propagation_c)):
+                scaletermlist.append(mpslib.scale(termlist[iterm],
+                    (-1.0j*dt)**iterm*propagation_c[iterm], QNargs=QNargs))
 
-    if (cleanexciton is not None) and (QNargs is None):
-        # clean the MPS according to quantum number constrain
-        MPSnew = MPSsolver.clean_MPS('R', MPSnew, ephtable, cleanexciton)
-        # compress the clean MPS
-        MPSnew = mpslib.compress(MPSnew, 'r', trunc=thresh)
+            MPSnew = scaletermlist[0]
+            for iterm in xrange(1,len(propagation_c)):
+                MPSnew = mpslib.add(MPSnew, scaletermlist[iterm], QNargs=QNargs)
+        
+            MPSnew = mpslib.canonicalise(MPSnew, 'r', QNargs=QNargs)
+            MPSnew = mpslib.compress(MPSnew, 'r', trunc=thresh, QNargs=QNargs, normalize=normalize)
+        else:
+            if swap == False:
+                MPSnew = mpslib.contract(approxeiHt, MPS, 'r', thresh, compress_method=compress_method, QNargs=QNargs)
+            else: 
+                MPSnew = mpslib.contract(MPS, approxeiHt, 'r', thresh, compress_method=compress_method, QNargs=QNargs)
+
+        if (cleanexciton is not None) and (QNargs is None):
+            # clean the MPS according to quantum number constrain
+            MPSnew = MPSsolver.clean_MPS('R', MPSnew, ephtable, cleanexciton)
+            # compress the clean MPS
+            MPSnew = mpslib.compress(MPSnew, 'r', trunc=thresh)
+        
+        if QNargs is None:
+            print "tMPS dim:", [mps.shape[0] for mps in MPSnew] + [1]
+        else:
+            print "tMPS dim:", [mps.shape[0] for mps in MPSnew[0]] + [1]
     
-    if QNargs is None:
+    elif scheme == "TDVP_PS":
+        # TDVP projector splitting
+        MPSnew = []
+        
+        # make sure the input MPS is L-orthogonal
+        # in the spectrum calculation set compress_method = "variational"
+        MPS =  mpslib.canonicalise(MPS,"l")
+        nMPS = len(MPS)
+        # construct the environment matrix
+        if mpompsmat.Enviro_check("L", range(nMPS-1), prefix=prefix) == False:
+            print "check_Enviro False"
+            mpompsmat.construct_enviro(MPS, mpslib.conj(MPS), MPO, "L", prefix=prefix)
+        
+        MPSold = copy.deepcopy(MPS)
+        # initial matrix   
+        ltensor = np.ones((1,1,1))
+        rtensor = np.ones((1,1,1))
+        
+        loop = [['R',i] for i in xrange(nMPS-1,-1,-1)] + [['L',i] for i in xrange(0,nMPS)]
+        for system, imps in loop:
+            if system == "R":
+                lmethod, rmethod = "Enviro", "System"
+                ltensor = mpompsmat.GetLR('L', imps-1, MPS, mpslib.conj(MPS), MPO, \
+                        itensor=ltensor, method=lmethod, prefix=prefix)
+            else:
+                lmethod, rmethod = "System", "Enviro"
+                rtensor = mpompsmat.GetLR('R', imps+1, MPS, mpslib.conj(MPS), MPO, \
+                        itensor=rtensor, method=rmethod, prefix=prefix)
+            
+            def hop(mps):
+                #S-a   l-S
+                #    d  
+                #O-b-O-f-O
+                #    e 
+                #S-c   k-S
+                
+                if mps.ndim == 3:
+                    path = [([0, 1],"abc, cek -> abek"),\
+                            ([2, 0],"abek, bdef -> akdf"),\
+                            ([1, 0],"akdf, lfk -> adl")]
+                    HC = tensorlib.multi_tensor_contract(path, ltensor,
+                            mps, MPO[imps], rtensor)
+                
+                #S-a   l-S
+                #    d  
+                #O-b-O-f-O
+                #    e 
+                #S-c   k-S
+                #    g   
+                elif mps.ndim == 4:
+                    path = [([0, 1],"abc, bdef -> acdef"),\
+                            ([2, 0],"acdef, cegk -> adfgk"),\
+                            ([1, 0],"adfgk, lfk -> adgl")]
+                    HC = tensorlib.multi_tensor_contract(path, ltensor,
+                            MPO[imps], mps, rtensor)
+                return HC
+            
+            def hop_svt(mps):
+                #S-a   l-S
+                #      
+                #O-b - b-O
+                #     
+                #S-c   k-S
+                
+                path = [([0, 1],"abc, ck -> abk"),\
+                        ([1, 0],"abk, lbk -> al")]
+                HC = tensorlib.multi_tensor_contract(path, ltensor,
+                        mps, rtensor)
+                return HC
+            
+            shape = list(MPS[imps].shape)
+            
+            def func(t, y):
+                return hop(y.reshape(shape)).ravel()/1.0j
+            sol = scipy.integrate.solve_ivp(func, (0,dt/2.), MPS[imps].ravel(), method="RK45")
+            print "nsteps for MPS[imps]:",len(sol.t)
+            mps_t = sol.y[:,-1].reshape(shape)
+            
+            if system == "L" and imps != len(MPS)-1:
+                # updated imps site
+                u,vt = scipy.linalg.qr(mps_t.reshape(-1,shape[-1]), mode="economic")
+                MPS[imps] = u.reshape(shape[:-1]+[-1])
+
+                ltensor = mpompsmat.GetLR('L', imps, MPS, mpslib.conj(MPS), MPO, \
+                        itensor=ltensor, method="System",prefix=prefix)
+                
+                # reverse update svt site
+                shape_svt = vt.shape
+                def func_svt(t, y):
+                    return hop_svt(y.reshape(shape_svt)).ravel()/1.0j
+                
+                sol_svt = scipy.integrate.solve_ivp(func_svt, (0,-dt/2), vt.ravel(), method="RK45")
+                print "nsteps for svt:",len(sol_svt.t)
+                MPS[imps+1] = np.tensordot(sol_svt.y[:,-1].reshape(shape_svt), MPS[imps+1], axes=(1,0))
+            
+            elif system == "R" and imps != 0:
+                # updated imps site
+                u,vt = scipy.linalg.rq(mps_t.reshape(shape[0], -1), mode="economic")
+                MPS[imps] = vt.reshape([-1]+shape[1:])
+
+                rtensor = mpompsmat.GetLR('R', imps, MPS, mpslib.conj(MPS), MPO, \
+                        itensor=rtensor, method="System", prefix=prefix)
+                
+                # reverse update u site
+                shape_u = u.shape
+                def func_u(t, y):
+                    return hop_svt(y.reshape(shape_u)).ravel()/1.0j
+                
+                sol_u = scipy.integrate.solve_ivp(func_u, (0,-dt/2), u.ravel(), method="RK45")
+                print "nsteps for u:",len(sol_u.t)
+                MPS[imps-1] = np.tensordot(MPS[imps-1], sol_u.y[:,-1].reshape(shape_u), axes=(-1,0))
+            
+            else:
+                MPS[imps] = mps_t
+            
+        MPSnew = MPS
+        if MPSnew[0].ndim == 3:
+            # normalize
+            norm = mpslib.norm(MPSnew)
+            print "norm", norm
+            MPSnew = mpslib.scale(MPSnew, 1./norm)
+        
         print "tMPS dim:", [mps.shape[0] for mps in MPSnew] + [1]
-    else:
-        print "tMPS dim:", [mps.shape[0] for mps in MPSnew[0]] + [1]
     
-    # get R-canonicalise MPS
+    elif scheme == "TDVP_MCTDH":
+        # TDVP for original MCTDH
+
+        MPSnew = []
+        if mpslib.is_left_canonical(MPS) == False:
+            print "MPS is not left canonical!"
+            MPS =  mpslib.canonicalise(MPS,"l")
+        
+        # TODO, reuse the last step environment, L-R, R-L
+        # construct the environment matrix
+        mpompsmat.construct_enviro(MPS, mpslib.conj(MPS), MPO, "R")
+        
+        # initial matrix   
+        ltensor = np.ones((1,1,1))
+        rtensor = np.ones((1,1,1))
+
+        for imps in range(len(MPS)):
+            ltensor = mpompsmat.GetLR('L', imps-1, MPS, mpslib.conj(MPS), MPO, \
+                    itensor=ltensor, method="System")
+            rtensor = mpompsmat.GetLR('R', imps+1, MPS, mpslib.conj(MPS), MPO, \
+                    itensor=rtensor, method="Enviro")
+            # density matrix
+            S = mpslib.transferMat(MPS, mpslib.conj(MPS), "R", imps+1)
+            
+            epsilon = 1e-10
+            w, u = scipy.linalg.eigh(S)
+            w = w + epsilon * np.exp(-w/epsilon)
+            print "sum w=", np.sum(w)
+            #S  = u.dot(np.diag(w)).dot(np.conj(u.T))
+            S_inv  = u.dot(np.diag(1./w)).dot(np.conj(u.T))
+            
+            # pseudo inverse 
+            #S_inv = scipy.linalg.pinvh(S,rcond=1e-2)
+
+            def projector(mps):
+                # projector
+                proj = np.tensordot(mps,np.conj(mps),axes=(2,2))
+                Iden = np.diag(np.ones(np.prod(proj.shape[:2]))).reshape(proj.shape)
+                proj = Iden - proj
+                return proj
+            
+            def hop(mps):
+                #S-a   l-S
+                #    d  
+                #O-b-O-f-O
+                #    e 
+                #S-c   k-S
+                
+                if mps.ndim == 3:
+                    path = [([0, 1],"abc, cek -> abek"),\
+                            ([2, 0],"abek, bdef -> akdf"),\
+                            ([1, 0],"akdf, lfk -> adl")]
+                    HC = tensorlib.multi_tensor_contract(path, ltensor,
+                            mps, MPO[imps], rtensor)
+                
+                #S-a   l-S
+                #    d  
+                #O-b-O-f-O
+                #    e 
+                #S-c   k-S
+                #    g   
+                elif mps.ndim == 4:
+                    path = [([0, 1],"abc, bdef -> acdef"),\
+                            ([2, 0],"acdef, cegk -> adfgk"),\
+                            ([1, 0],"adfgk, lfk -> adgl")]
+                    HC = tensorlib.multi_tensor_contract(path, ltensor,
+                            MPO[imps], mps, rtensor)
+                return HC
+            
+            shape = MPS[imps].shape
+            
+            def func(t, y):
+                y0 = y.reshape(shape)
+                HC = hop(y0)
+                if imps != len(MPS)-1:
+                    proj = projector(y0)
+                    if y0.ndim == 3:
+                        HC = np.tensordot(proj,HC,axes=([2,3],[0,1]))
+                        HC = np.tensordot(proj,HC,axes=([2,3],[0,1]))
+                    elif y0.ndim == 4:
+                        HC = np.tensordot(proj,HC,axes=([3,4,5],[0,1,2]))
+                        HC = np.tensordot(proj,HC,axes=([3,4,5],[0,1,2]))
+
+                return np.tensordot(HC, S_inv, axes=(-1,0)).ravel()/1.0j
+            
+            sol = scipy.integrate.solve_ivp(func,(0,dt), MPS[imps].ravel(),method="RK45")
+            print "CMF steps:", len(sol.t)
+            MPSnew.append(sol.y[:,-1].reshape(shape))
+            print "orthogonal1", np.allclose(np.tensordot(MPSnew[imps],
+                np.conj(MPSnew[imps]), axes=([0,1],[0,1])),
+                np.diag(np.ones(MPSnew[imps].shape[2])))
+        
+        norm = mpslib.norm(MPSnew)
+        MPSnew = mpslib.scale(MPSnew, 1./norm)
+        print "norm", norm
+        print "tMPS dim:", [mps.shape[0] for mps in MPSnew] + [1]
+    
+    elif scheme == "TDVP_MCTDHnew":
+        # new regularization scheme
+        # JCP 148, 124105 (2018)
+        # JCP 149, 044119 (2018)
+
+        MPSnew = []
+        if mpslib.is_right_canonical(MPS) == False:
+            print "MPS is not left canonical!"
+            MPS =  mpslib.canonicalise(MPS,"r")
+        
+        # construct the environment matrix
+        mpompsmat.construct_enviro(MPS, mpslib.conj(MPS), MPO, "R")
+        
+        # initial matrix   
+        ltensor = np.ones((1,1,1))
+        rtensor = np.ones((1,1,1))
+        
+        for imps in range(len(MPS)):
+            shape = list(MPS[imps].shape)
+            
+            u, s, vt = scipy.linalg.svd(MPS[imps].reshape(-1, shape[-1]), full_matrices=False)
+            MPS[imps] = u.reshape(shape[:-1]+[-1])
+            
+            ltensor = mpompsmat.GetLR('L', imps-1, MPS, mpslib.conj(MPS), MPO, \
+                    itensor=ltensor, method="System")
+            rtensor = mpompsmat.GetLR('R', imps+1, MPS, mpslib.conj(MPS), MPO, \
+                    itensor=rtensor, method="Enviro")
+            
+            epsilon = 1e-10
+            epsilon = np.sqrt(epsilon)
+            s = s + epsilon * np.exp(-s/epsilon)
+            
+            svt = np.diag(s).dot(vt)
+            
+            rtensor = np.tensordot(rtensor, svt, axes=(2, 1))
+            rtensor = np.tensordot(np.conj(vt), rtensor, axes=(1, 0))
+
+            if imps != len(MPS)-1:
+                MPS[imps+1] = np.tensordot(svt, MPS[imps+1], axes=(-1,0))
+            
+            # density matrix
+            S = s*s
+            print "sum density matrix", np.sum(S)
+
+            S_inv = np.diag(1./s)
+            
+            def projector(mps):
+                # projector
+                proj = np.tensordot(mps, np.conj(mps),axes=(-1,-1))
+                Iden = np.diag(np.ones(np.prod(mps.shape[:-1]))).reshape(proj.shape)
+                proj = Iden - proj
+                return proj
+            
+            def hop(mps):
+                #S-a   l-S
+                #    d  
+                #O-b-O-f-O
+                #    e 
+                #S-c   k-S
+                if mps.ndim == 3:
+                    path = [([0, 1],"abc, cek -> abek"),\
+                            ([2, 0],"abek, bdef -> akdf"),\
+                            ([1, 0],"akdf, lfk -> adl")]
+                    HC = tensorlib.multi_tensor_contract(path, ltensor,
+                            mps, MPO[imps], rtensor)
+                
+                #S-a   l-S
+                #    d  
+                #O-b-O-f-O
+                #    e 
+                #S-c   k-S
+                #    g   
+                elif mps.ndim == 4:
+                    path = [([0, 1],"abc, bdef -> acdef"),\
+                            ([2, 0],"acdef, cegk -> adfgk"),\
+                            ([1, 0],"adfgk, lfk -> adgl")]
+                    HC = tensorlib.multi_tensor_contract(path, ltensor,
+                            MPO[imps], mps, rtensor)
+                return HC
+            
+            shape = MPS[imps].shape
+            
+            def func(t, y):
+                y0 = y.reshape(shape)
+                HC = hop(y0)
+                if imps != len(MPS)-1:
+                    proj = projector(y0)
+                    if y0.ndim == 3:
+                        HC = np.tensordot(proj,HC,axes=([2,3],[0,1]))
+                        HC = np.tensordot(proj,HC,axes=([2,3],[0,1]))
+                    elif y0.ndim == 4:
+                        HC = np.tensordot(proj,HC,axes=([3,4,5],[0,1,2]))
+                        HC = np.tensordot(proj,HC,axes=([3,4,5],[0,1,2]))
+                return np.tensordot(HC, S_inv, axes=(-1,0)).ravel()/1.0j
+            
+            sol = scipy.integrate.solve_ivp(func,(0,dt), MPS[imps].ravel(),method="RK45")
+            print "CMF steps:", len(sol.t)
+            mps = sol.y[:,-1].reshape(shape)
+
+            if imps == len(MPS)-1:
+                print "s0", imps, s[0]
+                MPSnew.append(mps*s[0])
+            else:
+                MPSnew.append(mps)
+            
+            #print "orthogonal1", np.allclose(np.tensordot(MPSnew[imps],
+            #    np.conj(MPSnew[imps]), axes=([0,1],[0,1])),
+            #    np.diag(np.ones(MPSnew[imps].shape[2])))
+        
+        if MPSnew[0].ndim == 3:
+            norm = mpslib.norm(MPSnew)
+            MPSnew = mpslib.scale(MPSnew, 1./norm)
+            print "norm", norm
+        print "tMPS dim:", [mps.shape[0] for mps in MPSnew] + [1]
+    
     return MPSnew
 
 
 def FiniteT_spectra(spectratype, mol, pbond, iMPO, HMPO, dipoleMPO, nsteps, dt,\
         ephtable, insteps=0, thresh=0, temperature=298,\
         algorithm=2, prop_method="C_RK4", compress_method="svd", QNargs=None, \
-        approxeiHt=None, GSshift=0.0, cleanexciton=None):
+        approxeiHt=None, GSshift=0.0, cleanexciton=None, scheme="P&C"):
     '''
     finite temperature propagation
     only has algorithm 2, two way propagator
@@ -477,12 +822,14 @@ def FiniteT_spectra(spectratype, mol, pbond, iMPO, HMPO, dipoleMPO, nsteps, dt,\
                 braMPO = mpslib.mapply(braMPO, exacteiHpt, QNargs=QNargs) 
                 braMPO = tMPS(braMPO, HMPO, -dt, ephtable, propagation_c,\
                        thresh=thresh, cleanexciton=1, compress_method=compress_method, \
-                       QNargs=QNargs, approxeiHt=approxeiHmt)
+                       QNargs=QNargs, approxeiHt=approxeiHmt, scheme=scheme,\
+                       prefix=scheme+"2")
             else:
                 ketMPO = mpslib.mapply(ketMPO, exacteiHmt, QNargs=QNargs) 
                 ketMPO = tMPS(ketMPO, HMPO, dt, ephtable, propagation_c, \
                        thresh=thresh, cleanexciton=1, compress_method=compress_method, \
-                       QNargs=QNargs, approxeiHt=approxeiHpt)
+                       QNargs=QNargs, approxeiHt=approxeiHpt, scheme=scheme,\
+                       prefix=scheme+"1")
 
         
         ft = mpslib.dot(mpslib.conj(braMPO, QNargs=QNargs),ketMPO, QNargs=QNargs)
@@ -618,86 +965,6 @@ def FiniteT_abs(mol, pbond, iMPO, HMPO, dipoleMPO, nsteps, dt, ephtable,
     return autocorr   
 
 
-def construct_onsiteMPO(mol,pbond,opera,dipole=False,QNargs=None,sitelist=None):
-    '''
-    construct the electronic onsite operator \sum_i opera_i MPO
-    '''
-    assert opera in ["a", "a^\dagger", "a^\dagger a"]
-    nmols = len(mol)
-    if sitelist is None:
-        sitelist = np.arange(nmols)
-
-    MPOdim = []
-    for imol in xrange(nmols):
-        MPOdim.append(2)
-        for iph in xrange(mol[imol].nphs):
-            for iboson in xrange(mol[imol].ph[iph].nqboson):
-                if imol != nmols-1:
-                    MPOdim.append(2)
-                else:
-                    MPOdim.append(1)
-    
-    MPOdim[0] = 1
-    MPOdim.append(1)
-    print opera, "operator MPOdim", MPOdim
-
-    MPO = []
-    impo = 0
-    for imol in xrange(nmols):
-        mpo = np.zeros([MPOdim[impo],pbond[impo],pbond[impo],MPOdim[impo+1]])
-        for ibra in xrange(pbond[impo]):
-            for iket in xrange(pbond[impo]):
-                if imol in sitelist:
-                    if dipole == True:
-                        factor = mol[imol].dipole
-                    else:
-                        factor = 1.0
-                else:
-                    factor = 0.0
-                
-                mpo[-1,ibra,iket,0] = EElementOpera(opera, ibra, iket) * factor
-                if imol != 0:
-                    mpo[0,ibra,iket,0] = EElementOpera("Iden",ibra,iket)
-                if imol != nmols-1:
-                    mpo[-1,ibra,iket,-1] = EElementOpera("Iden",ibra,iket)
-        MPO.append(mpo)
-        impo += 1
-
-        for iph in xrange(mol[imol].nphs):
-            for iboson in xrange(mol[imol].ph[iph].nqboson):
-                mpo = np.zeros([MPOdim[impo],pbond[impo],pbond[impo],MPOdim[impo+1]])
-                for ibra in xrange(pbond[impo]):
-                    for idiag in xrange(MPOdim[impo]):
-                        mpo[idiag,ibra,ibra,idiag] = 1.0
-
-                MPO.append(mpo)
-                impo += 1
-    
-    # quantum number part
-    # len(MPO)-1 = len(MPOQN)-2, the L-most site is R-qn
-    MPOQNidx = len(MPO)-1
-    
-    totnqboson = 0
-    for iph in xrange(mol[-1].nphs):
-        totnqboson += mol[-1].ph[iph].nqboson
-
-    if opera == "a":
-        MPOQN = [[0]] + [[-1,0]]*(len(MPO)-totnqboson-1) + [[-1]]*(totnqboson+1)
-        MPOQNtot = -1
-    elif opera == "a^\dagger":
-        MPOQN = [[0]] + [[1,0]]*(len(MPO)-totnqboson-1) + [[1]]*(totnqboson+1)
-        MPOQNtot = 1
-    elif opera == "a^\dagger a":
-        MPOQN = [[0]] + [[0,0]]*(len(MPO)-totnqboson-1) + [[0]]*(totnqboson+1)
-        MPOQNtot = 0
-    MPOQN[-1] = [0]
-    
-    if QNargs is None:
-        return MPO, MPOdim
-    else:
-        return [MPO, MPOQN, MPOQNidx, MPOQNtot], MPOdim
-
-
 def random_MPS(mol, pbond, M):
     '''
     random entangled MPS
@@ -798,7 +1065,7 @@ def Max_Entangled_EX_MPO(mol, pbond, norm=True, QNargs=None):
     MPS, MPSdim = Max_Entangled_GS_MPS(mol, pbond, norm=norm, QNargs=QNargs)
 
     # the creation operator \sum_i a^\dagger_i
-    creationMPO, creationMPOdim = construct_onsiteMPO(mol, pbond, "a^\dagger",
+    creationMPO, creationMPOdim = MPSsolver.construct_onsiteMPO(mol, pbond, "a^\dagger",
             QNargs=QNargs)
 
     EXMPS =  mpslib.mapply(creationMPO, MPS, QNargs=QNargs)

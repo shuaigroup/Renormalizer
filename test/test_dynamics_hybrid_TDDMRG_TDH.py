@@ -32,7 +32,7 @@ class Test_dynamics_hybrid_TDDMRG_TDH(unittest.TestCase):
         iMPS = [MPS, MPSQN, len(MPS)-1, 0]
         QNargs = [ephtable, False]
         
-        dipoleMPO, dipoleMPOdim = tMPS.construct_onsiteMPO(mol, pbond, "a^\dagger",\
+        dipoleMPO, dipoleMPOdim = MPSsolver.construct_onsiteMPO(mol, pbond, "a^\dagger",\
                 QNargs=QNargs, sitelist=[0])
         
         iMPS = mpslib.mapply(dipoleMPO, iMPS, QNargs=QNargs)
@@ -47,7 +47,7 @@ class Test_dynamics_hybrid_TDDMRG_TDH(unittest.TestCase):
         
         MPOs = []
         for imol in xrange(len(mol)):
-            dipoleMPO, dipoleMPOdim = tMPS.construct_onsiteMPO(mol, pbond, "a^\dagger a",\
+            dipoleMPO, dipoleMPOdim = MPSsolver.construct_onsiteMPO(mol, pbond, "a^\dagger a",\
                 QNargs=QNargs, sitelist=[imol])
             MPOs.append(dipoleMPO)
         
@@ -79,7 +79,7 @@ class Test_dynamics_hybrid_TDDMRG_TDH(unittest.TestCase):
                 insteps, pbond, ephtable, thresh=1e-3, cleanexciton=nexciton,\
                 QNargs=QNargs, space="GS")
     
-        dipoleMPO, dipoleMPOdim = tMPS.construct_onsiteMPO(mol, pbond, "a^\dagger",\
+        dipoleMPO, dipoleMPOdim = MPSsolver.construct_onsiteMPO(mol, pbond, "a^\dagger",\
                 QNargs=QNargs, sitelist=[0])
         
         iMPS = mpslib.mapply(dipoleMPO, iMPS, QNargs=QNargs)
@@ -94,7 +94,7 @@ class Test_dynamics_hybrid_TDDMRG_TDH(unittest.TestCase):
         
         MPOs = []
         for imol in xrange(len(mol)):
-            dipoleMPO, dipoleMPOdim = tMPS.construct_onsiteMPO(mol, pbond, "a^\dagger a",\
+            dipoleMPO, dipoleMPOdim = MPSsolver.construct_onsiteMPO(mol, pbond, "a^\dagger a",\
                 QNargs=QNargs, sitelist=[imol])
             MPOs.append(dipoleMPO)
         

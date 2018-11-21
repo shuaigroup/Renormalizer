@@ -46,7 +46,7 @@ class Test_tMPS_eiHt(unittest.TestCase):
         else:
             QNargs = None
 
-        dipoleMPO, dipoleMPOdim = tMPS.construct_onsiteMPO(mol, pbond,
+        dipoleMPO, dipoleMPOdim = MPSsolver.construct_onsiteMPO(mol, pbond,
                 "a^\dagger", dipole=True, QNargs=QNargs)
         iMPS = mpslib.MPSdtype_convert(iMPS, QNargs=QNargs)
         
@@ -89,7 +89,7 @@ class Test_tMPS_eiHt(unittest.TestCase):
         else:
             QNargs = None
         
-        dipoleMPO, dipoleMPOdim = tMPS.construct_onsiteMPO(mol, pbond,
+        dipoleMPO, dipoleMPOdim = MPSsolver.construct_onsiteMPO(mol, pbond,
                 "a", dipole=True, QNargs=QNargs)
         
         nsteps = 100
@@ -138,7 +138,7 @@ class Test_tMPS_eiHt(unittest.TestCase):
             QNargs = None
         
         
-        dipoleMPO, dipoleMPOdim = tMPS.construct_onsiteMPO(mol, pbond,
+        dipoleMPO, dipoleMPOdim = MPSsolver.construct_onsiteMPO(mol, pbond,
                 "a^\dagger", dipole=True, QNargs=QNargs)
         GSMPS, GSMPSdim = tMPS.Max_Entangled_GS_MPS(mol, pbond, QNargs=QNargs)
         GSMPO = tMPS.hilbert_to_liouville(GSMPS, QNargs=QNargs)

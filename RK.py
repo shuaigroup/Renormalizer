@@ -27,7 +27,7 @@ def runge_kutta_explicit_tableau(RK_method):
             ----------------------------
                    1/2   1/2
     '''
-    assert RK_method in ["Forward_Euler","midpoint_RK2","Heun_RK2","Ralston_RK2","Kutta_RK3","C_RK4","38rule_RK4"]
+    assert RK_method in ["Forward_Euler","midpoint_RK2","Heun_RK2","Ralston_RK2","Kutta_RK3","C_RK4","38rule_RK4", "Fehlberg5"]
    
     print "Runge Kutta method", RK_method
 
@@ -74,10 +74,19 @@ def runge_kutta_explicit_tableau(RK_method):
         c = np.array([0.0, 1.0/3.0, 2.0/3.0 ,1.0])
         Nstage = 4
     
-        a = a.astype(np.float64)
-        b = b.astype(np.float64)
-        c = c.astype(np.float64)
-
+    elif RK_method == "Fehlberg5":
+        a = np.array([[0,0,0,0,0,0],
+                     [1/4., 0., 0., 0., 0., 0.],
+                     [3./32, 9./32, 0, 0, 0, 0 ],
+                     [1932./2197, -7200./2197, 7296./2197, 0, 0, 0],
+                     [439./216, -8., 3680./513, -845/4104, 0., 0.],
+                     [-8./27, 2., -3544./2565, 1859./4104, -11./40, 0.]])
+        b = np.array([16./135,0.,6656./12825,28561./56430,-9./50,2./55])
+        c = np.array([0., 1./4, 3./8, 12./13, 1., 1./2])
+        Nstage = 5
+    a = a.astype(np.float64)
+    b = b.astype(np.float64)
+    c = c.astype(np.float64)
     return [a,b,c,Nstage]
 
 

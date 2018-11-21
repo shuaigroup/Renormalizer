@@ -355,9 +355,7 @@ def construct_MPO(mol, J, pbond, scheme=2, rep="star", elocal_offset=None):
     MPOdim.append(1)
     MPOQN[0] = [0]
     MPOQN.append([0])
-    # the boundary side of L/R side quantum number
-    # MPOQN[:MPOQNidx] is L side
-    # MPOQN[MPOQNidx+1:] is R side
+    # the boundary site of L/R side quantum number
     MPOQNidx = len(MPOQN)-2 
     MPOQNtot = 0     # the total quantum number of each bond, for Hamiltonian it's 0              
         
@@ -1006,3 +1004,134 @@ def clean_MPS(system, MPS, ephtable, nexciton):
     return MPSnew
 
 
+def construct_onsiteMPO(mol,pbond,opera,dipole=False,QNargs=None,sitelist=None):
+    '''
+    construct the electronic onsite operator \sum_i opera_i MPO
+    '''
+    assert opera in ["a", "a^\dagger", "a^\dagger a"]
+    nmols = len(mol)
+    if sitelist is None:
+        sitelist = np.arange(nmols)
+
+    MPOdim = []
+    for imol in xrange(nmols):
+        MPOdim.append(2)
+        for iph in xrange(mol[imol].nphs):
+            for iboson in xrange(mol[imol].ph[iph].nqboson):
+                if imol != nmols-1:
+                    MPOdim.append(2)
+                else:
+                    MPOdim.append(1)
+    
+    MPOdim[0] = 1
+    MPOdim.append(1)
+    print opera, "operator MPOdim", MPOdim
+
+    MPO = []
+    impo = 0
+    for imol in xrange(nmols):
+        mpo = np.zeros([MPOdim[impo],pbond[impo],pbond[impo],MPOdim[impo+1]])
+        for ibra in xrange(pbond[impo]):
+            for iket in xrange(pbond[impo]):
+                if imol in sitelist:
+                    if dipole == True:
+                        factor = mol[imol].dipole
+                    else:
+                        factor = 1.0
+                else:
+                    factor = 0.0
+                
+                mpo[-1,ibra,iket,0] = EElementOpera(opera, ibra, iket) * factor
+                if imol != 0:
+                    mpo[0,ibra,iket,0] = EElementOpera("Iden",ibra,iket)
+                if imol != nmols-1:
+                    mpo[-1,ibra,iket,-1] = EElementOpera("Iden",ibra,iket)
+        MPO.append(mpo)
+        impo += 1
+
+        for iph in xrange(mol[imol].nphs):
+            for iboson in xrange(mol[imol].ph[iph].nqboson):
+                mpo = np.zeros([MPOdim[impo],pbond[impo],pbond[impo],MPOdim[impo+1]])
+                for ibra in xrange(pbond[impo]):
+                    for idiag in xrange(MPOdim[impo]):
+                        mpo[idiag,ibra,ibra,idiag] = 1.0
+
+                MPO.append(mpo)
+                impo += 1
+    
+    # quantum number part
+    # len(MPO)-1 = len(MPOQN)-2, the L-most site is R-qn
+    MPOQNidx = len(MPO)-1
+    
+    totnqboson = 0
+    for iph in xrange(mol[-1].nphs):
+        totnqboson += mol[-1].ph[iph].nqboson
+
+    if opera == "a":
+        MPOQN = [[0]] + [[-1,0]]*(len(MPO)-totnqboson-1) + [[-1]]*(totnqboson+1)
+        MPOQNtot = -1
+    elif opera == "a^\dagger":
+        MPOQN = [[0]] + [[1,0]]*(len(MPO)-totnqboson-1) + [[1]]*(totnqboson+1)
+        MPOQNtot = 1
+    elif opera == "a^\dagger a":
+        MPOQN = [[0]] + [[0,0]]*(len(MPO)-totnqboson-1) + [[0]]*(totnqboson+1)
+        MPOQNtot = 0
+    MPOQN[-1] = [0]
+    
+    if QNargs is None:
+        return MPO, MPOdim
+    else:
+        return [MPO, MPOQN, MPOQNidx, MPOQNtot], MPOdim
+
+
+def construct_intersiteMPO(mol,pbond,idxmol,jdxmol,QNargs=None):
+    '''
+    construct the electronic intersite operator \sum_i a_i^\dagger a_j
+    the MPO dimension is 1
+    '''
+    nmols = len(mol)
+    MPOdim = [1 for i in xrange(len(pbond)+1)]
+    print "MPOdim", MPOdim
+
+    MPO = []
+    MPOQN = [0, ]
+    impo = 0
+    for imol in xrange(nmols):
+        mpo = np.zeros([MPOdim[impo],pbond[impo],pbond[impo],MPOdim[impo+1]])
+        if imol == idxmol:
+            opera = "a^\dagger"
+            MPOQN.append(1)
+        elif imol == jdxmol:
+            opera = "a"
+            MPOQN.append(-1)
+        else:
+            opera = "Iden" 
+            MPOQN.append(0)
+        
+        for ibra in xrange(pbond[impo]):
+            for iket in xrange(pbond[impo]):
+                mpo[0,ibra,iket,0] = EElementOpera(opera, ibra, iket)
+
+        MPO.append(mpo)
+        impo += 1
+
+        for iph in xrange(mol[imol].nphs):
+            for iboson in xrange(mol[imol].ph[iph].nqboson):
+                mpo = np.zeros([MPOdim[impo],pbond[impo],pbond[impo],MPOdim[impo+1]])
+                MPOQN.append(0)
+                for ibra in xrange(pbond[impo]):
+                    mpo[0,ibra,ibra,0] = 1.0
+
+                MPO.append(mpo)
+                impo += 1
+    
+    # quantum number part
+    # len(MPO)-1 = len(MPOQN)-2, the L-most site is R-qn
+    MPOQNidx = len(MPO)-1
+    MPOQNtot = 0
+    MPOQN[-1] = 0
+    
+    if QNargs is None:
+        return MPO, MPOdim
+    else:
+        return [MPO, MPOQN, MPOQNidx, MPOQNtot], MPOdim

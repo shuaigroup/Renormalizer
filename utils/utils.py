@@ -23,10 +23,10 @@ def roundrobin(*iterables):
             nexts = cycle(islice(nexts, pending))
 
 
-def autocorr_store(autocorr, istep, freq=10):
+def autocorr_store(autocorr, istep, index="", freq=10):
     if istep % freq == 0:
         autocorr = np.array(autocorr)
-        with open("autocorr"+".npy", 'wb') as f:
+        with open("autocorr"+str(index)+".npy", 'wb') as f:
             np.save(f,autocorr)
 
 
@@ -34,3 +34,22 @@ def wfn_store(MPS, istep, filename, freq=100):
     if istep % freq == 0:
         with open(filename, 'wb') as f:
             pickle.dump(MPS,f,-1)
+            
+            
+def RK_IVP(v0, func, dt, tableau):
+    # Runge-Kutta solver
+    # func is dy/dt = func(y)
+
+    klist=[v0,]
+    for istage in range(len(tableau[0])):
+        v = copy.deepcopy(v0)
+        for iv in range(1,len(klist)):
+            v += klist[iv]*tableau[0][istage][iv-1]*dt
+        
+        klist.append(func(v))
+    
+    v = copy.deepcopy(v0)
+    for iv in range(1,len(klist)):
+        v += klist[iv]*tableau[1][iv-1]*dt
+
+    return v

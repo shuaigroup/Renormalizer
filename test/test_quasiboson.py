@@ -124,7 +124,7 @@ class Test_quasiboson(unittest.TestCase):
         else:
             QNargs = None
         
-        dipoleMPO, dipoleMPOdim = tMPS.construct_onsiteMPO(mol, pbond,
+        dipoleMPO, dipoleMPOdim = MPSsolver.construct_onsiteMPO(mol, pbond,
                 "a", dipole=True, QNargs=QNargs)
         nsteps = 30
         dt = 30.0
@@ -173,7 +173,7 @@ class Test_quasiboson(unittest.TestCase):
         else:
             QNargs = None
 
-        dipoleMPO, dipoleMPOdim = tMPS.construct_onsiteMPO(mol, pbond,
+        dipoleMPO, dipoleMPOdim = MPSsolver.construct_onsiteMPO(mol, pbond,
                 "a^\dagger", dipole=True, QNargs=QNargs)
         iMPS = mpslib.MPSdtype_convert(iMPS, QNargs=QNargs)
         
