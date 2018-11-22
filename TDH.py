@@ -310,9 +310,22 @@ def linear_spectra(spectratype, mol, J, nexciton, WFN, dt, nsteps, fe, fv,\
         WFNbra = copy.deepcopy(WFNket)
     else:
         WFNbra = copy.deepcopy(WFN)
-
+    
     # normalize bra
     mflib.normalize(WFNbra)
+    
+    # check whether the energy is conserved
+    def check_conserveE():
+        if T == 0:
+            Nouse, Etot_bra = construct_H_Ham(mol, J, nexciton, WFNbra, fe, fv)
+        else:
+            Nouse, Etot_bra = construct_H_Ham(mol, J, 1-nexciton, WFNbra, fe, fv)
+    
+        Nouse, Etot_ket = construct_H_Ham(mol, J, nexciton, WFNket, fe, fv)
+        
+        return Etot_bra, Etot_ket
+    
+    Etot_bra0, Etot_ket0 = check_conserveE()
 
     autocorr = []
     t = 0.0
@@ -343,8 +356,10 @@ def linear_spectra(spectratype, mol, J, nexciton, WFN, dt, nsteps, fe, fv,\
 
         autocorr.append(ft)
         autocorr_store(autocorr, istep)
+    
+    Etot_bra1, Etot_ket1 = check_conserveE()
 
-    return autocorr
+    return autocorr, [Etot_bra0, Etot_bra1, Etot_ket0, Etot_ket1]
 
 
 def FT_DM(mol, J, nexciton, T, nsteps, particle="hardcore boson", prop_method="unitary"):

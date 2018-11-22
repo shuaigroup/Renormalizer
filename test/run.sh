@@ -25,3 +25,7 @@ python test_TDH.py
 python test_hybrid_TDDMRG_TDH.py
 python test_FT_TDH.py
 python test_FT_hybrid_TDDMRG_TDH.py
+python test_dynamics_hybrid_TDDMRG_TDH.py
+python test_dynamics_TDH.py
+
+python test_tMPS_TDVP.py

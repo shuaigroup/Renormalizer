@@ -39,7 +39,7 @@ class Test_FT_TDH(unittest.TestCase):
             [[30.1370, 8.7729],"emi","std_data/TDH/TDH_FT_emi.npy"],\
             [[0.0, 0.0],"abs","std_data/TDH/TDH_FT_abs_0.npy"],\
             [[30.1370, 8.7729],"abs","std_data/TDH/TDH_FT_abs.npy"])
-    def test_FT_emi(self,value):
+    def test_FT_spectra(self,value):
         T = 298.
         insteps = 50
         nsteps = 300

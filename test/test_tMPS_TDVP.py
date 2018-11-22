@@ -46,7 +46,7 @@ class Test_tMPS_TDVP(unittest.TestCase):
                 thresh=1.0e-7, cleanexciton=1-nexciton, algorithm=value[1],
                 compress_method="variational", scheme=value[0])
 
-        with open("/std_data/tMPS/ZeroTabs_"+value[0]+".npy", 'rb') as f:
+        with open("std_data/tMPS/ZeroTabs_"+value[0]+".npy", 'rb') as f:
             ZeroTabs_std = np.load(f)
         self.assertTrue(np.allclose(autocorr,ZeroTabs_std[:len(autocorr)],rtol=value[3]))
     
@@ -79,7 +79,7 @@ class Test_tMPS_TDVP(unittest.TestCase):
                 dipoleMPO, nsteps, dt, ephtable, insteps, thresh=1.0e-3,
                 temperature=298, compress_method="variational", scheme=value[0])
         
-        with open("/std_data/tMPS/TTemi_2svd"+value[4]+".npy", 'rb') as f:
+        with open("std_data/tMPS/TTemi_2svd"+value[4]+".npy", 'rb') as f:
             TTemi_std = np.load(f)
         self.assertTrue(np.allclose(autocorr,TTemi_std[0:nsteps],rtol=value[3]))
 
