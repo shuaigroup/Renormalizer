@@ -30,7 +30,8 @@ def construct_hybrid_Ham(mol, J, MPS, WFN, debug=False):
     A_el = np.zeros((nmols))
     for imol in xrange(nmols):
         MPO, MPOdim = MPSsolver.construct_onsiteMPO(mol,pbond,"a^\dagger a",dipole=False,sitelist=[imol])
-        A_el[imol] = mpslib.dot(mpslib.conj(MPS),mpslib.mapply(MPO,MPS)).real
+        #A_el[imol] = mpslib.dot(mpslib.conj(MPS),mpslib.mapply(MPO,MPS)).real
+        A_el[imol] = mpslib.exp_value(MPS, MPO, MPS).real
     print "dmrg_occ", A_el
     
     # many-body vibration part
@@ -46,7 +47,8 @@ def construct_hybrid_Ham(mol, J, MPS, WFN, debug=False):
     Etot = 0.0
     # construct new HMPO
     MPO_indep, MPOdim, MPOQN, MPOQNidx, MPOQNtot = MPSsolver.construct_MPO(mol, J, pbond)
-    e_mean = mpslib.dot(mpslib.conj(MPS),mpslib.mapply(MPO_indep,MPS))
+    #e_mean = mpslib.dot(mpslib.conj(MPS),mpslib.mapply(MPO_indep,MPS))
+    e_mean = mpslib.exp_value(MPS, MPO_indep, MPS)
     elocal_offset = np.array([mol[imol].e0_hybrid + B_vib_mol[imol] for imol in xrange(nmols)]).real
     e_mean += A_el.dot(elocal_offset)
     
@@ -197,7 +199,7 @@ def ZeroTcorr_hybrid_TDDMRG_TDH(mol, J, iMPS, dipoleMPO, WFN0, nsteps, dt, ephta
 
 
 def FiniteT_spectra_TDDMRG_TDH(spectratype, T, mol, J, nsteps, dt, insteps, pbond, ephtable,\
-        thresh=0., TDDMRG_prop_method="C_RK4", E_offset=0., QNargs=None):
+        thresh=0., ithresh=1e-4, TDDMRG_prop_method="C_RK4", E_offset=0., QNargs=None):
     '''
     FT linear spectra
     '''
@@ -210,12 +212,12 @@ def FiniteT_spectra_TDDMRG_TDH(spectratype, T, mol, J, nsteps, dt, insteps, pbon
     if spectratype == "abs":
         nexciton = 0
         DMMPO, DMH = FT_DM_hybrid_TDDMRG_TDH(mol, J, nexciton, T, insteps, pbond, ephtable, \
-        thresh=thresh, TDDMRG_prop_method=TDDMRG_prop_method, QNargs=QNargs, space="GS")
+        thresh=ithresh, TDDMRG_prop_method=TDDMRG_prop_method, QNargs=QNargs, space="GS")
         DMMPOket = mpslib.mapply(dipoleMPO, DMMPO, QNargs=QNargs)
     else:
         nexciton = 1
         DMMPO, DMH = FT_DM_hybrid_TDDMRG_TDH(mol, J, nexciton, T, insteps, pbond, ephtable, \
-        thresh=thresh, TDDMRG_prop_method=TDDMRG_prop_method, QNargs=QNargs, space=None)
+        thresh=ithresh, TDDMRG_prop_method=TDDMRG_prop_method, QNargs=QNargs, space=None)
         if QNargs is not None:
             dipoleMPO[1] = [[0]*len(impsdim) for impsdim in dipoleMPO[1]]
             dipoleMPO[3] = 0
@@ -246,8 +248,11 @@ def FiniteT_spectra_TDDMRG_TDH(spectratype, T, mol, J, nsteps, dt, insteps, pbon
                 -dt, ephtable, thresh=thresh, QNargs=QNargs, TDDMRG_prop_method=TDDMRG_prop_method, normalize=1.0)
         
         return DMMPO, DMH
+    
+    print("Real time dynamics starts!")
 
     for istep in xrange(nsteps):
+        print("istep=", istep)
         if istep != 0:
             t += dt
             if istep % 2 == 0:
@@ -291,9 +296,9 @@ def ExactPropagator_hybrid_TDDMRG_TDH(mol, J, MPS, WFN, x, space="GS", QNargs=No
     if QNargs is not None:
         MPO_indep = [MPO_indep, MPOQN, MPOQNidx, MPOQNtot]
     
-    e_mean = mpslib.dot(mpslib.conj(MPS, QNargs=QNargs),mpslib.mapply(MPO_indep, \
-        MPS, QNargs=QNargs), QNargs=QNargs)
-    
+    e_mean = mpslib.exp_value(MPS, MPO_indep, MPS, QNargs=QNargs)
+    print "e_mean", e_mean
+
     if space == "EX":
         # the DMRG part exact propagator has no elocalex and e0
         e_mean -= mol[0].e0+mol[0].elocalex
@@ -445,8 +450,7 @@ def dynamics_hybrid_TDDMRG_TDH(mol, J, MPS, WFN, nsteps, dt, ephtable, thresh=0.
         
         # calculate the expectation value
         for iMPO, MPO in enumerate(property_MPOs):
-            ft = mpslib.dot(mpslib.conj(MPS,QNargs=QNargs), \
-                    mpslib.mapply(MPO, MPS, QNargs=QNargs), QNargs=QNargs)
+            ft = mpslib.exp_value(MPS, MPO, MPS, QNargs=QNargs)
             ft *= np.conj(WFN[-1])*WFN[-1]
             data[iMPO].append(ft)
         

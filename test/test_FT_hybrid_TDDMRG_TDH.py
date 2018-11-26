@@ -77,7 +77,7 @@ class Test_FT_hybrid_TDDMRG_TDH(unittest.TestCase):
         #QNargs = None
 
         autocorr = hybrid_TDDMRG_TDH.FiniteT_spectra_TDDMRG_TDH(value[1], T, value[0], J, nsteps, \
-                dt, insteps, pbond, ephtable, thresh=1e-3, E_offset=E_offset, QNargs=QNargs)
+                dt, insteps, pbond, ephtable, thresh=1e-3, ithresh=1e-3, E_offset=E_offset, QNargs=QNargs)
         with open(value[2], 'rb') as f:
             std = np.load(f)
         self.assertTrue(np.allclose(autocorr,std))

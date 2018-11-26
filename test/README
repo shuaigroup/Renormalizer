@@ -32,3 +32,15 @@ Then star is |00>, chain is |00> same
 each cutoff 1
 star is |00>,|10>,|01>,|11>
 chain is |00>, |10>-|01>, |10>+|01>, |20>-|02>
+
+
+time_benchmark.py
+single task on this node (If there are many other tasks, the CPU frequency will slow down)
+                                                           1core  2core  4core  6core  8core
+openblas 
+             Intel(R) Core(TM) i5-6440HQ CPU @ 2.60GHz     44.16  35.80  31.37
+mkl2018                                                    
+             Intel(R) Core(TM) i5-6440HQ CPU @ 2.60GHz     31.81  23.20  20.17
+dirac X24Cv4 Intel(R) Xeon(R) Silver 4116 CPU @ 2.10GHz    55.66  48.07  39.60  37.04  35.64
+dirac X28Cv4 Intel(R) Xeon(R) CPU E5-2680 v4 @ 2.40GHz     35.55  32.82  25.98  24.55  23.51
+dirac X16Cv3

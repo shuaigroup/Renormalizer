@@ -362,7 +362,7 @@ def ML_tMPS():
 
 def tMPS(MPS, MPO, dt, ephtable, propagation_c, thresh=0, \
         cleanexciton=None, compress_method="svd", QNargs=None, approxeiHt=None,\
-        normalize=None, swap=False, scheme="P&C",prefix=""):
+        normalize=None, swap=False, scheme="P&C",prefix="",opt=False):
     '''
         core function to do time propagation
         swap = False  e^-iHt MPO
@@ -390,11 +390,17 @@ def tMPS(MPS, MPO, dt, ephtable, propagation_c, thresh=0, \
                     (-1.0j*dt)**iterm*propagation_c[iterm], QNargs=QNargs))
 
             MPSnew = scaletermlist[0]
-            for iterm in xrange(1,len(propagation_c)):
-                MPSnew = mpslib.add(MPSnew, scaletermlist[iterm], QNargs=QNargs)
+            if opt == False:
+                for iterm in xrange(1,len(propagation_c)):
+                    MPSnew = mpslib.add(MPSnew, scaletermlist[iterm], QNargs=QNargs)
         
-            MPSnew = mpslib.canonicalise(MPSnew, 'r', QNargs=QNargs)
-            MPSnew = mpslib.compress(MPSnew, 'r', trunc=thresh, QNargs=QNargs, normalize=normalize)
+                MPSnew = mpslib.canonicalise(MPSnew, 'r', QNargs=QNargs)
+                MPSnew = mpslib.compress(MPSnew, 'r', trunc=thresh, QNargs=QNargs, normalize=normalize)
+            elif opt == "greedy":
+                for iterm in xrange(1,len(propagation_c)):
+                    MPSnew = mpslib.add(MPSnew, scaletermlist[iterm], QNargs=QNargs)
+                    MPSnew = mpslib.canonicalise(MPSnew, 'r', QNargs=QNargs)
+                    MPSnew = mpslib.compress(MPSnew, 'r', trunc=thresh, QNargs=QNargs, normalize=normalize)
         else:
             if swap == False:
                 MPSnew = mpslib.contract(approxeiHt, MPS, 'r', thresh, compress_method=compress_method, QNargs=QNargs)

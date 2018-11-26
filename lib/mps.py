@@ -679,10 +679,38 @@ def dot(mpsa,mpsb, QNargs=None):
         # therefore take transpose
         if mpsa[i].ndim == 3:
             e0=np.tensordot(e0,mpsa[i],([0,1],[0,1])).T
-        if mpsa[i].ndim == 4:
+        elif mpsa[i].ndim == 4:
             e0 = np.tensordot(e0, mpsa[i], ([0,1,2],[0,1,2])).T
 
     return e0[0,0]
+
+
+def exp_value(bra, O, ket, QNargs=None):
+    '''
+    expectation value <np.conj(bra)|O|ket>
+    bra and ket could be mps and mpo
+    '''
+    if QNargs is not None:
+        bra = bra[0]
+        ket = ket[0]
+        O = O[0]
+
+    bra = conj(bra)
+
+    assert len(bra) == len(ket)
+    nsites = len(bra)
+    e0 = np.ones([1,1,1])
+    
+    for i in xrange(nsites):
+        e0 = np.tensordot(e0, bra[i], axes=(0,0))
+        e0 = np.tensordot(e0, O[i], axes=([0,2],[0,1]))
+        
+        if bra[i].ndim == 3:
+            e0 = np.tensordot(e0, ket[i], axes=([0,2],[0,1]))
+        elif bra[i].ndim == 4:
+            e0 = np.tensordot(e0, ket[i], axes=([0,1,3],[0,2,1]))
+    
+    return e0[0,0,0]
 
 
 def distance(mpsa,mpsb,QNargs=None):
