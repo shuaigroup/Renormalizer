@@ -111,7 +111,7 @@ OMEGA = np.arange(0.1, 3.0, 0.01)
 W = OMEGA[-1] - OMEGA[0]
 epsi = 0.025
 W_prime = 1 - 0.5 * epsi
-a = W / (2 * W_prime)
+a = W / (W_prime)
 OMEGA_prime = (OMEGA - OMEGA[0]) / a
 
 for ibra in range(pbond[0]):
