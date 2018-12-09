@@ -94,20 +94,24 @@ len_interval = 100
 
 #OMEGA = np.linspace(1.4, 3.0, num=1000) / constant.au2ev
 #OMEGA = OMEGA[300:680, ]
-OMEGA = np.arange(0.1,3,0.01)
+OMEGA = np.arange(0.1,5,0.001)
 
 W = OMEGA[-1] - OMEGA[0]
 epsi = 0.025
 W_prime = 1 - 0.5 * epsi
-a = W / (W_prime)
+a = W / (2 * W_prime)
 
 
 for ibra in range(pbond[0]):
     L[0][0, ibra, ibra, 0] -= (E_0+OMEGA[0])
 L_prime = mpslib.scale(L, 1 / a)
-# for ibra in range(pbond[0]):
-#     L_prime[0][0, ibra, ibra, 0] -= W_prime
-OMEGA_prime = (OMEGA  - OMEGA[0]) / a
+
+# because scale function applies in the last site of MPO
+# which, should be strongly enhanced, scale 1/a also applies W_prime, so W_prime should rescale back
+for ibra in range(pbond[0]):
+    L_prime[0][0, ibra, ibra, 0] -= (a * W_prime)
+
+OMEGA_prime = (OMEGA - OMEGA[0]) / a - W_prime
 
 # use recursion relation to generate series |t_n\rangle
 t_overlap = []
@@ -130,17 +134,21 @@ def calc_tn(len_interval, t_overlap, t_nm1, t_nm2):
         len_interval -=  2
     for i in range(start, start + len_interval):
 
-        print('now generate t_n series', i)
+        # print('now generate t_n series', i)
         temp = mpslib.scale(mpslib.mapply(L_prime, t_nm1), 2)
         t_n = mpslib.add(temp, mpslib.scale(t_nm2, -1))
+        print[x.shape for x in t_n]
         t_n = mpslib.canonicalise(t_n, 'l')
         t_n = mpslib.compress(t_n, 'l', trunc=1.e-3)
+        print[x.shape for x in t_n]
+
 
         t_nm2 = copy.deepcopy(t_nm1)
         t_nm1 = copy.deepcopy(t_n)
         t_0i = mpslib.dot(t_0, t_n)
         t_overlap.append(t_0i)
-
+    print('M at N=%d'%(len(t_overlap)), 'is')
+    print[x.shape for x in t_n]
     return t_overlap, t_nm1, t_nm2
 
 
@@ -149,8 +157,13 @@ def calc_tn(len_interval, t_overlap, t_nm1, t_nm2):
 G = np.zeros(shape=(len(OMEGA_prime), max_N / len_interval))
 # t_overlap, t_nm1, t_nm2 = calc_tn(len_interval, t_overlap, t_nm1, t_nm2)
 num_omega = 0
+t_OMEGA = []
+for omega in OMEGA_prime:
+    t_OMEGA.append([1, omega])
+
 for i_column in range(G.shape[1]):
     print('generating' , i_column, " * 1000 now")
+    len_interval = 100
     t_overlap, t_nm1, t_nm2 = calc_tn(len_interval, t_overlap, t_nm1, t_nm2)
     g = []
     for i in range(len(t_overlap)):
@@ -158,13 +171,18 @@ for i_column in range(G.shape[1]):
         g.append(g_i / (len(t_overlap) + 1))
     num_omega = 0
     for omega in OMEGA_prime:
-        print('calculationg omega', omega)
-        t_omega = [1, omega]
-        for n in range(2, max_N):
-            t_omega.append(2 * omega * t_omega[n - 1] - t_omega[n - 2])
+
+        #print('calculationg omega', omega)
+
+        len_interval = 100
+        if len(t_OMEGA[num_omega]) == 2:
+            len_interval -= 2
+        for n in range(len(t_OMEGA[num_omega]), len(t_OMEGA[num_omega]) + len_interval):
+            t_OMEGA[num_omega].append(2 * omega * t_OMEGA[num_omega][n - 1] - t_OMEGA[num_omega][n - 2])
+
         G_old = g[0] * t_overlap[0]
         for i in range(1, len(t_overlap)):
-            G_new = G_old + 2 * g[i] * t_overlap[i] * t_omega[i]
+            G_new = G_old + 2 * g[i] * t_overlap[i] * t_OMEGA[num_omega][i]
             G_old = G_new
         G[num_omega][i_column] = (1. / np.sqrt(1 - omega * omega) * G_new)
         num_omega += 1

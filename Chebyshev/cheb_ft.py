@@ -111,14 +111,14 @@ OMEGA = np.arange(0.1, 3.0, 0.01)
 W = OMEGA[-1] - OMEGA[0]
 epsi = 0.025
 W_prime = 1 - 0.5 * epsi
-a = W / (W_prime)
-OMEGA_prime = (OMEGA - OMEGA[0]) / a
+a = W / (2 * W_prime)
+OMEGA_prime = (OMEGA - OMEGA[0]) / a - W_prime
 
 for ibra in range(pbond[0]):
     L[0][0, ibra, ibra, 0] -= OMEGA[0]
 L_prime = mpslib.scale(L, 1 / a)
-# for ibra in range(pbond[0]):
-#     L_prime[0][0, ibra, ibra, 0] -= W_prime
+for ibra in range(pbond[0]):
+     L_prime[0][0, ibra, ibra, 0] -= (W_prime * a)
 
 def L_apply(x):
     Lx = mpslib.contract(L_prime, x, 'l', 1.e-3, compress_method='svd')
@@ -168,6 +168,9 @@ len_interval = 100
 G = np.zeros(shape=(len(OMEGA_prime), max_N / len_interval))
 # t_overlap, t_nm1, t_nm2 = calc_tn(len_interval, t_overlap, t_nm1, t_nm2)
 num_omega = 0
+t_OMEGA = []
+for omega in OMEGA_prime:
+    t_OMEGA.append([1, omega])
 for i_column in range(G.shape[1]):
     print('generating' , i_column, " * 2000 now")
     t_overlap, t_nm1, t_nm2 = calc_tn(len_interval, t_overlap, t_nm1, t_nm2)
@@ -177,13 +180,18 @@ for i_column in range(G.shape[1]):
         g.append(g_i / (len(t_overlap) + 1))
     num_omega = 0
     for omega in OMEGA_prime:
-        print('calculationg omega', omega)
-        t_omega = [1, omega]
-        for n in range(2, max_N):
-            t_omega.append(2 * omega * t_omega[n - 1] - t_omega[n - 2])
+
+        #print('calculationg omega', omega)
+
+        len_interval = 100
+        if len(t_OMEGA[num_omega]) == 2:
+            len_interval -= 2
+        for n in range(len(t_OMEGA[num_omega]), len(t_OMEGA[num_omega]) + len_interval):
+            t_OMEGA[num_omega].append(2 * omega * t_OMEGA[num_omega][n - 1] - t_OMEGA[num_omega][n - 2])
+
         G_old = g[0] * t_overlap[0]
         for i in range(1, len(t_overlap)):
-            G_new = G_old + 2 * g[i] * t_overlap[i] * t_omega[i]
+            G_new = G_old + 2 * g[i] * t_overlap[i] * t_OMEGA[num_omega][i]
             G_old = G_new
         G[num_omega][i_column] = (1. / np.sqrt(1 - omega * omega) * G_new)
         num_omega += 1
