@@ -249,8 +249,7 @@ def ZeroTCorr(iMPS, HMPO, dipoleMPO, nsteps, dt, ephtable, thresh=0, \
 
     AketMPS = mpslib.mapply(dipoleMPO, iMPS, QNargs=QNargs)
     # store the factor and normalize the AketMPS, factor is the length of AketMPS
-    factor = mpslib.dot(mpslib.conj(AketMPS,QNargs=QNargs),AketMPS, QNargs=QNargs)
-    factor = np.sqrt(np.absolute(factor))
+    factor = mpslib.norm(AketMPS, QNargs=QNargs)
     print "factor",factor
     AketMPS = mpslib.scale(AketMPS, 1./factor, QNargs=QNargs)
     
@@ -785,9 +784,12 @@ def FiniteT_spectra(spectratype, mol, pbond, iMPO, HMPO, dipoleMPO, nsteps, dt,\
         ketMPO = mpslib.mapply(thermalMPO,iMPO, QNargs=QNargs)
     
     #\Psi e^{\-beta H} \Psi
-    Z = mpslib.dot(mpslib.conj(ketMPO, QNargs=QNargs),ketMPO, QNargs=QNargs)
-    print "partition function Z(beta)/Z(0)", Z
-
+    norm = mpslib.norm(ketMPO, QNargs=QNargs)
+    print "partition function", norm**2
+    
+    ketMPO = mpslib.scale(ketMPO, 1./norm, QNargs=QNargs)
+    print "norm:", mpslib.norm(ketMPO, QNargs=QNargs)
+    
     autocorr = []
     t = 0.0
     exacteiHpt, exacteiHptdim = ExactPropagatorMPO(mol, pbond, -1.0j*dt,\
@@ -804,6 +806,10 @@ def FiniteT_spectra(spectratype, mol, pbond, iMPO, HMPO, dipoleMPO, nsteps, dt,\
             dipoleMPOdagger[3] = 0
         ketMPO = mpslib.mapply(ketMPO, dipoleMPOdagger, QNargs=QNargs)
     
+    # normalize
+    factor = mpslib.norm(ketMPO, QNargs=QNargs)
+    ketMPO = mpslib.scale(ketMPO, 1./factor, QNargs=QNargs)
+
     braMPO = mpslib.add(ketMPO, None, QNargs=QNargs)
     
     if compress_method == "variational":
@@ -829,22 +835,22 @@ def FiniteT_spectra(spectratype, mol, pbond, iMPO, HMPO, dipoleMPO, nsteps, dt,\
                 braMPO = tMPS(braMPO, HMPO, -dt, ephtable, propagation_c,\
                        thresh=thresh, cleanexciton=1, compress_method=compress_method, \
                        QNargs=QNargs, approxeiHt=approxeiHmt, scheme=scheme,\
-                       prefix=scheme+"2")
+                       prefix=scheme+"2", normalize=1.)
             else:
                 ketMPO = mpslib.mapply(ketMPO, exacteiHmt, QNargs=QNargs) 
                 ketMPO = tMPS(ketMPO, HMPO, dt, ephtable, propagation_c, \
                        thresh=thresh, cleanexciton=1, compress_method=compress_method, \
                        QNargs=QNargs, approxeiHt=approxeiHpt, scheme=scheme,\
-                       prefix=scheme+"1")
+                       prefix=scheme+"1", normalize=1.)
 
         
-        ft = mpslib.dot(mpslib.conj(braMPO, QNargs=QNargs),ketMPO, QNargs=QNargs)
+        ft = mpslib.dot(mpslib.conj(braMPO, QNargs=QNargs),ketMPO, QNargs=QNargs) * factor**2
         if spectratype == "emi":
             ft = np.conj(ft)
         
         wfn_store(braMPO, istep, "braMPO.pkl")
         wfn_store(ketMPO, istep, "ketMPO.pkl")
-        autocorr.append(ft/Z)
+        autocorr.append(ft)
         autocorr_store(autocorr, istep)
     
     return autocorr  

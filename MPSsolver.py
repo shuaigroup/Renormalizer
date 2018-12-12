@@ -79,7 +79,7 @@ def construct_MPS_MPO_2(mol, J, Mmax, nexciton, MPOscheme=2, rep="star"):
     return MPS, MPSdim, MPSQN, MPO, MPOdim, MPOQN, MPOQNidx, MPOQNtot, ephtable, pbond
 
 
-def construct_MPS(domain, ephtable, pbond, nexciton, Mmax, percent=0):
+def construct_MPS(domain, ephtable, pbond, nexciton, Mmax, percent=1.0):
     '''
     construct 'domain' canonical MPS according to quantum number
     '''
