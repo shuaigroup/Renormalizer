@@ -6,6 +6,7 @@ import numpy as np
 import scipy.linalg
 import copy
 
+
 def Csvd(cstruct, qnbigl, qnbigr, nexciton, QR=False, system=None,\
         full_matrices=True, IfMPO=False, ddm=False):
     '''
@@ -121,8 +122,10 @@ def Csvd(cstruct, qnbigl, qnbigr, nexciton, QR=False, system=None,\
                 Sset = np.concatenate(Sset)
                 # sort the singular value in descending order
                 order = np.argsort(Sset)[::-1]
-                Uset_order = Uset[:,order]
-                Vset_order = Vset[:,order]
+                #Uset_order = Uset[:,order]
+                #Vset_order = Vset[:,order]
+                Uset_order = Uset.take(order, axis=1)
+                Vset_order = Vset.take(order, axis=1)
                 Sset_order = Sset[order]
                 qnlset_order = np.array(qnlset)[order].tolist()
                 qnrset_order = np.array(qnrset)[order].tolist()

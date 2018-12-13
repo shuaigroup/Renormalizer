@@ -142,19 +142,23 @@ def create(pdim,config):
     return mps
  
 
-def canonicalise(mps,side,QNargs=None):
+def canonicalise(mps,side,QNargs=None,direct=False):
     """
     canonicalise MPS
     """
     if side=='l':
-        return compress(mps,'r',0, QR=True, QNargs=QNargs)
+        return compress(mps,'r',0, QR=True, QNargs=QNargs,direct=direct)
     else:
-        return compress(mps,'l',0, QR=True, QNargs=QNargs)
+        return compress(mps,'l',0, QR=True, QNargs=QNargs,direct=direct)
 
 
-def contract(mpo,mpsb,side,thresh,mpsa=None,ncanonical=1,compress_method="svd",QNargs=None):
+def contract(mpo,mpsb,side,thresh,mpsa=None,ncanonical=1,\
+        compress_method="svd",QNargs=None,direct=True):
     '''
     contract a MPO times MPS
+    the "direct" method is to do the mpo/mps contraction in the compression step
+    the direct = False, scaling is D^2M^2p^3 + D^3M^3p^2
+    the direct = True, scaling is (D^3M^2p^2 + D^2M^3p^3) or (D^2M^3p^2 + D^3M^2p^3)
     '''
 
     assert compress_method in ["svd","variational"]
@@ -163,11 +167,11 @@ def contract(mpo,mpsb,side,thresh,mpsa=None,ncanonical=1,compress_method="svd",Q
         """
         mapply->canonicalise->compress
         """
-        ret=mapply(mpo,mpsb,QNargs=QNargs)
+        ret=mapply(mpo,mpsb,QNargs=QNargs,direct=direct)
         # roundoff can cause problems, 
         # so do multiple canonicalisations
         for i in xrange(ncanonical):
-            ret=canonicalise(ret,side, QNargs=QNargs)
+            ret=canonicalise(ret,side, QNargs=QNargs, direct=direct)
         ret=compress(ret,side,thresh, QNargs=QNargs)
     
     elif compress_method == "variational":
@@ -184,7 +188,7 @@ def contract(mpo,mpsb,side,thresh,mpsa=None,ncanonical=1,compress_method="svd",Q
     return ret
 
 
-def mapply(mpo,mps,QNargs=None):
+def mapply(mpo,mps,QNargs=None,direct=False):
     """
     apply mpo to mps, or apply mpo to mpo
     """
@@ -194,29 +198,33 @@ def mapply(mpo,mps,QNargs=None):
     
     nsites=len(mpo)
     assert len(mps)==nsites
-
-    ret=[None]*nsites
-
-    if len(mps[0].shape)==3: 
-        # mpo x mps
-        for i in xrange(nsites):
-            assert mpo[i].shape[2]==mps[i].shape[1]
-            #mt=np.einsum("apqb,cqd->acpbd",mpo[i],mps[i])
-            mt=np.moveaxis(np.tensordot(mpo[i],mps[i],axes=([2],[1])),3,1)
-            mt=np.reshape(mt,[mpo[i].shape[0]*mps[i].shape[0],mpo[i].shape[1],
-                             mpo[i].shape[-1]*mps[i].shape[-1]])
-            ret[i]=mt
-    elif len(mps[0].shape)==4: 
-        # mpo x mpo
-        for i in xrange(nsites):
-            assert mpo[i].shape[2]==mps[i].shape[1]
-            #mt=np.einsum("apqb,cqrd->acprbd",mpo[i],mps[i])
-            mt=np.moveaxis(np.tensordot(mpo[i],mps[i],axes=([2],[1])),[-3,-2],[1,3])
-            mt=np.reshape(mt,[mpo[i].shape[0]*mps[i].shape[0],
-                             mpo[i].shape[1],mps[i].shape[2],
-                             mpo[i].shape[-1]*mps[i].shape[-1]])
-            ret[i]=mt
     
+    ret=[None]*nsites
+    
+    if direct == False:
+        if len(mps[0].shape)==3: 
+            # mpo x mps
+            for i in xrange(nsites):
+                assert mpo[i].shape[2]==mps[i].shape[1]
+                #mt=np.einsum("apqb,cqd->acpbd",mpo[i],mps[i])
+                mt=np.moveaxis(np.tensordot(mpo[i],mps[i],axes=([2],[1])),3,1)
+                mt=np.reshape(mt,[mpo[i].shape[0]*mps[i].shape[0],mpo[i].shape[1],
+                                 mpo[i].shape[-1]*mps[i].shape[-1]])
+                ret[i]=mt
+        elif len(mps[0].shape)==4: 
+            # mpo x mpo
+            for i in xrange(nsites):
+                assert mpo[i].shape[2]==mps[i].shape[1]
+                #mt=np.einsum("apqb,cqrd->acprbd",mpo[i],mps[i])
+                mt=np.moveaxis(np.tensordot(mpo[i],mps[i],axes=([2],[1])),[-3,-2],[1,3])
+                mt=np.reshape(mt,[mpo[i].shape[0]*mps[i].shape[0],
+                                 mpo[i].shape[1],mps[i].shape[2],
+                                 mpo[i].shape[-1]*mps[i].shape[-1]])
+                ret[i]=mt
+    else:
+        for i in xrange(nsites):
+            ret[i] = [mpo[i], mps[i]]
+
     if QNargs is not None:
         mpsQNnew = svd_qn.QN_construct(mpsQN, mpsQNidx, mpoQNidx, mpstot)
         mpompsQN = []
@@ -224,6 +232,7 @@ def mapply(mpo,mps,QNargs=None):
             mpompsqn = np.add.outer(np.array(mpoQN[i]),np.array(mpsQNnew[i]))
             mpompsQN.append(mpompsqn.ravel().tolist())
         ret = [ret, mpompsQN, mpoQNidx, mpstot+mpotot]
+    
     return ret
 
 
@@ -397,7 +406,8 @@ def variational_compress(MPS,aMPS,MPO,side,nloops,trunc=1.e-12,method="1site"):
     return aMPS
 
 
-def compress(mps,side,trunc=1.e-12,check_canonical=False,QR=False,QNargs=None,normalize=None):
+def compress(mps,side,trunc=1.e-12,check_canonical=False,QR=False,\
+        QNargs=None,normalize=None, direct=False):
     """
     inp: canonicalise MPS (or MPO)
 
@@ -431,13 +441,20 @@ def compress(mps,side,trunc=1.e-12,check_canonical=False,QR=False,QNargs=None,no
             assert is_left_canonical(mps)
         else:
             assert is_right_canonical(mps)
+    
+    def getmps(mps):
+        if len(mps) == 2:
+            return mapply([mps[0]],[mps[1]])[0]
+        else:
+            return mps
+
 
     ret_mps=[]
     nsites=len(mps)
     if side=="l":
-        res=mps[-1]
+        res=getmps(mps[-1])
     else:
-        res=mps[0]
+        res=getmps(mps[0])
 
     for i in xrange(1,nsites):
         if side == "l":
@@ -457,9 +474,9 @@ def compress(mps,side,trunc=1.e-12,check_canonical=False,QR=False,QNargs=None,no
         if QNargs is not None:
             if ephtable[idx] == 1:
                 # e site
-                if mps[0].ndim == 3:
+                if len(pdim) == 1:
                     sigmaqn = np.array([0,1])
-                else:
+                elif len(pdim) == 2:
                     # if MPS is a real MPO, then bra and ket are both important
                     # if MPS is a MPS or density operator MPO, then only bra is important
                     if ifMPO == False:
@@ -526,12 +543,27 @@ def compress(mps,side,trunc=1.e-12,check_canonical=False,QR=False,QNargs=None,no
             m_trunc = u.shape[1]
 
         if side=="l":
-            res=np.tensordot(mps[nsites-i-1],u,axes=1)
+            if direct == False:
+                res=np.tensordot(mps[nsites-i-1],u,axes=1)
+            else:
+                res = u.reshape(mps[nsites-i-1][0].shape[0],mps[nsites-i-1][1].shape[0],-1)
+                res = np.tensordot(mps[nsites-i-1][1], res, axes=([-1],[1]))
+                res = np.tensordot(mps[nsites-i-1][0], res, axes=([-2,-1],[1,-2]))
+                res = np.moveaxis(res,[2],[1]).reshape([-1]+list(mps[nsites-i-1][1].shape[1:-1])+[u.shape[-1]])
+                
             ret_mpsi=np.reshape(vt,[m_trunc]+pdim+[vt.shape[1]/npdim])
             if QNargs is not None:
                 MPSQNnew[idx] = qnrset[:m_trunc]
         else:
-            res=np.tensordot(vt,mps[i],axes=1)
+            if direct == False:
+                res=np.tensordot(vt,mps[i],axes=1)
+            else:
+                res = vt.reshape(-1,mps[i][0].shape[0],mps[i][1].shape[0])
+                res = np.tensordot(res, mps[i][1], axes=1)
+                res = np.tensordot(res, mps[i][0], axes=([1,2],[0,2]))
+                res = np.moveaxis(res,
+                        [-2,-1],[1,-2]).reshape([vt.shape[0]]+list(mps[i][1].shape[1:-1])+[-1])
+            
             ret_mpsi=np.reshape(u,[u.shape[0]/npdim]+pdim+[m_trunc])
             if QNargs is not None:
                 MPSQNnew[idx+1] = qnlset[:m_trunc]

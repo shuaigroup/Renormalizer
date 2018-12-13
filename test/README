@@ -35,6 +35,7 @@ chain is |00>, |10>-|01>, |10>+|01>, |20>-|02>
 
 
 time_benchmark.py
+(M=30, 2mol PBI 10mode each nlevels=5)
 single task on this node (If there are many other tasks, the CPU frequency will slow down)
                                                            1core  2core  4core  6core  8core
 openblas 
