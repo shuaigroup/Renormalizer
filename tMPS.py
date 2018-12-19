@@ -387,11 +387,13 @@ def tMPS(MPS, MPO, dt, ephtable, propagation_c, thresh=0, \
             for iterm in xrange(len(propagation_c)):
                 scaletermlist.append(mpslib.scale(termlist[iterm],
                     (-1.0j*dt)**iterm*propagation_c[iterm], QNargs=QNargs))
-
+            del termlist
+            
             MPSnew = scaletermlist[0]
             if opt == False:
                 for iterm in xrange(1,len(propagation_c)):
                     MPSnew = mpslib.add(MPSnew, scaletermlist[iterm], QNargs=QNargs)
+                del scaletermlist
         
                 MPSnew = mpslib.canonicalise(MPSnew, 'r', QNargs=QNargs)
                 MPSnew = mpslib.compress(MPSnew, 'r', trunc=thresh, QNargs=QNargs, normalize=normalize)
