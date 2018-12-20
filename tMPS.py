@@ -401,7 +401,10 @@ def tMPS(MPS, MPO, dt, ephtable, propagation_c, thresh=0, \
                 for iterm in xrange(1,len(propagation_c)):
                     MPSnew = mpslib.add(MPSnew, scaletermlist[iterm], QNargs=QNargs)
                     MPSnew = mpslib.canonicalise(MPSnew, 'r', QNargs=QNargs)
-                    MPSnew = mpslib.compress(MPSnew, 'r', trunc=thresh, QNargs=QNargs, normalize=normalize)
+                    if iterm == len(propagation_c)-1:
+                        MPSnew = mpslib.compress(MPSnew, 'r', trunc=thresh, QNargs=QNargs, normalize=normalize)
+                    else:
+                        MPSnew = mpslib.compress(MPSnew, 'r', trunc=thresh, QNargs=QNargs)
         else:
             if swap == False:
                 MPSnew = mpslib.contract(approxeiHt, MPS, 'r', thresh, compress_method=compress_method, QNargs=QNargs)
