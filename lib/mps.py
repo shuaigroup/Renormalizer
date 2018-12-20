@@ -443,9 +443,9 @@ def compress(mps,side,trunc=1.e-12,check_canonical=False,QR=False,\
             assert is_right_canonical(mps)
     
     def getmps(mps):
-        if len(mps) == 2:
+        if type(mps) == list:
             return mapply([mps[0]],[mps[1]])[0]
-        else:
+        elif type(mps) == np.ndarray:
             return mps
 
 
