@@ -784,7 +784,7 @@ def FiniteT_spectra(spectratype, mol, pbond, iMPO, HMPO, dipoleMPO, nsteps, dt,\
             ketMPO = thermal_prop(iMPO, HMPO, insteps, ephtable,\
                     prop_method=prop_method, thresh=ithresh,\
                     temperature=temperature, compress_method=compress_method,\
-                    QNargs=QNargs, approxeiHt=approxeiHt)
+                    QNargs=QNargs, approxeiHt=approxeiHt, normalize=1.0)
         elif spectratype == "abs":
             thermalMPO, thermalMPOdim = ExactPropagatorMPO(mol, pbond, -beta/2.0,\
                     QNargs=QNargs, shift=GSshift)
@@ -797,7 +797,7 @@ def FiniteT_spectra(spectratype, mol, pbond, iMPO, HMPO, dipoleMPO, nsteps, dt,\
         ketMPO = mpslib.scale(ketMPO, 1./norm, QNargs=QNargs)
         print "norm:", mpslib.norm(ketMPO, QNargs=QNargs)
         
-        
+
         if spectratype == "abs":
             ketMPO = mpslib.mapply(dipoleMPO, ketMPO, QNargs=QNargs)
         else:
