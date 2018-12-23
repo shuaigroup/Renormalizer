@@ -762,7 +762,7 @@ def tMPS(MPS, MPO, dt, ephtable, propagation_c, thresh=0, \
 
 
 def FiniteT_spectra(spectratype, mol, pbond, iMPO, HMPO, dipoleMPO, nsteps, dt,\
-        ephtable, insteps=0, thresh=0, temperature=298,\
+        ephtable, insteps=0, thresh=0, ithresh=1e-3, temperature=298,\
         algorithm=2, prop_method="C_RK4", compress_method="svd", QNargs=None, \
         approxeiHt=None, GSshift=0.0, cleanexciton=None, scheme="P&C",\
         restart=False):
@@ -782,7 +782,7 @@ def FiniteT_spectra(spectratype, mol, pbond, iMPO, HMPO, dipoleMPO, nsteps, dt,\
         # e^{\-beta H/2} \Psi
         if spectratype == "emi":
             ketMPO = thermal_prop(iMPO, HMPO, insteps, ephtable,\
-                    prop_method=prop_method, thresh=thresh,\
+                    prop_method=prop_method, thresh=ithresh,\
                     temperature=temperature, compress_method=compress_method,\
                     QNargs=QNargs, approxeiHt=approxeiHt)
         elif spectratype == "abs":
