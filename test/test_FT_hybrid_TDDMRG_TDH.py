@@ -10,6 +10,7 @@ from ephMPS import tMPS
 from ephMPS.lib import mps as mpslib
 from ephMPS.constant import *
 from ephMPS import TDH
+from ephMPS import RK
 
 from parameter_hybrid import *
 mol_hybrid = mol
@@ -37,7 +38,9 @@ class Test_FT_hybrid_TDDMRG_TDH(unittest.TestCase):
         QNargs = [ephtable, False]
         #QNargs = None
         
-        MPS, DMH = hybrid_TDDMRG_TDH.FT_DM_hybrid_TDDMRG_TDH(value[0], J, nexciton, T, \
+        rk = RK.Runge_Kutta("C_RK4")
+
+        MPS, DMH = hybrid_TDDMRG_TDH.FT_DM_hybrid_TDDMRG_TDH(rk, value[0], J, nexciton, T, \
                 nsteps, pbond, ephtable, thresh=1e-3, cleanexciton=1, QNargs=QNargs)
         
         if QNargs is not None:   
@@ -45,7 +48,7 @@ class Test_FT_hybrid_TDDMRG_TDH(unittest.TestCase):
 
         MPO, MPOdim, MPOQN, MPOQNidx, MPOQNtot, HAM, Etot, A_el = \
             hybrid_TDDMRG_TDH.construct_hybrid_Ham(value[0], J, MPS, DMH, debug=True)
-
+        
         self.assertAlmostEqual(Etot, value[1])
         occ_std = np.array(value[2])
         self.assertTrue(np.allclose(A_el, occ_std))                
@@ -76,8 +79,13 @@ class Test_FT_hybrid_TDDMRG_TDH(unittest.TestCase):
         QNargs = [ephtable, False]
         #QNargs = None
 
-        autocorr = hybrid_TDDMRG_TDH.FiniteT_spectra_TDDMRG_TDH(value[1], T, value[0], J, nsteps, \
+        rk = RK.Runge_Kutta("C_RK4")
+        #rk = RK.Runge_Kutta(method="RKF45", rtol=1e-3, adaptive=True)
+        setup = tMPS.prop_setup(rk)
+
+        autocorr = hybrid_TDDMRG_TDH.FiniteT_spectra_TDDMRG_TDH(setup, value[1], T, value[0], J, nsteps, \
                 dt, insteps, pbond, ephtable, thresh=1e-3, ithresh=1e-3, E_offset=E_offset, QNargs=QNargs)
+        
         with open(value[2], 'rb') as f:
             std = np.load(f)
         self.assertTrue(np.allclose(autocorr,std))

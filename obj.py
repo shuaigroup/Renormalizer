@@ -49,7 +49,7 @@ class Mol(object):
     condon dipole moment : dipole
     phonon information : ph
     '''
-    def __init__(self, elocalex, nphs, dipole, nphs_hybrid=0):
+    def __init__(self, elocalex, nphs, dipole, nphs_hybrid=0, Model="Holstein"):
         self.elocalex = elocalex
         self.dipole = dipole
         
@@ -61,6 +61,9 @@ class Mol(object):
         self.nphs_hybrid = nphs_hybrid
         self.ph_hybrid = []
         self.e0_hybrid = 0.0
+
+        self.Model = Model
+        self.Delta = 1.
 
     def create_phhop(self, phhopmat):
         self.phhop = phhopmat.copy()

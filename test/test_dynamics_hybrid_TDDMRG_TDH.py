@@ -8,6 +8,7 @@ from ephMPS import TDH
 from ephMPS import MPSsolver
 from ephMPS import hybrid_TDDMRG_TDH
 from ephMPS import tMPS
+from ephMPS import RK
 from ephMPS.lib import mps as mpslib
 
 @ddt
@@ -51,9 +52,12 @@ class Test_dynamics_hybrid_TDDMRG_TDH(unittest.TestCase):
                 QNargs=QNargs, sitelist=[imol])
             MPOs.append(dipoleMPO)
         
-        data = hybrid_TDDMRG_TDH.dynamics_hybrid_TDDMRG_TDH(mol, J, iMPS, \
-                WFN, nsteps, dt, ephtable,thresh=1e-3, \
-                TDDMRG_prop_method="C_RK4", QNargs=QNargs, property_MPOs=MPOs)
+        rk = RK.Runge_Kutta(method="C_RK4")
+        #rk = RK.Runge_Kutta(method="RKF45", rtol=1e-3, adaptive=True)
+        setup = tMPS.prop_setup(rk)
+
+        tlist, data = hybrid_TDDMRG_TDH.dynamics_hybrid_TDDMRG_TDH(setup, mol, J, iMPS, \
+                WFN, nsteps, dt, ephtable,thresh=1e-3, QNargs=QNargs, property_MPOs=MPOs)
         
         with open("std_data/hybrid_TDDMRG_TDH/ZT_occ"+str(value[0])+".npy", 'rb') as f:
             std = np.load(f)
@@ -75,7 +79,11 @@ class Test_dynamics_hybrid_TDDMRG_TDH(unittest.TestCase):
         QNargs = [ephtable, False]
         T = 2000.
         insteps = 1
-        iMPS, WFN = hybrid_TDDMRG_TDH.FT_DM_hybrid_TDDMRG_TDH(mol, J, nexciton, T, \
+
+        rk = RK.Runge_Kutta(method="C_RK4")
+        setup = tMPS.prop_setup(rk)
+        
+        iMPS, WFN = hybrid_TDDMRG_TDH.FT_DM_hybrid_TDDMRG_TDH(rk, mol, J, nexciton, T, \
                 insteps, pbond, ephtable, thresh=1e-3, cleanexciton=nexciton,\
                 QNargs=QNargs, space="GS")
     
@@ -98,9 +106,11 @@ class Test_dynamics_hybrid_TDDMRG_TDH(unittest.TestCase):
                 QNargs=QNargs, sitelist=[imol])
             MPOs.append(dipoleMPO)
         
-        data = hybrid_TDDMRG_TDH.dynamics_hybrid_TDDMRG_TDH(mol, J, iMPS, \
-                WFN, nsteps, dt, ephtable,thresh=1e-3, \
-                TDDMRG_prop_method="C_RK4", QNargs=QNargs, property_MPOs=MPOs)
+        #rk = RK.Runge_Kutta(method="RKF45", rtol=1e-3, adaptive=True)
+        #setup = tMPS.prop_setup(rk)
+        
+        tlist, data = hybrid_TDDMRG_TDH.dynamics_hybrid_TDDMRG_TDH(setup, mol, J, iMPS, \
+                WFN, nsteps, dt, ephtable,thresh=1e-3, QNargs=QNargs, property_MPOs=MPOs)
         
         with open("std_data/hybrid_TDDMRG_TDH/FT_occ"+str(value[0])+".npy", 'rb') as f:
             std = np.load(f)

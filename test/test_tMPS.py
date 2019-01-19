@@ -9,6 +9,7 @@ from ephMPS import MPSsolver
 from ephMPS import constant
 from ephMPS.lib import mps as mpslib
 from ddt import ddt, data
+from ephMPS import RK
 
 @ddt
 class Test_tMPS(unittest.TestCase):
@@ -88,8 +89,11 @@ class Test_tMPS(unittest.TestCase):
 
         nsteps = 100
         dt = 30.0
+        
+        rk = RK.Runge_Kutta(method="C_RK4")
+        setup = tMPS.prop_setup(rk)
 
-        autocorr = tMPS.ZeroTCorr(iMPS, HMPO, dipoleMPO, nsteps, dt, ephtable,
+        autocorr = tMPS.ZeroTCorr(setup, iMPS, HMPO, dipoleMPO, nsteps, dt, ephtable,
                 thresh=1.0e-3, cleanexciton=1-nexciton, algorithm=value[0],
                 compress_method=value[1], QNargs=QNargs)
         autocorr = np.array(autocorr)
@@ -140,8 +144,11 @@ class Test_tMPS(unittest.TestCase):
 
         nsteps = 50
         dt = 30.0
+        
+        rk = RK.Runge_Kutta(method="C_RK4")
+        setup = tMPS.prop_setup(rk)
 
-        autocorr = tMPS.ZeroTCorr(iMPS, HMPO, dipoleMPO, nsteps, dt, ephtable,
+        autocorr = tMPS.ZeroTCorr(setup, iMPS, HMPO, dipoleMPO, nsteps, dt, ephtable,
                 thresh=1.0e-4, cleanexciton=1-nexciton, algorithm=value[0],
                 compress_method=value[1], QNargs=QNargs)
         autocorr = np.array(autocorr)
@@ -170,7 +177,7 @@ class Test_tMPS(unittest.TestCase):
         nsteps = 50
         dt = 30.0
 
-        autocorr3 = tMPS.ZeroTCorr(iMPS3, HMPO3, dipoleMPO, nsteps, dt, ephtable3,\
+        autocorr3 = tMPS.ZeroTCorr(setup, iMPS3, HMPO3, dipoleMPO, nsteps, dt, ephtable3,\
                 thresh=1.0e-4, cleanexciton=1-nexciton, algorithm=value[0],
                 compress_method=value[1], QNargs=QNargs3)
         autocorr3 = np.array(autocorr3)
@@ -212,7 +219,11 @@ class Test_tMPS(unittest.TestCase):
         EXMPO = mpslib.MPSdtype_convert(EXMPO, QNargs=QNargs)
 
         insteps = 50
-        autocorr = tMPS.FiniteT_spectra("emi", mol, pbond, EXMPO, HMPO,
+        
+        rk = RK.Runge_Kutta(method="C_RK4")
+        setup = tMPS.prop_setup(rk)
+        
+        autocorr = tMPS.FiniteT_spectra(setup, "emi", mol, pbond, EXMPO, HMPO,
                 dipoleMPO, nsteps, dt, ephtable, insteps, thresh=1.0e-3,
                 temperature=298, algorithm=value[0], compress_method=value[1],
                 QNargs=QNargs)
@@ -256,7 +267,11 @@ class Test_tMPS(unittest.TestCase):
 
         nsteps = 50
         dt = 30.0
-        autocorr = tMPS.FiniteT_spectra("abs", mol, pbond, GSMPO, HMPO,
+        
+        rk = RK.Runge_Kutta(method="C_RK4")
+        setup = tMPS.prop_setup(rk)
+        
+        autocorr = tMPS.FiniteT_spectra(setup, "abs", mol, pbond, GSMPO, HMPO,
                 dipoleMPO, nsteps, dt, ephtable, thresh=1.0e-3,
                 temperature=298, algorithm=value[0], compress_method=value[1], QNargs=QNargs)
         
@@ -266,76 +281,6 @@ class Test_tMPS(unittest.TestCase):
             TTabs_std = np.load(f)
 
         self.assertTrue(np.allclose(autocorr,TTabs_std[0:nsteps],rtol=value[4]))
-
-
-    @data(["svd",True],["svd",None],["variational",None])
-    def test_FiniteT_emi(self,value):
-        nexciton = 1
-        procedure = [[10,0.4],[20,0.2],[30,0.1],[40,0],[40,0]]
-        iMPS, iMPSdim, iMPSQN, HMPO, HMPOdim, HMPOQN, HMPOQNidx, HMPOQNtot, ephtable, pbond = MPSsolver.construct_MPS_MPO_2(mol, J, procedure[0][0], nexciton)
-        
-        # if in the EX space, MPO minus E_e to reduce osillation
-        for ibra in xrange(pbond[0]):
-            HMPO[0][0,ibra,ibra,0] -=  2.28614053/constant.au2ev
-        
-        if value[1] != None:
-            QNargs = [ephtable, False]
-            HMPO = [HMPO, HMPOQN, HMPOQNidx, HMPOQNtot]
-        else:
-            QNargs = None
-        
-        dipoleMPO, dipoleMPOdim = MPSsolver.construct_onsiteMPO(mol, pbond, "a", dipole=True, QNargs=QNargs)
-        nsteps = 30
-        dt = 30.0
-        EXMPO, EXMPOdim = tMPS.Max_Entangled_EX_MPO(mol, pbond, norm=True, QNargs=QNargs)
-        EXMPO = mpslib.MPSdtype_convert(EXMPO, QNargs=QNargs)
-    
-        insteps = 50
-        autocorr = tMPS.FiniteT_emi(mol, pbond, EXMPO, HMPO,
-                dipoleMPO, nsteps, dt, ephtable, insteps, thresh=1.0e-3,
-                temperature=298, compress_method=value[0], QNargs=QNargs)
-        
-        autocorr = np.array(autocorr)
-        
-        with open("std_data/tMPS/TTemi_"+str(2)+str(value[0])+".npy", 'rb') as f:
-            TTemi_std = np.load(f)
-        self.assertTrue(np.allclose(autocorr,TTemi_std[0:nsteps],rtol=1e-2))
-
-
-    @data(["svd",True],["svd",None],["variational",None])
-    def test_FiniteT_abs(self,value):
-        nexciton = 0
-        procedure = [[1,0],[1,0],[1,0]]
-        iMPS, iMPSdim, iMPSQN, HMPO, HMPOdim, HMPOQN, HMPOQNidx, HMPOQNtot, ephtable, pbond = MPSsolver.construct_MPS_MPO_2(mol, J, procedure[0][0], nexciton)
-        
-        # if in the EX space, MPO minus E_e to reduce osillation
-        for ibra in xrange(pbond[0]):
-            HMPO[0][0,ibra,ibra,0] -=  2.28614053/constant.au2ev
-        
-        if value[1] != None:
-            QNargs = [ephtable, False]
-            HMPO = [HMPO, HMPOQN, HMPOQNidx, HMPOQNtot]
-        else:
-            QNargs = None
-        
-        dipoleMPO, dipoleMPOdim = MPSsolver.construct_onsiteMPO(mol, pbond,
-                "a^\dagger", dipole=True, QNargs=QNargs)
-        GSMPS, GSMPSdim = tMPS.Max_Entangled_GS_MPS(mol, pbond, QNargs=QNargs)
-        GSMPO = tMPS.hilbert_to_liouville(GSMPS, QNargs=QNargs)
-        GSMPO = mpslib.MPSdtype_convert(GSMPO, QNargs=QNargs)
-
-        nsteps = 50
-        dt = 30.0
-        autocorr = tMPS.FiniteT_abs(mol, pbond, GSMPO, HMPO,
-                dipoleMPO, nsteps, dt, ephtable, thresh=1.0e-3,
-                temperature=298, compress_method=value[0], QNargs=QNargs)
-        
-        autocorr = np.array(autocorr)
-
-        with open("std_data/tMPS/TTabs_"+str(value[0]+".npy"), 'rb') as f:
-            TTabs_std = np.load(f)
-
-        self.assertTrue(np.allclose(autocorr,TTabs_std[0:nsteps],rtol=1e-3))
 
 
     def test_1mol_ZTabs(self):
@@ -366,7 +311,7 @@ class Test_tMPS(unittest.TestCase):
         with open("std_data/tMPS/1mol_ZTabs.npy", 'rb') as f:
             mol1_ZTabs_std = np.load(f)
 
-        self.assertTrue(np.allclose(autocorr,mol1_ZTabs_std))
+        self.assertTrue(np.allclose(autocorr,mol1_ZTabs_std,rtol=1e-3))
         
 
 if __name__ == "__main__":

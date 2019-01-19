@@ -406,8 +406,8 @@ def variational_compress(MPS,aMPS,MPO,side,nloops,trunc=1.e-12,method="1site"):
     return aMPS
 
 
-def compress(mps,side,trunc=1.e-12,check_canonical=False,QR=False,\
-        QNargs=None,normalize=None, direct=False):
+def compress(mps,side,trunc=1.e-12,check_canonical=False, QR=False,\
+        QNargs=None,normalize=None, direct=False, msite=None):
     """
     inp: canonicalise MPS (or MPO)
 
@@ -424,7 +424,9 @@ def compress(mps,side,trunc=1.e-12,check_canonical=False,QR=False,\
     returns:
          truncated or canonicalised MPS
     """
-    assert side in ["l","r"]
+    assert side in ["l","r","ml","mr"]
+
+    mpsin = mps
 
     if QNargs is not None:
         ephtable, ifMPO = QNargs[:]
@@ -432,14 +434,22 @@ def compress(mps,side,trunc=1.e-12,check_canonical=False,QR=False,\
         mps, MPSQN, MPSQNidx, MPSQNtot = mps
         if side == "l":
             MPSQNnew = svd_qn.QN_construct(MPSQN, MPSQNidx, len(mps)-1, MPSQNtot)
-        else:
+        elif side == "r":
             MPSQNnew = svd_qn.QN_construct(MPSQN, MPSQNidx, 0, MPSQNtot)
+        else:
+            MPSQNnew = MPSQN
+    
+    if side == "ml" and msite == 0:
+        return mpsin
+    elif side == "mr" and msite == len(mps)-1:
+        return mpsin
+
     # if trunc==0, we are just doing a canonicalisation,
     # so skip check, otherwise, ensure mps is canonicalised
     if trunc != 0 and check_canonical:
         if side=="l":
             assert is_left_canonical(mps)
-        else:
+        elif side=="r":
             assert is_right_canonical(mps)
     
     def getmps(mps):
@@ -448,25 +458,30 @@ def compress(mps,side,trunc=1.e-12,check_canonical=False,QR=False,\
         elif type(mps) == np.ndarray:
             return mps
 
-
     ret_mps=[]
     nsites=len(mps)
     if side=="l":
         res=getmps(mps[-1])
-    else:
+    elif side == "r":
         res=getmps(mps[0])
+    elif side == "mr" or side == "ml":
+        res=getmps(mps[msite])
+    
+    if side == "l":
+        loop = range(nsites-1,0,-1)
+    elif side == "r":
+        loop = range(0,nsites-1,1)
+    else:
+        loop = [msite]
 
-    for i in xrange(1,nsites):
-        if side == "l":
-            idx = nsites-i
-        else:
-            idx = i-1
+
+    for idx in loop:
 
         # physical indices exclude first and last indices
         pdim=list(res.shape[1:-1])
         npdim = np.prod(pdim)
 
-        if side=="l":
+        if side[-1] == "l":
             res=np.reshape(res,(res.shape[0],np.prod(res.shape[1:])))
         else:
             res=np.reshape(res,(np.prod(res.shape[:-1]),res.shape[-1]))
@@ -488,7 +503,7 @@ def compress(mps,side,trunc=1.e-12,check_canonical=False,QR=False,\
                 sigmaqn = np.array([0]*npdim)
             qnl = np.array(MPSQNnew[idx])
             qnr = np.array(MPSQNnew[idx+1])
-            if side == "l":
+            if side[-1] == "l":
                 qnbigl = qnl
                 qnbigr = np.add.outer(sigmaqn,qnr)
             else:
@@ -522,13 +537,13 @@ def compress(mps,side,trunc=1.e-12,check_canonical=False,QR=False,\
             sigma=sigma[0:m_trunc]
             vt=vt[0:m_trunc,:]
             
-            if side == "l":
+            if side[-1] == "l":
                 u = np.einsum('ji, i -> ji', u, sigma)
             else:
                 vt = np.einsum('i, ij -> ij', sigma, vt)
         else:
             if QNargs is not None:
-                if side == "l":
+                if side[-1] == "l":
                     system = "R"
                 else:
                     system = "L"
@@ -536,59 +551,68 @@ def compress(mps,side,trunc=1.e-12,check_canonical=False,QR=False,\
                         QR=True, system=system, full_matrices=False, IfMPO=ifMPO)
                 vt = v.T
             else:
-                if side == "l":
+                if side[-1] == "l":
                     u,vt = scipy.linalg.rq(res, mode='economic')
                 else:
                     u,vt = scipy.linalg.qr(res, mode='economic')
             m_trunc = u.shape[1]
 
-        if side=="l":
+        if side[-1] =="l":
             if direct == False:
-                res=np.tensordot(mps[nsites-i-1],u,axes=1)
+                res=np.tensordot(mps[idx-1],u,axes=1)
             else:
-                res = u.reshape(mps[nsites-i-1][0].shape[0],mps[nsites-i-1][1].shape[0],-1)
-                res = np.tensordot(mps[nsites-i-1][1], res, axes=([-1],[1]))
-                res = np.tensordot(mps[nsites-i-1][0], res, axes=([-2,-1],[1,-2]))
-                res = np.moveaxis(res,[2],[1]).reshape([-1]+list(mps[nsites-i-1][1].shape[1:-1])+[u.shape[-1]])
+                res = u.reshape(mps[idx-1][0].shape[0],mps[idx-1][1].shape[0],-1)
+                res = np.tensordot(mps[idx-1][1], res, axes=([-1],[1]))
+                res = np.tensordot(mps[idx-1][0], res, axes=([-2,-1],[1,-2]))
+                res = np.moveaxis(res,[2],[1]).reshape([-1]+list(mps[idx-1][1].shape[1:-1])+[u.shape[-1]])
                 
             ret_mpsi=np.reshape(vt,[m_trunc]+pdim+[vt.shape[1]/npdim])
             if QNargs is not None:
                 MPSQNnew[idx] = qnrset[:m_trunc]
         else:
             if direct == False:
-                res=np.tensordot(vt,mps[i],axes=1)
+                res=np.tensordot(vt,mps[idx+1],axes=1)
             else:
-                res = vt.reshape(-1,mps[i][0].shape[0],mps[i][1].shape[0])
-                res = np.tensordot(res, mps[i][1], axes=1)
-                res = np.tensordot(res, mps[i][0], axes=([1,2],[0,2]))
+                res = vt.reshape(-1,mps[idx+1][0].shape[0],mps[idx+1][1].shape[0])
+                res = np.tensordot(res, mps[idx+1][1], axes=1)
+                res = np.tensordot(res, mps[idx+1][0], axes=([1,2],[0,2]))
                 res = np.moveaxis(res,
-                        [-2,-1],[1,-2]).reshape([vt.shape[0]]+list(mps[i][1].shape[1:-1])+[-1])
+                        [-2,-1],[1,-2]).reshape([vt.shape[0]]+list(mps[idx+1][1].shape[1:-1])+[-1])
             
             ret_mpsi=np.reshape(u,[u.shape[0]/npdim]+pdim+[m_trunc])
             if QNargs is not None:
                 MPSQNnew[idx+1] = qnlset[:m_trunc]
         
         ret_mps.append(ret_mpsi)
-    
+        
     # normalize is the norm of the MPS
     if normalize is not None:
         res = res / np.linalg.norm(np.ravel(res)) * normalize
     
     ret_mps.append(res)
     
-    if side=="l":
+    if side[-1] == "l":
         ret_mps.reverse()
 
     #fidelity = dot(conj(ret_mps), mps)/dot(conj(mps), mps)
     #print "compression fidelity:: ", fidelity
     # if np.isnan(fidelity):
     #     dddd
+    if side == "ml":
+        ret_mps = mps[:msite-1] + ret_mps +  mps[msite+1:]
+    elif side == "mr":
+        ret_mps = mps[:msite] + ret_mps +  mps[msite+2:]
 
     if QNargs is not None:
         if side == "l":
             MPSQNnewidx = 0
-        else:
+        elif side == "r":
             MPSQNnewidx = len(mps)-1
+        elif side == "ml":
+            MPSQNnewidx = MPSQNidx - 1
+        else:
+            MPSQNnewidx = MPSQNidx + 1
+
         ret_mps = [ret_mps, MPSQNnew, MPSQNnewidx, MPSQNtot]
     return ret_mps
 

@@ -10,6 +10,7 @@ from ephMPS import tMPS
 from ephMPS.lib import mps as mpslib
 from ephMPS.constant import *
 from ephMPS import TDH
+from ephMPS import RK 
 
 from parameter_hybrid import *
 mol_hybrid = mol
@@ -65,9 +66,12 @@ class Test_hybrid_TDDMRG_TDH(unittest.TestCase):
         dt = 30.0
         iMPS = mpslib.MPSdtype_convert(iMPS, QNargs=QNargs)
         WFN = [wfn.astype(np.complex128) for wfn in WFN[:-1]]+[WFN[-1]]
-        autocorr = hybrid_TDDMRG_TDH.ZeroTcorr_hybrid_TDDMRG_TDH(value[0], J, iMPS, dipoleMPO, \
-                WFN, nsteps, dt, ephtable,thresh=1e-3,
-                TDDMRG_prop_method="C_RK4", E_offset=-2.28614053/constant.au2ev, QNargs=QNargs)
+
+        rk = RK.Runge_Kutta("C_RK4")
+        setup = tMPS.prop_setup(rk)
+
+        autocorr = hybrid_TDDMRG_TDH.ZeroTcorr_hybrid_TDDMRG_TDH(setup, value[0], J, iMPS, dipoleMPO, \
+                WFN, nsteps, dt, ephtable,thresh=1e-3, E_offset=-2.28614053/constant.au2ev, QNargs=QNargs)
         with open(value[1], 'rb') as f:
             hybrid_ZTabs_std = np.load(f)
         self.assertTrue(np.allclose(autocorr,hybrid_ZTabs_std,rtol=value[2]))
@@ -95,8 +99,12 @@ class Test_hybrid_TDDMRG_TDH(unittest.TestCase):
         dt = 30.0
         iMPS = mpslib.MPSdtype_convert(iMPS, QNargs=QNargs)
         WFN = [wfn.astype(np.complex128) for wfn in WFN[:-1]]+[WFN[-1]]
-        autocorr = hybrid_TDDMRG_TDH.ZeroTcorr_hybrid_TDDMRG_TDH(value[0], J, iMPS, dipoleMPO, \
-                WFN, nsteps, dt, ephtable,thresh=1e-3, TDDMRG_prop_method="C_RK4", QNargs=QNargs)
+        
+        rk = RK.Runge_Kutta("C_RK4")
+        setup = tMPS.prop_setup(rk)
+        
+        autocorr = hybrid_TDDMRG_TDH.ZeroTcorr_hybrid_TDDMRG_TDH(setup, value[0], J, iMPS, dipoleMPO, \
+                WFN, nsteps, dt, ephtable,thresh=1e-3, QNargs=QNargs)
         with open(value[1], 'rb') as f:
             hybrid_ZTemi_prop_std = np.load(f)[:nsteps]
         self.assertTrue(np.allclose(autocorr,hybrid_ZTemi_prop_std,rtol=value[2]))

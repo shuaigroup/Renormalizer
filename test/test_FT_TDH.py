@@ -59,7 +59,7 @@ class Test_FT_TDH(unittest.TestCase):
         TDH.construct_Ham_vib(mol)
         
         DM = TDH.FT_DM(mol, J, nexciton, T, insteps)
-        autocorr = TDH.linear_spectra(value[1], mol, J, nexciton, DM, dt, nsteps, fe, fv, E_offset=E_offset, T=T)
+        autocorr, E = TDH.linear_spectra(value[1], mol, J, nexciton, DM, dt, nsteps, fe, fv, E_offset=E_offset, T=T)
         with open(value[2], 'rb') as f:
             std = np.load(f)
         self.assertTrue(np.allclose(autocorr,std))

@@ -256,10 +256,11 @@ def TDH(mol, J, nexciton, WFN, dt, fe, fv, prop_method="unitary", particle="hard
         HAM, Etot = construct_H_Ham(mol, J, nexciton, WFN, fe, fv, particle=particle)
         unitary_propagation(HAM, WFN, dt)
     else:
-        [RK_a,RK_b,RK_c,Nstage] =  RK.runge_kutta_explicit_tableau(prop_method)
+        rk =  RK.Runge_Kutta(method=prop_method)
+        RK_a,RK_b,RK_c = rk.tableau
         
         klist = [] 
-        for istage in xrange(Nstage):
+        for istage in xrange(rk.stage):
             WFN_temp = copy.deepcopy(WFN)
             for jterm in xrange(istage):
                 for iwfn in xrange(f):
@@ -271,7 +272,7 @@ def TDH(mol, J, nexciton, WFN, dt, fe, fv, prop_method="unitary", particle="hard
             klist.append([HAM[iwfn].dot(WFN_temp[iwfn])/1.0j for iwfn in xrange(f)])
         
         for iwfn in xrange(f):
-            for istage in xrange(Nstage):
+            for istage in xrange(rk.stage):
                 WFN[iwfn] += RK_b[istage]*klist[istage][iwfn]*dt
     
     # EOM of coefficient a

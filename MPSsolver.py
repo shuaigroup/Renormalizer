@@ -365,7 +365,7 @@ def construct_MPO(mol, J, pbond, scheme=2, rep="star", elocal_offset=None):
     impo = 0
     for imol in xrange(nmols):
         
-        mididx = nmols/2
+        mididx = nmols//2
         
         # electronic part
         mpo = np.zeros([MPOdim[impo],pbond[impo],pbond[impo],MPOdim[impo+1]])
@@ -375,10 +375,17 @@ def construct_MPO(mol, J, pbond, scheme=2, rep="star", elocal_offset=None):
                 elocal = mol[imol].elocalex 
                 if elocal_offset is not None:
                     elocal += elocal_offset[imol]
-                mpo[-1,ibra,iket,0]  = EElementOpera("a^\dagger a", ibra, iket)\
-                    * (elocal + mol[imol].e0)
+                if mol[imol].Model == "Holstein":
+                    mpo[-1,ibra,iket,0]  = EElementOpera("a^\dagger a", ibra, iket)\
+                        * (elocal + mol[imol].e0)
+                    mpo[-1,ibra,iket,1]  = EElementOpera("a^\dagger a", ibra, iket)
+                elif mol[imol].Model == "SBM":
+                    mpo[-1,ibra,iket,0] = EElementOpera("sigma_z", ibra, iket) * elocal + \
+                        EElementOpera("Iden", ibra, iket)*mol[imol].e0 +  \
+                        EElementOpera("sigma_x", ibra, iket)*mol[imol].Delta
+                    mpo[-1,ibra,iket,1]  = EElementOpera("sigma_z", ibra, iket)
+
                 mpo[-1,ibra,iket,-1] = EElementOpera("Iden", ibra, iket)
-                mpo[-1,ibra,iket,1]  = EElementOpera("a^\dagger a", ibra, iket)
                 
                 # first column operator
                 if imol != 0 :
@@ -725,6 +732,15 @@ def optimization(MPS, MPSdim, MPSQN, MPO, MPOdim, ephtable, pbond, nexciton,\
             
             cstruct = c1d2cmat(cshape, c, qnmat, nexciton, nroots=nroots)
 
+            #if system == "R":
+            #    side = "ml"
+            #elif system == "L":
+            #    side = "mr"
+            #MPS[imps] = cstruct
+            #MPS = [MPS, MPSQN, imps, 1]
+            #MPS = mpslib.compress(MPS, side, trunc=1e-3, QR=True, QNargs=[ephtable, False], msite=imps)
+            #MPS, MPSQN = MPS[0:2]
+            
             if nroots == 1:
                 # direct svd the coefficient matrix
                 mps, mpsdim, mpsqn, compmps = Renormalization_svd(cstruct, qnbigl, qnbigr,\

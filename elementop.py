@@ -74,7 +74,7 @@ def EElementOpera(op, bra, ket):
     '''
     electronic operator
     '''
-    assert op in ["a^\dagger", "a", "a^\dagger a", "Iden"]
+    assert op in ["a^\dagger", "a", "a^\dagger a", "Iden","sigma_x", "sigma_z"]
     assert bra in [0, 1]
     assert ket in [0, 1]
 
@@ -98,6 +98,19 @@ def EElementOpera(op, bra, ket):
 
     elif op == "Iden":
         if bra == ket:
+            return 1.0
+        else:
+            return 0.0
+    elif op == "sigma_z":
+        if bra == ket:
+            if bra == 1:
+                return 1.0
+            else:
+                return -1.0
+        else:
+            return 0.0
+    elif op == "sigma_x":
+        if bra != ket:
             return 1.0
         else:
             return 0.0
