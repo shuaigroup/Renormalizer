@@ -65,6 +65,13 @@ class MpsBase(MatrixProduct):
 
         # print("self.dim", self.dim)
         mps._left_canon = True
+
+        mps.wfn = []
+        for mol in mps.mol_list:
+            for ph in mol.hartree_phs:
+                mps.wfn.append(np.random.random(ph.n_phys_dim))
+        mps.wfn.append(1.0)
+
         return mps
 
     @classmethod
@@ -85,7 +92,7 @@ class MpsBase(MatrixProduct):
             # electron mps
             mps.append(np.array([1, 0]).reshape(1, 2, 1))
             # ph mps
-            for ph in mol.phs:
+            for ph in mol.dmrg_phs:
                 for iboson in range(ph.nqboson):
                     ms = np.zeros((1, ph.base, 1))
                     if max_entangled:
@@ -99,6 +106,7 @@ class MpsBase(MatrixProduct):
     def __init__(self):
         super(MpsBase, self).__init__()
         self.mtype = MatrixState
+        self.wfn = []
 
     @property
     def digest(self):
@@ -110,6 +118,13 @@ class MpsBase(MatrixProduct):
             prod = prod.reshape((prod.shape[0], -1, prod.shape[-1]))
         return {'var': prod.var(), 'mean': prod.mean(), 'ptp': prod.ptp()}
 
+
     @property
     def nexciton(self):
         return self.qntot
+
+    def hartree_wfn_diff(self, other):
+        res = []
+        for wfn1, wfn2 in zip(self.wfn, other.wfn):
+            res.append(scipy.linalg.norm(np.tensordot(wfn1, wfn1, axes=0) - np.tensordot(wfn2, wfn2, axes=0)))
+        return np.array(res)

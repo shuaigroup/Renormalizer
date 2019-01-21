@@ -18,12 +18,12 @@ ph modes: [[[1, a.u.], [1, a.u.]]]
 ph phys dim: 10
 
 # temperature
-temperature: [0, a.u.]
+temperature: [1, a.u.]
 
 # simulation parameters
 # nsteps: 20
 evolve dt: auto
-evolve time: 6
+evolve time: 3
 
 # output parameters
 output dir: ./

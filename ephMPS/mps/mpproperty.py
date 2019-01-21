@@ -41,7 +41,7 @@ class MpProperty(MatrixProduct):
     def ph_occupations(self):
         ph_occupations = []
         for imol, mol in enumerate(self.mol_list):
-            for iph in range(len(mol.phs)):
+            for iph in range(len(mol.dmrg_phs)):
                 ph_occupations.append(self.calc_ph_occupation(imol, iph))
         return np.array(ph_occupations)
 

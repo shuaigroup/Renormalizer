@@ -10,10 +10,8 @@ from functools import partial
 
 import numpy as np
 
-from ephMPS.mps import solver
-from ephMPS.mps.mpo import Mpo
-from ephMPS.mps.mps import Mps
-from ephMPS.utils import TdMpsJob, constant, sizeof_fmt
+from ephMPS.mps import Mpo, Mps, solver
+from ephMPS.utils import TdMpsJob, constant, Quantity
 from ephMPS.mps.matrix import MatrixState, DensityMatrixOp
 
 logger = logging.getLogger(__name__)
@@ -21,11 +19,11 @@ logger = logging.getLogger(__name__)
 EDGE_THRESHOLD = 1e-4
 
 
-def calc_reduced_density_matrix(mp):
+def calc_reduced_density_matrix_straight(mp):  # this procedure is **very** memory consuming
     if mp.mtype == DensityMatrixOp:
         density_matrix_product = mp.apply(mp.conj_trans())
         #density_matrix_product = mp
-    elif mp.mtype == MatrixState:  # this step is memory consuming
+    elif mp.mtype == MatrixState:
         density_matrix_product = Mpo()
         density_matrix_product.mtype = DensityMatrixOp
         # todo: not elegant! figure out a better way to deal with data type
@@ -33,26 +31,56 @@ def calc_reduced_density_matrix(mp):
         density_matrix_product.mol_list = mp.mol_list
         for mt in mp:
             bond1, phys, bond2 = mt.shape
-            mt1 = mt.conj().reshape(bond1, phys, bond2, 1)
-            mt2 = mt.reshape(bond1, phys, bond2, 1)
+            mt1 = mt.reshape(bond1, phys, bond2, 1)
+            mt2 = mt.conj().reshape(bond1, phys, bond2, 1)
             new_mt = np.tensordot(mt1, mt2, axes=[3, 3]).transpose((0, 3, 1, 4, 2, 5)).reshape(bond1 ** 2, phys, phys, bond2 ** 2)
             density_matrix_product.append(new_mt)
         density_matrix_product.build_empty_qn()
     else:
         assert False
-    mp.peak_bytes = max(mp.peak_bytes, density_matrix_product.total_bytes)
+    mp.set_peak_bytes(density_matrix_product.total_bytes)
     return density_matrix_product.get_reduced_density_matrix()
 
+# saves memory, but still time consuming, especially when the calculation starts,
+# in long term the same order with expectation, see report/ephMPS9.pstat
+def calc_reduced_density_matrix(mp):
+    if mp.mtype == MatrixState:
+        mp1 = [mt.reshape(mt.shape[0], mt.shape[1], 1, mt.shape[2]) for mt in mp]
+        mp2 = [mt.reshape(mt.shape[0], 1, mt.shape[1], mt.shape[2]).conj()  for mt in mp]
+    else:
+        assert mp.mtype == DensityMatrixOp
+        mp1 = mp
+        mp2 = mp.conj_trans()
+    reduced_density_matrix = np.zeros((mp.mol_list.mol_num, mp.mol_list.mol_num), dtype=np.complex128)
+    for i in range(mp.mol_list.mol_num):
+        for j in range(mp.mol_list.mol_num):
+            elem = np.array([1]).reshape(1, 1)
+            e_idx = -1
+            for mt_idx, (mt1, mt2) in enumerate(zip(mp1, mp2)):
+                if mp.ephtable.is_electron(mt_idx):
+                    e_idx += 1
+                    axis_idx1 = int(e_idx == i)
+                    axis_idx2 = int(e_idx == j)
+                    sub_mt1 = mt1[:, axis_idx1, :, :]
+                    sub_mt2 = mt2[:, :, axis_idx2, :]
+                    elem = np.tensordot(elem, sub_mt1, axes=(0, 0))
+                    elem = np.tensordot(elem, sub_mt2, axes=[(0, 1), (0, 1)])
+                else:
+                    elem = np.tensordot(elem, mt1, axes=(0, 0))
+                    elem = np.tensordot(elem, mt2, axes=[(0, 1, 2), (0, 2, 1)])
+            reduced_density_matrix[i][j] = elem.flatten()[0]
+    return reduced_density_matrix
 
 class ChargeTransport(TdMpsJob):
-    def __init__(self, mol_list, j_constant, temperature=0):
+    def __init__(self, mol_list, temperature=0):
         self.mol_list = mol_list
-        self.j_constant = j_constant
         self.temperature = temperature
         self.mpo = None
+        self.mpo_e_lbound = None   # lower bound of the energy of the hamiltonian
+        self.mpo_e_ubound = None   # upper bound of the energy of the hamiltonian
         super(ChargeTransport, self).__init__()
         self.energies = [self.tdmps_list[0].expectation(self.mpo)]
-        self.reduced_density_matrices = [calc_reduced_density_matrix(self.tdmps_list[0])]
+        self.reduced_density_matrices = [calc_reduced_density_matrix_straight(self.tdmps_list[0])]
         self.custom_dump_info = OrderedDict()
         self.stop_at_edge = False
         self.memory_limit = None
@@ -63,12 +91,22 @@ class ChargeTransport(TdMpsJob):
         return self.mol_list.mol_num
 
     def create_electron(self, gs_mp):
+        # test code to put phonon at ground state of the electronic excited state
+        '''
+        import math
+        ph_mps = gs_mp[self.mol_num]  # suppose only one phonon
+        mol = self.mol_list[self.mol_num // 2]
+        s = mol.phs[0].coupling_constant ** 2
+
+        for k in range(mol.phs[0].n_phys_dim):  # Suppose physical order 10
+            ph_mps[0, k, 0] = math.exp(-s) * s ** k / math.factorial(k)
+        '''
+        # previous create electron code
         creation_operator = Mpo.onsite(self.mol_list, 'a^\dagger', mol_idx_set={self.mol_num // 2})
         return creation_operator.apply(gs_mp)
 
     def init_mps(self):
-        j_matrix = construct_j_matrix(self.mol_num, self.j_constant)
-        self.mpo = Mpo(self.mol_list, j_matrix, scheme=3)
+        self.mpo = Mpo(self.mol_list, scheme=3)
         if self.temperature == 0:
             gs_mp = Mps.gs(self.mol_list, max_entangled=False)
         else:
@@ -78,6 +116,11 @@ class ChargeTransport(TdMpsJob):
             gs_mp = thermal_prop.apply(gs_mp)
             gs_mp.normalize()
         init_mp = self.create_electron(gs_mp)
+        tentative_mpo = Mpo(self.mol_list, scheme=3)
+        energy = Quantity(init_mp.expectation(tentative_mpo))
+        self.mpo = Mpo(self.mol_list, scheme=3, offset=energy)
+        self.mpo_e_lbound = solver.find_lowest_energy(self.mpo, 1, 20)
+        self.mpo_e_ubound = solver.find_highest_energy(self.mpo, 1, 20)
         # init_mp.invalidate_cache()
         return init_mp
 
@@ -96,7 +139,10 @@ class ChargeTransport(TdMpsJob):
         self.energies.append(new_energy)
         logger.info('Energy of the new mps: %g, %.5f%% of initial energy preserved'
                     % (new_energy, self.latest_energy_ratio * 100))
-        self.reduced_density_matrices.append(calc_reduced_density_matrix(new_mps))
+        logger.debug('Calculating reduced density matrix')
+        if self.reduced_density_matrices is not None:
+            self.reduced_density_matrices.append(calc_reduced_density_matrix(new_mps))
+        logger.debug('Calculate reduced density matrix finished')
         return new_mps
 
     def stop_evolve_criteria(self):
@@ -106,7 +152,7 @@ class ChargeTransport(TdMpsJob):
     def get_dump_dict(self):
         dump_dict = OrderedDict()
         dump_dict['mol list'] = self.mol_list.to_dict()
-        dump_dict['J constant'] = str(self.j_constant)
+        dump_dict['J constant'] = str(self.mol_list.j_constant)
         dump_dict['total steps'] = len(self.tdmps_list)
         dump_dict['total time'] = self.evolve_times[-1]
         dump_dict['diffusion'] = self.latest_mps.r_square / self.evolve_times[-1]
@@ -118,8 +164,9 @@ class ChargeTransport(TdMpsJob):
         dump_dict['electron occupations array'] = [list(occupations) for occupations in self.e_occupations_array]
         dump_dict['phonon occupations array'] = [list(occupations) for occupations in self.ph_occupations_array]
         dump_dict['coherent length array'] = list(self.coherent_length_array.real)
-        dump_dict['final reduced density matrix real'] = [list(row.real) for row in self.reduced_density_matrices[-1]]
-        dump_dict['final reduced density matrix imag'] = [list(row.imag) for row in self.reduced_density_matrices[-1]]
+        if self.reduced_density_matrices is not None:
+            dump_dict['final reduced density matrix real'] = [list(row.real) for row in self.reduced_density_matrices[-1]]
+            dump_dict['final reduced density matrix imag'] = [list(row.imag) for row in self.reduced_density_matrices[-1]]
         dump_dict['time series'] = list(self.evolve_times)
         return dump_dict
 
@@ -133,7 +180,7 @@ class ChargeTransport(TdMpsJob):
 
     @property
     def latest_energy_ratio(self):
-        return self.latest_energy / self.initial_energy
+        return (self.latest_energy - self.mpo_e_lbound) / (self.initial_energy - self.mpo_e_lbound)
 
     @property
     def r_square_array(self):
@@ -149,6 +196,8 @@ class ChargeTransport(TdMpsJob):
 
     @property
     def coherent_length_array(self):
+        if self.reduced_density_matrices is None:
+            return np.array([])
         return np.array([np.abs(rdm).sum() - np.trace(rdm).real for rdm in self.reduced_density_matrices])
 
     def is_similar(self, other, rtol=1e-3):
@@ -170,13 +219,3 @@ class ChargeTransport(TdMpsJob):
             return False
         else:
             return True
-
-
-def construct_j_matrix(mol_num, j_constant):
-    j_constant_au = j_constant.as_au()
-    j_matrix = np.zeros((mol_num, mol_num))
-    for i in range(mol_num):
-        for j in range(mol_num):
-            if i - j == 1 or i - j == -1:
-                j_matrix[i][j] = j_constant_au
-    return j_matrix

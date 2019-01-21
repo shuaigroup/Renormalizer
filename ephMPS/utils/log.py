@@ -10,8 +10,8 @@ default_stream_handler = logging.StreamHandler()
 default_formatter = logging.Formatter('%(asctime)s[%(levelname)s] %(message)s')
 
 
-def init_log():
-    root_logger.setLevel(logging.DEBUG)
+def init_log(level=logging.DEBUG):
+    root_logger.setLevel(level)
 
     default_stream_handler.setLevel(logging.DEBUG)
 

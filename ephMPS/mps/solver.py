@@ -4,11 +4,14 @@
 import logging
 
 import numpy as np
+import scipy
 
 from ephMPS.lib import tensor as tensorlib
 from ephMPS.lib.davidson import davidson
 from ephMPS.mps import Mpo, Mps, svd_qn
 from ephMPS.mps.lib import construct_enviro, GetLR, updatemps
+from ephMPS.tdh import mflib
+from ephMPS.utils import Quantity
 
 
 logger = logging.getLogger(__name__)
@@ -26,7 +29,7 @@ def find_highest_energy(h_mpo, nexciton, Mmax):
     return - energy.min()
 
 
-def construct_mps_mpo_2(mol_list, J_matrix, Mmax, nexciton, scheme, rep="star"):
+def construct_mps_mpo_2(mol_list, Mmax, nexciton, scheme, rep="star", offset=Quantity(0)):
     '''
     MPO/MPS structure 2
     e1,ph11,ph12,..e2,ph21,ph22,...en,phn1,phn2...
@@ -35,7 +38,7 @@ def construct_mps_mpo_2(mol_list, J_matrix, Mmax, nexciton, scheme, rep="star"):
     '''
     initialize MPO
     '''
-    mpo = Mpo(mol_list, J_matrix, scheme=scheme, rep=rep)
+    mpo = Mpo(mol_list, scheme=scheme, rep=rep, offset=offset)
 
     '''
     initialize MPS according to quantum number
@@ -46,7 +49,93 @@ def construct_mps_mpo_2(mol_list, J_matrix, Mmax, nexciton, scheme, rep="star"):
     return mps, mpo
 
 
-def optimize_mps(mps, mpo, procedure, method="2site", nroots=1, inverse=1.0):
+def construct_hybrid_Ham(MPS, debug=False):
+    '''
+    construct hybrid DMRG and Hartree(-Fock) Hamiltonian
+    '''
+    mol_list = MPS.mol_list
+    WFN = MPS.wfn
+    nmols = len(mol_list)
+
+    # many-body electronic part
+    A_el = np.zeros((nmols))
+    for imol in range(nmols):
+        MPO = Mpo.onsite(mol_list, "a^\dagger a", dipole=False, mol_idx_set={imol})
+        # A_el[imol] = mpslib.dot(mpslib.conj(MPS),mpslib.mapply(MPO,MPS)).real
+        A_el[imol] = MPS.expectation(MPO)
+
+    logger.info("dmrg_occ: %s" % A_el)
+
+    # many-body vibration part
+    B_vib = []
+    iwfn = 0
+    for imol in range(nmols):
+        B_vib.append([])
+        for ph in mol_list[imol].hartree_phs:
+            B_vib[imol].append(mflib.exp_value(WFN[iwfn], ph.h_dep, WFN[iwfn]))
+            iwfn += 1
+    B_vib_mol = [np.sum(np.array(i)) for i in B_vib]
+
+    Etot = 0.0
+    # construct new HMPO
+    MPO_indep = Mpo(mol_list)
+    # e_mean = mpslib.dot(mpslib.conj(MPS),mpslib.mapply(MPO_indep,MPS))
+    e_mean = MPS.expectation(MPO_indep)
+    elocal_offset = np.array([mol_list[imol].hartree_e0 + B_vib_mol[imol] for imol in range(nmols)]).real
+    e_mean += A_el.dot(elocal_offset)
+
+    MPO = Mpo(mol_list, elocal_offset=elocal_offset, offset=Quantity(e_mean.real))
+
+    Etot += e_mean
+
+    iwfn = 0
+    HAM = []
+    for imol, mol in enumerate(mol_list):
+        for iph, ph in enumerate(mol.hartree_phs):
+            e_mean = mflib.exp_value(WFN[iwfn], ph.h_indep, WFN[iwfn])
+            Etot += e_mean
+            e_mean += A_el[imol] * B_vib[imol][iph]
+            HAM.append(ph.h_indep + ph.h_dep * A_el[imol] - np.diag([e_mean] * WFN[iwfn].shape[0]))
+            iwfn += 1
+    logger.info("Etot= %g" % Etot)
+    if debug:
+        return MPO, HAM, Etot, A_el
+    else:
+        return MPO, HAM, Etot
+
+
+def optimize_mps(mps, mpo, procedure, method="2site", nroots=1, inverse=1.0, niterations=None, dmrg_thresh=None, hartree_thresh=None, ):
+    energies = optimize_mps_dmrg(mps, mpo, procedure, method, nroots, inverse)
+    if mps.mol_list.pure_dmrg:
+        return energies[-1]
+    else:
+        assert nroots == 1
+        for v in [niterations, hartree_thresh, dmrg_thresh]:
+            assert v is not None
+
+    HAM = []
+
+    for mol in mps.mol_list:
+        for ph in mol.hartree_phs:
+            HAM.append(ph.h_indep)
+
+    optimize_mps_hartree(mps, HAM)
+
+    for itera in range(niterations):
+        logging.info("Loop: %d" % itera)
+        MPO, HAM, Etot = construct_hybrid_Ham(mps)
+
+        MPS_old = mps.copy()
+        optimize_mps_dmrg(mps, MPO, procedure, method, nroots, inverse)
+        optimize_mps_hartree(mps, HAM)
+
+        # check convergence
+        if np.all(mps.hartree_wfn_diff(MPS_old) < hartree_thresh) and abs(mps.angle(MPS_old) - 1) < dmrg_thresh:
+            logger.info("SCF converge!")
+            break
+    return Etot
+
+def optimize_mps_dmrg(mps, mpo, procedure, method="2site", nroots=1, inverse=1.0):
     '''
     1 or 2 site optimization procedure
     inverse = 1.0 / -1.0 
@@ -72,7 +161,7 @@ def optimize_mps(mps, mpo, procedure, method="2site", nroots=1, inverse=1.0):
     ltensor = np.ones((1, 1, 1))
     rtensor = np.ones((1, 1, 1))
 
-    energy = []
+    energies = []
     for isweep, (mmax, percent) in enumerate(procedure):
         # print("mmax, percent: ", mmax, percent)
 
@@ -176,7 +265,7 @@ def optimize_mps(mps, mpo, procedure, method="2site", nroots=1, inverse=1.0):
             # print("HC loops:", count[0])
             # print("isweep, imps, e=", isweep, imps, e)
 
-            energy.append(e)
+            energies.append(e)
 
             cstruct = mps.mtype(cvec2cmat(cshape, c, qnmat, nexciton, nroots=nroots))
 
@@ -221,12 +310,21 @@ def optimize_mps(mps, mpo, procedure, method="2site", nroots=1, inverse=1.0):
                 #mps.dim_list[imps] = mpsdim
                 mps.qn[imps] = mpsqn
 
-    energy = np.array(energy)
+    energies = np.array(energies)
     if nroots == 1:
-        lowestenergy = energy.min()
+        lowestenergy = energies.min()
         logger.debug("Optimization complete, lowest energy = %g", lowestenergy)
 
-    return energy
+    return energies
+
+
+def optimize_mps_hartree(mps, HAM):
+    mps.wfn = []
+    for ham in HAM:
+        w, v = scipy.linalg.eigh(ham)
+        mps.wfn.append(v[:, 0])
+    # append the coefficient a
+    mps.wfn.append(1.0)
 
 
 def renormalization_svd(cstruct, qnbigl, qnbigr, domain, nexciton, Mmax, percent=0):

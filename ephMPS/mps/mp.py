@@ -3,13 +3,19 @@
 from __future__ import absolute_import, division
 
 import copy
+import inspect
+import traceback
 from functools import reduce
+import logging
 
 import numpy as np
 import scipy
 
 from ephMPS.mps import rk, svd_qn
 from ephMPS.mps.matrix import Matrix
+from ephMPS.utils import sizeof_fmt
+
+logger = logging.getLogger(__name__)
 
 
 class MatrixProduct(list):
@@ -39,6 +45,8 @@ class MatrixProduct(list):
         self.threshold = 1e-3
 
         self._prop_method = 'C_RK4'
+
+        self.compress_add = False
 
         self.peak_bytes = 0
 
@@ -219,6 +227,7 @@ class MatrixProduct(list):
         assert self.is_left_canon == other.is_left_canon
 
         new_mps = other.copy()
+        new_mps.threshold = min(self.threshold, other.threshold)
 
         if self.is_mps:  # MPS
             new_mps[0] = np.dstack([self[0], other[0]])
@@ -256,7 +265,10 @@ class MatrixProduct(list):
         new_mps.qn = [qn1 + qn2 for qn1, qn2 in zip(self.qn, new_mps.qn)]
         new_mps.qn[0] = [0]
         new_mps.qn[-1] = [0]
-        #new_mps.canonicalise()
+        new_mps.set_peak_bytes()
+        if self.compress_add:
+            new_mps.canonicalise()
+            new_mps.compress()
         return new_mps
 
     def dot(self, other):
@@ -288,6 +300,9 @@ class MatrixProduct(list):
             if mt1.ndim == 4:
                 pass
 
+    def angle(self, other):
+        return np.abs(self.conj().dot(other))
+
     def scale(self, val, inplace=False):
         new_mp = self if inplace else self.copy()
         if np.iscomplexobj(val):
@@ -298,6 +313,7 @@ class MatrixProduct(list):
     def expectation(self, mpo):
         # todo: might cause performance problem when calculating a lot of expectations
         #       use dynamic programing to improve the performance.
+        # todo: different bra and ket
         return self.conj().dot(mpo.apply(self)).real / self.norm ** 2
 
     def to_complex(self, inplace=False):
@@ -378,6 +394,7 @@ class MatrixProduct(list):
                 # m_trunc=len([s for s in normed_sigma if s >trunc])
                 m_trunc = np.count_nonzero(normed_sigma > self.threshold)
             else:
+                assert False # in some cases buggy, such as dynamic threshold
                 m_trunc = int(self.threshold)
                 m_trunc = min(m_trunc, len(sigma))
             assert m_trunc != 0
@@ -404,7 +421,7 @@ class MatrixProduct(list):
     def normalize(self, norm=1.0):
         return self.scale(norm / self.norm, inplace=True)
 
-    # todo: separate the 2 methods (approx_eiht), because their parameters are contradictory
+    # todo: separate the 2 methods (approx_eiht), because their parameters are orthogonal
     def evolve(self, mpo=None, evolve_dt=None, norm=None, approx_eiht=None):
         if approx_eiht is not None:
             return approx_eiht.contract(self)
@@ -412,13 +429,14 @@ class MatrixProduct(list):
         termlist = [self]
         while len(termlist) < len(propagation_c):
             termlist.append(mpo.contract(termlist[-1]))
-        scaletermlist = []
-        for idx, (mps_term, c_term) in enumerate(zip(termlist, propagation_c)):
-            scaletermlist.append(mps_term.scale((-1.0j * evolve_dt) ** idx * c_term))
-        new_mps = reduce(lambda mps1, mps2: mps1.add(mps2), scaletermlist)
-        new_mps.peak_bytes = max(new_mps.peak_bytes, new_mps.total_bytes)
-        new_mps.canonicalise()
-        new_mps.compress()
+            # control term sizes to be approximately constant
+            termlist[-1].threshold *= 3
+        for idx, term in enumerate(termlist):
+            term.scale((-1.0j * evolve_dt) ** idx * propagation_c[idx], inplace=True)
+        new_mps = reduce(lambda mps1, mps2: mps1.add(mps2), termlist)
+        if not self.compress_add:
+            new_mps.canonicalise()
+            new_mps.compress()
         if norm is not None:
             new_mps.normalize(norm)
         return new_mps
@@ -432,6 +450,15 @@ class MatrixProduct(list):
     @property
     def total_bytes(self):
         return sum([array.nbytes for array in self])
+
+    def set_peak_bytes(self, new_bytes=None):
+        if new_bytes is None:
+            new_bytes = self.total_bytes
+        if new_bytes < self.peak_bytes:
+            return
+        self.peak_bytes = new_bytes
+        stack = ''.join(traceback.format_stack(inspect.stack()[2].frame, 1)).replace('\n', ' ')
+        logger.debug('Set peak bytes to {}. Called from: {}'.format(sizeof_fmt(new_bytes), stack))
 
     def __eq__(self, other):
         for m1, m2 in zip(self, other):

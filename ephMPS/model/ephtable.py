@@ -17,7 +17,7 @@ class EphTable(tuple):
         eph_list = []
         for mol in mol_list:
             eph_list.append(electron)
-            for ph in mol.phs:
+            for ph in mol.dmrg_phs:
                 eph_list.extend([phonon] * ph.nqboson)
         return cls(eph_list)
 
@@ -26,6 +26,14 @@ class EphTable(tuple):
 
     def is_phonon(self, idx):
         return self[idx] == phonon
+
+    @property
+    def num_electron_site(self):
+        res = 0
+        for i in self:
+            if i == electron:
+                res += 1
+        return res
 
     def __str__(self):
         return '[' + ', '.join(self) + ']'

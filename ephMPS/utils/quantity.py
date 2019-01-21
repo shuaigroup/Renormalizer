@@ -6,7 +6,6 @@ from __future__ import division
 
 from ephMPS.utils import constant
 
-allowed_units = ['meV', 'eV', 'cm^{-1}', 'K', 'a.u.', 'au']
 
 au_ratio_dict = {'meV': constant.au2ev * 1e3,
                  'eV': constant.au2ev,
@@ -15,6 +14,9 @@ au_ratio_dict = {'meV': constant.au2ev * 1e3,
                  'a.u.': 1,
                  'au': 1}
 
+au_ratio_dict.update({k.lower():v for k, v in au_ratio_dict.items()})
+
+allowed_units = set(au_ratio_dict.keys())
 
 def convert_to_au(num, unit):
     assert unit in allowed_units
@@ -24,10 +26,9 @@ def convert_to_au(num, unit):
 class Quantity(object):
 
     def __init__(self, value, unit='a.u.'):
-        # super(Quantity, self).__init__()
-        self.value = value
+        self.value = float(value)
         if unit not in allowed_units:
-            raise ValueError('Unit allowed {}, got {}.'.format(allowed_units, unit))
+            raise ValueError('Unit not in {}, got {}.'.format(allowed_units, unit))
         self.unit = unit
 
     def as_au(self):
@@ -43,7 +44,7 @@ class Quantity(object):
         elif other == 0:
             return self.value == 0
         else:
-            raise TypeError('{} can only compare with {} or 0, not {}'.format(self.__class__, self.__class__, other))
+            raise TypeError('{} can only compare with {} or 0, not {}'.format(self.__class__, self.__class__, other.__class__))
 
     def __ne__(self, other):
         return not self == other

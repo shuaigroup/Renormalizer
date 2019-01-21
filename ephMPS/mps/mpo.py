@@ -5,5 +5,4 @@ from ephMPS.mps.mpobase import MpoBase
 from ephMPS.mps.mpproperty import MpProperty
 
 
-class Mpo(MpProperty, MpoBase):
-        pass
+class Mpo(MpProperty, MpoBase): pass

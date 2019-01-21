@@ -10,3 +10,8 @@
 .idea/
 
 report/
+example/*.yaml
+example/*.ipynb
+example/*.json
+example/*.bak
+example/.ipynb_checkpoints/

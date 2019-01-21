@@ -34,11 +34,10 @@ class TdMpsJob(object):
     def __init__(self):
         logger.info('Creating TDMPS job.')
         logger.info('Step 0/?. Preparing MPS in the intial state.')
-        init_mps = self.init_mps()
         self.evolve_times = [0]
-        self.tdmps_list = [init_mps]
         self.dump_dir = None
         self.job_name = None
+        self.tdmps_list = [self.init_mps()]
         logger.info('TDMPS job created.')
 
     def init_mps(self):
@@ -61,13 +60,13 @@ class TdMpsJob(object):
         real_times = [datetime.now()]
         for i in range(nsteps):
             new_evolve_time = self.latest_evolve_time + evolve_dt
+            self.evolve_times.append(new_evolve_time)
             step_str = 'step {}/{}, time {:.2f}/{}'.format(len(self.tdmps_list), target_steps, new_evolve_time, target_time)
             logger.info('{} begin.'.format(step_str))
             new_mps = self.evolve_single_step(evolve_dt=evolve_dt)
             new_real_time = datetime.now()
             time_cost = new_real_time - real_times[-1]
             self.tdmps_list.append(new_mps)
-            self.evolve_times.append(new_evolve_time)
             logger.info('%s complete, time cost %s. %s' % (step_str, time_cost, new_mps))
             real_times.append(new_real_time)
             if 10 < i:  # otherwise samples too small to make a prediction

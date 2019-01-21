@@ -23,9 +23,8 @@ class TestZeroExactEmi(unittest.TestCase):
         # print "data", value
         nexciton = 1
         procedure = [[10, 0.4], [20, 0.2], [30, 0.1], [40, 0], [40, 0]]
-        mol_list = parameter.custom_mol_list(*ph_info)
-        i_mps, h_mpo = prepare_init_mps(mol_list, parameter.j_matrix, procedure, nexciton, 2, offset=2.28614053,
-                                        optimize=True)
+        mol_list = parameter.custom_mol_list(None, *ph_info)
+        i_mps, h_mpo = prepare_init_mps(mol_list, procedure, nexciton, 2, offset=Quantity(2.28614053, 'ev'), optimize=True)
         nsteps = 3000
         dt = 30.0
         temperature = Quantity(0, 'K')
@@ -53,9 +52,9 @@ class TestZeroTCorr(unittest.TestCase):
         procedure = [[1, 0], [1, 0], [1, 0]]
         nsteps = 100
         dt = 30.0
-        mol_list = parameter.custom_mol_list(*ph_info)
-        i_mps, h_mpo = prepare_init_mps(mol_list, parameter.j_matrix, procedure, nexciton, 2, compress_method,
-                                        2.28614053, optimize=True)
+        mol_list = parameter.custom_mol_list(None, *ph_info)
+        i_mps, h_mpo = prepare_init_mps(mol_list, procedure, nexciton, 2, compress_method,
+                                        Quantity(2.28614053, 'ev'), optimize=True)
         if algorithm == 1:
             zero_t_corr = SpectraOneWayPropZeroT(i_mps, h_mpo)
         else:
@@ -77,11 +76,11 @@ class TestZeroTCorr(unittest.TestCase):
         j_matrix = np.array([[0.0, -0.1, 0.0], [-0.1, 0.0, -0.3], [0.0, -0.3, 0.0]]) / constant.au2ev
         nexciton = 0
         procedure = [[1, 0], [1, 0], [1, 0]]
-        mol_list = parameter.custom_mol_list(*ph_info)
+        mol_list = parameter.custom_mol_list(j_matrix, *ph_info)
         nsteps = 50
         dt = 30.0
-        i_mps, h_mpo = prepare_init_mps(mol_list, j_matrix, procedure, nexciton, 2, compress_method,
-                                        2.28614053, optimize=True)
+        i_mps, h_mpo = prepare_init_mps(mol_list, procedure, nexciton, 2, compress_method,
+                                        Quantity(2.28614053, 'ev'), optimize=True)
         if algorithm == 1:
             SpectraClass = SpectraOneWayPropZeroT
         else:
@@ -102,12 +101,12 @@ class TestFiniteTSpectraEmi(unittest.TestCase):
         # print "data", value
         nexciton = 1
         procedure = [[10, 0.4], [20, 0.2], [30, 0.1], [40, 0], [40, 0]]
-        mol_list = parameter.custom_mol_list(*ph_info)
+        mol_list = parameter.custom_mol_list(None, *ph_info)
         nsteps = 30
         dt = 30.0
         insteps = 50
-        i_mps, h_mpo = prepare_init_mps(mol_list, parameter.j_matrix, procedure, nexciton, 2, compress_method,
-                                        2.28614053)
+        i_mps, h_mpo = prepare_init_mps(mol_list, procedure, nexciton, 2, compress_method,
+                                        Quantity(2.28614053, 'ev'))
         finite_t_emi = SpectraEmiFiniteT(i_mps, h_mpo, temperature=Quantity(298, 'K'), insteps=insteps)
         finite_t_emi.evolve(dt, nsteps)
         with open(os.path.join(cur_dir, 'TTemi_' + str(algorithm) + str(compress_method) + ".npy"), 'rb') as fin:
@@ -125,12 +124,12 @@ class TestFiniteTSpectraAbs(unittest.TestCase):
         # print "data", value
         nexciton = 0
         procedure = [[1, 0], [1, 0], [1, 0]]
-        mol_list = parameter.custom_mol_list(*ph_info)
+        mol_list = parameter.custom_mol_list(None, *ph_info)
         nsteps = 30
         dt = 30.0
         insteps = 50
-        i_mps, h_mpo = prepare_init_mps(mol_list, parameter.j_matrix, procedure, nexciton, 2, compress_method,
-                                        2.28614053)
+        i_mps, h_mpo = prepare_init_mps(mol_list, procedure, nexciton, 2, compress_method,
+                                        Quantity(2.28614053, 'ev'))
         finite_t_abs = SpectraAbsFiniteT(i_mps, h_mpo, temperature=Quantity(298, 'K'), insteps=insteps)
         finite_t_abs.evolve(dt, nsteps)
         with open(os.path.join(cur_dir, "TTabs_" + str(compress_method) + ".npy"), 'rb') as fin:

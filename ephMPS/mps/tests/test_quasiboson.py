@@ -20,11 +20,11 @@ procedure = [[10, 0.4], [20, 0.2], [30, 0.1], [40, 0], [40, 0]]
 class TestQuasiBoson(unittest.TestCase):
     def test_quasiboson_constructMPO(self):
 
-        mol_list1 = parameter.custom_mol_list([4, 4])
-        mps1, mpo1 = solver.construct_mps_mpo_2(mol_list1, parameter.j_matrix, procedure[0][0], nexciton, scheme=2)
+        mol_list1 = parameter.custom_mol_list(None, [4, 4])
+        mps1, mpo1 = solver.construct_mps_mpo_2(mol_list1, procedure[0][0], nexciton, scheme=2)
 
-        mol_list2 = mol_list = parameter.custom_mol_list([4, 4], [2, 2], [1e-7, 1e-7])
-        mps2, mpo2 = solver.construct_mps_mpo_2(mol_list2, parameter.j_matrix, procedure[0][0], nexciton, scheme=2)
+        mol_list2 = mol_list = parameter.custom_mol_list(None, [4, 4], [2, 2], [1e-7, 1e-7])
+        mps2, mpo2 = solver.construct_mps_mpo_2(mol_list2, procedure[0][0], nexciton, scheme=2)
 
         # merge the decomposed MPO
         mpo_merge = Mpo()
@@ -32,7 +32,7 @@ class TestQuasiBoson(unittest.TestCase):
         for mol in mol_list:
             mpo_merge.append(mpo2[impo])
             impo += 1
-            for _ in mol.phs:
+            for _ in mol.dmrg_phs:
                 mo = np.einsum("abcd, defg -> abecfg", mpo2[impo], mpo2[impo + 1]) \
                     .reshape(mpo2[impo].shape[0], 4, 4, mpo2[impo + 1].shape[-1])
                 mpo_merge.append(mo)
@@ -52,16 +52,16 @@ class TestQuasiBoson(unittest.TestCase):
     def test_quasiboson_solver(self, value):
         np.random.seed(0)
         # normal boson
-        mol_list1 = parameter.custom_mol_list(*value[0])
-        mps1, mpo1 = solver.construct_mps_mpo_2(mol_list1, parameter.j_matrix, procedure[0][0], nexciton, scheme=2)
+        mol_list1 = parameter.custom_mol_list(None, *value[0])
+        mps1, mpo1 = solver.construct_mps_mpo_2(mol_list1, procedure[0][0], nexciton, scheme=2)
 
         # quasiboson
-        mol_list2 = parameter.custom_mol_list(*value[1])
-        mps2, mpo2 = solver.construct_mps_mpo_2(mol_list2, parameter.j_matrix, procedure[0][0], nexciton, scheme=2)
+        mol_list2 = parameter.custom_mol_list(None, *value[1])
+        mps2, mpo2 = solver.construct_mps_mpo_2(mol_list2, procedure[0][0], nexciton, scheme=2)
 
         # quasiboson + normal boson
-        mol_list3 = parameter.custom_mol_list(*value[2])
-        mps3, mpo3 = solver.construct_mps_mpo_2(mol_list3, parameter.j_matrix, procedure[0][0], nexciton, scheme=2)
+        mol_list3 = parameter.custom_mol_list(None, *value[2])
+        mps3, mpo3 = solver.construct_mps_mpo_2(mol_list3, procedure[0][0], nexciton, scheme=2)
 
         for method in ['1site', '2site']:
             energy1 = solver.optimize_mps(mps1, mpo1, procedure, method=method)
