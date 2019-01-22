@@ -6,7 +6,7 @@ import unittest
 
 import numpy as np
 
-from ephMPS.mps import Mps, Mpo
+from ephMPS.mps import Mps, Mpo, MpDm
 from ephMPS.mps.matrix import DensityMatrixOp
 from ephMPS.tests.parameter import mol_list
 from ephMPS.utils.constant import t2beta
@@ -39,7 +39,7 @@ class TestMpProperty(unittest.TestCase):
         self.check_property(new_mps)
 
     def test_mpo(self):
-        gs_mp = Mpo.from_mps(Mps.gs(mol_list, max_entangled=True))
+        gs_mp = MpDm.from_mps(Mps.gs(mol_list, max_entangled=True))
         beta = t2beta(Quantity(1e-10, 'K'))
         thermal_prop = Mpo.exact_propagator(mol_list, - beta / 2, 'GS')
         gs_mp = thermal_prop.apply(gs_mp)

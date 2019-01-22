@@ -14,9 +14,6 @@ from ephMPS.mps import solver
 from ephMPS.transport import ChargeTransport
 from ephMPS.utils import log, Quantity
 
-for env in ['MKL_NUM_THREADS', 'NUMEXPR_NUM_THREADS', 'OMP_NUM_THREADS']:
-    os.environ[env] = '1'
-
 logger = logging.getLogger(__name__)
 
 if __name__ == '__main__':

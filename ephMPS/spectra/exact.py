@@ -1,7 +1,7 @@
 # -*- coding: utf-8 -*-
 # Author: Jiajun Ren <jiajunren0522@gmail.com>
 
-from ephMPS.mps import Mpo
+from ephMPS.mps import Mpo, MpDm
 from ephMPS.spectra.base import SpectraTdMpsJobBase, BraKetPair
 from ephMPS.utils import constant
 
@@ -69,6 +69,8 @@ class SpectraExact(SpectraTdMpsJobBase):
             ket_mps = self.i_mps
         a_ket_mps = dipole_mpo.apply(ket_mps)
 
+        # XXX: normalized here?
+
         if self.temperature != 0:
             a_bra_mps = ket_mps.copy()
         else:
@@ -82,4 +84,3 @@ class SpectraExact(SpectraTdMpsJobBase):
         if self.temperature != 0:
             latest_bra_mps = self.prop_mpo1(evolve_dt).apply(latest_bra_mps)
         return BraKetPair(latest_bra_mps, latest_ket_mps)
-

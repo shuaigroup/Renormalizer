@@ -6,7 +6,7 @@ import unittest
 import numpy as np
 from ddt import ddt, data, unpack
 
-from ephMPS.tdh import tdh
+from ephMPS.mps.tdh import tdh
 from ephMPS.tests.parameter import hartree_mol_list, custom_mol_list, ph_phys_dim
 from ephMPS.utils import Quantity, constant
 

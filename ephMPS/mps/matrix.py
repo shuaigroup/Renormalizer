@@ -3,6 +3,7 @@
 
 import numpy as np
 
+
 class Matrix(np.ndarray):
 
     def __new__(cls, array):

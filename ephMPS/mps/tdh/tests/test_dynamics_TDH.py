@@ -1,16 +1,15 @@
 # -*- coding: utf-8 -*-
 # Author: Jiajun Ren <jiajunren0522@gmail.com>
 
-import unittest
 import logging
+import unittest
 
-from ddt import ddt, data
 import numpy as np
-
-from ephMPS.tdh.tests import parameter_PBI
+from ddt import ddt
 from ephMPS.tdh import tdh
-from ephMPS.utils import log, Quantity
 
+from ephMPS.mps.tdh.tests import parameter_PBI
+from ephMPS.utils import log, Quantity
 
 
 @ddt

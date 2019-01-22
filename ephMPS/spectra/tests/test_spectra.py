@@ -12,19 +12,17 @@ from ephMPS.spectra import SpectraExact, SpectraOneWayPropZeroT, SpectraTwoWayPr
     SpectraEmiFiniteT, SpectraAbsFiniteT, prepare_init_mps
 from ephMPS.spectra.tests import cur_dir
 from ephMPS.tests import parameter
-from ephMPS.utils import constant, Quantity
+from ephMPS.utils import constant, Quantity, OptimizeConfig
 
 
 @ddt
-class TestZeroExactEmi(unittest.TestCase):
-    @data([[[4, 4]], 1e-3])
-    @unpack
-    def test_zero_exact_emi(self, ph_info, rtol):
+class TestZeroExact(unittest.TestCase):
+    def test_zero_exact_emi(self):
         # print "data", value
         nexciton = 1
-        procedure = [[10, 0.4], [20, 0.2], [30, 0.1], [40, 0], [40, 0]]
-        mol_list = parameter.custom_mol_list(None, *ph_info)
-        i_mps, h_mpo = prepare_init_mps(mol_list, procedure, nexciton, 2, offset=Quantity(2.28614053, 'ev'), optimize=True)
+        mol_list = parameter.custom_mol_list(None, [4, 4])
+        i_mps, h_mpo = prepare_init_mps(mol_list, 10, nexciton, 2, offset=Quantity(2.28614053, 'ev'),
+                                        optimize=OptimizeConfig())
         nsteps = 3000
         dt = 30.0
         temperature = Quantity(0, 'K')
@@ -33,7 +31,8 @@ class TestZeroExactEmi(unittest.TestCase):
         with open(os.path.join(cur_dir, 'ZeroExactEmi.npy'), 'rb') as fin:
             std = np.load(fin)
 
-        self.assertTrue(np.allclose(exact_emi.autocorr[:nsteps], std[:nsteps], rtol=rtol))
+        self.assertTrue(np.allclose(exact_emi.autocorr[:nsteps], std[:nsteps], rtol=1e-3))
+
 
 
 @ddt
@@ -53,8 +52,10 @@ class TestZeroTCorr(unittest.TestCase):
         nsteps = 100
         dt = 30.0
         mol_list = parameter.custom_mol_list(None, *ph_info)
-        i_mps, h_mpo = prepare_init_mps(mol_list, procedure, nexciton, 2, compress_method,
-                                        Quantity(2.28614053, 'ev'), optimize=True)
+        optimize_config = OptimizeConfig()
+        optimize_config.procedure = procedure
+        i_mps, h_mpo = prepare_init_mps(mol_list, 1, nexciton, 2, compress_method,
+                                        Quantity(2.28614053, 'ev'), optimize=optimize_config)
         if algorithm == 1:
             zero_t_corr = SpectraOneWayPropZeroT(i_mps, h_mpo)
         else:
@@ -79,13 +80,17 @@ class TestZeroTCorr(unittest.TestCase):
         mol_list = parameter.custom_mol_list(j_matrix, *ph_info)
         nsteps = 50
         dt = 30.0
-        i_mps, h_mpo = prepare_init_mps(mol_list, procedure, nexciton, 2, compress_method,
-                                        Quantity(2.28614053, 'ev'), optimize=True)
         if algorithm == 1:
             SpectraClass = SpectraOneWayPropZeroT
         else:
             SpectraClass = SpectraTwoWayPropZeroT
+        optimize_config = OptimizeConfig()
+        optimize_config.procedure = procedure
+        i_mps, h_mpo = prepare_init_mps(mol_list, 1, nexciton, 2, compress_method,
+                                        Quantity(2.28614053, 'ev'), optimize=optimize_config)
         zero_t_corr2 = SpectraClass(i_mps, h_mpo).evolve(dt, nsteps)
+        i_mps, h_mpo = prepare_init_mps(mol_list, 1, nexciton, 3, compress_method,
+                                        Quantity(2.28614053, 'ev'), optimize=optimize_config)
         zero_t_corr3 = SpectraClass(i_mps, h_mpo).evolve(dt, nsteps)
         self.assertTrue(np.allclose(zero_t_corr2.autocorr, zero_t_corr3.autocorr, rtol=rtol))
 
@@ -100,12 +105,11 @@ class TestFiniteTSpectraEmi(unittest.TestCase):
         np.random.seed(0)
         # print "data", value
         nexciton = 1
-        procedure = [[10, 0.4], [20, 0.2], [30, 0.1], [40, 0], [40, 0]]
         mol_list = parameter.custom_mol_list(None, *ph_info)
         nsteps = 30
         dt = 30.0
         insteps = 50
-        i_mps, h_mpo = prepare_init_mps(mol_list, procedure, nexciton, 2, compress_method,
+        i_mps, h_mpo = prepare_init_mps(mol_list, 10, nexciton, 2, compress_method,
                                         Quantity(2.28614053, 'ev'))
         finite_t_emi = SpectraEmiFiniteT(i_mps, h_mpo, temperature=Quantity(298, 'K'), insteps=insteps)
         finite_t_emi.evolve(dt, nsteps)
@@ -128,7 +132,7 @@ class TestFiniteTSpectraAbs(unittest.TestCase):
         nsteps = 30
         dt = 30.0
         insteps = 50
-        i_mps, h_mpo = prepare_init_mps(mol_list, procedure, nexciton, 2, compress_method,
+        i_mps, h_mpo = prepare_init_mps(mol_list, procedure[0][0], nexciton, 2, compress_method,
                                         Quantity(2.28614053, 'ev'))
         finite_t_abs = SpectraAbsFiniteT(i_mps, h_mpo, temperature=Quantity(298, 'K'), insteps=insteps)
         finite_t_abs.evolve(dt, nsteps)

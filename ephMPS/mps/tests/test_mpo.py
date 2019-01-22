@@ -8,7 +8,7 @@ import unittest
 from ddt import ddt, data
 import numpy as np
 
-from ephMPS.mps.mpo import Mpo
+from ephMPS.mps import Mpo
 from ephMPS.tests.parameter import mol_list
 from ephMPS.mps.tests import cur_dir
 

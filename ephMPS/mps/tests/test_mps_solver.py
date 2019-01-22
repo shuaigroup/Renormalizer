@@ -40,16 +40,23 @@ class TestMpsSolver(unittest.TestCase):
     @data([1],[2])
     def test_optimization(self, value):
         mps, mpo = construct_mps_mpo_2(mol_list, procedure[0][0], nexciton, scheme=value[0])
-        energy = optimize_mps(mps, mpo, procedure, method="2site")
-        self.assertAlmostEqual(np.min(energy) * constant.au2ev, 2.28614053133)
+        mps.optimize_config.procedure = procedure
+        mps.optimize_config.method = "2site"
+        energy = optimize_mps(mps.copy(), mpo)
+        self.assertAlmostEqual(energy * constant.au2ev, 2.28614053133)
 
-        energy = optimize_mps(mps, mpo, procedure, method="1site")
-        self.assertAlmostEqual(np.min(energy) * constant.au2ev, 2.28614053133)
+        mps.optimize_config.method = "1site"
+        energy = optimize_mps(mps.copy(), mpo)
+        self.assertAlmostEqual(energy * constant.au2ev, 2.28614053133)
 
     def test_multistate(self):
         mps, mpo = construct_mps_mpo_2(mol_list, procedure[0][0], nexciton, scheme=2)
-        energy1 = optimize_mps(mps, mpo, procedure, method="1site", nroots=5)
-        energy2 = optimize_mps(mps, mpo, procedure, method="2site", nroots=5)
+        mps.optimize_config.procedure = procedure
+        mps.optimize_config.nroots = 5
+        mps.optimize_config.method = "1site"
+        energy1 = optimize_mps(mps.copy(), mpo)
+        mps.optimize_config.method = "2site"
+        energy2 = optimize_mps(mps.copy(), mpo)
         # print energy1[-1], energy2[-1]
         energy_std = [0.08401412, 0.08449771, 0.08449801, 0.08449945]
         self.assertTrue(np.allclose(energy1[:4], energy_std))

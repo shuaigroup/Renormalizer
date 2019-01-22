@@ -1,19 +1,20 @@
 # -*- coding: utf-8 -*-
 # Author: Jiajun Ren <jiajunren0522@gmail.com>
 
-import unittest
 import logging
+import unittest
 
 import numpy as np
 from ddt import ddt
 
-from ephMPS.tdh import tdh
-from ephMPS.mps.solver import construct_mps_mpo_2, optimize_mps
+from ephMPS.model import MolList, Mol
 from ephMPS.mps import Mpo
-from ephMPS.utils import Quantity, log, constant
+from ephMPS.mps.solver import construct_mps_mpo_2, optimize_mps
+from ephMPS.mps.tdh import tdh
 from ephMPS.tests.parameter import hartree_mol_list, ph_phys_dim, custom_mol_list, \
     hartree_ph_list, elocalex, dipole_abs
-from ephMPS.model import MolList, Mol
+from ephMPS.utils import Quantity, log, constant
+
 
 @ddt
 class Test_TDH(unittest.TestCase):

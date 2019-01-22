@@ -4,16 +4,16 @@
 '''
 Time dependent Hartree (TDH) solver for vibronic coupling problem
 '''
-import logging
 import copy
+import logging
 
-import scipy
 import numpy as np
+import scipy
 
-from ephMPS.tdh import mflib
 import ephMPS.mps.rk
-from ephMPS.utils.tdmps import TdMpsJob
+from ephMPS.mps.tdh import mflib
 from ephMPS.utils import constant
+from ephMPS.utils.tdmps import TdMpsJob
 
 logger = logging.getLogger(__name__)
 
@@ -54,7 +54,7 @@ def SCF(mol_list, nexciton, niterations=20, thresh=1e-5, particle="hardcore boso
 
     # vibrational part
     for mol in mol_list:
-        for iph in range(mol.nphs):
+        for iph in range(mol.n_hartree_phs):
             vw, vv = scipy.linalg.eigh(a=mol.hartree_phs[iph].h_indep)
             WFN.append(vv[:, 0])
             fv += 1
@@ -92,7 +92,7 @@ def SCF(mol_list, nexciton, niterations=20, thresh=1e-5, particle="hardcore boso
     return WFN, Etot
 
 
-def unitary_propagation(HAM, WFN, dt):
+def unitary_propagation(HAM, WFN, Etot, dt):
     '''
     unitary propagation e^-iHdt * wfn(dm)
     '''
@@ -106,6 +106,7 @@ def unitary_propagation(HAM, WFN, dt):
             # print iham, "norm", scipy.linalg.norm(WFN[iham])
         else:
             assert False
+    WFN[-1] *= np.exp(Etot / 1.0j * dt)
 
 
 def Ham_elec(mol_list, nexciton, indirect=None, particle="hardcore boson"):
@@ -207,7 +208,7 @@ def construct_H_Ham(mol_list, nexciton, WFN, fe, fv, particle="hardcore boson", 
 
     iwfn = fe
     for imol, mol in enumerate(mol_list):
-        for iph in range(mol.nphs):
+        for iph in range(mol.n_hartree_phs):
             h_indep = mol.hartree_phs[iph].h_indep
             h_dep = mol.hartree_phs[iph].h_dep
             e_mean = mflib.exp_value(WFN[iwfn], h_indep, WFN[iwfn])
@@ -262,7 +263,7 @@ class TdHartree(TdMpsJob):
         # EOM of wfn
         if self.prop_method == "unitary":
             HAM, Etot = self.construct_H_Ham(nexciton, WFN)
-            unitary_propagation(HAM, WFN, evolve_dt)
+            unitary_propagation(HAM, WFN, Etot, evolve_dt)
         else:
             rk = ephMPS.mps.rk.Runge_Kutta(method=self.prop_method)
             RK_a, RK_b, RK_c = rk.tableau
@@ -282,10 +283,10 @@ class TdHartree(TdMpsJob):
             for iwfn in range(f):
                 for istage in range(rk.stage):
                     WFN[iwfn] += RK_b[istage] * klist[istage][iwfn] * evolve_dt
+            WFN[-1] *= np.exp(Etot / 1.0j * evolve_dt)
 
         # EOM of coefficient a
         logger.info("Etot %g" % Etot)
-        WFN[-1] *= np.exp(Etot / 1.0j * evolve_dt)
         self.checkWfn(WFN)
         return WFN
 

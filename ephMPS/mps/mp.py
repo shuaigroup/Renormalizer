@@ -37,54 +37,15 @@ class MatrixProduct(list):
         self.mol_list = None
         self._ephtable = None
 
-        self.qn = None
-        self.qnidx = None
-        self.qntot = None
-
+        # mpo also need to be compressed sometimes
         self._compress_method = 'svd'
         self.threshold = 1e-3
 
-        self._prop_method = 'C_RK4'
-
-        self.compress_add = False
-
         self.peak_bytes = 0
 
-    def check_left_canonical(self):
-        """
-        check L-canonical
-        """
-        for mt in self[:-1]:
-            if not mt.check_lortho():
-                return False
-        return True
-
-    def check_right_canonical(self):
-        """
-        check R-canonical
-        """
-        for mt in self[1:]:
-            if not mt.check_rortho():
-                return False
-        return True
-
-    @property
-    def compress_method(self):
-        return self._compress_method
-
-    @compress_method.setter
-    def compress_method(self, value):
-        assert value in ['svd', 'variational']
-        self._compress_method = value
-
-    @property
-    def prop_method(self):
-        return self._prop_method
-
-    @prop_method.setter
-    def prop_method(self, value):
-        assert value in rk.method_list
-        self._prop_method = value
+        self.qn = None
+        self.qnidx = None
+        self.qntot = None
 
     @property
     def site_num(self):
@@ -95,12 +56,13 @@ class MatrixProduct(list):
         return self.mol_list.mol_num
 
     @property
-    def is_left_canon(self):
-        return self.qnidx == self.site_num - 1
+    def compress_method(self):
+        return self._compress_method
 
-    @property
-    def is_right_canon(self):
-        return self.qnidx == 0
+    @compress_method.setter
+    def compress_method(self, value):
+        assert value in ['svd', 'variational']
+        self._compress_method = value
 
     @property
     def is_mps(self):
@@ -113,13 +75,6 @@ class MatrixProduct(list):
     @property
     def is_complex(self):
         return self.dtype == np.complex128
-
-    @property
-    def iter_idx_list(self):
-        if self.is_left_canon:
-            return range(self.site_num - 1, 0, -1)
-        else:
-            return range(0, self.site_num - 1)
 
     @property
     def bond_dims(self):
@@ -150,6 +105,55 @@ class MatrixProduct(list):
         self.qntot = None
         self.qnidx = None
         self.qn = None
+
+
+    def move_qnidx(self, dstidx):
+        """
+        Quantum number has a boundary side, left hand of the side is L system qn,
+        right hand of the side is R system qn, the sum of quantum number of L system
+        and R system is tot.
+        """
+        # construct the L system qn
+        for idx in range(self.qnidx + 1, len(self.qn) - 1):
+            self.qn[idx] = [self.qntot - i for i in self.qn[idx]]
+
+        # set boundary to fsite:
+        for idx in range(len(self.qn) - 2, dstidx, -1):
+            self.qn[idx] = [self.qntot - i for i in self.qn[idx]]
+        self.qnidx = dstidx
+
+    def check_left_canonical(self):
+        """
+        check L-canonical
+        """
+        for mt in self[:-1]:
+            if not mt.check_lortho():
+                return False
+        return True
+
+    def check_right_canonical(self):
+        """
+        check R-canonical
+        """
+        for mt in self[1:]:
+            if not mt.check_rortho():
+                return False
+        return True
+
+    @property
+    def is_left_canon(self):
+        return self.qnidx == self.site_num - 1
+
+    @property
+    def is_right_canon(self):
+        return self.qnidx == 0
+
+    @property
+    def iter_idx_list(self):
+        if self.is_left_canon:
+            return range(self.site_num - 1, 0, -1)
+        else:
+            return range(0, self.site_num - 1)
 
     def _update_ms(self, idx, u, vt, sigma=None, qnlset=None, qnrset=None, m_trunc=None):
         if m_trunc is None:
@@ -199,157 +203,6 @@ class MatrixProduct(list):
             qnbigr = qnr
         return qnbigl, qnbigr
 
-    @property
-    def norm(self):
-        # todo: get the fast version in the comment working
-        ''' Fast version yet not safe. Needs further testing
-        if self.is_left_canon:
-            assert self.check_left_canonical()
-            return np.linalg.norm(np.ravel(self[-1]))
-        else:
-            assert self.check_right_canonical()
-            return np.linalg.norm(np.ravel(self[0]))
-        '''
-        return np.sqrt(self.conj().dot(self).real)
-
-    def conj(self):
-        """
-        complex conjugate
-        """
-        new_mp = self.copy()
-        for idx, mt in enumerate(new_mp):
-            new_mp[idx] = mt.conj()
-        return new_mp
-
-    def add(self, other):
-        assert self.qntot == other.qntot
-        assert self.site_num == other.site_num
-        assert self.is_left_canon == other.is_left_canon
-
-        new_mps = other.copy()
-        new_mps.threshold = min(self.threshold, other.threshold)
-
-        if self.is_mps:  # MPS
-            new_mps[0] = np.dstack([self[0], other[0]])
-            for i in range(1, self.site_num - 1):
-                mta = self[i]
-                mtb = other[i]
-                pdim = mta.shape[1]
-                assert pdim == mtb.shape[1]
-                new_mps[i] = np.zeros([mta.shape[0] + mtb.shape[0], pdim,
-                                       mta.shape[2] + mtb.shape[2]], dtype=np.complex128)
-                new_mps[i][:mta.shape[0], :, :mta.shape[2]] = mta[:, :, :]
-                new_mps[i][mta.shape[0]:, :, mta.shape[2]:] = mtb[:, :, :]
-
-            new_mps[-1] = np.vstack([self[-1], other[-1]])
-        elif self.is_mpo:  # MPO
-            new_mps[0] = np.concatenate((self[0], other[0]), axis=3)
-            for i in range(1, self.site_num - 1):
-                mta = self[i]
-                mtb = other[i]
-                pdimu = mta.shape[1]
-                pdimd = mta.shape[2]
-                assert pdimu == mtb.shape[1]
-                assert pdimd == mtb.shape[2]
-
-                new_mps[i] = np.zeros([mta.shape[0] + mtb.shape[0], pdimu, pdimd,
-                                       mta.shape[3] + mtb.shape[3]], dtype=np.complex128)
-                new_mps[i][:mta.shape[0], :, :, :mta.shape[3]] = mta[:, :, :, :]
-                new_mps[i][mta.shape[0]:, :, :, mta.shape[3]:] = mtb[:, :, :, :]
-
-                new_mps[-1] = np.concatenate((self[-1], other[-1]), axis=0)
-        else:
-            assert False
-
-        new_mps.move_qnidx(self.qnidx)
-        new_mps.qn = [qn1 + qn2 for qn1, qn2 in zip(self.qn, new_mps.qn)]
-        new_mps.qn[0] = [0]
-        new_mps.qn[-1] = [0]
-        new_mps.set_peak_bytes()
-        if self.compress_add:
-            new_mps.canonicalise()
-            new_mps.compress()
-        return new_mps
-
-    def dot(self, other):
-        """
-        dot product of two mps / mpo 
-        """
-
-        assert len(self) == len(other)
-        e0 = np.eye(1, 1)
-        for mt1, mt2 in zip(self, other):
-            # sum_x e0[:,x].m[x,:,:]
-            e0 = np.tensordot(e0, mt2, 1)
-            # sum_ij e0[i,p,:] self[i,p,:]
-            # note, need to flip a (:) index onto top,
-            # therefore take transpose
-            if mt1.ndim == 3:
-                e0 = np.tensordot(e0, mt1, ([0, 1], [0, 1])).T
-            if mt2.ndim == 4:
-                e0 = np.tensordot(e0, mt1, ([0, 1, 2], [0, 1, 2])).T
-
-        return e0[0, 0]
-
-    def _dot(self, other):
-        raise NotImplementedError
-        contracted_matrices = []
-        for mt1, mt2 in zip(self, other):
-            if mt1.ndim == 3:
-                contracted_matrices.append(np.tensordot(mt1, mt2, [1, 1]).reshape())
-            if mt1.ndim == 4:
-                pass
-
-    def angle(self, other):
-        return np.abs(self.conj().dot(other))
-
-    def scale(self, val, inplace=False):
-        new_mp = self if inplace else self.copy()
-        if np.iscomplexobj(val):
-            new_mp.to_complex(inplace=True)
-        new_mp[self.qnidx] *= val
-        return new_mp
-
-    def expectation(self, mpo):
-        # todo: might cause performance problem when calculating a lot of expectations
-        #       use dynamic programing to improve the performance.
-        # todo: different bra and ket
-        return self.conj().dot(mpo.apply(self)).real / self.norm ** 2
-
-    def to_complex(self, inplace=False):
-        if inplace:
-            new_mp = self
-        else:
-            new_mp = self.copy()
-        new_mp.dtype = np.complex128
-        for i in range(new_mp.site_num):
-            new_mp[i] = new_mp.dtype(new_mp[i])
-        return new_mp
-
-    def to_raw_list(self):
-        return [np.array(mt) for mt in self]
-
-    def distance(self, other):
-        if not hasattr(other, 'conj'):
-            other = self.__class__.from_raw_list(other)
-        return self.conj().dot(self) - np.abs(self.conj().dot(other)) - np.abs(
-            other.conj().dot(self)) + other.conj().dot(other)
-
-    def move_qnidx(self, dstidx):
-        """
-        Quantum number has a boundary side, left hand of the side is L system qn,
-        right hand of the side is R system qn, the sum of quantum number of L system
-        and R system is tot.
-        """
-        # construct the L system qn
-        for idx in range(self.qnidx + 1, len(self.qn) - 1):
-            self.qn[idx] = [self.qntot - i for i in self.qn[idx]]
-
-        # set boundary to fsite:
-        for idx in range(len(self.qn) - 2, dstidx, -1):
-            self.qn[idx] = [self.qntot - i for i in self.qn[idx]]
-        self.qnidx = dstidx
-
     def compress(self, check_canonical=True):
         """
         inp: canonicalise MPS (or MPO)
@@ -358,7 +211,7 @@ class MatrixProduct(list):
         0<trunc<1: sigma threshold
         trunc>1: number of renormalised vectors to keep
 
-        side='l': compress LEFT-canonicalised MPS 
+        side='l': compress LEFT-canonicalised MPS
                   by sweeping from RIGHT to LEFT
                   output MPS is right canonicalised i.e. CRRR
 
@@ -395,8 +248,8 @@ class MatrixProduct(list):
                 m_trunc = np.count_nonzero(normed_sigma > self.threshold)
             else:
                 assert False # in some cases buggy, such as dynamic threshold
-                m_trunc = int(self.threshold)
-                m_trunc = min(m_trunc, len(sigma))
+                # m_trunc = int(self.threshold)
+                # m_trunc = min(m_trunc, len(sigma))
             assert m_trunc != 0
             self._update_ms(idx, u, vt, sigma, qnlset, qnrset, m_trunc)
 
@@ -418,28 +271,63 @@ class MatrixProduct(list):
             self._update_ms(idx, u, vt, sigma=None, qnlset=qnlset, qnrset=qnrset)
         self._switch_domain()
 
-    def normalize(self, norm=1.0):
-        return self.scale(norm / self.norm, inplace=True)
+    def conj(self):
+        """
+        complex conjugate
+        """
+        new_mp = self.copy()
+        for idx, mt in enumerate(new_mp):
+            new_mp[idx] = mt.conj()
+        return new_mp
 
-    # todo: separate the 2 methods (approx_eiht), because their parameters are orthogonal
-    def evolve(self, mpo=None, evolve_dt=None, norm=None, approx_eiht=None):
-        if approx_eiht is not None:
-            return approx_eiht.contract(self)
-        propagation_c = rk.coefficient_dict[self.prop_method]
-        termlist = [self]
-        while len(termlist) < len(propagation_c):
-            termlist.append(mpo.contract(termlist[-1]))
-            # control term sizes to be approximately constant
-            termlist[-1].threshold *= 3
-        for idx, term in enumerate(termlist):
-            term.scale((-1.0j * evolve_dt) ** idx * propagation_c[idx], inplace=True)
-        new_mps = reduce(lambda mps1, mps2: mps1.add(mps2), termlist)
-        if not self.compress_add:
-            new_mps.canonicalise()
-            new_mps.compress()
-        if norm is not None:
-            new_mps.normalize(norm)
-        return new_mps
+    def dot(self, other):
+        """
+        dot product of two mps / mpo 
+        """
+
+        assert len(self) == len(other)
+        e0 = np.eye(1, 1)
+        for mt1, mt2 in zip(self, other):
+            # sum_x e0[:,x].m[x,:,:]
+            e0 = np.tensordot(e0, mt2, 1)
+            # sum_ij e0[i,p,:] self[i,p,:]
+            # note, need to flip a (:) index onto top,
+            # therefore take transpose
+            if mt1.ndim == 3:
+                e0 = np.tensordot(e0, mt1, ([0, 1], [0, 1])).T
+            if mt2.ndim == 4:
+                e0 = np.tensordot(e0, mt1, ([0, 1, 2], [0, 1, 2])).T
+
+        return e0[0, 0]
+
+    def angle(self, other):
+        return np.abs(self.conj().dot(other))
+
+    def scale(self, val, inplace=False):
+        new_mp = self if inplace else self.copy()
+        if np.iscomplexobj(val):
+            new_mp.to_complex(inplace=True)
+        new_mp[self.qnidx] *= val
+        return new_mp
+
+    def to_complex(self, inplace=False):
+        if inplace:
+            new_mp = self
+        else:
+            new_mp = self.copy()
+        new_mp.dtype = np.complex128
+        for i in range(new_mp.site_num):
+            new_mp[i] = new_mp.dtype(new_mp[i])
+        return new_mp
+
+    def to_raw_list(self):
+        return [np.array(mt) for mt in self]
+
+    def distance(self, other):
+        if not hasattr(other, 'conj'):
+            other = self.__class__.from_raw_list(other)
+        return self.conj().dot(self) - np.abs(self.conj().dot(other)) - np.abs(
+            other.conj().dot(self)) + other.conj().dot(other)
 
     def copy(self):
         return copy.deepcopy(self)

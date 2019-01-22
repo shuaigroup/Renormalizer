@@ -10,7 +10,7 @@ from functools import partial
 
 import numpy as np
 
-from ephMPS.mps import Mpo, Mps, solver
+from ephMPS.mps import Mpo, Mps, MpDm, solver
 from ephMPS.utils import TdMpsJob, constant, Quantity
 from ephMPS.mps.matrix import MatrixState, DensityMatrixOp
 
@@ -24,7 +24,7 @@ def calc_reduced_density_matrix_straight(mp):  # this procedure is **very** memo
         density_matrix_product = mp.apply(mp.conj_trans())
         #density_matrix_product = mp
     elif mp.mtype == MatrixState:
-        density_matrix_product = Mpo()
+        density_matrix_product = MpDm()
         density_matrix_product.mtype = DensityMatrixOp
         # todo: not elegant! figure out a better way to deal with data type
         density_matrix_product.dtype = np.complex128
@@ -42,7 +42,7 @@ def calc_reduced_density_matrix_straight(mp):  # this procedure is **very** memo
     return density_matrix_product.get_reduced_density_matrix()
 
 # saves memory, but still time consuming, especially when the calculation starts,
-# in long term the same order with expectation, see report/ephMPS9.pstat
+# in long term the same order with expectation
 def calc_reduced_density_matrix(mp):
     if mp.mtype == MatrixState:
         mp1 = [mt.reshape(mt.shape[0], mt.shape[1], 1, mt.shape[2]) for mt in mp]
@@ -110,7 +110,7 @@ class ChargeTransport(TdMpsJob):
         if self.temperature == 0:
             gs_mp = Mps.gs(self.mol_list, max_entangled=False)
         else:
-            gs_mp = Mpo.from_mps(Mps.gs(self.mol_list, max_entangled=True))
+            gs_mp = MpDm.from_mps(Mps.gs(self.mol_list, max_entangled=True))
             beta = constant.t2beta(self.temperature)
             thermal_prop = Mpo.exact_propagator(self.mol_list, - beta / 2, 'GS')
             gs_mp = thermal_prop.apply(gs_mp)
