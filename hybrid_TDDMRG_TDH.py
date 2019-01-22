@@ -29,7 +29,11 @@ def construct_hybrid_Ham(mol, J, MPS, WFN, debug=False):
     # many-body electronic part 
     A_el = np.zeros((nmols))
     for imol in xrange(nmols):
-        MPO, MPOdim = MPSsolver.construct_onsiteMPO(mol,pbond,"a^\dagger a",dipole=False,sitelist=[imol])
+        if mol[imol].Model == "Holstein":
+            MPO, MPOdim = MPSsolver.construct_onsiteMPO(mol,pbond,"a^\dagger a",dipole=False,sitelist=[imol])
+        elif mol[imol].Model == "SBM":
+            MPO, MPOdim = MPSsolver.construct_onsiteMPO(mol,pbond,"sigma_z",dipole=False,sitelist=[imol])
+
         #A_el[imol] = mpslib.dot(mpslib.conj(MPS),mpslib.mapply(MPO,MPS)).real
         A_el[imol] = mpslib.exp_value(MPS, MPO, MPS).real
     print "dmrg_occ", A_el
@@ -49,9 +53,14 @@ def construct_hybrid_Ham(mol, J, MPS, WFN, debug=False):
     MPO_indep, MPOdim, MPOQN, MPOQNidx, MPOQNtot = MPSsolver.construct_MPO(mol, J, pbond)
     #e_mean = mpslib.dot(mpslib.conj(MPS),mpslib.mapply(MPO_indep,MPS))
     e_mean = mpslib.exp_value(MPS, MPO_indep, MPS)
-    elocal_offset = np.array([mol[imol].e0_hybrid + B_vib_mol[imol] for imol in xrange(nmols)]).real
-    e_mean += A_el.dot(elocal_offset)
     
+    if mol[0].Model == "Holstein":
+        elocal_offset = np.array([mol[imol].e0_hybrid + B_vib_mol[imol] for imol in xrange(nmols)]).real
+        e_mean += A_el.dot(elocal_offset)
+    elif mol[0].Model == "SBM":
+        elocal_offset = np.array([B_vib_mol[imol] for imol in xrange(nmols)]).real
+        e_mean += A_el.dot(elocal_offset)
+
     MPO, MPOdim, MPOQN, MPOQNidx, MPOQNtot = MPSsolver.construct_MPO(mol, J, pbond, elocal_offset=elocal_offset)
     for ibra in xrange(MPO[0].shape[1]):
         MPO[0][0,ibra,ibra,0] -=  e_mean.real
@@ -491,6 +500,7 @@ def dynamics_hybrid_TDDMRG_TDH(setup, mol, J, MPS, WFN, nsteps, dt, ephtable, th
     tlist = []
     t = 0. 
     for istep in xrange(nsteps):
+        print "istep", istep
         if istep != 0:
             MPS, WFN = hybrid_TDDMRG_TDH(rk, mol, J, MPS, WFN,\
                     dt, ephtable, thresh=thresh, cleanexciton=cleanexciton, QNargs=QNargs, \

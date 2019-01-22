@@ -22,7 +22,8 @@ def SCF(mol, J, nexciton, niterations=20, thresh=1e-5, particle="hardcore boson"
     each electron has 1 orbital, but if electronic part is hardcore boson, only
     one many-body wfn is used for electronic DOF
     '''
-    assert particle in ["hardcore boson", "fermion"]
+    assert particle in ["hardcore boson", "fermion", "SBM"]
+
     nmols = len(mol)
     
     # initial guess
@@ -33,7 +34,7 @@ def SCF(mol, J, nexciton, niterations=20, thresh=1e-5, particle="hardcore boson"
     # electronic part
     H_el_indep, H_el_dep = Ham_elec(mol, J, nexciton, particle=particle)
     ew, ev = scipy.linalg.eigh(a=H_el_indep)
-    if particle == "hardcore boson":
+    if particle == "hardcore boson" or particle == "SBM":
         WFN.append(ev[:,0])
         fe += 1
     elif particle == "fermion":
@@ -89,10 +90,17 @@ def Ham_elec(mol, J, nexciton, indirect=None, particle="hardcore boson"):
     construct electronic part Hamiltonian
     '''
 
-    assert particle in ["hardcore boson","fermion"]
+    assert particle in ["hardcore boson","fermion","SBM"]
     
     nmols = len(mol)
-    if nexciton == 0:  # 0 exciton space
+    if particle == "SBM":
+        H_el_indep = \
+            + Pauli_matrices("sigma_z") * mol[0].elocalex \
+            + Pauli_matrices("sigma_x") * mol[0].Delta
+        
+        H_el_dep = [Pauli_matrices("sigma_z")]
+    
+    elif nexciton == 0:  # 0 exciton space
         # independent part
         H_el_indep = np.zeros([1,1])   
         # dependent part, for Holstein model a_i^\dagger a_i
@@ -113,6 +121,7 @@ def Ham_elec(mol, J, nexciton, indirect=None, particle="hardcore boson"):
             tmp = np.zeros((nmols,nmols))
             tmp[imol, imol] = 1.0
             H_el_dep.append(tmp)
+
     else:
         pass
         # todo: hardcore boson and nexciton > 1, construct the full Hamiltonian   
@@ -175,7 +184,7 @@ def construct_H_Ham(mol, J, nexciton, WFN, fe, fv, particle="hardcore boson", de
     construct the mean field Hartree Hamiltonian
     the many body terms are A*B, A(B) is the electronic(vibrational) part mean field
     '''
-    assert particle in ["hardcore boson","fermion"]
+    assert particle in ["hardcore boson","fermion","SBM"]
     assert (fe + fv) == (len(WFN)-1) 
 
     nmols = len(mol)
@@ -450,7 +459,7 @@ def construct_onsiteO(mol,opera,dipole=False,sitelist=None):
     construct the electronic onsite operator \sum_i opera_i MPO
     '''
     
-    assert opera in ["a", "a^\dagger", "a^\dagger a"]
+    assert opera in ["a", "a^\dagger", "a^\dagger a", "sigma_z"]
     nmols = len(mol)
     if sitelist is None:
         sitelist = np.arange(nmols)
@@ -470,6 +479,8 @@ def construct_onsiteO(mol,opera,dipole=False,sitelist=None):
         O[:,0] = element
     elif opera == "a^\dagger a":
         O = np.diag(element)
+    elif opera == "sigma_z":
+        O = Pauli_matrices(opera)
 
     return O
         

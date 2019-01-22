@@ -8,6 +8,17 @@ written in Latex format. <bra|op|ket>
 
 import numpy as np
 
+
+def Pauli_matrices(op):
+    assert op in ["sigma_x","sigma_y","sigma_z"]
+    if op == "sigma_x":
+        return np.array([[0.,1.],[1.,0.]])
+    elif op == "sigma_y":
+        return np.array([[0., -1.j],[1.j,0.]])
+    elif op == "sigma_z":
+        return np.array([[1., 0.],[0.,-1.]])
+
+
 def PhElementOpera(op, bra, ket):
     '''
     phonon operator
@@ -103,7 +114,8 @@ def EElementOpera(op, bra, ket):
             return 0.0
     elif op == "sigma_z":
         if bra == ket:
-            if bra == 1:
+            # the 0 state is alpha, 1 state is beta
+            if bra == 0:
                 return 1.0
             else:
                 return -1.0

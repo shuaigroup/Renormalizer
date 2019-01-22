@@ -44,7 +44,11 @@ def construct_MPS_MPO_2(mol, J, Mmax, nexciton, MPOscheme=2, rep="star"):
 
     nmols = len(mol)
     for imol in xrange(nmols):
-        ephtable.append(1)
+        if mol[imol].Model == "SBM":
+            ephtable.append(0)
+        else:
+            ephtable.append(1)
+
         pbond.append(2)
         for iph in xrange(mol[imol].nphs):
             if mol[imol].ph[iph].nqboson == 1:
@@ -381,8 +385,9 @@ def construct_MPO(mol, J, pbond, scheme=2, rep="star", elocal_offset=None):
                     mpo[-1,ibra,iket,1]  = EElementOpera("a^\dagger a", ibra, iket)
                 elif mol[imol].Model == "SBM":
                     mpo[-1,ibra,iket,0] = EElementOpera("sigma_z", ibra, iket) * elocal + \
-                        EElementOpera("Iden", ibra, iket)*mol[imol].e0 +  \
                         EElementOpera("sigma_x", ibra, iket)*mol[imol].Delta
+                        #EElementOpera("Iden", ibra, iket)*mol[imol].e0 +  \
+                        # this is a constant energy in SBM model
                     mpo[-1,ibra,iket,1]  = EElementOpera("sigma_z", ibra, iket)
 
                 mpo[-1,ibra,iket,-1] = EElementOpera("Iden", ibra, iket)
@@ -1024,7 +1029,7 @@ def construct_onsiteMPO(mol,pbond,opera,dipole=False,QNargs=None,sitelist=None):
     '''
     construct the electronic onsite operator \sum_i opera_i MPO
     '''
-    assert opera in ["a", "a^\dagger", "a^\dagger a"]
+    assert opera in ["a", "a^\dagger", "a^\dagger a", "sigma_z"]
     nmols = len(mol)
     if sitelist is None:
         sitelist = np.arange(nmols)
@@ -1089,7 +1094,7 @@ def construct_onsiteMPO(mol,pbond,opera,dipole=False,QNargs=None,sitelist=None):
     elif opera == "a^\dagger":
         MPOQN = [[0]] + [[1,0]]*(len(MPO)-totnqboson-1) + [[1]]*(totnqboson+1)
         MPOQNtot = 1
-    elif opera == "a^\dagger a":
+    elif opera in ["a^\dagger a", "sigma_z"]:
         MPOQN = [[0]] + [[0,0]]*(len(MPO)-totnqboson-1) + [[0]]*(totnqboson+1)
         MPOQNtot = 0
     MPOQN[-1] = [0]
