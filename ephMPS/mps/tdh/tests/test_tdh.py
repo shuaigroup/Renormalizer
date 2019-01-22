@@ -50,8 +50,9 @@ class Test_TDH(unittest.TestCase):
         dmrg_mol_list = custom_mol_list(None, ph_phys_dim, dis=[Quantity(0), Quantity(0)])
         # DMRG calculation
         procedure = [[40, 0.4], [40, 0.2], [40, 0.1], [40, 0], [40, 0]]
-        mps, mpo = construct_mps_mpo_2(dmrg_mol_list, procedure[0][0], nexciton, scheme=2)
-        energy = optimize_mps(mps, mpo, procedure, method="2site")
+        mps, mpo = construct_mps_mpo_2(dmrg_mol_list, 40, nexciton, scheme=2)
+        mps.optimize_config.procedure = procedure
+        energy = optimize_mps(mps, mpo)
         dmrg_e = mps.expectation(mpo)
 
         # print occupation

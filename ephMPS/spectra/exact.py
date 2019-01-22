@@ -1,7 +1,7 @@
 # -*- coding: utf-8 -*-
 # Author: Jiajun Ren <jiajunren0522@gmail.com>
 
-from ephMPS.mps import Mpo, MpDm
+from ephMPS.mps import Mpo, Mps, solver
 from ephMPS.spectra.base import SpectraTdMpsJobBase, BraKetPair
 from ephMPS.utils import constant
 
@@ -20,39 +20,43 @@ class SpectraExact(SpectraTdMpsJobBase):
     all cases: 0Temi
     1mol case: 0Temi, TTemi, 0Tabs, TTabs
     """
-    def __init__(self, i_mps, h_mpo, spectratype, temperature, ex_shift=0, gs_shift=0):
-        assert spectratype in ["emi", "abs"]
-        self.spectratype = spectratype
-        self.temperature = temperature
-        if self.spectratype == "emi":
+    def __init__(self, mol_list, spectratype, temperature, optimize_config, offset, ex_shift=0, gs_shift=0):
+
+        if spectratype == "emi":
             self.space1 = "EX"
             self.space2 = "GS"
             self.shift1 = ex_shift
             self.shift2 = gs_shift
-            if self.temperature != 0:
-                assert len(h_mpo.mol_list) == 1
+            if temperature != 0:
+                assert len(mol_list) == 1
         else:
-            assert len(h_mpo.mol_list) == 1
+            assert len(mol_list) == 1
             self.space1 = "GS"
             self.space2 = "EX"
             self.shift1 = gs_shift
             self.shift2 = ex_shift
-        self._prop_mpo_cache = {}
-        super(SpectraExact, self).__init__(i_mps, h_mpo)
+        self.optimize_config = optimize_config
+        self._prop_mpo1_cache = {}
+        self._prop_mpo2_cache = {}
+        super(SpectraExact, self).__init__(mol_list, spectratype, temperature, offset=offset)
 
     def prop_mpo1(self, dt):
-        if dt not in self._prop_mpo_cache:
-                self._prop_mpo_cache[dt] = Mpo.exact_propagator(self.mol_list, -1.0j * dt,
+        if dt not in self._prop_mpo1_cache:
+                self._prop_mpo1_cache[dt] = Mpo.exact_propagator(self.mol_list, -1.0j * dt,
                                                                     space=self.space1, shift=self.shift1)
-        return self._prop_mpo_cache[dt]
+        return self._prop_mpo1_cache[dt]
 
     def prop_mpo2(self, dt):
-        if dt not in self._prop_mpo_cache:
-                self._prop_mpo_cache[dt] = Mpo.exact_propagator(self.mol_list, -1.0j * dt,
+        if dt not in self._prop_mpo2_cache:
+                self._prop_mpo2_cache[dt] = Mpo.exact_propagator(self.mol_list, -1.0j * dt,
                                                                     space=self.space2, shift=self.shift2)
-        return self._prop_mpo_cache[dt]
+        return self._prop_mpo2_cache[dt]
 
     def init_mps(self):
+        mmax = self.optimize_config.procedure[0][0]
+        i_mps = Mps.random(self.h_mpo, self.nexciton, mmax, 1)
+        i_mps.optimize_config = self.optimize_config
+        solver.optimize_mps(i_mps, self.h_mpo)
         if self.spectratype == "emi":
             operator = 'a'
         else:
@@ -62,11 +66,11 @@ class SpectraExact(SpectraTdMpsJobBase):
             beta = constant.t2beta(self.temperature)
             # print "beta=", beta
             thermal_mpo = Mpo.exact_propagator(self.mol_list, -beta / 2.0, space=self.space1, shift=self.shift1)
-            ket_mps = thermal_mpo.apply(self.i_mps)
+            ket_mps = thermal_mpo.apply(i_mps)
             ket_mps.normalize()
             # print "partition function Z(beta)/Z(0)", Z
         else:
-            ket_mps = self.i_mps
+            ket_mps = i_mps
         a_ket_mps = dipole_mpo.apply(ket_mps)
 
         # XXX: normalized here?

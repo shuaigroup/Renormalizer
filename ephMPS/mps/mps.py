@@ -42,9 +42,8 @@ class Mps(MatrixProduct):
         mps.mol_list = mpo.mol_list
         mps.qn = [[0], ]
         dim_list = [1, ]
-        nmps = len(mpo)
 
-        for imps in range(nmps - 1):
+        for imps in range(len(mpo) - 1):
 
             # quantum number
             if mps.ephtable.is_electron(imps):

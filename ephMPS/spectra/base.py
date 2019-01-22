@@ -4,7 +4,8 @@
 
 import numpy as np
 
-from ephMPS.utils import TdMpsJob
+from ephMPS.mps import solver, Mps, Mpo
+from ephMPS.utils import TdMpsJob, Quantity
 
 
 class BraKetPair(object):
@@ -32,23 +33,19 @@ class BraKetPair(object):
 
 class SpectraTdMpsJobBase(TdMpsJob):
 
-    def __init__(self, i_mps, h_mpo):
-        self.i_mps = i_mps
-        self.h_mpo = h_mpo
-        self.norm = None
+    def __init__(self, mol_list, spectratype, temperature, scheme=2, offset=Quantity(0)):
+        self.mol_list = mol_list
+        assert spectratype in ["emi", "abs"]
+        self.spectratype = spectratype
+        if spectratype == "emi":
+            self.nexciton = 1
+        else:
+            self.nexciton = 0
+        self.temperature = temperature
+        self.h_mpo = Mpo(mol_list, scheme=scheme, offset=offset)
         super(SpectraTdMpsJobBase, self).__init__()
-
-    def init_mps(self):
-        raise NotImplementedError
-
-    def evolve_single_step(self, evolve_dt):
-        raise NotImplementedError
 
     @property
     def autocorr(self):
         return np.array([pair.ft for pair in self.tdmps_list])
-
-    @property
-    def mol_list(self):
-        return self.h_mpo.mol_list
 
