@@ -167,7 +167,6 @@ def get_qb_mpo_dim_qn(mol_list, old_dim, old_qn, rep):
 
 class Mpo(MatrixProduct):
 
-
     @classmethod
     def exact_propagator(cls, mol_list, x, space="GS", shift=0.0):
         '''
@@ -182,14 +181,14 @@ class Mpo(MatrixProduct):
         mpo = cls().to_complex()
         mpo.mol_list = mol_list
 
-        for imol, mol in enumerate(mol_list):
+        for mol in mol_list:
             e_pbond = mol.pbond[0]
             mo = np.zeros([1, e_pbond, e_pbond, 1])
             for ibra in range(e_pbond):
                 mo[0, ibra, ibra, 0] = 1.0
             mpo.append(mo)
 
-            for iph, ph in enumerate(mol.dmrg_phs):
+            for ph in mol.dmrg_phs:
 
                 if space == "EX":
                     # for the EX space, with quasiboson algorithm, the b^\dagger + b
@@ -457,6 +456,8 @@ class Mpo(MatrixProduct):
             return
 
         self.mol_list = mol_list
+        # offset of the hamiltonian, might be useful when doing td-hartree job
+        self.offset = offset
         j_matrix = self.mol_list.j_matrix
         nmols = len(mol_list)
 
@@ -692,6 +693,7 @@ class Mpo(MatrixProduct):
         return mp
 
     def apply(self, mp):
+        # todo: use meta copy to save time
         new_mps = self.promote_mt_type(mp.copy())
         if mp.is_mps:
             # mpo x mps

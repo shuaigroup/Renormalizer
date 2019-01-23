@@ -13,7 +13,8 @@ class BraKetPairEmiFiniteT(BraKetPair):
         return np.conj(super(BraKetPairEmiFiniteT, self).calc_ft())
 
 
-class BraKetPairAbsFiniteT(BraKetPair): pass
+class BraKetPairAbsFiniteT(BraKetPair):
+    pass
 
 
 class SpectraFiniteT(SpectraTdMpsJobBase):

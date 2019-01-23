@@ -7,7 +7,7 @@ import numpy as np
 from ddt import ddt, data, unpack
 
 from ephMPS.mps.tdh import tdh
-from ephMPS.tests.parameter import hartree_mol_list, custom_mol_list, ph_phys_dim
+from ephMPS.tests.parameter import hartree_mol_list, custom_mol_list
 from ephMPS.utils import Quantity, constant
 
 
@@ -45,7 +45,7 @@ class Test_FT_TDH(unittest.TestCase):
         else:
             assert False
 
-        mol_list = custom_mol_list(None, ph_phys_dim, dis=[Quantity(d) for d in D_value], hartree=True)
+        mol_list = custom_mol_list(None, dis=[Quantity(d) for d in D_value], hartrees=[True, True])
 
         T = Quantity(298)
         insteps = 50

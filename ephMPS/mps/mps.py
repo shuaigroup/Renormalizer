@@ -88,11 +88,11 @@ class Mps(MatrixProduct):
         # print("self.dim", self.dim)
         mps._left_canon = True
 
-        mps.wfn = []
+        mps.wfns = []
         for mol in mps.mol_list:
             for ph in mol.hartree_phs:
-                mps.wfn.append(np.random.random(ph.n_phys_dim))
-        mps.wfn.append(1.0)
+                mps.wfns.append(np.random.random(ph.n_phys_dim))
+        mps.wfns.append(1.0)
 
         return mps
 
@@ -123,27 +123,27 @@ class Mps(MatrixProduct):
                         ms[0, 0, 0] = 1.0
                     mps.append(ms)
 
-        mps.wfn = []
+        mps.wfns = []
 
         for mol in mol_list:
             for ph in mol.hartree_phs:
                 if max_entangled:
                     diag_elems = [1.0] * ph.n_phys_dim
-                    mps.wfn.append(np.diag(diag_elems))
+                    mps.wfns.append(np.diag(diag_elems))
                 else:
                     diag_elems = [1.0] + [0.0] * (ph.n_phys_dim - 1)
-                    mps.wfn.append(np.array(diag_elems))
+                    mps.wfns.append(np.array(diag_elems))
         # the coefficent a
-        mps.wfn.append(1.0)
+        mps.wfns.append(1.0)
 
-        mflib.normalize(mps.wfn)
+        mflib.normalize(mps.wfns)
 
         return mps
 
     def __init__(self):
         super(Mps, self).__init__()
         self.mtype = MatrixState
-        self.wfn = [1]
+        self.wfns = [1]
 
         self.optimize_config = OptimizeConfig()
 
@@ -151,9 +151,24 @@ class Mps(MatrixProduct):
 
         self.compress_add = False
 
+    def conj(self):
+        new_mps = super(Mps, self).conj()
+        for idx, wfn in enumerate(new_mps.wfns):
+            new_mps.wfns[idx] = np.conj(wfn)
+        return new_mps
+
+    def dot(self, other, with_hartree=True):
+        e = super(Mps, self).dot(other)
+        if with_hartree:
+            assert len(self.wfns) == len(other.wfns)
+            for wfn1, wfn2 in zip(self.wfns, other.wfns):
+                # use vdot is buggy here, because vdot will take conjugation automatically
+                e *= np.dot(wfn1, wfn2)
+        return e
+
     def to_complex(self, inplace=False):
         new_mp = super(Mps, self).to_complex(inplace=inplace)
-        new_mp.wfn = [wfn.astype(np.complex128) for wfn in new_mp.wfn[:-1]] + [new_mp.wfn[-1]]
+        new_mp.wfns = [wfn.astype(np.complex128) for wfn in new_mp.wfns[:-1]] + [new_mp.wfns[-1]]
         return new_mp
 
     @property
@@ -171,6 +186,10 @@ class Mps(MatrixProduct):
 
     @_cached_property
     def norm(self):
+        return self.dmrg_norm * self.hartree_norm
+
+    @_cached_property
+    def dmrg_norm(self):
         # todo: get the fast version in the comment working
         ''' Fast version yet not safe. Needs further testing
         if self.is_left_canon:
@@ -181,6 +200,13 @@ class Mps(MatrixProduct):
             return np.linalg.norm(np.ravel(self[0]))
         '''
         return np.sqrt(self.conj().dot(self).real)
+
+    @_cached_property
+    def hartree_norm(self):
+        norm = np.dot(np.conj(self.wfns[-1]), self.wfns[-1])
+        for wfn in self.wfns[:-1]:
+            norm *= scipy.linalg.norm(wfn)
+        return norm
 
     def calc_e_occupation(self, idx):
         return self.expectation(Mpo.onsite(self.mol_list, 'a^\dagger a', mol_idx_set={idx}))
@@ -276,19 +302,20 @@ class Mps(MatrixProduct):
         return new_mps
 
     @invalidate_cache_decorator
-    def normalize(self, norm=1.0):
-        factor = norm / self.norm
-        self.scale(factor, inplace=True)
-        self.wfn[-1] *= norm
+    def normalize(self, norm=1.0, with_hartree=True):
+        self.scale(norm / self.dmrg_norm, inplace=True)
+        if with_hartree:
+            self.wfns[-1] *= norm / self.hartree_norm
         return self
 
     def evolve(self, mpo=None, evolve_dt=None, norm=None, approx_eiht=None):
         if self.mol_list.pure_dmrg:
             return self.evolve_dmrg(mpo, evolve_dt, norm, approx_eiht)
         else:
-            hybrid_mpo, HAM, Etot = self.construct_hybrid_Ham()
+            hybrid_mpo, HAM, Etot = self.construct_hybrid_Ham(mpo)
             mps = self.evolve_dmrg(hybrid_mpo, evolve_dt, norm, approx_eiht)
-            mps.wfn = unitary_propagation(HAM, mps.wfn, Etot, evolve_dt)
+            # mps = self.evolve_dmrg(mpo, evolve_dt, norm, approx_eiht)
+            unitary_propagation(mps.wfns, HAM, Etot, evolve_dt)
             return mps
 
     # todo: separate the 2 methods (approx_eiht), because their parameters are orthogonal
@@ -308,7 +335,7 @@ class Mps(MatrixProduct):
             new_mps.canonicalise()
             new_mps.compress()
         if norm is not None:
-            new_mps.normalize(norm)
+            new_mps.normalize(norm, with_hartree=False)
         return new_mps
 
 
@@ -316,7 +343,9 @@ class Mps(MatrixProduct):
         # todo: might cause performance problem when calculating a lot of expectations
         #       use dynamic programing to improve the performance.
         # todo: different bra and ket
-        return self.conj().dot(mpo.apply(self)).real / self.norm ** 2
+        # without hartree because currently no mpo will operate on the hartree part and if so
+        # take the dot will only result in unity
+        return self.conj().dot(mpo.apply(self), with_hartree=False).real / self.norm ** 2
 
     @property
     def digest(self):
@@ -328,12 +357,12 @@ class Mps(MatrixProduct):
             prod = prod.reshape((prod.shape[0], -1, prod.shape[-1]))
         return {'var': prod.var(), 'mean': prod.mean(), 'ptp': prod.ptp()}
 
-    def construct_hybrid_Ham(self, debug=False):
+    def construct_hybrid_Ham(self, mpo_indep, debug=False):
         '''
         construct hybrid DMRG and Hartree(-Fock) Hamiltonian
         '''
         mol_list = self.mol_list
-        WFN = self.wfn
+        WFN = self.wfns
         nmols = len(mol_list)
 
         # many-body electronic part
@@ -357,13 +386,12 @@ class Mps(MatrixProduct):
 
         Etot = 0.0
         # construct new HMPO
-        MPO_indep = Mpo(mol_list)
         # e_mean = mpslib.dot(mpslib.conj(MPS),mpslib.mapply(MPO_indep,MPS))
-        e_mean = self.expectation(MPO_indep)
+        e_mean = self.expectation(mpo_indep)
         elocal_offset = np.array([mol_list[imol].hartree_e0 + B_vib_mol[imol] for imol in range(nmols)]).real
         e_mean += A_el.dot(elocal_offset)
-
-        MPO = Mpo(mol_list, elocal_offset=elocal_offset, offset=Quantity(e_mean.real))
+        total_offset = mpo_indep.offset + Quantity(e_mean.real)
+        MPO = Mpo(mol_list, elocal_offset=elocal_offset, offset=total_offset)
 
         Etot += e_mean
 
@@ -383,9 +411,9 @@ class Mps(MatrixProduct):
             return MPO, HAM, Etot
 
     def hartree_wfn_diff(self, other):
-        assert len(self.wfn) == len(other.wfn)
+        assert len(self.wfns) == len(other.wfns)
         res = []
-        for wfn1, wfn2 in zip(self.wfn, other.wfn):
+        for wfn1, wfn2 in zip(self.wfns, other.wfns):
             res.append(scipy.linalg.norm(np.tensordot(wfn1, wfn1, axes=0) - np.tensordot(wfn2, wfn2, axes=0)))
         return np.array(res)
 

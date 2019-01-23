@@ -3,6 +3,7 @@ import numpy as np
 from ephMPS.model import Phonon, Mol, MolList
 from ephMPS.utils import constant, Quantity
 
+# todo: make `custom_mol_list` or even the whole file a (class) method of `MolList`
 elocalex = Quantity(2.67, 'eV')
 dipole_abs = 15.45
 nmols = 3
@@ -24,7 +25,7 @@ hartree_mol_list = MolList([Mol(elocalex, hartree_ph_list, dipole_abs)] * nmols,
 hybrid_mol_list = MolList([Mol(elocalex, hybrid_ph_list, dipole_abs)] * nmols, _j_matrix)
 
 
-def custom_mol_list(custom_j_matrix=None, n_phys_dim=None, nqboson=None, qbtrunc=None, force3rd=None, dis=None, hartree=False):
+def custom_mol_list(custom_j_matrix=None, n_phys_dim=None, nqboson=None, qbtrunc=None, force3rd=None, dis=None, hartrees=None, nmols=3):
     if custom_j_matrix is None:
         custom_j_matrix = _j_matrix
     if n_phys_dim is None:
@@ -37,6 +38,8 @@ def custom_mol_list(custom_j_matrix=None, n_phys_dim=None, nqboson=None, qbtrunc
         force3rd = [None, None]
     if dis is None:
         dis = displacement_quantities
+    if hartrees is None:
+        hartrees = [False, False]
     displacement = [[Quantity(0), dis[0]], [Quantity(0), dis[1]]]
-    ph_list = [Phonon(*args, hartree=hartree) for args in zip(omega, displacement, n_phys_dim, force3rd, nqboson, qbtrunc)]
+    ph_list = [Phonon(*args) for args in zip(omega, displacement, n_phys_dim, force3rd, nqboson, qbtrunc, hartrees)]
     return MolList([Mol(elocalex, ph_list, dipole_abs)] * nmols, custom_j_matrix)

@@ -18,10 +18,14 @@ from ephMPS.utils import constant, Quantity, OptimizeConfig
 class TestZeroExact(unittest.TestCase):
     def test_zero_exact_emi(self):
         # print "data", value
-        mol_list = parameter.custom_mol_list(None, [4, 4])
+        mol_list = parameter.mol_list
 
-        exact_emi = SpectraExact(mol_list, 'emi', Quantity(0, 'K'), OptimizeConfig(), offset=Quantity(2.28614053, 'ev'))
+        # exact_emi = SpectraExact(mol_list, 'emi', Quantity(0, 'K'), OptimizeConfig(), offset=Quantity(2.28614053, 'ev'))
+        exact_emi = SpectraExact(mol_list, 'emi')
+        # setup a large interval because evaluating expectations are expensive when evolution is fast
+        exact_emi.info_interval = 100
         nsteps = 3000
+        # nsteps = 100
         dt = 30.0
         exact_emi.evolve(dt, nsteps)
 
@@ -31,7 +35,7 @@ class TestZeroExact(unittest.TestCase):
         self.assertTrue(np.allclose(exact_emi.autocorr[:nsteps], std[:nsteps], rtol=1e-3))
 
 @ddt
-class TestZeroTCorr(unittest.TestCase):
+class TestZeroTSpectraAbs(unittest.TestCase):
     @data(
         [1, 'svd', [[4, 4]], 1e-3],
         [2, 'svd', [[4, 4]], 1e-3],
@@ -42,10 +46,7 @@ class TestZeroTCorr(unittest.TestCase):
     def test_zero_t_abs(self, algorithm, compress_method, ph_info, rtol):
         np.random.seed(0)
         # print "data", value
-        nexciton = 0
         procedure = [[1, 0], [1, 0], [1, 0]]
-        nsteps = 100
-        dt = 30.0
         mol_list = parameter.custom_mol_list(None, *ph_info)
         optimize_config = OptimizeConfig()
         optimize_config.procedure = procedure
@@ -55,6 +56,9 @@ class TestZeroTCorr(unittest.TestCase):
             SpectraZeroT = SpectraTwoWayPropZeroT
 
         zero_t_corr = SpectraZeroT(mol_list, "abs", optimize_config, offset=Quantity(2.28614053, 'ev'))
+        zero_t_corr.info_interval = 30
+        nsteps = 100
+        dt = 30.0
         zero_t_corr.evolve(dt, nsteps)
         with open(os.path.join(cur_dir, 'ZeroTabs_' + str(algorithm) + str(compress_method) + '.npy'), 'rb') as f:
             std = np.load(f)
@@ -66,7 +70,7 @@ class TestZeroTCorr(unittest.TestCase):
           [2, "svd", [[4, 4], [2, 2], [1.e-7, 1.e-7]], 1e-2],
           )
     @unpack
-    def test_zero_t_corr_mposcheme3(self, algorithm, compress_method, ph_info, rtol):
+    def test_zero_t_abs_mposcheme3(self, algorithm, compress_method, ph_info, rtol):
         np.random.seed(0)
         # print "data", value
         j_matrix = np.array([[0.0, -0.1, 0.0], [-0.1, 0.0, -0.3], [0.0, -0.3, 0.0]]) / constant.au2ev
@@ -86,6 +90,33 @@ class TestZeroTCorr(unittest.TestCase):
         zero_t_corr3.evolve(dt, nsteps)
 
         self.assertTrue(np.allclose(zero_t_corr2.autocorr, zero_t_corr3.autocorr, rtol=rtol))
+
+
+@ddt
+class TestZeroTSpectraEmi(unittest.TestCase):
+
+    @data(
+        [1, 1e-2],
+        [2, 1e-2],
+    )
+    @unpack
+    def test_zero_t_emi(self, algorithm, rtol):
+        np.random.seed(0)
+        # print "data", value
+        mol_list = parameter.mol_list
+        if algorithm == 1:
+            SpectraZeroT = SpectraOneWayPropZeroT
+        else:
+            SpectraZeroT = SpectraTwoWayPropZeroT
+
+        zero_t_corr = SpectraZeroT(mol_list, "emi")
+        zero_t_corr.info_interval = 50
+        nsteps = 100
+        dt = 30.0
+        zero_t_corr.evolve(dt, nsteps)
+        with open(os.path.join(cur_dir, 'ZeroExactEmi.npy'), 'rb') as f:
+            std = np.load(f)
+        self.assertTrue(np.allclose(zero_t_corr.autocorr[:nsteps], std[:nsteps], rtol=rtol))
 
 
 @ddt

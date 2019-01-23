@@ -61,7 +61,7 @@ class MpDm(Mpo, Mps):
         mpo.mol_list = mps.mol_list
 
         #todo: need to change to density operator form
-        mpo.wfn = mps.wfn
+        mpo.wfns = mps.wfns
         mpo.optimize_config = mps.optimize_config
         mpo._prop_method = mps.prop_method
         mpo.compress_add = mps.compress_add

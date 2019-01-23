@@ -63,7 +63,7 @@ def optimize_mps(mps, mpo):
 
     for itera in range(mps.optimize_config.niterations):
         logging.info("Loop: %d" % itera)
-        MPO, HAM, Etot = mps.construct_hybrid_Ham()
+        MPO, HAM, Etot = mps.construct_hybrid_Ham(mpo)
 
         MPS_old = mps.copy()
         optimize_mps_dmrg(mps, MPO)
@@ -267,12 +267,12 @@ def optimize_mps_dmrg(mps, mpo):
 
 
 def optimize_mps_hartree(mps, HAM):
-    mps.wfn = []
+    mps.wfns = []
     for ham in HAM:
         w, v = scipy.linalg.eigh(ham)
-        mps.wfn.append(v[:, 0])
+        mps.wfns.append(v[:, 0])
     # append the coefficient a
-    mps.wfn.append(1.0)
+    mps.wfns.append(1.0)
 
 
 def renormalization_svd(cstruct, qnbigl, qnbigr, domain, nexciton, Mmax, percent=0):

@@ -40,10 +40,13 @@ class TestQuasiBoson(unittest.TestCase):
 
         self.assertAlmostEqual(mpo1.distance(mpo_merge), 0.0)
 
-        energy = solver.optimize_mps(mps2, mpo2, procedure, method="2site")
+        mps2.optimize_config.procedure = procedure
+        mps2.optimize_config.method = "2site"
+        energy = solver.optimize_mps(mps2, mpo2)
         self.assertAlmostEqual(np.min(energy) * constant.au2ev, 2.28614053133)
 
-        energy = solver.optimize_mps(mps2, mpo2, procedure, method="1site")
+        mps2.optimize_config.method = "1site"
+        energy = solver.optimize_mps(mps2, mpo2)
         self.assertAlmostEqual(np.min(energy) * constant.au2ev, 2.28614053133)
 
     @data([[[64, 64]], [[64, 64], [6, 6], [1e-7, 1e-7]], [[64, 64], [6, 1], [1e-7, 1e-7]]],
@@ -54,19 +57,25 @@ class TestQuasiBoson(unittest.TestCase):
         # normal boson
         mol_list1 = parameter.custom_mol_list(None, *value[0])
         mps1, mpo1 = solver.construct_mps_mpo_2(mol_list1, procedure[0][0], nexciton, scheme=2)
+        mps1.optimize_config.procedure = procedure
 
         # quasiboson
         mol_list2 = parameter.custom_mol_list(None, *value[1])
         mps2, mpo2 = solver.construct_mps_mpo_2(mol_list2, procedure[0][0], nexciton, scheme=2)
+        mps2.optimize_config.procedure = procedure
 
         # quasiboson + normal boson
         mol_list3 = parameter.custom_mol_list(None, *value[2])
         mps3, mpo3 = solver.construct_mps_mpo_2(mol_list3, procedure[0][0], nexciton, scheme=2)
+        mps3.optimize_config.procedure = procedure
 
         for method in ['1site', '2site']:
-            energy1 = solver.optimize_mps(mps1, mpo1, procedure, method=method)
-            energy2 = solver.optimize_mps(mps2, mpo2, procedure, method=method)
-            energy3 = solver.optimize_mps(mps3, mpo3, procedure, method=method)
+            mps1.optimize_config.method = method
+            mps2.optimize_config.method = method
+            mps3.optimize_config.method = method
+            energy1 = solver.optimize_mps(mps1, mpo1)
+            energy2 = solver.optimize_mps(mps2, mpo2)
+            energy3 = solver.optimize_mps(mps3, mpo3)
             self.assertAlmostEqual(np.min(energy1), np.min(energy2))
             self.assertAlmostEqual(np.min(energy2), np.min(energy3))
 

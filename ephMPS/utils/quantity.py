@@ -34,9 +34,9 @@ class Quantity(object):
     def as_au(self):
         return convert_to_au(self.value, self.unit)
 
-    # magic methods such as `__add__` are better not implemented
-    # because a sound implementation free of unexpected behaviors
-    # may cost a lot of time and is simply not worth it
+    def __add__(self, other):
+        assert isinstance(other, Quantity)
+        return Quantity(self.as_au() + other.as_au())
 
     def __eq__(self, other):
         if hasattr(other, 'as_au'):

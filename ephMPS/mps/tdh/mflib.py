@@ -1,8 +1,6 @@
 # -*- coding: utf-8 -*-
 # Author: Jiajun Ren <jiajunren0522@gmail.com>
-'''
-mean-field lib similar to mps.py
-'''
+
 import numpy as np
 import scipy.linalg
 

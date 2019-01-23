@@ -62,7 +62,7 @@ class Test_TDH(unittest.TestCase):
             dmrg_occ.append(mps.expectation(mpo))
         print("dmrg_occ", dmrg_occ)
 
-        hartree_mol_list = custom_mol_list(None, ph_phys_dim, dis=[Quantity(0), Quantity(0)], hartree=True)
+        hartree_mol_list = custom_mol_list(None, ph_phys_dim, dis=[Quantity(0), Quantity(0)], hartrees=[True, True])
         WFN, Etot = tdh.SCF(hartree_mol_list, nexciton)
         self.assertAlmostEqual(Etot, dmrg_e)
 
@@ -116,14 +116,14 @@ class Test_TDH(unittest.TestCase):
         log.init_log(logging.WARNING)
         nmols = 1
 
-        mol_list = MolList([Mol(elocalex, hartree_ph_list, dipole_abs) for i in range(nmols)], np.zeros([1, 1]))
+        mol_list = MolList([Mol(elocalex, hartree_ph_list, dipole_abs) for _ in range(nmols)], np.zeros([1, 1]))
+
+        E_offset = - mol_list[0].elocalex - mol_list[0].hartree_e0
+
+        ls = tdh.LinearSpectra("abs", mol_list, E_offset=E_offset, prop_method="unitary")
 
         nsteps = 1000 - 1
         dt = 30.0
-
-        E_offset = -mol_list[0].elocalex - mol_list[0].hartree_e0
-
-        ls = tdh.LinearSpectra("abs", mol_list, E_offset=E_offset, prop_method="unitary")
         ls.evolve(dt, nsteps)
 
         with open("1mol_ZTabs.npy", 'rb') as f:

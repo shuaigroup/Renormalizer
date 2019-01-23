@@ -5,14 +5,12 @@ from __future__ import absolute_import, division
 import copy
 import inspect
 import traceback
-from functools import reduce
 import logging
 
 import numpy as np
 import scipy
 
-from ephMPS.mps import rk, svd_qn
-from ephMPS.mps.matrix import Matrix
+from ephMPS.mps import svd_qn
 from ephMPS.utils import sizeof_fmt
 
 logger = logging.getLogger(__name__)
@@ -31,7 +29,7 @@ class MatrixProduct(list):
 
     def __init__(self):
         super(MatrixProduct, self).__init__()
-        self.mtype = Matrix
+        self.mtype = None
         self.dtype = np.float64
 
         self.mol_list = None
@@ -43,9 +41,11 @@ class MatrixProduct(list):
 
         self.peak_bytes = 0
 
+        # QN related
         self.qn = None
         self.qnidx = None
         self.qntot = None
+
 
     @property
     def site_num(self):
@@ -105,7 +105,6 @@ class MatrixProduct(list):
         self.qntot = None
         self.qnidx = None
         self.qn = None
-
 
     def move_qnidx(self, dstidx):
         """
@@ -247,7 +246,7 @@ class MatrixProduct(list):
                 # m_trunc=len([s for s in normed_sigma if s >trunc])
                 m_trunc = np.count_nonzero(normed_sigma > self.threshold)
             else:
-                assert False # in some cases buggy, such as dynamic threshold
+                assert False  # in some cases buggy, such as dynamic threshold
                 # m_trunc = int(self.threshold)
                 # m_trunc = min(m_trunc, len(sigma))
             assert m_trunc != 0

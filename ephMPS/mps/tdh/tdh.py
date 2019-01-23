@@ -92,12 +92,12 @@ def SCF(mol_list, nexciton, niterations=20, thresh=1e-5, particle="hardcore boso
     return WFN, Etot
 
 
-def unitary_propagation(HAM, WFN, Etot, dt):
+def unitary_propagation(WFN, HAM, Etot, dt):
     '''
     unitary propagation e^-iHdt * wfn(dm)
     '''
-    ndim = WFN[0].ndim
     for iham, ham in enumerate(HAM):
+        ndim = WFN[iham].ndim
         w, v = scipy.linalg.eigh(ham)
         if ndim == 1:
             WFN[iham] = v.dot(np.exp(-1.0j * w * dt) * v.T.dot(WFN[iham]))
@@ -107,6 +107,7 @@ def unitary_propagation(HAM, WFN, Etot, dt):
         else:
             assert False
     WFN[-1] *= np.exp(Etot / 1.0j * dt)
+    return WFN
 
 
 def Ham_elec(mol_list, nexciton, indirect=None, particle="hardcore boson"):
@@ -263,7 +264,7 @@ class TdHartree(TdMpsJob):
         # EOM of wfn
         if self.prop_method == "unitary":
             HAM, Etot = self.construct_H_Ham(nexciton, WFN)
-            unitary_propagation(HAM, WFN, Etot, evolve_dt)
+            unitary_propagation(WFN, HAM, Etot, evolve_dt)
         else:
             rk = ephMPS.mps.rk.Runge_Kutta(method=self.prop_method)
             RK_a, RK_b, RK_c = rk.tableau

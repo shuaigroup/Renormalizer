@@ -21,7 +21,8 @@ class TestSvdQn(unittest.TestCase):
         np.random.seed(0)
         mps1, mpo = construct_mps_mpo_2(mol_list, procedure[0][0], nexciton, scheme=2)
         mps1.threshold = 1e-6
-        optimize_mps(mps1, mpo, procedure, method="2site")
+        mps1.optimize_config.procedure = procedure
+        optimize_mps(mps1, mpo)
         mps1.compress()
         with open(os.path.join(cur_dir, 'test_svd_qn.pickle'), 'rb') as fin:
             mps2 = pickle.load(fin)

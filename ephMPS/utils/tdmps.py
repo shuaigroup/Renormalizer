@@ -35,6 +35,8 @@ class TdMpsJob(object):
         logger.info('Creating TDMPS job.')
         logger.info('Step 0/?. Preparing MPS in the intial state.')
         self.evolve_times = [0]
+        # output abstract of current mps every x steps
+        self.info_interval = 1
         self.dump_dir = None
         self.job_name = None
         self.tdmps_list = [self.init_mps()]
@@ -67,7 +69,11 @@ class TdMpsJob(object):
             new_real_time = datetime.now()
             time_cost = new_real_time - real_times[-1]
             self.tdmps_list.append(new_mps)
-            logger.info('%s complete, time cost %s. %s' % (step_str, time_cost, new_mps))
+            if i % self.info_interval == 0:
+                mps_abstract = str(new_mps)
+            else:
+                mps_abstract = ''
+            logger.info('%s complete, time cost %s. %s' % (step_str, time_cost, mps_abstract))
             real_times.append(new_real_time)
             if 10 < i:  # otherwise samples too small to make a prediction
                 predict_step, predicted_time = predict_time(real_times, nsteps)
