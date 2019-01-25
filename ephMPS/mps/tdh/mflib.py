@@ -11,18 +11,27 @@ def exp_value(bra, O, ket):
     <np.conj(wfnbra) | O | wfnket>  at ZT
     trace (dmbra^\dagger | O | dmket) at FT
     '''
-
+    assert np.allclose(np.linalg.norm(bra), 1)
+    assert np.allclose(np.linalg.norm(ket), 1)
     return np.vdot(bra, O.dot(ket))
 
 
-def normalize(WFN):
+def normalize(WFN, norm=None):
     '''
     normalize WFN/DM and scale the prefactor
     '''
-    norm = 1.0
+    factor = 1.0
     for wfn in WFN[:-1]:
         lnorm = scipy.linalg.norm(wfn)
         wfn /= lnorm
-        norm *= lnorm
+        factor *= lnorm
 
-    WFN[-1] *= norm
+    if norm is not None:
+        WFN[-1] = norm
+
+def canonical_normalize(WFN):
+    factor = 1.0
+    for wfn in WFN:
+        lnorm = scipy.linalg.norm(wfn)
+        factor *= lnorm
+    normalize(WFN, factor)

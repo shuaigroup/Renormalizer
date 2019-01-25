@@ -91,7 +91,6 @@ class Test_TDH(unittest.TestCase):
             TDH_ZT_emi_RK4_std = np.load(f)
         self.assertTrue(np.allclose(ls.autocorr, TDH_ZT_emi_RK4_std))
 
-
     def test_TDH_ZT_abs(self):
 
         log.init_log(logging.WARNING)

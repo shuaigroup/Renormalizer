@@ -6,9 +6,9 @@ import unittest
 
 import numpy as np
 from ddt import ddt
-from ephMPS.mps.tdh import tdh
 
-from ephMPS.mps.tdh.tests import parameter_PBI
+from ephMPS.mps.tdh import tdh
+from ephMPS.tests import parameter_PBI
 from ephMPS.utils import log, Quantity
 
 

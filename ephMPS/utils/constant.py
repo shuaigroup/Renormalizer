@@ -23,14 +23,6 @@ fs2au =  1.0e-15 / scipy.constants.physical_constants["atomic unit of time"][0]
 K2au = scipy.constants.physical_constants["kelvin-hartree relationship"][0]
 au2K = scipy.constants.physical_constants["hartree-kelvin relationship"][0]
 
-
-# kelvin to beta  au^-1 
-def t2beta(temperature):
-    '''
-    temperature to beta
-    '''
-    return  1.0 / temperature.as_au()
-
 # nm to au
 def nm2au(l):
     return 1.e7/l*cm2au

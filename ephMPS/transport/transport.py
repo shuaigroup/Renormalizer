@@ -72,7 +72,7 @@ def calc_reduced_density_matrix(mp):
     return reduced_density_matrix
 
 class ChargeTransport(TdMpsJob):
-    def __init__(self, mol_list, temperature=0):
+    def __init__(self, mol_list, temperature=Quantity(0, 'K')):
         self.mol_list = mol_list
         self.temperature = temperature
         self.mpo = None
@@ -94,11 +94,11 @@ class ChargeTransport(TdMpsJob):
         # test code to put phonon at ground state of the electronic excited state
         '''
         import math
-        ph_mps = gs_mp[self.mol_num]  # suppose only one phonon
+        ph_mps = gs_mp[self.mol_num]  # suppose only one phonon mode
         mol = self.mol_list[self.mol_num // 2]
         s = mol.phs[0].coupling_constant ** 2
 
-        for k in range(mol.phs[0].n_phys_dim):  # Suppose physical order 10
+        for k in range(mol.phs[0].n_phys_dim):
             ph_mps[0, k, 0] = math.exp(-s) * s ** k / math.factorial(k)
         '''
         # previous create electron code
@@ -106,17 +106,17 @@ class ChargeTransport(TdMpsJob):
         return creation_operator.apply(gs_mp)
 
     def init_mps(self):
-        self.mpo = Mpo(self.mol_list, scheme=3)
+        # self.mpo = Mpo(self.mol_list, scheme=3)
+        tentative_mpo = Mpo(self.mol_list, scheme=3)
         if self.temperature == 0:
             gs_mp = Mps.gs(self.mol_list, max_entangled=False)
         else:
-            gs_mp = MpDm.from_mps(Mps.gs(self.mol_list, max_entangled=True))
-            beta = constant.t2beta(self.temperature)
-            thermal_prop = Mpo.exact_propagator(self.mol_list, - beta / 2, 'GS')
-            gs_mp = thermal_prop.apply(gs_mp)
-            gs_mp.normalize()
+            gs_mp = MpDm.max_entangled_gs(self.mol_list)
+            # subtract the energy otherwise might causes numeric error because of large offset * dbeta
+            energy = Quantity(gs_mp.expectation(tentative_mpo))
+            mpo = Mpo(self.mol_list, scheme=3 ,offset=energy)
+            gs_mp = gs_mp.thermal_prop_exact(mpo, self.temperature.to_beta() / 2, 1, "GS", True)
         init_mp = self.create_electron(gs_mp)
-        tentative_mpo = Mpo(self.mol_list, scheme=3)
         energy = Quantity(init_mp.expectation(tentative_mpo))
         self.mpo = Mpo(self.mol_list, scheme=3, offset=energy)
         self.mpo_e_lbound = solver.find_lowest_energy(self.mpo, 1, 20)
@@ -126,13 +126,13 @@ class ChargeTransport(TdMpsJob):
 
     def evolve_single_step(self, evolve_dt):
         old_mps = self.latest_mps
-        new_mps = old_mps.evolve(self.mpo, evolve_dt, norm=1.0)
+        new_mps = old_mps.evolve(self.mpo, evolve_dt)
         if self.memory_limit is not None:
             while self.memory_limit < new_mps.peak_bytes:
                 old_mps.threshold *= 1.2
                 logger.debug('Set threshold to {:g}'.format(old_mps.threshold))
                 old_mps.peak_bytes = 0
-                new_mps = old_mps.evolve(self.mpo, evolve_dt, norm=1.0)
+                new_mps = old_mps.evolve(self.mpo, evolve_dt)
         if self.economic_mode:
             old_mps.clear_memory()
         new_energy = new_mps.expectation(self.mpo)
@@ -201,7 +201,7 @@ class ChargeTransport(TdMpsJob):
         return np.array([np.abs(rdm).sum() - np.trace(rdm).real for rdm in self.reduced_density_matrices])
 
     def is_similar(self, other, rtol=1e-3):
-        # avoid a lot of if (not) ...: return false statements
+        # avoid a lot of if (not) ...: return False statements
         class FalseFlag(Exception): pass
         def my_assert(condition):
             if not condition:
@@ -211,7 +211,8 @@ class ChargeTransport(TdMpsJob):
             my_assert(len(self.tdmps_list) == len(other.tdmps_list))
             my_assert(all_close_with_tol(self.evolve_times, other.evolve_times))
             my_assert(all_close_with_tol(self.r_square_array, other.r_square_array))
-            my_assert(all_close_with_tol(self.energies, other.energies))
+            if not (np.array(self.energies) < 1e-5).all() or not (np.array(other.energies) < 1e-5).all():
+                my_assert(all_close_with_tol(self.energies, other.energies))
             my_assert(np.allclose(self.e_occupations_array, other.e_occupations_array, atol=1e-3))
             my_assert(np.allclose(self.ph_occupations_array, other.ph_occupations_array, atol=1e-3))
             my_assert(all_close_with_tol(self.coherent_length_array, other.coherent_length_array))

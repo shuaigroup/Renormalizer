@@ -4,19 +4,19 @@
 
 import numpy as np
 
-from ephMPS.mps import solver, Mps, Mpo
+from ephMPS.mps import Mpo
 from ephMPS.utils import TdMpsJob, Quantity
 
 
 class BraKetPair(object):
 
-    def __init__(self, bra_mps, ket_mps, *args, **kwargs):
+    def __init__(self, bra_mps, ket_mps):
         self.bra_mps = bra_mps
         self.ket_mps = ket_mps
-        self.ft = self.calc_ft(*args, **kwargs)
+        self.ft = self.calc_ft()
 
-    def calc_ft(self, *args, **kwargs):
-        return self.bra_mps.conj().dot(self.ket_mps)
+    def calc_ft(self):
+        return self.bra_mps.conj().dot(self.ket_mps) * np.conjugate(self.bra_mps.coeff) * self.ket_mps.coeff
 
     def __str__(self):
         if np.iscomplex(self.ft):

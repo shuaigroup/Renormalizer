@@ -136,7 +136,7 @@ class Mps(MatrixProduct):
         # the coefficent a
         mps.wfns.append(1.0)
 
-        mflib.normalize(mps.wfns)
+        mflib.normalize(mps.wfns, 1.0)
 
         return mps
 
@@ -161,7 +161,7 @@ class Mps(MatrixProduct):
         e = super(Mps, self).dot(other)
         if with_hartree:
             assert len(self.wfns) == len(other.wfns)
-            for wfn1, wfn2 in zip(self.wfns, other.wfns):
+            for wfn1, wfn2 in zip(self.wfns[:-1], other.wfns[:-1]):
                 # use vdot is buggy here, because vdot will take conjugation automatically
                 e *= np.dot(wfn1, wfn2)
         return e
@@ -170,6 +170,10 @@ class Mps(MatrixProduct):
         new_mp = super(Mps, self).to_complex(inplace=inplace)
         new_mp.wfns = [wfn.astype(np.complex128) for wfn in new_mp.wfns[:-1]] + [new_mp.wfns[-1]]
         return new_mp
+
+    @property
+    def coeff(self):
+        return self.wfns[-1]
 
     @property
     def nexciton(self):
@@ -186,9 +190,11 @@ class Mps(MatrixProduct):
 
     @_cached_property
     def norm(self):
-        return self.dmrg_norm * self.hartree_norm
+        #return self.dmrg_norm * self.hartree_norm
+        return self.wfns[-1]
 
-    @_cached_property
+    #@_cached_property
+    @property
     def dmrg_norm(self):
         # todo: get the fast version in the comment working
         ''' Fast version yet not safe. Needs further testing
@@ -199,14 +205,7 @@ class Mps(MatrixProduct):
             assert self.check_right_canonical()
             return np.linalg.norm(np.ravel(self[0]))
         '''
-        return np.sqrt(self.conj().dot(self).real)
-
-    @_cached_property
-    def hartree_norm(self):
-        norm = np.dot(np.conj(self.wfns[-1]), self.wfns[-1])
-        for wfn in self.wfns[:-1]:
-            norm *= scipy.linalg.norm(wfn)
-        return norm
+        return np.sqrt(self.conj().dot(self, with_hartree=False).real)
 
     def calc_e_occupation(self, idx):
         return self.expectation(Mpo.onsite(self.mol_list, 'a^\dagger a', mol_idx_set={idx}))
@@ -302,24 +301,40 @@ class Mps(MatrixProduct):
         return new_mps
 
     @invalidate_cache_decorator
-    def normalize(self, norm=1.0, with_hartree=True):
-        self.scale(norm / self.dmrg_norm, inplace=True)
-        if with_hartree:
-            self.wfns[-1] *= norm / self.hartree_norm
+    def normalize(self, norm=None):
+        # real time propagation: dmrg should be normalized, tdh should be normalized, coefficient is not changed,
+        #  use nomr=None
+        # imag time propagation: dmrg should be normalized, tdh should be normalized, coefficient is normalized to 1.0
+        # applied by a operator then normalize: dmrg should be normalized,
+        #   tdh should be normalized, coefficient is set to the length
+        # these two cases should set `norm` equals to corresponding value
+        if norm is None:
+            self.scale(1.0 / self.dmrg_norm, inplace=True)
+            mflib.normalize(self.wfns, self.wfns[-1])
+        else:
+            self.scale(1.0 / self.dmrg_norm, inplace=True)
+            mflib.normalize(self.wfns)
+            self.wfns[-1] = norm
         return self
 
-    def evolve(self, mpo=None, evolve_dt=None, norm=None, approx_eiht=None):
-        if self.mol_list.pure_dmrg:
-            return self.evolve_dmrg(mpo, evolve_dt, norm, approx_eiht)
+    def canonical_normalize(self):
+        # applied by a operator then normalize: dmrg should be normalized,
+        #   tdh should be normalized, coefficient is set to the length
+        # suppose length is only determined by dmrg part
+        self.normalize(self.dmrg_norm)
+
+    def evolve(self, mpo=None, evolve_dt=None, approx_eiht=None):
+        hybrid_mpo, HAM, Etot = self.construct_hybrid_Ham(mpo)
+        mps = self.evolve_dmrg(hybrid_mpo, evolve_dt, approx_eiht)
+        unitary_propagation(mps.wfns, HAM, Etot, evolve_dt)
+        if np.iscomplex(evolve_dt):
+            mps.normalize(1.0)
         else:
-            hybrid_mpo, HAM, Etot = self.construct_hybrid_Ham(mpo)
-            mps = self.evolve_dmrg(hybrid_mpo, evolve_dt, norm, approx_eiht)
-            # mps = self.evolve_dmrg(mpo, evolve_dt, norm, approx_eiht)
-            unitary_propagation(mps.wfns, HAM, Etot, evolve_dt)
-            return mps
+            mps.normalize(None)
+        return mps
 
     # todo: separate the 2 methods (approx_eiht), because their parameters are orthogonal
-    def evolve_dmrg(self, mpo=None, evolve_dt=None, norm=None, approx_eiht=None):
+    def evolve_dmrg(self, mpo=None, evolve_dt=None, approx_eiht=None):
         if approx_eiht is not None:
             return approx_eiht.contract(self)
         propagation_c = rk.coefficient_dict[self.prop_method]
@@ -334,18 +349,19 @@ class Mps(MatrixProduct):
         if not self.compress_add:
             new_mps.canonicalise()
             new_mps.compress()
-        if norm is not None:
-            new_mps.normalize(norm, with_hartree=False)
         return new_mps
 
+    def evolve_exact(self, h_mpo, evolve_dt, space):
+        MPOprop, HAM, Etot = self.hybrid_exact_propagator(h_mpo, -1.0j * evolve_dt, space)
+        new_mps = MPOprop.apply(self)
+        unitary_propagation(new_mps.wfns, HAM, Etot, evolve_dt)
+        return new_mps
 
     def expectation(self, mpo):
         # todo: might cause performance problem when calculating a lot of expectations
         #       use dynamic programing to improve the performance.
         # todo: different bra and ket
-        # without hartree because currently no mpo will operate on the hartree part and if so
-        # take the dot will only result in unity
-        return self.conj().dot(mpo.apply(self), with_hartree=False).real / self.norm ** 2
+        return self.conj().dot(mpo.apply(self), with_hartree=False).real
 
     @property
     def digest(self):
@@ -357,6 +373,8 @@ class Mps(MatrixProduct):
             prod = prod.reshape((prod.shape[0], -1, prod.shape[-1]))
         return {'var': prod.var(), 'mean': prod.mean(), 'ptp': prod.ptp()}
 
+    # put the below 2 constructors here because they really depend on the implement details of MPS (at least the
+    # Hartree part).
     def construct_hybrid_Ham(self, mpo_indep, debug=False):
         '''
         construct hybrid DMRG and Hartree(-Fock) Hamiltonian
@@ -366,11 +384,7 @@ class Mps(MatrixProduct):
         nmols = len(mol_list)
 
         # many-body electronic part
-        A_el = np.zeros((nmols))
-        for imol in range(nmols):
-            MPO = Mpo.onsite(mol_list, "a^\dagger a", dipole=False, mol_idx_set={imol})
-            # A_el[imol] = mpslib.dot(mpslib.conj(MPS),mpslib.mapply(MPO,MPS)).real
-            A_el[imol] = self.expectation(MPO)
+        A_el = self.e_occupations
 
         logger.info("dmrg_occ: %s" % A_el)
 
@@ -404,11 +418,51 @@ class Mps(MatrixProduct):
                 e_mean += A_el[imol] * B_vib[imol][iph]
                 HAM.append(ph.h_indep + ph.h_dep * A_el[imol] - np.diag([e_mean] * WFN[iwfn].shape[0]))
                 iwfn += 1
-        logger.info("Etot= %g" % Etot)
+        logger.debug("Etot= %g" % Etot)
         if debug:
             return MPO, HAM, Etot, A_el
         else:
             return MPO, HAM, Etot
+
+    # provide e_mean and mpo_indep separately because e_mean can be precomputed and stored to avoid multiple computation
+    def hybrid_exact_propagator(self, mpo_indep, x, space="GS"):
+        '''
+        construct the exact propagator in the GS space or single molecule
+        '''
+        assert space in ["GS", "EX"]
+
+        e_mean = self.expectation(mpo_indep)
+
+        logger.debug("e_mean in exact propagator: %g" % e_mean)
+        total_offset = (mpo_indep.offset + Quantity(e_mean.real)).as_au()
+        MPOprop = Mpo.exact_propagator(self.mol_list, x, space=space, shift=-total_offset)
+
+        Etot = total_offset
+
+        # TDH propagator
+        iwfn = 0
+        HAM = []
+        for mol in self.mol_list:
+            for ph in mol.hartree_phs:
+                h_vib_indep = ph.h_indep
+                h_vib_dep = ph.h_dep
+                e_mean = mflib.exp_value(self.wfns[iwfn], h_vib_indep, self.wfns[iwfn])
+                if space == "EX":
+                    e_mean += mflib.exp_value(self.wfns[iwfn], h_vib_dep, self.wfns[iwfn])
+                Etot += e_mean
+
+                if space == "GS":
+                    ham = h_vib_indep - np.diag([e_mean] * ph.n_phys_dim)
+                elif space == "EX":
+                    ham = h_vib_indep + h_vib_dep - np.diag([e_mean] * ph.n_phys_dim)
+                else:
+                    assert False
+
+                HAM.append(ham)
+                iwfn += 1
+
+        return MPOprop, HAM, Etot
+
 
     def hartree_wfn_diff(self, other):
         assert len(self.wfns) == len(other.wfns)

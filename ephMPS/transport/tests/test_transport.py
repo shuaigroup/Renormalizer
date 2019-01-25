@@ -12,6 +12,10 @@ from ephMPS.transport import ChargeTransport, EDGE_THRESHOLD
 from ephMPS.transport.transport import calc_reduced_density_matrix, calc_reduced_density_matrix_straight
 from ephMPS.utils import Quantity
 
+# the temperature should be compatible with the low vibration frequency in TestBandLimitFiniteT
+# otherwise underflow happens in exact propagator
+low_t = Quantity(1e-7, "K")
+
 
 @ddt
 class TestBandLimitZeroT(unittest.TestCase):
@@ -71,7 +75,7 @@ class TestMemoryLimit(unittest.TestCase):
         ct1 = ChargeTransport(mol_list)
         ct1.evolve(evolve_dt, nsteps)
         ct2 = ChargeTransport(mol_list)
-        ct2.memory_limit = 2 ** 20 / 6
+        ct2.memory_limit = 2 ** 20 / 4
         ct2.evolve(evolve_dt, nsteps)
         self.assertTrue(ct1.is_similar(ct2, rtol=1e-2))
 
@@ -87,13 +91,13 @@ class TestCompressAdd(unittest.TestCase):
         ph_list = [Phonon.simple_phonon(Quantity(omega, 'cm^{-1}'), Quantity(displacement, 'a.u.'), ph_phys_dim)
                    for omega, displacement in ph_info]
         mol_list = MolList([Mol(Quantity(elocalex_value, 'a.u.'), ph_list)] * mol_num, Quantity(j_constant_value, 'eV'))
-        ct1 = ChargeTransport(mol_list, temperature=Quantity(1e-10, 'K'))
+        ct1 = ChargeTransport(mol_list, temperature=Quantity(298, "K"))
         ct1.reduced_density_matrices = None
-        ct1.set_threshold(1e-15)
+        ct1.set_threshold(1e-5)
         ct1.evolve(evolve_dt, nsteps)
-        ct2 = ChargeTransport(mol_list, temperature=Quantity(1e-10, 'K'))
+        ct2 = ChargeTransport(mol_list, temperature=Quantity(298, "K"))
         ct2.reduced_density_matrices = None
-        ct2.set_threshold(1e-15)
+        ct2.set_threshold(1e-5)
         ct2.latest_mps.compress_add = True
         ct2.evolve(evolve_dt, nsteps)
         self.assertTrue(ct1.is_similar(ct2, rtol=1e-2))
@@ -109,7 +113,7 @@ class TestReducedDensityMatrix(unittest.TestCase):
 
     @data(
         [3, 0.8, 3.87e-3, [[1345.6738910804488, 16.274571056529368]], 4, 2, 15, 0],
-        [3, 0.8, 3.87e-3, [[1345.6738910804488, 16.274571056529368]], 4, 2, 15, 1e-10]
+        [3, 0.8, 3.87e-3, [[1345.6738910804488, 16.274571056529368]], 4, 2, 15, 100]
     )
     @unpack
     def test(self, mol_num, j_constant_value, elocalex_value, ph_info, ph_phys_dim, evolve_dt, nsteps, temperature):
@@ -174,28 +178,6 @@ class TestBandLimitFiniteT(unittest.TestCase):
         mol_list = MolList([Mol(Quantity(elocalex_value, 'a.u.'), ph_list)] * mol_num, Quantity(j_constant_value, 'eV'))
         ct1 = ChargeTransport(mol_list)
         ct1.evolve(evolve_dt, nsteps)
-        ct2 = ChargeTransport(mol_list, temperature=Quantity(1e-10, 'K'))
+        ct2 = ChargeTransport(mol_list, temperature=low_t)
         ct2.evolve(evolve_dt, nsteps)
         self.assertTrue(ct1.is_similar(ct2))
-
-
-@ddt
-class TestHoppingLimitZeroT(unittest.TestCase):
-    @data(
-        [9, 0.02, 3.87e-3, [[1345.6738910804488, 16.274571056529368]], 10, 20, 300]
-    )
-    @unpack
-    def test(self, mol_num, j_constant_value, elocalex_value, ph_info, ph_phys_dim, evolve_dt, nsteps):
-        ph_list = [Phonon.simple_phonon(Quantity(omega, 'cm^{-1}'), Quantity(displacement, 'a.u.'), ph_phys_dim)
-                   for omega, displacement in ph_info]
-        mol_list = MolList([Mol(Quantity(elocalex_value, 'a.u.'), ph_list)] * mol_num, Quantity(j_constant_value, 'eV'))
-        ct = ChargeTransport(mol_list)
-        ct.stop_at_edge = True
-        ct.evolve(evolve_dt, nsteps)
-        pass
-
-
-if __name__ == '__main__':
-    suite = unittest.TestLoader().loadTestsFromTestCase(TestCompressAdd)
-    unittest.TextTestRunner().run(suite)
-    #unittest.main()

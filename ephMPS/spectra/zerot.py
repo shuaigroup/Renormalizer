@@ -28,6 +28,7 @@ class SpectraZeroT(SpectraTdMpsJobBase):
             operator = "a^\dagger"
         dipole_mpo = Mpo.onsite(self.mol_list, operator, dipole=True)
         a_ket_mps = dipole_mpo.apply(self.get_imps())
+        a_ket_mps.canonical_normalize()
         a_bra_mps = a_ket_mps.copy()
         return BraKetPair(a_bra_mps, a_ket_mps)
 
@@ -43,7 +44,7 @@ class SpectraOneWayPropZeroT(SpectraZeroT):
 
     def evolve_single_step(self, evolve_dt):
         latest_bra_mps, latest_ket_mps = self.latest_mps
-        latest_ket_mps = latest_ket_mps.evolve(self.h_mpo, evolve_dt, norm=latest_ket_mps.norm)
+        latest_ket_mps = latest_ket_mps.evolve(self.h_mpo, evolve_dt)
         return BraKetPair(latest_bra_mps, latest_ket_mps)
 
 
@@ -52,8 +53,8 @@ class SpectraTwoWayPropZeroT(SpectraZeroT):
     def evolve_single_step(self, evolve_dt):
         latest_bra_mps, latest_ket_mps = self.latest_mps
         if len(self.tdmps_list) % 2 == 1:
-            latest_ket_mps = latest_ket_mps.evolve(self.h_mpo, evolve_dt, norm=latest_ket_mps.norm)
+            latest_ket_mps = latest_ket_mps.evolve(self.h_mpo, evolve_dt)
         else:
-            latest_bra_mps = latest_bra_mps.evolve(self.h_mpo, -evolve_dt, norm=latest_bra_mps.norm)
+            latest_bra_mps = latest_bra_mps.evolve(self.h_mpo, -evolve_dt)
         return BraKetPair(latest_bra_mps, latest_ket_mps)
 

@@ -17,8 +17,8 @@ from ephMPS.utils import Quantity
 class TestHybridAbs(unittest.TestCase):
 
     @data(
-            [1, parameter.hybrid_mol_list,"hybrid_ZTabs.npy",1e-3],
-            [1, parameter.mol_list,"ZeroTabs_2svd.npy",1e-2],
+            #[1, parameter.hybrid_mol_list,"hybrid_ZTabs.npy",1e-2],
+            #[1, parameter.mol_list,"ZeroTabs_2svd.npy",1e-2],
             [2, parameter.hybrid_mol_list, "hybrid_ZTabs.npy", 1e-3],
             [2, parameter.mol_list, "ZeroTabs_2svd.npy", 1e-2],
     )
@@ -42,7 +42,10 @@ class TestHybridAbs(unittest.TestCase):
             std = np.load(f)
         self.assertTrue(np.allclose(zero_t_corr.autocorr[:nsteps], std[:nsteps], rtol=rtol))
 
-
+#from matplotlib import pyplot as plt
+#plt.plot(zero_t_corr.autocorr)
+#plt.plot(std)
+#plt.show()
 @ddt
 class TestHybridEmi(unittest.TestCase):
 
@@ -96,7 +99,6 @@ class TestHybridExactAbs(unittest.TestCase):
         nmols = 1
         J = np.zeros([1,1])
 
-        
         if algorithm == "pure":
             mol_list = parameter.custom_mol_list(J, nmols=nmols)
         elif algorithm == "hybrid":

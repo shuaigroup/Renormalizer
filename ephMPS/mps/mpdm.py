@@ -3,13 +3,12 @@
 import copy
 import logging
 
-import scipy
 import numpy as np
+import scipy.linalg
 
-from ephMPS.mps.elementop import construct_ph_op_dict
 from ephMPS.mps.matrix import DensityMatrixOp
 from ephMPS.mps import Mpo, Mps
-from ephMPS.utils import constant
+from ephMPS.mps.tdh import mflib, unitary_propagation
 
 logger = logging.getLogger(__name__)
 
@@ -60,8 +59,10 @@ class MpDm(Mpo, Mps):
             mpo.append(mo)
         mpo.mol_list = mps.mol_list
 
-        #todo: need to change to density operator form
+        for wfn in mps.wfns[:-1]:
+            assert wfn.ndim == 2
         mpo.wfns = mps.wfns
+
         mpo.optimize_config = mps.optimize_config
         mpo._prop_method = mps.prop_method
         mpo.compress_add = mps.compress_add
@@ -82,9 +83,19 @@ class MpDm(Mpo, Mps):
         # the creation operator \sum_i a^\dagger_i
         ex_mps = Mpo.onsite(mol_list, "a^\dagger").apply(mps)
         if normalize:
-            ex_mps.scale(1.0 / np.sqrt(float(len(mol_list))), inplace=True)  # normalize
+            ex_mps.normalize(1.0)
+            #ex_mps.scale(1.0 / np.sqrt(float(len(mol_list))), inplace=True)  # normalize
         return cls.from_mps(ex_mps)
 
+    @classmethod
+    def max_entangled_gs(cls, mol_list):
+        return cls.from_mps(Mps.gs(mol_list, max_entangled=True))
+
+    def conj_trans(self):
+        new_mpdm = super(MpDm, self).conj_trans()
+        for idx, wfn in enumerate(new_mpdm.wfns):
+            new_mpdm.wfns[idx] = np.conj(wfn).T
+        return new_mpdm
 
     def apply(self, mp):
         assert mp.is_mpo
@@ -109,25 +120,56 @@ class MpDm(Mpo, Mps):
         #new_mps.canonicalise()
         return new_mps
 
-    def thermal_prop(self, h_mpo, nsteps, temperature=298, approx_eiht=None, inplace=False):
+    def dot(self, other, with_hartree=True):
+        e = super(MpDm, self).dot(other, with_hartree=False)
+        if with_hartree:
+            assert len(self.wfns) == len(other.wfns)
+            for wfn1, wfn2 in zip(self.wfns[:-1], other.wfns[:-1]):
+                # use vdot is buggy here, because vdot will take conjugation automatically
+                e *= np.dot(wfn1.flatten(), wfn2.flatten())
+        return e
+
+    def thermal_prop(self, h_mpo, nsteps, beta, approx_eiht=None, inplace=False):
         '''
         do imaginary propagation
         '''
-
-        beta = constant.t2beta(temperature)
         # print "beta=", beta
         dbeta = beta / float(nsteps)
 
         ket_mpo = self if inplace else self.copy()
 
         if approx_eiht is not None:
-            approx_eihpt = self.__class__.approx_propagator(h_mpo, -0.5j * dbeta, thresh=approx_eiht)
+            approx_eihpt = self.__class__.approx_propagator(h_mpo, -1.0j * dbeta, thresh=approx_eiht)
         else:
             approx_eihpt = None
         for istep in range(nsteps):
             logger.debug('Thermal propagating %d/%d' % (istep + 1, nsteps))
-            ket_mpo = ket_mpo.evolve(h_mpo, -0.5j * dbeta, approx_eiht=approx_eihpt)
+            # partition function can't be obtained
+            ket_mpo = ket_mpo.evolve(h_mpo, -1.0j * dbeta, approx_eiht=approx_eihpt)
         return ket_mpo
+
+    def evolve_exact(self, h_mpo, evolve_dt, space):
+        MPOprop, HAM, Etot = self.hybrid_exact_propagator(h_mpo, -1.0j * evolve_dt, space)
+        # Mpdm is applied on the propagator, different from base method
+        new_mpdm = self.apply(MPOprop)
+        for iham, ham in enumerate(HAM):
+            w, v = scipy.linalg.eigh(ham)
+            new_mpdm.wfns[iham] = new_mpdm.wfns[iham].dot(v).dot(np.diag(np.exp(-1.0j*evolve_dt*w))).dot(v.T)
+        new_mpdm.wfns[-1] *= np.exp(-1.0j * Etot * evolve_dt)
+        #unitary_propagation(new_mpdm.wfns, HAM, Etot, evolve_dt)
+        return new_mpdm
+
+    def thermal_prop_exact(self, mpo, beta, nsteps, space, inplace=False):
+        # can't really inplace because `apply` has no inplace mode
+        dbeta = beta / nsteps
+        new_mpdm = self if inplace else self.copy()
+        for istep in range(nsteps):
+            MPOprop, HAM, Etot = new_mpdm.hybrid_exact_propagator(mpo, -dbeta, space=space)
+            new_mpdm = MPOprop.apply(new_mpdm)
+            unitary_propagation(new_mpdm.wfns, HAM, Etot, dbeta / 1.0j)
+            # partition function can't be obtained
+            new_mpdm.normalize(1.0)
+        return new_mpdm
 
     def get_reduced_density_matrix(self):
         assert self.mtype == DensityMatrixOp

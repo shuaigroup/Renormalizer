@@ -12,7 +12,7 @@ import scipy
 
 import ephMPS.mps.rk
 from ephMPS.mps.tdh import mflib
-from ephMPS.utils import constant
+from ephMPS.utils import Quantity
 from ephMPS.utils.tdmps import TdMpsJob
 
 logger = logging.getLogger(__name__)
@@ -106,7 +106,7 @@ def unitary_propagation(WFN, HAM, Etot, dt):
             # print iham, "norm", scipy.linalg.norm(WFN[iham])
         else:
             assert False
-    WFN[-1] *= np.exp(Etot / 1.0j * dt)
+    WFN[-1] *= np.exp(-1.0j * Etot * dt)
     return WFN
 
 
@@ -226,7 +226,7 @@ def construct_H_Ham(mol_list, nexciton, WFN, fe, fv, particle="hardcore boson", 
 
 class TdHartree(TdMpsJob):
 
-    def __init__(self, mol_list, nexciton, particle, prop_method, temperature=0, insteps=None):
+    def __init__(self, mol_list, nexciton, particle, prop_method, temperature=Quantity(0, 'K'), insteps=None):
         assert mol_list.pure_hartree
         self.mol_list = mol_list
         self.nexciton = nexciton
@@ -275,6 +275,10 @@ class TdHartree(TdMpsJob):
                 for jterm in range(istage):
                     for iwfn in range(f):
                         WFN_temp[iwfn] += klist[jterm][iwfn] * RK_a[istage][jterm] * evolve_dt
+                if np.iscomplex(evolve_dt):
+                    mflib.normalize(WFN_temp, 1.0)
+                else:
+                    mflib.normalize(WFN_temp, None)
                 HAM, Etot_check = self.construct_H_Ham(nexciton, WFN_temp)
                 if istage == 0:
                     Etot = Etot_check
@@ -301,26 +305,26 @@ class TdHartree(TdMpsJob):
         # initial state infinite T density matrix
         H_el_indep, H_el_dep = Ham_elec(self.mol_list, nexciton, particle=self.particle)
         dim = H_el_indep.shape[0]
-        DM.append(np.diag([1.0] * dim, k=0))
+        DM.append(np.diag([1.0] * dim))
 
 
         for mol in self.mol_list:
             for ph in mol.hartree_phs:
                 dim = ph.h_indep.shape[0]
-                DM.append(np.diag([1.0] * dim, k=0))
+                DM.append(np.diag([1.0] * dim))
 
         # the coefficent a
         DM.append(1.0)
 
         # normalize the dm (physical \otimes ancilla)
-        mflib.normalize(DM)
+        mflib.normalize(DM, 1.0)
 
-        beta = constant.t2beta(self.temperature) / 2.0
+        beta = self.temperature.to_beta() / 2.0
         dbeta = beta / float(self.insteps)
 
         for istep in range(self.insteps):
             DM = self._evolve_single_step(dbeta / 1.0j, DM, nexciton)
-            mflib.normalize(DM)
+            mflib.normalize(DM, 1.0)
 
         Z = DM[-1] ** 2
         logger.info("partition function Z=%g" % Z)
@@ -364,18 +368,18 @@ class LinearSpectra(TdHartree):
 
     def calc_autocorr(self, WFNbra, WFNket):
         # E_offset to add a prefactor
-        autocurr = np.conj(WFNbra[-1]) * WFNket[-1] * np.exp(-1.0j * self.E_offset * self.latest_evolve_time)
+        autocorr = np.conj(WFNbra[-1]) * WFNket[-1] * np.exp(-1.0j * self.E_offset * self.latest_evolve_time)
         for iwfn in range(self.fe + self.fv):
             if self.temperature == 0:
-                autocurr *= np.vdot(WFNbra[iwfn], WFNket[iwfn])
+                autocorr *= np.vdot(WFNbra[iwfn], WFNket[iwfn])
             else:
                 # FT
                 if iwfn == 0:
-                    autocurr *= mflib.exp_value(WFNbra[iwfn], self.dipolemat.T, WFNket[iwfn])
+                    autocorr *= mflib.exp_value(WFNbra[iwfn], self.dipolemat.T, WFNket[iwfn])
                 else:
-                    autocurr *= np.vdot(WFNbra[iwfn], WFNket[iwfn])
+                    autocorr *= np.vdot(WFNbra[iwfn], WFNket[iwfn])
 
-        self.autocorr.append(autocurr)
+        self.autocorr.append(autocorr)
 
     def init_zt(self):
 
@@ -407,20 +411,16 @@ class LinearSpectra(TdHartree):
         WFNket[0] = self.dipolemat.dot(WFNket[0])
 
         # normalize ket
-        mflib.normalize(WFNket)
+        mflib.canonical_normalize(WFNket)
 
         if self.temperature == 0:
             WFNbra = copy.deepcopy(WFNket)
         else:
             WFNbra = copy.deepcopy(WFN)
 
-        # normalize bra
-        mflib.normalize(WFNbra)
-
         self.calc_autocorr(WFNbra, WFNket)
 
         return WFNbra, WFNket
-
 
     def evolve_single_step(self, evolve_dt):
         WFNbra, WFNket = self.latest_mps
@@ -450,7 +450,7 @@ class Dynamics(TdHartree):
         WFN, Etot = SCF(self.mol_list, 0)
         dipoleO = construct_onsiteO(self.mol_list, "a^\dagger", dipole=True, mol_idx_set={0})
         WFN[0] = dipoleO.dot(WFN[0])
-        mflib.normalize(WFN)
+        mflib.canonical_normalize(WFN)
         return WFN
 
     def init_ft(self):
@@ -461,7 +461,7 @@ class Dynamics(TdHartree):
 
         dipoleO = construct_onsiteO(self.mol_list, "a^\dagger", dipole=True, mol_idx_set={0})
         DM[0] = dipoleO.dot(DM[0])
-        mflib.normalize(DM)
+        mflib.canonical_normalize(DM)
 
         return DM
 

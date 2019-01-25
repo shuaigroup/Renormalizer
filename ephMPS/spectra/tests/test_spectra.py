@@ -34,11 +34,12 @@ class TestZeroExact(unittest.TestCase):
 
         self.assertTrue(np.allclose(exact_emi.autocorr[:nsteps], std[:nsteps], rtol=1e-3))
 
+
 @ddt
 class TestZeroTSpectraAbs(unittest.TestCase):
     @data(
-        [1, 'svd', [[4, 4]], 1e-3],
-        [2, 'svd', [[4, 4]], 1e-3],
+        [1, 'svd', [[4, 4]], 1e-2],
+        [2, 'svd', [[4, 4]], 1e-2],
         [1, 'svd', [[4, 4], [2, 2], [1.e-7, 1.e-7]], 1e-2],
         [2, 'svd', [[4, 4], [2, 2], [1.e-7, 1.e-7]], 1e-2],
     )
@@ -121,7 +122,7 @@ class TestZeroTSpectraEmi(unittest.TestCase):
 
 @ddt
 class TestFiniteTSpectraEmi(unittest.TestCase):
-    @data([2, "svd", [[4, 4]], 1e-3],
+    @data([2, "svd", [[4, 4]], 1e-2],
           [2, "svd", [[4, 4], [2, 2], [1.e-7, 1.e-7]], 1e-2]
           )
     @unpack
@@ -141,7 +142,7 @@ class TestFiniteTSpectraEmi(unittest.TestCase):
 
 @ddt
 class TestFiniteTSpectraAbs(unittest.TestCase):
-    @data([2, "svd", [[4, 4]], 1e-3],
+    @data([2, "svd", [[4, 4]], 1e-2],
           [2, "svd", [[4, 4], [2, 2], [1.e-7, 1.e-7]], 1e-2]
           )
     @unpack
@@ -150,7 +151,7 @@ class TestFiniteTSpectraAbs(unittest.TestCase):
         mol_list = parameter.custom_mol_list(None, *ph_info)
         insteps = 50
         finite_t_abs = SpectraFiniteT(mol_list, "abs", Quantity(298, 'K'), insteps, Quantity(2.28614053, 'ev'))
-        nsteps = 30
+        nsteps = 50
         dt = 30.0
         finite_t_abs.evolve(dt, nsteps)
         with open(os.path.join(cur_dir, "TTabs_" + str(compress_method) + ".npy"), 'rb') as fin:

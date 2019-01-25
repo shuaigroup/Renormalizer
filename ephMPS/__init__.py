@@ -2,7 +2,11 @@
 # Author: Jiajun Ren <jiajunren0522@gmail.com>
 import os
 
+import numpy as np
+
 from ephMPS.utils.log import init_log
+
+np.seterr(divide='raise', over='raise', under='warn', invalid='raise')
 
 init_log()
 

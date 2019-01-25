@@ -228,8 +228,7 @@ class Mpo(MatrixProduct):
                             mo = np.zeros([1, ph_pbond, ph_pbond, 1], dtype=np.complex128)
 
                             for ibra in range(ph_pbond):
-                                mo[0, ibra, ibra, 0] = np.exp(
-                                    x * ph.omega[0] * float(ph.base) ** (ph.nqboson - iboson - 1) * float(ibra))
+                                mo[0, ibra, ibra, 0] = np.exp(x * ph.omega[0] * ph.base ** (ph.nqboson - iboson - 1) * ibra)
 
                             mpo.append(mo)
                     else:
@@ -679,8 +678,8 @@ class Mpo(MatrixProduct):
                         self.append(mo)
                         impo += 1
 
-
-        self[0][0, :, :, 0] -= offset.as_au()
+        for i in range(self[0].shape[1]):
+            self[0][0, i, i, 0] -= offset.as_au()
 
     @property
     def digest(self):
@@ -694,6 +693,7 @@ class Mpo(MatrixProduct):
 
     def apply(self, mp):
         # todo: use meta copy to save time
+        # todo: inplace version (saved memory and can be used in `hybrid_exact_propagator`)
         new_mps = self.promote_mt_type(mp.copy())
         if mp.is_mps:
             # mpo x mps
