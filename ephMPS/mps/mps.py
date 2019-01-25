@@ -386,7 +386,7 @@ class Mps(MatrixProduct):
         # many-body electronic part
         A_el = self.e_occupations
 
-        logger.info("dmrg_occ: %s" % A_el)
+        logger.debug("dmrg_occ: %s" % A_el)
 
         # many-body vibration part
         B_vib = []

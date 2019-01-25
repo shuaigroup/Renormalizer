@@ -14,6 +14,14 @@ logger = logging.getLogger(__name__)
 
 class MpDm(Mpo, Mps):
 
+    @classmethod
+    def random(cls, mpo, nexciton, m_max, percent=0):
+        # avoid misuse to produce mps
+        raise NotImplementedError
+
+    @classmethod
+    def gs(cls, mol_list, max_entangled):
+        raise ValueError("Use max_entangled_ex or max_entangled_gs for matrix product density matrix")
 
     @classmethod
     def approx_propagator(cls, mpo, dt, thresh=0):
@@ -125,7 +133,9 @@ class MpDm(Mpo, Mps):
         if with_hartree:
             assert len(self.wfns) == len(other.wfns)
             for wfn1, wfn2 in zip(self.wfns[:-1], other.wfns[:-1]):
-                # use vdot is buggy here, because vdot will take conjugation automatically
+                # using vdot is buggy here, because vdot will take conjugation automatically
+                # note the difference between np.dot(wfn1, wfn2).trace()
+                # probably the wfn part should be better wrapped?
                 e *= np.dot(wfn1.flatten(), wfn2.flatten())
         return e
 
