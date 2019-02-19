@@ -9,7 +9,7 @@ import numpy as np
 
 root_logger = logging.root
 default_stream_handler = logging.StreamHandler()
-default_formatter = logging.Formatter('%(asctime)s[%(levelname)s] %(message)s')
+default_formatter = logging.Formatter("%(asctime)s[%(levelname)s] %(message)s")
 
 
 def init_log(level=logging.DEBUG):
@@ -31,13 +31,13 @@ def disable_stream_output():
         root_logger.removeHandler(default_stream_handler)
 
 
-def register_file_output(file_path, mode='w', level=DEBUG):
+def register_file_output(file_path, mode="w", level=DEBUG):
     file_handler = logging.FileHandler(file_path, mode=mode)
     file_handler.setLevel(level)
     file_handler.setFormatter(default_formatter)
     root_logger.addHandler(file_handler)
 
 
-NP_ERRCONFIG = {"divide": "raise", "over": "raise", "under": "warn", "invalid":"raise"}
+NP_ERRCONFIG = {"divide": "raise", "over": "raise", "under": "warn", "invalid": "raise"}
 
 DEFAULT_NP_ERRCONFIG = np.seterr(**NP_ERRCONFIG)

@@ -10,21 +10,23 @@ from ephMPS.utils import Quantity
 
 
 class Mol(object):
-    '''
+    """
     molecule class property:
     local excitation energy :  elocalex
     # of phonons : nphs
     condon dipole moment : dipole
     phonon information : ph
-    '''
+    """
 
     def __init__(self, elocalex, ph_list, dipole=None):
         self.elocalex = elocalex.as_au()
         self.dipole = dipole
         self.dmrg_phs = tuple([ph for ph in ph_list if not ph.hartree])
         self.hartree_phs = tuple([ph for ph in ph_list if ph.hartree])
+
         def calc_lambda(phs):
             return sum([ph.reorganization_energy.as_au() for ph in phs])
+
         self.dmrg_e0 = calc_lambda(self.dmrg_phs)
         self.hartree_e0 = calc_lambda(self.hartree_phs)
         self.n_dmrg_phs = len(self.dmrg_phs)
@@ -49,20 +51,19 @@ class Mol(object):
     def pure_dmrg(self):
         return not bool(self.hartree_phs)
 
-
     @property
     def pure_hartree(self):
         return not bool(self.dmrg_phs)
 
     def to_dict(self):
         info_dict = OrderedDict()
-        info_dict['elocalex'] = self.elocalex
-        info_dict['dipole'] = self.dipole
-        info_dict['reorganization energy in a.u.'] = self.reorganization_energy
-        info_dict['dmrg phonon modes'] = self.n_dmrg_phs
+        info_dict["elocalex"] = self.elocalex
+        info_dict["dipole"] = self.dipole
+        info_dict["reorganization energy in a.u."] = self.reorganization_energy
+        info_dict["dmrg phonon modes"] = self.n_dmrg_phs
         if self.n_hartree_phs:
-            info_dict['dmrg phonon modes'] = self.n_dmrg_phs
-        info_dict['DMRG phonon list'] = [ph.to_dict() for ph in self.dmrg_phs]
+            info_dict["dmrg phonon modes"] = self.n_dmrg_phs
+        info_dict["DMRG phonon list"] = [ph.to_dict() for ph in self.dmrg_phs]
         if self.hartree_phs:
-            info_dict['Hartree phonon list'] = [ph.to_dict() for ph in self.hartree_phs]
+            info_dict["Hartree phonon list"] = [ph.to_dict() for ph in self.hartree_phs]
         return info_dict

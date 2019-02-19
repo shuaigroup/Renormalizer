@@ -5,7 +5,6 @@ import numpy as np
 
 
 class Matrix(np.ndarray):
-
     def __new__(cls, array):
         obj = np.array(array).view(cls)
         obj.original_shape = obj.shape
@@ -16,7 +15,7 @@ class Matrix(np.ndarray):
     def __array_finalize__(self, obj):
         if obj is None:
             return
-        self.original_shape = getattr(obj, 'original_shape', None)
+        self.original_shape = getattr(obj, "original_shape", None)
 
     # physical indices exclude first and last indices
     @property

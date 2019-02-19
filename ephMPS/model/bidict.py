@@ -4,9 +4,10 @@ from __future__ import absolute_import, print_function, unicode_literals
 
 
 class bidict(dict):
-    '''
+    """
     bi-dictionary class, doule-way hash table
-    '''
+    """
+
     def __init__(self, *args, **kwargs):
         self.inverse = {}
         super(bidict, self).__init__(*args, **kwargs)

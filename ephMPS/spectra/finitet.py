@@ -8,7 +8,6 @@ from ephMPS.utils import constant
 
 
 class BraKetPairEmiFiniteT(BraKetPair):
-
     def calc_ft(self):
         return np.conj(super(BraKetPairEmiFiniteT, self).calc_ft())
 
@@ -18,12 +17,26 @@ class BraKetPairAbsFiniteT(BraKetPair):
 
 
 class SpectraFiniteT(SpectraTdMpsJobBase):
-
-    def __init__(self, mol_list, spectratype, temperature, insteps, offset, evolve_config=None, gs_shift=0):
+    def __init__(
+        self,
+        mol_list,
+        spectratype,
+        temperature,
+        insteps,
+        offset,
+        evolve_config=None,
+        gs_shift=0,
+    ):
         self.temperature = temperature
         self.insteps = insteps
         self.gs_shift = gs_shift
-        super(SpectraFiniteT, self).__init__(mol_list, spectratype, temperature, evolve_config=evolve_config, offset=offset)
+        super(SpectraFiniteT, self).__init__(
+            mol_list,
+            spectratype,
+            temperature,
+            evolve_config=evolve_config,
+            offset=offset,
+        )
 
     def init_mps(self):
         if self.spectratype == "emi":
@@ -32,10 +45,12 @@ class SpectraFiniteT(SpectraTdMpsJobBase):
             return self.init_mps_abs()
 
     def init_mps_emi(self):
-        dipole_mpo = Mpo.onsite(self.mol_list, 'a', dipole=True)
+        dipole_mpo = Mpo.onsite(self.mol_list, "a", dipole=True)
         i_mpo = MpDm.max_entangled_ex(self.mol_list)
         # only propagate half beta
-        ket_mpo = i_mpo.thermal_prop(self.h_mpo, self.insteps, self.temperature.to_beta() / 2)
+        ket_mpo = i_mpo.thermal_prop(
+            self.h_mpo, self.insteps, self.temperature.to_beta() / 2
+        )
         ket_mpo.evolve_config = self.evolve_config
         # e^{\-beta H/2} \Psi
         dipole_mpo_dagger = dipole_mpo.conj_trans()
@@ -46,10 +61,10 @@ class SpectraFiniteT(SpectraTdMpsJobBase):
         return BraKetPairEmiFiniteT(a_bra_mpo, a_ket_mpo)
 
     def init_mps_abs(self):
-        dipole_mpo = Mpo.onsite(self.mol_list, 'a^\dagger', dipole=True)
+        dipole_mpo = Mpo.onsite(self.mol_list, "a^\dagger", dipole=True)
         i_mpo = MpDm.max_entangled_gs(self.mol_list)
         beta = self.temperature.to_beta()
-        ket_mpo = i_mpo.thermal_prop_exact(self.h_mpo, beta / 2.0, 1, 'GS')
+        ket_mpo = i_mpo.thermal_prop_exact(self.h_mpo, beta / 2.0, 1, "GS")
         ket_mpo.evolve_config = self.evolve_config
         a_ket_mpo = dipole_mpo.apply(ket_mpo, canonicalise=True)
         a_ket_mpo.canonical_normalize()

@@ -8,20 +8,18 @@ import numpy as np
 from ephMPS.utils import elementop
 
 test_phonon_op_data = (
-    ['b^\dagger b', 3, 3, 3.0],
-    ['b^\dagger b', 3, 2, 0.0],
-    ['b^\dagger b', 2, 3, 0.0],
-    ['b^\dagger b', 0, 0, 0.0],
-
-    ['b^\dagger + b', 3, 3, 0.0],
-    ['b^\dagger + b', 3, 2, np.sqrt(3.0)],
-    ['b^\dagger + b', 2, 3, np.sqrt(3.0)],
-    ['b^\dagger + b', 4, 2, 0.0],
-    ['b^\dagger + b', 2, 4, 0.0],
-
-    ['Iden', 2, 4, 0.0],
-    ['Iden', 4, 2, 0.0],
-    ['Iden', 2, 2, 1.0],
+    ["b^\dagger b", 3, 3, 3.0],
+    ["b^\dagger b", 3, 2, 0.0],
+    ["b^\dagger b", 2, 3, 0.0],
+    ["b^\dagger b", 0, 0, 0.0],
+    ["b^\dagger + b", 3, 3, 0.0],
+    ["b^\dagger + b", 3, 2, np.sqrt(3.0)],
+    ["b^\dagger + b", 2, 3, np.sqrt(3.0)],
+    ["b^\dagger + b", 4, 2, 0.0],
+    ["b^\dagger + b", 2, 4, 0.0],
+    ["Iden", 2, 4, 0.0],
+    ["Iden", 4, 2, 0.0],
+    ["Iden", 2, 2, 1.0],
 )
 
 
@@ -36,25 +34,22 @@ def test_phonon_exception():
 
 
 test_electronic_op_data = (
-    ['a^\dagger', 1, 0, 1.0],
-    ['a^\dagger', 0, 1, 0.0],
-    ['a^\dagger', 1, 1, 0.0],
-    ['a^\dagger', 0, 0, 0.0],
-
-    ['a', 1, 0, 0.0],
-    ['a', 0, 1, 1.0],
-    ['a', 1, 1, 0.0],
-    ['a', 0, 0, 0.0],
-
-    ['a^\dagger a', 1, 0, 0.0],
-    ['a^\dagger a', 0, 1, 0.0],
-    ['a^\dagger a', 1, 1, 1.0],
-    ['a^\dagger a', 0, 0, 0.0],
-
-    ['Iden', 1, 0, 0.0],
-    ['Iden', 0, 1, 0.0],
-    ['Iden', 1, 1, 1.0],
-    ['Iden', 0, 0, 1.0],
+    ["a^\dagger", 1, 0, 1.0],
+    ["a^\dagger", 0, 1, 0.0],
+    ["a^\dagger", 1, 1, 0.0],
+    ["a^\dagger", 0, 0, 0.0],
+    ["a", 1, 0, 0.0],
+    ["a", 0, 1, 1.0],
+    ["a", 1, 1, 0.0],
+    ["a", 0, 0, 0.0],
+    ["a^\dagger a", 1, 0, 0.0],
+    ["a^\dagger a", 0, 1, 0.0],
+    ["a^\dagger a", 1, 1, 1.0],
+    ["a^\dagger a", 0, 0, 0.0],
+    ["Iden", 1, 0, 0.0],
+    ["Iden", 0, 1, 0.0],
+    ["Iden", 1, 1, 1.0],
+    ["Iden", 0, 0, 1.0],
 )
 
 

@@ -8,11 +8,13 @@ from ephMPS.mps import solver
 from ephMPS.tests import parameter
 
 
-@pytest.mark.parametrize("mol_list, target",
-                         (
-                                 [parameter.hybrid_mol_list, 0.084015672468],
-                                 [parameter.mol_list, 0.08401411562239858])
-                         )
+@pytest.mark.parametrize(
+    "mol_list, target",
+    (
+        [parameter.hybrid_mol_list, 0.084015672468],
+        [parameter.mol_list, 0.08401411562239858],
+    ),
+)
 def test_hybrid_DMRG_H_SCF(mol_list, target):
 
     nexciton = 1

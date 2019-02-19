@@ -10,16 +10,19 @@ from ephMPS.utils import constant
 
 logger = logging.getLogger(__name__)
 
-au_ratio_dict = {'meV': constant.au2ev * 1e3,
-                 'eV': constant.au2ev,
-                 'cm^{-1}': 1 / constant.cm2au,
-                 'K': constant.au2K,
-                 'a.u.': 1,
-                 'au': 1}
+au_ratio_dict = {
+    "meV": constant.au2ev * 1e3,
+    "eV": constant.au2ev,
+    "cm^{-1}": 1 / constant.cm2au,
+    "K": constant.au2K,
+    "a.u.": 1,
+    "au": 1,
+}
 
-au_ratio_dict.update({k.lower():v for k, v in au_ratio_dict.items()})
+au_ratio_dict.update({k.lower(): v for k, v in au_ratio_dict.items()})
 
 allowed_units = set(au_ratio_dict.keys())
+
 
 def convert_to_au(num, unit):
     assert unit in allowed_units
@@ -27,12 +30,11 @@ def convert_to_au(num, unit):
 
 
 class Quantity(object):
-
-    def __init__(self, value, unit='a.u.'):
+    def __init__(self, value, unit="a.u."):
         self.value = float(value)
         if unit not in allowed_units:
-            raise ValueError('Unit not in {}, got {}.'.format(allowed_units, unit))
-        if value < 0.1 and value != 0 and (unit == 'K' or unit == 'k'):
+            raise ValueError("Unit not in {}, got {}.".format(allowed_units, unit))
+        if value < 0.1 and value != 0 and (unit == "K" or unit == "k"):
             msg = "temperature too low and might cause various numerical errors"
             # raise ValueError("temperature too low and might cause various numerical errors")
             logger.warning(msg)
@@ -72,12 +74,16 @@ class Quantity(object):
         return Quantity(self.as_au() / other)
 
     def __eq__(self, other):
-        if hasattr(other, 'as_au'):
+        if hasattr(other, "as_au"):
             return self.as_au == other.as_au()
         elif other == 0:
             return self.value == 0
         else:
-            raise TypeError('Quantity can only compare with Quantity or 0, not {}'.format(other.__class__))
+            raise TypeError(
+                "Quantity can only compare with Quantity or 0, not {}".format(
+                    other.__class__
+                )
+            )
 
     def __ne__(self, other):
         return not self == other
@@ -85,4 +91,4 @@ class Quantity(object):
     # todo: magic methods such as `__lt__` and so on
 
     def __str__(self):
-        return '%g %s' % (self.value, self.unit)
+        return "%g %s" % (self.value, self.unit)

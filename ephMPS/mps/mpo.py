@@ -8,7 +8,11 @@ import scipy
 from ephMPS.model.ephtable import EphTable
 from ephMPS.mps.mp import MatrixProduct
 from ephMPS.utils import Quantity
-from ephMPS.utils.elementop import construct_ph_op_dict, construct_e_op_dict, ph_op_matrix
+from ephMPS.utils.elementop import (
+    construct_ph_op_dict,
+    construct_e_op_dict,
+    ph_op_matrix,
+)
 from ephMPS.utils.utils import roundrobin
 
 logger = logging.getLogger(__name__)
@@ -21,7 +25,7 @@ def base_convert(n, base):
     """
     convert 10 base number to any base number
     """
-    result = ''
+    result = ""
     while True:
         tup = divmod(n, base)
         result += str(tup[1])
@@ -105,76 +109,95 @@ def get_mpo_dim_qn(mol_list, scheme, rep):
 
 
 def get_qb_mpo_dim_qn(mol_list, old_dim, old_qn, rep):
-        # quasi boson MPO dim
-        qbopera = []  # b+b^\dagger MPO in quasi boson representation
-        new_dim = []
-        new_qn = []
-        impo = 0
-        for imol, mol in enumerate(mol_list):
-            qbopera.append({})
-            new_dim.append(old_dim[impo])
-            new_qn.append(old_qn[impo])
-            impo += 1
-            for iph, ph in enumerate(mol.dmrg_phs):
-                nqb = ph.nqboson
-                if nqb != 1:
-                    if rep == "chain":
-                        b = Mpo.quasi_boson("b", nqb, ph.qbtrunc, base=ph.base)
-                        bdagger = Mpo.quasi_boson("b^\dagger", nqb, ph.qbtrunc, base=ph.base)
-                        bpbdagger = Mpo.quasi_boson("b + b^\dagger", nqb, ph.qbtrunc, base=ph.base)
-                        qbopera[imol]["b" + str(iph)] = b
-                        qbopera[imol]["bdagger" + str(iph)] = bdagger
-                        qbopera[imol]["bpbdagger" + str(iph)] = bpbdagger
+    # quasi boson MPO dim
+    qbopera = []  # b+b^\dagger MPO in quasi boson representation
+    new_dim = []
+    new_qn = []
+    impo = 0
+    for imol, mol in enumerate(mol_list):
+        qbopera.append({})
+        new_dim.append(old_dim[impo])
+        new_qn.append(old_qn[impo])
+        impo += 1
+        for iph, ph in enumerate(mol.dmrg_phs):
+            nqb = ph.nqboson
+            if nqb != 1:
+                if rep == "chain":
+                    b = Mpo.quasi_boson("b", nqb, ph.qbtrunc, base=ph.base)
+                    bdagger = Mpo.quasi_boson(
+                        "b^\dagger", nqb, ph.qbtrunc, base=ph.base
+                    )
+                    bpbdagger = Mpo.quasi_boson(
+                        "b + b^\dagger", nqb, ph.qbtrunc, base=ph.base
+                    )
+                    qbopera[imol]["b" + str(iph)] = b
+                    qbopera[imol]["bdagger" + str(iph)] = bdagger
+                    qbopera[imol]["bpbdagger" + str(iph)] = bpbdagger
 
-                        if iph == 0:
-                            if iph != mol.n_dmrg_phs - 1:
-                                addmpodim = [b[i].shape[0] + bdagger[i].shape[0] + bpbdagger[i].shape[0] - 1 for i in
-                                             range(nqb)]
-                            else:
-                                addmpodim = [bpbdagger[i].shape[0] - 1 for i in range(nqb)]
-                            addmpodim[0] = 0
+                    if iph == 0:
+                        if iph != mol.n_dmrg_phs - 1:
+                            addmpodim = [
+                                b[i].shape[0]
+                                + bdagger[i].shape[0]
+                                + bpbdagger[i].shape[0]
+                                - 1
+                                for i in range(nqb)
+                            ]
                         else:
-                            addmpodim = [(b[i].shape[0] + bdagger[i].shape[0]) * 2 - 2 for i in range(nqb)]
-                            addmpodim[0] = 0
-
-                    else:
-                        bpbdagger = Mpo.quasi_boson("C1(b + b^\dagger) + C2(b + b^\dagger)^2", nqb, ph.qbtrunc,
-                                                    base=ph.base, c1=ph.term10, c2=ph.term20)
-
-                        qbopera[imol]["bpbdagger" + str(iph)] = bpbdagger
-                        addmpodim = [i.shape[0] for i in bpbdagger]
+                            addmpodim = [bpbdagger[i].shape[0] - 1 for i in range(nqb)]
                         addmpodim[0] = 0
-                        # the first quasi boson MPO the row dim is as before, while
-                        # the others the a_i^\dagger a_i should exist
-                else:
-                    addmpodim = [0]
+                    else:
+                        addmpodim = [
+                            (b[i].shape[0] + bdagger[i].shape[0]) * 2 - 2
+                            for i in range(nqb)
+                        ]
+                        addmpodim[0] = 0
 
-                # new MPOdim
-                new_dim += [i + old_dim[impo] for i in addmpodim]
-                # new MPOQN
-                for iqb in range(nqb):
-                    new_qn.append(old_qn[impo][0:1] + [0] * addmpodim[iqb] + old_qn[impo][1:])
-                impo += 1
-        new_dim.append(1)
-        new_qn[0] = [0]
-        new_qn.append([0])
-        # the boundary side of L/R side quantum number
-        # MPOQN[:MPOQNidx] is L side
-        # MPOQN[MPOQNidx+1:] is R side
-        return qbopera, new_dim, new_qn
+                else:
+                    bpbdagger = Mpo.quasi_boson(
+                        "C1(b + b^\dagger) + C2(b + b^\dagger)^2",
+                        nqb,
+                        ph.qbtrunc,
+                        base=ph.base,
+                        c1=ph.term10,
+                        c2=ph.term20,
+                    )
+
+                    qbopera[imol]["bpbdagger" + str(iph)] = bpbdagger
+                    addmpodim = [i.shape[0] for i in bpbdagger]
+                    addmpodim[0] = 0
+                    # the first quasi boson MPO the row dim is as before, while
+                    # the others the a_i^\dagger a_i should exist
+            else:
+                addmpodim = [0]
+
+            # new MPOdim
+            new_dim += [i + old_dim[impo] for i in addmpodim]
+            # new MPOQN
+            for iqb in range(nqb):
+                new_qn.append(
+                    old_qn[impo][0:1] + [0] * addmpodim[iqb] + old_qn[impo][1:]
+                )
+            impo += 1
+    new_dim.append(1)
+    new_qn[0] = [0]
+    new_qn.append([0])
+    # the boundary side of L/R side quantum number
+    # MPOQN[:MPOQNidx] is L side
+    # MPOQN[MPOQNidx+1:] is R side
+    return qbopera, new_dim, new_qn
 
 
 class Mpo(MatrixProduct):
-
     @classmethod
     def exact_propagator(cls, mol_list, x, space="GS", shift=0.0):
-        '''
+        """
         construct the GS space propagator e^{xH} exact MPO
         H=\sum_{in} \omega_{in} b^\dagger_{in} b_{in}
         fortunately, the H is local. so e^{xH} = e^{xh1}e^{xh2}...e^{xhn}
         the bond dimension is 1
         shift is the a constant for H+shift
-        '''
+        """
         assert space in ["GS", "EX"]
 
         mpo = cls().to_complex()
@@ -197,11 +220,13 @@ class Mpo(MatrixProduct):
                     # construct the matrix exponential by diagonalize the matrix first
                     phop = construct_ph_op_dict(ph_pbond)
 
-                    h_mo = phop['b^\dagger b'] * ph.omega[0] \
-                           + phop['(b^\dagger + b)^3'] * ph.term30 \
-                           + phop['b^\dagger + b'] * (ph.term10 + ph.term11) \
-                           + phop['(b^\dagger + b)^2'] * (ph.term20 + ph.term21) \
-                           + phop['(b^\dagger + b)^3'] * (ph.term31 - ph.term30)
+                    h_mo = (
+                        phop["b^\dagger b"] * ph.omega[0]
+                        + phop["(b^\dagger + b)^3"] * ph.term30
+                        + phop["b^\dagger + b"] * (ph.term10 + ph.term11)
+                        + phop["(b^\dagger + b)^2"] * (ph.term20 + ph.term21)
+                        + phop["(b^\dagger + b)^3"] * (ph.term31 - ph.term30)
+                    )
 
                     w, v = scipy.linalg.eigh(h_mo)
                     h_mo = np.diag(np.exp(x * w))
@@ -219,22 +244,34 @@ class Mpo(MatrixProduct):
                     # potential quasiboson algorithm
                     ph_pbond = ph.pbond[0]
                     for i in ph.force3rd:
-                        anharmo = not np.allclose(ph.force3rd[i] * ph.dis[i] / ph.omega[i], 0.0)
+                        anharmo = not np.allclose(
+                            ph.force3rd[i] * ph.dis[i] / ph.omega[i], 0.0
+                        )
                         if anharmo:
                             break
                     if not anharmo:
                         for iboson in range(ph.nqboson):
-                            mo = np.zeros([1, ph_pbond, ph_pbond, 1], dtype=np.complex128)
+                            mo = np.zeros(
+                                [1, ph_pbond, ph_pbond, 1], dtype=np.complex128
+                            )
 
                             for ibra in range(ph_pbond):
-                                mo[0, ibra, ibra, 0] = np.exp(x * ph.omega[0] * ph.base ** (ph.nqboson - iboson - 1) * ibra)
+                                mo[0, ibra, ibra, 0] = np.exp(
+                                    x
+                                    * ph.omega[0]
+                                    * ph.base ** (ph.nqboson - iboson - 1)
+                                    * ibra
+                                )
 
                             mpo.append(mo)
                     else:
                         assert ph.nqboson == 1
                         # construct the matrix exponential by diagonalize the matrix first
                         phop = construct_ph_op_dict(ph_pbond)
-                        h_mo = phop['b^\dagger b'] * ph.omega[0] + phop['(b^\dagger + b)^3'] * ph.term30
+                        h_mo = (
+                            phop["b^\dagger b"] * ph.omega[0]
+                            + phop["(b^\dagger + b)^3"] * ph.term30
+                        )
                         w, v = scipy.linalg.eigh(h_mo)
                         h_mo = np.diag(np.exp(x * w))
                         h_mo = v.dot(h_mo)
@@ -257,17 +294,22 @@ class Mpo(MatrixProduct):
 
     @classmethod
     def quasi_boson(cls, opera, nqb, trunc, base=2, c1=1.0, c2=1.0):
-        '''
+        """
         nqb : # of quasi boson sites
         opera : operator to be decomposed
                 "b + b^\dagger"
-        '''
-        assert opera in ["b + b^\dagger", "b^\dagger b", "b", "b^\dagger",
-                         "C1(b + b^\dagger) + C2(b + b^\dagger)^2"]
+        """
+        assert opera in [
+            "b + b^\dagger",
+            "b^\dagger b",
+            "b",
+            "b^\dagger",
+            "C1(b + b^\dagger) + C2(b + b^\dagger)^2",
+        ]
 
         # the structure is [bra_highest_bit, ket_highest_bit,..., bra_lowest_bit,
         # ket_lowest_bit]
-        mat = np.zeros([base, ] * nqb * 2)
+        mat = np.zeros([base] * nqb * 2)
 
         if opera == "b + b^\dagger" or opera == "b^\dagger" or opera == "b":
             if opera == "b + b^\dagger" or opera == "b^\dagger":
@@ -322,8 +364,9 @@ class Mpo(MatrixProduct):
         mpo.threshold = trunc
         mat = mat.reshape(1, -1)
         for idx in range(nqb - 1):
-            u, s, vt = scipy.linalg.svd(mat.reshape(mat.shape[0] * base ** 2, -1),
-                                        full_matrices=False)
+            u, s, vt = scipy.linalg.svd(
+                mat.reshape(mat.shape[0] * base ** 2, -1), full_matrices=False
+            )
             u = u.reshape(mat.shape[0], base, base, -1)
             mpo.append(u)
             mat = np.einsum("i, ij -> ij", s, vt)
@@ -380,9 +423,9 @@ class Mpo(MatrixProduct):
             mo[-1, :, :, 0] = factor * eop[opera]
 
             if imol != 0:
-                mo[0, :, :, 0] = eop['Iden']
+                mo[0, :, :, 0] = eop["Iden"]
             if imol != nmols - 1:
-                mo[-1, :, :, -1] = eop['Iden']
+                mo[-1, :, :, -1] = eop["Iden"]
             mpo.append(mo)
             impo += 1
 
@@ -406,13 +449,25 @@ class Mpo(MatrixProduct):
             totnqboson += ph.nqboson
 
         if opera == "a":
-            mpo.qn = [[0]] + [[-1, 0]] * (len(mpo) - totnqboson - 1) + [[-1]] * (totnqboson + 1)
+            mpo.qn = (
+                [[0]]
+                + [[-1, 0]] * (len(mpo) - totnqboson - 1)
+                + [[-1]] * (totnqboson + 1)
+            )
             mpo.qntot = -1
         elif opera == "a^\dagger":
-            mpo.qn = [[0]] + [[1, 0]] * (len(mpo) - totnqboson - 1) + [[1]] * (totnqboson + 1)
+            mpo.qn = (
+                [[0]]
+                + [[1, 0]] * (len(mpo) - totnqboson - 1)
+                + [[1]] * (totnqboson + 1)
+            )
             mpo.qntot = 1
         elif opera == "a^\dagger a":
-            mpo.qn = [[0]] + [[0, 0]] * (len(mpo) - totnqboson - 1) + [[0]] * (totnqboson + 1)
+            mpo.qn = (
+                [[0]]
+                + [[0, 0]] * (len(mpo) - totnqboson - 1)
+                + [[0]] * (totnqboson + 1)
+            )
             mpo.qntot = 0
         mpo.qn[-1] = [0]
 
@@ -425,28 +480,35 @@ class Mpo(MatrixProduct):
         for imol, mol in enumerate(mol_list):
             e_pbond = mol.pbond[0]
             eop = construct_e_op_dict(e_pbond)
-            mpo.append(eop['Iden'].reshape(1, e_pbond, e_pbond, 1))
+            mpo.append(eop["Iden"].reshape(1, e_pbond, e_pbond, 1))
             iph = 0
             for ph in mol.dmrg_phs:
                 for iqph in range(ph.nqboson):
                     ph_pbond = ph.pbond[iqph]
                     if imol == mol_idx and iph == ph_idx:
-                        mt = ph_op_matrix('b^\dagger b', ph_pbond)
+                        mt = ph_op_matrix("b^\dagger b", ph_pbond)
                     else:
-                        mt = ph_op_matrix('Iden', ph_pbond)
+                        mt = ph_op_matrix("Iden", ph_pbond)
                     mpo.append(mt.reshape(1, ph_pbond, ph_pbond, 1))
                     iph += 1
         mpo.build_empty_qn()
         return mpo
 
-    def __init__(self, mol_list=None, scheme=2, rep="star", elocal_offset=None, offset=Quantity(0)):
-        '''
+    def __init__(
+        self,
+        mol_list=None,
+        scheme=2,
+        rep="star",
+        elocal_offset=None,
+        offset=Quantity(0),
+    ):
+        """
         scheme 1: l to r
         scheme 2: l,r to middle, the bond dimension is smaller than scheme 1
         scheme 3: l to r, nearest neighbour exciton interaction
         rep (representation) has "star" or "chain"
         please see doc
-        '''
+        """
         assert rep in ["star", "chain"]
 
         super(Mpo, self).__init__()
@@ -486,49 +548,61 @@ class Mpo(MatrixProduct):
             elocal = mol.elocalex
             if elocal_offset is not None:
                 elocal += elocal_offset[imol]
-            mo[-1, :, :, 0] = eop['a^\dagger a'] * (elocal + mol.dmrg_e0)
-            mo[-1, :, :, -1] = eop['Iden']
-            mo[-1, :, :, 1] = eop['a^\dagger a']
+            mo[-1, :, :, 0] = eop["a^\dagger a"] * (elocal + mol.dmrg_e0)
+            mo[-1, :, :, -1] = eop["Iden"]
+            mo[-1, :, :, 1] = eop["a^\dagger a"]
 
             # first column operator
             if imol != 0:
-                mo[0, :, :, 0] = eop['Iden']
+                mo[0, :, :, 0] = eop["Iden"]
                 if (scheme == 1) or (scheme == 2 and imol <= mididx):
                     for ileft in range(1, mpo_dim[impo] - 1):
                         if ileft % 2 == 1:
-                            mo[ileft, :, :, 0] = eop['a'] * j_matrix[(ileft - 1) // 2, imol]
+                            mo[ileft, :, :, 0] = (
+                                eop["a"] * j_matrix[(ileft - 1) // 2, imol]
+                            )
                         else:
-                            mo[ileft, :, :, 0] = eop['a^\dagger'] * j_matrix[(ileft - 1) // 2, imol]
+                            mo[ileft, :, :, 0] = (
+                                eop["a^\dagger"] * j_matrix[(ileft - 1) // 2, imol]
+                            )
                 elif scheme == 2 and imol > mididx:
-                    mo[-3, :, :, 0] = eop['a']
-                    mo[-2, :, :, 0] = eop['a^\dagger']
+                    mo[-3, :, :, 0] = eop["a"]
+                    mo[-2, :, :, 0] = eop["a^\dagger"]
                 elif scheme == 3:
-                    mo[-3, :, :, 0] = eop['a'] * j_matrix[imol - 1, imol]
-                    mo[-2, :, :, 0] = eop['a^\dagger'] * j_matrix[imol - 1, imol]
+                    mo[-3, :, :, 0] = eop["a"] * j_matrix[imol - 1, imol]
+                    mo[-2, :, :, 0] = eop["a^\dagger"] * j_matrix[imol - 1, imol]
 
             # last row operator
             if imol != nmols - 1:
                 if (scheme == 1) or (scheme == 2 and imol < mididx) or (scheme == 3):
-                    mo[-1, :, :, -2] = eop['a']
-                    mo[-1, :, :, -3] = eop['a^\dagger']
+                    mo[-1, :, :, -2] = eop["a"]
+                    mo[-1, :, :, -3] = eop["a^\dagger"]
                 elif scheme == 2 and imol >= mididx:
                     for jmol in range(imol + 1, nmols):
-                        mo[-1, :, :, (nmols - jmol) * 2] = eop['a^\dagger'] * j_matrix[imol, jmol]
-                        mo[-1, :, :, (nmols - jmol) * 2 + 1] = eop['a'] * j_matrix[imol, jmol]
+                        mo[-1, :, :, (nmols - jmol) * 2] = (
+                            eop["a^\dagger"] * j_matrix[imol, jmol]
+                        )
+                        mo[-1, :, :, (nmols - jmol) * 2 + 1] = (
+                            eop["a"] * j_matrix[imol, jmol]
+                        )
 
             # mat body
             if imol != nmols - 1 and imol != 0:
                 if scheme == 1 or (scheme == 2 and imol < mididx):
                     for ileft in range(2, 2 * (imol + 1)):
-                        mo[ileft - 1, :, :, ileft] = eop['Iden']
+                        mo[ileft - 1, :, :, ileft] = eop["Iden"]
                 elif scheme == 2 and imol > mididx:
                     for ileft in range(2, 2 * (nmols - imol)):
-                        mo[ileft - 1, :, :, ileft] = eop['Iden']
+                        mo[ileft - 1, :, :, ileft] = eop["Iden"]
                 elif scheme == 2 and imol == mididx:
                     for jmol in range(imol + 1, nmols):
                         for ileft in range(imol):
-                            mo[ileft * 2 + 1, :, :, (nmols - jmol) * 2] = eop['Iden'] * j_matrix[ileft, jmol]
-                            mo[ileft * 2 + 2, :, :, (nmols - jmol) * 2 + 1] = eop['Iden'] * j_matrix[ileft, jmol]
+                            mo[ileft * 2 + 1, :, :, (nmols - jmol) * 2] = (
+                                eop["Iden"] * j_matrix[ileft, jmol]
+                            )
+                            mo[ileft * 2 + 2, :, :, (nmols - jmol) * 2 + 1] = (
+                                eop["Iden"] * j_matrix[ileft, jmol]
+                            )
             # scheme 3 no body mat
 
             self.append(mo)
@@ -548,35 +622,40 @@ class Mpo(MatrixProduct):
                     phop = construct_ph_op_dict(pbond)
                     mo = np.zeros([mpo_dim[impo], pbond, pbond, mpo_dim[impo + 1]])
                     # first column
-                    mo[0, :, :, 0] = phop['Iden']
-                    mo[-1, :, :, 0] = phop['b^\dagger b'] * ph.omega[0] + phop['(b^\dagger + b)^3'] * ph.term30
+                    mo[0, :, :, 0] = phop["Iden"]
+                    mo[-1, :, :, 0] = (
+                        phop["b^\dagger b"] * ph.omega[0]
+                        + phop["(b^\dagger + b)^3"] * ph.term30
+                    )
                     if rep == "chain" and iph != 0:
-                        mo[1, :, :, 0] = phop['b'] * mol.phhop[iph, iph - 1]
-                        mo[2, :, :, 0] = phop['b^\dagger'] * mol.phhop[iph, iph - 1]
+                        mo[1, :, :, 0] = phop["b"] * mol.phhop[iph, iph - 1]
+                        mo[2, :, :, 0] = phop["b^\dagger"] * mol.phhop[iph, iph - 1]
                     else:
-                        mo[1, :, :, 0] = phop['b^\dagger + b'] * (ph.term10 + ph.term11) \
-                                         + phop['(b^\dagger + b)^2'] * (ph.term20 + ph.term21) \
-                                         + phop['(b^\dagger + b)^3'] * (ph.term31 - ph.term30)
+                        mo[1, :, :, 0] = (
+                            phop["b^\dagger + b"] * (ph.term10 + ph.term11)
+                            + phop["(b^\dagger + b)^2"] * (ph.term20 + ph.term21)
+                            + phop["(b^\dagger + b)^3"] * (ph.term31 - ph.term30)
+                        )
                     if imol != nmols - 1 or iph != mol.n_dmrg_phs - 1:
-                        mo[-1, :, :, -1] = phop['Iden']
+                        mo[-1, :, :, -1] = phop["Iden"]
                         if rep == "chain":
                             if iph == 0:
-                                mo[-1, :, :, 1] = phop['b^\dagger']
-                                mo[-1, :, :, 2] = phop['b']
+                                mo[-1, :, :, 1] = phop["b^\dagger"]
+                                mo[-1, :, :, 2] = phop["b"]
                                 for icol in range(3, mpo_dim[impo + 1] - 1):
-                                    mol[icol - 1, :, :, icol] = phop('Iden')
+                                    mol[icol - 1, :, :, icol] = phop("Iden")
                             elif iph == mol.n_dmrg_phs - 1:
                                 for icol in range(1, mpo_dim[impo + 1] - 1):
-                                    mo[icol + 2, :, :, icol] = phop['Iden']
+                                    mo[icol + 2, :, :, icol] = phop["Iden"]
                             else:
-                                mo[-1, :, : 1] = phop['b^\dagger']
-                                mo[-1, :, :, 2] = phop['b']
+                                mo[-1, :, :1] = phop["b^\dagger"]
+                                mo[-1, :, :, 2] = phop["b"]
                                 for icol in range(3, mpo_dim[impo + 1] - 1):
-                                    mo[icol, :, :, icol] = phop['Iden']
+                                    mo[icol, :, :, icol] = phop["Iden"]
                         elif rep == "star":
                             if iph != mol.n_dmrg_phs - 1:
                                 for icol in range(1, mpo_dim[impo + 1] - 1):
-                                    mo[icol, :, :, icol] = phop['Iden']
+                                    mo[icol, :, :, icol] = phop["Iden"]
                             else:
                                 for icol in range(1, mpo_dim[impo + 1] - 1):
                                     mo[icol + 1, :, :, icol] = phop["Iden"]
@@ -592,9 +671,12 @@ class Mpo(MatrixProduct):
                         if rep == "star":
                             bpbdagger = qbopera[imol]["bpbdagger" + str(iph)][iqb]
 
-                            mo[0, :, :, 0] = phop['Iden']
-                            mo[-1, :, :, 0] = phop['b^\dagger b'] * mol.dmrg_phs[iph].omega[0] * float(
-                                mol.dmrg_phs[iph].base) ** (nqb - iqb - 1)
+                            mo[0, :, :, 0] = phop["Iden"]
+                            mo[-1, :, :, 0] = (
+                                phop["b^\dagger b"]
+                                * mol.dmrg_phs[iph].omega[0]
+                                * float(mol.dmrg_phs[iph].base) ** (nqb - iqb - 1)
+                            )
 
                             #  the # of identity operator
                             if iqb != nqb - 1:
@@ -603,13 +685,23 @@ class Mpo(MatrixProduct):
                                 nI = mpo_dim[impo + 1] - 1
 
                             for iset in range(1, nI + 1):
-                                mo[-iset, :, :, -iset] = phop['Iden']
+                                mo[-iset, :, :, -iset] = phop["Iden"]
 
-                            # b + b^\dagger 
+                            # b + b^\dagger
                             if iqb != nqb - 1:
-                                mo[1:bpbdagger.shape[0] + 1, :, :, 1:bpbdagger.shape[-1] + 1] = bpbdagger
+                                mo[
+                                    1 : bpbdagger.shape[0] + 1,
+                                    :,
+                                    :,
+                                    1 : bpbdagger.shape[-1] + 1,
+                                ] = bpbdagger
                             else:
-                                mo[1:bpbdagger.shape[0] + 1, :, :, 0:bpbdagger.shape[-1]] = bpbdagger
+                                mo[
+                                    1 : bpbdagger.shape[0] + 1,
+                                    :,
+                                    :,
+                                    0 : bpbdagger.shape[-1],
+                                ] = bpbdagger
 
                         elif rep == "chain":
 
@@ -617,9 +709,12 @@ class Mpo(MatrixProduct):
                             bdagger = qbopera[imol]["bdagger" + str(iph)][iqb]
                             bpbdagger = qbopera[imol]["bpbdagger" + str(iph)][iqb]
 
-                            mo[0, :, : 0] = phop['Iden']
-                            mo[-1, :, :, 0] = phop['b^\dagger b'] * mol.dmrg_phs[iph].omega[0] * float(
-                                mol.dmrg_phs[iph].base) ** (nqb - iqb - 1)
+                            mo[0, :, :0] = phop["Iden"]
+                            mo[-1, :, :, 0] = (
+                                phop["b^\dagger b"]
+                                * mol.dmrg_phs[iph].omega[0]
+                                * float(mol.dmrg_phs[iph].base) ** (nqb - iqb - 1)
+                            )
 
                             #  the # of identity operator
                             if impo == len(mpo_dim) - 2:
@@ -630,24 +725,52 @@ class Mpo(MatrixProduct):
                             # print
                             # "nI", nI
                             for iset in range(1, nI + 1):
-                                mo[-iset, :, :, -iset] = phop['Iden']
+                                mo[-iset, :, :, -iset] = phop["Iden"]
 
                             if iph == 0:
-                                # b + b^\dagger 
+                                # b + b^\dagger
                                 if iqb != nqb - 1:
-                                    mo[1:bpbdagger.shape[0] + 1, :, :, 1:bpbdagger.shape[-1] + 1] = bpbdagger
+                                    mo[
+                                        1 : bpbdagger.shape[0] + 1,
+                                        :,
+                                        :,
+                                        1 : bpbdagger.shape[-1] + 1,
+                                    ] = bpbdagger
                                 else:
-                                    mo[1:bpbdagger.shape[0] + 1, :, :, 0:1] = bpbdagger * ph.term10
+                                    mo[1 : bpbdagger.shape[0] + 1, :, :, 0:1] = (
+                                        bpbdagger * ph.term10
+                                    )
                             else:
                                 # b^\dagger, b
                                 if iqb != nqb - 1:
-                                    mo[1:b.shape[0] + 1, :, :, 1:b.shape[-1] + 1] = b
-                                    mo[b.shape[0] + 1:b.shape[0] + 1 + bdagger.shape[0], :, :, \
-                                    b.shape[-1] + 1:b.shape[-1] + 1 + bdagger.shape[-1]] = bdagger
+                                    mo[
+                                        1 : b.shape[0] + 1, :, :, 1 : b.shape[-1] + 1
+                                    ] = b
+                                    mo[
+                                        b.shape[0]
+                                        + 1 : b.shape[0]
+                                        + 1
+                                        + bdagger.shape[0],
+                                        :,
+                                        :,
+                                        b.shape[-1]
+                                        + 1 : b.shape[-1]
+                                        + 1
+                                        + bdagger.shape[-1],
+                                    ] = bdagger
                                 else:
-                                    mo[1:b.shape[0] + 1, :, :, 0:1] = b * mol.phhop[iph, iph - 1]
-                                    mo[b.shape[0] + 1:b.shape[0] + 1 + bdagger.shape[0], :, :, 0:1] \
-                                        = bdagger * mol.phhop[iph, iph - 1]
+                                    mo[1 : b.shape[0] + 1, :, :, 0:1] = (
+                                        b * mol.phhop[iph, iph - 1]
+                                    )
+                                    mo[
+                                        b.shape[0]
+                                        + 1 : b.shape[0]
+                                        + 1
+                                        + bdagger.shape[0],
+                                        :,
+                                        :,
+                                        0:1,
+                                    ] = (bdagger * mol.phhop[iph, iph - 1])
 
                             if iph != mol.n_dmrg_phs - 1:
                                 if iph == 0:
@@ -656,23 +779,69 @@ class Mpo(MatrixProduct):
                                 else:
                                     loffset = b.shape[0] + bdagger.shape[0]
                                     roffset = b.shape[-1] + bdagger.shape[-1]
-                                    # b^\dagger, b     
+                                    # b^\dagger, b
                                 if iqb == 0:
-                                    mo[-1:, :, :, roffset + 1:roffset + 1 + bdagger.shape[-1]] = bdagger
-                                    mo[-1:, :, :,
-                                    roffset + 1 + bdagger.shape[-1]:roffset + 1 + bdagger.shape[-1] + b.shape[-1]] = b
+                                    mo[
+                                        -1:,
+                                        :,
+                                        :,
+                                        roffset + 1 : roffset + 1 + bdagger.shape[-1],
+                                    ] = bdagger
+                                    mo[
+                                        -1:,
+                                        :,
+                                        :,
+                                        roffset
+                                        + 1
+                                        + bdagger.shape[-1] : roffset
+                                        + 1
+                                        + bdagger.shape[-1]
+                                        + b.shape[-1],
+                                    ] = b
                                 elif iqb == nqb - 1:
                                     # print
                                     # "He", loffset + 1, \
                                     # loffset + 1 + bdagger.shape[0], loffset + 1 + bdagger.shape[0] + b.shape[0],
-                                    mo[loffset + 1:loffset + 1 + bdagger.shape[0], :, :, 1:2] = bdagger
-                                    mo[loffset + 1 + bdagger.shape[0]:loffset + 1 + bdagger.shape[0] + b.shape[0], :, :,
-                                    2:3] = b
+                                    mo[
+                                        loffset + 1 : loffset + 1 + bdagger.shape[0],
+                                        :,
+                                        :,
+                                        1:2,
+                                    ] = bdagger
+                                    mo[
+                                        loffset
+                                        + 1
+                                        + bdagger.shape[0] : loffset
+                                        + 1
+                                        + bdagger.shape[0]
+                                        + b.shape[0],
+                                        :,
+                                        :,
+                                        2:3,
+                                    ] = b
                                 else:
-                                    mo[loffset + 1:loffset + 1 + bdagger.shape[0], :, :,
-                                      roffset + 1:roffset + 1 + bdagger.shape[-1]] = bdagger
-                                    mo[loffset + 1 + bdagger.shape[0]:loffset + 1 + bdagger.shape[0] + b.shape[0], :, :,
-                                      roffset + 1 + bdagger.shape[-1]:roffset + 1 + bdagger.shape[-1] + b.shape[-1]] = b
+                                    mo[
+                                        loffset + 1 : loffset + 1 + bdagger.shape[0],
+                                        :,
+                                        :,
+                                        roffset + 1 : roffset + 1 + bdagger.shape[-1],
+                                    ] = bdagger
+                                    mo[
+                                        loffset
+                                        + 1
+                                        + bdagger.shape[0] : loffset
+                                        + 1
+                                        + bdagger.shape[0]
+                                        + b.shape[0],
+                                        :,
+                                        :,
+                                        roffset
+                                        + 1
+                                        + bdagger.shape[-1] : roffset
+                                        + 1
+                                        + bdagger.shape[-1]
+                                        + b.shape[-1],
+                                    ] = b
 
                         self.append(mo)
                         impo += 1
@@ -721,26 +890,42 @@ class Mpo(MatrixProduct):
                 assert mt_self.shape[2] == mt_other.shape[1]
                 # mt=np.einsum("apqb,cqd->acpbd",mpo[i],mps[i])
                 mt = np.moveaxis(np.tensordot(mt_self, mt_other, axes=([2], [1])), 3, 1)
-                mt = np.reshape(mt, [mt_self.shape[0] * mt_other.shape[0], mt_self.shape[1],
-                                     mt_self.shape[-1] * mt_other.shape[-1]])
+                mt = np.reshape(
+                    mt,
+                    [
+                        mt_self.shape[0] * mt_other.shape[0],
+                        mt_self.shape[1],
+                        mt_self.shape[-1] * mt_other.shape[-1],
+                    ],
+                )
                 new_mps[i] = mt
         elif mp.is_mpo or mp.is_mpdm:
             # mpo x mpo
             for i, (mt_self, mt_other) in enumerate(zip(self, mp)):
                 assert mt_self.shape[2] == mt_other.shape[1]
                 # mt=np.einsum("apqb,cqrd->acprbd",mt_s,mt_o)
-                mt = np.moveaxis(np.tensordot(mt_self, mt_other, axes=([2], [1])), [-3, -2], [1, 3])
-                mt = np.reshape(mt, [mt_self.shape[0] * mt_other.shape[0],
-                                     mt_self.shape[1], mt_other.shape[2],
-                                     mt_self.shape[-1] * mt_other.shape[-1]])
+                mt = np.moveaxis(
+                    np.tensordot(mt_self, mt_other, axes=([2], [1])), [-3, -2], [1, 3]
+                )
+                mt = np.reshape(
+                    mt,
+                    [
+                        mt_self.shape[0] * mt_other.shape[0],
+                        mt_self.shape[1],
+                        mt_other.shape[2],
+                        mt_self.shape[-1] * mt_other.shape[-1],
+                    ],
+                )
                 new_mps[i] = mt
         else:
             assert False
         orig_idx = new_mps.qnidx
         new_mps.move_qnidx(self.qnidx)
         qn = self.qn if not mp.use_dummy_qn else self.dummy_qn
-        new_mps.qn = [np.add.outer(np.array(qn_o), np.array(qn_m)).ravel().tolist()
-                      for qn_o, qn_m in zip(qn, new_mps.qn)]
+        new_mps.qn = [
+            np.add.outer(np.array(qn_o), np.array(qn_m)).ravel().tolist()
+            for qn_o, qn_m in zip(qn, new_mps.qn)
+        ]
         new_mps.move_qnidx(orig_idx)
         new_mps.qntot += self.qntot
         new_mps.set_peak_bytes()
@@ -759,7 +944,7 @@ class Mpo(MatrixProduct):
         :return:
         """
         assert self.compress_method == mps.compress_method
-        if self.compress_method == 'svd':
+        if self.compress_method == "svd":
             return self.contract_svd(mps)
         else:
             return self.contract_variational()

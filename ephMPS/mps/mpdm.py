@@ -13,7 +13,6 @@ logger = logging.getLogger(__name__)
 
 # MPS first. Influenced `digest`
 class MpDm(Mpo, Mps):
-
     @classmethod
     def random(cls, mpo, nexciton, m_max, percent=0):
         # avoid misuse to produce mps
@@ -21,7 +20,9 @@ class MpDm(Mpo, Mps):
 
     @classmethod
     def gs(cls, mol_list, max_entangled):
-        raise ValueError("Use max_entangled_ex or max_entangled_gs for matrix product density matrix")
+        raise ValueError(
+            "Use max_entangled_ex or max_entangled_gs for matrix product density matrix"
+        )
 
     @classmethod
     def approx_propagator(cls, mpo, dt, thresh=0):
@@ -83,15 +84,15 @@ class MpDm(Mpo, Mps):
 
     @classmethod
     def max_entangled_ex(cls, mol_list, normalize=True):
-        '''
+        """
         T = \infty maximum entangled EX state
-        '''
+        """
         mps = Mps.gs(mol_list, max_entangled=True)
         # the creation operator \sum_i a^\dagger_i
         ex_mps = Mpo.onsite(mol_list, "a^\dagger").apply(mps)
         if normalize:
             ex_mps.normalize(1.0)
-            #ex_mps.scale(1.0 / np.sqrt(float(len(mol_list))), inplace=True)  # normalize
+            # ex_mps.scale(1.0 / np.sqrt(float(len(mol_list))), inplace=True)  # normalize
         return cls.from_mps(ex_mps)
 
     @classmethod
@@ -124,21 +125,33 @@ class MpDm(Mpo, Mps):
 
     def apply(self, mp, canonicalise=False):
         assert not mp.is_mps
-        new_mps = self.copy() # todo: this is slow and memory consuming! implement meta copy should do
+        new_mps = (
+            self.copy()
+        )  # todo: this is slow and memory consuming! implement meta copy should do
         # todo: also duplicate with MPO apply. What to do???
         for i, (mt_self, mt_other) in enumerate(zip(self, mp)):
             assert mt_self.shape[2] == mt_other.shape[1]
             # mt=np.einsum("apqb,cqrd->acprbd",mt_s,mt_o)
-            mt = np.moveaxis(np.tensordot(mt_self, mt_other, axes=([2], [1])), [-3, -2], [1, 3])
-            mt = np.reshape(mt, [mt_self.shape[0] * mt_other.shape[0],
-                                 mt_self.shape[1], mt_other.shape[2],
-                                 mt_self.shape[-1] * mt_other.shape[-1]])
+            mt = np.moveaxis(
+                np.tensordot(mt_self, mt_other, axes=([2], [1])), [-3, -2], [1, 3]
+            )
+            mt = np.reshape(
+                mt,
+                [
+                    mt_self.shape[0] * mt_other.shape[0],
+                    mt_self.shape[1],
+                    mt_other.shape[2],
+                    mt_self.shape[-1] * mt_other.shape[-1],
+                ],
+            )
             new_mps[i] = mt
         orig_idx = mp.qnidx
         mp.move_qnidx(new_mps.qnidx)
         qn = mp.qn if not self.use_dummy_qn else mp.dummy_qn
-        new_mps.qn = [np.add.outer(np.array(qn_o), np.array(qn_m)).ravel().tolist()
-                      for qn_o, qn_m in zip(self.qn, qn)]
+        new_mps.qn = [
+            np.add.outer(np.array(qn_o), np.array(qn_m)).ravel().tolist()
+            for qn_o, qn_m in zip(self.qn, qn)
+        ]
         mp.move_qnidx(orig_idx)
         new_mps.qntot += mp.qntot
         new_mps.set_peak_bytes()
@@ -158,33 +171,42 @@ class MpDm(Mpo, Mps):
         return e
 
     def thermal_prop(self, h_mpo, nsteps, beta, approx_eiht=None, inplace=False):
-        '''
+        """
         do imaginary propagation
-        '''
+        """
         # print "beta=", beta
         dbeta = beta / float(nsteps)
 
         ket_mpo = self if inplace else self.copy()
 
         if approx_eiht is not None:
-            approx_eihpt = self.__class__.approx_propagator(h_mpo, -1.0j * dbeta, thresh=approx_eiht)
+            approx_eihpt = self.__class__.approx_propagator(
+                h_mpo, -1.0j * dbeta, thresh=approx_eiht
+            )
         else:
             approx_eihpt = None
         for istep in range(nsteps):
-            logger.debug('Thermal propagating %d/%d' % (istep + 1, nsteps))
+            logger.debug("Thermal propagating %d/%d" % (istep + 1, nsteps))
             # partition function can't be obtained
             ket_mpo = ket_mpo.evolve(h_mpo, -1.0j * dbeta, approx_eiht=approx_eihpt)
         return ket_mpo
 
     def evolve_exact(self, h_mpo, evolve_dt, space):
-        MPOprop, HAM, Etot = self.hybrid_exact_propagator(h_mpo, -1.0j * evolve_dt, space)
+        MPOprop, HAM, Etot = self.hybrid_exact_propagator(
+            h_mpo, -1.0j * evolve_dt, space
+        )
         # Mpdm is applied on the propagator, different from base method
         new_mpdm = self.apply(MPOprop, canonicalise=True)
         for iham, ham in enumerate(HAM):
             w, v = scipy.linalg.eigh(ham)
-            new_mpdm.wfns[iham] = new_mpdm.wfns[iham].dot(v).dot(np.diag(np.exp(-1.0j*evolve_dt*w))).dot(v.T)
+            new_mpdm.wfns[iham] = (
+                new_mpdm.wfns[iham]
+                .dot(v)
+                .dot(np.diag(np.exp(-1.0j * evolve_dt * w)))
+                .dot(v.T)
+            )
         new_mpdm.wfns[-1] *= np.exp(-1.0j * Etot * evolve_dt)
-        #unitary_propagation(new_mpdm.wfns, HAM, Etot, evolve_dt)
+        # unitary_propagation(new_mpdm.wfns, HAM, Etot, evolve_dt)
         return new_mpdm
 
     def thermal_prop_exact(self, mpo, beta, nsteps, space, inplace=False):
@@ -192,7 +214,9 @@ class MpDm(Mpo, Mps):
         dbeta = beta / nsteps
         new_mpdm = self if inplace else self.copy()
         for istep in range(nsteps):
-            MPOprop, HAM, Etot = new_mpdm.hybrid_exact_propagator(mpo, -dbeta, space=space)
+            MPOprop, HAM, Etot = new_mpdm.hybrid_exact_propagator(
+                mpo, -dbeta, space=space
+            )
             new_mpdm = MPOprop.apply(new_mpdm)
             unitary_propagation(new_mpdm.wfns, HAM, Etot, dbeta / 1.0j)
             # partition function can't be obtained
@@ -211,7 +235,9 @@ class MpDm(Mpo, Mps):
                 prev_mt = reduced_density_matrix_product[-1]
                 new_mt = np.tensordot(prev_mt, reduced_mt, 1)
                 reduced_density_matrix_product[-1] = new_mt
-        reduced_density_matrix = np.zeros((self.mol_list.mol_num, self.mol_list.mol_num), dtype=np.complex128)
+        reduced_density_matrix = np.zeros(
+            (self.mol_list.mol_num, self.mol_list.mol_num), dtype=np.complex128
+        )
         for i in range(self.mol_list.mol_num):
             for j in range(self.mol_list.mol_num):
                 elem = np.array([1]).reshape(1, 1)

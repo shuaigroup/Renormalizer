@@ -18,6 +18,7 @@ from ephMPS.utils import sizeof_fmt
 
 logger = logging.getLogger(__name__)
 
+
 class MatrixProduct:
     @classmethod
     def from_raw_list(cls, raw_list, mol_list):
@@ -40,7 +41,7 @@ class MatrixProduct:
         self._pbond_list = None
 
         # mpo also need to be compressed sometimes
-        self._compress_method = 'svd'
+        self._compress_method = "svd"
         self.threshold = 1e-3
 
         self.peak_bytes = 0
@@ -66,7 +67,7 @@ class MatrixProduct:
 
     @compress_method.setter
     def compress_method(self, value):
-        assert value in ['svd', 'variational']
+        assert value in ["svd", "variational"]
         self._compress_method = value
 
     @property
@@ -87,7 +88,11 @@ class MatrixProduct:
 
     @property
     def bond_dims(self):
-        bond_dims = [mt.bond_dim[0] for mt in self] + [self[-1].bond_dim[-1]] if self.site_num else []
+        bond_dims = (
+            [mt.bond_dim[0] for mt in self] + [self[-1].bond_dim[-1]]
+            if self.site_num
+            else []
+        )
         return bond_dims
 
     @property
@@ -186,7 +191,9 @@ class MatrixProduct:
         else:
             return range(0, self.site_num - 1)
 
-    def _update_ms(self, idx, u, vt, sigma=None, qnlset=None, qnrset=None, m_trunc=None):
+    def _update_ms(
+        self, idx, u, vt, sigma=None, qnlset=None, qnrset=None, m_trunc=None
+    ):
         if m_trunc is None:
             m_trunc = u.shape[1]
         u = u[:, :m_trunc]
@@ -194,17 +201,23 @@ class MatrixProduct:
         if sigma is not None:
             sigma = sigma[:m_trunc]
             if self.is_left_canon:
-                u = np.einsum('ji, i -> ji', u, sigma)
+                u = np.einsum("ji, i -> ji", u, sigma)
             else:
-                vt = np.einsum('i, ij -> ij', sigma, vt)
+                vt = np.einsum("i, ij -> ij", sigma, vt)
         if self.is_left_canon:
             self[idx - 1] = np.tensordot(self[idx - 1], u, axes=1)
-            ret_mpsi = np.reshape(vt, [m_trunc] + list(self[idx].pdim) + [vt.shape[1] // self[idx].pdim_prod])
+            ret_mpsi = np.reshape(
+                vt,
+                [m_trunc] + list(self[idx].pdim) + [vt.shape[1] // self[idx].pdim_prod],
+            )
             if qnrset is not None:
                 self.qn[idx] = qnrset[:m_trunc]
         else:
             self[idx + 1] = np.tensordot(vt, self[idx + 1], axes=1)
-            ret_mpsi = np.reshape(u, [u.shape[0] // self[idx].pdim_prod] + list(self[idx].pdim) + [m_trunc])
+            ret_mpsi = np.reshape(
+                u,
+                [u.shape[0] // self[idx].pdim_prod] + list(self[idx].pdim) + [m_trunc],
+            )
             if qnlset is not None:
                 self.qn[idx + 1] = qnlset[:m_trunc]
         assert ret_mpsi.any()
@@ -258,7 +271,7 @@ class MatrixProduct:
                 assert self.check_left_canonical()
             else:
                 assert self.check_right_canonical()
-        system = 'R' if self.is_left_canon else 'L'
+        system = "R" if self.is_left_canon else "L"
 
         for idx in self.iter_idx_list:
             mt = self[idx]
@@ -268,11 +281,12 @@ class MatrixProduct:
             else:
                 mt = mt.l_combine()
             qnbigl, qnbigr = self._get_big_qn(idx)
-            u, sigma, qnlset, v, sigma, qnrset = svd_qn.Csvd(mt, qnbigl, qnbigr, self.qntot,
-                                                             system=system, full_matrices=False)
+            u, sigma, qnlset, v, sigma, qnrset = svd_qn.Csvd(
+                mt, qnbigl, qnbigr, self.qntot, system=system, full_matrices=False
+            )
             vt = v.T
 
-            if self.threshold < 1.:
+            if self.threshold < 1.0:
                 # count how many sing vals < trunc
                 normed_sigma = sigma / scipy.linalg.norm(sigma)
                 # m_trunc=len([s for s in normed_sigma if s >trunc])
@@ -295,9 +309,16 @@ class MatrixProduct:
             else:
                 mt = mt.l_combine()
             qnbigl, qnbigr = self._get_big_qn(idx)
-            system = 'R' if self.is_left_canon else 'L'
-            u, qnlset, v, qnrset = svd_qn.Csvd(mt, qnbigl, qnbigr, self.qntot,
-                                               QR=True, system=system, full_matrices=False)
+            system = "R" if self.is_left_canon else "L"
+            u, qnlset, v, qnrset = svd_qn.Csvd(
+                mt,
+                qnbigl,
+                qnbigr,
+                self.qntot,
+                QR=True,
+                system=system,
+                full_matrices=False,
+            )
             self._update_ms(idx, u, v.T, sigma=None, qnlset=qnlset, qnrset=qnrset)
         self._switch_domain()
 
@@ -354,10 +375,14 @@ class MatrixProduct:
         return [np.array(mt) for mt in self]
 
     def distance(self, other):
-        if not hasattr(other, 'conj'):
+        if not hasattr(other, "conj"):
             other = self.__class__.from_raw_list(other, self.mol_list)
-        return self.conj().dot(self) - np.abs(self.conj().dot(other)) - np.abs(
-            other.conj().dot(self)) + other.conj().dot(other)
+        return (
+            self.conj().dot(self)
+            - np.abs(self.conj().dot(other))
+            - np.abs(other.conj().dot(self))
+            + other.conj().dot(other)
+        )
 
     def copy(self):
         return copy.deepcopy(self)
@@ -380,8 +405,12 @@ class MatrixProduct:
         if new_bytes < self.peak_bytes:
             return
         self.peak_bytes = new_bytes
-        stack = ''.join(traceback.format_stack(inspect.stack()[2].frame, 1)).replace('\n', ' ')
-        logger.debug('Set peak bytes to {}. Called from: {}'.format(sizeof_fmt(new_bytes), stack))
+        stack = "".join(traceback.format_stack(inspect.stack()[2].frame, 1)).replace(
+            "\n", " "
+        )
+        logger.debug(
+            "Set peak bytes to {}. Called from: {}".format(sizeof_fmt(new_bytes), stack)
+        )
 
     def _get_sigmaqn(self, idx):
         raise NotImplementedError
@@ -399,7 +428,7 @@ class MatrixProduct:
         return not self == other
 
     def __repr__(self):
-        return '%s with %d sites' % (self.__class__, len(self))
+        return "%s with %d sites" % (self.__class__, len(self))
 
     def __iter__(self):
         return iter(self._mp)

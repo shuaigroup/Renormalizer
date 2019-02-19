@@ -20,14 +20,16 @@ def test_ZT_dynamics_TDH():
 
     operators = []
     for imol in range(len(mol_list)):
-        dipoleO = tdh.construct_onsiteO(mol_list, "a^\dagger a", dipole=False, mol_idx_set={imol})
+        dipoleO = tdh.construct_onsiteO(
+            mol_list, "a^\dagger a", dipole=False, mol_idx_set={imol}
+        )
         operators.append(dipoleO)
 
     nsteps = 100 - 1
     dt = 10.0
     dynamics = tdh.Dynamics(mol_list, property_ops=operators)
     dynamics.evolve(dt, nsteps)
-    with open(os.path.join(cur_dir, "ZT_occ10.npy"), 'rb') as f:
+    with open(os.path.join(cur_dir, "ZT_occ10.npy"), "rb") as f:
         std = np.load(f)
     assert np.allclose(dynamics.properties, std)
 
@@ -40,17 +42,20 @@ def test_FT_dynamics_TDH():
 
     operators = []
     for imol in range(len(mol_list)):
-        dipoleO = tdh.construct_onsiteO(mol_list, "a^\dagger a", dipole=False, mol_idx_set={imol})
+        dipoleO = tdh.construct_onsiteO(
+            mol_list, "a^\dagger a", dipole=False, mol_idx_set={imol}
+        )
         operators.append(dipoleO)
 
     T = Quantity(2000, "K")
     insteps = 1
-    dynamics = tdh.Dynamics(mol_list, property_ops=operators, temperature=T, insteps=insteps)
+    dynamics = tdh.Dynamics(
+        mol_list, property_ops=operators, temperature=T, insteps=insteps
+    )
     nsteps = 300 - 1
     dt = 10.0
     dynamics.evolve(dt, nsteps)
 
-    with open(os.path.join(cur_dir, "FT_occ10.npy"), 'rb') as f:
+    with open(os.path.join(cur_dir, "FT_occ10.npy"), "rb") as f:
         std = np.load(f)
     assert np.allclose(dynamics.properties, std)
-

@@ -9,7 +9,8 @@ from ephMPS.tests.parameter import mol_list, custom_mol_list
 from ephMPS.utils import constant
 
 nexciton = 1
-procedure = [[10,0.4],[20,0.2],[30,0.1],[40,0],[40,0]]
+procedure = [[10, 0.4], [20, 0.2], [30, 0.1], [40, 0], [40, 0]]
+
 
 def test_construct_MPO():
     Mmax = 10
@@ -23,7 +24,10 @@ def test_construct_MPO():
 
 def test_construct_MPO_scheme3():
     Mmax = 10
-    J = np.array([[0.0,-0.1,0.0],[-0.1,0.0,-0.3],[0.0,-0.3,0.0]]) / constant.au2ev
+    J = (
+        np.array([[0.0, -0.1, 0.0], [-0.1, 0.0, -0.3], [0.0, -0.3, 0.0]])
+        / constant.au2ev
+    )
     mol_list = custom_mol_list(J)
     mps2, mpo2 = construct_mps_mpo_2(mol_list, Mmax, nexciton, scheme=2)
     mps3, mpo3 = construct_mps_mpo_2(mol_list, Mmax, nexciton, scheme=3)
@@ -31,7 +35,8 @@ def test_construct_MPO_scheme3():
     assert mpo2.pbond_list == mpo3.pbond_list
     assert mpo3.distance(mpo2) == pytest.approx(0)
 
-@pytest.mark.parametrize("value", ([1],[2]))
+
+@pytest.mark.parametrize("value", ([1], [2]))
 def test_optimization(value):
     mps, mpo = construct_mps_mpo_2(mol_list, procedure[0][0], nexciton, scheme=value[0])
     mps.optimize_config.procedure = procedure
@@ -42,6 +47,7 @@ def test_optimization(value):
     mps.optimize_config.method = "1site"
     energy = optimize_mps(mps.copy(), mpo)
     assert energy * constant.au2ev == pytest.approx(2.28614053133)
+
 
 def test_multistate():
     mps, mpo = construct_mps_mpo_2(mol_list, procedure[0][0], nexciton, scheme=2)

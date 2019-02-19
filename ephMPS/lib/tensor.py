@@ -2,14 +2,14 @@
 # Author: Jiajun Ren <jiajunren0522@gmail.com>
 
 
-'''
+"""
 automatic construct tensordot string with einsum style
-'''
+"""
 import numpy as np
 
 
 def multi_tensor_contract(path, *operands):
-    '''
+    """
     ipath[0] is the index of the mat
     ipaht[1] is the contraction index
     oeprands is the arrays
@@ -20,20 +20,25 @@ def multi_tensor_contract(path, *operands):
             ([1, 0],"flcge, helc -> fgh")]
     outtensor = tensorlib.multi_tensor_contract(path, MPSconj[isite], intensor,
             MPO[isite], MPS[isite])
-    '''
+    """
 
     operands = list(operands)
     for ipath in path:
 
-        input_str, results_str = ipath[1].split('->')
-        input_str = input_str.split(',')
+        input_str, results_str = ipath[1].split("->")
+        input_str = input_str.split(",")
         input_str = [x.replace(" ", "") for x in input_str]
         results_set = set(results_str)
         inputs_set = set(input_str[0] + input_str[1])
         idx_removed = inputs_set - (inputs_set & results_set)
 
-        tmpmat = pair_tensor_contract(operands[ipath[0][0]], input_str[0],
-                                      operands[ipath[0][1]], input_str[1], idx_removed)
+        tmpmat = pair_tensor_contract(
+            operands[ipath[0][0]],
+            input_str[0],
+            operands[ipath[0][1]],
+            input_str[1],
+            idx_removed,
+        )
 
         for x in sorted(ipath[0], reverse=True):
             del operands[x]

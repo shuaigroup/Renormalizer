@@ -11,8 +11,9 @@ from ephMPS.mps.solver import construct_mps_mpo_2, optimize_mps
 from ephMPS.utils import pickle
 from ephMPS.mps.tests import cur_dir
 
-nexciton=1
-procedure = [[20,0.4],[20,0.2],[20,0.1],[20,0],[20,0]]
+nexciton = 1
+procedure = [[20, 0.4], [20, 0.2], [20, 0.1], [20, 0], [20, 0]]
+
 
 def test_csvd():
     np.random.seed(0)
@@ -21,6 +22,6 @@ def test_csvd():
     mps1.optimize_config.procedure = procedure
     optimize_mps(mps1, mpo)
     mps1.compress()
-    with open(os.path.join(cur_dir, 'test_svd_qn.pickle'), 'rb') as fin:
+    with open(os.path.join(cur_dir, "test_svd_qn.pickle"), "rb") as fin:
         mps2 = pickle.load(fin)
-    assert mps1.distance(mps2) == pytest.approx(0)
+    assert mps1.distance(mps2) == pytest.approx(0, abs=1e-8)

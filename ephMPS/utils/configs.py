@@ -3,9 +3,8 @@ from enum import Enum
 
 
 class OptimizeConfig:
-
     def __init__(self):
-        self.procedure = [[10,0.4],[20,0.2],[30,0.1],[40,0],[40,0]]
+        self.procedure = [[10, 0.4], [20, 0.2], [30, 0.1], [40, 0], [40, 0]]
         self.method = "2site"
         self.nroots = 1
         self.inverse = 1.0
@@ -23,7 +22,6 @@ class EvolveMethod(Enum):
 
 
 class EvolveConfig:
-
     def __init__(self):
         self.scheme = EvolveMethod.prop_and_compress
         if self.scheme == EvolveMethod.prop_and_compress:

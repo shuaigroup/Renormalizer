@@ -1,13 +1,12 @@
 # -*- coding: utf-8 -*-
 # Author: Jiajun Ren <jiajunren0522@gmail.com>
 
-electron = 'e'
+electron = "e"
 
-phonon = 'ph'
+phonon = "ph"
 
 
 class EphTable(tuple):
-
     @classmethod
     def all_phonon(cls, site_num):
         return cls([phonon] * site_num)
@@ -39,5 +38,4 @@ class EphTable(tuple):
         return res
 
     def __str__(self):
-        return '[' + ', '.join(self) + ']'
-
+        return "[" + ", ".join(self) + "]"

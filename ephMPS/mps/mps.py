@@ -16,16 +16,24 @@ from ephMPS.mps.mpo import Mpo
 from ephMPS.mps.tdh import mflib
 from ephMPS.lib import tensor as tensorlib
 from ephMPS.lib import solve_ivp
-from ephMPS.utils import Quantity, OptimizeConfig, EvolveConfig, EvolveMethod, sizeof_fmt
+from ephMPS.utils import (
+    Quantity,
+    OptimizeConfig,
+    EvolveConfig,
+    EvolveMethod,
+    sizeof_fmt,
+)
 
 logger = logging.getLogger(__name__)
 
 
 cached_property_set = set()
 
+
 def _cached_property(func):
     cached_property_set.add(func.__name__)
     return cached_property(func)
+
 
 def invalidate_cache_decorator(f):
     def wrapper(self, *args, **kwargs):
@@ -33,16 +41,17 @@ def invalidate_cache_decorator(f):
         assert isinstance(ret, self.__class__)
         ret.invalidate_cache()
         return ret
+
     return wrapper
 
-class Mps(MatrixProduct):
 
+class Mps(MatrixProduct):
     @classmethod
     def random(cls, mpo, nexciton, m_max, percent=0):
         mps = cls()
         mps.mol_list = mpo.mol_list
-        mps.qn = [[0], ]
-        dim_list = [1, ]
+        mps.qn = [[0]]
+        dim_list = [1]
 
         for imps in range(len(mpo) - 1):
 
@@ -66,16 +75,22 @@ class Mps(MatrixProduct):
 
             u_set = np.concatenate(u_set, axis=1)
             s_set = np.concatenate(s_set)
-            mt, mpsdim, mpsqn, nouse = updatemps(u_set, s_set, qnset, u_set, nexciton, m_max, percent=percent)
+            mt, mpsdim, mpsqn, nouse = updatemps(
+                u_set, s_set, qnset, u_set, nexciton, m_max, percent=percent
+            )
             # add the next mpsdim
             dim_list.append(mpsdim)
-            mps.append(mt.reshape(dim_list[imps], mps.pbond_list[imps], dim_list[imps + 1]))
+            mps.append(
+                mt.reshape(dim_list[imps], mps.pbond_list[imps], dim_list[imps + 1])
+            )
             mps.qn.append(mpsqn)
 
         # the last site
         mps.qn.append([0])
         dim_list.append(1)
-        mps.append(np.random.random([dim_list[-2], mps.pbond_list[-1], dim_list[-1]]) - 0.5)
+        mps.append(
+            np.random.random([dim_list[-2], mps.pbond_list[-1], dim_list[-1]]) - 0.5
+        )
 
         mps.qnidx = len(mps) - 1
         mps.qntot = nexciton
@@ -104,7 +119,7 @@ class Mps(MatrixProduct):
         mps.qn = [[0]] * (len(mps.ephtable) + 1)
         mps.qnidx = len(mps.ephtable) - 1
         mps.qntot = 0
-        
+
         for mol in mol_list:
             # electron mps
             mps.append(np.array([1, 0]).reshape(1, 2, 1))
@@ -161,7 +176,9 @@ class Mps(MatrixProduct):
 
     def to_complex(self, inplace=False):
         new_mp = super(Mps, self).to_complex(inplace=inplace)
-        new_mp.wfns = [wfn.astype(np.complex128) for wfn in new_mp.wfns[:-1]] + [new_mp.wfns[-1]]
+        new_mp.wfns = [wfn.astype(np.complex128) for wfn in new_mp.wfns[:-1]] + [
+            new_mp.wfns[-1]
+        ]
         return new_mp
 
     def _get_sigmaqn(self, idx):
@@ -201,26 +218,28 @@ class Mps(MatrixProduct):
 
     @_cached_property
     def norm(self):
-        #return self.dmrg_norm * self.hartree_norm
+        # return self.dmrg_norm * self.hartree_norm
         return self.wfns[-1]
 
-    #@_cached_property
+    # @_cached_property
     @property
     def dmrg_norm(self):
         # the fast version in the comment rarely makes sense because in a lot of cases
         # the mps is not canonicalised (though qnidx is set)
-        ''' Fast version yet not safe. Needs further testing
+        """ Fast version yet not safe. Needs further testing
         if self.is_left_canon:
             assert self.check_left_canonical()
             return np.linalg.norm(np.ravel(self[-1]))
         else:
             assert self.check_right_canonical()
             return np.linalg.norm(np.ravel(self[0]))
-        '''
+        """
         return np.sqrt(self.conj().dot(self, with_hartree=False).real)
 
     def calc_e_occupation(self, idx):
-        return self.expectation(Mpo.onsite(self.mol_list, 'a^\dagger a', mol_idx_set={idx}))
+        return self.expectation(
+            Mpo.onsite(self.mol_list, "a^\dagger a", mol_idx_set={idx})
+        )
 
     def calc_ph_occupation(self, mol_idx, ph_idx):
         return self.expectation(Mpo.ph_occupation_mpo(self.mol_list, mol_idx, ph_idx))
@@ -277,10 +296,12 @@ class Mps(MatrixProduct):
                 mtb = other[i]
                 pdim = mta.shape[1]
                 assert pdim == mtb.shape[1]
-                new_mps[i] = np.zeros([mta.shape[0] + mtb.shape[0], pdim,
-                                       mta.shape[2] + mtb.shape[2]], dtype=np.complex128)
-                new_mps[i][:mta.shape[0], :, :mta.shape[2]] = mta[:, :, :]
-                new_mps[i][mta.shape[0]:, :, mta.shape[2]:] = mtb[:, :, :]
+                new_mps[i] = np.zeros(
+                    [mta.shape[0] + mtb.shape[0], pdim, mta.shape[2] + mtb.shape[2]],
+                    dtype=np.complex128,
+                )
+                new_mps[i][: mta.shape[0], :, : mta.shape[2]] = mta[:, :, :]
+                new_mps[i][mta.shape[0] :, :, mta.shape[2] :] = mtb[:, :, :]
 
             new_mps[-1] = np.vstack([self[-1], other[-1]])
         elif self.is_mpo or self.is_mpdm:  # MPO
@@ -293,10 +314,17 @@ class Mps(MatrixProduct):
                 assert pdimu == mtb.shape[1]
                 assert pdimd == mtb.shape[2]
 
-                new_mps[i] = np.zeros([mta.shape[0] + mtb.shape[0], pdimu, pdimd,
-                                       mta.shape[3] + mtb.shape[3]], dtype=np.complex128)
-                new_mps[i][:mta.shape[0], :, :, :mta.shape[3]] = mta[:, :, :, :]
-                new_mps[i][mta.shape[0]:, :, :, mta.shape[3]:] = mtb[:, :, :, :]
+                new_mps[i] = np.zeros(
+                    [
+                        mta.shape[0] + mtb.shape[0],
+                        pdimu,
+                        pdimd,
+                        mta.shape[3] + mtb.shape[3],
+                    ],
+                    dtype=np.complex128,
+                )
+                new_mps[i][: mta.shape[0], :, :, : mta.shape[3]] = mta[:, :, :, :]
+                new_mps[i][mta.shape[0] :, :, :, mta.shape[3] :] = mtb[:, :, :, :]
 
                 new_mps[-1] = np.concatenate((self[-1], other[-1]), axis=0)
         else:
@@ -376,7 +404,7 @@ class Mps(MatrixProduct):
     def evolve_dmrg_tdvp_mctdh(self, mpo, evolve_dt):
         # TDVP for original MCTDH
         if self.is_left_canon:
-            assert  self.check_left_canonical()
+            assert self.check_left_canonical()
             self.canonicalise()
         # qn for this method has not been implemented
         self.use_dummy_qn = True
@@ -392,8 +420,12 @@ class Mps(MatrixProduct):
         new_mps = self.copy()
 
         for imps in range(len(mps)):
-            ltensor = GetLR('L', imps - 1, mps, mps_conj, mpo, itensor=ltensor, method="System")
-            rtensor = GetLR('R', imps + 1, mps, mps_conj, mpo, itensor=rtensor, method="Enviro")
+            ltensor = GetLR(
+                "L", imps - 1, mps, mps_conj, mpo, itensor=ltensor, method="System"
+            )
+            rtensor = GetLR(
+                "R", imps + 1, mps, mps_conj, mpo, itensor=rtensor, method="Enviro"
+            )
             # density matrix
             S = transferMat(mps, mps_conj, "R", imps + 1)
 
@@ -403,7 +435,7 @@ class Mps(MatrixProduct):
             # print
             # "sum w=", np.sum(w)
             # S  = u.dot(np.diag(w)).dot(np.conj(u.T))
-            S_inv = u.dot(np.diag(1. / w)).dot(np.conj(u.T))
+            S_inv = u.dot(np.diag(1.0 / w)).dot(np.conj(u.T))
 
             # pseudo inverse
             # S_inv = scipy.linalg.pinvh(S,rcond=1e-2)
@@ -412,7 +444,7 @@ class Mps(MatrixProduct):
 
             shape = mps[imps].shape
 
-            func = integrand_func_factory(shape, hop, imps==len(mps)-1, S_inv)
+            func = integrand_func_factory(shape, hop, imps == len(mps) - 1, S_inv)
 
             sol = solve_ivp(func, (0, evolve_dt), mps[imps].ravel(), method="RK45")
             # print
@@ -454,11 +486,17 @@ class Mps(MatrixProduct):
         for imps in range(len(mps)):
             shape = list(mps[imps].shape)
 
-            u, s, vt = scipy.linalg.svd(mps[imps].reshape(-1, shape[-1]), full_matrices=False)
+            u, s, vt = scipy.linalg.svd(
+                mps[imps].reshape(-1, shape[-1]), full_matrices=False
+            )
             mps[imps] = u.reshape(shape[:-1] + [-1])
 
-            ltensor = GetLR('L', imps - 1, mps, mps.conj(), mpo,itensor=ltensor, method="System")
-            rtensor = GetLR('R', imps + 1, mps, mps.conj(), mpo,itensor=rtensor, method="Enviro")
+            ltensor = GetLR(
+                "L", imps - 1, mps, mps.conj(), mpo, itensor=ltensor, method="System"
+            )
+            rtensor = GetLR(
+                "R", imps + 1, mps, mps.conj(), mpo, itensor=rtensor, method="Enviro"
+            )
 
             epsilon = 1e-10
             epsilon = np.sqrt(epsilon)
@@ -477,11 +515,11 @@ class Mps(MatrixProduct):
             # print
             # "sum density matrix", np.sum(S)
 
-            S_inv = np.diag(1. / s)
+            S_inv = np.diag(1.0 / s)
 
             hop = hop_factory(ltensor, rtensor, mpo[imps])
 
-            func = integrand_func_factory(shape, hop, imps==len(mps)-1, S_inv)
+            func = integrand_func_factory(shape, hop, imps == len(mps) - 1, S_inv)
 
             sol = solve_ivp(func, (0, evolve_dt), mps[imps].ravel(), method="RK45")
             # print
@@ -525,14 +563,20 @@ class Mps(MatrixProduct):
         ltensor = np.ones((1, 1, 1))
         rtensor = np.ones((1, 1, 1))
 
-        loop = [['R', i] for i in range(len(mps) - 1, -1, -1)] + [['L', i] for i in range(0, len(mps))]
+        loop = [["R", i] for i in range(len(mps) - 1, -1, -1)] + [
+            ["L", i] for i in range(0, len(mps))
+        ]
         for system, imps in loop:
             if system == "R":
                 lmethod, rmethod = "Enviro", "System"
-                ltensor = GetLR('L', imps - 1, mps, mps.conj(), mpo, itensor=ltensor, method=lmethod)
+                ltensor = GetLR(
+                    "L", imps - 1, mps, mps.conj(), mpo, itensor=ltensor, method=lmethod
+                )
             else:
                 lmethod, rmethod = "System", "Enviro"
-                rtensor = GetLR('R', imps + 1, mps, mps.conj(), mpo, itensor=rtensor, method=rmethod)
+                rtensor = GetLR(
+                    "R", imps + 1, mps, mps.conj(), mpo, itensor=rtensor, method=rmethod
+                )
 
             hop = hop_factory(ltensor, rtensor, mpo[imps])
 
@@ -543,8 +587,7 @@ class Mps(MatrixProduct):
                 #
                 # S-c   k-S
 
-                path = [([0, 1], "abc, ck -> abk"),
-                        ([1, 0], "abk, lbk -> al")]
+                path = [([0, 1], "abc, ck -> abk"), ([1, 0], "abk, lbk -> al")]
                 HC = tensorlib.multi_tensor_contract(path, ltensor, mps, rtensor)
                 return HC
 
@@ -553,9 +596,11 @@ class Mps(MatrixProduct):
             def func(t, y):
                 return hop(y.reshape(shape)).ravel() / 1.0j
 
-            sol = solve_ivp(func, (0, evolve_dt / 2.), mps[imps].ravel(), method="RK45")
-            #print
-            #"nsteps for MPS[imps]:", len(sol.t)
+            sol = solve_ivp(
+                func, (0, evolve_dt / 2.0), mps[imps].ravel(), method="RK45"
+            )
+            # print
+            # "nsteps for MPS[imps]:", len(sol.t)
             mps_t = sol.y[:, -1].reshape(shape)
 
             if system == "L" and imps != len(mps) - 1:
@@ -563,7 +608,9 @@ class Mps(MatrixProduct):
                 u, vt = scipy.linalg.qr(mps_t.reshape(-1, shape[-1]), mode="economic")
                 mps[imps] = u.reshape(shape[:-1] + [-1])
 
-                ltensor = GetLR('L', imps, mps, mps.conj(), mpo, itensor=ltensor, method="System")
+                ltensor = GetLR(
+                    "L", imps, mps, mps.conj(), mpo, itensor=ltensor, method="System"
+                )
 
                 # reverse update svt site
                 shape_svt = vt.shape
@@ -571,17 +618,23 @@ class Mps(MatrixProduct):
                 def func_svt(t, y):
                     return hop_svt(y.reshape(shape_svt)).ravel() / 1.0j
 
-                sol_svt = solve_ivp(func_svt, (0, -evolve_dt / 2), vt.ravel(), method="RK45")
-                #print
-                #"nsteps for svt:", len(sol_svt.t)
-                mps[imps + 1] = np.tensordot(sol_svt.y[:, -1].reshape(shape_svt), mps[imps + 1], axes=(1, 0))
+                sol_svt = solve_ivp(
+                    func_svt, (0, -evolve_dt / 2), vt.ravel(), method="RK45"
+                )
+                # print
+                # "nsteps for svt:", len(sol_svt.t)
+                mps[imps + 1] = np.tensordot(
+                    sol_svt.y[:, -1].reshape(shape_svt), mps[imps + 1], axes=(1, 0)
+                )
 
             elif system == "R" and imps != 0:
                 # updated imps site
                 u, vt = scipy.linalg.rq(mps_t.reshape(shape[0], -1), mode="economic")
                 mps[imps] = vt.reshape([-1] + shape[1:])
 
-                rtensor = GetLR('R', imps, mps, mps.conj(), mpo, itensor=rtensor, method="System")
+                rtensor = GetLR(
+                    "R", imps, mps, mps.conj(), mpo, itensor=rtensor, method="System"
+                )
 
                 # reverse update u site
                 shape_u = u.shape
@@ -590,21 +643,24 @@ class Mps(MatrixProduct):
                     return hop_svt(y.reshape(shape_u)).ravel() / 1.0j
 
                 sol_u = solve_ivp(func_u, (0, -evolve_dt / 2), u.ravel(), method="RK45")
-                #print
-                #"nsteps for u:", len(sol_u.t)
-                mps[imps - 1] = np.tensordot(mps[imps - 1], sol_u.y[:, -1].reshape(shape_u), axes=(-1, 0))
+                # print
+                # "nsteps for u:", len(sol_u.t)
+                mps[imps - 1] = np.tensordot(
+                    mps[imps - 1], sol_u.y[:, -1].reshape(shape_u), axes=(-1, 0)
+                )
 
             else:
                 mps[imps] = mps_t
 
         return mps
 
-        #print
-        #"tMPS dim:", [mps.shape[0] for mps in MPSnew] + [1]
-
+        # print
+        # "tMPS dim:", [mps.shape[0] for mps in MPSnew] + [1]
 
     def evolve_exact(self, h_mpo, evolve_dt, space):
-        MPOprop, HAM, Etot = self.hybrid_exact_propagator(h_mpo, -1.0j * evolve_dt, space)
+        MPOprop, HAM, Etot = self.hybrid_exact_propagator(
+            h_mpo, -1.0j * evolve_dt, space
+        )
         new_mps = MPOprop.apply(self, canonicalise=True)
         unitary_propagation(new_mps.wfns, HAM, Etot, evolve_dt)
         return new_mps
@@ -623,14 +679,14 @@ class Mps(MatrixProduct):
         for ms in self:
             prod = np.tensordot(prod, ms, axes=1)
             prod = prod.reshape((prod.shape[0], -1, prod.shape[-1]))
-        return {'var': prod.var(), 'mean': prod.mean(), 'ptp': prod.ptp()}
+        return {"var": prod.var(), "mean": prod.mean(), "ptp": prod.ptp()}
 
     # put the below 2 constructors here because they really depend on the implement details of MPS (at least the
     # Hartree part).
     def construct_hybrid_Ham(self, mpo_indep, debug=False):
-        '''
+        """
         construct hybrid DMRG and Hartree(-Fock) Hamiltonian
-        '''
+        """
         mol_list = self.mol_list
         WFN = self.wfns
         nmols = len(mol_list)
@@ -654,7 +710,9 @@ class Mps(MatrixProduct):
         # construct new HMPO
         # e_mean = mpslib.dot(mpslib.conj(MPS),mpslib.mapply(MPO_indep,MPS))
         e_mean = self.expectation(mpo_indep)
-        elocal_offset = np.array([mol_list[imol].hartree_e0 + B_vib_mol[imol] for imol in range(nmols)]).real
+        elocal_offset = np.array(
+            [mol_list[imol].hartree_e0 + B_vib_mol[imol] for imol in range(nmols)]
+        ).real
         e_mean += A_el.dot(elocal_offset)
         total_offset = mpo_indep.offset + Quantity(e_mean.real)
         MPO = Mpo(mol_list, elocal_offset=elocal_offset, offset=total_offset)
@@ -668,7 +726,11 @@ class Mps(MatrixProduct):
                 e_mean = mflib.exp_value(WFN[iwfn], ph.h_indep, WFN[iwfn])
                 Etot += e_mean
                 e_mean += A_el[imol] * B_vib[imol][iph]
-                HAM.append(ph.h_indep + ph.h_dep * A_el[imol] - np.diag([e_mean] * WFN[iwfn].shape[0]))
+                HAM.append(
+                    ph.h_indep
+                    + ph.h_dep * A_el[imol]
+                    - np.diag([e_mean] * WFN[iwfn].shape[0])
+                )
                 iwfn += 1
         logger.debug("Etot= %g" % Etot)
         if debug:
@@ -678,16 +740,18 @@ class Mps(MatrixProduct):
 
     # provide e_mean and mpo_indep separately because e_mean can be precomputed and stored to avoid multiple computation
     def hybrid_exact_propagator(self, mpo_indep, x, space="GS"):
-        '''
+        """
         construct the exact propagator in the GS space or single molecule
-        '''
+        """
         assert space in ["GS", "EX"]
 
         e_mean = self.expectation(mpo_indep)
         logger.debug("e_mean in exact propagator: %g" % e_mean)
 
         total_offset = (mpo_indep.offset + Quantity(e_mean.real)).as_au()
-        MPOprop = Mpo.exact_propagator(self.mol_list, x, space=space, shift=-total_offset)
+        MPOprop = Mpo.exact_propagator(
+            self.mol_list, x, space=space, shift=-total_offset
+        )
 
         Etot = total_offset
 
@@ -700,7 +764,9 @@ class Mps(MatrixProduct):
                 h_vib_dep = ph.h_dep
                 e_mean = mflib.exp_value(self.wfns[iwfn], h_vib_indep, self.wfns[iwfn])
                 if space == "EX":
-                    e_mean += mflib.exp_value(self.wfns[iwfn], h_vib_dep, self.wfns[iwfn])
+                    e_mean += mflib.exp_value(
+                        self.wfns[iwfn], h_vib_dep, self.wfns[iwfn]
+                    )
                 Etot += e_mean
 
                 if space == "GS":
@@ -715,19 +781,30 @@ class Mps(MatrixProduct):
 
         return MPOprop, HAM, Etot
 
-
     def hartree_wfn_diff(self, other):
         assert len(self.wfns) == len(other.wfns)
         res = []
         for wfn1, wfn2 in zip(self.wfns, other.wfns):
-            res.append(scipy.linalg.norm(np.tensordot(wfn1, wfn1, axes=0) - np.tensordot(wfn2, wfn2, axes=0)))
+            res.append(
+                scipy.linalg.norm(
+                    np.tensordot(wfn1, wfn1, axes=0) - np.tensordot(wfn2, wfn2, axes=0)
+                )
+            )
         return np.array(res)
 
     def __str__(self):
         # too many digits in the default format
-        e_occupations_str = ', '.join(['%.2f' % number for number in self.e_occupations])
-        template_str = 'threshold: {:g}, current size: {}, peak size: {}, Matrix product bond order:{}, electron occupations: {}'
-        return template_str.format(self.threshold, sizeof_fmt(self.total_bytes), sizeof_fmt(self.peak_bytes), self.bond_dims, e_occupations_str)
+        e_occupations_str = ", ".join(
+            ["%.2f" % number for number in self.e_occupations]
+        )
+        template_str = "threshold: {:g}, current size: {}, peak size: {}, Matrix product bond order:{}, electron occupations: {}"
+        return template_str.format(
+            self.threshold,
+            sizeof_fmt(self.total_bytes),
+            sizeof_fmt(self.peak_bytes),
+            self.bond_dims,
+            e_occupations_str,
+        )
 
 
 def projector(ms):
@@ -737,6 +814,7 @@ def projector(ms):
     proj = Iden - proj
     return proj
 
+
 def hop_factory(ltensor, rtensor, mo):
     def hop(ms):
         # S-a   l-S
@@ -745,9 +823,11 @@ def hop_factory(ltensor, rtensor, mo):
         #     e
         # S-c   k-S
         if ms.ndim == 3:
-            path = [([0, 1], "abc, cek -> abek"),
-                    ([2, 0], "abek, bdef -> akdf"),
-                    ([1, 0], "akdf, lfk -> adl")]
+            path = [
+                ([0, 1], "abc, cek -> abek"),
+                ([2, 0], "abek, bdef -> akdf"),
+                ([1, 0], "akdf, lfk -> adl"),
+            ]
             HC = tensorlib.multi_tensor_contract(path, ltensor, ms, mo, rtensor)
 
         # S-a   l-S
@@ -757,14 +837,18 @@ def hop_factory(ltensor, rtensor, mo):
         # S-c   k-S
         #     g
         elif ms.ndim == 4:
-            path = [([0, 1], "abc, bdef -> acdef"),
-                    ([2, 0], "acdef, cegk -> adfgk"),
-                    ([1, 0], "adfgk, lfk -> adgl")]
+            path = [
+                ([0, 1], "abc, bdef -> acdef"),
+                ([2, 0], "acdef, cegk -> adfgk"),
+                ([1, 0], "adfgk, lfk -> adgl"),
+            ]
             HC = tensorlib.multi_tensor_contract(path, ltensor, mo, ms, rtensor)
         else:
             assert False
         return HC
+
     return hop
+
 
 def integrand_func_factory(shape, hop, islast, S_inv):
     def func(t, y):
@@ -779,4 +863,5 @@ def integrand_func_factory(shape, hop, islast, S_inv):
                 HC = np.tensordot(proj, HC, axes=([3, 4, 5], [0, 1, 2]))
                 HC = np.tensordot(proj, HC, axes=([3, 4, 5], [0, 1, 2]))
         return np.tensordot(HC, S_inv, axes=(-1, 0)).ravel() / 1.0j
+
     return func

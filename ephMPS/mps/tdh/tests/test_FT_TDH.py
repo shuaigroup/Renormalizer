@@ -16,42 +16,50 @@ def test_FT_DM():
     nexciton = 1
     T = Quantity(298, "K")
     insteps = 100
-    tdHartree = tdh.Dynamics(hartree_mol_list, property_ops=[], temperature=T, insteps=insteps)
+    tdHartree = tdh.Dynamics(
+        hartree_mol_list, property_ops=[], temperature=T, insteps=insteps
+    )
     DM = tdHartree._FT_DM(nexciton)
     HAM, Etot, A_el = tdHartree.construct_H_Ham(nexciton, DM, debug=True)
     assert Etot == pytest.approx(0.0856330141528)
-    occ_std = np.array([[0.20300487], [0.35305247],[0.44394266]])
+    occ_std = np.array([[0.20300487], [0.35305247], [0.44394266]])
     assert np.allclose(A_el, occ_std)
 
     # DMRGresult
     # energy = 0.08534143842580197
     # occ = 0.20881751295568823, 0.35239681740226808, 0.43878566964204374
 
-@pytest.mark.parametrize("D_value, spectratype, std_path",
-                         (
-                                 [[0.0, 0.0], "emi", "TDH_FT_emi_0.npy"],
-                                 [[30.1370, 8.7729], "emi", "TDH_FT_emi.npy"],
-                                 [[0.0, 0.0], "abs", "TDH_FT_abs_0.npy"],
-                                 [[30.1370, 8.7729], "abs", "TDH_FT_abs.npy"])
-                         )
+
+@pytest.mark.parametrize(
+    "D_value, spectratype, std_path",
+    (
+        [[0.0, 0.0], "emi", "TDH_FT_emi_0.npy"],
+        [[30.1370, 8.7729], "emi", "TDH_FT_emi.npy"],
+        [[0.0, 0.0], "abs", "TDH_FT_abs_0.npy"],
+        [[30.1370, 8.7729], "abs", "TDH_FT_abs.npy"],
+    ),
+)
 def test_FT_spectra(D_value, spectratype, std_path):
 
     if spectratype == "emi":
-        E_offset = 2.28614053/constant.au2ev
+        E_offset = 2.28614053 / constant.au2ev
     elif spectratype == "abs":
-        E_offset = -2.28614053/constant.au2ev
+        E_offset = -2.28614053 / constant.au2ev
     else:
         assert False
 
-    mol_list = custom_mol_list(None, dis=[Quantity(d) for d in D_value], hartrees=[True, True])
+    mol_list = custom_mol_list(
+        None, dis=[Quantity(d) for d in D_value], hartrees=[True, True]
+    )
 
-    T = Quantity(298, 'K')
+    T = Quantity(298, "K")
     insteps = 50
-    spectra = tdh.LinearSpectra(spectratype, mol_list, E_offset=E_offset, temperature=T, insteps=insteps)
+    spectra = tdh.LinearSpectra(
+        spectratype, mol_list, E_offset=E_offset, temperature=T, insteps=insteps
+    )
     nsteps = 300 - 1
     dt = 30.0
     spectra.evolve(dt, nsteps)
-    with open(os.path.join(cur_dir, std_path), 'rb') as f:
+    with open(os.path.join(cur_dir, std_path), "rb") as f:
         std = np.load(f)
-    assert np.allclose(spectra.autocorr,std)
-
+    assert np.allclose(spectra.autocorr, std)

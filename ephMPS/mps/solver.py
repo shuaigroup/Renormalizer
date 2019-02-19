@@ -25,23 +25,25 @@ def find_highest_energy(h_mpo, nexciton, Mmax):
     mps = Mps.random(h_mpo, nexciton, Mmax)
     mps.optimize_config.inverse = -1.0
     energy = optimize_mps(mps, h_mpo)
-    return - energy.min()
+    return -energy.min()
 
 
-def construct_mps_mpo_2(mol_list, Mmax, nexciton, scheme, rep="star", offset=Quantity(0)):
-    '''
+def construct_mps_mpo_2(
+    mol_list, Mmax, nexciton, scheme, rep="star", offset=Quantity(0)
+):
+    """
     MPO/MPS structure 2
     e1,ph11,ph12,..e2,ph21,ph22,...en,phn1,phn2...
-    '''
+    """
 
-    '''
+    """
     initialize MPO
-    '''
+    """
     mpo = Mpo(mol_list, scheme=scheme, rep=rep, offset=offset)
 
-    '''
+    """
     initialize MPS according to quantum number
-    '''
+    """
     mps = Mps.random(mpo, nexciton, Mmax, percent=1)
     # print("initialize left-canonical:", mps.check_left_canonical())
 
@@ -71,7 +73,9 @@ def optimize_mps(mps, mpo):
 
         # check convergence
         dmrg_converge = abs(mps.angle(MPS_old) - 1) < mps.optimize_config.dmrg_thresh
-        hartree_converge = np.all(mps.hartree_wfn_diff(MPS_old) < mps.optimize_config.hartree_thresh)
+        hartree_converge = np.all(
+            mps.hartree_wfn_diff(MPS_old) < mps.optimize_config.hartree_thresh
+        )
         if dmrg_converge and hartree_converge:
             logger.info("SCF converge!")
             break
@@ -79,11 +83,11 @@ def optimize_mps(mps, mpo):
 
 
 def optimize_mps_dmrg(mps, mpo):
-    '''
+    """
     1 or 2 site optimization procedure
     inverse = 1.0 / -1.0 
     -1.0 to get the largest eigenvalue
-    '''
+    """
 
     method = mps.optimize_config.method
     procedure = mps.optimize_config.procedure
@@ -101,11 +105,15 @@ def optimize_mps_dmrg(mps, mpo):
     nMPS = len(mps)
     # construct each sweep cycle scheme
     if method == "1site":
-        loop = [['R', i] for i in range(nMPS - 1, -1, -1)] + [['L', i] for i in range(0, nMPS)]
+        loop = [["R", i] for i in range(nMPS - 1, -1, -1)] + [
+            ["L", i] for i in range(0, nMPS)
+        ]
     else:
-        loop = [['R', i] for i in range(nMPS - 1, 0, -1)] + [['L', i] for i in range(1, nMPS)]
+        loop = [["R", i] for i in range(nMPS - 1, 0, -1)] + [
+            ["L", i] for i in range(1, nMPS)
+        ]
 
-    # initial matrix   
+    # initial matrix
     ltensor = np.ones((1, 1, 1))
     rtensor = np.ones((1, 1, 1))
 
@@ -115,9 +123,9 @@ def optimize_mps_dmrg(mps, mpo):
 
         for system, imps in loop:
             if system == "R":
-                lmethod, rmethod = 'Enviro', 'System'
+                lmethod, rmethod = "Enviro", "System"
             else:
-                lmethod, rmethod = 'System', 'Enviro'
+                lmethod, rmethod = "System", "Enviro"
 
             if method == "1site":
                 lsite = imps - 1
@@ -126,11 +134,15 @@ def optimize_mps_dmrg(mps, mpo):
                 lsite = imps - 2
                 addlist = [imps - 1, imps]
 
-            ltensor = GetLR('L', lsite, mps, mps, mpo, itensor=ltensor, method=lmethod)
-            rtensor = GetLR('R', imps + 1, mps, mps, mpo, itensor=rtensor, method=rmethod)
+            ltensor = GetLR("L", lsite, mps, mps, mpo, itensor=ltensor, method=lmethod)
+            rtensor = GetLR(
+                "R", imps + 1, mps, mps, mpo, itensor=rtensor, method=rmethod
+            )
 
             # get the quantum number pattern
-            qnmat, qnbigl, qnbigr = construct_qnmat(mps, mpo.ephtable, mpo.pbond_list, addlist, method, system)
+            qnmat, qnbigl, qnbigr = construct_qnmat(
+                mps, mpo.ephtable, mpo.pbond_list, addlist, method, system
+            )
             cshape = qnmat.shape
 
             # hdiag
@@ -141,26 +153,31 @@ def optimize_mps_dmrg(mps, mpo):
                 #   S-a c f-S
                 #   O-b-O-g-O
                 #   S-a c f-S
-                path = [([0, 1], "ba, bcg -> acg"),
-                        ([1, 0], "acg, gf -> acf")]
-                hdiag = tensorlib.multi_tensor_contract(path, tmp_ltensor,
-                                                        tmp_MPOimps, tmp_rtensor)[(qnmat == nexciton)]
-                # initial guess   b-S-c 
-                #                   a    
+                path = [([0, 1], "ba, bcg -> acg"), ([1, 0], "acg, gf -> acf")]
+                hdiag = tensorlib.multi_tensor_contract(
+                    path, tmp_ltensor, tmp_MPOimps, tmp_rtensor
+                )[(qnmat == nexciton)]
+                # initial guess   b-S-c
+                #                   a
                 cguess = mps[imps][qnmat == nexciton]
             else:
                 #   S-a c   d f-S
                 #   O-b-O-e-O-g-O
                 #   S-a c   d f-S
                 tmp_MPOimpsm1 = np.einsum("abbc -> abc", mpo[imps - 1])
-                path = [([0, 1], "ba, bce -> ace"),
-                        ([0, 1], "edg, gf -> edf"),
-                        ([0, 1], "ace, edf -> acdf")]
-                hdiag = tensorlib.multi_tensor_contract(path, tmp_ltensor,
-                                                        tmp_MPOimpsm1, tmp_MPOimps, tmp_rtensor)[(qnmat == nexciton)]
+                path = [
+                    ([0, 1], "ba, bce -> ace"),
+                    ([0, 1], "edg, gf -> edf"),
+                    ([0, 1], "ace, edf -> acdf"),
+                ]
+                hdiag = tensorlib.multi_tensor_contract(
+                    path, tmp_ltensor, tmp_MPOimpsm1, tmp_MPOimps, tmp_rtensor
+                )[(qnmat == nexciton)]
                 # initial guess b-S-c-S-e
                 #                 a   d
-                cguess = np.tensordot(mps[imps - 1], mps[imps], axes=1)[qnmat == nexciton]
+                cguess = np.tensordot(mps[imps - 1], mps[imps], axes=1)[
+                    qnmat == nexciton
+                ]
 
             hdiag *= inverse
             nonzeros = np.sum(qnmat == nexciton)
@@ -175,30 +192,37 @@ def optimize_mps_dmrg(mps, mpo):
 
                 if method == "1site":
                     # S-a   l-S
-                    #    d  
+                    #    d
                     # O-b-O-f-O
-                    #    e 
+                    #    e
                     # S-c   k-S
 
-                    path = [([0, 1], "abc, adl -> bcdl"),
-                            ([2, 0], "bcdl, bdef -> clef"),
-                            ([1, 0], "clef, lfk -> cek")]
-                    cout = tensorlib.multi_tensor_contract(path, ltensor,
-                                                           cstruct, mpo[imps], rtensor)
+                    path = [
+                        ([0, 1], "abc, adl -> bcdl"),
+                        ([2, 0], "bcdl, bdef -> clef"),
+                        ([1, 0], "clef, lfk -> cek"),
+                    ]
+                    cout = tensorlib.multi_tensor_contract(
+                        path, ltensor, cstruct, mpo[imps], rtensor
+                    )
                 else:
                     # S-a       l-S
-                    #    d   g 
+                    #    d   g
                     # O-b-O-f-O-j-O
                     #    e   h
                     # S-c       k-S
-                    path = [([0, 1], "abc, adgl -> bcdgl"),
-                            ([3, 0], "bcdgl, bdef -> cglef"),
-                            ([2, 0], "cglef, fghj -> clehj"),
-                            ([1, 0], "clehj, ljk -> cehk")]
-                    cout = tensorlib.multi_tensor_contract(path, ltensor,
-                                                           cstruct, mpo[imps - 1], mpo[imps], rtensor)
-                # convert structure c to 1d according to qn 
+                    path = [
+                        ([0, 1], "abc, adgl -> bcdgl"),
+                        ([3, 0], "bcdgl, bdef -> cglef"),
+                        ([2, 0], "cglef, fghj -> clehj"),
+                        ([1, 0], "clehj, ljk -> cehk"),
+                    ]
+                    cout = tensorlib.multi_tensor_contract(
+                        path, ltensor, cstruct, mpo[imps - 1], mpo[imps], rtensor
+                    )
+                # convert structure c to 1d according to qn
                 return inverse * cout[qnmat == nexciton]
+
             if nroots != 1:
                 cguess = [cguess]
                 for iroot in range(nroots - 1):
@@ -206,7 +230,9 @@ def optimize_mps_dmrg(mps, mpo):
 
             precond = lambda x, e, *args: x / (hdiag - e + 1e-4)
 
-            e, c = davidson(hop, cguess, precond, max_cycle=100, nroots=nroots, max_memory=64000)
+            e, c = davidson(
+                hop, cguess, precond, max_cycle=100, nroots=nroots, max_memory=64000
+            )
             # scipy arpack solver : much slower than davidson
             # A = spslinalg.LinearOperator((nonzeros,nonzeros), matvec=hop)
             # e, c = spslinalg.eigsh(A,k=1, which="SA",v0=cguess)
@@ -219,33 +245,47 @@ def optimize_mps_dmrg(mps, mpo):
 
             if nroots == 1:
                 # direct svd the coefficient matrix
-                mt, mpsdim, mpsqn, compmps = renormalization_svd(cstruct, qnbigl, qnbigr,
-                                                                 system, nexciton, Mmax=mmax, percent=percent)
+                mt, mpsdim, mpsqn, compmps = renormalization_svd(
+                    cstruct,
+                    qnbigl,
+                    qnbigr,
+                    system,
+                    nexciton,
+                    Mmax=mmax,
+                    percent=percent,
+                )
             else:
                 # diagonalize the reduced density matrix
-                mt, mpsdim, mpsqn, compmps = renormalization_ddm(cstruct, qnbigl, qnbigr,
-                                                                 system, nexciton, Mmax=mmax, percent=percent)
+                mt, mpsdim, mpsqn, compmps = renormalization_ddm(
+                    cstruct,
+                    qnbigl,
+                    qnbigr,
+                    system,
+                    nexciton,
+                    Mmax=mmax,
+                    percent=percent,
+                )
 
             if method == "1site":
                 mps[imps] = mt
                 if system == "L":
                     if imps != len(mps) - 1:
                         mps[imps + 1] = np.tensordot(compmps, mps[imps + 1], axes=1)
-                        #mps.dim_list[imps + 1] = mpsdim
+                        # mps.dim_list[imps + 1] = mpsdim
                         mps.qn[imps + 1] = mpsqn
                     else:
                         mps[imps] = np.tensordot(mps[imps], compmps, axes=1)
-                        #mps.dim_list[imps + 1] = 1
+                        # mps.dim_list[imps + 1] = 1
                         mps.qn[imps + 1] = [0]
 
                 else:
                     if imps != 0:
                         mps[imps - 1] = np.tensordot(mps[imps - 1], compmps, axes=1)
-                        #mps.dim_list[imps] = mpsdim
+                        # mps.dim_list[imps] = mpsdim
                         mps.qn[imps] = mpsqn
                     else:
                         mps[imps] = np.tensordot(compmps, mps[imps], axes=1)
-                        #mps.dim_list[imps] = 1
+                        # mps.dim_list[imps] = 1
                         mps.qn[imps] = [0]
             else:
                 if system == "L":
@@ -255,7 +295,7 @@ def optimize_mps_dmrg(mps, mpo):
                     mps[imps] = mt
                     mps[imps - 1] = compmps
 
-                #mps.dim_list[imps] = mpsdim
+                # mps.dim_list[imps] = mpsdim
                 mps.qn[imps] = mpsqn
 
     energies = np.array(energies)
@@ -275,56 +315,91 @@ def optimize_mps_hartree(mps, HAM):
 
 
 def renormalization_svd(cstruct, qnbigl, qnbigr, domain, nexciton, Mmax, percent=0):
-    '''
+    """
         get the new mps, mpsdim, mpdqn, complementary mps to get the next guess
         with singular value decomposition method (1 root)
-    '''
+    """
     assert domain in ["R", "L"]
 
-    Uset, SUset, qnlnew, Vset, SVset, qnrnew = svd_qn.Csvd(cstruct, qnbigl, qnbigr, nexciton, system=domain)
+    Uset, SUset, qnlnew, Vset, SVset, qnrnew = svd_qn.Csvd(
+        cstruct, qnbigl, qnbigr, nexciton, system=domain
+    )
     if domain == "R":
-        mps, mpsdim, mpsqn, compmps = updatemps(Vset, SVset, qnrnew, Uset,
-                                                nexciton, Mmax, percent=percent)
-        return np.moveaxis(mps.reshape(list(qnbigr.shape) + [mpsdim]), -1, 0), mpsdim, mpsqn, \
-               compmps.reshape(list(qnbigl.shape) + [mpsdim])
+        mps, mpsdim, mpsqn, compmps = updatemps(
+            Vset, SVset, qnrnew, Uset, nexciton, Mmax, percent=percent
+        )
+        return (
+            np.moveaxis(mps.reshape(list(qnbigr.shape) + [mpsdim]), -1, 0),
+            mpsdim,
+            mpsqn,
+            compmps.reshape(list(qnbigl.shape) + [mpsdim]),
+        )
     else:
-        mps, mpsdim, mpsqn, compmps = updatemps(Uset, SUset, qnlnew, Vset,
-                                                nexciton, Mmax, percent=percent)
-        return mps.reshape(list(qnbigl.shape) + [mpsdim]), mpsdim, mpsqn, \
-               np.moveaxis(compmps.reshape(list(qnbigr.shape) + [mpsdim]), -1, 0)
+        mps, mpsdim, mpsqn, compmps = updatemps(
+            Uset, SUset, qnlnew, Vset, nexciton, Mmax, percent=percent
+        )
+        return (
+            mps.reshape(list(qnbigl.shape) + [mpsdim]),
+            mpsdim,
+            mpsqn,
+            np.moveaxis(compmps.reshape(list(qnbigr.shape) + [mpsdim]), -1, 0),
+        )
 
 
 def renormalization_ddm(cstruct, qnbigl, qnbigr, domain, nexciton, Mmax, percent=0):
-    '''
+    """
         get the new mps, mpsdim, mpdqn, complementary mps to get the next guess
         with diagonalize reduced density matrix method (> 1 root)
-    '''
+    """
     nroots = len(cstruct)
     ddm = 0.0
     for iroot in range(nroots):
         if domain == "R":
-            ddm += np.tensordot(cstruct[iroot], cstruct[iroot],
-                                axes=(range(qnbigl.ndim), range(qnbigl.ndim)))
+            ddm += np.tensordot(
+                cstruct[iroot],
+                cstruct[iroot],
+                axes=(range(qnbigl.ndim), range(qnbigl.ndim)),
+            )
         else:
-            ddm += np.tensordot(cstruct[iroot], cstruct[iroot],
-                                axes=(range(qnbigl.ndim, cstruct[0].ndim),
-                                      range(qnbigl.ndim, cstruct[0].ndim)))
+            ddm += np.tensordot(
+                cstruct[iroot],
+                cstruct[iroot],
+                axes=(
+                    range(qnbigl.ndim, cstruct[0].ndim),
+                    range(qnbigl.ndim, cstruct[0].ndim),
+                ),
+            )
     ddm /= float(nroots)
     if domain == "L":
         Uset, Sset, qnnew = svd_qn.Csvd(ddm, qnbigl, qnbigl, nexciton, ddm=True)
     else:
         Uset, Sset, qnnew = svd_qn.Csvd(ddm, qnbigr, qnbigr, nexciton, ddm=True)
-    mps, mpsdim, mpsqn, compmps = updatemps(Uset, Sset, qnnew, None,
-                                            nexciton, Mmax, percent=percent)
+    mps, mpsdim, mpsqn, compmps = updatemps(
+        Uset, Sset, qnnew, None, nexciton, Mmax, percent=percent
+    )
 
     if domain == "R":
-        return np.moveaxis(mps.reshape(list(qnbigr.shape) + [mpsdim]), -1, 0), mpsdim, mpsqn, \
-               np.tensordot(cstruct[0], mps.reshape(list(qnbigr.shape) + [mpsdim]),
-                            axes=(range(qnbigl.ndim, cstruct[0].ndim), range(qnbigr.ndim)))
+        return (
+            np.moveaxis(mps.reshape(list(qnbigr.shape) + [mpsdim]), -1, 0),
+            mpsdim,
+            mpsqn,
+            np.tensordot(
+                cstruct[0],
+                mps.reshape(list(qnbigr.shape) + [mpsdim]),
+                axes=(range(qnbigl.ndim, cstruct[0].ndim), range(qnbigr.ndim)),
+            ),
+        )
     else:
-        return mps.reshape(list(qnbigl.shape) + [mpsdim]), mpsdim, mpsqn, \
-               np.tensordot(mps.reshape(list(qnbigl.shape) + [mpsdim]), cstruct[0],
-                            axes=(range(qnbigl.ndim), range(qnbigl.ndim)))
+        return (
+            mps.reshape(list(qnbigl.shape) + [mpsdim]),
+            mpsdim,
+            mpsqn,
+            np.tensordot(
+                mps.reshape(list(qnbigl.shape) + [mpsdim]),
+                cstruct[0],
+                axes=(range(qnbigl.ndim), range(qnbigl.ndim)),
+            ),
+        )
 
 
 def cvec2cmat(cshape, c, qnmat, nexciton, nroots=1):
@@ -343,13 +418,13 @@ def cvec2cmat(cshape, c, qnmat, nexciton, nroots=1):
 
 
 def construct_qnmat(mps, ephtable, pbond, addlist, method, system):
-    '''
+    """
     construct the quantum number pattern, the structure is as the coefficient
     QN: quantum number list at each bond
     ephtable : e-ph table 1 is electron and 0 is phonon 
     pbond : physical pbond
     addlist : the sigma orbital set
-    '''
+    """
     # print(method)
     assert method in ["1site", "2site"]
     assert system in ["L", "R"]

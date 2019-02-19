@@ -4,15 +4,16 @@ import numpy as np
 
 from ephMPS.mps.rk import coefficient_dict
 
+
 def test_rk():
     std_list = [
-        ('Forward_Euler', [1.0, 1.0]),
-        ('Heun_RK2', [1.0, 1.0, 0.5]),
-        ('Ralston_RK2', [1.0, 1.0, 0.5]),
-        ('midpoint_RK2', [1.0, 1.0, 0.5]),
-        ('Kutta_RK3', [1., 1., 0.5, 0.16666667]),
-        ('C_RK4', [1., 1., 0.5, 0.16666667, 0.04166667]),
-        ('38rule_RK4', [1., 1., 0.5, 0.16666667, 0.04166667])
+        ("Forward_Euler", [1.0, 1.0]),
+        ("Heun_RK2", [1.0, 1.0, 0.5]),
+        ("Ralston_RK2", [1.0, 1.0, 0.5]),
+        ("midpoint_RK2", [1.0, 1.0, 0.5]),
+        ("Kutta_RK3", [1.0, 1.0, 0.5, 0.16666667]),
+        ("C_RK4", [1.0, 1.0, 0.5, 0.16666667, 0.04166667]),
+        ("38rule_RK4", [1.0, 1.0, 0.5, 0.16666667, 0.04166667]),
     ]
     for method, std in std_list:
         assert np.allclose(coefficient_dict[method], std)

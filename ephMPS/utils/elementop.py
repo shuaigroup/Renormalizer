@@ -10,8 +10,8 @@ import numpy as np
 
 
 def op_matrix(op, size, type):
-    assert type in ['e', 'ph']
-    if type == 'e':
+    assert type in ["e", "ph"]
+    if type == "e":
         element_func = e_element_op
     else:
         element_func = ph_element_op
@@ -23,14 +23,22 @@ def op_matrix(op, size, type):
 
 
 def e_op_matrix(op, size):
-    return op_matrix(op, size, 'e')
+    return op_matrix(op, size, "e")
 
 
 def ph_op_matrix(op, size):
-    return op_matrix(op, size, 'ph')
+    return op_matrix(op, size, "ph")
 
 
-ph_op_list = ["b", "b^\dagger", "b^\dagger b", "b^\dagger + b", "Iden", "(b^\dagger + b)^2", "(b^\dagger + b)^3"]
+ph_op_list = [
+    "b",
+    "b^\dagger",
+    "b^\dagger b",
+    "b^\dagger + b",
+    "Iden",
+    "(b^\dagger + b)^2",
+    "(b^\dagger + b)^3",
+]
 
 
 def ph_element_op(op, bra, ket):
@@ -70,28 +78,32 @@ def ph_element_op(op, bra, ket):
             return 0.0
     elif op == "(b^\dagger + b)^2":
         if bra == ket + 2:
-            return np.sqrt(float(ket+1)*float(ket+2))
+            return np.sqrt(float(ket + 1) * float(ket + 2))
         elif bra == ket:
-            return float(ket*2+1)
+            return float(ket * 2 + 1)
         elif bra == ket - 2:
-            return np.sqrt(float(ket)*float(ket-1))
+            return np.sqrt(float(ket) * float(ket - 1))
         else:
             return 0.0
     elif op == "(b^\dagger + b)^3":
         if bra == ket + 3:
-            return np.sqrt((ket+1)*(ket+2)*(ket+3))
+            return np.sqrt((ket + 1) * (ket + 2) * (ket + 3))
         elif bra == ket + 1:
-            return np.sqrt((ket+1)**3) \
-                    + np.sqrt((ket+1)*(ket+2)**2) \
-                    + np.sqrt(ket**2*(ket+1))
+            return (
+                np.sqrt((ket + 1) ** 3)
+                + np.sqrt((ket + 1) * (ket + 2) ** 2)
+                + np.sqrt(ket ** 2 * (ket + 1))
+            )
         elif bra == ket - 1:
-            return np.sqrt((ket+1)**2*ket)\
-                    + np.sqrt(ket*(ket-1)**2)\
-                    + np.sqrt(ket**3)
+            return (
+                np.sqrt((ket + 1) ** 2 * ket)
+                + np.sqrt(ket * (ket - 1) ** 2)
+                + np.sqrt(ket ** 3)
+            )
         elif bra == ket - 3:
-            return np.sqrt(ket*(ket-1)*(ket-2))
-        else: 
-            return 0.0 
+            return np.sqrt(ket * (ket - 1) * (ket - 2))
+        else:
+            return 0.0
 
 
 e_op_list = ["a^\dagger", "a", "a^\dagger a", "Iden"]

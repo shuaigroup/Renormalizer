@@ -12,18 +12,26 @@ logger = logging.getLogger(__name__)
 
 
 class SpectraZeroT(SpectraTdMpsJobBase):
-
-    def __init__(self, mol_list, spectratype, optimize_config=None, evolve_config=None, scheme=2, offset=Quantity(0)):
+    def __init__(
+        self,
+        mol_list,
+        spectratype,
+        optimize_config=None,
+        evolve_config=None,
+        scheme=2,
+        offset=Quantity(0),
+    ):
         if optimize_config is None:
             self.optimize_config = OptimizeConfig()
         else:
             self.optimize_config = optimize_config
 
-        super(SpectraZeroT, self).__init__(mol_list, spectratype, Quantity(0), scheme, evolve_config, offset)
-
+        super(SpectraZeroT, self).__init__(
+            mol_list, spectratype, Quantity(0), scheme, evolve_config, offset
+        )
 
     def init_mps(self):
-        if self.spectratype == 'emi':
+        if self.spectratype == "emi":
             operator = "a"
         else:
             operator = "a^\dagger"
@@ -43,7 +51,6 @@ class SpectraZeroT(SpectraTdMpsJobBase):
 
 
 class SpectraOneWayPropZeroT(SpectraZeroT):
-
     def evolve_single_step(self, evolve_dt):
         latest_bra_mps, latest_ket_mps = self.latest_mps
         latest_ket_mps = latest_ket_mps.evolve(self.h_mpo, evolve_dt)
@@ -51,7 +58,6 @@ class SpectraOneWayPropZeroT(SpectraZeroT):
 
 
 class SpectraTwoWayPropZeroT(SpectraZeroT):
-
     def evolve_single_step(self, evolve_dt):
         latest_bra_mps, latest_ket_mps = self.latest_mps
         if len(self.tdmps_list) % 2 == 1:
@@ -59,4 +65,3 @@ class SpectraTwoWayPropZeroT(SpectraZeroT):
         else:
             latest_bra_mps = latest_bra_mps.evolve(self.h_mpo, -evolve_dt)
         return BraKetPair(latest_bra_mps, latest_ket_mps)
-

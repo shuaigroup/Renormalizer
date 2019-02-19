@@ -25,8 +25,17 @@ class SpectraExact(SpectraTdMpsJobBase):
     all cases: 0Temi
     1mol case: 0Temi, TTemi, 0Tabs, TTabs
     """
-    def __init__(self, mol_list, spectratype, temperature=Quantity(0, 'K'), optimize_config=None,
-                 offset=Quantity(0), ex_shift=0, gs_shift=0):
+
+    def __init__(
+        self,
+        mol_list,
+        spectratype,
+        temperature=Quantity(0, "K"),
+        optimize_config=None,
+        offset=Quantity(0),
+        ex_shift=0,
+        gs_shift=0,
+    ):
         # != 0 cases not tested
         assert ex_shift == gs_shift == 0
         assert temperature == 0
@@ -46,7 +55,9 @@ class SpectraExact(SpectraTdMpsJobBase):
         if optimize_config is None:
             optimize_config = OptimizeConfig()
         self.optimize_config = optimize_config
-        super(SpectraExact, self).__init__(mol_list, spectratype, temperature, offset=offset)
+        super(SpectraExact, self).__init__(
+            mol_list, spectratype, temperature, offset=offset
+        )
         self.i_mps = self.latest_mps.ket_mps
         self.e_mean = self.i_mps.expectation(self.h_mpo)
 
@@ -56,9 +67,9 @@ class SpectraExact(SpectraTdMpsJobBase):
         i_mps.optimize_config = self.optimize_config
         solver.optimize_mps(i_mps, self.h_mpo)
         if self.spectratype == "emi":
-            operator = 'a'
+            operator = "a"
         else:
-            operator = 'a^\dagger'
+            operator = "a^\dagger"
         dipole_mpo = Mpo.onsite(self.mol_list, operator, dipole=True)
         if self.temperature != 0:
             beta = self.temperature.to_beta()
@@ -68,7 +79,9 @@ class SpectraExact(SpectraTdMpsJobBase):
             # ket_mps.normalize()
             # no test, don't know work or not
             i_mpdm = MpDm.from_mps(i_mps)
-            ket_mps = i_mpdm.thermal_prop_exact(self.h_mpo, -beta / 2.0, 1, self.space1, inplace=True)
+            ket_mps = i_mpdm.thermal_prop_exact(
+                self.h_mpo, -beta / 2.0, 1, self.space1, inplace=True
+            )
         else:
             ket_mps = i_mps
         a_ket_mps = dipole_mpo.apply(ket_mps, canonicalise=True)
@@ -85,5 +98,7 @@ class SpectraExact(SpectraTdMpsJobBase):
         latest_bra_mps, latest_ket_mps = self.latest_mps
         latest_ket_mps = latest_ket_mps.evolve_exact(self.h_mpo, evolve_dt, self.space2)
         if self.temperature != 0:
-            latest_ket_mps = latest_bra_mps.evolve_exact(self.h_mpo, evolve_dt, self.space1)
+            latest_ket_mps = latest_bra_mps.evolve_exact(
+                self.h_mpo, evolve_dt, self.space1
+            )
         return BraKetPair(latest_bra_mps, latest_ket_mps)

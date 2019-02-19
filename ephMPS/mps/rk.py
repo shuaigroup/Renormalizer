@@ -1,15 +1,25 @@
 # -*- coding: utf-8 -*-
 # Author: Jiajun Ren <jiajunren0522@gmail.com>
 
-'''
+"""
 automatic Runge-Kutta method coefficient calculation
-'''
+"""
 
 import numpy as np
 from scipy.special import factorial
 
-method_list = ["Forward_Euler", "midpoint_RK2", "Heun_RK2", "Ralston_RK2",
-                "Kutta_RK3", "C_RK4", "38rule_RK4", "Fehlberg5", "RKF45"]
+method_list = [
+    "Forward_Euler",
+    "midpoint_RK2",
+    "Heun_RK2",
+    "Ralston_RK2",
+    "Kutta_RK3",
+    "C_RK4",
+    "38rule_RK4",
+    "Fehlberg5",
+    "RKF45",
+]
+
 
 class Runge_Kutta(object):
     def __init__(self, method="C_RK4", TD=False, adaptive=False, rtol=1e-3):
@@ -35,14 +45,14 @@ class Runge_Kutta(object):
 
     @property
     def Te_coeff(self):
-        '''
+        """
         Taylor_expansion_coefficient
-        '''
+        """
         assert self.TD == False
-        return np.array([1. / factorial(i) for i in range(self.order[-1] + 1)])
+        return np.array([1.0 / factorial(i) for i in range(self.order[-1] + 1)])
 
     def tableau(self):
-        '''
+        """
         Butcher tableau of the explicit Runge-Kutta methods.
 
         different types of propagation methods: e^-iHdt \Psi
@@ -59,7 +69,7 @@ class Runge_Kutta(object):
                 1   |   1
                 ----------------------------
                        1/2   1/2
-        '''
+        """
 
         if self.method == "Forward_Euler":
             # Euler explicit
@@ -95,8 +105,7 @@ class Runge_Kutta(object):
 
         elif self.method == "C_RK4":
             # Classic fourth-order method
-            a = np.array([[0, 0, 0, 0], [0.5, 0, 0, 0],
-                          [0, 0.5, 0, 0], [0, 0, 1, 0]])
+            a = np.array([[0, 0, 0, 0], [0.5, 0, 0, 0], [0, 0.5, 0, 0], [0, 0, 1, 0]])
             b = np.array([1.0 / 6.0, 1.0 / 3.0, 1.0 / 3.0, 1.0 / 6.0])
             c = np.array([0, 0.5, 0.5, 1.0])
             Nstage = 4
@@ -104,39 +113,62 @@ class Runge_Kutta(object):
 
         elif self.method == "38rule_RK4":
             # 3/8 rule fourth-order method
-            a = np.array([[0, 0, 0, 0],
-                          [1.0 / 3.0, 0, 0, 0],
-                          [-1.0 / 3.0, 1, 0, 0],
-                          [1, -1, 1, 0]])
+            a = np.array(
+                [
+                    [0, 0, 0, 0],
+                    [1.0 / 3.0, 0, 0, 0],
+                    [-1.0 / 3.0, 1, 0, 0],
+                    [1, -1, 1, 0],
+                ]
+            )
             b = np.array([1.0 / 8.0, 3.0 / 8.0, 3.0 / 8.0, 1.0 / 8.0])
             c = np.array([0.0, 1.0 / 3.0, 2.0 / 3.0, 1.0])
             Nstage = 4
             order = (4,)
 
         elif self.method == "Fehlberg5":
-            a = np.array([[0, 0, 0, 0, 0, 0],
-                          [1 / 4., 0., 0., 0., 0., 0.],
-                          [3. / 32, 9. / 32, 0, 0, 0, 0],
-                          [1932. / 2197, -7200. / 2197, 7296. / 2197, 0, 0, 0],
-                          [439. / 216, -8., 3680. / 513, -845 / 4104, 0., 0.],
-                          [-8. / 27, 2., -3544. / 2565, 1859. / 4104, -11. / 40, 0.]])
-            b = np.array([16. / 135, 0., 6656. / 12825, 28561. / 56430, -9. / 50, 2. / 55])
-            c = np.array([0., 1. / 4, 3. / 8, 12. / 13, 1., 1. / 2])
+            a = np.array(
+                [
+                    [0, 0, 0, 0, 0, 0],
+                    [1 / 4.0, 0.0, 0.0, 0.0, 0.0, 0.0],
+                    [3.0 / 32, 9.0 / 32, 0, 0, 0, 0],
+                    [1932.0 / 2197, -7200.0 / 2197, 7296.0 / 2197, 0, 0, 0],
+                    [439.0 / 216, -8.0, 3680.0 / 513, -845 / 4104, 0.0, 0.0],
+                    [-8.0 / 27, 2.0, -3544.0 / 2565, 1859.0 / 4104, -11.0 / 40, 0.0],
+                ]
+            )
+            b = np.array(
+                [16.0 / 135, 0.0, 6656.0 / 12825, 28561.0 / 56430, -9.0 / 50, 2.0 / 55]
+            )
+            c = np.array([0.0, 1.0 / 4, 3.0 / 8, 12.0 / 13, 1.0, 1.0 / 2])
             Nstage = 6
             order = (5,)
 
         elif self.method == "RKF45":
             a = np.array(
-                [[0.0, 0.0, 0.0, 0.0, 0.0, 0.0],
-                 [1. / 4, 0.0, 0.0, 0.0, 0.0, 0.0],
-                 [3. / 32, 9. / 32, 0.0, 0.0, 0.0, 0.0],
-                 [1932. / 2197, -7200. / 2197, 7296. / 2197, 0.0, 0.0, 0.0],
-                 [439. / 216, -8., 3680. / 513, -845. / 4104, 0.0, 0.0],
-                 [-8. / 27, 2., -3544. / 2565, 1859. / 4104, -11. / 40, 0.0]])
-            c = np.array([0.0, 1. / 4, 3. / 8, 12. / 13, 1., 1 / 2.])
+                [
+                    [0.0, 0.0, 0.0, 0.0, 0.0, 0.0],
+                    [1.0 / 4, 0.0, 0.0, 0.0, 0.0, 0.0],
+                    [3.0 / 32, 9.0 / 32, 0.0, 0.0, 0.0, 0.0],
+                    [1932.0 / 2197, -7200.0 / 2197, 7296.0 / 2197, 0.0, 0.0, 0.0],
+                    [439.0 / 216, -8.0, 3680.0 / 513, -845.0 / 4104, 0.0, 0.0],
+                    [-8.0 / 27, 2.0, -3544.0 / 2565, 1859.0 / 4104, -11.0 / 40, 0.0],
+                ]
+            )
+            c = np.array([0.0, 1.0 / 4, 3.0 / 8, 12.0 / 13, 1.0, 1 / 2.0])
             b = np.array(
-                [[16. / 135, 0., 6656. / 12825, 28561. / 56430, -9. / 50, 2. / 55],
-                 [25. / 216, 0., 1408. / 2565, 2197. / 4104, -1. / 5, 0.]])
+                [
+                    [
+                        16.0 / 135,
+                        0.0,
+                        6656.0 / 12825,
+                        28561.0 / 56430,
+                        -9.0 / 50,
+                        2.0 / 55,
+                    ],
+                    [25.0 / 216, 0.0, 1408.0 / 2565, 2197.0 / 4104, -1.0 / 5, 0.0],
+                ]
+            )
             Nstage = 6
             order = (4, 5)
 
@@ -147,7 +179,7 @@ class Runge_Kutta(object):
         return [a, b, c], Nstage, order
 
     def runge_kutta_explicit_coefficient(self):
-        '''
+        """
         only suited for time-independent propagator
         y'(t) = fy(t) f is time-independent
         the final formula is
@@ -160,7 +192,7 @@ class Runge_Kutta(object):
         Though, each order has different versions of RK methods, if f is time
         independent, the coefficient is the same. For example, Classical 4th order
         Runge Kutta and 3/8 rule Runge Kutta has some coefficient.
-        '''
+        """
 
         a, b, c = self.tableau
         Nstage = self.stage
