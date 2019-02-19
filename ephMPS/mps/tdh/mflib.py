@@ -28,6 +28,8 @@ def normalize(WFN, norm=None):
 
     if norm is not None:
         WFN[-1] = norm
+    else:
+        WFN[-1] *= factor
 
 def canonical_normalize(WFN):
     factor = 1.0

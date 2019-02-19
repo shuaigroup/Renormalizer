@@ -440,7 +440,7 @@ class LinearSpectra(TdHartree):
 
 class Dynamics(TdHartree):
     
-    def __init__(self, mol_list, property_ops, temperature=0, insteps=None):
+    def __init__(self, mol_list, property_ops, temperature=Quantity(0, "K"), insteps=None):
         self.property_ops = property_ops
         self.properties = [[] for _ in property_ops]
         super(Dynamics, self).__init__(mol_list, 1, "hardcore boson", "unitary", temperature, insteps)

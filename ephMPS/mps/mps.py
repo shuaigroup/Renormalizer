@@ -315,7 +315,7 @@ class Mps(MatrixProduct):
     @invalidate_cache_decorator
     def normalize(self, norm=None):
         # real time propagation: dmrg should be normalized, tdh should be normalized, coefficient is not changed,
-        #  use nomr=None
+        #  use norm=None
         # imag time propagation: dmrg should be normalized, tdh should be normalized, coefficient is normalized to 1.0
         # applied by a operator then normalize: dmrg should be normalized,
         #   tdh should be normalized, coefficient is set to the length
@@ -324,8 +324,7 @@ class Mps(MatrixProduct):
         if norm is None:
             mflib.normalize(self.wfns, self.wfns[-1])
         else:
-            mflib.normalize(self.wfns)
-            self.wfns[-1] = norm
+            mflib.normalize(self.wfns, norm)
         return self
 
     def canonical_normalize(self):

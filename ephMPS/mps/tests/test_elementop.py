@@ -1,71 +1,68 @@
 # -*- coding: utf-8 -*-
 # Author: Jiajun Ren <jiajunren0522@gmail.com>
 
-import unittest
+import pytest
 
 import numpy as np
-from ddt import ddt, data, unpack
 
 from ephMPS.utils import elementop
 
+test_phonon_op_data = (
+    ['b^\dagger b', 3, 3, 3.0],
+    ['b^\dagger b', 3, 2, 0.0],
+    ['b^\dagger b', 2, 3, 0.0],
+    ['b^\dagger b', 0, 0, 0.0],
 
-@ddt
-class TestElementop(unittest.TestCase):
+    ['b^\dagger + b', 3, 3, 0.0],
+    ['b^\dagger + b', 3, 2, np.sqrt(3.0)],
+    ['b^\dagger + b', 2, 3, np.sqrt(3.0)],
+    ['b^\dagger + b', 4, 2, 0.0],
+    ['b^\dagger + b', 2, 4, 0.0],
 
-    @data(
-        ['b^\dagger b', 3, 3, 3.0],
-        ['b^\dagger b', 3, 2, 0.0],
-        ['b^\dagger b', 2, 3, 0.0],
-        ['b^\dagger b', 0, 0, 0.0],
-
-        ['b^\dagger + b', 3, 3, 0.0],
-        ['b^\dagger + b', 3, 2, np.sqrt(3.0)],
-        ['b^\dagger + b', 2, 3, np.sqrt(3.0)],
-        ['b^\dagger + b', 4, 2, 0.0],
-        ['b^\dagger + b', 2, 4, 0.0],
-
-        ['Iden', 2, 4, 0.0],
-        ['Iden', 4, 2, 0.0],
-        ['Iden', 2, 2, 1.0],
-    )
-    @unpack
-    def test_phonon_op(self, op, bra, ket, value):
-        self.assertAlmostEqual(elementop.ph_element_op(op, bra, ket), value)
-
-    def test_phonon_exception(self):
-        with self.assertRaises(AssertionError):
-            elementop.ph_element_op("b^\dagger b", 0, -1)
-
-    @data(
-        ['a^\dagger', 1, 0, 1.0],
-        ['a^\dagger', 0, 1, 0.0],
-        ['a^\dagger', 1, 1, 0.0],
-        ['a^\dagger', 0, 0, 0.0],
-
-        ['a', 1, 0, 0.0],
-        ['a', 0, 1, 1.0],
-        ['a', 1, 1, 0.0],
-        ['a', 0, 0, 0.0],
-
-        ['a^\dagger a', 1, 0, 0.0],
-        ['a^\dagger a', 0, 1, 0.0],
-        ['a^\dagger a', 1, 1, 1.0],
-        ['a^\dagger a', 0, 0, 0.0],
-
-        ['Iden', 1, 0, 0.0],
-        ['Iden', 0, 1, 0.0],
-        ['Iden', 1, 1, 1.0],
-        ['Iden', 0, 0, 1.0],
-    )
-    @unpack
-    def test_electronic_op(self, op, bra, ket, value):
-        self.assertAlmostEqual(elementop.e_element_op(op, bra, ket), value)
-
-    def test_electronic_exception(self):
-        with self.assertRaises(AssertionError):
-            elementop.e_element_op("a", 0, 3)
+    ['Iden', 2, 4, 0.0],
+    ['Iden', 4, 2, 0.0],
+    ['Iden', 2, 2, 1.0],
+)
 
 
-if __name__ == "__main__":
-    print("Test elementop")
-    unittest.main()
+@pytest.mark.parametrize("op, bra, ket, value", test_phonon_op_data)
+def test_phonon_op(op, bra, ket, value):
+    assert elementop.ph_element_op(op, bra, ket) == pytest.approx(value)
+
+
+def test_phonon_exception():
+    with pytest.raises(AssertionError):
+        elementop.ph_element_op("b^\dagger b", 0, -1)
+
+
+test_electronic_op_data = (
+    ['a^\dagger', 1, 0, 1.0],
+    ['a^\dagger', 0, 1, 0.0],
+    ['a^\dagger', 1, 1, 0.0],
+    ['a^\dagger', 0, 0, 0.0],
+
+    ['a', 1, 0, 0.0],
+    ['a', 0, 1, 1.0],
+    ['a', 1, 1, 0.0],
+    ['a', 0, 0, 0.0],
+
+    ['a^\dagger a', 1, 0, 0.0],
+    ['a^\dagger a', 0, 1, 0.0],
+    ['a^\dagger a', 1, 1, 1.0],
+    ['a^\dagger a', 0, 0, 0.0],
+
+    ['Iden', 1, 0, 0.0],
+    ['Iden', 0, 1, 0.0],
+    ['Iden', 1, 1, 1.0],
+    ['Iden', 0, 0, 1.0],
+)
+
+
+@pytest.mark.parametrize("op, bra, ket, value", test_electronic_op_data)
+def test_electronic_op(op, bra, ket, value):
+    assert elementop.e_element_op(op, bra, ket) == pytest.approx(value)
+
+
+def test_electronic_exception():
+    with pytest.raises(AssertionError):
+        elementop.e_element_op("a", 0, 3)

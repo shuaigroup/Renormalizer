@@ -128,6 +128,8 @@ def e_element_op(op, bra, ket):
             return 1.0
         else:
             return 0.0
+    else:
+        assert False
 
 
 def construct_e_op_dict(pbond):
