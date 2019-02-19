@@ -2,11 +2,13 @@
 # Author: Jiajun Ren <jiajunren0522@gmail.com>
 
 import logging
+import os
 
 import numpy as np
 
 from ephMPS.mps.tdh import tdh
 from ephMPS.tests import parameter_PBI
+from ephMPS.mps.tdh.tests import cur_dir
 from ephMPS.utils import log, Quantity
 
 
@@ -25,7 +27,7 @@ def test_ZT_dynamics_TDH():
     dt = 10.0
     dynamics = tdh.Dynamics(mol_list, property_ops=operators)
     dynamics.evolve(dt, nsteps)
-    with open("ZT_occ10.npy", 'rb') as f:
+    with open(os.path.join(cur_dir, "ZT_occ10.npy"), 'rb') as f:
         std = np.load(f)
     assert np.allclose(dynamics.properties, std)
 
@@ -48,7 +50,7 @@ def test_FT_dynamics_TDH():
     dt = 10.0
     dynamics.evolve(dt, nsteps)
 
-    with open("FT_occ10.npy", 'rb') as f:
+    with open(os.path.join(cur_dir, "FT_occ10.npy"), 'rb') as f:
         std = np.load(f)
     assert np.allclose(dynamics.properties, std)
 

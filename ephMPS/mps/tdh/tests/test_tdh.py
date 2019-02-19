@@ -2,6 +2,7 @@
 # Author: Jiajun Ren <jiajunren0522@gmail.com>
 
 import logging
+import os
 
 import numpy as np
 import pytest
@@ -12,6 +13,7 @@ from ephMPS.mps.solver import construct_mps_mpo_2, optimize_mps
 from ephMPS.mps.tdh import tdh
 from ephMPS.tests.parameter import hartree_mol_list, ph_phys_dim, custom_mol_list, \
     hartree_ph_list, elocalex, dipole_abs
+from ephMPS.mps.tdh.tests import cur_dir
 from ephMPS.utils import Quantity, log, constant
 
 
@@ -77,13 +79,13 @@ def test_TDH_ZT_emi():
 
     ls = tdh.LinearSpectra("emi", hartree_mol_list, prop_method="unitary")
     ls.evolve(dt, nsteps)
-    with open("TDH_ZT_emi_prop1.npy", 'rb') as f:
+    with open(os.path.join(cur_dir, "TDH_ZT_emi_prop1.npy"), 'rb') as f:
         TDH_ZT_emi_prop1_std = np.load(f)
     assert np.allclose(ls.autocorr, TDH_ZT_emi_prop1_std)
 
     ls = tdh.LinearSpectra("emi", hartree_mol_list, prop_method="C_RK4")
     ls.evolve(dt, nsteps)
-    with open("TDH_ZT_emi_RK4.npy", 'rb') as f:
+    with open(os.path.join(cur_dir, "TDH_ZT_emi_RK4.npy"), 'rb') as f:
         TDH_ZT_emi_RK4_std = np.load(f)
     assert np.allclose(ls.autocorr, TDH_ZT_emi_RK4_std, rtol=1e-2)
 
@@ -97,13 +99,13 @@ def test_TDH_ZT_abs():
 
     ls = tdh.LinearSpectra("abs", hartree_mol_list, E_offset=E_offset, prop_method="unitary")
     ls.evolve(dt, nsteps)
-    with open("TDH_ZT_abs_prop1.npy", 'rb') as f:
+    with open(os.path.join(cur_dir, "TDH_ZT_abs_prop1.npy"), 'rb') as f:
         TDH_ZT_abs_prop1_std = np.load(f)
     assert np.allclose(ls.autocorr, TDH_ZT_abs_prop1_std)
 
     ls = tdh.LinearSpectra("abs", hartree_mol_list, E_offset=E_offset, prop_method="C_RK4")
     ls.evolve(dt, nsteps)
-    with open("TDH_ZT_abs_RK4.npy", 'rb') as f:
+    with open(os.path.join(cur_dir, "TDH_ZT_abs_RK4.npy"), 'rb') as f:
         TDH_ZT_abs_RK4_std = np.load(f)
     assert np.allclose(ls.autocorr, TDH_ZT_abs_RK4_std, rtol=1e-3)
 
@@ -121,7 +123,7 @@ def test_1mol_ZTabs():
     dt = 30.0
     ls.evolve(dt, nsteps)
 
-    with open("1mol_ZTabs.npy", 'rb') as f:
+    with open(os.path.join(cur_dir, "1mol_ZTabs.npy"), 'rb') as f:
         mol1_ZTabs_std = np.load(f)
 
     assert np.allclose(ls.autocorr, mol1_ZTabs_std)

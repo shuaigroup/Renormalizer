@@ -1,11 +1,13 @@
 # -*- coding: utf-8 -*-
 # Author: Jiajun Ren <jiajunren0522@gmail.com>
+import os
 
 import numpy as np
 import pytest
 
 from ephMPS.mps.tdh import tdh
 from ephMPS.tests.parameter import hartree_mol_list, custom_mol_list
+from ephMPS.mps.tdh.tests import cur_dir
 from ephMPS.utils import Quantity, constant
 
 
@@ -49,7 +51,7 @@ def test_FT_spectra(D_value, spectratype, std_path):
     nsteps = 300 - 1
     dt = 30.0
     spectra.evolve(dt, nsteps)
-    with open(std_path, 'rb') as f:
+    with open(os.path.join(cur_dir, std_path), 'rb') as f:
         std = np.load(f)
     assert np.allclose(spectra.autocorr,std)
 
