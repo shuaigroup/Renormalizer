@@ -130,7 +130,7 @@ def optimize_mps_dmrg(mps, mpo):
             rtensor = GetLR('R', imps + 1, mps, mps, mpo, itensor=rtensor, method=rmethod)
 
             # get the quantum number pattern
-            qnmat, qnbigl, qnbigr = construct_qnmat(mps.qn, mpo.ephtable, mpo.pbond_list, addlist, method, system)
+            qnmat, qnbigl, qnbigr = construct_qnmat(mps, mpo.ephtable, mpo.pbond_list, addlist, method, system)
             cshape = qnmat.shape
 
             # hdiag
@@ -169,7 +169,7 @@ def optimize_mps_dmrg(mps, mpo):
             count = [0]
 
             def hop(c):
-                # convert c to initial structure according to qn patter
+                # convert c to initial structure according to qn pattern
                 cstruct = cvec2cmat(cshape, c, qnmat, nexciton)
                 count[0] += 1
 
@@ -215,7 +215,7 @@ def optimize_mps_dmrg(mps, mpo):
 
             energies.append(e)
 
-            cstruct = mps.mtype(cvec2cmat(cshape, c, qnmat, nexciton, nroots=nroots))
+            cstruct = cvec2cmat(cshape, c, qnmat, nexciton, nroots=nroots)
 
             if nroots == 1:
                 # direct svd the coefficient matrix
@@ -260,8 +260,7 @@ def optimize_mps_dmrg(mps, mpo):
 
     energies = np.array(energies)
     if nroots == 1:
-        lowestenergy = energies.min()
-        logger.debug("Optimization complete, lowest energy = %g", lowestenergy)
+        logger.debug("Optimization complete, lowest energy = %g", energies.min())
 
     return energies
 
@@ -343,7 +342,7 @@ def cvec2cmat(cshape, c, qnmat, nexciton, nroots=1):
     return cstruct
 
 
-def construct_qnmat(QN, ephtable, pbond, addlist, method, system):
+def construct_qnmat(mps, ephtable, pbond, addlist, method, system):
     '''
     construct the quantum number pattern, the structure is as the coefficient
     QN: quantum number list at each bond
@@ -354,18 +353,14 @@ def construct_qnmat(QN, ephtable, pbond, addlist, method, system):
     # print(method)
     assert method in ["1site", "2site"]
     assert system in ["L", "R"]
-    qnl = np.array(QN[addlist[0]])
-    qnr = np.array(QN[addlist[-1] + 1])
+    qnl = np.array(mps.qn[addlist[0]])
+    qnr = np.array(mps.qn[addlist[-1] + 1])
     qnmat = qnl.copy()
     qnsigmalist = []
 
     for idx in addlist:
 
-        if ephtable.is_electron(idx):
-            qnsigma = np.array([0, 1])
-        else:
-            qnsigma = np.zeros([pbond[idx]], dtype=qnl.dtype)
-
+        qnsigma = mps[idx].sigmaqn
         qnmat = np.add.outer(qnmat, qnsigma)
         qnsigmalist.append(qnsigma)
 

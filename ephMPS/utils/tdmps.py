@@ -15,6 +15,8 @@ from datetime import datetime, timedelta
 
 import numpy as np
 
+from ephMPS.utils.configs import EvolveConfig
+
 logger = logging.getLogger(__name__)
 
 
@@ -31,8 +33,12 @@ def predict_time(real_times, nsteps):
 
 class TdMpsJob(object):
 
-    def __init__(self):
+    def __init__(self, evolve_config=None):
         logger.info('Creating TDMPS job.')
+        if evolve_config is None:
+            self.evolve_config = EvolveConfig()
+        else:
+            self.evolve_config = evolve_config
         logger.info('Step 0/?. Preparing MPS in the intial state.')
         self.evolve_times = [0]
         # output abstract of current mps every x steps

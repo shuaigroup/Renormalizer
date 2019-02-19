@@ -12,7 +12,7 @@ import yaml
 from ephMPS.model import Phonon, Mol, MolList
 from ephMPS.mps import solver
 from ephMPS.transport import ChargeTransport
-from ephMPS.utils import log, Quantity
+from ephMPS.utils import log, Quantity, EvolveConfig, EvolveMethod
 
 logger = logging.getLogger(__name__)
 
@@ -28,7 +28,9 @@ if __name__ == '__main__':
                for omega, displacement in param['ph modes']]
     j_constant = Quantity(param['j constant'], param['j constant unit'])
     mol_list = MolList([Mol(Quantity(param['elocalex'], param['elocalex unit']), ph_list)] * param['mol num'], j_constant)
-    ct = ChargeTransport(mol_list, temperature=Quantity(*param['temperature']))
+    evolve_config = EvolveConfig()
+    evolve_config.scheme = EvolveMethod.tdvp_mctdh_new
+    ct = ChargeTransport(mol_list, temperature=Quantity(*param['temperature']), evolve_config=evolve_config)
     #ct.stop_at_edge = True
     ct.economic_mode = True
     ct.memory_limit = 2 ** 30  # 1 GB

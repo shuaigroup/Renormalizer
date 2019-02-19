@@ -19,8 +19,8 @@ def Csvd(cstruct, qnbigl, qnbigr, nexciton, QR=False, system=None,
     localqnl = qnbigl.ravel()
     localqnr = qnbigr.ravel()
     
-    Uset = []     # corresponse to nonzero svd value
-    Uset0 = []    # corresponse to zero svd value
+    Uset = []     # corresponds to nonzero svd value
+    Uset0 = []    # corresponds to zero svd value
     Vset = []
     Vset0 = []
     Sset = []
@@ -33,7 +33,7 @@ def Csvd(cstruct, qnbigl, qnbigr, nexciton, QR=False, system=None,
     
     if not ddm:
         # different combination
-        if cstruct.is_density_matrix:
+        if cstruct.ndim == 4: # density matrix
             combine = [[x, nexciton-x] for x in range(nexciton+1)]
         else:
             min0 = min(np.min(localqnl),np.min(localqnr))

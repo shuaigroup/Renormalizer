@@ -27,6 +27,9 @@ class EphTable(tuple):
     def is_phonon(self, idx):
         return self[idx] == phonon
 
+    def get_sigmaqn(self, idx):
+        pass
+
     @property
     def num_electron_site(self):
         res = 0

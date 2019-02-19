@@ -3,10 +3,10 @@
 
 import unittest
 
-from ddt import ddt, data, unpack
 import numpy as np
+from ddt import ddt, data, unpack
 
-from ephMPS.mps import elementop
+from ephMPS.utils import elementop
 
 
 @ddt

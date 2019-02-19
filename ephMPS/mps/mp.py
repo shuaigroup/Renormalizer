@@ -6,20 +6,23 @@ import copy
 import inspect
 import traceback
 import logging
+from typing import List
 
 import numpy as np
 import scipy
 
+from ephMPS.mps.matrix import Matrix
 from ephMPS.mps import svd_qn
+from ephMPS.model import MolList, EphTable
 from ephMPS.utils import sizeof_fmt
 
 logger = logging.getLogger(__name__)
 
-
-class MatrixProduct(list):
+class MatrixProduct:
     @classmethod
-    def from_raw_list(cls, raw_list):
+    def from_raw_list(cls, raw_list, mol_list):
         new_mp = cls()
+        new_mp.mol_list = mol_list
         if not raw_list:
             return new_mp
         new_mp.dtype = raw_list[0].dtype.type
@@ -28,12 +31,13 @@ class MatrixProduct(list):
         return new_mp
 
     def __init__(self):
-        super(MatrixProduct, self).__init__()
-        self.mtype = None
+        self._mp: List[Matrix] = []
         self.dtype = np.float64
 
-        self.mol_list = None
-        self._ephtable = None
+        # in mpo.quasi_boson, mol_list is not set, then _ephtable and _pbond_list should be used
+        self.mol_list: MolList = None
+        self._ephtable: EphTable = None
+        self._pbond_list = None
 
         # mpo also need to be compressed sometimes
         self._compress_method = 'svd'
@@ -42,14 +46,15 @@ class MatrixProduct(list):
         self.peak_bytes = 0
 
         # QN related
+        self.use_dummy_qn = False
+        # self.use_dummy_qn = True
         self.qn = None
         self.qnidx = None
-        self.qntot = None
-
+        self._qntot = None
 
     @property
     def site_num(self):
-        return len(self)
+        return len(self._mp)
 
     @property
     def mol_num(self):
@@ -66,11 +71,15 @@ class MatrixProduct(list):
 
     @property
     def is_mps(self):
-        return self.mtype.is_ms
+        raise NotImplementedError
 
     @property
     def is_mpo(self):
-        return self.mtype.is_mo
+        raise NotImplementedError
+
+    @property
+    def is_mpdm(self):
+        raise NotImplementedError
 
     @property
     def is_complex(self):
@@ -89,12 +98,31 @@ class MatrixProduct(list):
             return self.mol_list.ephtable
 
     @ephtable.setter
-    def ephtable(self, ephtable):
+    def ephtable(self, ephtable: EphTable):
         self._ephtable = ephtable
 
     @property
     def pbond_list(self):
-        return self.mol_list.pbond_list
+        if self._pbond_list is not None:
+            return self._pbond_list
+        else:
+            return self.mol_list.pbond_list
+
+    @pbond_list.setter
+    def pbond_list(self, pbond_list):
+        self._pbond_list = pbond_list
+
+    @property
+    def qntot(self):
+        if self.use_dummy_qn:
+            return 0
+        else:
+            return self._qntot
+
+    @qntot.setter
+    def qntot(self, qntot: int):
+        if not self.use_dummy_qn:
+            self._qntot = qntot
 
     def build_empty_qn(self):
         self.qntot = 0
@@ -106,9 +134,13 @@ class MatrixProduct(list):
         self.qnidx = None
         self.qn = None
 
-    def move_qnidx(self, dstidx):
+    def clear_qn(self):
+        self.qntot = 0
+        self.qn = [[0] * dim for dim in self.bond_dims]
+
+    def move_qnidx(self, dstidx: int):
         """
-        Quantum number has a boundary side, left hand of the side is L system qn,
+        Quantum number has a boundary site, left hand of the site is L system qn,
         right hand of the side is R system qn, the sum of quantum number of L system
         and R system is tot.
         """
@@ -181,19 +213,19 @@ class MatrixProduct(list):
     def _switch_domain(self):
         if self.is_left_canon:
             self.qnidx = 0
+            # assert self.check_right_canonical()
         else:
             self.qnidx = self.site_num - 1
+            # assert self.check_left_canonical()
 
     def _get_big_qn(self, idx):
         mt = self[idx]
-        if self.ephtable.is_electron(idx):
-            # e site
-            sigmaqn = mt.elec_sigmaqn
-        else:
-            # ph site
-            sigmaqn = np.array([0] * mt.pdim_prod)
+        sigmaqn = mt.sigmaqn
         qnl = np.array(self.qn[idx])
         qnr = np.array(self.qn[idx + 1])
+        assert len(qnl) == mt.shape[0]
+        assert len(qnr) == mt.shape[-1]
+        assert len(sigmaqn) == mt.pdim_prod
         if self.is_left_canon:
             qnbigl = qnl
             qnbigr = np.add.outer(sigmaqn, qnr)
@@ -266,8 +298,7 @@ class MatrixProduct(list):
             system = 'R' if self.is_left_canon else 'L'
             u, qnlset, v, qnrset = svd_qn.Csvd(mt, qnbigl, qnbigr, self.qntot,
                                                QR=True, system=system, full_matrices=False)
-            vt = v.T
-            self._update_ms(idx, u, vt, sigma=None, qnlset=qnlset, qnrset=qnrset)
+            self._update_ms(idx, u, v.T, sigma=None, qnlset=qnlset, qnrset=qnrset)
         self._switch_domain()
 
     def conj(self):
@@ -324,15 +355,20 @@ class MatrixProduct(list):
 
     def distance(self, other):
         if not hasattr(other, 'conj'):
-            other = self.__class__.from_raw_list(other)
+            other = self.__class__.from_raw_list(other, self.mol_list)
         return self.conj().dot(self) - np.abs(self.conj().dot(other)) - np.abs(
             other.conj().dot(self)) + other.conj().dot(other)
 
     def copy(self):
         return copy.deepcopy(self)
 
-    def array2mt(self, array):
-        return self.mtype(self.dtype(array))
+    def array2mt(self, array, idx):
+        mt = Matrix(self.dtype(array))
+        if self.use_dummy_qn:
+            mt.sigmaqn = np.zeros(mt.pdim_prod, dtype=np.int)
+        else:
+            mt.sigmaqn = self._get_sigmaqn(idx)
+        return mt
 
     @property
     def total_bytes(self):
@@ -347,6 +383,12 @@ class MatrixProduct(list):
         stack = ''.join(traceback.format_stack(inspect.stack()[2].frame, 1)).replace('\n', ' ')
         logger.debug('Set peak bytes to {}. Called from: {}'.format(sizeof_fmt(new_bytes), stack))
 
+    def _get_sigmaqn(self, idx):
+        raise NotImplementedError
+
+    def get_sigmaqn(self, idx):
+        return self[idx].sigmaqn
+
     def __eq__(self, other):
         for m1, m2 in zip(self, other):
             if not np.allclose(m1, m2):
@@ -359,8 +401,22 @@ class MatrixProduct(list):
     def __repr__(self):
         return '%s with %d sites' % (self.__class__, len(self))
 
+    def __iter__(self):
+        return iter(self._mp)
+
+    def __len__(self):
+        return len(self._mp)
+
+    def __getitem__(self, item):
+        return self._mp[item]
+
     def __setitem__(self, key, array):
-        super(MatrixProduct, self).__setitem__(key, self.array2mt(array))
+        new_mt = self.array2mt(array, key)
+        self._mp[key] = new_mt
 
     def append(self, array):
-        super(MatrixProduct, self).append(self.array2mt(array))
+        new_mt = self.array2mt(array, len(self))
+        self._mp.append(new_mt)
+
+    def clear(self):
+        self._mp.clear()

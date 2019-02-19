@@ -6,12 +6,12 @@ import logging
 import numpy as np
 import scipy.linalg
 
-from ephMPS.mps.matrix import DensityMatrixOp
 from ephMPS.mps import Mpo, Mps
 from ephMPS.mps.tdh import mflib, unitary_propagation
 
 logger = logging.getLogger(__name__)
 
+# MPS first. Influenced `digest`
 class MpDm(Mpo, Mps):
 
     @classmethod
@@ -59,20 +59,19 @@ class MpDm(Mpo, Mps):
     @classmethod
     def from_mps(cls, mps):
         mpo = cls()
-        mpo.mtype = DensityMatrixOp
+        mpo.mol_list = mps.mol_list
         for ms in mps:
             mo = np.zeros([ms.shape[0]] + [ms.shape[1]] * 2 + [ms.shape[2]])
             for iaxis in range(ms.shape[1]):
                 mo[:, iaxis, iaxis, :] = ms[:, iaxis, :].copy()
             mpo.append(mo)
-        mpo.mol_list = mps.mol_list
 
         for wfn in mps.wfns[:-1]:
             assert wfn.ndim == 2
         mpo.wfns = mps.wfns
 
         mpo.optimize_config = mps.optimize_config
-        mpo._prop_method = mps.prop_method
+        mpo.evolve_config = mps.evolve_config
         mpo.compress_add = mps.compress_add
 
         mpo.qn = copy.deepcopy(mps.qn)
@@ -99,14 +98,32 @@ class MpDm(Mpo, Mps):
     def max_entangled_gs(cls, mol_list):
         return cls.from_mps(Mps.gs(mol_list, max_entangled=True))
 
+    def _get_sigmaqn(self, idx):
+        if self.ephtable.is_electron(idx):
+            return np.array([0, 0, 1, 1])
+        else:
+            return np.array([0] * self.pbond_list[idx] ** 2)
+
+    @property
+    def is_mps(self):
+        return False
+
+    @property
+    def is_mpo(self):
+        return False
+
+    @property
+    def is_mpdm(self):
+        return True
+
     def conj_trans(self):
         new_mpdm = super(MpDm, self).conj_trans()
         for idx, wfn in enumerate(new_mpdm.wfns):
             new_mpdm.wfns[idx] = np.conj(wfn).T
         return new_mpdm
 
-    def apply(self, mp):
-        assert mp.is_mpo
+    def apply(self, mp, canonicalise=False):
+        assert not mp.is_mps
         new_mps = self.copy() # todo: this is slow and memory consuming! implement meta copy should do
         # todo: also duplicate with MPO apply. What to do???
         for i, (mt_self, mt_other) in enumerate(zip(self, mp)):
@@ -117,15 +134,16 @@ class MpDm(Mpo, Mps):
                                  mt_self.shape[1], mt_other.shape[2],
                                  mt_self.shape[-1] * mt_other.shape[-1]])
             new_mps[i] = mt
-
         orig_idx = mp.qnidx
         mp.move_qnidx(new_mps.qnidx)
+        qn = mp.qn if not self.use_dummy_qn else mp.dummy_qn
         new_mps.qn = [np.add.outer(np.array(qn_o), np.array(qn_m)).ravel().tolist()
-                      for qn_o, qn_m in zip(self.qn, mp.qn)]
+                      for qn_o, qn_m in zip(self.qn, qn)]
         mp.move_qnidx(orig_idx)
         new_mps.qntot += mp.qntot
         new_mps.set_peak_bytes()
-        #new_mps.canonicalise()
+        if canonicalise:
+            new_mps.canonicalise()
         return new_mps
 
     def dot(self, other, with_hartree=True):
@@ -161,7 +179,7 @@ class MpDm(Mpo, Mps):
     def evolve_exact(self, h_mpo, evolve_dt, space):
         MPOprop, HAM, Etot = self.hybrid_exact_propagator(h_mpo, -1.0j * evolve_dt, space)
         # Mpdm is applied on the propagator, different from base method
-        new_mpdm = self.apply(MPOprop)
+        new_mpdm = self.apply(MPOprop, canonicalise=True)
         for iham, ham in enumerate(HAM):
             w, v = scipy.linalg.eigh(ham)
             new_mpdm.wfns[iham] = new_mpdm.wfns[iham].dot(v).dot(np.diag(np.exp(-1.0j*evolve_dt*w))).dot(v.T)
@@ -182,7 +200,6 @@ class MpDm(Mpo, Mps):
         return new_mpdm
 
     def get_reduced_density_matrix(self):
-        assert self.mtype == DensityMatrixOp
         reduced_density_matrix_product = list()
         # ensure there is a first matrix in the new mps/mpo
         assert self.ephtable.is_electron(0)
@@ -207,7 +224,6 @@ class MpDm(Mpo, Mps):
         return reduced_density_matrix
 
     def trace(self):
-        assert self.mtype == DensityMatrixOp
         traced_product = []
         for mt in self:
             traced_product.append(mt.trace(axis1=1, axis2=2))

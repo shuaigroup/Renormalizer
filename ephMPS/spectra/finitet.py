@@ -19,11 +19,11 @@ class BraKetPairAbsFiniteT(BraKetPair):
 
 class SpectraFiniteT(SpectraTdMpsJobBase):
 
-    def __init__(self, mol_list, spectratype, temperature, insteps, offset, gs_shift=0):
+    def __init__(self, mol_list, spectratype, temperature, insteps, offset, evolve_config=None, gs_shift=0):
         self.temperature = temperature
         self.insteps = insteps
         self.gs_shift = gs_shift
-        super(SpectraFiniteT, self).__init__(mol_list, spectratype, temperature, offset=offset)
+        super(SpectraFiniteT, self).__init__(mol_list, spectratype, temperature, evolve_config=evolve_config, offset=offset)
 
     def init_mps(self):
         if self.spectratype == "emi":
@@ -36,10 +36,11 @@ class SpectraFiniteT(SpectraTdMpsJobBase):
         i_mpo = MpDm.max_entangled_ex(self.mol_list)
         # only propagate half beta
         ket_mpo = i_mpo.thermal_prop(self.h_mpo, self.insteps, self.temperature.to_beta() / 2)
+        ket_mpo.evolve_config = self.evolve_config
         # e^{\-beta H/2} \Psi
         dipole_mpo_dagger = dipole_mpo.conj_trans()
         dipole_mpo_dagger.build_empty_qn()
-        a_ket_mpo = ket_mpo.apply(dipole_mpo_dagger)
+        a_ket_mpo = ket_mpo.apply(dipole_mpo_dagger, canonicalise=True)
         a_ket_mpo.canonical_normalize()
         a_bra_mpo = a_ket_mpo.copy()
         return BraKetPairEmiFiniteT(a_bra_mpo, a_ket_mpo)
@@ -49,7 +50,8 @@ class SpectraFiniteT(SpectraTdMpsJobBase):
         i_mpo = MpDm.max_entangled_gs(self.mol_list)
         beta = self.temperature.to_beta()
         ket_mpo = i_mpo.thermal_prop_exact(self.h_mpo, beta / 2.0, 1, 'GS')
-        a_ket_mpo = dipole_mpo.apply(ket_mpo)
+        ket_mpo.evolve_config = self.evolve_config
+        a_ket_mpo = dipole_mpo.apply(ket_mpo, canonicalise=True)
         a_ket_mpo.canonical_normalize()
         a_bra_mpo = a_ket_mpo.copy()
         return BraKetPairAbsFiniteT(a_bra_mpo, a_ket_mpo)

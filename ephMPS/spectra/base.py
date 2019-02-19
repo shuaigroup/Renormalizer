@@ -34,7 +34,7 @@ class BraKetPair(object):
 
 class SpectraTdMpsJobBase(TdMpsJob):
 
-    def __init__(self, mol_list, spectratype, temperature, scheme=2, offset=Quantity(0)):
+    def __init__(self, mol_list, spectratype, temperature, scheme=2, evolve_config=None, offset=Quantity(0)):
         self.mol_list = mol_list
         assert spectratype in ["emi", "abs"]
         self.spectratype = spectratype
@@ -44,7 +44,7 @@ class SpectraTdMpsJobBase(TdMpsJob):
             self.nexciton = 0
         self.temperature = temperature
         self.h_mpo = Mpo(mol_list, scheme=scheme, offset=offset)
-        super(SpectraTdMpsJobBase, self).__init__()
+        super(SpectraTdMpsJobBase, self).__init__(evolve_config)
 
     @property
     def autocorr(self):

@@ -7,7 +7,6 @@ import unittest
 import numpy as np
 
 from ephMPS.mps import Mps, Mpo, MpDm
-from ephMPS.mps.matrix import DensityMatrixOp
 from ephMPS.tests.parameter import mol_list
 from ephMPS.utils import Quantity
 
@@ -42,7 +41,6 @@ class TestMpProperty(unittest.TestCase):
         beta = Quantity(10, 'K').to_beta()
         gs_dm = gs_dm.thermal_prop_exact(Mpo(gs_dm.mol_list), beta, 500, 'GS')
         mp = self.creation_operator.apply(gs_dm)
-        self.assertEqual(mp.mtype, DensityMatrixOp)
         self.check_property(mp)
 
 

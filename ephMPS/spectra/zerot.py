@@ -13,12 +13,13 @@ logger = logging.getLogger(__name__)
 
 class SpectraZeroT(SpectraTdMpsJobBase):
 
-    def __init__(self, mol_list, spectratype, optimize_config=None, scheme=2, offset=Quantity(0)):
+    def __init__(self, mol_list, spectratype, optimize_config=None, evolve_config=None, scheme=2, offset=Quantity(0)):
         if optimize_config is None:
             self.optimize_config = OptimizeConfig()
         else:
             self.optimize_config = optimize_config
-        super(SpectraZeroT, self).__init__(mol_list, spectratype, Quantity(0), scheme, offset)
+
+        super(SpectraZeroT, self).__init__(mol_list, spectratype, Quantity(0), scheme, evolve_config, offset)
 
 
     def init_mps(self):
@@ -27,8 +28,9 @@ class SpectraZeroT(SpectraTdMpsJobBase):
         else:
             operator = "a^\dagger"
         dipole_mpo = Mpo.onsite(self.mol_list, operator, dipole=True)
-        a_ket_mps = dipole_mpo.apply(self.get_imps())
+        a_ket_mps = dipole_mpo.apply(self.get_imps(), canonicalise=True)
         a_ket_mps.canonical_normalize()
+        a_ket_mps.evolve_config = self.evolve_config
         a_bra_mps = a_ket_mps.copy()
         return BraKetPair(a_bra_mps, a_ket_mps)
 

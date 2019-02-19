@@ -6,7 +6,7 @@ automatic Runge-Kutta method coefficient calculation
 '''
 
 import numpy as np
-from scipy.misc import factorial
+from scipy.special import factorial
 
 method_list = ["Forward_Euler", "midpoint_RK2", "Heun_RK2", "Ralston_RK2",
                 "Kutta_RK3", "C_RK4", "38rule_RK4", "Fehlberg5", "RKF45"]
@@ -104,9 +104,9 @@ class Runge_Kutta(object):
 
         elif self.method == "38rule_RK4":
             # 3/8 rule fourth-order method
-            a = np.array([[0, 0, 0, 0], \
-                          [1.0 / 3.0, 0, 0, 0], \
-                          [-1.0 / 3.0, 1, 0, 0], \
+            a = np.array([[0, 0, 0, 0],
+                          [1.0 / 3.0, 0, 0, 0],
+                          [-1.0 / 3.0, 1, 0, 0],
                           [1, -1, 1, 0]])
             b = np.array([1.0 / 8.0, 3.0 / 8.0, 3.0 / 8.0, 1.0 / 8.0])
             c = np.array([0.0, 1.0 / 3.0, 2.0 / 3.0, 1.0])

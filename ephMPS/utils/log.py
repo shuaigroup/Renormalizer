@@ -5,6 +5,8 @@
 import logging
 from logging import ERROR, WARN, INFO, DEBUG
 
+import numpy as np
+
 root_logger = logging.root
 default_stream_handler = logging.StreamHandler()
 default_formatter = logging.Formatter('%(asctime)s[%(levelname)s] %(message)s')
@@ -34,3 +36,8 @@ def register_file_output(file_path, mode='w', level=DEBUG):
     file_handler.setLevel(level)
     file_handler.setFormatter(default_formatter)
     root_logger.addHandler(file_handler)
+
+
+NP_ERRCONFIG = {"divide": "raise", "over": "raise", "under": "warn", "invalid":"raise"}
+
+DEFAULT_NP_ERRCONFIG = np.seterr(**NP_ERRCONFIG)

@@ -71,7 +71,7 @@ class SpectraExact(SpectraTdMpsJobBase):
             ket_mps = i_mpdm.thermal_prop_exact(self.h_mpo, -beta / 2.0, 1, self.space1, inplace=True)
         else:
             ket_mps = i_mps
-        a_ket_mps = dipole_mpo.apply(ket_mps)
+        a_ket_mps = dipole_mpo.apply(ket_mps, canonicalise=True)
         a_ket_mps.canonical_normalize()
 
         if self.temperature != 0:

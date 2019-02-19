@@ -9,6 +9,8 @@ class Matrix(np.ndarray):
     def __new__(cls, array):
         obj = np.array(array).view(cls)
         obj.original_shape = obj.shape
+        # set in MatrixProduct
+        obj.sigmaqn = None
         return obj
 
     def __array_finalize__(self, obj):
@@ -30,20 +32,16 @@ class Matrix(np.ndarray):
         return self.original_shape[0], self.original_shape[-1]
 
     @property
-    def elec_sigmaqn(self):
-        raise NotImplementedError
-
-    @property
-    def is_density_matrix(self):
-        return False
-
-    @property
     def r_combine_shape(self):
         return self.original_shape[0], np.prod(self.original_shape[1:])
 
     @property
     def l_combine_shape(self):
         return np.prod(self.original_shape[:-1]), self.original_shape[-1]
+
+    @property
+    def is_mpo(self):
+        return self.original_shape.ndim == 4
 
     def r_combine(self):
         return self.reshape(self.r_combine_shape)
@@ -57,7 +55,7 @@ class Matrix(np.ndarray):
         """
         tensm = np.reshape(self, [np.prod(self.shape[:-1]), self.shape[-1]])
         s = np.dot(np.conj(tensm.T), tensm)
-        return np.allclose(s, np.eye(s.shape[0]))
+        return np.allclose(s, np.eye(s.shape[0]), atol=1e-3)
 
     def check_rortho(self):
         """
@@ -67,33 +65,8 @@ class Matrix(np.ndarray):
         s = np.dot(tensm, np.conj(tensm.T))
         return np.allclose(s, np.eye(s.shape[0]))
 
-
-class MatrixState(Matrix):
-
-    is_ms = True
-    is_mo = False
-
-    @property
-    def elec_sigmaqn(self):
-        return np.array([0, 1])
-
-
-class MatrixOp(Matrix):
-
-    is_mo = True
-    is_ms = False
-
-    @property
-    def elec_sigmaqn(self):
-        return np.array([0, -1, 1, 0])
-
-
-class DensityMatrixOp(MatrixOp):
-
-    @property
-    def elec_sigmaqn(self):
-        return np.array([0, 0, 1, 1])
-
-    @property
-    def is_density_matrix(self):
-        return True
+    def __deepcopy__(self, memodict, *arg, **kwargs):
+        y = super(Matrix, self).__deepcopy__(memodict, *arg, **kwargs)
+        y.original_shape = self.original_shape
+        y.sigmaqn = self.sigmaqn
+        return y

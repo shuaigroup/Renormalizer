@@ -28,6 +28,7 @@ class TestQuasiBoson(unittest.TestCase):
 
         # merge the decomposed MPO
         mpo_merge = Mpo()
+        mpo_merge.mol_list = mol_list
         impo = 0
         for mol in mol_list:
             mpo_merge.append(mpo2[impo])

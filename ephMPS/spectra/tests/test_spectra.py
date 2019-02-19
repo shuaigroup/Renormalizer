@@ -11,7 +11,7 @@ from ddt import ddt, data, unpack
 from ephMPS.spectra import SpectraExact, SpectraOneWayPropZeroT, SpectraTwoWayPropZeroT, SpectraFiniteT
 from ephMPS.spectra.tests import cur_dir
 from ephMPS.tests import parameter
-from ephMPS.utils import constant, Quantity, OptimizeConfig
+from ephMPS.utils import constant, Quantity, OptimizeConfig, EvolveConfig, EvolveMethod
 
 
 @ddt
@@ -48,9 +48,9 @@ class TestZeroTSpectraAbs(unittest.TestCase):
         np.random.seed(0)
         # print "data", value
         procedure = [[1, 0], [1, 0], [1, 0]]
-        mol_list = parameter.custom_mol_list(None, *ph_info)
         optimize_config = OptimizeConfig()
         optimize_config.procedure = procedure
+        mol_list = parameter.custom_mol_list(None, *ph_info)
         if algorithm == 1:
             SpectraZeroT = SpectraOneWayPropZeroT
         else:
@@ -85,9 +85,9 @@ class TestZeroTSpectraAbs(unittest.TestCase):
             SpectraZeroT = SpectraTwoWayPropZeroT
         optimize_config = OptimizeConfig()
         optimize_config.procedure = procedure
-        zero_t_corr2 = SpectraZeroT(mol_list, "abs", optimize_config, 2, offset=Quantity(2.28614053, 'ev'))
+        zero_t_corr2 = SpectraZeroT(mol_list, "abs", optimize_config, scheme=2, offset=Quantity(2.28614053, 'ev'))
         zero_t_corr2.evolve(dt, nsteps)
-        zero_t_corr3 = SpectraZeroT(mol_list, "abs", optimize_config, 3, offset=Quantity(2.28614053, 'ev'))
+        zero_t_corr3 = SpectraZeroT(mol_list, "abs", optimize_config, scheme=3, offset=Quantity(2.28614053, 'ev'))
         zero_t_corr3.evolve(dt, nsteps)
 
         self.assertTrue(np.allclose(zero_t_corr2.autocorr, zero_t_corr3.autocorr, rtol=rtol))

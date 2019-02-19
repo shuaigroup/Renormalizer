@@ -8,7 +8,7 @@ from collections import OrderedDict
 import numpy as np
 
 from ephMPS.utils import Quantity
-from ephMPS.mps.elementop import construct_ph_op_dict
+from ephMPS.utils.elementop import construct_ph_op_dict
 
 
 class Phonon(object):

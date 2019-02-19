@@ -6,10 +6,9 @@ import numpy as np
 import scipy
 
 from ephMPS.model.ephtable import EphTable
-from ephMPS.mps.elementop import construct_ph_op_dict, construct_e_op_dict, ph_op_matrix
-from ephMPS.mps.matrix import MatrixOp, DensityMatrixOp
 from ephMPS.mps.mp import MatrixProduct
 from ephMPS.utils import Quantity
+from ephMPS.utils.elementop import construct_ph_op_dict, construct_e_op_dict, ph_op_matrix
 from ephMPS.utils.utils import roundrobin
 
 logger = logging.getLogger(__name__)
@@ -318,6 +317,8 @@ class Mpo(MatrixProduct):
 
         # decompose canonicalise
         mpo = cls()
+        mpo.ephtable = EphTable.all_phonon(nqb)
+        mpo.pbond_list = [base] * nqb
         mpo.threshold = trunc
         mat = mat.reshape(1, -1)
         for idx in range(nqb - 1):
@@ -330,7 +331,6 @@ class Mpo(MatrixProduct):
         mpo.append(mat.reshape(-1, base, base, 1))
         # print "original MPO shape:", [i.shape[0] for i in MPO] + [1]
         mpo.build_empty_qn()
-        mpo.ephtable = EphTable.all_phonon(mpo.site_num)
         # compress
         mpo.canonicalise()
         mpo.compress()
@@ -450,7 +450,6 @@ class Mpo(MatrixProduct):
         assert rep in ["star", "chain"]
 
         super(Mpo, self).__init__()
-        self.mtype = MatrixOp
         if mol_list is None:
             return
 
@@ -681,17 +680,38 @@ class Mpo(MatrixProduct):
         for i in range(self[0].shape[1]):
             self[0][0, i, i, 0] -= offset.as_au()
 
+    def _get_sigmaqn(self, idx):
+        if self.ephtable.is_electron(idx):
+            return np.array([0, -1, 1, 0])
+        else:
+            return np.array([0] * self.pbond_list[idx] ** 2)
+
+    @property
+    def is_mps(self):
+        return False
+
+    @property
+    def is_mpo(self):
+        return True
+
+    @property
+    def is_mpdm(self):
+        return False
+
+    @property
+    def dummy_qn(self):
+        return [[0] * dim for dim in self.bond_dims]
+
     @property
     def digest(self):
         return np.array([mt.var() for mt in self]).var()
 
     def promote_mt_type(self, mp):
-        assert self.mtype != DensityMatrixOp
         if self.is_complex and not mp.is_complex:
             mp.to_complex(inplace=True)
         return mp
 
-    def apply(self, mp):
+    def apply(self, mp, canonicalise=False):
         # todo: use meta copy to save time
         # todo: inplace version (saved memory and can be used in `hybrid_exact_propagator`)
         new_mps = self.promote_mt_type(mp.copy())
@@ -704,7 +724,7 @@ class Mpo(MatrixProduct):
                 mt = np.reshape(mt, [mt_self.shape[0] * mt_other.shape[0], mt_self.shape[1],
                                      mt_self.shape[-1] * mt_other.shape[-1]])
                 new_mps[i] = mt
-        elif mp.is_mpo:
+        elif mp.is_mpo or mp.is_mpdm:
             # mpo x mpo
             for i, (mt_self, mt_other) in enumerate(zip(self, mp)):
                 assert mt_self.shape[2] == mt_other.shape[1]
@@ -718,12 +738,18 @@ class Mpo(MatrixProduct):
             assert False
         orig_idx = new_mps.qnidx
         new_mps.move_qnidx(self.qnidx)
+        qn = self.qn if not mp.use_dummy_qn else self.dummy_qn
         new_mps.qn = [np.add.outer(np.array(qn_o), np.array(qn_m)).ravel().tolist()
-                      for qn_o, qn_m in zip(self.qn, new_mps.qn)]
+                      for qn_o, qn_m in zip(qn, new_mps.qn)]
         new_mps.move_qnidx(orig_idx)
         new_mps.qntot += self.qntot
         new_mps.set_peak_bytes()
-        #new_mps.canonicalise()
+        # concerns about whether to canonicalise:
+        # * canonicalise helps to keep mps the maintain in a truly canonicalised state
+        # * canonicalise comes with a cost. Unnecessary canonicalise (for example in P&C evolution and
+        #   expectation calculation) hampers performance.
+        if canonicalise:
+            new_mps.canonicalise()
         return new_mps
 
     def contract(self, mps):

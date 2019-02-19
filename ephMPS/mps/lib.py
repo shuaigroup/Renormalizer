@@ -9,6 +9,22 @@ import numpy as np
 from ephMPS.lib import tensor as tensorlib
 
 
+def transferMat(mps, mpsconj, domain, siteidx):
+    '''
+    calculate the transfer matrix from the left hand or the right hand
+    '''
+    val = np.ones([1, 1])
+    if domain == "R":
+        for imps in range(len(mps) - 1, siteidx - 1, -1):
+            val = np.tensordot(mpsconj[imps], val, axes=(2, 0))
+            val = np.tensordot(val, mps[imps], axes=([1, 2], [1, 2]))
+    elif domain == "L":
+        for imps in range(0, siteidx + 1, 1):
+            val = np.tensordot(mpsconj[imps], val, axes=(0, 0))
+            val = np.tensordot(val, mps[imps], axes=([0, 2], [1, 0]))
+
+    return val
+
 def GetLR(domain, siteidx, MPS, MPSconj, MPO, itensor=np.ones((1, 1, 1)), method="Scratch"):
     '''
     get the L/R Hamiltonian matrix at a random site(siteidx): 3d tensor

@@ -11,8 +11,7 @@ from functools import partial
 import numpy as np
 
 from ephMPS.mps import Mpo, Mps, MpDm, solver
-from ephMPS.utils import TdMpsJob, constant, Quantity
-from ephMPS.mps.matrix import MatrixState, DensityMatrixOp
+from ephMPS.utils import TdMpsJob, Quantity, EvolveConfig
 
 logger = logging.getLogger(__name__)
 
@@ -20,12 +19,11 @@ EDGE_THRESHOLD = 1e-4
 
 
 def calc_reduced_density_matrix_straight(mp):  # this procedure is **very** memory consuming
-    if mp.mtype == DensityMatrixOp:
+    if mp.is_mpdm:
         density_matrix_product = mp.apply(mp.conj_trans())
         #density_matrix_product = mp
-    elif mp.mtype == MatrixState:
+    elif mp.is_mps:
         density_matrix_product = MpDm()
-        density_matrix_product.mtype = DensityMatrixOp
         # todo: not elegant! figure out a better way to deal with data type
         density_matrix_product.dtype = np.complex128
         density_matrix_product.mol_list = mp.mol_list
@@ -44,11 +42,11 @@ def calc_reduced_density_matrix_straight(mp):  # this procedure is **very** memo
 # saves memory, but still time consuming, especially when the calculation starts,
 # in long term the same order with expectation
 def calc_reduced_density_matrix(mp):
-    if mp.mtype == MatrixState:
+    if mp.is_mps:
         mp1 = [mt.reshape(mt.shape[0], mt.shape[1], 1, mt.shape[2]) for mt in mp]
         mp2 = [mt.reshape(mt.shape[0], 1, mt.shape[1], mt.shape[2]).conj()  for mt in mp]
     else:
-        assert mp.mtype == DensityMatrixOp
+        assert mp.is_mpdm
         mp1 = mp
         mp2 = mp.conj_trans()
     reduced_density_matrix = np.zeros((mp.mol_list.mol_num, mp.mol_list.mol_num), dtype=np.complex128)
@@ -72,13 +70,13 @@ def calc_reduced_density_matrix(mp):
     return reduced_density_matrix
 
 class ChargeTransport(TdMpsJob):
-    def __init__(self, mol_list, temperature=Quantity(0, 'K')):
+    def __init__(self, mol_list, temperature=Quantity(0, 'K'), evolve_config=None):
         self.mol_list = mol_list
         self.temperature = temperature
         self.mpo = None
         self.mpo_e_lbound = None   # lower bound of the energy of the hamiltonian
         self.mpo_e_ubound = None   # upper bound of the energy of the hamiltonian
-        super(ChargeTransport, self).__init__()
+        super(ChargeTransport, self).__init__(evolve_config)
         self.energies = [self.tdmps_list[0].expectation(self.mpo)]
         self.reduced_density_matrices = [calc_reduced_density_matrix_straight(self.tdmps_list[0])]
         self.custom_dump_info = OrderedDict()
@@ -115,12 +113,14 @@ class ChargeTransport(TdMpsJob):
             # subtract the energy otherwise might causes numeric error because of large offset * dbeta
             energy = Quantity(gs_mp.expectation(tentative_mpo))
             mpo = Mpo(self.mol_list, scheme=3 ,offset=energy)
-            gs_mp = gs_mp.thermal_prop_exact(mpo, self.temperature.to_beta() / 2, 1, "GS", True)
+            gs_mp = gs_mp.thermal_prop_exact(mpo, self.temperature.to_beta() / 2, 50, "GS", True)
         init_mp = self.create_electron(gs_mp)
         energy = Quantity(init_mp.expectation(tentative_mpo))
         self.mpo = Mpo(self.mol_list, scheme=3, offset=energy)
         self.mpo_e_lbound = solver.find_lowest_energy(self.mpo, 1, 20)
         self.mpo_e_ubound = solver.find_highest_energy(self.mpo, 1, 20)
+        init_mp.canonicalise()
+        init_mp.evolve_config = self.evolve_config
         # init_mp.invalidate_cache()
         return init_mp
 

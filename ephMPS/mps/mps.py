@@ -1,21 +1,22 @@
 from __future__ import absolute_import, print_function, unicode_literals
 
-import itertools
 import logging
 from functools import reduce
 
 import numpy as np
-from cached_property import cached_property
 import scipy
-from ephMPS.mps.tdh import unitary_propagation
+from cached_property import cached_property
 
+
+from ephMPS.mps.tdh import unitary_propagation
 from ephMPS.mps import svd_qn, rk
-from ephMPS.mps.lib import updatemps
-from ephMPS.mps.matrix import MatrixState
+from ephMPS.mps.lib import construct_enviro, GetLR, updatemps, transferMat
 from ephMPS.mps.mp import MatrixProduct
 from ephMPS.mps.mpo import Mpo
 from ephMPS.mps.tdh import mflib
-from ephMPS.utils import Quantity, OptimizeConfig, sizeof_fmt
+from ephMPS.lib import tensor as tensorlib
+from ephMPS.lib import solve_ivp
+from ephMPS.utils import Quantity, OptimizeConfig, EvolveConfig, EvolveMethod, sizeof_fmt
 
 logger = logging.getLogger(__name__)
 
@@ -46,13 +47,7 @@ class Mps(MatrixProduct):
         for imps in range(len(mpo) - 1):
 
             # quantum number
-            if mps.ephtable.is_electron(imps):
-                # e site
-                qnbig = list(itertools.chain.from_iterable([x, x + 1] for x in mps.qn[imps]))
-            else:
-                # ph site
-                qnbig = list(itertools.chain.from_iterable([x] * mps.pbond_list[imps] for x in mps.qn[imps]))
-
+            qnbig = np.add.outer(mps.qn[imps], mps._get_sigmaqn(imps)).flatten()
             u_set = []
             s_set = []
             qnset = []
@@ -142,12 +137,10 @@ class Mps(MatrixProduct):
 
     def __init__(self):
         super(Mps, self).__init__()
-        self.mtype = MatrixState
         self.wfns = [1]
 
         self.optimize_config = OptimizeConfig()
-
-        self._prop_method = 'C_RK4'
+        self.evolve_config = EvolveConfig()
 
         self.compress_add = False
 
@@ -171,6 +164,24 @@ class Mps(MatrixProduct):
         new_mp.wfns = [wfn.astype(np.complex128) for wfn in new_mp.wfns[:-1]] + [new_mp.wfns[-1]]
         return new_mp
 
+    def _get_sigmaqn(self, idx):
+        if self.ephtable.is_electron(idx):
+            return [0, 1]
+        else:
+            return [0] * self.pbond_list[idx]
+
+    @property
+    def is_mps(self):
+        return True
+
+    @property
+    def is_mpo(self):
+        return False
+
+    @property
+    def is_mpdm(self):
+        return False
+
     @property
     def coeff(self):
         return self.wfns[-1]
@@ -181,12 +192,12 @@ class Mps(MatrixProduct):
 
     @property
     def prop_method(self):
-        return self._prop_method
+        return self.evolve_config.prop_method
 
     @prop_method.setter
     def prop_method(self, value):
         assert value in rk.method_list
-        self._prop_method = value
+        self.evolve_config.prop_method = value
 
     @_cached_property
     def norm(self):
@@ -196,7 +207,8 @@ class Mps(MatrixProduct):
     #@_cached_property
     @property
     def dmrg_norm(self):
-        # todo: get the fast version in the comment working
+        # the fast version in the comment rarely makes sense because in a lot of cases
+        # the mps is not canonicalised (though qnidx is set)
         ''' Fast version yet not safe. Needs further testing
         if self.is_left_canon:
             assert self.check_left_canonical()
@@ -233,9 +245,9 @@ class Mps(MatrixProduct):
         return mean_r_square - r_mean_square
 
     def invalidate_cache(self):
-        for property in cached_property_set:
-            if property in self.__dict__:
-                del self.__dict__[property]
+        for p in cached_property_set:
+            if p in self.__dict__:
+                del self.__dict__[p]
 
     @invalidate_cache_decorator
     def copy(self):
@@ -271,7 +283,7 @@ class Mps(MatrixProduct):
                 new_mps[i][mta.shape[0]:, :, mta.shape[2]:] = mtb[:, :, :]
 
             new_mps[-1] = np.vstack([self[-1], other[-1]])
-        elif self.is_mpo:  # MPO
+        elif self.is_mpo or self.is_mpdm:  # MPO
             new_mps[0] = np.concatenate((self[0], other[0]), axis=3)
             for i in range(1, self.site_num - 1):
                 mta = self[i]
@@ -308,11 +320,10 @@ class Mps(MatrixProduct):
         # applied by a operator then normalize: dmrg should be normalized,
         #   tdh should be normalized, coefficient is set to the length
         # these two cases should set `norm` equals to corresponding value
+        self.scale(1.0 / self.dmrg_norm, inplace=True)
         if norm is None:
-            self.scale(1.0 / self.dmrg_norm, inplace=True)
             mflib.normalize(self.wfns, self.wfns[-1])
         else:
-            self.scale(1.0 / self.dmrg_norm, inplace=True)
             mflib.normalize(self.wfns)
             self.wfns[-1] = norm
         return self
@@ -335,6 +346,18 @@ class Mps(MatrixProduct):
 
     # todo: separate the 2 methods (approx_eiht), because their parameters are orthogonal
     def evolve_dmrg(self, mpo=None, evolve_dt=None, approx_eiht=None):
+        if self.evolve_config.scheme == EvolveMethod.prop_and_compress:
+            return self.evolve_dmrg_prop_and_compress(mpo, evolve_dt, approx_eiht)
+        if self.evolve_config.scheme == EvolveMethod.tdvp_mctdh:
+            return self.evolve_dmrg_tdvp_mctdh(mpo, evolve_dt)
+        elif self.evolve_config.scheme == EvolveMethod.tdvp_mctdh_new:
+            return self.evolve_dmrg_tdvp_mctdhnew(mpo, evolve_dt)
+        elif self.evolve_config.scheme == EvolveMethod.tdvp_ps:
+            return self.evolve_dmrg_tdvp_ps(mpo, evolve_dt)
+        else:
+            assert False
+
+    def evolve_dmrg_prop_and_compress(self, mpo=None, evolve_dt=None, approx_eiht=None):
         if approx_eiht is not None:
             return approx_eiht.contract(self)
         propagation_c = rk.coefficient_dict[self.prop_method]
@@ -351,9 +374,239 @@ class Mps(MatrixProduct):
             new_mps.compress()
         return new_mps
 
+    def evolve_dmrg_tdvp_mctdh(self, mpo, evolve_dt):
+        # TDVP for original MCTDH
+        if self.is_left_canon:
+            assert  self.check_left_canonical()
+            self.canonicalise()
+        # qn for this method has not been implemented
+        self.use_dummy_qn = True
+        self.clear_qn()
+        mps = self.to_complex(inplace=True)
+        mps_conj = mps.conj()
+        construct_enviro(mps, mps_conj, mpo, "R")
+
+        # initial matrix
+        ltensor = np.ones((1, 1, 1))
+        rtensor = np.ones((1, 1, 1))
+
+        new_mps = self.copy()
+
+        for imps in range(len(mps)):
+            ltensor = GetLR('L', imps - 1, mps, mps_conj, mpo, itensor=ltensor, method="System")
+            rtensor = GetLR('R', imps + 1, mps, mps_conj, mpo, itensor=rtensor, method="Enviro")
+            # density matrix
+            S = transferMat(mps, mps_conj, "R", imps + 1)
+
+            epsilon = 1e-10
+            w, u = scipy.linalg.eigh(S)
+            w = w + epsilon * np.exp(-w / epsilon)
+            # print
+            # "sum w=", np.sum(w)
+            # S  = u.dot(np.diag(w)).dot(np.conj(u.T))
+            S_inv = u.dot(np.diag(1. / w)).dot(np.conj(u.T))
+
+            # pseudo inverse
+            # S_inv = scipy.linalg.pinvh(S,rcond=1e-2)
+
+            hop = hop_factory(ltensor, rtensor, mpo[imps])
+
+            shape = mps[imps].shape
+
+            func = integrand_func_factory(shape, hop, imps==len(mps)-1, S_inv)
+
+            sol = solve_ivp(func, (0, evolve_dt), mps[imps].ravel(), method="RK45")
+            # print
+            # "CMF steps:", len(sol.t)
+            new_mps[imps] = sol.y[:, -1].reshape(shape)
+            # print
+            # "orthogonal1", np.allclose(np.tensordot(MPSnew[imps],
+            #                                        np.conj(MPSnew[imps]), axes=([0, 1], [0, 1])),
+            #                           np.diag(np.ones(MPSnew[imps].shape[2])))
+
+        mps._switch_domain()
+        new_mps._switch_domain()
+        new_mps.canonicalise()
+        return new_mps
+
+    def evolve_dmrg_tdvp_mctdhnew(self, mpo, evolve_dt):
+        # new regularization scheme
+        # JCP 148, 124105 (2018)
+        # JCP 149, 044119 (2018)
+
+        if self.is_left_canon:
+            assert self.check_left_canonical()
+            self.canonicalise()
+        # qn for this method has not been implemented
+        self.use_dummy_qn = True
+        self.clear_qn()
+        # todo: use 4x memory here, could be reduced to 2x
+        mps = self.to_complex(inplace=True)
+
+        # construct the environment matrix
+        construct_enviro(mps, mps.conj(), mpo, "R")
+
+        # initial matrix
+        ltensor = np.ones((1, 1, 1))
+        rtensor = np.ones((1, 1, 1))
+
+        new_mps = mps.copy()
+
+        for imps in range(len(mps)):
+            shape = list(mps[imps].shape)
+
+            u, s, vt = scipy.linalg.svd(mps[imps].reshape(-1, shape[-1]), full_matrices=False)
+            mps[imps] = u.reshape(shape[:-1] + [-1])
+
+            ltensor = GetLR('L', imps - 1, mps, mps.conj(), mpo,itensor=ltensor, method="System")
+            rtensor = GetLR('R', imps + 1, mps, mps.conj(), mpo,itensor=rtensor, method="Enviro")
+
+            epsilon = 1e-10
+            epsilon = np.sqrt(epsilon)
+            s = s + epsilon * np.exp(-s / epsilon)
+
+            svt = np.diag(s).dot(vt)
+
+            rtensor = np.tensordot(rtensor, svt, axes=(2, 1))
+            rtensor = np.tensordot(np.conj(vt), rtensor, axes=(1, 0))
+
+            if imps != len(mps) - 1:
+                mps[imps + 1] = np.tensordot(svt, mps[imps + 1], axes=(-1, 0))
+
+            # density matrix
+            S = s * s
+            # print
+            # "sum density matrix", np.sum(S)
+
+            S_inv = np.diag(1. / s)
+
+            hop = hop_factory(ltensor, rtensor, mpo[imps])
+
+            func = integrand_func_factory(shape, hop, imps==len(mps)-1, S_inv)
+
+            sol = solve_ivp(func, (0, evolve_dt), mps[imps].ravel(), method="RK45")
+            # print
+            # "CMF steps:", len(sol.t)
+            ms = sol.y[:, -1].reshape(shape)
+            # check for othorgonal
+            # e = np.tensordot(ms, ms, axes=((0, 1), (0, 1)))
+            # print(np.allclose(np.eye(e.shape[0]), e))
+
+            if imps == len(mps) - 1:
+                # print
+                # "s0", imps, s[0]
+                new_mps[imps] = ms * s[0]
+            else:
+                new_mps[imps] = ms
+
+                # print "orthogonal1", np.allclose(np.tensordot(MPSnew[imps],
+                #    np.conj(MPSnew[imps]), axes=([0,1],[0,1])),
+                #    np.diag(np.ones(MPSnew[imps].shape[2])))
+
+        mps._switch_domain()
+        new_mps._switch_domain()
+        new_mps.canonicalise()
+
+        return new_mps
+
+    def evolve_dmrg_tdvp_ps(self, mpo, evolve_dt):
+        # TDVP projector splitting
+        if self.is_right_canon:
+            assert self.check_right_canonical()
+            self.canonicalise()
+        # qn for this method has not been implemented
+        self.use_dummy_qn = True
+        self.clear_qn()
+        mps = self.to_complex()
+
+        # construct the environment matrix
+        construct_enviro(mps, mps.conj(), mpo, "L")
+
+        # initial matrix
+        ltensor = np.ones((1, 1, 1))
+        rtensor = np.ones((1, 1, 1))
+
+        loop = [['R', i] for i in range(len(mps) - 1, -1, -1)] + [['L', i] for i in range(0, len(mps))]
+        for system, imps in loop:
+            if system == "R":
+                lmethod, rmethod = "Enviro", "System"
+                ltensor = GetLR('L', imps - 1, mps, mps.conj(), mpo, itensor=ltensor, method=lmethod)
+            else:
+                lmethod, rmethod = "System", "Enviro"
+                rtensor = GetLR('R', imps + 1, mps, mps.conj(), mpo, itensor=rtensor, method=rmethod)
+
+            hop = hop_factory(ltensor, rtensor, mpo[imps])
+
+            def hop_svt(mps):
+                # S-a   l-S
+                #
+                # O-b - b-O
+                #
+                # S-c   k-S
+
+                path = [([0, 1], "abc, ck -> abk"),
+                        ([1, 0], "abk, lbk -> al")]
+                HC = tensorlib.multi_tensor_contract(path, ltensor, mps, rtensor)
+                return HC
+
+            shape = list(mps[imps].shape)
+
+            def func(t, y):
+                return hop(y.reshape(shape)).ravel() / 1.0j
+
+            sol = solve_ivp(func, (0, evolve_dt / 2.), mps[imps].ravel(), method="RK45")
+            #print
+            #"nsteps for MPS[imps]:", len(sol.t)
+            mps_t = sol.y[:, -1].reshape(shape)
+
+            if system == "L" and imps != len(mps) - 1:
+                # updated imps site
+                u, vt = scipy.linalg.qr(mps_t.reshape(-1, shape[-1]), mode="economic")
+                mps[imps] = u.reshape(shape[:-1] + [-1])
+
+                ltensor = GetLR('L', imps, mps, mps.conj(), mpo, itensor=ltensor, method="System")
+
+                # reverse update svt site
+                shape_svt = vt.shape
+
+                def func_svt(t, y):
+                    return hop_svt(y.reshape(shape_svt)).ravel() / 1.0j
+
+                sol_svt = solve_ivp(func_svt, (0, -evolve_dt / 2), vt.ravel(), method="RK45")
+                #print
+                #"nsteps for svt:", len(sol_svt.t)
+                mps[imps + 1] = np.tensordot(sol_svt.y[:, -1].reshape(shape_svt), mps[imps + 1], axes=(1, 0))
+
+            elif system == "R" and imps != 0:
+                # updated imps site
+                u, vt = scipy.linalg.rq(mps_t.reshape(shape[0], -1), mode="economic")
+                mps[imps] = vt.reshape([-1] + shape[1:])
+
+                rtensor = GetLR('R', imps, mps, mps.conj(), mpo, itensor=rtensor, method="System")
+
+                # reverse update u site
+                shape_u = u.shape
+
+                def func_u(t, y):
+                    return hop_svt(y.reshape(shape_u)).ravel() / 1.0j
+
+                sol_u = solve_ivp(func_u, (0, -evolve_dt / 2), u.ravel(), method="RK45")
+                #print
+                #"nsteps for u:", len(sol_u.t)
+                mps[imps - 1] = np.tensordot(mps[imps - 1], sol_u.y[:, -1].reshape(shape_u), axes=(-1, 0))
+
+            else:
+                mps[imps] = mps_t
+
+        return mps
+
+        #print
+        #"tMPS dim:", [mps.shape[0] for mps in MPSnew] + [1]
+
+
     def evolve_exact(self, h_mpo, evolve_dt, space):
         MPOprop, HAM, Etot = self.hybrid_exact_propagator(h_mpo, -1.0j * evolve_dt, space)
-        new_mps = MPOprop.apply(self)
+        new_mps = MPOprop.apply(self, canonicalise=True)
         unitary_propagation(new_mps.wfns, HAM, Etot, evolve_dt)
         return new_mps
 
@@ -432,8 +685,8 @@ class Mps(MatrixProduct):
         assert space in ["GS", "EX"]
 
         e_mean = self.expectation(mpo_indep)
-
         logger.debug("e_mean in exact propagator: %g" % e_mean)
+
         total_offset = (mpo_indep.offset + Quantity(e_mean.real)).as_au()
         MPOprop = Mpo.exact_propagator(self.mol_list, x, space=space, shift=-total_offset)
 
@@ -476,3 +729,55 @@ class Mps(MatrixProduct):
         e_occupations_str = ', '.join(['%.2f' % number for number in self.e_occupations])
         template_str = 'threshold: {:g}, current size: {}, peak size: {}, Matrix product bond order:{}, electron occupations: {}'
         return template_str.format(self.threshold, sizeof_fmt(self.total_bytes), sizeof_fmt(self.peak_bytes), self.bond_dims, e_occupations_str)
+
+
+def projector(ms):
+    # projector
+    proj = np.tensordot(ms, np.conj(ms), axes=(-1, -1))
+    Iden = np.diag(np.ones(np.prod(ms.shape[:-1]))).reshape(proj.shape)
+    proj = Iden - proj
+    return proj
+
+def hop_factory(ltensor, rtensor, mo):
+    def hop(ms):
+        # S-a   l-S
+        #     d
+        # O-b-O-f-O
+        #     e
+        # S-c   k-S
+        if ms.ndim == 3:
+            path = [([0, 1], "abc, cek -> abek"),
+                    ([2, 0], "abek, bdef -> akdf"),
+                    ([1, 0], "akdf, lfk -> adl")]
+            HC = tensorlib.multi_tensor_contract(path, ltensor, ms, mo, rtensor)
+
+        # S-a   l-S
+        #     d
+        # O-b-O-f-O
+        #     e
+        # S-c   k-S
+        #     g
+        elif ms.ndim == 4:
+            path = [([0, 1], "abc, bdef -> acdef"),
+                    ([2, 0], "acdef, cegk -> adfgk"),
+                    ([1, 0], "adfgk, lfk -> adgl")]
+            HC = tensorlib.multi_tensor_contract(path, ltensor, mo, ms, rtensor)
+        else:
+            assert False
+        return HC
+    return hop
+
+def integrand_func_factory(shape, hop, islast, S_inv):
+    def func(t, y):
+        y0 = y.reshape(shape)
+        HC = hop(y0)
+        if not islast:
+            proj = projector(y0)
+            if y0.ndim == 3:
+                HC = np.tensordot(proj, HC, axes=([2, 3], [0, 1]))
+                HC = np.tensordot(proj, HC, axes=([2, 3], [0, 1]))
+            elif y0.ndim == 4:
+                HC = np.tensordot(proj, HC, axes=([3, 4, 5], [0, 1, 2]))
+                HC = np.tensordot(proj, HC, axes=([3, 4, 5], [0, 1, 2]))
+        return np.tensordot(HC, S_inv, axes=(-1, 0)).ravel() / 1.0j
+    return func
