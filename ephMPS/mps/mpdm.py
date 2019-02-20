@@ -2,6 +2,7 @@
 
 import copy
 import logging
+from typing import List
 
 import numpy as np
 import scipy.linalg
@@ -169,6 +170,15 @@ class MpDm(Mpo, Mps):
                 # probably the wfn part should be better wrapped?
                 e *= np.dot(wfn1.flatten(), wfn2.flatten())
         return e
+
+    def _get_expectation_indices(self, prefix: str) -> List[List[str]]:
+        res = []
+        for i in range(len(self)):
+            # Not: a transpose is taken here
+            #       left bond,        physical bond,   bond to trace,  right bond
+            index = [f"{prefix}_{i}_b", f"{prefix}_{i}_p", f"t_{i}", f"{prefix}_{i+1}_b"]
+            res.append(index)
+        return res
 
     def thermal_prop(self, h_mpo, nsteps, beta, approx_eiht=None, inplace=False):
         """

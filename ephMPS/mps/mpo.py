@@ -1,6 +1,7 @@
 from __future__ import absolute_import, print_function, unicode_literals
 
 import logging
+import weakref
 
 import numpy as np
 import scipy
@@ -189,6 +190,7 @@ def get_qb_mpo_dim_qn(mol_list, old_dim, old_qn, rep):
 
 
 class Mpo(MatrixProduct):
+
     @classmethod
     def exact_propagator(cls, mol_list, x, space="GS", shift=0.0):
         """
@@ -607,6 +609,9 @@ class Mpo(MatrixProduct):
                             )
             # scheme 3 no body mat
 
+            if imol == 0:
+                for i in range(mo.shape[1]):
+                    mo[0, i, i, 0] -= offset.as_au()
             self.append(mo)
             impo += 1
 
@@ -848,14 +853,12 @@ class Mpo(MatrixProduct):
                         self.append(mo)
                         impo += 1
 
-        for i in range(self[0].shape[1]):
-            self[0][0, i, i, 0] -= offset.as_au()
-
     def _get_sigmaqn(self, idx):
         if self.ephtable.is_electron(idx):
             return np.array([0, -1, 1, 0])
         else:
             return np.array([0] * self.pbond_list[idx] ** 2)
+
 
     @property
     def is_mps(self):

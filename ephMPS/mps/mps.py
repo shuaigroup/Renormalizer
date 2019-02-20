@@ -2,14 +2,17 @@ from __future__ import absolute_import, print_function, unicode_literals
 
 import logging
 from functools import reduce
+from itertools import chain
+from typing import List, Dict
 
 import numpy as np
 import scipy
+import opt_einsum
 from cached_property import cached_property
 
-
-from ephMPS.mps.tdh import unitary_propagation
 from ephMPS.mps import svd_qn, rk
+from ephMPS.mps.matrix import Matrix
+from ephMPS.mps.tdh import unitary_propagation
 from ephMPS.mps.lib import construct_enviro, GetLR, updatemps, transferMat
 from ephMPS.mps.mp import MatrixProduct
 from ephMPS.mps.mpo import Mpo
@@ -158,6 +161,8 @@ class Mps(MatrixProduct):
         self.evolve_config = EvolveConfig()
 
         self.compress_add = False
+        self.expectation_cache: List[Dict[Matrix, Matrix]] = []
+
 
     def conj(self):
         new_mps = super(Mps, self).conj()
@@ -236,25 +241,52 @@ class Mps(MatrixProduct):
         """
         return np.sqrt(self.conj().dot(self, with_hartree=False).real)
 
-    def calc_e_occupation(self, idx):
-        return self.expectation(
-            Mpo.onsite(self.mol_list, "a^\dagger a", mol_idx_set={idx})
-        )
 
-    def calc_ph_occupation(self, mol_idx, ph_idx):
-        return self.expectation(Mpo.ph_occupation_mpo(self.mol_list, mol_idx, ph_idx))
+    def _get_expectation_indices(self, prefix: str) -> List[List[str]]:
+        # for mpdm consistency
+        assert prefix in ['top', 'bottom']
+        res = []
+        for i in range(len(self)):
+            #       left bond,    physical bond,  right bond
+            res.append([f"{prefix}_{i}_b", f"{prefix}_{i}_p", f"{prefix}_{i+1}_b"])
+        return res
+
+    def expectation(self, mpo, self_conj=None):
+        # todo: might cause performance problem when calculating a lot of expectations
+        #       use dynamic programing to improve the performance.
+        # todo: different bra and ket
+        if self_conj is None:
+            self_conj = self.conj()
+        ms_list = list(self_conj) + list(mpo) + list(self)
+        mpo_subscripts: List[str] = []
+        for i in range(len(self)):
+            mpo_subscripts.append([f"mpo_{i}", f"top_{i}_p", f"bottom_{i}_p", f"mpo_{i+1}"])
+        subscripts_list = self._get_expectation_indices("top") + mpo_subscripts + self._get_expectation_indices("bottom")
+        # convert to list for debugging convenience
+        args = list(chain.from_iterable(zip(ms_list, subscripts_list)))
+        return opt_einsum.contract(*args).real.flatten()[0]
+        #return self.conj().dot(mpo.apply(self), with_hartree=False).real
+
+    def expectations(self, mpos):
+        res = []
+        self_conj = self.conj()
+        with opt_einsum.shared_intermediates():
+            for mpo in mpos:
+                res.append(self.expectation(mpo, self_conj))
+            return np.array(res)
 
     @_cached_property
     def ph_occupations(self):
-        ph_occupations = []
+        mpos = []
         for imol, mol in enumerate(self.mol_list):
             for iph in range(len(mol.dmrg_phs)):
-                ph_occupations.append(self.calc_ph_occupation(imol, iph))
-        return np.array(ph_occupations)
+                mpos.append(Mpo.ph_occupation_mpo(self.mol_list, imol, iph))
+        return self.expectations(mpos)
 
     @_cached_property
     def e_occupations(self):
-        return np.array([self.calc_e_occupation(i) for i in range(self.mol_num)])
+        mpos = [Mpo.onsite(self.mol_list, "a^\dagger a", mol_idx_set={i}) for i in range(self.mol_num)]
+        return self.expectations(mpos)
 
     @_cached_property
     def r_square(self):
@@ -299,12 +331,13 @@ class Mps(MatrixProduct):
                 mtb = other[i]
                 pdim = mta.shape[1]
                 assert pdim == mtb.shape[1]
-                new_mps[i] = np.zeros(
+                new_ms = np.zeros(
                     [mta.shape[0] + mtb.shape[0], pdim, mta.shape[2] + mtb.shape[2]],
                     dtype=np.complex128,
                 )
-                new_mps[i][: mta.shape[0], :, : mta.shape[2]] = mta[:, :, :]
-                new_mps[i][mta.shape[0] :, :, mta.shape[2] :] = mtb[:, :, :]
+                new_ms[: mta.shape[0], :, : mta.shape[2]] = mta[:, :, :]
+                new_ms[mta.shape[0] :, :, mta.shape[2] :] = mtb[:, :, :]
+                new_mps[i] = new_ms
 
             new_mps[-1] = np.vstack([self[-1], other[-1]])
         elif self.is_mpo or self.is_mpdm:  # MPO
@@ -317,7 +350,7 @@ class Mps(MatrixProduct):
                 assert pdimu == mtb.shape[1]
                 assert pdimd == mtb.shape[2]
 
-                new_mps[i] = np.zeros(
+                new_ms = np.zeros(
                     [
                         mta.shape[0] + mtb.shape[0],
                         pdimu,
@@ -326,10 +359,11 @@ class Mps(MatrixProduct):
                     ],
                     dtype=np.complex128,
                 )
-                new_mps[i][: mta.shape[0], :, :, : mta.shape[3]] = mta[:, :, :, :]
-                new_mps[i][mta.shape[0] :, :, :, mta.shape[3] :] = mtb[:, :, :, :]
+                new_ms[: mta.shape[0], :, :, : mta.shape[3]] = mta[:, :, :, :]
+                new_ms[mta.shape[0] :, :, :, mta.shape[3] :] = mtb[:, :, :, :]
+                new_mps[i] = new_ms
 
-                new_mps[-1] = np.concatenate((self[-1], other[-1]), axis=0)
+            new_mps[-1] = np.concatenate((self[-1], other[-1]), axis=0)
         else:
             assert False
 
@@ -685,11 +719,6 @@ class Mps(MatrixProduct):
         unitary_propagation(new_mps.wfns, HAM, Etot, evolve_dt)
         return new_mps
 
-    def expectation(self, mpo):
-        # todo: might cause performance problem when calculating a lot of expectations
-        #       use dynamic programing to improve the performance.
-        # todo: different bra and ket
-        return self.conj().dot(mpo.apply(self), with_hartree=False).real
 
     @property
     def digest(self):
@@ -744,7 +773,7 @@ class Mps(MatrixProduct):
         for imol, mol in enumerate(mol_list):
             for iph, ph in enumerate(mol.hartree_phs):
                 e_mean = mflib.exp_value(WFN[iwfn], ph.h_indep, WFN[iwfn])
-                Etot += e_mean
+                Etot += e_mean.real
                 e_mean += A_el[imol] * B_vib[imol][iph]
                 HAM.append(
                     ph.h_indep

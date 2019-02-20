@@ -1,12 +1,41 @@
 # -*- coding: utf-8 -*-
 # Author: Jiajun Ren <jiajunren0522@gmail.com>
 
+import weakref
+import logging
+from functools import wraps
+
 import numpy as np
 
+logger = logging.getLogger(__name__)
+
+def _mo_check_decorator(func):
+    @wraps(func)  # implement the dict by hand because can't override __eq__
+    def wrapper(cls, array: np.ndarray, is_mpo: bool):
+        if is_mpo:
+            k = hash(array.tobytes())
+            if k in cls._mo_dict:
+                res = cls._mo_dict[k]
+                assert np.allclose(res, array)
+                return res
+            else:
+                res = func(cls, array, is_mpo)
+                cls._mo_dict[k] = res
+                return res
+        else:
+            return func(cls, array, is_mpo)
+
+    return wrapper
 
 class Matrix(np.ndarray):
-    def __new__(cls, array):
-        obj = np.array(array).view(cls)
+
+    _mo_dict = weakref.WeakValueDictionary()
+
+    @_mo_check_decorator
+    def __new__(cls, array: np.ndarray, is_mpo: bool):
+        obj = array.view(cls)
+        # let hashing possible
+        obj.flags.writeable = False
         obj.original_shape = obj.shape
         # set in MatrixProduct
         obj.sigmaqn = None
@@ -69,3 +98,7 @@ class Matrix(np.ndarray):
         y.original_shape = self.original_shape
         y.sigmaqn = self.sigmaqn
         return y
+
+    def __hash__(self):
+        return hash(self.tobytes())
+

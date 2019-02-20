@@ -13,7 +13,7 @@ from ephMPS.transport.tests import cur_dir
 
 
 @pytest.mark.parametrize("n_dmrg_phs", (10, 5))
-def test(n_dmrg_phs):
+def test_zt(n_dmrg_phs):
 
     mol_list = parameter_PBI.construct_mol(4, n_dmrg_phs, 10 - n_dmrg_phs)
     mps = Mps.gs(mol_list, False)

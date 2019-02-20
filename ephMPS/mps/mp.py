@@ -358,8 +358,10 @@ class MatrixProduct:
             # therefore take transpose
             if mt1.ndim == 3:
                 e0 = np.tensordot(e0, mt1, ([0, 1], [0, 1])).T
-            if mt2.ndim == 4:
+            elif mt1.ndim == 4:
                 e0 = np.tensordot(e0, mt1, ([0, 1, 2], [0, 1, 2])).T
+            else:
+                assert False
 
         return e0[0, 0]
 
@@ -370,7 +372,8 @@ class MatrixProduct:
         new_mp = self if inplace else self.copy()
         if np.iscomplexobj(val):
             new_mp.to_complex(inplace=True)
-        new_mp[self.qnidx] *= val
+        # matrices are read-only
+        new_mp[self.qnidx] = new_mp[self.qnidx] * val
         return new_mp
 
     def to_complex(self, inplace=False):
@@ -400,7 +403,7 @@ class MatrixProduct:
         return copy.deepcopy(self)
 
     def array2mt(self, array, idx):
-        mt = Matrix(self.dtype(array))
+        mt = Matrix(self.dtype(array), self.is_mpo)
         if self.use_dummy_qn:
             mt.sigmaqn = np.zeros(mt.pdim_prod, dtype=np.int)
         else:
