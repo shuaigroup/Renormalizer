@@ -287,7 +287,10 @@ class Mps(MatrixProduct):
         assert self.is_left_canon == other.is_left_canon
 
         new_mps = other.copy()
-        new_mps.threshold = min(self.threshold, other.threshold)
+        if self.threshold < 1:
+            new_mps.threshold = min(self.threshold, other.threshold)
+        else:
+            new_mps.threshold = max(self.threshold, other.threshold)
 
         if self.is_mps:  # MPS
             new_mps[0] = np.dstack([self[0], other[0]])
@@ -375,6 +378,12 @@ class Mps(MatrixProduct):
     def evolve_dmrg(self, mpo=None, evolve_dt=None, approx_eiht=None):
         if self.evolve_config.scheme == EvolveMethod.prop_and_compress:
             return self.evolve_dmrg_prop_and_compress(mpo, evolve_dt, approx_eiht)
+        if not self._tdvp_check_bond_order():
+            threshold = self.threshold
+            self.threshold = self.evolve_config.expected_bond_order
+            res = self.evolve_dmrg_prop_and_compress(mpo, evolve_dt)
+            self.threshold = threshold
+            return res
         if self.evolve_config.scheme == EvolveMethod.tdvp_mctdh:
             return self.evolve_dmrg_tdvp_mctdh(mpo, evolve_dt)
         elif self.evolve_config.scheme == EvolveMethod.tdvp_mctdh_new:
@@ -392,7 +401,10 @@ class Mps(MatrixProduct):
         while len(termlist) < len(propagation_c):
             termlist.append(mpo.contract(termlist[-1]))
             # control term sizes to be approximately constant
-            termlist[-1].threshold *= 3
+            if termlist[-1].threshold < 1:
+                termlist[-1].threshold = min(termlist[-1].threshold * 3, 0.9) # can't set to 1 which is ambigous
+            else:
+                termlist[-1].threshold = max(int(termlist[-1].threshold * 0.8), 2)
         for idx, term in enumerate(termlist):
             term.scale((-1.0j * evolve_dt) ** idx * propagation_c[idx], inplace=True)
         new_mps = reduce(lambda mps1, mps2: mps1.add(mps2), termlist)
@@ -400,6 +412,14 @@ class Mps(MatrixProduct):
             new_mps.canonicalise()
             new_mps.compress()
         return new_mps
+
+    def _tdvp_check_bond_order(self):
+        assert self.evolve_config.scheme != EvolveMethod.prop_and_compress
+        assert self.evolve_config.expected_bond_order is not None
+        for bd in self.bond_dims[1:-1]:
+            if bd < self.evolve_config.expected_bond_order:
+                return False
+        return True
 
     def evolve_dmrg_tdvp_mctdh(self, mpo, evolve_dt):
         # TDVP for original MCTDH
@@ -580,7 +600,7 @@ class Mps(MatrixProduct):
 
             hop = hop_factory(ltensor, rtensor, mpo[imps])
 
-            def hop_svt(mps):
+            def hop_svt(ms):
                 # S-a   l-S
                 #
                 # O-b - b-O
@@ -588,7 +608,7 @@ class Mps(MatrixProduct):
                 # S-c   k-S
 
                 path = [([0, 1], "abc, ck -> abk"), ([1, 0], "abk, lbk -> al")]
-                HC = tensorlib.multi_tensor_contract(path, ltensor, mps, rtensor)
+                HC = tensorlib.multi_tensor_contract(path, ltensor, ms, rtensor)
                 return HC
 
             shape = list(mps[imps].shape)
@@ -715,7 +735,7 @@ class Mps(MatrixProduct):
         ).real
         e_mean += A_el.dot(elocal_offset)
         total_offset = mpo_indep.offset + Quantity(e_mean.real)
-        MPO = Mpo(mol_list, elocal_offset=elocal_offset, offset=total_offset)
+        MPO = Mpo(mol_list, mpo_indep.scheme, mpo_indep.rep, elocal_offset=elocal_offset, offset=total_offset)
 
         Etot += e_mean
 

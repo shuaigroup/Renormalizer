@@ -106,7 +106,7 @@ def test_1mol_Exact_Spectra_hybrid_TDDMRG_TDH(algorithm):
     dt = 30.0
     exact_abs.evolve(dt, nsteps)
 
-    with open("1mol_ZTabs.npy", "rb") as f:
+    with open(os.path.join(cur_dir, "1mol_ZTabs.npy"), "rb") as f:
         mol1_ZTabs_std = np.load(f)
 
     assert np.allclose(exact_abs.autocorr[:nsteps], mol1_ZTabs_std[:nsteps], rtol=1e-3)

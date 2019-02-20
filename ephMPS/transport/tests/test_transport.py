@@ -12,6 +12,7 @@ from ephMPS.transport.transport import (
     calc_reduced_density_matrix_straight,
 )
 from ephMPS.utils import Quantity
+from ephMPS.utils import EvolveMethod, EvolveConfig
 
 # the temperature should be compatible with the low vibration frequency in TestBandLimitFiniteT
 # otherwise underflow happens in exact propagator
@@ -19,25 +20,32 @@ low_t = Quantity(1e-7, "K")
 
 
 @pytest.mark.parametrize(
-    "mol_num, j_constant_value, elocalex_value, ph_info, ph_phys_dim, evolve_dt, nsteps",
-    ([13, 0.8, 3.87e-3, [[1e-10, 1e-10]], 4, 2, 50],),
+    "method",
+    (
+     EvolveMethod.prop_and_compress,
+     EvolveMethod.tdvp_mctdh,
+     EvolveMethod.tdvp_ps)
 )
-def test_bandlimit_zero_t(
-    mol_num, j_constant_value, elocalex_value, ph_info, ph_phys_dim, evolve_dt, nsteps
-):
+def test_bandlimit_zero_t(method):
+    mol_num = 13
     ph_list = [
         Phonon.simple_phonon(
-            Quantity(omega, "cm^{-1}"), Quantity(displacement, "a.u."), ph_phys_dim
+            Quantity(omega, "cm^{-1}"), Quantity(displacement, "a.u."), 4
         )
-        for omega, displacement in ph_info
+        for omega, displacement in [[1e-10, 1e-10]]
     ]
-    j_constant = Quantity(j_constant_value, "eV")
+    j_constant = Quantity(0.8, "eV")
     mol_list = MolList(
-        [Mol(Quantity(elocalex_value, "a.u."), ph_list)] * mol_num, j_constant
+        [Mol(Quantity(3.87e-3, "a.u."), ph_list)] * mol_num, j_constant
     )
-    ct = ChargeTransport(mol_list)
+    evolve_config = EvolveConfig(method)
+    if method != EvolveMethod.prop_and_compress:
+        evolve_config.expected_bond_order = 5
+    ct = ChargeTransport(mol_list, evolve_config=evolve_config)
     ct.stop_at_edge = True
     ct.set_threshold(1e-4)
+    evolve_dt = 2
+    nsteps = 50
     ct.evolve(evolve_dt, nsteps)
     analytical_r_square = 2 * (j_constant.as_au()) ** 2 * ct.evolve_times_array ** 2
     # has evolved to the edge

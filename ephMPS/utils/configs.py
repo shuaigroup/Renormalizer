@@ -22,9 +22,12 @@ class EvolveMethod(Enum):
 
 
 class EvolveConfig:
-    def __init__(self):
-        self.scheme = EvolveMethod.prop_and_compress
+    def __init__(self, scheme=EvolveMethod.prop_and_compress):
+        self.scheme = scheme
+        # tdvp also requires prop and compress
+        self.prop_method = "C_RK4"
         if self.scheme == EvolveMethod.prop_and_compress:
-            self.prop_method = "C_RK4"
+            self.expected_bond_order = None
         else:
-            self.prop_method = None
+            self.expected_bond_order = 50
+

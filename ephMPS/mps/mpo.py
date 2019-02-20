@@ -516,6 +516,8 @@ class Mpo(MatrixProduct):
             return
 
         self.mol_list = mol_list
+        self.scheme = scheme
+        self.rep = rep
         # offset of the hamiltonian, might be useful when doing td-hartree job
         self.offset = offset
         j_matrix = self.mol_list.j_matrix

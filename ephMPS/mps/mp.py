@@ -42,7 +42,7 @@ class MatrixProduct:
 
         # mpo also need to be compressed sometimes
         self._compress_method = "svd"
-        self.threshold = 1e-3
+        self._threshold = 1e-3
 
         self.peak_bytes = 0
 
@@ -69,6 +69,19 @@ class MatrixProduct:
     def compress_method(self, value):
         assert value in ["svd", "variational"]
         self._compress_method = value
+
+    @property
+    def threshold(self):
+        return self._threshold
+
+    @threshold.setter
+    def threshold(self, v):
+        if v <= 0:
+            raise ValueError('non-positive threshold')
+        elif v == 1:
+            raise ValueError("ambiguous threshold (1)")
+        else:
+            self._threshold = v
 
     @property
     def is_mps(self):
@@ -285,16 +298,15 @@ class MatrixProduct:
                 mt, qnbigl, qnbigr, self.qntot, system=system, full_matrices=False
             )
             vt = v.T
-
+            assert 0 < self.threshold and self.threshold != 1
             if self.threshold < 1.0:
                 # count how many sing vals < trunc
                 normed_sigma = sigma / scipy.linalg.norm(sigma)
                 # m_trunc=len([s for s in normed_sigma if s >trunc])
                 m_trunc = np.count_nonzero(normed_sigma > self.threshold)
             else:
-                assert False  # in some cases buggy, such as dynamic threshold
-                # m_trunc = int(self.threshold)
-                # m_trunc = min(m_trunc, len(sigma))
+                m_trunc = int(self.threshold)
+                m_trunc = min(m_trunc, len(sigma))
             assert m_trunc != 0
             self._update_ms(idx, u, vt, sigma, qnlset, qnrset, m_trunc)
 

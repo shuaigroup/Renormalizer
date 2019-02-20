@@ -28,8 +28,7 @@ def test_ZeroTcorr_TDVP(method, evolve_dt, rtol):
 
     mol_list = parameter.mol_list
 
-    evolve_config = EvolveConfig()
-    evolve_config.scheme = method
+    evolve_config = EvolveConfig(method)
 
     zero_t_corr = SpectraTwoWayPropZeroT(
         mol_list,
@@ -66,8 +65,8 @@ def test_finite_t_spectra_emi_TDVP(method, nsteps, evolve_dt, rtol):
     mol_list = parameter.mol_list
     temperature = Quantity(298, "K")
     offset = Quantity(2.28614053, "ev")
-    evolve_config = EvolveConfig()
-    evolve_config.scheme = method
+    evolve_config = EvolveConfig(method)
+    evolve_config.expected_bond_order = 10
     finite_t_corr = SpectraFiniteT(
         mol_list, "emi", temperature, 50, offset, evolve_config=evolve_config
     )
