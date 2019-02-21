@@ -15,7 +15,7 @@ from ephMPS.mps.tests import cur_dir
 @pytest.mark.parametrize(
     "method, evolve_dt, rtol",
     (
-        # [EvolveMethod.tdvp_mctdh, 2.0, 1e-2], # not working
+        # [EvolveMethod.tdvp_mctdh, 2.0, 1e-2],
         [EvolveMethod.tdvp_mctdh_new, 2.0, 1e-2],
         [EvolveMethod.tdvp_ps, 15.0, 1e-2],
     ),
@@ -29,7 +29,7 @@ def test_ZeroTcorr_TDVP(method, evolve_dt, rtol):
     mol_list = parameter.mol_list
 
     evolve_config = EvolveConfig(method)
-
+    evolve_config.expected_bond_order = 20
     zero_t_corr = SpectraTwoWayPropZeroT(
         mol_list,
         "abs",
@@ -39,6 +39,7 @@ def test_ZeroTcorr_TDVP(method, evolve_dt, rtol):
     )
     zero_t_corr.info_interval = 30
     nsteps = 200
+    # nsteps = 1200
     zero_t_corr.evolve(evolve_dt, nsteps)
     with open(
         os.path.join(
@@ -83,3 +84,29 @@ def test_finite_t_spectra_emi_TDVP(method, nsteps, evolve_dt, rtol):
     # plt.plot(finite_t_corr.autocorr)
     # plt.plot(std)
     # plt.show()
+'''
+import logging
+from ephMPS.tests.parameter import mol_list
+from ephMPS.mps import Mps, Mpo
+from ephMPS.utils import RungeKutta, log
+
+if __name__ == "__main__":
+    #log.set_stream_level(logging.INFO)
+    mps = Mps.gs(mol_list, False)
+    mpo = Mpo(mol_list, scheme=3)
+    # create electron
+    mps = Mpo.onsite(mol_list, "a^\dagger", mol_idx_set={0}).apply(mps).normalize(1.0)
+    rk_config = RungeKutta("RKF45")
+    evolve_config = EvolveConfig(rk_config=rk_config)
+    mps.evolve_config = evolve_config
+
+    occ = [mps.e_occupations]
+    total_time = 0
+    while total_time < 1000:
+        total_time += mps.evolve_config.rk_config.evolve_dt
+        mps = mps.evolve(mpo, mps.evolve_config.rk_config.evolve_dt)
+        occ.append(mps.e_occupations)
+    from matplotlib import pyplot as plt
+    plt.plot(np.array(occ))
+    plt.show()
+'''

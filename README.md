@@ -7,3 +7,5 @@ This is a electron-phonon hamiltonina MPS
 
 ## todo
 * benchmark framework (could be useful in detecting bugs)
+* switch from p&c to tdvp more cleverly (only when p&c becomes slower? 
+or when highest bond order hits expectated bond order?)

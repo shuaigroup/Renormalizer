@@ -10,9 +10,9 @@ import logging
 import numpy as np
 import scipy
 
-import ephMPS.mps.rk
 from ephMPS.mps.tdh import mflib
 from ephMPS.utils import Quantity
+from ephMPS.utils.rk import RungeKutta
 from ephMPS.utils.tdmps import TdMpsJob
 
 logger = logging.getLogger(__name__)
@@ -294,7 +294,7 @@ class TdHartree(TdMpsJob):
             HAM, Etot = self.construct_H_Ham(nexciton, WFN)
             unitary_propagation(WFN, HAM, Etot, evolve_dt)
         else:
-            rk = ephMPS.mps.rk.Runge_Kutta(method=self.prop_method)
+            rk = RungeKutta(method=self.prop_method)
             RK_a, RK_b, RK_c = rk.tableau
 
             klist = []

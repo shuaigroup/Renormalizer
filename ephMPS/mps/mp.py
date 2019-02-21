@@ -38,12 +38,13 @@ class MatrixProduct:
         # in mpo.quasi_boson, mol_list is not set, then _ephtable and _pbond_list should be used
         self.mol_list: MolList = None
         self._ephtable: EphTable = None
-        self._pbond_list = None
+        self._pbond_list: List[int] = None
 
         # mpo also need to be compressed sometimes
         self._compress_method = "svd"
         self._threshold = 1e-3
 
+        # maximum size during the whole life time of the mp
         self.peak_bytes = 0
 
         # QN related

@@ -19,7 +19,8 @@ from ephMPS.utils.configs import EvolveConfig
 
 logger = logging.getLogger(__name__)
 
-
+# this is now highly inaccurate. Could use some more powerful algorithms (see `fbprophet`)
+# but is it worth the fuss?
 def predict_time(real_times, nsteps):
     time_deltas = [(time - real_times[0]).total_seconds() for time in real_times]
     current_steps = len(real_times)
@@ -32,12 +33,12 @@ def predict_time(real_times, nsteps):
 
 
 class TdMpsJob(object):
-    def __init__(self, evolve_config=None):
+    def __init__(self, evolve_config: EvolveConfig=None):
         logger.info("Creating TDMPS job.")
         if evolve_config is None:
-            self.evolve_config = EvolveConfig()
+            self.evolve_config: EvolveConfig = EvolveConfig()
         else:
-            self.evolve_config = evolve_config
+            self.evolve_config: EvolveConfig = evolve_config
         logger.info("Step 0/?. Preparing MPS in the intial state.")
         self.evolve_times = [0]
         # output abstract of current mps every x steps
@@ -53,23 +54,35 @@ class TdMpsJob(object):
         """
         raise NotImplementedError
 
-    def evolve(self, evolve_dt, nsteps=None, evolve_time=None):
-        if nsteps is None and evolve_time is None:
-            raise ValueError(
-                "Must provided either number of steps or target evolution time"
-            )
-        if nsteps is None:
-            nsteps = int(evolve_time / evolve_dt) + 1  # round up
-        elif evolve_time is None:
-            evolve_time = nsteps * evolve_dt
+    def evolve(self, evolve_dt=None, nsteps=None, evolve_time=None):
+        if evolve_dt is None:
+            if not self.evolve_config.rk_config.adaptive:
+                raise ValueError("in non-adaptive mode evolve_dt is not given")
+            if evolve_time is None:
+                target_time = "?" # stop by `stop_evolve_criteria`
+            else:
+                target_time = self.evolve_times[-1] + evolve_time
+            target_steps = "?"
+            nsteps = int(1e10) # insanely large
         else:
-            logger.warning(
-                "Both nsteps and evolve_time is defined for evolution. The result may be unexpected."
-            )
-        target_steps = len(self.tdmps_list) + nsteps - 1
-        target_time = self.evolve_times[-1] + evolve_time
+            if nsteps is None and evolve_time is None:
+                raise ValueError(
+                    "Must provided either number of steps or target evolution time"
+                )
+            if nsteps is None:
+                nsteps = int(evolve_time / evolve_dt) + 1  # round up
+            elif evolve_time is None:
+                evolve_time = nsteps * evolve_dt
+            else:
+                logger.warning(
+                    "Both nsteps and evolve_time is defined for evolution. The result may be unexpected."
+                )
+            target_steps = len(self.tdmps_list) + nsteps - 1
+            target_time = self.evolve_times[-1] + evolve_time
         real_times = [datetime.now()]
         for i in range(nsteps):
+            if self.evolve_config.rk_config.adaptive:
+                evolve_dt = self.evolve_config.rk_config.evolve_dt
             new_evolve_time = self.latest_evolve_time + evolve_dt
             self.evolve_times.append(new_evolve_time)
             step_str = "step {}/{}, time {:.2f}/{}".format(
@@ -77,13 +90,13 @@ class TdMpsJob(object):
             )
             logger.info("{} begin.".format(step_str))
             new_mps = self.evolve_single_step(evolve_dt=evolve_dt)
+            if self.evolve_config.rk_config.adaptive:
+                # update evolve_dt
+                self.evolve_config.rk_config.evolve_dt = new_mps.evolve_config.rk_config.evolve_dt
             new_real_time = datetime.now()
             time_cost = new_real_time - real_times[-1]
             self.tdmps_list.append(new_mps)
-            if i % self.info_interval == 0:
-                mps_abstract = str(new_mps)
-            else:
-                mps_abstract = ""
+            mps_abstract = str(new_mps) if i % self.info_interval == 0 else ""
             logger.info(
                 "%s complete, time cost %s. %s" % (step_str, time_cost, mps_abstract)
             )

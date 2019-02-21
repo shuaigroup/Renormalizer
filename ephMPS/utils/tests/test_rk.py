@@ -2,7 +2,7 @@
 # Author: Jiajun Ren <jiajunren0522@gmail.com>
 import numpy as np
 
-from ephMPS.mps.rk import coefficient_dict
+from ephMPS.utils.rk import RungeKutta
 
 
 def test_rk():
@@ -16,4 +16,4 @@ def test_rk():
         ("38rule_RK4", [1.0, 1.0, 0.5, 0.16666667, 0.04166667]),
     ]
     for method, std in std_list:
-        assert np.allclose(coefficient_dict[method], std)
+        assert np.allclose(RungeKutta(method).coeff, std)

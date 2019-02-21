@@ -1,31 +1,29 @@
 from __future__ import absolute_import, print_function, unicode_literals
 
 import logging
-from functools import reduce
 from itertools import chain
 from typing import List, Dict
 
 import numpy as np
-import scipy
 import opt_einsum
+import scipy
 from cached_property import cached_property
 
-from ephMPS.mps import svd_qn, rk
+from ephMPS.lib import solve_ivp
+from ephMPS.lib import tensor as tensorlib
+from ephMPS.mps import svd_qn
+from ephMPS.mps.lib import construct_enviro, GetLR, updatemps, compressed_sum
 from ephMPS.mps.matrix import Matrix
-from ephMPS.mps.tdh import unitary_propagation
-from ephMPS.mps.lib import construct_enviro, GetLR, updatemps, transferMat
 from ephMPS.mps.mp import MatrixProduct
 from ephMPS.mps.mpo import Mpo
 from ephMPS.mps.tdh import mflib
-from ephMPS.lib import tensor as tensorlib
-from ephMPS.lib import solve_ivp
+from ephMPS.mps.tdh import unitary_propagation
 from ephMPS.utils import (
     Quantity,
     OptimizeConfig,
     EvolveConfig,
     EvolveMethod,
-    sizeof_fmt,
-)
+    sizeof_fmt)
 
 logger = logging.getLogger(__name__)
 
@@ -157,10 +155,10 @@ class Mps(MatrixProduct):
         super(Mps, self).__init__()
         self.wfns = [1]
 
-        self.optimize_config = OptimizeConfig()
-        self.evolve_config = EvolveConfig()
+        self.optimize_config: OptimizeConfig = OptimizeConfig()
+        self.evolve_config: EvolveConfig = EvolveConfig()
 
-        self.compress_add = False
+        self.compress_add: bool = False
         self.expectation_cache: List[Dict[Matrix, Matrix]] = []
 
 
@@ -175,7 +173,7 @@ class Mps(MatrixProduct):
         if with_hartree:
             assert len(self.wfns) == len(other.wfns)
             for wfn1, wfn2 in zip(self.wfns[:-1], other.wfns[:-1]):
-                # use vdot is buggy here, because vdot will take conjugation automatically
+                # using vdot is buggy here, because vdot will take conjugation automatically
                 e *= np.dot(wfn1, wfn2)
         return e
 
@@ -211,15 +209,6 @@ class Mps(MatrixProduct):
     @property
     def nexciton(self):
         return self.qntot
-
-    @property
-    def prop_method(self):
-        return self.evolve_config.prop_method
-
-    @prop_method.setter
-    def prop_method(self, value):
-        assert value in rk.method_list
-        self.evolve_config.prop_method = value
 
     @_cached_property
     def norm(self):
@@ -398,7 +387,7 @@ class Mps(MatrixProduct):
         # suppose length is only determined by dmrg part
         self.normalize(self.dmrg_norm)
 
-    def evolve(self, mpo=None, evolve_dt=None, approx_eiht=None):
+    def evolve(self, mpo, evolve_dt, approx_eiht=None):
         hybrid_mpo, HAM, Etot = self.construct_hybrid_Ham(mpo)
         mps = self.evolve_dmrg(hybrid_mpo, evolve_dt, approx_eiht)
         unitary_propagation(mps.wfns, HAM, Etot, evolve_dt)
@@ -408,10 +397,11 @@ class Mps(MatrixProduct):
             mps.normalize(None)
         return mps
 
-    # todo: separate the 2 methods (approx_eiht), because their parameters are orthogonal
-    def evolve_dmrg(self, mpo=None, evolve_dt=None, approx_eiht=None):
+    def evolve_dmrg(self, mpo, evolve_dt, approx_eiht=None):
+        if approx_eiht is not None:
+            return approx_eiht.contract(self)
         if self.evolve_config.scheme == EvolveMethod.prop_and_compress:
-            return self.evolve_dmrg_prop_and_compress(mpo, evolve_dt, approx_eiht)
+            return self.evolve_dmrg_prop_and_compress(mpo, evolve_dt)
         if not self._tdvp_check_bond_order():
             threshold = self.threshold
             self.threshold = self.evolve_config.expected_bond_order
@@ -427,38 +417,66 @@ class Mps(MatrixProduct):
         else:
             assert False
 
-    def evolve_dmrg_prop_and_compress(self, mpo=None, evolve_dt=None, approx_eiht=None):
-        if approx_eiht is not None:
-            return approx_eiht.contract(self)
-        propagation_c = rk.coefficient_dict[self.prop_method]
+    def evolve_dmrg_prop_and_compress(self, mpo, evolve_dt):
+        rk_config = self.evolve_config.rk_config
+        propagation_c = rk_config.coeff
         termlist = [self]
         while len(termlist) < len(propagation_c):
             termlist.append(mpo.contract(termlist[-1]))
             # control term sizes to be approximately constant
             if termlist[-1].threshold < 1:
-                termlist[-1].threshold = min(termlist[-1].threshold * 3, 0.9) # can't set to 1 which is ambigous
+                termlist[-1].threshold = min(termlist[-1].threshold * 3, 0.9) # can't set to 1 which is ambiguous
             else:
                 termlist[-1].threshold = max(int(termlist[-1].threshold * 0.8), 2)
-        for idx, term in enumerate(termlist):
-            term.scale((-1.0j * evolve_dt) ** idx * propagation_c[idx], inplace=True)
-        new_mps = reduce(lambda mps1, mps2: mps1.add(mps2), termlist)
-        if not self.compress_add:
-            new_mps.canonicalise()
-            new_mps.compress()
-        return new_mps
+        if rk_config.adaptive:
+            while True:
+                scaled_termlist = []
+                for idx, term in enumerate(termlist):
+                    scale = (-1.0j * rk_config.evolve_dt) ** idx * propagation_c[idx]
+                    scaled_termlist.append(term.scale(scale))
+                new_mps1 = compressed_sum(scaled_termlist[:-1])
+                new_mps2 = compressed_sum([new_mps1, scaled_termlist[-1]])
+                angle = new_mps1.angle(new_mps2)
+                logger.debug(f"angle: {angle:f}")
+                rk_config = new_mps2.evolve_config.rk_config
+                # some tests show that five 9s mean totally safe
+                # four 9s with last digit smaller than 5 mean unstably is coming
+                # three 9s explode immediately
+                if 0.99995 < angle < 1.00005:
+                    # converged
+                    if rk_config.evolve_dt < evolve_dt:
+                        new_dt = evolve_dt - rk_config.evolve_dt
+                        return new_mps2.evolve_dmrg_prop_and_compress(mpo, new_dt)
+                    elif rk_config.evolve_dt == evolve_dt:
+                        if 0.99999 < angle < 1.00001:
+                            # a larger dt could be used
+                            rk_config.evolve_dt *= 1.5
+                            logger.debug(f"evolution easily converged, new evolve_dt: {rk_config.evolve_dt}")
+                        # the only exit
+                        return new_mps2
+                    else:
+                        assert False
+                else:
+                    # not converged
+                    rk_config.evolve_dt /= 2
+                    logger.debug(f"evolution not converged, new evolve_dt: {rk_config.evolve_dt}")
+        else:
+            for idx, term in enumerate(termlist):
+                term.scale((-1.0j * evolve_dt) ** idx * propagation_c[idx], inplace=True)
+            return compressed_sum(termlist)
 
     def _tdvp_check_bond_order(self):
         assert self.evolve_config.scheme != EvolveMethod.prop_and_compress
         assert self.evolve_config.expected_bond_order is not None
-        for bd in self.bond_dims[1:-1]:
-            if bd < self.evolve_config.expected_bond_order:
-                return False
-        return True
+        for bd in self.bond_dims:
+            if self.evolve_config.expected_bond_order <= bd:
+                return True
+        return False
 
     def evolve_dmrg_tdvp_mctdh(self, mpo, evolve_dt):
         # TDVP for original MCTDH
-        if self.is_left_canon:
-            assert self.check_left_canonical()
+        if self.is_right_canon:
+            assert self.check_right_canonical()
             self.canonicalise()
         # qn for this method has not been implemented
         self.use_dummy_qn = True
@@ -509,9 +527,6 @@ class Mps(MatrixProduct):
             #                                        np.conj(MPSnew[imps]), axes=([0, 1], [0, 1])),
             #                           np.diag(np.ones(MPSnew[imps].shape[2])))
 
-        mps._switch_domain()
-        new_mps._switch_domain()
-        new_mps.canonicalise()
         return new_mps
 
     def evolve_dmrg_tdvp_mctdhnew(self, mpo, evolve_dt):
@@ -525,7 +540,7 @@ class Mps(MatrixProduct):
         # qn for this method has not been implemented
         self.use_dummy_qn = True
         self.clear_qn()
-        # todo: use 4x memory here, could be reduced to 2x
+        # xxx: uses 3x memory. Is it possible to only use 2x?
         mps = self.to_complex(inplace=True)
 
         # construct the environment matrix
@@ -718,7 +733,6 @@ class Mps(MatrixProduct):
         new_mps = MPOprop.apply(self, canonicalise=True)
         unitary_propagation(new_mps.wfns, HAM, Etot, evolve_dt)
         return new_mps
-
 
     @property
     def digest(self):
@@ -914,3 +928,20 @@ def integrand_func_factory(shape, hop, islast, S_inv):
         return np.tensordot(HC, S_inv, axes=(-1, 0)).ravel() / 1.0j
 
     return func
+
+
+def transferMat(mps, mpsconj, domain, siteidx):
+    """
+    calculate the transfer matrix from the left hand or the right hand
+    """
+    val = np.ones([1, 1])
+    if domain == "R":
+        for imps in range(len(mps) - 1, siteidx - 1, -1):
+            val = np.tensordot(mpsconj[imps], val, axes=(2, 0))
+            val = np.tensordot(val, mps[imps], axes=([1, 2], [1, 2]))
+    elif domain == "L":
+        for imps in range(0, siteidx + 1, 1):
+            val = np.tensordot(mpsconj[imps], val, axes=(0, 0))
+            val = np.tensordot(val, mps[imps], axes=([0, 2], [1, 0]))
+
+    return val

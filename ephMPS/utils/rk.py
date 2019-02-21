@@ -21,37 +21,41 @@ method_list = [
 ]
 
 
-class Runge_Kutta(object):
-    def __init__(self, method="C_RK4", TD=False, adaptive=False, rtol=1e-3):
+class RungeKutta:
+    def __init__(self, method="C_RK4", td=False, adaptive=False, rtol=1e-3):
 
         assert method in method_list
         self.method = method
 
         # if the propagator is time dependent
-        self.TD = TD
-        self.adaptive = adaptive
+        self.td = td
 
         if method == "RKF45":
-            self.adaptive = True
+            adaptive = True
+        self.adaptive = adaptive
+        if self.adaptive:
+            # a wild guess
+            self.evolve_dt = 1e-1
 
         self.rtol = rtol
         # if self.adaptive == True, please set rtol
 
-        self.tableau, self.stage, self.order = self.tableau()
-        if self.TD == False:
+        self.tableau, self.stage, self.order = self.get_tableau()
+        if not self.td:
             # if time independent, stage is the same as order because of the
             # taylor expansion
             self.stage = self.order[-1]
+            self._coeff = np.array([1.0 / factorial(i) for i in range(self.order[-1] + 1)])
 
     @property
-    def Te_coeff(self):
+    def coeff(self):
         """
         Taylor_expansion_coefficient
         """
-        assert self.TD == False
-        return np.array([1.0 / factorial(i) for i in range(self.order[-1] + 1)])
+        assert self.td == False
+        return self._coeff
 
-    def tableau(self):
+    def get_tableau(self):
         """
         Butcher tableau of the explicit Runge-Kutta methods.
 
@@ -88,6 +92,8 @@ class Runge_Kutta(object):
                 alpha = 0.5
             elif self.method == "Ralston_RK2":
                 alpha = 2.0 / 3.0
+            else:
+                assert False
 
             a = np.array([[0, 0], [alpha, 0]])
             b = np.array([1 - 0.5 / alpha, 0.5 / alpha])
@@ -171,6 +177,8 @@ class Runge_Kutta(object):
             )
             Nstage = 6
             order = (4, 5)
+        else:
+            assert False
 
         a = a.astype(np.float64)
         b = b.astype(np.float64)
@@ -194,7 +202,7 @@ class Runge_Kutta(object):
         Runge Kutta and 3/8 rule Runge Kutta has some coefficient.
         """
 
-        a, b, c = self.tableau
+        a, b, c = self.get_tableau
         Nstage = self.stage
 
         table = np.zeros([Nstage + 1, Nstage + 1])
@@ -229,5 +237,3 @@ def adaptive_fix(p):
 
     return p
 
-
-coefficient_dict = {method: Runge_Kutta(method).Te_coeff for method in method_list}

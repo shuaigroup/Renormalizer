@@ -4,26 +4,11 @@
 """
 construct the operator matrix in the MPS sweep procedure
 """
+from functools import reduce
 
 import numpy as np
+
 from ephMPS.lib import tensor as tensorlib
-
-
-def transferMat(mps, mpsconj, domain, siteidx):
-    """
-    calculate the transfer matrix from the left hand or the right hand
-    """
-    val = np.ones([1, 1])
-    if domain == "R":
-        for imps in range(len(mps) - 1, siteidx - 1, -1):
-            val = np.tensordot(mpsconj[imps], val, axes=(2, 0))
-            val = np.tensordot(val, mps[imps], axes=([1, 2], [1, 2]))
-    elif domain == "L":
-        for imps in range(0, siteidx + 1, 1):
-            val = np.tensordot(mpsconj[imps], val, axes=(0, 0))
-            val = np.tensordot(val, mps[imps], axes=([0, 2], [1, 0]))
-
-    return val
 
 
 def GetLR(
@@ -246,3 +231,12 @@ def updatemps(vset, sset, qnset, compset, nexciton, Mmax, percent=0):
     # print("discard:", 1.0 - stot)
 
     return mps, mpsdim, mpsqn, compmps
+
+
+def compressed_sum(mps_list):
+    assert len(mps_list) != 0
+    new_mps = reduce(lambda mps1, mps2: mps1.add(mps2), mps_list)
+    if not mps_list[0].compress_add:
+        new_mps.canonicalise()
+        new_mps.compress()
+    return new_mps

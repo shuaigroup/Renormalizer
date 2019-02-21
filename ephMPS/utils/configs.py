@@ -1,6 +1,8 @@
 # -*- coding: utf-8 -*-
 from enum import Enum
 
+from ephMPS.utils.rk import RungeKutta
+
 
 class OptimizeConfig:
     def __init__(self):
@@ -22,12 +24,15 @@ class EvolveMethod(Enum):
 
 
 class EvolveConfig:
-    def __init__(self, scheme=EvolveMethod.prop_and_compress):
+    def __init__(self, scheme: EvolveMethod=EvolveMethod.prop_and_compress, rk_config: RungeKutta=None):
         self.scheme = scheme
         # tdvp also requires prop and compress
+        if rk_config is None:
+            self.rk_config: RungeKutta = RungeKutta()
+        else:
+            self.rk_config: RungeKutta = rk_config
         self.prop_method = "C_RK4"
         if self.scheme == EvolveMethod.prop_and_compress:
             self.expected_bond_order = None
         else:
             self.expected_bond_order = 50
-
