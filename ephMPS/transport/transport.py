@@ -94,9 +94,9 @@ class ChargeTransport(TdMpsJob):
         self.custom_dump_info = OrderedDict()
         self.stop_at_edge = False
         self.memory_limit = None
-        self.economic_mode = (
-            False
-        )  # if set True, only save full information of the latest mps and discard previous ones
+        # if set True, only save full information of the latest mps and discard previous ones
+        self.economic_mode = False
+
 
     @property
     def mol_num(self):
@@ -147,6 +147,7 @@ class ChargeTransport(TdMpsJob):
         new_mps = old_mps.evolve(self.mpo, evolve_dt)
         if self.memory_limit is not None:
             while self.memory_limit < new_mps.peak_bytes:
+                # todo: buggy
                 old_mps.threshold *= 1.2
                 logger.debug("Set threshold to {:g}".format(old_mps.threshold))
                 old_mps.peak_bytes = 0
@@ -159,10 +160,10 @@ class ChargeTransport(TdMpsJob):
             "Energy of the new mps: %g, %.5f%% of initial energy preserved"
             % (new_energy, self.latest_energy_ratio * 100)
         )
-        logger.debug("Calculating reduced density matrix")
         if self.reduced_density_matrices is not None:
+            logger.debug("Calculating reduced density matrix")
             self.reduced_density_matrices.append(calc_reduced_density_matrix(new_mps))
-        logger.debug("Calculate reduced density matrix finished")
+            logger.debug("Calculate reduced density matrix finished")
         return new_mps
 
     def stop_evolve_criteria(self):

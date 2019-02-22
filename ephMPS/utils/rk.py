@@ -22,7 +22,7 @@ method_list = [
 
 
 class RungeKutta:
-    def __init__(self, method="C_RK4", td=False, adaptive=False, rtol=1e-3):
+    def __init__(self, method="C_RK4", td=False, adaptive=False, evolve_dt=1e-1, rtol=1e-3):
 
         assert method in method_list
         self.method = method
@@ -35,7 +35,9 @@ class RungeKutta:
         self.adaptive = adaptive
         if self.adaptive:
             # a wild guess
-            self.evolve_dt = 1e-1
+            self.evolve_dt = evolve_dt
+        else:
+            self.evolve_dt = None
 
         self.rtol = rtol
         # if self.adaptive == True, please set rtol

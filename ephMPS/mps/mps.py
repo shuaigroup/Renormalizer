@@ -159,7 +159,6 @@ class Mps(MatrixProduct):
         self.evolve_config: EvolveConfig = EvolveConfig()
 
         self.compress_add: bool = False
-        self.expectation_cache: List[Dict[Matrix, Matrix]] = []
 
 
     def conj(self):
@@ -205,6 +204,10 @@ class Mps(MatrixProduct):
     @property
     def coeff(self):
         return self.wfns[-1]
+
+    @property
+    def use_tdh(self):
+        return 1 < len(self.wfns)
 
     @property
     def nexciton(self):
@@ -388,9 +391,13 @@ class Mps(MatrixProduct):
         self.normalize(self.dmrg_norm)
 
     def evolve(self, mpo, evolve_dt, approx_eiht=None):
-        hybrid_mpo, HAM, Etot = self.construct_hybrid_Ham(mpo)
-        mps = self.evolve_dmrg(hybrid_mpo, evolve_dt, approx_eiht)
-        unitary_propagation(mps.wfns, HAM, Etot, evolve_dt)
+        if self.use_tdh:
+            # the cost is calculating energy
+            hybrid_mpo, HAM, Etot = self.construct_hybrid_Ham(mpo)
+            mps = self.evolve_dmrg(hybrid_mpo, evolve_dt, approx_eiht)
+            unitary_propagation(mps.wfns, HAM, Etot, evolve_dt)
+        else:
+            mps = self.evolve_dmrg(mpo, evolve_dt, approx_eiht)
         if np.iscomplex(evolve_dt):
             mps.normalize(1.0)
         else:
@@ -438,24 +445,30 @@ class Mps(MatrixProduct):
                 new_mps2 = compressed_sum([new_mps1, scaled_termlist[-1]])
                 angle = new_mps1.angle(new_mps2)
                 logger.debug(f"angle: {angle:f}")
-                rk_config = new_mps2.evolve_config.rk_config
                 # some tests show that five 9s mean totally safe
                 # four 9s with last digit smaller than 5 mean unstably is coming
                 # three 9s explode immediately
                 if 0.99995 < angle < 1.00005:
                     # converged
-                    if rk_config.evolve_dt < evolve_dt:
-                        new_dt = evolve_dt - rk_config.evolve_dt
-                        return new_mps2.evolve_dmrg_prop_and_compress(mpo, new_dt)
-                    elif rk_config.evolve_dt == evolve_dt:
+                    if abs(rk_config.evolve_dt - evolve_dt) / evolve_dt < 1e-5:
+                        # equal evolve_dt
                         if 0.99999 < angle < 1.00001:
                             # a larger dt could be used
                             rk_config.evolve_dt *= 1.5
                             logger.debug(f"evolution easily converged, new evolve_dt: {rk_config.evolve_dt}")
-                        # the only exit
+                        # First exit
+                        new_mps2.evolve_config.rk_config = rk_config
                         return new_mps2
+                    if rk_config.evolve_dt < evolve_dt:
+                        # step too small
+                        new_dt = evolve_dt - rk_config.evolve_dt
+                        logger.debug(f"remaining: {new_dt}")
+                        # Second exit
+                        new_mps2.evolve_config.rk_config = rk_config
+                        return new_mps2.evolve_dmrg_prop_and_compress(mpo, new_dt)
                     else:
-                        assert False
+                        # shouldn't happen.
+                        raise ValueError(f"evolve_dt in config: {rk_config.evolve_dt}, in arg: {evolve_dt}")
                 else:
                     # not converged
                     rk_config.evolve_dt /= 2
@@ -771,7 +784,6 @@ class Mps(MatrixProduct):
 
         Etot = 0.0
         # construct new HMPO
-        # e_mean = mpslib.dot(mpslib.conj(MPS),mpslib.mapply(MPO_indep,MPS))
         e_mean = self.expectation(mpo_indep)
         elocal_offset = np.array(
             [mol_list[imol].hartree_e0 + B_vib_mol[imol] for imol in range(nmols)]

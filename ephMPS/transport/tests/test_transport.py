@@ -43,8 +43,8 @@ def assert_band_limit(ct, rtol):
 @pytest.mark.parametrize(
     "method, evolve_dt, nsteps, rtol",
     (
-            #(EvolveMethod.prop_and_compress, 4, 25, 1e-3),
-            # not working. Moves slightly slowere. Dunno why.
+            (EvolveMethod.prop_and_compress, 4, 25, 1e-3),
+            # not working. Moves slightly slower. Dunno why.
             #(EvolveMethod.tdvp_mctdh_new, 0.5, 200, 1e-2),
             (EvolveMethod.tdvp_ps, 2, 50, 1e-3),
     )
@@ -64,8 +64,9 @@ def test_bandlimit_zero_t(method, evolve_dt, nsteps, rtol):
 # plt.plot(analytical_r_square)
 # plt.show()
 
-def test_adaptive_zero_t():
-    rk_config = RungeKutta("RKF45")
+@pytest.mark.parametrize("init_dt", (1e-1, 20))
+def test_adaptive_zero_t(init_dt):
+    rk_config = RungeKutta("RKF45", evolve_dt=init_dt)
     evolve_config = EvolveConfig(rk_config=rk_config)
     ct = ChargeTransport(band_limit_mol_list, evolve_config=evolve_config)
     ct.stop_at_edge = True

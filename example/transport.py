@@ -10,9 +10,8 @@ import logging
 import yaml
 
 from ephMPS.model import Phonon, Mol, MolList
-from ephMPS.mps import solver
 from ephMPS.transport import ChargeTransport
-from ephMPS.utils import log, Quantity, EvolveConfig, EvolveMethod
+from ephMPS.utils import log, Quantity, EvolveConfig, EvolveMethod, RungeKutta
 
 logger = logging.getLogger(__name__)
 
@@ -38,8 +37,11 @@ if __name__ == "__main__":
         * param["mol num"],
         j_constant,
     )
-    evolve_config = EvolveConfig()
-    evolve_config.scheme = EvolveMethod.tdvp_mctdh_new
+    evolve_config = EvolveConfig(EvolveMethod.tdvp_ps)
+    evolve_config.expected_bond_order = 40
+    #rk_config = RungeKutta("RKF45")
+    #evolve_config = EvolveConfig(rk_config=rk_config)
+    #evolve_config = EvolveConfig()
     ct = ChargeTransport(
         mol_list,
         temperature=Quantity(*param["temperature"]),
@@ -47,12 +49,13 @@ if __name__ == "__main__":
     )
     # ct.stop_at_edge = True
     ct.economic_mode = True
-    ct.memory_limit = 2 ** 30  # 1 GB
+    # ct.memory_limit = 2 ** 30  # 1 GB
     # ct.memory_limit /= 10 # 100 MB
     ct.dump_dir = param["output dir"]
     ct.job_name = param["fname"]
     ct.custom_dump_info["comment"] = param["comment"]
-    ct.set_threshold(1e-4)
+    # ct.set_threshold(1e-4)
+    ct.set_threshold(40)
     # ct.latest_mps.compress_add = True
     evolve_dt = param["evolve dt"]
     lowest_energy = ct.mpo_e_lbound
@@ -74,4 +77,5 @@ if __name__ == "__main__":
         # evolve_dt = 1 / abs(highest_energy)
     # disable calculation of reduced density matrices
     ct.reduced_density_matrices = None
-    ct.evolve(evolve_dt, param.get("nsteps"), param.get("evolve time"))
+    #ct.evolve(evolve_dt, param.get("nsteps"), param.get("evolve time"))
+    ct.evolve(evolve_dt, 5, param.get("evolve time"))

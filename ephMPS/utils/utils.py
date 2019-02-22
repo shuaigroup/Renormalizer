@@ -7,10 +7,10 @@ useful utilities
 
 from itertools import islice, cycle
 import sys
+import pickle
 
 import numpy as np
 
-from ephMPS.utils import pickle
 
 
 def roundrobin(*iterables):

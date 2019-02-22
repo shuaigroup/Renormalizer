@@ -56,6 +56,7 @@ class TdMpsJob(object):
 
     def evolve(self, evolve_dt=None, nsteps=None, evolve_time=None):
         if evolve_dt is None:
+            # adaptive mode
             if not self.evolve_config.rk_config.adaptive:
                 raise ValueError("in non-adaptive mode evolve_dt is not given")
             if evolve_time is None:
@@ -111,9 +112,8 @@ class TdMpsJob(object):
                     "Criteria to stop the evolution has met. Stop the evolution"
                 )
                 break
-        logger.info(
-            "%d steps of evolution with delta t = %g complete!" % (nsteps, evolve_dt)
-        )
+
+        logger.info(f"{len(real_times)-1} steps of evolution complete!")
         logger.info(
             "Normal termination. Time cost: %s" % (real_times[-1] - real_times[0])
         )

@@ -2,13 +2,13 @@
 # Author: Jiajun Ren <jiajunren0522@gmail.com>
 
 import os
+import pickle
 
 import numpy as np
 import pytest
 
 from ephMPS.tests.parameter import mol_list
 from ephMPS.mps.solver import construct_mps_mpo_2, optimize_mps
-from ephMPS.utils import pickle
 from ephMPS.mps.tests import cur_dir
 
 nexciton = 1

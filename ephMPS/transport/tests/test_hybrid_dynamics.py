@@ -17,10 +17,11 @@ def test_zt(n_dmrg_phs):
 
     mol_list = parameter_PBI.construct_mol(4, n_dmrg_phs, 10 - n_dmrg_phs)
     mps = Mps.gs(mol_list, False)
-    mpo = Mpo(mol_list, scheme=3)
     # create electron
     mps = Mpo.onsite(mol_list, "a^\dagger", mol_idx_set={0}).apply(mps).normalize(1.0)
-
+    tentative_mpo = Mpo(mol_list, scheme=3)
+    offset = mps.expectation(tentative_mpo)
+    mpo = Mpo(mol_list, scheme=3, offset=Quantity(offset, "a.u."))
     # do the evolution
     nsteps = 30
     dt = 30.0
@@ -42,13 +43,15 @@ def test_FT_dynamics_hybrid_TDDMRG_TDH(n_dmrg_phs):
 
     mol_list = parameter_PBI.construct_mol(4, n_dmrg_phs, 10 - n_dmrg_phs)
     mpdm = MpDm.max_entangled_gs(mol_list)
-    mpo = Mpo(mol_list, scheme=3)
+    tentative_mpo = Mpo(mol_list, scheme=3)
     temperature = Quantity(2000, "K")
     # why divide by 2? in hybrid_TDDMRG_TDH.py FT_DM_hybrid_TDDMRG_TDH, beta is divided by 2
     mpdm = mpdm.thermal_prop_exact(
-        mpo, temperature.to_beta() / 2, 1, "GS", inplace=True
+        tentative_mpo, temperature.to_beta() / 2, 1, "GS", inplace=True
     )
     mpdm = Mpo.onsite(mol_list, "a^\dagger", mol_idx_set={0}).apply(mpdm).normalize(1.0)
+    offset = mpdm.expectation(tentative_mpo)
+    mpo = Mpo(mol_list, scheme=3, offset=Quantity(offset, "a.u."))
 
     # do the evolution
     # nsteps = 90  # too many steps, may take hours to finish
