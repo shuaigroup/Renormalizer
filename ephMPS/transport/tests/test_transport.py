@@ -75,6 +75,9 @@ def test_adaptive_zero_t(init_dt):
     assert_band_limit(ct, 1e-2)
 
 def test_32backend():
+    # a hack for tests
+    import ephMPS.mps.matrix
+    ephMPS.mps.matrix.first_mp = False
     backend.dtypes = (np.float32, np.complex64)
     rk_config = RungeKutta("RKF45", evolve_dt=4)
     evolve_config = EvolveConfig(rk_config=rk_config)

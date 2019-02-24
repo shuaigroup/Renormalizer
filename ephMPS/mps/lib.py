@@ -14,7 +14,6 @@ class Environ:
 
     def __init__(self):
         # todo: real disk and other backend
-        virtual_disk = {}
         self.virtual_disk = {}
 
     def construct(self, mps, mps_conj, mpo, domain):
@@ -22,8 +21,10 @@ class Environ:
         assert domain in ["L", "R", "l", "r"]
         if domain == "L" or domain == "l":
             start, end, inc = 0, len(mps) - 1, 1
+            self.write(domain, -1, tensor)
         else:
             start, end, inc = len(mps) - 1, 0, -1
+            self.write(domain, len(mps), tensor)
 
         for idx in range(start, end, inc):
             tensor = self.addone(tensor, mps, mps_conj, mpo, idx, domain)

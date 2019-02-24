@@ -247,27 +247,26 @@ class Mps(MatrixProduct):
             self_conj = self.conj()
         return self_conj.dot(mpo.apply(self), with_hartree=False).real
 
-    def expectations(self, mpos):
-        '''
-        assert 3 < len(mpos)
+    def expectations(self, mpos) -> np.ndarray:
+        assert 2 < len(mpos)
+        # id can be used as efficient hash because of `Matrix` implementation
         mpo_ids = np.array([[id(m) for m in mpo] for mpo in mpos])
         common_mpo_ids = mpo_ids[0].copy()
         mpo0_unique_idx = np.where(np.sum(mpo_ids == common_mpo_ids, axis=0) == 1)[0][0]
         common_mpo_ids[mpo0_unique_idx] = mpo_ids[1][mpo0_unique_idx]
         x, unique_idx = np.where(mpo_ids != common_mpo_ids)
         # should find one at each line
-        assert x == np.arange(len(mpos))
+        assert np.allclose(x, np.arange(len(mpos)))
         common_mpo = list(mpos[0])
         common_mpo[mpo0_unique_idx] = mpos[1][mpo0_unique_idx]
         self_conj = self.conj()
-        xp = np
         environ = Environ()
         environ.construct(self, self_conj, common_mpo, 'l')
         environ.construct(self, self_conj, common_mpo, 'r')
         res_list = []
         for idx, mpo in zip(unique_idx, mpos):
-            l = environ.read('l', idx)
-            r = environ.write('r', idx)
+            l = environ.read('l', idx-1)
+            r = environ.read('r', idx+1)
             if self.is_mps:
                 # S--a--S--e--S
                 # |     |     |
@@ -304,11 +303,11 @@ class Mps(MatrixProduct):
                         ]
             else:
                 raise RuntimeError
-            res = tensorlib.multi_tensor_contract(path, l, self[idx], mpos[idx], self_conj[idx], r)
-            res_list.append(float(res))
-        return res_list
-        '''
-        return np.array([self.expectation(mpo) for mpo in mpos])
+            res = tensorlib.multi_tensor_contract(path, l, self[idx], mpo[idx], self_conj[idx], r)
+            res_list.append(float(res.real))
+        return np.array(res_list)
+        # the naive way
+        # return np.array([self.expectation(mpo) for mpo in mpos])
 
 
     @_cached_property
