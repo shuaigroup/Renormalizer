@@ -3,10 +3,12 @@ from enum import Enum
 
 from ephMPS.utils.rk import RungeKutta
 
-
 class OptimizeConfig:
-    def __init__(self):
-        self.procedure = [[10, 0.4], [20, 0.2], [30, 0.1], [40, 0], [40, 0]]
+    def __init__(self, procedure=None):
+        if procedure is None:
+            self.procedure = [[10, 0.4], [20, 0.2], [30, 0.1], [40, 0], [40, 0]]
+        else:
+            self.procedure = procedure
         self.method = "2site"
         self.nroots = 1
         self.inverse = 1.0

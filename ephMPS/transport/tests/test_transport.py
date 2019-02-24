@@ -6,6 +6,7 @@ import numpy as np
 import pytest
 
 from ephMPS.model import Phonon, Mol, MolList
+from ephMPS.mps import backend
 from ephMPS.transport import ChargeTransport, EDGE_THRESHOLD
 from ephMPS.transport.transport import (
     calc_reduced_density_matrix,
@@ -30,7 +31,7 @@ band_limit_mol_list = MolList(
     [Mol(Quantity(3.87e-3, "a.u."), ph_list)] * mol_num, j_constant
 )
 
-def get_analytical_r_square(time_series):
+def get_analytical_r_square(time_series: np.ndarray):
     return  2 * (j_constant.as_au()) ** 2 * time_series ** 2
 
 def assert_band_limit(ct, rtol):
@@ -67,6 +68,15 @@ def test_bandlimit_zero_t(method, evolve_dt, nsteps, rtol):
 @pytest.mark.parametrize("init_dt", (1e-1, 20))
 def test_adaptive_zero_t(init_dt):
     rk_config = RungeKutta("RKF45", evolve_dt=init_dt)
+    evolve_config = EvolveConfig(rk_config=rk_config)
+    ct = ChargeTransport(band_limit_mol_list, evolve_config=evolve_config)
+    ct.stop_at_edge = True
+    ct.evolve()
+    assert_band_limit(ct, 1e-2)
+
+def test_32backend():
+    backend.dtypes = (np.float32, np.complex64)
+    rk_config = RungeKutta("RKF45", evolve_dt=4)
     evolve_config = EvolveConfig(rk_config=rk_config)
     ct = ChargeTransport(band_limit_mol_list, evolve_config=evolve_config)
     ct.stop_at_edge = True

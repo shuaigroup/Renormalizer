@@ -12,6 +12,10 @@ from ephMPS.tests import parameter
 from ephMPS.mps.tests import cur_dir
 
 
+# for test
+from ephMPS.mps import matrix
+matrix.backend_dtypes = [np.float32, np.complex64]
+
 @pytest.mark.parametrize(
     "method, evolve_dt, rtol",
     (
@@ -23,8 +27,7 @@ from ephMPS.mps.tests import cur_dir
 def test_ZeroTcorr_TDVP(method, evolve_dt, rtol):
     # procedure = [[50, 0], [50, 0], [50, 0]]
     procedure = [[20, 0], [20, 0], [20, 0]]
-    optimize_config = OptimizeConfig()
-    optimize_config.procedure = procedure
+    optimize_config = OptimizeConfig(procedure=procedure)
 
     mol_list = parameter.mol_list
 
@@ -84,7 +87,7 @@ def test_finite_t_spectra_emi_TDVP(method, nsteps, evolve_dt, rtol):
     # plt.plot(finite_t_corr.autocorr)
     # plt.plot(std)
     # plt.show()
-'''
+
 import logging
 from ephMPS.tests.parameter import mol_list
 from ephMPS.mps import Mps, Mpo
@@ -109,4 +112,3 @@ if __name__ == "__main__":
     from matplotlib import pyplot as plt
     plt.plot(np.array(occ))
     plt.show()
-'''

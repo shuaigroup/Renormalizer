@@ -1,10 +1,10 @@
 from __future__ import absolute_import, print_function, unicode_literals
 
 import logging
-import weakref
 
 import numpy as np
 import scipy
+import opt_einsum
 
 from ephMPS.model.ephtable import EphTable
 from ephMPS.mps.mp import MatrixProduct

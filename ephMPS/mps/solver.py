@@ -9,7 +9,7 @@ import scipy
 from ephMPS.lib import tensor as tensorlib
 from ephMPS.lib.davidson import davidson
 from ephMPS.mps import Mpo, Mps, svd_qn
-from ephMPS.mps.lib import construct_enviro, GetLR, updatemps
+from ephMPS.mps.lib import updatemps, Environ
 from ephMPS.utils import Quantity
 
 logger = logging.getLogger(__name__)
@@ -100,7 +100,8 @@ def optimize_mps_dmrg(mps, mpo):
     nexciton = mps.nexciton
 
     # construct the environment matrix
-    construct_enviro(mps, mps, mpo, "L")
+    environ = Environ()
+    environ.construct(mps, mps, mpo, "L")
 
     nMPS = len(mps)
     # construct each sweep cycle scheme
@@ -134,8 +135,8 @@ def optimize_mps_dmrg(mps, mpo):
                 lsite = imps - 2
                 addlist = [imps - 1, imps]
 
-            ltensor = GetLR("L", lsite, mps, mps, mpo, itensor=ltensor, method=lmethod)
-            rtensor = GetLR(
+            ltensor = environ.GetLR("L", lsite, mps, mps, mpo, itensor=ltensor, method=lmethod)
+            rtensor = environ.GetLR(
                 "R", imps + 1, mps, mps, mpo, itensor=rtensor, method=rmethod
             )
 

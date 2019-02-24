@@ -10,152 +10,154 @@ import numpy as np
 
 from ephMPS.lib import tensor as tensorlib
 
+class Environ:
 
-def GetLR(
-    domain, siteidx, MPS, MPSconj, MPO, itensor=np.ones((1, 1, 1)), method="Scratch"
-):
-    """
-    get the L/R Hamiltonian matrix at a random site(siteidx): 3d tensor
-    S-     -S     MPSconj
-    O- or  -O     MPO
-    S-     -S     MPS
-    enviroment part from disc,  system part from one step calculation
-    support from scratch calculation: from two open boundary np.ones((1,1,1))
-    """
+    def __init__(self):
+        # todo: real disk and other backend
+        virtual_disk = {}
+        self.virtual_disk = {}
 
-    assert domain in ["L", "R"]
-    assert method in ["Enviro", "System", "Scratch"]
-
-    if siteidx not in range(len(MPS)):
-        return np.ones((1, 1, 1))
-
-    if method == "Scratch":
-        itensor = np.ones((1, 1, 1))
-        if domain == "L":
-            sitelist = range(siteidx + 1)
+    def construct(self, mps, mps_conj, mpo, domain):
+        tensor = np.ones((1, 1, 1), dtype=mps.dtype)
+        assert domain in ["L", "R", "l", "r"]
+        if domain == "L" or domain == "l":
+            start, end, inc = 0, len(mps) - 1, 1
         else:
-            sitelist = range(len(MPS) - 1, siteidx - 1, -1)
-        for imps in sitelist:
-            itensor = addone(itensor, MPS, MPSconj, MPO, imps, domain)
-    elif method == "Enviro":
-        itensor = Enviro_read(domain, siteidx)
-    elif method == "System":
-        itensor = addone(itensor, MPS, MPSconj, MPO, siteidx, domain)
-        Enviro_write(domain, siteidx, itensor)
+            start, end, inc = len(mps) - 1, 0, -1
 
-    return itensor
+        for idx in range(start, end, inc):
+            tensor = self.addone(tensor, mps, mps_conj, mpo, idx, domain)
+            self.write(domain, idx, tensor)
 
-
-def addone(intensor, MPS, MPSconj, MPO, isite, domain):
-    """
-    add one MPO/MPS(MPO) site
-             _   _
-            | | | |
-    S-S-    | S-|-S-
-    O-O- or | O-|-O- (the ancillary bond is traced)
-    S-S-    | S-|-S-
-            |_| |_|
-    """
-    assert domain in ["L", "R", "l", "r"]
-
-    if domain == "L" or domain == "l":
-        assert intensor.shape[0] == MPSconj[isite].shape[0]
-        assert intensor.shape[1] == MPO[isite].shape[0]
-        assert intensor.shape[2] == MPS[isite].shape[0]
+    def GetLR(
+        self, domain, siteidx, MPS, MPSconj, MPO, itensor=np.ones((1, 1, 1)), method="Scratch"
+    ):
         """
-                       l 
-        S-a-S-f    O-a-O-f
-            d          d
-        O-b-O-g or O-b-O-g  
-            e          e
-        S-c-S-h    O-c-O-h
-                       l  
+        get the L/R Hamiltonian matrix at a random site(siteidx): 3d tensor
+        S-     -S     MPSconj
+        O- or  -O     MPO
+        S-     -S     MPS
+        enviroment part from disc,  system part from one step calculation
+        support from scratch calculation: from two open boundary np.ones((1,1,1))
         """
 
-        if MPS[isite].ndim == 3:
-            path = [
-                ([0, 1], "abc, adf -> bcdf"),
-                ([2, 0], "bcdf, bdeg -> cfeg"),
-                ([1, 0], "cfeg, ceh -> fgh"),
-            ]
-        elif MPS[isite].ndim == 4:
-            path = [
-                ([0, 1], "abc, adlf -> bcdlf"),
-                ([2, 0], "bcdlf, bdeg -> clfeg"),
-                ([1, 0], "clfeg, celh -> fgh"),
-            ]
-        else:
-            raise ValueError(
-                "MPS ndim at %d is not 3 or 4, got %s" % (isite, MPS[isite].ndim)
+        assert domain in ["L", "R"]
+        assert method in ["Enviro", "System", "Scratch"]
+
+        if siteidx not in range(len(MPS)):
+            return np.ones((1, 1, 1))
+
+        if method == "Scratch":
+            itensor = np.ones((1, 1, 1))
+            if domain == "L":
+                sitelist = range(siteidx + 1)
+            else:
+                sitelist = range(len(MPS) - 1, siteidx - 1, -1)
+            for imps in sitelist:
+                itensor = self.addone(itensor, MPS, MPSconj, MPO, imps, domain)
+        elif method == "Enviro":
+            itensor = self.read(domain, siteidx)
+        elif method == "System":
+            itensor = self.addone(itensor, MPS, MPSconj, MPO, siteidx, domain)
+            self.write(domain, siteidx, itensor)
+
+        return itensor
+
+
+    def addone(self, intensor, MPS, MPSconj, MPO, isite, domain):
+        """
+        add one MPO/MPS(MPO) site
+                 _   _
+                | | | |
+        S-S-    | S-|-S-
+        O-O- or | O-|-O- (the ancillary bond is traced)
+        S-S-    | S-|-S-
+                |_| |_|
+        """
+        assert domain in ["L", "R", "l", "r"]
+
+        if domain == "L" or domain == "l":
+            assert intensor.shape[0] == MPSconj[isite].shape[0]
+            assert intensor.shape[1] == MPO[isite].shape[0]
+            assert intensor.shape[2] == MPS[isite].shape[0]
+            """
+                           l 
+            S-a-S-f    O-a-O-f
+                d          d
+            O-b-O-g or O-b-O-g  
+                e          e
+            S-c-S-h    O-c-O-h
+                           l  
+            """
+
+            if MPS[isite].ndim == 3:
+                path = [
+                    ([0, 1], "abc, adf -> bcdf"),
+                    ([2, 0], "bcdf, bdeg -> cfeg"),
+                    ([1, 0], "cfeg, ceh -> fgh"),
+                ]
+            elif MPS[isite].ndim == 4:
+                path = [
+                    ([0, 1], "abc, adlf -> bcdlf"),
+                    ([2, 0], "bcdlf, bdeg -> clfeg"),
+                    ([1, 0], "clfeg, celh -> fgh"),
+                ]
+            else:
+                raise ValueError(
+                    "MPS ndim at %d is not 3 or 4, got %s" % (isite, MPS[isite].ndim)
+                )
+            outtensor = tensorlib.multi_tensor_contract(
+                path, intensor, MPSconj[isite], MPO[isite], MPS[isite]
             )
-        outtensor = tensorlib.multi_tensor_contract(
-            path, intensor, MPSconj[isite], MPO[isite], MPS[isite]
-        )
 
-    else:
-        assert intensor.shape[0] == MPSconj[isite].shape[-1]
-        assert intensor.shape[1] == MPO[isite].shape[-1]
-        assert intensor.shape[2] == MPS[isite].shape[-1]
-        """
-                       l
-        -f-S-a-S    -f-S-a-S
-           d           d
-        -g-O-b-O or -g-O-b-O
-           e           e
-        -h-S-c-S    -h-S-c-S
-                       l
-        """
-
-        if MPS[isite].ndim == 3:
-            path = [
-                ([0, 1], "fda, abc -> fdbc"),
-                ([2, 0], "fdbc, gdeb -> fcge"),
-                ([1, 0], "fcge, hec -> fgh"),
-            ]
-        elif MPS[isite].ndim == 4:
-            path = [
-                ([0, 1], "fdla, abc -> fdlbc"),
-                ([2, 0], "fdlbc, gdeb -> flcge"),
-                ([1, 0], "flcge, helc -> fgh"),
-            ]
         else:
-            raise ValueError(
-                "MPS ndim at %d is not 3 or 4, got %s" % (isite, MPS[isite].ndim)
+            assert intensor.shape[0] == MPSconj[isite].shape[-1]
+            assert intensor.shape[1] == MPO[isite].shape[-1]
+            assert intensor.shape[2] == MPS[isite].shape[-1]
+            """
+                           l
+            -f-S-a-S    -f-S-a-S
+               d           d
+            -g-O-b-O or -g-O-b-O
+               e           e
+            -h-S-c-S    -h-S-c-S
+                           l
+            """
+
+            if MPS[isite].ndim == 3:
+                path = [
+                    ([0, 1], "fda, abc -> fdbc"),
+                    ([2, 0], "fdbc, gdeb -> fcge"),
+                    ([1, 0], "fcge, hec -> fgh"),
+                ]
+            elif MPS[isite].ndim == 4:
+                path = [
+                    ([0, 1], "fdla, abc -> fdlbc"),
+                    ([2, 0], "fdlbc, gdeb -> flcge"),
+                    ([1, 0], "flcge, helc -> fgh"),
+                ]
+            else:
+                raise ValueError(
+                    "MPS ndim at %d is not 3 or 4, got %s" % (isite, MPS[isite].ndim)
+                )
+            outtensor = tensorlib.multi_tensor_contract(
+                path, MPSconj[isite], intensor, MPO[isite], MPS[isite]
             )
-        outtensor = tensorlib.multi_tensor_contract(
-            path, MPSconj[isite], intensor, MPO[isite], MPS[isite]
-        )
 
-    return outtensor
+        return outtensor
 
 
-def construct_enviro(MPS, MPSconj, MPO, domain):
-    tensor = np.ones((1, 1, 1))
-    assert domain in ["L", "R", "l", "r"]
-    if domain == "L" or domain == "l":
-        start, end, inc = 0, len(MPS) - 1, 1
-    else:
-        start, end, inc = len(MPS) - 1, 0, -1
 
-    for idx in range(start, end, inc):
-        tensor = addone(tensor, MPS, MPSconj, MPO, idx, domain)
-        Enviro_write(domain, idx, tensor)
+    def write(self, domain, siteidx, tensor):
+        # with open(domain + str(siteidx) + ".npy", 'wb') as f:
+        #    np.save(f, tensor)
+        self.virtual_disk[(domain, siteidx)] = tensor
 
 
-# todo: real disk
-virtual_disk = {}
-
-
-def Enviro_write(domain, siteidx, tensor):
-    # with open(domain + str(siteidx) + ".npy", 'wb') as f:
-    #    np.save(f, tensor)
-    virtual_disk[(domain, siteidx)] = tensor
-
-
-def Enviro_read(domain, siteidx):
-    # with open(domain + str(siteidx) + ".npy", 'rb') as f:
-    #    return np.load(f)
-    return virtual_disk[(domain, siteidx)]
+    def read(self, domain, siteidx):
+        # with open(domain + str(siteidx) + ".npy", 'rb') as f:
+        #    return np.load(f)
+        return self.virtual_disk[(domain, siteidx)]
 
 
 def select_basis(qnset, Sset, qnlist, Mmax, percent=0):

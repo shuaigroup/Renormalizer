@@ -11,7 +11,7 @@ from typing import List
 import numpy as np
 import scipy
 
-from ephMPS.mps.matrix import Matrix
+from ephMPS.mps.matrix import Matrix, backend
 from ephMPS.mps import svd_qn
 from ephMPS.model import MolList, EphTable
 from ephMPS.utils import sizeof_fmt
@@ -33,7 +33,7 @@ class MatrixProduct:
 
     def __init__(self):
         self._mp: List[Matrix] = []
-        self.dtype = np.float64
+        self.dtype = backend.real_dtype
 
         # in mpo.quasi_boson, mol_list is not set, then _ephtable and _pbond_list should be used
         self.mol_list: MolList = None
@@ -98,7 +98,7 @@ class MatrixProduct:
 
     @property
     def is_complex(self):
-        return self.dtype == np.complex128
+        return self.dtype == backend.complex_dtype
 
     @property
     def bond_dims(self):
@@ -382,9 +382,9 @@ class MatrixProduct:
             new_mp = self
         else:
             new_mp = self.copy()
-        new_mp.dtype = np.complex128
+        new_mp.dtype = backend.complex_dtype
         for i in range(new_mp.site_num):
-            new_mp[i] = new_mp.dtype(new_mp[i])
+            new_mp[i] = new_mp[i].to_complex()
         return new_mp
 
     def to_raw_list(self):
@@ -404,7 +404,7 @@ class MatrixProduct:
         return copy.deepcopy(self)
 
     def array2mt(self, array, idx):
-        mt = Matrix(self.dtype(array), self.is_mpo)
+        mt = Matrix(array, self.is_mpo, dtype=self.dtype)
         if self.use_dummy_qn:
             mt.sigmaqn = np.zeros(mt.pdim_prod, dtype=np.int)
         else:

@@ -1,19 +1,16 @@
 from __future__ import absolute_import, print_function, unicode_literals
 
 import logging
-from itertools import chain
-from typing import List, Dict
+from typing import List
 
 import numpy as np
-import opt_einsum
 import scipy
 from cached_property import cached_property
 
 from ephMPS.lib import solve_ivp
 from ephMPS.lib import tensor as tensorlib
 from ephMPS.mps import svd_qn
-from ephMPS.mps.lib import construct_enviro, GetLR, updatemps, compressed_sum
-from ephMPS.mps.matrix import Matrix
+from ephMPS.mps.lib import Environ, updatemps, compressed_sum
 from ephMPS.mps.mp import MatrixProduct
 from ephMPS.mps.mpo import Mpo
 from ephMPS.mps.tdh import mflib
@@ -26,7 +23,6 @@ from ephMPS.utils import (
     sizeof_fmt)
 
 logger = logging.getLogger(__name__)
-
 
 cached_property_set = set()
 
@@ -249,23 +245,71 @@ class Mps(MatrixProduct):
         # todo: different bra and ket
         if self_conj is None:
             self_conj = self.conj()
-        ms_list = list(self_conj) + list(mpo) + list(self)
-        mpo_subscripts: List[str] = []
-        for i in range(len(self)):
-            mpo_subscripts.append([f"mpo_{i}", f"top_{i}_p", f"bottom_{i}_p", f"mpo_{i+1}"])
-        subscripts_list = self._get_expectation_indices("top") + mpo_subscripts + self._get_expectation_indices("bottom")
-        # convert to list for debugging convenience
-        args = list(chain.from_iterable(zip(ms_list, subscripts_list)))
-        return opt_einsum.contract(*args).real.flatten()[0]
-        #return self.conj().dot(mpo.apply(self), with_hartree=False).real
+        return self_conj.dot(mpo.apply(self), with_hartree=False).real
 
     def expectations(self, mpos):
-        res = []
+        '''
+        assert 3 < len(mpos)
+        mpo_ids = np.array([[id(m) for m in mpo] for mpo in mpos])
+        common_mpo_ids = mpo_ids[0].copy()
+        mpo0_unique_idx = np.where(np.sum(mpo_ids == common_mpo_ids, axis=0) == 1)[0][0]
+        common_mpo_ids[mpo0_unique_idx] = mpo_ids[1][mpo0_unique_idx]
+        x, unique_idx = np.where(mpo_ids != common_mpo_ids)
+        # should find one at each line
+        assert x == np.arange(len(mpos))
+        common_mpo = list(mpos[0])
+        common_mpo[mpo0_unique_idx] = mpos[1][mpo0_unique_idx]
         self_conj = self.conj()
-        with opt_einsum.shared_intermediates():
-            for mpo in mpos:
-                res.append(self.expectation(mpo, self_conj))
-            return np.array(res)
+        xp = np
+        environ = Environ()
+        environ.construct(self, self_conj, common_mpo, 'l')
+        environ.construct(self, self_conj, common_mpo, 'r')
+        res_list = []
+        for idx, mpo in zip(unique_idx, mpos):
+            l = environ.read('l', idx)
+            r = environ.write('r', idx)
+            if self.is_mps:
+                # S--a--S--e--S
+                # |     |     |
+                # |     d     |
+                # |     |     |
+                # O--b--O--g--O
+                # |     |     |
+                # |     f     |
+                # |     |     |
+                # S--c--S--h--S
+                path = [([0, 1], "abc, cfh -> abfh"),
+                        ([3, 0], "abfh, bdfg -> ahdg"),
+                        ([2, 0], "ahdg, ade -> hge"),
+                        ([1, 0], "hge, egh -> "),
+                        ]
+            elif self.is_mpdm:
+                #       e
+                #       |
+                # S--a--S--f--S
+                # |     |     |
+                # |     d     |
+                # |     |     |
+                # O--b--O--h--O
+                # |     |     |
+                # |     g     |
+                # |     |     |
+                # S--c--S--j--S
+                #       |
+                #       e
+                path = [([0, 1], "abc, cgej -> abgej"),
+                        ([3, 0], "abgej, bdgh -> aejdh"),
+                        ([2, 0], "aejdh, adef -> jhf"),
+                        ([1, 0], "jhf, fhj -> "),
+                        ]
+            else:
+                raise RuntimeError
+            res = tensorlib.multi_tensor_contract(path, l, self[idx], mpos[idx], self_conj[idx], r)
+            res_list.append(float(res))
+        return res_list
+        '''
+        return np.array([self.expectation(mpo) for mpo in mpos])
+
 
     @_cached_property
     def ph_occupations(self):
@@ -481,10 +525,9 @@ class Mps(MatrixProduct):
     def _tdvp_check_bond_order(self):
         assert self.evolve_config.scheme != EvolveMethod.prop_and_compress
         assert self.evolve_config.expected_bond_order is not None
-        for bd in self.bond_dims:
-            if self.evolve_config.expected_bond_order <= bd:
-                return True
-        return False
+        # neither too low nor too high will do
+        return max(self.bond_dims) == self.evolve_config.expected_bond_order
+
 
     def evolve_dmrg_tdvp_mctdh(self, mpo, evolve_dt):
         # TDVP for original MCTDH
@@ -496,7 +539,8 @@ class Mps(MatrixProduct):
         self.clear_qn()
         mps = self.to_complex(inplace=True)
         mps_conj = mps.conj()
-        construct_enviro(mps, mps_conj, mpo, "R")
+        environ = Environ()
+        environ.construct(mps, mps_conj, mpo, "R")
 
         # initial matrix
         ltensor = np.ones((1, 1, 1))
@@ -505,10 +549,10 @@ class Mps(MatrixProduct):
         new_mps = self.copy()
 
         for imps in range(len(mps)):
-            ltensor = GetLR(
+            ltensor = environ.GetLR(
                 "L", imps - 1, mps, mps_conj, mpo, itensor=ltensor, method="System"
             )
-            rtensor = GetLR(
+            rtensor = environ.GetLR(
                 "R", imps + 1, mps, mps_conj, mpo, itensor=rtensor, method="Enviro"
             )
             # density matrix
@@ -525,9 +569,9 @@ class Mps(MatrixProduct):
             # pseudo inverse
             # S_inv = scipy.linalg.pinvh(S,rcond=1e-2)
 
-            hop = hop_factory(ltensor, rtensor, mpo[imps])
-
             shape = mps[imps].shape
+
+            hop = hop_factory(ltensor, rtensor, mpo[imps], len(shape))
 
             func = integrand_func_factory(shape, hop, imps == len(mps) - 1, S_inv)
 
@@ -557,7 +601,8 @@ class Mps(MatrixProduct):
         mps = self.to_complex(inplace=True)
 
         # construct the environment matrix
-        construct_enviro(mps, mps.conj(), mpo, "R")
+        environ = Environ()
+        environ.construct(mps, mps.conj(), mpo, "R")
 
         # initial matrix
         ltensor = np.ones((1, 1, 1))
@@ -573,10 +618,10 @@ class Mps(MatrixProduct):
             )
             mps[imps] = u.reshape(shape[:-1] + [-1])
 
-            ltensor = GetLR(
+            ltensor = environ.GetLR(
                 "L", imps - 1, mps, mps.conj(), mpo, itensor=ltensor, method="System"
             )
-            rtensor = GetLR(
+            rtensor = environ.GetLR(
                 "R", imps + 1, mps, mps.conj(), mpo, itensor=rtensor, method="Enviro"
             )
 
@@ -599,13 +644,12 @@ class Mps(MatrixProduct):
 
             S_inv = np.diag(1.0 / s)
 
-            hop = hop_factory(ltensor, rtensor, mpo[imps])
+            hop = hop_factory(ltensor, rtensor, mpo[imps], len(shape))
 
             func = integrand_func_factory(shape, hop, imps == len(mps) - 1, S_inv)
 
             sol = solve_ivp(func, (0, evolve_dt), mps[imps].ravel(), method="RK45")
-            # print
-            # "CMF steps:", len(sol.t)
+            #logger.debug(f"CMF steps: {len(sol.t)}")
             ms = sol.y[:, -1].reshape(shape)
             # check for othorgonal
             # e = np.tensordot(ms, ms, axes=((0, 1), (0, 1)))
@@ -639,7 +683,8 @@ class Mps(MatrixProduct):
         mps = self.to_complex()
 
         # construct the environment matrix
-        construct_enviro(mps, mps.conj(), mpo, "L")
+        environ = Environ()
+        environ.construct(mps, mps.conj(), mpo, "L")
 
         # initial matrix
         ltensor = np.ones((1, 1, 1))
@@ -651,16 +696,18 @@ class Mps(MatrixProduct):
         for system, imps in loop:
             if system == "R":
                 lmethod, rmethod = "Enviro", "System"
-                ltensor = GetLR(
+                ltensor = environ.GetLR(
                     "L", imps - 1, mps, mps.conj(), mpo, itensor=ltensor, method=lmethod
                 )
             else:
                 lmethod, rmethod = "System", "Enviro"
-                rtensor = GetLR(
+                rtensor = environ.GetLR(
                     "R", imps + 1, mps, mps.conj(), mpo, itensor=rtensor, method=rmethod
                 )
 
-            hop = hop_factory(ltensor, rtensor, mpo[imps])
+            shape = list(mps[imps].shape)
+
+            hop = hop_factory(ltensor, rtensor, mpo[imps], len(shape))
 
             def hop_svt(ms):
                 # S-a   l-S
@@ -672,8 +719,6 @@ class Mps(MatrixProduct):
                 path = [([0, 1], "abc, ck -> abk"), ([1, 0], "abk, lbk -> al")]
                 HC = tensorlib.multi_tensor_contract(path, ltensor, ms, rtensor)
                 return HC
-
-            shape = list(mps[imps].shape)
 
             def func(t, y):
                 return hop(y.reshape(shape)).ravel() / 1.0j
@@ -690,7 +735,7 @@ class Mps(MatrixProduct):
                 u, vt = scipy.linalg.qr(mps_t.reshape(-1, shape[-1]), mode="economic")
                 mps[imps] = u.reshape(shape[:-1] + [-1])
 
-                ltensor = GetLR(
+                ltensor = environ.GetLR(
                     "L", imps, mps, mps.conj(), mpo, itensor=ltensor, method="System"
                 )
 
@@ -714,7 +759,7 @@ class Mps(MatrixProduct):
                 u, vt = scipy.linalg.rq(mps_t.reshape(shape[0], -1), mode="economic")
                 mps[imps] = vt.reshape([-1] + shape[1:])
 
-                rtensor = GetLR(
+                rtensor = environ.GetLR(
                     "R", imps, mps, mps.conj(), mpo, itensor=rtensor, method="System"
                 )
 
@@ -889,21 +934,52 @@ def projector(ms):
     proj = Iden - proj
     return proj
 
-
-def hop_factory(ltensor, rtensor, mo):
-    def hop(ms):
-        # S-a   l-S
+# Note: don't do "optimization" like this. The contraction will take more time
+'''
+def hop_factory(ltensor, rtensor, mo, dim):
+    h = opt_einsum.contract("abc, bdeg, fgh -> adfceh", ltensor, mo, rtensor)
+    if dim == 3:
+        # S-a   f-S
         #     d
-        # O-b-O-f-O
+        # O-b-O-g-O
         #     e
-        # S-c   k-S
-        if ms.ndim == 3:
-            path = [
-                ([0, 1], "abc, cek -> abek"),
-                ([2, 0], "abek, bdef -> akdf"),
-                ([1, 0], "akdf, lfk -> adl"),
-            ]
-            HC = tensorlib.multi_tensor_contract(path, ltensor, ms, mo, rtensor)
+        # S-c   h-S
+        def hop(ms):
+            return np.tensordot(h, ms, 3)
+    elif dim == 4:
+        # S-a   f-S
+        #     d
+        # O-b-O-g-O
+        #     e
+        # S-c   h-S
+        #     i
+        def hop(ms):
+            return np.tensordot(h, ms, [[3, 4, 5], [0, 1, 3]]).transpose([0, 1, 3, 2])
+    else:
+        assert False
+    return hop
+'''
+'''
+# gpu
+def hop_factory(ltensor, rtensor, mo, ndim):
+    import cupy as cp
+    ltensor = cp.asarray(ltensor)
+    rtensor = cp.asarray(rtensor)
+    mo = cp.asarray(mo)
+    # S-a   l-S
+    #     d
+    # O-b-O-f-O
+    #     e
+    # S-c   k-S
+    if ndim == 3:
+        path = [
+            ([0, 1], "abc, cek -> abek"),
+            ([2, 0], "abek, bdef -> akdf"),
+            ([1, 0], "akdf, lfk -> adl"),
+        ]
+        def hop(ms):
+            ms = cp.asarray(ms)
+            return cp.asnumpy(tensorlib.multi_tensor_contract_gpu(path, ltensor, ms, mo, rtensor))
 
         # S-a   l-S
         #     d
@@ -911,16 +987,51 @@ def hop_factory(ltensor, rtensor, mo):
         #     e
         # S-c   k-S
         #     g
-        elif ms.ndim == 4:
-            path = [
-                ([0, 1], "abc, bdef -> acdef"),
-                ([2, 0], "acdef, cegk -> adfgk"),
-                ([1, 0], "adfgk, lfk -> adgl"),
-            ]
-            HC = tensorlib.multi_tensor_contract(path, ltensor, mo, ms, rtensor)
-        else:
-            assert False
-        return HC
+    elif ndim == 4:
+        path = [
+            ([0, 1], "abc, bdef -> acdef"),
+            ([2, 0], "acdef, cegk -> adfgk"),
+            ([1, 0], "adfgk, lfk -> adgl"),
+        ]
+        def hop(ms):
+            return tensorlib.multi_tensor_contract(path, ltensor, mo, ms, rtensor)
+    else:
+        assert False
+
+    return hop
+'''
+
+def hop_factory(ltensor, rtensor, mo, ndim):
+    # S-a   l-S
+    #     d
+    # O-b-O-f-O
+    #     e
+    # S-c   k-S
+    if ndim == 3:
+        path = [
+            ([0, 1], "abc, cek -> abek"),
+            ([2, 0], "abek, bdef -> akdf"),
+            ([1, 0], "akdf, lfk -> adl"),
+        ]
+        def hop(ms):
+            return tensorlib.multi_tensor_contract(path, ltensor, ms, mo, rtensor)
+
+        # S-a   l-S
+        #     d
+        # O-b-O-f-O
+        #     e
+        # S-c   k-S
+        #     g
+    elif ndim == 4:
+        path = [
+            ([0, 1], "abc, bdef -> acdef"),
+            ([2, 0], "acdef, cegk -> adfgk"),
+            ([1, 0], "adfgk, lfk -> adgl"),
+        ]
+        def hop(ms):
+            return tensorlib.multi_tensor_contract(path, ltensor, mo, ms, rtensor)
+    else:
+        assert False
 
     return hop
 
