@@ -248,6 +248,8 @@ class Mps(MatrixProduct):
         return self_conj.dot(mpo.apply(self), with_hartree=False).real
 
     def expectations(self, mpos) -> np.ndarray:
+        if len(mpos) < 3:
+            return np.array([self.expectation(mpo) for mpo in mpos])
         assert 2 < len(mpos)
         # id can be used as efficient hash because of `Matrix` implementation
         mpo_ids = np.array([[id(m) for m in mpo] for mpo in mpos])
@@ -370,8 +372,8 @@ class Mps(MatrixProduct):
                     [mta.shape[0] + mtb.shape[0], pdim, mta.shape[2] + mtb.shape[2]],
                     dtype=np.complex128,
                 )
-                new_ms[: mta.shape[0], :, : mta.shape[2]] = mta[:, :, :]
-                new_ms[mta.shape[0] :, :, mta.shape[2] :] = mtb[:, :, :]
+                new_ms[: mta.shape[0], :, : mta.shape[2]] = mta
+                new_ms[mta.shape[0] :, :, mta.shape[2] :] = mtb
                 new_mps[i] = new_ms
 
             new_mps[-1] = np.vstack([self[-1], other[-1]])

@@ -4,7 +4,6 @@ import logging
 
 import numpy as np
 import scipy
-import opt_einsum
 
 from ephMPS.model.ephtable import EphTable
 from ephMPS.mps.mp import MatrixProduct
@@ -290,7 +289,7 @@ class Mpo(MatrixProduct):
         mpo.qnidx = len(mpo) - 1
         mpo.qntot = 0
 
-        mpo = mpo.scale(np.exp(shift * x))
+        mpo = mpo.scale(np.exp(shift * x), inplace=True)
 
         return mpo
 
@@ -894,7 +893,7 @@ class Mpo(MatrixProduct):
             for i, (mt_self, mt_other) in enumerate(zip(self, mp)):
                 assert mt_self.shape[2] == mt_other.shape[1]
                 # mt=np.einsum("apqb,cqd->acpbd",mpo[i],mps[i])
-                mt = np.moveaxis(np.tensordot(mt_self, mt_other, axes=([2], [1])), 3, 1)
+                mt = np.moveaxis(np.tensordot(mt_self.array, mt_other.array, axes=([2], [1])), 3, 1)
                 mt = np.reshape(
                     mt,
                     [
@@ -910,7 +909,7 @@ class Mpo(MatrixProduct):
                 assert mt_self.shape[2] == mt_other.shape[1]
                 # mt=np.einsum("apqb,cqrd->acprbd",mt_s,mt_o)
                 mt = np.moveaxis(
-                    np.tensordot(mt_self, mt_other, axes=([2], [1])), [-3, -2], [1, 3]
+                    np.tensordot(mt_self.array, mt_other.array, axes=([2], [1])), [-3, -2], [1, 3]
                 )
                 mt = np.reshape(
                     mt,

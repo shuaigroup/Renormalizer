@@ -3,6 +3,7 @@
 
 import weakref
 import logging
+import copy
 
 import numpy as np
 
@@ -55,17 +56,17 @@ class Backend:
 backend = Backend()
 
 
-'''
+
 class Matrix:
 
     _mo_dict = weakref.WeakValueDictionary()
 
-    def __new__(cls, array, is_mpo=False):
+    def __new__(cls, array, is_mpo=False, dtype=None):
         if is_mpo:
             k = hash(array.tobytes())
             if k in cls._mo_dict:
                 res = cls._mo_dict[k]
-                assert np.allclose(res.array, array)
+                assert xp.allclose(res.array, array)
                 return res
             else:
                 res = super().__new__(cls)
@@ -75,29 +76,16 @@ class Matrix:
             return super().__new__(cls)
 
 
-    def __init__(self, array, is_mpo=False):
-        self.array = array
+    def __init__(self, array, is_mpo=False, dtype=None):
+        if dtype is None:
+            dtype = backend.real_dtype
+        self.array = xp.array(array, dtype=dtype)
         self.is_mpo = is_mpo
         self.original_shape = self.array.shape
         self.sigmaqn = None
 
-    @property
-    def shape(self):
-        return self.array.shape
-
-    @shape.setter
-    def shape(self, shape):
-        self.array.shape = shape
-
-    @property
-    def T(self):
-        return self.__class__(self.array.T)
-
-    def conj(self):
-        return self.__class__(self.array.conj())
-
-    def reshape(self, shape):
-        return self.__class__(self.array.reshape(shape))
+    def __getattr__(self, item):
+        return getattr(self.array, item)
 
     # physical indices exclude first and last indices
     @property
@@ -132,21 +120,40 @@ class Matrix:
         """
         tensm = self.reshape([np.prod(self.shape[:-1]), self.shape[-1]])
         s = xp.dot(tensm.T.conj(), tensm)
-        return np.allclose(s, np.eye(s.shape[0]), atol=1e-3)
+        return xp.allclose(s, xp.eye(s.shape[0]), atol=1e-3)
 
     def check_rortho(self):
         """
         check R-orthogonal
         """
         tensm = self.reshape([self.shape[0], np.prod(self.shape[1:])])
-        s = np.dot(tensm, tensm.T.conj())
-        return np.allclose(s, np.eye(s.shape[0]))
+        s = xp.dot(tensm, tensm.T.conj())
+        return xp.allclose(s, xp.eye(s.shape[0]))
+
+    def to_complex(self):
+        return xp.array(self.array, dtype=backend.complex_dtype)
+
 
     def __hash__(self):
         return hash(self.array.tobytes())
 
+    def __getitem__(self, item):
+        return self.array.__getitem__(item)
+
+    def __mul__(self, other):
+        return self.array.__mul__(other)
+
+    def __repr__(self):
+        return repr(self.array)
+
+    def __str__(self):
+        return str(self.array)
+
     def __deepcopy__(self, memodict):
-        return self.__class__(self.array, is_mpo=self.is_mpo)
+        new = self.__class__(self.array, self.is_mpo, self.array.dtype)
+        new.__dict__ = copy.deepcopy(self.__dict__)
+        return new
+
 '''
 
 from functools import wraps
@@ -250,3 +257,4 @@ class Matrix(np.ndarray):
 
     def __hash__(self):
         return hash(self.tobytes())
+'''

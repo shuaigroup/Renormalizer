@@ -382,7 +382,11 @@ class MatrixProduct:
             new_mp = self
         else:
             new_mp = self.copy()
-        new_mp.dtype = backend.complex_dtype
+        if new_mp.dtype == backend.complex_dtype:
+            # no need for casting
+            return new_mp
+        else:
+            new_mp.dtype = backend.complex_dtype
         for i in range(new_mp.site_num):
             new_mp[i] = new_mp[i].to_complex()
         return new_mp

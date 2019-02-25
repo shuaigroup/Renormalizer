@@ -86,6 +86,21 @@ def test_32backend():
     ct.evolve()
     assert_band_limit(ct, 1e-2)
 
+
+def assert_iterable_equal(i1, i2):
+    if isinstance(i1, str):
+        assert i1 == i2
+        return
+    if not hasattr(i1, "__iter__"):
+        if isinstance(i1, float):
+            assert i1 == pytest.approx(i2)
+        else:
+            assert i1 == i2
+        return
+    for ii1, ii2 in zip(i1, i2):
+        assert_iterable_equal(ii1, ii2)
+
+
 @pytest.mark.parametrize(
     "mol_num, j_constant_value, elocalex_value, ph_info, ph_phys_dim, evolve_dt, nsteps",
     (
@@ -112,7 +127,8 @@ def test_economic_mode(
     ct2.economic_mode = True
     ct2.evolve(evolve_dt, nsteps)
     assert ct1.is_similar(ct2)
-    assert ct1.get_dump_dict() == ct2.get_dump_dict()
+
+    assert_iterable_equal(ct1.get_dump_dict(), ct2.get_dump_dict())
 
 
 @pytest.mark.parametrize(
@@ -257,7 +273,7 @@ def test_evolve(
     ct2 = ChargeTransport(mol_list)
     ct2.evolve(evolve_dt, nsteps)
     assert ct1.is_similar(ct2)
-    assert ct1.get_dump_dict() == ct2.get_dump_dict()
+    assert_iterable_equal(ct1.get_dump_dict(), ct2.get_dump_dict())
 
 
 @pytest.mark.parametrize(
