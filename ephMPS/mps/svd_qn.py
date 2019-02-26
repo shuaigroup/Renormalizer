@@ -6,9 +6,10 @@ from __future__ import absolute_import, print_function, unicode_literals
 import numpy as np
 import scipy.linalg
 
+from ephMPS.mps.backend import xp
 
 def Csvd(
-    cstruct,
+    cstruct: xp.ndarray,
     qnbigl,
     qnbigr,
     nexciton,
@@ -23,7 +24,7 @@ def Csvd(
     ddm is the direct diagonalization the reduced density matrix
     """
 
-    Gamma = cstruct.reshape(np.prod(qnbigl.shape), np.prod(qnbigr.shape))
+    Gamma = cstruct.reshape((np.prod(qnbigl.shape), np.prod(qnbigr.shape)))
     localqnl = qnbigl.ravel()
     localqnr = qnbigr.ravel()
 

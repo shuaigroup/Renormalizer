@@ -11,7 +11,7 @@ from typing import List
 import numpy as np
 import scipy
 
-from ephMPS.mps.matrix import Matrix, backend
+from ephMPS.mps.matrix import Matrix, backend, eye, einsum, tensordot, allclose
 from ephMPS.mps import svd_qn
 from ephMPS.model import MolList, EphTable
 from ephMPS.utils import sizeof_fmt
@@ -215,21 +215,19 @@ class MatrixProduct:
         if sigma is not None:
             sigma = sigma[:m_trunc]
             if self.is_left_canon:
-                u = np.einsum("ji, i -> ji", u, sigma)
+                u = einsum("ji, i -> ji", u, sigma)
             else:
-                vt = np.einsum("i, ij -> ij", sigma, vt)
+                vt = einsum("i, ij -> ij", sigma, vt)
         if self.is_left_canon:
-            self[idx - 1] = np.tensordot(self[idx - 1], u, axes=1)
-            ret_mpsi = np.reshape(
-                vt,
+            self[idx - 1] = tensordot(self[idx - 1], u, axes=1)
+            ret_mpsi = vt.reshape(
                 [m_trunc] + list(self[idx].pdim) + [vt.shape[1] // self[idx].pdim_prod],
             )
             if qnrset is not None:
                 self.qn[idx] = qnrset[:m_trunc]
         else:
-            self[idx + 1] = np.tensordot(vt, self[idx + 1], axes=1)
-            ret_mpsi = np.reshape(
-                u,
+            self[idx + 1] = tensordot(vt, self[idx + 1], axes=1)
+            ret_mpsi = u.reshape(
                 [u.shape[0] // self[idx].pdim_prod] + list(self[idx].pdim) + [m_trunc],
             )
             if qnlset is not None:
@@ -296,7 +294,7 @@ class MatrixProduct:
                 mt = mt.l_combine()
             qnbigl, qnbigr = self._get_big_qn(idx)
             u, sigma, qnlset, v, sigma, qnrset = svd_qn.Csvd(
-                mt, qnbigl, qnbigr, self.qntot, system=system, full_matrices=False
+                mt.asnumpy(), qnbigl, qnbigr, self.qntot, system=system, full_matrices=False
             )
             vt = v.T
             assert 0 < self.threshold and self.threshold != 1
@@ -304,12 +302,12 @@ class MatrixProduct:
                 # count how many sing vals < trunc
                 normed_sigma = sigma / scipy.linalg.norm(sigma)
                 # m_trunc=len([s for s in normed_sigma if s >trunc])
-                m_trunc = np.count_nonzero(normed_sigma > self.threshold)
+                m_trunc = sum(normed_sigma > self.threshold)
             else:
                 m_trunc = int(self.threshold)
                 m_trunc = min(m_trunc, len(sigma))
             assert m_trunc != 0
-            self._update_ms(idx, u, vt, sigma, qnlset, qnrset, m_trunc)
+            self._update_ms(idx, Matrix(u), Matrix(vt), Matrix(sigma), qnlset, qnrset, m_trunc)
 
         self._switch_domain()
 
@@ -324,7 +322,7 @@ class MatrixProduct:
             qnbigl, qnbigr = self._get_big_qn(idx)
             system = "R" if self.is_left_canon else "L"
             u, qnlset, v, qnrset = svd_qn.Csvd(
-                mt,
+                mt.asnumpy(),
                 qnbigl,
                 qnbigr,
                 self.qntot,
@@ -332,7 +330,7 @@ class MatrixProduct:
                 system=system,
                 full_matrices=False,
             )
-            self._update_ms(idx, u, v.T, sigma=None, qnlset=qnlset, qnrset=qnrset)
+            self._update_ms(idx, Matrix(u), Matrix(v.T), sigma=None, qnlset=qnlset, qnrset=qnrset)
         self._switch_domain()
 
     def conj(self):
@@ -350,24 +348,24 @@ class MatrixProduct:
         """
 
         assert len(self) == len(other)
-        e0 = np.eye(1, 1)
+        e0 = eye(1, 1)
         for mt1, mt2 in zip(self, other):
             # sum_x e0[:,x].m[x,:,:]
-            e0 = np.tensordot(e0, mt2, 1)
+            e0 = tensordot(e0, mt2, 1)
             # sum_ij e0[i,p,:] self[i,p,:]
             # note, need to flip a (:) index onto top,
             # therefore take transpose
             if mt1.ndim == 3:
-                e0 = np.tensordot(e0, mt1, ([0, 1], [0, 1])).T
+                e0 = tensordot(e0, mt1, ([0, 1], [0, 1])).T
             elif mt1.ndim == 4:
-                e0 = np.tensordot(e0, mt1, ([0, 1, 2], [0, 1, 2])).T
+                e0 = tensordot(e0, mt1, ([0, 1, 2], [0, 1, 2])).T
             else:
                 assert False
 
         return e0[0, 0]
 
     def angle(self, other):
-        return np.abs(self.conj().dot(other))
+        return abs(self.conj().dot(other))
 
     def scale(self, val, inplace=False):
         new_mp = self if inplace else self.copy()
@@ -391,16 +389,13 @@ class MatrixProduct:
             new_mp[i] = new_mp[i].to_complex()
         return new_mp
 
-    def to_raw_list(self):
-        return [np.array(mt) for mt in self]
-
     def distance(self, other):
         if not hasattr(other, "conj"):
             other = self.__class__.from_raw_list(other, self.mol_list)
         return (
             self.conj().dot(self)
-            - np.abs(self.conj().dot(other))
-            - np.abs(other.conj().dot(self))
+            - abs(self.conj().dot(other))
+            - abs(other.conj().dot(self))
             + other.conj().dot(other)
         )
 
@@ -408,7 +403,10 @@ class MatrixProduct:
         return copy.deepcopy(self)
 
     def array2mt(self, array, idx):
-        mt = Matrix(array, self.is_mpo, dtype=self.dtype)
+        if isinstance(array, Matrix):
+            mt = array
+        else:
+            mt = Matrix.interned(array, self.is_mpo, dtype=self.dtype)
         if self.use_dummy_qn:
             mt.sigmaqn = np.zeros(mt.pdim_prod, dtype=np.int)
         else:
@@ -440,7 +438,7 @@ class MatrixProduct:
 
     def __eq__(self, other):
         for m1, m2 in zip(self, other):
-            if not np.allclose(m1, m2):
+            if not allclose(m1, m2):
                 return False
         return True
 

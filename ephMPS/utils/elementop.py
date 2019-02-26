@@ -32,12 +32,12 @@ def ph_op_matrix(op, size):
 
 ph_op_list = [
     "b",
-    "b^\dagger",
-    "b^\dagger b",
-    "b^\dagger + b",
+    r"b^\dagger",
+    r"b^\dagger b",
+    r"b^\dagger + b",
     "Iden",
-    "(b^\dagger + b)^2",
-    "(b^\dagger + b)^3",
+    r"(b^\dagger + b)^2",
+    r"(b^\dagger + b)^3",
 ]
 
 
@@ -49,7 +49,7 @@ def ph_element_op(op, bra, ket):
     assert bra >= 0
     assert ket >= 0
 
-    if op == "b^\dagger b":
+    if op == r"b^\dagger b":
         if bra == ket:
             return float(ket)
         else:
@@ -59,12 +59,12 @@ def ph_element_op(op, bra, ket):
             return np.sqrt(float(ket))
         else:
             return 0.0
-    elif op == "b^\dagger":
+    elif op == r"b^\dagger":
         if bra == ket + 1:
             return np.sqrt(float(bra))
         else:
             return 0.0
-    elif op == "b^\dagger + b":
+    elif op == r"b^\dagger + b":
         if bra == ket + 1:
             return np.sqrt(float(bra))
         elif bra == ket - 1:
@@ -76,7 +76,7 @@ def ph_element_op(op, bra, ket):
             return 1.0
         else:
             return 0.0
-    elif op == "(b^\dagger + b)^2":
+    elif op == r"(b^\dagger + b)^2":
         if bra == ket + 2:
             return np.sqrt(float(ket + 1) * float(ket + 2))
         elif bra == ket:
@@ -85,7 +85,7 @@ def ph_element_op(op, bra, ket):
             return np.sqrt(float(ket) * float(ket - 1))
         else:
             return 0.0
-    elif op == "(b^\dagger + b)^3":
+    elif op == r"(b^\dagger + b)^3":
         if bra == ket + 3:
             return np.sqrt((ket + 1) * (ket + 2) * (ket + 3))
         elif bra == ket + 1:
@@ -106,7 +106,7 @@ def ph_element_op(op, bra, ket):
             return 0.0
 
 
-e_op_list = ["a^\dagger", "a", "a^\dagger a", "Iden"]
+e_op_list = [r"a^\dagger", "a", r"a^\dagger a", "Iden"]
 
 
 def e_element_op(op, bra, ket):
@@ -117,7 +117,7 @@ def e_element_op(op, bra, ket):
     assert bra in [0, 1]
     assert ket in [0, 1]
 
-    if op == "a^\dagger":
+    if op == r"a^\dagger":
         if bra == ket + 1:
             return 1.0
         else:
@@ -129,7 +129,7 @@ def e_element_op(op, bra, ket):
         else:
             return 0.0
 
-    elif op == "a^\dagger a":
+    elif op == r"a^\dagger a":
         if bra == 1 and ket == 1:
             return 1.0
         else:

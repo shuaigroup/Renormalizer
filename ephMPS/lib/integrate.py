@@ -3,14 +3,15 @@
 from functools import update_wrapper
 
 import numpy as np
-import scipy.integrate
+
 
 from ephMPS.utils.log import DEFAULT_NP_ERRCONFIG
+from ephMPS.lib import _ivp
 
 
 def solve_ivp(*args, **kwargs):
     with np.errstate(**DEFAULT_NP_ERRCONFIG):
-        return scipy.integrate.solve_ivp(*args, **kwargs)
+        return _ivp.solve_ivp(*args, **kwargs)
 
 
-update_wrapper(solve_ivp, scipy.integrate.solve_ivp)
+update_wrapper(solve_ivp, _ivp.solve_ivp)

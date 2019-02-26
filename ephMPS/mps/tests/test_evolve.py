@@ -98,7 +98,7 @@ if __name__ == "__main__":
     mps = Mps.gs(mol_list, False)
     mpo = Mpo(mol_list, scheme=3)
     # create electron
-    mps = Mpo.onsite(mol_list, "a^\dagger", mol_idx_set={0}).apply(mps).normalize(1.0)
+    mps = Mpo.onsite(mol_list, r"a^\dagger", mol_idx_set={0}).apply(mps).normalize(1.0)
     rk_config = RungeKutta("RKF45")
     evolve_config = EvolveConfig(rk_config=rk_config)
     mps.evolve_config = evolve_config

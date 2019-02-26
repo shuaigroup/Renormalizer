@@ -7,8 +7,10 @@ from typing import List
 import numpy as np
 import scipy.linalg
 
+from ephMPS.mps.backend import xp, backend
+from ephMPS.mps.matrix import tensordot, ones
 from ephMPS.mps import Mpo, Mps
-from ephMPS.mps.tdh import mflib, unitary_propagation
+from ephMPS.mps.tdh import unitary_propagation
 
 logger = logging.getLogger(__name__)
 
@@ -40,7 +42,7 @@ class MpDm(Mpo, Mps):
         mps.threshold = thresh
 
         for impo in range(mpo.site_num):
-            ms = np.ones([1, mpo[impo].shape[1], 1], dtype=np.complex128)
+            ms = xp.ones((1, mpo[impo].shape[1], 1), dtype=xp.complex128)
             mps.append(ms)
         approx_mpo_t0 = cls.from_mps(mps)
 
@@ -63,9 +65,9 @@ class MpDm(Mpo, Mps):
         mpo = cls()
         mpo.mol_list = mps.mol_list
         for ms in mps:
-            mo = np.zeros([ms.shape[0]] + [ms.shape[1]] * 2 + [ms.shape[2]])
+            mo = xp.zeros(tuple([ms.shape[0]] + [ms.shape[1]] * 2 + [ms.shape[2]]))
             for iaxis in range(ms.shape[1]):
-                mo[:, iaxis, iaxis, :] = ms[:, iaxis, :].copy()
+                mo[:, iaxis, iaxis, :] = ms[:, iaxis, :].array
             mpo.append(mo)
 
         for wfn in mps.wfns[:-1]:
@@ -86,11 +88,11 @@ class MpDm(Mpo, Mps):
     @classmethod
     def max_entangled_ex(cls, mol_list, normalize=True):
         """
-        T = \infty maximum entangled EX state
+        T = \\infty maximum entangled EX state
         """
         mps = Mps.gs(mol_list, max_entangled=True)
-        # the creation operator \sum_i a^\dagger_i
-        ex_mps = Mpo.onsite(mol_list, "a^\dagger").apply(mps)
+        # the creation operator \\sum_i a^\\dagger_i
+        ex_mps = Mpo.onsite(mol_list, r"a^\dagger").apply(mps)
         if normalize:
             ex_mps.normalize(1.0)
             # ex_mps.scale(1.0 / np.sqrt(float(len(mol_list))), inplace=True)  # normalize
@@ -126,24 +128,22 @@ class MpDm(Mpo, Mps):
 
     def apply(self, mp, canonicalise=False):
         assert not mp.is_mps
-        new_mps = (
-            self.copy()
-        )  # todo: this is slow and memory consuming! implement meta copy should do
+        # todo: this is slow and memory consuming! implement meta copy should do
+        new_mps = self.copy()
         # todo: also duplicate with MPO apply. What to do???
         for i, (mt_self, mt_other) in enumerate(zip(self, mp)):
             assert mt_self.shape[2] == mt_other.shape[1]
             # mt=np.einsum("apqb,cqrd->acprbd",mt_s,mt_o)
-            mt = np.moveaxis(
-                np.tensordot(mt_self, mt_other, axes=([2], [1])), [-3, -2], [1, 3]
+            mt = xp.moveaxis(
+                xp.tensordot(mt_self.array, mt_other.array, axes=([2], [1])), [-3, -2], [1, 3]
             )
-            mt = np.reshape(
-                mt,
-                [
+            mt = mt.reshape(
+                (
                     mt_self.shape[0] * mt_other.shape[0],
                     mt_self.shape[1],
                     mt_other.shape[2],
                     mt_self.shape[-1] * mt_other.shape[-1],
-                ],
+                ),
             )
             new_mps[i] = mt
         orig_idx = mp.qnidx
@@ -243,19 +243,19 @@ class MpDm(Mpo, Mps):
             else:  # phonon site
                 reduced_mt = mt.trace(axis1=1, axis2=2)
                 prev_mt = reduced_density_matrix_product[-1]
-                new_mt = np.tensordot(prev_mt, reduced_mt, 1)
+                new_mt = tensordot(prev_mt, reduced_mt, 1)
                 reduced_density_matrix_product[-1] = new_mt
         reduced_density_matrix = np.zeros(
-            (self.mol_list.mol_num, self.mol_list.mol_num), dtype=np.complex128
+            (self.mol_list.mol_num, self.mol_list.mol_num), dtype=backend.complex_dtype
         )
         for i in range(self.mol_list.mol_num):
             for j in range(self.mol_list.mol_num):
-                elem = np.array([1]).reshape(1, 1)
+                elem = ones((1, 1))
                 for mt_idx, mt in enumerate(reduced_density_matrix_product):
                     axis_idx1 = int(mt_idx == i)
                     axis_idx2 = int(mt_idx == j)
                     sub_mt = mt[:, axis_idx1, axis_idx2, :]
-                    elem = np.tensordot(elem, sub_mt, 1)
+                    elem = tensordot(elem, sub_mt, 1)
                 reduced_density_matrix[i][j] = elem.flatten()[0]
         return reduced_density_matrix
 
@@ -263,7 +263,7 @@ class MpDm(Mpo, Mps):
         traced_product = []
         for mt in self:
             traced_product.append(mt.trace(axis1=1, axis2=2))
-        ret = np.array([1]).reshape((1, 1))
+        ret = xp.array([1]).reshape((1, 1))
         for mt in traced_product:
-            ret = np.tensordot(ret, mt, 1)
+            ret = xp.tensordot(ret, mt, 1)
         return ret.flatten()[0]

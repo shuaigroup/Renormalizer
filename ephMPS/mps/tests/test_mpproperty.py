@@ -11,9 +11,8 @@ from ephMPS.utils import Quantity
 
 
 creation_operator = Mpo.onsite(
-    mol_list, "a^\dagger", mol_idx_set={mol_list.mol_num // 2}
+    mol_list, r"a^\dagger", mol_idx_set={mol_list.mol_num // 2}
 )
-
 
 def check_property(mp):
     electron_occupation = np.zeros((mol_list.mol_num))

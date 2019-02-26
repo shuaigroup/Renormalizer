@@ -67,7 +67,7 @@ def test_SCF_exact():
     # print occupation
     dmrg_occ = []
     for i in [0, 1, 2]:
-        mpo = Mpo.onsite(dmrg_mol_list, "a^\dagger a", dipole=False, mol_idx_set={i})
+        mpo = Mpo.onsite(dmrg_mol_list, r"a^\dagger a", dipole=False, mol_idx_set={i})
         dmrg_occ.append(mps.expectation(mpo))
     print("dmrg_occ", dmrg_occ)
 

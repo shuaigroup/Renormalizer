@@ -8,7 +8,9 @@ from functools import reduce
 
 import numpy as np
 
-from ephMPS.lib import tensor as tensorlib
+from ephMPS.mps.matrix import Matrix, multi_tensor_contract, ones, zeros
+
+sentinel = ones((1,1,1))
 
 class Environ:
 
@@ -17,7 +19,7 @@ class Environ:
         self.virtual_disk = {}
 
     def construct(self, mps, mps_conj, mpo, domain):
-        tensor = np.ones((1, 1, 1), dtype=mps.dtype)
+        tensor = ones((1,1,1), mps.dtype)
         assert domain in ["L", "R", "l", "r"]
         if domain == "L" or domain == "l":
             start, end, inc = 0, len(mps) - 1, 1
@@ -31,7 +33,7 @@ class Environ:
             self.write(domain, idx, tensor)
 
     def GetLR(
-        self, domain, siteidx, MPS, MPSconj, MPO, itensor=np.ones((1, 1, 1)), method="Scratch"
+        self, domain, siteidx, MPS, MPSconj, MPO, itensor=sentinel, method="Scratch"
     ):
         """
         get the L/R Hamiltonian matrix at a random site(siteidx): 3d tensor
@@ -46,10 +48,10 @@ class Environ:
         assert method in ["Enviro", "System", "Scratch"]
 
         if siteidx not in range(len(MPS)):
-            return np.ones((1, 1, 1))
+            return sentinel
 
         if method == "Scratch":
-            itensor = np.ones((1, 1, 1))
+            itensor = sentinel
             if domain == "L":
                 sitelist = range(siteidx + 1)
             else:
@@ -107,7 +109,7 @@ class Environ:
                 raise ValueError(
                     "MPS ndim at %d is not 3 or 4, got %s" % (isite, MPS[isite].ndim)
                 )
-            outtensor = tensorlib.multi_tensor_contract(
+            outtensor = multi_tensor_contract(
                 path, intensor, MPSconj[isite], MPO[isite], MPS[isite]
             )
 
@@ -141,7 +143,7 @@ class Environ:
                 raise ValueError(
                     "MPS ndim at %d is not 3 or 4, got %s" % (isite, MPS[isite].ndim)
                 )
-            outtensor = tensorlib.multi_tensor_contract(
+            outtensor = multi_tensor_contract(
                 path, MPSconj[isite], intensor, MPO[isite], MPS[isite]
             )
 
@@ -215,7 +217,8 @@ def updatemps(vset, sset, qnset, compset, nexciton, Mmax, percent=0):
     """
     sidx = select_basis(qnset, sset, range(nexciton + 1), Mmax, percent=percent)
     mpsdim = len(sidx)
-    mps = np.zeros((vset.shape[0], mpsdim), dtype=vset.dtype)
+    # need to set value column by column. better in CPU
+    ms = np.zeros((vset.shape[0], mpsdim), dtype=vset.dtype)
 
     if compset is not None:
         compmps = np.zeros((compset.shape[0], mpsdim), dtype=compset.dtype)
@@ -225,15 +228,17 @@ def updatemps(vset, sset, qnset, compset, nexciton, Mmax, percent=0):
     mpsqn = []
     stot = 0.0
     for idim in range(mpsdim):
-        mps[:, idim] = vset[:, sidx[idim]].copy()
+        ms[:, idim] = vset[:, sidx[idim]].copy()
         if (compset is not None) and sidx[idim] < compset.shape[1]:
             compmps[:, idim] = compset[:, sidx[idim]].copy() * sset[sidx[idim]]
         mpsqn.append(qnset[sidx[idim]])
         stot += sset[sidx[idim]] ** 2
 
     # print("discard:", 1.0 - stot)
+    if compmps is not None:
+        compmps = Matrix(compmps)
 
-    return mps, mpsdim, mpsqn, compmps
+    return Matrix(ms), mpsdim, mpsqn, compmps
 
 
 def compressed_sum(mps_list):

@@ -55,13 +55,13 @@ class Phonon(object):
         if hartree:
             phop = construct_ph_op_dict(self.n_phys_dim)
             self.h_indep = (
-                phop["b^\dagger b"] * self.omega[0]
-                + phop["(b^\dagger + b)^3"] * self.term30
+                phop[r"b^\dagger b"] * self.omega[0]
+                + phop[r"(b^\dagger + b)^3"] * self.term30
             )
             self.h_dep = (
-                phop["b^\dagger + b"] * (self.term10 + self.term11)
-                + phop["(b^\dagger + b)^2"] * (self.term20 + self.term21)
-                + phop["(b^\dagger + b)^3"] * (self.term31 + self.term30)
+                phop[r"b^\dagger + b"] * (self.term10 + self.term11)
+                + phop[r"(b^\dagger + b)^2"] * (self.term20 + self.term21)
+                + phop[r"(b^\dagger + b)^3"] * (self.term31 + self.term30)
             )
         else:
             self.h_indep = self.h_dep = None

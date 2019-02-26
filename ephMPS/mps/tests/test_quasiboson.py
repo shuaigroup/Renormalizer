@@ -4,8 +4,8 @@
 import numpy as np
 import pytest
 
-from ephMPS.mps import Mpo
-from ephMPS.mps import solver
+from ephMPS.mps.matrix import einsum
+from ephMPS.mps import Mpo, solver
 from ephMPS.tests import parameter
 from ephMPS.utils import constant
 
@@ -33,8 +33,8 @@ def test_quasiboson_constructMPO():
         mpo_merge.append(mpo2[impo])
         impo += 1
         for _ in mol.dmrg_phs:
-            mo = np.einsum("abcd, defg -> abecfg", mpo2[impo], mpo2[impo + 1]).reshape(
-                mpo2[impo].shape[0], 4, 4, mpo2[impo + 1].shape[-1]
+            mo = einsum("abcd, defg -> abecfg", mpo2[impo], mpo2[impo + 1]).reshape(
+                (mpo2[impo].shape[0], 4, 4, mpo2[impo + 1].shape[-1])
             )
             mpo_merge.append(mo)
             impo += 2

@@ -4,89 +4,76 @@
 import weakref
 import logging
 import copy
+from typing import List, Union
 
 import numpy as np
 
-xp = np
+from ephMPS.mps.backend import xp, backend, cp
+
 
 
 logger = logging.getLogger(__name__)
 
 
-first_mp = False
-
-
-class Backend:
-    def __init__(self):
-        self._real_dtype = np.float64
-        self._complex_dtype = np.complex128
-
-    @property
-    def real_dtype(self):
-        return self._real_dtype
-
-    @real_dtype.setter
-    def real_dtype(self, tp):
-        if not first_mp:
-            self._real_dtype = tp
-        else:
-            raise RuntimeError("Can't alter backend data type")
-
-    @property
-    def complex_dtype(self):
-        return self._complex_dtype
-
-    @complex_dtype.setter
-    def complex_dtype(self, tp):
-        if not first_mp:
-            self._complex_dtype = tp
-        else:
-            raise RuntimeError("Can't alter backend data type")
-
-
-    @property
-    def dtypes(self):
-        return self.real_dtype, self.complex_dtype
-
-    @dtypes.setter
-    def dtypes(self, target):
-        self.real_dtype, self.complex_dtype = target
-
-
-backend = Backend()
-
-
-
 class Matrix:
 
-    _mo_dict = weakref.WeakValueDictionary()
+    _mo_dict = weakref.WeakValueDictionary() # dummy value
 
-    def __new__(cls, array, is_mpo=False, dtype=None):
+    @classmethod
+    def interned(cls, array, is_mpo, dtype):
+        new_matrix = cls(array, dtype)
         if is_mpo:
-            k = hash(array.tobytes())
-            if k in cls._mo_dict:
-                res = cls._mo_dict[k]
-                assert xp.allclose(res.array, array)
-                return res
-            else:
-                res = super().__new__(cls)
-                cls._mo_dict[k] = res
-                return res
-        else:
-            return super().__new__(cls)
+            h = hash(new_matrix)
+            old_matrix = cls._mo_dict.get(h, None)
+            if old_matrix is not None:
+                assert allclose(old_matrix.array, new_matrix.array)
+                return old_matrix
+            cls._mo_dict[h] = new_matrix
+        return new_matrix
 
-
-    def __init__(self, array, is_mpo=False, dtype=None):
+    def __init__(self, array, dtype=None):
+        if dtype == backend.real_dtype:
+            assert not xp.iscomplexobj(array)
         if dtype is None:
-            dtype = backend.real_dtype
-        self.array = xp.array(array, dtype=dtype)
-        self.is_mpo = is_mpo
+            if xp.iscomplexobj(array):
+                dtype = backend.complex_dtype
+            else:
+                dtype = backend.real_dtype
+        self.array: [xp.ndarray] = xp.asarray(array, dtype=dtype)
         self.original_shape = self.array.shape
         self.sigmaqn = None
+        backend.first_mp = True
 
     def __getattr__(self, item):
-        return getattr(self.array, item)
+        res = getattr(self.array, item)
+        if isinstance(res, xp.ndarray):
+            return Matrix(res)
+        functiontype = type([].append)
+        if isinstance(res, functiontype):
+            def wrapped(*args, **kwargs):
+                res2 = res(*args, **kwargs)
+                if isinstance(res2, xp.ndarray):
+                    return Matrix(res2)
+                return res2
+            return wrapped
+        return res
 
+    # for debugging purpose (let it shown in debugger)
+    @property
+    def dtype(self):
+        return self.array.dtype
+
+    def abs(self):
+        return self.__class__(xp.abs(self.array))
+
+    def norm(self):
+        return xp.linalg.norm(self.array)
+
+    def asnumpy(self):
+        if xp == np:
+            return self.array
+        else:
+            return xp.asnumpy(self.array)
     # physical indices exclude first and last indices
     @property
     def pdim(self):
@@ -118,7 +105,7 @@ class Matrix:
         """
         check L-orthogonal
         """
-        tensm = self.reshape([np.prod(self.shape[:-1]), self.shape[-1]])
+        tensm = self.array.reshape([np.prod(self.shape[:-1]), self.shape[-1]])
         s = xp.dot(tensm.T.conj(), tensm)
         return xp.allclose(s, xp.eye(s.shape[0]), atol=1e-3)
 
@@ -126,135 +113,183 @@ class Matrix:
         """
         check R-orthogonal
         """
-        tensm = self.reshape([self.shape[0], np.prod(self.shape[1:])])
+        tensm = self.array.reshape([self.shape[0], np.prod(self.shape[1:])])
         s = xp.dot(tensm, tensm.T.conj())
-        return xp.allclose(s, xp.eye(s.shape[0]))
+        return xp.allclose(s, xp.eye(s.shape[0]), atol=1e-3)
 
     def to_complex(self):
         return xp.array(self.array, dtype=backend.complex_dtype)
 
 
     def __hash__(self):
-        return hash(self.array.tobytes())
+        if xp == np:
+            return hash(self.array.tobytes())
+        else:
+            # the transfer shouldn't be a bottleneck as they are all
+            # small matrices. Could be optimized to hash on device
+            return hash(xp.asnumpy(self.array).tobytes())
 
     def __getitem__(self, item):
-        return self.array.__getitem__(item)
+        res = self.array.__getitem__(item)
+        if res.ndim != 0:
+            return self.__class__(res)
+        else:
+            return complex(res)
+
+    def __setitem__(self, key, value):
+        if isinstance(value, Matrix):
+            value = value.array
+        self.array[key] = value
+
+    def __add__(self, other):
+        if isinstance(other, Matrix):
+            other = other.array
+        return self.__class__(self.array.__add__(other))
+
+    def __radd__(self, other):
+        if isinstance(other, Matrix):
+            other = other.array
+        return self.__class__(self.array.__radd__(other))
 
     def __mul__(self, other):
-        return self.array.__mul__(other)
+        if isinstance(other, Matrix):
+            other = other.array
+        return self.__class__(self.array.__mul__(other))
+
+    def __rmul__(self, other):
+        if isinstance(other, Matrix):
+            other = other.array
+        return self.__class__(self.array.__rmul__(other))
+
+    def __truediv__(self, other):
+        if isinstance(other, Matrix):
+            other = other.array
+        return self.__class__(self.array.__truediv__(other))
 
     def __repr__(self):
-        return repr(self.array)
+        return f"<Matrix at 0x{id(self):x} {self.shape} {self.dtype}>"
 
     def __str__(self):
         return str(self.array)
 
+    def __float__(self):
+        return self.array.__float__()
+
     def __deepcopy__(self, memodict):
-        new = self.__class__(self.array, self.is_mpo, self.array.dtype)
+        new = self.__class__(self.array, self.array.dtype)
         new.__dict__ = copy.deepcopy(self.__dict__)
         return new
 
-'''
+def zeros(shape, dtype=None):
+    if dtype is None:
+        dtype = backend.real_dtype
+    return Matrix(xp.zeros(shape), dtype=dtype)
 
-from functools import wraps
 
-def _mo_check_decorator(func):
-    @wraps(func)  # implement the dict by hand because can't override __eq__
-    def wrapper(cls, array: np.ndarray, is_mpo: bool, dtype):
-        if is_mpo:
-            k = hash(array.tobytes())
-            if k in cls._mo_dict:
-                res = cls._mo_dict[k]
-                assert np.allclose(res, array)
-                return res
-            else:
-                res = func(cls, array, is_mpo, dtype)
-                cls._mo_dict[k] = res
-                return res
-        else:
-            return func(cls, array, is_mpo, dtype)
+def eye(N, M=None, dtype=None):
+    if dtype is None:
+        dtype = backend.real_dtype
+    return Matrix(xp.eye(N, M), dtype=dtype)
 
-    return wrapper
+def ones(shape, dtype=None):
+    if dtype is None:
+        dtype = backend.real_dtype
+    return Matrix(xp.ones(shape), dtype=dtype)
 
-class Matrix(np.ndarray):
 
-    _mo_dict = weakref.WeakValueDictionary()
+def einsum(subscripts, *operands):
+    return Matrix(xp.einsum(subscripts, *[o.array for o in operands]))
 
-    @_mo_check_decorator
-    def __new__(cls, array, is_mpo: bool, dtype):
-        global first_mp
-        first_mp = True
-        array = np.array(array, dtype=dtype)
-        obj = array.view(cls)
-        # let hashing possible
-        obj.flags.writeable = False
-        obj.original_shape = obj.shape
-        # set in MatrixProduct
-        obj.sigmaqn = None
-        return obj
 
-    def __array_finalize__(self, obj):
-        if obj is None:
-            return
-        self.original_shape = getattr(obj, "original_shape", None)
+def tensordot(a: Union[Matrix, xp.ndarray], b: Union[Matrix, xp.ndarray], axes):
+    matrix_flag = False
+    if isinstance(a, Matrix):
+        a = a.array
+        assert isinstance(b, Matrix)
+        b = b.array
+        matrix_flag = True
+    else:
+        assert isinstance(b, xp.ndarray)
+    res = xp.tensordot(a, b, axes)
+    if matrix_flag:
+        return Matrix(res)
+    else:
+        return res
 
-    # physical indices exclude first and last indices
-    @property
-    def pdim(self):
-        return self.original_shape[1:-1]
 
-    @property
-    def pdim_prod(self):
-        return np.prod(self.pdim)
+def moveaxis(a: Matrix, source, destination):
+    return Matrix(xp.moveaxis(a.array, source, destination))
 
-    @property
-    def bond_dim(self):
-        return self.original_shape[0], self.original_shape[-1]
+def vstack(tup):
+    return Matrix(xp.vstack([m.array for m in tup]))
 
-    @property
-    def r_combine_shape(self):
-        return self.original_shape[0], np.prod(self.original_shape[1:])
+def dstack(tup):
+    return Matrix(xp.dstack([m.array for m in tup]))
 
-    @property
-    def l_combine_shape(self):
-        return np.prod(self.original_shape[:-1]), self.original_shape[-1]
+def concatenate(arrays, axis=None, out=None):
+    return Matrix(xp.concatenate([m.array for m in arrays], axis, out))
 
-    @property
-    def is_mpo(self):
-        return self.original_shape.ndim == 4
+# can only use numpy for now. see gh-cupy-1946
+def allclose(a, b, rtol=1.e-5, atol=1.e-8):
+    if isinstance(a, Matrix):
+        a = a.array
+    else:
+        a = xp.asarray(a)
+    if isinstance(b, Matrix):
+        b = b.array
+    else:
+        b = xp.asarray(b)
+    # delete this when CuPy 6.0 is released
+    if xp == cp:
+        a = cp.asnumpy(a)
+        b = cp.asnumpy(b)
+    return np.allclose(a, b, rtol=rtol, atol=atol)
 
-    def r_combine(self):
-        return self.reshape(self.r_combine_shape)
 
-    def l_combine(self):
-        return self.reshape(self.l_combine_shape)
+def multi_tensor_contract(path, *operands: [List[Union[Matrix, xp.ndarray]]]):
+    """
+    ipath[0] is the index of the mat
+    ipaht[1] is the contraction index
+    oeprands is the arrays
 
-    def check_lortho(self):
-        """
-        check L-orthogonal
-        """
-        tensm = np.reshape(self, [np.prod(self.shape[:-1]), self.shape[-1]])
-        s = np.dot(np.conj(tensm.T), tensm)
-        return np.allclose(s, np.eye(s.shape[0]), atol=1e-3)
+    For example:  in mpompsmat.py
+    path = [([0, 1],"fdla, abc -> fdlbc")   ,\
+            ([2, 0],"fdlbc, gdeb -> flcge") ,\
+            ([1, 0],"flcge, helc -> fgh")]
+    outtensor = tensorlib.multi_tensor_contract(path, MPSconj[isite], intensor,
+            MPO[isite], MPS[isite])
+    """
 
-    def check_rortho(self):
-        """
-        check R-orthogonal
-        """
-        tensm = np.reshape(self, [self.shape[0], np.prod(self.shape[1:])])
-        s = np.dot(tensm, np.conj(tensm.T))
-        return np.allclose(s, np.eye(s.shape[0]))
+    operands = list(operands)
+    for ipath in path:
 
-    def to_complex(self):
-        return np.array(self, dtype=backend.complex_dtype)
-    
+        input_str, results_str = ipath[1].split("->")
+        input_str = input_str.split(",")
+        input_str = [x.replace(" ", "") for x in input_str]
+        results_set = set(results_str)
+        inputs_set = set(input_str[0] + input_str[1])
+        idx_removed = inputs_set - (inputs_set & results_set)
 
-    def __deepcopy__(self, memodict, *arg, **kwargs):
-        y = super(Matrix, self).__deepcopy__(memodict, *arg, **kwargs)
-        y.original_shape = self.original_shape
-        y.sigmaqn = self.sigmaqn
-        return y
+        tmpmat = pair_tensor_contract(
+            operands[ipath[0][0]],
+            input_str[0],
+            operands[ipath[0][1]],
+            input_str[1],
+            idx_removed,
+        )
 
-    def __hash__(self):
-        return hash(self.tobytes())
-'''
+        for x in sorted(ipath[0], reverse=True):
+            del operands[x]
+
+        operands.append(tmpmat)
+
+    return operands[0]
+
+
+def pair_tensor_contract(view_left: Union[Matrix, xp.ndarray], input_left, view_right: Union[Matrix, xp.ndarray], input_right, idx_removed):
+    # Find indices to contract over
+    left_pos, right_pos = (), ()
+    for s in idx_removed:
+        left_pos += (input_left.find(s),)
+        right_pos += (input_right.find(s),)
+    return tensordot(view_left, view_right, axes=(left_pos, right_pos))

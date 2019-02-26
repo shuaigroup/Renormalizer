@@ -21,10 +21,10 @@ def test_hybrid_DMRG_H_SCF(mol_list, target):
     mps, mpo = solver.construct_mps_mpo_2(mol_list, 10, nexciton, scheme=2)
     Etot = solver.optimize_mps(mps, mpo)
     # print("Etot", Etot)
-    assert Etot == pytest.approx(target, abs=1e-10)
+    assert Etot == pytest.approx(target, abs=1e-5)
 
     nexciton = 0
     mps, mpo = solver.construct_mps_mpo_2(mol_list, 10, nexciton, scheme=2)
     Etot = solver.optimize_mps(mps, mpo)
     # print("Etot", Etot)
-    assert Etot == pytest.approx(0.0, abs=1e-10)
+    assert Etot == pytest.approx(0.0, abs=1e-5)

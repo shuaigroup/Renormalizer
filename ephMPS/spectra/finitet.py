@@ -61,7 +61,7 @@ class SpectraFiniteT(SpectraTdMpsJobBase):
         return BraKetPairEmiFiniteT(a_bra_mpo, a_ket_mpo)
 
     def init_mps_abs(self):
-        dipole_mpo = Mpo.onsite(self.mol_list, "a^\dagger", dipole=True)
+        dipole_mpo = Mpo.onsite(self.mol_list, r"a^\dagger", dipole=True)
         i_mpo = MpDm.max_entangled_gs(self.mol_list)
         beta = self.temperature.to_beta()
         ket_mpo = i_mpo.thermal_prop_exact(self.h_mpo, beta / 2.0, 1, "GS")

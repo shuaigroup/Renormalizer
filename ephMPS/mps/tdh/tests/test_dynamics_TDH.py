@@ -21,7 +21,7 @@ def test_ZT_dynamics_TDH():
     operators = []
     for imol in range(len(mol_list)):
         dipoleO = tdh.construct_onsiteO(
-            mol_list, "a^\dagger a", dipole=False, mol_idx_set={imol}
+            mol_list, r"a^\dagger a", dipole=False, mol_idx_set={imol}
         )
         operators.append(dipoleO)
 
@@ -43,7 +43,7 @@ def test_FT_dynamics_TDH():
     operators = []
     for imol in range(len(mol_list)):
         dipoleO = tdh.construct_onsiteO(
-            mol_list, "a^\dagger a", dipole=False, mol_idx_set={imol}
+            mol_list, r"a^\dagger a", dipole=False, mol_idx_set={imol}
         )
         operators.append(dipoleO)
 

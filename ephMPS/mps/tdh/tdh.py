@@ -383,7 +383,7 @@ class LinearSpectra(TdHartree):
         self.spectratype = spectratype
         self.E_offset = E_offset
         if self.spectratype == "abs":
-            self.dipolemat = construct_onsiteO(mol_list, "a^\dagger", dipole=True)
+            self.dipolemat = construct_onsiteO(mol_list, r"a^\dagger", dipole=True)
             nexciton = 1
         elif self.spectratype == "emi":
             self.dipolemat = construct_onsiteO(mol_list, "a", dipole=True)
@@ -498,7 +498,7 @@ class Dynamics(TdHartree):
     def init_zt(self):
         WFN, Etot = SCF(self.mol_list, 0)
         dipoleO = construct_onsiteO(
-            self.mol_list, "a^\dagger", dipole=True, mol_idx_set={0}
+            self.mol_list, r"a^\dagger", dipole=True, mol_idx_set={0}
         )
         WFN[0] = dipoleO.dot(WFN[0])
         mflib.canonical_normalize(WFN)
@@ -511,7 +511,7 @@ class Dynamics(TdHartree):
         DM = self._FT_DM(0)
 
         dipoleO = construct_onsiteO(
-            self.mol_list, "a^\dagger", dipole=True, mol_idx_set={0}
+            self.mol_list, r"a^\dagger", dipole=True, mol_idx_set={0}
         )
         DM[0] = dipoleO.dot(DM[0])
         mflib.canonical_normalize(DM)
@@ -539,17 +539,17 @@ class Dynamics(TdHartree):
 
 def construct_intersiteO(mol, idxmol, j_matrixdxmol):
     """
-    construct the electronic inter site operator \sum_i a_i^\dagger a_j
+    construct the electronic inter site operator \\sum_i a_i^\\dagger a_j
     """
-    pass
+    raise NotImplementedError
 
 
 def construct_onsiteO(mol_list, opera, dipole=False, mol_idx_set=None):
     """
-    construct the electronic onsite operator \sum_i opera_i MPO
+    construct the electronic onsite operator \\sum_i opera_i MPO
     """
     assert mol_list.pure_hartree
-    assert opera in ["a", "a^\dagger", "a^\dagger a"]
+    assert opera in ["a", r"a^\dagger", r"a^\dagger a"]
     nmols = len(mol_list)
     if mol_idx_set is None:
         mol_idx_set = set(np.arange(nmols))
@@ -564,10 +564,10 @@ def construct_onsiteO(mol_list, opera, dipole=False, mol_idx_set=None):
     if opera == "a":
         O = np.zeros([1, nmols])
         O[0, :] = element
-    elif opera == "a^\dagger":
+    elif opera == r"a^\dagger":
         O = np.zeros([nmols, 1])
         O[:, 0] = element
-    elif opera == "a^\dagger a":
+    elif opera == r"a^\dagger a":
         O = np.diag(element)
     else:
         assert False

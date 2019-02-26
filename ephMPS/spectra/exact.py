@@ -69,7 +69,7 @@ class SpectraExact(SpectraTdMpsJobBase):
         if self.spectratype == "emi":
             operator = "a"
         else:
-            operator = "a^\dagger"
+            operator = r"a^\dagger"
         dipole_mpo = Mpo.onsite(self.mol_list, operator, dipole=True)
         if self.temperature != 0:
             beta = self.temperature.to_beta()

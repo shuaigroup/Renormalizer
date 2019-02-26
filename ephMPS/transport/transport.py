@@ -10,8 +10,10 @@ from functools import partial
 
 import numpy as np
 
+from ephMPS.mps.backend import backend
+from ephMPS.mps.matrix import tensordot
 from ephMPS.mps import Mpo, Mps, MpDm, solver
-from ephMPS.utils import TdMpsJob, Quantity, EvolveConfig
+from ephMPS.utils import TdMpsJob, Quantity
 
 logger = logging.getLogger(__name__)
 
@@ -27,16 +29,16 @@ def calc_reduced_density_matrix_straight(
     elif mp.is_mps:
         density_matrix_product = MpDm()
         # todo: not elegant! figure out a better way to deal with data type
-        density_matrix_product.dtype = np.complex128
+        density_matrix_product.dtype = backend.complex_dtype
         density_matrix_product.mol_list = mp.mol_list
         for mt in mp:
             bond1, phys, bond2 = mt.shape
-            mt1 = mt.reshape(bond1, phys, bond2, 1)
-            mt2 = mt.conj().reshape(bond1, phys, bond2, 1)
+            mt1 = mt.reshape((bond1, phys, bond2, 1))
+            mt2 = mt.conj().reshape((bond1, phys, bond2, 1))
             new_mt = (
-                np.tensordot(mt1, mt2, axes=[3, 3])
+                tensordot(mt1, mt2, axes=[3, 3])
                 .transpose((0, 3, 1, 4, 2, 5))
-                .reshape(bond1 ** 2, phys, phys, bond2 ** 2)
+                .reshape((bond1 ** 2, phys, phys, bond2 ** 2))
             )
             density_matrix_product.append(new_mt)
         density_matrix_product.build_empty_qn()
@@ -57,7 +59,7 @@ def calc_reduced_density_matrix(mp):
         mp1 = mp
         mp2 = mp.conj_trans()
     reduced_density_matrix = np.zeros(
-        (mp.mol_list.mol_num, mp.mol_list.mol_num), dtype=np.complex128
+        (mp.mol_list.mol_num, mp.mol_list.mol_num), dtype=backend.complex_dtype
     )
     for i in range(mp.mol_list.mol_num):
         for j in range(mp.mol_list.mol_num):
@@ -115,7 +117,7 @@ class ChargeTransport(TdMpsJob):
         """
         # previous create electron code
         creation_operator = Mpo.onsite(
-            self.mol_list, "a^\dagger", mol_idx_set={self.mol_num // 2}
+            self.mol_list, r"a^\dagger", mol_idx_set={self.mol_num // 2}
         )
         return creation_operator.apply(gs_mp)
 

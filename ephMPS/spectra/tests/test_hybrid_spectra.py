@@ -84,7 +84,7 @@ def test_Exact_Spectra_hybrid_TDDMRG_TDH():
     with open(os.path.join(cur_dir, "hybrid_ZTemi_exact.npy"), "rb") as fin:
         std = np.load(fin)
 
-    assert np.allclose(exact_emi.autocorr[:nsteps], std[:nsteps], rtol=1e-5)
+    assert np.allclose(exact_emi.autocorr[:nsteps], std[:nsteps], rtol=1e-3)
 
 
 @pytest.mark.parametrize("algorithm", ("pure", "hybrid"))

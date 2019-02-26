@@ -24,4 +24,4 @@ def test_csvd():
     mps1.compress()
     with open(os.path.join(cur_dir, "test_svd_qn.pickle"), "rb") as fin:
         mps2 = pickle.load(fin)
-    assert mps1.distance(mps2) == pytest.approx(0, abs=1e-8)
+    assert mps1.distance(mps2) == pytest.approx(0, abs=1e-5)

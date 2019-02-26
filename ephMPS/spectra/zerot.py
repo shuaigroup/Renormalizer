@@ -34,7 +34,7 @@ class SpectraZeroT(SpectraTdMpsJobBase):
         if self.spectratype == "emi":
             operator = "a"
         else:
-            operator = "a^\dagger"
+            operator = r"a^\dagger"
         dipole_mpo = Mpo.onsite(self.mol_list, operator, dipole=True)
         a_ket_mps = dipole_mpo.apply(self.get_imps(), canonicalise=True)
         a_ket_mps.canonical_normalize()

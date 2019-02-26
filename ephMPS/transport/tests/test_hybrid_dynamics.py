@@ -18,7 +18,7 @@ def test_zt(n_dmrg_phs):
     mol_list = parameter_PBI.construct_mol(4, n_dmrg_phs, 10 - n_dmrg_phs)
     mps = Mps.gs(mol_list, False)
     # create electron
-    mps = Mpo.onsite(mol_list, "a^\dagger", mol_idx_set={0}).apply(mps).normalize(1.0)
+    mps = Mpo.onsite(mol_list, r"a^\dagger", mol_idx_set={0}).apply(mps).normalize(1.0)
     tentative_mpo = Mpo(mol_list, scheme=3)
     offset = mps.expectation(tentative_mpo)
     mpo = Mpo(mol_list, scheme=3, offset=Quantity(offset, "a.u."))
@@ -49,7 +49,7 @@ def test_FT_dynamics_hybrid_TDDMRG_TDH(n_dmrg_phs):
     mpdm = mpdm.thermal_prop_exact(
         tentative_mpo, temperature.to_beta() / 2, 1, "GS", inplace=True
     )
-    mpdm = Mpo.onsite(mol_list, "a^\dagger", mol_idx_set={0}).apply(mpdm).normalize(1.0)
+    mpdm = Mpo.onsite(mol_list, r"a^\dagger", mol_idx_set={0}).apply(mpdm).normalize(1.0)
     offset = mpdm.expectation(tentative_mpo)
     mpo = Mpo(mol_list, scheme=3, offset=Quantity(offset, "a.u."))
 

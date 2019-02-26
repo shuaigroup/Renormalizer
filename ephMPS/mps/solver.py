@@ -6,8 +6,10 @@ import logging
 import numpy as np
 import scipy
 
-from ephMPS.lib import tensor as tensorlib
+
 from ephMPS.lib.davidson import davidson
+from ephMPS.mps.backend import xp
+from ephMPS.mps.matrix import Matrix, multi_tensor_contract, ones, einsum, moveaxis, tensordot
 from ephMPS.mps import Mpo, Mps, svd_qn
 from ephMPS.mps.lib import updatemps, Environ
 from ephMPS.utils import Quantity
@@ -52,7 +54,7 @@ def construct_mps_mpo_2(
 
 def optimize_mps(mps, mpo):
     energies = optimize_mps_dmrg(mps, mpo)
-    if mps.mol_list.pure_dmrg:
+    if not mps.hybrid_tdh:
         return energies[-1]
 
     HAM = []
@@ -115,8 +117,8 @@ def optimize_mps_dmrg(mps, mpo):
         ]
 
     # initial matrix
-    ltensor = np.ones((1, 1, 1))
-    rtensor = np.ones((1, 1, 1))
+    ltensor = ones((1, 1, 1))
+    rtensor = ones((1, 1, 1))
 
     energies = []
     for isweep, (mmax, percent) in enumerate(procedure):
@@ -147,15 +149,15 @@ def optimize_mps_dmrg(mps, mpo):
             cshape = qnmat.shape
 
             # hdiag
-            tmp_ltensor = np.einsum("aba -> ba", ltensor)
-            tmp_MPOimps = np.einsum("abbc -> abc", mpo[imps])
-            tmp_rtensor = np.einsum("aba -> ba", rtensor)
+            tmp_ltensor = einsum("aba -> ba", ltensor)
+            tmp_MPOimps = einsum("abbc -> abc", mpo[imps])
+            tmp_rtensor = einsum("aba -> ba", rtensor)
             if method == "1site":
                 #   S-a c f-S
                 #   O-b-O-g-O
                 #   S-a c f-S
                 path = [([0, 1], "ba, bcg -> acg"), ([1, 0], "acg, gf -> acf")]
-                hdiag = tensorlib.multi_tensor_contract(
+                hdiag = multi_tensor_contract(
                     path, tmp_ltensor, tmp_MPOimps, tmp_rtensor
                 )[(qnmat == nexciton)]
                 # initial guess   b-S-c
@@ -165,21 +167,21 @@ def optimize_mps_dmrg(mps, mpo):
                 #   S-a c   d f-S
                 #   O-b-O-e-O-g-O
                 #   S-a c   d f-S
-                tmp_MPOimpsm1 = np.einsum("abbc -> abc", mpo[imps - 1])
+                tmp_MPOimpsm1 = einsum("abbc -> abc", mpo[imps - 1])
                 path = [
                     ([0, 1], "ba, bce -> ace"),
                     ([0, 1], "edg, gf -> edf"),
                     ([0, 1], "ace, edf -> acdf"),
                 ]
-                hdiag = tensorlib.multi_tensor_contract(
+                hdiag = multi_tensor_contract(
                     path, tmp_ltensor, tmp_MPOimpsm1, tmp_MPOimps, tmp_rtensor
                 )[(qnmat == nexciton)]
                 # initial guess b-S-c-S-e
                 #                 a   d
-                cguess = np.tensordot(mps[imps - 1], mps[imps], axes=1)[
+                cguess = tensordot(mps[imps - 1], mps[imps], axes=1)[
                     qnmat == nexciton
                 ]
-
+            cguess = cguess.asnumpy()
             hdiag *= inverse
             nonzeros = np.sum(qnmat == nexciton)
             # print("Hmat dim", nonzeros)
@@ -203,8 +205,8 @@ def optimize_mps_dmrg(mps, mpo):
                         ([2, 0], "bcdl, bdef -> clef"),
                         ([1, 0], "clef, lfk -> cek"),
                     ]
-                    cout = tensorlib.multi_tensor_contract(
-                        path, ltensor, cstruct, mpo[imps], rtensor
+                    cout = multi_tensor_contract(
+                        path, ltensor, Matrix(cstruct), mpo[imps], rtensor
                     )
                 else:
                     # S-a       l-S
@@ -218,18 +220,18 @@ def optimize_mps_dmrg(mps, mpo):
                         ([2, 0], "cglef, fghj -> clehj"),
                         ([1, 0], "clehj, ljk -> cehk"),
                     ]
-                    cout = tensorlib.multi_tensor_contract(
-                        path, ltensor, cstruct, mpo[imps - 1], mpo[imps], rtensor
+                    cout = multi_tensor_contract(
+                        path, ltensor, Matrix(cstruct), mpo[imps - 1], mpo[imps], rtensor
                     )
                 # convert structure c to 1d according to qn
-                return inverse * cout[qnmat == nexciton]
+                return inverse * cout.asnumpy()[qnmat == nexciton]
 
             if nroots != 1:
                 cguess = [cguess]
                 for iroot in range(nroots - 1):
-                    cguess.append(mps.dtype(np.random.random([nonzeros]) - 0.5))
+                    cguess.append(np.random.random([nonzeros]) - 0.5)
 
-            precond = lambda x, e, *args: x / (hdiag - e + 1e-4)
+            precond = lambda x, e, *args: x / (hdiag.asnumpy() - e + 1e-4)
 
             e, c = davidson(
                 hop, cguess, precond, max_cycle=100, nroots=nroots, max_memory=64000
@@ -271,21 +273,21 @@ def optimize_mps_dmrg(mps, mpo):
                 mps[imps] = mt
                 if system == "L":
                     if imps != len(mps) - 1:
-                        mps[imps + 1] = np.tensordot(compmps, mps[imps + 1], axes=1)
+                        mps[imps + 1] = tensordot(compmps, mps[imps + 1], axes=1)
                         # mps.dim_list[imps + 1] = mpsdim
                         mps.qn[imps + 1] = mpsqn
                     else:
-                        mps[imps] = np.tensordot(mps[imps], compmps, axes=1)
+                        mps[imps] = tensordot(mps[imps], compmps, axes=1)
                         # mps.dim_list[imps + 1] = 1
                         mps.qn[imps + 1] = [0]
 
                 else:
                     if imps != 0:
-                        mps[imps - 1] = np.tensordot(mps[imps - 1], compmps, axes=1)
+                        mps[imps - 1] = tensordot(mps[imps - 1], compmps, axes=1)
                         # mps.dim_list[imps] = mpsdim
                         mps.qn[imps] = mpsqn
                     else:
-                        mps[imps] = np.tensordot(compmps, mps[imps], axes=1)
+                        mps[imps] = tensordot(compmps, mps[imps], axes=1)
                         # mps.dim_list[imps] = 1
                         mps.qn[imps] = [0]
             else:
@@ -330,7 +332,7 @@ def renormalization_svd(cstruct, qnbigl, qnbigr, domain, nexciton, Mmax, percent
             Vset, SVset, qnrnew, Uset, nexciton, Mmax, percent=percent
         )
         return (
-            np.moveaxis(mps.reshape(list(qnbigr.shape) + [mpsdim]), -1, 0),
+            moveaxis(mps.reshape(list(qnbigr.shape) + [mpsdim]), -1, 0),
             mpsdim,
             mpsqn,
             compmps.reshape(list(qnbigl.shape) + [mpsdim]),
@@ -343,7 +345,7 @@ def renormalization_svd(cstruct, qnbigl, qnbigr, domain, nexciton, Mmax, percent
             mps.reshape(list(qnbigl.shape) + [mpsdim]),
             mpsdim,
             mpsqn,
-            np.moveaxis(compmps.reshape(list(qnbigr.shape) + [mpsdim]), -1, 0),
+            moveaxis(compmps.reshape(list(qnbigr.shape) + [mpsdim]), -1, 0),
         )
 
 
@@ -381,11 +383,11 @@ def renormalization_ddm(cstruct, qnbigl, qnbigr, domain, nexciton, Mmax, percent
 
     if domain == "R":
         return (
-            np.moveaxis(mps.reshape(list(qnbigr.shape) + [mpsdim]), -1, 0),
+            moveaxis(mps.reshape(list(qnbigr.shape) + [mpsdim]), -1, 0),
             mpsdim,
             mpsqn,
-            np.tensordot(
-                cstruct[0],
+            tensordot(
+                Matrix(cstruct[0]),
                 mps.reshape(list(qnbigr.shape) + [mpsdim]),
                 axes=(range(qnbigl.ndim, cstruct[0].ndim), range(qnbigr.ndim)),
             ),
@@ -395,9 +397,9 @@ def renormalization_ddm(cstruct, qnbigl, qnbigr, domain, nexciton, Mmax, percent
             mps.reshape(list(qnbigl.shape) + [mpsdim]),
             mpsdim,
             mpsqn,
-            np.tensordot(
+            tensordot(
                 mps.reshape(list(qnbigl.shape) + [mpsdim]),
-                cstruct[0],
+                Matrix(cstruct[0]),
                 axes=(range(qnbigl.ndim), range(qnbigl.ndim)),
             ),
         )
