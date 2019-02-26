@@ -107,7 +107,7 @@ class Matrix:
         """
         tensm = self.array.reshape([np.prod(self.shape[:-1]), self.shape[-1]])
         s = xp.dot(tensm.T.conj(), tensm)
-        return xp.allclose(s, xp.eye(s.shape[0]), atol=1e-3)
+        return allclose(s, xp.eye(s.shape[0]), atol=1e-3)
 
     def check_rortho(self):
         """
@@ -115,7 +115,7 @@ class Matrix:
         """
         tensm = self.array.reshape([self.shape[0], np.prod(self.shape[1:])])
         s = xp.dot(tensm, tensm.T.conj())
-        return xp.allclose(s, xp.eye(s.shape[0]), atol=1e-3)
+        return allclose(s, xp.eye(s.shape[0]), atol=1e-3)
 
     def to_complex(self):
         return xp.array(self.array, dtype=backend.complex_dtype)
@@ -177,7 +177,8 @@ class Matrix:
 
     def __deepcopy__(self, memodict):
         new = self.__class__(self.array, self.array.dtype)
-        new.__dict__ = copy.deepcopy(self.__dict__)
+        new.original_shape = self.original_shape
+        new.sigmaqn = self.sigmaqn
         return new
 
 def zeros(shape, dtype=None):
@@ -226,8 +227,8 @@ def vstack(tup):
 def dstack(tup):
     return Matrix(xp.dstack([m.array for m in tup]))
 
-def concatenate(arrays, axis=None, out=None):
-    return Matrix(xp.concatenate([m.array for m in arrays], axis, out))
+def concatenate(arrays, axis=None):
+    return Matrix(xp.concatenate([m.array for m in arrays], axis))
 
 # can only use numpy for now. see gh-cupy-1946
 def allclose(a, b, rtol=1.e-5, atol=1.e-8):
@@ -245,6 +246,12 @@ def allclose(a, b, rtol=1.e-5, atol=1.e-8):
         b = cp.asnumpy(b)
     return np.allclose(a, b, rtol=rtol, atol=atol)
 
+
+def asnumpy(a: Union[np.ndarray, cp.ndarray]):
+    if xp == np:
+        return a
+    else:
+        return xp.asnumpy(a)
 
 def multi_tensor_contract(path, *operands: [List[Union[Matrix, xp.ndarray]]]):
     """

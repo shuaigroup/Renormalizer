@@ -24,3 +24,4 @@ or when highest bond order hits expectated bond order?)
 * refactor utils/tdmps. make economic mode the default. user should input what they
 what to be calculated. Need to ask jjr what is the best prctice. And start from chk file?
 * license of libs
+* different backend for original mctdh_tdvp is buggy

@@ -19,7 +19,7 @@ else:
     logger.info("use numpy as backend")
 
 
-xp = np
+#xp = np
 
 class Backend:
 
@@ -33,8 +33,10 @@ class Backend:
 
     def __init__(self):
         self.first_mp = False
-        self._real_dtype = xp.float64
-        self._complex_dtype = xp.complex128
+        #self._real_dtype = xp.float64
+        #self._complex_dtype = xp.complex128
+        self._real_dtype = xp.float32
+        self._complex_dtype = xp.complex64
 
     @property
     def real_dtype(self):

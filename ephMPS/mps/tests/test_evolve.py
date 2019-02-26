@@ -12,10 +12,6 @@ from ephMPS.tests import parameter
 from ephMPS.mps.tests import cur_dir
 
 
-# for test
-from ephMPS.mps import matrix
-matrix.backend_dtypes = [np.float32, np.complex64]
-
 @pytest.mark.parametrize(
     "method, evolve_dt, rtol",
     (

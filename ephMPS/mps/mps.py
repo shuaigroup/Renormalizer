@@ -10,7 +10,7 @@ from cached_property import cached_property
 
 from ephMPS.lib import solve_ivp
 from ephMPS.mps import svd_qn
-from ephMPS.mps.matrix import multi_tensor_contract, vstack, dstack, concatenate, zeros, ones, tensordot, Matrix
+from ephMPS.mps.matrix import multi_tensor_contract, vstack, dstack, concatenate, zeros, ones, tensordot, Matrix, asnumpy
 from ephMPS.mps.backend import backend, xp
 from ephMPS.mps.lib import Environ, updatemps, compressed_sum
 from ephMPS.mps.mp import MatrixProduct
@@ -570,7 +570,7 @@ class Mps(MatrixProduct):
             # print
             # "sum w=", np.sum(w)
             # S  = u.dot(np.diag(w)).dot(np.conj(u.T))
-            S_inv = u.dot(np.diag(1.0 / w)).dot(np.conj(u.T))
+            S_inv = xp.asarray(u.dot(np.diag(1.0 / w)).dot(np.conj(u.T)))
 
             # pseudo inverse
             # S_inv = scipy.linalg.pinvh(S,rcond=1e-2)
@@ -648,7 +648,7 @@ class Mps(MatrixProduct):
             # print
             # "sum density matrix", np.sum(S)
 
-            S_inv = np.diag(1.0 / s)
+            S_inv = xp.diag(1.0 / s)
 
             hop = hop_factory(ltensor, rtensor, mpo[imps], len(shape))
 
@@ -737,6 +737,8 @@ class Mps(MatrixProduct):
             # print
             # "nsteps for MPS[imps]:", len(sol.t)
             mps_t = sol.y[:, -1].reshape(shape)
+            # cast to numpy array because we are doing qr
+            mps_t = asnumpy(mps_t)
 
             if system == "L" and imps != len(mps) - 1:
                 # updated imps site
@@ -940,7 +942,8 @@ class Mps(MatrixProduct):
 def projector(ms: xp.ndarray) -> xp.ndarray:
     # projector
     proj = xp.tensordot(ms, ms.conj(), axes=(-1, -1))
-    Iden = xp.diag(xp.ones(np.prod(ms.shape[:-1]))).reshape(proj.shape)
+    sz = int(np.prod(ms.shape[:-1]))
+    Iden = xp.array(xp.diag(xp.ones(sz)), dtype=backend.real_dtype).reshape(proj.shape)
     proj = Iden - proj
     return proj
 

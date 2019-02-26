@@ -1,5 +1,7 @@
 from __future__ import division, print_function, absolute_import
-#import numpy as np
+
+import numpy as np
+
 from ephMPS.mps.backend import xp
 
 
@@ -143,7 +145,7 @@ class OdeSolver(object):
         self.fun_single = fun_single
         self.fun_vectorized = fun_vectorized
 
-        self.direction = xp.sign(t_bound - t0) if t_bound != t0 else 1
+        self.direction = np.sign(t_bound - t0) if t_bound != t0 else 1
         self.n = self.y.size
         self.status = 'running'
 

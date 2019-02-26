@@ -11,7 +11,7 @@ from functools import partial
 import numpy as np
 
 from ephMPS.mps.backend import backend
-from ephMPS.mps.matrix import tensordot
+from ephMPS.mps.matrix import tensordot, ones
 from ephMPS.mps import Mpo, Mps, MpDm, solver
 from ephMPS.utils import TdMpsJob, Quantity
 
@@ -63,7 +63,7 @@ def calc_reduced_density_matrix(mp):
     )
     for i in range(mp.mol_list.mol_num):
         for j in range(mp.mol_list.mol_num):
-            elem = np.array([1]).reshape(1, 1)
+            elem = ones((1, 1))
             e_idx = -1
             for mt_idx, (mt1, mt2) in enumerate(zip(mp1, mp2)):
                 if mp.ephtable.is_electron(mt_idx):
@@ -72,11 +72,11 @@ def calc_reduced_density_matrix(mp):
                     axis_idx2 = int(e_idx == j)
                     sub_mt1 = mt1[:, axis_idx1, :, :]
                     sub_mt2 = mt2[:, :, axis_idx2, :]
-                    elem = np.tensordot(elem, sub_mt1, axes=(0, 0))
-                    elem = np.tensordot(elem, sub_mt2, axes=[(0, 1), (0, 1)])
+                    elem = tensordot(elem, sub_mt1, axes=(0, 0))
+                    elem = tensordot(elem, sub_mt2, axes=[(0, 1), (0, 1)])
                 else:
-                    elem = np.tensordot(elem, mt1, axes=(0, 0))
-                    elem = np.tensordot(elem, mt2, axes=[(0, 1, 2), (0, 2, 1)])
+                    elem = tensordot(elem, mt1, axes=(0, 0))
+                    elem = tensordot(elem, mt2, axes=[(0, 1, 2), (0, 2, 1)])
             reduced_density_matrix[i][j] = elem.flatten()[0]
     return reduced_density_matrix
 

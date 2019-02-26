@@ -61,7 +61,7 @@ def validate_tol(rtol, atol, n):
 
 def norm(x):
     """Compute RMS norm."""
-    return xp.linalg.norm(x) / x.size ** 0.5
+    return float(xp.linalg.norm(x)) / x.size ** 0.5
 
 
 def select_initial_step(fun, t0, y0, f0, direction, order, rtol, atol):

@@ -3,7 +3,9 @@ from .base import OdeSolver, DenseOutput
 from .common import (validate_max_step, validate_tol, select_initial_step,
                      norm, warn_extraneous, validate_first_step)
 
-from ephMPS.mps.backend import xp
+import numpy as np
+
+from ephMPS.mps.backend import xp, backend
 
 # Multiply steps computed from asymptotic behaviour of errors by this.
 SAFETY = 0.9
@@ -137,7 +139,7 @@ class RungeKutta(OdeSolver):
                 t_new = self.t_bound
 
             h = t_new - t
-            h_abs = xp.abs(h)
+            h_abs = np.abs(h)
 
             y_new, f_new, error = rk_step(self.fun, t, y, self.f, h, self.A,
                                           self.B, self.C, self.E, self.K)
@@ -169,6 +171,7 @@ class RungeKutta(OdeSolver):
         Q = self.K.T.dot(self.P)
         return RkDenseOutput(self.t_old, self.t, self.y_old, Q)
 
+dtype = backend.real_dtype
 
 class RK23(RungeKutta):
     """Explicit Runge-Kutta method of order 3(2).
@@ -248,15 +251,15 @@ class RK23(RungeKutta):
     """
     order = 2
     n_stages = 3
-    C = xp.array([1/2, 3/4])
-    A = [xp.array([1/2]),
-         xp.array([0, 3/4])]
-    B = xp.array([2/9, 1/3, 4/9])
-    E = xp.array([5/72, -1/12, -1/9, 1/8])
+    C = xp.array([1/2, 3/4], dtype=dtype)
+    A = [xp.array([1/2], dtype=dtype),
+         xp.array([0, 3/4], dtype=dtype)]
+    B = xp.array([2/9, 1/3, 4/9], dtype=dtype)
+    E = xp.array([5/72, -1/12, -1/9, 1/8], dtype=dtype)
     P = xp.array([[1, -4 / 3, 5 / 9],
                   [0, 1, -2/3],
                   [0, 4/3, -8/9],
-                  [0, -1, 1]])
+                  [0, -1, 1]], dtype=dtype)
 
 
 class RK45(RungeKutta):
@@ -340,15 +343,15 @@ class RK45(RungeKutta):
     """
     order = 4
     n_stages = 6
-    C = xp.array([1/5, 3/10, 4/5, 8/9, 1])
-    A = [xp.array([1/5]),
-         xp.array([3/40, 9/40]),
-         xp.array([44/45, -56/15, 32/9]),
-         xp.array([19372/6561, -25360/2187, 64448/6561, -212/729]),
-         xp.array([9017/3168, -355/33, 46732/5247, 49/176, -5103/18656])]
-    B = xp.array([35/384, 0, 500/1113, 125/192, -2187/6784, 11/84])
+    C = xp.array([1/5, 3/10, 4/5, 8/9, 1], dtype=dtype)
+    A = [xp.array([1/5], dtype=dtype),
+         xp.array([3/40, 9/40], dtype=dtype),
+         xp.array([44/45, -56/15, 32/9], dtype=dtype),
+         xp.array([19372/6561, -25360/2187, 64448/6561, -212/729], dtype=dtype),
+         xp.array([9017/3168, -355/33, 46732/5247, 49/176, -5103/18656], dtype=dtype)]
+    B = xp.array([35/384, 0, 500/1113, 125/192, -2187/6784, 11/84], dtype=dtype)
     E = xp.array([-71/57600, 0, 71/16695, -71/1920, 17253/339200, -22/525,
-                  1/40])
+                  1/40], dtype=dtype)
     # Corresponds to the optimum value of c_6 from [2]_.
     P = xp.array([
         [1, -8048581381/2820520608, 8663915743/2820520608,
@@ -361,7 +364,7 @@ class RK45(RungeKutta):
         [0, 127303824393/49829197408, -318862633887/49829197408,
          701980252875 / 199316789632],
         [0, -282668133/205662961, 2019193451/616988883, -1453857185/822651844],
-        [0, 40617522/29380423, -110615467/29380423, 69997945/29380423]])
+        [0, 40617522/29380423, -110615467/29380423, 69997945/29380423]], dtype=dtype)
 
 
 class RkDenseOutput(DenseOutput):
