@@ -14,8 +14,8 @@ from ephMPS.mps.tdh import unitary_propagation
 
 logger = logging.getLogger(__name__)
 
-# MPS first. Influenced `digest`
-class MpDm(Mpo, Mps):
+# MPS first. `digest`, `metacopy`
+class MpDm(Mps, Mpo):
     @classmethod
     def random(cls, mpo, nexciton, m_max, percent=0):
         # avoid misuse to produce mps
@@ -78,7 +78,7 @@ class MpDm(Mpo, Mps):
         mpo.evolve_config = mps.evolve_config
         mpo.compress_add = mps.compress_add
 
-        mpo.qn = copy.deepcopy(mps.qn)
+        mpo.qn = [qn.copy() for qn in mps.qn]
         mpo.qntot = mps.qntot
         mpo.qnidx = mps.qnidx
         mpo.compress_method = mps.compress_method
@@ -128,8 +128,7 @@ class MpDm(Mpo, Mps):
 
     def apply(self, mp, canonicalise=False):
         assert not mp.is_mps
-        # todo: this is slow and memory consuming! implement meta copy should do
-        new_mps = self.copy()
+        new_mps = self.metacopy()
         # todo: also duplicate with MPO apply. What to do???
         for i, (mt_self, mt_other) in enumerate(zip(self, mp)):
             assert mt_self.shape[2] == mt_other.shape[1]

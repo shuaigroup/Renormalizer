@@ -24,6 +24,8 @@ class MolList(object):
         self.pbond_list = []
         for mol in mol_list:
             self.pbond_list += mol.pbond
+        # reusable mpos for the system
+        self.mpos = dict()
 
     @property
     def mol_num(self):

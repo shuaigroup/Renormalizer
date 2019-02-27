@@ -96,5 +96,5 @@ def test_quasiboson_solver(value):
         energy1 = solver.optimize_mps(mps1, mpo1)
         energy2 = solver.optimize_mps(mps2, mpo2)
         energy3 = solver.optimize_mps(mps3, mpo3)
-        assert np.min(energy1) == pytest.approx(np.min(energy2))
-        assert np.min(energy2) == pytest.approx(np.min(energy3))
+        assert np.min(energy1) == pytest.approx(np.min(energy2), rel=1e-4)
+        assert np.min(energy2) == pytest.approx(np.min(energy3), rel=1e-4)

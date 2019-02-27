@@ -61,6 +61,8 @@ def validate_tol(rtol, atol, n):
 
 def norm(x):
     """Compute RMS norm."""
+    # this step looks like a bottleneck in some benchmarks.
+    # In this because GPU and CPU have to sync in this function
     return float(xp.linalg.norm(x)) / x.size ** 0.5
 
 

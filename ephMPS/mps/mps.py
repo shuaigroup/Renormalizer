@@ -1,6 +1,7 @@
 from __future__ import absolute_import, print_function, unicode_literals
 
 import logging
+import copy
 from typing import List, Union
 
 import numpy as np
@@ -163,7 +164,7 @@ class Mps(MatrixProduct):
 
 
     def conj(self):
-        new_mps = super(Mps, self).conj()
+        new_mps = super().conj()
         for idx, wfn in enumerate(new_mps.wfns):
             new_mps.wfns[idx] = np.conj(wfn)
         return new_mps
@@ -319,15 +320,25 @@ class Mps(MatrixProduct):
 
     @_cached_property
     def ph_occupations(self):
-        mpos = []
-        for imol, mol in enumerate(self.mol_list):
-            for iph in range(len(mol.dmrg_phs)):
-                mpos.append(Mpo.ph_occupation_mpo(self.mol_list, imol, iph))
+        key = "ph_occupations"
+        if key not in self.mol_list.mpos:
+            mpos = []
+            for imol, mol in enumerate(self.mol_list):
+                for iph in range(len(mol.dmrg_phs)):
+                    mpos.append(Mpo.ph_occupation_mpo(self.mol_list, imol, iph))
+            self.mol_list.mpos[key] = mpos
+        else:
+            mpos = self.mol_list.mpos[key]
         return self.expectations(mpos)
 
     @_cached_property
     def e_occupations(self):
-        mpos = [Mpo.onsite(self.mol_list, r"a^\dagger a", mol_idx_set={i}) for i in range(self.mol_num)]
+        key = "e_occupations"
+        if key not in self.mol_list.mpos:
+            mpos = [Mpo.onsite(self.mol_list, r"a^\dagger a", mol_idx_set={i}) for i in range(self.mol_num)]
+            self.mol_list.mpos[key] = mpos
+        else:
+            mpos = self.mol_list.mpos[key]
         return self.expectations(mpos)
 
     @_cached_property
@@ -342,9 +353,13 @@ class Mps(MatrixProduct):
             if p in self.__dict__:
                 del self.__dict__[p]
 
-    @invalidate_cache_decorator
-    def copy(self):
-        return super(Mps, self).copy()
+    def metacopy(self):
+        new = super().metacopy()
+        new.wfns = [wfn.copy() for wfn in self.wfns[:-1]] + [self.wfns[-1]]
+        new.optimize_config = self.optimize_config
+        new.evolve_config = self.evolve_config
+        new.compress_add = self.compress_add
+        return new
 
     def calc_energy(self, h_mpo):
         return self.expectation(h_mpo)
@@ -360,7 +375,7 @@ class Mps(MatrixProduct):
         assert self.site_num == other.site_num
         assert self.is_left_canon == other.is_left_canon
 
-        new_mps = other.copy()
+        new_mps = other.metacopy()
         if self.threshold < 1:
             new_mps.threshold = min(self.threshold, other.threshold)
         else:
@@ -552,7 +567,7 @@ class Mps(MatrixProduct):
         ltensor = np.ones((1, 1, 1))
         rtensor = np.ones((1, 1, 1))
 
-        new_mps = self.copy()
+        new_mps = self.metacopy()
 
         for imps in range(len(mps)):
             ltensor = environ.GetLR(
@@ -687,10 +702,11 @@ class Mps(MatrixProduct):
         self.use_dummy_qn = True
         self.clear_qn()
         mps = self.to_complex()
+        mps_conj = mps.conj()
 
         # construct the environment matrix
         environ = Environ()
-        environ.construct(mps, mps.conj(), mpo, "L")
+        environ.construct(mps, mps_conj, mpo, "L")
 
         # initial matrix
         ltensor = ones((1, 1, 1))
@@ -703,12 +719,12 @@ class Mps(MatrixProduct):
             if system == "R":
                 lmethod, rmethod = "Enviro", "System"
                 ltensor = environ.GetLR(
-                    "L", imps - 1, mps, mps.conj(), mpo, itensor=ltensor, method=lmethod
+                    "L", imps - 1, mps, mps_conj, mpo, itensor=ltensor, method=lmethod
                 )
             else:
                 lmethod, rmethod = "System", "Enviro"
                 rtensor = environ.GetLR(
-                    "R", imps + 1, mps, mps.conj(), mpo, itensor=rtensor, method=rmethod
+                    "R", imps + 1, mps, mps_conj, mpo, itensor=rtensor, method=rmethod
                 )
 
             shape = list(mps[imps].shape)
@@ -744,9 +760,10 @@ class Mps(MatrixProduct):
                 # updated imps site
                 u, vt = scipy.linalg.qr(mps_t.reshape(-1, shape[-1]), mode="economic")
                 mps[imps] = u.reshape(shape[:-1] + [-1])
+                mps_conj[imps] = mps[imps].conj()
 
                 ltensor = environ.GetLR(
-                    "L", imps, mps, mps.conj(), mpo, itensor=ltensor, method="System"
+                    "L", imps, mps, mps_conj, mpo, itensor=ltensor, method="System"
                 )
                 l_array = ltensor.array
 
@@ -764,14 +781,16 @@ class Mps(MatrixProduct):
                 mps[imps + 1] = tensordot(
                     sol_svt.y[:, -1].reshape(shape_svt), mps[imps + 1].array, axes=(1, 0)
                 )
+                mps_conj[imps+1] = mps[imps+1].conj()
 
             elif system == "R" and imps != 0:
                 # updated imps site
                 u, vt = scipy.linalg.rq(mps_t.reshape(shape[0], -1), mode="economic")
                 mps[imps] = vt.reshape([-1] + shape[1:])
+                mps_conj[imps] = mps[imps].conj()
 
                 rtensor = environ.GetLR(
-                    "R", imps, mps, mps.conj(), mpo, itensor=rtensor, method="System"
+                    "R", imps, mps, mps_conj, mpo, itensor=rtensor, method="System"
                 )
                 r_array = rtensor.array
 
@@ -787,9 +806,11 @@ class Mps(MatrixProduct):
                 mps[imps - 1] = tensordot(
                     mps[imps - 1].array, sol_u.y[:, -1].reshape(shape_u), axes=(-1, 0)
                 )
+                mps_conj[imps-1] = mps[imps-1].conj()
 
             else:
                 mps[imps] = mps_t
+                mps_conj[imps] = mps[imps].conj()
 
         return mps
 
@@ -970,47 +991,6 @@ def hop_factory(ltensor, rtensor, mo, dim):
             return np.tensordot(h, ms, [[3, 4, 5], [0, 1, 3]]).transpose([0, 1, 3, 2])
     else:
         assert False
-    return hop
-'''
-'''
-# gpu
-def hop_factory(ltensor, rtensor, mo, ndim):
-    import cupy as cp
-    ltensor = cp.asarray(ltensor)
-    rtensor = cp.asarray(rtensor)
-    mo = cp.asarray(mo)
-    # S-a   l-S
-    #     d
-    # O-b-O-f-O
-    #     e
-    # S-c   k-S
-    if ndim == 3:
-        path = [
-            ([0, 1], "abc, cek -> abek"),
-            ([2, 0], "abek, bdef -> akdf"),
-            ([1, 0], "akdf, lfk -> adl"),
-        ]
-        def hop(ms):
-            ms = cp.asarray(ms)
-            return cp.asnumpy(multi_tensor_contract_gpu(path, ltensor, ms, mo, rtensor))
-
-        # S-a   l-S
-        #     d
-        # O-b-O-f-O
-        #     e
-        # S-c   k-S
-        #     g
-    elif ndim == 4:
-        path = [
-            ([0, 1], "abc, bdef -> acdef"),
-            ([2, 0], "acdef, cegk -> adfgk"),
-            ([1, 0], "adfgk, lfk -> adgl"),
-        ]
-        def hop(ms):
-            return multi_tensor_contract(path, ltensor, mo, ms, rtensor)
-    else:
-        assert False
-
     return hop
 '''
 

@@ -38,6 +38,11 @@ class Backend:
         self._real_dtype = xp.float32
         self._complex_dtype = xp.complex64
 
+    def sync(self):
+        # only works with one GPU
+        if xp == cp:
+            cp.cuda.device.Device(0).synchronize()
+
     @property
     def real_dtype(self):
         return self._real_dtype

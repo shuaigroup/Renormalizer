@@ -873,6 +873,15 @@ class Mpo(MatrixProduct):
     def is_mpdm(self):
         return False
 
+    def metacopy(self):
+        new = super().metacopy()
+        # some mpo may not have these things
+        attrs = ["scheme", "rep", "offset"]
+        for attr in attrs:
+            if hasattr(self, attr):
+                setattr(new, attr, getattr(self, attr))
+        return new
+
     @property
     def dummy_qn(self):
         return [[0] * dim for dim in self.bond_dims]
@@ -887,7 +896,7 @@ class Mpo(MatrixProduct):
         return mp
 
     def apply(self, mp, canonicalise=False):
-        # todo: use meta copy to save time
+        # todo: use meta copy to save time, could be subtle when complex type is involved
         # todo: inplace version (saved memory and can be used in `hybrid_exact_propagator`)
         new_mps = self.promote_mt_type(mp.copy())
         if mp.is_mps:
@@ -967,7 +976,7 @@ class Mpo(MatrixProduct):
         raise NotImplementedError
 
     def conj_trans(self):
-        new_mpo = self.copy()
+        new_mpo = self.metacopy()
         for i in range(new_mpo.site_num):
             new_mpo[i] = moveaxis(self[i], (1, 2), (2, 1)).conj()
         new_mpo.qn = [[-i for i in mt_qn] for mt_qn in new_mpo.qn]

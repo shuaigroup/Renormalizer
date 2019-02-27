@@ -117,8 +117,18 @@ class Matrix:
         s = xp.dot(tensm, tensm.T.conj())
         return allclose(s, xp.eye(s.shape[0]), atol=1e-3)
 
-    def to_complex(self):
-        return xp.array(self.array, dtype=backend.complex_dtype)
+    def to_complex(self, inplace=False):
+        if inplace:
+            self.array = xp.array(self.array, dtype=backend.complex_dtype)
+            return self
+        else:
+            return xp.array(self.array, dtype=backend.complex_dtype)
+
+    def copy(self):
+        new = self.__class__(self.array, self.array.dtype)
+        new.original_shape = self.original_shape
+        new.sigmaqn = self.sigmaqn
+        return new
 
 
     def __hash__(self):
@@ -175,11 +185,6 @@ class Matrix:
     def __float__(self):
         return self.array.__float__()
 
-    def __deepcopy__(self, memodict):
-        new = self.__class__(self.array, self.array.dtype)
-        new.original_shape = self.original_shape
-        new.sigmaqn = self.sigmaqn
-        return new
 
 def zeros(shape, dtype=None):
     if dtype is None:

@@ -2,7 +2,6 @@
 # Author: Jiajun Ren <jiajunren0522@gmail.com>
 from __future__ import absolute_import, division
 
-import copy
 import inspect
 import traceback
 import logging
@@ -32,6 +31,7 @@ class MatrixProduct:
         return new_mp
 
     def __init__(self):
+        # when modify theses codes, keep in mind to update `metacopy` method
         self._mp: List[Matrix] = []
         self.dtype = backend.real_dtype
 
@@ -50,9 +50,9 @@ class MatrixProduct:
         # QN related
         self.use_dummy_qn = False
         # self.use_dummy_qn = True
-        self.qn = None
-        self.qnidx = None
-        self._qntot = None
+        self.qn: List[List[int]] = []
+        self.qnidx: int = None
+        self._qntot: int = None
 
     @property
     def site_num(self):
@@ -244,7 +244,7 @@ class MatrixProduct:
             # assert self.check_left_canonical()
 
     def _get_big_qn(self, idx):
-        mt = self[idx]
+        mt: Matrix = self[idx]
         sigmaqn = mt.sigmaqn
         qnl = np.array(self.qn[idx])
         qnr = np.array(self.qn[idx + 1])
@@ -286,7 +286,7 @@ class MatrixProduct:
         system = "R" if self.is_left_canon else "L"
 
         for idx in self.iter_idx_list:
-            mt = self[idx]
+            mt: Matrix = self[idx]
             assert mt.any()
             if self.is_left_canon:
                 mt = mt.r_combine()
@@ -297,7 +297,7 @@ class MatrixProduct:
                 mt.asnumpy(), qnbigl, qnbigr, self.qntot, system=system, full_matrices=False
             )
             vt = v.T
-            assert 0 < self.threshold and self.threshold != 1
+            assert 0 < self.threshold < 1 or 1 < self.threshold
             if self.threshold < 1.0:
                 # count how many sing vals < trunc
                 normed_sigma = sigma / scipy.linalg.norm(sigma)
@@ -313,7 +313,7 @@ class MatrixProduct:
 
     def canonicalise(self):
         for idx in self.iter_idx_list:
-            mt = self[idx]
+            mt: Matrix = self[idx]
             assert mt.any()
             if self.is_left_canon:
                 mt = mt.r_combine()
@@ -337,8 +337,8 @@ class MatrixProduct:
         """
         complex conjugate
         """
-        new_mp = self.copy()
-        for idx, mt in enumerate(new_mp):
+        new_mp = self.metacopy()
+        for idx, mt in enumerate(self):
             new_mp[idx] = mt.conj()
         return new_mp
 
@@ -379,14 +379,10 @@ class MatrixProduct:
         if inplace:
             new_mp = self
         else:
-            new_mp = self.copy()
-        if new_mp.dtype == backend.complex_dtype:
-            # no need for casting
-            return new_mp
-        else:
-            new_mp.dtype = backend.complex_dtype
-        for i in range(new_mp.site_num):
-            new_mp[i] = new_mp[i].to_complex()
+            new_mp = self.metacopy()
+        new_mp.dtype = backend.complex_dtype
+        for i, mt in enumerate(self):
+            new_mp[i] = mt.to_complex(inplace)
         return new_mp
 
     def distance(self, other):
@@ -400,7 +396,27 @@ class MatrixProduct:
         )
 
     def copy(self):
-        return copy.deepcopy(self)
+        new = self.metacopy()
+        new._mp = [m.copy() for m in self._mp]
+        return new
+
+    # only copy metadata because usually after been copied the data is overwritten
+    def metacopy(self):
+        new = self.__class__.__new__(self.__class__)
+        new._mp = [None] * len(self)
+        new.dtype = self.dtype
+        new.mol_list = self.mol_list
+        new._ephtable = self._ephtable
+        new._pbond_list = self._pbond_list
+        new._compress_method = self._compress_method
+        new._threshold = self._threshold
+        new.peak_bytes = 0
+        new.use_dummy_qn = self.use_dummy_qn
+        new.qn = [qn.copy() for qn in self.qn]
+        new.qnidx = self.qnidx
+        new._qntot = self.qntot
+        return new
+
 
     def array2mt(self, array, idx):
         if isinstance(array, Matrix):

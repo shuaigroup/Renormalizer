@@ -144,6 +144,9 @@ class RungeKutta(OdeSolver):
             y_new, f_new, error = rk_step(self.fun, t, y, self.f, h, self.A,
                                           self.B, self.C, self.E, self.K)
             scale = atol + xp.maximum(xp.abs(y), xp.abs(y_new)) * rtol
+            # the `norm` below will cost a lot of time because of sync
+            # backend.sync() can be used to test this
+            # backend.sync()
             error_norm = norm(error / scale)
 
             if error_norm == 0.0:
