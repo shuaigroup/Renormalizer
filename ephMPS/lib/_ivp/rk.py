@@ -1,7 +1,13 @@
 from __future__ import division, print_function, absolute_import
 from .base import OdeSolver, DenseOutput
-from .common import (validate_max_step, validate_tol, select_initial_step,
-                     norm, warn_extraneous, validate_first_step)
+from .common import (
+    validate_max_step,
+    validate_tol,
+    select_initial_step,
+    norm,
+    warn_extraneous,
+    validate_first_step,
+)
 
 import numpy as np
 
@@ -68,7 +74,7 @@ def rk_step(fun, t, y, f, h, A, B, C, E, K):
     """
     K[0] = f
     for s, (a, c) in enumerate(zip(A, C)):
-        dy = xp.dot(K[:s + 1].T, a) * h
+        dy = xp.dot(K[: s + 1].T, a) * h
         K[s + 1] = fun(t + c * h, y + dy)
 
     y_new = y + h * xp.dot(K[:-1].T, B)
@@ -82,6 +88,7 @@ def rk_step(fun, t, y, f, h, A, B, C, E, K):
 
 class RungeKutta(OdeSolver):
     """Base class for explicit Runge-Kutta methods."""
+
     C = NotImplemented
     A = NotImplemented
     B = NotImplemented
@@ -90,20 +97,38 @@ class RungeKutta(OdeSolver):
     order = NotImplemented
     n_stages = NotImplemented
 
-    def __init__(self, fun, t0, y0, t_bound, max_step=xp.inf,
-                 rtol=1e-3, atol=1e-6, vectorized=False,
-                 first_step=None, **extraneous):
+    def __init__(
+        self,
+        fun,
+        t0,
+        y0,
+        t_bound,
+        max_step=xp.inf,
+        rtol=1e-3,
+        atol=1e-6,
+        vectorized=False,
+        first_step=None,
+        **extraneous
+    ):
         warn_extraneous(extraneous)
-        super(RungeKutta, self).__init__(fun, t0, y0, t_bound, vectorized,
-                                         support_complex=True)
+        super(RungeKutta, self).__init__(
+            fun, t0, y0, t_bound, vectorized, support_complex=True
+        )
         self.y_old = None
         self.max_step = validate_max_step(max_step)
         self.rtol, self.atol = validate_tol(rtol, atol, self.n)
         self.f = self.fun(self.t, self.y)
         if first_step is None:
             self.h_abs = select_initial_step(
-                self.fun, self.t, self.y, self.f, self.direction,
-                self.order, self.rtol, self.atol)
+                self.fun,
+                self.t,
+                self.y,
+                self.f,
+                self.direction,
+                self.order,
+                self.rtol,
+                self.atol,
+            )
         else:
             self.h_abs = validate_first_step(first_step, t0, t_bound)
         self.K = xp.empty((self.n_stages + 1, self.n), dtype=self.y.dtype)
@@ -141,8 +166,9 @@ class RungeKutta(OdeSolver):
             h = t_new - t
             h_abs = np.abs(h)
 
-            y_new, f_new, error = rk_step(self.fun, t, y, self.f, h, self.A,
-                                          self.B, self.C, self.E, self.K)
+            y_new, f_new, error = rk_step(
+                self.fun, t, y, self.f, h, self.A, self.B, self.C, self.E, self.K
+            )
             scale = atol + xp.maximum(xp.abs(y), xp.abs(y_new)) * rtol
             # the `norm` below will cost a lot of time because of sync
             # backend.sync() can be used to test this
@@ -153,12 +179,12 @@ class RungeKutta(OdeSolver):
                 h_abs *= MAX_FACTOR
                 step_accepted = True
             elif error_norm < 1:
-                h_abs *= min(MAX_FACTOR,
-                             max(1, SAFETY * error_norm ** (-1 / (order + 1))))
+                h_abs *= min(
+                    MAX_FACTOR, max(1, SAFETY * error_norm ** (-1 / (order + 1)))
+                )
                 step_accepted = True
             else:
-                h_abs *= max(MIN_FACTOR,
-                             SAFETY * error_norm ** (-1 / (order + 1)))
+                h_abs *= max(MIN_FACTOR, SAFETY * error_norm ** (-1 / (order + 1)))
 
         self.y_old = y
 
@@ -174,7 +200,9 @@ class RungeKutta(OdeSolver):
         Q = self.K.T.dot(self.P)
         return RkDenseOutput(self.t_old, self.t, self.y_old, Q)
 
+
 dtype = backend.real_dtype
+
 
 class RK23(RungeKutta):
     """Explicit Runge-Kutta method of order 3(2).
@@ -252,17 +280,17 @@ class RK23(RungeKutta):
     .. [1] P. Bogacki, L.F. Shampine, "A 3(2) Pair of Runge-Kutta Formulas",
            Appl. Math. Lett. Vol. 2, No. 4. pp. 321-325, 1989.
     """
+
     order = 2
     n_stages = 3
-    C = xp.array([1/2, 3/4], dtype=dtype)
-    A = [xp.array([1/2], dtype=dtype),
-         xp.array([0, 3/4], dtype=dtype)]
-    B = xp.array([2/9, 1/3, 4/9], dtype=dtype)
-    E = xp.array([5/72, -1/12, -1/9, 1/8], dtype=dtype)
-    P = xp.array([[1, -4 / 3, 5 / 9],
-                  [0, 1, -2/3],
-                  [0, 4/3, -8/9],
-                  [0, -1, 1]], dtype=dtype)
+    C = xp.array([1 / 2, 3 / 4], dtype=dtype)
+    A = [xp.array([1 / 2], dtype=dtype), xp.array([0, 3 / 4], dtype=dtype)]
+    B = xp.array([2 / 9, 1 / 3, 4 / 9], dtype=dtype)
+    E = xp.array([5 / 72, -1 / 12, -1 / 9, 1 / 8], dtype=dtype)
+    P = xp.array(
+        [[1, -4 / 3, 5 / 9], [0, 1, -2 / 3], [0, 4 / 3, -8 / 9], [0, -1, 1]],
+        dtype=dtype,
+    )
 
 
 class RK45(RungeKutta):
@@ -344,30 +372,64 @@ class RK45(RungeKutta):
     .. [2] L. W. Shampine, "Some Practical Runge-Kutta Formulas", Mathematics
            of Computation,, Vol. 46, No. 173, pp. 135-150, 1986.
     """
+
     order = 4
     n_stages = 6
-    C = xp.array([1/5, 3/10, 4/5, 8/9, 1], dtype=dtype)
-    A = [xp.array([1/5], dtype=dtype),
-         xp.array([3/40, 9/40], dtype=dtype),
-         xp.array([44/45, -56/15, 32/9], dtype=dtype),
-         xp.array([19372/6561, -25360/2187, 64448/6561, -212/729], dtype=dtype),
-         xp.array([9017/3168, -355/33, 46732/5247, 49/176, -5103/18656], dtype=dtype)]
-    B = xp.array([35/384, 0, 500/1113, 125/192, -2187/6784, 11/84], dtype=dtype)
-    E = xp.array([-71/57600, 0, 71/16695, -71/1920, 17253/339200, -22/525,
-                  1/40], dtype=dtype)
+    C = xp.array([1 / 5, 3 / 10, 4 / 5, 8 / 9, 1], dtype=dtype)
+    A = [
+        xp.array([1 / 5], dtype=dtype),
+        xp.array([3 / 40, 9 / 40], dtype=dtype),
+        xp.array([44 / 45, -56 / 15, 32 / 9], dtype=dtype),
+        xp.array([19372 / 6561, -25360 / 2187, 64448 / 6561, -212 / 729], dtype=dtype),
+        xp.array(
+            [9017 / 3168, -355 / 33, 46732 / 5247, 49 / 176, -5103 / 18656], dtype=dtype
+        ),
+    ]
+    B = xp.array(
+        [35 / 384, 0, 500 / 1113, 125 / 192, -2187 / 6784, 11 / 84], dtype=dtype
+    )
+    E = xp.array(
+        [-71 / 57600, 0, 71 / 16695, -71 / 1920, 17253 / 339200, -22 / 525, 1 / 40],
+        dtype=dtype,
+    )
     # Corresponds to the optimum value of c_6 from [2]_.
-    P = xp.array([
-        [1, -8048581381/2820520608, 8663915743/2820520608,
-         -12715105075/11282082432],
-        [0, 0, 0, 0],
-        [0, 131558114200/32700410799, -68118460800/10900136933,
-         87487479700/32700410799],
-        [0, -1754552775/470086768, 14199869525/1410260304,
-         -10690763975/1880347072],
-        [0, 127303824393/49829197408, -318862633887/49829197408,
-         701980252875 / 199316789632],
-        [0, -282668133/205662961, 2019193451/616988883, -1453857185/822651844],
-        [0, 40617522/29380423, -110615467/29380423, 69997945/29380423]], dtype=dtype)
+    P = xp.array(
+        [
+            [
+                1,
+                -8048581381 / 2820520608,
+                8663915743 / 2820520608,
+                -12715105075 / 11282082432,
+            ],
+            [0, 0, 0, 0],
+            [
+                0,
+                131558114200 / 32700410799,
+                -68118460800 / 10900136933,
+                87487479700 / 32700410799,
+            ],
+            [
+                0,
+                -1754552775 / 470086768,
+                14199869525 / 1410260304,
+                -10690763975 / 1880347072,
+            ],
+            [
+                0,
+                127303824393 / 49829197408,
+                -318862633887 / 49829197408,
+                701980252875 / 199316789632,
+            ],
+            [
+                0,
+                -282668133 / 205662961,
+                2019193451 / 616988883,
+                -1453857185 / 822651844,
+            ],
+            [0, 40617522 / 29380423, -110615467 / 29380423, 69997945 / 29380423],
+        ],
+        dtype=dtype,
+    )
 
 
 class RkDenseOutput(DenseOutput):

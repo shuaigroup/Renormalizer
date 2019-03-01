@@ -9,12 +9,13 @@ from .base import OdeSolver
 
 from ephMPS.mps.backend import xp
 
-METHODS = {'RK23': RK23,
-           'RK45': RK45,}
+METHODS = {"RK23": RK23, "RK45": RK45}
 
 
-MESSAGES = {0: "The solver successfully reached the end of the integration interval.",
-            1: "A termination event occurred."}
+MESSAGES = {
+    0: "The solver successfully reached the end of the integration interval.",
+    1: "A termination event occurred.",
+}
 
 
 class OdeResult(OptimizeResult):
@@ -70,8 +71,8 @@ def solve_event_equation(event, sol, t_old, t):
         Found solution.
     """
     from scipy.optimize import brentq
-    return brentq(lambda t: event(t, sol(t)), t_old, t,
-                  xtol=4 * EPS, rtol=4 * EPS)
+
+    return brentq(lambda t: event(t, sol(t)), t_old, t, xtol=4 * EPS, rtol=4 * EPS)
 
 
 def handle_events(sol, events, active_events, is_terminal, t_old, t):
@@ -115,8 +116,8 @@ def handle_events(sol, events, active_events, is_terminal, t_old, t):
         active_events = active_events[order]
         roots = roots[order]
         t = xp.nonzero(is_terminal[active_events])[0][0]
-        active_events = active_events[:t + 1]
-        roots = roots[:t + 1]
+        active_events = active_events[: t + 1]
+        roots = roots[: t + 1]
         terminate = True
     else:
         terminate = False
@@ -143,15 +144,22 @@ def find_active_events(g, g_new, direction):
     up = (g <= 0) & (g_new >= 0)
     down = (g >= 0) & (g_new <= 0)
     either = up | down
-    mask = (up & (direction > 0) |
-            down & (direction < 0) |
-            either & (direction == 0))
+    mask = up & (direction > 0) | down & (direction < 0) | either & (direction == 0)
 
     return xp.nonzero(mask)[0]
 
 
-def solve_ivp(fun, t_span, y0, method='RK45', t_eval=None, dense_output=False,
-              events=None, vectorized=False, **options):
+def solve_ivp(
+    fun,
+    t_span,
+    y0,
+    method="RK45",
+    t_eval=None,
+    dense_output=False,
+    events=None,
+    vectorized=False,
+    **options
+):
     """Solve an initial value problem for a system of ODEs.
 
     This function numerically integrates a system of ordinary differential
@@ -420,9 +428,11 @@ def solve_ivp(fun, t_span, y0, method='RK45', t_eval=None, dense_output=False,
      1.11088891e-01 1.11098890e+00 1.11099890e+01 2.00000000e+01]
     """
     if method not in METHODS and not (
-            inspect.isclass(method) and issubclass(method, OdeSolver)):
-        raise ValueError("`method` must be one of {} or OdeSolver class."
-                         .format(METHODS))
+        inspect.isclass(method) and issubclass(method, OdeSolver)
+    ):
+        raise ValueError(
+            "`method` must be one of {} or OdeSolver class.".format(METHODS)
+        )
 
     t0, tf = float(t_span[0]), float(t_span[1])
 
@@ -476,9 +486,9 @@ def solve_ivp(fun, t_span, y0, method='RK45', t_eval=None, dense_output=False,
     while status is None:
         message = solver.step()
 
-        if solver.status == 'finished':
+        if solver.status == "finished":
             status = 0
-        elif solver.status == 'failed':
+        elif solver.status == "failed":
             status = -1
             break
 
@@ -500,7 +510,8 @@ def solve_ivp(fun, t_span, y0, method='RK45', t_eval=None, dense_output=False,
                     sol = solver.dense_output()
 
                 root_indices, roots, terminate = handle_events(
-                    sol, events, active_events, is_terminal, t_old, t)
+                    sol, events, active_events, is_terminal, t_old, t
+                )
 
                 for e, te in zip(root_indices, roots):
                     t_events[e].append(te)
@@ -518,10 +529,10 @@ def solve_ivp(fun, t_span, y0, method='RK45', t_eval=None, dense_output=False,
         else:
             # The value in t_eval equal to t will be included.
             if solver.direction > 0:
-                t_eval_i_new = xp.searchsorted(t_eval, t, side='right')
+                t_eval_i_new = xp.searchsorted(t_eval, t, side="right")
                 t_eval_step = t_eval[t_eval_i:t_eval_i_new]
             else:
-                t_eval_i_new = xp.searchsorted(t_eval, t, side='left')
+                t_eval_i_new = xp.searchsorted(t_eval, t, side="left")
                 # It has to be done with two slice operations, because
                 # you can't slice to 0-th element inclusive using backward
                 # slicing.
@@ -533,7 +544,7 @@ def solve_ivp(fun, t_span, y0, method='RK45', t_eval=None, dense_output=False,
                 ts.append(t_eval_step)
                 ys.append(sol(t_eval_step))
                 t_eval_i = t_eval_i_new
-        
+
         if t_eval is not None and dense_output:
             ti.append(t)
 
@@ -557,6 +568,15 @@ def solve_ivp(fun, t_span, y0, method='RK45', t_eval=None, dense_output=False,
     else:
         sol = None
 
-    return OdeResult(t=ts, y=ys, sol=sol, t_events=t_events, nfev=solver.nfev,
-                     njev=solver.njev, nlu=solver.nlu, status=status,
-                     message=message, success=status >= 0)
+    return OdeResult(
+        t=ts,
+        y=ys,
+        sol=sol,
+        t_events=t_events,
+        nfev=solver.nfev,
+        njev=solver.njev,
+        nlu=solver.nlu,
+        status=status,
+        message=message,
+        success=status >= 0,
+    )

@@ -22,7 +22,9 @@ method_list = [
 
 
 class RungeKutta:
-    def __init__(self, method="C_RK4", td=False, adaptive=False, evolve_dt=1e-1, rtol=1e-3):
+    def __init__(
+        self, method="C_RK4", td=False, adaptive=False, evolve_dt=1e-1, rtol=1e-3
+    ):
 
         assert method in method_list
         self.method = method
@@ -47,7 +49,9 @@ class RungeKutta:
             # if time independent, stage is the same as order because of the
             # taylor expansion
             self.stage = self.order[-1]
-            self._coeff = np.array([1.0 / factorial(i) for i in range(self.order[-1] + 1)])
+            self._coeff = np.array(
+                [1.0 / factorial(i) for i in range(self.order[-1] + 1)]
+            )
 
     @property
     def coeff(self):
@@ -238,4 +242,3 @@ def adaptive_fix(p):
         print("p is fixed to 0.1")
 
     return p
-

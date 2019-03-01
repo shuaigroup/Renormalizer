@@ -54,7 +54,7 @@ class SpectraTdMpsJobBase(TdMpsJob):
             self.nexciton = 0
         self.temperature = temperature
         self.h_mpo = Mpo(mol_list, scheme=scheme, offset=offset)
-        super(SpectraTdMpsJobBase, self).__init__(evolve_config)
+        super(SpectraTdMpsJobBase, self).__init__(evolve_config=evolve_config)
 
     @property
     def autocorr(self):

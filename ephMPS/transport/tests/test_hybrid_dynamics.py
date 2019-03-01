@@ -49,7 +49,9 @@ def test_FT_dynamics_hybrid_TDDMRG_TDH(n_dmrg_phs):
     mpdm = mpdm.thermal_prop_exact(
         tentative_mpo, temperature.to_beta() / 2, 1, "GS", inplace=True
     )
-    mpdm = Mpo.onsite(mol_list, r"a^\dagger", mol_idx_set={0}).apply(mpdm).normalize(1.0)
+    mpdm = (
+        Mpo.onsite(mol_list, r"a^\dagger", mol_idx_set={0}).apply(mpdm).normalize(1.0)
+    )
     offset = mpdm.expectation(tentative_mpo)
     mpo = Mpo(mol_list, scheme=3, offset=Quantity(offset, "a.u."))
 

@@ -83,7 +83,9 @@ def test_finite_t_spectra_emi_TDVP(method, nsteps, evolve_dt, rtol):
     # plt.plot(finite_t_corr.autocorr)
     # plt.plot(std)
     # plt.show()
-'''
+
+
+"""
 import logging
 from ephMPS.tests.parameter import mol_list
 from ephMPS.mps import Mps, Mpo
@@ -108,4 +110,4 @@ if __name__ == "__main__":
     from matplotlib import pyplot as plt
     plt.plot(np.array(occ))
     plt.show()
-'''
+"""

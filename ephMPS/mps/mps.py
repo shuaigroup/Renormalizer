@@ -11,7 +11,17 @@ from cached_property import cached_property
 
 from ephMPS.lib import solve_ivp
 from ephMPS.mps import svd_qn
-from ephMPS.mps.matrix import multi_tensor_contract, vstack, dstack, concatenate, zeros, ones, tensordot, Matrix, asnumpy
+from ephMPS.mps.matrix import (
+    multi_tensor_contract,
+    vstack,
+    dstack,
+    concatenate,
+    zeros,
+    ones,
+    tensordot,
+    Matrix,
+    asnumpy,
+)
 from ephMPS.mps.backend import backend, xp
 from ephMPS.mps.lib import Environ, updatemps, compressed_sum
 from ephMPS.mps.mp import MatrixProduct
@@ -23,7 +33,8 @@ from ephMPS.utils import (
     OptimizeConfig,
     EvolveConfig,
     EvolveMethod,
-    sizeof_fmt)
+    sizeof_fmt,
+)
 
 logger = logging.getLogger(__name__)
 
@@ -162,7 +173,6 @@ class Mps(MatrixProduct):
 
         self.compress_add: bool = False
 
-
     def conj(self):
         new_mps = super().conj()
         for idx, wfn in enumerate(new_mps.wfns):
@@ -240,8 +250,8 @@ class Mps(MatrixProduct):
         if self_conj is None:
             self_conj = self.conj()
         environ = Environ()
-        environ.construct(self, self_conj, mpo, 'r')
-        r = environ.read('r', 1)
+        environ.construct(self, self_conj, mpo, "r")
+        r = environ.read("r", 1)
         if self.is_mps:
             # g--S--h--S
             #    |     |
@@ -252,10 +262,11 @@ class Mps(MatrixProduct):
             #    b     |
             #    |     |
             # a--S--c--S
-            path = [([0, 3], "abc, hfc -> abhf"),
-                    ([2, 0], "abhf, debf -> ahde"),
-                    ([1, 0], "ahde, geh -> adg"),
-                    ]
+            path = [
+                ([0, 3], "abc, hfc -> abhf"),
+                ([2, 0], "abhf, debf -> ahde"),
+                ([1, 0], "ahde, geh -> adg"),
+            ]
         elif self.is_mpdm:
             #    d
             #    |
@@ -270,10 +281,11 @@ class Mps(MatrixProduct):
             # a--S--c--S
             #    |
             #    d
-            path = [([0, 3], "abdc, jgc -> abdjg"),
-                    ([2, 0], "abdjg, efbg -> adjef"),
-                    ([1, 0], "adjef, hfdj -> aeh"),
-                    ]
+            path = [
+                ([0, 3], "abdc, jgc -> abdjg"),
+                ([2, 0], "abdjg, efbg -> adjef"),
+                ([1, 0], "adjef, hfdj -> aeh"),
+            ]
         else:
             raise RuntimeError
         return float(multi_tensor_contract(path, self[0], mpo[0], self_conj[0], r).real)
@@ -296,8 +308,8 @@ class Mps(MatrixProduct):
         common_mpo[mpo0_unique_idx] = mpos[1][mpo0_unique_idx]
         self_conj = self.conj()
         environ = Environ()
-        environ.construct(self, self_conj, common_mpo, 'l')
-        environ.construct(self, self_conj, common_mpo, 'r')
+        environ.construct(self, self_conj, common_mpo, "l")
+        environ.construct(self, self_conj, common_mpo, "r")
         res_list = []
         if self.is_mps:
             # S--a--S--e--S
@@ -309,11 +321,12 @@ class Mps(MatrixProduct):
             # |     f     |
             # |     |     |
             # S--c--S--h--S
-            path = [([0, 1], "abc, cfh -> abfh"),
-                    ([3, 0], "abfh, bdfg -> ahdg"),
-                    ([2, 0], "ahdg, ade -> hge"),
-                    ([1, 0], "hge, egh -> "),
-                    ]
+            path = [
+                ([0, 1], "abc, cfh -> abfh"),
+                ([3, 0], "abfh, bdfg -> ahdg"),
+                ([2, 0], "ahdg, ade -> hge"),
+                ([1, 0], "hge, egh -> "),
+            ]
         elif self.is_mpdm:
             #       e
             #       |
@@ -328,22 +341,22 @@ class Mps(MatrixProduct):
             # S--c--S--j--S
             #       |
             #       e
-            path = [([0, 1], "abc, cgej -> abgej"),
-                    ([3, 0], "abgej, bdgh -> aejdh"),
-                    ([2, 0], "aejdh, adef -> jhf"),
-                    ([1, 0], "jhf, fhj -> "),
-                    ]
+            path = [
+                ([0, 1], "abc, cgej -> abgej"),
+                ([3, 0], "abgej, bdgh -> aejdh"),
+                ([2, 0], "aejdh, adef -> jhf"),
+                ([1, 0], "jhf, fhj -> "),
+            ]
         else:
             raise RuntimeError
         for idx, mpo in zip(unique_idx, mpos):
-            l = environ.read('l', idx-1)
-            r = environ.read('r', idx+1)
+            l = environ.read("l", idx - 1)
+            r = environ.read("r", idx + 1)
             res = multi_tensor_contract(path, l, self[idx], mpo[idx], self_conj[idx], r)
             res_list.append(float(res.real))
         return np.array(res_list)
         # the naive way
         # return np.array([self.expectation(mpo) for mpo in mpos])
-
 
     @_cached_property
     def ph_occupations(self):
@@ -362,7 +375,10 @@ class Mps(MatrixProduct):
     def e_occupations(self):
         key = "e_occupations"
         if key not in self.mol_list.mpos:
-            mpos = [Mpo.onsite(self.mol_list, r"a^\dagger a", mol_idx_set={i}) for i in range(self.mol_num)]
+            mpos = [
+                Mpo.onsite(self.mol_list, r"a^\dagger a", mol_idx_set={i})
+                for i in range(self.mol_num)
+            ]
             self.mol_list.mpos[key] = mpos
         else:
             mpos = self.mol_list.mpos[key]
@@ -403,10 +419,7 @@ class Mps(MatrixProduct):
         assert self.is_left_canon == other.is_left_canon
 
         new_mps = other.metacopy()
-        if self.threshold < 1:
-            new_mps.threshold = min(self.threshold, other.threshold)
-        else:
-            new_mps.threshold = max(self.threshold, other.threshold)
+        new_mps.compress_config.update(self.compress_config)
 
         if self.is_mps:  # MPS
             new_mps[0] = dstack([self[0], other[0]])
@@ -502,10 +515,12 @@ class Mps(MatrixProduct):
         if self.evolve_config.scheme == EvolveMethod.prop_and_compress:
             return self.evolve_dmrg_prop_and_compress(mpo, evolve_dt)
         if not self._tdvp_check_bond_order():
-            threshold = self.threshold
-            self.threshold = self.evolve_config.expected_bond_order
+            orig_compress_config = self.compress_config.copy()
+            self.compress_config.set_bondorder(
+                len(self) - 1, self.evolve_config.expected_bond_order
+            )
             res = self.evolve_dmrg_prop_and_compress(mpo, evolve_dt)
-            self.threshold = threshold
+            self.compress_config = orig_compress_config
             return res
         if self.evolve_config.scheme == EvolveMethod.tdvp_mctdh:
             return self.evolve_dmrg_tdvp_mctdh(mpo, evolve_dt)
@@ -523,10 +538,7 @@ class Mps(MatrixProduct):
         while len(termlist) < len(propagation_c):
             termlist.append(mpo.contract(termlist[-1]))
             # control term sizes to be approximately constant
-            if termlist[-1].threshold < 1:
-                termlist[-1].threshold = min(termlist[-1].threshold * 3, 0.9) # can't set to 1 which is ambiguous
-            else:
-                termlist[-1].threshold = max(int(termlist[-1].threshold * 0.8), 2)
+            termlist[-1].compress_config.relax()
         if rk_config.adaptive:
             while True:
                 scaled_termlist = []
@@ -548,7 +560,9 @@ class Mps(MatrixProduct):
                         if 0.99999 < angle < 1.00001:
                             # a larger dt could be used
                             rk_config.evolve_dt *= 1.5
-                            logger.debug(f"evolution easily converged, new evolve_dt: {rk_config.evolve_dt}")
+                            logger.debug(
+                                f"evolution easily converged, new evolve_dt: {rk_config.evolve_dt}"
+                            )
                         # First exit
                         new_mps2.evolve_config.rk_config = rk_config
                         return new_mps2
@@ -562,14 +576,20 @@ class Mps(MatrixProduct):
                         return new_mps2.evolve_dmrg_prop_and_compress(mpo, new_dt)
                     else:
                         # shouldn't happen.
-                        raise ValueError(f"evolve_dt in config: {rk_config.evolve_dt}, in arg: {evolve_dt}")
+                        raise ValueError(
+                            f"evolve_dt in config: {rk_config.evolve_dt}, in arg: {evolve_dt}"
+                        )
                 else:
                     # not converged
                     rk_config.evolve_dt /= 2
-                    logger.debug(f"evolution not converged, new evolve_dt: {rk_config.evolve_dt}")
+                    logger.debug(
+                        f"evolution not converged, new evolve_dt: {rk_config.evolve_dt}"
+                    )
         else:
             for idx, term in enumerate(termlist):
-                term.scale((-1.0j * evolve_dt) ** idx * propagation_c[idx], inplace=True)
+                term.scale(
+                    (-1.0j * evolve_dt) ** idx * propagation_c[idx], inplace=True
+                )
             return compressed_sum(termlist)
 
     def _tdvp_check_bond_order(self):
@@ -577,7 +597,6 @@ class Mps(MatrixProduct):
         assert self.evolve_config.expected_bond_order is not None
         # neither too low nor too high will do
         return max(self.bond_dims) == self.evolve_config.expected_bond_order
-
 
     def evolve_dmrg_tdvp_mctdh(self, mpo, evolve_dt):
         # TDVP for original MCTDH
@@ -625,7 +644,9 @@ class Mps(MatrixProduct):
 
             func = integrand_func_factory(shape, hop, imps == len(mps) - 1, S_inv)
 
-            sol = solve_ivp(func, (0, evolve_dt), mps[imps].ravel().array, method="RK45")
+            sol = solve_ivp(
+                func, (0, evolve_dt), mps[imps].ravel().array, method="RK45"
+            )
             # print
             # "CMF steps:", len(sol.t)
             new_mps[imps] = sol.y[:, -1].reshape(shape)
@@ -698,8 +719,10 @@ class Mps(MatrixProduct):
 
             func = integrand_func_factory(shape, hop, imps == len(mps) - 1, S_inv)
 
-            sol = solve_ivp(func, (0, evolve_dt), mps[imps].ravel().array, method="RK45")
-            #logger.debug(f"CMF steps: {len(sol.t)}")
+            sol = solve_ivp(
+                func, (0, evolve_dt), mps[imps].ravel().array, method="RK45"
+            )
+            # logger.debug(f"CMF steps: {len(sol.t)}")
             ms = sol.y[:, -1].reshape(shape)
             # check for othorgonal
             # e = np.tensordot(ms, ms, axes=((0, 1), (0, 1)))
@@ -730,8 +753,8 @@ class Mps(MatrixProduct):
         # qn for this method has not been implemented
         self.use_dummy_qn = True
         self.clear_qn()
-        mps = self.to_complex()
-        mps_conj = mps.conj()
+        mps = self.to_complex()  # make a copy
+        mps_conj = mps.conj()  # another copy, so 3x memory is used.
 
         # construct the environment matrix
         environ = Environ()
@@ -808,9 +831,11 @@ class Mps(MatrixProduct):
                 # print
                 # "nsteps for svt:", len(sol_svt.t)
                 mps[imps + 1] = tensordot(
-                    sol_svt.y[:, -1].reshape(shape_svt), mps[imps + 1].array, axes=(1, 0)
+                    sol_svt.y[:, -1].reshape(shape_svt),
+                    mps[imps + 1].array,
+                    axes=(1, 0),
                 )
-                mps_conj[imps+1] = mps[imps+1].conj()
+                mps_conj[imps + 1] = mps[imps + 1].conj()
 
             elif system == "R" and imps != 0:
                 # updated imps site
@@ -835,7 +860,7 @@ class Mps(MatrixProduct):
                 mps[imps - 1] = tensordot(
                     mps[imps - 1].array, sol_u.y[:, -1].reshape(shape_u), axes=(-1, 0)
                 )
-                mps_conj[imps-1] = mps[imps-1].conj()
+                mps_conj[imps - 1] = mps[imps - 1].conj()
 
             else:
                 mps[imps] = mps_t
@@ -897,7 +922,13 @@ class Mps(MatrixProduct):
         ).real
         e_mean += A_el.dot(elocal_offset)
         total_offset = mpo_indep.offset + Quantity(e_mean.real)
-        MPO = Mpo(mol_list, mpo_indep.scheme, mpo_indep.rep, elocal_offset=elocal_offset, offset=total_offset)
+        MPO = Mpo(
+            mol_list,
+            mpo_indep.scheme,
+            mpo_indep.rep,
+            elocal_offset=elocal_offset,
+            offset=total_offset,
+        )
 
         Etot += e_mean
 
@@ -997,8 +1028,9 @@ def projector(ms: xp.ndarray) -> xp.ndarray:
     proj = Iden - proj
     return proj
 
+
 # Note: don't do "optimization" like this. The contraction will take more time
-'''
+"""
 def hop_factory(ltensor, rtensor, mo, dim):
     h = opt_einsum.contract("abc, bdeg, fgh -> adfceh", ltensor, mo, rtensor)
     if dim == 3:
@@ -1021,9 +1053,15 @@ def hop_factory(ltensor, rtensor, mo, dim):
     else:
         assert False
     return hop
-'''
+"""
 
-def hop_factory(ltensor: Union[Matrix, xp.ndarray], rtensor: Union[Matrix, xp.ndarray], mo: Union[Matrix, xp.ndarray], ndim):
+
+def hop_factory(
+    ltensor: Union[Matrix, xp.ndarray],
+    rtensor: Union[Matrix, xp.ndarray],
+    mo: Union[Matrix, xp.ndarray],
+    ndim,
+):
     if isinstance(ltensor, Matrix):
         ltensor = ltensor.array
     if isinstance(rtensor, Matrix):
@@ -1041,6 +1079,7 @@ def hop_factory(ltensor: Union[Matrix, xp.ndarray], rtensor: Union[Matrix, xp.nd
             ([2, 0], "abek, bdef -> akdf"),
             ([1, 0], "akdf, lfk -> adl"),
         ]
+
         def hop(ms: xp.ndarray):
             return multi_tensor_contract(path, ltensor, ms, mo, rtensor)
 
@@ -1056,8 +1095,10 @@ def hop_factory(ltensor: Union[Matrix, xp.ndarray], rtensor: Union[Matrix, xp.nd
             ([2, 0], "acdef, cegk -> adfgk"),
             ([1, 0], "adfgk, lfk -> adgl"),
         ]
+
         def hop(ms: xp.ndarray):
             return multi_tensor_contract(path, ltensor, mo, ms, rtensor)
+
     else:
         assert False
 

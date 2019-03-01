@@ -10,16 +10,16 @@ import numpy as np
 
 from ephMPS.mps.matrix import Matrix, multi_tensor_contract, ones, zeros
 
-sentinel = ones((1,1,1))
+sentinel = ones((1, 1, 1))
+
 
 class Environ:
-
     def __init__(self):
         # todo: real disk and other backend
         self.virtual_disk = {}
 
     def construct(self, mps, mps_conj, mpo, domain):
-        tensor = ones((1,1,1), mps.dtype)
+        tensor = ones((1, 1, 1), mps.dtype)
         assert domain in ["L", "R", "l", "r"]
         if domain == "L" or domain == "l":
             start, end, inc = 0, len(mps) - 1, 1
@@ -65,7 +65,6 @@ class Environ:
             self.write(domain, siteidx, itensor)
 
         return itensor
-
 
     def addone(self, intensor, MPS, MPSconj, MPO, isite, domain):
         """
@@ -149,13 +148,10 @@ class Environ:
 
         return outtensor
 
-
-
     def write(self, domain, siteidx, tensor):
         # with open(domain + str(siteidx) + ".npy", 'wb') as f:
         #    np.save(f, tensor)
         self.virtual_disk[(domain, siteidx)] = tensor
-
 
     def read(self, domain, siteidx):
         # with open(domain + str(siteidx) + ".npy", 'rb') as f:

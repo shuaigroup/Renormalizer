@@ -15,7 +15,7 @@ logger = logging.getLogger(__name__)
 
 class Matrix:
 
-    _mo_dict = weakref.WeakValueDictionary() # dummy value
+    _mo_dict = weakref.WeakValueDictionary()  # dummy value
 
     @classmethod
     def interned(cls, array, is_mpo, dtype):
@@ -48,11 +48,13 @@ class Matrix:
             return Matrix(res)
         functiontype = type([].append)
         if isinstance(res, functiontype):
+
             def wrapped(*args, **kwargs):
                 res2 = res(*args, **kwargs)
                 if isinstance(res2, xp.ndarray):
                     return Matrix(res2)
                 return res2
+
             return wrapped
         return res
 
@@ -72,6 +74,7 @@ class Matrix:
             return self.array
         else:
             return xp.asnumpy(self.array)
+
     # physical indices exclude first and last indices
     @property
     def pdim(self):
@@ -116,6 +119,8 @@ class Matrix:
         return allclose(s, xp.eye(s.shape[0]), atol=1e-3)
 
     def to_complex(self, inplace=False):
+        # `xp.array` always creates new array, so to_complex means copy, which is
+        # in accordance with NumPy
         if inplace:
             self.array = xp.array(self.array, dtype=backend.complex_dtype)
             return self
@@ -127,7 +132,6 @@ class Matrix:
         new.original_shape = self.original_shape
         new.sigmaqn = self.sigmaqn
         return new
-
 
     def __hash__(self):
         if xp == np:
@@ -195,6 +199,7 @@ def eye(N, M=None, dtype=None):
         dtype = backend.real_dtype
     return Matrix(xp.eye(N, M), dtype=dtype)
 
+
 def ones(shape, dtype=None):
     if dtype is None:
         dtype = backend.real_dtype
@@ -224,17 +229,21 @@ def tensordot(a: Union[Matrix, xp.ndarray], b: Union[Matrix, xp.ndarray], axes):
 def moveaxis(a: Matrix, source, destination):
     return Matrix(xp.moveaxis(a.array, source, destination))
 
+
 def vstack(tup):
     return Matrix(xp.vstack([m.array for m in tup]))
+
 
 def dstack(tup):
     return Matrix(xp.dstack([m.array for m in tup]))
 
+
 def concatenate(arrays, axis=None):
     return Matrix(xp.concatenate([m.array for m in arrays], axis))
 
+
 # can only use numpy for now. see gh-cupy-1946
-def allclose(a, b, rtol=1.e-5, atol=1.e-8):
+def allclose(a, b, rtol=1.0e-5, atol=1.0e-8):
     if isinstance(a, Matrix):
         a = a.array
     else:
@@ -255,6 +264,7 @@ def asnumpy(a: Union[np.ndarray, cp.ndarray]):
         return a
     else:
         return xp.asnumpy(a)
+
 
 def multi_tensor_contract(path, *operands: [List[Union[Matrix, xp.ndarray]]]):
     """
@@ -296,7 +306,13 @@ def multi_tensor_contract(path, *operands: [List[Union[Matrix, xp.ndarray]]]):
     return operands[0]
 
 
-def pair_tensor_contract(view_left: Union[Matrix, xp.ndarray], input_left, view_right: Union[Matrix, xp.ndarray], input_right, idx_removed):
+def pair_tensor_contract(
+    view_left: Union[Matrix, xp.ndarray],
+    input_left,
+    view_right: Union[Matrix, xp.ndarray],
+    input_right,
+    idx_removed,
+):
     # Find indices to contract over
     left_pos, right_pos = (), ()
     for s in idx_removed:

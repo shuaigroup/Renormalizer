@@ -81,8 +81,7 @@ class MpDm(Mps, Mpo):
         mpo.qn = [qn.copy() for qn in mps.qn]
         mpo.qntot = mps.qntot
         mpo.qnidx = mps.qnidx
-        mpo.compress_method = mps.compress_method
-        mpo.threshold = mps.threshold
+        mpo.compress_config = mps.compress_config.copy()
         return mpo
 
     @classmethod
@@ -134,7 +133,9 @@ class MpDm(Mps, Mpo):
             assert mt_self.shape[2] == mt_other.shape[1]
             # mt=np.einsum("apqb,cqrd->acprbd",mt_s,mt_o)
             mt = xp.moveaxis(
-                xp.tensordot(mt_self.array, mt_other.array, axes=([2], [1])), [-3, -2], [1, 3]
+                xp.tensordot(mt_self.array, mt_other.array, axes=([2], [1])),
+                [-3, -2],
+                [1, 3],
             )
             mt = mt.reshape(
                 (
@@ -142,7 +143,7 @@ class MpDm(Mps, Mpo):
                     mt_self.shape[1],
                     mt_other.shape[2],
                     mt_self.shape[-1] * mt_other.shape[-1],
-                ),
+                )
             )
             new_mps[i] = mt
         orig_idx = mp.qnidx

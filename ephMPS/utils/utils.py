@@ -12,7 +12,6 @@ import pickle
 import numpy as np
 
 
-
 def roundrobin(*iterables):
     """
     "roundrobin('ABC', 'D', 'EF') --> A D E B F C"

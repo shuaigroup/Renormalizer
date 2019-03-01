@@ -13,7 +13,7 @@ import scipy
 from ephMPS.mps.matrix import Matrix, backend, eye, einsum, tensordot, allclose
 from ephMPS.mps import svd_qn
 from ephMPS.model import MolList, EphTable
-from ephMPS.utils import sizeof_fmt
+from ephMPS.utils import sizeof_fmt, CompressConfig
 
 logger = logging.getLogger(__name__)
 
@@ -41,14 +41,13 @@ class MatrixProduct:
         self._pbond_list: List[int] = None
 
         # mpo also need to be compressed sometimes
-        self._compress_method = "svd"
-        self._threshold = 1e-3
+        self.compress_config: CompressConfig = CompressConfig()
 
         # maximum size during the whole life time of the mp
-        self.peak_bytes = 0
+        self.peak_bytes: int = 0
 
         # QN related
-        self.use_dummy_qn = False
+        self.use_dummy_qn: bool = False
         # self.use_dummy_qn = True
         self.qn: List[List[int]] = []
         self.qnidx: int = None
@@ -63,26 +62,12 @@ class MatrixProduct:
         return self.mol_list.mol_num
 
     @property
-    def compress_method(self):
-        return self._compress_method
-
-    @compress_method.setter
-    def compress_method(self, value):
-        assert value in ["svd", "variational"]
-        self._compress_method = value
-
-    @property
     def threshold(self):
-        return self._threshold
+        return self.compress_config.threshold
 
     @threshold.setter
     def threshold(self, v):
-        if v <= 0:
-            raise ValueError('non-positive threshold')
-        elif v == 1:
-            raise ValueError("ambiguous threshold (1)")
-        else:
-            self._threshold = v
+        self.compress_config.threshold = v
 
     @property
     def is_mps(self):
@@ -200,6 +185,7 @@ class MatrixProduct:
 
     @property
     def iter_idx_list(self):
+        # Note that this function doesn't mean all sites. The last is omitted.
         if self.is_left_canon:
             return range(self.site_num - 1, 0, -1)
         else:
@@ -221,14 +207,14 @@ class MatrixProduct:
         if self.is_left_canon:
             self[idx - 1] = tensordot(self[idx - 1], u, axes=1)
             ret_mpsi = vt.reshape(
-                [m_trunc] + list(self[idx].pdim) + [vt.shape[1] // self[idx].pdim_prod],
+                [m_trunc] + list(self[idx].pdim) + [vt.shape[1] // self[idx].pdim_prod]
             )
             if qnrset is not None:
                 self.qn[idx] = qnrset[:m_trunc]
         else:
             self[idx + 1] = tensordot(vt, self[idx + 1], axes=1)
             ret_mpsi = u.reshape(
-                [u.shape[0] // self[idx].pdim_prod] + list(self[idx].pdim) + [m_trunc],
+                [u.shape[0] // self[idx].pdim_prod] + list(self[idx].pdim) + [m_trunc]
             )
             if qnlset is not None:
                 self.qn[idx + 1] = qnlset[:m_trunc]
@@ -299,20 +285,20 @@ class MatrixProduct:
                 mt = mt.l_combine()
             qnbigl, qnbigr = self._get_big_qn(idx)
             u, sigma, qnlset, v, sigma, qnrset = svd_qn.Csvd(
-                mt.asnumpy(), qnbigl, qnbigr, self.qntot, system=system, full_matrices=False
+                mt.asnumpy(),
+                qnbigl,
+                qnbigr,
+                self.qntot,
+                system=system,
+                full_matrices=False,
             )
             vt = v.T
-            assert 0 < self.threshold < 1 or 1 < self.threshold
-            if self.threshold < 1.0:
-                # count how many sing vals < trunc
-                normed_sigma = sigma / scipy.linalg.norm(sigma)
-                # m_trunc=len([s for s in normed_sigma if s >trunc])
-                m_trunc = sum(normed_sigma > self.threshold)
-            else:
-                m_trunc = int(self.threshold)
-                m_trunc = min(m_trunc, len(sigma))
-            assert m_trunc != 0
-            self._update_ms(idx, Matrix(u), Matrix(vt), Matrix(sigma), qnlset, qnrset, m_trunc)
+            m_trunc = self.compress_config.compute_m_trunc(
+                sigma, idx, self.is_left_canon
+            )
+            self._update_ms(
+                idx, Matrix(u), Matrix(vt), Matrix(sigma), qnlset, qnrset, m_trunc
+            )
 
         self._switch_domain()
 
@@ -335,7 +321,9 @@ class MatrixProduct:
                 system=system,
                 full_matrices=False,
             )
-            self._update_ms(idx, Matrix(u), Matrix(v.T), sigma=None, qnlset=qnlset, qnrset=qnrset)
+            self._update_ms(
+                idx, Matrix(u), Matrix(v.T), sigma=None, qnlset=qnlset, qnrset=qnrset
+            )
         self._switch_domain()
 
     def conj(self):
@@ -405,23 +393,22 @@ class MatrixProduct:
         new._mp = [m.copy() for m in self._mp]
         return new
 
-    # only copy metadata because usually after been copied the data is overwritten
-    def metacopy(self):
+    # only (shalow) copy metadata because usually after been copied the real data is overwritten
+    def metacopy(self) -> "MatrixProduct":
         new = self.__class__.__new__(self.__class__)
         new._mp = [None] * len(self)
         new.dtype = self.dtype
         new.mol_list = self.mol_list
         new._ephtable = self._ephtable
         new._pbond_list = self._pbond_list
-        new._compress_method = self._compress_method
-        new._threshold = self._threshold
+        # need to deep copy compress_config because threshold might change dynamically
+        new.compress_config = self.compress_config.copy()
         new.peak_bytes = 0
         new.use_dummy_qn = self.use_dummy_qn
         new.qn = [qn.copy() for qn in self.qn]
         new.qnidx = self.qnidx
         new._qntot = self.qntot
         return new
-
 
     def array2mt(self, array, idx):
         if isinstance(array, Matrix):

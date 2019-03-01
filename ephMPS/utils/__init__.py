@@ -4,4 +4,11 @@
 from ephMPS.utils.tdmps import TdMpsJob
 from ephMPS.utils.quantity import Quantity
 from ephMPS.utils.utils import sizeof_fmt
-from ephMPS.utils.configs import OptimizeConfig, EvolveConfig, EvolveMethod, RungeKutta
+from ephMPS.utils.configs import (
+    BondOrderDistri,
+    CompressConfig,
+    OptimizeConfig,
+    EvolveConfig,
+    EvolveMethod,
+    RungeKutta,
+)

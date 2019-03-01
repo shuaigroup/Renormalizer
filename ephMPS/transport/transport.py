@@ -82,13 +82,19 @@ def calc_reduced_density_matrix(mp):
 
 
 class ChargeTransport(TdMpsJob):
-    def __init__(self, mol_list, temperature=Quantity(0, "K"), evolve_config=None):
+    def __init__(
+        self,
+        mol_list,
+        temperature=Quantity(0, "K"),
+        compress_config=None,
+        evolve_config=None,
+    ):
         self.mol_list = mol_list
         self.temperature = temperature
         self.mpo = None
         self.mpo_e_lbound = None  # lower bound of the energy of the hamiltonian
         self.mpo_e_ubound = None  # upper bound of the energy of the hamiltonian
-        super(ChargeTransport, self).__init__(evolve_config)
+        super(ChargeTransport, self).__init__(compress_config, evolve_config)
         self.energies = [self.tdmps_list[0].expectation(self.mpo)]
         self.reduced_density_matrices = [
             calc_reduced_density_matrix_straight(self.tdmps_list[0])
@@ -98,7 +104,6 @@ class ChargeTransport(TdMpsJob):
         self.memory_limit = None
         # if set True, only save full information of the latest mps and discard previous ones
         self.economic_mode = False
-
 
     @property
     def mol_num(self):
@@ -141,6 +146,9 @@ class ChargeTransport(TdMpsJob):
         self.mpo_e_ubound = solver.find_highest_energy(self.mpo, 1, 20)
         init_mp.canonicalise()
         init_mp.evolve_config = self.evolve_config
+        if not self.compress_config.use_threshold:
+            self.compress_config.set_bondorder(length=len(init_mp) - 1)
+        init_mp.compress_config = self.compress_config
         # init_mp.invalidate_cache()
         return init_mp
 

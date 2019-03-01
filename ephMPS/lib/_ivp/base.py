@@ -10,7 +10,7 @@ def check_arguments(fun, y0, support_complex):
 
     y0 = xp.asarray(y0)
     # dtype casting is not necessary in tdvp
-    '''
+    """
     if xp.issubdtype(y0.dtype, xp.complexfloating):
         if not support_complex:
             raise ValueError("`y0` is complex, but the chosen solver does "
@@ -19,7 +19,7 @@ def check_arguments(fun, y0, support_complex):
     else:
         dtype = float
     y0 = y0.astype(dtype, copy=False)
-    '''
+    """
     if y0.ndim != 1:
         raise ValueError("`y0` must be 1-dimensional.")
 
@@ -114,10 +114,10 @@ class OdeSolver(object):
     nlu : int
         Number of LU decompositions.
     """
+
     TOO_SMALL_STEP = "Required step size is less than spacing between numbers."
 
-    def __init__(self, fun, t0, y0, t_bound, vectorized,
-                 support_complex=False):
+    def __init__(self, fun, t0, y0, t_bound, vectorized, support_complex=False):
         self.t_old = None
         self.t = t0
         self._fun, self.y = check_arguments(fun, y0, support_complex)
@@ -125,8 +125,10 @@ class OdeSolver(object):
         self.vectorized = vectorized
 
         if vectorized:
+
             def fun_single(t, y):
                 return self._fun(t, y[:, None]).ravel()
+
             fun_vectorized = self._fun
         else:
             fun_single = self._fun
@@ -147,7 +149,7 @@ class OdeSolver(object):
 
         self.direction = np.sign(t_bound - t0) if t_bound != t0 else 1
         self.n = self.y.size
-        self.status = 'running'
+        self.status = "running"
 
         self.nfev = 0
         self.njev = 0
@@ -170,26 +172,25 @@ class OdeSolver(object):
             `self.status` is 'failed' after the step was taken or None
             otherwise.
         """
-        if self.status != 'running':
-            raise RuntimeError("Attempt to step on a failed or finished "
-                               "solver.")
+        if self.status != "running":
+            raise RuntimeError("Attempt to step on a failed or finished " "solver.")
 
         if self.n == 0 or self.t == self.t_bound:
             # Handle corner cases of empty solver or no integration.
             self.t_old = self.t
             self.t = self.t_bound
             message = None
-            self.status = 'finished'
+            self.status = "finished"
         else:
             t = self.t
             success, message = self._step_impl()
 
             if not success:
-                self.status = 'failed'
+                self.status = "failed"
             else:
                 self.t_old = t
                 if self.direction * (self.t - self.t_bound) >= 0:
-                    self.status = 'finished'
+                    self.status = "finished"
 
         return message
 
@@ -202,8 +203,9 @@ class OdeSolver(object):
             Local interpolant over the last successful step.
         """
         if self.t_old is None:
-            raise RuntimeError("Dense output is available after a successful "
-                               "step was made.")
+            raise RuntimeError(
+                "Dense output is available after a successful " "step was made."
+            )
 
         if self.n == 0 or self.t == self.t_old:
             # Handle corner cases of empty solver and no integration.
@@ -230,6 +232,7 @@ class DenseOutput(object):
     t_min, t_max : float
         Time range of the interpolation.
     """
+
     def __init__(self, t_old, t):
         self.t_old = t_old
         self.t = t
@@ -265,6 +268,7 @@ class ConstantDenseOutput(DenseOutput):
     This class used for degenerate integration cases: equal integration limits
     or a system with 0 equations.
     """
+
     def __init__(self, t_old, t, value):
         super(ConstantDenseOutput, self).__init__(t_old, t)
         self.value = value

@@ -9,7 +9,14 @@ import scipy
 
 from ephMPS.lib.davidson import davidson
 from ephMPS.mps.backend import xp
-from ephMPS.mps.matrix import Matrix, multi_tensor_contract, ones, einsum, moveaxis, tensordot
+from ephMPS.mps.matrix import (
+    Matrix,
+    multi_tensor_contract,
+    ones,
+    einsum,
+    moveaxis,
+    tensordot,
+)
 from ephMPS.mps import Mpo, Mps, svd_qn
 from ephMPS.mps.lib import updatemps, Environ
 from ephMPS.utils import Quantity
@@ -52,7 +59,7 @@ def construct_mps_mpo_2(
     return mps, mpo
 
 
-def optimize_mps(mps, mpo):
+def optimize_mps(mps: Mps, mpo: Mpo):
     energies = optimize_mps_dmrg(mps, mpo)
     if not mps.hybrid_tdh:
         return energies[-1]
@@ -137,7 +144,9 @@ def optimize_mps_dmrg(mps, mpo):
                 lsite = imps - 2
                 addlist = [imps - 1, imps]
 
-            ltensor = environ.GetLR("L", lsite, mps, mps, mpo, itensor=ltensor, method=lmethod)
+            ltensor = environ.GetLR(
+                "L", lsite, mps, mps, mpo, itensor=ltensor, method=lmethod
+            )
             rtensor = environ.GetLR(
                 "R", imps + 1, mps, mps, mpo, itensor=rtensor, method=rmethod
             )
@@ -178,9 +187,7 @@ def optimize_mps_dmrg(mps, mpo):
                 )[(qnmat == nexciton)]
                 # initial guess b-S-c-S-e
                 #                 a   d
-                cguess = tensordot(mps[imps - 1], mps[imps], axes=1)[
-                    qnmat == nexciton
-                ]
+                cguess = tensordot(mps[imps - 1], mps[imps], axes=1)[qnmat == nexciton]
             cguess = cguess.asnumpy()
             hdiag *= inverse
             nonzeros = np.sum(qnmat == nexciton)
@@ -221,7 +228,12 @@ def optimize_mps_dmrg(mps, mpo):
                         ([1, 0], "clehj, ljk -> cehk"),
                     ]
                     cout = multi_tensor_contract(
-                        path, ltensor, Matrix(cstruct), mpo[imps - 1], mpo[imps], rtensor
+                        path,
+                        ltensor,
+                        Matrix(cstruct),
+                        mpo[imps - 1],
+                        mpo[imps],
+                        rtensor,
                     )
                 # convert structure c to 1d according to qn
                 return inverse * cout.asnumpy()[qnmat == nexciton]

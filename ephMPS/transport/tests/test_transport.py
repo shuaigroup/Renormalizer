@@ -13,7 +13,13 @@ from ephMPS.transport.transport import (
     calc_reduced_density_matrix_straight,
 )
 from ephMPS.utils import Quantity
-from ephMPS.utils import EvolveMethod, EvolveConfig, RungeKutta
+from ephMPS.utils import (
+    BondOrderDistri,
+    CompressConfig,
+    EvolveMethod,
+    EvolveConfig,
+    RungeKutta,
+)
 
 # the temperature should be compatible with the low vibration frequency in TestBandLimitFiniteT
 # otherwise underflow happens in exact propagator
@@ -21,9 +27,7 @@ low_t = Quantity(1e-7, "K")
 
 mol_num = 13
 ph_list = [
-    Phonon.simple_phonon(
-        Quantity(omega, "cm^{-1}"), Quantity(displacement, "a.u."), 4
-    )
+    Phonon.simple_phonon(Quantity(omega, "cm^{-1}"), Quantity(displacement, "a.u."), 4)
     for omega, displacement in [[1e-10, 1e-10]]
 ]
 j_constant = Quantity(0.8, "eV")
@@ -31,8 +35,10 @@ band_limit_mol_list = MolList(
     [Mol(Quantity(3.87e-3, "a.u."), ph_list)] * mol_num, j_constant
 )
 
+
 def get_analytical_r_square(time_series: np.ndarray):
-    return  2 * (j_constant.as_au()) ** 2 * time_series ** 2
+    return 2 * (j_constant.as_au()) ** 2 * time_series ** 2
+
 
 def assert_band_limit(ct, rtol):
     analytical_r_square = get_analytical_r_square(ct.evolve_times_array)
@@ -41,14 +47,15 @@ def assert_band_limit(ct, rtol):
     # value OK
     assert np.allclose(analytical_r_square, ct.r_square_array, rtol=rtol)
 
+
 @pytest.mark.parametrize(
     "method, evolve_dt, nsteps, rtol",
     (
-            (EvolveMethod.prop_and_compress, 4, 25, 1e-3),
-            # not working. Moves slightly slower. Dunno why.
-            #(EvolveMethod.tdvp_mctdh_new, 0.5, 200, 1e-2),
-            (EvolveMethod.tdvp_ps, 2, 50, 1e-3),
-    )
+        (EvolveMethod.prop_and_compress, 4, 25, 1e-3),
+        # not working. Moves slightly slower. Dunno why.
+        # (EvolveMethod.tdvp_mctdh_new, 0.5, 200, 1e-2),
+        (EvolveMethod.tdvp_ps, 2, 50, 1e-3),
+    ),
 )
 def test_bandlimit_zero_t(method, evolve_dt, nsteps, rtol):
     evolve_config = EvolveConfig(method)
@@ -65,6 +72,7 @@ def test_bandlimit_zero_t(method, evolve_dt, nsteps, rtol):
 # plt.plot(analytical_r_square)
 # plt.show()
 
+
 @pytest.mark.parametrize("init_dt", (1e-1, 20))
 def test_adaptive_zero_t(init_dt):
     rk_config = RungeKutta("RKF45", evolve_dt=init_dt)
@@ -74,13 +82,37 @@ def test_adaptive_zero_t(init_dt):
     ct.evolve()
     assert_band_limit(ct, 1e-2)
 
-def test_32backend():
-    # a hack for tests
+
+@pytest.fixture
+def switch_to_32backend():
+    if backend.is_32bits:
+        pytest.skip("already testing in 32 bits")
+    # a hack for tests, shouldn't be used in production code
     backend.first_mp = False
-    backend.dtypes = (np.float32, np.complex64)
+    backend.use_32bits()
+    yield
+    backend.first_mp = False
+    backend.use_64bits()
+
+
+def test_32backend(switch_to_32backend):
     rk_config = RungeKutta("RKF45", evolve_dt=4)
     evolve_config = EvolveConfig(rk_config=rk_config)
     ct = ChargeTransport(band_limit_mol_list, evolve_config=evolve_config)
+    ct.stop_at_edge = True
+    ct.evolve()
+    assert_band_limit(ct, 1e-2)
+
+
+def test_gaussian_bond_order():
+    compress_config = CompressConfig(BondOrderDistri.center_gaussian, 10)
+    rk_config = RungeKutta("RKF45", evolve_dt=4)
+    evolve_config = EvolveConfig(rk_config=rk_config)
+    ct = ChargeTransport(
+        band_limit_mol_list,
+        compress_config=compress_config,
+        evolve_config=evolve_config,
+    )
     ct.stop_at_edge = True
     ct.evolve()
     assert_band_limit(ct, 1e-2)

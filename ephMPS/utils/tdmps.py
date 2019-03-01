@@ -15,7 +15,7 @@ from datetime import datetime, timedelta
 
 import numpy as np
 
-from ephMPS.utils.configs import EvolveConfig
+from ephMPS.utils.configs import CompressConfig, EvolveConfig
 
 logger = logging.getLogger(__name__)
 
@@ -33,8 +33,12 @@ def predict_time(real_times, nsteps):
 
 
 class TdMpsJob(object):
-    def __init__(self, evolve_config: EvolveConfig=None):
+    def __init__(self, compress_config=None, evolve_config: EvolveConfig = None):
         logger.info("Creating TDMPS job.")
+        if compress_config is None:
+            self.compress_config: CompressConfig = CompressConfig()
+        else:
+            self.compress_config = compress_config
         if evolve_config is None:
             self.evolve_config: EvolveConfig = EvolveConfig()
         else:
@@ -60,11 +64,11 @@ class TdMpsJob(object):
             if not self.evolve_config.rk_config.adaptive:
                 raise ValueError("in non-adaptive mode evolve_dt is not given")
             if evolve_time is None:
-                target_time = "?" # stop by `stop_evolve_criteria`
+                target_time = "?"  # stop by `stop_evolve_criteria`
             else:
                 target_time = self.evolve_times[-1] + evolve_time
             target_steps = "?"
-            nsteps = int(1e10) # insanely large
+            nsteps = int(1e10)  # insanely large
         else:
             if nsteps is None and evolve_time is None:
                 raise ValueError(
@@ -95,7 +99,9 @@ class TdMpsJob(object):
             new_mps = self.evolve_single_step(evolve_dt=evolve_dt)
             if self.evolve_config.rk_config.adaptive:
                 # update evolve_dt
-                self.evolve_config.rk_config.evolve_dt = new_mps.evolve_config.rk_config.evolve_dt
+                self.evolve_config.rk_config.evolve_dt = (
+                    new_mps.evolve_config.rk_config.evolve_dt
+                )
             new_real_time = datetime.now()
             time_cost = new_real_time - real_times[-1]
             self.tdmps_list.append(new_mps)

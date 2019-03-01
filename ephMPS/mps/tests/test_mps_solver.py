@@ -17,7 +17,6 @@ def test_construct_MPO():
     mps1, mpo1 = construct_mps_mpo_2(mol_list, Mmax, nexciton, scheme=1)
     mps2, mpo2 = construct_mps_mpo_2(mol_list, Mmax, nexciton, scheme=2)
 
-
     assert mpo1.ephtable == mpo2.ephtable
     assert mpo1.pbond_list == mpo2.pbond_list
     # for double precision the abs could be near 0. In single precision

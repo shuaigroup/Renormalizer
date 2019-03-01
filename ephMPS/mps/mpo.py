@@ -191,7 +191,6 @@ def get_qb_mpo_dim_qn(mol_list, old_dim, old_qn, rep):
 
 
 class Mpo(MatrixProduct):
-
     @classmethod
     def exact_propagator(cls, mol_list, x, space="GS", shift=0.0):
         """
@@ -677,7 +676,9 @@ class Mpo(MatrixProduct):
                         mo = np.zeros([mpo_dim[impo], pbond, pbond, mpo_dim[impo + 1]])
 
                         if rep == "star":
-                            bpbdagger = qbopera[imol]["bpbdagger" + str(iph)][iqb].asnumpy()
+                            bpbdagger = qbopera[imol]["bpbdagger" + str(iph)][
+                                iqb
+                            ].asnumpy()
 
                             mo[0, :, :, 0] = phop["Iden"]
                             mo[-1, :, :, 0] = (
@@ -860,7 +861,6 @@ class Mpo(MatrixProduct):
         else:
             return np.array([0] * self.pbond_list[idx] ** 2)
 
-
     @property
     def is_mps(self):
         return False
@@ -904,13 +904,15 @@ class Mpo(MatrixProduct):
             for i, (mt_self, mt_other) in enumerate(zip(self, mp)):
                 assert mt_self.shape[2] == mt_other.shape[1]
                 # mt=np.einsum("apqb,cqd->acpbd",mpo[i],mps[i])
-                mt = xp.moveaxis(tensordot(mt_self.array, mt_other.array, axes=([2], [1])), 3, 1)
+                mt = xp.moveaxis(
+                    tensordot(mt_self.array, mt_other.array, axes=([2], [1])), 3, 1
+                )
                 mt = mt.reshape(
                     (
                         mt_self.shape[0] * mt_other.shape[0],
                         mt_self.shape[1],
                         mt_self.shape[-1] * mt_other.shape[-1],
-                    ),
+                    )
                 )
                 new_mps[i] = mt
         elif mp.is_mpo or mp.is_mpdm:
@@ -919,7 +921,9 @@ class Mpo(MatrixProduct):
                 assert mt_self.shape[2] == mt_other.shape[1]
                 # mt=np.einsum("apqb,cqrd->acprbd",mt_s,mt_o)
                 mt = xp.moveaxis(
-                    tensordot(mt_self.array, mt_other.array, axes=([2], [1])), [-3, -2], [1, 3]
+                    tensordot(mt_self.array, mt_other.array, axes=([2], [1])),
+                    [-3, -2],
+                    [1, 3],
                 )
                 mt = mt.reshape(
                     (
@@ -927,7 +931,7 @@ class Mpo(MatrixProduct):
                         mt_self.shape[1],
                         mt_other.shape[2],
                         mt_self.shape[-1] * mt_other.shape[-1],
-                    ),
+                    )
                 )
                 new_mps[i] = mt
         else:
@@ -951,18 +955,6 @@ class Mpo(MatrixProduct):
         return new_mps
 
     def contract(self, mps):
-        """
-        a wrapper for apply. Include compress
-        :param mps:
-        :return:
-        """
-        assert self.compress_method == mps.compress_method
-        if self.compress_method == "svd":
-            return self.contract_svd(mps)
-        else:
-            return self.contract_variational()
-
-    def contract_svd(self, mps):
 
         """
         mapply->canonicalise->compress
