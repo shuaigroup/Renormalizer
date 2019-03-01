@@ -232,6 +232,11 @@ class MatrixProduct:
             )
             if qnlset is not None:
                 self.qn[idx + 1] = qnlset[:m_trunc]
+        if ret_mpsi.nbytes < ret_mpsi.base.nbytes * 0.8:
+            # do copy here to discard unnecessary data. Note that in NumPy common slicing returns
+            # a `view` containing the original data. If `ret_mpsi` is used directly the original
+            # `u` or `vt` is not garbage collected.
+            ret_mpsi = ret_mpsi.copy()
         assert ret_mpsi.any()
         self[idx] = ret_mpsi
 

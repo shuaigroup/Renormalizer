@@ -3,13 +3,11 @@
 
 import weakref
 import logging
-import copy
 from typing import List, Union
 
 import numpy as np
 
 from ephMPS.mps.backend import xp, backend, cp
-
 
 
 logger = logging.getLogger(__name__)
@@ -125,7 +123,7 @@ class Matrix:
             return xp.array(self.array, dtype=backend.complex_dtype)
 
     def copy(self):
-        new = self.__class__(self.array, self.array.dtype)
+        new = self.__class__(self.array.copy(), self.array.dtype)
         new.original_shape = self.original_shape
         new.sigmaqn = self.sigmaqn
         return new

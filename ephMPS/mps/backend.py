@@ -19,7 +19,7 @@ else:
     logger.info("use numpy as backend")
 
 
-#xp = np
+xp = np
 
 class Backend:
 

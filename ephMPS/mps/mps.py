@@ -235,23 +235,50 @@ class Mps(MatrixProduct):
         """
         return np.sqrt(self.conj().dot(self, with_hartree=False).real)
 
-
-    def _get_expectation_indices(self, prefix: str) -> List[List[str]]:
-        # for mpdm consistency
-        assert prefix in ['top', 'bottom']
-        res = []
-        for i in range(len(self)):
-            #       left bond,    physical bond,  right bond
-            res.append([f"{prefix}_{i}_b", f"{prefix}_{i}_p", f"{prefix}_{i+1}_b"])
-        return res
-
     def expectation(self, mpo, self_conj=None):
-        # todo: might cause performance problem when calculating a lot of expectations
-        #       use dynamic programing to improve the performance.
         # todo: different bra and ket
         if self_conj is None:
             self_conj = self.conj()
-        return self_conj.dot(mpo.apply(self), with_hartree=False).real
+        environ = Environ()
+        environ.construct(self, self_conj, mpo, 'r')
+        r = environ.read('r', 1)
+        if self.is_mps:
+            # g--S--h--S
+            #    |     |
+            #    e     |
+            #    |     |
+            # d--O--f--O
+            #    |     |
+            #    b     |
+            #    |     |
+            # a--S--c--S
+            path = [([0, 3], "abc, hfc -> abhf"),
+                    ([2, 0], "abhf, debf -> ahde"),
+                    ([1, 0], "ahde, geh -> adg"),
+                    ]
+        elif self.is_mpdm:
+            #    d
+            #    |
+            # h--S--j--S
+            #    |     |
+            #    f     |
+            #    |     |
+            # e--O--g--O
+            #    |     |
+            #    b     |
+            #    |     |
+            # a--S--c--S
+            #    |
+            #    d
+            path = [([0, 3], "abdc, jgc -> abdjg"),
+                    ([2, 0], "abdjg, efbg -> adjef"),
+                    ([1, 0], "adjef, hfdj -> aeh"),
+                    ]
+        else:
+            raise RuntimeError
+        return float(multi_tensor_contract(path, self[0], mpo[0], self_conj[0], r).real)
+        # This is time and memory consuming
+        # return self_conj.dot(mpo.apply(self), with_hartree=False).real
 
     def expectations(self, mpos) -> np.ndarray:
         if len(mpos) < 3:
@@ -506,6 +533,7 @@ class Mps(MatrixProduct):
                 for idx, term in enumerate(termlist):
                     scale = (-1.0j * rk_config.evolve_dt) ** idx * propagation_c[idx]
                     scaled_termlist.append(term.scale(scale))
+                del term
                 new_mps1 = compressed_sum(scaled_termlist[:-1])
                 new_mps2 = compressed_sum([new_mps1, scaled_termlist[-1]])
                 angle = new_mps1.angle(new_mps2)
@@ -513,7 +541,7 @@ class Mps(MatrixProduct):
                 # some tests show that five 9s mean totally safe
                 # four 9s with last digit smaller than 5 mean unstably is coming
                 # three 9s explode immediately
-                if 0.99995 < angle < 1.00005:
+                if 0.99996 < angle < 1.00004:
                     # converged
                     if abs(rk_config.evolve_dt - evolve_dt) / evolve_dt < 1e-5:
                         # equal evolve_dt
@@ -530,6 +558,7 @@ class Mps(MatrixProduct):
                         logger.debug(f"remaining: {new_dt}")
                         # Second exit
                         new_mps2.evolve_config.rk_config = rk_config
+                        del new_mps1, termlist, scaled_termlist  # memory consuming and not used
                         return new_mps2.evolve_dmrg_prop_and_compress(mpo, new_dt)
                     else:
                         # shouldn't happen.

@@ -83,6 +83,8 @@ class TdMpsJob(object):
         real_times = [datetime.now()]
         for i in range(nsteps):
             if self.evolve_config.rk_config.adaptive:
+                if evolve_dt is not None:
+                    logger.warning("evolve_dt is ignored in adaptive RK propagation")
                 evolve_dt = self.evolve_config.rk_config.evolve_dt
             new_evolve_time = self.latest_evolve_time + evolve_dt
             self.evolve_times.append(new_evolve_time)
