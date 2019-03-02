@@ -364,8 +364,19 @@ class MatrixProduct:
         new_mp = self if inplace else self.copy()
         if np.iscomplexobj(val):
             new_mp.to_complex(inplace=True)
-        # matrices are read-only
-        new_mp[self.qnidx] = new_mp[self.qnidx] * val
+        # Note matrices are read-only
+        # there are two ways to do the scaling
+        if np.abs(np.log(np.abs(val))) < 0.01:
+            # Thr first way. The operation performs very quickly,
+            # but leads to high float point error when val is very large or small
+            new_mp[self.qnidx] = new_mp[self.qnidx] * val
+        else:
+            # The second way. High time complexity but numerically more feasible.
+            root_val = val ** (1 / len(self))
+            for idx, mt in enumerate(self):
+                new_mp[idx] = mt * root_val
+        # the two ways could be united. I'm currently not confident enough that
+        # the modification will work. So explicitly use two ways for now
         return new_mp
 
     def to_complex(self, inplace=False):

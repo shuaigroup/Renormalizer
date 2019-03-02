@@ -13,19 +13,19 @@ logger = logging.getLogger(__name__)
 
 class BondOrderDistri(Enum):
     uniform = "uniform"
-    center_gaussian = "center gaussian"
+    center_gauss = "center gaussian"
 
 
 class CompressConfig:
-    def __init__(self, bond_order_distri=None, max_bondorder=None):
+    def __init__(self, bondorder_distri=None, max_bondorder=None):
         self.use_threshold = True
         self._threshold = 0.001
-        if bond_order_distri is not None:
+        if bondorder_distri is not None:
             self.use_threshold = False
         else:
-            bond_order_distri = BondOrderDistri.uniform
+            bondorder_distri = BondOrderDistri.uniform
             max_bondorder = 1
-        self.bond_order_distribution: BondOrderDistri = bond_order_distri
+        self.bond_order_distribution: BondOrderDistri = bondorder_distri
         self.max_bondorder = max_bondorder
         # the length should be len(mps) - 1, because on terminals bond orders are 1
         self.bond_orders: np.ndarray = np.array([])

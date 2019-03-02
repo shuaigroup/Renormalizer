@@ -105,7 +105,7 @@ def test_32backend(switch_to_32backend):
 
 
 def test_gaussian_bond_order():
-    compress_config = CompressConfig(BondOrderDistri.center_gaussian, 10)
+    compress_config = CompressConfig(BondOrderDistri.center_gauss, 10)
     rk_config = RungeKutta("RKF45", evolve_dt=4)
     evolve_config = EvolveConfig(rk_config=rk_config)
     ct = ChargeTransport(

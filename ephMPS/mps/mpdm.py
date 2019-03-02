@@ -211,7 +211,8 @@ class MpDm(Mps, Mpo):
         return new_mpdm
 
     def thermal_prop_exact(self, mpo, beta, nsteps, space, inplace=False):
-        # can't really inplace because `apply` has no inplace mode
+        # can't really inplace because `apply` has no inplace mode.
+        # should add inplace mode to `apply`
         dbeta = beta / nsteps
         new_mpdm = self if inplace else self.copy()
         for istep in range(nsteps):
@@ -220,7 +221,8 @@ class MpDm(Mps, Mpo):
             )
             new_mpdm = MPOprop.apply(new_mpdm)
             unitary_propagation(new_mpdm.wfns, HAM, Etot, dbeta / 1.0j)
-            # partition function can't be obtained
+            # partition function can't be obtained. It's not practical anyway.
+            # The function is too large to be fit into float64 even float128
             new_mpdm.normalize(1.0)
         return new_mpdm
 

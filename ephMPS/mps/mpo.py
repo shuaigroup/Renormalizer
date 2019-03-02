@@ -290,6 +290,7 @@ class Mpo(MatrixProduct):
         mpo.qnidx = len(mpo) - 1
         mpo.qntot = 0
 
+        # np.exp(shift * x) is usually very large
         mpo = mpo.scale(np.exp(shift * x), inplace=True)
 
         return mpo
