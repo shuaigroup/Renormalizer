@@ -259,7 +259,7 @@ def allclose(a, b, rtol=1.0e-5, atol=1.0e-8):
     return np.allclose(a, b, rtol=rtol, atol=atol)
 
 
-def asnumpy(a: Union[np.ndarray, cp.ndarray]):
+def asnumpy(a):
     if xp == np:
         return a
     else:
