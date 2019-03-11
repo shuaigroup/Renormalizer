@@ -88,6 +88,7 @@ class ChargeTransport(TdMpsJob):
         temperature=Quantity(0, "K"),
         compress_config=None,
         evolve_config=None,
+        rdm=False
     ):
         self.mol_list = mol_list
         self.temperature = temperature
@@ -95,13 +96,14 @@ class ChargeTransport(TdMpsJob):
         self.mpo_e_lbound = None  # lower bound of the energy of the hamiltonian
         self.mpo_e_ubound = None  # upper bound of the energy of the hamiltonian
         super(ChargeTransport, self).__init__(compress_config, evolve_config)
-        self.energies = [self.tdmps_list[0].expectation(self.mpo)]
-        self.reduced_density_matrices = [
-            calc_reduced_density_matrix_straight(self.tdmps_list[0])
-        ]
+        self.energies = [self.tdmps_list[0].expectation(self.mpo) + self.mpo_e_lbound]
+        self.reduced_density_matrices = []
+        if rdm:
+            self.reduced_density_matrices.append(
+                calc_reduced_density_matrix_straight(self.tdmps_list[0])
+            )
         self.custom_dump_info = OrderedDict()
         self.stop_at_edge = False
-        self.memory_limit = None
         # if set True, only save full information of the latest mps and discard previous ones
         self.economic_mode = False
 
@@ -155,22 +157,15 @@ class ChargeTransport(TdMpsJob):
     def evolve_single_step(self, evolve_dt):
         old_mps = self.latest_mps
         new_mps = old_mps.evolve(self.mpo, evolve_dt)
-        if self.memory_limit is not None:
-            while self.memory_limit < new_mps.peak_bytes:
-                # todo: buggy
-                old_mps.threshold *= 1.2
-                logger.debug("Set threshold to {:g}".format(old_mps.threshold))
-                old_mps.peak_bytes = 0
-                new_mps = old_mps.evolve(self.mpo, evolve_dt)
         if self.economic_mode:
             old_mps.clear_memory()
-        new_energy = new_mps.expectation(self.mpo)
+        new_energy = new_mps.expectation(self.mpo) + self.mpo_e_lbound
         self.energies.append(new_energy)
         logger.info(
             "Energy of the new mps: %g, %.5f%% of initial energy preserved"
             % (new_energy, self.latest_energy_ratio * 100)
         )
-        if self.reduced_density_matrices is not None:
+        if self.reduced_density_matrices:
             logger.debug("Calculating reduced density matrix")
             self.reduced_density_matrices.append(calc_reduced_density_matrix(new_mps))
             logger.debug("Calculate reduced density matrix finished")
@@ -199,7 +194,7 @@ class ChargeTransport(TdMpsJob):
             list(occupations) for occupations in self.ph_occupations_array
         ]
         dump_dict["coherent length array"] = list(self.coherent_length_array.real)
-        if self.reduced_density_matrices is not None:
+        if self.reduced_density_matrices:
             dump_dict["final reduced density matrix real"] = [
                 list(row.real) for row in self.reduced_density_matrices[-1]
             ]
@@ -219,9 +214,7 @@ class ChargeTransport(TdMpsJob):
 
     @property
     def latest_energy_ratio(self):
-        return (self.latest_energy - self.mpo_e_lbound) / (
-            self.initial_energy - self.mpo_e_lbound
-        )
+        return self.latest_energy / self.mpo_e_lbound
 
     @property
     def r_square_array(self):

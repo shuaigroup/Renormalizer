@@ -12,9 +12,11 @@ import os
 import errno
 import logging
 from datetime import datetime, timedelta
+from typing import Union
 
 import numpy as np
 
+from ephMPS.mps import Mps, MpDm
 from ephMPS.utils.configs import CompressConfig, EvolveConfig
 
 logger = logging.getLogger(__name__)
@@ -43,7 +45,7 @@ class TdMpsJob(object):
             self.evolve_config: EvolveConfig = EvolveConfig()
         else:
             self.evolve_config: EvolveConfig = evolve_config
-        logger.info("Step 0/?. Preparing MPS in the intial state.")
+        logger.info("Step 0/?. Preparing MPS in the initial state.")
         self.evolve_times = [0]
         # output abstract of current mps every x steps
         self.info_interval = 1
@@ -169,7 +171,7 @@ class TdMpsJob(object):
         return False
 
     @property
-    def latest_mps(self):
+    def latest_mps(self) -> Union[Mps, MpDm]:
         return self.tdmps_list[-1]
 
     @property

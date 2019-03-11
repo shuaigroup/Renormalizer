@@ -13,9 +13,10 @@ if importlib.util.find_spec("cupy"):
     import cupy as cp
 
     xp = cp
-    # effect unknown. Seems to reduce memory usage and hampers performance
+    # The following code can reduce memory usage and bug it hampers performance
     # cp.cuda.set_allocator(None)
     # cp.cuda.set_pinned_memory_allocator(None)
+    # should have a cleverer way to deal with memory issue
     logger.info("use cupy as backend")
 else:
     cp = None

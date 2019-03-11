@@ -159,7 +159,7 @@ def solve_ivp(
     events=None,
     vectorized=False,
     **options
-):
+) -> OdeResult:
     """Solve an initial value problem for a system of ODEs.
 
     This function numerically integrates a system of ordinary differential

@@ -25,12 +25,14 @@ logger = logging.getLogger(__name__)
 
 
 def find_lowest_energy(h_mpo, nexciton, Mmax):
+    logger.debug("begin finding lowest energy")
     mps = Mps.random(h_mpo, nexciton, Mmax)
     energy = optimize_mps(mps, h_mpo)
     return energy.min()
 
 
 def find_highest_energy(h_mpo, nexciton, Mmax):
+    logger.debug("begin finding lowest energy")
     mps = Mps.random(h_mpo, nexciton, Mmax)
     mps.optimize_config.inverse = -1.0
     energy = optimize_mps(mps, h_mpo)

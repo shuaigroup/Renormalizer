@@ -54,7 +54,7 @@ def assert_band_limit(ct, rtol):
         (EvolveMethod.prop_and_compress, 4, 25, 1e-3),
         # not working. Moves slightly slower. Dunno why.
         # (EvolveMethod.tdvp_mctdh_new, 0.5, 200, 1e-2),
-        (EvolveMethod.tdvp_ps, 2, 50, 1e-3),
+        (EvolveMethod.tdvp_ps, 10, 10, 1e-3),
     ),
 )
 def test_bandlimit_zero_t(method, evolve_dt, nsteps, rtol):
@@ -105,7 +105,7 @@ def test_32backend(switch_to_32backend):
 
 
 def test_gaussian_bond_order():
-    compress_config = CompressConfig(BondOrderDistri.center_gauss, 10)
+    compress_config = CompressConfig(bondorder_distri=BondOrderDistri.center_gauss, max_bondorder=10)
     rk_config = RungeKutta("RKF45", evolve_dt=4)
     evolve_config = EvolveConfig(rk_config=rk_config)
     ct = ChargeTransport(
@@ -179,12 +179,14 @@ def test_memory_limit(
         [Mol(Quantity(elocalex_value, "a.u."), ph_list)] * mol_num,
         Quantity(j_constant_value, "eV"),
     )
-    ct1 = ChargeTransport(mol_list)
+    compress_config = CompressConfig(threshold=1e-5)  # make the size of the MPS grow fast
+    evolve_config = EvolveConfig(memory_limit="100 KB")
+    ct1 = ChargeTransport(mol_list, evolve_config=evolve_config, compress_config=compress_config)
     ct1.evolve(evolve_dt, nsteps)
-    ct2 = ChargeTransport(mol_list)
-    ct2.memory_limit = 2 ** 20 / 4
+    ct2 = ChargeTransport(mol_list, compress_config=compress_config)
     ct2.evolve(evolve_dt, nsteps)
     assert ct1.is_similar(ct2, rtol=1e-2)
+    assert ct1.latest_mps.peak_bytes < ct2.latest_mps.peak_bytes
 
 
 @pytest.mark.parametrize(

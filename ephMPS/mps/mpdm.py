@@ -61,7 +61,7 @@ class MpDm(Mps, Mpo):
         return approx_mpo
 
     @classmethod
-    def from_mps(cls, mps):
+    def from_mps(cls, mps: Mps):
         mpo = cls()
         mpo.mol_list = mps.mol_list
         for ms in mps:

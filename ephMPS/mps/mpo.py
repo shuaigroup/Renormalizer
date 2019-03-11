@@ -7,7 +7,7 @@ import scipy
 
 from ephMPS.model.ephtable import EphTable
 from ephMPS.mps.backend import xp
-from ephMPS.mps.matrix import moveaxis, tensordot
+from ephMPS.mps.matrix import moveaxis, tensordot, ones
 from ephMPS.mps.mp import MatrixProduct
 from ephMPS.utils import Quantity
 from ephMPS.utils.elementop import (
@@ -974,3 +974,12 @@ class Mpo(MatrixProduct):
             new_mpo[i] = moveaxis(self[i], (1, 2), (2, 1)).conj()
         new_mpo.qn = [[-i for i in mt_qn] for mt_qn in new_mpo.qn]
         return new_mpo
+
+    def full_operator(self):
+        dim = np.prod(self.pbond_list)
+        if 20000 < dim:
+            raise ValueError("operator too large")
+        res = ones((1, ))
+        for mt in self:
+            res = tensordot(res, mt, axes=1)
+        return res.reshape((dim, dim))

@@ -44,11 +44,11 @@ def test_quasiboson_constructMPO():
     mps2.optimize_config.procedure = procedure
     mps2.optimize_config.method = "2site"
     energy = solver.optimize_mps(mps2, mpo2)
-    assert np.min(energy) * constant.au2ev == pytest.approx(2.28614053133)
+    assert np.min(energy) * constant.au2ev == pytest.approx(2.28614053133, rel=1e-4)
 
     mps2.optimize_config.method = "1site"
     energy = solver.optimize_mps(mps2, mpo2)
-    assert np.min(energy) * constant.au2ev == pytest.approx(2.28614053133)
+    assert np.min(energy) * constant.au2ev == pytest.approx(2.28614053133, rel=1e-4)
 
 
 @pytest.mark.parametrize(

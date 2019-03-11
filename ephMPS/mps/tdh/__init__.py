@@ -1,3 +1,3 @@
 # -*- coding: utf-8 -*-
 
-from ephMPS.mps.tdh.tdh import unitary_propagation
+from ephMPS.mps.tdh.propagation import unitary_propagation

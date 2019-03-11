@@ -11,8 +11,10 @@ import numpy as np
 import scipy
 
 from ephMPS.mps.tdh import mflib
+from ephMPS.mps.tdh.propagation import unitary_propagation
 from ephMPS.utils import Quantity
 from ephMPS.utils.rk import RungeKutta
+# This module relies on tdmps which relies on Mps and Mpdm. Be careful on cyclic dependence.
 from ephMPS.utils.tdmps import TdMpsJob
 
 logger = logging.getLogger(__name__)
@@ -95,23 +97,6 @@ def SCF(mol_list, nexciton, niterations=20, thresh=1e-5, particle="hardcore boso
 
     return WFN, Etot
 
-
-def unitary_propagation(WFN, HAM, Etot, dt):
-    """
-    unitary propagation e^-iHdt * wfn(dm)
-    """
-    for iham, ham in enumerate(HAM):
-        ndim = WFN[iham].ndim
-        w, v = scipy.linalg.eigh(ham)
-        if ndim == 1:
-            WFN[iham] = v.dot(np.exp(-1.0j * w * dt) * v.T.dot(WFN[iham]))
-        elif ndim == 2:
-            WFN[iham] = v.dot(np.diag(np.exp(-1.0j * w * dt)).dot(v.T.dot(WFN[iham])))
-            # print iham, "norm", scipy.linalg.norm(WFN[iham])
-        else:
-            assert False
-    WFN[-1] *= np.exp(-1.0j * Etot * dt)
-    return WFN
 
 
 def Ham_elec(mol_list, nexciton, indirect=None, particle="hardcore boson"):

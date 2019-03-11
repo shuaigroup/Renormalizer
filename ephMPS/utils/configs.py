@@ -14,12 +14,17 @@ logger = logging.getLogger(__name__)
 class BondOrderDistri(Enum):
     uniform = "uniform"
     center_gauss = "center gaussian"
+    runtime = "runtime"
 
 
 class CompressConfig:
-    def __init__(self, bondorder_distri=None, max_bondorder=None):
+    def __init__(self, threshold=None, bondorder_distri=None, max_bondorder=None):
+        # two sets of criteria here: threshold and max_bondorder
+        # `use_threshold` is to determine which to use
         self.use_threshold = True
         self._threshold = 0.001
+        if threshold is not None:
+            self.threshold = threshold
         if bondorder_distri is not None:
             self.use_threshold = False
         else:
@@ -40,8 +45,9 @@ class CompressConfig:
             raise ValueError("non-positive threshold")
         elif v == 1:
             raise ValueError("ambiguous threshold (1)")
-        else:
-            self._threshold = v
+        elif 1 < v:
+            raise ValueError("Can't set threshold to be larger than 1")
+        self._threshold = v
 
     def set_bondorder(self, length, max_value=None):
         if max_value is None:
@@ -62,6 +68,12 @@ class CompressConfig:
                 seq.pop(half_length)
             self.bond_orders = np.int64(seq)
             self.bond_orders[self.bond_orders == 0] = 1  # avoid zeros
+
+    def set_runtime_bondorder(self, bond_orders):
+        self.use_threshold = False
+        self.bond_order_distribution = BondOrderDistri.runtime
+        self.bond_orders = np.array(bond_orders)
+
 
     def compute_m_trunc(self, sigma: np.ndarray, idx: int, l: bool) -> int:
         if self.use_threshold:
@@ -104,7 +116,7 @@ class CompressConfig:
             np.int64(self.bond_orders * 0.8), np.full_like(self.bond_orders, 2)
         )
 
-    def copy(self):
+    def copy(self) -> "CompressConfig":
         new = self.__class__.__new__(self.__class__)
         # shallow copies
         new.__dict__ = self.__dict__.copy()
@@ -135,13 +147,37 @@ class EvolveMethod(Enum):
     tdvp_mctdh_new = "TDVP_MCTDHnew"
 
 
+def parse_memory_limit(x) -> float:
+    if x is None:
+        return float("inf")
+    try:
+        return float(x)
+    except:
+        pass
+    try:
+        x_str = str(x)
+        num, unit = x_str.split()
+        unit = unit.lower()
+        mapping = {"kb": 2 ** 10, "mb": 2 ** 20, "gb": 2 ** 30}
+        return float(num) * mapping[unit]
+    except:
+        # might error when converting to str, but the message is clear enough.
+        raise ValueError(f"invalid input for memory: {x}")
+
 class EvolveConfig:
     def __init__(
         self,
         scheme: EvolveMethod = EvolveMethod.prop_and_compress,
         rk_config: RungeKutta = None,
+        memory_limit = None
     ):
         self.scheme = scheme
+        if self.scheme == EvolveMethod.prop_and_compress:
+            # note this memory limit is for single mps and not the whole program
+            self.memory_limit : float = parse_memory_limit(memory_limit)
+        else:
+            if memory_limit is not None:
+                raise ValueError("Memory limit is only valid in propagation and compression method.")
         # tdvp also requires prop and compress
         if rk_config is None:
             self.rk_config: RungeKutta = RungeKutta()
@@ -152,3 +188,5 @@ class EvolveConfig:
             self.expected_bond_order = None
         else:
             self.expected_bond_order = 50
+
+

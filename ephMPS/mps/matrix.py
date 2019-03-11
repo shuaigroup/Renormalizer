@@ -67,7 +67,7 @@ class Matrix:
         return self.__class__(xp.abs(self.array))
 
     def norm(self):
-        return xp.linalg.norm(self.array)
+        return xp.linalg.norm(self.array.flatten())
 
     def asnumpy(self):
         if xp == np:

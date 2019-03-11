@@ -1,11 +1,11 @@
 from __future__ import absolute_import, print_function, unicode_literals
 
 import logging
-import copy
 from typing import List, Union
 
 import numpy as np
 import scipy
+from scipy import stats
 from cached_property import cached_property
 
 
@@ -31,6 +31,7 @@ from ephMPS.mps.tdh import unitary_propagation
 from ephMPS.utils import (
     Quantity,
     OptimizeConfig,
+    CompressConfig,
     EvolveConfig,
     EvolveMethod,
     sizeof_fmt,
@@ -99,24 +100,21 @@ class Mps(MatrixProduct):
         # the last site
         mps.qn.append([0])
         dim_list.append(1)
-        mps.append(
-            np.random.random([dim_list[-2], mps.pbond_list[-1], dim_list[-1]]) - 0.5
-        )
+        last_mt = xp.random.random([dim_list[-2], mps.pbond_list[-1], dim_list[-1]]) - 0.5
+        # normalize the mt so that the whole mps is normalized
+        last_mt /= xp.linalg.norm(last_mt.flatten())
+        mps.append(last_mt)
 
         mps.qnidx = len(mps) - 1
         mps.qntot = nexciton
 
         # print("self.dim", self.dim)
-        mps._left_canon = True
 
         mps.wfns = []
         for mol in mps.mol_list:
             for ph in mol.hartree_phs:
                 mps.wfns.append(np.random.random(ph.n_phys_dim))
         mps.wfns.append(1.0)
-
-        # why is this necessary if we do decomposition constructing the mps?
-        mps.normalize(1.0)
 
         return mps
 
@@ -225,6 +223,7 @@ class Mps(MatrixProduct):
     def nexciton(self):
         return self.qntot
 
+    # todo: no need to cache this O(1) operation?
     @_cached_property
     def norm(self):
         # return self.dmrg_norm * self.hartree_norm
@@ -489,11 +488,12 @@ class Mps(MatrixProduct):
             mflib.normalize(self.wfns, norm)
         return self
 
+    @invalidate_cache_decorator
     def canonical_normalize(self):
         # applied by a operator then normalize: dmrg should be normalized,
         #   tdh should be normalized, coefficient is set to the length
         # suppose length is only determined by dmrg part
-        self.normalize(self.dmrg_norm)
+        return self.normalize(self.dmrg_norm)
 
     def evolve(self, mpo, evolve_dt, approx_eiht=None):
         if self.hybrid_tdh:
@@ -509,29 +509,31 @@ class Mps(MatrixProduct):
             mps.normalize(None)
         return mps
 
-    def evolve_dmrg(self, mpo, evolve_dt, approx_eiht=None):
+    def evolve_dmrg(self, mpo, evolve_dt, approx_eiht=None) -> "Mps":
         if approx_eiht is not None:
             return approx_eiht.contract(self)
         if self.evolve_config.scheme == EvolveMethod.prop_and_compress:
-            return self.evolve_dmrg_prop_and_compress(mpo, evolve_dt)
+            new_mps = self.evolve_dmrg_prop_and_compress(mpo, evolve_dt)
+            if self.evolve_config.memory_limit < new_mps.peak_bytes:
+                logger.info("switch to fixed bond order compression config to save memory")
+                new_mps.compress_config.set_runtime_bondorder(new_mps.bond_dims[1:-1])
+            return new_mps
         if not self._tdvp_check_bond_order():
-            orig_compress_config = self.compress_config.copy()
+            orig_compress_config: CompressConfig = self.compress_config.copy()
             self.compress_config.set_bondorder(
                 len(self) - 1, self.evolve_config.expected_bond_order
             )
             res = self.evolve_dmrg_prop_and_compress(mpo, evolve_dt)
             self.compress_config = orig_compress_config
             return res
-        if self.evolve_config.scheme == EvolveMethod.tdvp_mctdh:
-            return self.evolve_dmrg_tdvp_mctdh(mpo, evolve_dt)
-        elif self.evolve_config.scheme == EvolveMethod.tdvp_mctdh_new:
-            return self.evolve_dmrg_tdvp_mctdhnew(mpo, evolve_dt)
-        elif self.evolve_config.scheme == EvolveMethod.tdvp_ps:
-            return self.evolve_dmrg_tdvp_ps(mpo, evolve_dt)
-        else:
-            assert False
+        method_mapping = {
+            EvolveMethod.tdvp_mctdh: self.evolve_dmrg_tdvp_mctdh,
+            EvolveMethod.tdvp_mctdh_new: self.evolve_dmrg_tdvp_mctdhnew,
+            EvolveMethod.tdvp_ps: self.evolve_dmrg_tdvp_ps}
+        method = method_mapping[self.evolve_config.scheme]
+        return method(mpo, evolve_dt)
 
-    def evolve_dmrg_prop_and_compress(self, mpo, evolve_dt):
+    def evolve_dmrg_prop_and_compress(self, mpo, evolve_dt) -> "Mps":
         rk_config = self.evolve_config.rk_config
         propagation_c = rk_config.coeff
         termlist = [self]
@@ -598,7 +600,7 @@ class Mps(MatrixProduct):
         # neither too low nor too high will do
         return max(self.bond_dims) == self.evolve_config.expected_bond_order
 
-    def evolve_dmrg_tdvp_mctdh(self, mpo, evolve_dt):
+    def evolve_dmrg_tdvp_mctdh(self, mpo, evolve_dt) -> "Mps":
         # TDVP for original MCTDH
         if self.is_right_canon:
             assert self.check_right_canonical()
@@ -657,7 +659,7 @@ class Mps(MatrixProduct):
 
         return new_mps
 
-    def evolve_dmrg_tdvp_mctdhnew(self, mpo, evolve_dt):
+    def evolve_dmrg_tdvp_mctdhnew(self, mpo, evolve_dt) -> "Mps":
         # new regularization scheme
         # JCP 148, 124105 (2018)
         # JCP 149, 044119 (2018)
@@ -745,7 +747,7 @@ class Mps(MatrixProduct):
 
         return new_mps
 
-    def evolve_dmrg_tdvp_ps(self, mpo, evolve_dt):
+    def evolve_dmrg_tdvp_ps(self, mpo, evolve_dt) -> "Mps":
         # TDVP projector splitting
         if self.is_right_canon:
             assert self.check_right_canonical()
@@ -767,6 +769,7 @@ class Mps(MatrixProduct):
         loop = [["R", i] for i in range(len(mps) - 1, -1, -1)] + [
             ["L", i] for i in range(0, len(mps))
         ]
+        rk_steps = []
         for system, imps in loop:
             if system == "R":
                 lmethod, rmethod = "Enviro", "System"
@@ -802,8 +805,7 @@ class Mps(MatrixProduct):
             sol = solve_ivp(
                 func, (0, evolve_dt / 2.0), mps[imps].ravel().array, method="RK45"
             )
-            # print
-            # "nsteps for MPS[imps]:", len(sol.t)
+            rk_steps.append(len(sol.t))
             mps_t = sol.y[:, -1].reshape(shape)
             # cast to numpy array because we are doing qr
             mps_t = asnumpy(mps_t)
@@ -828,8 +830,7 @@ class Mps(MatrixProduct):
                 sol_svt = solve_ivp(
                     func_svt, (0, -evolve_dt / 2), vt.ravel(), method="RK45"
                 )
-                # print
-                # "nsteps for svt:", len(sol_svt.t)
+                rk_steps.append(len(sol_svt.t))
                 mps[imps + 1] = tensordot(
                     sol_svt.y[:, -1].reshape(shape_svt),
                     mps[imps + 1].array,
@@ -855,8 +856,7 @@ class Mps(MatrixProduct):
                     return hop_svt(y.reshape(shape_u)).ravel() / 1.0j
 
                 sol_u = solve_ivp(func_u, (0, -evolve_dt / 2), u.ravel(), method="RK45")
-                # print
-                # "nsteps for u:", len(sol_u.t)
+                rk_steps.append(len(sol_u.t))
                 mps[imps - 1] = tensordot(
                     mps[imps - 1].array, sol_u.y[:, -1].reshape(shape_u), axes=(-1, 0)
                 )
@@ -866,10 +866,9 @@ class Mps(MatrixProduct):
                 mps[imps] = mps_t
                 mps_conj[imps] = mps[imps].conj()
 
-        return mps
+        logger.debug(f"TDVP-PS RK steps: {stats.describe(rk_steps)}")
 
-        # print
-        # "tMPS dim:", [mps.shape[0] for mps in MPSnew] + [1]
+        return mps
 
     def evolve_exact(self, h_mpo, evolve_dt, space):
         MPOprop, HAM, Etot = self.hybrid_exact_propagator(
@@ -1010,9 +1009,8 @@ class Mps(MatrixProduct):
         e_occupations_str = ", ".join(
             ["%.2f" % number for number in self.e_occupations]
         )
-        template_str = "threshold: {:g}, current size: {}, peak size: {}, Matrix product bond order:{}, electron occupations: {}"
+        template_str = "current size: {}, peak size: {}, Matrix product bond order:{}, electron occupations: {}"
         return template_str.format(
-            self.threshold,
             sizeof_fmt(self.total_bytes),
             sizeof_fmt(self.peak_bytes),
             self.bond_dims,
