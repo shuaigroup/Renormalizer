@@ -5,8 +5,12 @@
 automatic Runge-Kutta method coefficient calculation
 """
 
+import logging
+
 import numpy as np
 from scipy.special import factorial
+
+logger = logging.getLogger(__name__)
 
 method_list = [
     "Forward_Euler",
@@ -22,9 +26,7 @@ method_list = [
 
 
 class RungeKutta:
-    def __init__(
-        self, method="C_RK4", td=False, adaptive=False, evolve_dt=1e-1, rtol=1e-3
-    ):
+    def __init__(self, method="C_RK4", td=False):
 
         assert method in method_list
         self.method = method
@@ -32,17 +34,7 @@ class RungeKutta:
         # if the propagator is time dependent
         self.td = td
 
-        if method == "RKF45":
-            adaptive = True
-        self.adaptive = adaptive
-        if self.adaptive:
-            # a wild guess
-            self.evolve_dt = evolve_dt
-        else:
-            self.evolve_dt = None
-
-        self.rtol = rtol
-        # if self.adaptive == True, please set rtol
+        self.adaptive = method == "RKF45"
 
         self.tableau, self.stage, self.order = self.get_tableau()
         if not self.td:
@@ -231,14 +223,3 @@ class RungeKutta:
         # actully it is Taylor expansion for time independent f
 
         return coeff
-
-
-def adaptive_fix(p):
-    if p > 4:
-        p = 4
-        print("p is fixed to 4")
-    elif p < 0.1:
-        p = 0.1
-        print("p is fixed to 0.1")
-
-    return p

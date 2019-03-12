@@ -1,7 +1,8 @@
 from __future__ import absolute_import, print_function, unicode_literals
 
 import logging
-from typing import List, Union
+import functools
+from typing import List, Union, Tuple
 
 import numpy as np
 import scipy
@@ -48,6 +49,7 @@ def _cached_property(func):
 
 
 def invalidate_cache_decorator(f):
+    @functools.wraps(f)
     def wrapper(self, *args, **kwargs):
         ret = f(self, *args, **kwargs)
         assert isinstance(ret, self.__class__)
@@ -56,6 +58,66 @@ def invalidate_cache_decorator(f):
 
     return wrapper
 
+def adaptive_tdvp(fun):
+    @functools.wraps(fun)
+    def f(self: "Mps", mpo, evolve_dt):
+        if not self.evolve_config.adaptive:
+            return fun(self, mpo, evolve_dt)
+        config = self.evolve_config
+        accumulated_dt = 0
+        # use 2 descriptors to decide accept or not: angle and energy
+        mps = None
+        start = self
+        start_energy = start.expectation(mpo)
+        while True:
+            logger.debug(f"adaptive dt: {config.evolve_dt}")
+            mps_half1 = fun(start, mpo, config.evolve_dt / 2)
+            e_half1 = mps_half1.expectation(mpo)
+            if 1e-3 < abs(e_half1 - start_energy):
+                # not converged
+                logger.debug(f"energy not converged in first half. start energy: {start_energy}, new energy: {e_half1}")
+                config.evolve_dt /= 2
+                mps = mps_half1
+                continue
+            mps_half2 = fun(mps_half1, mpo, config.evolve_dt / 2)
+            e_half2 = mps_half2.expectation(mpo)
+            if 1e-3 < abs(e_half2 - start_energy):
+                # not converged
+                logger.debug(f"energy not converged in second half. start energy: {start_energy}, new energy: {e_half2}")
+                config.evolve_dt /= 2
+                mps = mps_half1
+                continue
+            if mps is None:
+                mps = fun(self, mpo, config.evolve_dt)
+            angle = mps.angle(mps_half2)
+            logger.debug(f"Adaptive TDVP. angle: {angle}, start_energy: {start_energy}, e_half1: {e_half1}, e_half2: {e_half2}")
+            if 0.9999 < angle < 1.0001:
+                # converged
+                accumulated_dt += config.evolve_dt
+                logger.debug(
+                    f"evolution converged with dt: {config.evolve_dt}, accumulated: {accumulated_dt}"
+                )
+                if np.isclose(accumulated_dt, evolve_dt):
+                    break
+                start = mps_half2
+                start_energy = e_half2
+                mps = None
+            else:
+                # not converged
+                config.evolve_dt /= 2
+                logger.debug(
+                    f"evolution not converged, angle: {angle}"
+                )
+                mps = mps_half1
+        if 0.99999 < angle < 1.00001:
+            # a larger dt could be used
+            config.evolve_dt *= 1.5
+            logger.debug(
+                f"evolution easily converged, new evolve_dt: {config.evolve_dt}"
+            )
+            mps_half2.evolve_config = config
+        return mps_half2
+    return f
 
 class Mps(MatrixProduct):
     @classmethod
@@ -512,40 +574,46 @@ class Mps(MatrixProduct):
     def evolve_dmrg(self, mpo, evolve_dt, approx_eiht=None) -> "Mps":
         if approx_eiht is not None:
             return approx_eiht.contract(self)
+
         if self.evolve_config.scheme == EvolveMethod.prop_and_compress:
-            new_mps = self.evolve_dmrg_prop_and_compress(mpo, evolve_dt)
+            new_mps = self._evolve_dmrg_prop_and_compress(mpo, evolve_dt)
             if self.evolve_config.memory_limit < new_mps.peak_bytes:
-                logger.info("switch to fixed bond order compression config to save memory")
+                logger.info("switch to fixed bond order compression to save memory")
                 new_mps.compress_config.set_runtime_bondorder(new_mps.bond_dims[1:-1])
             return new_mps
+
         if not self._tdvp_check_bond_order():
             orig_compress_config: CompressConfig = self.compress_config.copy()
             self.compress_config.set_bondorder(
                 len(self) - 1, self.evolve_config.expected_bond_order
             )
-            res = self.evolve_dmrg_prop_and_compress(mpo, evolve_dt)
+            self.use_dummy_qn = True
+            self.clear_qn()
+            new_mps = self._evolve_dmrg_prop_and_compress(mpo, evolve_dt)
             self.compress_config = orig_compress_config
-            return res
-        method_mapping = {
-            EvolveMethod.tdvp_mctdh: self.evolve_dmrg_tdvp_mctdh,
-            EvolveMethod.tdvp_mctdh_new: self.evolve_dmrg_tdvp_mctdhnew,
-            EvolveMethod.tdvp_ps: self.evolve_dmrg_tdvp_ps}
-        method = method_mapping[self.evolve_config.scheme]
-        return method(mpo, evolve_dt)
+            return new_mps
 
-    def evolve_dmrg_prop_and_compress(self, mpo, evolve_dt) -> "Mps":
-        rk_config = self.evolve_config.rk_config
-        propagation_c = rk_config.coeff
+        method_mapping = {
+            EvolveMethod.tdvp_mctdh: self._evolve_dmrg_tdvp_mctdh,
+            EvolveMethod.tdvp_mctdh_new: self._evolve_dmrg_tdvp_mctdhnew,
+            EvolveMethod.tdvp_ps: self._evolve_dmrg_tdvp_ps}
+        method = method_mapping[self.evolve_config.scheme]
+        new_mps = method(mpo, evolve_dt)
+        return new_mps
+
+    def _evolve_dmrg_prop_and_compress(self, mpo, evolve_dt) -> "Mps":
+        config = self.evolve_config
+        propagation_c = self.evolve_config.rk_config.coeff
         termlist = [self]
         while len(termlist) < len(propagation_c):
             termlist.append(mpo.contract(termlist[-1]))
             # control term sizes to be approximately constant
             termlist[-1].compress_config.relax()
-        if rk_config.adaptive:
+        if config.adaptive:
             while True:
                 scaled_termlist = []
                 for idx, term in enumerate(termlist):
-                    scale = (-1.0j * rk_config.evolve_dt) ** idx * propagation_c[idx]
+                    scale = (-1.0j * config.evolve_dt) ** idx * propagation_c[idx]
                     scaled_termlist.append(term.scale(scale))
                 del term
                 new_mps1 = compressed_sum(scaled_termlist[:-1])
@@ -557,35 +625,35 @@ class Mps(MatrixProduct):
                 # three 9s explode immediately
                 if 0.99996 < angle < 1.00004:
                     # converged
-                    if abs(rk_config.evolve_dt - evolve_dt) / evolve_dt < 1e-5:
+                    if abs(config.evolve_dt - evolve_dt) / evolve_dt < 1e-5:
                         # equal evolve_dt
                         if 0.99999 < angle < 1.00001:
                             # a larger dt could be used
-                            rk_config.evolve_dt *= 1.5
+                            config.evolve_dt *= 1.5
                             logger.debug(
-                                f"evolution easily converged, new evolve_dt: {rk_config.evolve_dt}"
+                                f"evolution easily converged, new evolve_dt: {config.evolve_dt}"
                             )
                         # First exit
-                        new_mps2.evolve_config.rk_config = rk_config
+                        new_mps2.evolve_config = config
                         return new_mps2
-                    if rk_config.evolve_dt < evolve_dt:
+                    if config.evolve_dt < evolve_dt:
                         # step too small
-                        new_dt = evolve_dt - rk_config.evolve_dt
+                        new_dt = evolve_dt - config.evolve_dt
                         logger.debug(f"remaining: {new_dt}")
                         # Second exit
-                        new_mps2.evolve_config.rk_config = rk_config
+                        new_mps2.evolve_config = config
                         del new_mps1, termlist, scaled_termlist  # memory consuming and not used
-                        return new_mps2.evolve_dmrg_prop_and_compress(mpo, new_dt)
+                        return new_mps2._evolve_dmrg_prop_and_compress(mpo, new_dt)
                     else:
                         # shouldn't happen.
                         raise ValueError(
-                            f"evolve_dt in config: {rk_config.evolve_dt}, in arg: {evolve_dt}"
+                            f"evolve_dt in config: {config.evolve_dt}, in arg: {evolve_dt}"
                         )
                 else:
                     # not converged
-                    rk_config.evolve_dt /= 2
+                    config.evolve_dt /= 2
                     logger.debug(
-                        f"evolution not converged, new evolve_dt: {rk_config.evolve_dt}"
+                        f"evolution not converged, new evolve_dt: {config.evolve_dt}"
                     )
         else:
             for idx, term in enumerate(termlist):
@@ -594,13 +662,14 @@ class Mps(MatrixProduct):
                 )
             return compressed_sum(termlist)
 
-    def _tdvp_check_bond_order(self):
+    def _tdvp_check_bond_order(self) -> bool:
         assert self.evolve_config.scheme != EvolveMethod.prop_and_compress
         assert self.evolve_config.expected_bond_order is not None
         # neither too low nor too high will do
         return max(self.bond_dims) == self.evolve_config.expected_bond_order
 
-    def evolve_dmrg_tdvp_mctdh(self, mpo, evolve_dt) -> "Mps":
+    @adaptive_tdvp
+    def _evolve_dmrg_tdvp_mctdh(self, mpo, evolve_dt) -> "Mps":
         # TDVP for original MCTDH
         if self.is_right_canon:
             assert self.check_right_canonical()
@@ -659,7 +728,8 @@ class Mps(MatrixProduct):
 
         return new_mps
 
-    def evolve_dmrg_tdvp_mctdhnew(self, mpo, evolve_dt) -> "Mps":
+    @adaptive_tdvp
+    def _evolve_dmrg_tdvp_mctdhnew(self, mpo, evolve_dt) -> "Mps":
         # new regularization scheme
         # JCP 148, 124105 (2018)
         # JCP 149, 044119 (2018)
@@ -747,7 +817,8 @@ class Mps(MatrixProduct):
 
         return new_mps
 
-    def evolve_dmrg_tdvp_ps(self, mpo, evolve_dt) -> "Mps":
+    @adaptive_tdvp
+    def _evolve_dmrg_tdvp_ps(self, mpo, evolve_dt) -> "Mps":
         # TDVP projector splitting
         if self.is_right_canon:
             assert self.check_right_canonical()
@@ -992,6 +1063,7 @@ class Mps(MatrixProduct):
                 iwfn += 1
 
         return MPOprop, HAM, Etot
+
 
     def hartree_wfn_diff(self, other):
         assert len(self.wfns) == len(other.wfns)

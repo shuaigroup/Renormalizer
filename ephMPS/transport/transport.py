@@ -88,22 +88,22 @@ class ChargeTransport(TdMpsJob):
         temperature=Quantity(0, "K"),
         compress_config=None,
         evolve_config=None,
+        stop_at_edge=True,
         rdm=False
     ):
         self.mol_list = mol_list
         self.temperature = temperature
         self.mpo = None
-        self.mpo_e_lbound = None  # lower bound of the energy of the hamiltonian
-        self.mpo_e_ubound = None  # upper bound of the energy of the hamiltonian
+        self.mpo_e_lbound = None  # the ground energy of the hamiltonian
         super(ChargeTransport, self).__init__(compress_config, evolve_config)
-        self.energies = [self.tdmps_list[0].expectation(self.mpo) + self.mpo_e_lbound]
+        self.energies = [self.tdmps_list[0].expectation(self.mpo)]
         self.reduced_density_matrices = []
         if rdm:
             self.reduced_density_matrices.append(
                 calc_reduced_density_matrix_straight(self.tdmps_list[0])
             )
         self.custom_dump_info = OrderedDict()
-        self.stop_at_edge = False
+        self.stop_at_edge = stop_at_edge
         # if set True, only save full information of the latest mps and discard previous ones
         self.economic_mode = False
 
@@ -145,7 +145,6 @@ class ChargeTransport(TdMpsJob):
         energy = Quantity(init_mp.expectation(tentative_mpo))
         self.mpo = Mpo(self.mol_list, scheme=3, offset=energy)
         self.mpo_e_lbound = solver.find_lowest_energy(self.mpo, 1, 20)
-        self.mpo_e_ubound = solver.find_highest_energy(self.mpo, 1, 20)
         init_mp.canonicalise()
         init_mp.evolve_config = self.evolve_config
         if not self.compress_config.use_threshold:
@@ -157,14 +156,15 @@ class ChargeTransport(TdMpsJob):
     def evolve_single_step(self, evolve_dt):
         old_mps = self.latest_mps
         new_mps = old_mps.evolve(self.mpo, evolve_dt)
-        if self.economic_mode:
-            old_mps.clear_memory()
-        new_energy = new_mps.expectation(self.mpo) + self.mpo_e_lbound
+        new_energy = new_mps.expectation(self.mpo)
         self.energies.append(new_energy)
         logger.info(
             "Energy of the new mps: %g, %.5f%% of initial energy preserved"
             % (new_energy, self.latest_energy_ratio * 100)
         )
+        logger.info(f"r_square: {new_mps.r_square}")
+        if self.economic_mode:
+            old_mps.clear_memory()
         if self.reduced_density_matrices:
             logger.debug("Calculating reduced density matrix")
             self.reduced_density_matrices.append(calc_reduced_density_matrix(new_mps))
@@ -214,7 +214,7 @@ class ChargeTransport(TdMpsJob):
 
     @property
     def latest_energy_ratio(self):
-        return self.latest_energy / self.mpo_e_lbound
+        return (self.latest_energy - self.mpo_e_lbound) / (self.initial_energy - self.mpo_e_lbound)
 
     @property
     def r_square_array(self):
@@ -240,40 +240,14 @@ class ChargeTransport(TdMpsJob):
         )
 
     def is_similar(self, other, rtol=1e-3):
-        # avoid a lot of if (not) ...: return False statements
-        class FalseFlag(Exception):
-            pass
-
-        def my_assert(condition):
-            if not condition:
-                raise FalseFlag
-
-        all_close_with_tol = partial(np.allclose, rtol=rtol)
-        try:
-            my_assert(len(self.tdmps_list) == len(other.tdmps_list))
-            my_assert(all_close_with_tol(self.evolve_times, other.evolve_times))
-            my_assert(all_close_with_tol(self.r_square_array, other.r_square_array))
-            if (
-                not (np.array(self.energies) < 1e-5).all()
-                or not (np.array(other.energies) < 1e-5).all()
-            ):
-                my_assert(all_close_with_tol(self.energies, other.energies))
-            my_assert(
-                np.allclose(
-                    self.e_occupations_array, other.e_occupations_array, atol=1e-3
-                )
-            )
-            my_assert(
-                np.allclose(
-                    self.ph_occupations_array, other.ph_occupations_array, atol=1e-3
-                )
-            )
-            my_assert(
-                all_close_with_tol(
-                    self.coherent_length_array, other.coherent_length_array
-                )
-            )
-        except FalseFlag:
+        all_close_with_tol = partial(np.allclose, rtol=rtol, atol=1e-4)
+        if len(self.tdmps_list) != len(other.tdmps_list):
             return False
-        else:
-            return True
+        attrs = ["evolve_times", "r_square_array", "energies", "e_occupations_array",
+                 "ph_occupations_array", "coherent_length_array"]
+        for attr in attrs:
+            s = getattr(self, attr)
+            o = getattr(other, attr)
+            if not all_close_with_tol(s, o):
+                return False
+        return True

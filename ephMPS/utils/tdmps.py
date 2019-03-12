@@ -87,11 +87,11 @@ class TdMpsJob(object):
             target_steps = len(self.tdmps_list) + nsteps - 1
             target_time = self.evolve_times[-1] + evolve_time
         real_times = [datetime.now()]
+        if self.evolve_config.adaptive and evolve_dt is not None:
+            logger.warning("evolve_dt is ignored in adaptive propagation")
         for i in range(nsteps):
-            if self.evolve_config.rk_config.adaptive:
-                if evolve_dt is not None:
-                    logger.warning("evolve_dt is ignored in adaptive RK propagation")
-                evolve_dt = self.evolve_config.rk_config.evolve_dt
+            if self.evolve_config.adaptive:
+                evolve_dt = self.evolve_config.evolve_dt
             new_evolve_time = self.latest_evolve_time + evolve_dt
             self.evolve_times.append(new_evolve_time)
             step_str = "step {}/{}, time {:.2f}/{}".format(
@@ -99,11 +99,9 @@ class TdMpsJob(object):
             )
             logger.info("{} begin.".format(step_str))
             new_mps = self.evolve_single_step(evolve_dt=evolve_dt)
-            if self.evolve_config.rk_config.adaptive:
+            if self.evolve_config.adaptive:
                 # update evolve_dt
-                self.evolve_config.rk_config.evolve_dt = (
-                    new_mps.evolve_config.rk_config.evolve_dt
-                )
+                self.evolve_config.evolve_dt = new_mps.evolve_config.evolve_dt
             new_real_time = datetime.now()
             time_cost = new_real_time - real_times[-1]
             self.tdmps_list.append(new_mps)
@@ -145,7 +143,7 @@ class TdMpsJob(object):
     def dump_dict(self):
         if self.dump_dir is None or self.job_name is None:
             raise ValueError("Dump dir or job name not set")
-        # todo: refactor with `pathlib` which is not compatible with python2 (maybe after year 2020!)
+        # todo: refactor with `pathlib`
         try:
             os.makedirs(self.dump_dir)
         except OSError as e:

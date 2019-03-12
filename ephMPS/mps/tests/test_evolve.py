@@ -16,8 +16,8 @@ from ephMPS.mps.tests import cur_dir
     "method, evolve_dt, rtol",
     (
         # [EvolveMethod.tdvp_mctdh, 2.0, 1e-2],
-        [EvolveMethod.tdvp_mctdh_new, 2.0, 1e-2],
-        [EvolveMethod.tdvp_ps, 15.0, 1e-2],
+        [EvolveMethod.tdvp_mctdh_new, 4.0, 1e-2],
+        [EvolveMethod.tdvp_ps, 30.0, 1e-2],
     ),
 )
 def test_ZeroTcorr_TDVP(method, evolve_dt, rtol):
@@ -37,7 +37,7 @@ def test_ZeroTcorr_TDVP(method, evolve_dt, rtol):
         offset=Quantity(2.28614053, "ev"),
     )
     zero_t_corr.info_interval = 30
-    nsteps = 200
+    nsteps = 100
     # nsteps = 1200
     zero_t_corr.evolve(evolve_dt, nsteps)
     with open(
@@ -47,7 +47,7 @@ def test_ZeroTcorr_TDVP(method, evolve_dt, rtol):
         "rb",
     ) as f:
         ZeroTabs_std = np.load(f)
-    assert np.allclose(zero_t_corr.autocorr[:nsteps], ZeroTabs_std[:nsteps], rtol=rtol)
+    assert np.allclose(zero_t_corr.autocorr[:nsteps], ZeroTabs_std[:2*nsteps:2], rtol=rtol)
     # from matplotlib import pyplot as plt
     # plt.plot(zero_t_corr.autocorr)
     # plt.plot(ZeroTabs_std)
@@ -57,8 +57,8 @@ def test_ZeroTcorr_TDVP(method, evolve_dt, rtol):
 @pytest.mark.parametrize(
     "method, nsteps, evolve_dt, rtol",
     (
-        [EvolveMethod.tdvp_mctdh_new, 191, 2.0, 1e-2],
-        [EvolveMethod.tdvp_ps, 30, 30, 1e-2],
+        [EvolveMethod.tdvp_mctdh_new, 95, 4.0, 1e-2],
+        [EvolveMethod.tdvp_ps, 15, 60, 1e-2],
     ),
 )
 def test_finite_t_spectra_emi_TDVP(method, nsteps, evolve_dt, rtol):
@@ -78,7 +78,7 @@ def test_finite_t_spectra_emi_TDVP(method, nsteps, evolve_dt, rtol):
         "rb",
     ) as fin:
         std = np.load(fin)
-    assert np.allclose(finite_t_corr.autocorr[:nsteps], std[:nsteps], rtol=rtol)
+    assert np.allclose(finite_t_corr.autocorr[:nsteps], std[:2*nsteps:2], rtol=rtol)
     # from matplotlib import pyplot as plt
     # plt.plot(finite_t_corr.autocorr)
     # plt.plot(std)

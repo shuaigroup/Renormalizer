@@ -26,6 +26,7 @@ class CompressConfig:
         if threshold is not None:
             self.threshold = threshold
         if bondorder_distri is not None:
+            assert isinstance(bondorder_distri, BondOrderDistri)
             self.use_threshold = False
         else:
             bondorder_distri = BondOrderDistri.uniform
@@ -44,7 +45,7 @@ class CompressConfig:
         if v <= 0:
             raise ValueError("non-positive threshold")
         elif v == 1:
-            raise ValueError("ambiguous threshold (1)")
+            raise ValueError("1 is an ambiguous threshold")
         elif 1 < v:
             raise ValueError("Can't set threshold to be larger than 1")
         self._threshold = v
@@ -61,13 +62,10 @@ class CompressConfig:
             assert length % 2 == 1
             half_length = length // 2
             x = np.arange(-half_length, half_length + 1)
-            sigma = half_length / np.sqrt(np.log(max_value))
+            sigma = half_length / np.sqrt(np.log(max_value / 3))
             seq = list(max_value * np.exp(-(x / sigma) ** 2))
-            if length % 2 == 0:
-                # should pop the middle
-                seq.pop(half_length)
             self.bond_orders = np.int64(seq)
-            self.bond_orders[self.bond_orders == 0] = 1  # avoid zeros
+            assert not (self.bond_orders == 0).any()
 
     def set_runtime_bondorder(self, bond_orders):
         self.use_threshold = False
@@ -152,7 +150,7 @@ def parse_memory_limit(x) -> float:
         return float("inf")
     try:
         return float(x)
-    except:
+    except (TypeError, ValueError):
         pass
     try:
         x_str = str(x)
@@ -166,11 +164,13 @@ def parse_memory_limit(x) -> float:
 
 class EvolveConfig:
     def __init__(
-        self,
-        scheme: EvolveMethod = EvolveMethod.prop_and_compress,
-        rk_config: RungeKutta = None,
-        memory_limit = None
+            self,
+            scheme: EvolveMethod = EvolveMethod.prop_and_compress,
+            memory_limit = None,
+            adaptive = False,
+            evolve_dt = 1e-1,
     ):
+
         self.scheme = scheme
         if self.scheme == EvolveMethod.prop_and_compress:
             # note this memory limit is for single mps and not the whole program
@@ -178,15 +178,20 @@ class EvolveConfig:
         else:
             if memory_limit is not None:
                 raise ValueError("Memory limit is only valid in propagation and compression method.")
+
         # tdvp also requires prop and compress
-        if rk_config is None:
-            self.rk_config: RungeKutta = RungeKutta()
+        if adaptive:
+            self.rk_config: RungeKutta = RungeKutta("RKF45")
         else:
-            self.rk_config: RungeKutta = rk_config
+            self.rk_config: RungeKutta = RungeKutta()
+        self.adaptive = adaptive
+        self.evolve_dt = evolve_dt  # a wild guess
+
         self.prop_method = "C_RK4"
         if self.scheme == EvolveMethod.prop_and_compress:
             self.expected_bond_order = None
         else:
             self.expected_bond_order = 50
+
 
 

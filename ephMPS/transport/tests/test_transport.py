@@ -73,12 +73,11 @@ def test_bandlimit_zero_t(method, evolve_dt, nsteps, rtol):
 # plt.show()
 
 
+@pytest.mark.parametrize("method", (EvolveMethod.prop_and_compress, EvolveMethod.tdvp_ps))
 @pytest.mark.parametrize("init_dt", (1e-1, 20))
-def test_adaptive_zero_t(init_dt):
-    rk_config = RungeKutta("RKF45", evolve_dt=init_dt)
-    evolve_config = EvolveConfig(rk_config=rk_config)
-    ct = ChargeTransport(band_limit_mol_list, evolve_config=evolve_config)
-    ct.stop_at_edge = True
+def test_adaptive_zero_t(method, init_dt):
+    evolve_config = EvolveConfig(scheme=method, evolve_dt=init_dt, adaptive=True)
+    ct = ChargeTransport(band_limit_mol_list, evolve_config=evolve_config, stop_at_edge=True)
     ct.evolve()
     assert_band_limit(ct, 1e-2)
 
@@ -96,8 +95,7 @@ def switch_to_32backend():
 
 
 def test_32backend(switch_to_32backend):
-    rk_config = RungeKutta("RKF45", evolve_dt=4)
-    evolve_config = EvolveConfig(rk_config=rk_config)
+    evolve_config = EvolveConfig(evolve_dt=4, adaptive=True)
     ct = ChargeTransport(band_limit_mol_list, evolve_config=evolve_config)
     ct.stop_at_edge = True
     ct.evolve()
@@ -106,8 +104,8 @@ def test_32backend(switch_to_32backend):
 
 def test_gaussian_bond_order():
     compress_config = CompressConfig(bondorder_distri=BondOrderDistri.center_gauss, max_bondorder=10)
-    rk_config = RungeKutta("RKF45", evolve_dt=4)
-    evolve_config = EvolveConfig(rk_config=rk_config)
+    rk_config = RungeKutta("RKF45")
+    evolve_config = EvolveConfig(evolve_dt=4, adaptive=True)
     ct = ChargeTransport(
         band_limit_mol_list,
         compress_config=compress_config,
@@ -181,9 +179,9 @@ def test_memory_limit(
     )
     compress_config = CompressConfig(threshold=1e-5)  # make the size of the MPS grow fast
     evolve_config = EvolveConfig(memory_limit="100 KB")
-    ct1 = ChargeTransport(mol_list, evolve_config=evolve_config, compress_config=compress_config)
+    ct1 = ChargeTransport(mol_list, evolve_config=evolve_config, compress_config=compress_config, stop_at_edge=False)
     ct1.evolve(evolve_dt, nsteps)
-    ct2 = ChargeTransport(mol_list, compress_config=compress_config)
+    ct2 = ChargeTransport(mol_list, compress_config=compress_config, stop_at_edge=False)
     ct2.evolve(evolve_dt, nsteps)
     assert ct1.is_similar(ct2, rtol=1e-2)
     assert ct1.latest_mps.peak_bytes < ct2.latest_mps.peak_bytes
@@ -299,11 +297,11 @@ def test_evolve(
         [Mol(Quantity(elocalex_value, "a.u."), ph_list)] * mol_num,
         Quantity(j_constant_value, "eV"),
     )
-    ct1 = ChargeTransport(mol_list)
+    ct1 = ChargeTransport(mol_list, stop_at_edge=False)
     half_nsteps = nsteps // 2
     ct1.evolve(evolve_dt, half_nsteps)
     ct1.evolve(evolve_dt, nsteps - half_nsteps)
-    ct2 = ChargeTransport(mol_list)
+    ct2 = ChargeTransport(mol_list, stop_at_edge=False)
     ct2.evolve(evolve_dt, nsteps)
     assert ct1.is_similar(ct2)
     assert_iterable_equal(ct1.get_dump_dict(), ct2.get_dump_dict())
