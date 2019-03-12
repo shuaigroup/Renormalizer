@@ -20,6 +20,13 @@ class EphTable(tuple):
                 eph_list.extend([phonon] * ph.nqboson)
         return cls(eph_list)
 
+    def electron_idx(self, idx):
+        for res, st in enumerate(self):
+            if st == electron:
+                idx -= 1
+            if idx == -1:
+                return res
+
     def is_electron(self, idx):
         return self[idx] == electron
 

@@ -5,7 +5,7 @@ from __future__ import absolute_import, division
 import inspect
 import traceback
 import logging
-from typing import List
+from typing import List, Union
 
 import numpy as np
 import scipy
@@ -32,7 +32,8 @@ class MatrixProduct:
 
     def __init__(self):
         # when modify theses codes, keep in mind to update `metacopy` method
-        self._mp: List[Matrix] = []
+        # set to a list of None upon metacopy
+        self._mp: List[Union[Matrix, None]] = []
         self.dtype = backend.real_dtype
 
         # in mpo.quasi_boson, mol_list is not set, then _ephtable and _pbond_list should be used
@@ -86,13 +87,13 @@ class MatrixProduct:
         return self.dtype == backend.complex_dtype
 
     @property
-    def bond_dims(self):
+    def bond_dims(self) -> np.ndarray:
         bond_dims = (
             [mt.bond_dim[0] for mt in self] + [self[-1].bond_dim[-1]]
             if self.site_num
             else []
         )
-        return bond_dims
+        return np.array(bond_dims)
 
     @property
     def ephtable(self):

@@ -104,7 +104,6 @@ def test_32backend(switch_to_32backend):
 
 def test_gaussian_bond_order():
     compress_config = CompressConfig(bondorder_distri=BondOrderDistri.center_gauss, max_bondorder=10)
-    rk_config = RungeKutta("RKF45")
     evolve_config = EvolveConfig(evolve_dt=4, adaptive=True)
     ct = ChargeTransport(
         band_limit_mol_list,
@@ -324,8 +323,8 @@ def test_band_limit_finite_t(
         [Mol(Quantity(elocalex_value, "a.u."), ph_list)] * mol_num,
         Quantity(j_constant_value, "eV"),
     )
-    ct1 = ChargeTransport(mol_list)
+    ct1 = ChargeTransport(mol_list, stop_at_edge=False)
     ct1.evolve(evolve_dt, nsteps)
-    ct2 = ChargeTransport(mol_list, temperature=low_t)
+    ct2 = ChargeTransport(mol_list, temperature=low_t, stop_at_edge=False)
     ct2.evolve(evolve_dt, nsteps)
     assert ct1.is_similar(ct2)

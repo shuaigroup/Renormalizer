@@ -66,6 +66,19 @@ class Phonon(object):
         else:
             self.h_indep = self.h_dep = None
 
+    def get_displacement_evecs(self) -> np.ndarray:
+        assert self.nqboson == 1
+        h = np.zeros((self.n_phys_dim, self.n_phys_dim))
+        for i in range(self.n_phys_dim):
+            h[i, i] = i
+        off_diag = np.zeros((self.n_phys_dim, self.n_phys_dim))
+        g = self.coupling_constant
+        for i in range(self.n_phys_dim - 1):
+            off_diag[i + 1, i] = g * np.sqrt(i + 1)
+        h = h + off_diag + off_diag.T
+        evals, evecs = np.linalg.eigh(h)
+        return evecs
+
     def to_dict(self):
         info_dict = OrderedDict()
         info_dict["omega"] = self.omega
@@ -90,10 +103,11 @@ class Phonon(object):
 
     @property
     def coupling_constant(self):  # the $g$
-        return float(np.sqrt(self.reorganization_energy.as_au() / 2 / self.omega[0]))
+        return float(np.sqrt(self.reorganization_energy.as_au() / self.omega[0]))
 
     """
-    todo: These "term"s should be renamed by their physical meanings
+    These "term"s don't have any particular physical meanings. They just happen to appear
+    lot of times in the final expression
     """
 
     @property

@@ -195,12 +195,9 @@ def optimize_mps_dmrg(mps, mpo):
             nonzeros = np.sum(qnmat == nexciton)
             # print("Hmat dim", nonzeros)
 
-            count = [0]
-
             def hop(c):
                 # convert c to initial structure according to qn pattern
                 cstruct = cvec2cmat(cshape, c, qnmat, nexciton)
-                count[0] += 1
 
                 if method == "1site":
                     # S-a   l-S

@@ -3,16 +3,18 @@
 from __future__ import absolute_import
 
 from collections import OrderedDict
+from typing import List, Union
 
 import numpy as np
 
-from .ephtable import EphTable
+from ephMPS.model.ephtable import EphTable
+from ephMPS.model.mol import Mol
 from ephMPS.utils import Quantity
 
 
 class MolList(object):
-    def __init__(self, mol_list, j_matrix):
-        self.mol_list = mol_list
+    def __init__(self, mol_list: List[Mol], j_matrix: Union[Quantity, np.ndarray]):
+        self.mol_list: List[Mol] = mol_list
         if isinstance(j_matrix, Quantity):
             self.j_matrix = construct_j_matrix(self.mol_num, j_matrix)
             self.j_constant = j_matrix
@@ -26,6 +28,7 @@ class MolList(object):
             self.pbond_list += mol.pbond
         # reusable mpos for the system
         self.mpos = dict()
+
 
     @property
     def mol_num(self):

@@ -20,10 +20,6 @@ a lot of memory.
 ## todo
 * scheduler for CPU and GPU memory (CPU memory for small matrices and for doing SVD)
 * TDVP uses scipy.linalg.qr. Update to Csvd. Better performance and preserves qn info.
-* adaptive mode for TDVP. Two options, maybe both.
-  * second order TDVP propagation to determined step size
-  * hybrid P&C and TDVP. use adaptive RK to determine step size. Relies on Csvd.
-* More output (dense output?) on TDVP integration.
 * investigate GPU usage fluctuation pattern and possibly optimize.
 * benchmark framework (could be useful in detecting bugs)
 * switch from p&c to tdvp more cleverly (only when p&c becomes slower? 

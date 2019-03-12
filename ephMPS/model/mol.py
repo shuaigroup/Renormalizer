@@ -3,9 +3,11 @@
 from __future__ import absolute_import, print_function, unicode_literals
 
 from collections import OrderedDict
+from typing import List
 
 import numpy as np
 
+from ephMPS.model.phonon import Phonon
 from ephMPS.utils import Quantity
 
 
@@ -18,7 +20,7 @@ class Mol(object):
     phonon information : ph
     """
 
-    def __init__(self, elocalex, ph_list, dipole=None):
+    def __init__(self, elocalex, ph_list: List[Phonon], dipole=None):
         self.elocalex = elocalex.as_au()
         self.dipole = dipole
         self.dmrg_phs = tuple([ph for ph in ph_list if not ph.hartree])

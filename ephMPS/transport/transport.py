@@ -13,6 +13,7 @@ import numpy as np
 from ephMPS.mps.backend import backend
 from ephMPS.mps.matrix import tensordot, ones
 from ephMPS.mps import Mpo, Mps, MpDm, solver
+from ephMPS.model import MolList
 from ephMPS.utils import TdMpsJob, Quantity
 
 logger = logging.getLogger(__name__)
@@ -84,14 +85,14 @@ def calc_reduced_density_matrix(mp):
 class ChargeTransport(TdMpsJob):
     def __init__(
         self,
-        mol_list,
+        mol_list: MolList,
         temperature=Quantity(0, "K"),
         compress_config=None,
         evolve_config=None,
         stop_at_edge=True,
         rdm=False
     ):
-        self.mol_list = mol_list
+        self.mol_list: MolList = mol_list
         self.temperature = temperature
         self.mpo = None
         self.mpo_e_lbound = None  # the ground energy of the hamiltonian
@@ -112,21 +113,28 @@ class ChargeTransport(TdMpsJob):
         return self.mol_list.mol_num
 
     def create_electron(self, gs_mp):
-        # test code to put phonon at ground state of the electronic excited state
-        """
-        import math
-        ph_mps = gs_mp[self.mol_num]  # suppose only one phonon mode
-        mol = self.mol_list[self.mol_num // 2]
-        s = mol.phs[0].coupling_constant ** 2
+        assert np.allclose(gs_mp.bond_dims, np.ones_like(gs_mp.bond_dims))
+        center_mol_idx = self.mol_num // 2
+        center_mol = self.mol_list[center_mol_idx]
+        # start from phonon
+        start_idx = self.mol_list.ephtable.electron_idx(center_mol_idx) + 1
+        for i, ph in enumerate(center_mol.dmrg_phs):
+            mt = gs_mp[start_idx+i][0, ..., 0].asnumpy()
+            evecs = ph.get_displacement_evecs()
+            if gs_mp.is_mps:
+                mt = evecs.dot(mt)
+            elif gs_mp.is_mpdm:
+                assert np.allclose(np.diag(np.diag(mt)), mt)
+                mt = evecs.dot(evecs.T).dot(mt)
+            else:
+                assert False
+            gs_mp[start_idx+i] = mt.reshape([1] + list(mt.shape) + [1])
 
-        for k in range(mol.phs[0].n_phys_dim):
-            ph_mps[0, k, 0] = math.exp(-s) * s ** k / math.factorial(k)
-        """
-        # previous create electron code
         creation_operator = Mpo.onsite(
-            self.mol_list, r"a^\dagger", mol_idx_set={self.mol_num // 2}
+            self.mol_list, r"a^\dagger", mol_idx_set={center_mol_idx}
         )
-        return creation_operator.apply(gs_mp)
+        mps = creation_operator.apply(gs_mp)
+        return mps
 
     def init_mps(self):
         # self.mpo = Mpo(self.mol_list, scheme=3)
@@ -135,7 +143,7 @@ class ChargeTransport(TdMpsJob):
             gs_mp = Mps.gs(self.mol_list, max_entangled=False)
         else:
             gs_mp = MpDm.max_entangled_gs(self.mol_list)
-            # subtract the energy otherwise might causes numeric error because of large offset * dbeta
+            # subtract the energy otherwise might cause numeric error because of large offset * dbeta
             energy = Quantity(gs_mp.expectation(tentative_mpo))
             mpo = Mpo(self.mol_list, scheme=3, offset=energy)
             gs_mp = gs_mp.thermal_prop_exact(
@@ -240,7 +248,7 @@ class ChargeTransport(TdMpsJob):
         )
 
     def is_similar(self, other, rtol=1e-3):
-        all_close_with_tol = partial(np.allclose, rtol=rtol, atol=1e-4)
+        all_close_with_tol = partial(np.allclose, rtol=rtol, atol=1e-3)
         if len(self.tdmps_list) != len(other.tdmps_list):
             return False
         attrs = ["evolve_times", "r_square_array", "energies", "e_occupations_array",
