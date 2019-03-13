@@ -12,11 +12,10 @@ import os
 import errno
 import logging
 from datetime import datetime, timedelta
-from typing import Union
 
 import numpy as np
 
-from ephMPS.mps import Mps, MpDm
+# this file shouldn't import anythin from the `mps` module. IOW it's mps agnostic
 from ephMPS.utils.configs import CompressConfig, EvolveConfig
 
 logger = logging.getLogger(__name__)
@@ -169,7 +168,7 @@ class TdMpsJob(object):
         return False
 
     @property
-    def latest_mps(self) -> Union[Mps, MpDm]:
+    def latest_mps(self):
         return self.tdmps_list[-1]
 
     @property

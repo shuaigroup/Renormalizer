@@ -57,9 +57,11 @@ class Backend:
             cp.cuda.device.Device(0).synchronize()
 
     def use_32bits(self):
+        logger.info("use 32 bits")
         self.dtypes = (xp.float32, xp.complex64)
 
     def use_64bits(self):
+        logger.info("use 64 bits")
         self.dtypes = (xp.float64, xp.complex128)
 
     @property

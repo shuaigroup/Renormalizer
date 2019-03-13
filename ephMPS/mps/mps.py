@@ -66,16 +66,16 @@ def adaptive_tdvp(fun):
         config = self.evolve_config
         accumulated_dt = 0
         # use 2 descriptors to decide accept or not: angle and energy
-        mps = None
-        start = self
+        mps = None  # the mps after config.evolve_dt
+        start = self  # the mps to start with
         start_energy = start.expectation(mpo)
         while True:
             logger.debug(f"adaptive dt: {config.evolve_dt}")
             mps_half1 = fun(start, mpo, config.evolve_dt / 2)
             e_half1 = mps_half1.expectation(mpo)
-            if 1e-3 < abs(e_half1 - start_energy):
+            if 5e-4 < abs(e_half1 - start_energy):
                 # not converged
-                logger.debug(f"energy not converged in first half. start energy: {start_energy}, new energy: {e_half1}")
+                logger.debug(f"energy not converged in the first sub-step. start energy: {start_energy}, new energy: {e_half1}")
                 config.evolve_dt /= 2
                 mps = mps_half1
                 continue
@@ -83,15 +83,15 @@ def adaptive_tdvp(fun):
             e_half2 = mps_half2.expectation(mpo)
             if 1e-3 < abs(e_half2 - start_energy):
                 # not converged
-                logger.debug(f"energy not converged in second half. start energy: {start_energy}, new energy: {e_half2}")
+                logger.debug(f"energy not converged in the second sub-step. start energy: {start_energy}, new energy: {e_half2}")
                 config.evolve_dt /= 2
                 mps = mps_half1
                 continue
             if mps is None:
-                mps = fun(self, mpo, config.evolve_dt)
+                mps = fun(start, mpo, config.evolve_dt)
             angle = mps.angle(mps_half2)
             logger.debug(f"Adaptive TDVP. angle: {angle}, start_energy: {start_energy}, e_half1: {e_half1}, e_half2: {e_half2}")
-            if 0.9999 < angle < 1.0001:
+            if 0.999 < angle < 1.001:
                 # converged
                 accumulated_dt += config.evolve_dt
                 logger.debug(
@@ -108,6 +108,8 @@ def adaptive_tdvp(fun):
                 logger.debug(
                     f"evolution not converged, angle: {angle}"
                 )
+                if config.evolve_dt / (evolve_dt - accumulated_dt) < 1e-2:
+                    raise RuntimeError("too many sub-steps required in a single step")
                 mps = mps_half1
         if 0.99999 < angle < 1.00001:
             # a larger dt could be used

@@ -87,13 +87,14 @@ class MatrixProduct:
         return self.dtype == backend.complex_dtype
 
     @property
-    def bond_dims(self) -> np.ndarray:
+    def bond_dims(self) -> List:
         bond_dims = (
             [mt.bond_dim[0] for mt in self] + [self[-1].bond_dim[-1]]
             if self.site_num
             else []
         )
-        return np.array(bond_dims)
+        # return a list so that the logging result is more pretty
+        return bond_dims
 
     @property
     def ephtable(self):
