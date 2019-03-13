@@ -111,7 +111,7 @@ def adaptive_tdvp(fun):
                 if config.evolve_dt / (evolve_dt - accumulated_dt) < 1e-2:
                     raise RuntimeError("too many sub-steps required in a single step")
                 mps = mps_half1
-        if 0.99999 < angle < 1.00001:
+        if 0.99998 < angle < 1.00002:
             # a larger dt could be used
             config.evolve_dt *= 1.5
             logger.debug(
