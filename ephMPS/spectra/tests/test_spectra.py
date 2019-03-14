@@ -22,7 +22,6 @@ def test_zero_exact_emi():
     # print "data", value
     mol_list = parameter.mol_list
 
-    # exact_emi = SpectraExact(mol_list, 'emi', Quantity(0, 'K'), OptimizeConfig(), offset=Quantity(2.28614053, 'ev'))
     exact_emi = SpectraExact(mol_list, "emi")
     # setup a large interval because evaluating expectations are expensive when evolution is fast
     exact_emi.info_interval = 100

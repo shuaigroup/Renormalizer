@@ -169,6 +169,7 @@ class EvolveConfig:
             memory_limit = None,
             adaptive = False,
             evolve_dt = 1e-1,
+            enhance_symmetry=False,
     ):
 
         self.scheme = scheme
@@ -192,6 +193,17 @@ class EvolveConfig:
             self.expected_bond_order = None
         else:
             self.expected_bond_order = 50
+
+        self.enhance_symmetry = enhance_symmetry
+        self.enhance_symmetry_counter = 0
+
+    @property
+    def should_switch_side(self):
+        if self.enhance_symmetry:
+            self.enhance_symmetry_counter += 1
+            if self.enhance_symmetry_counter % 10 == 0:
+                return True
+        return False
 
 
 

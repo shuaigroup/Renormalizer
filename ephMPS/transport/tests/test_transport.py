@@ -58,7 +58,7 @@ def assert_band_limit(ct, rtol):
     ),
 )
 def test_bandlimit_zero_t(method, evolve_dt, nsteps, rtol):
-    evolve_config = EvolveConfig(method)
+    evolve_config = EvolveConfig(method, enhance_symmetry=True)
     if method != EvolveMethod.prop_and_compress:
         evolve_config.expected_bond_order = 10
     ct = ChargeTransport(band_limit_mol_list, evolve_config=evolve_config)
@@ -67,16 +67,14 @@ def test_bandlimit_zero_t(method, evolve_dt, nsteps, rtol):
     assert_band_limit(ct, rtol)
 
 
-# from matplotlib import pyplot as plt
-# plt.plot(ct.r_square_array)
-# plt.plot(analytical_r_square)
-# plt.show()
 
 
 @pytest.mark.parametrize("method", (EvolveMethod.prop_and_compress, EvolveMethod.tdvp_ps))
 @pytest.mark.parametrize("init_dt", (1e-1, 20))
 def test_adaptive_zero_t(method, init_dt):
     evolve_config = EvolveConfig(scheme=method, evolve_dt=init_dt, adaptive=True)
+    if method == EvolveMethod.tdvp_ps:
+        evolve_config.expected_bond_order = 3
     ct = ChargeTransport(band_limit_mol_list, evolve_config=evolve_config, stop_at_edge=True)
     ct.evolve()
     assert_band_limit(ct, 1e-2)

@@ -149,13 +149,9 @@ class Environ:
         return outtensor
 
     def write(self, domain, siteidx, tensor):
-        # with open(domain + str(siteidx) + ".npy", 'wb') as f:
-        #    np.save(f, tensor)
         self.virtual_disk[(domain, siteidx)] = tensor
 
-    def read(self, domain, siteidx):
-        # with open(domain + str(siteidx) + ".npy", 'rb') as f:
-        #    return np.load(f)
+    def read(self, domain: str, siteidx: int):
         return self.virtual_disk[(domain, siteidx)]
 
 

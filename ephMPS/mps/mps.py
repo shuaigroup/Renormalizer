@@ -589,8 +589,6 @@ class Mps(MatrixProduct):
             self.compress_config.set_bondorder(
                 len(self) - 1, self.evolve_config.expected_bond_order
             )
-            self.use_dummy_qn = True
-            self.clear_qn()
             new_mps = self._evolve_dmrg_prop_and_compress(mpo, evolve_dt)
             self.compress_config = orig_compress_config
             return new_mps
@@ -822,122 +820,117 @@ class Mps(MatrixProduct):
     @adaptive_tdvp
     def _evolve_dmrg_tdvp_ps(self, mpo, evolve_dt) -> "Mps":
         # TDVP projector splitting
-        if self.is_right_canon:
-            assert self.check_right_canonical()
-            self.canonicalise()
-        # qn for this method has not been implemented
-        self.use_dummy_qn = True
-        self.clear_qn()
         mps = self.to_complex()  # make a copy
+        # switch to make sure it's symmetric
+        if mps.evolve_config.should_switch_side:
+            mps.canonicalise()
         mps_conj = mps.conj()  # another copy, so 3x memory is used.
 
         # construct the environment matrix
         environ = Environ()
+        # almost half is not used. Not a big deal.
         environ.construct(mps, mps_conj, mpo, "L")
+        environ.construct(mps, mps_conj, mpo, "R")
 
-        # initial matrix
-        ltensor = ones((1, 1, 1))
-        rtensor = ones((1, 1, 1))
-
-        loop = [["R", i] for i in range(len(mps) - 1, -1, -1)] + [
-            ["L", i] for i in range(0, len(mps))
-        ]
         rk_steps = []
-        for system, imps in loop:
-            if system == "R":
-                lmethod, rmethod = "Enviro", "System"
-                ltensor = environ.GetLR(
-                    "L", imps - 1, mps, mps_conj, mpo, itensor=ltensor, method=lmethod
-                )
-            else:
-                lmethod, rmethod = "System", "Enviro"
-                rtensor = environ.GetLR(
-                    "R", imps + 1, mps, mps_conj, mpo, itensor=rtensor, method=rmethod
-                )
+        # sweep for 2 rounds
+        for i in range(2):
+            for imps in mps.iter_idx_list(full=True):
+                system = "R" if mps.is_left_canon else "L"
+                ltensor = environ.read("L", imps - 1)
+                rtensor = environ.read("R", imps + 1)
 
-            shape = list(mps[imps].shape)
-            l_array = ltensor.array
-            r_array = rtensor.array
-
-            hop = hop_factory(l_array, r_array, mpo[imps].array, len(shape))
-
-            def hop_svt(ms):
-                # S-a   l-S
-                #
-                # O-b - b-O
-                #
-                # S-c   k-S
-
-                path = [([0, 1], "abc, ck -> abk"), ([1, 0], "abk, lbk -> al")]
-                HC = multi_tensor_contract(path, l_array, ms, r_array)
-                return HC
-
-            def func(t, y):
-                return hop(y.reshape(shape)).ravel() / 1.0j
-
-            sol = solve_ivp(
-                func, (0, evolve_dt / 2.0), mps[imps].ravel().array, method="RK45"
-            )
-            rk_steps.append(len(sol.t))
-            mps_t = sol.y[:, -1].reshape(shape)
-            # cast to numpy array because we are doing qr
-            mps_t = asnumpy(mps_t)
-
-            if system == "L" and imps != len(mps) - 1:
-                # updated imps site
-                u, vt = scipy.linalg.qr(mps_t.reshape(-1, shape[-1]), mode="economic")
-                mps[imps] = u.reshape(shape[:-1] + [-1])
-                mps_conj[imps] = mps[imps].conj()
-
-                ltensor = environ.GetLR(
-                    "L", imps, mps, mps_conj, mpo, itensor=ltensor, method="System"
-                )
+                shape = list(mps[imps].shape)
                 l_array = ltensor.array
-
-                # reverse update svt site
-                shape_svt = vt.shape
-
-                def func_svt(t, y):
-                    return hop_svt(y.reshape(shape_svt)).ravel() / 1.0j
-
-                sol_svt = solve_ivp(
-                    func_svt, (0, -evolve_dt / 2), vt.ravel(), method="RK45"
-                )
-                rk_steps.append(len(sol_svt.t))
-                mps[imps + 1] = tensordot(
-                    sol_svt.y[:, -1].reshape(shape_svt),
-                    mps[imps + 1].array,
-                    axes=(1, 0),
-                )
-                mps_conj[imps + 1] = mps[imps + 1].conj()
-
-            elif system == "R" and imps != 0:
-                # updated imps site
-                u, vt = scipy.linalg.rq(mps_t.reshape(shape[0], -1), mode="economic")
-                mps[imps] = vt.reshape([-1] + shape[1:])
-                mps_conj[imps] = mps[imps].conj()
-
-                rtensor = environ.GetLR(
-                    "R", imps, mps, mps_conj, mpo, itensor=rtensor, method="System"
-                )
                 r_array = rtensor.array
 
-                # reverse update u site
-                shape_u = u.shape
+                hop = hop_factory(l_array, r_array, mpo[imps].array, len(shape))
 
-                def func_u(t, y):
-                    return hop_svt(y.reshape(shape_u)).ravel() / 1.0j
+                def hop_svt(ms):
+                    # S-a   l-S
+                    #
+                    # O-b - b-O
+                    #
+                    # S-c   k-S
 
-                sol_u = solve_ivp(func_u, (0, -evolve_dt / 2), u.ravel(), method="RK45")
-                rk_steps.append(len(sol_u.t))
-                mps[imps - 1] = tensordot(
-                    mps[imps - 1].array, sol_u.y[:, -1].reshape(shape_u), axes=(-1, 0)
+                    path = [([0, 1], "abc, ck -> abk"), ([1, 0], "abk, lbk -> al")]
+                    HC = multi_tensor_contract(path, l_array, ms, r_array)
+                    return HC
+
+                def func(t, y):
+                    return hop(y.reshape(shape)).ravel() / 1.0j
+
+                sol = solve_ivp(
+                    func, (0, evolve_dt / 2.0), mps[imps].ravel().array, method="RK45"
                 )
-                mps_conj[imps - 1] = mps[imps - 1].conj()
+                rk_steps.append(len(sol.t))
+                mps_t = sol.y[:, -1].reshape(shape)
+                qnbigl, qnbigr = mps._get_big_qn(imps)
+                u, qnlset, v, qnrset = svd_qn.Csvd(
+                    asnumpy(mps_t),
+                    qnbigl,
+                    qnbigr,
+                    mps.qntot,
+                    QR=True,
+                    system=system,
+                    full_matrices=False,
+                )
+                vt = v.T
 
-            else:
-                mps[imps] = mps_t
-                mps_conj[imps] = mps[imps].conj()
+                if mps.is_left_canon and imps != 0:
+                    mps[imps] = vt.reshape([-1] + shape[1:])
+                    mps_conj[imps] = mps[imps].conj()
+                    mps.qn[imps] = qnrset
+
+                    rtensor = environ.GetLR(
+                        "R", imps, mps, mps_conj, mpo, itensor=rtensor, method="System"
+                    )
+                    r_array = rtensor.array
+
+                    # reverse update u site
+                    shape_u = u.shape
+
+                    def func_u(t, y):
+                        return hop_svt(y.reshape(shape_u)).ravel() / 1.0j
+
+                    sol_u = solve_ivp(func_u, (0, -evolve_dt / 2), u.ravel(), method="RK45")
+                    rk_steps.append(len(sol_u.t))
+                    mps[imps - 1] = tensordot(
+                        mps[imps - 1].array, sol_u.y[:, -1].reshape(shape_u), axes=(-1, 0)
+                    )
+                    mps_conj[imps - 1] = mps[imps - 1].conj()
+
+                elif mps.is_right_canon and imps != len(mps) - 1:
+                    mps[imps] = u.reshape(shape[:-1] + [-1])
+                    mps_conj[imps] = mps[imps].conj()
+                    mps.qn[imps + 1] = qnlset
+
+                    ltensor = environ.GetLR(
+                        "L", imps, mps, mps_conj, mpo, itensor=ltensor, method="System"
+                    )
+                    l_array = ltensor.array
+
+                    # reverse update svt site
+                    shape_svt = vt.shape
+
+                    def func_svt(t, y):
+                        return hop_svt(y.reshape(shape_svt)).ravel() / 1.0j
+
+                    sol_svt = solve_ivp(
+                        func_svt, (0, -evolve_dt / 2), vt.ravel(), method="RK45"
+                    )
+                    rk_steps.append(len(sol_svt.t))
+                    mps[imps + 1] = tensordot(
+                        sol_svt.y[:, -1].reshape(shape_svt),
+                        mps[imps + 1].array,
+                        axes=(1, 0),
+                    )
+                    mps_conj[imps + 1] = mps[imps + 1].conj()
+
+                else:
+                    mps[imps] = mps_t
+                    mps_conj[imps] = mps[imps].conj()
+            mps._switch_domain()
 
         logger.debug(f"TDVP-PS RK steps: {stats.describe(rk_steps)}")
 

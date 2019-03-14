@@ -1,4 +1,6 @@
-This is a electron-phonon hamiltonina MPS
+This is a electron-phonon hamiltoninan MPS
+
+[![Build Status](https://travis-ci.org/jjren/ephMPS.svg?branch=wtli-develop)](https://travis-ci.org/jjren/ephMPS)
 
 ## Notice
 * use `-O` flag to enable optimizations (disable asserts) for Python can typically speed
@@ -19,7 +21,7 @@ a lot of memory.
 
 ## todo
 * scheduler for CPU and GPU memory (CPU memory for small matrices and for doing SVD)
-* TDVP uses scipy.linalg.qr. Update to Csvd. Better performance and preserves qn info.
+* TDVP uses scipy.linalg.qr. Update to Csvd. Better performance and preserves qn info. (`ps` has been updated to qn version.)
 * investigate GPU usage fluctuation pattern and possibly optimize.
 * benchmark framework (could be useful in detecting bugs)
 * switch from p&c to tdvp more cleverly (only when p&c becomes slower? 

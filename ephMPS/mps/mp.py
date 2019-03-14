@@ -179,19 +179,22 @@ class MatrixProduct:
 
     @property
     def is_left_canon(self):
+        assert self.qnidx in (self.site_num - 1, 0)
         return self.qnidx == self.site_num - 1
 
     @property
     def is_right_canon(self):
+        assert self.qnidx in (self.site_num - 1, 0)
         return self.qnidx == 0
 
-    @property
-    def iter_idx_list(self):
-        # Note that this function doesn't mean all sites. The last is omitted.
+    def iter_idx_list(self, full: bool):
+        # if not `full`, the last site is omitted.
         if self.is_left_canon:
-            return range(self.site_num - 1, 0, -1)
+            last = -1 if full else 0
+            return range(self.site_num - 1, last, -1)
         else:
-            return range(0, self.site_num - 1)
+            last = self.site_num if full else self.site_num - 1
+            return range(0, last)
 
     def _update_ms(
         self, idx, u, vt, sigma=None, qnlset=None, qnrset=None, m_trunc=None
@@ -256,10 +259,6 @@ class MatrixProduct:
         """
         inp: canonicalise MPS (or MPO)
 
-        trunc=0: just canonicalise
-        0<trunc<1: sigma threshold
-        trunc>1: number of renormalised vectors to keep
-
         side='l': compress LEFT-canonicalised MPS
                   by sweeping from RIGHT to LEFT
                   output MPS is right canonicalised i.e. CRRR
@@ -267,7 +266,7 @@ class MatrixProduct:
         side='r': reverse of 'l'
 
         returns:
-             truncated or canonicalised MPS
+             truncated MPS
         """
 
         # ensure mps is canonicalised
@@ -278,7 +277,7 @@ class MatrixProduct:
                 assert self.check_right_canonical()
         system = "R" if self.is_left_canon else "L"
 
-        for idx in self.iter_idx_list:
+        for idx in self.iter_idx_list(full=False):
             mt: Matrix = self[idx]
             assert mt.any()
             if self.is_left_canon:
@@ -305,7 +304,7 @@ class MatrixProduct:
         self._switch_domain()
 
     def canonicalise(self):
-        for idx in self.iter_idx_list:
+        for idx in self.iter_idx_list(full=False):
             mt: Matrix = self[idx]
             assert mt.any()
             if self.is_left_canon:

@@ -16,8 +16,8 @@ from ephMPS.mps.tests import cur_dir
     "method, evolve_dt, rtol",
     (
         # [EvolveMethod.tdvp_mctdh, 2.0, 1e-2],
-        [EvolveMethod.tdvp_mctdh_new, 4.0, 1e-2],
-        [EvolveMethod.tdvp_ps, 30.0, 1e-2],
+        [EvolveMethod.tdvp_mctdh_new, 2.0, 1e-2],
+        [EvolveMethod.tdvp_ps, 15.0, 1e-2],
     ),
 )
 def test_ZeroTcorr_TDVP(method, evolve_dt, rtol):
@@ -37,7 +37,7 @@ def test_ZeroTcorr_TDVP(method, evolve_dt, rtol):
         offset=Quantity(2.28614053, "ev"),
     )
     zero_t_corr.info_interval = 30
-    nsteps = 100
+    nsteps = 200
     # nsteps = 1200
     zero_t_corr.evolve(evolve_dt, nsteps)
     with open(
@@ -47,11 +47,14 @@ def test_ZeroTcorr_TDVP(method, evolve_dt, rtol):
         "rb",
     ) as f:
         ZeroTabs_std = np.load(f)
-    assert np.allclose(zero_t_corr.autocorr[:nsteps], ZeroTabs_std[:2*nsteps:2], rtol=rtol)
+    assert np.allclose(zero_t_corr.autocorr[:nsteps], ZeroTabs_std[:nsteps], rtol=rtol)
+
+
     # from matplotlib import pyplot as plt
-    # plt.plot(zero_t_corr.autocorr)
-    # plt.plot(ZeroTabs_std)
-    # plt.show()
+    # plt.clf()
+    # plt.plot(zero_t_corr.autocorr[:nsteps])
+    # plt.plot(ZeroTabs_std[:nsteps])
+    # plt.savefig("a.png")
 
 
 @pytest.mark.parametrize(
