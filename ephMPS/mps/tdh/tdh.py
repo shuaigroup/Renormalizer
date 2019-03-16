@@ -14,6 +14,7 @@ from ephMPS.mps.tdh import mflib
 from ephMPS.mps.tdh.propagation import unitary_propagation
 from ephMPS.utils import Quantity
 from ephMPS.utils.rk import RungeKutta
+
 # This module relies on tdmps which relies on Mps and Mpdm. Be careful on cyclic dependence.
 from ephMPS.utils.tdmps import TdMpsJob
 
@@ -96,7 +97,6 @@ def SCF(mol_list, nexciton, niterations=20, thresh=1e-5, particle="hardcore boso
             break
 
     return WFN, Etot
-
 
 
 def Ham_elec(mol_list, nexciton, indirect=None, particle="hardcore boson"):

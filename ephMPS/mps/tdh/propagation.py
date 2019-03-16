@@ -3,6 +3,7 @@
 import numpy as np
 import scipy
 
+
 def unitary_propagation(WFN, HAM, Etot, dt):
     """
     unitary propagation e^-iHdt * wfn(dm)

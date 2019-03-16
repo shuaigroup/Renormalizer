@@ -32,6 +32,7 @@ from ephMPS.mps.tdh import unitary_propagation
 from ephMPS.utils import (
     Quantity,
     OptimizeConfig,
+    CompressCriteria,
     CompressConfig,
     EvolveConfig,
     EvolveMethod,
@@ -58,6 +59,7 @@ def invalidate_cache_decorator(f):
 
     return wrapper
 
+
 def adaptive_tdvp(fun):
     @functools.wraps(fun)
     def f(self: "Mps", mpo, evolve_dt):
@@ -75,7 +77,9 @@ def adaptive_tdvp(fun):
             e_half1 = mps_half1.expectation(mpo)
             if 5e-4 < abs(e_half1 - start_energy):
                 # not converged
-                logger.debug(f"energy not converged in the first sub-step. start energy: {start_energy}, new energy: {e_half1}")
+                logger.debug(
+                    f"energy not converged in the first sub-step. start energy: {start_energy}, new energy: {e_half1}"
+                )
                 config.evolve_dt /= 2
                 mps = mps_half1
                 continue
@@ -83,14 +87,18 @@ def adaptive_tdvp(fun):
             e_half2 = mps_half2.expectation(mpo)
             if 1e-3 < abs(e_half2 - start_energy):
                 # not converged
-                logger.debug(f"energy not converged in the second sub-step. start energy: {start_energy}, new energy: {e_half2}")
+                logger.debug(
+                    f"energy not converged in the second sub-step. start energy: {start_energy}, new energy: {e_half2}"
+                )
                 config.evolve_dt /= 2
                 mps = mps_half1
                 continue
             if mps is None:
                 mps = fun(start, mpo, config.evolve_dt)
             angle = mps.angle(mps_half2)
-            logger.debug(f"Adaptive TDVP. angle: {angle}, start_energy: {start_energy}, e_half1: {e_half1}, e_half2: {e_half2}")
+            logger.debug(
+                f"Adaptive TDVP. angle: {angle}, start_energy: {start_energy}, e_half1: {e_half1}, e_half2: {e_half2}"
+            )
             if 0.999 < angle < 1.001:
                 # converged
                 accumulated_dt += config.evolve_dt
@@ -105,21 +113,21 @@ def adaptive_tdvp(fun):
             else:
                 # not converged
                 config.evolve_dt /= 2
-                logger.debug(
-                    f"evolution not converged, angle: {angle}"
-                )
+                logger.debug(f"evolution not converged, angle: {angle}")
                 if config.evolve_dt / (evolve_dt - accumulated_dt) < 1e-2:
                     raise RuntimeError("too many sub-steps required in a single step")
                 mps = mps_half1
         if 0.99998 < angle < 1.00002:
             # a larger dt could be used
-            config.evolve_dt *= 1.5
+            config.enlarge_evolve_dt()
             logger.debug(
                 f"evolution easily converged, new evolve_dt: {config.evolve_dt}"
             )
             mps_half2.evolve_config = config
         return mps_half2
+
     return f
+
 
 class Mps(MatrixProduct):
     @classmethod
@@ -164,7 +172,9 @@ class Mps(MatrixProduct):
         # the last site
         mps.qn.append([0])
         dim_list.append(1)
-        last_mt = xp.random.random([dim_list[-2], mps.pbond_list[-1], dim_list[-1]]) - 0.5
+        last_mt = (
+            xp.random.random([dim_list[-2], mps.pbond_list[-1], dim_list[-1]]) - 0.5
+        )
         # normalize the mt so that the whole mps is normalized
         last_mt /= xp.linalg.norm(last_mt.flatten())
         mps.append(last_mt)
@@ -463,7 +473,8 @@ class Mps(MatrixProduct):
         new = super().metacopy()
         new.wfns = [wfn.copy() for wfn in self.wfns[:-1]] + [self.wfns[-1]]
         new.optimize_config = self.optimize_config
-        new.evolve_config = self.evolve_config
+        # evolve_config has its own data
+        new.evolve_config = self.evolve_config.copy()
         new.compress_add = self.compress_add
         return new
 
@@ -581,22 +592,36 @@ class Mps(MatrixProduct):
             new_mps = self._evolve_dmrg_prop_and_compress(mpo, evolve_dt)
             if self.evolve_config.memory_limit < new_mps.peak_bytes:
                 logger.info("switch to fixed bond order compression to save memory")
-                new_mps.compress_config.set_runtime_bondorder(new_mps.bond_dims[1:-1])
+                new_mps.compress_config.criteria = CompressCriteria.fixed
+                new_mps.compress_config.set_runtime_bondorder(new_mps.bond_dims)
             return new_mps
 
-        if not self._tdvp_check_bond_order():
-            orig_compress_config: CompressConfig = self.compress_config.copy()
+        # currently qn is not working fot tdvp
+        if not self.use_dummy_qn:
+            logger.debug("using dummy qn")
+            self.use_dummy_qn = True
+            self.clear_qn()
+
+        if self.evolve_config.should_adjust_bond_order:
+            logger.debug("adjusting bond order")
+            orig_config: CompressConfig = self.compress_config
+            # use this custom compress method for tdvp
+            self.compress_config.criteria = CompressCriteria.both
+            self.compress_config.threshold = (
+                1e-5
+            )  # use a tight threshold to keep more basis
             self.compress_config.set_bondorder(
-                len(self) - 1, self.evolve_config.expected_bond_order
+                len(self) + 1, self.evolve_config.max_bond_order
             )
             new_mps = self._evolve_dmrg_prop_and_compress(mpo, evolve_dt)
-            self.compress_config = orig_compress_config
+            self.compress_config = new_mps.compress_config = orig_config
             return new_mps
 
         method_mapping = {
             EvolveMethod.tdvp_mctdh: self._evolve_dmrg_tdvp_mctdh,
             EvolveMethod.tdvp_mctdh_new: self._evolve_dmrg_tdvp_mctdhnew,
-            EvolveMethod.tdvp_ps: self._evolve_dmrg_tdvp_ps}
+            EvolveMethod.tdvp_ps: self._evolve_dmrg_tdvp_ps,
+        }
         method = method_mapping[self.evolve_config.scheme]
         new_mps = method(mpo, evolve_dt)
         return new_mps
@@ -661,12 +686,6 @@ class Mps(MatrixProduct):
                     (-1.0j * evolve_dt) ** idx * propagation_c[idx], inplace=True
                 )
             return compressed_sum(termlist)
-
-    def _tdvp_check_bond_order(self) -> bool:
-        assert self.evolve_config.scheme != EvolveMethod.prop_and_compress
-        assert self.evolve_config.expected_bond_order is not None
-        # neither too low nor too high will do
-        return max(self.bond_dims) == self.evolve_config.expected_bond_order
 
     @adaptive_tdvp
     def _evolve_dmrg_tdvp_mctdh(self, mpo, evolve_dt) -> "Mps":
@@ -823,6 +842,7 @@ class Mps(MatrixProduct):
         mps = self.to_complex()  # make a copy
         # switch to make sure it's symmetric
         if mps.evolve_config.should_switch_side:
+            logger.debug("switch side")
             mps.canonicalise()
         mps_conj = mps.conj()  # another copy, so 3x memory is used.
 
@@ -893,10 +913,14 @@ class Mps(MatrixProduct):
                     def func_u(t, y):
                         return hop_svt(y.reshape(shape_u)).ravel() / 1.0j
 
-                    sol_u = solve_ivp(func_u, (0, -evolve_dt / 2), u.ravel(), method="RK45")
+                    sol_u = solve_ivp(
+                        func_u, (0, -evolve_dt / 2), u.ravel(), method="RK45"
+                    )
                     rk_steps.append(len(sol_u.t))
                     mps[imps - 1] = tensordot(
-                        mps[imps - 1].array, sol_u.y[:, -1].reshape(shape_u), axes=(-1, 0)
+                        mps[imps - 1].array,
+                        sol_u.y[:, -1].reshape(shape_u),
+                        axes=(-1, 0),
                     )
                     mps_conj[imps - 1] = mps[imps - 1].conj()
 
@@ -1058,7 +1082,6 @@ class Mps(MatrixProduct):
                 iwfn += 1
 
         return MPOprop, HAM, Etot
-
 
     def hartree_wfn_diff(self, other):
         assert len(self.wfns) == len(other.wfns)

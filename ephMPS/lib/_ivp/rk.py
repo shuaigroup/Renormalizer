@@ -19,6 +19,7 @@ SAFETY = 0.9
 MIN_FACTOR = 0.2  # Minimum allowed decrease in a step size.
 MAX_FACTOR = 10  # Maximum allowed increase in a step size.
 
+
 def rk_step(fun, t, y, f, h, A, B, C, E, K):
     """Perform a single Runge-Kutta step.
 

@@ -6,7 +6,6 @@ import numpy as np
 import pytest
 
 from ephMPS.model import Phonon, Mol, MolList
-from ephMPS.mps import backend
 from ephMPS.transport import ChargeTransport, EDGE_THRESHOLD
 from ephMPS.transport.transport import (
     calc_reduced_density_matrix,
@@ -15,10 +14,10 @@ from ephMPS.transport.transport import (
 from ephMPS.utils import Quantity
 from ephMPS.utils import (
     BondOrderDistri,
+    CompressCriteria,
     CompressConfig,
     EvolveMethod,
     EvolveConfig,
-    RungeKutta,
 )
 
 # the temperature should be compatible with the low vibration frequency in TestBandLimitFiniteT
@@ -53,29 +52,28 @@ def assert_band_limit(ct, rtol):
     (
         (EvolveMethod.prop_and_compress, 4, 25, 1e-3),
         # not working. Moves slightly slower. Dunno why.
-        # (EvolveMethod.tdvp_mctdh_new, 0.5, 200, 1e-2),
-        (EvolveMethod.tdvp_ps, 10, 10, 1e-3),
+        # (EvolveMethod.tdvp_mctdh_new, 2, 50, 1e-2),
+        (EvolveMethod.tdvp_ps, 2, 100, 1e-3),
     ),
 )
 def test_bandlimit_zero_t(method, evolve_dt, nsteps, rtol):
+    np.random.seed(0)
     evolve_config = EvolveConfig(method, enhance_symmetry=True)
-    if method != EvolveMethod.prop_and_compress:
-        evolve_config.expected_bond_order = 10
     ct = ChargeTransport(band_limit_mol_list, evolve_config=evolve_config)
     ct.stop_at_edge = True
     ct.evolve(evolve_dt, nsteps)
     assert_band_limit(ct, rtol)
 
 
-
-
-@pytest.mark.parametrize("method", (EvolveMethod.prop_and_compress, EvolveMethod.tdvp_ps))
+@pytest.mark.parametrize(
+    "method", (EvolveMethod.prop_and_compress, EvolveMethod.tdvp_ps)
+)
 @pytest.mark.parametrize("init_dt", (1e-1, 20))
 def test_adaptive_zero_t(method, init_dt):
     evolve_config = EvolveConfig(scheme=method, evolve_dt=init_dt, adaptive=True)
-    if method == EvolveMethod.tdvp_ps:
-        evolve_config.expected_bond_order = 3
-    ct = ChargeTransport(band_limit_mol_list, evolve_config=evolve_config, stop_at_edge=True)
+    ct = ChargeTransport(
+        band_limit_mol_list, evolve_config=evolve_config, stop_at_edge=True
+    )
     ct.evolve()
     assert_band_limit(ct, 1e-2)
 
@@ -89,7 +87,11 @@ def test_32backend(switch_to_32backend):
 
 
 def test_gaussian_bond_order():
-    compress_config = CompressConfig(bondorder_distri=BondOrderDistri.center_gauss, max_bondorder=10)
+    compress_config = CompressConfig(
+        criteria=CompressCriteria.fixed,
+        bondorder_distri=BondOrderDistri.center_gauss,
+        max_bondorder=10,
+    )
     evolve_config = EvolveConfig(evolve_dt=4, adaptive=True)
     ct = ChargeTransport(
         band_limit_mol_list,
@@ -162,9 +164,16 @@ def test_memory_limit(
         [Mol(Quantity(elocalex_value, "a.u."), ph_list)] * mol_num,
         Quantity(j_constant_value, "eV"),
     )
-    compress_config = CompressConfig(threshold=1e-5)  # make the size of the MPS grow fast
+    compress_config = CompressConfig(
+        threshold=1e-5
+    )  # make the size of the MPS grow fast
     evolve_config = EvolveConfig(memory_limit="100 KB")
-    ct1 = ChargeTransport(mol_list, evolve_config=evolve_config, compress_config=compress_config, stop_at_edge=False)
+    ct1 = ChargeTransport(
+        mol_list,
+        evolve_config=evolve_config,
+        compress_config=compress_config,
+        stop_at_edge=False,
+    )
     ct1.evolve(evolve_dt, nsteps)
     ct2 = ChargeTransport(mol_list, compress_config=compress_config, stop_at_edge=False)
     ct2.evolve(evolve_dt, nsteps)

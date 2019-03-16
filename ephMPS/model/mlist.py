@@ -29,7 +29,6 @@ class MolList(object):
         # reusable mpos for the system
         self.mpos = dict()
 
-
     @property
     def mol_num(self):
         return len(self.mol_list)

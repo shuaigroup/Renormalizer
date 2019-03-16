@@ -27,8 +27,7 @@ def test_ZeroTcorr_TDVP(method, evolve_dt, rtol):
 
     mol_list = parameter.mol_list
 
-    evolve_config = EvolveConfig(method)
-    evolve_config.expected_bond_order = 20
+    evolve_config = EvolveConfig(method, enhance_symmetry=True)
     zero_t_corr = SpectraTwoWayPropZeroT(
         mol_list,
         "abs",
@@ -49,7 +48,6 @@ def test_ZeroTcorr_TDVP(method, evolve_dt, rtol):
         ZeroTabs_std = np.load(f)
     assert np.allclose(zero_t_corr.autocorr[:nsteps], ZeroTabs_std[:nsteps], rtol=rtol)
 
-
     # from matplotlib import pyplot as plt
     # plt.clf()
     # plt.plot(zero_t_corr.autocorr[:nsteps])
@@ -69,7 +67,6 @@ def test_finite_t_spectra_emi_TDVP(method, nsteps, evolve_dt, rtol):
     temperature = Quantity(298, "K")
     offset = Quantity(2.28614053, "ev")
     evolve_config = EvolveConfig(method)
-    evolve_config.expected_bond_order = 10
     finite_t_corr = SpectraFiniteT(
         mol_list, "emi", temperature, 50, offset, evolve_config=evolve_config
     )
@@ -81,7 +78,9 @@ def test_finite_t_spectra_emi_TDVP(method, nsteps, evolve_dt, rtol):
         "rb",
     ) as fin:
         std = np.load(fin)
-    assert np.allclose(finite_t_corr.autocorr[:nsteps], std[:2*nsteps:2], rtol=rtol)
+    assert np.allclose(
+        finite_t_corr.autocorr[:nsteps], std[: 2 * nsteps : 2], rtol=rtol
+    )
     # from matplotlib import pyplot as plt
     # plt.plot(finite_t_corr.autocorr)
     # plt.plot(std)

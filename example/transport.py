@@ -11,14 +11,14 @@ import yaml
 
 from ephMPS.model import Phonon, Mol, MolList
 from ephMPS.transport import ChargeTransport
-from ephMPS.utils import log, Quantity, EvolveConfig, EvolveMethod, RungeKutta
+from ephMPS.utils import log, Quantity, EvolveConfig, EvolveMethod, RungeKutta, CompressConfig, BondOrderDistri
 
 logger = logging.getLogger(__name__)
 
 if __name__ == "__main__":
     if len(sys.argv) != 2:
         print("No or more than one parameter file are provided, abort")
-        exit()
+        exit(1)
     parameter_path = sys.argv[1]
     with open(parameter_path) as fin:
         param = yaml.safe_load(fin)
@@ -37,15 +37,20 @@ if __name__ == "__main__":
         * param["mol num"],
         j_constant,
     )
-    evolve_config = EvolveConfig(EvolveMethod.tdvp_ps)
-    evolve_config.expected_bond_order = 40
+    compress_config = CompressConfig(bondorder_distri=BondOrderDistri.center_gauss, max_bondorder=80)
+    evolve_config = EvolveConfig(EvolveMethod.tdvp_ps, adaptive=True)
+    # evolve_config.expected_bond_order = 80
     #rk_config = RungeKutta("RKF45")
+    #rk_config.evolve_dt = 40
+    #compress_config = CompressConfig()
     #evolve_config = EvolveConfig(rk_config=rk_config)
     #evolve_config = EvolveConfig()
     ct = ChargeTransport(
         mol_list,
         temperature=Quantity(*param["temperature"]),
+        compress_config=compress_config,
         evolve_config=evolve_config,
+        rdm=False
     )
     # ct.stop_at_edge = True
     ct.economic_mode = True
@@ -54,28 +59,8 @@ if __name__ == "__main__":
     ct.dump_dir = param["output dir"]
     ct.job_name = param["fname"]
     ct.custom_dump_info["comment"] = param["comment"]
-    # ct.set_threshold(1e-4)
-    ct.set_threshold(40)
+    ct.set_threshold(1e-4)
     # ct.latest_mps.compress_add = True
-    evolve_dt = param["evolve dt"]
-    lowest_energy = ct.mpo_e_lbound
-    highest_energy = ct.mpo_e_ubound
-    logger.debug(
-        "Energy of the Hamiltonian: {:g} ~ {:g}".format(lowest_energy, highest_energy)
-    )
-    if evolve_dt == "auto":
-        factor = min(
-            highest_energy * 0.1
-            + (ct.initial_energy - lowest_energy)
-            / (highest_energy - lowest_energy)
-            * highest_energy
-            * 1.8,
-            highest_energy,
-        )
-        evolve_dt = 1 / factor
-        logger.info("Auto evolve delta t: {:g}".format(evolve_dt))
-        # evolve_dt = 1 / abs(highest_energy)
-    # disable calculation of reduced density matrices
-    ct.reduced_density_matrices = None
-    #ct.evolve(evolve_dt, param.get("nsteps"), param.get("evolve time"))
-    ct.evolve(evolve_dt, 5, param.get("evolve time"))
+    logger.debug(f"ground energy of the Hamiltonian: {ct.mpo_e_lbound:g}")
+    ct.evolve(param["evolve dt"], param.get("nsteps"), param.get("evolve time"))
+    # ct.evolve(evolve_dt, 100, param.get("evolve time"))

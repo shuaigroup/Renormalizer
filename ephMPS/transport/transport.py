@@ -14,7 +14,7 @@ from ephMPS.mps.backend import backend
 from ephMPS.mps.matrix import tensordot, ones
 from ephMPS.mps import Mpo, Mps, MpDm, solver
 from ephMPS.model import MolList
-from ephMPS.utils import TdMpsJob, Quantity
+from ephMPS.utils import TdMpsJob, Quantity, CompressCriteria
 
 logger = logging.getLogger(__name__)
 
@@ -90,7 +90,7 @@ class ChargeTransport(TdMpsJob):
         compress_config=None,
         evolve_config=None,
         stop_at_edge=True,
-        rdm=False
+        rdm=False,
     ):
         self.mol_list: MolList = mol_list
         self.temperature = temperature
@@ -119,7 +119,7 @@ class ChargeTransport(TdMpsJob):
         # start from phonon
         start_idx = self.mol_list.ephtable.electron_idx(center_mol_idx) + 1
         for i, ph in enumerate(center_mol.dmrg_phs):
-            mt = gs_mp[start_idx+i][0, ..., 0].asnumpy()
+            mt = gs_mp[start_idx + i][0, ..., 0].asnumpy()
             evecs = ph.get_displacement_evecs()
             if gs_mp.is_mps:
                 mt = evecs.dot(mt)
@@ -128,7 +128,7 @@ class ChargeTransport(TdMpsJob):
                 mt = evecs.dot(evecs.T).dot(mt)
             else:
                 assert False
-            gs_mp[start_idx+i] = mt.reshape([1] + list(mt.shape) + [1])
+            gs_mp[start_idx + i] = mt.reshape([1] + list(mt.shape) + [1])
 
         creation_operator = Mpo.onsite(
             self.mol_list, r"a^\dagger", mol_idx_set={center_mol_idx}
@@ -155,8 +155,9 @@ class ChargeTransport(TdMpsJob):
         self.mpo_e_lbound = solver.find_lowest_energy(self.mpo, 1, 20)
         init_mp.canonicalise()
         init_mp.evolve_config = self.evolve_config
-        if not self.compress_config.use_threshold:
-            self.compress_config.set_bondorder(length=len(init_mp) - 1)
+        # init the compress config if not using threshold
+        if self.compress_config.criteria is not CompressCriteria.threshold:
+            self.compress_config.set_bondorder(length=len(init_mp) + 1)
         init_mp.compress_config = self.compress_config
         # init_mp.invalidate_cache()
         return init_mp
@@ -222,7 +223,9 @@ class ChargeTransport(TdMpsJob):
 
     @property
     def latest_energy_ratio(self):
-        return (self.latest_energy - self.mpo_e_lbound) / (self.initial_energy - self.mpo_e_lbound)
+        return (self.latest_energy - self.mpo_e_lbound) / (
+            self.initial_energy - self.mpo_e_lbound
+        )
 
     @property
     def r_square_array(self):
@@ -251,8 +254,14 @@ class ChargeTransport(TdMpsJob):
         all_close_with_tol = partial(np.allclose, rtol=rtol, atol=1e-3)
         if len(self.tdmps_list) != len(other.tdmps_list):
             return False
-        attrs = ["evolve_times", "r_square_array", "energies", "e_occupations_array",
-                 "ph_occupations_array", "coherent_length_array"]
+        attrs = [
+            "evolve_times",
+            "r_square_array",
+            "energies",
+            "e_occupations_array",
+            "ph_occupations_array",
+            "coherent_length_array",
+        ]
         for attr in attrs:
             s = getattr(self, attr)
             o = getattr(other, attr)

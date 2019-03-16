@@ -302,6 +302,7 @@ class MatrixProduct:
             )
 
         self._switch_domain()
+        return self
 
     def canonicalise(self):
         for idx in self.iter_idx_list(full=False):
@@ -326,6 +327,7 @@ class MatrixProduct:
                 idx, Matrix(u), Matrix(v.T), sigma=None, qnlset=qnlset, qnrset=qnrset
             )
         self._switch_domain()
+        return self
 
     def conj(self):
         """

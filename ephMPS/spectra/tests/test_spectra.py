@@ -83,7 +83,9 @@ def test_zero_t_abs(algorithm, compress_method, ph_info, rtol, switch_to_64backe
         [2, "svd", [[4, 4], [2, 2], [1.0e-7, 1.0e-7]], 1e-2],
     ),
 )
-def test_zero_t_abs_mposcheme3(algorithm, compress_method, ph_info, rtol, switch_to_64backend):
+def test_zero_t_abs_mposcheme3(
+    algorithm, compress_method, ph_info, rtol, switch_to_64backend
+):
     np.random.seed(0)
     # print "data", value
     j_matrix = (

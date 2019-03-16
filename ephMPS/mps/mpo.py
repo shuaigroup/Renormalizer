@@ -979,7 +979,7 @@ class Mpo(MatrixProduct):
         dim = np.prod(self.pbond_list)
         if 20000 < dim:
             raise ValueError("operator too large")
-        res = ones((1, ))
+        res = ones((1,))
         for mt in self:
             res = tensordot(res, mt, axes=1)
         return res.reshape((dim, dim))
