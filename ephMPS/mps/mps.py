@@ -34,6 +34,7 @@ from ephMPS.utils import (
     OptimizeConfig,
     CompressCriteria,
     CompressConfig,
+    RungeKutta,
     EvolveConfig,
     EvolveMethod,
     sizeof_fmt,
@@ -65,7 +66,11 @@ def adaptive_tdvp(fun):
     def f(self: "Mps", mpo, evolve_dt):
         if not self.evolve_config.adaptive:
             return fun(self, mpo, evolve_dt)
+        if evolve_dt < 0:
+            raise NotImplementedError("adaptive tdvp with negative evolve dt not implemented")
         config = self.evolve_config
+        # requires exactly divisible
+        assert evolve_dt % config.evolve_dt == 0
         accumulated_dt = 0
         # use 2 descriptors to decide accept or not: angle and energy
         mps = None  # the mps after config.evolve_dt
@@ -99,7 +104,7 @@ def adaptive_tdvp(fun):
             logger.debug(
                 f"Adaptive TDVP. angle: {angle}, start_energy: {start_energy}, e_half1: {e_half1}, e_half2: {e_half2}"
             )
-            if 0.999 < angle < 1.001:
+            if 0.99995 < angle < 1.00005:
                 # converged
                 accumulated_dt += config.evolve_dt
                 logger.debug(
@@ -117,7 +122,7 @@ def adaptive_tdvp(fun):
                 if config.evolve_dt / (evolve_dt - accumulated_dt) < 1e-2:
                     raise RuntimeError("too many sub-steps required in a single step")
                 mps = mps_half1
-        if 0.99998 < angle < 1.00002:
+        if 0.99999 < angle < 1.00001:
             # a larger dt could be used
             config.enlarge_evolve_dt()
             logger.debug(
@@ -602,39 +607,55 @@ class Mps(MatrixProduct):
             self.use_dummy_qn = True
             self.clear_qn()
 
+        mps = self
         if self.evolve_config.should_adjust_bond_order:
             logger.debug("adjusting bond order")
-            orig_config: CompressConfig = self.compress_config
             # use this custom compress method for tdvp
+            orig_compress_config: CompressConfig = self.compress_config.copy()
             self.compress_config.criteria = CompressCriteria.both
-            self.compress_config.threshold = (
-                1e-5
-            )  # use a tight threshold to keep more basis
+            # use a tight threshold to keep more basis
+            self.compress_config.threshold = 1e-6
             self.compress_config.set_bondorder(
                 len(self) + 1, self.evolve_config.max_bond_order
             )
-            new_mps = self._evolve_dmrg_prop_and_compress(mpo, evolve_dt)
-            self.compress_config = new_mps.compress_config = orig_config
-            return new_mps
+            config = self.evolve_config.copy()
+            if 5 < np.array(self.bond_dims).max():
+                # use a cheap method
+                pc_dt = evolve_dt / 10
+                config.rk_config = RungeKutta("Forward_Euler")
+                mps = self._evolve_dmrg_prop_and_compress(mpo, pc_dt, config)
+                self.compress_config = mps.compress_config = orig_compress_config
+                evolve_dt -= pc_dt
+                mps.evolve_config.evolve_dt = evolve_dt
+            else:
+                # RK45 not too expensive
+                config.adaptive = True
+                config.evolve_dt = evolve_dt
+                new_mps = self._evolve_dmrg_prop_and_compress(mpo, evolve_dt, config)
+                self.compress_config = new_mps.compress_config = orig_compress_config
+                return new_mps
 
         method_mapping = {
-            EvolveMethod.tdvp_mctdh: self._evolve_dmrg_tdvp_mctdh,
-            EvolveMethod.tdvp_mctdh_new: self._evolve_dmrg_tdvp_mctdhnew,
-            EvolveMethod.tdvp_ps: self._evolve_dmrg_tdvp_ps,
+            EvolveMethod.tdvp_mctdh: mps._evolve_dmrg_tdvp_mctdh,
+            EvolveMethod.tdvp_mctdh_new: mps._evolve_dmrg_tdvp_mctdhnew,
+            EvolveMethod.tdvp_ps: mps._evolve_dmrg_tdvp_ps,
         }
-        method = method_mapping[self.evolve_config.scheme]
+        method = method_mapping[mps.evolve_config.scheme]
         new_mps = method(mpo, evolve_dt)
         return new_mps
 
-    def _evolve_dmrg_prop_and_compress(self, mpo, evolve_dt) -> "Mps":
-        config = self.evolve_config
-        propagation_c = self.evolve_config.rk_config.coeff
+    def _evolve_dmrg_prop_and_compress(self, mpo, evolve_dt, config: EvolveConfig = None) -> "Mps":
+        if config is None:
+            config = self.evolve_config
+        propagation_c = config.rk_config.coeff
         termlist = [self]
         while len(termlist) < len(propagation_c):
             termlist.append(mpo.contract(termlist[-1]))
-            # control term sizes to be approximately constant
             termlist[-1].compress_config.relax()
         if config.adaptive:
+            if evolve_dt * config.evolve_dt < 0:
+                raise ValueError("evolve into wrong direction")
+            # control term sizes to be approximately constant
             while True:
                 scaled_termlist = []
                 for idx, term in enumerate(termlist):
@@ -659,16 +680,16 @@ class Mps(MatrixProduct):
                                 f"evolution easily converged, new evolve_dt: {config.evolve_dt}"
                             )
                         # First exit
-                        new_mps2.evolve_config = config
+                        new_mps2.evolve_config.evolve_dt = config.evolve_dt
                         return new_mps2
                     if config.evolve_dt < evolve_dt:
                         # step too small
                         new_dt = evolve_dt - config.evolve_dt
                         logger.debug(f"remaining: {new_dt}")
                         # Second exit
-                        new_mps2.evolve_config = config
+                        new_mps2.evolve_config.evolve_dt = config.evolve_dt
                         del new_mps1, termlist, scaled_termlist  # memory consuming and not used
-                        return new_mps2._evolve_dmrg_prop_and_compress(mpo, new_dt)
+                        return new_mps2._evolve_dmrg_prop_and_compress(mpo, new_dt, config)
                     else:
                         # shouldn't happen.
                         raise ValueError(
@@ -1217,11 +1238,11 @@ def transferMat(mps, mpsconj, domain, siteidx):
     val = np.ones([1, 1])
     if domain == "R":
         for imps in range(len(mps) - 1, siteidx - 1, -1):
-            val = np.tensordot(mpsconj[imps], val, axes=(2, 0))
-            val = np.tensordot(val, mps[imps], axes=([1, 2], [1, 2]))
+            val = tensordot(mpsconj[imps], val, axes=(2, 0))
+            val = tensordot(val, mps[imps], axes=([1, 2], [1, 2]))
     elif domain == "L":
         for imps in range(0, siteidx + 1, 1):
-            val = np.tensordot(mpsconj[imps], val, axes=(0, 0))
-            val = np.tensordot(val, mps[imps], axes=([0, 2], [1, 0]))
+            val = tensordot(mpsconj[imps], val, axes=(0, 0))
+            val = tensordot(val, mps[imps], axes=([0, 2], [1, 0]))
 
     return val

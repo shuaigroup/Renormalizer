@@ -226,8 +226,9 @@ class EvolveConfig:
     def should_adjust_bond_order(self):
         assert self.scheme != EvolveMethod.prop_and_compress
         self._adjust_bond_order_counter += 1
-        if 10 < self._adjust_bond_order_counter:
-            self._adjust_bond_order_counter = self._adjust_bond_order_counter % 10
+        counter_max = 5
+        if counter_max < self._adjust_bond_order_counter:
+            self._adjust_bond_order_counter = self._adjust_bond_order_counter % counter_max
             return True
         else:
             return False

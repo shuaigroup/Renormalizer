@@ -27,7 +27,7 @@ def test_ZeroTcorr_TDVP(method, evolve_dt, rtol):
 
     mol_list = parameter.mol_list
 
-    evolve_config = EvolveConfig(method, enhance_symmetry=True)
+    evolve_config = EvolveConfig(method, evolve_dt=evolve_dt, enhance_symmetry=False, adaptive=False)
     zero_t_corr = SpectraTwoWayPropZeroT(
         mol_list,
         "abs",
@@ -48,12 +48,16 @@ def test_ZeroTcorr_TDVP(method, evolve_dt, rtol):
         ZeroTabs_std = np.load(f)
     assert np.allclose(zero_t_corr.autocorr[:nsteps], ZeroTabs_std[:nsteps], rtol=rtol)
 
-    # from matplotlib import pyplot as plt
-    # plt.clf()
-    # plt.plot(zero_t_corr.autocorr[:nsteps])
-    # plt.plot(ZeroTabs_std[:nsteps])
-    # plt.savefig("a.png")
-
+# from matplotlib import pyplot as plt
+#
+# plt.clf()
+# plt.plot(zero_t_corr.autocorr[:nsteps:2], label="c")
+# plt.plot(ZeroTabs_std[:nsteps:2], label="tdvp svd")
+# with open("/home/wtli/GitClone/ephMPS/ephMPS/spectra/tests/ZeroTabs_2svd.npy", "rb") as fin:
+#     data = np.load(fin)
+# plt.plot(data, label="pc std")
+# plt.legend()
+# plt.savefig("a.png")
 
 @pytest.mark.parametrize(
     "method, nsteps, evolve_dt, rtol",
