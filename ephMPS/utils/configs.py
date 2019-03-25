@@ -36,9 +36,11 @@ class CompressConfig:
         self._threshold = 0.001
         self.threshold = threshold
         self.bond_order_distribution: BondOrderDistri = bondorder_distri
-        self.max_bondorder = max_bondorder
+        self.bondorder_max_value = max_bondorder
+        self.bondorder_min_value = 20
         # the length should be len(mps) + 1, the terminals are also counted. This is for accordance with mps.bond_dims
-        self.bond_orders: np.ndarray = None
+        self.max_bondorders: np.ndarray = None
+        self.min_bondorders: np.ndarray = None
 
     @property
     def threshold(self):
@@ -58,25 +60,26 @@ class CompressConfig:
         if self.criteria is CompressCriteria.threshold:
             raise ValueError("compress config is using threshold criteria")
         if max_value is None:
-            max_value = self.max_bondorder
+            max_value = self.bondorder_max_value
         else:
-            self.max_bondorder = max_value
+            self.bondorder_max_value = max_value
         if max_value is None:
             raise ValueError("max value is not set")
         if self.bond_order_distribution == BondOrderDistri.uniform:
-            self.bond_orders = np.full(length, max_value)
+            self.max_bondorders = np.full(length, max_value)
         else:
             assert length % 2 == 1
             half_length = length // 2
             x = np.arange(-half_length, half_length + 1)
             sigma = half_length / np.sqrt(np.log(max_value / 3))
             seq = list(max_value * np.exp(-(x / sigma) ** 2))
-            self.bond_orders = np.int64(seq)
-            assert not (self.bond_orders == 0).any()
+            self.max_bondorders = np.int64(seq)
+            assert not (self.max_bondorders == 0).any()
+        self.min_bondorders = np.full(length, self.bondorder_min_value)
 
     def set_runtime_bondorder(self, bond_orders):
         self.bond_order_distribution = BondOrderDistri.runtime
-        self.bond_orders = np.array(bond_orders)
+        self.max_bondorders = np.array(bond_orders)
 
     def _threshold_m_trunc(self, sigma: np.ndarray) -> int:
         assert 0 < self.threshold < 1
@@ -85,9 +88,9 @@ class CompressConfig:
         return int(np.sum(normed_sigma > self.threshold))
 
     def _fixed_m_trunc(self, sigma: np.ndarray, idx: int, left: bool) -> int:
-        assert self.bond_orders is not None
+        assert self.max_bondorders is not None
         bond_idx = idx if left else idx + 1
-        return min(self.bond_orders[bond_idx], len(sigma))
+        return min(self.max_bondorders[bond_idx], len(sigma))
 
     def compute_m_trunc(self, sigma: np.ndarray, idx: int, left: bool) -> int:
         if self.criteria is CompressCriteria.threshold:
@@ -101,6 +104,10 @@ class CompressConfig:
             )
         else:
             assert False
+        if self.min_bondorders is not None:
+            bond_idx = idx if left else idx + 1
+            min_trunc = min(self.min_bondorders[bond_idx], len(sigma))
+            trunc = max(trunc, min_trunc)
         return trunc
 
     def update(self, other: "CompressConfig"):
@@ -110,21 +117,21 @@ class CompressConfig:
         # look for minimum
         self.threshold = min(self.threshold, other.threshold)
         # look for maximum
-        if self.bond_orders is None:
-            self.bond_orders = other.bond_orders
-        elif other.bond_orders is None:
+        if self.max_bondorders is None:
+            self.max_bondorders = other.max_bondorders
+        elif other.max_bondorders is None:
             pass  # do nothing
         else:
-            self.bond_orders = np.maximum(self.bond_orders, other.bond_orders)
+            self.max_bondorders = np.maximum(self.max_bondorders, other.max_bondorders)
 
     def relax(self):
         # relax the two criteria simultaneously
         self.threshold = min(
             self.threshold * 3, 0.9
         )  # can't set to 1 which is ambiguous
-        if self.bond_orders is not None:
-            self.bond_orders = np.maximum(
-                np.int64(self.bond_orders * 0.8), np.full_like(self.bond_orders, 2)
+        if self.max_bondorders is not None:
+            self.max_bondorders = np.maximum(
+                np.int64(self.max_bondorders * 0.8), np.full_like(self.max_bondorders, 2)
             )
 
     def copy(self) -> "CompressConfig":
@@ -132,8 +139,8 @@ class CompressConfig:
         # shallow copies
         new.__dict__ = self.__dict__.copy()
         # deep copy
-        if self.bond_orders is not None:
-            new.bond_orders = self.bond_orders.copy()
+        if self.max_bondorders is not None:
+            new.max_bondorders = self.max_bondorders.copy()
         return new
 
 
@@ -184,7 +191,6 @@ class EvolveConfig:
         memory_limit=None,
         adaptive=False,
         evolve_dt=1e-1,
-        enhance_symmetry=False,
     ):
 
         self.scheme = scheme
@@ -208,40 +214,26 @@ class EvolveConfig:
         else:
             self.rk_config: RungeKutta = RungeKutta()
         self.adaptive = adaptive
+        self.stat = None  # single step CMF stats used in adaptive tdvp
         self.evolve_dt = evolve_dt  # a wild guess
 
         self.prop_method = "C_RK4"
 
-        self.enhance_symmetry = enhance_symmetry
-        self._enhance_symmetry_counter = 0
         # should adjust bond order before any tdvp evolution
-        self._adjust_bond_order_counter = 10
+        self._adjust_bond_order_counter = False
 
     def enlarge_evolve_dt(self, ratio=1.5):
         self.evolve_dt *= ratio
-        self._enhance_symmetry_counter += 3 * ratio
         self._adjust_bond_order_counter += 3 * ratio
 
     @property
     def should_adjust_bond_order(self):
         assert self.scheme != EvolveMethod.prop_and_compress
-        self._adjust_bond_order_counter += 1
-        counter_max = 5
-        if counter_max < self._adjust_bond_order_counter:
-            self._adjust_bond_order_counter = self._adjust_bond_order_counter % counter_max
+        if not self._adjust_bond_order_counter:
+            self._adjust_bond_order_counter = True
             return True
         else:
             return False
-
-    @property
-    def should_switch_side(self):
-        assert self.scheme != EvolveMethod.prop_and_compress
-        if self.enhance_symmetry:
-            self._enhance_symmetry_counter += 1
-            if 10 < self._enhance_symmetry_counter:
-                self._enhance_symmetry_counter = self._enhance_symmetry_counter % 10
-                return True
-        return False
 
     def copy(self):
         new = self.__class__.__new__(self.__class__)

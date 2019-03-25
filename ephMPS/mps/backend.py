@@ -42,7 +42,7 @@ class Backend:
         self._real_dtype = None
         self._complex_dtype = None
         self.use_32bits()
-        # self.use_64bits()
+        #self.use_64bits()
 
     def free_all_blocks(self):
         if xp == np:

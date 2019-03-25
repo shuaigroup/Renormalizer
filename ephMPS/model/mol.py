@@ -5,10 +5,8 @@ from __future__ import absolute_import, print_function, unicode_literals
 from collections import OrderedDict
 from typing import List
 
-import numpy as np
-
 from ephMPS.model.phonon import Phonon
-from ephMPS.utils import Quantity
+
 
 
 class Mol(object):
@@ -33,10 +31,6 @@ class Mol(object):
         self.hartree_e0 = calc_lambda(self.hartree_phs)
         self.n_dmrg_phs = len(self.dmrg_phs)
         self.n_hartree_phs = len(self.hartree_phs)
-        self.phhop = np.zeros([self.n_dmrg_phs, self.n_dmrg_phs])
-
-    def create_phhop(self, phhopmat):
-        self.phhop = phhopmat.copy()
 
     @property
     def pbond(self):
@@ -69,3 +63,9 @@ class Mol(object):
         if self.hartree_phs:
             info_dict["Hartree phonon list"] = [ph.to_dict() for ph in self.hartree_phs]
         return info_dict
+
+    def __eq__(self, other):
+        return self.__dict__ == other.__dict__
+
+    def __ne__(self, other):
+        return not (self == other)

@@ -27,7 +27,7 @@ def test_ZeroTcorr_TDVP(method, evolve_dt, rtol):
 
     mol_list = parameter.mol_list
 
-    evolve_config = EvolveConfig(method, evolve_dt=evolve_dt, enhance_symmetry=False, adaptive=False)
+    evolve_config = EvolveConfig(method, evolve_dt=evolve_dt, adaptive=False)
     zero_t_corr = SpectraTwoWayPropZeroT(
         mol_list,
         "abs",
@@ -60,13 +60,13 @@ def test_ZeroTcorr_TDVP(method, evolve_dt, rtol):
 # plt.savefig("a.png")
 
 @pytest.mark.parametrize(
-    "method, nsteps, evolve_dt, rtol",
+    "method, nsteps, evolve_dt, rtol, interval",
     (
-        [EvolveMethod.tdvp_mctdh_new, 95, 4.0, 1e-2],
-        [EvolveMethod.tdvp_ps, 15, 60, 1e-2],
+       [EvolveMethod.tdvp_mctdh_new, 85, 4, 1e-2, 2],
+       [EvolveMethod.tdvp_ps, 30, 30, 1e-2, 1],
     ),
 )
-def test_finite_t_spectra_emi_TDVP(method, nsteps, evolve_dt, rtol):
+def test_finite_t_spectra_emi_TDVP(method, nsteps, evolve_dt, rtol, interval):
     mol_list = parameter.mol_list
     temperature = Quantity(298, "K")
     offset = Quantity(2.28614053, "ev")
@@ -83,7 +83,7 @@ def test_finite_t_spectra_emi_TDVP(method, nsteps, evolve_dt, rtol):
     ) as fin:
         std = np.load(fin)
     assert np.allclose(
-        finite_t_corr.autocorr[:nsteps], std[: 2 * nsteps : 2], rtol=rtol
+        finite_t_corr.autocorr[:nsteps], std[:interval*nsteps:interval], rtol=rtol
     )
     # from matplotlib import pyplot as plt
     # plt.plot(finite_t_corr.autocorr)

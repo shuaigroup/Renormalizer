@@ -82,7 +82,7 @@ def test_SCF_exact():
         hartree_mol_list, nexciton, WFN, fe, fv, debug=True
     )
     assert Etot == pytest.approx(dmrg_e)
-    assert np.allclose(A_el.flatten(), dmrg_occ)
+    assert np.allclose(A_el.flatten(), dmrg_occ, rtol=1e-5)
 
 
 def test_TDH_ZT_emi():

@@ -11,6 +11,14 @@ from ephMPS.utils import Quantity
 from ephMPS.utils.elementop import construct_ph_op_dict
 
 
+def all_positive_or_all_negative(array):
+    if (np.logical_or(array <= 0, np.isclose(array, np.zeros_like(array)))).all():
+        return True
+    elif (np.logical_or(0 <= array, np.isclose(array, np.zeros_like(array)))).all():
+        return True
+    else:
+        return False
+
 class Phonon(object):
     """
     phonon class has property:
@@ -18,6 +26,33 @@ class Phonon(object):
     PES displacement: dis
     highest occupation levels: nlevels
     """
+
+    @classmethod
+    def simplest_phonon(cls, omega, displacement):
+        # detect pdim automatically
+        pdim = 256
+        while True:
+            trial_phonon = cls.simple_phonon(omega, displacement, pdim)
+            evecs = trial_phonon.get_displacement_evecs()
+            gs = evecs[:, 0]
+            # all positive or all negative
+            assert all_positive_or_all_negative(gs)
+            if 0.9999 < gs[:len(gs) // 2].sum() / gs.sum():
+                # too many levels
+                pdim //= 2
+            elif 0.001 < np.abs(gs[-1]):
+                if pdim == 256:
+                    # not enough levels. the required pdim is insanely large
+                    # something went wrong!
+                    raise ValueError(f"Too many phonon level required. omega: {omega}. displacement: {displacement}")
+                else:
+                    # a too large step
+                    pdim *= 2
+                    break
+            else:
+                break
+        return trial_phonon
+
 
     @classmethod
     def simple_phonon(cls, omega, displacement, n_phys_dim):
@@ -29,7 +64,7 @@ class Phonon(object):
         self,
         omega,
         displacement,
-        n_phys_dim,
+        n_phys_dim: int =None,
         force3rd=None,
         nqboson=1,
         qbtrunc=0.0,
@@ -46,8 +81,7 @@ class Phonon(object):
                 self.force3rd[i] = 0.0
         else:
             self.force3rd = force3rd
-
-        self.n_phys_dim = n_phys_dim
+        self.n_phys_dim: int = n_phys_dim
         self.nqboson = nqboson
         self.qbtrunc = qbtrunc
         self.base = int(round(n_phys_dim ** (1.0 / nqboson)))
@@ -74,7 +108,8 @@ class Phonon(object):
         off_diag = np.zeros((self.n_phys_dim, self.n_phys_dim))
         g = self.coupling_constant
         for i in range(self.n_phys_dim - 1):
-            off_diag[i + 1, i] = g * np.sqrt(i + 1)
+            # note displacement is defined as negative
+            off_diag[i + 1, i] = -g * np.sqrt(i + 1)
         h = h + off_diag + off_diag.T
         evals, evecs = np.linalg.eigh(h)
         return evecs
@@ -141,3 +176,12 @@ class Phonon(object):
         print("nqboson = ", self.nqboson)
         print("qbtrunc = ", self.qbtrunc)
         print("base =", self.base)
+
+    def __eq__(self, other):
+        a = self.__dict__
+        b = other.__dict__
+        for d in [a, b]:
+            # numpy arrays tricky to handle
+            d.pop("h_dep")
+            d.pop("h_indep")
+        return a == b

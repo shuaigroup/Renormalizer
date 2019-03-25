@@ -11,7 +11,7 @@ from ephMPS.utils import Quantity
 
 def test_property():
     ph = Phonon.simple_phonon(
-        omega=Quantity(1, "a.u."), displacement=Quantity(1, "a.u."), n_phys_dim=10
+        omega=Quantity(1), displacement=Quantity(1), n_phys_dim=10
     )
     assert ph.reorganization_energy.as_au() == pytest.approx(0.5)
     assert ph.coupling_constant == pytest.approx(sqrt(0.5))
@@ -21,3 +21,20 @@ def test_property():
     for k in range(1, 10):
         res.append(res[-1] * s / k)
     assert np.allclose(res, evecs[:, 0] ** 2)
+
+    ph2 = Phonon.simple_phonon(
+        omega=Quantity(1), displacement=Quantity(1), n_phys_dim=10
+    )
+    assert ph == ph2
+
+
+def test_simplest_phonon():
+    ph =Phonon.simplest_phonon(Quantity(0.1), Quantity(10))
+    assert ph.nlevels == 32
+    ph = Phonon.simplest_phonon(Quantity(1), Quantity(1))
+    assert ph.nlevels == 16
+    ph = Phonon.simplest_phonon(Quantity(0.128), Quantity(6.25))
+    assert ph.nlevels == 16
+    ph = Phonon.simplest_phonon(Quantity(0.032), Quantity(6.25))
+    assert ph.nlevels == 16
+

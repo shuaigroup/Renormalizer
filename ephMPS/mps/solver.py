@@ -8,7 +8,6 @@ import scipy
 
 
 from ephMPS.lib.davidson import davidson
-from ephMPS.mps.backend import xp
 from ephMPS.mps.matrix import (
     Matrix,
     multi_tensor_contract,
@@ -131,7 +130,9 @@ def optimize_mps_dmrg(mps, mpo):
 
     energies = []
     for isweep, (mmax, percent) in enumerate(procedure):
-        # print("mmax, percent: ", mmax, percent)
+        logger.debug(f"mmax, percent: {mmax}, {percent}")
+        logger.debug(f"energy: {mps.expectation(mpo)}")
+        logger.debug(f"{mps}")
 
         for system, imps in loop:
             if system == "R":
@@ -251,7 +252,7 @@ def optimize_mps_dmrg(mps, mpo):
             # A = spslinalg.LinearOperator((nonzeros,nonzeros), matvec=hop)
             # e, c = spslinalg.eigsh(A,k=1, which="SA",v0=cguess)
             # print("HC loops:", count[0])
-            # print("isweep, imps, e=", isweep, imps, e)
+            # logger.debug(f"isweep: {isweep}, e: {e}")
 
             energies.append(e)
 

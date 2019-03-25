@@ -31,6 +31,7 @@ class Matrix:
 
     def __init__(self, array, dtype=None):
         if dtype == backend.real_dtype:
+            # forbid unchecked casting
             assert not xp.iscomplexobj(array)
         if dtype is None:
             if xp.iscomplexobj(array):
@@ -40,7 +41,7 @@ class Matrix:
         self.array: [xp.ndarray] = xp.asarray(array, dtype=dtype)
         self.original_shape = self.array.shape
         self.sigmaqn = None
-        backend.first_mp = True
+        backend.running = True
 
     def __getattr__(self, item):
         res = getattr(self.array, item)
@@ -62,6 +63,11 @@ class Matrix:
     @property
     def dtype(self):
         return self.array.dtype
+
+    def astype(self, dtype):
+        assert not (self.dtype == backend.complex_dtype and dtype == backend.real_dtype)
+        self.array = xp.asarray(self.array, dtype=dtype)
+        return self
 
     def abs(self):
         return self.__class__(xp.abs(self.array))

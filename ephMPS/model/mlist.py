@@ -29,6 +29,10 @@ class MolList(object):
         # reusable mpos for the system
         self.mpos = dict()
 
+        # originally designed for symmetry enforced evolution. Not implemented
+        # need symmetric MPO but we currently don't have one.
+        self.is_symmetric = self.check_symmetric()
+
     @property
     def mol_num(self):
         return len(self.mol_list)
@@ -51,6 +55,17 @@ class MolList(object):
                 return False
         return True
 
+    def check_symmetric(self):
+        # first check for j matrix
+        rot = np.rot90(self.j_matrix)
+        if not np.allclose(rot, rot.T):
+            return False
+        # then check for mols
+        for i in range(len(self.mol_list) // 2):
+            if self.mol_list[i] != self.mol_list[-i]:
+                return False
+        return True
+
     def __getitem__(self, idx):
         return self.mol_list[idx]
 
@@ -67,6 +82,7 @@ class MolList(object):
 
 
 def construct_j_matrix(mol_num, j_constant):
+    # nearest neighbour interaction
     j_constant_au = j_constant.as_au()
     j_matrix = np.zeros((mol_num, mol_num))
     for i in range(mol_num):

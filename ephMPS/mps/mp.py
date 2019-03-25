@@ -25,7 +25,7 @@ class MatrixProduct:
         new_mp.mol_list = mol_list
         if not raw_list:
             return new_mp
-        new_mp.dtype = raw_list[0].dtype.type
+        new_mp.dtype = backend.complex_dtype
         for mt in raw_list:
             new_mp.append(mt)
         return new_mp
@@ -363,7 +363,7 @@ class MatrixProduct:
     def angle(self, other):
         return abs(self.conj().dot(other))
 
-    def scale(self, val, inplace=False):
+    def scale2(self, val, inplace=False):
         new_mp = self if inplace else self.copy()
         if np.iscomplexobj(val):
             new_mp.to_complex(inplace=True)
@@ -382,6 +382,36 @@ class MatrixProduct:
         # the modification will work. So explicitly use two ways for now
         return new_mp
 
+    def scale(self, val, inplace=False):
+        new_mp = self if inplace else self.copy()
+        # np.iscomplex regards 1+0j as non complex while np.iscomplexobj
+        # regards 1+0j as complex. The former is the desired behavior
+        if np.iscomplex(val):
+            new_mp.to_complex(inplace=True)
+            # no need to care about negative because no `abs` will be done
+            negative = False
+        else:
+            if isinstance(val, complex):
+                val = val.real
+            negative = val < 0
+            val = abs(val)
+        # Note matrices are read-only
+        # there are two ways to do the scaling
+        if np.abs(np.log(np.abs(val))) < 0.01:
+            # Thr first way. The operation performs very quickly,
+            # but leads to high float point error when val is very large or small
+            new_mp[self.qnidx] = new_mp[self.qnidx] * val
+        else:
+            # The second way. High time complexity but numerically more feasible.
+            root_val = val ** (1 / len(self))
+            for idx, mt in enumerate(self):
+                new_mp[idx] = mt * root_val
+        # the two ways could be united. I'm currently not confident enough that
+        # the modification will work. So explicitly use two ways for now
+        if negative:
+            new_mp[0] *= -1
+        return new_mp
+
     def to_complex(self, inplace=False):
         if inplace:
             new_mp = self
@@ -389,6 +419,9 @@ class MatrixProduct:
             new_mp = self.metacopy()
         new_mp.dtype = backend.complex_dtype
         for i, mt in enumerate(self):
+            if mt is None:
+                # dummy mt after metacopy. Bad idea. Remove the dummy thing when feasible
+                continue
             new_mp[i] = mt.to_complex(inplace)
         return new_mp
 
@@ -426,18 +459,19 @@ class MatrixProduct:
 
     def array2mt(self, array, idx):
         if isinstance(array, Matrix):
-            mt = array
+            mt = array.astype(self.dtype)
         else:
             mt = Matrix.interned(array, self.is_mpo, dtype=self.dtype)
         if self.use_dummy_qn:
             mt.sigmaqn = np.zeros(mt.pdim_prod, dtype=np.int)
         else:
             mt.sigmaqn = self._get_sigmaqn(idx)
+        assert mt.array.any()
         return mt
 
     @property
     def total_bytes(self):
-        return sum([array.nbytes for array in self])
+        return sum(array.nbytes for array in self)
 
     def set_peak_bytes(self, new_bytes=None):
         if new_bytes is None:
@@ -445,6 +479,9 @@ class MatrixProduct:
         if new_bytes < self.peak_bytes:
             return
         self.peak_bytes = new_bytes
+        want_to_debug_memory = False
+        if not want_to_debug_memory:
+            return
         stack = "".join(traceback.format_stack(inspect.stack()[2].frame, 1)).replace(
             "\n", " "
         )

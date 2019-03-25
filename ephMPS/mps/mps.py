@@ -34,7 +34,6 @@ from ephMPS.utils import (
     OptimizeConfig,
     CompressCriteria,
     CompressConfig,
-    RungeKutta,
     EvolveConfig,
     EvolveMethod,
     sizeof_fmt,
@@ -133,6 +132,57 @@ def adaptive_tdvp(fun):
 
     return f
 
+"""
+Tried to just use substeps. Result not so good. Can't control step well.
+Sometimes steps too large, sometimes too small
+def adaptive_tdvp(fun):
+    @functools.wraps(fun)
+    def f(self: "Mps", mpo, evolve_dt):
+        if not self.evolve_config.adaptive:
+            return fun(self, mpo, evolve_dt)
+        if evolve_dt < 0:
+            raise NotImplementedError("adaptive tdvp with negative evolve dt not implemented")
+        config = self.evolve_config
+        # requires exactly divisible
+        assert evolve_dt % config.evolve_dt == 0
+        accumulated_dt = 0
+        # Tried to use angle and energy as adaptive descriptor. Angle not working well, the
+        # threshold is too flexible. A simple, useful threshold that balances accuracy and
+        # time cost can't be found. Energy is too simple, can't guarantee accuracy.
+        start = self  # the mps to start with
+        while True:
+            start_energy = start.expectation(mpo)
+            logger.debug(f"adaptive dt: {config.evolve_dt}, start energy: {start_energy}")
+            mps = fun(start, mpo, config.evolve_dt)
+            energy = mps.expectation(mpo)
+            stat: DescribeResult = mps.evolve_config.stat
+            if 1e-3 < abs(energy - start_energy) or 4 < stat.mean:
+                # not converged
+                logger.debug(f"tdvp not converged, energy: {energy}")
+                if config.evolve_dt / (evolve_dt - accumulated_dt) < 1e-2:
+                    raise RuntimeError("too many sub-steps required in a single step")
+                config.evolve_dt /= 2
+                continue
+            else:
+                # converged
+                accumulated_dt += config.evolve_dt
+                logger.debug(
+                    f"evolution converged with dt: {config.evolve_dt}, accumulated: {accumulated_dt}"
+                )
+                if np.isclose(accumulated_dt, evolve_dt):
+                    break
+                start = mps
+        if mps.evolve_config.stat.mean < 3:
+            # a larger dt could be used
+            config.enlarge_evolve_dt()
+            logger.debug(
+                f"evolution easily converged, new evolve_dt: {config.evolve_dt}"
+            )
+            mps.evolve_config = config
+        return mps
+
+    return f
+"""
 
 class Mps(MatrixProduct):
     @classmethod
@@ -155,7 +205,7 @@ class Mps(MatrixProduct):
                 indices = [i for i, x in enumerate(qnbig) if x == iblock]
 
                 if len(indices) != 0:
-                    a = np.random.random([len(indices), len(indices)]) - 0.5
+                    a: np.ndarray = np.random.random([len(indices), len(indices)]) - 0.5
                     a = a + a.T
                     s, u = scipy.linalg.eigh(a=a)
                     u_set.append(svd_qn.blockrecover(indices, u, len(qnbig)))
@@ -213,7 +263,7 @@ class Mps(MatrixProduct):
 
         for mol in mol_list:
             # electron mps
-            mps.append(np.array([1, 0]).reshape(1, 2, 1))
+            mps.append(np.array([1, 0]).reshape((1, 2, 1)))
             # ph mps
             for ph in mol.dmrg_phs:
                 for iboson in range(ph.nqboson):
@@ -498,6 +548,8 @@ class Mps(MatrixProduct):
         assert self.is_left_canon == other.is_left_canon
 
         new_mps = other.metacopy()
+        if self.is_complex:
+            new_mps.to_complex(inplace=True)
         new_mps.compress_config.update(self.compress_config)
 
         if self.is_mps:  # MPS
@@ -509,7 +561,7 @@ class Mps(MatrixProduct):
                 assert pdim == mtb.shape[1]
                 new_ms = zeros(
                     [mta.shape[0] + mtb.shape[0], pdim, mta.shape[2] + mtb.shape[2]],
-                    dtype=mta.dtype,
+                    dtype=new_mps.dtype,
                 )
                 new_ms[: mta.shape[0], :, : mta.shape[2]] = mta
                 new_ms[mta.shape[0] :, :, mta.shape[2] :] = mtb
@@ -533,7 +585,7 @@ class Mps(MatrixProduct):
                         pdimd,
                         mta.shape[3] + mtb.shape[3],
                     ],
-                    dtype=mta.dtype,
+                    dtype=new_mps.dtype,
                 )
                 new_ms[: mta.shape[0], :, :, : mta.shape[3]] = mta[:, :, :, :]
                 new_ms[mta.shape[0] :, :, :, mta.shape[3] :] = mtb[:, :, :, :]
@@ -607,40 +659,27 @@ class Mps(MatrixProduct):
             self.use_dummy_qn = True
             self.clear_qn()
 
-        mps = self
         if self.evolve_config.should_adjust_bond_order:
             logger.debug("adjusting bond order")
             # use this custom compress method for tdvp
             orig_compress_config: CompressConfig = self.compress_config.copy()
-            self.compress_config.criteria = CompressCriteria.both
-            # use a tight threshold to keep more basis
-            self.compress_config.threshold = 1e-6
+            self.compress_config.criteria = CompressCriteria.fixed
             self.compress_config.set_bondorder(
                 len(self) + 1, self.evolve_config.max_bond_order
             )
             config = self.evolve_config.copy()
-            if 5 < np.array(self.bond_dims).max():
-                # use a cheap method
-                pc_dt = evolve_dt / 10
-                config.rk_config = RungeKutta("Forward_Euler")
-                mps = self._evolve_dmrg_prop_and_compress(mpo, pc_dt, config)
-                self.compress_config = mps.compress_config = orig_compress_config
-                evolve_dt -= pc_dt
-                mps.evolve_config.evolve_dt = evolve_dt
-            else:
-                # RK45 not too expensive
-                config.adaptive = True
-                config.evolve_dt = evolve_dt
-                new_mps = self._evolve_dmrg_prop_and_compress(mpo, evolve_dt, config)
-                self.compress_config = new_mps.compress_config = orig_compress_config
-                return new_mps
+            config.adaptive = True
+            config.evolve_dt = evolve_dt
+            new_mps = self._evolve_dmrg_prop_and_compress(mpo, evolve_dt, config)
+            self.compress_config = new_mps.compress_config = orig_compress_config
+            return new_mps
 
         method_mapping = {
-            EvolveMethod.tdvp_mctdh: mps._evolve_dmrg_tdvp_mctdh,
-            EvolveMethod.tdvp_mctdh_new: mps._evolve_dmrg_tdvp_mctdhnew,
-            EvolveMethod.tdvp_ps: mps._evolve_dmrg_tdvp_ps,
+            EvolveMethod.tdvp_mctdh: self._evolve_dmrg_tdvp_mctdh,
+            EvolveMethod.tdvp_mctdh_new: self._evolve_dmrg_tdvp_mctdhnew,
+            EvolveMethod.tdvp_ps: self._evolve_dmrg_tdvp_ps,
         }
-        method = method_mapping[mps.evolve_config.scheme]
+        method = method_mapping[self.evolve_config.scheme]
         new_mps = method(mpo, evolve_dt)
         return new_mps
 
@@ -708,7 +747,6 @@ class Mps(MatrixProduct):
                 )
             return compressed_sum(termlist)
 
-    @adaptive_tdvp
     def _evolve_dmrg_tdvp_mctdh(self, mpo, evolve_dt) -> "Mps":
         # TDVP for original MCTDH
         if self.is_right_canon:
@@ -792,7 +830,7 @@ class Mps(MatrixProduct):
         rtensor = ones((1, 1, 1))
 
         new_mps = mps.copy()
-
+        cmf_rk_steps = []
         for imps in range(len(mps)):
             shape = list(mps[imps].shape)
 
@@ -834,7 +872,7 @@ class Mps(MatrixProduct):
             sol = solve_ivp(
                 func, (0, evolve_dt), mps[imps].ravel().array, method="RK45"
             )
-            # logger.debug(f"CMF steps: {len(sol.t)}")
+            cmf_rk_steps.append(len(sol.t))
             ms = sol.y[:, -1].reshape(shape)
             # check for othorgonal
             # e = np.tensordot(ms, ms, axes=((0, 1), (0, 1)))
@@ -855,16 +893,16 @@ class Mps(MatrixProduct):
         new_mps._switch_domain()
         new_mps.canonicalise()
 
+        steps_stat = stats.describe(cmf_rk_steps)
+        logger.debug(f"TDVP-MCTDH CMF steps: {steps_stat}")
+        new_mps.evolve_config.stat = steps_stat
+
         return new_mps
 
     @adaptive_tdvp
     def _evolve_dmrg_tdvp_ps(self, mpo, evolve_dt) -> "Mps":
         # TDVP projector splitting
         mps = self.to_complex()  # make a copy
-        # switch to make sure it's symmetric
-        if mps.evolve_config.should_switch_side:
-            logger.debug("switch side")
-            mps.canonicalise()
         mps_conj = mps.conj()  # another copy, so 3x memory is used.
 
         # construct the environment matrix
@@ -873,7 +911,7 @@ class Mps(MatrixProduct):
         environ.construct(mps, mps_conj, mpo, "L")
         environ.construct(mps, mps_conj, mpo, "R")
 
-        rk_steps = []
+        cmf_rk_steps = []
         # sweep for 2 rounds
         for i in range(2):
             for imps in mps.iter_idx_list(full=True):
@@ -904,7 +942,7 @@ class Mps(MatrixProduct):
                 sol = solve_ivp(
                     func, (0, evolve_dt / 2.0), mps[imps].ravel().array, method="RK45"
                 )
-                rk_steps.append(len(sol.t))
+                cmf_rk_steps.append(len(sol.t))
                 mps_t = sol.y[:, -1].reshape(shape)
                 qnbigl, qnbigr = mps._get_big_qn(imps)
                 u, qnlset, v, qnrset = svd_qn.Csvd(
@@ -937,7 +975,7 @@ class Mps(MatrixProduct):
                     sol_u = solve_ivp(
                         func_u, (0, -evolve_dt / 2), u.ravel(), method="RK45"
                     )
-                    rk_steps.append(len(sol_u.t))
+                    cmf_rk_steps.append(len(sol_u.t))
                     mps[imps - 1] = tensordot(
                         mps[imps - 1].array,
                         sol_u.y[:, -1].reshape(shape_u),
@@ -964,7 +1002,7 @@ class Mps(MatrixProduct):
                     sol_svt = solve_ivp(
                         func_svt, (0, -evolve_dt / 2), vt.ravel(), method="RK45"
                     )
-                    rk_steps.append(len(sol_svt.t))
+                    cmf_rk_steps.append(len(sol_svt.t))
                     mps[imps + 1] = tensordot(
                         sol_svt.y[:, -1].reshape(shape_svt),
                         mps[imps + 1].array,
@@ -977,9 +1015,12 @@ class Mps(MatrixProduct):
                     mps_conj[imps] = mps[imps].conj()
             mps._switch_domain()
 
-        logger.debug(f"TDVP-PS RK steps: {stats.describe(rk_steps)}")
+        steps_stat = stats.describe(cmf_rk_steps)
+        logger.debug(f"TDVP-PS CMF steps: {steps_stat}")
+        mps.evolve_config.stat = steps_stat
 
         return mps
+
 
     def evolve_exact(self, h_mpo, evolve_dt, space):
         MPOprop, HAM, Etot = self.hybrid_exact_propagator(
@@ -1127,6 +1168,10 @@ class Mps(MatrixProduct):
             self.bond_dims,
             e_occupations_str,
         )
+
+    def __setitem__(self, key, value):
+        self.invalidate_cache()
+        return super().__setitem__(key, value)
 
 
 def projector(ms: xp.ndarray) -> xp.ndarray:

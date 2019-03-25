@@ -5,7 +5,6 @@ import pickle
 import os
 
 import pytest
-import numpy as np
 
 from ephMPS.mps import Mpo
 from ephMPS.tests.parameter import mol_list

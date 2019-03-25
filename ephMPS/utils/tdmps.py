@@ -97,6 +97,7 @@ class TdMpsJob(object):
                 len(self.tdmps_list), target_steps, new_evolve_time, target_time
             )
             logger.info("{} begin.".format(step_str))
+            # XXX: the actual evolve step here
             new_mps = self.evolve_single_step(evolve_dt=evolve_dt)
             if self.evolve_config.adaptive:
                 # update evolve_dt
@@ -113,7 +114,11 @@ class TdMpsJob(object):
                 predict_step, predicted_time = predict_time(real_times, nsteps)
                 logger.info("predict %s at step %d." % (predicted_time, predict_step))
             if self.dump_dir is not None and self.job_name is not None:
-                self.dump_dict()
+                try:
+                    self.dump_dict()
+                except IOError as e:  # never quit calculation because of IOError
+                    logger.warning("dumping dict failed with IOError")
+                    logger.warning(e)
             if self.stop_evolve_criteria():
                 logger.info(
                     "Criteria to stop the evolution has met. Stop the evolution"
@@ -155,8 +160,9 @@ class TdMpsJob(object):
             if os.path.exists(bak_path):
                 os.remove(bak_path)
             os.rename(file_path, bak_path)
+        d = self.get_dump_dict()
         with open(file_path, "w") as fout:
-            json.dump(self.get_dump_dict(), fout, indent=2)
+            json.dump(d, fout, indent=2)
         if os.path.exists(bak_path):
             os.remove(bak_path)
 

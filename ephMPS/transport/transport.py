@@ -128,6 +128,7 @@ class ChargeTransport(TdMpsJob):
                 mt = evecs.dot(evecs.T).dot(mt)
             else:
                 assert False
+            logger.debug(f"relaxed mt: {mt}")
             gs_mp[start_idx + i] = mt.reshape([1] + list(mt.shape) + [1])
 
         creation_operator = Mpo.onsite(
@@ -152,6 +153,7 @@ class ChargeTransport(TdMpsJob):
         init_mp = self.create_electron(gs_mp)
         energy = Quantity(init_mp.expectation(tentative_mpo))
         self.mpo = Mpo(self.mol_list, scheme=3, offset=energy)
+        logger.info(f"mpo bond dims: {self.mpo.bond_dims}")
         self.mpo_e_lbound = solver.find_lowest_energy(self.mpo, 1, 20)
         init_mp.canonicalise()
         init_mp.evolve_config = self.evolve_config

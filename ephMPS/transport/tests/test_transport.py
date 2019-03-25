@@ -6,6 +6,8 @@ import numpy as np
 import pytest
 
 from ephMPS.model import Phonon, Mol, MolList
+from ephMPS.mps import Mps, Mpo
+from ephMPS.mps.solver import optimize_mps
 from ephMPS.transport import ChargeTransport, EDGE_THRESHOLD
 from ephMPS.transport.transport import (
     calc_reduced_density_matrix,
@@ -19,6 +21,17 @@ from ephMPS.utils import (
     EvolveMethod,
     EvolveConfig,
 )
+
+
+def test_init_state():
+    ph = Phonon.simple_phonon(Quantity(1), Quantity(1), 10)
+    mol_list = MolList([Mol(Quantity(0), [ph])], Quantity(0))
+    mpo = Mpo(mol_list, scheme=3)
+    mps = Mps.random(mpo, 1, 10)
+    optimize_mps(mps, mpo)
+    ct = ChargeTransport(mol_list)
+    assert mps.angle(ct.latest_mps) == pytest.approx(1)
+
 
 # the temperature should be compatible with the low vibration frequency in TestBandLimitFiniteT
 # otherwise underflow happens in exact propagator
@@ -41,8 +54,8 @@ def get_analytical_r_square(time_series: np.ndarray):
 
 def assert_band_limit(ct, rtol):
     analytical_r_square = get_analytical_r_square(ct.evolve_times_array)
-    # has evolved to the edge
-    assert EDGE_THRESHOLD < ct.latest_mps.e_occupations[0]
+    # has evolved to the edge but not too large
+    assert EDGE_THRESHOLD < ct.latest_mps.e_occupations[0] < 0.1
     # value OK
     assert np.allclose(analytical_r_square, ct.r_square_array, rtol=rtol)
 
@@ -50,7 +63,7 @@ def assert_band_limit(ct, rtol):
 @pytest.mark.parametrize(
     "method, evolve_dt, nsteps, rtol",
     (
-        (EvolveMethod.prop_and_compress, 4, 25, 1e-3),
+        # (EvolveMethod.prop_and_compress, 4, 25, 1e-3),
         # not working. Moves slightly slower. Dunno why.
         # (EvolveMethod.tdvp_mctdh_new, 2, 50, 1e-2),
         (EvolveMethod.tdvp_ps, 2, 100, 1e-3),
@@ -58,7 +71,7 @@ def assert_band_limit(ct, rtol):
 )
 def test_bandlimit_zero_t(method, evolve_dt, nsteps, rtol):
     np.random.seed(0)
-    evolve_config = EvolveConfig(method, enhance_symmetry=True)
+    evolve_config = EvolveConfig(method)
     ct = ChargeTransport(band_limit_mol_list, evolve_config=evolve_config)
     ct.stop_at_edge = True
     ct.evolve(evolve_dt, nsteps)
@@ -66,10 +79,14 @@ def test_bandlimit_zero_t(method, evolve_dt, nsteps, rtol):
 
 
 @pytest.mark.parametrize(
-    "method", (EvolveMethod.prop_and_compress, EvolveMethod.tdvp_ps)
+    "method", (
+            EvolveMethod.prop_and_compress,
+            EvolveMethod.tdvp_ps,
+    )
 )
 @pytest.mark.parametrize("init_dt", (1e-1, 20))
 def test_adaptive_zero_t(method, init_dt):
+    np.random.seed(0)
     evolve_config = EvolveConfig(scheme=method, evolve_dt=init_dt, adaptive=True)
     ct = ChargeTransport(
         band_limit_mol_list, evolve_config=evolve_config, stop_at_edge=True

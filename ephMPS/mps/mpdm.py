@@ -126,8 +126,11 @@ class MpDm(Mps, Mpo):
         return new_mpdm
 
     def apply(self, mp, canonicalise=False):
+        # Note usually mp is an mpo
         assert not mp.is_mps
         new_mps = self.metacopy()
+        if mp.is_complex:
+            new_mps.to_complex(inplace=True)
         # todo: also duplicate with MPO apply. What to do???
         for i, (mt_self, mt_other) in enumerate(zip(self, mp)):
             assert mt_self.shape[2] == mt_other.shape[1]
