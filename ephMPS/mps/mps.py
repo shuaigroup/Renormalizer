@@ -186,7 +186,9 @@ def adaptive_tdvp(fun):
 
 class Mps(MatrixProduct):
     @classmethod
-    def random(cls, mpo, nexciton, m_max, percent=0):
+    def random(cls, mpo, nexciton, m_max, percent=1.0):
+        # a high percent make the result more random
+        # sometimes critical for getting correct optimization result
         mps = cls()
         mps.mol_list = mpo.mol_list
         mps.qn = [[0]]

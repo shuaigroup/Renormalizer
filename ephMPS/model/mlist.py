@@ -1,6 +1,5 @@
 # -*- coding: utf-8 -*-
 # Author: Jiajun Ren <jiajunren0522@gmail.com>
-from __future__ import absolute_import
 
 from collections import OrderedDict
 from typing import List, Union
@@ -65,6 +64,17 @@ class MolList(object):
             if self.mol_list[i] != self.mol_list[-i]:
                 return False
         return True
+
+    def sub_mollist(self, span=None):
+        assert self.mol_num % 2 == 1
+        center_idx = self.mol_num // 2
+        if span is None:
+            span = self.mol_num // 10
+        start_idx = center_idx-span
+        end_idx = center_idx+span+1
+        sub_list =self.mol_list[start_idx:end_idx]
+        sub_matrix = self.j_matrix[start_idx:end_idx, start_idx:end_idx]
+        return self.__class__(sub_list, sub_matrix), start_idx
 
     def __getitem__(self, idx):
         return self.mol_list[idx]

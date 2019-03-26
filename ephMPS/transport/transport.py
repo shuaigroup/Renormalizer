@@ -5,8 +5,10 @@
 from __future__ import division, print_function, absolute_import
 
 import logging
+from enum import Enum
 from collections import OrderedDict
 from functools import partial
+from typing import Union
 
 import numpy as np
 
@@ -21,9 +23,8 @@ logger = logging.getLogger(__name__)
 EDGE_THRESHOLD = 1e-4
 
 
-def calc_reduced_density_matrix_straight(
-    mp
-):  # this procedure is **very** memory consuming
+# this procedure is **very** memory consuming
+def calc_reduced_density_matrix_straight(mp):
     if mp.is_mpdm:
         density_matrix_product = mp.apply(mp.conj_trans())
         # density_matrix_product = mp
@@ -82,6 +83,12 @@ def calc_reduced_density_matrix(mp):
     return reduced_density_matrix
 
 
+class InitElectron(Enum):
+    fc = "franc-condon excitation"
+    relaxed = "analytically relaxed phonon(s)"
+    polaron = "optimized polaron"
+
+
 class ChargeTransport(TdMpsJob):
     def __init__(
         self,
@@ -90,12 +97,14 @@ class ChargeTransport(TdMpsJob):
         compress_config=None,
         evolve_config=None,
         stop_at_edge=True,
+        init_electron=InitElectron.relaxed,
         rdm=False,
     ):
         self.mol_list: MolList = mol_list
         self.temperature = temperature
         self.mpo = None
         self.mpo_e_lbound = None  # the ground energy of the hamiltonian
+        self.init_electron=init_electron
         super(ChargeTransport, self).__init__(compress_config, evolve_config)
         self.energies = [self.tdmps_list[0].expectation(self.mpo)]
         self.reduced_density_matrices = []
@@ -112,7 +121,15 @@ class ChargeTransport(TdMpsJob):
     def mol_num(self):
         return self.mol_list.mol_num
 
-    def create_electron(self, gs_mp):
+    def create_electron_fc(self, gs_mp):
+        center_mol_idx = self.mol_num // 2
+        creation_operator = Mpo.onsite(
+            self.mol_list, r"a^\dagger", mol_idx_set={center_mol_idx}
+        )
+        mps = creation_operator.apply(gs_mp)
+        return mps
+
+    def create_electron_relaxed(self, gs_mp):
         assert np.allclose(gs_mp.bond_dims, np.ones_like(gs_mp.bond_dims))
         center_mol_idx = self.mol_num // 2
         center_mol = self.mol_list[center_mol_idx]
@@ -137,6 +154,36 @@ class ChargeTransport(TdMpsJob):
         mps = creation_operator.apply(gs_mp)
         return mps
 
+    def create_electron_polaron(self, gs_mp: Union[Mps, MpDm]):
+        # finite temperature not implemented
+        assert self.temperature == 0
+        assert np.allclose(gs_mp.bond_dims, np.ones_like(gs_mp.bond_dims))
+        assert gs_mp.is_left_canon
+        sub_mollist, start_molidx = self.mol_list.sub_mollist()
+        sub_mpo = Mpo(sub_mollist, scheme=3)
+        mps = Mps.random(sub_mpo, 1, 10)
+        energy = solver.optimize_mps(mps, sub_mpo)
+        # do the canonicalise to make sure it's still left canonicalised
+        mps = mps.canonicalise().compress()
+        logger.info(f"optimized sub mps: f{mps}, energy: {energy}")
+        assert mps.is_left_canon
+        start_idx = self.mol_list.ephtable.electron_idx(start_molidx)
+        for i in range(len(mps)):
+            gs_mp[start_idx + i] = mps[i]
+            gs_mp.qn[start_idx + i] = mps.qn[i]
+        while start_idx + i != len(gs_mp)-1:
+            i += 1
+            gs_mp.qn[start_idx+i] = [1]
+        gs_mp.qntot += 1
+        return gs_mp
+
+    def create_electron(self, gs_mp):
+        method_mapping = {InitElectron.fc: self.create_electron_fc,
+                          InitElectron.relaxed: self.create_electron_relaxed,
+                          InitElectron.polaron: self.create_electron_polaron
+                          }
+        return method_mapping[self.init_electron](gs_mp)
+
     def init_mps(self):
         # self.mpo = Mpo(self.mol_list, scheme=3)
         tentative_mpo = Mpo(self.mol_list, scheme=3)
@@ -154,6 +201,7 @@ class ChargeTransport(TdMpsJob):
         energy = Quantity(init_mp.expectation(tentative_mpo))
         self.mpo = Mpo(self.mol_list, scheme=3, offset=energy)
         logger.info(f"mpo bond dims: {self.mpo.bond_dims}")
+        logger.info(f"mpo physical dims: {self.mpo.pbond_list}")
         self.mpo_e_lbound = solver.find_lowest_energy(self.mpo, 1, 20)
         init_mp.canonicalise()
         init_mp.evolve_config = self.evolve_config

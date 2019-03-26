@@ -8,7 +8,7 @@ import pytest
 from ephMPS.model import Phonon, Mol, MolList
 from ephMPS.mps import Mps, Mpo
 from ephMPS.mps.solver import optimize_mps
-from ephMPS.transport import ChargeTransport, EDGE_THRESHOLD
+from ephMPS.transport import ChargeTransport, InitElectron, EDGE_THRESHOLD
 from ephMPS.transport.transport import (
     calc_reduced_density_matrix,
     calc_reduced_density_matrix_straight,
@@ -44,7 +44,7 @@ ph_list = [
 ]
 j_constant = Quantity(0.8, "eV")
 band_limit_mol_list = MolList(
-    [Mol(Quantity(3.87e-3, "a.u."), ph_list)] * mol_num, j_constant
+    [Mol(Quantity(0), ph_list)] * mol_num, j_constant
 )
 
 
