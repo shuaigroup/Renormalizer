@@ -6,6 +6,7 @@ import numpy as np
 import scipy
 
 from ephMPS.model.ephtable import EphTable
+from ephMPS.model import MolList
 from ephMPS.mps.backend import xp
 from ephMPS.mps.matrix import moveaxis, tensordot, ones
 from ephMPS.mps.mp import MatrixProduct
@@ -499,7 +500,7 @@ class Mpo(MatrixProduct):
 
     def __init__(
         self,
-        mol_list=None,
+        mol_list: MolList=None,
         scheme=2,
         rep="star",
         elocal_offset=None,
@@ -517,6 +518,8 @@ class Mpo(MatrixProduct):
         super(Mpo, self).__init__()
         if mol_list is None:
             return
+        if mol_list.pure_hartree:
+            raise ValueError("Can't construct MPO for pure hartree model")
 
         self.mol_list = mol_list
         self.scheme = scheme

@@ -16,7 +16,7 @@ from ephMPS.mps.backend import backend
 from ephMPS.mps.matrix import tensordot, ones
 from ephMPS.mps import Mpo, Mps, MpDm, solver
 from ephMPS.model import MolList
-from ephMPS.utils import TdMpsJob, Quantity, CompressCriteria
+from ephMPS.utils import TdMpsJob, Quantity, CompressCriteria, CompressConfig
 
 logger = logging.getLogger(__name__)
 
@@ -161,8 +161,10 @@ class ChargeTransport(TdMpsJob):
         assert gs_mp.is_left_canon
         sub_mollist, start_molidx = self.mol_list.sub_mollist()
         sub_mpo = Mpo(sub_mollist, scheme=3)
-        mps = Mps.random(sub_mpo, 1, 10)
+        mps = Mps.random(sub_mollist, 1, 10)
         energy = solver.optimize_mps(mps, sub_mpo)
+        # use a more strict threshold
+        mps.compress_config = CompressConfig(threshold=1e-5)
         # do the canonicalise to make sure it's still left canonicalised
         mps = mps.canonicalise().compress()
         logger.info(f"optimized sub mps: f{mps}, energy: {energy}")
@@ -202,7 +204,7 @@ class ChargeTransport(TdMpsJob):
         self.mpo = Mpo(self.mol_list, scheme=3, offset=energy)
         logger.info(f"mpo bond dims: {self.mpo.bond_dims}")
         logger.info(f"mpo physical dims: {self.mpo.pbond_list}")
-        self.mpo_e_lbound = solver.find_lowest_energy(self.mpo, 1, 20)
+        self.mpo_e_lbound = solver.find_lowest_energy(self.mpo, 1, 20, with_hartree=False)
         init_mp.canonicalise()
         init_mp.evolve_config = self.evolve_config
         # init the compress config if not using threshold

@@ -471,10 +471,11 @@ class LinearSpectra(TdHartree):
 
 class Dynamics(TdHartree):
     def __init__(
-        self, mol_list, property_ops, temperature=Quantity(0, "K"), insteps=None
+        self, mol_list, property_ops, temperature=Quantity(0, "K"), insteps=None, init_idx=0
     ):
         self.property_ops = property_ops
         self.properties = [[] for _ in property_ops]
+        self.init_idx = init_idx
         super(Dynamics, self).__init__(
             mol_list, 1, "hardcore boson", "unitary", temperature, insteps
         )
@@ -483,7 +484,7 @@ class Dynamics(TdHartree):
     def init_zt(self):
         WFN, Etot = SCF(self.mol_list, 0)
         dipoleO = construct_onsiteO(
-            self.mol_list, r"a^\dagger", dipole=True, mol_idx_set={0}
+            self.mol_list, r"a^\dagger", dipole=True, mol_idx_set={self.init_idx}
         )
         WFN[0] = dipoleO.dot(WFN[0])
         mflib.canonical_normalize(WFN)
@@ -496,7 +497,7 @@ class Dynamics(TdHartree):
         DM = self._FT_DM(0)
 
         dipoleO = construct_onsiteO(
-            self.mol_list, r"a^\dagger", dipole=True, mol_idx_set={0}
+            self.mol_list, r"a^\dagger", dipole=True, mol_idx_set={self.init_idx}
         )
         DM[0] = dipoleO.dot(DM[0])
         mflib.canonical_normalize(DM)

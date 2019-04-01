@@ -14,6 +14,7 @@ au_ratio_dict = {
     "meV": constant.au2ev * 1e3,
     "eV": constant.au2ev,
     "cm^{-1}": 1 / constant.cm2au,
+    "cm-1": 1 / constant.cm2au,
     "K": constant.au2K,
     "a.u.": 1,
     "au": 1,

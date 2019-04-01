@@ -76,6 +76,13 @@ class MolList(object):
         sub_matrix = self.j_matrix[start_idx:end_idx, start_idx:end_idx]
         return self.__class__(sub_list, sub_matrix), start_idx
 
+    def get_pure_dmrg_mollist(self):
+        l = []
+        for mol in self.mol_list:
+            mol = Mol(Quantity(mol.elocalex), mol.dmrg_phs, mol.dipole)
+            l.append(mol)
+        return self.__class__(l, self.j_matrix)
+
     def __getitem__(self, idx):
         return self.mol_list[idx]
 

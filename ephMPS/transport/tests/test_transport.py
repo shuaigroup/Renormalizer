@@ -27,7 +27,7 @@ def test_init_state():
     ph = Phonon.simple_phonon(Quantity(1), Quantity(1), 10)
     mol_list = MolList([Mol(Quantity(0), [ph])], Quantity(0))
     mpo = Mpo(mol_list, scheme=3)
-    mps = Mps.random(mpo, 1, 10)
+    mps = Mps.random(mol_list, 1, 10)
     optimize_mps(mps, mpo)
     ct = ChargeTransport(mol_list)
     assert mps.angle(ct.latest_mps) == pytest.approx(1)

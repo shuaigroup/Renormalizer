@@ -110,9 +110,11 @@ class TdMpsJob(object):
                 "%s complete, time cost %s. %s" % (step_str, time_cost, mps_abstract)
             )
             real_times.append(new_real_time)
+            """
             if 10 < i:  # otherwise samples too small to make a prediction
                 predict_step, predicted_time = predict_time(real_times, nsteps)
                 logger.info("predict %s at step %d." % (predicted_time, predict_step))
+            """
             if self.dump_dir is not None and self.job_name is not None:
                 try:
                     self.dump_dict()

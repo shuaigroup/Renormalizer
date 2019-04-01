@@ -10,6 +10,7 @@ from scipy import stats
 from cached_property import cached_property
 
 
+from ephMPS.model import MolList
 from ephMPS.lib import solve_ivp
 from ephMPS.mps import svd_qn
 from ephMPS.mps.matrix import (
@@ -186,15 +187,15 @@ def adaptive_tdvp(fun):
 
 class Mps(MatrixProduct):
     @classmethod
-    def random(cls, mpo, nexciton, m_max, percent=1.0):
+    def random(cls, mol_list: MolList, nexciton, m_max, percent=1.0):
         # a high percent make the result more random
         # sometimes critical for getting correct optimization result
         mps = cls()
-        mps.mol_list = mpo.mol_list
+        mps.mol_list = mol_list
         mps.qn = [[0]]
         dim_list = [1]
 
-        for imps in range(len(mpo) - 1):
+        for imps in range(len(mol_list.ephtable) - 1):
 
             # quantum number
             qnbig = np.add.outer(mps.qn[imps], mps._get_sigmaqn(imps)).flatten()
@@ -706,15 +707,17 @@ class Mps(MatrixProduct):
                 new_mps1 = compressed_sum(scaled_termlist[:-1])
                 new_mps2 = compressed_sum([new_mps1, scaled_termlist[-1]])
                 angle = new_mps1.angle(new_mps2)
-                logger.debug(f"angle: {angle:f}")
-                # some tests show that five 9s mean totally safe
+                energy1 = self.expectation(mpo)
+                energy2 = new_mps1.expectation(mpo)
+                logger.debug(f"angle: {angle:f}. e1: {energy1}. e2: {energy2}")
+                # some tests show that five 9s mean safe
                 # four 9s with last digit smaller than 5 mean unstably is coming
                 # three 9s explode immediately
-                if 0.99996 < angle < 1.00004:
+                if abs(energy1 - energy2) < 1e-3 and 0.99996 < angle < 1.00004:
                     # converged
                     if abs(config.evolve_dt - evolve_dt) / evolve_dt < 1e-5:
                         # equal evolve_dt
-                        if 0.99999 < angle < 1.00001:
+                        if abs(energy1 - energy2) < 1e-4 and 0.99999 < angle < 1.00001:
                             # a larger dt could be used
                             config.evolve_dt *= 1.5
                             logger.debug(

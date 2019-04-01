@@ -23,16 +23,24 @@ from ephMPS.utils import Quantity
 logger = logging.getLogger(__name__)
 
 
-def find_lowest_energy(h_mpo, nexciton, Mmax):
+def find_lowest_energy(h_mpo: Mpo, nexciton, Mmax, with_hartree=True):
     logger.debug("begin finding lowest energy")
-    mps = Mps.random(h_mpo, nexciton, Mmax)
+    if with_hartree:
+        mol_list = h_mpo.mol_list
+    else:
+        mol_list = h_mpo.mol_list.get_pure_dmrg_mollist()
+    mps = Mps.random(mol_list, nexciton, Mmax)
     energy = optimize_mps(mps, h_mpo)
     return energy.min()
 
 
-def find_highest_energy(h_mpo, nexciton, Mmax):
+def find_highest_energy(h_mpo: Mpo, nexciton, Mmax, with_hartree=True):
     logger.debug("begin finding highest energy")
-    mps = Mps.random(h_mpo, nexciton, Mmax)
+    if with_hartree:
+        mol_list = h_mpo.mol_list
+    else:
+        mol_list = h_mpo.mol_list.get_pure_dmrg_mollist()
+    mps = Mps.random(mol_list, nexciton, Mmax)
     mps.optimize_config.inverse = -1.0
     energy = optimize_mps(mps, h_mpo)
     return -energy.min()
@@ -54,7 +62,7 @@ def construct_mps_mpo_2(
     """
     initialize MPS according to quantum number
     """
-    mps = Mps.random(mpo, nexciton, Mmax, percent=1)
+    mps = Mps.random(mol_list, nexciton, Mmax, percent=1)
     # print("initialize left-canonical:", mps.check_left_canonical())
 
     return mps, mpo

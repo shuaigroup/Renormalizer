@@ -63,7 +63,7 @@ class SpectraExact(SpectraTdMpsJobBase):
 
     def init_mps(self):
         mmax = self.optimize_config.procedure[0][0]
-        i_mps = Mps.random(self.h_mpo, self.nexciton, mmax, 1)
+        i_mps = Mps.random(self.h_mpo.mol_list, self.nexciton, mmax, 1)
         i_mps.optimize_config = self.optimize_config
         solver.optimize_mps(i_mps, self.h_mpo)
         if self.spectratype == "emi":

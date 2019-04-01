@@ -28,8 +28,12 @@ class Phonon(object):
     """
 
     @classmethod
-    def simplest_phonon(cls, omega, displacement):
+    def simplest_phonon(cls, omega, displacement, hartree=False, lam=False):
         # detect pdim automatically
+        if lam:
+            # the second argument is lambda
+            d = np.sqrt(2 * displacement.as_au()) / omega.as_au()
+            displacement = Quantity(d)
         pdim = 256
         while True:
             trial_phonon = cls.simple_phonon(omega, displacement, pdim)
@@ -51,14 +55,14 @@ class Phonon(object):
                     break
             else:
                 break
-        return trial_phonon
+        return cls.simple_phonon(omega, displacement, pdim ,hartree)
 
 
     @classmethod
-    def simple_phonon(cls, omega, displacement, n_phys_dim):
+    def simple_phonon(cls, omega, displacement, n_phys_dim, hartree=False):
         complete_omega = [omega, omega]
         complete_displacement = [Quantity(0), displacement]
-        return cls(complete_omega, complete_displacement, n_phys_dim)
+        return cls(complete_omega, complete_displacement, n_phys_dim, hartree=hartree)
 
     def __init__(
         self,
