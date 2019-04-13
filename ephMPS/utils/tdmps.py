@@ -105,7 +105,10 @@ class TdMpsJob(object):
             new_real_time = datetime.now()
             time_cost = new_real_time - real_times[-1]
             self.tdmps_list.append(new_mps)
-            mps_abstract = str(new_mps) if i % self.info_interval == 0 else ""
+            if self.info_interval is not None and i % self.info_interval == 0:
+                mps_abstract = str(new_mps)
+            else:
+                mps_abstract = ""
             logger.info(
                 "%s complete, time cost %s. %s" % (step_str, time_cost, mps_abstract)
             )

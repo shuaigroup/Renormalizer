@@ -72,7 +72,7 @@ def davidson1(
     toloose = numpy.sqrt(tol)
     # print('tol %g  toloose %g', tol, toloose)
 
-    if isinstance(x0, numpy.ndarray) and x0.ndim == 1:
+    if (not isinstance(x0, list)) and x0.ndim == 1:
         x0 = [x0]
     # max_cycle = min(max_cycle, x0[0].size)
     max_space = max_space + nroots * 3

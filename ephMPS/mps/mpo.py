@@ -106,7 +106,8 @@ def get_mpo_dim_qn(mol_list, scheme, rep):
                 else:
                     mpo_dim.append(3)
                     mpo_qn.append([0, 0, 0])
-
+    else:
+        raise ValueError(f"unknow scheme: {scheme}")
     mpo_dim[0] = 1
     return mpo_dim, mpo_qn
 
@@ -246,7 +247,7 @@ class Mpo(MatrixProduct):
                     # for the ground state space, yet doesn't support 3rd force
                     # potential quasiboson algorithm
                     ph_pbond = ph.pbond[0]
-                    for i in ph.force3rd:
+                    for i in range(len(ph.force3rd)):
                         anharmo = not np.allclose(
                             ph.force3rd[i] * ph.dis[i] / ph.omega[i], 0.0
                         )

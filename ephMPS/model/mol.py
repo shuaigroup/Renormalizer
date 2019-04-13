@@ -88,6 +88,10 @@ class Mol(object):
     def pure_hartree(self):
         return not bool(self.dmrg_phs)
 
+    @property
+    def phs(self):
+        return self.dmrg_phs + self.hartree_phs
+
     def to_dict(self):
         info_dict = OrderedDict()
         info_dict["elocalex"] = self.elocalex

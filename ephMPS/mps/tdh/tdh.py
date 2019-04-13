@@ -497,7 +497,7 @@ class Dynamics(TdHartree):
         DM = self._FT_DM(0)
 
         dipoleO = construct_onsiteO(
-            self.mol_list, r"a^\dagger", dipole=True, mol_idx_set={self.init_idx}
+            self.mol_list, r"a^\dagger", dipole=False, mol_idx_set={self.init_idx}
         )
         DM[0] = dipoleO.dot(DM[0])
         mflib.canonical_normalize(DM)

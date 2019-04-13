@@ -39,9 +39,10 @@ def test_construct_MPO_scheme3():
     assert mpo3.distance(mpo2) == pytest.approx(0)
 
 
-@pytest.mark.parametrize("value", ([1], [2]))
-def test_optimization(value):
-    mps, mpo = construct_mps_mpo_2(mol_list, procedure[0][0], nexciton, scheme=value[0])
+
+@pytest.mark.parametrize("scheme", (1, 2))
+def test_optimization(scheme):
+    mps, mpo = construct_mps_mpo_2(mol_list, procedure[0][0], nexciton, scheme=scheme)
     mps.optimize_config.procedure = procedure
     mps.optimize_config.method = "2site"
     energy = optimize_mps(mps.copy(), mpo)

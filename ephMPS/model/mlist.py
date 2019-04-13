@@ -65,7 +65,7 @@ class MolList(object):
                 return False
         return True
 
-    def sub_mollist(self, span=None):
+    def get_sub_mollist(self, span=None):
         assert self.mol_num % 2 == 1
         center_idx = self.mol_num // 2
         if span is None:

@@ -10,13 +10,6 @@ def construct_mol(nmols, dmrg_nphs, hartree_nphs):
     dipole_abs = 1.0
 
     # cm^-1
-    J = np.zeros((nmols, nmols))
-    J += np.diag([-500.0] * (nmols - 1), k=1)
-    J += np.diag([-500.0] * (nmols - 1), k=-1)
-    J = J * constant.cm2au
-    print("J=", J)
-
-    # cm^-1
     omega_value = (
         np.array(
             [206.0, 211.0, 540.0, 552.0, 751.0, 1325.0, 1371.0, 1469.0, 1570.0, 1628.0]
@@ -46,6 +39,7 @@ def construct_mol(nmols, dmrg_nphs, hartree_nphs):
         for args in zip(omega, displacement, ph_phys_dim, is_hartree)
     ]
 
-    mol_list = MolList([Mol(elocalex, ph_list, dipole_abs)] * nmols, J)
+    mol_list = MolList([Mol(elocalex, ph_list, dipole_abs, heatbath=True)] * nmols, Quantity(500, "cm-1"))
+    #mol_list = MolList([Mol(elocalex, ph_list, dipole_abs, heatbath=True)] * nmols, Quantity(0.0124, "eV"))
 
     return mol_list

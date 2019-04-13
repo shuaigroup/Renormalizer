@@ -32,3 +32,4 @@ what to be calculated. Need to ask jjr what is the best prctice. And start from 
 * license of libs
 * different backend for original mctdh_tdvp is buggy
 * include the tdh part with backend
+* lazy evaluation when mpo is applied on mps to save memory

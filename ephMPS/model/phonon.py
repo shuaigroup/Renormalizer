@@ -80,9 +80,7 @@ class Phonon(object):
         self.dis = [d.as_au() for d in displacement]
 
         if force3rd is None:
-            self.force3rd = {}
-            for i in range(len(omega)):
-                self.force3rd[i] = 0.0
+            self.force3rd = [0.0, 0.0]
         else:
             self.force3rd = force3rd
         self.n_phys_dim: int = n_phys_dim

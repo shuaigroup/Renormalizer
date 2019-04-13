@@ -704,8 +704,8 @@ class Mps(MatrixProduct):
                     scale = (-1.0j * config.evolve_dt) ** idx * propagation_c[idx]
                     scaled_termlist.append(term.scale(scale))
                 del term
-                new_mps1 = compressed_sum(scaled_termlist[:-1])
-                new_mps2 = compressed_sum([new_mps1, scaled_termlist[-1]])
+                new_mps1 = compressed_sum(scaled_termlist[:-1]).normalize(None)
+                new_mps2 = compressed_sum([new_mps1, scaled_termlist[-1]]).normalize(None)
                 angle = new_mps1.angle(new_mps2)
                 energy1 = self.expectation(mpo)
                 energy2 = new_mps1.expectation(mpo)
@@ -1051,7 +1051,7 @@ class Mps(MatrixProduct):
         """
         construct hybrid DMRG and Hartree(-Fock) Hamiltonian
         """
-        mol_list = self.mol_list
+        mol_list = mpo_indep.mol_list
         WFN = self.wfns
         nmols = len(mol_list)
 

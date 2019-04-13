@@ -112,6 +112,8 @@ class ChargeTransport(TdMpsJob):
             self.reduced_density_matrices.append(
                 calc_reduced_density_matrix_straight(self.tdmps_list[0])
             )
+        self.elocalex_arrays = []
+        self.j_arrays = []
         self.custom_dump_info = OrderedDict()
         self.stop_at_edge = stop_at_edge
         # if set True, only save full information of the latest mps and discard previous ones
@@ -159,7 +161,7 @@ class ChargeTransport(TdMpsJob):
         assert self.temperature == 0
         assert np.allclose(gs_mp.bond_dims, np.ones_like(gs_mp.bond_dims))
         assert gs_mp.is_left_canon
-        sub_mollist, start_molidx = self.mol_list.sub_mollist()
+        sub_mollist, start_molidx = self.mol_list.get_sub_mollist()
         sub_mpo = Mpo(sub_mollist, scheme=3)
         mps = Mps.random(sub_mollist, 1, 10)
         energy = solver.optimize_mps(mps, sub_mpo)
@@ -187,7 +189,6 @@ class ChargeTransport(TdMpsJob):
         return method_mapping[self.init_electron](gs_mp)
 
     def init_mps(self):
-        # self.mpo = Mpo(self.mol_list, scheme=3)
         tentative_mpo = Mpo(self.mol_list, scheme=3)
         if self.temperature == 0:
             gs_mp = Mps.gs(self.mol_list, max_entangled=False)
@@ -216,7 +217,12 @@ class ChargeTransport(TdMpsJob):
 
     def evolve_single_step(self, evolve_dt):
         old_mps = self.latest_mps
-        new_mps = old_mps.evolve(self.mpo, evolve_dt)
+        #mol_list = self.mol_list.get_fluctuation_mollist(self.latest_evolve_time)
+        #self.elocalex_arrays.append(mol_list.elocalex_array)
+        #self.j_arrays.append(mol_list.adjacent_transfer_integral)
+        #mpo = Mpo(mol_list, 3, offset=self.mpo.offset)
+        mpo = self.mpo
+        new_mps = old_mps.evolve(mpo, evolve_dt)
         new_energy = new_mps.expectation(self.mpo)
         self.energies.append(new_energy)
         logger.info(
@@ -240,6 +246,7 @@ class ChargeTransport(TdMpsJob):
         dump_dict = OrderedDict()
         dump_dict["mol list"] = self.mol_list.to_dict()
         dump_dict["J constant"] = str(self.mol_list.j_constant)
+        dump_dict["tempearture"] = self.temperature.as_au()
         dump_dict["total steps"] = len(self.tdmps_list)
         dump_dict["total time"] = self.evolve_times[-1]
         dump_dict["diffusion"] = self.latest_mps.r_square / self.evolve_times[-1]
@@ -254,7 +261,9 @@ class ChargeTransport(TdMpsJob):
         dump_dict["phonon occupations array"] = [
             list(occupations) for occupations in self.ph_occupations_array
         ]
-        dump_dict["coherent length array"] = list(self.coherent_length_array.real)
+        #dump_dict["elocalex arrays"] = [list(e) for e in self.elocalex_arrays]
+        dump_dict["j arrays"] = [list(j) for j in self.j_arrays]
+        dump_dict["coherent length array"] = list(map(float, self.coherent_length_array.real))
         if self.reduced_density_matrices:
             dump_dict["final reduced density matrix real"] = [
                 list(row.real) for row in self.reduced_density_matrices[-1]

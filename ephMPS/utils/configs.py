@@ -65,12 +65,11 @@ class CompressConfig:
             self.bondorder_max_value = max_value
         if max_value is None:
             raise ValueError("max value is not set")
-        if self.bond_order_distribution == BondOrderDistri.uniform:
+        if self.bond_order_distribution is BondOrderDistri.uniform:
             self.max_bondorders = np.full(length, max_value)
         else:
-            assert length % 2 == 1
             half_length = length // 2
-            x = np.arange(-half_length, half_length + 1)
+            x = np.arange(- half_length, - half_length + length)
             sigma = half_length / np.sqrt(np.log(max_value / 3))
             seq = list(max_value * np.exp(-(x / sigma) ** 2))
             self.max_bondorders = np.int64(seq)
