@@ -217,11 +217,11 @@ class ChargeTransport(TdMpsJob):
 
     def evolve_single_step(self, evolve_dt):
         old_mps = self.latest_mps
-        #mol_list = self.mol_list.get_fluctuation_mollist(self.latest_evolve_time)
-        #self.elocalex_arrays.append(mol_list.elocalex_array)
-        #self.j_arrays.append(mol_list.adjacent_transfer_integral)
-        #mpo = Mpo(mol_list, 3, offset=self.mpo.offset)
-        mpo = self.mpo
+        mol_list = self.mol_list.get_fluctuation_mollist(self.latest_evolve_time)
+        self.elocalex_arrays.append(mol_list.elocalex_array)
+        self.j_arrays.append(mol_list.adjacent_transfer_integral)
+        mpo = Mpo(mol_list, 3, offset=self.mpo.offset)
+        #mpo = self.mpo
         new_mps = old_mps.evolve(mpo, evolve_dt)
         new_energy = new_mps.expectation(self.mpo)
         self.energies.append(new_energy)

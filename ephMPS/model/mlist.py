@@ -3,6 +3,7 @@
 
 from collections import OrderedDict
 from typing import List, Union
+import random
 
 import numpy as np
 
@@ -32,6 +33,8 @@ class MolList(object):
         # need symmetric MPO but we currently don't have one.
         self.is_symmetric = self.check_symmetric()
 
+        self.fluctuation_coeffs = None
+
     @property
     def mol_num(self):
         return len(self.mol_list)
@@ -53,6 +56,14 @@ class MolList(object):
             if not mol.pure_hartree:
                 return False
         return True
+
+    @property
+    def elocalex_array(self):
+        return np.array([m.elocalex for m in self.mol_list])
+
+    @property
+    def adjacent_transfer_integral(self):
+        return np.diag(self.j_matrix, 1)
 
     def check_symmetric(self):
         # first check for j matrix
@@ -82,6 +93,76 @@ class MolList(object):
             mol = Mol(Quantity(mol.elocalex), mol.dmrg_phs, mol.dipole)
             l.append(mol)
         return self.__class__(l, self.j_matrix)
+
+
+    def get_fluctuation_mollist(self, time):
+        if self.fluctuation_coeffs is None:
+            self.fluctuation_coeffs = []
+            for i in range(self.mol_num - 1):
+                n = 10
+                coeffs = (np.random.rand(n) - 0.5, (np.random.rand(n) - 0.5) * np.pi)
+                self.fluctuation_coeffs.append(coeffs)
+        # site_energy
+        j_list = []
+        for mol, (a, b) in zip(self.mol_list, self.fluctuation_coeffs):
+            # e = np.sin(a*time + b).sum()
+            # by experiment, e has std of 2 and cycle of 10
+            # what we want is std of 20 meV, cycle of 50 cm-1 (27000 a.u.)
+            e = np.sin(a * (time / 2700) + b).sum() * 10
+            j_list.append(Quantity(e, "meV").as_au())
+        j_matrix = np.zeros_like(self.j_matrix)
+        for i in range(self.mol_num - 1):
+            j_matrix[i+1, i] = self.j_matrix[i+1, i] + j_list[i]
+        j_matrix = j_matrix + j_matrix.T
+        new_mollist = self.__class__(self.mol_list, j_matrix)
+        # mpos can still be reused
+        new_mollist.mpos = self.mpos
+        return new_mollist
+
+    def get_fluctuation_mollist4(self, time):
+        if self.fluctuation_coeffs is None:
+            self.fluctuation_coeffs = []
+            for i in range(self.mol_num):
+                n = 10
+                coeffs = (np.random.rand(n) - 0.5, (np.random.rand(n) - 0.5) * np.pi)
+                self.fluctuation_coeffs.append(coeffs)
+        # site_energy
+        l = []
+        for mol, (a, b) in zip(self.mol_list, self.fluctuation_coeffs):
+            # e = np.sin(a*time + b).sum()
+            # by experiment, e has std of 2 and cycle of 10
+            # what we want is std of 0.2 eV, cycle of 200 cm-1 (7000 a.u.)
+            #e = np.sin(a * (time / 700) + b).sum() / 10
+            e = np.sin(a * (time / 70) + b).sum() / 10
+            new_mol = Mol(Quantity(e, "eV"), mol.phs)
+            l.append(new_mol)
+        new_mollist = self.__class__(l, self.j_matrix)
+        # mpos can still be reused
+        new_mollist.mpos = self.mpos
+        return new_mollist
+
+    def get_fluctuation_mollist3(self):
+        # site_energy
+        l = []
+        for mol in self.mol_list:
+            new_mol = Mol(Quantity(random.random() * 0.5, "eV"), mol.phs)
+            l.append(new_mol)
+        new_mollist = self.__class__(l, self.j_matrix)
+        # mpos can still be reused
+        new_mollist.mpos = self.mpos
+        return new_mollist
+
+    def get_fluctuation_mollist2(self):
+        # transfer integral
+        j_matrix: np.ndarray = self.j_matrix.copy()
+        fluctuation = np.random.random(j_matrix.shape)
+        j_matrix *= fluctuation
+        # make j_matrix symmetric
+        j_matrix = (j_matrix + j_matrix.T) / 2
+        new_mollist = self.__class__(self.mol_list, j_matrix)
+        # mpos can still be reused
+        new_mollist.mpos = self.mpos
+        return new_mollist
 
     def __getitem__(self, idx):
         return self.mol_list[idx]
