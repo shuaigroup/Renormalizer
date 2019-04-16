@@ -230,31 +230,17 @@ class MpDm(Mps, Mpo):
             new_mpdm.normalize(1.0)
         return new_mpdm
 
-    def get_reduced_density_matrix(self):
-        reduced_density_matrix_product = list()
-        # ensure there is a first matrix in the new mps/mpo
-        assert self.ephtable.is_electron(0)
-        for idx, mt in enumerate(self):
-            if self.ephtable.is_electron(idx):
-                reduced_density_matrix_product.append(mt)
-            else:  # phonon site
-                reduced_mt = mt.trace(axis1=1, axis2=2)
-                prev_mt = reduced_density_matrix_product[-1]
-                new_mt = tensordot(prev_mt, reduced_mt, 1)
-                reduced_density_matrix_product[-1] = new_mt
-        reduced_density_matrix = np.zeros(
-            (self.mol_list.mol_num, self.mol_list.mol_num), dtype=backend.complex_dtype
-        )
-        for i in range(self.mol_list.mol_num):
-            for j in range(self.mol_list.mol_num):
-                elem = ones((1, 1))
-                for mt_idx, mt in enumerate(reduced_density_matrix_product):
-                    axis_idx1 = int(mt_idx == i)
-                    axis_idx2 = int(mt_idx == j)
-                    sub_mt = mt[:, axis_idx1, axis_idx2, :]
-                    elem = tensordot(elem, sub_mt, 1)
-                reduced_density_matrix[i][j] = elem.flatten()[0]
-        return reduced_density_matrix
+    def calc_reduced_density_matrix(self):
+        if self.mol_list.scheme < 4:
+            return self._calc_reduced_density_matrix(self, self.conj_trans())
+        elif self.mol_list.scheme == 4:
+            # be careful this method should be read-only
+            copy = self.copy()
+            copy.canonicalise(self.mol_list.e_idx())
+            e_mo = copy[self.mol_list.e_idx()]
+            return tensordot(e_mo, e_mo.conj(), axes=((0, 2 ,3), (0, 2, 3))).array
+        else:
+            assert False
 
     def trace(self):
         traced_product = []

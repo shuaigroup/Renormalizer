@@ -544,20 +544,9 @@ class Mps(MatrixProduct):
                 mpos = self.mol_list.mpos[key]
             return self.expectations(mpos)
         elif self.mol_list.scheme == 4:
-            # be careful this method should be read-only
-            copy = self.copy()
-            copy.canonicalise(self.mol_list.e_idx())
-            e_mo = copy[self.mol_list.e_idx()]
-            if self.is_mps:
-                res = (xp.abs(e_mo.array) ** 2).sum(axis=(0, 2))
-            elif self.is_mpdm:
-                dm = tensordot(e_mo, e_mo.conj(), axes=(2, 2)).array
-                dm = xp.trace(dm, axis1=0, axis2=3)
-                dm = xp.trace(dm, axis1=1, axis2=3)
-                res = xp.diag(dm.real)
-            else:
-                assert False
-            return res
+            # get rdm is very fast
+            rdm = self.calc_reduced_density_matrix()
+            return xp.diag(rdm)
         else:
             assert False
 
@@ -1206,6 +1195,44 @@ class Mps(MatrixProduct):
                 )
             )
         return np.array(res)
+
+    def _calc_reduced_density_matrix(self, mp1, mp2):
+        reduced_density_matrix = np.zeros(
+            (self.mol_list.mol_num, self.mol_list.mol_num), dtype=backend.complex_dtype
+        )
+        for i in range(self.mol_list.mol_num):
+            for j in range(self.mol_list.mol_num):
+                elem = ones((1, 1))
+                e_idx = -1
+                for mt_idx, (mt1, mt2) in enumerate(zip(mp1, mp2)):
+                    if self.ephtable.is_electron(mt_idx):
+                        e_idx += 1
+                        axis_idx1 = int(e_idx == i)
+                        axis_idx2 = int(e_idx == j)
+                        sub_mt1 = mt1[:, axis_idx1, :, :]
+                        sub_mt2 = mt2[:, :, axis_idx2, :]
+                        elem = tensordot(elem, sub_mt1, axes=(0, 0))
+                        elem = tensordot(elem, sub_mt2, axes=[(0, 1), (0, 1)])
+                    else:
+                        elem = tensordot(elem, mt1, axes=(0, 0))
+                        elem = tensordot(elem, mt2, axes=[(0, 1, 2), (0, 2, 1)])
+                reduced_density_matrix[i][j] = elem.flatten()[0]
+        return reduced_density_matrix
+
+    def calc_reduced_density_matrix(self):
+        if self.mol_list.scheme < 4:
+            mp1 = [mt.reshape(mt.shape[0], mt.shape[1], 1, mt.shape[2]) for mt in self]
+            mp2 = [mt.reshape(mt.shape[0], 1, mt.shape[1], mt.shape[2]).conj() for mt in self]
+            return self._calc_reduced_density_matrix(mp1, mp2)
+        elif self.mol_list.scheme == 4:
+            # be careful this method should be read-only
+            copy = self.copy()
+            copy.canonicalise(self.mol_list.e_idx())
+            e_mo = copy[self.mol_list.e_idx()]
+            return tensordot(e_mo.conj(), e_mo, axes=((0, 2), (0, 2))).array
+        else:
+            assert False
+
 
     def __str__(self):
         # too many digits in the default format

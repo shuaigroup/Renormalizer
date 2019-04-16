@@ -9,10 +9,6 @@ from ephMPS.model import Phonon, Mol, MolList
 from ephMPS.mps import Mps, Mpo
 from ephMPS.mps.solver import optimize_mps
 from ephMPS.transport import ChargeTransport, InitElectron, EDGE_THRESHOLD
-from ephMPS.transport.transport import (
-    calc_reduced_density_matrix,
-    calc_reduced_density_matrix_straight,
-)
 from ephMPS.utils import Quantity
 from ephMPS.utils import (
     BondOrderDistri,
@@ -156,6 +152,7 @@ def test_economic_mode(
     mol_list = MolList(
         [Mol(Quantity(elocalex_value, "a.u."), ph_list)] * mol_num,
         Quantity(j_constant_value, "eV"),
+        scheme=3
     )
     ct1 = ChargeTransport(mol_list)
     ct1.evolve(evolve_dt, nsteps)
@@ -183,6 +180,7 @@ def test_memory_limit(
     mol_list = MolList(
         [Mol(Quantity(elocalex_value, "a.u."), ph_list)] * mol_num,
         Quantity(j_constant_value, "eV"),
+        scheme=3
     )
     compress_config = CompressConfig(
         threshold=1e-5
@@ -217,6 +215,7 @@ def test_compress_add(
     mol_list = MolList(
         [Mol(Quantity(elocalex_value, "a.u."), ph_list)] * mol_num,
         Quantity(j_constant_value, "eV"),
+        scheme=3
     )
     ct1 = ChargeTransport(mol_list, temperature=Quantity(298, "K"))
     ct1.reduced_density_matrices = None
@@ -228,12 +227,6 @@ def test_compress_add(
     ct2.latest_mps.compress_add = True
     ct2.evolve(evolve_dt, nsteps)
     assert ct1.is_similar(ct2, rtol=1e-2)
-
-
-def check_rdm(mps):
-    rdm1 = calc_reduced_density_matrix_straight(mps)
-    rdm2 = calc_reduced_density_matrix(mps)
-    assert np.allclose(rdm1, rdm2)
 
 
 @pytest.mark.parametrize(
@@ -262,12 +255,14 @@ def test_reduced_density_matrix(
     mol_list = MolList(
         [Mol(Quantity(elocalex_value, "a.u."), ph_list)] * mol_num,
         Quantity(j_constant_value, "eV"),
+        scheme=3
     )
-    ct = ChargeTransport(mol_list, temperature=Quantity(temperature, "K"))
-    check_rdm(ct.latest_mps)
+    ct = ChargeTransport(mol_list, temperature=Quantity(temperature, "K"), stop_at_edge=False)
     ct.evolve(evolve_dt, nsteps)
     for mps in ct.tdmps_list:
-        check_rdm(mps)
+        rdm = mps.calc_reduced_density_matrix()
+        # best we can do?
+        assert np.allclose(np.diag(rdm), mps.e_occupations)
 
 
 @pytest.mark.parametrize(
@@ -286,6 +281,7 @@ def test_similar(
     mol_list = MolList(
         [Mol(Quantity(elocalex_value, "a.u."), ph_list)] * mol_num,
         Quantity(j_constant_value, "eV"),
+        scheme=3
     )
     ct1 = ChargeTransport(mol_list)
     ct1.evolve(evolve_dt, nsteps)
@@ -310,6 +306,7 @@ def test_evolve(
     mol_list = MolList(
         [Mol(Quantity(elocalex_value, "a.u."), ph_list)] * mol_num,
         Quantity(j_constant_value, "eV"),
+        scheme=3
     )
     ct1 = ChargeTransport(mol_list, stop_at_edge=False)
     half_nsteps = nsteps // 2

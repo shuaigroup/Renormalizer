@@ -23,65 +23,6 @@ logger = logging.getLogger(__name__)
 EDGE_THRESHOLD = 1e-4
 
 
-# this procedure is **very** memory consuming
-def calc_reduced_density_matrix_straight(mp):
-    if mp.is_mpdm:
-        density_matrix_product = mp.apply(mp.conj_trans())
-        # density_matrix_product = mp
-    elif mp.is_mps:
-        density_matrix_product = MpDm()
-        # todo: not elegant! figure out a better way to deal with data type
-        density_matrix_product.dtype = backend.complex_dtype
-        density_matrix_product.mol_list = mp.mol_list
-        for mt in mp:
-            bond1, phys, bond2 = mt.shape
-            mt1 = mt.reshape((bond1, phys, bond2, 1))
-            mt2 = mt.conj().reshape((bond1, phys, bond2, 1))
-            new_mt = (
-                tensordot(mt1, mt2, axes=[3, 3])
-                .transpose((0, 3, 1, 4, 2, 5))
-                .reshape((bond1 ** 2, phys, phys, bond2 ** 2))
-            )
-            density_matrix_product.append(new_mt)
-        density_matrix_product.build_empty_qn()
-    else:
-        assert False
-    mp.set_peak_bytes(density_matrix_product.total_bytes)
-    return density_matrix_product.get_reduced_density_matrix()
-
-
-# saves memory, but still time consuming, especially when the calculation starts,
-def calc_reduced_density_matrix(mp):
-    if mp.is_mps:
-        mp1 = [mt.reshape(mt.shape[0], mt.shape[1], 1, mt.shape[2]) for mt in mp]
-        mp2 = [mt.reshape(mt.shape[0], 1, mt.shape[1], mt.shape[2]).conj() for mt in mp]
-    else:
-        assert mp.is_mpdm
-        mp1 = mp
-        mp2 = mp.conj_trans()
-    reduced_density_matrix = np.zeros(
-        (mp.mol_list.mol_num, mp.mol_list.mol_num), dtype=backend.complex_dtype
-    )
-    for i in range(mp.mol_list.mol_num):
-        for j in range(mp.mol_list.mol_num):
-            elem = ones((1, 1))
-            e_idx = -1
-            for mt_idx, (mt1, mt2) in enumerate(zip(mp1, mp2)):
-                if mp.ephtable.is_electron(mt_idx):
-                    e_idx += 1
-                    axis_idx1 = int(e_idx == i)
-                    axis_idx2 = int(e_idx == j)
-                    sub_mt1 = mt1[:, axis_idx1, :, :]
-                    sub_mt2 = mt2[:, :, axis_idx2, :]
-                    elem = tensordot(elem, sub_mt1, axes=(0, 0))
-                    elem = tensordot(elem, sub_mt2, axes=[(0, 1), (0, 1)])
-                else:
-                    elem = tensordot(elem, mt1, axes=(0, 0))
-                    elem = tensordot(elem, mt2, axes=[(0, 1, 2), (0, 2, 1)])
-            reduced_density_matrix[i][j] = elem.flatten()[0]
-    return reduced_density_matrix
-
-
 class InitElectron(Enum):
     fc = "franc-condon excitation"
     relaxed = "analytically relaxed phonon(s)"
@@ -109,7 +50,7 @@ class ChargeTransport(TdMpsJob):
         self.reduced_density_matrices = []
         if rdm:
             self.reduced_density_matrices.append(
-                calc_reduced_density_matrix_straight(self.tdmps_list[0])
+                calc_reduced_density_matrix(self.tdmps_list[0])
             )
         self.elocalex_arrays = []
         self.j_arrays = []
@@ -239,10 +180,10 @@ class ChargeTransport(TdMpsJob):
         dump_dict["coherent length array"] = list(map(float, self.coherent_length_array.real))
         if self.reduced_density_matrices:
             dump_dict["final reduced density matrix real"] = [
-                list(row.real) for row in self.reduced_density_matrices[-1]
+                list(list(map(float, row.real))) for row in self.reduced_density_matrices[-1]
             ]
             dump_dict["final reduced density matrix imag"] = [
-                list(row.imag) for row in self.reduced_density_matrices[-1]
+                list(list(map(float, row.imag))) for row in self.reduced_density_matrices[-1]
             ]
         dump_dict["time series"] = list(self.evolve_times)
         return dump_dict
