@@ -17,12 +17,12 @@ def test_quasiboson_constructMPO():
 
     mol_list1 = parameter.custom_mol_list(None, [4, 4])
     mps1, mpo1 = solver.construct_mps_mpo_2(
-        mol_list1, procedure[0][0], nexciton, scheme=2
+        mol_list1, procedure[0][0], nexciton
     )
 
     mol_list2 = mol_list = parameter.custom_mol_list(None, [4, 4], [2, 2], [1e-7, 1e-7])
     mps2, mpo2 = solver.construct_mps_mpo_2(
-        mol_list2, procedure[0][0], nexciton, scheme=2
+        mol_list2, procedure[0][0], nexciton
     )
 
     # merge the decomposed MPO
@@ -71,21 +71,21 @@ def test_quasiboson_solver(value, switch_to_64backend):
     # normal boson
     mol_list1 = parameter.custom_mol_list(None, *value[0])
     mps1, mpo1 = solver.construct_mps_mpo_2(
-        mol_list1, procedure[0][0], nexciton, scheme=2
+        mol_list1, procedure[0][0], nexciton
     )
     mps1.optimize_config.procedure = procedure
 
     # quasiboson
     mol_list2 = parameter.custom_mol_list(None, *value[1])
     mps2, mpo2 = solver.construct_mps_mpo_2(
-        mol_list2, procedure[0][0], nexciton, scheme=2
+        mol_list2, procedure[0][0], nexciton
     )
     mps2.optimize_config.procedure = procedure
 
     # quasiboson + normal boson
     mol_list3 = parameter.custom_mol_list(None, *value[2])
     mps3, mpo3 = solver.construct_mps_mpo_2(
-        mol_list3, procedure[0][0], nexciton, scheme=2
+        mol_list3, procedure[0][0], nexciton
     )
     mps3.optimize_config.procedure = procedure
 

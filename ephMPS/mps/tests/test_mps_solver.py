@@ -14,8 +14,8 @@ procedure = [[10, 0.4], [20, 0.2], [30, 0.1], [40, 0], [40, 0]]
 
 def test_construct_MPO():
     Mmax = 10
-    mps1, mpo1 = construct_mps_mpo_2(mol_list, Mmax, nexciton, scheme=1)
-    mps2, mpo2 = construct_mps_mpo_2(mol_list, Mmax, nexciton, scheme=2)
+    mps1, mpo1 = construct_mps_mpo_2(mol_list.switch_scheme(1), Mmax, nexciton)
+    mps2, mpo2 = construct_mps_mpo_2(mol_list, Mmax, nexciton)
 
     assert mpo1.ephtable == mpo2.ephtable
     assert mpo1.pbond_list == mpo2.pbond_list
@@ -32,17 +32,16 @@ def test_construct_MPO_scheme3():
         / constant.au2ev
     )
     mol_list = custom_mol_list(J)
-    mps2, mpo2 = construct_mps_mpo_2(mol_list, Mmax, nexciton, scheme=2)
-    mps3, mpo3 = construct_mps_mpo_2(mol_list, Mmax, nexciton, scheme=3)
+    mps2, mpo2 = construct_mps_mpo_2(mol_list, Mmax, nexciton)
+    mps3, mpo3 = construct_mps_mpo_2(mol_list.switch_scheme(3), Mmax, nexciton)
     assert mpo2.ephtable == mpo3.ephtable
     assert mpo2.pbond_list == mpo3.pbond_list
     assert mpo3.distance(mpo2) == pytest.approx(0)
 
 
-
-@pytest.mark.parametrize("scheme", (1, 2))
+@pytest.mark.parametrize("scheme", (1, 2, 4))
 def test_optimization(scheme):
-    mps, mpo = construct_mps_mpo_2(mol_list, procedure[0][0], nexciton, scheme=scheme)
+    mps, mpo = construct_mps_mpo_2(mol_list.switch_scheme(scheme), procedure[0][0], nexciton)
     mps.optimize_config.procedure = procedure
     mps.optimize_config.method = "2site"
     energy = optimize_mps(mps.copy(), mpo)
@@ -54,7 +53,7 @@ def test_optimization(scheme):
 
 
 def test_multistate():
-    mps, mpo = construct_mps_mpo_2(mol_list, procedure[0][0], nexciton, scheme=2)
+    mps, mpo = construct_mps_mpo_2(mol_list, procedure[0][0], nexciton)
     mps.optimize_config.procedure = procedure
     mps.optimize_config.nroots = 5
     mps.optimize_config.method = "1site"

@@ -4,7 +4,7 @@ from ephMPS.utils import Quantity, constant
 from ephMPS.model import MolList, Mol, Phonon
 
 
-def construct_mol(nmols, dmrg_nphs, hartree_nphs):
+def construct_mol(nmols, dmrg_nphs, hartree_nphs) -> MolList:
     assert dmrg_nphs + hartree_nphs == 10
     elocalex = Quantity(2.13 / constant.au2ev)
     dipole_abs = 1.0
@@ -32,14 +32,14 @@ def construct_mol(nmols, dmrg_nphs, hartree_nphs):
 
     ph_phys_dim = [5] * 10
 
-    print(dmrg_nphs, hartree_nphs)
+    # print(dmrg_nphs, hartree_nphs)
     is_hartree = [False] * dmrg_nphs + [True] * hartree_nphs
     ph_list = [
         Phonon(*args[:3], hartree=args[3])
         for args in zip(omega, displacement, ph_phys_dim, is_hartree)
     ]
 
-    mol_list = MolList([Mol(elocalex, ph_list, dipole_abs, heatbath=True)] * nmols, Quantity(500, "cm-1"))
+    mol_list = MolList([Mol(elocalex, ph_list, dipole_abs)] * nmols, Quantity(500, "cm-1"), scheme=3)
     #mol_list = MolList([Mol(elocalex, ph_list, dipole_abs, heatbath=True)] * nmols, Quantity(0.0124, "eV"))
 
     return mol_list

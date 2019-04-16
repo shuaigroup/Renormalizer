@@ -28,7 +28,7 @@ class Phonon(object):
     """
 
     @classmethod
-    def simplest_phonon(cls, omega, displacement, hartree=False, lam=False):
+    def simplest_phonon(cls, omega, displacement, hartree: bool=False, lam=False):
         # detect pdim automatically
         if lam:
             # the second argument is lambda
@@ -80,7 +80,7 @@ class Phonon(object):
         self.dis = [d.as_au() for d in displacement]
 
         if force3rd is None:
-            self.force3rd = [0.0, 0.0]
+            self.force3rd = (0.0, 0.0)
         else:
             self.force3rd = force3rd
         self.n_phys_dim: int = n_phys_dim
@@ -137,6 +137,10 @@ class Phonon(object):
         return Quantity(
             0.5 * dis_diff ** 2 * self.omega[1] ** 2 - dis_diff ** 3 * self.force3rd[1]
         )
+    @property
+    def is_simple(self):
+        return self.force3rd == (0.0, 0.0) and self.nqboson == 1
+
 
     @property
     def coupling_constant(self):  # the $g$

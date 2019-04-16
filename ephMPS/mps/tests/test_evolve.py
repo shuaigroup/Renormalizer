@@ -41,7 +41,7 @@ def test_ZeroTcorr_TDVP(method, evolve_dt, rtol):
     zero_t_corr.evolve(evolve_dt, nsteps)
     with open(
         os.path.join(
-            cur_dir, "zero_t_%s.npy" % str(evolve_config.scheme).split(".")[1]
+            cur_dir, "zero_t_%s.npy" % str(evolve_config.method).split(".")[1]
         ),
         "rb",
     ) as f:
@@ -77,7 +77,7 @@ def test_finite_t_spectra_emi_TDVP(method, nsteps, evolve_dt, rtol, interval):
     finite_t_corr.evolve(evolve_dt, nsteps)
     with open(
         os.path.join(
-            cur_dir, "finite_t_%s.npy" % str(evolve_config.scheme).split(".")[1]
+            cur_dir, "finite_t_%s.npy" % str(evolve_config.method).split(".")[1]
         ),
         "rb",
     ) as fin:

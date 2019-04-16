@@ -18,7 +18,6 @@ class SpectraZeroT(SpectraTdMpsJobBase):
         spectratype,
         optimize_config=None,
         evolve_config=None,
-        scheme=2,
         offset=Quantity(0),
     ):
         if optimize_config is None:
@@ -27,7 +26,7 @@ class SpectraZeroT(SpectraTdMpsJobBase):
             self.optimize_config = optimize_config
 
         super(SpectraZeroT, self).__init__(
-            mol_list, spectratype, Quantity(0), scheme, evolve_config, offset
+            mol_list, spectratype, Quantity(0), evolve_config, offset
         )
 
     def init_mps(self):

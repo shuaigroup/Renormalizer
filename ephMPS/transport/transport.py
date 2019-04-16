@@ -51,7 +51,6 @@ def calc_reduced_density_matrix_straight(mp):
 
 
 # saves memory, but still time consuming, especially when the calculation starts,
-# in long term the same order with expectation
 def calc_reduced_density_matrix(mp):
     if mp.is_mps:
         mp1 = [mt.reshape(mt.shape[0], mt.shape[1], 1, mt.shape[2]) for mt in mp]
@@ -136,9 +135,9 @@ class ChargeTransport(TdMpsJob):
         center_mol_idx = self.mol_num // 2
         center_mol = self.mol_list[center_mol_idx]
         # start from phonon
-        start_idx = self.mol_list.ephtable.electron_idx(center_mol_idx) + 1
         for i, ph in enumerate(center_mol.dmrg_phs):
-            mt = gs_mp[start_idx + i][0, ..., 0].asnumpy()
+            idx = self.mol_list.ph_idx(center_mol_idx, i)
+            mt = gs_mp[idx][0, ..., 0].asnumpy()
             evecs = ph.get_displacement_evecs()
             if gs_mp.is_mps:
                 mt = evecs.dot(mt)
@@ -148,7 +147,7 @@ class ChargeTransport(TdMpsJob):
             else:
                 assert False
             logger.debug(f"relaxed mt: {mt}")
-            gs_mp[start_idx + i] = mt.reshape([1] + list(mt.shape) + [1])
+            gs_mp[idx] = mt.reshape([1] + list(mt.shape) + [1])
 
         creation_operator = Mpo.onsite(
             self.mol_list, r"a^\dagger", mol_idx_set={center_mol_idx}
@@ -156,53 +155,27 @@ class ChargeTransport(TdMpsJob):
         mps = creation_operator.apply(gs_mp)
         return mps
 
-    def create_electron_polaron(self, gs_mp: Union[Mps, MpDm]):
-        # finite temperature not implemented
-        assert self.temperature == 0
-        assert np.allclose(gs_mp.bond_dims, np.ones_like(gs_mp.bond_dims))
-        assert gs_mp.is_left_canon
-        sub_mollist, start_molidx = self.mol_list.get_sub_mollist()
-        sub_mpo = Mpo(sub_mollist, scheme=3)
-        mps = Mps.random(sub_mollist, 1, 10)
-        energy = solver.optimize_mps(mps, sub_mpo)
-        # use a more strict threshold
-        mps.compress_config = CompressConfig(threshold=1e-5)
-        # do the canonicalise to make sure it's still left canonicalised
-        mps = mps.canonicalise().compress()
-        logger.info(f"optimized sub mps: f{mps}, energy: {energy}")
-        assert mps.is_left_canon
-        start_idx = self.mol_list.ephtable.electron_idx(start_molidx)
-        for i in range(len(mps)):
-            gs_mp[start_idx + i] = mps[i]
-            gs_mp.qn[start_idx + i] = mps.qn[i]
-        while start_idx + i != len(gs_mp)-1:
-            i += 1
-            gs_mp.qn[start_idx+i] = [1]
-        gs_mp.qntot += 1
-        return gs_mp
-
     def create_electron(self, gs_mp):
         method_mapping = {InitElectron.fc: self.create_electron_fc,
                           InitElectron.relaxed: self.create_electron_relaxed,
-                          InitElectron.polaron: self.create_electron_polaron
                           }
         return method_mapping[self.init_electron](gs_mp)
 
     def init_mps(self):
-        tentative_mpo = Mpo(self.mol_list, scheme=3)
+        tentative_mpo = Mpo(self.mol_list)
         if self.temperature == 0:
             gs_mp = Mps.gs(self.mol_list, max_entangled=False)
         else:
             gs_mp = MpDm.max_entangled_gs(self.mol_list)
             # subtract the energy otherwise might cause numeric error because of large offset * dbeta
             energy = Quantity(gs_mp.expectation(tentative_mpo))
-            mpo = Mpo(self.mol_list, scheme=3, offset=energy)
+            mpo = Mpo(self.mol_list, offset=energy)
             gs_mp = gs_mp.thermal_prop_exact(
                 mpo, self.temperature.to_beta() / 2, 50, "GS", True
             )
         init_mp = self.create_electron(gs_mp)
         energy = Quantity(init_mp.expectation(tentative_mpo))
-        self.mpo = Mpo(self.mol_list, scheme=3, offset=energy)
+        self.mpo = Mpo(self.mol_list, offset=energy)
         logger.info(f"mpo bond dims: {self.mpo.bond_dims}")
         logger.info(f"mpo physical dims: {self.mpo.pbond_list}")
         self.mpo_e_lbound = solver.find_lowest_energy(self.mpo, 1, 20, with_hartree=False)

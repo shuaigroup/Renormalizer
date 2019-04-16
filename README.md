@@ -3,6 +3,7 @@ This is a electron-phonon hamiltoninan MPS
 [![Build Status](https://travis-ci.org/jjren/ephMPS.svg?branch=wtli-develop)](https://travis-ci.org/jjren/ephMPS)
 
 ## Notice
+* ephMPS is still under heavy development. API changes come without any prior deprecation.
 * use `-O` flag to enable optimizations (disable asserts) for Python can typically speed
 things up for 50% (time cost drops to 66%).
 * use float32/complex64 as backend (rather than float64/complex128) can speed things up for 50%. Although all test cases can pass

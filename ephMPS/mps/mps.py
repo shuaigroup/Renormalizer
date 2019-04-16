@@ -188,7 +188,7 @@ def adaptive_tdvp(fun):
 class Mps(MatrixProduct):
     @classmethod
     def random(cls, mol_list: MolList, nexciton, m_max, percent=1.0):
-        # a high percent make the result more random
+        # a high percent makes the result more random
         # sometimes critical for getting correct optimization result
         mps = cls()
         mps.mol_list = mol_list
@@ -223,7 +223,7 @@ class Mps(MatrixProduct):
             # add the next mpsdim
             dim_list.append(mpsdim)
             mps.append(
-                mt.reshape((dim_list[imps], mps.pbond_list[imps], dim_list[imps + 1]))
+                mt.reshape((dim_list[imps], -1, dim_list[imps + 1]))
             )
             mps.qn.append(mpsqn)
 
@@ -238,7 +238,13 @@ class Mps(MatrixProduct):
         mps.append(last_mt)
 
         mps.qnidx = len(mps) - 1
-        mps.qntot = nexciton
+        mps.left = False
+        if mol_list.scheme < 4:
+            mps.qntot = nexciton
+        elif mol_list.scheme == 4:
+            mps.qntot = 0
+        else:
+            assert False
 
         # print("self.dim", self.dim)
 
@@ -251,7 +257,7 @@ class Mps(MatrixProduct):
         return mps
 
     @classmethod
-    def gs(cls, mol_list, max_entangled):
+    def gs(cls, mol_list: MolList, max_entangled: bool):
         """
         T = \\infty maximum entangled GS state
         electronic site: pbond 0 element 1.0
@@ -262,11 +268,18 @@ class Mps(MatrixProduct):
         mps.mol_list = mol_list
         mps.qn = [[0]] * (len(mps.ephtable) + 1)
         mps.qnidx = len(mps.ephtable) - 1
+        mps.left = False
         mps.qntot = 0
 
-        for mol in mol_list:
+        for imol, mol in enumerate(mol_list):
             # electron mps
-            mps.append(np.array([1, 0]).reshape((1, 2, 1)))
+            if 0 < mol_list.scheme < 4:
+                mps.append(np.array([1, 0]).reshape((1, 2, 1)))
+            elif mol_list.scheme == 4:
+                if imol == mol_list.mol_num // 2:
+                    mps.append(np.zeros((1, mol_list.mol_num, 1)))
+            else:
+                assert False
             # ph mps
             for ph in mol.dmrg_phs:
                 for iboson in range(ph.nqboson):
@@ -374,7 +387,22 @@ class Mps(MatrixProduct):
             assert self.check_right_canonical()
             return np.linalg.norm(np.ravel(self[0]))
         """
-        return np.sqrt(self.conj().dot(self, with_hartree=False).real)
+        replacement_idx = self.mol_list.e_idx()
+        orig_ms = self[replacement_idx]
+        if self.mol_list.scheme == 4:
+            ms = orig_ms.copy()
+            if xp.linalg.norm(ms.array) == 0:
+                assert ms.shape[0] == ms.shape[-1] == 1
+                if self.is_mps:
+                    ms[0, 0, 0] = 1
+                elif self.is_mpdm:
+                    ms[0, 0, 0, 0] = 1
+                else:
+                    assert False
+                self[replacement_idx] = ms
+        res = np.sqrt(self.conj().dot(self, with_hartree=False).real)
+        self[replacement_idx] = orig_ms
+        return res
 
     def expectation(self, mpo, self_conj=None):
         # todo: different bra and ket
@@ -504,16 +532,34 @@ class Mps(MatrixProduct):
 
     @_cached_property
     def e_occupations(self):
-        key = "e_occupations"
-        if key not in self.mol_list.mpos:
-            mpos = [
-                Mpo.onsite(self.mol_list, r"a^\dagger a", mol_idx_set={i})
-                for i in range(self.mol_num)
-            ]
-            self.mol_list.mpos[key] = mpos
+        if self.mol_list.scheme < 4:
+            key = "e_occupations"
+            if key not in self.mol_list.mpos:
+                mpos = [
+                    Mpo.onsite(self.mol_list, r"a^\dagger a", mol_idx_set={i})
+                    for i in range(self.mol_num)
+                ]
+                self.mol_list.mpos[key] = mpos
+            else:
+                mpos = self.mol_list.mpos[key]
+            return self.expectations(mpos)
+        elif self.mol_list.scheme == 4:
+            # be careful this method should be read-only
+            copy = self.copy()
+            copy.canonicalise(self.mol_list.e_idx())
+            e_mo = copy[self.mol_list.e_idx()]
+            if self.is_mps:
+                res = (xp.abs(e_mo.array) ** 2).sum(axis=(0, 2))
+            elif self.is_mpdm:
+                dm = tensordot(e_mo, e_mo.conj(), axes=(2, 2)).array
+                dm = xp.trace(dm, axis1=0, axis2=3)
+                dm = xp.trace(dm, axis1=1, axis2=3)
+                res = xp.diag(dm.real)
+            else:
+                assert False
+            return res
         else:
-            mpos = self.mol_list.mpos[key]
-        return self.expectations(mpos)
+            assert False
 
     @_cached_property
     def r_square(self):
@@ -548,7 +594,7 @@ class Mps(MatrixProduct):
     def add(self, other):
         assert self.qntot == other.qntot
         assert self.site_num == other.site_num
-        assert self.is_left_canon == other.is_left_canon
+        assert self.qnidx == other.qnidx
 
         new_mps = other.metacopy()
         if self.is_complex:
@@ -648,7 +694,7 @@ class Mps(MatrixProduct):
         if approx_eiht is not None:
             return approx_eiht.contract(self)
 
-        if self.evolve_config.scheme == EvolveMethod.prop_and_compress:
+        if self.evolve_config.method == EvolveMethod.prop_and_compress:
             new_mps = self._evolve_dmrg_prop_and_compress(mpo, evolve_dt)
             if self.evolve_config.memory_limit < new_mps.peak_bytes:
                 logger.info("switch to fixed bond order compression to save memory")
@@ -673,6 +719,7 @@ class Mps(MatrixProduct):
             config = self.evolve_config.copy()
             config.adaptive = True
             config.evolve_dt = evolve_dt
+            self.compress_add = True
             new_mps = self._evolve_dmrg_prop_and_compress(mpo, evolve_dt, config)
             self.compress_config = new_mps.compress_config = orig_compress_config
             return new_mps
@@ -682,7 +729,7 @@ class Mps(MatrixProduct):
             EvolveMethod.tdvp_mctdh_new: self._evolve_dmrg_tdvp_mctdhnew,
             EvolveMethod.tdvp_ps: self._evolve_dmrg_tdvp_ps,
         }
-        method = method_mapping[self.evolve_config.scheme]
+        method = method_mapping[self.evolve_config.method]
         new_mps = method(mpo, evolve_dt)
         return new_mps
 
@@ -894,8 +941,8 @@ class Mps(MatrixProduct):
                 #    np.conj(MPSnew[imps]), axes=([0,1],[0,1])),
                 #    np.diag(np.ones(MPSnew[imps].shape[2])))
 
-        mps._switch_domain()
-        new_mps._switch_domain()
+        mps._switch_direction()
+        new_mps._switch_direction()
         new_mps.canonicalise()
 
         steps_stat = stats.describe(cmf_rk_steps)
@@ -920,7 +967,7 @@ class Mps(MatrixProduct):
         # sweep for 2 rounds
         for i in range(2):
             for imps in mps.iter_idx_list(full=True):
-                system = "R" if mps.is_left_canon else "L"
+                system = "L" if mps.left else "R"
                 ltensor = environ.read("L", imps - 1)
                 rtensor = environ.read("R", imps + 1)
 
@@ -1018,7 +1065,7 @@ class Mps(MatrixProduct):
                 else:
                     mps[imps] = mps_t
                     mps_conj[imps] = mps[imps].conj()
-            mps._switch_domain()
+            mps._switch_direction()
 
         steps_stat = stats.describe(cmf_rk_steps)
         logger.debug(f"TDVP-PS CMF steps: {steps_stat}")
@@ -1080,7 +1127,6 @@ class Mps(MatrixProduct):
         total_offset = mpo_indep.offset + Quantity(e_mean.real)
         MPO = Mpo(
             mol_list,
-            mpo_indep.scheme,
             mpo_indep.rep,
             elocal_offset=elocal_offset,
             offset=total_offset,

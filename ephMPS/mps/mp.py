@@ -5,7 +5,7 @@ from __future__ import absolute_import, division
 import inspect
 import traceback
 import logging
-from typing import List, Union
+from typing import List, Union, Tuple
 
 import numpy as np
 import scipy
@@ -31,7 +31,7 @@ class MatrixProduct:
         return new_mp
 
     def __init__(self):
-        # when modify theses codes, keep in mind to update `metacopy` method
+        # XXX: when modify theses codes, keep in mind to update `metacopy` method
         # set to a list of None upon metacopy
         self._mp: List[Union[Matrix, None]] = []
         self.dtype = backend.real_dtype
@@ -53,6 +53,8 @@ class MatrixProduct:
         self.qn: List[List[int]] = []
         self.qnidx: int = None
         self._qntot: int = None
+        # sweeping from left?
+        self.left: bool = None
 
     @property
     def site_num(self):
@@ -109,10 +111,9 @@ class MatrixProduct:
 
     @property
     def pbond_list(self):
-        if self._pbond_list is not None:
-            return self._pbond_list
-        else:
-            return self.mol_list.pbond_list
+        if self._pbond_list is None:
+            self._pbond_list = self.mol_list.pbond_list
+        return self._pbond_list
 
     @pbond_list.setter
     def pbond_list(self, pbond_list):
@@ -134,11 +135,13 @@ class MatrixProduct:
         self.qntot = 0
         self.qnidx = 0
         self.qn = [[0] * dim for dim in self.bond_dims]
+        self.left = True
 
     def build_none_qn(self):
         self.qntot = None
         self.qnidx = None
         self.qn = None
+        self.left = None
 
     def clear_qn(self):
         self.qntot = 0
@@ -192,9 +195,13 @@ class MatrixProduct:
         if self.is_left_canon:
             last = -1 if full else 0
             return range(self.site_num - 1, last, -1)
-        else:
+        elif self.is_right_canon:
             last = self.site_num if full else self.site_num - 1
             return range(0, last)
+        else:
+            # this could happen when canonicalization is break at some point
+            last = self.site_num if full else self.site_num - 1
+            return range(self.qnidx, last)
 
     def _update_ms(
         self, idx, u, vt, sigma=None, qnlset=None, qnrset=None, m_trunc=None
@@ -205,24 +212,24 @@ class MatrixProduct:
         vt = vt[:m_trunc, :]
         if sigma is not None:
             sigma = sigma[:m_trunc]
-            if self.is_left_canon:
-                u = einsum("ji, i -> ji", u, sigma)
-            else:
+            if self.left:
                 vt = einsum("i, ij -> ij", sigma, vt)
-        if self.is_left_canon:
-            self[idx - 1] = tensordot(self[idx - 1], u, axes=1)
-            ret_mpsi = vt.reshape(
-                [m_trunc] + list(self[idx].pdim) + [vt.shape[1] // self[idx].pdim_prod]
-            )
-            if qnrset is not None:
-                self.qn[idx] = qnrset[:m_trunc]
-        else:
+            else:
+                u = einsum("ji, i -> ji", u, sigma)
+        if self.left:
             self[idx + 1] = tensordot(vt, self[idx + 1], axes=1)
             ret_mpsi = u.reshape(
                 [u.shape[0] // self[idx].pdim_prod] + list(self[idx].pdim) + [m_trunc]
             )
             if qnlset is not None:
                 self.qn[idx + 1] = qnlset[:m_trunc]
+        else:
+            self[idx - 1] = tensordot(self[idx - 1], u, axes=1)
+            ret_mpsi = vt.reshape(
+                [m_trunc] + list(self[idx].pdim) + [vt.shape[1] // self[idx].pdim_prod]
+            )
+            if qnrset is not None:
+                self.qn[idx] = qnrset[:m_trunc]
         if ret_mpsi.nbytes < ret_mpsi.base.nbytes * 0.8:
             # do copy here to discard unnecessary data. Note that in NumPy common slicing returns
             # a `view` containing the original data. If `ret_mpsi` is used directly the original
@@ -231,13 +238,17 @@ class MatrixProduct:
         assert ret_mpsi.any()
         self[idx] = ret_mpsi
 
-    def _switch_domain(self):
-        if self.is_left_canon:
-            self.qnidx = 0
-            # assert self.check_right_canonical()
-        else:
+    def _switch_direction(self):
+        assert self.left is not None
+        if self.left:
             self.qnidx = self.site_num - 1
+            self.left = False
             # assert self.check_left_canonical()
+        else:
+            self.qnidx = 0
+            self.left = True
+            # assert self.check_right_canonical()
+
 
     def _get_big_qn(self, idx):
         mt: Matrix = self[idx]
@@ -247,12 +258,12 @@ class MatrixProduct:
         assert len(qnl) == mt.shape[0]
         assert len(qnr) == mt.shape[-1]
         assert len(sigmaqn) == mt.pdim_prod
-        if self.is_left_canon:
-            qnbigl = qnl
-            qnbigr = np.add.outer(sigmaqn, qnr)
-        else:
+        if self.left:
             qnbigl = np.add.outer(qnl, sigmaqn)
             qnbigr = qnr
+        else:
+            qnbigl = qnl
+            qnbigr = np.add.outer(sigmaqn, qnr)
         return qnbigl, qnbigr
 
     def compress(self, check_canonical=True):
@@ -275,15 +286,15 @@ class MatrixProduct:
                 assert self.check_left_canonical()
             else:
                 assert self.check_right_canonical()
-        system = "R" if self.is_left_canon else "L"
+        system = "L" if self.left else "R"
 
         for idx in self.iter_idx_list(full=False):
             mt: Matrix = self[idx]
             assert mt.any()
-            if self.is_left_canon:
-                mt = mt.r_combine()
-            else:
+            if self.left:
                 mt = mt.l_combine()
+            else:
+                mt = mt.r_combine()
             qnbigl, qnbigr = self._get_big_qn(idx)
             u, sigma, qnlset, v, sigma, qnrset = svd_qn.Csvd(
                 mt.asnumpy(),
@@ -295,25 +306,28 @@ class MatrixProduct:
             )
             vt = v.T
             m_trunc = self.compress_config.compute_m_trunc(
-                sigma, idx, self.is_left_canon
+                sigma, idx, self.left
             )
             self._update_ms(
                 idx, Matrix(u), Matrix(vt), Matrix(sigma), qnlset, qnrset, m_trunc
             )
 
-        self._switch_domain()
+        self._switch_direction()
         return self
 
-    def canonicalise(self):
+    def canonicalise(self, stop_idx: int=None):
         for idx in self.iter_idx_list(full=False):
+            self.qnidx = idx
+            if stop_idx is not None and idx == stop_idx:
+                break
             mt: Matrix = self[idx]
             assert mt.any()
-            if self.is_left_canon:
-                mt = mt.r_combine()
-            else:
+            if self.left:
                 mt = mt.l_combine()
+            else:
+                mt = mt.r_combine()
             qnbigl, qnbigr = self._get_big_qn(idx)
-            system = "R" if self.is_left_canon else "L"
+            system = "L" if self.left else "R"
             u, qnlset, v, qnrset = svd_qn.Csvd(
                 mt.asnumpy(),
                 qnbigl,
@@ -326,7 +340,7 @@ class MatrixProduct:
             self._update_ms(
                 idx, Matrix(u), Matrix(v.T), sigma=None, qnlset=qnlset, qnrset=qnrset
             )
-        self._switch_domain()
+        self._switch_direction()
         return self
 
     def conj(self):
@@ -397,17 +411,18 @@ class MatrixProduct:
             val = abs(val)
         # Note matrices are read-only
         # there are two ways to do the scaling
-        if np.abs(np.log(np.abs(val))) < 0.01:
+        if np.abs(np.log(np.abs(val))) < 1:
             # Thr first way. The operation performs very quickly,
             # but leads to high float point error when val is very large or small
+            assert new_mp[self.qnidx].array.any()
             new_mp[self.qnidx] = new_mp[self.qnidx] * val
         else:
             # The second way. High time complexity but numerically more feasible.
-            root_val = val ** (1 / len(self))
-            for idx, mt in enumerate(self):
+            # take care of emtpy matrices. happens at zero electron state at scheme 4
+            candidates = list(filter(lambda x: x[1].array.any(), enumerate(self)))
+            root_val = val ** (1 / len(candidates))
+            for idx, mt in candidates:
                 new_mp[idx] = mt * root_val
-        # the two ways could be united. I'm currently not confident enough that
-        # the modification will work. So explicitly use two ways for now
         if negative:
             new_mp[0] *= -1
         return new_mp
@@ -455,6 +470,7 @@ class MatrixProduct:
         new.qn = [qn.copy() for qn in self.qn]
         new.qnidx = self.qnidx
         new._qntot = self.qntot
+        new.left = self.left
         return new
 
     def array2mt(self, array, idx):
@@ -466,7 +482,9 @@ class MatrixProduct:
             mt.sigmaqn = np.zeros(mt.pdim_prod, dtype=np.int)
         else:
             mt.sigmaqn = self._get_sigmaqn(idx)
-        assert mt.array.any()
+        # mol_list is None when using quasiboson
+        if self.mol_list is None or self.mol_list.scheme != 4:
+            assert mt.array.any()
         return mt
 
     @property

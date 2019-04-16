@@ -41,7 +41,6 @@ class SpectraTdMpsJobBase(TdMpsJob):
         mol_list,
         spectratype,
         temperature,
-        scheme=2,
         evolve_config=None,
         offset=Quantity(0),
     ):
@@ -53,7 +52,7 @@ class SpectraTdMpsJobBase(TdMpsJob):
         else:
             self.nexciton = 0
         self.temperature = temperature
-        self.h_mpo = Mpo(mol_list, scheme=scheme, offset=offset)
+        self.h_mpo = Mpo(mol_list, offset=offset)
         super(SpectraTdMpsJobBase, self).__init__(evolve_config=evolve_config)
 
     @property

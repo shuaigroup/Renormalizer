@@ -25,8 +25,8 @@ from ephMPS.utils import (
 
 def test_init_state():
     ph = Phonon.simple_phonon(Quantity(1), Quantity(1), 10)
-    mol_list = MolList([Mol(Quantity(0), [ph])], Quantity(0))
-    mpo = Mpo(mol_list, scheme=3)
+    mol_list = MolList([Mol(Quantity(0), [ph])], Quantity(0), scheme=3)
+    mpo = Mpo(mol_list)
     mps = Mps.random(mol_list, 1, 10)
     optimize_mps(mps, mpo)
     ct = ChargeTransport(mol_list)
@@ -44,7 +44,7 @@ ph_list = [
 ]
 j_constant = Quantity(0.8, "eV")
 band_limit_mol_list = MolList(
-    [Mol(Quantity(0), ph_list)] * mol_num, j_constant
+    [Mol(Quantity(0), ph_list)] * mol_num, j_constant, 4
 )
 
 
@@ -63,16 +63,19 @@ def assert_band_limit(ct, rtol):
 @pytest.mark.parametrize(
     "method, evolve_dt, nsteps, rtol",
     (
-        # (EvolveMethod.prop_and_compress, 4, 25, 1e-3),
+        (EvolveMethod.prop_and_compress, 4, 25, 1e-3),
         # not working. Moves slightly slower. Dunno why.
         # (EvolveMethod.tdvp_mctdh_new, 2, 50, 1e-2),
         (EvolveMethod.tdvp_ps, 2, 100, 1e-3),
     ),
 )
-def test_bandlimit_zero_t(method, evolve_dt, nsteps, rtol):
+@pytest.mark.parametrize(
+    "scheme", (3, 4)
+)
+def test_bandlimit_zero_t(method, evolve_dt, nsteps, rtol, scheme):
     np.random.seed(0)
     evolve_config = EvolveConfig(method)
-    ct = ChargeTransport(band_limit_mol_list, evolve_config=evolve_config)
+    ct = ChargeTransport(band_limit_mol_list.switch_scheme(scheme), evolve_config=evolve_config)
     ct.stop_at_edge = True
     ct.evolve(evolve_dt, nsteps)
     assert_band_limit(ct, rtol)
@@ -87,7 +90,7 @@ def test_bandlimit_zero_t(method, evolve_dt, nsteps, rtol):
 @pytest.mark.parametrize("init_dt", (1e-1, 20))
 def test_adaptive_zero_t(method, init_dt):
     np.random.seed(0)
-    evolve_config = EvolveConfig(scheme=method, evolve_dt=init_dt, adaptive=True)
+    evolve_config = EvolveConfig(method=method, evolve_dt=init_dt, adaptive=True)
     ct = ChargeTransport(
         band_limit_mol_list, evolve_config=evolve_config, stop_at_edge=True
     )
@@ -322,8 +325,11 @@ def test_evolve(
     "mol_num, j_constant_value, elocalex_value, ph_info, ph_phys_dim, evolve_dt, nsteps",
     ([3, 1, 3.87e-3, [[1e-5, 1e-5]], 2, 2, 50],),
 )
+@pytest.mark.parametrize(
+    "scheme", (3, 4)
+)
 def test_band_limit_finite_t(
-    mol_num, j_constant_value, elocalex_value, ph_info, ph_phys_dim, evolve_dt, nsteps
+    mol_num, j_constant_value, elocalex_value, ph_info, ph_phys_dim, evolve_dt, nsteps, scheme
 ):
     ph_list = [
         Phonon.simple_phonon(
@@ -333,10 +339,35 @@ def test_band_limit_finite_t(
     ]
     mol_list = MolList(
         [Mol(Quantity(elocalex_value, "a.u."), ph_list)] * mol_num,
-        Quantity(j_constant_value, "eV"),
+        Quantity(j_constant_value, "eV"), scheme=scheme
     )
     ct1 = ChargeTransport(mol_list, stop_at_edge=False)
     ct1.evolve(evolve_dt, nsteps)
     ct2 = ChargeTransport(mol_list, temperature=low_t, stop_at_edge=False)
     ct2.evolve(evolve_dt, nsteps)
     assert ct1.is_similar(ct2)
+
+
+@pytest.mark.parametrize(
+    "mol_num, j_constant_value, elocalex_value, ph_info, ph_phys_dim, evolve_dt, nsteps",
+    ([3, 1, 3.87e-3, [[1400, 17]], 8, 2, 50],),
+)
+def test_scheme4_finite_t(
+    mol_num, j_constant_value, elocalex_value, ph_info, ph_phys_dim, evolve_dt, nsteps
+):
+    temperature = Quantity(1, "a.u.")
+    ph_list = [
+        Phonon.simple_phonon(
+            Quantity(omega, "cm^{-1}"), Quantity(displacement, "a.u."), ph_phys_dim
+        )
+        for omega, displacement in ph_info
+    ]
+    mol_list = MolList(
+        [Mol(Quantity(elocalex_value, "a.u."), ph_list)] * mol_num,
+        Quantity(j_constant_value, "eV")
+    )
+    ct1 = ChargeTransport(mol_list.switch_scheme(3), temperature=temperature, stop_at_edge=False)
+    ct1.evolve(evolve_dt, nsteps)
+    ct2 = ChargeTransport(mol_list.switch_scheme(4), temperature=temperature, stop_at_edge=False)
+    ct2.evolve(evolve_dt, nsteps)
+    assert ct1.is_similar(ct2, rtol=1e-2)

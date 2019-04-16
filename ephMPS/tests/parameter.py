@@ -48,7 +48,7 @@ def custom_mol_list(
     dis=None,
     hartrees=None,
     nmols=3,
-):
+) -> MolList:
     if custom_j_matrix is None:
         custom_j_matrix = _j_matrix
     if n_phys_dim is None:

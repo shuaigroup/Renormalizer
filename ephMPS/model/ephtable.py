@@ -3,6 +3,8 @@
 
 electron = "e"
 
+electrons = "es"
+
 phonon = "ph"
 
 
@@ -12,37 +14,27 @@ class EphTable(tuple):
         return cls([phonon] * site_num)
 
     @classmethod
-    def from_mol_list(cls, mol_list):
+    def from_mol_list(cls, mol_list, scheme):
         eph_list = []
-        for mol in mol_list:
-            eph_list.append(electron)
-            for ph in mol.dmrg_phs:
-                eph_list.extend([phonon] * ph.nqboson)
+        if scheme < 4:
+            for mol in mol_list:
+                eph_list.append(electron)
+                for ph in mol.dmrg_phs:
+                    eph_list.extend([phonon] * ph.nqboson)
+        else:
+            for imol, mol in enumerate(mol_list):
+                if imol == len(mol_list) // 2:
+                    eph_list.append(electrons)
+                eph_list.extend([phonon] * mol.n_dmrg_phs)
+                for ph in mol.dmrg_phs:
+                    assert ph.is_simple
         return cls(eph_list)
-
-    def electron_idx(self, idx):
-        for res, st in enumerate(self):
-            if st == electron:
-                idx -= 1
-            if idx == -1:
-                return res
 
     def is_electron(self, idx):
         return self[idx] == electron
 
     def is_phonon(self, idx):
         return self[idx] == phonon
-
-    def get_sigmaqn(self, idx):
-        pass
-
-    @property
-    def num_electron_site(self):
-        res = 0
-        for i in self:
-            if i == electron:
-                res += 1
-        return res
 
     def __str__(self):
         return "[" + ", ".join(self) + "]"

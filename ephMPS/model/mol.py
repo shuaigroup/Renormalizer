@@ -70,13 +70,6 @@ class Mol(object):
         self.n_hartree_phs = len(self.hartree_phs)
 
     @property
-    def pbond(self):
-        pbond = [2]
-        for ph in self.dmrg_phs:
-            pbond += ph.pbond
-        return pbond
-
-    @property
     def reorganization_energy(self):
         return self.dmrg_e0 + self.hartree_e0
 
@@ -87,6 +80,13 @@ class Mol(object):
     @property
     def pure_hartree(self):
         return not bool(self.dmrg_phs)
+
+    @property
+    def no_qboson(self):
+        for ph in self.dmrg_phs:
+            if ph.nqboson != 1:
+                return False
+        return True
 
     @property
     def phs(self):

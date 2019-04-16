@@ -12,7 +12,7 @@ from ephMPS.utils import Quantity
 
 
 class MolList(object):
-    def __init__(self, mol_list: List[Mol], j_matrix: Union[Quantity, np.ndarray]):
+    def __init__(self, mol_list: List[Mol], j_matrix: Union[Quantity, np.ndarray], scheme: int=2):
         self.mol_list: List[Mol] = mol_list
         if isinstance(j_matrix, Quantity):
             self.j_matrix = construct_j_matrix(self.mol_num, j_matrix)
@@ -20,11 +20,28 @@ class MolList(object):
         else:
             self.j_matrix = j_matrix
             self.j_constant = None
-        self.ephtable = EphTable.from_mol_list(mol_list)
-        assert self.j_matrix.shape[0] == self.ephtable.num_electron_site
+        self.scheme = scheme
+
+        self.ephtable = EphTable.from_mol_list(mol_list, scheme)
         self.pbond_list = []
-        for mol in mol_list:
-            self.pbond_list += mol.pbond
+        if scheme < 4:
+            if scheme == 3:
+                assert self.check_nearest_neighbour()
+            self._e_idx = []
+            for mol in mol_list:
+                self._e_idx.append(len(self.pbond_list))
+                self.pbond_list.append(2)
+                for ph in mol.dmrg_phs:
+                    self.pbond_list += ph.pbond
+        else:
+            for imol, mol in enumerate(mol_list):
+                if imol == len(mol_list) // 2:
+                    self._e_idx = [len(self.pbond_list)] * len(mol_list)
+                    self.pbond_list.append(len(mol_list))
+                for ph in mol.dmrg_phs:
+                    assert ph.is_simple
+                    self.pbond_list += ph.pbond
+        assert self.j_matrix.shape[0] == self.mol_num
         # reusable mpos for the system
         self.mpos = dict()
 
@@ -54,6 +71,29 @@ class MolList(object):
                 return False
         return True
 
+    def switch_scheme(self, scheme):
+        return self.__class__(self.mol_list, self.j_matrix, scheme)
+
+    def e_idx(self, idx=0):
+        return self._e_idx[idx]
+
+    def ph_idx(self, eidx, phidx):
+        if self.scheme < 4:
+            start = self.e_idx(eidx)
+            assert self.mol_list[eidx].no_qboson
+            # skip the electron site
+            return start + 1 + phidx
+        elif self.scheme == 4:
+            res = 0
+            for mol in self.mol_list[:eidx]:
+                assert mol.no_qboson
+                res += mol.n_dmrg_phs
+            if self.mol_num // 2 <= eidx:
+                res += 1
+            return res + phidx
+        else:
+            assert False
+
     def check_symmetric(self):
         # first check for j matrix
         rot = np.rot90(self.j_matrix)
@@ -65,6 +105,10 @@ class MolList(object):
                 return False
         return True
 
+    def check_nearest_neighbour(self):
+        d = np.diag(np.diag(self.j_matrix, k=1), k=1)
+        return np.allclose(d + d.T, self.j_matrix)
+
     def get_sub_mollist(self, span=None):
         assert self.mol_num % 2 == 1
         center_idx = self.mol_num // 2
@@ -74,14 +118,14 @@ class MolList(object):
         end_idx = center_idx+span+1
         sub_list =self.mol_list[start_idx:end_idx]
         sub_matrix = self.j_matrix[start_idx:end_idx, start_idx:end_idx]
-        return self.__class__(sub_list, sub_matrix), start_idx
+        return self.__class__(sub_list, sub_matrix, scheme=self.scheme), start_idx
 
     def get_pure_dmrg_mollist(self):
         l = []
         for mol in self.mol_list:
             mol = Mol(Quantity(mol.elocalex), mol.dmrg_phs, mol.dipole)
             l.append(mol)
-        return self.__class__(l, self.j_matrix)
+        return self.__class__(l, self.j_matrix, scheme=self.scheme)
 
     def __getitem__(self, idx):
         return self.mol_list[idx]
@@ -93,7 +137,6 @@ class MolList(object):
         info_dict = OrderedDict()
         info_dict["mol num"] = len(self)
         info_dict["electron phonon table"] = self.ephtable
-        info_dict["physical bond list"] = self.pbond_list
         info_dict["mol list"] = [mol.to_dict() for mol in self.mol_list]
         return info_dict
 

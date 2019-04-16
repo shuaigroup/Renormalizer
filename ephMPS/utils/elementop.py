@@ -22,8 +22,8 @@ def op_matrix(op, size, type):
     return op_matrix
 
 
-def e_op_matrix(op, size):
-    return op_matrix(op, size, "e")
+def e_op_matrix(op):
+    return op_matrix(op, 2, "e")
 
 
 def ph_op_matrix(op, size):
@@ -144,10 +144,10 @@ def e_element_op(op, bra, ket):
         assert False
 
 
-def construct_e_op_dict(pbond):
+def construct_e_op_dict():
     e_op_dict = {}
     for op in e_op_list:
-        e_op_dict[op] = e_op_matrix(op, pbond)
+        e_op_dict[op] = e_op_matrix(op)
     return e_op_dict
 
 

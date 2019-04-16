@@ -47,7 +47,7 @@ def find_highest_energy(h_mpo: Mpo, nexciton, Mmax, with_hartree=True):
 
 
 def construct_mps_mpo_2(
-    mol_list, Mmax, nexciton, scheme, rep="star", offset=Quantity(0)
+    mol_list, Mmax, nexciton, rep="star", offset=Quantity(0)
 ):
     """
     MPO/MPS structure 2
@@ -57,7 +57,7 @@ def construct_mps_mpo_2(
     """
     initialize MPO
     """
-    mpo = Mpo(mol_list, scheme=scheme, rep=rep, offset=offset)
+    mpo = Mpo(mol_list, rep=rep, offset=offset)
 
     """
     initialize MPS according to quantum number
@@ -72,6 +72,8 @@ def optimize_mps(mps: Mps, mpo: Mpo):
     energies = optimize_mps_dmrg(mps, mpo)
     if not mps.hybrid_tdh:
         return energies[-1]
+    # from matplotlib import pyplot as plt
+    # plt.plot(energies); plt.show()
 
     HAM = []
 
@@ -103,8 +105,6 @@ def optimize_mps(mps: Mps, mpo: Mpo):
 def optimize_mps_dmrg(mps, mpo):
     """
     1 or 2 site optimization procedure
-    inverse = 1.0 / -1.0 
-    -1.0 to get the largest eigenvalue
     """
 
     method = mps.optimize_config.method
@@ -223,6 +223,11 @@ def optimize_mps_dmrg(mps, mpo):
                     cout = multi_tensor_contract(
                         path, ltensor, Matrix(cstruct), mpo[imps], rtensor
                     )
+                    # for small matrices, check hermite:
+                    # a=tensordot(ltensor, mpo[imps], ((1), (0)))
+                    # b=tensordot(a, rtensor, ((4), (1)))
+                    # c=b.transpose((0, 2, 4, 1, 3, 5))
+                    # d=c.reshape(16, 16)
                 else:
                     # S-a       l-S
                     #    d   g
@@ -294,21 +299,17 @@ def optimize_mps_dmrg(mps, mpo):
                 if system == "L":
                     if imps != len(mps) - 1:
                         mps[imps + 1] = tensordot(compmps, mps[imps + 1], axes=1)
-                        # mps.dim_list[imps + 1] = mpsdim
                         mps.qn[imps + 1] = mpsqn
                     else:
                         mps[imps] = tensordot(mps[imps], compmps, axes=1)
-                        # mps.dim_list[imps + 1] = 1
                         mps.qn[imps + 1] = [0]
 
                 else:
                     if imps != 0:
                         mps[imps - 1] = tensordot(mps[imps - 1], compmps, axes=1)
-                        # mps.dim_list[imps] = mpsdim
                         mps.qn[imps] = mpsqn
                     else:
                         mps[imps] = tensordot(compmps, mps[imps], axes=1)
-                        # mps.dim_list[imps] = 1
                         mps.qn[imps] = [0]
             else:
                 if system == "L":

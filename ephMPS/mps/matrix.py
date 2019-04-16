@@ -30,6 +30,7 @@ class Matrix:
         return new_matrix
 
     def __init__(self, array, dtype=None):
+        assert array is not None
         if dtype == backend.real_dtype:
             # forbid unchecked casting
             assert not xp.iscomplexobj(array)

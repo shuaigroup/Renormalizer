@@ -33,7 +33,7 @@ class CompressConfig:
         # two sets of criteria here: threshold and max_bondorder
         # `criteria` is to determine which to use
         self.criteria: CompressCriteria = criteria
-        self._threshold = 0.001
+        self._threshold = None
         self.threshold = threshold
         self.bond_order_distribution: BondOrderDistri = bondorder_distri
         self.bondorder_max_value = max_bondorder
@@ -88,7 +88,7 @@ class CompressConfig:
 
     def _fixed_m_trunc(self, sigma: np.ndarray, idx: int, left: bool) -> int:
         assert self.max_bondorders is not None
-        bond_idx = idx if left else idx + 1
+        bond_idx = idx + 1 if left else idx
         return min(self.max_bondorders[bond_idx], len(sigma))
 
     def compute_m_trunc(self, sigma: np.ndarray, idx: int, left: bool) -> int:
@@ -149,8 +149,10 @@ class OptimizeConfig:
             self.procedure = [[10, 0.4], [20, 0.2], [30, 0.1], [40, 0], [40, 0]]
         else:
             self.procedure = procedure
-        self.method = "2site"
+        self.method = "1site"
         self.nroots = 1
+        # inverse = 1.0 / -1.0
+        # -1.0 to get the largest eigenvalue
         self.inverse = 1.0
         # for dmrg-hartree hybrid to check converge. Not to confuse with compress threshold
         self.niterations = 20
@@ -186,14 +188,14 @@ def parse_memory_limit(x) -> float:
 class EvolveConfig:
     def __init__(
         self,
-        scheme: EvolveMethod = EvolveMethod.prop_and_compress,
+        method: EvolveMethod = EvolveMethod.prop_and_compress,
         memory_limit=None,
         adaptive=False,
         evolve_dt=1e-1,
     ):
 
-        self.scheme = scheme
-        if self.scheme == EvolveMethod.prop_and_compress:
+        self.method = method
+        if self.method == EvolveMethod.prop_and_compress:
             # note this memory limit is for single mps and not the whole program
             self.memory_limit: float = parse_memory_limit(memory_limit)
         else:
@@ -202,7 +204,7 @@ class EvolveConfig:
                     "Memory limit is only valid in propagation and compression method."
                 )
 
-        if self.scheme != EvolveMethod.prop_and_compress:
+        if self.method != EvolveMethod.prop_and_compress:
             self.max_bond_order = 32
         else:
             self.max_bond_order = None
@@ -213,7 +215,6 @@ class EvolveConfig:
         else:
             self.rk_config: RungeKutta = RungeKutta()
         self.adaptive = adaptive
-        self.stat = None  # single step CMF stats used in adaptive tdvp
         self.evolve_dt = evolve_dt  # a wild guess
 
         self.prop_method = "C_RK4"
@@ -227,7 +228,7 @@ class EvolveConfig:
 
     @property
     def should_adjust_bond_order(self):
-        assert self.scheme != EvolveMethod.prop_and_compress
+        assert self.method != EvolveMethod.prop_and_compress
         if not self._adjust_bond_order_counter:
             self._adjust_bond_order_counter = True
             return True

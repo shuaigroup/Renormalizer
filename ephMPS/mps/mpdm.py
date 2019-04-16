@@ -81,6 +81,7 @@ class MpDm(Mps, Mpo):
         mpo.qn = [qn.copy() for qn in mps.qn]
         mpo.qntot = mps.qntot
         mpo.qnidx = mps.qnidx
+        mpo.left = mps.left
         mpo.compress_config = mps.compress_config.copy()
         return mpo
 

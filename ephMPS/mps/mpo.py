@@ -107,7 +107,7 @@ def get_mpo_dim_qn(mol_list, scheme, rep):
                     mpo_dim.append(3)
                     mpo_qn.append([0, 0, 0])
     else:
-        raise ValueError(f"unknow scheme: {scheme}")
+        raise ValueError(f"unknown scheme: {scheme}")
     mpo_dim[0] = 1
     return mpo_dim, mpo_qn
 
@@ -194,7 +194,7 @@ def get_qb_mpo_dim_qn(mol_list, old_dim, old_qn, rep):
 
 class Mpo(MatrixProduct):
     @classmethod
-    def exact_propagator(cls, mol_list, x, space="GS", shift=0.0):
+    def exact_propagator(cls, mol_list: MolList, x, space="GS", shift=0.0):
         """
         construct the GS space propagator e^{xH} exact MPO
         H=\\sum_{in} \\omega_{in} b^\\dagger_{in} b_{in}
@@ -207,12 +207,16 @@ class Mpo(MatrixProduct):
         mpo = cls().to_complex()
         mpo.mol_list = mol_list
 
-        for mol in mol_list:
-            e_pbond = mol.pbond[0]
-            mo = np.zeros([1, e_pbond, e_pbond, 1])
-            for ibra in range(e_pbond):
-                mo[0, ibra, ibra, 0] = 1.0
-            mpo.append(mo)
+        for imol, mol in enumerate(mol_list):
+            if mol_list.scheme < 4:
+                mo = np.eye(2).reshape(1, 2, 2, 1)
+                mpo.append(mo)
+            elif mol_list.scheme == 4:
+                if len(mpo) == mol_list.e_idx():
+                    n = mol_list.mol_num
+                    mpo.append(np.eye(n).reshape(1, n, n, 1))
+            else:
+                assert False
 
             for ph in mol.dmrg_phs:
 
@@ -285,7 +289,8 @@ class Mpo(MatrixProduct):
                         mo[0, :, :, 0] = h_mo
 
                         mpo.append(mo)
-
+                else:
+                    assert False
         # shift the H by plus a constant
 
         mpo.qn = [[0]] * (len(mpo) + 1)
@@ -376,7 +381,7 @@ class Mpo(MatrixProduct):
             mpo.append(u)
             mat = np.einsum("i, ij -> ij", s, vt)
 
-        mpo.append(mat.reshape(-1, base, base, 1))
+        mpo.append(mat.reshape((-1, base, base, 1)))
         # print "original MPO shape:", [i.shape[0] for i in MPO] + [1]
         mpo.build_empty_qn()
         # compress
@@ -390,8 +395,10 @@ class Mpo(MatrixProduct):
         return mpo
 
     @classmethod
-    def onsite(cls, mol_list, opera, dipole=False, mol_idx_set=None):
+    def onsite(cls, mol_list: MolList, opera, dipole=False, mol_idx_set=None):
         assert opera in ["a", r"a^\dagger", r"a^\dagger a"]
+        if mol_list.scheme == 4:
+            return VirtualOnSite(mol_list, opera, dipole, mol_idx_set)
         nmols = len(mol_list)
         if mol_idx_set is None:
             mol_idx_set = set(np.arange(nmols))
@@ -413,9 +420,8 @@ class Mpo(MatrixProduct):
         mpo.mol_list = mol_list
         impo = 0
         for imol in range(nmols):
-            pbond = mol_list.pbond_list[impo]
-            eop = construct_e_op_dict(pbond)
-            mo = np.zeros([mpo_dim[impo], pbond, pbond, mpo_dim[impo + 1]])
+            eop = construct_e_op_dict()
+            mo = np.zeros([mpo_dim[impo], 2, 2, mpo_dim[impo + 1]])
 
             if imol in mol_idx_set:
                 if dipole:
@@ -474,18 +480,25 @@ class Mpo(MatrixProduct):
                 + [[0]] * (totnqboson + 1)
             )
             mpo.qntot = 0
+        else:
+            assert False
         mpo.qn[-1] = [0]
 
         return mpo
 
     @classmethod
-    def ph_occupation_mpo(cls, mol_list, mol_idx, ph_idx=0):
+    def ph_occupation_mpo(cls, mol_list: MolList, mol_idx: int, ph_idx=0):
         mpo = cls()
         mpo.mol_list = mol_list
         for imol, mol in enumerate(mol_list):
-            e_pbond = mol.pbond[0]
-            eop = construct_e_op_dict(e_pbond)
-            mpo.append(eop["Iden"].reshape(1, e_pbond, e_pbond, 1))
+            if mol_list.scheme < 4:
+                mpo.append(xp.eye(2).reshape(1, 2, 2, 1))
+            elif mol_list.scheme == 4:
+                if len(mpo) == mol_list.e_idx():
+                    n = mol_list.mol_num
+                    mpo.append(xp.eye(n).reshape(1, n, n, 1))
+            else:
+                assert False
             iph = 0
             for ph in mol.dmrg_phs:
                 for iqph in range(ph.nqboson):
@@ -499,10 +512,87 @@ class Mpo(MatrixProduct):
         mpo.build_empty_qn()
         return mpo
 
+    def _scheme4(self, mol_list: MolList, elocal_offset, offset):
+
+        # setup some metadata
+        self.rep = None
+        self.use_dummy_qn = True
+        self.offset = offset
+
+        def get_marginal_phonon_mo(pdim, bdim, ph, phop):
+            mo = xp.zeros((1, pdim, pdim, bdim))
+            mo[0, :, :, 0] = phop[r"b^\dagger b"] * ph.omega[0]
+            mo[0, :, :, 1] = phop[r"b^\dagger + b"] * ph.term10
+            mo[0, :, :, -1] = phop[r"Iden"]
+            return mo
+
+        def get_phonon_mo(pdim, bdim, ph, phop, isfirst):
+            if isfirst:
+                mo = xp.zeros((bdim - 1, pdim, pdim, bdim))
+            else:
+                mo = xp.zeros((bdim, pdim, pdim, bdim))
+            mo[-1, :, :, 0] = phop[r"b^\dagger b"] * ph.omega[0]
+            for i in range(bdim - 1):
+                mo[i, :, :, i] = phop[r"Iden"]
+            if isfirst:
+                mo[bdim - 2, :, :, bdim - 2] = phop[r"b^\dagger + b"] * ph.term10
+            else:
+                mo[bdim - 1, :, :, bdim - 2] = phop[r"b^\dagger + b"] * ph.term10
+            mo[-1, :, :, -1] = phop[r"Iden"]
+            return mo
+
+        nmol = mol_list.mol_num
+        n_left_mol = nmol // 2
+        n_right_mol = nmol - n_left_mol
+        # the first half phonons
+        for imol, mol in enumerate(mol_list[:n_left_mol]):
+            for iph, ph in enumerate(mol.dmrg_phs):
+                assert ph.is_simple
+                pdim = ph.n_phys_dim
+                bdim = imol + 3
+                phop = construct_ph_op_dict(pdim)
+                if imol == iph == 0:
+                    mo = get_marginal_phonon_mo(pdim, bdim, ph, phop)
+                    for i in range(mo.shape[1]):
+                        mo[0, i, i, 0] -= offset.as_au()
+                else:
+                    mo = get_phonon_mo(pdim, bdim, ph, phop, iph == 0)
+                self.append(mo)
+        # the electronic part
+        center_mo = xp.zeros((n_left_mol+2, nmol, nmol, n_right_mol+2))
+        center_mo[0, :, :, 0] = center_mo[-1, :, :, -1] = xp.eye(nmol)
+        j_matrix = mol_list.j_matrix.copy()
+        for i in range(mol_list.mol_num):
+            j_matrix[i, i] = mol_list[i].elocalex + mol_list[i].reorganization_energy
+        if elocal_offset is not None:
+            j_matrix += np.diag(elocal_offset)
+        center_mo[-1, :, :, 0] = j_matrix
+        for i in range(nmol):
+            m = xp.zeros((nmol, nmol))
+            m[i, i] = 1
+            if i < n_left_mol:
+                center_mo[i+1, :, :, 0] = m
+            else:
+                center_mo[-1, :, :, i-n_left_mol+1] = m
+        self.append(center_mo)
+        # remaining phonons
+        for imol, mol in enumerate(mol_list[n_left_mol:]):
+            for iph, ph in enumerate(mol.dmrg_phs):
+                assert ph.is_simple
+                pdim = ph.n_phys_dim
+                bdim = n_right_mol + 2 - imol
+                phop = construct_ph_op_dict(pdim)
+                if imol == n_right_mol - 1 and iph == mol.n_dmrg_phs - 1:
+                    mo = get_marginal_phonon_mo(pdim, bdim, ph, phop)
+                else:
+                    islast =  iph == (mol.n_dmrg_phs - 1)
+                    mo = get_phonon_mo(pdim, bdim, ph, phop, islast)
+                self.append(mo.transpose((3, 1, 2, 0))[::-1, :, :, ::-1])
+        self.build_empty_qn()
+
     def __init__(
         self,
         mol_list: MolList=None,
-        scheme=2,
         rep="star",
         elocal_offset=None,
         offset=Quantity(0),
@@ -514,7 +604,9 @@ class Mpo(MatrixProduct):
         rep (representation) has "star" or "chain"
         please see doc
         """
-        assert rep in ["star", "chain"]
+        assert rep in ["star", "chain", None]
+        if rep is None:
+            assert mol_list.scheme == 4
 
         super(Mpo, self).__init__()
         if mol_list is None:
@@ -522,17 +614,24 @@ class Mpo(MatrixProduct):
         if mol_list.pure_hartree:
             raise ValueError("Can't construct MPO for pure hartree model")
 
+        # used in the hybrid TDDMRG/TDH algorithm
+        if elocal_offset is not None:
+            assert len(elocal_offset) == mol_list.mol_num
+
         self.mol_list = mol_list
-        self.scheme = scheme
+
+        self.scheme = scheme = self.mol_list.scheme
+
+        if scheme == 4:
+            self._scheme4(mol_list, elocal_offset, offset)
+            return
+
         self.rep = rep
         # offset of the hamiltonian, might be useful when doing td-hartree job
         self.offset = offset
         j_matrix = self.mol_list.j_matrix
         nmols = len(mol_list)
 
-        # used in the hybrid TDDMRG/TDH algorithm
-        if elocal_offset is not None:
-            assert len(elocal_offset) == nmols
 
         mpo_dim, mpo_qn = get_mpo_dim_qn(mol_list, scheme, rep)
 
@@ -550,9 +649,8 @@ class Mpo(MatrixProduct):
             mididx = nmols // 2
 
             # electronic part
-            pbond = mol_list.pbond_list[impo]
-            mo = np.zeros([mpo_dim[impo], pbond, pbond, mpo_dim[impo + 1]])
-            eop = construct_e_op_dict(pbond)
+            mo = np.zeros([mpo_dim[impo], 2, 2, mpo_dim[impo + 1]])
+            eop = construct_e_op_dict()
             # last row operator
             elocal = mol.elocalex
             if elocal_offset is not None:
@@ -630,7 +728,7 @@ class Mpo(MatrixProduct):
             for iph, ph in enumerate(mol.dmrg_phs):
                 nqb = mol.dmrg_phs[iph].nqboson
                 if nqb == 1:
-                    pbond = mol_list.pbond_list[impo]
+                    pbond = self.pbond_list[impo]
                     phop = construct_ph_op_dict(pbond)
                     mo = np.zeros([mpo_dim[impo], pbond, pbond, mpo_dim[impo + 1]])
                     # first column
@@ -676,7 +774,7 @@ class Mpo(MatrixProduct):
                 else:
                     # b + b^\dagger in Mpo representation
                     for iqb in range(nqb):
-                        pbond = mol_list.pbond_list[impo]
+                        pbond = self.pbond_list[impo]
                         phop = construct_ph_op_dict(pbond)
                         mo = np.zeros([mpo_dim[impo], pbond, pbond, mpo_dim[impo + 1]])
 
@@ -983,7 +1081,55 @@ class Mpo(MatrixProduct):
         dim = np.prod(self.pbond_list)
         if 20000 < dim:
             raise ValueError("operator too large")
-        res = ones((1,))
+        res = ones((1, 1, 1, 1))
         for mt in self:
-            res = tensordot(res, mt, axes=1)
-        return res.reshape((dim, dim))
+            dim1 = res.shape[1] * mt.shape[1]
+            dim2 = res.shape[2] * mt.shape[2]
+            dim3 = mt.shape[-1]
+            res = tensordot(res, mt, axes=1).transpose((0, 1, 3, 2, 4, 5)).reshape(1, dim1, dim2, dim3)
+        return res[0, :, :, 0]
+
+
+class VirtualOnSite(Mpo):
+    """
+    acts like a mpo but manipulates mps or mpdm directly
+    """
+
+    def __init__(self, mol_list, opera, dipole=False, mol_idx_set=None):
+        super().__init__(None)
+        assert mol_list.scheme == 4
+        self.mol_list = mol_list
+        self.type = "onsite"
+        self.opera = opera
+        assert not dipole  # not implemented
+        self.dipole = dipole
+        if mol_idx_set is None:
+            self.mol_idx_set = np.arange(len(mol_list))
+        else:
+            self.mol_idx_set = mol_idx_set
+        assert len(self.mol_idx_set) != 0
+
+    def apply(self, mp: MatrixProduct, canonicalise=False):
+        assert mp.mol_list.scheme == 4
+        new_mp = mp.copy()
+        e_ms = mp[self.mol_list.e_idx()]
+        new_ms = xp.zeros_like(e_ms)
+        if self.opera == r"a^\dagger a":
+            for idx in self.mol_idx_set:
+                new_ms[:, idx, ...] = e_ms[:, idx, ...]
+        elif self.opera == r"a^\dagger":
+            assert (e_ms.original_shape[0], e_ms.original_shape[-1]) == (1, 1)
+            for idx in self.mol_idx_set:
+                if mp.is_mps:
+                    new_ms[0, idx, 0] = 1
+                elif mp.is_mpdm:
+                    new_ms[0, idx, idx, 0] = 1
+                else:
+                    assert False
+        else:
+            assert False
+        new_mp[self.mol_list.e_idx()] = new_ms
+
+        if canonicalise:
+            new_mp.canonicalise()
+        return new_mp
