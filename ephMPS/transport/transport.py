@@ -10,13 +10,15 @@ from collections import OrderedDict
 from functools import partial
 from typing import Union
 
-import numpy as np
 
 from ephMPS.mps.backend import backend
 from ephMPS.mps.matrix import tensordot, ones
 from ephMPS.mps import Mpo, Mps, MpDm, solver
 from ephMPS.model import MolList
-from ephMPS.utils import TdMpsJob, Quantity, CompressCriteria, CompressConfig
+from ephMPS.utils import TdMpsJob, Quantity, CompressCriteria
+from ephMPS.utils.utils import cast_float
+
+import numpy as np
 
 logger = logging.getLogger(__name__)
 
@@ -50,7 +52,7 @@ class ChargeTransport(TdMpsJob):
         self.reduced_density_matrices = []
         if rdm:
             self.reduced_density_matrices.append(
-                calc_reduced_density_matrix(self.tdmps_list[0])
+                self.tdmps_list[0].calc_reduced_density_matrix()
             )
         self.elocalex_arrays = []
         self.j_arrays = []
@@ -112,7 +114,7 @@ class ChargeTransport(TdMpsJob):
             energy = Quantity(gs_mp.expectation(tentative_mpo))
             mpo = Mpo(self.mol_list, offset=energy)
             gs_mp = gs_mp.thermal_prop_exact(
-                mpo, self.temperature.to_beta() / 2, 50, "GS", True
+                mpo, self.temperature.to_beta() / 2, 500, "GS", True
             )
         init_mp = self.create_electron(gs_mp)
         energy = Quantity(init_mp.expectation(tentative_mpo))
@@ -124,7 +126,7 @@ class ChargeTransport(TdMpsJob):
         init_mp.evolve_config = self.evolve_config
         # init the compress config if not using threshold
         if self.compress_config.criteria is not CompressCriteria.threshold:
-            self.compress_config.set_bondorder(length=len(init_mp) + 1)
+            self.compress_config.set_bonddim(length=len(init_mp) + 1)
         init_mp.compress_config = self.compress_config
         # init_mp.invalidate_cache()
         return init_mp
@@ -148,7 +150,7 @@ class ChargeTransport(TdMpsJob):
             old_mps.clear_memory()
         if self.reduced_density_matrices:
             logger.debug("Calculating reduced density matrix")
-            self.reduced_density_matrices.append(calc_reduced_density_matrix(new_mps))
+            self.reduced_density_matrices.append(new_mps.calc_reduced_density_matrix())
             logger.debug("Calculate reduced density matrix finished")
         return new_mps
 
@@ -168,23 +170,15 @@ class ChargeTransport(TdMpsJob):
         dump_dict["thresholds"] = [tdmps.threshold for tdmps in self.tdmps_list]
         dump_dict["other info"] = self.custom_dump_info
         # make np array json serializable
-        dump_dict["r square array"] = list(self.r_square_array)
-        dump_dict["electron occupations array"] = [
-            list(occupations) for occupations in self.e_occupations_array
-        ]
-        dump_dict["phonon occupations array"] = [
-            list(occupations) for occupations in self.ph_occupations_array
-        ]
+        dump_dict["r square array"] = cast_float(self.r_square_array)
+        dump_dict["electron occupations array"] = cast_float(self.e_occupations_array)
+        dump_dict["phonon occupations array"] = cast_float(self.ph_occupations_array)
         #dump_dict["elocalex arrays"] = [list(e) for e in self.elocalex_arrays]
-        dump_dict["j arrays"] = [list(j) for j in self.j_arrays]
-        dump_dict["coherent length array"] = list(map(float, self.coherent_length_array.real))
+        #dump_dict["j arrays"] = [list(j) for j in self.j_arrays]
+        dump_dict["coherent length array"] = cast_float(self.coherent_length_array.real)
         if self.reduced_density_matrices:
-            dump_dict["final reduced density matrix real"] = [
-                list(list(map(float, row.real))) for row in self.reduced_density_matrices[-1]
-            ]
-            dump_dict["final reduced density matrix imag"] = [
-                list(list(map(float, row.imag))) for row in self.reduced_density_matrices[-1]
-            ]
+            dump_dict["final reduced density matrix real"] = cast_float(self.reduced_density_matrices[-1].real)
+            dump_dict["final reduced density matrix imag"] = cast_float(self.reduced_density_matrices[-1].imag)
         dump_dict["time series"] = list(self.evolve_times)
         return dump_dict
 

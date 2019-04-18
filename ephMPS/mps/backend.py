@@ -11,20 +11,21 @@ logger = logging.getLogger(__name__)
 
 if importlib.util.find_spec("cupy"):
     import cupy as cp
-
     xp = cp
-    # The following code can reduce memory usage and bug it hampers performance
-    # cp.cuda.set_allocator(None)
-    # cp.cuda.set_pinned_memory_allocator(None)
-    # should have a cleverer way to deal with memory issue
-    logger.info("use cupy as backend")
 else:
     cp = None
     xp = np
-    logger.info("use numpy as backend")
+
 
 
 # xp = np
+
+if xp is np:
+    logger.info("use numpy as backend")
+elif xp is cp:
+    logger.info("use cupy as backend")
+else:
+    assert False
 
 
 class Backend:
@@ -42,7 +43,7 @@ class Backend:
         self._real_dtype = None
         self._complex_dtype = None
         self.use_32bits()
-        #self.use_64bits()
+        # self.use_64bits()
 
     def free_all_blocks(self):
         if xp == np:

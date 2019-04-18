@@ -11,7 +11,7 @@ import yaml
 
 from ephMPS.model import Phonon, Mol, MolList
 from ephMPS.transport import ChargeTransport
-from ephMPS.utils import log, Quantity, EvolveConfig, EvolveMethod, RungeKutta, CompressConfig, BondOrderDistri
+from ephMPS.utils import log, Quantity, EvolveConfig, EvolveMethod, RungeKutta, CompressConfig, BondDimDistri
 
 logger = logging.getLogger(__name__)
 
@@ -37,9 +37,9 @@ if __name__ == "__main__":
         * param["mol num"],
         j_constant,
     )
-    compress_config = CompressConfig(bondorder_distri=BondOrderDistri.center_gauss, max_bondorder=80)
+    compress_config = CompressConfig(bonddim_distri=BondDimDistri.center_gauss, max_bonddim=80)
     evolve_config = EvolveConfig(EvolveMethod.tdvp_ps, adaptive=True)
-    # evolve_config.expected_bond_order = 80
+    # evolve_config.expected_bond_dim = 80
     #rk_config = RungeKutta("RKF45")
     #rk_config.evolve_dt = 40
     #compress_config = CompressConfig()

@@ -10,7 +10,7 @@ from ephMPS.utils.rk import RungeKutta
 logger = logging.getLogger(__name__)
 
 
-class BondOrderDistri(Enum):
+class BondDimDistri(Enum):
     uniform = "uniform"
     center_gauss = "center gaussian"
     runtime = "runtime"
@@ -27,20 +27,20 @@ class CompressConfig:
         self,
         criteria: CompressCriteria = CompressCriteria.threshold,
         threshold: float = 1e-3,
-        bondorder_distri: BondOrderDistri = BondOrderDistri.uniform,
-        max_bondorder: int = None,
+        bonddim_distri: BondDimDistri = BondDimDistri.uniform,
+        max_bonddim: int = None,
     ):
         # two sets of criteria here: threshold and max_bondorder
         # `criteria` is to determine which to use
         self.criteria: CompressCriteria = criteria
         self._threshold = None
         self.threshold = threshold
-        self.bond_order_distribution: BondOrderDistri = bondorder_distri
-        self.bondorder_max_value = max_bondorder
-        self.bondorder_min_value = 20
+        self.bond_dim_distribution: BondDimDistri = bonddim_distri
+        self.bond_dim_max_value = max_bonddim
+        self.bond_dim_min_value = 20
         # the length should be len(mps) + 1, the terminals are also counted. This is for accordance with mps.bond_dims
-        self.max_bondorders: np.ndarray = None
-        self.min_bondorders: np.ndarray = None
+        self.max_dims: np.ndarray = None
+        self.min_dims: np.ndarray = None
 
     @property
     def threshold(self):
@@ -56,29 +56,29 @@ class CompressConfig:
             raise ValueError("Can't set threshold to be larger than 1")
         self._threshold = v
 
-    def set_bondorder(self, length, max_value=None):
+    def set_bonddim(self, length, max_value=None):
         if self.criteria is CompressCriteria.threshold:
             raise ValueError("compress config is using threshold criteria")
         if max_value is None:
-            max_value = self.bondorder_max_value
+            max_value = self.bond_dim_max_value
         else:
-            self.bondorder_max_value = max_value
+            self.bond_dim_max_value = max_value
         if max_value is None:
             raise ValueError("max value is not set")
-        if self.bond_order_distribution is BondOrderDistri.uniform:
-            self.max_bondorders = np.full(length, max_value)
+        if self.bond_dim_distribution is BondDimDistri.uniform:
+            self.max_dims = np.full(length, max_value)
         else:
             half_length = length // 2
             x = np.arange(- half_length, - half_length + length)
             sigma = half_length / np.sqrt(np.log(max_value / 3))
             seq = list(max_value * np.exp(-(x / sigma) ** 2))
-            self.max_bondorders = np.int64(seq)
-            assert not (self.max_bondorders == 0).any()
-        self.min_bondorders = np.full(length, self.bondorder_min_value)
+            self.max_dims = np.int64(seq)
+            assert not (self.max_dims == 0).any()
+        self.min_dims = np.full(length, self.bond_dim_min_value)
 
-    def set_runtime_bondorder(self, bond_orders):
-        self.bond_order_distribution = BondOrderDistri.runtime
-        self.max_bondorders = np.array(bond_orders)
+    def set_runtime_bondorder(self, bond_dims):
+        self.bond_dim_distribution = BondDimDistri.runtime
+        self.max_dims = np.array(bond_dims)
 
     def _threshold_m_trunc(self, sigma: np.ndarray) -> int:
         assert 0 < self.threshold < 1
@@ -87,9 +87,9 @@ class CompressConfig:
         return int(np.sum(normed_sigma > self.threshold))
 
     def _fixed_m_trunc(self, sigma: np.ndarray, idx: int, left: bool) -> int:
-        assert self.max_bondorders is not None
+        assert self.max_dims is not None
         bond_idx = idx + 1 if left else idx
-        return min(self.max_bondorders[bond_idx], len(sigma))
+        return min(self.max_dims[bond_idx], len(sigma))
 
     def compute_m_trunc(self, sigma: np.ndarray, idx: int, left: bool) -> int:
         if self.criteria is CompressCriteria.threshold:
@@ -103,9 +103,9 @@ class CompressConfig:
             )
         else:
             assert False
-        if self.min_bondorders is not None:
+        if self.min_dims is not None:
             bond_idx = idx if left else idx + 1
-            min_trunc = min(self.min_bondorders[bond_idx], len(sigma))
+            min_trunc = min(self.min_dims[bond_idx], len(sigma))
             trunc = max(trunc, min_trunc)
         return trunc
 
@@ -116,21 +116,21 @@ class CompressConfig:
         # look for minimum
         self.threshold = min(self.threshold, other.threshold)
         # look for maximum
-        if self.max_bondorders is None:
-            self.max_bondorders = other.max_bondorders
-        elif other.max_bondorders is None:
+        if self.max_dims is None:
+            self.max_dims = other.max_dims
+        elif other.max_dims is None:
             pass  # do nothing
         else:
-            self.max_bondorders = np.maximum(self.max_bondorders, other.max_bondorders)
+            self.max_dims = np.maximum(self.max_dims, other.max_dims)
 
     def relax(self):
         # relax the two criteria simultaneously
         self.threshold = min(
             self.threshold * 3, 0.9
         )  # can't set to 1 which is ambiguous
-        if self.max_bondorders is not None:
-            self.max_bondorders = np.maximum(
-                np.int64(self.max_bondorders * 0.8), np.full_like(self.max_bondorders, 2)
+        if self.max_dims is not None:
+            self.max_dims = np.maximum(
+                np.int64(self.max_dims * 0.8), np.full_like(self.max_dims, 2)
             )
 
     def copy(self) -> "CompressConfig":
@@ -138,8 +138,8 @@ class CompressConfig:
         # shallow copies
         new.__dict__ = self.__dict__.copy()
         # deep copy
-        if self.max_bondorders is not None:
-            new.max_bondorders = self.max_bondorders.copy()
+        if self.max_dims is not None:
+            new.max_dims = self.max_dims.copy()
         return new
 
 
@@ -205,9 +205,9 @@ class EvolveConfig:
                 )
 
         if self.method != EvolveMethod.prop_and_compress:
-            self.max_bond_order = 32
+            self.max_bond_dim = 32
         else:
-            self.max_bond_order = None
+            self.max_bond_dim = None
 
         # tdvp also requires prop and compress
         if adaptive:
@@ -220,17 +220,17 @@ class EvolveConfig:
         self.prop_method = "C_RK4"
 
         # should adjust bond order before any tdvp evolution
-        self._adjust_bond_order_counter = False
+        self._adjust_bond_dim_counter = False
 
     def enlarge_evolve_dt(self, ratio=1.5):
         self.evolve_dt *= ratio
-        self._adjust_bond_order_counter += 3 * ratio
+        self._adjust_bond_dim_counter += 3 * ratio
 
     @property
-    def should_adjust_bond_order(self):
+    def should_adjust_bond_dim(self):
         assert self.method != EvolveMethod.prop_and_compress
-        if not self._adjust_bond_order_counter:
-            self._adjust_bond_order_counter = True
+        if not self._adjust_bond_dim_counter:
+            self._adjust_bond_dim_counter = True
             return True
         else:
             return False

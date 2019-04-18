@@ -520,7 +520,7 @@ class Mpo(MatrixProduct):
         self.offset = offset
 
         def get_marginal_phonon_mo(pdim, bdim, ph, phop):
-            mo = xp.zeros((1, pdim, pdim, bdim))
+            mo = np.zeros((1, pdim, pdim, bdim))
             mo[0, :, :, 0] = phop[r"b^\dagger b"] * ph.omega[0]
             mo[0, :, :, 1] = phop[r"b^\dagger + b"] * ph.term10
             mo[0, :, :, -1] = phop[r"Iden"]
@@ -528,9 +528,9 @@ class Mpo(MatrixProduct):
 
         def get_phonon_mo(pdim, bdim, ph, phop, isfirst):
             if isfirst:
-                mo = xp.zeros((bdim - 1, pdim, pdim, bdim))
+                mo = np.zeros((bdim - 1, pdim, pdim, bdim))
             else:
-                mo = xp.zeros((bdim, pdim, pdim, bdim))
+                mo = np.zeros((bdim, pdim, pdim, bdim))
             mo[-1, :, :, 0] = phop[r"b^\dagger b"] * ph.omega[0]
             for i in range(bdim - 1):
                 mo[i, :, :, i] = phop[r"Iden"]
@@ -559,8 +559,8 @@ class Mpo(MatrixProduct):
                     mo = get_phonon_mo(pdim, bdim, ph, phop, iph == 0)
                 self.append(mo)
         # the electronic part
-        center_mo = xp.zeros((n_left_mol+2, nmol, nmol, n_right_mol+2))
-        center_mo[0, :, :, 0] = center_mo[-1, :, :, -1] = xp.eye(nmol)
+        center_mo = np.zeros((n_left_mol+2, nmol, nmol, n_right_mol+2))
+        center_mo[0, :, :, 0] = center_mo[-1, :, :, -1] = np.eye(nmol)
         j_matrix = mol_list.j_matrix.copy()
         for i in range(mol_list.mol_num):
             j_matrix[i, i] = mol_list[i].elocalex + mol_list[i].reorganization_energy
@@ -568,7 +568,7 @@ class Mpo(MatrixProduct):
             j_matrix += np.diag(elocal_offset)
         center_mo[-1, :, :, 0] = j_matrix
         for i in range(nmol):
-            m = xp.zeros((nmol, nmol))
+            m = np.zeros((nmol, nmol))
             m[i, i] = 1
             if i < n_left_mol:
                 center_mo[i+1, :, :, 0] = m
@@ -1113,7 +1113,7 @@ class VirtualOnSite(Mpo):
         assert mp.mol_list.scheme == 4
         new_mp = mp.copy()
         e_ms = mp[self.mol_list.e_idx()]
-        new_ms = xp.zeros_like(e_ms)
+        new_ms = xp.zeros_like(e_ms.array)
         if self.opera == r"a^\dagger a":
             for idx in self.mol_idx_set:
                 new_ms[:, idx, ...] = e_ms[:, idx, ...]

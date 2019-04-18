@@ -359,8 +359,10 @@ class MatrixProduct:
 
         assert len(self) == len(other)
         e0 = eye(1, 1)
+        t = []
         for mt1, mt2 in zip(self, other):
             # sum_x e0[:,x].m[x,:,:]
+            t.append(e0)
             e0 = tensordot(e0, mt2, 1)
             # sum_ij e0[i,p,:] self[i,p,:]
             # note, need to flip a (:) index onto top,
@@ -411,9 +413,11 @@ class MatrixProduct:
             val = abs(val)
         # Note matrices are read-only
         # there are two ways to do the scaling
-        if np.abs(np.log(np.abs(val))) < 1:
+        if np.abs(np.log(np.abs(val))) < 0.01:
             # Thr first way. The operation performs very quickly,
             # but leads to high float point error when val is very large or small
+            # val = 2 is considered as very large because the normalization can
+            # be done successively
             assert new_mp[self.qnidx].array.any()
             new_mp[self.qnidx] = new_mp[self.qnidx] * val
         else:

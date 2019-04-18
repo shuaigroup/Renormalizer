@@ -4,7 +4,7 @@
 from ephMPS.utils.quantity import Quantity
 from ephMPS.utils.utils import sizeof_fmt
 from ephMPS.utils.configs import (
-    BondOrderDistri,
+    BondDimDistri,
     CompressCriteria,
     CompressConfig,
     OptimizeConfig,

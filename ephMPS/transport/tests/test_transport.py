@@ -11,7 +11,7 @@ from ephMPS.mps.solver import optimize_mps
 from ephMPS.transport import ChargeTransport, InitElectron, EDGE_THRESHOLD
 from ephMPS.utils import Quantity
 from ephMPS.utils import (
-    BondOrderDistri,
+    BondDimDistri,
     CompressCriteria,
     CompressConfig,
     EvolveMethod,
@@ -102,11 +102,11 @@ def test_32backend(switch_to_32backend):
     assert_band_limit(ct, 1e-2)
 
 
-def test_gaussian_bond_order():
+def test_gaussian_bond_dim():
     compress_config = CompressConfig(
         criteria=CompressCriteria.fixed,
-        bondorder_distri=BondOrderDistri.center_gauss,
-        max_bondorder=10,
+        bonddim_distri=BondDimDistri.center_gauss,
+        max_bonddim=10,
     )
     evolve_config = EvolveConfig(evolve_dt=4, adaptive=True)
     ct = ChargeTransport(

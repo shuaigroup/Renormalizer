@@ -230,7 +230,7 @@ class MpDm(Mps, Mpo):
             new_mpdm.normalize(1.0)
         return new_mpdm
 
-    def calc_reduced_density_matrix(self):
+    def calc_reduced_density_matrix(self) -> np.ndarray:
         if self.mol_list.scheme < 4:
             return self._calc_reduced_density_matrix(self, self.conj_trans())
         elif self.mol_list.scheme == 4:
@@ -238,7 +238,7 @@ class MpDm(Mps, Mpo):
             copy = self.copy()
             copy.canonicalise(self.mol_list.e_idx())
             e_mo = copy[self.mol_list.e_idx()]
-            return tensordot(e_mo, e_mo.conj(), axes=((0, 2 ,3), (0, 2, 3))).array
+            return tensordot(e_mo, e_mo.conj(), axes=((0, 2 ,3), (0, 2, 3))).asnumpy()
         else:
             assert False
 

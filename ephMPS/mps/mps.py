@@ -401,10 +401,11 @@ class Mps(MatrixProduct):
                     assert False
                 self[replacement_idx] = ms
         res = np.sqrt(self.conj().dot(self, with_hartree=False).real)
+        assert res != 0
         self[replacement_idx] = orig_ms
         return res
 
-    def expectation(self, mpo, self_conj=None):
+    def expectation(self, mpo, self_conj=None) -> float:
         # todo: different bra and ket
         if self_conj is None:
             self_conj = self.conj()
@@ -546,7 +547,7 @@ class Mps(MatrixProduct):
         elif self.mol_list.scheme == 4:
             # get rdm is very fast
             rdm = self.calc_reduced_density_matrix()
-            return xp.diag(rdm)
+            return np.diag(rdm).real
         else:
             assert False
 
@@ -697,13 +698,13 @@ class Mps(MatrixProduct):
             self.use_dummy_qn = True
             self.clear_qn()
 
-        if self.evolve_config.should_adjust_bond_order:
+        if self.evolve_config.should_adjust_bond_dim:
             logger.debug("adjusting bond order")
             # use this custom compress method for tdvp
             orig_compress_config: CompressConfig = self.compress_config.copy()
             self.compress_config.criteria = CompressCriteria.fixed
-            self.compress_config.set_bondorder(
-                len(self) + 1, self.evolve_config.max_bond_order
+            self.compress_config.set_bonddim(
+                len(self) + 1, self.evolve_config.max_bond_dim
             )
             config = self.evolve_config.copy()
             config.adaptive = True
@@ -1219,7 +1220,7 @@ class Mps(MatrixProduct):
                 reduced_density_matrix[i][j] = elem.flatten()[0]
         return reduced_density_matrix
 
-    def calc_reduced_density_matrix(self):
+    def calc_reduced_density_matrix(self) -> np.ndarray:
         if self.mol_list.scheme < 4:
             mp1 = [mt.reshape(mt.shape[0], mt.shape[1], 1, mt.shape[2]) for mt in self]
             mp2 = [mt.reshape(mt.shape[0], 1, mt.shape[1], mt.shape[2]).conj() for mt in self]
@@ -1229,7 +1230,7 @@ class Mps(MatrixProduct):
             copy = self.copy()
             copy.canonicalise(self.mol_list.e_idx())
             e_mo = copy[self.mol_list.e_idx()]
-            return tensordot(e_mo.conj(), e_mo, axes=((0, 2), (0, 2))).array
+            return tensordot(e_mo.conj(), e_mo, axes=((0, 2), (0, 2))).asnumpy()
         else:
             assert False
 
@@ -1239,7 +1240,7 @@ class Mps(MatrixProduct):
         e_occupations_str = ", ".join(
             ["%.2f" % number for number in self.e_occupations]
         )
-        template_str = "current size: {}, peak size: {}, Matrix product bond order:{}, electron occupations: {}"
+        template_str = "current size: {}, peak size: {}, Matrix product bond dim:{}, electron occupations: {}"
         return template_str.format(
             sizeof_fmt(self.total_bytes),
             sizeof_fmt(self.peak_bytes),
