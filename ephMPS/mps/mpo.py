@@ -1067,9 +1067,6 @@ class Mpo(MatrixProduct):
         new_mps.compress()
         return new_mps
 
-    def contract_variational(self):
-        raise NotImplementedError
-
     def conj_trans(self):
         new_mpo = self.metacopy()
         for i in range(new_mpo.site_num):
