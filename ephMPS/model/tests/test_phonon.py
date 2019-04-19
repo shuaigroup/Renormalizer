@@ -1,6 +1,7 @@
 # -*- coding: utf-8 -*-
 
 from math import sqrt
+from functools import reduce
 
 import pytest
 import numpy as np
@@ -37,4 +38,14 @@ def test_simplest_phonon():
     assert ph.nlevels == 16
     ph = Phonon.simplest_phonon(Quantity(0.032), Quantity(6.25))
     assert ph.nlevels == 16
+    ph = Phonon.simplest_phonon(Quantity(1), Quantity(0.01), temperature=Quantity(1))
+    assert ph.nlevels == 10
 
+
+def test_split():
+    ph = Phonon.simplest_phonon(Quantity(100, "cm-1"), Quantity(1))
+    ph1, ph2 = ph.split(width=Quantity(20, "cm-1"))
+    assert ph1.e0 == ph2.e0 == ph.e0 / 2
+    assert ph1.omega[0] == Quantity(80, "cm-1").as_au()
+    ph_list = ph.split(n=100)
+    assert reduce(lambda x, y: x+y, map(lambda x: x.e0, ph_list)) == ph.e0

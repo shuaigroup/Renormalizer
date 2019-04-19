@@ -70,13 +70,17 @@ class Quantity(object):
         assert not isinstance(other, Quantity)
         return Quantity(self.as_au() * other)
 
+    def __rmul__(self, other):
+        assert not isinstance(other, Quantity)
+        return Quantity(self.as_au() * other)
+
     def __truediv__(self, other):
         assert not isinstance(other, Quantity)
         return Quantity(self.as_au() / other)
 
     def __eq__(self, other):
         if hasattr(other, "as_au"):
-            return self.as_au == other.as_au()
+            return abs (self.as_au() - other.as_au()) < 1e-10
         elif other == 0:
             return self.value == 0
         else:

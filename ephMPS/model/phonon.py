@@ -4,8 +4,10 @@
 from __future__ import absolute_import, print_function, unicode_literals
 
 from collections import OrderedDict
+from typing import List
 
 import numpy as np
+from scipy.stats import binom
 
 from ephMPS.utils import Quantity
 from ephMPS.utils.elementop import construct_ph_op_dict
@@ -28,7 +30,7 @@ class Phonon(object):
     """
 
     @classmethod
-    def simplest_phonon(cls, omega, displacement, hartree: bool=False, lam=False):
+    def simplest_phonon(cls, omega, displacement, temperature: Quantity = Quantity(0), hartree: bool=False, lam: bool=False):
         # detect pdim automatically
         if lam:
             # the second argument is lambda
@@ -55,6 +57,8 @@ class Phonon(object):
                     break
             else:
                 break
+        t = temperature.as_au()
+        pdim = max(pdim, min(int(t * 10 / omega.as_au()), 128))
         return cls.simple_phonon(omega, displacement, pdim ,hartree)
 
 
@@ -116,6 +120,20 @@ class Phonon(object):
         evals, evecs = np.linalg.eigh(h)
         return evecs
 
+    def split(self, n=2, width: Quantity=Quantity(10, "cm-1")) -> List["Phonon"]:
+        assert self.is_simple
+        rv = binom(n-1, 0.5)
+        width = width.as_au()
+        step = 2 * width / (n - 1)
+        omegas = np.linspace(self.omega[0] - width, self.omega[0] + width + step, n)
+        phonons = []
+        for i, omega in enumerate(omegas):
+            lam = rv.pmf(i) * self.reorganization_energy
+            ph = Phonon.simplest_phonon(Quantity(omega), lam, lam=True)
+            phonons.append(ph)
+        return phonons
+
+
     def to_dict(self):
         info_dict = OrderedDict()
         info_dict["omega"] = self.omega
@@ -137,10 +155,15 @@ class Phonon(object):
         return Quantity(
             0.5 * dis_diff ** 2 * self.omega[1] ** 2 - dis_diff ** 3 * self.force3rd[1]
         )
+
+    @property
+    def e0(self):
+        # an alias for reorganization energy
+        return self.reorganization_energy
+
     @property
     def is_simple(self):
-        return self.force3rd == (0.0, 0.0) and self.nqboson == 1
-
+        return self.force3rd == (0.0, 0.0) and self.nqboson == 1 and self.omega[0] == self.omega[1]
 
     @property
     def coupling_constant(self):  # the $g$

@@ -40,7 +40,7 @@ ph_list = [
 ]
 j_constant = Quantity(0.8, "eV")
 band_limit_mol_list = MolList(
-    [Mol(Quantity(0), ph_list)] * mol_num, j_constant, 4
+    [Mol(Quantity(0), ph_list)] * mol_num, j_constant, 3
 )
 
 
