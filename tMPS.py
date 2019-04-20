@@ -1093,13 +1093,20 @@ def MPOprop(iMPS, HMPO, nsteps, dt, ephtable, thresh=0, cleanexciton=None):
     #    iMPS = tMPS(iMPS, HMPO, dt, ephtable, thresh=thresh, cleanexciton=cleanexciton)
 
 
-def dynamics_TDDMRG(setup, mol, J, HMPO, MPS, nsteps, dt, ephtable, thresh=0.,\
+def dynamics_TDDMRG(setup, mol, J, HMPO, MPS, stop, dt, ephtable, thresh=0.,\
         cleanexciton=None, scheme="P&C", QNargs=None, property_MPOs=[]):
+    
     '''
     ZT/FT dynamics to calculate the expectation value of a list of MPOs
     the MPOs is only related to the MPS part (usually electronic part)
     '''
-    
+    if type(stop) == int:
+        nsteps = stop
+        tstop = dt * nsteps
+    elif type(stop) == float:
+        tstop= stop
+        nsteps = 100000
+
     factor = mpslib.norm(MPS, QNargs=QNargs)
     print "factor",factor
     MPS = mpslib.scale(MPS, 1./factor, QNargs=QNargs)
@@ -1107,7 +1114,8 @@ def dynamics_TDDMRG(setup, mol, J, HMPO, MPS, nsteps, dt, ephtable, thresh=0.,\
     data = [[] for i in xrange(len(property_MPOs))]
     tlist = []
     t = 0. 
-    for istep in xrange(nsteps):
+
+    for istep in range(nsteps):
         print "istep", istep
         if istep != 0:
             
@@ -1132,6 +1140,9 @@ def dynamics_TDDMRG(setup, mol, J, HMPO, MPS, nsteps, dt, ephtable, thresh=0.,\
         wfn_store(MPS, istep, "MPS.pkl")
         wfn_store(tlist, istep, "tlist.pkl")
         autocorr_store(data, istep)
+
+        if t > tstop:
+            break
     
     return tlist, data
     
