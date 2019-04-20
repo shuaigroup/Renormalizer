@@ -7,66 +7,113 @@ from ephMPS.lib import mps as mpslib
 import numpy.polynomial.laguerre as La
 import numpy.polynomial.legendre as Le
 import scipy
+import scipy.special
 
-def SBM_init(mol, T=0):
+def SBM_init(mol, T=0, pure_Hartree=False):
     """
     initiate the spin-boson model initial state the spin is alpha and the vibrations
     are on the ground state equilibrium position
     """
     if T == 0:
-        mps_e = np.zeros([1,2,1])
-        mps_e[0,0,0] = 1.0
-        MPS = [mps_e,]
+        if pure_Hartree == False:
+            mps_e = np.zeros([1,2,1])
+            mps_e[0,0,0] = 1.0
+            MPS = [mps_e,]
 
-        for ph in mol[0].ph:
-            mps = np.zeros([1,ph.nlevels,1])
-            mps[0,0,0] = 1.0
-            MPS.append(mps)
+            for ph in mol[0].ph:
+                mps = np.zeros([1,ph.nlevels,1])
+                mps[0,0,0] = 1.0
+                MPS.append(mps)
 
-        WFN = []
-        for ph in mol[0].ph_hybrid:
-            wfn = np.zeros(ph.nlevels)
-            wfn[0] = 1.0
-            WFN.appedn(wfn)
+            WFN = []
+            for ph in mol[0].ph_hybrid:
+                wfn = np.zeros(ph.nlevels)
+                wfn[0] = 1.0
+                WFN.append(wfn)
 
-        WFN.append(1.0)   
+            WFN.append(1.0)  
+        
+        else:
+            MPS = []
+            wfn_e = np.array([1.0,0.0])
+            WFN = [wfn_e,]
+            
+            for ph in mol[0].ph:
+                wfn = np.zeros(ph.nlevels)
+                wfn[0] = 1.0
+                WFN.append(wfn)
+
+            WFN.append(1.0)  
     
     else:
+
         beta = constant.T2beta(T)/2.0
+        
+        def hartree_init(WFN, ph_list):
+            for ph in ph_list:
+                wfn = np.zeros(ph.nlevels, ph.nlevels)
+                
+                partition = 0.0
+                for il in range(ph.nlevels):
+                    pop = np.exp(- beta * il * ph.omega[0])
+                    partition += pop**2
+                    wfn[il,il] = pop
 
-        mps_e = np.zeros([1,2,2,1])
-        mps_e[0,0,0,0] = 1.0
-        MPS = [mps_e,]
+                WFN.appedn(wfn/np.sqrt(partition))
 
-        for ph in mol[0].ph:
-            mps = np.zeros([1, ph.nlevels, ph.nlevels, 1])
+
+        if pure_Hartree == False:
+            mps_e = np.zeros([1,2,2,1])
+            mps_e[0,0,0,0] = 1.0
+            MPS = [mps_e,]
+
+            for ph in mol[0].ph:
+                mps = np.zeros([1, ph.nlevels, ph.nlevels, 1])
+                
+                partition = 0.0
+                for il in range(ph.nlevels):
+                    pop = np.exp(- beta * il * ph.omega[0])
+                    partition += pop**2
+                    mps[0,il,il,0] = pop
+
+                MPS.append(mps/np.sqrt(partition))
             
-            partition = 0.0
-            for il in range(ph.nlevels):
-                pop = np.exp(- beta * il * ph.omega[0])
-                partition += pop**2
-                mps[0,il,il,0] = pop
+            WFN = []
+            hartree_init(WFN, mol[0].ph_hybrid)
+            WFN.append(1.0)
 
-            MPS.append(mps/np.sqrt(partition))
-
-        WFN = []
-        for ph in mol[0].ph_hybrid:
-            wfn = np.zeros(ph.nlevels, ph.nlevels)
+        else:
+            MPS = []
+            wfn_e = np.zeros([2,2])
+            wfn_e[0,0] = 1.0
             
-            partition = 0.0
-            for il in range(ph.nlevels):
-                pop = np.exp(- beta * il * ph.omega[0])
-                partition += pop**2
-                wfn[il,il] = pop
-
-            WFN.appedn(wfn/np.sqrt(partition))
-
-        WFN.append(1.0)   
+            WFN = [wfn_e,]
+            hartree_init(WFN, mol[0].ph)
+            WFN.append(1.0)
+            
     
-    MPS = mpslib.MPSdtype_convert(MPS)
+    if pure_Hartree == False:
+        MPS = mpslib.MPSdtype_convert(MPS)
     WFN = [wfn.astype(np.complex128) for wfn in WFN[:-1]]+[WFN[-1]]
 
     return MPS, WFN
+
+
+
+class Debye_type_spectral_density_function(object):
+    '''
+    the Debye-type ohmic spectral density function 
+    J(\omega)= \frac{2 \lambda \omega \omega_{c}}{\omega^{2}+\omega_{c}^{2}}
+    '''
+    def __init__(self, lamb, omega_c):
+        self.lamb = lamb
+        self.omega_c = omega_c
+
+    def func(self, omega_value):
+        '''
+        the function of the Debye-type spectral density function
+        '''
+        return 2.* self.lamb * omega_value*self.omega_c/(omega_value**2 + self.omega_c**2)
 
 
 class spectral_density_function(object):
@@ -78,6 +125,20 @@ class spectral_density_function(object):
         self.alpha = alpha
         self.omega_c = omega_c
 
+    
+    def adiabatic_renormalization(self, Delta, p):
+        loop = 0
+        re = 1.
+        while loop<50:
+            re_old = re
+            omega_l = Delta * re * float(p)
+            re = np.exp(-self.alpha*scipy.special.expn(1,omega_l/self.omega_c))
+            loop += 1
+            print ("adiabatic_renormalization loop,re:",loop, re)
+            if np.allclose(re,re_old) == True:
+                break
+            
+        return Delta*re, Delta*re*p
 
     def func(self, omega_value):
         '''

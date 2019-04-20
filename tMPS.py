@@ -26,7 +26,6 @@ class prop_setup(object):
     def __init__(self, rk):
         self.rk = rk
 
-
 def Exact_Spectra(spectratype, mol, pbond, iMPS, dipoleMPO, nsteps, dt,\
         temperature, GSshift=0.0, EXshift=0.0):
     '''
@@ -1094,3 +1093,45 @@ def MPOprop(iMPS, HMPO, nsteps, dt, ephtable, thresh=0, cleanexciton=None):
     #    iMPS = tMPS(iMPS, HMPO, dt, ephtable, thresh=thresh, cleanexciton=cleanexciton)
 
 
+def dynamics_TDDMRG(setup, mol, J, HMPO, MPS, nsteps, dt, ephtable, thresh=0.,\
+        cleanexciton=None, scheme="P&C", QNargs=None, property_MPOs=[]):
+    '''
+    ZT/FT dynamics to calculate the expectation value of a list of MPOs
+    the MPOs is only related to the MPS part (usually electronic part)
+    '''
+    
+    factor = mpslib.norm(MPS, QNargs=QNargs)
+    print "factor",factor
+    MPS = mpslib.scale(MPS, 1./factor, QNargs=QNargs)
+
+    data = [[] for i in xrange(len(property_MPOs))]
+    tlist = []
+    t = 0. 
+    for istep in xrange(nsteps):
+        print "istep", istep
+        if istep != 0:
+            
+            MPS = tMPS(setup.rk, MPS, HMPO, dt, ephtable, thresh=thresh, \
+                    cleanexciton=cleanexciton, compress_method="svd",
+                    QNargs=QNargs, normalize=1.0, scheme=scheme)
+            
+            t += dt
+            
+            if setup.rk.adaptive == True:
+                MPS, p = MPS
+                p = RK.adaptive_fix(p)
+                dt = p*dt
+                print "p=", p, dt
+
+        tlist.append(t)
+        # calculate the expectation value
+        for iMPO, MPO in enumerate(property_MPOs):
+            ft = mpslib.exp_value(MPS, MPO, MPS, QNargs=QNargs) * factor**2
+            data[iMPO].append(ft)
+        
+        wfn_store(MPS, istep, "MPS.pkl")
+        wfn_store(tlist, istep, "tlist.pkl")
+        autocorr_store(data, istep)
+    
+    return tlist, data
+    

@@ -439,6 +439,7 @@ def dynamics_TDH(mol, J, nexciton, WFN, dt, nsteps, fe, fv,\
     
     data = [[] for i in xrange(len(property_Os))]
     for istep in xrange(nsteps):
+        print("istep:", istep)
         if istep != 0:
             WFN = TDH(mol, J, nexciton, WFN, dt, fe, fv, prop_method=prop_method, particle=particle)
         

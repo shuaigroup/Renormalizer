@@ -1024,7 +1024,39 @@ def clean_MPS(system, MPS, ephtable, nexciton):
     
     return MPSnew
 
+def ph_occ_MPO(mol, pbond, opera, molidx, phidx):
+    '''
+    construct the onsite vibration operator
+    '''
+    
+    nmols = len(mol)
+    impo = 0
+    MPO = []
+    for imol in range(nmols):
+        # electron site
+        mpo = np.zeros((1, pbond[impo], pbond[impo],1))
+        for ibra in range(pbond[impo]):
+            for iket in range(pbond[impo]):
+                mpo[0,ibra,iket,0] = EElementOpera("Iden",ibra,iket)
+        
+        impo += 1
+        MPO.append(mpo)
+        
+        # vib site
+        for iph in range(mol[imol].nphs):
+            mpo = np.zeros((1, pbond[impo], pbond[impo],1))
+            for ibra in range(pbond[impo]):
+                for iket in range(pbond[impo]):
+                    if imol == molidx and iph == phidx:
+                        mpo[0,ibra,iket,0] = PhElementOpera(opera,ibra,iket)
+                    else:
+                        mpo[0,ibra,iket,0] = PhElementOpera("Iden",ibra,iket)
+            impo += 1
+            MPO.append(mpo)
 
+    return MPO
+
+    
 def construct_onsiteMPO(mol,pbond,opera,dipole=False,QNargs=None,sitelist=None):
     '''
     construct the electronic onsite operator \sum_i opera_i MPO
