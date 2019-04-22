@@ -1094,7 +1094,8 @@ def MPOprop(iMPS, HMPO, nsteps, dt, ephtable, thresh=0, cleanexciton=None):
 
 
 def dynamics_TDDMRG(setup, mol, J, HMPO, MPS, stop, dt, ephtable, thresh=0.,\
-        cleanexciton=None, scheme="P&C", QNargs=None, property_MPOs=[]):
+        cleanexciton=None, scheme="P&C", QNargs=None, property_MPOs=[],\
+        tstart=0.):
     
     '''
     ZT/FT dynamics to calculate the expectation value of a list of MPOs
@@ -1113,7 +1114,7 @@ def dynamics_TDDMRG(setup, mol, J, HMPO, MPS, stop, dt, ephtable, thresh=0.,\
 
     data = [[] for i in xrange(len(property_MPOs))]
     tlist = []
-    t = 0. 
+    t = tstart
 
     for istep in range(nsteps):
         print "istep", istep
