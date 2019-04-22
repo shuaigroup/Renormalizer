@@ -27,6 +27,8 @@ class Test_dynamics_hybrid_TDDMRG_TDH(unittest.TestCase):
         MPS, MPSdim, MPSQN, MPO, MPOdim, MPOQN, MPOQNidx, MPOQNtot, ephtable, pbond = \
             MPSsolver.construct_MPS_MPO_2(mol, J, dmrg_procedure[0][0], nexciton)
         
+        HMPO_init = [MPO, MPOQN, MPOQNidx, MPOQNtot]
+        
         MPS, MPSQN, WFN, Etot = hybrid_TDDMRG_TDH.hybrid_DMRG_H_SCF(mol, J, \
                 nexciton, dmrg_procedure, 20, DMRGthresh=1e-7, Hthresh=1e-7)
         
@@ -35,6 +37,7 @@ class Test_dynamics_hybrid_TDDMRG_TDH(unittest.TestCase):
         
         dipoleMPO, dipoleMPOdim = MPSsolver.construct_onsiteMPO(mol, pbond, "a^\dagger",\
                 QNargs=QNargs, sitelist=[0])
+        
         
         iMPS = mpslib.mapply(dipoleMPO, iMPS, QNargs=QNargs)
         norm = mpslib.norm(iMPS, QNargs=QNargs)
@@ -56,7 +59,8 @@ class Test_dynamics_hybrid_TDDMRG_TDH(unittest.TestCase):
         #rk = RK.Runge_Kutta(method="RKF45", rtol=1e-3, adaptive=True)
         setup = tMPS.prop_setup(rk)
 
-        tlist, data = hybrid_TDDMRG_TDH.dynamics_hybrid_TDDMRG_TDH(setup, mol, J, iMPS, \
+        tlist, data = hybrid_TDDMRG_TDH.dynamics_hybrid_TDDMRG_TDH(setup, mol, \
+                J, HMPO_init, iMPS, \
                 WFN, nsteps, dt, ephtable,thresh=1e-3, QNargs=QNargs, property_MPOs=MPOs)
         
         with open("std_data/hybrid_TDDMRG_TDH/ZT_occ"+str(value[0])+".npy", 'rb') as f:
@@ -76,6 +80,7 @@ class Test_dynamics_hybrid_TDDMRG_TDH(unittest.TestCase):
         MPS, MPSdim, MPSQN, MPO, MPOdim, MPOQN, MPOQNidx, MPOQNtot, ephtable, pbond = \
             MPSsolver.construct_MPS_MPO_2(mol, J, dmrg_procedure[0][0], nexciton)
         
+        HMPO_init = [MPO, MPOQN, MPOQNidx, MPOQNtot]
         QNargs = [ephtable, False]
         T = 2000.
         insteps = 1
@@ -83,7 +88,8 @@ class Test_dynamics_hybrid_TDDMRG_TDH(unittest.TestCase):
         rk = RK.Runge_Kutta(method="C_RK4")
         setup = tMPS.prop_setup(rk)
         
-        iMPS, WFN = hybrid_TDDMRG_TDH.FT_DM_hybrid_TDDMRG_TDH(rk, mol, J, nexciton, T, \
+        iMPS, WFN = hybrid_TDDMRG_TDH.FT_DM_hybrid_TDDMRG_TDH(rk, mol, J,\
+                HMPO_init, nexciton, T, \
                 insteps, pbond, ephtable, thresh=1e-3, cleanexciton=nexciton,\
                 QNargs=QNargs, space="GS")
     
@@ -109,7 +115,8 @@ class Test_dynamics_hybrid_TDDMRG_TDH(unittest.TestCase):
         #rk = RK.Runge_Kutta(method="RKF45", rtol=1e-3, adaptive=True)
         #setup = tMPS.prop_setup(rk)
         
-        tlist, data = hybrid_TDDMRG_TDH.dynamics_hybrid_TDDMRG_TDH(setup, mol, J, iMPS, \
+        tlist, data = hybrid_TDDMRG_TDH.dynamics_hybrid_TDDMRG_TDH(setup, mol, \
+                J, HMPO_init, iMPS, \
                 WFN, nsteps, dt, ephtable,thresh=1e-3, QNargs=QNargs, property_MPOs=MPOs)
         
         with open("std_data/hybrid_TDDMRG_TDH/FT_occ"+str(value[0])+".npy", 'rb') as f:

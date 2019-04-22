@@ -1103,7 +1103,7 @@ def dynamics_TDDMRG(setup, mol, J, HMPO, MPS, stop, dt, ephtable, thresh=0.,\
     '''
     if type(stop) == int:
         nsteps = stop
-        tstop = dt * nsteps
+        tstop = np.inf
     elif type(stop) == float:
         tstop= stop
         nsteps = 100000

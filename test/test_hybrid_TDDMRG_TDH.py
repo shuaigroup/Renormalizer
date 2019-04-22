@@ -56,6 +56,8 @@ class Test_hybrid_TDDMRG_TDH(unittest.TestCase):
         MPS, MPSdim, MPSQN, MPO, MPOdim, MPOQN, MPOQNidx, MPOQNtot, ephtable, pbond = \
             MPSsolver.construct_MPS_MPO_2(value[0], J, dmrg_procedure[0][0], nexciton)
 
+        HMPO_init = [MPO, MPOQN, MPOQNidx, MPOQNtot]
+        
         MPS, MPSQN, WFN, Etot = hybrid_TDDMRG_TDH.hybrid_DMRG_H_SCF(value[0], J, \
                 nexciton, dmrg_procedure, 20, DMRGthresh=1e-5, Hthresh=1e-5)
         iMPS = [MPS, MPSQN, len(MPS)-1, 0]
@@ -70,7 +72,8 @@ class Test_hybrid_TDDMRG_TDH(unittest.TestCase):
         rk = RK.Runge_Kutta("C_RK4")
         setup = tMPS.prop_setup(rk)
 
-        autocorr = hybrid_TDDMRG_TDH.ZeroTcorr_hybrid_TDDMRG_TDH(setup, value[0], J, iMPS, dipoleMPO, \
+        autocorr = hybrid_TDDMRG_TDH.ZeroTcorr_hybrid_TDDMRG_TDH(setup, \
+                value[0], J, HMPO_init, iMPS, dipoleMPO, \
                 WFN, nsteps, dt, ephtable,thresh=1e-3, E_offset=-2.28614053/constant.au2ev, QNargs=QNargs)
         with open(value[1], 'rb') as f:
             hybrid_ZTabs_std = np.load(f)
@@ -88,6 +91,8 @@ class Test_hybrid_TDDMRG_TDH(unittest.TestCase):
         
         MPS, MPSdim, MPSQN, MPO, MPOdim, MPOQN, MPOQNidx, MPOQNtot, ephtable, pbond = \
             MPSsolver.construct_MPS_MPO_2(value[0], J, dmrg_procedure[0][0], nexciton)
+        
+        HMPO_init = [MPO, MPOQN, MPOQNidx, MPOQNtot]
 
         MPS, MPSQN, WFN, Etot = hybrid_TDDMRG_TDH.hybrid_DMRG_H_SCF(value[0], J, \
                 nexciton, dmrg_procedure, 20, DMRGthresh=1e-5, Hthresh=1e-5)
@@ -103,7 +108,8 @@ class Test_hybrid_TDDMRG_TDH(unittest.TestCase):
         rk = RK.Runge_Kutta("C_RK4")
         setup = tMPS.prop_setup(rk)
         
-        autocorr = hybrid_TDDMRG_TDH.ZeroTcorr_hybrid_TDDMRG_TDH(setup, value[0], J, iMPS, dipoleMPO, \
+        autocorr = hybrid_TDDMRG_TDH.ZeroTcorr_hybrid_TDDMRG_TDH(setup,\
+                value[0], J, HMPO_init, iMPS, dipoleMPO, \
                 WFN, nsteps, dt, ephtable,thresh=1e-3, QNargs=QNargs)
         with open(value[1], 'rb') as f:
             hybrid_ZTemi_prop_std = np.load(f)[:nsteps]

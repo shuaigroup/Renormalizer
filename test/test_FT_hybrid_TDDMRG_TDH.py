@@ -35,19 +35,22 @@ class Test_FT_hybrid_TDDMRG_TDH(unittest.TestCase):
         MPS, MPSdim, MPSQN, HMPO, HMPOdim, HMPOQN, HMPOQNidx, HMPOQNtot, ephtable, pbond = \
             MPSsolver.construct_MPS_MPO_2(value[0], J, dmrg_procedure[0][0], nexciton)
         
+        HMPO_init = [HMPO, HMPOQN, HMPOQNidx, HMPOQNtot]
         QNargs = [ephtable, False]
         #QNargs = None
         
         rk = RK.Runge_Kutta("C_RK4")
 
-        MPS, DMH = hybrid_TDDMRG_TDH.FT_DM_hybrid_TDDMRG_TDH(rk, value[0], J, nexciton, T, \
+        MPS, DMH = hybrid_TDDMRG_TDH.FT_DM_hybrid_TDDMRG_TDH(rk, value[0], J,\
+                HMPO_init, nexciton, T, \
                 nsteps, pbond, ephtable, thresh=1e-3, cleanexciton=1, QNargs=QNargs)
         
         if QNargs is not None:   
             MPS = MPS[0]
 
-        MPO, MPOdim, MPOQN, MPOQNidx, MPOQNtot, HAM, Etot, A_el = \
-            hybrid_TDDMRG_TDH.construct_hybrid_Ham(value[0], J, MPS, DMH, debug=True)
+        MPO, HAM, Etot, A_el = \
+            hybrid_TDDMRG_TDH.construct_hybrid_Ham(value[0], J, HMPO_init, MPS, \
+                    DMH, debug=True, QNargs=QNargs)
         
         self.assertAlmostEqual(Etot, value[1])
         occ_std = np.array(value[2])
@@ -76,6 +79,7 @@ class Test_FT_hybrid_TDDMRG_TDH(unittest.TestCase):
         MPS, MPSdim, MPSQN, HMPO, HMPOdim, HMPOQN, HMPOQNidx, HMPOQNtot, ephtable, pbond = \
             MPSsolver.construct_MPS_MPO_2(value[0], J, dmrg_procedure[0][0], nexciton)
         
+        HMPO_init = [HMPO, HMPOQN, HMPOQNidx, HMPOQNtot]
         QNargs = [ephtable, False]
         #QNargs = None
 
@@ -83,7 +87,8 @@ class Test_FT_hybrid_TDDMRG_TDH(unittest.TestCase):
         #rk = RK.Runge_Kutta(method="RKF45", rtol=1e-3, adaptive=True)
         setup = tMPS.prop_setup(rk)
 
-        autocorr = hybrid_TDDMRG_TDH.FiniteT_spectra_TDDMRG_TDH(setup, value[1], T, value[0], J, nsteps, \
+        autocorr = hybrid_TDDMRG_TDH.FiniteT_spectra_TDDMRG_TDH(setup, value[1], \
+                T, value[0], J, HMPO_init, nsteps, \
                 dt, insteps, pbond, ephtable, thresh=1e-3, ithresh=1e-3, E_offset=E_offset, QNargs=QNargs)
         
         with open(value[2], 'rb') as f:
