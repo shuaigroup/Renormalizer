@@ -23,6 +23,7 @@ logger = logging.getLogger(__name__)
 # todo: refactor init
 # the code is hard to understand...... need some closer look
 
+# todo: refactor scheme4, add QN and the 0 electron state!
 
 def base_convert(n, base):
     """
@@ -1002,7 +1003,7 @@ class Mpo(MatrixProduct):
             mp.to_complex(inplace=True)
         return mp
 
-    def apply(self, mp, canonicalise=False) -> MatrixProduct:
+    def apply(self, mp: MatrixProduct, canonicalise: bool=False) -> MatrixProduct:
         # todo: use meta copy to save time, could be subtle when complex type is involved
         # todo: inplace version (saved memory and can be used in `hybrid_exact_propagator`)
         new_mps = self.promote_mt_type(mp.copy())
@@ -1134,3 +1135,30 @@ class VirtualOnSite(Mpo):
         if canonicalise:
             new_mp.canonicalise()
         return new_mp
+
+
+class SuperLiouville(Mpo):
+
+    def __init__(self, mol_list, h_mpo, dissipation=0):
+        super().__init__()
+        self.mol_list = mol_list
+        self.h_mpo = h_mpo
+        self.dissipation = dissipation
+
+    def apply(self, mp, canonicalise=False):
+        assert mp.is_mpdm
+        no_dissipation = self.h_mpo.contract(mp) - mp.contract(self.h_mpo)
+        if self.dissipation == 0:
+            return no_dissipation
+        diag = mp.metacopy()
+        for i, mt in enumerate(mp):
+            new_mt = xp.zeros_like(mt.array)
+            for j in range(mt.shape[1]):
+                new_mt[:, j, j, :] = mt[:, j, j, :]
+            diag[i] = new_mt
+        non_diag = mp - diag
+        return no_dissipation - non_diag.scale(1j * self.dissipation)
+
+    # used when calculating energy in evolve_dmrg_propagation_and_compress
+    def __getitem__(self, item):
+        return self.h_mpo[item]

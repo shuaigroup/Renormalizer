@@ -679,6 +679,7 @@ class Mps(MatrixProduct):
     def _evolve_dmrg_prop_and_compress(self, mpo, evolve_dt, config: EvolveConfig = None) -> "Mps":
         if config is None:
             config = self.evolve_config
+        assert evolve_dt is not None
         propagation_c = config.rk_config.coeff
         termlist = [self]
         while len(termlist) < len(propagation_c):
@@ -1205,6 +1206,12 @@ class Mps(MatrixProduct):
     def __setitem__(self, key, value):
         self.invalidate_cache()
         return super().__setitem__(key, value)
+
+    def __add__(self, other: "Mps"):
+        return self.add(other)
+
+    def __sub__(self, other: "Mps"):
+        return self.add(other.scale(-1))
 
 
 def projector(ms: xp.ndarray) -> xp.ndarray:

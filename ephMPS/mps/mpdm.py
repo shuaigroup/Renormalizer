@@ -283,6 +283,8 @@ class MpDmFull(MpDmBase):
         product.compress()
         # qn not implemented
         mpdm_full.use_dummy_qn = True
+        if product.is_complex:
+            mpdm_full.to_complex(inplace=True)
         for mt in product:
             mpdm_full.append(mt)
         mpdm_full.build_empty_qn()
@@ -307,5 +309,16 @@ class MpDmFull(MpDmBase):
         i = Mpo.identity(self.mol_list)
         return self.expectation(i, i)
 
+    # tdvp can't be used in this representation
+    def _evolve_dmrg_tdvp_mctdh(self, mpo, evolve_dt):
+        raise NotImplementedError
+
+    def _evolve_dmrg_tdvp_mctdhnew(self, mpo, evolve_dt):
+        raise NotImplementedError
+
+    def _evolve_dmrg_tdvp_ps(self, mpo, evolve_dt):
+        raise NotImplementedError
+
+    # todo: implement this
     def calc_reduced_density_matrix(self) -> np.ndarray:
         raise NotImplementedError
