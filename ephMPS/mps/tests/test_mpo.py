@@ -36,6 +36,11 @@ def test_offset(scheme):
     evals2, _ = np.linalg.eigh(f2.array)
     assert np.allclose(evals1 - offset.as_au(), evals2)
 
+def test_identity():
+    identity = Mpo.identity(mol_list)
+    mps = Mps.random(mol_list, nexciton=1, m_max=5)
+    assert mps.expectation(identity) == pytest.approx(mps.dmrg_norm) == pytest.approx(1)
+
 
 def test_scheme4():
     ph = Phonon.simple_phonon(Quantity(3.33), Quantity(1), 2)

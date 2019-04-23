@@ -9,6 +9,29 @@ import scipy.linalg
 from ephMPS.mps.backend import xp
 
 
+def blockappend(
+        vset,
+        vset0,
+        qnset,
+        qnset0,
+        svset0,
+        v,
+        n,
+        dim,
+        indice,
+        shape,
+        full_matrices=True,
+):
+    vset.append(blockrecover(indice, v[:, :dim], shape))
+    qnset += [n] * dim
+    if full_matrices:
+        vset0.append(blockrecover(indice, v[:, dim:], shape))
+        qnset0 += [n] * (v.shape[0] - dim)
+        svset0.append(np.zeros(v.shape[0] - dim))
+
+    return vset, vset0, qnset, qnset0, svset0
+
+
 def Csvd(
     cstruct: xp.ndarray,
     qnbigl,
@@ -56,112 +79,91 @@ def Csvd(
     for nl, nr in combine:
         lset = np.where(localqnl == nl)[0]
         rset = np.where(localqnr == nr)[0]
-        if len(lset) != 0 and len(rset) != 0:
-            # Gamma_block = Gamma[np.ix_(lset,rset)]
-            Gamma_block = Gamma.ravel().take(
-                (lset * Gamma.shape[1]).reshape(-1, 1) + rset
-            )
+        if len(lset) == 0 or len(rset) == 0:
+            continue
+        # Gamma_block = Gamma[np.ix_(lset,rset)]
+        Gamma_block = Gamma.ravel().take(
+            (lset * Gamma.shape[1]).reshape(-1, 1) + rset
+        )
 
-            def blockappend(
-                vset,
-                vset0,
-                qnset,
-                qnset0,
-                svset0,
-                v,
-                n,
-                dim,
-                indice,
-                shape,
-                full_matrices=True,
-            ):
-                vset.append(blockrecover(indice, v[:, :dim], shape))
-                qnset += [n] * dim
-                if full_matrices:
-                    vset0.append(blockrecover(indice, v[:, dim:], shape))
-                    qnset0 += [n] * (v.shape[0] - dim)
-                    svset0.append(np.zeros(v.shape[0] - dim))
-
-                return vset, vset0, qnset, qnset0, svset0
-
-            if not ddm:
-                if not QR:
-                    try:
-                        U, S, Vt = scipy.linalg.svd(
-                            Gamma_block,
-                            full_matrices=full_matrices,
-                            lapack_driver="gesdd",
-                        )
-                    except:
-                        # print "Csvd converge failed"
-                        U, S, Vt = scipy.linalg.svd(
-                            Gamma_block,
-                            full_matrices=full_matrices,
-                            lapack_driver="gesvd",
-                        )
-                    dim = S.shape[0]
-                    Sset.append(S)
-                else:
-                    if full_matrices:
-                        mode = "full"
-                    else:
-                        mode = "economic"
-                    if system == "R":
-                        U, Vt = scipy.linalg.rq(Gamma_block, mode=mode)
-                    elif system == "L":
-                        U, Vt = scipy.linalg.qr(Gamma_block, mode=mode)
-                    else:
-                        assert False
-                    dim = min(Gamma_block.shape)
-
-                Uset, Uset0, qnlset, qnlset0, SUset0 = blockappend(
-                    Uset,
-                    Uset0,
-                    qnlset,
-                    qnlset0,
-                    SUset0,
-                    U,
-                    nl,
-                    dim,
-                    lset,
-                    Gamma.shape[0],
-                    full_matrices=full_matrices,
-                )
-                Vset, Vset0, qnrset, qnrset0, SVset0 = blockappend(
-                    Vset,
-                    Vset0,
-                    qnrset,
-                    qnrset0,
-                    SVset0,
-                    Vt.T,
-                    nr,
-                    dim,
-                    rset,
-                    Gamma.shape[1],
-                    full_matrices=full_matrices,
-                )
-            else:
-                S, U = scipy.linalg.eigh(Gamma_block)
-                # numerical error for eigenvalue < 0
-                for ss in range(len(S)):
-                    if S[ss] < 0:
-                        S[ss] = 0.0
-                S = np.sqrt(S)
+        if not ddm:
+            if not QR:
+                try:
+                    U, S, Vt = scipy.linalg.svd(
+                        Gamma_block,
+                        full_matrices=full_matrices,
+                        lapack_driver="gesdd",
+                    )
+                except:
+                    # print "Csvd converge failed"
+                    U, S, Vt = scipy.linalg.svd(
+                        Gamma_block,
+                        full_matrices=full_matrices,
+                        lapack_driver="gesvd",
+                    )
                 dim = S.shape[0]
                 Sset.append(S)
-                Uset, Uset0, qnlset, qnlset0, SUset0 = blockappend(
-                    Uset,
-                    Uset0,
-                    qnlset,
-                    qnlset0,
-                    SUset0,
-                    U,
-                    nl,
-                    dim,
-                    lset,
-                    Gamma.shape[0],
-                    full_matrices=False,
-                )
+            else:
+                if full_matrices:
+                    mode = "full"
+                else:
+                    mode = "economic"
+                if system == "R":
+                    U, Vt = scipy.linalg.rq(Gamma_block, mode=mode)
+                elif system == "L":
+                    U, Vt = scipy.linalg.qr(Gamma_block, mode=mode)
+                else:
+                    assert False
+                dim = min(Gamma_block.shape)
+
+            Uset, Uset0, qnlset, qnlset0, SUset0 = blockappend(
+                Uset,
+                Uset0,
+                qnlset,
+                qnlset0,
+                SUset0,
+                U,
+                nl,
+                dim,
+                lset,
+                Gamma.shape[0],
+                full_matrices=full_matrices,
+            )
+            Vset, Vset0, qnrset, qnrset0, SVset0 = blockappend(
+                Vset,
+                Vset0,
+                qnrset,
+                qnrset0,
+                SVset0,
+                Vt.T,
+                nr,
+                dim,
+                rset,
+                Gamma.shape[1],
+                full_matrices=full_matrices,
+            )
+        else:
+            S, U = scipy.linalg.eigh(Gamma_block)
+            # numerical error for eigenvalue < 0
+            for ss in range(len(S)):
+                if S[ss] < 0:
+                    S[ss] = 0.0
+            S = np.sqrt(S)
+            dim = S.shape[0]
+            Sset.append(S)
+            Uset, Uset0, qnlset, qnlset0, SUset0 = blockappend(
+                Uset,
+                Uset0,
+                qnlset,
+                qnlset0,
+                SUset0,
+                U,
+                nl,
+                dim,
+                lset,
+                Gamma.shape[0],
+                full_matrices=False,
+            )
 
     if not ddm:
         if full_matrices:

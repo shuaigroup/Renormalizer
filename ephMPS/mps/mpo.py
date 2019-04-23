@@ -204,7 +204,9 @@ class Mpo(MatrixProduct):
         """
         assert space in ["GS", "EX"]
 
-        mpo = cls().to_complex()
+        mpo = cls()
+        if np.iscomplex(x):
+            mpo.to_complex(inplace=True)
         mpo.mol_list = mol_list
 
         for imol, mol in enumerate(mol_list):
@@ -240,9 +242,7 @@ class Mpo(MatrixProduct):
                     h_mo = np.diag(np.exp(x * w))
                     h_mo = v.dot(h_mo)
                     h_mo = h_mo.dot(v.T)
-
-                    mo = np.zeros([1, ph_pbond, ph_pbond, 1], dtype=np.complex128)
-                    mo[0, :, :, 0] = h_mo
+                    mo = h_mo.reshape(1, ph_pbond, ph_pbond, 1)
 
                     mpo.append(mo)
 
@@ -259,18 +259,13 @@ class Mpo(MatrixProduct):
                             break
                     if not anharmo:
                         for iboson in range(ph.nqboson):
-                            mo = np.zeros(
-                                [1, ph_pbond, ph_pbond, 1], dtype=np.complex128
-                            )
-
-                            for ibra in range(ph_pbond):
-                                mo[0, ibra, ibra, 0] = np.exp(
+                            d = np.exp(
                                     x
                                     * ph.omega[0]
                                     * ph.base ** (ph.nqboson - iboson - 1)
-                                    * ibra
+                                    * np.arange(ph_pbond)
                                 )
-
+                            mo = np.diag(d).reshape(1, ph_pbond, ph_pbond, 1)
                             mpo.append(mo)
                     else:
                         assert ph.nqboson == 1
@@ -285,7 +280,7 @@ class Mpo(MatrixProduct):
                         h_mo = v.dot(h_mo)
                         h_mo = h_mo.dot(v.T)
 
-                        mo = np.zeros([1, ph_pbond, ph_pbond, 1], dtype=np.complex128)
+                        mo = np.zeros([1, ph_pbond, ph_pbond, 1])
                         mo[0, :, :, 0] = h_mo
 
                         mpo.append(mo)
@@ -509,6 +504,15 @@ class Mpo(MatrixProduct):
                         mt = ph_op_matrix("Iden", ph_pbond)
                     mpo.append(mt.reshape(1, ph_pbond, ph_pbond, 1))
                     iph += 1
+        mpo.build_empty_qn()
+        return mpo
+
+    @classmethod
+    def identity(cls, mol_list: MolList):
+        mpo = cls()
+        mpo.mol_list = mol_list
+        for p in mol_list.pbond_list:
+            mpo.append(xp.eye(p).reshape(1, p, p, 1))
         mpo.build_empty_qn()
         return mpo
 
@@ -998,7 +1002,7 @@ class Mpo(MatrixProduct):
             mp.to_complex(inplace=True)
         return mp
 
-    def apply(self, mp, canonicalise=False):
+    def apply(self, mp, canonicalise=False) -> MatrixProduct:
         # todo: use meta copy to save time, could be subtle when complex type is involved
         # todo: inplace version (saved memory and can be used in `hybrid_exact_propagator`)
         new_mps = self.promote_mt_type(mp.copy())
@@ -1046,11 +1050,11 @@ class Mpo(MatrixProduct):
             np.add.outer(np.array(qn_o), np.array(qn_m)).ravel().tolist()
             for qn_o, qn_m in zip(qn, new_mps.qn)
         ]
-        new_mps.move_qnidx(orig_idx)
         new_mps.qntot += self.qntot
+        new_mps.move_qnidx(orig_idx)
         new_mps.set_peak_bytes()
         # concerns about whether to canonicalise:
-        # * canonicalise helps to keep mps the maintain in a truly canonicalised state
+        # * canonicalise helps to keep mps in a truly canonicalised state
         # * canonicalise comes with a cost. Unnecessary canonicalise (for example in P&C evolution and
         #   expectation calculation) hampers performance.
         if canonicalise:
