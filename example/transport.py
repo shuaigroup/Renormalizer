@@ -25,32 +25,26 @@ if __name__ == "__main__":
     log.register_file_output(
         os.path.join(param["output dir"], param["fname"] + ".log"), "w"
     )
+    temperature = Quantity(*param["temperature"])
     ph_list = [
-        Phonon.simple_phonon(
-            Quantity(*omega), Quantity(*displacement), param["ph phys dim"]
+        Phonon.simplest_phonon(
+            Quantity(*omega), Quantity(*displacement), temperature=temperature
         )
         for omega, displacement in param["ph modes"]
     ]
-    j_constant = Quantity(param["j constant"], param["j constant unit"])
-    mol_list = MolList(
-        [Mol(Quantity(param["elocalex"], param["elocalex unit"]), ph_list)]
-        * param["mol num"],
-        j_constant,
+    j_constant = Quantity(*param["j constant"])
+    mol_list = MolList([Mol(Quantity(0), ph_list)] * param["mol num"],
+        j_constant, scheme=3
     )
-    compress_config = CompressConfig(bonddim_distri=BondDimDistri.center_gauss, max_bonddim=80)
-    evolve_config = EvolveConfig(EvolveMethod.tdvp_ps, adaptive=True)
-    # evolve_config.expected_bond_dim = 80
-    #rk_config = RungeKutta("RKF45")
-    #rk_config.evolve_dt = 40
-    #compress_config = CompressConfig()
-    #evolve_config = EvolveConfig(rk_config=rk_config)
-    #evolve_config = EvolveConfig()
+    compress_config = CompressConfig(threshold=1e-3)
+    evolve_config = EvolveConfig(adaptive=True, evolve_dt=20)
     ct = ChargeTransport(
         mol_list,
-        temperature=Quantity(*param["temperature"]),
+        temperature=temperature,
         compress_config=compress_config,
         evolve_config=evolve_config,
-        rdm=False
+        rdm=False,
+        dissipation=float(param["dissipation"])
     )
     # ct.stop_at_edge = True
     ct.economic_mode = True
@@ -59,8 +53,7 @@ if __name__ == "__main__":
     ct.dump_dir = param["output dir"]
     ct.job_name = param["fname"]
     ct.custom_dump_info["comment"] = param["comment"]
-    ct.set_threshold(1e-4)
     # ct.latest_mps.compress_add = True
     logger.debug(f"ground energy of the Hamiltonian: {ct.mpo_e_lbound:g}")
-    ct.evolve(param["evolve dt"], param.get("nsteps"), param.get("evolve time"))
+    ct.evolve(param.get("evolve dt"), param.get("nsteps"), param.get("evolve time"))
     # ct.evolve(evolve_dt, 100, param.get("evolve time"))

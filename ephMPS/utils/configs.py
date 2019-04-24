@@ -137,9 +137,11 @@ class CompressConfig:
         new = self.__class__.__new__(self.__class__)
         # shallow copies
         new.__dict__ = self.__dict__.copy()
-        # deep copy
+        # deep copies
         if self.max_dims is not None:
             new.max_dims = self.max_dims.copy()
+        if self.min_dims is not None:
+            new.min_dims = self.min_dims.copy()
         return new
 
 

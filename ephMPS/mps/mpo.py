@@ -1159,6 +1159,6 @@ class SuperLiouville(Mpo):
         non_diag = mp - diag
         return no_dissipation - non_diag.scale(1j * self.dissipation)
 
-    # used when calculating energy in evolve_dmrg_propagation_and_compress
+    # used when calculating energy in evolve_dmrg_prop_and_compress
     def __getitem__(self, item):
         return self.h_mpo[item]

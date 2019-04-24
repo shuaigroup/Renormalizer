@@ -171,10 +171,6 @@ class TdMpsJob(object):
         if os.path.exists(bak_path):
             os.remove(bak_path)
 
-    def set_threshold(self, threshold):
-        logger.info("Set threshold to %g" % threshold)
-        self.latest_mps.threshold = threshold
-
     def stop_evolve_criteria(self):
         return False
 

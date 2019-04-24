@@ -682,9 +682,18 @@ class Mps(MatrixProduct):
         assert evolve_dt is not None
         propagation_c = config.rk_config.coeff
         termlist = [self]
+        # don't let bond dim grow when contracting
+        orig_compress_config = self.compress_config
+        contract_compress_config = self.compress_config.copy()
+        contract_compress_config.criteria = CompressCriteria.both
+        contract_compress_config.min_dims = None
+        contract_compress_config.max_dims = np.array(self.bond_dims) + 4
+        self.compress_config = contract_compress_config
         while len(termlist) < len(propagation_c):
             termlist.append(mpo.contract(termlist[-1]))
-            termlist[-1].compress_config.relax()
+        # bond dim can grow after adding
+        for t in termlist:
+            t.compress_config = orig_compress_config
         if config.adaptive:
             if evolve_dt * config.evolve_dt < 0:
                 raise ValueError("evolve into wrong direction")

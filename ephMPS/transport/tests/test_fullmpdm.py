@@ -6,6 +6,7 @@ import numpy as np
 import pytest
 
 from ephMPS.mps import MpDm, Mpo, MpDmFull, SuperLiouville
+from ephMPS.transport import ChargeTransport
 from ephMPS.utils import Quantity, CompressConfig
 from ephMPS.transport.tests.band_param import band_limit_mol_list, low_t, get_analytical_r_square
 
@@ -33,11 +34,13 @@ def test_dynamics(dissipation, dt, nsteps):
     creation_operator = Mpo.onsite(
         band_limit_mol_list, r"a^\dagger", mol_idx_set={center_mol_idx}
     )
-    mps = creation_operator.apply(gs_mp)
-    mpdm_full = MpDmFull.from_mpdm(mps)
+    mpdm = creation_operator.apply(gs_mp)
+    mpdm_full = MpDmFull.from_mpdm(mpdm)
     # As more compression is involved higher threshold is necessary
     mpdm_full.compress_config = CompressConfig(threshold=1e-4)
     liouville = SuperLiouville(band_limit_mol_list, mpo, dissipation)
+    mpdm_full = mpdm
+    liouville = mpo
     r_square_list = [mpdm_full.r_square]
     time_series = [0]
     for i in range(nsteps - 1):
@@ -58,3 +61,7 @@ def test_dynamics(dissipation, dt, nsteps):
 #plt.show()
 
 
+def test_ct():
+    ct = ChargeTransport(band_limit_mol_list, dissipation=0.05)
+    ct.evolve(4, 30)
+    assert (ct.r_square_array[1:] < get_analytical_r_square(np.array(ct.evolve_times))[1:]).all()

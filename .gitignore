@@ -11,6 +11,8 @@
 .idea/
 .cache/
 
+out/
+opt/
 report/
 example/*.yaml
 example/*.ipynb

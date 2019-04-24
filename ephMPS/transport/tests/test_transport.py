@@ -193,11 +193,9 @@ def test_compress_add(
     )
     ct1 = ChargeTransport(mol_list, temperature=Quantity(298, "K"))
     ct1.reduced_density_matrices = None
-    ct1.set_threshold(1e-5)
     ct1.evolve(evolve_dt, nsteps)
     ct2 = ChargeTransport(mol_list, temperature=Quantity(298, "K"))
     ct2.reduced_density_matrices = None
-    ct2.set_threshold(1e-5)
     ct2.latest_mps.compress_add = True
     ct2.evolve(evolve_dt, nsteps)
     assert ct1.is_similar(ct2, rtol=1e-2)

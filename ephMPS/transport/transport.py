@@ -8,12 +8,8 @@ import logging
 from enum import Enum
 from collections import OrderedDict
 from functools import partial
-from typing import Union
 
-
-from ephMPS.mps.backend import backend
-from ephMPS.mps.matrix import tensordot, ones
-from ephMPS.mps import Mpo, Mps, MpDm, solver
+from ephMPS.mps import Mpo, Mps, MpDm, solver, MpDmFull, SuperLiouville
 from ephMPS.model import MolList
 from ephMPS.utils import TdMpsJob, Quantity, CompressCriteria
 from ephMPS.utils.utils import cast_float
@@ -41,12 +37,14 @@ class ChargeTransport(TdMpsJob):
         stop_at_edge=True,
         init_electron=InitElectron.relaxed,
         rdm=False,
+        dissipation=0
     ):
         self.mol_list: MolList = mol_list
         self.temperature = temperature
         self.mpo = None
         self.mpo_e_lbound = None  # the ground energy of the hamiltonian
-        self.init_electron=init_electron
+        self.init_electron = init_electron
+        self.dissipation = dissipation
         super(ChargeTransport, self).__init__(compress_config, evolve_config)
         self.energies = [self.tdmps_list[0].expectation(self.mpo)]
         self.reduced_density_matrices = []
@@ -108,20 +106,26 @@ class ChargeTransport(TdMpsJob):
         tentative_mpo = Mpo(self.mol_list)
         if self.temperature == 0:
             gs_mp = Mps.gs(self.mol_list, max_entangled=False)
+            if self.dissipation != 0:
+                gs_mp = MpDm.from_mps(gs_mp)
         else:
             gs_mp = MpDm.max_entangled_gs(self.mol_list)
             # subtract the energy otherwise might cause numeric error because of large offset * dbeta
             energy = Quantity(gs_mp.expectation(tentative_mpo))
             mpo = Mpo(self.mol_list, offset=energy)
             gs_mp = gs_mp.thermal_prop_exact(
-                mpo, self.temperature.to_beta() / 2, 500, "GS", True
+                mpo, self.temperature.to_beta() / 2, len(gs_mp), "GS", True
             )
         init_mp = self.create_electron(gs_mp)
+        if self.dissipation != 0:
+            init_mp = MpDmFull.from_mpdm(init_mp)
         energy = Quantity(init_mp.expectation(tentative_mpo))
         self.mpo = Mpo(self.mol_list, offset=energy)
         logger.info(f"mpo bond dims: {self.mpo.bond_dims}")
         logger.info(f"mpo physical dims: {self.mpo.pbond_list}")
         self.mpo_e_lbound = solver.find_lowest_energy(self.mpo, 1, 20, with_hartree=False)
+        if self.dissipation != 0:
+            self.mpo = SuperLiouville(self.mol_list, self.mpo, self.dissipation)
         init_mp.canonicalise()
         init_mp.evolve_config = self.evolve_config
         # init the compress config if not using threshold
