@@ -341,8 +341,12 @@ class Mps(MatrixProduct):
     def _get_sigmaqn(self, idx):
         if self.ephtable.is_electron(idx):
             return [0, 1]
-        else:
+        elif self.ephtable.is_phonon(idx):
             return [0] * self.pbond_list[idx]
+        else:
+            if self.mol_list.scheme == 4:
+                return [0] * self.pbond_list[idx]
+            assert False
 
     @property
     def is_mps(self):
@@ -368,8 +372,7 @@ class Mps(MatrixProduct):
     def nexciton(self):
         return self.qntot
 
-    # todo: no need to cache this O(1) operation?
-    @_cached_property
+    @property
     def norm(self):
         # return self.dmrg_norm * self.hartree_norm
         return self.wfns[-1]
@@ -405,50 +408,37 @@ class Mps(MatrixProduct):
         self[replacement_idx] = orig_ms
         return res
 
+    def _expectation_path(self):
+        # S--a--S--e--S
+        # |     |     |
+        # |     d     |
+        # |     |     |
+        # O--b--O--g--O
+        # |     |     |
+        # |     f     |
+        # |     |     |
+        # S--c--S--h--S
+        path = [
+            ([0, 1], "abc, cfh -> abfh"),
+            ([3, 0], "abfh, bdfg -> ahdg"),
+            ([2, 0], "ahdg, ade -> hge"),
+            ([1, 0], "hge, egh -> "),
+        ]
+        return path
+
+
+    def _expectation_conj(self):
+        return self.conj()
+
     def expectation(self, mpo, self_conj=None) -> float:
-        # todo: different bra and ket
         if self_conj is None:
-            self_conj = self.conj()
+            self_conj = self._expectation_conj()
         environ = Environ()
         environ.construct(self, self_conj, mpo, "r")
+        l = ones((1, 1, 1))
         r = environ.read("r", 1)
-        if self.is_mps:
-            # g--S--h--S
-            #    |     |
-            #    e     |
-            #    |     |
-            # d--O--f--O
-            #    |     |
-            #    b     |
-            #    |     |
-            # a--S--c--S
-            path = [
-                ([0, 3], "abc, hfc -> abhf"),
-                ([2, 0], "abhf, debf -> ahde"),
-                ([1, 0], "ahde, geh -> adg"),
-            ]
-        elif self.is_mpdm:
-            #    d
-            #    |
-            # h--S--j--S
-            #    |     |
-            #    f     |
-            #    |     |
-            # e--O--g--O
-            #    |     |
-            #    b     |
-            #    |     |
-            # a--S--c--S
-            #    |
-            #    d
-            path = [
-                ([0, 3], "abdc, jgc -> abdjg"),
-                ([2, 0], "abdjg, efbg -> adjef"),
-                ([1, 0], "adjef, hfdj -> aeh"),
-            ]
-        else:
-            raise RuntimeError
-        return float(multi_tensor_contract(path, self[0], mpo[0], self_conj[0], r).real)
+        path = self._expectation_path()
+        return float(multi_tensor_contract(path, l, self[0], mpo[0], self_conj[0], r).real)
         # This is time and memory consuming
         # return self_conj.dot(mpo.apply(self), with_hartree=False).real
 
@@ -466,56 +456,19 @@ class Mps(MatrixProduct):
         assert np.allclose(x, np.arange(len(mpos)))
         common_mpo = list(mpos[0])
         common_mpo[mpo0_unique_idx] = mpos[1][mpo0_unique_idx]
-        self_conj = self.conj()
+        self_conj = self._expectation_conj()
         environ = Environ()
         environ.construct(self, self_conj, common_mpo, "l")
         environ.construct(self, self_conj, common_mpo, "r")
         res_list = []
-        if self.is_mps:
-            # S--a--S--e--S
-            # |     |     |
-            # |     d     |
-            # |     |     |
-            # O--b--O--g--O
-            # |     |     |
-            # |     f     |
-            # |     |     |
-            # S--c--S--h--S
-            path = [
-                ([0, 1], "abc, cfh -> abfh"),
-                ([3, 0], "abfh, bdfg -> ahdg"),
-                ([2, 0], "ahdg, ade -> hge"),
-                ([1, 0], "hge, egh -> "),
-            ]
-        elif self.is_mpdm:
-            #       e
-            #       |
-            # S--a--S--f--S
-            # |     |     |
-            # |     d     |
-            # |     |     |
-            # O--b--O--h--O
-            # |     |     |
-            # |     g     |
-            # |     |     |
-            # S--c--S--j--S
-            #       |
-            #       e
-            path = [
-                ([0, 1], "abc, cgej -> abgej"),
-                ([3, 0], "abgej, bdgh -> aejdh"),
-                ([2, 0], "aejdh, adef -> jhf"),
-                ([1, 0], "jhf, fhj -> "),
-            ]
-        else:
-            raise RuntimeError
         for idx, mpo in zip(unique_idx, mpos):
             l = environ.read("l", idx - 1)
             r = environ.read("r", idx + 1)
+            path = self._expectation_path()
             res = multi_tensor_contract(path, l, self[idx], mpo[idx], self_conj[idx], r)
             res_list.append(float(res.real))
         return np.array(res_list)
-        # the naive way
+        # the naive way, slow and time consuming
         # return np.array([self.expectation(mpo) for mpo in mpos])
 
     @_cached_property
@@ -726,11 +679,21 @@ class Mps(MatrixProduct):
     def _evolve_dmrg_prop_and_compress(self, mpo, evolve_dt, config: EvolveConfig = None) -> "Mps":
         if config is None:
             config = self.evolve_config
+        assert evolve_dt is not None
         propagation_c = config.rk_config.coeff
         termlist = [self]
+        # don't let bond dim grow when contracting
+        orig_compress_config = self.compress_config
+        contract_compress_config = self.compress_config.copy()
+        contract_compress_config.criteria = CompressCriteria.both
+        contract_compress_config.min_dims = None
+        contract_compress_config.max_dims = np.array(self.bond_dims) + 4
+        self.compress_config = contract_compress_config
         while len(termlist) < len(propagation_c):
             termlist.append(mpo.contract(termlist[-1]))
-            termlist[-1].compress_config.relax()
+        # bond dim can grow after adding
+        for t in termlist:
+            t.compress_config = orig_compress_config
         if config.adaptive:
             if evolve_dt * config.evolve_dt < 0:
                 raise ValueError("evolve into wrong direction")
@@ -1198,6 +1161,7 @@ class Mps(MatrixProduct):
         return np.array(res)
 
     def _calc_reduced_density_matrix(self, mp1, mp2):
+        # further optimization is difficult. There are totally N^2 intermediate results to remember.
         reduced_density_matrix = np.zeros(
             (self.mol_list.mol_num, self.mol_list.mol_num), dtype=backend.complex_dtype
         )
@@ -1251,6 +1215,12 @@ class Mps(MatrixProduct):
     def __setitem__(self, key, value):
         self.invalidate_cache()
         return super().__setitem__(key, value)
+
+    def __add__(self, other: "Mps"):
+        return self.add(other)
+
+    def __sub__(self, other: "Mps"):
+        return self.add(other.scale(-1))
 
 
 def projector(ms: xp.ndarray) -> xp.ndarray:

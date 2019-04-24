@@ -29,7 +29,7 @@ class Matrix:
             cls._mo_dict[h] = new_matrix
         return new_matrix
 
-    def __init__(self, array, dtype=None):
+    def __init__(self, array, dtype=None, is_full_mpdm=False):
         assert array is not None
         if dtype == backend.real_dtype:
             # forbid unchecked casting
@@ -42,6 +42,7 @@ class Matrix:
         self.array: [xp.ndarray] = xp.asarray(array, dtype=dtype)
         self.original_shape = self.array.shape
         self.sigmaqn = None
+        self.is_full_mpdm = is_full_mpdm
         backend.running = True
 
     def __getattr__(self, item):
@@ -60,7 +61,7 @@ class Matrix:
             return wrapped
         return res
 
-    # for debugging purpose (let it shown in debugger)
+    # for debugging purpose (let it shown in debuggers)
     @property
     def dtype(self):
         return self.array.dtype

@@ -40,6 +40,8 @@ def test_simplest_phonon():
     assert ph.nlevels == 16
     ph = Phonon.simplest_phonon(Quantity(1), Quantity(0.01), temperature=Quantity(1))
     assert ph.nlevels == 10
+    ph = Phonon.simplest_phonon(Quantity(520, "cm-1"), Quantity(28, "meV"), Quantity(298, "K"), lam=True)
+    assert ph.nlevels == 16
 
 
 def test_split():

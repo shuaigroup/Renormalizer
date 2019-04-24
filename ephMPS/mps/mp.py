@@ -19,6 +19,7 @@ logger = logging.getLogger(__name__)
 
 
 class MatrixProduct:
+
     @classmethod
     def from_raw_list(cls, raw_list, mol_list):
         new_mp = cls()
@@ -133,9 +134,12 @@ class MatrixProduct:
 
     def build_empty_qn(self):
         self.qntot = 0
-        self.qnidx = 0
+        # retain qnidx to indicate left or right canonicalise
+        if self.qnidx is None:
+            self.qnidx = 0
         self.qn = [[0] * dim for dim in self.bond_dims]
-        self.left = True
+        if self.left is None:
+            self.left = True
 
     def build_none_qn(self):
         self.qntot = None
@@ -266,7 +270,7 @@ class MatrixProduct:
             qnbigr = np.add.outer(sigmaqn, qnr)
         return qnbigl, qnbigr
 
-    def compress(self, check_canonical=True):
+    def compress(self):
         """
         inp: canonicalise MPS (or MPO)
 
@@ -280,12 +284,12 @@ class MatrixProduct:
              truncated MPS
         """
 
-        # ensure mps is canonicalised
-        if check_canonical:
-            if self.is_left_canon:
-                assert self.check_left_canonical()
-            else:
-                assert self.check_right_canonical()
+        # ensure mps is canonicalised. This is time consuming.
+        # to disable this, run python as `python -O`
+        if self.is_left_canon:
+            assert self.check_left_canonical()
+        else:
+            assert self.check_right_canonical()
         system = "L" if self.left else "R"
 
         for idx in self.iter_idx_list(full=False):
@@ -359,10 +363,11 @@ class MatrixProduct:
 
         assert len(self) == len(other)
         e0 = eye(1, 1)
-        t = []
+        # for debugging. It has little computational cost anyway
+        debug_t = []
         for mt1, mt2 in zip(self, other):
             # sum_x e0[:,x].m[x,:,:]
-            t.append(e0)
+            debug_t.append(e0)
             e0 = tensordot(e0, mt2, 1)
             # sum_ij e0[i,p,:] self[i,p,:]
             # note, need to flip a (:) index onto top,
@@ -378,25 +383,6 @@ class MatrixProduct:
 
     def angle(self, other):
         return abs(self.conj().dot(other))
-
-    def scale2(self, val, inplace=False):
-        new_mp = self if inplace else self.copy()
-        if np.iscomplexobj(val):
-            new_mp.to_complex(inplace=True)
-        # Note matrices are read-only
-        # there are two ways to do the scaling
-        if np.abs(np.log(np.abs(val))) < 0.01:
-            # Thr first way. The operation performs very quickly,
-            # but leads to high float point error when val is very large or small
-            new_mp[self.qnidx] = new_mp[self.qnidx] * val
-        else:
-            # The second way. High time complexity but numerically more feasible.
-            root_val = val ** (1 / len(self))
-            for idx, mt in enumerate(self):
-                new_mp[idx] = mt * root_val
-        # the two ways could be united. I'm currently not confident enough that
-        # the modification will work. So explicitly use two ways for now
-        return new_mp
 
     def scale(self, val, inplace=False):
         new_mp = self if inplace else self.copy()

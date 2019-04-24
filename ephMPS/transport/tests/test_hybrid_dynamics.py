@@ -7,7 +7,7 @@ import numpy as np
 import pytest
 
 from ephMPS.mps import Mps, Mpo, MpDm
-from ephMPS.utils import Quantity
+from ephMPS.utils import Quantity, CompressConfig
 from ephMPS.tests import parameter_PBI
 from ephMPS.transport.tests import cur_dir
 
@@ -53,6 +53,7 @@ def test_FT_dynamics_hybrid_TDDMRG_TDH(n_dmrg_phs, scheme):
     mpdm = (
         Mpo.onsite(mol_list, r"a^\dagger", mol_idx_set={0}).apply(mpdm).normalize(1.0)
     )
+    mpdm.compress_config = CompressConfig(threshold=5e-4)
     offset = mpdm.expectation(tentative_mpo)
     mpo = Mpo(mol_list, offset=Quantity(offset, "a.u."))
 

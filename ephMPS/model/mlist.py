@@ -23,7 +23,7 @@ class MolList(object):
         self.scheme = scheme
 
         self.ephtable = EphTable.from_mol_list(mol_list, scheme)
-        self.pbond_list = []
+        self.pbond_list: List[int] = []
         if scheme < 4:
             if scheme == 3:
                 assert self.check_nearest_neighbour()
