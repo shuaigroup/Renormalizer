@@ -3,13 +3,14 @@
 
 import numpy as np
 from ephMPS import constant
+from ephMPS import classical
 from ephMPS.lib import mps as mpslib
 import numpy.polynomial.laguerre as La
 import numpy.polynomial.legendre as Le
 import scipy
 import scipy.special
 
-def SBM_init(mol, T=0, pure_Hartree=False):
+def SBM_init(mol, T=0, pure_Hartree=False, Ehrenfest=False):
     """
     initiate the spin-boson model initial state the spin is alpha and the vibrations
     are on the ground state equilibrium position
@@ -24,13 +25,15 @@ def SBM_init(mol, T=0, pure_Hartree=False):
                 mps = np.zeros([1,ph.nlevels,1])
                 mps[0,0,0] = 1.0
                 MPS.append(mps)
-
+            
             WFN = []
             for ph in mol[0].ph_hybrid:
-                wfn = np.zeros(ph.nlevels)
-                wfn[0] = 1.0
+                if Ehrenfest == False:
+                    wfn = np.zeros(ph.nlevels)
+                    wfn[0] = 1.0
+                else:
+                    wfn = classical.classical_particle.action_angle(T, ph.omega[0])
                 WFN.append(wfn)
-
             WFN.append(1.0)  
         
         else:
@@ -94,7 +97,9 @@ def SBM_init(mol, T=0, pure_Hartree=False):
     
     if pure_Hartree == False:
         MPS = mpslib.MPSdtype_convert(MPS)
-    WFN = [wfn.astype(np.complex128) for wfn in WFN[:-1]]+[WFN[-1]]
+    
+    if Ehrenfest == False:
+        WFN = [wfn.astype(np.complex128) for wfn in WFN[:-1]]+[WFN[-1]]
 
     return MPS, WFN
 

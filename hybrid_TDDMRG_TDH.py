@@ -19,10 +19,7 @@ from ephMPS.lib import mf as mflib
 from ephMPS import RK
 from ephMPS import elementop
 
-def construct_hybrid_Ham(mol, J, HMPO_init, MPS, WFN, debug=False, QNargs=None):
-    '''
-    construct hybrid DMRG and Hartree(-Fock) Hamiltonian
-    '''
+def cal_A_el(mol, MPS):
 
     nmols = len(mol)
     pbond = [mps.shape[1] for mps in MPS]
@@ -35,21 +32,33 @@ def construct_hybrid_Ham(mol, J, HMPO_init, MPS, WFN, debug=False, QNargs=None):
         elif mol[imol].Model == "SBM":
             MPO, MPOdim = MPSsolver.construct_onsiteMPO(mol,pbond,"sigma_z",dipole=False,sitelist=[imol])
 
-        #A_el[imol] = mpslib.dot(mpslib.conj(MPS),mpslib.mapply(MPO,MPS)).real
         A_el[imol] = mpslib.exp_value(MPS, MPO, MPS).real
+    
     print "dmrg_occ", A_el
     
+    return A_el
+
+
+def cal_B_vib(mol, WFN, Ehrenfest=False):
+
+    nmols = len(mol)
     # many-body vibration part
     B_vib = []
     iwfn = 0
     for imol in xrange(nmols):
         B_vib.append([])
         for iph in xrange(mol[imol].nphs_hybrid):
-            B_vib[imol].append( mflib.exp_value(WFN[iwfn], mol[imol].ph_hybrid[iph].H_vib_dep, WFN[iwfn]) )
+            B_vib[imol].append( mflib.exp_value(WFN[iwfn], \
+                mol[imol].ph_hybrid[iph].H_vib_dep, WFN[iwfn], Ehrenfest=Ehrenfest) )
             iwfn += 1
-    B_vib_mol = [np.sum(np.array(i)) for i in B_vib]
+    
+    return B_vib
 
-    Etot = 0.0
+
+def construct_hybrid_TDDMRG_MPO(mol, A_el, B_vib, MPS, HMPO_init, QNargs=None):
+
+    nmols = len(mol)
+    B_vib_mol = [np.sum(np.array(i)) for i in B_vib]
     # construct new HMPO
     if QNargs is not None:
         e_mean = mpslib.exp_value(MPS, HMPO_init[0], MPS)
@@ -90,22 +99,49 @@ def construct_hybrid_Ham(mol, J, HMPO_init, MPS, WFN, debug=False, QNargs=None):
     if QNargs is not None:
         MPO = [MPO, MPOQN, MPOQNidx, MPOQNtot]
 
-    Etot += e_mean
-    
+    # e_mean = e_system + e_interaction  
+    return MPO, e_mean
+
+
+def construct_hybrid_TDSCF_HAM(mol, A_el, B_vib, WFN, Ehrenfest=False):
+
+    nmols = len(mol)
     iwfn = 0
     HAM = []
+    Etot = 0.
     for imol in xrange(nmols):
         for iph in xrange(mol[imol].nphs_hybrid):
-            e_mean = mflib.exp_value(WFN[iwfn], mol[imol].ph_hybrid[iph].H_vib_indep, WFN[iwfn])
+            e_mean = mflib.exp_value(WFN[iwfn], \
+                    mol[imol].ph_hybrid[iph].H_vib_indep, WFN[iwfn], Ehrenfest=Ehrenfest)
             Etot += e_mean
-            e_mean += A_el[imol]*B_vib[imol][iph]
-            HAM.append(mol[imol].ph_hybrid[iph].H_vib_indep + \
-                    mol[imol].ph_hybrid[iph].H_vib_dep*A_el[imol]-np.diag([e_mean]*WFN[iwfn].shape[0]))
+            if Ehrenfest == False:
+                e_mean += A_el[imol]*B_vib[imol][iph]
+                HAM.append(mol[imol].ph_hybrid[iph].H_vib_indep + \
+                        mol[imol].ph_hybrid[iph].H_vib_dep*A_el[imol]-np.diag([e_mean]*WFN[iwfn].shape[0]))
+            else:
+                # TODO only for displacement harmonics     
+                HAM.append(-(A_el[imol]*mol[imol].ph_hybrid[iph].H_vib_dep(WFN[iwfn].p,\
+                    WFN[iwfn].q, derivative=True)\
+                    +mol[imol].ph_hybrid[iph].omega[0]**2*WFN[iwfn].q))
             iwfn += 1
-    if debug == False:
-        return MPO, HAM, Etot
+    # Etot = e_environ
+    return HAM, Etot
+
+
+def construct_hybrid_Ham(mol, J, HMPO_init, MPS, WFN, debug=False, QNargs=None, Ehrenfest=False):
+    '''
+    construct hybrid DMRG and Hartree(-Fock) Hamiltonian
+    '''
+
+    A_el = cal_A_el(mol, MPS)
+    B_vib = cal_B_vib(mol, WFN, Ehrenfest=Ehrenfest)
+    MPO, Etot1 = construct_hybrid_TDDMRG_MPO(mol, A_el, B_vib, MPS, HMPO_init, QNargs=QNargs)
+    HAM, Etot2 = construct_hybrid_TDSCF_HAM(mol, A_el, B_vib, WFN, Ehrenfest=Ehrenfest)
+    
+    if debug == True:
+        return MPO, HAM, Etot1 + Etot2, A_el, B_vib
     else:
-        return MPO, HAM, Etot, A_el
+        return MPO, HAM, Etot1 + Etot2
 
 
 def hybrid_DMRG_H_SCF(mol, J, nexciton, dmrg_procedure, niterations, DMRGthresh=1e-5, Hthresh=1e-5):
@@ -161,7 +197,7 @@ def hybrid_DMRG_H_SCF(mol, J, nexciton, dmrg_procedure, niterations, DMRGthresh=
 
 def hybrid_TDDMRG_TDH(rk, mol, J, HMPO_init, MPS, WFN, dt, ephtable, thresh=0.,\
         cleanexciton=None, QNargs=None, TDH_prop_method="unitary",
-        normalize=1.0):
+        normalize=1.0, Ehrenfest=False, scheme="P&C"):
     '''
     hybrid TDDMRG and TDH solver
     1.gauge is g_k = 0
@@ -169,64 +205,66 @@ def hybrid_TDDMRG_TDH(rk, mol, J, HMPO_init, MPS, WFN, dt, ephtable, thresh=0.,\
     # construct Hamiltonian 
     if QNargs is None:
         MPO, HAM, Etot = construct_hybrid_Ham(mol, J, HMPO_init, MPS, WFN, \
-                QNargs=QNargs)
+                QNargs=QNargs, Ehrenfest=Ehrenfest)
     else:
         MPO, HAM, Etot = construct_hybrid_Ham(mol, J, HMPO_init, MPS[0], WFN, \
-                QNargs=QNargs)
-
+                QNargs=QNargs, Ehrenfest=Ehrenfest)
+    
     print "Etot", Etot
-
+    
     # EOM of coefficient a
     WFN[-1] *= np.exp(Etot/1.0j*dt)
     
     # EOM of TDDMRG
     MPS = tMPS.tMPS(rk, MPS, MPO, dt, ephtable, thresh=thresh, \
-           cleanexciton=cleanexciton, QNargs=QNargs, normalize=normalize)
+           cleanexciton=cleanexciton, QNargs=QNargs, scheme=scheme, normalize=normalize)
     
     # EOM of TDH 
     # here if TDH also use RK4, then the TDDMRG part should be changed to get
     # t=t_1, t=t_2... wfn and slope k
     if TDH_prop_method == "unitary":
         TDH.unitary_propagation(HAM, WFN, dt)
+    elif TDH_prop_method == "classical":
+        TDH.classical_propagation(HAM, WFN, dt)
     
-    return MPS, WFN
-
-
+    return MPS, WFN, Etot
+    
+    
 def ZeroTcorr_hybrid_TDDMRG_TDH(setup, mol, J, HMPO_init, iMPS, dipoleMPO, WFN0, nsteps, dt, ephtable,\
         thresh=0., E_offset=0., cleanexciton=None, QNargs=None):
     '''
     ZT linear spectra
     '''
     rk = setup.rk
-
+    
     AketMPS = mpslib.mapply(dipoleMPO, iMPS, QNargs=QNargs)
     factor = mpslib.norm(AketMPS, QNargs=QNargs)
     AketMPS = mpslib.scale(AketMPS, 1./factor, QNargs=QNargs)
     AbraMPS = mpslib.add(AketMPS,None, QNargs=QNargs)
-
+    
     WFN0[-1] *= factor
     WFNket = copy.deepcopy(WFN0)
     WFNbra = copy.deepcopy(WFN0)
-
+    
     autocorr = []
     t = 0.0
     for istep in xrange(nsteps):
         if istep != 0:
             t += dt
             if istep % 2 == 1:
-                AketMPS, WFNket = hybrid_TDDMRG_TDH(rk, mol, J, HMPO_init, AketMPS, WFNket,\
-                        dt, ephtable, thresh=thresh, cleanexciton=cleanexciton, QNargs=QNargs, \
-                        TDH_prop_method="unitary")
+                AketMPS, WFNket, Etot = hybrid_TDDMRG_TDH(rk, mol, J, HMPO_init, AketMPS, WFNket,\
+                            dt, ephtable, thresh=thresh, cleanexciton=cleanexciton, QNargs=QNargs, \
+                            TDH_prop_method="unitary")
             else:
-                AbraMPS, WFNbra = hybrid_TDDMRG_TDH(rk, mol, J, HMPO_init, AbraMPS, WFNbra,\
+                AbraMPS, WFNbra, Etot = hybrid_TDDMRG_TDH(rk, mol, J, HMPO_init, AbraMPS, WFNbra,\
                         -dt, ephtable, thresh=thresh, cleanexciton=cleanexciton, QNargs=QNargs, \
                         TDH_prop_method="unitary")
-
+    
         ft = mpslib.dot(mpslib.conj(AbraMPS,QNargs=QNargs),AketMPS, QNargs=QNargs)
         ft *= np.conj(WFNbra[-1])*WFNket[-1] * np.exp(-1.0j*E_offset*t)
         for iwfn in xrange(len(WFN0)-1):
             ft *= np.vdot(WFNbra[iwfn], WFNket[iwfn])
-
+    
         autocorr.append(ft)
         autocorr_store(autocorr, istep)
 
@@ -284,7 +322,7 @@ def FiniteT_spectra_TDDMRG_TDH(setup, spectratype, T, mol, J, HMPO_init, nsteps,
             w, v = scipy.linalg.eigh(hamprop)
             DMH[iham] = DMH[iham].dot(v).dot(np.diag(np.exp(-1.0j*dt*w))).dot(v.T)
         
-        DMMPO, DMH = hybrid_TDDMRG_TDH(rk, mol, J, HMPO_init, DMMPO, DMH, \
+        DMMPO, DMH, Etot = hybrid_TDDMRG_TDH(rk, mol, J, HMPO_init, DMMPO, DMH, \
                 -dt, ephtable, thresh=thresh, QNargs=QNargs, normalize=1.0)
         
         return DMMPO, DMH
@@ -496,7 +534,7 @@ def FT_DM_hybrid_TDDMRG_TDH(rk, mol, J, HMPO_init, nexciton, T, nsteps, pbond, e
                     loop = False
 
             print ("dbeta", dbeta)
-            DMMPOnew, DMH = hybrid_TDDMRG_TDH(rk, mol, J, HMPO_init, DMMPO, DMH, dbeta/1.0j, ephtable, \
+            DMMPOnew, DMH, Etot = hybrid_TDDMRG_TDH(rk, mol, J, HMPO_init, DMMPO, DMH, dbeta/1.0j, ephtable, \
                     thresh=thresh, cleanexciton=cleanexciton, QNargs=QNargs, normalize=1.0)
             
             if rk.adaptive == True:
@@ -515,7 +553,8 @@ def FT_DM_hybrid_TDDMRG_TDH(rk, mol, J, HMPO_init, nexciton, T, nsteps, pbond, e
 
 
 def dynamics_hybrid_TDDMRG_TDH(setup, mol, J, HMPO_init, MPS, WFN, stop, dt, ephtable, thresh=0.,\
-        cleanexciton=None, QNargs=None, property_MPOs=[], tstart=0.):
+        cleanexciton=None, QNargs=None, property_MPOs=[], tstart=0.,
+        TDH_prop_method="unitary", Ehrenfest=False):
     '''
     ZT/FT dynamics to calculate the expectation value of a list of MPOs
     the MPOs in only related to the MPS part (usually electronic part)
@@ -533,13 +572,14 @@ def dynamics_hybrid_TDDMRG_TDH(setup, mol, J, HMPO_init, MPS, WFN, stop, dt, eph
     data = [[] for i in xrange(len(property_MPOs))]
     tlist = []
     t = 0. 
+
     for istep in xrange(nsteps):
         print "istep", istep
         if istep != 0:
-            MPS, WFN = hybrid_TDDMRG_TDH(rk, mol, J, HMPO_init, MPS, WFN,\
+            MPS, WFN, Etot = hybrid_TDDMRG_TDH(rk, mol, J, HMPO_init, MPS, WFN,\
                     dt, ephtable, thresh=thresh, cleanexciton=cleanexciton, QNargs=QNargs, \
-                    TDH_prop_method="unitary")
-            
+                    TDH_prop_method=TDH_prop_method,Ehrenfest=Ehrenfest, scheme="P&C")
+
             t += dt
             
             if rk.adaptive == True:

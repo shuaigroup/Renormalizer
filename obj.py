@@ -40,6 +40,15 @@ class Phonon(object):
         print "qbtrunc = ", self.qbtrunc
         print "base =", self.base
 
+    # TODO only for displacement harmonics
+    def classical_H_vib_indep(self, p, q):
+        return 0.5 * p**2 + 0.5 * self.omega[0]**2 * q**2
+
+    def classical_H_vib_dep(self, p, q, derivative=False):
+        if derivative == False:
+            return -self.omega[0]**2*self.dis[1]*q
+        else:
+            return -self.omega[0]**2*self.dis[1]
 
 class Mol(object):
     '''
@@ -60,6 +69,7 @@ class Mol(object):
         
         self.nphs_hybrid = nphs_hybrid
         self.ph_hybrid = []
+        self.phhop_hybrid= np.zeros([nphs_hybrid, nphs_hybrid])
         self.e0_hybrid = 0.0
 
         self.Model = Model

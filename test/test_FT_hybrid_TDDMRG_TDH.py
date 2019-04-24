@@ -48,7 +48,7 @@ class Test_FT_hybrid_TDDMRG_TDH(unittest.TestCase):
         if QNargs is not None:   
             MPS = MPS[0]
 
-        MPO, HAM, Etot, A_el = \
+        MPO, HAM, Etot, A_el, B_vib = \
             hybrid_TDDMRG_TDH.construct_hybrid_Ham(value[0], J, HMPO_init, MPS, \
                     DMH, debug=True, QNargs=QNargs)
         

@@ -151,31 +151,34 @@ def Ham_elec(mol, J, nexciton, indirect=None, particle="hardcore boson"):
     return H_el_indep, H_el_dep
 
 
-def Ham_vib(ph):
+def Ham_vib(ph, Ehrenfest=False):
     '''
     construct vibrational part Hamiltonian
     '''
-    
-    ndim = ph.nlevels
-    H_vib_indep = np.zeros((ndim, ndim))
-    H_vib_dep = np.zeros((ndim, ndim))
-    for ibra in xrange(ndim):
-        for iket in xrange(ndim):
-            # independent part
-            H_vib_indep[ibra, iket] += PhElementOpera("b^\dagger b", ibra, iket) * ph.omega[0]  \
-                                + PhElementOpera("(b^\dagger + b)^3",ibra, iket)*\
-                                ph.force3rd[0] * (0.5/ph.omega[0])**1.5
-            # dependent part
-            H_vib_dep[ibra, iket] += PhElementOpera("b^\dagger + b",ibra, iket) * \
-                             (ph.omega[1]**2 / np.sqrt(2.*ph.omega[0]) * -ph.dis[1] \
-                              + 3.0*ph.dis[1]**2*ph.force3rd[1]/\
-                              np.sqrt(2.*ph.omega[0])) \
-                              + PhElementOpera("(b^\dagger + b)^2",ibra, iket) * \
-                             (0.25*(ph.omega[1]**2-ph.omega[0]**2)/ph.omega[0]\
-                              - 1.5*ph.dis[1]*ph.force3rd[1]/ph.omega[0])\
-                              + PhElementOpera("(b^\dagger + b)^3",ibra, iket) * \
-                              (ph.force3rd[1]-ph.force3rd[0])*(0.5/ph.omega[0])**1.5
-    
+    if Ehrenfest == False:
+        ndim = ph.nlevels
+        H_vib_indep = np.zeros((ndim, ndim))
+        H_vib_dep = np.zeros((ndim, ndim))
+        for ibra in xrange(ndim):
+            for iket in xrange(ndim):
+                # independent part
+                H_vib_indep[ibra, iket] += PhElementOpera("b^\dagger b", ibra, iket) * ph.omega[0]  \
+                                    + PhElementOpera("(b^\dagger + b)^3",ibra, iket)*\
+                                    ph.force3rd[0] * (0.5/ph.omega[0])**1.5
+                # dependent part
+                H_vib_dep[ibra, iket] += PhElementOpera("b^\dagger + b",ibra, iket) * \
+                                 (ph.omega[1]**2 / np.sqrt(2.*ph.omega[0]) * -ph.dis[1] \
+                                  + 3.0*ph.dis[1]**2*ph.force3rd[1]/\
+                                  np.sqrt(2.*ph.omega[0])) \
+                                  + PhElementOpera("(b^\dagger + b)^2",ibra, iket) * \
+                                 (0.25*(ph.omega[1]**2-ph.omega[0]**2)/ph.omega[0]\
+                                  - 1.5*ph.dis[1]*ph.force3rd[1]/ph.omega[0])\
+                                  + PhElementOpera("(b^\dagger + b)^3",ibra, iket) * \
+                                  (ph.force3rd[1]-ph.force3rd[0])*(0.5/ph.omega[0])**1.5
+    else:
+        H_vib_indep = ph.classical_H_vib_indep
+        H_vib_dep = ph.classical_H_vib_dep
+
     return H_vib_indep, H_vib_dep
 
 
@@ -233,6 +236,21 @@ def construct_H_Ham(mol, J, nexciton, WFN, fe, fv, particle="hardcore boson", de
     else:
         return HAM, Etot, A_el
 
+def classical_propagation(HAM, WFN, dt):
+    '''
+    velocity Verlet algorithm
+    '''
+    for iham, ham in enumerate(HAM):
+        if WFN[iham].qlast == None:
+            # the first step
+            WFN[iham].qlast = copy.copy(WFN[iham].q)
+            WFN[iham].q +=  WFN[iham].p * dt + 0.5 * ham * dt**2
+        else:
+            newq = 2.*WFN[iham].q - WFN[iham].qlast + ham * dt**2
+            WFN[iham].qlast = copy.copy(WFN[iham].q)
+            WFN[iham].q = newq
+
+        WFN[iham].p +=  ham * dt
 
 def unitary_propagation(HAM, WFN, dt):
     '''
@@ -414,17 +432,17 @@ def FT_DM(mol, J, nexciton, T, nsteps, particle="hardcore boson", prop_method="u
     return DM
 
 
-def construct_Ham_vib(mol,hybrid=False):
+def construct_Ham_vib(mol,hybrid=False,Ehrenfest=False):
     if hybrid == False:
         for imol in xrange(len(mol)):
             for iph in xrange(mol[imol].nphs):
-                H_vib_indep, H_vib_dep = Ham_vib(mol[imol].ph[iph])
+                H_vib_indep, H_vib_dep = Ham_vib(mol[imol].ph[iph], Ehrenfest=Ehrenfest)
                 mol[imol].ph[iph].H_vib_indep = H_vib_indep
                 mol[imol].ph[iph].H_vib_dep = H_vib_dep
     else:
         for imol in xrange(len(mol)):
             for iph in xrange(mol[imol].nphs_hybrid):
-                H_vib_indep, H_vib_dep = Ham_vib(mol[imol].ph_hybrid[iph])
+                H_vib_indep, H_vib_dep = Ham_vib(mol[imol].ph_hybrid[iph], Ehrenfest=Ehrenfest)
                 mol[imol].ph_hybrid[iph].H_vib_indep = H_vib_indep
                 mol[imol].ph_hybrid[iph].H_vib_dep = H_vib_dep
 

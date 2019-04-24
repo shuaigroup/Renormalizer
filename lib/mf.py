@@ -6,15 +6,16 @@ mean-field lib similar to mps.py
 import numpy as np
 import scipy.linalg
 
-def exp_value(bra, O, ket):
+def exp_value(bra, O, ket, Ehrenfest=False):
     '''
     calculate the expectation value 
     <np.conj(wfnbra) | O | wfnket>  at ZT
     trace (dmbra^\dagger | O | dmket) at FT
     '''
-
-    return np.vdot(bra, O.dot(ket))
-
+    if Ehrenfest == False:
+        return np.vdot(bra, O.dot(ket))
+    else:
+        return O(bra.p, bra.q)
 
 def normalize(WFN):
     '''
@@ -27,3 +28,5 @@ def normalize(WFN):
         norm *= lnorm
 
     WFN[-1] *= norm
+
+
