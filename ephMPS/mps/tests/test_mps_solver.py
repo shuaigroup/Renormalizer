@@ -45,11 +45,11 @@ def test_optimization(scheme):
     mps.optimize_config.procedure = procedure
     mps.optimize_config.method = "2site"
     energy = optimize_mps(mps.copy(), mpo)
-    assert energy * constant.au2ev == pytest.approx(2.28614053133)
+    assert energy * constant.au2ev == pytest.approx(2.28614053133, rel=1e-5)
 
     mps.optimize_config.method = "1site"
     energy = optimize_mps(mps.copy(), mpo)
-    assert energy * constant.au2ev == pytest.approx(2.28614053133)
+    assert energy * constant.au2ev == pytest.approx(2.28614053133, rel=1e-5)
 
 
 def test_multistate():

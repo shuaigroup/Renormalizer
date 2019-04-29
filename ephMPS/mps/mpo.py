@@ -515,19 +515,29 @@ class Mpo(MatrixProduct):
         mpo = cls()
         mpo.mol_list = mol_list
         e_op = construct_e_op_dict()
+        mpo.qn = [[0]]
+        qn = 0
         for imol, mol in enumerate(mol_list):
             if imol == start == end:
-                mpo.append(e_op[r"a^\dagger a"])
+                mt = e_op[r"a^\dagger a"]
             elif imol == start:
-                mpo.append(e_op[r"a"])
+                mt = e_op[r"a"]
+                qn -= 1
             elif imol == end:
-                mpo.append(e_op[r"a^\dagger"])
+                mt = e_op[r"a^\dagger"]
+                qn += 1
             else:
-                mpo.append(e_op["Iden"])
+                mt = e_op["Iden"]
+            mpo.append(mt.reshape(1, 2, 2, 1))
+            mpo.qn.append([qn])
             for ph in mol.dmrg_phs:
                 assert ph.is_simple
-                mpo.append(ph_op_matrix("Iden", ph.n_phys_dim))
-        mpo.build_empty_qn()
+                n = ph.n_phys_dim
+                mpo.append(ph_op_matrix("Iden", n).reshape(1, n, n, 1))
+                mpo.qn.append([qn])
+        mpo.qntot = 0
+        mpo.qnidx = len(mpo) - 1
+        mpo.left = False
         return mpo
 
     @classmethod
