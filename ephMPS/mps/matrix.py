@@ -141,6 +141,13 @@ class Matrix:
         new.sigmaqn = self.sigmaqn
         return new
 
+    def nearly_zero(self):
+        if backend.is_32bits:
+            atol = 1e-10
+        else:
+            atol = 1e-20
+        return xp.allclose(self.array, xp.zeros_like(self.array), atol=atol)
+
     def __hash__(self):
         if xp == np:
             return hash(self.array.tobytes())
@@ -327,3 +334,6 @@ def pair_tensor_contract(
         left_pos += (input_left.find(s),)
         right_pos += (input_right.find(s),)
     return tensordot(view_left, view_right, axes=(left_pos, right_pos))
+
+
+class EmptyMatrixError(Exception): pass

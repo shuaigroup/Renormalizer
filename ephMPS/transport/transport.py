@@ -125,7 +125,7 @@ class ChargeTransport(TdMpsJob):
         logger.info(f"mpo physical dims: {self.mpo.pbond_list}")
         self.mpo_e_lbound = solver.find_lowest_energy(self.mpo, 1, 20, with_hartree=False)
         if self.dissipation != 0:
-            self.mpo = SuperLiouville(self.mol_list, self.mpo, self.dissipation)
+            self.mpo = SuperLiouville(self.mpo, self.dissipation)
         init_mp.canonicalise()
         init_mp.evolve_config = self.evolve_config
         # init the compress config if not using threshold

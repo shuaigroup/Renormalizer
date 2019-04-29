@@ -15,15 +15,11 @@ from ephMPS.lib import solve_ivp
 from ephMPS.mps import svd_qn
 from ephMPS.mps.matrix import (
     multi_tensor_contract,
-    vstack,
-    dstack,
-    concatenate,
-    zeros,
     ones,
     tensordot,
     Matrix,
     asnumpy,
-)
+    EmptyMatrixError)
 from ephMPS.mps.backend import backend, xp
 from ephMPS.mps.lib import Environ, updatemps, compressed_sum
 from ephMPS.mps.mp import MatrixProduct
@@ -314,8 +310,6 @@ class Mps(MatrixProduct):
         self.optimize_config: OptimizeConfig = OptimizeConfig()
         self.evolve_config: EvolveConfig = EvolveConfig()
 
-        self.compress_add: bool = False
-
     def conj(self):
         new_mps = super().conj()
         for idx, wfn in enumerate(new_mps.wfns):
@@ -382,7 +376,7 @@ class Mps(MatrixProduct):
     def dmrg_norm(self):
         # the fast version in the comment rarely makes sense because in a lot of cases
         # the mps is not canonicalised (though qnidx is set)
-        """ Fast version yet not safe. Needs further testing
+        """
         if self.is_left_canon:
             assert self.check_left_canonical()
             return np.linalg.norm(np.ravel(self[-1]))
@@ -478,7 +472,7 @@ class Mps(MatrixProduct):
             mpos = []
             for imol, mol in enumerate(self.mol_list):
                 for iph in range(len(mol.dmrg_phs)):
-                    mpos.append(Mpo.ph_occupation_mpo(self.mol_list, imol, iph))
+                    mpos.append(Mpo.ph_onsite(self.mol_list, r"b^\dagger b", imol, iph))
             self.mol_list.mpos[key] = mpos
         else:
             mpos = self.mol_list.mpos[key]
@@ -522,7 +516,6 @@ class Mps(MatrixProduct):
         new.optimize_config = self.optimize_config
         # evolve_config has its own data
         new.evolve_config = self.evolve_config.copy()
-        new.compress_add = self.compress_add
         return new
 
     def calc_energy(self, h_mpo):
@@ -533,69 +526,6 @@ class Mps(MatrixProduct):
         for prop in cached_property_set:
             _ = getattr(self, prop)
         self.clear()
-
-    def add(self, other):
-        assert self.qntot == other.qntot
-        assert self.site_num == other.site_num
-        assert self.qnidx == other.qnidx
-
-        new_mps = other.metacopy()
-        if self.is_complex:
-            new_mps.to_complex(inplace=True)
-        new_mps.compress_config.update(self.compress_config)
-
-        if self.is_mps:  # MPS
-            new_mps[0] = dstack([self[0], other[0]])
-            for i in range(1, self.site_num - 1):
-                mta = self[i]
-                mtb = other[i]
-                pdim = mta.shape[1]
-                assert pdim == mtb.shape[1]
-                new_ms = zeros(
-                    [mta.shape[0] + mtb.shape[0], pdim, mta.shape[2] + mtb.shape[2]],
-                    dtype=new_mps.dtype,
-                )
-                new_ms[: mta.shape[0], :, : mta.shape[2]] = mta
-                new_ms[mta.shape[0] :, :, mta.shape[2] :] = mtb
-                new_mps[i] = new_ms
-
-            new_mps[-1] = vstack([self[-1], other[-1]])
-        elif self.is_mpdm:  # MPO
-            new_mps[0] = concatenate((self[0], other[0]), axis=3)
-            for i in range(1, self.site_num - 1):
-                mta = self[i]
-                mtb = other[i]
-                pdimu = mta.shape[1]
-                pdimd = mta.shape[2]
-                assert pdimu == mtb.shape[1]
-                assert pdimd == mtb.shape[2]
-
-                new_ms = zeros(
-                    [
-                        mta.shape[0] + mtb.shape[0],
-                        pdimu,
-                        pdimd,
-                        mta.shape[3] + mtb.shape[3],
-                    ],
-                    dtype=new_mps.dtype,
-                )
-                new_ms[: mta.shape[0], :, :, : mta.shape[3]] = mta[:, :, :, :]
-                new_ms[mta.shape[0] :, :, :, mta.shape[3] :] = mtb[:, :, :, :]
-                new_mps[i] = new_ms
-
-            new_mps[-1] = concatenate((self[-1], other[-1]), axis=0)
-        else:
-            assert False
-
-        new_mps.move_qnidx(self.qnidx)
-        new_mps.qn = [qn1 + qn2 for qn1, qn2 in zip(self.qn, new_mps.qn)]
-        new_mps.qn[0] = [0]
-        new_mps.qn[-1] = [0]
-        new_mps.set_peak_bytes()
-        if self.compress_add:
-            new_mps.canonicalise()
-            new_mps.compress()
-        return new_mps
 
     @invalidate_cache_decorator
     def normalize(self, norm=None):
@@ -690,14 +620,18 @@ class Mps(MatrixProduct):
         contract_compress_config.max_dims = np.array(self.bond_dims) + 4
         self.compress_config = contract_compress_config
         while len(termlist) < len(propagation_c):
-            termlist.append(mpo.contract(termlist[-1]))
+            try:
+                termlist.append(mpo.contract(termlist[-1]))
+            except EmptyMatrixError:
+                # empty states can be discarded
+                logger.warning(f"Discard empty states. Length of terms: {len(termlist)}")
+                break
         # bond dim can grow after adding
         for t in termlist:
             t.compress_config = orig_compress_config
         if config.adaptive:
             if evolve_dt * config.evolve_dt < 0:
                 raise ValueError("evolve into wrong direction")
-            # control term sizes to be approximately constant
             while True:
                 scaled_termlist = []
                 for idx, term in enumerate(termlist):
@@ -1159,6 +1093,17 @@ class Mps(MatrixProduct):
                 )
             )
         return np.array(res)
+
+    def full_wfn(self):
+        dim = np.prod(self.pbond_list)
+        if 20000 < dim:
+            raise ValueError("wavefunction too large")
+        res = ones((1, 1, 1))
+        for mt in self:
+            dim1 = res.shape[1] * mt.shape[1]
+            dim2 = mt.shape[-1]
+            res = tensordot(res, mt, axes=1).reshape(1, dim1, dim2)
+        return res[0, :, 0]
 
     def _calc_reduced_density_matrix(self, mp1, mp2):
         # further optimization is difficult. There are totally N^2 intermediate results to remember.

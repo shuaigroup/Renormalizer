@@ -94,6 +94,14 @@ class MolList(object):
         else:
             assert False
 
+    def get_mpos(self, key, fun):
+        if key not in self.mpos:
+            mpos = fun(self)
+            self.mpos[key] = mpos
+        else:
+            mpos = self.mpos[key]
+        return mpos
+
     def check_symmetric(self):
         # first check for j matrix
         rot = np.rot90(self.j_matrix)

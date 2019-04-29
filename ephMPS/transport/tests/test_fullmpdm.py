@@ -5,9 +5,10 @@ import logging
 import numpy as np
 import pytest
 
-from ephMPS.mps import MpDm, Mpo, MpDmFull, SuperLiouville
+from ephMPS.mps import MpDm, Mpo, MpDmFull, SuperLiouville, Mps
 from ephMPS.transport import ChargeTransport
 from ephMPS.utils import Quantity, CompressConfig
+from ephMPS.model import Phonon, Mol, MolList
 from ephMPS.transport.tests.band_param import band_limit_mol_list, low_t, get_analytical_r_square
 
 
@@ -18,7 +19,7 @@ logger = logging.getLogger(__name__)
     "dissipation, dt, nsteps",
     (
         [0, 4, 20],
-        [0.05, 4, 30],
+        #[0.05, 4, 30], computational cost too large
     ),
 )
 def test_dynamics(dissipation, dt, nsteps):
@@ -38,9 +39,7 @@ def test_dynamics(dissipation, dt, nsteps):
     mpdm_full = MpDmFull.from_mpdm(mpdm)
     # As more compression is involved higher threshold is necessary
     mpdm_full.compress_config = CompressConfig(threshold=1e-4)
-    liouville = SuperLiouville(band_limit_mol_list, mpo, dissipation)
-    mpdm_full = mpdm
-    liouville = mpo
+    liouville = SuperLiouville(mpo, dissipation)
     r_square_list = [mpdm_full.r_square]
     time_series = [0]
     for i in range(nsteps - 1):
@@ -61,7 +60,50 @@ def test_dynamics(dissipation, dt, nsteps):
 #plt.show()
 
 
-def test_ct():
-    ct = ChargeTransport(band_limit_mol_list, dissipation=0.05)
-    ct.evolve(4, 30)
-    assert (ct.r_square_array[1:] < get_analytical_r_square(np.array(ct.evolve_times))[1:]).all()
+def test_2site():
+    ph = Phonon.simple_phonon(Quantity(1), Quantity(1), 2)
+    m = Mol(Quantity(0), [ph])
+    mol_list = MolList([m] * 2, Quantity(1), scheme=3)
+    gs_mp = Mpo.onsite(mol_list, opera=r"a^\dagger", mol_idx_set={0}).apply(Mps.gs(mol_list, max_entangled=False))
+    mpdm = MpDm.from_mps(gs_mp)
+    mpdm_full = MpDmFull.from_mpdm(mpdm)
+    mpdm_full.compress_config = CompressConfig(threshold=1e-4)
+    liouville = SuperLiouville(Mpo(mol_list), dissipation=1)
+    ph_occupations_array = []
+    energies = []
+    for i in range(51):
+        logger.info(mpdm_full)
+        logger.info(mpdm_full.ph_occupations)
+        ph_occupations_array.append(mpdm_full.ph_occupations)
+        logger.info(mpdm_full.expectation(liouville))
+        energies.append(mpdm_full.expectation(liouville))
+        mpdm_full = mpdm_full.evolve(liouville, 0.4)
+    ph_occupations_array = np.array(ph_occupations_array)
+    assert energies[-1] == pytest.approx(-0.340162, rel=1e-2)
+    assert np.allclose(ph_occupations_array[-1], [0.0930588, 0.099115], rtol=1e-2)
+
+
+def get_2site_std():
+    """
+    How to produce the standard data of the test_2site method
+    """
+    import qutip
+    import numpy as np
+    from matplotlib import pyplot as plt
+    ph_levels = 2
+    init_state = qutip.tensor(qutip.basis(2, 1), qutip.basis(2, 0), qutip.basis(ph_levels, 0), qutip.basis(ph_levels, 0))
+    c1 = qutip.tensor([qutip.destroy(2), qutip.identity(ph_levels), qutip.identity(2), qutip.identity(ph_levels)])
+    c2 = qutip.tensor([qutip.identity(2), qutip.identity(ph_levels), qutip.destroy(2), qutip.identity(ph_levels)])
+    b1 = qutip.tensor([qutip.identity(2), qutip.destroy(ph_levels), qutip.identity(2), qutip.identity(ph_levels)])
+    b2 = qutip.tensor([qutip.identity(2), qutip.identity(ph_levels), qutip.identity(2), qutip.destroy(ph_levels)])
+    J = 1
+    omega = 1
+    g = -0.707
+    lam = g ** 2 * omega
+    H = J * c1.dag() * c2 + J * c1 * c2.dag() + lam * c1.dag() * c1 + lam * c2.dag() * c2 + omega * b1.dag() * b1 + omega * b2.dag() * b2 + omega * g * c1.dag() * c1 * (
+    b1.dag() + b1) + omega * g * c2.dag() * c2 * (b2.dag() + b2)
+    projectors = [b1, b2]
+    result = qutip.mesolve(H, init_state, np.linspace(0, 20, 101), c_ops=projectors,
+                           e_ops=[c1.dag() * c1, c2.dag() * c2, b1.dag() * b1, b2.dag() * b2, H])
+    qutip.plot_expectation_values(result)
+    plt.show()

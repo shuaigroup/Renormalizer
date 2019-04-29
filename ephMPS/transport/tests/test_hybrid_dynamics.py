@@ -12,7 +12,8 @@ from ephMPS.tests import parameter_PBI
 from ephMPS.transport.tests import cur_dir
 
 
-@pytest.mark.parametrize("scheme", (4, 3))
+@pytest.mark.parametrize("scheme", (3, ))
+#@pytest.mark.parametrize("scheme", (4, 3))
 @pytest.mark.parametrize("n_dmrg_phs", (10, 5))
 def test_zt(n_dmrg_phs, scheme):
 

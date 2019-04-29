@@ -66,7 +66,7 @@ class MpDmBase(Mps, Mpo):
             new_mpdm.wfns[idx] = np.conj(wfn).T
         return new_mpdm
 
-    def apply(self, mp, canonicalise=False):
+    def apply(self, mp, canonicalise=False) -> "MpDmBase":
         # Note usually mp is an mpo
         assert not mp.is_mps
         new_mpdm = self.metacopy()
@@ -263,7 +263,8 @@ class MpDm(MpDmBase):
         # new_mpdm.canonicalise()
         return new_mpdm
 
-
+    def full_wfn(self):
+        raise NotImplementedError("Use full_operator on Matrix Product Density Matrix")
 
 
 # MpDm without the auxiliary space.
@@ -306,8 +307,15 @@ class MpDmFull(MpDmBase):
         return i
 
     def mpdm_norm(self):
+        # the trace
         i = Mpo.identity(self.mol_list)
         return self.expectation(i, i)
+
+    def full_operator(self, normalize=False):
+        if normalize:
+            return super().full_operator() / self.mpdm_norm()
+        else:
+            return super().full_operator()
 
     # tdvp can't be used in this representation
     def _evolve_dmrg_tdvp_mctdh(self, mpo, evolve_dt):
