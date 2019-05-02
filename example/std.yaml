@@ -1,7 +1,7 @@
 # Define all parameters used in the transport model
 
 # number of molecules
-mol num: 41
+mol num: 21
 
 # transfer integral
 j constant: [3.0e-2, a.u.]

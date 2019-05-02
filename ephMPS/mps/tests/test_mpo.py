@@ -28,6 +28,7 @@ def test_offset(scheme):
     m = Mol(Quantity(0), [ph] * 2)
     mlist = MolList([m] * 2, Quantity(17), scheme=scheme)
     mpo1 = Mpo(mlist)
+    assert mpo1.is_hermitian()
     f1 = mpo1.full_operator()
     evals1, _ = np.linalg.eigh(f1.array)
     offset = Quantity(0.123)
@@ -49,9 +50,11 @@ def test_scheme4():
     mlist1 = MolList([m1, m2], Quantity(17), 4)
     mlist2 = MolList([m1, m2], Quantity(17), 3)
     mpo4 = Mpo(mlist1)
+    assert mpo4.is_hermitian()
     # for debugging
     f = mpo4.full_operator()
     mpo3 = Mpo(mlist2)
+    assert mpo3.is_hermitian()
     # makeup two states
     mps4 = Mps()
     mps4.mol_list = mlist1
@@ -71,3 +74,30 @@ def test_scheme4():
     mps3.append(np.array([1, 0]).reshape((1,2,1)))
     e3 = mps3.expectation(mpo3)
     assert pytest.approx(e4) == e3
+
+
+def test_phonon_onsite():
+    gs = Mps.gs(mol_list, max_entangled=False)
+    assert not gs.ph_occupations.any()
+    b2 = Mpo.ph_onsite(mol_list, r"b^\dagger", 0, 0)
+    p1 = b2.apply(gs).normalize()
+    assert np.allclose(p1.ph_occupations, [1, 0, 0, 0, 0, 0])
+    p2 = b2.apply(p1).normalize()
+    assert np.allclose(p2.ph_occupations, [2, 0, 0, 0, 0, 0])
+    b = b2.conj_trans()
+    assert b.distance(Mpo.ph_onsite(mol_list, r"b", 0, 0)) == 0
+    assert b.apply(p2).normalize().distance(p1) == pytest.approx(0, abs=1e-5)
+
+
+def test_displacement():
+    def get_e_occu(idx):
+        res = np.zeros(len(mol_list))
+        res[idx] = 1
+        return res
+    gs = Mps.gs(mol_list, max_entangled=False)
+    gs = Mpo.onsite(mol_list, r"a^\dagger", mol_idx_set={0}).apply(gs).compress()
+    assert np.allclose(gs.e_occupations, get_e_occu(0))
+    gs = Mpo.displacement(mol_list, 0, 2).apply(gs)
+    assert np.allclose(gs.e_occupations, get_e_occu(2))
+    gs = Mpo.displacement(mol_list, 2, 0).apply(gs)
+    assert np.allclose(gs.e_occupations ,get_e_occu(0))

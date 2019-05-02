@@ -36,8 +36,8 @@ if __name__ == "__main__":
     mol_list = MolList([Mol(Quantity(0), ph_list)] * param["mol num"],
         j_constant, scheme=3
     )
-    compress_config = CompressConfig(threshold=1e-3)
-    evolve_config = EvolveConfig(adaptive=True, evolve_dt=20)
+    compress_config = CompressConfig(threshold=1e-4)
+    evolve_config = EvolveConfig(adaptive=True, evolve_dt=2)
     ct = ChargeTransport(
         mol_list,
         temperature=temperature,

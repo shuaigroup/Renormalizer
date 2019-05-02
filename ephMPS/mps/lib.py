@@ -5,10 +5,11 @@
 construct the operator matrix in the MPS sweep procedure
 """
 from functools import reduce
+from collections import deque
 
 import numpy as np
 
-from ephMPS.mps.matrix import Matrix, multi_tensor_contract, ones, zeros
+from ephMPS.mps.matrix import Matrix, multi_tensor_contract, ones, EmptyMatrixError
 
 sentinel = ones((1, 1, 1))
 
@@ -233,10 +234,30 @@ def updatemps(vset, sset, qnset, compset, nexciton, Mmax, percent=0):
     return Matrix(ms), mpsdim, mpsqn, compmps
 
 
-def compressed_sum(mps_list):
+def compressed_sum(mps_list, batchsize=5, ignore_empty=False):
     assert len(mps_list) != 0
+    mps_queue = deque(mps_list)
+    while len(mps_queue) != 1:
+        term_to_sum = []
+        for i in range(min(batchsize, len(mps_queue))):
+            term_to_sum.append(mps_queue.popleft())
+        try:
+            s = _sum(term_to_sum)
+        except EmptyMatrixError:
+            if ignore_empty:
+                if len(mps_queue) == 0:
+                    return _sum(term_to_sum, compress=False)
+                else:
+                    continue
+            else:
+                raise
+        mps_queue.append(s)
+    return mps_queue[0]
+
+
+def _sum(mps_list, compress=True):
     new_mps = reduce(lambda mps1, mps2: mps1.add(mps2), mps_list)
-    if not mps_list[0].compress_add:
+    if compress and not mps_list[0].compress_add:
         new_mps.canonicalise()
         new_mps.compress()
     return new_mps

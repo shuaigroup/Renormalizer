@@ -1,12 +1,10 @@
-from __future__ import absolute_import, print_function, unicode_literals
-
 import logging
 
 import numpy as np
 import scipy
 
-from ephMPS.model.ephtable import EphTable
 from ephMPS.model import MolList
+from ephMPS.model.ephtable import EphTable
 from ephMPS.mps.backend import xp
 from ephMPS.mps.matrix import moveaxis, tensordot, ones
 from ephMPS.mps.mp import MatrixProduct
@@ -483,7 +481,8 @@ class Mpo(MatrixProduct):
         return mpo
 
     @classmethod
-    def ph_occupation_mpo(cls, mol_list: MolList, mol_idx: int, ph_idx=0):
+    def ph_onsite(cls, mol_list: MolList, opera: str, mol_idx:int, ph_idx=0):
+        assert opera in ["b", r"b^\dagger", r"b^\dagger b"]
         mpo = cls()
         mpo.mol_list = mol_list
         for imol, mol in enumerate(mol_list):
@@ -500,12 +499,45 @@ class Mpo(MatrixProduct):
                 for iqph in range(ph.nqboson):
                     ph_pbond = ph.pbond[iqph]
                     if imol == mol_idx and iph == ph_idx:
-                        mt = ph_op_matrix(r"b^\dagger b", ph_pbond)
+                        mt = ph_op_matrix(opera, ph_pbond)
                     else:
                         mt = ph_op_matrix("Iden", ph_pbond)
                     mpo.append(mt.reshape(1, ph_pbond, ph_pbond, 1))
                     iph += 1
         mpo.build_empty_qn()
+        return mpo
+
+
+    @classmethod
+    def displacement(cls, mol_list: MolList, start: int, end: int):
+        if mol_list.scheme == 4:
+            raise NotImplementedError
+        mpo = cls()
+        mpo.mol_list = mol_list
+        e_op = construct_e_op_dict()
+        mpo.qn = [[0]]
+        qn = 0
+        for imol, mol in enumerate(mol_list):
+            if imol == start == end:
+                mt = e_op[r"a^\dagger a"]
+            elif imol == start:
+                mt = e_op[r"a"]
+                qn -= 1
+            elif imol == end:
+                mt = e_op[r"a^\dagger"]
+                qn += 1
+            else:
+                mt = e_op["Iden"]
+            mpo.append(mt.reshape(1, 2, 2, 1))
+            mpo.qn.append([qn])
+            for ph in mol.dmrg_phs:
+                assert ph.is_simple
+                n = ph.n_phys_dim
+                mpo.append(ph_op_matrix("Iden", n).reshape(1, n, n, 1))
+                mpo.qn.append([qn])
+        mpo.qntot = 0
+        mpo.qnidx = len(mpo) - 1
+        mpo.left = False
         return mpo
 
     @classmethod
@@ -1091,6 +1123,9 @@ class Mpo(MatrixProduct):
             res = tensordot(res, mt, axes=1).transpose((0, 1, 3, 2, 4, 5)).reshape(1, dim1, dim2, dim3)
         return res[0, :, :, 0]
 
+    def is_hermitian(self):
+        full = self.full_operator()
+        return xp.allclose(full.array.conj().T, full, atol=1e-7)
 
 class VirtualOnSite(Mpo):
     """
@@ -1137,28 +1172,3 @@ class VirtualOnSite(Mpo):
         return new_mp
 
 
-class SuperLiouville(Mpo):
-
-    def __init__(self, mol_list, h_mpo, dissipation=0):
-        super().__init__()
-        self.mol_list = mol_list
-        self.h_mpo = h_mpo
-        self.dissipation = dissipation
-
-    def apply(self, mp, canonicalise=False):
-        assert mp.is_mpdm
-        no_dissipation = self.h_mpo.contract(mp) - mp.contract(self.h_mpo)
-        if self.dissipation == 0:
-            return no_dissipation
-        diag = mp.metacopy()
-        for i, mt in enumerate(mp):
-            new_mt = xp.zeros_like(mt.array)
-            for j in range(mt.shape[1]):
-                new_mt[:, j, j, :] = mt[:, j, j, :]
-            diag[i] = new_mt
-        non_diag = mp - diag
-        return no_dissipation - non_diag.scale(1j * self.dissipation)
-
-    # used when calculating energy in evolve_dmrg_prop_and_compress
-    def __getitem__(self, item):
-        return self.h_mpo[item]

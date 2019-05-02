@@ -3,16 +3,26 @@
 from __future__ import absolute_import, division
 
 import inspect
-import traceback
 import logging
-from typing import List, Union, Tuple
+import traceback
+from typing import List, Union
 
 import numpy as np
-import scipy
 
-from ephMPS.mps.matrix import Matrix, backend, eye, einsum, tensordot, allclose
-from ephMPS.mps import svd_qn
 from ephMPS.model import MolList, EphTable
+from ephMPS.mps import svd_qn
+from ephMPS.mps.matrix import (
+    einsum,
+    eye,
+    allclose,
+    backend,
+    vstack,
+    dstack,
+    concatenate,
+    zeros,
+    tensordot,
+    Matrix,
+    EmptyMatrixError)
 from ephMPS.utils import sizeof_fmt, CompressConfig
 
 logger = logging.getLogger(__name__)
@@ -56,6 +66,9 @@ class MatrixProduct:
         self._qntot: int = None
         # sweeping from left?
         self.left: bool = None
+
+        # compress after add?
+        self.compress_add: bool = False
 
     @property
     def site_num(self):
@@ -270,6 +283,69 @@ class MatrixProduct:
             qnbigr = np.add.outer(sigmaqn, qnr)
         return qnbigl, qnbigr
 
+    def add(self, other):
+        assert self.qntot == other.qntot
+        assert self.site_num == other.site_num
+        assert self.qnidx == other.qnidx
+
+        new_mps = other.metacopy()
+        if self.is_complex:
+            new_mps.to_complex(inplace=True)
+        new_mps.compress_config.update(self.compress_config)
+
+        if self.is_mps:  # MPS
+            new_mps[0] = dstack([self[0], other[0]])
+            for i in range(1, self.site_num - 1):
+                mta = self[i]
+                mtb = other[i]
+                pdim = mta.shape[1]
+                assert pdim == mtb.shape[1]
+                new_ms = zeros(
+                    [mta.shape[0] + mtb.shape[0], pdim, mta.shape[2] + mtb.shape[2]],
+                    dtype=new_mps.dtype,
+                )
+                new_ms[: mta.shape[0], :, : mta.shape[2]] = mta
+                new_ms[mta.shape[0] :, :, mta.shape[2] :] = mtb
+                new_mps[i] = new_ms
+
+            new_mps[-1] = vstack([self[-1], other[-1]])
+        elif self.is_mpo or self.is_mpdm:  # MPO
+            new_mps[0] = concatenate((self[0], other[0]), axis=3)
+            for i in range(1, self.site_num - 1):
+                mta = self[i]
+                mtb = other[i]
+                pdimu = mta.shape[1]
+                pdimd = mta.shape[2]
+                assert pdimu == mtb.shape[1]
+                assert pdimd == mtb.shape[2]
+
+                new_ms = zeros(
+                    [
+                        mta.shape[0] + mtb.shape[0],
+                        pdimu,
+                        pdimd,
+                        mta.shape[3] + mtb.shape[3],
+                    ],
+                    dtype=new_mps.dtype,
+                )
+                new_ms[: mta.shape[0], :, :, : mta.shape[3]] = mta[:, :, :, :]
+                new_ms[mta.shape[0] :, :, :, mta.shape[3] :] = mtb[:, :, :, :]
+                new_mps[i] = new_ms
+
+            new_mps[-1] = concatenate((self[-1], other[-1]), axis=0)
+        else:
+            assert False
+
+        new_mps.move_qnidx(self.qnidx)
+        new_mps.qn = [qn1 + qn2 for qn1, qn2 in zip(self.qn, new_mps.qn)]
+        new_mps.qn[0] = [0]
+        new_mps.qn[-1] = [0]
+        new_mps.set_peak_bytes()
+        if self.compress_add:
+            new_mps.canonicalise()
+            new_mps.compress()
+        return new_mps
+
     def compress(self):
         """
         inp: canonicalise MPS (or MPO)
@@ -294,7 +370,8 @@ class MatrixProduct:
 
         for idx in self.iter_idx_list(full=False):
             mt: Matrix = self[idx]
-            assert mt.any()
+            if mt.nearly_zero():
+                raise EmptyMatrixError
             if self.left:
                 mt = mt.l_combine()
             else:
@@ -461,6 +538,7 @@ class MatrixProduct:
         new.qnidx = self.qnidx
         new._qntot = self.qntot
         new.left = self.left
+        new.compress_add = self.compress_add
         return new
 
     def array2mt(self, array, idx):
@@ -474,7 +552,9 @@ class MatrixProduct:
             mt.sigmaqn = self._get_sigmaqn(idx)
         # mol_list is None when using quasiboson
         if self.mol_list is None or self.mol_list.scheme != 4:
-            assert mt.array.any()
+            if mt.nearly_zero():
+                pass
+                #raise EmptyMatrixError
         return mt
 
     @property
@@ -503,6 +583,9 @@ class MatrixProduct:
     def get_sigmaqn(self, idx):
         return self[idx].sigmaqn
 
+    def set_threshold(self, val):
+        self.compress_config.threshold = val
+
     def __eq__(self, other):
         for m1, m2 in zip(self, other):
             if not allclose(m1, m2):
@@ -520,6 +603,14 @@ class MatrixProduct:
 
     def __len__(self):
         return len(self._mp)
+
+    def __mul__(self, other):
+        assert isinstance(other, (float, complex))
+        return self.scale(other)
+
+    def __rmul__(self, other):
+        assert isinstance(other, (float, complex))
+        return self.scale(other)
 
     def __getitem__(self, item):
         return self._mp[item]
