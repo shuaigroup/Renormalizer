@@ -1,5 +1,6 @@
 # -*- coding: utf-8 -*-
 
+import os
 import importlib.util
 import logging
 
@@ -12,6 +13,9 @@ logger = logging.getLogger(__name__)
 if importlib.util.find_spec("cupy"):
     import cupy as cp
     xp = cp
+    gpu_id = os.environ.get("EPHMPS_GPU", 0)
+    logger.info(f"Using GPU: {gpu_id}")
+    cp.cuda.Device(gpu_id).use()
 else:
     cp = None
     xp = np
@@ -43,7 +47,7 @@ class Backend:
         self._real_dtype = None
         self._complex_dtype = None
         self.use_32bits()
-        # self.use_64bits()
+        #self.use_64bits()
 
     def free_all_blocks(self):
         if xp == np:
