@@ -52,6 +52,8 @@ class Mol(object):
     def __init__(self, elocalex, ph_list: List[Phonon], dipole=None, heatbath=False):
         self.elocalex = elocalex.as_au()
         self.dipole = dipole
+        if len(ph_list) == 0:
+            raise ValueError("No phonon mode in phonon list")
         self.dmrg_phs = [ph for ph in ph_list if not ph.hartree]
         self.hartree_phs = [ph for ph in ph_list if ph.hartree]
 
