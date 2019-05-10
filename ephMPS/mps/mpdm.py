@@ -239,7 +239,7 @@ class MpDm(MpDmBase):
         else:
             approx_eihpt = None
         for istep in range(nsteps):
-            logger.debug("Thermal propagating %d/%d" % (istep + 1, nsteps))
+            logger.debug(f"Thermal propagating {istep+1}/{nsteps}. {self}")
             # partition function can't be obtained
             ket_mpo = ket_mpo.evolve(h_mpo, -1.0j * dbeta, approx_eiht=approx_eihpt)
         return ket_mpo

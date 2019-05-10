@@ -221,12 +221,17 @@ class MatrixProduct:
             return range(self.qnidx, last)
 
     def _update_ms(
-        self, idx, u, vt, sigma=None, qnlset=None, qnrset=None, m_trunc=None
+        self, idx: int, u: Matrix, vt: Matrix, sigma=None, qnlset=None, qnrset=None, m_trunc=None
     ):
         if m_trunc is None:
             m_trunc = u.shape[1]
         u = u[:, :m_trunc]
         vt = vt[:m_trunc, :]
+        if self.is_mpo:
+            # no need to be unitary for single matrix
+            sqrt_norm = np.sqrt(vt.norm())
+            u = Matrix(u.array * sqrt_norm)
+            vt = Matrix(vt.array / sqrt_norm)
         if sigma is not None:
             sigma = sigma[:m_trunc]
             if self.left:
@@ -359,13 +364,13 @@ class MatrixProduct:
         returns:
              truncated MPS
         """
-
-        # ensure mps is canonicalised. This is time consuming.
-        # to disable this, run python as `python -O`
-        if self.is_left_canon:
-            assert self.check_left_canonical()
-        else:
-            assert self.check_right_canonical()
+        if not self.is_mpo:
+            # ensure mps is canonicalised. This is time consuming.
+            # to disable this, run python as `python -O`
+            if self.is_left_canon:
+                assert self.check_left_canonical()
+            else:
+                assert self.check_right_canonical()
         system = "L" if self.left else "R"
 
         for idx in self.iter_idx_list(full=False):
