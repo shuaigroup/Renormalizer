@@ -183,7 +183,7 @@ def adaptive_tdvp(fun):
 
 class Mps(MatrixProduct):
     @classmethod
-    def random(cls, mol_list: MolList, nexciton, m_max, percent=1.0):
+    def random(cls, mol_list: MolList, nexciton, m_max, percent=1.0) -> "Mps":
         # a high percent makes the result more random
         # sometimes critical for getting correct optimization result
         mps = cls()
@@ -630,7 +630,10 @@ class Mps(MatrixProduct):
         for t in termlist:
             t.compress_config = orig_compress_config
         if config.adaptive:
-            if evolve_dt * config.evolve_dt < 0:
+            if np.iscomplex(evolve_dt) and not np.iscomplex(config.evolve_dt):
+                raise ValueError("evolve config dt is not imaginary")
+            if (np.iscomplex(evolve_dt) and evolve_dt.imag * config.evolve_dt.imag < 0) or \
+                (not np.iscomplex(evolve_dt) and evolve_dt * config.evolve_dt < 0):
                 raise ValueError("evolve into wrong direction")
             while True:
                 scaled_termlist = []
@@ -649,7 +652,7 @@ class Mps(MatrixProduct):
                 # three 9s explode immediately
                 if abs(energy1 - energy2) < 1e-3 and 0.99996 < angle < 1.00004:
                     # converged
-                    if abs(config.evolve_dt - evolve_dt) / evolve_dt < 1e-5:
+                    if abs(config.evolve_dt - evolve_dt) / abs(evolve_dt) < 1e-5:
                         # equal evolve_dt
                         if abs(energy1 - energy2) < 1e-4 and 0.99999 < angle < 1.00001:
                             # a larger dt could be used
@@ -660,7 +663,7 @@ class Mps(MatrixProduct):
                         # First exit
                         new_mps2.evolve_config.evolve_dt = config.evolve_dt
                         return new_mps2
-                    if config.evolve_dt < evolve_dt:
+                    if abs(config.evolve_dt) < abs(evolve_dt):
                         # step too small
                         new_dt = evolve_dt - config.evolve_dt
                         logger.debug(f"remaining: {new_dt}")

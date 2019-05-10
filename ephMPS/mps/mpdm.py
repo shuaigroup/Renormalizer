@@ -223,7 +223,7 @@ class MpDm(MpDmBase):
         # unitary_propagation(new_mpdm.wfns, HAM, Etot, evolve_dt)
         return new_mpdm
 
-    def thermal_prop(self, h_mpo, nsteps, beta, approx_eiht=None, inplace=False):
+    def thermal_prop(self, h_mpo, nsteps, beta: float, approx_eiht=None, inplace=False):
         """
         do imaginary propagation
         """
@@ -239,7 +239,7 @@ class MpDm(MpDmBase):
         else:
             approx_eihpt = None
         for istep in range(nsteps):
-            logger.debug(f"Thermal propagating {istep+1}/{nsteps}. {self}")
+            logger.debug(f"Thermal propagating {istep+1}/{nsteps}. {ket_mpo}")
             # partition function can't be obtained
             ket_mpo = ket_mpo.evolve(h_mpo, -1.0j * dbeta, approx_eiht=approx_eihpt)
         return ket_mpo
