@@ -58,7 +58,7 @@ def test_zero_t_abs(algorithm, compress_method, ph_info, rtol, switch_to_64backe
         SpectraZeroT = SpectraTwoWayPropZeroT
 
     zero_t_corr = SpectraZeroT(
-        mol_list.switch_scheme(2), "abs", optimize_config, offset=Quantity(2.28614053, "ev")
+        mol_list.switch_scheme(2), "abs", optimize_config, offset=parameter.offset
     )
     zero_t_corr.info_interval = 30
     nsteps = 100
@@ -103,11 +103,11 @@ def test_zero_t_abs_mposcheme3(
     optimize_config = OptimizeConfig()
     optimize_config.procedure = procedure
     zero_t_corr2 = SpectraZeroT(
-        mol_list, "abs", optimize_config, offset=Quantity(2.28614053, "ev")
+        mol_list, "abs", optimize_config, offset=parameter.offset
     )
     zero_t_corr2.evolve(dt, nsteps)
     zero_t_corr3 = SpectraZeroT(
-        mol_list.switch_scheme(3), "abs", optimize_config, offset=Quantity(2.28614053, "ev")
+        mol_list.switch_scheme(3), "abs", optimize_config, offset=parameter.offset
     )
     zero_t_corr3.evolve(dt, nsteps)
 
@@ -144,7 +144,7 @@ def test_finite_t_spectra_emi(algorithm, compress_method, ph_info, rtol):
     mol_list = parameter.custom_mol_list(None, *ph_info)
     insteps = 50
     finite_t_emi = SpectraFiniteT(
-        mol_list, "emi", Quantity(298, "K"), insteps, Quantity(2.28614053, "ev")
+        mol_list, "emi", Quantity(298, "K"), insteps, parameter.offset
     )
     nsteps = 30
     dt = 30.0
@@ -168,7 +168,7 @@ def test_finite_t_spectra_abs(algorithm, compress_method, ph_info, rtol):
     mol_list = parameter.custom_mol_list(None, *ph_info)
     insteps = 50
     finite_t_abs = SpectraFiniteT(
-        mol_list, "abs", Quantity(298, "K"), insteps, Quantity(2.28614053, "ev")
+        mol_list, "abs", Quantity(298, "K"), insteps, parameter.offset
     )
     nsteps = 50
     dt = 30.0

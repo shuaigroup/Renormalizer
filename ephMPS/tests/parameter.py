@@ -38,6 +38,7 @@ hybrid_mol_list = MolList(
     [Mol(elocalex, hybrid_ph_list, dipole_abs)] * nmols, _j_matrix
 )
 
+offset = Quantity(2.28614053, "ev")
 
 def custom_mol_list(
     custom_j_matrix=None,

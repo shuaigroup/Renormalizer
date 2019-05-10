@@ -227,14 +227,15 @@ class MatrixProduct:
             m_trunc = u.shape[1]
         u = u[:, :m_trunc]
         vt = vt[:m_trunc, :]
-        if self.is_mpo:
-            # no need to be unitary for single matrix
-            sqrt_norm = np.sqrt(vt.norm())
-            u = Matrix(u.array * sqrt_norm)
-            vt = Matrix(vt.array / sqrt_norm)
-        if sigma is not None:
+        if sigma is None:
+            # canonicalise, vt is not unitary
+            if self.is_mpo and self.left:
+                norm = vt.norm()
+                u = Matrix(u.array * norm)
+                vt = Matrix(vt.array / norm)
+        else:
             sigma = sigma[:m_trunc]
-            if self.left:
+            if (not self.is_mpo and self.left) or (self.is_mpo and not self.left):
                 vt = einsum("i, ij -> ij", sigma, vt)
             else:
                 u = einsum("ji, i -> ji", u, sigma)
