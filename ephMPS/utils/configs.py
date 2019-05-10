@@ -151,7 +151,7 @@ class OptimizeConfig:
             self.procedure = [[10, 0.4], [20, 0.2], [30, 0.1], [40, 0], [40, 0]]
         else:
             self.procedure = procedure
-        self.method = "1site"
+        self.method = "2site"
         self.nroots = 1
         # inverse = 1.0 / -1.0
         # -1.0 to get the largest eigenvalue
