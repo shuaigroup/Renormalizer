@@ -236,10 +236,15 @@ class MatrixProduct:
         vt = vt[:m_trunc, :]
         if sigma is None:
             # canonicalise, vt is not unitary
-            if self.is_mpo and self.left:
-                norm = vt.norm()
-                u = Matrix(u.array * norm)
-                vt = Matrix(vt.array / norm)
+            if self.is_mpo:
+                if self.left:
+                    norm = vt.norm()
+                    u = Matrix(u.array * norm)
+                    vt = Matrix(vt.array / norm)
+                else:
+                    norm = u.norm()
+                    u = Matrix(u.array / norm)
+                    vt = Matrix(vt.array * norm)
         else:
             sigma = sigma[:m_trunc]
             if (not self.is_mpo and self.left) or (self.is_mpo and not self.left):
