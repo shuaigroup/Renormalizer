@@ -1288,3 +1288,30 @@ def transferMat(mps, mpsconj, domain, siteidx):
             val = tensordot(val, mps[imps], axes=([0, 2], [1, 0]))
 
     return val
+
+
+class BraKetPair(object):
+    def __init__(self, bra_mps, ket_mps):
+        self.bra_mps = bra_mps
+        self.ket_mps = ket_mps
+        self.ft = self.calc_ft()
+
+    def calc_ft(self):
+        return (
+            self.bra_mps.conj().dot(self.ket_mps)
+            * np.conjugate(self.bra_mps.coeff)
+            * self.ket_mps.coeff
+        )
+
+    def __str__(self):
+        if np.iscomplex(self.ft):
+            # if negative, sign is included in the imag part
+            sign = "+" if 0 <= self.ft.imag else ""
+            ft_str = "%g%s%gj" % (self.ft.real, sign, self.ft.imag)
+        else:
+            ft_str = "%g" % self.ft
+        return "bra: %s, ket: %s, ft: %s" % (self.bra_mps, self.ket_mps, ft_str)
+
+    # todo: not used?
+    def __iter__(self):
+        return iter((self.bra_mps, self.ket_mps))

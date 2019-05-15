@@ -34,12 +34,8 @@ def predict_time(real_times, nsteps):
 
 
 class TdMpsJob(object):
-    def __init__(self, compress_config=None, evolve_config: EvolveConfig = None):
+    def __init__(self, evolve_config: EvolveConfig = None):
         logger.info("Creating TDMPS job.")
-        if compress_config is None:
-            self.compress_config: CompressConfig = CompressConfig()
-        else:
-            self.compress_config = compress_config
         if evolve_config is None:
             self.evolve_config: EvolveConfig = EvolveConfig()
         else:

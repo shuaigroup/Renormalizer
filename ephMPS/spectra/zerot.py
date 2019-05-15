@@ -5,7 +5,8 @@
 import logging
 
 from ephMPS.mps import Mpo, Mps, solver
-from ephMPS.spectra.base import SpectraTdMpsJobBase, BraKetPair
+from ephMPS.spectra.base import SpectraTdMpsJobBase
+from ephMPS.mps.mps import BraKetPair
 from ephMPS.utils import Quantity, OptimizeConfig
 
 logger = logging.getLogger(__name__)

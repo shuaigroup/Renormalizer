@@ -11,7 +11,7 @@ from functools import partial
 
 from ephMPS.mps import Mpo, Mps, MpDm, solver, MpDmFull, SuperLiouville
 from ephMPS.model import MolList
-from ephMPS.utils import TdMpsJob, Quantity, CompressCriteria
+from ephMPS.utils import TdMpsJob, Quantity, CompressCriteria, CompressConfig
 from ephMPS.utils.utils import cast_float
 
 import numpy as np
@@ -45,7 +45,11 @@ class ChargeTransport(TdMpsJob):
         self.mpo_e_lbound = None  # the ground energy of the hamiltonian
         self.init_electron = init_electron
         self.dissipation = dissipation
-        super(ChargeTransport, self).__init__(compress_config, evolve_config)
+        if compress_config is None:
+            self.compress_config: CompressConfig = CompressConfig()
+        else:
+            self.compress_config = compress_config
+        super(ChargeTransport, self).__init__(evolve_config)
         self.energies = [self.tdmps_list[0].expectation(self.mpo)]
         self.reduced_density_matrices = []
         if rdm:

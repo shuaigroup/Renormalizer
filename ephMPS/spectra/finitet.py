@@ -3,7 +3,8 @@
 import numpy as np
 
 from ephMPS.mps import Mpo, Mps, MpDm
-from ephMPS.spectra.base import SpectraTdMpsJobBase, BraKetPair
+from ephMPS.spectra.base import SpectraTdMpsJobBase
+from ephMPS.mps.mps import BraKetPair
 from ephMPS.utils import constant
 
 
