@@ -17,7 +17,7 @@ def test_autocorr():
     compress_config = CompressConfig(threshold=1e-3)
     ac = TransportAutoCorr(mol_list, Quantity(1, 'K'), 50, compress_config=compress_config)
     ac.evolve(0.2, 50)
-    corr_real = ac.auto_corr().real
+    corr_real = ac.auto_corr.real
     exact_real = get_exact_autocorr(mol_list, ac.evolve_times_array).real
     # direct comparison may fail because of different sign
     atol = 5e-3
