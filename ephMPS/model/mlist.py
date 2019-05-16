@@ -146,6 +146,7 @@ class MolList(object):
         info_dict["mol num"] = len(self)
         info_dict["electron phonon table"] = self.ephtable
         info_dict["mol list"] = [mol.to_dict() for mol in self.mol_list]
+        info_dict["J constant"] = self.j_constant
         return info_dict
 
 
