@@ -19,20 +19,27 @@ logger = logging.getLogger(__name__)
 
 class TransportAutoCorr(TdMpsJob):
 
-    def __init__(self, mol_list, temperature, insteps, ievolve_config=None, compress_config=None, evolve_config=None):
+    def __init__(self, mol_list, temperature: Quantity, insteps: int=None, ievolve_config=None, compress_config=None, evolve_config=None):
         self.mol_list = mol_list
         self.h_mpo = Mpo(mol_list)
         self.temperature = temperature
+
         # imaginary time evolution config
         if ievolve_config is None:
             self.ievolve_config = EvolveConfig()
+            if insteps is None:
+                self.ievolve_config.adaptive = True
+                # start from a small step
+                self.ievolve_config.evolve_dt = -temperature.to_beta() / 1e5j
         else:
             self.ievolve_config = ievolve_config
+        self.insteps = insteps
+
         if compress_config is None:
             self.compress_config = CompressConfig()
         else:
             self.compress_config = compress_config
-        self.insteps = insteps
+
         super().__init__(evolve_config)
 
     def _construct_flux_operator(self):
@@ -51,11 +58,12 @@ class TransportAutoCorr(TdMpsJob):
         i_mpdm.evolve_config = self.ievolve_config
         i_mpdm.compress_config = self.compress_config
         # only propagate half beta
-        mpdm = i_mpdm.thermal_prop(
-            self.h_mpo, self.insteps, self.temperature.to_beta() / 2
-        )
+
+        mpdm = i_mpdm.thermal_prop(self.h_mpo, self.temperature.to_beta() / 2, self.insteps)
+        
         if self.dump_dir is not None and self.job_name is not None:
             mpdm.dump(os.path.join(self.dump_dir, self.job_name + 'impdm'))
+
         e = mpdm.expectation(self.h_mpo)
         self.h_mpo = Mpo(self.mol_list, offset=Quantity(e))
         mpdm.evolve_config = self.evolve_config
