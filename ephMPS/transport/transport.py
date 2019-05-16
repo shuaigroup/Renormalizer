@@ -169,7 +169,6 @@ class ChargeTransport(TdMpsJob):
     def get_dump_dict(self):
         dump_dict = OrderedDict()
         dump_dict["mol list"] = self.mol_list.to_dict()
-        dump_dict["J constant"] = str(self.mol_list.j_constant)
         dump_dict["tempearture"] = self.temperature.as_au()
         dump_dict["total steps"] = len(self.tdmps_list)
         dump_dict["total time"] = self.evolve_times[-1]

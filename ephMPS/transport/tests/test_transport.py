@@ -2,6 +2,8 @@
 # Author: Jiajun Ren <jiajunren0522@gmail.com>
 #         Weitang Li <liwt31@163.com>
 
+import os
+
 import numpy as np
 import pytest
 
@@ -288,6 +290,12 @@ def test_evolve(
     ct2.evolve(evolve_dt, nsteps)
     assert ct1.is_similar(ct2)
     assert_iterable_equal(ct1.get_dump_dict(), ct2.get_dump_dict())
+
+    # test dump
+    ct2.dump_dir = '.'
+    ct2.job_name = 'test'
+    ct2.dump_dict()
+    os.remove('test.json')
 
 
 @pytest.mark.parametrize(
