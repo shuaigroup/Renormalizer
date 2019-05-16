@@ -16,7 +16,7 @@ from datetime import datetime, timedelta
 import numpy as np
 
 # this file shouldn't import anythin from the `mps` module. IOW it's mps agnostic
-from ephMPS.utils.configs import CompressConfig, EvolveConfig
+from ephMPS.utils.configs import EvolveConfig
 
 logger = logging.getLogger(__name__)
 
@@ -56,6 +56,7 @@ class TdMpsJob(object):
         raise NotImplementedError
 
     def evolve(self, evolve_dt=None, nsteps=None, evolve_time=None):
+        # deal with arguments
         if evolve_dt is None:
             # adaptive mode
             if not self.evolve_config.rk_config.adaptive:
@@ -81,6 +82,7 @@ class TdMpsJob(object):
                 )
             target_steps = len(self.tdmps_list) + nsteps - 1
             target_time = self.evolve_times[-1] + evolve_time
+
         real_times = [datetime.now()]
         if self.evolve_config.adaptive and evolve_dt is not None:
             logger.warning("evolve_dt is ignored in adaptive propagation")

@@ -49,9 +49,7 @@ class SpectraFiniteT(SpectraTdMpsJobBase):
         dipole_mpo = Mpo.onsite(self.mol_list, "a", dipole=True)
         i_mpo = MpDm.max_entangled_ex(self.mol_list)
         # only propagate half beta
-        ket_mpo = i_mpo.thermal_prop(
-            self.h_mpo, self.insteps, self.temperature.to_beta() / 2
-        )
+        ket_mpo = i_mpo.thermal_prop(self.h_mpo, self.temperature.to_beta() / 2, self.insteps)
         ket_mpo.evolve_config = self.evolve_config
         # e^{\-beta H/2} \Psi
         dipole_mpo_dagger = dipole_mpo.conj_trans()

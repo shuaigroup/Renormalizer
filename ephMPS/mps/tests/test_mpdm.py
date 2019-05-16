@@ -5,6 +5,7 @@ import pytest
 
 from ephMPS.mps import Mpo, MpDm, MpDmFull
 from ephMPS.model import MolList, Mol, Phonon
+from ephMPS.tests import parameter
 from ephMPS.utils import Quantity
 
 
@@ -26,3 +27,32 @@ def test_mpdm_full(nmols, phonon_freq):
     assert np.allclose(mpdm_full.e_occupations, e_gs_dm.e_occupations)
     assert np.allclose(mpdm_full.ph_occupations, e_gs_dm.ph_occupations, rtol=1e-3)
 
+
+@pytest.mark.parametrize(
+    "mol_list, etot_std, occ_std, rtol",
+    (
+        [
+            parameter.hybrid_mol_list,
+            0.0853441664951,
+            [0.20881609, 0.35239430, 0.43878960],
+            1e-3,
+        ],
+        [parameter.mol_list, 0.0853413581416, [0.20881782, 0.35239674, 0.43878545], 5e-3],
+    ),
+)
+@pytest.mark.parametrize("nsteps", (
+        100,
+        None,
+))
+def test_thermal_prop(mol_list, etot_std, occ_std, nsteps, rtol):
+    mps = MpDm.max_entangled_ex(mol_list)
+    mpo = Mpo(mol_list)
+    beta = Quantity(298, "K").to_beta() / 2
+    if nsteps is None:
+        mps.evolve_config.adaptive = True
+        mps.evolve_config.evolve_dt = beta / 100j
+    mps = mps.thermal_prop(mpo, beta, nsteps, inplace=True)
+    MPO, HAM, Etot, A_el = mps.construct_hybrid_Ham(mpo, debug=True)
+
+    assert np.allclose(Etot, etot_std, rtol=rtol)
+    assert np.allclose(A_el, occ_std, rtol=rtol)

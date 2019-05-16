@@ -664,12 +664,12 @@ class Mps(MatrixProduct):
                         new_mps2.evolve_config.evolve_dt = config.evolve_dt
                         return new_mps2
                     if abs(config.evolve_dt) < abs(evolve_dt):
-                        # step too small
+                        # step smaller than required
                         new_dt = evolve_dt - config.evolve_dt
                         logger.debug(f"remaining: {new_dt}")
                         # Second exit
                         new_mps2.evolve_config.evolve_dt = config.evolve_dt
-                        del new_mps1, termlist, scaled_termlist  # memory consuming and not used
+                        del new_mps1, termlist, scaled_termlist  # memory consuming and not useful anymore
                         return new_mps2._evolve_dmrg_prop_and_compress(mpo, new_dt, config)
                     else:
                         # shouldn't happen.
