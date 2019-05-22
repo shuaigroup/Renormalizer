@@ -7,11 +7,12 @@ from typing import List, Union
 import numpy as np
 
 from ephMPS.model.ephtable import EphTable
-from ephMPS.model.mol import Mol
+from ephMPS.model.mol import Mol, Phonon
 from ephMPS.utils import Quantity
 
 
 class MolList(object):
+
     def __init__(self, mol_list: List[Mol], j_matrix: Union[Quantity, np.ndarray], scheme: int=2):
         self.mol_list: List[Mol] = mol_list
         if isinstance(j_matrix, Quantity):
@@ -159,3 +160,18 @@ def construct_j_matrix(mol_num, j_constant):
             if i - j == 1 or i - j == -1:
                 j_matrix[i][j] = j_constant_au
     return j_matrix
+
+
+def load_from_dict(param, scheme, lam: bool):
+    temperature = Quantity(*param["temperature"])
+    ph_list = [
+        Phonon.simplest_phonon(
+            Quantity(*omega), Quantity(*displacement), temperature=temperature, lam=lam
+        )
+        for omega, displacement in param["ph modes"]
+    ]
+    j_constant = Quantity(*param["j constant"])
+    mol_list = MolList([Mol(Quantity(0), ph_list)] * param["mol num"],
+                       j_constant, scheme=scheme
+                       )
+    return mol_list, temperature

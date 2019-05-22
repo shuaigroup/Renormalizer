@@ -650,11 +650,12 @@ class Mps(MatrixProduct):
                 # some tests show that five 9s mean safe
                 # four 9s with last digit smaller than 5 mean unstably is coming
                 # three 9s explode immediately
-                if abs(energy1 - energy2) < 1e-3 and 0.99996 < angle < 1.00004:
+                d_energy = config.d_energy
+                if abs(energy1 - energy2) < d_energy and 0.99996 < angle < 1.00004:
                     # converged
                     if abs(config.evolve_dt - evolve_dt) / abs(evolve_dt) < 1e-5:
                         # equal evolve_dt
-                        if abs(energy1 - energy2) < 1e-4 and 0.99999 < angle < 1.00001:
+                        if abs(energy1 - energy2) < (d_energy/10) and 0.99999 < angle < 1.00001:
                             # a larger dt could be used
                             config.evolve_dt *= 1.5
                             logger.debug(
@@ -1294,6 +1295,10 @@ class BraKetPair(object):
     def __init__(self, bra_mps, ket_mps):
         self.bra_mps = bra_mps
         self.ket_mps = ket_mps
+        # for adaptive evolution. This is not an ideal solution but
+        # I can't find anyone better. Bra and Ket have the same step size during
+        # the evolution. Is this necessary?
+        self.evolve_config = ket_mps.evolve_config
         self.ft = self.calc_ft()
 
     def calc_ft(self):

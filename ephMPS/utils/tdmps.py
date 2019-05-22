@@ -34,7 +34,7 @@ def predict_time(real_times, nsteps):
 
 
 class TdMpsJob(object):
-    def __init__(self, evolve_config: EvolveConfig = None):
+    def __init__(self, evolve_config: EvolveConfig = None, dump_dir: str=None, job_name: str=None):
         logger.info("Creating TDMPS job.")
         if evolve_config is None:
             self.evolve_config: EvolveConfig = EvolveConfig()
@@ -44,8 +44,8 @@ class TdMpsJob(object):
         self.evolve_times = [0]
         # output abstract of current mps every x steps
         self.info_interval = 1
-        self.dump_dir = None
-        self.job_name = None
+        self.dump_dir = dump_dir
+        self.job_name = job_name
         self.tdmps_list = [self.init_mps()]
         logger.info("TDMPS job created.")
 
@@ -116,7 +116,7 @@ class TdMpsJob(object):
                 predict_step, predicted_time = predict_time(real_times, nsteps)
                 logger.info("predict %s at step %d." % (predicted_time, predict_step))
             """
-            if self.dump_dir is not None and self.job_name is not None:
+            if self._defined_output_path:
                 try:
                     self.dump_dict()
                 except IOError as e:  # never quit calculation because of IOError
@@ -148,7 +148,7 @@ class TdMpsJob(object):
         raise NotImplementedError
 
     def dump_dict(self):
-        if self.dump_dir is None or self.job_name is None:
+        if not self._defined_output_path:
             raise ValueError("Dump dir or job name not set")
         # todo: refactor with `pathlib`
         try:
@@ -183,3 +183,7 @@ class TdMpsJob(object):
     @property
     def evolve_times_array(self):
         return np.array(self.evolve_times)
+
+    @property
+    def _defined_output_path(self):
+        return self.dump_dir is not None and self.job_name is not None

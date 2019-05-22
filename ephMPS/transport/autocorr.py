@@ -19,7 +19,7 @@ logger = logging.getLogger(__name__)
 
 class TransportAutoCorr(TdMpsJob):
 
-    def __init__(self, mol_list, temperature: Quantity, insteps: int=None, ievolve_config=None, compress_config=None, evolve_config=None):
+    def __init__(self, mol_list, temperature: Quantity, insteps: int=None, ievolve_config=None, compress_config=None, evolve_config=None, dump_dir: str=None, job_name: str=None):
         self.mol_list = mol_list
         self.h_mpo = Mpo(mol_list)
         self.temperature = temperature
@@ -30,7 +30,8 @@ class TransportAutoCorr(TdMpsJob):
             if insteps is None:
                 self.ievolve_config.adaptive = True
                 # start from a small step
-                self.ievolve_config.evolve_dt = -temperature.to_beta() / 1e5j
+                self.ievolve_config.evolve_dt = temperature.to_beta() / 1e5j
+                self.ievolve_config.d_energy = 1
         else:
             self.ievolve_config = ievolve_config
         self.insteps = insteps
@@ -40,10 +41,11 @@ class TransportAutoCorr(TdMpsJob):
         else:
             self.compress_config = compress_config
 
-        super().__init__(evolve_config)
+        super().__init__(evolve_config, dump_dir, job_name)
 
     def _construct_flux_operator(self):
         # construct flux operator
+        logger.debug("constructing flux operator")
         j_list = []
         for i in range(len(self.mol_list) - 1):
             j1 = Mpo.displacement(self.mol_list, i, i + 1).scale(self.mol_list.j_matrix[i, i + 1])
@@ -54,15 +56,26 @@ class TransportAutoCorr(TdMpsJob):
         return j_oper
 
     def init_mps(self):
-        i_mpdm = MpDm.max_entangled_ex(self.mol_list)
-        i_mpdm.evolve_config = self.ievolve_config
-        i_mpdm.compress_config = self.compress_config
-        # only propagate half beta
+        if self._defined_output_path:
+            impdm_path = os.path.join(self.dump_dir, self.job_name + '_impdm.npz')
+            try:
+                logger.info(f"Try load from {impdm_path}")
+                mpdm = MpDm.load(self.mol_list, impdm_path)
+                mpdm.compress_config = self.compress_config
+            except FileNotFoundError:
+                logger.debug(f"No file found in {impdm_path}")
+                mpdm = None
+        else:
+            mpdm = None
+        if mpdm is None:
+            i_mpdm = MpDm.max_entangled_ex(self.mol_list)
+            i_mpdm.evolve_config = self.ievolve_config
+            i_mpdm.compress_config = self.compress_config
+            # only propagate half beta
+            mpdm = i_mpdm.thermal_prop(self.h_mpo, self.temperature.to_beta() / 2, self.insteps)
 
-        mpdm = i_mpdm.thermal_prop(self.h_mpo, self.temperature.to_beta() / 2, self.insteps)
-        
-        if self.dump_dir is not None and self.job_name is not None:
-            mpdm.dump(os.path.join(self.dump_dir, self.job_name + 'impdm'))
+            if self.dump_dir is not None and self.job_name is not None:
+                mpdm.dump(impdm_path)
 
         e = mpdm.expectation(self.h_mpo)
         self.h_mpo = Mpo(self.mol_list, offset=Quantity(e))
@@ -78,6 +91,7 @@ class TransportAutoCorr(TdMpsJob):
         if len(self.tdmps_list) % 2 == 1:
             latest_ket_mpdm = latest_ket_mpdm.evolve(self.h_mpo, evolve_dt)
         else:
+            latest_bra_mpdm.evolve_config.evolve_dt = -latest_ket_mpdm.evolve_config.evolve_dt
             latest_bra_mpdm = latest_bra_mpdm.evolve(self.h_mpo, -evolve_dt)
         return BraKetPair(latest_bra_mpdm, latest_ket_mpdm)
 
@@ -86,7 +100,7 @@ class TransportAutoCorr(TdMpsJob):
         if len(corr) < 10:
             return False
         last_corr = corr[-10:]
-        return np.abs(last_corr.mean()) < 1e-3 and last_corr.std() < 1e-3
+        return np.abs(last_corr.mean()) < 1e-5 and last_corr.std() < 1e-5
 
     @property
     def auto_corr(self):
@@ -97,7 +111,8 @@ class TransportAutoCorr(TdMpsJob):
         dump_dict["mol list"] = self.mol_list.to_dict()
         dump_dict["tempearture"] = self.temperature.as_au()
         dump_dict["time series"] = self.evolve_times
-        dump_dict["auto correlation"] = cast_float(self.auto_corr)
+        dump_dict["auto correlation real"] = cast_float(self.auto_corr.real)
+        dump_dict["auto correlation imag"] = cast_float(self.auto_corr.imag)
         dump_dict["mobility"] = self.calc_mobility()[1]
         return dump_dict
 

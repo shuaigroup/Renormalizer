@@ -7,9 +7,6 @@ useful utilities
 
 from itertools import islice, cycle
 import sys
-import pickle
-
-import numpy as np
 
 
 def roundrobin(*iterables):
@@ -29,19 +26,6 @@ def roundrobin(*iterables):
         except StopIteration:
             pending -= 1
             nexts = cycle(islice(nexts, pending))
-
-
-def autocorr_store(autocorr, istep, freq=10):
-    if istep % freq == 0:
-        autocorr = np.array(autocorr)
-        with open("autocorr" + ".npy", "wb") as f:
-            np.save(f, autocorr)
-
-
-def wfn_store(mps, istep, filename, freq=100):
-    if istep % freq == 0:
-        with open(filename, "wb") as f:
-            pickle.dump(mps, f, -1)
 
 
 # from https://stackoverflow.com/questions/1094841/reusable-library-to-get-human-readable-version-of-file-size

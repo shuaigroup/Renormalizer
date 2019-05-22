@@ -14,9 +14,6 @@ ph modes: [[[6.128e-3, a.u.], [16.274571056529368, a.u.]]]
 # temperature
 temperature: [298, K]
 
-# dissipation strength
-dissipation: 0.05
-
 # total time of evolution in au
 evolve tim: 30000
 

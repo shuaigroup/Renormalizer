@@ -10,7 +10,7 @@ import logging
 import yaml
 
 from ephMPS.model import load_from_dict
-from ephMPS.transport import ChargeTransport
+from ephMPS.transport import TransportAutoCorr
 from ephMPS.utils import log, Quantity, EvolveConfig, EvolveMethod, RungeKutta, CompressConfig, BondDimDistri
 
 logger = logging.getLogger(__name__)
@@ -27,22 +27,10 @@ if __name__ == "__main__":
     )
     mol_list, temperature = load_from_dict(param, 3, False)
     compress_config = CompressConfig(threshold=1e-4)
+    ievolve_config = EvolveConfig(adaptive=True, evolve_dt=temperature.as_au()/1000j)
     evolve_config = EvolveConfig(adaptive=True, evolve_dt=2)
-    ct = ChargeTransport(
-        mol_list,
-        temperature=temperature,
-        compress_config=compress_config,
-        evolve_config=evolve_config,
-        rdm=False,
-    )
-    # ct.stop_at_edge = True
+    ct = TransportAutoCorr(mol_list, temperature=temperature, evolve_config=evolve_config, dump_dir=param["output dir"], job_name=param["fname"] + "_autocorr")
     ct.economic_mode = True
-    # ct.memory_limit = 2 ** 30  # 1 GB
-    # ct.memory_limit /= 10 # 100 MB
-    ct.dump_dir = param["output dir"]
-    ct.job_name = param["fname"]
-    ct.custom_dump_info["comment"] = param["comment"]
     # ct.latest_mps.compress_add = True
-    logger.debug(f"ground energy of the Hamiltonian: {ct.mpo_e_lbound:g}")
     ct.evolve(param.get("evolve dt"), param.get("nsteps"), param.get("evolve time"))
     # ct.evolve(evolve_dt, 100, param.get("evolve time"))
