@@ -27,9 +27,11 @@ if __name__ == "__main__":
     )
     mol_list, temperature = load_from_dict(param, 3, False)
     compress_config = CompressConfig(threshold=1e-4)
-    ievolve_config = EvolveConfig(adaptive=True, evolve_dt=temperature.as_au()/1000j)
+    ievolve_config = EvolveConfig(adaptive=True, evolve_dt=temperature.to_beta() / 1000j)
     evolve_config = EvolveConfig(adaptive=True, evolve_dt=2)
-    ct = TransportAutoCorr(mol_list, temperature=temperature, evolve_config=evolve_config, dump_dir=param["output dir"], job_name=param["fname"] + "_autocorr")
+    ct = TransportAutoCorr(mol_list, temperature=temperature, ievolve_config=ievolve_config,
+                           compress_config=compress_config, evolve_config=evolve_config, dump_dir=param["output dir"],
+                           job_name=param["fname"] + "_autocorr")
     ct.economic_mode = True
     # ct.latest_mps.compress_add = True
     ct.evolve(param.get("evolve dt"), param.get("nsteps"), param.get("evolve time"))

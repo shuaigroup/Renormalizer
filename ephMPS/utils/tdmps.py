@@ -37,6 +37,7 @@ class TdMpsJob(object):
     def __init__(self, evolve_config: EvolveConfig = None, dump_dir: str=None, job_name: str=None):
         logger.info("Creating TDMPS job.")
         if evolve_config is None:
+            logger.debug("using default evolve config")
             self.evolve_config: EvolveConfig = EvolveConfig()
         else:
             self.evolve_config: EvolveConfig = evolve_config

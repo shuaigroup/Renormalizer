@@ -1309,7 +1309,7 @@ class BraKetPair(object):
         )
 
     def __str__(self):
-        if np.iscomplex(self.ft):
+        if np.iscomplexobj(self.ft):
             # if negative, sign is included in the imag part
             sign = "+" if 0 <= self.ft.imag else ""
             ft_str = "%g%s%gj" % (self.ft.real, sign, self.ft.imag)

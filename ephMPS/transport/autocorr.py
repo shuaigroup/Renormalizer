@@ -37,11 +37,13 @@ class TransportAutoCorr(TdMpsJob):
         self.insteps = insteps
 
         if compress_config is None:
+            logger.debug("using default compress config")
             self.compress_config = CompressConfig()
         else:
             self.compress_config = compress_config
 
         super().__init__(evolve_config, dump_dir, job_name)
+
 
     def _construct_flux_operator(self):
         # construct flux operator
@@ -53,6 +55,7 @@ class TransportAutoCorr(TdMpsJob):
             j2 = j1.conj_trans().scale(-1)
             j_list.extend([j1, j2])
         j_oper = compressed_sum(j_list, batchsize=10)
+        logger.debug(f"operator bond dim: {j_oper.bond_dims}")
         return j_oper
 
     def init_mps(self):
@@ -61,6 +64,7 @@ class TransportAutoCorr(TdMpsJob):
             try:
                 logger.info(f"Try load from {impdm_path}")
                 mpdm = MpDm.load(self.mol_list, impdm_path)
+                logger.info(f"Init mpdm loaded: {mpdm}")
                 mpdm.compress_config = self.compress_config
             except FileNotFoundError:
                 logger.debug(f"No file found in {impdm_path}")
@@ -87,12 +91,14 @@ class TransportAutoCorr(TdMpsJob):
         return BraKetPair(bra_mpdm, ket_mpdm)
 
     def evolve_single_step(self, evolve_dt):
-        latest_bra_mpdm, latest_ket_mpdm = self.latest_mps
+        prev_bra_mpdm, prev_ket_mpdm = self.latest_mps
         if len(self.tdmps_list) % 2 == 1:
-            latest_ket_mpdm = latest_ket_mpdm.evolve(self.h_mpo, evolve_dt)
+            latest_ket_mpdm = prev_ket_mpdm.evolve(self.h_mpo, evolve_dt)
+            latest_bra_mpdm = prev_bra_mpdm.copy()
         else:
-            latest_bra_mpdm.evolve_config.evolve_dt = -latest_ket_mpdm.evolve_config.evolve_dt
-            latest_bra_mpdm = latest_bra_mpdm.evolve(self.h_mpo, -evolve_dt)
+            latest_ket_mpdm = prev_ket_mpdm.copy()
+            prev_bra_mpdm.evolve_config.evolve_dt = -prev_ket_mpdm.evolve_config.evolve_dt
+            latest_bra_mpdm = prev_bra_mpdm.evolve(self.h_mpo, -evolve_dt)
         return BraKetPair(latest_bra_mpdm, latest_ket_mpdm)
 
     def stop_evolve_criteria(self):
@@ -100,7 +106,8 @@ class TransportAutoCorr(TdMpsJob):
         if len(corr) < 10:
             return False
         last_corr = corr[-10:]
-        return np.abs(last_corr.mean()) < 1e-5 and last_corr.std() < 1e-5
+        first_corr = corr[0]
+        return np.abs(last_corr.mean()) < 1e-5 * np.abs(first_corr) and last_corr.std() < 1e-5 * np.abs(first_corr)
 
     @property
     def auto_corr(self):

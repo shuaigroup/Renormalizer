@@ -10,13 +10,19 @@ import numpy as np
 logger = logging.getLogger(__name__)
 
 
+GPU_KEY = "EPHMPS_GPU"
+
+
 if importlib.util.find_spec("cupy"):
     import cupy as cp
     xp = cp
-    gpu_id = os.environ.get("EPHMPS_GPU", 0)
+    gpu_id = os.environ.get(GPU_KEY, 0)
     logger.info(f"Using GPU: {gpu_id}")
     cp.cuda.Device(gpu_id).use()
 else:
+    gpu_id = os.environ.get(GPU_KEY, None)
+    if gpu_id is not None:
+        logger.warning(f"Cupy is not installed. Setting {GPU_KEY} to {gpu_id} has no effect.")
     cp = None
     xp = np
 
