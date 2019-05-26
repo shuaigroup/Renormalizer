@@ -3,10 +3,10 @@
 import numpy as np
 import pytest
 
-from ephMPS.mps import Mpo, MpDm, MpDmFull
+from ephMPS.mps import Mpo, MpDm, MpDmFull, ThermalProp
 from ephMPS.model import MolList, Mol, Phonon
 from ephMPS.tests import parameter
-from ephMPS.utils import Quantity
+from ephMPS.utils import Quantity, EvolveConfig
 
 
 @pytest.mark.parametrize("nmols", (2, 3, 4))
@@ -52,6 +52,46 @@ def test_thermal_prop(mol_list, etot_std, occ_std, nsteps, rtol):
         mps.evolve_config.adaptive = True
         mps.evolve_config.evolve_dt = beta / 100j
     mps = mps.thermal_prop(mpo, beta, nsteps, inplace=True)
+    MPO, HAM, Etot, A_el = mps.construct_hybrid_Ham(mpo, debug=True)
+
+    assert np.allclose(Etot, etot_std, rtol=rtol)
+    assert np.allclose(A_el, occ_std, rtol=rtol)
+
+
+@pytest.mark.parametrize(
+    "mol_list, etot_std, occ_std, rtol",
+    (
+        [
+            parameter.hybrid_mol_list,
+            0.0853441664951,
+            [0.20881609, 0.35239430, 0.43878960],
+            1e-3,
+        ],
+        [parameter.mol_list, 0.0853413581416, [0.20881782, 0.35239674, 0.43878545], 5e-3],
+    ),
+)
+@pytest.mark.parametrize("nsteps", (
+        100,
+        None,
+))
+def test_thermal_prop2(mol_list, etot_std, occ_std, nsteps, rtol):
+    init_mps = MpDm.max_entangled_ex(mol_list)
+    mpo = Mpo(mol_list)
+    beta = Quantity(298, "K").to_beta()
+    evolve_time = beta / 2j
+    if nsteps is None:
+        evolve_config = EvolveConfig(adaptive=True, evolve_dt=beta/100j)
+        tp = ThermalProp(init_mps, mpo, evolve_config=evolve_config)
+        tp.evolve(evolve_time=evolve_time)
+    else:
+        tp = ThermalProp(init_mps, mpo)
+        tp.evolve(None, nsteps=nsteps, evolve_time=evolve_time)
+    mps = tp.latest_mps
+    #beta = Quantity(298, "K").to_beta() / 2
+    #if nsteps is None:
+    #    mps.evolve_config.adaptive = True
+    #    mps.evolve_config.evolve_dt = beta / 100j
+    #mps = mps.thermal_prop(mpo, beta, nsteps, inplace=True)
     MPO, HAM, Etot, A_el = mps.construct_hybrid_Ham(mpo, debug=True)
 
     assert np.allclose(Etot, etot_std, rtol=rtol)

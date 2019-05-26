@@ -79,6 +79,7 @@ class TransportAutoCorr(TdMpsJob):
             mpdm = i_mpdm.thermal_prop(self.h_mpo, self.temperature.to_beta() / 2, self.insteps)
 
             if self.dump_dir is not None and self.job_name is not None:
+                impdm_path = os.path.join(self.dump_dir, self.job_name + '_impdm.npz')
                 mpdm.dump(impdm_path)
 
         e = mpdm.expectation(self.h_mpo)
