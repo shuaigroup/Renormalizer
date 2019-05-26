@@ -3,10 +3,10 @@
 import numpy as np
 import pytest
 
-from ephMPS.mps import Mpo, MpDm, MpDmFull
+from ephMPS.mps import Mpo, MpDm, MpDmFull, ThermalProp
 from ephMPS.model import MolList, Mol, Phonon
 from ephMPS.tests import parameter
-from ephMPS.utils import Quantity
+from ephMPS.utils import Quantity, EvolveConfig
 
 
 @pytest.mark.parametrize("nmols", (2, 3, 4))
@@ -18,7 +18,9 @@ def test_mpdm_full(nmols, phonon_freq):
 
     gs_dm = MpDm.max_entangled_gs(mol_list)
     beta = Quantity(1000, "K").to_beta()
-    gs_dm = gs_dm.thermal_prop_exact(Mpo(mol_list), beta, 50, "GS")
+    tp = ThermalProp(gs_dm, Mpo(mol_list), exact=True, space="GS")
+    tp.evolve(None, 50, beta / 1j)
+    gs_dm = tp.latest_mps
     assert np.allclose(gs_dm.e_occupations, [0] * nmols)
     e_gs_dm = Mpo.onsite(mol_list, r"a^\dagger", mol_idx_set={0}).apply(gs_dm, canonicalise=True)
     assert np.allclose(e_gs_dm.e_occupations, [1] + [0] * (nmols - 1))
@@ -44,14 +46,19 @@ def test_mpdm_full(nmols, phonon_freq):
         100,
         None,
 ))
-def test_thermal_prop(mol_list, etot_std, occ_std, nsteps, rtol):
-    mps = MpDm.max_entangled_ex(mol_list)
+def test_thermal_prop2(mol_list, etot_std, occ_std, nsteps, rtol):
+    init_mps = MpDm.max_entangled_ex(mol_list)
     mpo = Mpo(mol_list)
-    beta = Quantity(298, "K").to_beta() / 2
+    beta = Quantity(298, "K").to_beta()
+    evolve_time = beta / 2j
     if nsteps is None:
-        mps.evolve_config.adaptive = True
-        mps.evolve_config.evolve_dt = beta / 100j
-    mps = mps.thermal_prop(mpo, beta, nsteps, inplace=True)
+        evolve_config = EvolveConfig(adaptive=True, evolve_dt=beta/100j)
+        tp = ThermalProp(init_mps, mpo, evolve_config=evolve_config)
+        tp.evolve(evolve_time=evolve_time)
+    else:
+        tp = ThermalProp(init_mps, mpo)
+        tp.evolve(None, nsteps=nsteps, evolve_time=evolve_time)
+    mps = tp.latest_mps
     MPO, HAM, Etot, A_el = mps.construct_hybrid_Ham(mpo, debug=True)
 
     assert np.allclose(Etot, etot_std, rtol=rtol)

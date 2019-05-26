@@ -9,7 +9,7 @@ from enum import Enum
 from collections import OrderedDict
 from functools import partial
 
-from ephMPS.mps import Mpo, Mps, MpDm, solver, MpDmFull, SuperLiouville
+from ephMPS.mps import Mpo, Mps, MpDm, solver, MpDmFull, SuperLiouville, ThermalProp
 from ephMPS.model import MolList
 from ephMPS.utils import TdMpsJob, Quantity, CompressCriteria, CompressConfig
 from ephMPS.utils.utils import cast_float
@@ -117,9 +117,9 @@ class ChargeTransport(TdMpsJob):
             # subtract the energy otherwise might cause numeric error because of large offset * dbeta
             energy = Quantity(gs_mp.expectation(tentative_mpo))
             mpo = Mpo(self.mol_list, offset=energy)
-            gs_mp = gs_mp.thermal_prop_exact(
-                mpo, self.temperature.to_beta() / 2, len(gs_mp), "GS", True
-            )
+            tp = ThermalProp(gs_mp, mpo, exact=True, space="GS")
+            tp.evolve(None, len(gs_mp), self.temperature.to_beta() / 2j)
+            gs_mp = tp.latest_mps
         init_mp = self.create_electron(gs_mp)
         if self.dissipation != 0:
             init_mp = MpDmFull.from_mpdm(init_mp)

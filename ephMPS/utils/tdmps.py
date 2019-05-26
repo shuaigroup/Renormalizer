@@ -58,24 +58,24 @@ class TdMpsJob(object):
 
     def evolve(self, evolve_dt=None, nsteps=None, evolve_time=None):
         # deal with arguments
+        if nsteps is not None and evolve_time is not None:
+            evolve_dt = evolve_time / nsteps
         if evolve_dt is None:
             # adaptive mode
             if not self.evolve_config.rk_config.adaptive:
                 raise ValueError("in non-adaptive mode evolve_dt is not given")
             if evolve_time is None:
-                target_time = "?"  # stop by `stop_evolve_criteria`
+                target_time = None  # stop by `stop_evolve_criteria`
             else:
                 target_time = self.evolve_times[-1] + evolve_time
             target_steps = "?"
             nsteps = int(1e10)  # insanely large
         else:
-            if nsteps is None and evolve_time is None:
-                raise ValueError(
-                    "Must provided either number of steps or target evolution time"
-                )
             if nsteps is None:
-                nsteps = int(evolve_time / evolve_dt) + 1  # round up
-            elif evolve_time is None:
+                raise ValueError(
+                    "Must provide number of steps"
+                )
+            if evolve_time is None:
                 evolve_time = nsteps * evolve_dt
             else:
                 logger.warning(
@@ -88,11 +88,14 @@ class TdMpsJob(object):
         if self.evolve_config.adaptive and evolve_dt is not None:
             logger.warning("evolve_dt is ignored in adaptive propagation")
         for i in range(nsteps):
+            if target_time is not None and abs(self.latest_evolve_time - target_time) < 1e-3:
+                break
             if self.evolve_config.adaptive:
                 evolve_dt = self.evolve_config.evolve_dt
+                assert not (np.iscomplex(evolve_dt) ^ np.iscomplex(target_time))
             new_evolve_time = self.latest_evolve_time + evolve_dt
             self.evolve_times.append(new_evolve_time)
-            step_str = "step {}/{}, time {:.2f}/{}".format(
+            step_str = "step {}/{}, time {}/{}".format(
                 len(self.tdmps_list), target_steps, new_evolve_time, target_time
             )
             logger.info("{} begin.".format(step_str))
@@ -100,7 +103,13 @@ class TdMpsJob(object):
             new_mps = self.evolve_single_step(evolve_dt=evolve_dt)
             if self.evolve_config.adaptive:
                 # update evolve_dt
-                self.evolve_config.evolve_dt = new_mps.evolve_config.evolve_dt
+                if target_time is not None \
+                        and abs(target_time) < abs(new_evolve_time) + abs(new_mps.evolve_config.evolve_dt):
+                    new_dt = target_time - new_evolve_time
+                    new_mps.evolve_config.evolve_dt = new_dt
+                else:
+                    new_dt = new_mps.evolve_config.evolve_dt
+                self.evolve_config.evolve_dt = new_dt
             new_real_time = datetime.now()
             time_cost = new_real_time - real_times[-1]
             self.tdmps_list.append(new_mps)

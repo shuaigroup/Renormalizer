@@ -2,10 +2,9 @@
 # Author: Jiajun Ren <jiajunren0522@gmail.com>
 import numpy as np
 
-from ephMPS.mps import Mpo, Mps, MpDm
+from ephMPS.mps import Mpo, MpDm, ThermalProp
 from ephMPS.spectra.base import SpectraTdMpsJobBase
 from ephMPS.mps.mps import BraKetPair
-from ephMPS.utils import constant
 
 
 class BraKetPairEmiFiniteT(BraKetPair):
@@ -49,7 +48,9 @@ class SpectraFiniteT(SpectraTdMpsJobBase):
         dipole_mpo = Mpo.onsite(self.mol_list, "a", dipole=True)
         i_mpo = MpDm.max_entangled_ex(self.mol_list)
         # only propagate half beta
-        ket_mpo = i_mpo.thermal_prop(self.h_mpo, self.temperature.to_beta() / 2, self.insteps)
+        tp = ThermalProp(i_mpo, self.h_mpo)
+        tp.evolve(None, self.insteps, self.temperature.to_beta() / 2j)
+        ket_mpo = tp.latest_mps
         ket_mpo.evolve_config = self.evolve_config
         # e^{\-beta H/2} \Psi
         dipole_mpo_dagger = dipole_mpo.conj_trans()
@@ -63,7 +64,9 @@ class SpectraFiniteT(SpectraTdMpsJobBase):
         dipole_mpo = Mpo.onsite(self.mol_list, r"a^\dagger", dipole=True)
         i_mpo = MpDm.max_entangled_gs(self.mol_list)
         beta = self.temperature.to_beta()
-        ket_mpo = i_mpo.thermal_prop_exact(self.h_mpo, beta / 2.0, 1, "GS")
+        tp = ThermalProp(i_mpo, self.h_mpo, exact=True, space="GS")
+        tp.evolve(None, 1, beta / 2j)
+        ket_mpo = tp.latest_mps
         ket_mpo.evolve_config = self.evolve_config
         a_ket_mpo = dipole_mpo.apply(ket_mpo, canonicalise=True)
         a_ket_mpo.canonical_normalize()

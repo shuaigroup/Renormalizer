@@ -6,14 +6,13 @@ import os
 import numpy as np
 import pytest
 
-from ephMPS.mps import Mps, Mpo, MpDm
+from ephMPS.mps import Mps, Mpo, MpDm, ThermalProp
 from ephMPS.utils import Quantity, CompressConfig
 from ephMPS.tests import parameter_PBI
 from ephMPS.transport.tests import cur_dir
 
 
-@pytest.mark.parametrize("scheme", (3, ))
-#@pytest.mark.parametrize("scheme", (4, 3))
+@pytest.mark.parametrize("scheme", (4, 3))
 @pytest.mark.parametrize("n_dmrg_phs", (10, 5))
 def test_zt(n_dmrg_phs, scheme):
 
@@ -48,11 +47,10 @@ def test_FT_dynamics_hybrid_TDDMRG_TDH(n_dmrg_phs, scheme):
     mpdm = MpDm.max_entangled_gs(mol_list)
     tentative_mpo = Mpo(mol_list)
     temperature = Quantity(2000, "K")
-    mpdm = mpdm.thermal_prop_exact(
-        tentative_mpo, temperature.to_beta() / 2, 1, "GS", inplace=True
-    )
+    tp = ThermalProp(mpdm, tentative_mpo, exact=True, space="GS")
+    tp.evolve(None, 1, temperature.to_beta() / 2j)
     mpdm = (
-        Mpo.onsite(mol_list, r"a^\dagger", mol_idx_set={0}).apply(mpdm).normalize(1.0)
+        Mpo.onsite(mol_list, r"a^\dagger", mol_idx_set={0}).apply(tp.latest_mps).normalize(1.0)
     )
     mpdm.compress_config = CompressConfig(threshold=5e-4)
     offset = mpdm.expectation(tentative_mpo)

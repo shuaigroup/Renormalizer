@@ -501,6 +501,8 @@ class Mps(MatrixProduct):
     @_cached_property
     def r_square(self):
         r_list = np.arange(0, self.mol_num)
+        if np.allclose(self.e_occupations, np.zeros_like(self.e_occupations)):
+            return 0
         r_mean_square = np.average(r_list, weights=self.e_occupations) ** 2
         mean_r_square = np.average(r_list ** 2, weights=self.e_occupations)
         return mean_r_square - r_mean_square

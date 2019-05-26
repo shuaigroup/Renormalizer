@@ -223,60 +223,6 @@ class MpDm(MpDmBase):
         # unitary_propagation(new_mpdm.wfns, HAM, Etot, evolve_dt)
         return new_mpdm
 
-    def thermal_prop(self, h_mpo, beta: float, nsteps=None, approx_eiht=None, inplace=False):
-        """
-        do imaginary propagation
-        """
-        ket_mpo = self if inplace else self.copy()
-
-        if nsteps is None:
-            assert self.evolve_config.adaptive
-            assert np.iscomplex(self.evolve_config.evolve_dt)
-            assert self.evolve_config.evolve_dt.imag < 0
-            assert approx_eiht is None
-            dbeta = self.evolve_config.evolve_dt
-            accumulated = 0j
-            while 1e-3 < abs(abs(accumulated) / beta - 1):
-                logger.debug(f"Thermal propagating {abs(accumulated)}/{beta}. {ket_mpo}")
-                ket_mpo = ket_mpo.evolve(h_mpo, dbeta)
-                accumulated += dbeta
-                dbeta = -1j * min(-ket_mpo.evolve_config.evolve_dt.imag, beta - abs(accumulated))
-                ket_mpo.evolve_config.evolve_dt = dbeta
-        else:
-            dbeta = beta / float(nsteps)
-
-            if approx_eiht is not None:
-                approx_eihpt = self.__class__.approx_propagator(
-                    h_mpo, -1.0j * dbeta, thresh=approx_eiht
-                )
-            else:
-                approx_eihpt = None
-            for istep in range(nsteps):
-                logger.debug(f"Thermal propagating {istep+1}/{nsteps}. {ket_mpo}")
-                # partition function can't be obtained
-                ket_mpo = ket_mpo.evolve(h_mpo, -1.0j * dbeta, approx_eiht=approx_eihpt)
-
-        return ket_mpo
-
-    def thermal_prop_exact(self, mpo, beta, nsteps, space, inplace=False):
-        # can't really inplace because `apply` has no inplace mode.
-        # should add inplace mode to `apply`
-        dbeta = beta / nsteps
-        new_mpdm = self if inplace else self.copy()
-        for istep in range(nsteps):
-            MPOprop, HAM, Etot = new_mpdm.hybrid_exact_propagator(
-                mpo, -dbeta, space=space
-            )
-            new_mpdm = MPOprop.apply(new_mpdm)
-            unitary_propagation(new_mpdm.wfns, HAM, Etot, dbeta / 1.0j)
-            # partition function can't be obtained. It's not practical anyway.
-            # The function is too large to be fit into float64 even float128
-            new_mpdm.normalize(1.0)
-        # the mpdm may not be canonicalised due to distributed scaling. It's not wise to do
-        # so currently because scheme4 might have empty matrices
-        # new_mpdm.canonicalise()
-        return new_mpdm
-
     def full_wfn(self):
         raise NotImplementedError("Use full_operator on Matrix Product Density Matrix")
 
