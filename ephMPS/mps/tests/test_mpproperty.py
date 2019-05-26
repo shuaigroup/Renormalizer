@@ -5,7 +5,7 @@
 import numpy as np
 import pytest
 
-from ephMPS.mps import Mps, Mpo, MpDm
+from ephMPS.mps import Mps, Mpo, MpDm, ThermalProp
 from ephMPS.tests.parameter import mol_list
 from ephMPS.utils import Quantity
 
@@ -42,6 +42,8 @@ def test_clear():
 def test_mpo():
     gs_dm = MpDm.max_entangled_gs(mol_list)
     beta = Quantity(10, "K").to_beta()
-    gs_dm = gs_dm.thermal_prop_exact(Mpo(gs_dm.mol_list), beta, 500, "GS")
+    tp = ThermalProp(gs_dm, Mpo(gs_dm.mol_list), exact=True, space="GS")
+    tp.evolve(None, 500, beta / 1j)
+    gs_dm = tp.latest_mps
     mp = creation_operator.apply(gs_dm)
     check_property(mp)

@@ -73,7 +73,7 @@ class ThermalProp(TdMpsJob):
 
     def get_dump_dict(self):
         dump_dict = dict()
-        dump_dict["time series"] = self.evolve_times
+        dump_dict["time series"] = [t.imag for t in self.evolve_times]
         dump_dict["electron occupations array"] = cast_float(self.e_occupations_array)
         dump_dict["phonon occupations array"] = cast_float(self.ph_occupations_array)
         return dump_dict

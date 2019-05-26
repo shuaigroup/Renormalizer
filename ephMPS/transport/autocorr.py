@@ -6,7 +6,7 @@ import os
 import numpy as np
 import scipy.integrate
 
-from ephMPS.mps import MpDm, Mpo, BraKetPair
+from ephMPS.mps import MpDm, Mpo, BraKetPair, ThermalProp
 from ephMPS.mps.lib import compressed_sum
 from ephMPS.utils.constant import mobility2au
 from ephMPS.utils import TdMpsJob, Quantity, EvolveConfig, CompressConfig
@@ -51,7 +51,7 @@ class TransportAutoCorr(TdMpsJob):
         j_list = []
         for i in range(len(self.mol_list) - 1):
             j1 = Mpo.displacement(self.mol_list, i, i + 1).scale(self.mol_list.j_matrix[i, i + 1])
-            j1.compress_config.threshold = 1e-10
+            j1.compress_config.threshold = 1e-5
             j2 = j1.conj_trans().scale(-1)
             j_list.extend([j1, j2])
         j_oper = compressed_sum(j_list, batchsize=10)
@@ -59,28 +59,32 @@ class TransportAutoCorr(TdMpsJob):
         return j_oper
 
     def init_mps(self):
+        # first try to laod
         if self._defined_output_path:
-            impdm_path = os.path.join(self.dump_dir, self.job_name + '_impdm.npz')
             try:
-                logger.info(f"Try load from {impdm_path}")
-                mpdm = MpDm.load(self.mol_list, impdm_path)
+                logger.info(f"Try load from {self._thermal_dump_path}")
+                mpdm = MpDm.load(self.mol_list, self._thermal_dump_path)
                 logger.info(f"Init mpdm loaded: {mpdm}")
                 mpdm.compress_config = self.compress_config
             except FileNotFoundError:
-                logger.debug(f"No file found in {impdm_path}")
+                logger.debug(f"No file found in {self._thermal_dump_path}")
                 mpdm = None
         else:
             mpdm = None
+        # then try to calculate
         if mpdm is None:
             i_mpdm = MpDm.max_entangled_ex(self.mol_list)
-            i_mpdm.evolve_config = self.ievolve_config
             i_mpdm.compress_config = self.compress_config
+            if self.job_name is None:
+                job_name = None
+            else:
+                job_name = self.job_name + "_thermal_prop"
+            tp = ThermalProp(i_mpdm, self.h_mpo, evolve_config=self.ievolve_config, dump_dir=self.dump_dir, job_name=job_name)
             # only propagate half beta
-            mpdm = i_mpdm.thermal_prop(self.h_mpo, self.temperature.to_beta() / 2, self.insteps)
-
-            if self.dump_dir is not None and self.job_name is not None:
-                impdm_path = os.path.join(self.dump_dir, self.job_name + '_impdm.npz')
-                mpdm.dump(impdm_path)
+            tp.evolve(None, self.insteps, self.temperature.to_beta() / 2j)
+            mpdm = tp.latest_mps
+            if self._defined_output_path:
+                mpdm.dump(self._thermal_dump_path)
 
         e = mpdm.expectation(self.h_mpo)
         self.h_mpo = Mpo(self.mol_list, offset=Quantity(e))
@@ -109,6 +113,11 @@ class TransportAutoCorr(TdMpsJob):
         last_corr = corr[-10:]
         first_corr = corr[0]
         return np.abs(last_corr.mean()) < 1e-5 * np.abs(first_corr) and last_corr.std() < 1e-5 * np.abs(first_corr)
+
+    @property
+    def _thermal_dump_path(self):
+        assert self._defined_output_path
+        return os.path.join(self.dump_dir, self.job_name + '_impdm.npz')
 
     @property
     def auto_corr(self):

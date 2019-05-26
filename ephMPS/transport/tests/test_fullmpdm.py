@@ -5,8 +5,7 @@ import logging
 import numpy as np
 import pytest
 
-from ephMPS.mps import MpDm, Mpo, MpDmFull, SuperLiouville, Mps
-from ephMPS.transport import ChargeTransport
+from ephMPS.mps import MpDm, Mpo, MpDmFull, SuperLiouville, Mps, ThermalProp
 from ephMPS.utils import Quantity, CompressConfig
 from ephMPS.model import Phonon, Mol, MolList
 from ephMPS.transport.tests.band_param import band_limit_mol_list, low_t, get_analytical_r_square
@@ -28,9 +27,9 @@ def test_dynamics(dissipation, dt, nsteps):
     # subtract the energy otherwise might cause numeric error because of large offset * dbeta
     energy = Quantity(gs_mp.expectation(tentative_mpo))
     mpo = Mpo(band_limit_mol_list, offset=energy)
-    gs_mp = gs_mp.thermal_prop_exact(
-        mpo, low_t.to_beta() / 2, 50, "GS", True
-    )
+    tp = ThermalProp(gs_mp, mpo, exact=True, space="GS")
+    tp.evolve(None, 50, low_t.to_beta() / 2j)
+    gs_mp = tp.latest_mps
     center_mol_idx = band_limit_mol_list.mol_num // 2
     creation_operator = Mpo.onsite(
         band_limit_mol_list, r"a^\dagger", mol_idx_set={center_mol_idx}

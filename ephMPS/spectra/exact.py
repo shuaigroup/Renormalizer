@@ -3,7 +3,7 @@
 
 import logging
 
-from ephMPS.mps import Mpo, Mps, MpDm, solver
+from ephMPS.mps import Mpo, Mps, MpDm, solver, ThermalProp
 from ephMPS.spectra.base import SpectraTdMpsJobBase
 from ephMPS.mps.mps import BraKetPair
 from ephMPS.utils import Quantity, OptimizeConfig
@@ -80,9 +80,9 @@ class SpectraExact(SpectraTdMpsJobBase):
             # ket_mps.normalize()
             # no test, don't know work or not
             i_mpdm = MpDm.from_mps(i_mps)
-            ket_mps = i_mpdm.thermal_prop_exact(
-                self.h_mpo, -beta / 2.0, 1, self.space1, inplace=True
-            )
+            tp = ThermalProp(i_mpdm, self.h_mpo, exact=True, space=self.space1)
+            tp.evolve(None, 1, beta / 2j)
+            ket_mps = tp.latest_mps
         else:
             ket_mps = i_mps
         a_ket_mps = dipole_mpo.apply(ket_mps, canonicalise=True)
