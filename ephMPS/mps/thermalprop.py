@@ -1,9 +1,14 @@
+import logging
+
 import numpy as np
 
 from ephMPS.mps import MpDm
 from ephMPS.mps.tdh import unitary_propagation
 from ephMPS.utils import TdMpsJob
 from ephMPS.utils.utils import cast_float
+
+
+logger = logging.getLogger(__name__)
 
 
 class ThermalProp(TdMpsJob):
@@ -19,6 +24,7 @@ class ThermalProp(TdMpsJob):
         # calculated during propagation
         self.approx_eihpt = None
         super().__init__(evolve_config, dump_dir, job_name)
+        self.energies = []
 
     def init_mps(self):
         self.init_mpdm.evolve_config = self.evolve_config
@@ -48,6 +54,9 @@ class ThermalProp(TdMpsJob):
         else:
             new_mpdm = self.evolve_prop(old_mpdm, evolve_dt)
         old_mpdm.clear_memory()
+        new_energy = new_mpdm.expectation(self.h_mpo)
+        self.energies.append(new_energy)
+        logger.info(f"Energy: {new_energy}")
         return new_mpdm
 
     def evolve(self, evolve_dt=None, nsteps=None, evolve_time=None):
@@ -73,7 +82,8 @@ class ThermalProp(TdMpsJob):
 
     def get_dump_dict(self):
         dump_dict = dict()
-        dump_dict["time series"] = [t.imag for t in self.evolve_times]
+        dump_dict["time series"] = [-t.imag for t in self.evolve_times]
+        dump_dict["energies"] = self.energies
         dump_dict["electron occupations array"] = cast_float(self.e_occupations_array)
         dump_dict["phonon occupations array"] = cast_float(self.ph_occupations_array)
         return dump_dict

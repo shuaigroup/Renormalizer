@@ -176,7 +176,6 @@ class MpDm(MpDmBase):
         ex_mps = Mpo.onsite(mol_list, r"a^\dagger").apply(mps)
         if normalize:
             ex_mps.normalize(1.0)
-            # ex_mps.scale(1.0 / np.sqrt(float(len(mol_list))), inplace=True)  # normalize
         return cls.from_mps(ex_mps)
 
     @classmethod

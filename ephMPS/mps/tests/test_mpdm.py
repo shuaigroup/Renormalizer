@@ -46,7 +46,7 @@ def test_mpdm_full(nmols, phonon_freq):
         100,
         None,
 ))
-def test_thermal_prop2(mol_list, etot_std, occ_std, nsteps, rtol):
+def test_thermal_prop(mol_list, etot_std, occ_std, nsteps, rtol):
     init_mps = MpDm.max_entangled_ex(mol_list)
     mpo = Mpo(mol_list)
     beta = Quantity(298, "K").to_beta()

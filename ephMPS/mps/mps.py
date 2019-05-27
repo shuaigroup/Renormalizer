@@ -648,16 +648,14 @@ class Mps(MatrixProduct):
                 angle = new_mps1.angle(new_mps2)
                 energy1 = self.expectation(mpo)
                 energy2 = new_mps1.expectation(mpo)
-                logger.debug(f"angle: {angle:f}. e1: {energy1}. e2: {energy2}")
-                # some tests show that five 9s mean safe
-                # four 9s with last digit smaller than 5 mean unstably is coming
-                # three 9s explode immediately
+                p = (1e-3 / np.sqrt(2 * abs(1 - angle) + 1e-30)) ** 0.2 * 0.8
+                logger.debug(f"angle: {angle}. e1: {energy1}. e2: {energy2}, p: {p}")
                 d_energy = config.d_energy
-                if abs(energy1 - energy2) < d_energy and 0.99996 < angle < 1.00004:
+                if abs(energy1 - energy2) < d_energy and 0.5 < p:
                     # converged
                     if abs(config.evolve_dt - evolve_dt) / abs(evolve_dt) < 1e-5:
                         # equal evolve_dt
-                        if abs(energy1 - energy2) < (d_energy/10) and 0.99999 < angle < 1.00001:
+                        if abs(energy1 - energy2) < (d_energy/10) and 1.5 < p:
                             # a larger dt could be used
                             config.evolve_dt *= 1.5
                             logger.debug(
