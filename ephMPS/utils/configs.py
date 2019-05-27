@@ -194,6 +194,7 @@ class EvolveConfig:
         memory_limit=None,
         adaptive=False,
         evolve_dt=1e-1,
+        adaptive_rtol=1e-3,
     ):
 
         self.method = method
@@ -214,12 +215,12 @@ class EvolveConfig:
         # tdvp also requires prop and compress
         if adaptive:
             self.rk_config: RungeKutta = RungeKutta("RKF45")
-            self._d_energy = 1e-3
         else:
             self.rk_config: RungeKutta = RungeKutta()
-            self._d_energy = None
         self.adaptive = adaptive
         self.evolve_dt = evolve_dt  # a wild guess
+        self.adaptive_rtol = adaptive_rtol
+        self.d_energy = 1e-3
 
         self.prop_method = "C_RK4"
 
@@ -238,19 +239,6 @@ class EvolveConfig:
             return True
         else:
             return False
-
-    @property
-    def d_energy(self):
-        if self.adaptive:
-            if self._d_energy is None:
-                return 1e-3
-            else:
-                return self._d_energy
-        return None
-
-    @d_energy.setter
-    def d_energy(self, v):
-        self._d_energy = v
 
     def copy(self):
         new = self.__class__.__new__(self.__class__)

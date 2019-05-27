@@ -648,7 +648,8 @@ class Mps(MatrixProduct):
                 angle = new_mps1.angle(new_mps2)
                 energy1 = self.expectation(mpo)
                 energy2 = new_mps1.expectation(mpo)
-                p = (1e-3 / np.sqrt(2 * abs(1 - angle) + 1e-30)) ** 0.2 * 0.8
+                rtol = config.adaptive_rtol  # default to 1e-3
+                p = (rtol / (np.sqrt(2 * abs(1 - angle)) + 1e-30)) ** 0.2 * 0.8
                 logger.debug(f"angle: {angle}. e1: {energy1}. e2: {energy2}, p: {p}")
                 d_energy = config.d_energy
                 if abs(energy1 - energy2) < d_energy and 0.5 < p:
