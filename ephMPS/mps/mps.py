@@ -1,8 +1,8 @@
-from __future__ import absolute_import, print_function, unicode_literals
+# -*- encoding: utf-8 -*-
 
 import logging
 import functools
-from typing import List, Union, Tuple
+from typing import Union
 
 import numpy as np
 import scipy
@@ -1293,9 +1293,10 @@ def transferMat(mps, mpsconj, domain, siteidx):
 
 
 class BraKetPair(object):
-    def __init__(self, bra_mps, ket_mps):
+    def __init__(self, bra_mps, ket_mps, mpo=None):
         self.bra_mps = bra_mps
         self.ket_mps = ket_mps
+        self.mpo = mpo
         # for adaptive evolution. This is not an ideal solution but
         # I can't find anyone better. Bra and Ket have the same step size during
         # the evolution. Is this necessary?
@@ -1303,9 +1304,12 @@ class BraKetPair(object):
         self.ft = self.calc_ft()
 
     def calc_ft(self):
+        if self.mpo is None:
+            dot = self.bra_mps.conj().dot(self.ket_mps)
+        else:
+            dot = self.bra_mps.conj().dot(self.mpo.apply(self.ket_mps))
         return (
-            self.bra_mps.conj().dot(self.ket_mps)
-            * np.conjugate(self.bra_mps.coeff)
+            dot * np.conjugate(self.bra_mps.coeff)
             * self.ket_mps.coeff
         )
 

@@ -22,6 +22,7 @@ class TransportAutoCorr(TdMpsJob):
     def __init__(self, mol_list, temperature: Quantity, insteps: int=None, ievolve_config=None, compress_config=None, evolve_config=None, dump_dir: str=None, job_name: str=None):
         self.mol_list = mol_list
         self.h_mpo = Mpo(mol_list)
+        self.j_oper = self._construct_flux_operator()
         self.temperature = temperature
 
         # imaginary time evolution config
@@ -42,6 +43,7 @@ class TransportAutoCorr(TdMpsJob):
         else:
             self.compress_config = compress_config
 
+        self.impdm = None
         super().__init__(evolve_config, dump_dir, job_name)
 
 
@@ -85,26 +87,20 @@ class TransportAutoCorr(TdMpsJob):
             mpdm = tp.latest_mps
             if self._defined_output_path:
                 mpdm.dump(self._thermal_dump_path)
-
+        self.impdm = mpdm
         e = mpdm.expectation(self.h_mpo)
         self.h_mpo = Mpo(self.mol_list, offset=Quantity(e))
         mpdm.evolve_config = self.evolve_config
-        # e^{\-beta H/2} \Psi
-        j_oper = self._construct_flux_operator()
-        ket_mpdm = j_oper.contract(mpdm).canonical_normalize()
-        bra_mpdm = ket_mpdm.copy()
-        return BraKetPair(bra_mpdm, ket_mpdm)
+        ket_mpdm = self.j_oper.contract(mpdm).canonical_normalize()
+        bra_mpdm = mpdm.copy()
+        return BraKetPair(bra_mpdm, ket_mpdm, self.j_oper)
 
     def evolve_single_step(self, evolve_dt):
         prev_bra_mpdm, prev_ket_mpdm = self.latest_mps
-        if len(self.tdmps_list) % 2 == 1:
-            latest_ket_mpdm = prev_ket_mpdm.evolve(self.h_mpo, evolve_dt)
-            latest_bra_mpdm = prev_bra_mpdm.copy()
-        else:
-            latest_ket_mpdm = prev_ket_mpdm.copy()
-            prev_bra_mpdm.evolve_config.evolve_dt = -prev_ket_mpdm.evolve_config.evolve_dt
-            latest_bra_mpdm = prev_bra_mpdm.evolve(self.h_mpo, -evolve_dt)
-        return BraKetPair(latest_bra_mpdm, latest_ket_mpdm)
+        latest_ket_mpdm = prev_ket_mpdm.evolve(self.h_mpo, evolve_dt)
+        prev_bra_mpdm.evolve_config.evolve_dt = -prev_ket_mpdm.evolve_config.evolve_dt
+        latest_bra_mpdm = prev_bra_mpdm.evolve(self.h_mpo, evolve_dt)
+        return BraKetPair(latest_bra_mpdm, latest_ket_mpdm, self.j_oper)
 
     def stop_evolve_criteria(self):
         corr = self.auto_corr

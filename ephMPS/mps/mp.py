@@ -557,7 +557,7 @@ class MatrixProduct:
         new.compress_add = self.compress_add
         return new
 
-    def array2mt(self, array, idx):
+    def _array2mt(self, array, idx):
         if isinstance(array, Matrix):
             mt = array.astype(self.dtype)
         else:
@@ -646,11 +646,11 @@ class MatrixProduct:
         return self._mp[item]
 
     def __setitem__(self, key, array):
-        new_mt = self.array2mt(array, key)
+        new_mt = self._array2mt(array, key)
         self._mp[key] = new_mt
 
     def append(self, array):
-        new_mt = self.array2mt(array, len(self))
+        new_mt = self._array2mt(array, len(self))
         self._mp.append(new_mt)
 
     def clear(self):

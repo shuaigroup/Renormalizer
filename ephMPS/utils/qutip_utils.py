@@ -5,6 +5,9 @@ This module is not included in any program that is designed to "run" during test
 verification and generating standard files.
 """
 
+from itertools import product
+
+import numpy as np
 import qutip
 
 def get_clist(nsites, ph_levels):
@@ -37,7 +40,8 @@ def get_blist(nsites, ph_levels):
     return blist
 
 
-def get_hamiltonian(nsites, J, lam, omega, g, clist, blist):
+def get_hamiltonian(nsites, J, omega, g, clist, blist):
+    lam = g ** 2 * omega
     terms = []
     for i in range(nsites):
         terms.append(lam * clist[i].dag() * clist[i])
@@ -48,3 +52,8 @@ def get_hamiltonian(nsites, J, lam, omega, g, clist, blist):
         terms.append(J * clist[i] * clist[i + 1].dag())
     H = sum(terms)
     return H
+
+
+def get_qnidx(ph_levels, nsites):
+    particles = np.array(list(product(*[[0, 1], [0] * ph_levels] * nsites))).sum(axis=1)
+    return np.where(particles == 1)[0]

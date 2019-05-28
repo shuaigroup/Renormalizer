@@ -61,7 +61,9 @@ class MpDmBase(Mps, Mpo):
         return path
 
     def conj_trans(self):
+        logger.warning("use conj_trans on mpdm leads to dummy qn")
         new_mpdm = super().conj_trans()
+        new_mpdm.use_dummy_qn = True
         for idx, wfn in enumerate(new_mpdm.wfns):
             new_mpdm.wfns[idx] = np.conj(wfn).T
         return new_mpdm
@@ -90,15 +92,11 @@ class MpDmBase(Mps, Mpo):
                 )
             )
             new_mpdm[i] = mt
-        orig_idx = mp.qnidx
-        mp.move_qnidx(new_mpdm.qnidx)
-        qn = mp.qn if not self.use_dummy_qn else mp.dummy_qn
+        qn = mp.dummy_qn
         new_mpdm.qn = [
             np.add.outer(np.array(qn_o), np.array(qn_m)).ravel().tolist()
             for qn_o, qn_m in zip(self.qn, qn)
         ]
-        mp.move_qnidx(orig_idx)
-        new_mpdm.qntot += mp.qntot
         new_mpdm.set_peak_bytes()
         if canonicalise:
             new_mpdm.canonicalise()

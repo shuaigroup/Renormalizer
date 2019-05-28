@@ -213,10 +213,7 @@ class EvolveConfig:
             self.max_bond_dim = None
 
         # tdvp also requires prop and compress
-        if adaptive:
-            self.rk_config: RungeKutta = RungeKutta("RKF45")
-        else:
-            self.rk_config: RungeKutta = RungeKutta()
+        self._adaptive = None
         self.adaptive = adaptive
         self.evolve_dt = evolve_dt  # a wild guess
         self.adaptive_rtol = adaptive_rtol
@@ -226,6 +223,18 @@ class EvolveConfig:
 
         # should adjust bond order before any tdvp evolution
         self._adjust_bond_dim_counter = False
+
+    @property
+    def adaptive(self):
+        return self._adaptive
+
+    @adaptive.setter
+    def adaptive(self, v):
+        self._adaptive = v
+        if v:
+            self.rk_config = RungeKutta("RKF45")
+        else:
+            self.rk_config = RungeKutta()
 
     def enlarge_evolve_dt(self, ratio=1.5):
         self.evolve_dt *= ratio

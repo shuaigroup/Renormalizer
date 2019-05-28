@@ -1170,5 +1170,3 @@ class VirtualOnSite(Mpo):
         if canonicalise:
             new_mp.canonicalise()
         return new_mp
-
-
