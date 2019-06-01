@@ -2,9 +2,9 @@ import logging
 
 import numpy as np
 
-from ephMPS.mps import MpDm
+from ephMPS.mps import MpDm, Mpo
 from ephMPS.mps.tdh import unitary_propagation
-from ephMPS.utils import TdMpsJob
+from ephMPS.utils import TdMpsJob, Quantity
 from ephMPS.utils.utils import cast_float
 
 
@@ -23,11 +23,12 @@ class ThermalProp(TdMpsJob):
         self.approx_eiht = approx_eiht
         # calculated during propagation
         self.approx_eihpt = None
-        super().__init__(evolve_config, dump_dir, job_name)
         self.energies = []
+        super().__init__(evolve_config, dump_dir, job_name)
 
     def init_mps(self):
         self.init_mpdm.evolve_config = self.evolve_config
+        self.energies.append(self.init_mpdm.expectation(self.h_mpo))
         return self.init_mpdm
 
     def evolve_exact(self, old_mpdm, evolve_dt):
@@ -45,7 +46,8 @@ class ThermalProp(TdMpsJob):
         return new_mpdm
 
     def evolve_prop(self, old_mpdm, evolve_dt):
-        return old_mpdm.evolve(self.h_mpo, evolve_dt, self.approx_eihpt)
+        h_mpo = Mpo(self.h_mpo.mol_list, offset=Quantity(self.energies[-1]))
+        return old_mpdm.evolve(h_mpo, evolve_dt, self.approx_eihpt)
 
     def evolve_single_step(self, evolve_dt):
         old_mpdm = self.latest_mps

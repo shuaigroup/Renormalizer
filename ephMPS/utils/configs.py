@@ -194,7 +194,7 @@ class EvolveConfig:
         memory_limit=None,
         adaptive=False,
         evolve_dt=1e-1,
-        adaptive_rtol=1e-3,
+        adaptive_rtol=5e-4,
     ):
 
         self.method = method
