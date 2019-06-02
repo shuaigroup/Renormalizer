@@ -270,8 +270,13 @@ class Mps(MatrixProduct):
         for imol, mol in enumerate(mol_list):
             # electron mps
             if 0 < mol_list.scheme < 4:
-                mps.append(np.array([1, 0]).reshape((1, 2, 1)))
+                if mol.sbm and max_entangled:
+                    array = np.array([1/np.sqrt(2), 1/np.sqrt(2)])
+                else:
+                    array = np.array([1, 0])
+                mps.append(array.reshape((1, 2, 1)))
             elif mol_list.scheme == 4:
+                assert not mol.sbm
                 if imol == mol_list.mol_num // 2:
                     mps.append(np.zeros((1, mol_list.mol_num, 1)))
             else:

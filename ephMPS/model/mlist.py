@@ -11,10 +11,14 @@ from ephMPS.model.mol import Mol, Phonon
 from ephMPS.utils import Quantity
 
 
-class MolList(object):
+class MolList:
 
-    def __init__(self, mol_list: List[Mol], j_matrix: Union[Quantity, np.ndarray], scheme: int=2):
+    def __init__(self, mol_list: List[Mol], j_matrix: Union[Quantity, np.ndarray], scheme: int=2, sbm=False):
         self.mol_list: List[Mol] = mol_list
+        if sbm or j_matrix is None:
+            assert len(self.mol_list) == 1
+            j_matrix = Quantity(0)
+
         if isinstance(j_matrix, Quantity):
             self.j_matrix = construct_j_matrix(self.mol_num, j_matrix)
             self.j_constant = j_matrix

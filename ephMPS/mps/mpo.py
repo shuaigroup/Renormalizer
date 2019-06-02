@@ -390,7 +390,7 @@ class Mpo(MatrixProduct):
 
     @classmethod
     def onsite(cls, mol_list: MolList, opera, dipole=False, mol_idx_set=None):
-        assert opera in ["a", r"a^\dagger", r"a^\dagger a"]
+        assert opera in ["a", r"a^\dagger", r"a^\dagger a", "sigmax"]
         if mol_list.scheme == 4:
             return VirtualOnSite(mol_list, opera, dipole, mol_idx_set)
         nmols = len(mol_list)
@@ -474,6 +474,9 @@ class Mpo(MatrixProduct):
                 + [[0]] * (totnqboson + 1)
             )
             mpo.qntot = 0
+        elif opera == "sigmax":
+            mpo.build_empty_qn()
+            mpo.use_dummy_qn = True
         else:
             assert False
         mpo.qn[-1] = [0]
@@ -550,6 +553,9 @@ class Mpo(MatrixProduct):
         return mpo
 
     def _scheme4(self, mol_list: MolList, elocal_offset, offset):
+
+        for m in mol_list:
+            assert m.tunnel == 0
 
         # setup some metadata
         self.rep = None
@@ -689,12 +695,18 @@ class Mpo(MatrixProduct):
             mo = np.zeros([mpo_dim[impo], 2, 2, mpo_dim[impo + 1]])
             eop = construct_e_op_dict()
             # last row operator
-            elocal = mol.elocalex
-            if elocal_offset is not None:
-                elocal += elocal_offset[imol]
-            mo[-1, :, :, 0] = eop[r"a^\dagger a"] * (elocal + mol.dmrg_e0)
-            mo[-1, :, :, -1] = eop["Iden"]
-            mo[-1, :, :, 1] = eop[r"a^\dagger a"]
+            if not mol.sbm:
+                elocal = mol.elocalex
+                if elocal_offset is not None:
+                    elocal += elocal_offset[imol]
+                mo[-1, :, :, 0] = eop[r"a^\dagger a"] * (elocal + mol.dmrg_e0)
+                mo[-1, :, :, -1] = eop["Iden"]
+                mo[-1, :, :, 1] = eop[r"a^\dagger a"]
+            else:
+                assert len(mol_list) == 1
+                mo[-1, :, :, 0] = 1/2 * eop["sigmaz"] * mol.elocalex + 1/2 * eop["sigmax"] * mol.tunnel
+                mo[-1, :, :, -1] = eop["Iden"]
+                mo[-1, :, :, 1] = 1/2 * eop["sigmaz"]
 
             # first column operator
             if imol != 0:
