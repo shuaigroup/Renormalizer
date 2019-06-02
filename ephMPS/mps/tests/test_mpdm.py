@@ -37,7 +37,7 @@ def test_mpdm_full(nmols, phonon_freq):
             parameter.hybrid_mol_list,
             0.0853441664951,
             [0.20881609, 0.35239430, 0.43878960],
-            1e-3,
+            5e-3,
         ],
         [parameter.mol_list, 0.0853413581416, [0.20881782, 0.35239674, 0.43878545], 5e-3],
     ),

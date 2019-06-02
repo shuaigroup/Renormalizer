@@ -3,6 +3,7 @@
 import os
 import importlib.util
 import logging
+import random
 
 import numpy as np
 
@@ -36,6 +37,11 @@ elif xp is cp:
     logger.info("use cupy as backend")
 else:
     assert False
+
+
+np.random.seed(9012)
+xp.random.seed(2019)
+random.seed(1092)
 
 
 class Backend:

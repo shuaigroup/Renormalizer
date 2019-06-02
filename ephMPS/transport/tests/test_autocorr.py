@@ -12,13 +12,13 @@ from ephMPS.transport.tests import cur_dir
 
 
 @pytest.mark.parametrize(
-    "insteps",
+    "insteps, atol",
     (
-        50,
-        None,
+        (50, 1e-2),
+        (None, 1e-2)
     ),
 )
-def test_autocorr(insteps):
+def test_autocorr(insteps, atol):
     ph = Phonon.simple_phonon(Quantity(1), Quantity(1), 2)
     mol = Mol(Quantity(0), [ph])
     mol_list = MolList([mol] * 5, Quantity(1), 3)
@@ -29,7 +29,6 @@ def test_autocorr(insteps):
     corr_real = ac.auto_corr.real
     exact_real = get_exact_autocorr(mol_list, temperature, ac.evolve_times_array).real
     # direct comparison may fail because of different sign
-    atol = 5e-3
     assert np.allclose(corr_real, exact_real, atol=atol) or np.allclose(corr_real, -exact_real, atol=atol)
 
 

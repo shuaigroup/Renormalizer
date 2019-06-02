@@ -61,7 +61,7 @@ class TransportAutoCorr(TdMpsJob):
         return j_oper
 
     def init_mps(self):
-        # first try to laod
+        # first try to load
         if self._defined_output_path:
             try:
                 logger.info(f"Try load from {self._thermal_dump_path}")
