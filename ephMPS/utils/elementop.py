@@ -9,9 +9,9 @@ written in Latex format. <bra|op|ket>
 import numpy as np
 
 
-def op_matrix(op, size, type):
-    assert type in ["e", "ph"]
-    if type == "e":
+def get_op_matrix(op, size, op_type):
+    assert op_type in ["e", "ph"]
+    if op_type == "e":
         element_func = e_element_op
     else:
         element_func = ph_element_op
@@ -23,11 +23,11 @@ def op_matrix(op, size, type):
 
 
 def e_op_matrix(op):
-    return op_matrix(op, 2, "e")
+    return get_op_matrix(op, 2, "e")
 
 
 def ph_op_matrix(op, size):
-    return op_matrix(op, size, "ph")
+    return get_op_matrix(op, size, "ph")
 
 
 ph_op_list = [
@@ -106,7 +106,7 @@ def ph_element_op(op, bra, ket):
             return 0.0
 
 
-e_op_list = [r"a^\dagger", "a", r"a^\dagger a", "Iden"]
+e_op_list = [r"a^\dagger", "a", r"a^\dagger a", "Iden", "sigmax", "sigmaz"]
 
 
 def e_element_op(op, bra, ket):
@@ -140,6 +140,20 @@ def e_element_op(op, bra, ket):
             return 1.0
         else:
             return 0.0
+
+    elif op == "sigmax":
+        if abs(bra - ket) == 1:
+            return 1.0
+        else:
+            return 0
+
+    elif op == "sigmaz":
+        if bra == ket == 1:
+            return -1
+        elif bra == ket == 0:
+            return 1
+        else:
+            return 0
     else:
         assert False
 

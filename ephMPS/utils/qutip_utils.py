@@ -1,9 +1,4 @@
 # -*- coding: utf-8 -*-
-"""
-This module is not included in any program that is designed to "run" during tests as
-`qutip` is not included in `requirements.txt`. The module is only used for offline
-verification and generating standard files.
-"""
 
 from itertools import product
 

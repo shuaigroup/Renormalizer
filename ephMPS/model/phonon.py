@@ -41,7 +41,6 @@ class Phonon(object):
             trial_phonon = cls.simple_phonon(omega, displacement, pdim)
             evecs = trial_phonon.get_displacement_evecs()
             gs = evecs[:, 0]
-            # all positive or all negative
             assert all_positive_or_all_negative(gs)
             if 0.9999 < gs[:len(gs) // 2].sum() / gs.sum():
                 # too many levels

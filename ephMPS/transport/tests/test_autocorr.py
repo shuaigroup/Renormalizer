@@ -4,11 +4,12 @@ import os
 
 import pytest
 import numpy as np
+import qutip
 
 from ephMPS.model import Phonon, Mol, MolList
 from ephMPS.transport.autocorr import TransportAutoCorr
 from ephMPS.utils import Quantity, CompressConfig
-from ephMPS.transport.tests import cur_dir
+from ephMPS.utils.qutip_utils import get_clist, get_blist, get_hamiltonian, get_qnidx
 
 
 @pytest.mark.parametrize(
@@ -33,21 +34,6 @@ def test_autocorr(insteps, atol):
 
 
 def get_exact_autocorr(mol_list, temperature, time_series):
-    try:
-        autocorr = _get_exact_autocorr(mol_list, temperature, time_series)
-    except ImportError:
-        autocorr = None
-    fname = os.path.join(cur_dir, 'autocorr.npz')
-    if autocorr is None:
-        return np.load(fname)['autocorr']
-    else:
-        np.savez(fname, autocorr=autocorr)
-        return autocorr
-
-
-def _get_exact_autocorr(mol_list, temperature, time_series):
-    from ephMPS.utils.qutip_utils import get_clist, get_blist, get_hamiltonian, get_qnidx
-    import qutip
 
     nsites = len(mol_list)
     J = mol_list.j_constant.as_au()

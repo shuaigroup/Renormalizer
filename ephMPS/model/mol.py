@@ -40,7 +40,7 @@ def create_heatbath(heatbath_energy, method="ohmic") -> List[Phonon]:
     return [Phonon.simplest_phonon(Quantity(omega), Quantity(displacement), hartree=True) for omega, displacement in zip(omegas, displacements)]
 
 
-class Mol(object):
+class Mol:
     """
     molecule class property:
     local excitation energy :  elocalex
@@ -49,9 +49,10 @@ class Mol(object):
     phonon information : ph
     """
 
-    def __init__(self, elocalex, ph_list: List[Phonon], dipole=None, heatbath=False):
+    def __init__(self, elocalex, ph_list: List[Phonon], dipole=None, heatbath=False, tunnel=Quantity(0)):
         self.elocalex = elocalex.as_au()
         self.dipole = dipole
+        self.tunnel = tunnel.as_au()
         if len(ph_list) == 0:
             raise ValueError("No phonon mode in phonon list")
         self.dmrg_phs = [ph for ph in ph_list if not ph.hartree]
@@ -93,6 +94,10 @@ class Mol(object):
     @property
     def phs(self):
         return self.dmrg_phs + self.hartree_phs
+
+    @property
+    def sbm(self):
+        return self.tunnel != 0
 
     def to_dict(self):
         info_dict = OrderedDict()
