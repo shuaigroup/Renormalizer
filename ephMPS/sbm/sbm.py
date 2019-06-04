@@ -5,6 +5,7 @@ import logging
 import numpy as np
 from ephMPS.mps import Mpo, Mps
 from ephMPS.utils import TdMpsJob, Quantity, CompressConfig
+from ephMPS.utils.utils import cast_float
 
 
 logger = logging.getLogger(__name__)
@@ -37,8 +38,18 @@ class SBM(TdMpsJob):
         return init_mps
 
     def evolve_single_step(self, evolve_dt):
-        return self.latest_mps.evolve(self.h_mpo, evolve_dt)
+        new_mps = self.latest_mps.evolve(self.h_mpo, evolve_dt)
+        logger.info(f"spin: {1 - 2 * new_mps.e_occupations[0]}")
+        return new_mps
 
     @property
     def spin(self):
         return np.array([1 - 2 * mps.e_occupations[0] for mps in self.tdmps_list])
+
+    def get_dump_dict(self):
+        dump_dict = dict()
+        dump_dict["mol list"] = self.mol_list.to_dict()
+        dump_dict["tempearture"] = self.temperature.as_au()
+        dump_dict["time series"] = self.evolve_times
+        dump_dict["spin"] = cast_float(self.spin)
+        return dump_dict

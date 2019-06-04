@@ -1,4 +1,4 @@
 # -*- coding: utf-8 -*-
 
-from ephMPS.sbm.lib import SpectralDensityFunction
+from ephMPS.sbm.lib import SpectralDensityFunction, param2mollist
 from ephMPS.sbm.sbm import SBM

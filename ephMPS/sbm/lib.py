@@ -7,6 +7,7 @@ import scipy
 import scipy.special
 import scipy.optimize
 
+from ephMPS.model import Phonon, Mol, MolList
 from ephMPS.utils import Quantity
 
 
@@ -152,3 +153,15 @@ class SpectralDensityFunction:
                         np.exp(-(np.subtract.outer(x, omega_value) / sigma) ** 2 / 2.))
 
         return x, y_c, y_d
+
+
+def param2mollist(alpha: float, raw_delta: Quantity, raw_omega_c: Quantity, n_phonons: int):
+    sdf = SpectralDensityFunction(alpha, raw_omega_c)
+
+    delta, omega_c = sdf.adiabatic_renormalization(raw_delta, 5)
+
+    omega_list, displacement_list = sdf.trapz(n_phonons, 0.0, omega_c.as_au())
+
+    ph_list = [Phonon.simplest_phonon(o, d) for o,d in zip(omega_list, displacement_list)]
+    mol = Mol(Quantity(0), ph_list, tunnel=delta)
+    return MolList([mol], None)
