@@ -21,8 +21,7 @@ from ephMPS.mps.matrix import (
     concatenate,
     zeros,
     tensordot,
-    Matrix,
-    EmptyMatrixError)
+    Matrix)
 from ephMPS.utils import sizeof_fmt, CompressConfig
 
 logger = logging.getLogger(__name__)
@@ -388,8 +387,6 @@ class MatrixProduct:
 
         for idx in self.iter_idx_list(full=False):
             mt: Matrix = self[idx]
-            if mt.nearly_zero():
-                raise EmptyMatrixError
             if self.left:
                 mt = mt.l_combine()
             else:
@@ -566,11 +563,6 @@ class MatrixProduct:
             mt.sigmaqn = np.zeros(mt.pdim_prod, dtype=np.int)
         else:
             mt.sigmaqn = self._get_sigmaqn(idx)
-        # mol_list is None when using quasiboson
-        if self.mol_list is None or self.mol_list.scheme != 4:
-            if mt.nearly_zero():
-                pass
-                #raise EmptyMatrixError
         return mt
 
     @property

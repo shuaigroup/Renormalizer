@@ -234,23 +234,14 @@ def updatemps(vset, sset, qnset, compset, nexciton, Mmax, percent=0):
     return Matrix(ms), mpsdim, mpsqn, compmps
 
 
-def compressed_sum(mps_list, batchsize=5, ignore_empty=False):
+def compressed_sum(mps_list, batchsize=5):
     assert len(mps_list) != 0
     mps_queue = deque(mps_list)
     while len(mps_queue) != 1:
         term_to_sum = []
         for i in range(min(batchsize, len(mps_queue))):
             term_to_sum.append(mps_queue.popleft())
-        try:
-            s = _sum(term_to_sum)
-        except EmptyMatrixError:
-            if ignore_empty:
-                if len(mps_queue) == 0:
-                    return _sum(term_to_sum, compress=False)
-                else:
-                    continue
-            else:
-                raise
+        s = _sum(term_to_sum)
         mps_queue.append(s)
     return mps_queue[0]
 

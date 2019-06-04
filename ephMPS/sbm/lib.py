@@ -50,7 +50,7 @@ class SpectralDensityFunction:
             if np.allclose(re, re_old):
                 break
 
-        return Quantity(delta * re), Quantity(delta * re * p)
+        return delta_quan * re, Quantity(delta * re * p)
 
     def func(self, omega_value):
         """
@@ -116,8 +116,7 @@ class SpectralDensityFunction:
         dw = (x1 - x0) / float(nb)
         xlist = [x0 + i * dw for i in range(nb + 1)]
         omega_value = np.array([(xlist[i] + xlist[i + 1]) / 2. for i in range(nb)])
-        c_j2 = np.array([(self.func(xlist[i]) + self.func(xlist[i + 1])) / 2 for i in
-                         range(nb)]) * 2. / np.pi * omega_value * dw
+        c_j2 = np.array([(self.func(xlist[i]) + self.func(xlist[i + 1])) / 2 for i in range(nb)]) * 2. / np.pi * omega_value * dw
 
         return self.post_process(omega_value, c_j2, ifsort)
 
@@ -155,12 +154,10 @@ class SpectralDensityFunction:
         return x, y_c, y_d
 
 
-def param2mollist(alpha: float, raw_delta: Quantity, raw_omega_c: Quantity, n_phonons: int):
-    sdf = SpectralDensityFunction(alpha, raw_omega_c)
-
-    delta, omega_c = sdf.adiabatic_renormalization(raw_delta, 5)
-
-    omega_list, displacement_list = sdf.trapz(n_phonons, 0.0, omega_c.as_au())
+def param2mollist(alpha: float, raw_delta: Quantity, omega_c: Quantity, n_phonons: int):
+    sdf = SpectralDensityFunction(alpha, omega_c)
+    delta, max_omega = sdf.adiabatic_renormalization(raw_delta, 5)
+    omega_list, displacement_list = sdf.trapz(n_phonons, 0.0, max_omega.as_au())
 
     ph_list = [Phonon.simplest_phonon(o, d) for o,d in zip(omega_list, displacement_list)]
     mol = Mol(Quantity(0), ph_list, tunnel=delta)

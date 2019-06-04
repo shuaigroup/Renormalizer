@@ -6,7 +6,7 @@ import scipy
 from ephMPS.model import MolList
 from ephMPS.model.ephtable import EphTable
 from ephMPS.mps.backend import xp
-from ephMPS.mps.matrix import moveaxis, tensordot, ones
+from ephMPS.mps.matrix import moveaxis, tensordot, ones, EmptyMatrixError
 from ephMPS.mps.mp import MatrixProduct
 from ephMPS.utils import Quantity
 from ephMPS.utils.elementop import (
@@ -1108,12 +1108,16 @@ class Mpo(MatrixProduct):
             new_mps.canonicalise()
         return new_mps
 
-    def contract(self, mps):
+    def contract(self, mps, check_emtpy=False):
 
         """
         mapply->canonicalise->compress
         """
         new_mps = self.apply(mps)
+        if check_emtpy:
+            for mt in new_mps:
+                if mt.nearly_zero():
+                    raise EmptyMatrixError
         new_mps.canonicalise()
         new_mps.compress()
         return new_mps

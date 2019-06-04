@@ -627,12 +627,7 @@ class Mps(MatrixProduct):
         contract_compress_config.max_dims = np.array(self.bond_dims) + 4
         self.compress_config = contract_compress_config
         while len(termlist) < len(propagation_c):
-            try:
-                termlist.append(mpo.contract(termlist[-1]))
-            except EmptyMatrixError:
-                # empty states can be discarded
-                logger.warning(f"Discard empty states. Length of terms: {len(termlist)}")
-                break
+            termlist.append(mpo.contract(termlist[-1]))
         # bond dim can grow after adding
         for t in termlist:
             t.compress_config = orig_compress_config

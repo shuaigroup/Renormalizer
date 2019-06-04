@@ -3,12 +3,24 @@
 import pytest
 import numpy as np
 
-from ephMPS.sbm import SBM, param2mollist
+from ephMPS.model import Phonon, Mol
+from ephMPS.sbm import SBM, param2mollist, SpectralDensityFunction
 from ephMPS.utils import Quantity, CompressConfig, EvolveConfig
 from ephMPS.mps.tests.test_sbm import get_exact_zt
 
 
-# todo: test for SpectralDensityFunction
+def test_sdf():
+    alpha = 0.05
+    omega_c = Quantity(5)
+    sdf = SpectralDensityFunction(alpha, omega_c)
+    omega_list, displacement_list = sdf.trapz(200, 0.0, 50)
+
+    ph_list = [Phonon.simplest_phonon(o, d) for o,d in zip(omega_list, displacement_list)]
+    mol = Mol(Quantity(0), ph_list, tunnel=Quantity(1))
+    mol_reor = mol.reorganization_energy
+
+    assert mol_reor == pytest.approx(alpha * omega_c.as_au() / 2, abs=0.005)
+
 
 @pytest.mark.parametrize(
     "alpha",
