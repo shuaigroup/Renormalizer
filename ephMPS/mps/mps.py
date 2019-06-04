@@ -1297,10 +1297,11 @@ def transferMat(mps, mpsconj, domain, siteidx):
     return val
 
 
-class BraKetPair(object):
+class BraKetPair:
     def __init__(self, bra_mps, ket_mps, mpo=None):
-        self.bra_mps = bra_mps
-        self.ket_mps = ket_mps
+        # do copy so that clear_memory won't clear previous braket
+        self.bra_mps = bra_mps.copy()
+        self.ket_mps = ket_mps.copy()
         self.mpo = mpo
         # for adaptive evolution. This is not an ideal solution but
         # I can't find anyone better. Bra and Ket have the same step size during
@@ -1317,6 +1318,10 @@ class BraKetPair(object):
             dot * np.conjugate(self.bra_mps.coeff)
             * self.ket_mps.coeff
         )
+
+    def clear_memory(self):
+        self.bra_mps.clear_memory()
+        self.ket_mps.clear_memory()
 
     def __str__(self):
         if np.iscomplexobj(self.ft):

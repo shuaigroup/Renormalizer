@@ -33,8 +33,6 @@ lazy evaluation has no diff with eager evaluation.
 * benchmark framework (could be useful in detecting bugs)
 * switch from p&c to tdvp more cleverly (only when p&c becomes slower? 
 or when highest bond order hits expectated bond order?)
-* refactor utils/tdmps. make economic mode the default. user should input what they
-what to be calculated. Need to ask jjr what is the best prctice. And start from chk file?
 * license of libs
 * different backend for original mctdh_tdvp is buggy
 * include the tdh part with backend

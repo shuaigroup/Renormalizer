@@ -32,7 +32,6 @@ if __name__ == "__main__":
     ct = TransportAutoCorr(mol_list, temperature=temperature, ievolve_config=ievolve_config,
                            compress_config=compress_config, evolve_config=evolve_config, dump_dir=param["output dir"],
                            job_name=param["fname"] + "_autocorr")
-    ct.economic_mode = True
     # ct.latest_mps.compress_add = True
     ct.evolve(param.get("evolve dt"), param.get("nsteps"), param.get("evolve time"))
     # ct.evolve(evolve_dt, 100, param.get("evolve time"))
