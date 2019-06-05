@@ -55,7 +55,6 @@ class ThermalProp(TdMpsJob):
             new_mpdm = self.evolve_exact(old_mpdm, evolve_dt)
         else:
             new_mpdm = self.evolve_prop(old_mpdm, evolve_dt)
-        old_mpdm.clear_memory()
         new_energy = new_mpdm.expectation(self.h_mpo)
         self.energies.append(new_energy)
         logger.info(f"Energy: {new_energy}")

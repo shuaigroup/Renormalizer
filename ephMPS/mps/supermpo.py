@@ -28,20 +28,22 @@ class SuperLiouville(Mpo):
         pm_operators: List[Tuple[Mpo, Mpo]] = mp.mol_list.get_mpos("lindblad_pm", calc_lindblad_pm)
         applied_terms = []
         for b, b_dag in pm_operators:
-            try:
-                res = b.apply(mp).apply(b_dag)
-            except EmptyMatrixError:
-                # discard vacuum states
-                continue
-            applied_terms.append(res)
+            res = b.apply(mp).apply(b_dag)
+            for mt in res:
+                if mt.nearly_zero():
+                    # discard vacuum states
+                    break
+            else:
+                applied_terms.append(res)
+
         if len(applied_terms) == 0:
             assert mp.ph_occupations.sum() == 0
             return no_dissipation
-        summed_term = compressed_sum(applied_terms, ignore_empty=True)
+        summed_term = compressed_sum(applied_terms)
         bdb_operator: Mpo = mp.mol_list.get_mpos("lindblad_bdb", calc_lindblad_bdb)
         # any room for optimization? are there any simple relations between the two terms?
         try:
-            lindblad = summed_term - 0.5 * (bdb_operator.contract(mp) + mp.contract(bdb_operator))
+            lindblad = summed_term - 0.5 * (bdb_operator.contract(mp, True) + mp.contract(bdb_operator, True))
         except EmptyMatrixError:
             lindblad = summed_term
         ret = no_dissipation + 1j * self.dissipation * lindblad

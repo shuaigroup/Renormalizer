@@ -30,7 +30,7 @@ def convert_to_au(num, unit):
     return num / au_ratio_dict[unit]
 
 
-class Quantity(object):
+class Quantity:
     def __init__(self, value, unit="a.u."):
         self.value = float(value)
         if unit not in allowed_units:
@@ -44,6 +44,10 @@ class Quantity(object):
 
     def as_au(self):
         return convert_to_au(self.value, self.unit)
+
+    def as_unit(self, unit):
+        v = self.as_au() * au_ratio_dict[unit]
+        return self.__class__(v, unit)
 
     # kelvin to beta  au^-1
     def to_beta(self):

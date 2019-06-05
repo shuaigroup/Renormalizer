@@ -36,7 +36,6 @@ if __name__ == "__main__":
         rdm=False,
     )
     # ct.stop_at_edge = True
-    ct.economic_mode = True
     # ct.memory_limit = 2 ** 30  # 1 GB
     # ct.memory_limit /= 10 # 100 MB
     ct.dump_dir = param["output dir"]

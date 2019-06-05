@@ -144,6 +144,14 @@ class CompressConfig:
             new.min_dims = self.min_dims.copy()
         return new
 
+    def __str__(self):
+        attrs = ["criteria", "threshold"]
+        lines = []
+        for attr in attrs:
+            attr_value = getattr(self, attr)
+            lines.append(f"\n{attr}: {attr_value}")
+        return "".join(lines)
+
 
 class OptimizeConfig:
     def __init__(self, procedure=None):
@@ -253,3 +261,11 @@ class EvolveConfig:
         new = self.__class__.__new__(self.__class__)
         new.__dict__ = self.__dict__.copy()
         return new
+
+    def __str__(self):
+        attrs = ["method", "adaptive", "evolve_dt", "adaptive_rtol", "d_energy"]
+        lines = []
+        for attr in attrs:
+            attr_value = getattr(self, attr)
+            lines.append(f"\n{attr}: {attr_value}")
+        return "".join(lines)

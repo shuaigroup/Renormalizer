@@ -627,12 +627,7 @@ class Mps(MatrixProduct):
         contract_compress_config.max_dims = np.array(self.bond_dims) + 4
         self.compress_config = contract_compress_config
         while len(termlist) < len(propagation_c):
-            try:
-                termlist.append(mpo.contract(termlist[-1]))
-            except EmptyMatrixError:
-                # empty states can be discarded
-                logger.warning(f"Discard empty states. Length of terms: {len(termlist)}")
-                break
+            termlist.append(mpo.contract(termlist[-1]))
         # bond dim can grow after adding
         for t in termlist:
             t.compress_config = orig_compress_config
@@ -661,9 +656,9 @@ class Mps(MatrixProduct):
                     # converged
                     if abs(config.evolve_dt - evolve_dt) / abs(evolve_dt) < 1e-5:
                         # equal evolve_dt
-                        if abs(energy1 - energy2) < (d_energy/10) and 1.5 < p:
+                        if abs(energy1 - energy2) < (d_energy/10) and 1.1 < p:
                             # a larger dt could be used
-                            config.evolve_dt *= 1.5
+                            config.evolve_dt *= min(p, 1.5)
                             logger.debug(
                                 f"evolution easily converged, new evolve_dt: {config.evolve_dt}"
                             )
@@ -1297,10 +1292,11 @@ def transferMat(mps, mpsconj, domain, siteidx):
     return val
 
 
-class BraKetPair(object):
+class BraKetPair:
     def __init__(self, bra_mps, ket_mps, mpo=None):
-        self.bra_mps = bra_mps
-        self.ket_mps = ket_mps
+        # do copy so that clear_memory won't clear previous braket
+        self.bra_mps = bra_mps.copy()
+        self.ket_mps = ket_mps.copy()
         self.mpo = mpo
         # for adaptive evolution. This is not an ideal solution but
         # I can't find anyone better. Bra and Ket have the same step size during
@@ -1317,6 +1313,10 @@ class BraKetPair(object):
             dot * np.conjugate(self.bra_mps.coeff)
             * self.ket_mps.coeff
         )
+
+    def clear_memory(self):
+        self.bra_mps.clear_memory()
+        self.ket_mps.clear_memory()
 
     def __str__(self):
         if np.iscomplexobj(self.ft):

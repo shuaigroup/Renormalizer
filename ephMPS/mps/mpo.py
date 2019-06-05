@@ -6,7 +6,7 @@ import scipy
 from ephMPS.model import MolList
 from ephMPS.model.ephtable import EphTable
 from ephMPS.mps.backend import xp
-from ephMPS.mps.matrix import moveaxis, tensordot, ones
+from ephMPS.mps.matrix import moveaxis, tensordot, ones, EmptyMatrixError
 from ephMPS.mps.mp import MatrixProduct
 from ephMPS.utils import Quantity
 from ephMPS.utils.elementop import (
@@ -22,6 +22,8 @@ logger = logging.getLogger(__name__)
 # the code is hard to understand...... need some closer look
 
 # todo: refactor scheme4, add QN and the 0 electron state!
+# the problem of the current scheme4 is that there are states (0 electron state) that the
+# scheme can not represent
 
 def base_convert(n, base):
     """
@@ -704,9 +706,9 @@ class Mpo(MatrixProduct):
                 mo[-1, :, :, 1] = eop[r"a^\dagger a"]
             else:
                 assert len(mol_list) == 1
-                mo[-1, :, :, 0] = 1/2 * eop["sigmaz"] * mol.elocalex + 1/2 * eop["sigmax"] * mol.tunnel
+                mo[-1, :, :, 0] = eop["sigmaz"] * mol.elocalex + eop["sigmax"] * mol.tunnel
                 mo[-1, :, :, -1] = eop["Iden"]
-                mo[-1, :, :, 1] = 1/2 * eop["sigmaz"]
+                mo[-1, :, :, 1] = eop["sigmaz"]
 
             # first column operator
             if imol != 0:
@@ -1106,12 +1108,16 @@ class Mpo(MatrixProduct):
             new_mps.canonicalise()
         return new_mps
 
-    def contract(self, mps):
+    def contract(self, mps, check_emtpy=False):
 
         """
         mapply->canonicalise->compress
         """
         new_mps = self.apply(mps)
+        if check_emtpy:
+            for mt in new_mps:
+                if mt.nearly_zero():
+                    raise EmptyMatrixError
         new_mps.canonicalise()
         new_mps.compress()
         return new_mps

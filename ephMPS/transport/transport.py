@@ -60,8 +60,6 @@ class ChargeTransport(TdMpsJob):
         self.j_arrays = []
         self.custom_dump_info = OrderedDict()
         self.stop_at_edge = stop_at_edge
-        # if set True, only save full information of the latest mps and discard previous ones
-        self.economic_mode = False
 
     @property
     def mol_num(self):
@@ -154,8 +152,6 @@ class ChargeTransport(TdMpsJob):
             % (new_energy, self.latest_energy_ratio * 100)
         )
         logger.info(f"r_square: {new_mps.r_square}")
-        if self.economic_mode:
-            old_mps.clear_memory()
         if self.reduced_density_matrices:
             logger.debug("Calculating reduced density matrix")
             self.reduced_density_matrices.append(new_mps.calc_reduced_density_matrix())

@@ -35,12 +35,13 @@ def predict_time(real_times, nsteps):
 
 class TdMpsJob(object):
     def __init__(self, evolve_config: EvolveConfig = None, dump_dir: str=None, job_name: str=None):
-        logger.info("Creating TDMPS job.")
+        logger.info(f"Creating TDMPS job. dump_dir: {dump_dir}. job_name: {job_name}")
         if evolve_config is None:
             logger.debug("using default evolve config")
             self.evolve_config: EvolveConfig = EvolveConfig()
         else:
             self.evolve_config: EvolveConfig = evolve_config
+        logger.info(f"evolve_config: {self.evolve_config}")
         logger.info("Step 0/?. Preparing MPS in the initial state.")
         self.evolve_times = [0]
         # output abstract of current mps every x steps
@@ -59,6 +60,7 @@ class TdMpsJob(object):
     def evolve(self, evolve_dt=None, nsteps=None, evolve_time=None):
         # deal with arguments
         if nsteps is not None and evolve_time is not None:
+            logger.debug("calculate evolve_dt according to the rest two args")
             evolve_dt = evolve_time / nsteps
         if evolve_dt is None:
             # adaptive mode
@@ -112,6 +114,10 @@ class TdMpsJob(object):
                 self.evolve_config.evolve_dt = new_dt
             new_real_time = datetime.now()
             time_cost = new_real_time - real_times[-1]
+            if hasattr(self.tdmps_list[-1], "clear_memory"):
+                self.tdmps_list[-1].clear_memory()
+            else:
+                logger.debug(f"No clear memory method for type {type(self.tdmps_list[-1])} found")
             self.tdmps_list.append(new_mps)
             if self.info_interval is not None and i % self.info_interval == 0:
                 mps_abstract = str(new_mps)

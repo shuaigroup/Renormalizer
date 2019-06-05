@@ -104,6 +104,7 @@ class Mol:
         info_dict["elocalex"] = self.elocalex
         info_dict["dipole"] = self.dipole
         info_dict["reorganization energy in a.u."] = self.reorganization_energy
+        info_dict["tunnel"] = self.tunnel
         info_dict["dmrg phonon modes"] = self.n_dmrg_phs
         if self.n_hartree_phs:
             info_dict["dmrg phonon modes"] = self.n_dmrg_phs
