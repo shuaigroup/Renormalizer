@@ -656,9 +656,9 @@ class Mps(MatrixProduct):
                     # converged
                     if abs(config.evolve_dt - evolve_dt) / abs(evolve_dt) < 1e-5:
                         # equal evolve_dt
-                        if abs(energy1 - energy2) < (d_energy/10) and 1.5 < p:
+                        if abs(energy1 - energy2) < (d_energy/10) and 1.1 < p:
                             # a larger dt could be used
-                            config.evolve_dt *= 1.5
+                            config.evolve_dt *= min(p, 1.5)
                             logger.debug(
                                 f"evolution easily converged, new evolve_dt: {config.evolve_dt}"
                             )

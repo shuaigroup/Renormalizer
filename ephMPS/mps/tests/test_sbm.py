@@ -83,11 +83,11 @@ def get_exact_operator(mol):
     sigmaz = qutip.tensor([qutip.sigmaz()] + ph_iden)
     delta = mol.tunnel
     epsilon = mol.elocalex
-    terms = [-delta / 2 * sigmax, epsilon / 2 * sigmaz]
+    terms = [-delta * sigmax, epsilon * sigmaz]
     for i, ph in enumerate(mol.dmrg_phs):
         g = ph.coupling_constant
         terms.append(ph.omega[0] * blist[i].dag() * blist[i])
-        terms.append(ph.omega[0] * g * sigmaz / 2 * (blist[i].dag() + blist[i]))
+        terms.append(ph.omega[0] * g * sigmaz * (blist[i].dag() + blist[i]))
     H = sum(terms)
 
     return H, sigmax, sigmaz

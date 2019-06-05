@@ -35,12 +35,13 @@ def predict_time(real_times, nsteps):
 
 class TdMpsJob(object):
     def __init__(self, evolve_config: EvolveConfig = None, dump_dir: str=None, job_name: str=None):
-        logger.info("Creating TDMPS job.")
+        logger.info(f"Creating TDMPS job. dump_dir: {dump_dir}. job_name: {job_name}")
         if evolve_config is None:
             logger.debug("using default evolve config")
             self.evolve_config: EvolveConfig = EvolveConfig()
         else:
             self.evolve_config: EvolveConfig = evolve_config
+        logger.info(f"evolve_config: {self.evolve_config}")
         logger.info("Step 0/?. Preparing MPS in the initial state.")
         self.evolve_times = [0]
         # output abstract of current mps every x steps

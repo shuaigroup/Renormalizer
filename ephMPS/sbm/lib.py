@@ -154,9 +154,9 @@ class SpectralDensityFunction:
         return x, y_c, y_d
 
 
-def param2mollist(alpha: float, raw_delta: Quantity, omega_c: Quantity, n_phonons: int):
+def param2mollist(alpha: float, raw_delta: Quantity, omega_c: Quantity, renormalization_p: float, n_phonons: int):
     sdf = SpectralDensityFunction(alpha, omega_c)
-    delta, max_omega = sdf.adiabatic_renormalization(raw_delta, 5)
+    delta, max_omega = sdf.adiabatic_renormalization(raw_delta, renormalization_p)
     omega_list, displacement_list = sdf.trapz(n_phonons, 0.0, max_omega.as_au())
 
     ph_list = [Phonon.simplest_phonon(o, d) for o,d in zip(omega_list, displacement_list)]

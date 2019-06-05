@@ -706,9 +706,9 @@ class Mpo(MatrixProduct):
                 mo[-1, :, :, 1] = eop[r"a^\dagger a"]
             else:
                 assert len(mol_list) == 1
-                mo[-1, :, :, 0] = 1/2 * eop["sigmaz"] * mol.elocalex + 1/2 * eop["sigmax"] * mol.tunnel
+                mo[-1, :, :, 0] = eop["sigmaz"] * mol.elocalex + eop["sigmax"] * mol.tunnel
                 mo[-1, :, :, -1] = eop["Iden"]
-                mo[-1, :, :, 1] = 1/2 * eop["sigmaz"]
+                mo[-1, :, :, 1] = eop["sigmaz"]
 
             # first column operator
             if imol != 0:
