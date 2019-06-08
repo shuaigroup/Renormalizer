@@ -28,7 +28,7 @@ class CompressConfig:
         criteria: CompressCriteria = CompressCriteria.threshold,
         threshold: float = 1e-3,
         bonddim_distri: BondDimDistri = BondDimDistri.uniform,
-        max_bonddim: int = None,
+        max_bonddim: int = 32,
     ):
         # two sets of criteria here: threshold and max_bondorder
         # `criteria` is to determine which to use
@@ -37,7 +37,8 @@ class CompressConfig:
         self.threshold = threshold
         self.bond_dim_distribution: BondDimDistri = bonddim_distri
         self.bond_dim_max_value = max_bonddim
-        self.bond_dim_min_value = 20
+        # not in arg list, but still useful in some cases
+        self.bond_dim_min_value = 1
         # the length should be len(mps) + 1, the terminals are also counted. This is for accordance with mps.bond_dims
         self.max_dims: np.ndarray = None
         self.min_dims: np.ndarray = None
@@ -60,6 +61,7 @@ class CompressConfig:
         if self.criteria is CompressCriteria.threshold:
             raise ValueError("compress config is using threshold criteria")
         if max_value is None:
+            assert self.bond_dim_max_value is not None
             max_value = self.bond_dim_max_value
         else:
             self.bond_dim_max_value = max_value
@@ -214,11 +216,6 @@ class EvolveConfig:
                 raise ValueError(
                     "Memory limit is only valid in propagation and compression method."
                 )
-
-        if self.method != EvolveMethod.prop_and_compress:
-            self.max_bond_dim = 32
-        else:
-            self.max_bond_dim = None
 
         # tdvp also requires prop and compress
         self._adaptive = None

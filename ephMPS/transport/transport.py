@@ -42,7 +42,6 @@ class ChargeTransport(TdMpsJob):
         self.mol_list: MolList = mol_list
         self.temperature = temperature
         self.mpo = None
-        self.mpo_e_lbound = None  # the ground energy of the hamiltonian
         self.init_electron = init_electron
         self.dissipation = dissipation
         if compress_config is None:
@@ -125,7 +124,6 @@ class ChargeTransport(TdMpsJob):
         self.mpo = Mpo(self.mol_list, offset=energy)
         logger.info(f"mpo bond dims: {self.mpo.bond_dims}")
         logger.info(f"mpo physical dims: {self.mpo.pbond_list}")
-        self.mpo_e_lbound = solver.find_lowest_energy(self.mpo, 1, 20, with_hartree=False)
         if self.dissipation != 0:
             self.mpo = SuperLiouville(self.mpo, self.dissipation)
         init_mp.canonicalise()
@@ -147,10 +145,6 @@ class ChargeTransport(TdMpsJob):
         new_mps = old_mps.evolve(mpo, evolve_dt)
         new_energy = new_mps.expectation(self.mpo)
         self.energies.append(new_energy)
-        logger.info(
-            "Energy of the new mps: %g, %.5f%% of initial energy preserved"
-            % (new_energy, self.latest_energy_ratio * 100)
-        )
         logger.info(f"r_square: {new_mps.r_square}")
         if self.reduced_density_matrices:
             logger.debug("Calculating reduced density matrix")
@@ -169,7 +163,6 @@ class ChargeTransport(TdMpsJob):
         dump_dict["total steps"] = len(self.tdmps_list)
         dump_dict["total time"] = self.evolve_times[-1]
         dump_dict["diffusion"] = self.latest_mps.r_square / self.evolve_times[-1]
-        dump_dict["delta energy (%)"] = (self.latest_energy_ratio - 1) * 100
         dump_dict["thresholds"] = [tdmps.threshold for tdmps in self.tdmps_list]
         dump_dict["other info"] = self.custom_dump_info
         # make np array json serializable
@@ -192,12 +185,6 @@ class ChargeTransport(TdMpsJob):
     @property
     def latest_energy(self):
         return float(self.energies[-1])
-
-    @property
-    def latest_energy_ratio(self):
-        return (self.latest_energy - self.mpo_e_lbound) / (
-            self.initial_energy - self.mpo_e_lbound
-        )
 
     @property
     def r_square_array(self):

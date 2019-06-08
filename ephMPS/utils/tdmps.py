@@ -73,12 +73,14 @@ class TdMpsJob(object):
             target_steps = "?"
             nsteps = int(1e10)  # insanely large
         else:
-            if nsteps is None:
+            if nsteps is None and evolve_time is None:
                 raise ValueError(
-                    "Must provide number of steps"
+                    "Must provide number of steps or evolve time"
                 )
             if evolve_time is None:
                 evolve_time = nsteps * evolve_dt
+            elif nsteps is None:
+                nsteps = evolve_time // evolve_dt
             else:
                 logger.warning(
                     "Both nsteps and evolve_time is defined for evolution. The result may be unexpected."

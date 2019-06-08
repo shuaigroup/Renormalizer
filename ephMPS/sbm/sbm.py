@@ -12,7 +12,7 @@ from ephMPS.utils.utils import cast_float
 logger = logging.getLogger(__name__)
 
 
-class SBM(TdMpsJob):
+class SpinBosonModel(TdMpsJob):
 
     def __init__(self, mol_list: MolList, temperature: Quantity, compress_config=None, evolve_config=None, dump_dir=None, job_name=None):
         self.mol_list = mol_list

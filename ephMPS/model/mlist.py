@@ -9,6 +9,7 @@ import numpy as np
 from ephMPS.model.ephtable import EphTable
 from ephMPS.model.mol import Mol, Phonon
 from ephMPS.utils import Quantity
+from ephMPS.utils.utils import cast_float
 
 
 class MolList:
@@ -151,7 +152,10 @@ class MolList:
         info_dict["mol num"] = len(self)
         info_dict["electron phonon table"] = self.ephtable
         info_dict["mol list"] = [mol.to_dict() for mol in self.mol_list]
-        info_dict["J constant"] = self.j_constant.as_au()
+        if self.j_constant is None:
+            info_dict["J matrix"] = cast_float(self.j_matrix)
+        else:
+            info_dict["J constant"] = self.j_constant.as_au()
         return info_dict
 
 
