@@ -25,3 +25,5 @@ def switch_to_64backend():
         yield
         backend.running = False
         backend.use_32bits()
+    else:
+        yield

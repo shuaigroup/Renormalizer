@@ -4,7 +4,7 @@ import pytest
 import numpy as np
 
 from ephMPS.model import Phonon, Mol
-from ephMPS.sbm import SBM, param2mollist, SpectralDensityFunction
+from ephMPS.sbm import SpinBosonModel, param2mollist, SpectralDensityFunction
 from ephMPS.utils import Quantity, CompressConfig, EvolveConfig
 from ephMPS.mps.tests.test_sbm import get_exact_zt
 
@@ -38,7 +38,7 @@ def test_sbm_zt(alpha):
 
     compress_config = CompressConfig(threshold=1e-4)
     evolve_config = EvolveConfig(adaptive=True, evolve_dt=0.1)
-    sbm = SBM(mol_list, Quantity(0), compress_config=compress_config, evolve_config=evolve_config)
+    sbm = SpinBosonModel(mol_list, Quantity(0), compress_config=compress_config, evolve_config=evolve_config)
     sbm.evolve(evolve_time=20)
     spin1 = sbm.sigma_z
     spin2 = get_exact_zt(mol_list[0], sbm.evolve_times)

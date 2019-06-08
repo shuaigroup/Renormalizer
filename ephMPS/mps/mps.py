@@ -593,9 +593,7 @@ class Mps(MatrixProduct):
             # use this custom compress method for tdvp
             orig_compress_config: CompressConfig = self.compress_config.copy()
             self.compress_config.criteria = CompressCriteria.fixed
-            self.compress_config.set_bonddim(
-                len(self) + 1, self.evolve_config.max_bond_dim
-            )
+            self.compress_config.set_bonddim(len(self) + 1)
             config = self.evolve_config.copy()
             config.adaptive = True
             config.evolve_dt = evolve_dt
@@ -845,6 +843,7 @@ class Mps(MatrixProduct):
 
     @adaptive_tdvp
     def _evolve_dmrg_tdvp_ps(self, mpo, evolve_dt) -> "Mps":
+        # PhysRevB.94.165116
         # TDVP projector splitting
         mps = self.to_complex()  # make a copy
         mps_conj = mps.conj()  # another copy, so 3x memory is used.
