@@ -110,41 +110,6 @@ def assert_iterable_equal(i1, i2):
 
 @pytest.mark.parametrize(
     "mol_num, j_constant_value, elocalex_value, ph_info, ph_phys_dim, evolve_dt, nsteps",
-    ([5, 0.8, 3.87e-3, [[1345.6738910804488, 16.274571056529368]], 4, 2, 25],),
-)
-def test_memory_limit(
-    mol_num, j_constant_value, elocalex_value, ph_info, ph_phys_dim, evolve_dt, nsteps
-):
-    ph_list = [
-        Phonon.simple_phonon(
-            Quantity(omega, "cm^{-1}"), Quantity(displacement, "a.u."), ph_phys_dim
-        )
-        for omega, displacement in ph_info
-    ]
-    mol_list = MolList(
-        [Mol(Quantity(elocalex_value, "a.u."), ph_list)] * mol_num,
-        Quantity(j_constant_value, "eV"),
-        scheme=3
-    )
-    compress_config = CompressConfig(
-        threshold=1e-5
-    )  # make the size of the MPS grow fast
-    evolve_config = EvolveConfig(memory_limit="100 KB")
-    ct1 = ChargeTransport(
-        mol_list,
-        evolve_config=evolve_config,
-        compress_config=compress_config,
-        stop_at_edge=False,
-    )
-    ct1.evolve(evolve_dt, nsteps)
-    ct2 = ChargeTransport(mol_list, compress_config=compress_config, stop_at_edge=False)
-    ct2.evolve(evolve_dt, nsteps)
-    assert ct1.is_similar(ct2, rtol=1e-2)
-    assert ct1.latest_mps.peak_bytes < ct2.latest_mps.peak_bytes
-
-
-@pytest.mark.parametrize(
-    "mol_num, j_constant_value, elocalex_value, ph_info, ph_phys_dim, evolve_dt, nsteps",
     ([5, 0.8, 3.87e-3, [[1345.6738910804488, 16.274571056529368]], 4, 2, 50],),
 )
 def test_compress_add(

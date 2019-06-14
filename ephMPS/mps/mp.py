@@ -61,9 +61,6 @@ class MatrixProduct:
         # mpo also need to be compressed sometimes
         self.compress_config: CompressConfig = CompressConfig()
 
-        # maximum size during the whole life time of the mp
-        self.peak_bytes: int = 0
-
         # QN related
         self.use_dummy_qn: bool = False
         # self.use_dummy_qn = True
@@ -357,7 +354,6 @@ class MatrixProduct:
         new_mps.qn = [qn1 + qn2 for qn1, qn2 in zip(self.qn, new_mps.qn)]
         new_mps.qn[0] = [0]
         new_mps.qn[-1] = [0]
-        new_mps.set_peak_bytes()
         if self.compress_add:
             new_mps.canonicalise()
             new_mps.compress()
@@ -376,6 +372,8 @@ class MatrixProduct:
         returns:
              truncated MPS
         """
+        # used for logging at exit
+        sz_before = self.total_bytes
         if not self.is_mpo:
             # ensure mps is canonicalised. This is time consuming.
             # to disable this, run python as `python -O`
@@ -409,6 +407,8 @@ class MatrixProduct:
             )
 
         self._switch_direction()
+        compress_ratio = sz_before / self.total_bytes
+        logger.debug(f"size before/after compress: {sizeof_fmt(sz_before)}/{sizeof_fmt(self.total_bytes)}, ratio: {compress_ratio}")
         return self
 
     def canonicalise(self, stop_idx: int=None):
@@ -568,22 +568,6 @@ class MatrixProduct:
     @property
     def total_bytes(self):
         return sum(array.nbytes for array in self)
-
-    def set_peak_bytes(self, new_bytes=None):
-        if new_bytes is None:
-            new_bytes = self.total_bytes
-        if new_bytes < self.peak_bytes:
-            return
-        self.peak_bytes = new_bytes
-        want_to_debug_memory = False
-        if not want_to_debug_memory:
-            return
-        stack = "".join(traceback.format_stack(inspect.stack()[2].frame, 1)).replace(
-            "\n", " "
-        )
-        logger.debug(
-            "Set peak bytes to {}. Called from: {}".format(sizeof_fmt(new_bytes), stack)
-        )
 
     def _get_sigmaqn(self, idx):
         raise NotImplementedError

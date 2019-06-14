@@ -201,21 +201,12 @@ class EvolveConfig:
     def __init__(
         self,
         method: EvolveMethod = EvolveMethod.prop_and_compress,
-        memory_limit=None,
         adaptive=False,
         evolve_dt=1e-1,
         adaptive_rtol=5e-4,
     ):
 
         self.method = method
-        if self.method == EvolveMethod.prop_and_compress:
-            # note this memory limit is for single mps and not the whole program
-            self.memory_limit: float = parse_memory_limit(memory_limit)
-        else:
-            if memory_limit is not None:
-                raise ValueError(
-                    "Memory limit is only valid in propagation and compression method."
-                )
 
         # tdvp also requires prop and compress
         self._adaptive = None

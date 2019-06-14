@@ -576,10 +576,6 @@ class Mps(MatrixProduct):
 
         if self.evolve_config.method == EvolveMethod.prop_and_compress:
             new_mps = self._evolve_dmrg_prop_and_compress(mpo, evolve_dt)
-            if self.evolve_config.memory_limit < new_mps.peak_bytes:
-                logger.info("switch to fixed bond order compression to save memory")
-                new_mps.compress_config.criteria = CompressCriteria.fixed
-                new_mps.compress_config.set_runtime_bondorder(new_mps.bond_dims)
             return new_mps
 
         # currently qn is not working fot tdvp
@@ -1164,10 +1160,9 @@ class Mps(MatrixProduct):
         e_occupations_str = ", ".join(
             ["%.2f" % number for number in self.e_occupations]
         )
-        template_str = "current size: {}, peak size: {}, Matrix product bond dim:{}, electron occupations: {}"
+        template_str = "current size: {}, Matrix product bond dim:{}, electron occupations: {}"
         return template_str.format(
             sizeof_fmt(self.total_bytes),
-            sizeof_fmt(self.peak_bytes),
             self.bond_dims,
             e_occupations_str,
         )
