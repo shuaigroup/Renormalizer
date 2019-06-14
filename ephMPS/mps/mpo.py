@@ -14,7 +14,7 @@ from ephMPS.utils.elementop import (
     construct_e_op_dict,
     ph_op_matrix,
 )
-from ephMPS.utils.utils import roundrobin
+from ephMPS.utils.utils import roundrobin, sizeof_fmt
 
 logger = logging.getLogger(__name__)
 

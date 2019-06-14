@@ -372,6 +372,8 @@ class MatrixProduct:
         returns:
              truncated MPS
         """
+        # used for logging at exit
+        sz_before = self.total_bytes
         if not self.is_mpo:
             # ensure mps is canonicalised. This is time consuming.
             # to disable this, run python as `python -O`
@@ -405,6 +407,8 @@ class MatrixProduct:
             )
 
         self._switch_direction()
+        compress_ratio = sz_before / self.total_bytes
+        logger.debug(f"size before/after compress: {sizeof_fmt(sz_before)}/{sizeof_fmt(self.total_bytes)}, ratio: {compress_ratio}")
         return self
 
     def canonicalise(self, stop_idx: int=None):
