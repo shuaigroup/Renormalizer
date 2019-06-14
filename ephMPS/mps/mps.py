@@ -708,6 +708,8 @@ class Mps(MatrixProduct):
 
         new_mps = self.metacopy()
 
+        cmf_rk_steps = []
+
         for imps in range(len(mps)):
             ltensor = environ.GetLR(
                 "L", imps - 1, mps, mps_conj, mpo, itensor=ltensor, method="System"
@@ -716,11 +718,16 @@ class Mps(MatrixProduct):
                 "R", imps + 1, mps, mps_conj, mpo, itensor=rtensor, method="Enviro"
             )
             # density matrix
-            S = transferMat(mps, mps_conj, "R", imps + 1)
+            S = transferMat(mps, mps_conj, "R", imps + 1).asnumpy()
 
-            epsilon = 1e-10
+            epsilon = 1e-8
             w, u = scipy.linalg.eigh(S)
-            w = w + epsilon * np.exp(-w / epsilon)
+            try:
+                w = w + epsilon * np.exp(-w / epsilon)
+            except FloatingPointError:
+                logger.warning(f"eigenvalue of density matrix contains negative value")
+                w -= 2 * w.min()
+                w = w + epsilon * np.exp(-w / epsilon)
             # print
             # "sum w=", np.sum(w)
             # S  = u.dot(np.diag(w)).dot(np.conj(u.T))
@@ -740,11 +747,15 @@ class Mps(MatrixProduct):
             )
             # print
             # "CMF steps:", len(sol.t)
+            cmf_rk_steps.append(len(sol.t))
             new_mps[imps] = sol.y[:, -1].reshape(shape)
+            new_mps[imps].check_lortho()
             # print
             # "orthogonal1", np.allclose(np.tensordot(MPSnew[imps],
             #                                        np.conj(MPSnew[imps]), axes=([0, 1], [0, 1])),
             #                           np.diag(np.ones(MPSnew[imps].shape[2])))
+        steps_stat = stats.describe(cmf_rk_steps)
+        logger.debug(f"TDVP-MCTDH CMF steps: {steps_stat}")
 
         return new_mps
 
@@ -837,7 +848,7 @@ class Mps(MatrixProduct):
 
         steps_stat = stats.describe(cmf_rk_steps)
         logger.debug(f"TDVP-MCTDH CMF steps: {steps_stat}")
-        new_mps.evolve_config.stat = steps_stat
+        # new_mps.evolve_config.stat = steps_stat
 
         return new_mps
 
@@ -1278,7 +1289,7 @@ def transferMat(mps, mpsconj, domain, siteidx):
     """
     calculate the transfer matrix from the left hand or the right hand
     """
-    val = np.ones([1, 1])
+    val = ones([1, 1])
     if domain == "R":
         for imps in range(len(mps) - 1, siteidx - 1, -1):
             val = tensordot(mpsconj[imps], val, axes=(2, 0))
