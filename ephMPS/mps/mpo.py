@@ -1099,7 +1099,6 @@ class Mpo(MatrixProduct):
         ]
         new_mps.qntot += self.qntot
         new_mps.move_qnidx(orig_idx)
-        new_mps.set_peak_bytes()
         # concerns about whether to canonicalise:
         # * canonicalise helps to keep mps in a truly canonicalised state
         # * canonicalise comes with a cost. Unnecessary canonicalise (for example in P&C evolution and

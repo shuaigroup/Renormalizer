@@ -97,7 +97,6 @@ class MpDmBase(Mps, Mpo):
             np.add.outer(np.array(qn_o), np.array(qn_m)).ravel().tolist()
             for qn_o, qn_m in zip(self.qn, qn)
         ]
-        new_mpdm.set_peak_bytes()
         if canonicalise:
             new_mpdm.canonicalise()
         return new_mpdm
