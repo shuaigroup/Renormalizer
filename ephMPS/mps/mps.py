@@ -61,11 +61,8 @@ def adaptive_tdvp(fun):
     def f(self: "Mps", mpo, evolve_dt):
         if not self.evolve_config.adaptive:
             return fun(self, mpo, evolve_dt)
-        if evolve_dt < 0:
-            raise NotImplementedError("adaptive tdvp with negative evolve dt not implemented")
         config = self.evolve_config
-        # requires exactly divisible
-        assert evolve_dt % config.evolve_dt == 0
+        config.check_valid_dt(evolve_dt)
         accumulated_dt = 0
         # use 2 descriptors to decide accept or not: angle and energy
         mps = None  # the mps after config.evolve_dt
@@ -73,9 +70,9 @@ def adaptive_tdvp(fun):
         start_energy = start.expectation(mpo)
         while True:
             logger.debug(f"adaptive dt: {config.evolve_dt}")
-            mps_half1 = fun(start, mpo, config.evolve_dt / 2)
+            mps_half1 = fun(start, mpo, config.evolve_dt / 2)._dmrg_normalize()
             e_half1 = mps_half1.expectation(mpo)
-            if 5e-4 < abs(e_half1 - start_energy):
+            if config.d_energy / 2 < abs(e_half1 - start_energy):
                 # not converged
                 logger.debug(
                     f"energy not converged in the first sub-step. start energy: {start_energy}, new energy: {e_half1}"
@@ -83,9 +80,9 @@ def adaptive_tdvp(fun):
                 config.evolve_dt /= 2
                 mps = mps_half1
                 continue
-            mps_half2 = fun(mps_half1, mpo, config.evolve_dt / 2)
+            mps_half2 = fun(mps_half1, mpo, config.evolve_dt / 2)._dmrg_normalize()
             e_half2 = mps_half2.expectation(mpo)
-            if 1e-3 < abs(e_half2 - start_energy):
+            if config.d_energy < abs(e_half2 - start_energy):
                 # not converged
                 logger.debug(
                     f"energy not converged in the second sub-step. start energy: {start_energy}, new energy: {e_half2}"
@@ -94,7 +91,7 @@ def adaptive_tdvp(fun):
                 mps = mps_half1
                 continue
             if mps is None:
-                mps = fun(start, mpo, config.evolve_dt)
+                mps = fun(start, mpo, config.evolve_dt)._dmrg_normalize()
             angle = mps.angle(mps_half2)
             logger.debug(
                 f"Adaptive TDVP. angle: {angle}, start_energy: {start_energy}, e_half1: {e_half1}, e_half2: {e_half2}"
@@ -114,7 +111,7 @@ def adaptive_tdvp(fun):
                 # not converged
                 config.evolve_dt /= 2
                 logger.debug(f"evolution not converged, angle: {angle}")
-                if config.evolve_dt / (evolve_dt - accumulated_dt) < 1e-2:
+                if abs(config.evolve_dt) / abs(evolve_dt - accumulated_dt) < 1e-2:
                     raise RuntimeError("too many sub-steps required in a single step")
                 mps = mps_half1
         if 0.99999 < angle < 1.00001:
@@ -533,6 +530,9 @@ class Mps(MatrixProduct):
             _ = getattr(self, prop)
         self.clear()
 
+    def _dmrg_normalize(self):
+        return self.scale(1.0 / self.dmrg_norm, inplace=True)
+
     @invalidate_cache_decorator
     def normalize(self, norm=None):
         # real time propagation: dmrg should be normalized, tdh should be normalized, coefficient is not changed,
@@ -541,7 +541,7 @@ class Mps(MatrixProduct):
         # applied by a operator then normalize: dmrg should be normalized,
         #   tdh should be normalized, coefficient is set to the length
         # these two cases should set `norm` equals to corresponding value
-        self.scale(1.0 / self.dmrg_norm, inplace=True)
+        self._dmrg_normalize()
         if norm is None:
             mflib.normalize(self.wfns, self.wfns[-1])
         else:
@@ -576,12 +576,6 @@ class Mps(MatrixProduct):
         if self.evolve_config.method == EvolveMethod.prop_and_compress:
             new_mps = self._evolve_dmrg_prop_and_compress(mpo, evolve_dt)
             return new_mps
-
-        # currently qn is not working fot tdvp
-        # if not self.use_dummy_qn:
-        #     logger.debug("using dummy qn")
-        #     self.use_dummy_qn = True
-        #     self.clear_qn()
 
         if self.evolve_config.should_adjust_bond_dim:
             logger.debug("adjusting bond order")
@@ -625,19 +619,15 @@ class Mps(MatrixProduct):
         for t in termlist:
             t.compress_config = orig_compress_config
         if config.adaptive:
-            if np.iscomplex(evolve_dt) and not np.iscomplex(config.evolve_dt):
-                raise ValueError("evolve config dt is not imaginary")
-            if (np.iscomplex(evolve_dt) and evolve_dt.imag * config.evolve_dt.imag < 0) or \
-                (not np.iscomplex(evolve_dt) and evolve_dt * config.evolve_dt < 0):
-                raise ValueError("evolve into wrong direction")
+            config.check_valid_dt(evolve_dt)
             while True:
                 scaled_termlist = []
                 for idx, term in enumerate(termlist):
                     scale = (-1.0j * config.evolve_dt) ** idx * propagation_c[idx]
                     scaled_termlist.append(term.scale(scale))
                 del term
-                new_mps1 = compressed_sum(scaled_termlist[:-1]).normalize(None)
-                new_mps2 = compressed_sum([new_mps1, scaled_termlist[-1]]).normalize(None)
+                new_mps1 = compressed_sum(scaled_termlist[:-1])._dmrg_normalize()
+                new_mps2 = compressed_sum([new_mps1, scaled_termlist[-1]])._dmrg_normalize()
                 angle = new_mps1.angle(new_mps2)
                 energy1 = self.expectation(mpo)
                 energy2 = new_mps1.expectation(mpo)

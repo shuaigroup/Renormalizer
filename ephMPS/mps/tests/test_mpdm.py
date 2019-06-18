@@ -52,8 +52,6 @@ def test_mpdm_full(nmols, phonon_freq):
         (EvolveMethod.tdvp_ps, False),
 ))
 def test_thermal_prop(mol_list, etot_std, occ_std, nsteps, evolve_method, use_rk, rtol):
-    if evolve_method is EvolveMethod.tdvp_ps and nsteps is None:
-        pytest.skip("adaptive tdvp for imaginary time not implemented")
     init_mps = MpDm.max_entangled_ex(mol_list)
     mpo = Mpo(mol_list)
     beta = Quantity(298, "K").to_beta()

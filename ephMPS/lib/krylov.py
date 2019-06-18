@@ -32,6 +32,7 @@ def expm_krylov(Afunc, dt, vstart):
     """
 
     # normalize starting vector
+    vstart = xp.asarray(vstart)
     nrmv = xp.linalg.norm(vstart)
     assert nrmv > 0
     vstart = vstart / nrmv
@@ -57,7 +58,7 @@ def expm_krylov(Afunc, dt, vstart):
             logger.warning(f'beta[{j}] ~= 0 encountered during Lanczos iteration.')
             return _expm_krylov(alpha[:j+1], beta[:j], V[:j+1, :].T, nrmv, dt)
 
-        if 4 < j and j % 5 == 0:
+        if 3 < j and j % 2 == 0:
             new_res = _expm_krylov(alpha[:j+1], beta[:j], V[:j+1].T, nrmv, dt)
             if res is not None and xp.allclose(res, new_res):
                 return new_res
