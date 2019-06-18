@@ -485,8 +485,7 @@ class MatrixProduct:
             # no need to care about negative because no `abs` will be done
             negative = False
         else:
-            if isinstance(val, complex):
-                val = val.real
+            val = val.real
             negative = val < 0
             val = abs(val)
         # Note matrices are read-only
