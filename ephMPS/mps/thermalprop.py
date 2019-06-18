@@ -57,7 +57,7 @@ class ThermalProp(TdMpsJob):
             new_mpdm = self.evolve_prop(old_mpdm, evolve_dt)
         new_energy = new_mpdm.expectation(self.h_mpo)
         self.energies.append(new_energy)
-        logger.info(f"Energy: {new_energy}")
+        logger.info(f"Energy: {new_energy}, total electron: {new_mpdm.e_occupations.sum()}")
         return new_mpdm
 
     def evolve(self, evolve_dt=None, nsteps=None, evolve_time=None):

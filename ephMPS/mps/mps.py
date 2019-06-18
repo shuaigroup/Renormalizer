@@ -1,7 +1,7 @@
 # -*- encoding: utf-8 -*-
 
 import logging
-import functools
+from functools import wraps
 from typing import Union
 
 import numpy as np
@@ -11,15 +11,14 @@ from cached_property import cached_property
 
 
 from ephMPS.model import MolList
-from ephMPS.lib import solve_ivp
+from ephMPS.lib import solve_ivp, expm_krylov
 from ephMPS.mps import svd_qn
 from ephMPS.mps.matrix import (
     multi_tensor_contract,
     ones,
     tensordot,
     Matrix,
-    asnumpy,
-    EmptyMatrixError)
+    asnumpy,)
 from ephMPS.mps.backend import backend, xp
 from ephMPS.mps.lib import Environ, updatemps, compressed_sum
 from ephMPS.mps.mp import MatrixProduct
@@ -47,7 +46,7 @@ def _cached_property(func):
 
 
 def invalidate_cache_decorator(f):
-    @functools.wraps(f)
+    @wraps(f)
     def wrapper(self, *args, **kwargs):
         ret = f(self, *args, **kwargs)
         assert isinstance(ret, self.__class__)
@@ -58,7 +57,7 @@ def invalidate_cache_decorator(f):
 
 
 def adaptive_tdvp(fun):
-    @functools.wraps(fun)
+    @wraps(fun)
     def f(self: "Mps", mpo, evolve_dt):
         if not self.evolve_config.adaptive:
             return fun(self, mpo, evolve_dt)
@@ -579,10 +578,10 @@ class Mps(MatrixProduct):
             return new_mps
 
         # currently qn is not working fot tdvp
-        if not self.use_dummy_qn:
-            logger.debug("using dummy qn")
-            self.use_dummy_qn = True
-            self.clear_qn()
+        # if not self.use_dummy_qn:
+        #     logger.debug("using dummy qn")
+        #     self.use_dummy_qn = True
+        #     self.clear_qn()
 
         if self.evolve_config.should_adjust_bond_dim:
             logger.debug("adjusting bond order")
@@ -690,6 +689,16 @@ class Mps(MatrixProduct):
         if self.is_right_canon:
             assert self.check_right_canonical()
             self.canonicalise()
+
+        # a workaround for https://github.com/scipy/scipy/issues/10164
+        imag_time = np.iscomplex(evolve_dt)
+        if imag_time:
+            evolve_dt = -evolve_dt.imag
+            # used in calculating derivatives
+            coef = -1
+        else:
+            coef = 1j
+
         # qn for this method has not been implemented
         self.use_dummy_qn = True
         self.clear_qn()
@@ -729,7 +738,7 @@ class Mps(MatrixProduct):
 
             hop = hop_factory(ltensor, rtensor, mpo[imps], len(shape))
 
-            func = integrand_func_factory(shape, hop, imps == len(mps) - 1, S_inv)
+            func = integrand_func_factory(shape, hop, imps == len(mps) - 1, S_inv, coef)
 
             sol = solve_ivp(
                 func, (0, evolve_dt), mps[imps].ravel().array, method="RK45"
@@ -750,6 +759,15 @@ class Mps(MatrixProduct):
         # JCP 148, 124105 (2018)
         # JCP 149, 044119 (2018)
 
+        # a workaround for https://github.com/scipy/scipy/issues/10164
+        imag_time = np.iscomplex(evolve_dt)
+        if imag_time:
+            evolve_dt = -evolve_dt.imag
+            # used in calculating derivatives
+            coef = -1
+        else:
+            coef = 1j
+
         if self.is_left_canon:
             assert self.check_left_canonical()
             self.canonicalise()
@@ -768,7 +786,10 @@ class Mps(MatrixProduct):
         rtensor = ones((1, 1, 1))
 
         new_mps = mps.copy()
+
+        # statistics for debug output
         cmf_rk_steps = []
+
         for imps in range(len(mps)):
             shape = list(mps[imps].shape)
 
@@ -796,36 +817,22 @@ class Mps(MatrixProduct):
             if imps != len(mps) - 1:
                 mps[imps + 1] = tensordot(svt, mps[imps + 1], axes=(-1, 0))
 
-            # density matrix
-            S = s * s
-            # print
-            # "sum density matrix", np.sum(S)
-
             S_inv = xp.diag(1.0 / s)
 
             hop = hop_factory(ltensor, rtensor, mpo[imps], len(shape))
 
-            func = integrand_func_factory(shape, hop, imps == len(mps) - 1, S_inv)
+            func = integrand_func_factory(shape, hop, imps == len(mps) - 1, S_inv, coef)
 
             sol = solve_ivp(
                 func, (0, evolve_dt), mps[imps].ravel().array, method="RK45"
             )
             cmf_rk_steps.append(len(sol.t))
             ms = sol.y[:, -1].reshape(shape)
-            # check for othorgonal
-            # e = np.tensordot(ms, ms, axes=((0, 1), (0, 1)))
-            # print(np.allclose(np.eye(e.shape[0]), e))
 
             if imps == len(mps) - 1:
-                # print
-                # "s0", imps, s[0]
                 new_mps[imps] = ms * s[0]
             else:
                 new_mps[imps] = ms
-
-                # print "orthogonal1", np.allclose(np.tensordot(MPSnew[imps],
-                #    np.conj(MPSnew[imps]), axes=([0,1],[0,1])),
-                #    np.diag(np.ones(MPSnew[imps].shape[2])))
 
         mps._switch_direction()
         new_mps._switch_direction()
@@ -850,7 +857,18 @@ class Mps(MatrixProduct):
         environ.construct(mps, mps_conj, mpo, "L")
         environ.construct(mps, mps_conj, mpo, "R")
 
+        # a workaround for https://github.com/scipy/scipy/issues/10164
+        imag_time = np.iscomplex(evolve_dt)
+        if imag_time:
+            evolve_dt = -evolve_dt.imag
+            # used in calculating derivatives
+            coef = -1
+        else:
+            coef = 1j
+
+        # statistics for debug output
         cmf_rk_steps = []
+        USE_RK = self.evolve_config.tdvp_ps_rk4
         # sweep for 2 rounds
         for i in range(2):
             for imps in mps.iter_idx_list(full=True):
@@ -875,14 +893,21 @@ class Mps(MatrixProduct):
                     HC = multi_tensor_contract(path, l_array, ms, r_array)
                     return HC
 
-                def func(t, y):
-                    return hop(y.reshape(shape)).ravel() / 1.0j
+                if USE_RK:
+                    def func(t, y):
+                        return hop(y.reshape(shape)).ravel() / coef
+                    sol = solve_ivp(
+                        func, (0, evolve_dt / 2.0), mps[imps].ravel().array, method="RK45"
+                    )
+                    cmf_rk_steps.append(len(sol.t))
+                    mps_t = sol.y[:, -1]
+                else:
+                    # Can't use the same func because here H should be Hermitian
+                    def func(y):
+                        return hop(y.reshape(shape)).ravel()
+                    mps_t = expm_krylov(func, (evolve_dt / 2) / coef, mps[imps].ravel().array)
+                mps_t = mps_t.reshape(shape)
 
-                sol = solve_ivp(
-                    func, (0, evolve_dt / 2.0), mps[imps].ravel().array, method="RK45"
-                )
-                cmf_rk_steps.append(len(sol.t))
-                mps_t = sol.y[:, -1].reshape(shape)
                 qnbigl, qnbigr = mps._get_big_qn(imps)
                 u, qnlset, v, qnrset = svd_qn.Csvd(
                     asnumpy(mps_t),
@@ -908,16 +933,22 @@ class Mps(MatrixProduct):
                     # reverse update u site
                     shape_u = u.shape
 
-                    def func_u(t, y):
-                        return hop_svt(y.reshape(shape_u)).ravel() / 1.0j
-
-                    sol_u = solve_ivp(
-                        func_u, (0, -evolve_dt / 2), u.ravel(), method="RK45"
-                    )
-                    cmf_rk_steps.append(len(sol_u.t))
+                    if USE_RK:
+                        def func_u(t, y):
+                            return hop_svt(y.reshape(shape_u)).ravel() / coef
+                        sol_u = solve_ivp(
+                            func_u, (0, -evolve_dt / 2), u.ravel(), method="RK45"
+                        )
+                        cmf_rk_steps.append(len(sol_u.t))
+                        mps_t = sol_u.y[:, -1]
+                    else:
+                        def func_u(y):
+                            return hop_svt(y.reshape(shape_u)).ravel()
+                        mps_t = expm_krylov(func_u, (-evolve_dt / 2) / coef, u.ravel())
+                    mps_t = mps_t.reshape(shape_u)
                     mps[imps - 1] = tensordot(
                         mps[imps - 1].array,
-                        sol_u.y[:, -1].reshape(shape_u),
+                        mps_t,
                         axes=(-1, 0),
                     )
                     mps_conj[imps - 1] = mps[imps - 1].conj()
@@ -935,15 +966,21 @@ class Mps(MatrixProduct):
                     # reverse update svt site
                     shape_svt = vt.shape
 
-                    def func_svt(t, y):
-                        return hop_svt(y.reshape(shape_svt)).ravel() / 1.0j
-
-                    sol_svt = solve_ivp(
-                        func_svt, (0, -evolve_dt / 2), vt.ravel(), method="RK45"
-                    )
-                    cmf_rk_steps.append(len(sol_svt.t))
+                    if USE_RK:
+                        def func_svt(t, y):
+                            return hop_svt(y.reshape(shape_svt)).ravel() / coef
+                        sol_svt = solve_ivp(
+                            func_svt, (0, -evolve_dt / 2), vt.ravel(), method="RK45"
+                        )
+                        cmf_rk_steps.append(len(sol_svt.t))
+                        mps_t = sol_svt.y[:, -1]
+                    else:
+                        def func_svt(y):
+                            return hop_svt(y.reshape(shape_svt)).ravel()
+                        mps_t = expm_krylov(func_svt, (-evolve_dt / 2) / coef, vt.ravel())
+                    mps_t = mps_t.reshape(shape_svt)
                     mps[imps + 1] = tensordot(
-                        sol_svt.y[:, -1].reshape(shape_svt),
+                        mps_t,
                         mps[imps + 1].array,
                         axes=(1, 0),
                     )
@@ -954,9 +991,10 @@ class Mps(MatrixProduct):
                     mps_conj[imps] = mps[imps].conj()
             mps._switch_direction()
 
-        steps_stat = stats.describe(cmf_rk_steps)
-        logger.debug(f"TDVP-PS CMF steps: {steps_stat}")
-        mps.evolve_config.stat = steps_stat
+        if USE_RK:
+            steps_stat = stats.describe(cmf_rk_steps)
+            logger.debug(f"TDVP-PS CMF steps: {steps_stat}")
+            mps.evolve_config.stat = steps_stat
 
         return mps
 
@@ -1252,7 +1290,7 @@ def hop_factory(
     return hop
 
 
-def integrand_func_factory(shape, hop, islast, S_inv: xp.ndarray):
+def integrand_func_factory(shape, hop, islast, S_inv: xp.ndarray, coef: complex):
     def func(t, y):
         y0 = y.reshape(shape)
         HC = hop(y0)
@@ -1264,7 +1302,7 @@ def integrand_func_factory(shape, hop, islast, S_inv: xp.ndarray):
             elif y0.ndim == 4:
                 HC = tensordot(proj, HC, axes=([3, 4, 5], [0, 1, 2]))
                 HC = tensordot(proj, HC, axes=([3, 4, 5], [0, 1, 2]))
-        return tensordot(HC, S_inv, axes=(-1, 0)).ravel() / 1.0j
+        return tensordot(HC, S_inv, axes=(-1, 0)).ravel() / coef
 
     return func
 

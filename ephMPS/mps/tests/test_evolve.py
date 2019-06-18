@@ -13,14 +13,15 @@ from ephMPS.mps.tests import cur_dir
 
 
 @pytest.mark.parametrize(
-    "method, evolve_dt, rtol",
+    "method, evolve_dt, use_rk, rtol",
     (
         # [EvolveMethod.tdvp_mctdh, 2.0, 1e-2],
-        [EvolveMethod.tdvp_mctdh_new, 2.0, 1e-2],
-        [EvolveMethod.tdvp_ps, 15.0, 1e-2],
+        [EvolveMethod.tdvp_mctdh_new, 2.0, None, 1e-2],
+        [EvolveMethod.tdvp_ps, 15.0, True, 1e-2],
+        [EvolveMethod.tdvp_ps, 15.0, False, 1e-2],
     ),
 )
-def test_ZeroTcorr_TDVP(method, evolve_dt, rtol):
+def test_ZeroTcorr_TDVP(method, evolve_dt, use_rk, rtol):
     # procedure = [[50, 0], [50, 0], [50, 0]]
     procedure = [[20, 0], [20, 0], [20, 0]]
     optimize_config = OptimizeConfig(procedure=procedure)
@@ -28,6 +29,8 @@ def test_ZeroTcorr_TDVP(method, evolve_dt, rtol):
     mol_list = parameter.mol_list
 
     evolve_config = EvolveConfig(method, evolve_dt=evolve_dt, adaptive=False)
+    evolve_config.tdvp_ps_rk4 = use_rk
+
     zero_t_corr = SpectraTwoWayPropZeroT(
         mol_list,
         "abs",
@@ -60,17 +63,19 @@ def test_ZeroTcorr_TDVP(method, evolve_dt, rtol):
 # plt.savefig("a.png")
 
 @pytest.mark.parametrize(
-    "method, nsteps, evolve_dt, rtol, interval",
+    "method, nsteps, evolve_dt, use_rk, rtol, interval",
     (
-       [EvolveMethod.tdvp_mctdh_new, 85, 4, 1e-2, 2],
-       [EvolveMethod.tdvp_ps, 30, 30, 1e-2, 1],
+       [EvolveMethod.tdvp_mctdh_new, 85, 4, None, 1e-2, 2],
+       [EvolveMethod.tdvp_ps, 30, 30, True, 1e-2, 1],
+       [EvolveMethod.tdvp_ps, 30, 30, False, 1e-2, 1],
     ),
 )
-def test_finite_t_spectra_emi_TDVP(method, nsteps, evolve_dt, rtol, interval):
+def test_finite_t_spectra_emi_TDVP(method, nsteps, evolve_dt, use_rk, rtol, interval):
     mol_list = parameter.mol_list
     temperature = Quantity(298, "K")
     offset = Quantity(2.28614053, "ev")
     evolve_config = EvolveConfig(method)
+    evolve_config.tdvp_ps_rk4 = use_rk
     finite_t_corr = SpectraFiniteT(
         mol_list, "emi", temperature, 50, offset, evolve_config=evolve_config
     )
@@ -89,31 +94,3 @@ def test_finite_t_spectra_emi_TDVP(method, nsteps, evolve_dt, rtol, interval):
     # plt.plot(finite_t_corr.autocorr)
     # plt.plot(std)
     # plt.show()
-
-
-"""
-import logging
-from ephMPS.tests.parameter import mol_list
-from ephMPS.mps import Mps, Mpo
-from ephMPS.utils import RungeKutta, log
-
-if __name__ == "__main__":
-    #log.set_stream_level(logging.INFO)
-    mps = Mps.gs(mol_list, False)
-    mpo = Mpo(mol_list, scheme=3)
-    # create electron
-    mps = Mpo.onsite(mol_list, r"a^\dagger", mol_idx_set={0}).apply(mps).normalize(1.0)
-    rk_config = RungeKutta("RKF45")
-    evolve_config = EvolveConfig(rk_config=rk_config)
-    mps.evolve_config = evolve_config
-
-    occ = [mps.e_occupations]
-    total_time = 0
-    while total_time < 1000:
-        total_time += mps.evolve_config.rk_config.evolve_dt
-        mps = mps.evolve(mpo, mps.evolve_config.rk_config.evolve_dt)
-        occ.append(mps.e_occupations)
-    from matplotlib import pyplot as plt
-    plt.plot(np.array(occ))
-    plt.show()
-"""

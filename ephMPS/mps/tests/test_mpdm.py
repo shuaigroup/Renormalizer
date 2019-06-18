@@ -6,7 +6,7 @@ import pytest
 from ephMPS.mps import Mpo, MpDm, MpDmFull, ThermalProp
 from ephMPS.model import MolList, Mol, Phonon
 from ephMPS.tests import parameter
-from ephMPS.utils import Quantity, EvolveConfig
+from ephMPS.utils import Quantity, EvolveConfig, EvolveMethod
 
 
 @pytest.mark.parametrize("nmols", (2, 3, 4))
@@ -46,18 +46,26 @@ def test_mpdm_full(nmols, phonon_freq):
         100,
         None,
 ))
-def test_thermal_prop(mol_list, etot_std, occ_std, nsteps, rtol):
+@pytest.mark.parametrize("evolve_method, use_rk", (
+        (EvolveMethod.prop_and_compress, None),
+        (EvolveMethod.tdvp_ps, True),
+        (EvolveMethod.tdvp_ps, False),
+))
+def test_thermal_prop(mol_list, etot_std, occ_std, nsteps, evolve_method, use_rk, rtol):
+    if evolve_method is EvolveMethod.tdvp_ps and nsteps is None:
+        pytest.skip("adaptive tdvp for imaginary time not implemented")
     init_mps = MpDm.max_entangled_ex(mol_list)
     mpo = Mpo(mol_list)
     beta = Quantity(298, "K").to_beta()
     evolve_time = beta / 2j
     if nsteps is None:
-        evolve_config = EvolveConfig(adaptive=True, evolve_dt=beta/100j)
-        tp = ThermalProp(init_mps, mpo, evolve_config=evolve_config)
-        tp.evolve(evolve_time=evolve_time)
+        evolve_config = EvolveConfig(evolve_method, adaptive=True, evolve_dt=beta/100j)
     else:
-        tp = ThermalProp(init_mps, mpo)
-        tp.evolve(None, nsteps=nsteps, evolve_time=evolve_time)
+        evolve_config = EvolveConfig(evolve_method)
+    if evolve_method is EvolveMethod.tdvp_ps:
+        evolve_config.tdvp_ps_rk4 = use_rk
+    tp = ThermalProp(init_mps, mpo, evolve_config=evolve_config)
+    tp.evolve(nsteps=nsteps, evolve_time=evolve_time)
     mps = tp.latest_mps
     MPO, HAM, Etot, A_el = mps.construct_hybrid_Ham(mpo, debug=True)
 

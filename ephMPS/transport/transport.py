@@ -47,7 +47,7 @@ class ChargeTransport(TdMpsJob):
         if compress_config is None:
             self.compress_config: CompressConfig = CompressConfig()
         else:
-            self.compress_config = compress_config
+            self.compress_config: CompressConfig = compress_config
         super(ChargeTransport, self).__init__(evolve_config)
         self.energies = [self.tdmps_list[0].expectation(self.mpo)]
         self.reduced_density_matrices = []
@@ -128,8 +128,9 @@ class ChargeTransport(TdMpsJob):
             self.mpo = SuperLiouville(self.mpo, self.dissipation)
         init_mp.canonicalise()
         init_mp.evolve_config = self.evolve_config
-        # init the compress config if not using threshold
-        if self.compress_config.criteria is not CompressCriteria.threshold:
+        # init the compress config if not using threshold and not set
+        if self.compress_config.criteria is not CompressCriteria.threshold\
+                and self.compress_config.max_dims is None:
             self.compress_config.set_bonddim(length=len(init_mp) + 1)
         init_mp.compress_config = self.compress_config
         # init_mp.invalidate_cache()
