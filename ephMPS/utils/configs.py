@@ -211,7 +211,7 @@ class EvolveConfig:
         # tdvp also requires prop and compress
         self._adaptive = None
         self.adaptive = adaptive
-        self.evolve_dt = evolve_dt  # a wild guess
+        self.evolve_dt: complex = evolve_dt  # a wild guess
         self.adaptive_rtol = adaptive_rtol
         self.d_energy = 1e-3
 
@@ -246,6 +246,17 @@ class EvolveConfig:
             return True
         else:
             return False
+
+    def check_valid_dt(self, evolve_dt: complex):
+        info_str = f"in config: {self.evolve_dt}, in arg: {evolve_dt}"
+        if np.iscomplex(evolve_dt) ^ np.iscomplex(self.evolve_dt):
+            raise ValueError("real and imag not compatible. " + info_str)
+        if (np.iscomplex(evolve_dt) and evolve_dt.imag * self.evolve_dt.imag < 0) or \
+                (not np.iscomplex(evolve_dt) and evolve_dt * self.evolve_dt < 0):
+            raise ValueError("evolve into wrong direction. " + info_str)
+        div = abs(evolve_dt) / abs(self.evolve_dt)
+        if not np.isclose(div, round(div)):
+            raise ValueError("requires exactly divisible. " + info_str)
 
     def copy(self):
         new = self.__class__.__new__(self.__class__)
