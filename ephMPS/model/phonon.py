@@ -30,7 +30,7 @@ class Phonon(object):
     """
 
     @classmethod
-    def simplest_phonon(cls, omega, displacement, temperature: Quantity = Quantity(0), hartree: bool=False, lam: bool=False):
+    def simplest_phonon(cls, omega, displacement, temperature: Quantity = Quantity(0), hartree: bool=False, lam: bool=False, max_pdim=128):
         # detect pdim automatically
         if lam:
             # the second argument is lambda
@@ -57,7 +57,8 @@ class Phonon(object):
             else:
                 break
         t = temperature.as_au()
-        pdim = max(pdim, min(int(t * 10 / omega.as_au()), 128))
+        thermal_dim = int(t * 10 / omega.as_au())
+        pdim = min(pdim + thermal_dim, max_pdim)
         return cls.simple_phonon(omega, displacement, pdim ,hartree)
 
 

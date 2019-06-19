@@ -68,7 +68,7 @@ class CompressConfig:
         if max_value is None:
             raise ValueError("max value is not set")
         if self.bond_dim_distribution is BondDimDistri.uniform:
-            self.max_dims = np.full(length, max_value)
+            self.max_dims = np.full(length, max_value, dtype=int)
         else:
             half_length = length // 2
             x = np.arange(- half_length, - half_length + length)
@@ -76,7 +76,7 @@ class CompressConfig:
             seq = list(max_value * np.exp(-(x / sigma) ** 2))
             self.max_dims = np.int64(seq)
             assert not (self.max_dims == 0).any()
-        self.min_dims = np.full(length, self.bond_dim_min_value)
+        self.min_dims = np.full(length, self.bond_dim_min_value, dtype=int)
 
     def set_runtime_bondorder(self, bond_dims):
         self.bond_dim_distribution = BondDimDistri.runtime
@@ -264,7 +264,7 @@ class EvolveConfig:
         return new
 
     def __str__(self):
-        attrs = ["method", "adaptive", "evolve_dt", "adaptive_rtol", "d_energy"]
+        attrs = ["method", "adaptive", "evolve_dt", "adaptive_rtol", "d_energy", "tdvp_ps_rk4"]
         lines = []
         for attr in attrs:
             attr_value = getattr(self, attr)
