@@ -65,6 +65,8 @@ def adaptive_tdvp(fun):
         config.check_valid_dt(evolve_dt)
         accumulated_dt = 0
         # use 2 descriptors to decide accept or not: angle and energy
+        # the logic about energy is different with that of prop&compress
+        # because here we can compare energies early and restart early
         mps = None  # the mps after config.evolve_dt
         start = self  # the mps to start with
         start_energy = start.expectation(mpo)
@@ -589,6 +591,7 @@ class Mps(MatrixProduct):
             self.compress_add = True
             new_mps = self._evolve_dmrg_prop_and_compress(mpo, evolve_dt, config)
             self.compress_config = new_mps.compress_config = orig_compress_config
+            backend.free_all_blocks()
             return new_mps
 
         method_mapping = {
@@ -1288,10 +1291,10 @@ def integrand_func_factory(shape, hop, islast, S_inv: xp.ndarray, coef: complex)
             proj = projector(y0)
             if y0.ndim == 3:
                 HC = tensordot(proj, HC, axes=([2, 3], [0, 1]))
-                HC = tensordot(proj, HC, axes=([2, 3], [0, 1]))
+                #HC = tensordot(proj, HC, axes=([2, 3], [0, 1]))
             elif y0.ndim == 4:
                 HC = tensordot(proj, HC, axes=([3, 4, 5], [0, 1, 2]))
-                HC = tensordot(proj, HC, axes=([3, 4, 5], [0, 1, 2]))
+                #HC = tensordot(proj, HC, axes=([3, 4, 5], [0, 1, 2]))
         return tensordot(HC, S_inv, axes=(-1, 0)).ravel() / coef
 
     return func

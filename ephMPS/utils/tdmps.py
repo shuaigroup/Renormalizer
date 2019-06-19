@@ -48,7 +48,10 @@ class TdMpsJob(object):
         self.info_interval = 1
         self.dump_dir = dump_dir
         self.job_name = job_name
-        self.tdmps_list = [self.init_mps()]
+        mps = self.init_mps()
+        if mps is None:
+            raise ValueError("init_mps should return an mps. Got None")
+        self.tdmps_list = [mps]
         logger.info("TDMPS job created.")
 
     def init_mps(self):

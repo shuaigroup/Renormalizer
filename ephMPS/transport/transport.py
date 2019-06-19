@@ -49,6 +49,7 @@ class ChargeTransport(TdMpsJob):
         else:
             self.compress_config: CompressConfig = compress_config
         super(ChargeTransport, self).__init__(evolve_config)
+        assert self.mpo is not None
         self.energies = [self.tdmps_list[0].expectation(self.mpo)]
         self.reduced_density_matrices = []
         if rdm:

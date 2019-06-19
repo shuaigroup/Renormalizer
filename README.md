@@ -27,15 +27,16 @@ a lot of memory.
 * should separate evolution to a different file? no. tdvp touches the core of the data structure.
 * lazy evaluation when mpo is applied on mps to save memory? Not useful. After `contract` canonicalise is performed,
 lazy evaluation has no diff with eager evaluation.
+* benchmark framework (could be useful in detecting bugs)？ No. Need to much maintenance. 
+Currently use `pytest --durations=0` should work well.
+* automatic switch from p&c to tdvp (only when p&c becomes slower? 
+or when highest bond order hits expectated bond order?). Fancy but not useful. The user should have this kind of
+control (by subclassing, etc.)
 
 ## todo
 * Choose a baseline for core mps test. Better with analytical result.
 * scheduler for CPU and GPU memory (CPU memory for small matrices and for doing SVD)
 * TDVP uses scipy.linalg.qr. Update to Csvd. Better performance and preserves qn info. (`ps` has been updated to qn version.)
 * investigate GPU usage fluctuation pattern and possibly optimize.
-* benchmark framework (could be useful in detecting bugs)
-* switch from p&c to tdvp more cleverly (only when p&c becomes slower? 
-or when highest bond order hits expectated bond order?)
 * license of libs
-* different backend for original mctdh_tdvp is buggy
 * include the tdh part with backend

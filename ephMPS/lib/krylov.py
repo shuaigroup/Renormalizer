@@ -38,17 +38,16 @@ def expm_krylov(Afunc, dt, vstart):
     vstart = vstart / nrmv
     # max iteration
     MAX_ITER = 50
-    numiter = len(vstart)
 
-    alpha = np.zeros(numiter)
-    beta  = np.zeros(numiter-1)
+    alpha = np.zeros(MAX_ITER)
+    beta  = np.zeros(MAX_ITER-1)
 
-    V = xp.zeros((numiter, len(vstart)), dtype=vstart.dtype)
+    V = xp.zeros((MAX_ITER, len(vstart)), dtype=vstart.dtype)
     V[0] = vstart
     res = None
 
-    for j in range(numiter-1):
-        if MAX_ITER < j:
+    for j in range(len(vstart) - 1):
+        if MAX_ITER == j:
             raise RuntimeError("krylov not converged")
         w = Afunc(V[j])
         alpha[j] = xp.vdot(w, V[j]).real
