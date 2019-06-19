@@ -48,6 +48,8 @@ def test_mpdm_full(nmols, phonon_freq):
 ))
 @pytest.mark.parametrize("evolve_method, use_rk", (
         (EvolveMethod.prop_and_compress, None),
+        # in principle should work, but in 32 bits is not numerically stable
+        # (EvolveMethod.tdvp_mctdh_new, None),
         (EvolveMethod.tdvp_ps, True),
         (EvolveMethod.tdvp_ps, False),
 ))

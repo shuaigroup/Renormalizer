@@ -764,10 +764,7 @@ class Mps(MatrixProduct):
         if self.is_left_canon:
             assert self.check_left_canonical()
             self.canonicalise()
-        # qn for this method has not been implemented
-        self.use_dummy_qn = True
-        self.clear_qn()
-        # xxx: uses 3x memory. Is it possible to only use 2x?
+
         mps = self.to_complex(inplace=True)
 
         # construct the environment matrix
@@ -778,7 +775,7 @@ class Mps(MatrixProduct):
         ltensor = ones((1, 1, 1))
         rtensor = ones((1, 1, 1))
 
-        new_mps = mps.copy()
+        new_mps = mps.metacopy()
 
         # statistics for debug output
         cmf_rk_steps = []
@@ -786,9 +783,18 @@ class Mps(MatrixProduct):
         for imps in range(len(mps)):
             shape = list(mps[imps].shape)
 
-            u, s, vt = scipy.linalg.svd(
-                mps[imps].reshape((-1, shape[-1])).asnumpy(), full_matrices=False
+            system = "L" if mps.left else "R"
+            qnbigl, qnbigr = mps._get_big_qn(imps)
+            u, s, qnlset, v, s, qnrset = svd_qn.Csvd(
+                mps[imps].asnumpy(),
+                qnbigl,
+                qnbigr,
+                mps.qntot,
+                system=system,
+                full_matrices=False,
             )
+            vt = v.T
+
             mps[imps] = u.reshape(shape[:-1] + [-1])
 
             ltensor = environ.GetLR(
@@ -809,6 +815,8 @@ class Mps(MatrixProduct):
 
             if imps != len(mps) - 1:
                 mps[imps + 1] = tensordot(svt, mps[imps + 1], axes=(-1, 0))
+                mps.qn[imps + 1] = qnlset
+                new_mps.qn[imps + 1] = qnlset.copy()
 
             S_inv = xp.diag(1.0 / s)
 
@@ -826,7 +834,6 @@ class Mps(MatrixProduct):
                 new_mps[imps] = ms * s[0]
             else:
                 new_mps[imps] = ms
-
         mps._switch_direction()
         new_mps._switch_direction()
         new_mps.canonicalise()
@@ -841,8 +848,13 @@ class Mps(MatrixProduct):
     def _evolve_dmrg_tdvp_ps(self, mpo, evolve_dt) -> "Mps":
         # PhysRevB.94.165116
         # TDVP projector splitting
-        mps = self.to_complex()  # make a copy
-        mps_conj = mps.conj()  # another copy, so 3x memory is used.
+        imag_time = np.iscomplex(evolve_dt)
+        if imag_time:
+            mps = self.copy()
+            mps_conj = mps
+        else:
+            mps = self.to_complex()
+            mps_conj = mps.conj()  # another copy, so 3x memory is used.
 
         # construct the environment matrix
         environ = Environ()
@@ -851,7 +863,6 @@ class Mps(MatrixProduct):
         environ.construct(mps, mps_conj, mpo, "R")
 
         # a workaround for https://github.com/scipy/scipy/issues/10164
-        imag_time = np.iscomplex(evolve_dt)
         if imag_time:
             evolve_dt = -evolve_dt.imag
             # used in calculating derivatives
@@ -1291,10 +1302,11 @@ def integrand_func_factory(shape, hop, islast, S_inv: xp.ndarray, coef: complex)
             proj = projector(y0)
             if y0.ndim == 3:
                 HC = tensordot(proj, HC, axes=([2, 3], [0, 1]))
-                #HC = tensordot(proj, HC, axes=([2, 3], [0, 1]))
+                # uncomment this might resolve some numerical problem
+                # HC = tensordot(proj, HC, axes=([2, 3], [0, 1]))
             elif y0.ndim == 4:
                 HC = tensordot(proj, HC, axes=([3, 4, 5], [0, 1, 2]))
-                #HC = tensordot(proj, HC, axes=([3, 4, 5], [0, 1, 2]))
+                # HC = tensordot(proj, HC, axes=([3, 4, 5], [0, 1, 2]))
         return tensordot(HC, S_inv, axes=(-1, 0)).ravel() / coef
 
     return func
