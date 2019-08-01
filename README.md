@@ -1,4 +1,4 @@
-This is a electron-phonon hamiltoninan MPS
+Renormalizer is a python package based on tensor network states for electron-phonon quantum dynamics.
 
 [![Build Status](https://travis-ci.org/jjren/ephMPS.svg?branch=wtli-develop)](https://travis-ci.org/jjren/ephMPS)
 
