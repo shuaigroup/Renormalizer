@@ -4,5 +4,5 @@ numpy==1.16.1
 cached_property==1.5.1
 h5py==2.9.0
 typing==3.6.6
-PyYAML==3.13
+PyYAML==5.1
 Cython==0.29.6
