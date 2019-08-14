@@ -1,0 +1,24 @@
+# Define all parameters used in the transport model
+
+# number of molecules
+mol num: 21
+
+# transfer integral
+j constant: [3.0e-2, a.u.]
+
+# phonon info
+
+#           omega, displacement
+ph modes: [[[6.128e-3, a.u.], [16.274571056529368, a.u.]]]
+
+# temperature
+temperature: [298, K]
+
+# total time of evolution in au
+evolve tim: 30000
+
+# output parameters
+output dir: ./
+fname: std
+comment: bla
+
