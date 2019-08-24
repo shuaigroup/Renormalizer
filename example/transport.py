@@ -9,9 +9,9 @@ import logging
 
 import yaml
 
-from ephMPS.model import load_from_dict
-from ephMPS.transport import ChargeTransport
-from ephMPS.utils import log, Quantity, EvolveConfig, EvolveMethod, RungeKutta, CompressConfig, BondDimDistri
+from renormalizer.model import load_from_dict
+from renormalizer.transport import ChargeTransport
+from renormalizer.utils import log, Quantity, EvolveConfig, EvolveMethod, RungeKutta, CompressConfig, BondDimDistri
 
 logger = logging.getLogger(__name__)
 

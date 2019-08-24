@@ -1,9 +1,9 @@
 # -*- coding: utf-8 -*-
 
-from ephMPS.model import Phonon, Mol, MolList
-from ephMPS.utils import Quantity, EvolveConfig, CompressConfig, CompressCriteria, EvolveMethod
-from ephMPS.utils.constant import cm2au
-from ephMPS.transport import ChargeTransport
+from renormalizer.model import Phonon, Mol, MolList
+from renormalizer.utils import Quantity, EvolveConfig, CompressConfig, CompressCriteria, EvolveMethod
+from renormalizer.utils.constant import cm2au
+from renormalizer.transport import ChargeTransport
 
 import numpy as np
 

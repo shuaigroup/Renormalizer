@@ -1,7 +1,6 @@
 Renormalizer is a python package based on tensor network states for electron-phonon quantum dynamics.
 
-[![Build Status](https://travis-ci.org/jjren/ephMPS.svg?branch=wtli-develop)](https://travis-ci.org/jjren/ephMPS)
-
+[![Build Status](https://travis-ci.org/jjren/Renormalizer.svg?branch=master)](https://travis-ci.org/jjren/Renormalizer)
 ## Installation
 Installation guide can be found in the [project wiki](https://github.com/jjren/ephMPS/wiki/Installation-Guide).
 

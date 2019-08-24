@@ -2,7 +2,7 @@
 
 import pytest
 
-from ephMPS.mps import backend
+from renormalizer.mps import backend
 
 @pytest.fixture
 def switch_to_32backend():
