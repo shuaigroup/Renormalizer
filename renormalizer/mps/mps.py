@@ -308,6 +308,7 @@ class Mps(MatrixProduct):
 
     def __init__(self):
         super(Mps, self).__init__()
+        # todo: tdh part with GPU backend
         self.wfns = [1]
 
         self.optimize_config: OptimizeConfig = OptimizeConfig()
