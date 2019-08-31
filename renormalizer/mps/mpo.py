@@ -556,6 +556,7 @@ class Mpo(MatrixProduct):
 
     def _scheme4(self, mol_list: MolList, elocal_offset, offset):
 
+        # sbm not supported
         for m in mol_list:
             assert m.tunnel == 0
 
@@ -565,6 +566,7 @@ class Mpo(MatrixProduct):
         self.offset = offset
 
         def get_marginal_phonon_mo(pdim, bdim, ph, phop):
+            # [ w b^d b,  gw(b^d+b), I]
             mo = np.zeros((1, pdim, pdim, bdim))
             mo[0, :, :, 0] = phop[r"b^\dagger b"] * ph.omega[0]
             mo[0, :, :, 1] = phop[r"b^\dagger + b"] * ph.term10
@@ -572,6 +574,15 @@ class Mpo(MatrixProduct):
             return mo
 
         def get_phonon_mo(pdim, bdim, ph, phop, isfirst):
+            # `isfirst`:
+            # [I,       0,     0        , 0]
+            # [0,       I,     0        , 0]
+            # [w b^d b, 0,     gw(b^d+b), I]
+            # not `isfirst`:
+            # [I,       0,     0        , 0]
+            # [0,       I,     0        , 0]
+            # [0,       0,     I        , 0]
+            # [w b^d b, 0,     gw(b^d+b), I]
             if isfirst:
                 mo = np.zeros((bdim - 1, pdim, pdim, bdim))
             else:
@@ -579,10 +590,7 @@ class Mpo(MatrixProduct):
             mo[-1, :, :, 0] = phop[r"b^\dagger b"] * ph.omega[0]
             for i in range(bdim - 1):
                 mo[i, :, :, i] = phop[r"Iden"]
-            if isfirst:
-                mo[bdim - 2, :, :, bdim - 2] = phop[r"b^\dagger + b"] * ph.term10
-            else:
-                mo[bdim - 1, :, :, bdim - 2] = phop[r"b^\dagger + b"] * ph.term10
+            mo[-1, :, :, -2] = phop[r"b^\dagger + b"] * ph.term10
             mo[-1, :, :, -1] = phop[r"Iden"]
             return mo
 
@@ -604,6 +612,9 @@ class Mpo(MatrixProduct):
                     mo = get_phonon_mo(pdim, bdim, ph, phop, iph == 0)
                 self.append(mo)
         # the electronic part
+        # [ I,        0,       0]
+        # [ a1^d a1,  0,       0]
+        # [ J_matrix, a2^d a2, I]
         center_mo = np.zeros((n_left_mol+2, nmol, nmol, n_right_mol+2))
         center_mo[0, :, :, 0] = center_mo[-1, :, :, -1] = np.eye(nmol)
         j_matrix = mol_list.j_matrix.copy()
