@@ -43,7 +43,7 @@ class MolList:
             for imol, mol in enumerate(mol_list):
                 if imol == len(mol_list) // 2:
                     self._e_idx = [len(self.pbond_list)] * len(mol_list)
-                    self.pbond_list.append(len(mol_list))
+                    self.pbond_list.append(len(mol_list)+1)
                 for ph in mol.dmrg_phs:
                     assert ph.is_simple
                     self.pbond_list += ph.pbond

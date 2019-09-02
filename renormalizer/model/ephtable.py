@@ -31,9 +31,15 @@ class EphTable(tuple):
         return cls(eph_list)
 
     def is_electron(self, idx):
+        # an electron site
         return self[idx] == electron
 
+    def is_electrons(self, idx):
+        # a site with all electron DOFs, used in scheme 4
+        return self[idx] == electrons
+
     def is_phonon(self, idx):
+        # a phonon site
         return self[idx] == phonon
 
     def __str__(self):
