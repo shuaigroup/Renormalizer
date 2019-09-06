@@ -7,7 +7,7 @@ import numpy as np
 import scipy
 
 
-from renormalizer.lib.davidson import davidson
+from renormalizer.lib import davidson
 from renormalizer.mps.matrix import (
     Matrix,
     multi_tensor_contract,
