@@ -83,7 +83,7 @@ class TdMpsJob(object):
             if evolve_time is None:
                 evolve_time = nsteps * evolve_dt
             elif nsteps is None:
-                nsteps = evolve_time // evolve_dt
+                nsteps = int(evolve_time // evolve_dt)
             else:
                 logger.warning(
                     "Both nsteps and evolve_time is defined for evolution. The result may be unexpected."

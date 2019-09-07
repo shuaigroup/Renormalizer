@@ -404,7 +404,8 @@ class Mps(MatrixProduct):
         res = np.sqrt(self.conj().dot(self, with_hartree=False).real)
         assert res != 0
         self[replacement_idx] = orig_ms
-        return res
+        assert not np.iscomplex(res)
+        return res.real
 
     def _expectation_path(self):
         # S--a--S--e--S
@@ -613,7 +614,8 @@ class Mps(MatrixProduct):
         # don't let bond dim grow when contracting
         orig_compress_config = self.compress_config
         contract_compress_config = self.compress_config.copy()
-        contract_compress_config.criteria = CompressCriteria.both
+        if contract_compress_config.criteria is CompressCriteria.threshold:
+            contract_compress_config.criteria = CompressCriteria.both
         contract_compress_config.min_dims = None
         contract_compress_config.max_dims = np.array(self.bond_dims) + 4
         self.compress_config = contract_compress_config

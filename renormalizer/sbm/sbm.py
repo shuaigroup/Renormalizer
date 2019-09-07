@@ -31,7 +31,7 @@ class SpinBosonModel(TdMpsJob):
 
 
     def init_mps(self):
-        logger.debug(f"mpo dimension: {self.h_mpo.bond_dims}, {self.h_mpo.pbond_list}")
+        logger.debug(f"mpo bond and physical dimension: {self.h_mpo.bond_dims}, {self.h_mpo.pbond_list}")
         if self.temperature == 0:
             init_mps = Mps.gs(self.mol_list, False)
         else:
