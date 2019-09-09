@@ -20,6 +20,39 @@ import copy
 logger = logging.getLogger(__name__)
 
 class SpectraZtCV(object):
+    ''' Use CV-DMRG to calculate the zero temperature spectrum from frequency domain
+
+    Paramters:
+        mol_list : MolList
+            provide the molecular information,
+        spectratype : string
+            "abs" or "emi"
+        freq_reg : list
+            frequency window to be calculated (a.u.)
+        m_max : int
+            maximal bond dimension of correction vector
+        eta : float
+            Lorentizian broadening width
+        method : string
+            "1site" or "2site"
+        procedure_gs : list, optional
+            the procedure for ground state calculation
+            if not provided, procedure_gs = [[10, 0.4], [20, 0.2], [30, 0.1], [40, 0], [40, 0]]
+        procedure_cv : list
+            percent used for each sweep
+
+    Example::
+
+    >>> from renormalizer.cv.zerot import SpectraZtCV
+    >>> from renormalizer.tests.parameter import mol_list
+    >>> import numpy as np
+    >>> freq_reg = np.arange(0, 0.1, 1.e-3)
+    >>> m_max = 10
+    >>> eta = 1.e-3
+    >>> spectra = SpectraZtCV(mol_list, "abs", freq_reg, m_max, eta)
+    >>> result = spectra.cv_solve()
+    >>> # then plot the spectrum
+    '''
     def __init__(
         self,
         mol_list,

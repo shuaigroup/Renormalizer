@@ -13,6 +13,18 @@ logger = logging.getLogger(__name__)
 
 
 class SpectraZeroT(SpectraTdMpsJobBase):
+    '''Calculate the zero temprature absorption & emission spectrum using TD-DMRG
+
+    Parameters:
+        mol_list : MolList
+            the molecular information
+        spectratype : string
+            "abs" or "emi"
+        optimize_config :
+            parameter for ground state sweep
+        evolve_config :
+            time evolution
+    '''
     def __init__(
         self,
         mol_list,
