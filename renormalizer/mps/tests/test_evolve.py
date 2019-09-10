@@ -13,15 +13,15 @@ from renormalizer.mps.tests import cur_dir
 
 
 @pytest.mark.parametrize(
-    "method, evolve_dt, use_rk, rtol",
+    "method, evolve_dt, nsteps, use_rk, rtol, interval",
     (
         # [EvolveMethod.tdvp_mctdh, 2.0, 1e-2],
-        [EvolveMethod.tdvp_mctdh_new, 2.0, None, 1e-2],
-        [EvolveMethod.tdvp_ps, 15.0, True, 1e-2],
-        [EvolveMethod.tdvp_ps, 15.0, False, 1e-2],
+        [EvolveMethod.tdvp_mctdh_new, 8, 50, None, 1e-2, 4],
+        [EvolveMethod.tdvp_ps, 15.0, 200, True, 1e-2, 1],
+        [EvolveMethod.tdvp_ps, 15.0, 200, False, 1e-2, 1],
     ),
 )
-def test_ZeroTcorr_TDVP(method, evolve_dt, use_rk, rtol):
+def test_ZeroTcorr_TDVP(method, evolve_dt, nsteps, use_rk, rtol, interval):
     # procedure = [[50, 0], [50, 0], [50, 0]]
     procedure = [[20, 0], [20, 0], [20, 0]]
     optimize_config = OptimizeConfig(procedure=procedure)
@@ -39,7 +39,6 @@ def test_ZeroTcorr_TDVP(method, evolve_dt, use_rk, rtol):
         offset=Quantity(2.28614053, "ev"),
     )
     zero_t_corr.info_interval = 30
-    nsteps = 200
     # nsteps = 1200
     zero_t_corr.evolve(evolve_dt, nsteps)
     with open(
@@ -48,8 +47,8 @@ def test_ZeroTcorr_TDVP(method, evolve_dt, use_rk, rtol):
         ),
         "rb",
     ) as f:
-        ZeroTabs_std = np.load(f)
-    assert np.allclose(zero_t_corr.autocorr[:nsteps], ZeroTabs_std[:nsteps], rtol=rtol)
+        std = np.load(f)
+    assert np.allclose(zero_t_corr.autocorr[:nsteps], std[:interval*nsteps:interval], rtol=rtol)
 
 # from matplotlib import pyplot as plt
 #
@@ -65,7 +64,7 @@ def test_ZeroTcorr_TDVP(method, evolve_dt, use_rk, rtol):
 @pytest.mark.parametrize(
     "method, nsteps, evolve_dt, use_rk, rtol, interval",
     (
-       [EvolveMethod.tdvp_mctdh_new, 85, 4, None, 1e-2, 2],
+       [EvolveMethod.tdvp_mctdh_new, 10, 32, None, 1e-2, 16],
        [EvolveMethod.tdvp_ps, 30, 30, True, 1e-2, 1],
        [EvolveMethod.tdvp_ps, 30, 30, False, 1e-2, 1],
     ),

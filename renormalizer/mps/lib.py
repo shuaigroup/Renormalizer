@@ -17,6 +17,8 @@ sentinel = ones((1, 1, 1))
 class Environ:
     def __init__(self):
         # todo: real disk and other backend
+        # idx indicates the exact position of L or R, like
+        # L(idx-1) - mpo(idx) - R(idx+1)
         self.virtual_disk = {}
 
     def construct(self, mps, mps_conj, mpo, domain):
@@ -41,7 +43,7 @@ class Environ:
         S-     -S     MPSconj
         O- or  -O     MPO
         S-     -S     MPS
-        enviroment part from disc,  system part from one step calculation
+        enviroment part from self.virtual_disk,  system part from one step calculation
         support from scratch calculation: from two open boundary np.ones((1,1,1))
         """
 
@@ -62,6 +64,9 @@ class Environ:
         elif method == "Enviro":
             itensor = self.read(domain, siteidx)
         elif method == "System":
+            if itensor is None:
+                offset = -1 if domain == "L" else 1
+                itensor = self.read(domain, siteidx + offset)
             itensor = self.addone(itensor, MPS, MPSconj, MPO, siteidx, domain)
             self.write(domain, siteidx, itensor)
 

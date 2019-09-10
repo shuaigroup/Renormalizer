@@ -57,6 +57,8 @@ def invalidate_cache_decorator(f):
 
 
 def adaptive_tdvp(fun):
+    # evolve t/2 for 2 times
+    #  J. Chem. Phys. 146, 174107 (2017)
     @wraps(fun)
     def f(self: "Mps", mpo, evolve_dt):
         if not self.evolve_config.adaptive:
@@ -741,7 +743,7 @@ class Mps(MatrixProduct):
 
             hop = hop_factory(ltensor, rtensor, mpo[imps], len(shape))
 
-            func = integrand_func_factory(shape, hop, imps == len(mps) - 1, S_inv, coef)
+            func = integrand_func_factory(shape, hop, imps == len(mps) - 1, S_inv, True, coef)
 
             sol = solve_ivp(
                 func, (0, evolve_dt), mps[imps].ravel().array, method="RK45"
@@ -775,88 +777,116 @@ class Mps(MatrixProduct):
         else:
             coef = 1j
 
-        if self.is_left_canon:
-            assert self.check_left_canonical()
-            self.canonicalise()
-
-        mps = self.to_complex(inplace=True)
+        imag_time = np.iscomplex(evolve_dt)
+        if imag_time:
+            mps = self.copy()
+            mps_conj = mps
+        else:
+            mps = self.to_complex()
+            mps_conj = mps.conj()  # another copy, so 3x memory is used.
 
         # construct the environment matrix
         environ = Environ()
-        environ.construct(mps, mps.conj(), mpo, "R")
-
-        # initial matrix
-        ltensor = ones((1, 1, 1))
-        rtensor = ones((1, 1, 1))
-
-        new_mps = mps.metacopy()
+        environ.construct(mps, mps_conj, mpo, "R")
+        environ.construct(mps, mps_conj, mpo, "L")
 
         # statistics for debug output
         cmf_rk_steps = []
 
-        for imps in range(len(mps)):
-            shape = list(mps[imps].shape)
+        for i in range(2):
+            for imps in mps.iter_idx_list(full=True):
+                shape = list(mps[imps].shape)
 
-            system = "L" if mps.left else "R"
-            qnbigl, qnbigr = mps._get_big_qn(imps)
-            u, s, qnlset, v, s, qnrset = svd_qn.Csvd(
-                mps[imps].asnumpy(),
-                qnbigl,
-                qnbigr,
-                mps.qntot,
-                system=system,
-                full_matrices=False,
-            )
-            vt = v.T
+                system = "L" if mps.left else "R"
 
-            mps[imps] = u.reshape(shape[:-1] + [-1])
+                qnbigl, qnbigr = mps._get_big_qn(imps)
+                u, s, qnlset, v, s, qnrset = svd_qn.Csvd(
+                    mps[imps].asnumpy(),
+                    qnbigl,
+                    qnbigr,
+                    mps.qntot,
+                    system=system,
+                    full_matrices=False,
+                )
+                vt = v.T
 
-            ltensor = environ.GetLR(
-                "L", imps - 1, mps, mps.conj(), mpo, itensor=ltensor, method="System"
-            )
-            rtensor = environ.GetLR(
-                "R", imps + 1, mps, mps.conj(), mpo, itensor=rtensor, method="Enviro"
-            )
+                if not mps.left:
+                    islast = imps == 0
+                    mps[imps] = vt.reshape([-1] + shape[1:])
+                    mps_conj[imps] = mps[imps].conj()
 
-            epsilon = 1e-10
-            epsilon = np.sqrt(epsilon)
-            s = s + epsilon * np.exp(-s / epsilon)
+                    ltensor = environ.read("L", imps - 1)
+                    rtensor = environ.GetLR(
+                        "R", imps + 1, mps, mps_conj, mpo, itensor=None, method="System"
+                    )
 
-            svt = Matrix(np.diag(s).dot(vt))
+                    epsilon = 1e-10
+                    epsilon = np.sqrt(epsilon)
+                    s = s + epsilon * np.exp(- s / epsilon)
 
-            rtensor = tensordot(rtensor, svt, axes=(2, 1))
-            rtensor = tensordot(Matrix(vt).conj(), rtensor, axes=(1, 0))
+                    us = Matrix(u.dot(np.diag(s)))
+                    # svt = Matrix(np.diag(s).dot(vt))
+                    ltensor = tensordot(ltensor, us, axes=(2, 0))
+                    ltensor = tensordot(Matrix(u.conj()), ltensor, axes=(0, 0))
+                    #rtensor = tensordot(rtensor, svt, axes=(2, 1))
+                    #rtensor = tensordot(vt.conj(), rtensor.array, axes=(1, 0))
 
-            if imps != len(mps) - 1:
-                mps[imps + 1] = tensordot(svt, mps[imps + 1], axes=(-1, 0))
-                mps.qn[imps + 1] = qnlset
-                new_mps.qn[imps + 1] = qnlset.copy()
+                    if not islast:
+                        mps[imps - 1] = tensordot(mps[imps - 1], us , axes=(-1, 0))
+                        mps_conj[imps - 1] = mps[imps - 1].conj()
+                        mps.qn[imps] = qnrset
 
-            S_inv = xp.diag(1.0 / s)
+                elif mps.left:
+                    islast = imps == len(mps) - 1
+                    mps[imps] = u.reshape(shape[:-1] + [-1])
+                    mps_conj[imps] = mps[imps].conj()
 
-            hop = hop_factory(ltensor, rtensor, mpo[imps], len(shape))
+                    ltensor = environ.GetLR(
+                        "L", imps - 1, mps, mps_conj, mpo, itensor=None, method="System"
+                    )
+                    rtensor = environ.read("R", imps + 1)
 
-            func = integrand_func_factory(shape, hop, imps == len(mps) - 1, S_inv, coef)
+                    epsilon = 1e-10
+                    epsilon = np.sqrt(epsilon)
+                    s = s + epsilon * np.exp(-s / epsilon)
 
-            sol = solve_ivp(
-                func, (0, evolve_dt), mps[imps].ravel().array, method="RK45"
-            )
-            cmf_rk_steps.append(len(sol.t))
-            ms = sol.y[:, -1].reshape(shape)
+                    svt = Matrix(np.diag(s).dot(vt))
 
-            if imps == len(mps) - 1:
-                new_mps[imps] = ms * s[0]
-            else:
-                new_mps[imps] = ms
-        mps._switch_direction()
-        new_mps._switch_direction()
-        new_mps.canonicalise()
+                    rtensor = tensordot(rtensor, svt, axes=(2, 1))
+                    rtensor = tensordot(Matrix(vt.conj()), rtensor, axes=(1, 0))
 
+                    if not islast:
+                        mps[imps + 1] = tensordot(svt, mps[imps + 1], axes=(-1, 0))
+                        mps_conj[imps + 1] = mps[imps + 1].conj()
+                        mps.qn[imps + 1] = qnlset
+
+                else:
+                    assert False
+
+                S_inv = xp.diag(1.0 / s)
+
+                hop = hop_factory(ltensor, rtensor, mpo[imps], len(shape))
+
+                func = integrand_func_factory(shape, hop, islast, S_inv, mps.left, coef)
+
+                sol = solve_ivp(
+                    func, (0, evolve_dt / 2), mps[imps].ravel().array, method="RK45"
+                )
+                cmf_rk_steps.append(len(sol.t))
+                ms = sol.y[:, -1].reshape(shape)
+                if islast:
+                    if not mps.left:
+                        ms = xp.tensordot(us.array, ms, 1)
+                    else:
+                        ms = xp.tensordot(ms, svt.array, 1)
+                mps[imps] = ms
+                mps_conj[imps] = ms.conj()
+            mps._switch_direction()
         steps_stat = stats.describe(cmf_rk_steps)
         logger.debug(f"TDVP-MCTDH CMF steps: {steps_stat}")
         # new_mps.evolve_config.stat = steps_stat
 
-        return new_mps
+        return mps
 
     @adaptive_tdvp
     def _evolve_dmrg_tdvp_ps(self, mpo, evolve_dt) -> "Mps":
@@ -938,7 +968,7 @@ class Mps(MatrixProduct):
                 )
                 vt = v.T
 
-                if mps.is_left_canon and imps != 0:
+                if not mps.left and imps != 0:
                     mps[imps] = vt.reshape([-1] + shape[1:])
                     mps_conj[imps] = mps[imps].conj()
                     mps.qn[imps] = qnrset
@@ -971,7 +1001,7 @@ class Mps(MatrixProduct):
                     )
                     mps_conj[imps - 1] = mps[imps - 1].conj()
 
-                elif mps.is_right_canon and imps != len(mps) - 1:
+                elif mps.left and imps != len(mps) - 1:
                     mps[imps] = u.reshape(shape[:-1] + [-1])
                     mps_conj[imps] = mps[imps].conj()
                     mps.qn[imps + 1] = qnlset
@@ -1223,10 +1253,16 @@ class Mps(MatrixProduct):
         return self.add(other.scale(-1))
 
 
-def projector(ms: xp.ndarray) -> xp.ndarray:
-    # projector
-    proj = xp.tensordot(ms, ms.conj(), axes=(-1, -1))
-    sz = int(np.prod(ms.shape[:-1]))
+def projector(ms: xp.ndarray, left: bool) -> xp.ndarray:
+    if left:
+        axes = (-1, -1)
+    else:
+        axes = (0, 0)
+    proj = xp.tensordot(ms, ms.conj(), axes=axes)
+    if left:
+        sz = int(np.prod(ms.shape[:-1]))
+    else:
+        sz = int(np.prod(ms.shape[1:]))
     Iden = xp.array(xp.diag(xp.ones(sz)), dtype=backend.real_dtype).reshape(proj.shape)
     proj = Iden - proj
     return proj
@@ -1308,20 +1344,30 @@ def hop_factory(
     return hop
 
 
-def integrand_func_factory(shape, hop, islast, S_inv: xp.ndarray, coef: complex):
+def integrand_func_factory(shape, hop, islast, S_inv: xp.ndarray, left: bool, coef: complex):
     def func(t, y):
         y0 = y.reshape(shape)
         HC = hop(y0)
         if not islast:
-            proj = projector(y0)
+            proj = projector(y0, left)
             if y0.ndim == 3:
-                HC = tensordot(proj, HC, axes=([2, 3], [0, 1]))
-                # uncomment this might resolve some numerical problem
-                # HC = tensordot(proj, HC, axes=([2, 3], [0, 1]))
+                if left:
+                    HC = tensordot(proj, HC, axes=([2, 3], [0, 1]))
+                    # uncomment this might resolve some numerical problem
+                    # HC = tensordot(proj, HC, axes=([2, 3], [0, 1]))
+                else:
+                    HC = tensordot(HC, proj, axes=([1, 2], [2, 3]))
             elif y0.ndim == 4:
-                HC = tensordot(proj, HC, axes=([3, 4, 5], [0, 1, 2]))
-                # HC = tensordot(proj, HC, axes=([3, 4, 5], [0, 1, 2]))
-        return tensordot(HC, S_inv, axes=(-1, 0)).ravel() / coef
+                if left:
+                    HC = tensordot(proj, HC, axes=([3, 4, 5], [0, 1, 2]))
+                    # HC = tensordot(proj, HC, axes=([3, 4, 5], [0, 1, 2]))
+                else:
+                    HC = tensordot(HC, proj, axes=([1, 2, 3], [3, 4, 5]))
+
+        if left:
+            return tensordot(HC, S_inv, axes=(-1, 0)).ravel() / coef
+        else:
+            return tensordot(S_inv, HC, axes=(0, 0)).ravel() / coef
 
     return func
 
