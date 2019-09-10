@@ -31,7 +31,7 @@ class MatrixProduct:
 
     @classmethod
     def load(cls, mol_list: MolList, fname: str):
-        npload = np.load(fname)
+        npload = np.load(fname, allow_pickle=True)
         mp = cls()
         mp.mol_list = mol_list
         for i in range(int(npload["nsites"])):
@@ -522,12 +522,15 @@ class MatrixProduct:
         return new_mp
 
     def distance(self, other):
-        return (
+        res =  np.sqrt(
             self.conj().dot(self)
-            - abs(self.conj().dot(other))
-            - abs(other.conj().dot(self))
+            - self.conj().dot(other)
+            - other.conj().dot(self)
             + other.conj().dot(other)
         )
+        # corresponds to < 1e-6 before sqrt
+        assert res.imag < 1e-3
+        return res.real
 
     def copy(self):
         new = self.metacopy()

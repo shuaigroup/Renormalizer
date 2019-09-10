@@ -47,7 +47,7 @@ def expm_krylov(Afunc, dt, vstart):
     res = None
 
     for j in range(len(vstart) - 1):
-        if MAX_ITER == j:
+        if MAX_ITER - 1 == j:
             raise RuntimeError("krylov not converged")
         w = Afunc(V[j])
         alpha[j] = xp.vdot(w, V[j]).real
