@@ -217,10 +217,12 @@ class EvolveConfig:
 
         self.prop_method = "C_RK4"
         # both rk45 and krylov are ok for tdvp_ps
-        self.tdvp_ps_rk4 = True
+        self.tdvp_ps_rk4: bool = False
+
+        self.tdvp_mu_cmf = False
 
         # should adjust bond order before any tdvp evolution
-        self._adjust_bond_dim_counter = False
+        self._adjust_bond_dim_counter: bool = False
 
     @property
     def adaptive(self):

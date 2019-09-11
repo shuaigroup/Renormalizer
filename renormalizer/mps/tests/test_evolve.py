@@ -13,16 +13,16 @@ from renormalizer.mps.tests import cur_dir
 
 
 @pytest.mark.parametrize(
-    "method, evolve_dt, nsteps, use_rk, rtol, interval",
+    "method, evolve_dt, nsteps, use_rk, cmf, rtol, interval",
     (
         # [EvolveMethod.tdvp_mctdh, 2.0, 1e-2],
-        [EvolveMethod.tdvp_mctdh_new, 8, 50, None, 1e-2, 4],
-        [EvolveMethod.tdvp_ps, 15.0, 200, True, 1e-2, 1],
-        [EvolveMethod.tdvp_ps, 15.0, 200, False, 1e-2, 1],
+        [EvolveMethod.tdvp_mctdh_new, 6, 70, None, False, 1e-2, 3],
+        [EvolveMethod.tdvp_mctdh_new, 2, 200, None, True, 1e-2, 1],
+        [EvolveMethod.tdvp_ps, 15.0, 200, True, None, 1e-2, 1],
+        [EvolveMethod.tdvp_ps, 15.0, 200, False, None, 1e-2, 1],
     ),
 )
-def test_ZeroTcorr_TDVP(method, evolve_dt, nsteps, use_rk, rtol, interval):
-    # procedure = [[50, 0], [50, 0], [50, 0]]
+def test_ZeroTcorr_TDVP(method, evolve_dt, nsteps, use_rk, cmf, rtol, interval):
     procedure = [[20, 0], [20, 0], [20, 0]]
     optimize_config = OptimizeConfig(procedure=procedure)
 
@@ -30,6 +30,7 @@ def test_ZeroTcorr_TDVP(method, evolve_dt, nsteps, use_rk, rtol, interval):
 
     evolve_config = EvolveConfig(method, evolve_dt=evolve_dt, adaptive=False)
     evolve_config.tdvp_ps_rk4 = use_rk
+    evolve_config.tdvp_mu_cmf = cmf
 
     zero_t_corr = SpectraTwoWayPropZeroT(
         mol_list,
@@ -39,7 +40,6 @@ def test_ZeroTcorr_TDVP(method, evolve_dt, nsteps, use_rk, rtol, interval):
         offset=Quantity(2.28614053, "ev"),
     )
     zero_t_corr.info_interval = 30
-    # nsteps = 1200
     zero_t_corr.evolve(evolve_dt, nsteps)
     with open(
         os.path.join(
@@ -50,16 +50,6 @@ def test_ZeroTcorr_TDVP(method, evolve_dt, nsteps, use_rk, rtol, interval):
         std = np.load(f)
     assert np.allclose(zero_t_corr.autocorr[:nsteps], std[:interval*nsteps:interval], rtol=rtol)
 
-# from matplotlib import pyplot as plt
-#
-# plt.clf()
-# plt.plot(zero_t_corr.autocorr[:nsteps:2], label="c")
-# plt.plot(ZeroTabs_std[:nsteps:2], label="tdvp svd")
-# with open("/home/wtli/GitClone/renormalizer/renormalizer/spectra/tests/ZeroTabs_2svd.npy", "rb") as fin:
-#     data = np.load(fin)
-# plt.plot(data, label="pc std")
-# plt.legend()
-# plt.savefig("a.png")
 
 @pytest.mark.parametrize(
     "method, nsteps, evolve_dt, use_rk, rtol, interval",

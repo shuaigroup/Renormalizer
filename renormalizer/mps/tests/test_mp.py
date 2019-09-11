@@ -6,6 +6,7 @@ import numpy as np
 import pytest
 
 from renormalizer.mps import Mps, Mpo
+from renormalizer.mps.lib import Environ
 from renormalizer.tests import parameter
 
 
@@ -43,3 +44,16 @@ def test_distance():
         a = a.evolve(h, 10)
         b = b.evolve(h, 10)
         check_distance(a, b)
+
+
+def test_environ():
+    mps = Mps.random(parameter.mol_list, 1, 10)
+    mpo = Mpo(parameter.mol_list)
+    mps = mps.evolve(mpo, 10)
+    environ = Environ(mps, mpo)
+    for i in range(len(mps)-1):
+        l = environ.read("L", i)
+        r = environ.read("R", i+1)
+        e = np.tensordot(l, r, axes=((0, 1, 2), (0, 1, 2)))
+        assert pytest.approx(e) == mps.expectation(mpo)
+

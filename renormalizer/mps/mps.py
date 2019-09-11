@@ -434,10 +434,9 @@ class Mps(MatrixProduct):
     def expectation(self, mpo, self_conj=None) -> float:
         if self_conj is None:
             self_conj = self._expectation_conj()
-        environ = Environ()
-        environ.construct(self, self_conj, mpo, "r")
+        environ = Environ(self, mpo, "R", mps_conj=self_conj)
         l = ones((1, 1, 1))
-        r = environ.read("r", 1)
+        r = environ.read("R", 1)
         path = self._expectation_path()
         return float(multi_tensor_contract(path, l, self[0], mpo[0], self_conj[0], r).real)
         # This is time and memory consuming
@@ -458,13 +457,11 @@ class Mps(MatrixProduct):
         common_mpo = list(mpos[0])
         common_mpo[mpo0_unique_idx] = mpos[1][mpo0_unique_idx]
         self_conj = self._expectation_conj()
-        environ = Environ()
-        environ.construct(self, self_conj, common_mpo, "l")
-        environ.construct(self, self_conj, common_mpo, "r")
+        environ = Environ(self, common_mpo, mps_conj=self_conj)
         res_list = []
         for idx, mpo in zip(unique_idx, mpos):
-            l = environ.read("l", idx - 1)
-            r = environ.read("r", idx + 1)
+            l = environ.read("L", idx - 1)
+            r = environ.read("R", idx + 1)
             path = self._expectation_path()
             res = multi_tensor_contract(path, l, self[idx], mpo[idx], self_conj[idx], r)
             res_list.append(float(res.real))
@@ -519,7 +516,7 @@ class Mps(MatrixProduct):
             if p in self.__dict__:
                 del self.__dict__[p]
 
-    def metacopy(self):
+    def metacopy(self) -> "Mps":
         new = super().metacopy()
         new.wfns = [wfn.copy() for wfn in self.wfns[:-1]] + [self.wfns[-1]]
         new.optimize_config = self.optimize_config
@@ -702,8 +699,7 @@ class Mps(MatrixProduct):
         self.clear_qn()
         mps = self.to_complex(inplace=True)
         mps_conj = mps.conj()
-        environ = Environ()
-        environ.construct(mps, mps_conj, mpo, "R")
+        environ = Environ(mps, mpo, "R")
 
         # initial matrix
         ltensor = np.ones((1, 1, 1))
@@ -715,10 +711,10 @@ class Mps(MatrixProduct):
 
         for imps in range(len(mps)):
             ltensor = environ.GetLR(
-                "L", imps - 1, mps, mps_conj, mpo, itensor=ltensor, method="System"
+                "L", imps - 1, mps, mpo, itensor=ltensor, method="System"
             )
             rtensor = environ.GetLR(
-                "R", imps + 1, mps, mps_conj, mpo, itensor=rtensor, method="Enviro"
+                "R", imps + 1, mps, mpo, itensor=rtensor, method="Enviro"
             )
             # density matrix
             S = transferMat(mps, mps_conj, "R", imps + 1).asnumpy()
@@ -778,22 +774,33 @@ class Mps(MatrixProduct):
             coef = 1j
 
         imag_time = np.iscomplex(evolve_dt)
+
+
+        # `self` should not be modified during the evolution
+        # mps: the mps at time 0
+        # environ_mps: mps to construct environ
         if imag_time:
             mps = self.copy()
-            mps_conj = mps
         else:
             mps = self.to_complex()
-            mps_conj = mps.conj()  # another copy, so 3x memory is used.
-
+        if self.evolve_config.tdvp_mu_cmf:
+            # constant environment
+            environ_mps = mps
+            mps_t = mps.metacopy()
+            sweep_round = 1
+        else:
+            # evolving environment
+            environ_mps = mps
+            mps_t = mps
+            sweep_round = 2
         # construct the environment matrix
-        environ = Environ()
-        environ.construct(mps, mps_conj, mpo, "R")
-        environ.construct(mps, mps_conj, mpo, "L")
+        environ = Environ(environ_mps, mpo)
+
 
         # statistics for debug output
         cmf_rk_steps = []
 
-        for i in range(2):
+        for i in range(sweep_round):
             for imps in mps.iter_idx_list(full=True):
                 shape = list(mps[imps].shape)
 
@@ -813,42 +820,34 @@ class Mps(MatrixProduct):
                 if not mps.left:
                     islast = imps == 0
                     mps[imps] = vt.reshape([-1] + shape[1:])
-                    mps_conj[imps] = mps[imps].conj()
 
                     ltensor = environ.read("L", imps - 1)
                     rtensor = environ.GetLR(
-                        "R", imps + 1, mps, mps_conj, mpo, itensor=None, method="System"
+                        "R", imps + 1, environ_mps, mpo, itensor=None, method="System"
                     )
 
-                    epsilon = 1e-10
-                    epsilon = np.sqrt(epsilon)
-                    s = s + epsilon * np.exp(- s / epsilon)
+                    s = _mu_regularize(s)
 
                     us = Matrix(u.dot(np.diag(s)))
-                    # svt = Matrix(np.diag(s).dot(vt))
+
                     ltensor = tensordot(ltensor, us, axes=(2, 0))
                     ltensor = tensordot(Matrix(u.conj()), ltensor, axes=(0, 0))
-                    #rtensor = tensordot(rtensor, svt, axes=(2, 1))
-                    #rtensor = tensordot(vt.conj(), rtensor.array, axes=(1, 0))
 
                     if not islast:
                         mps[imps - 1] = tensordot(mps[imps - 1], us , axes=(-1, 0))
-                        mps_conj[imps - 1] = mps[imps - 1].conj()
                         mps.qn[imps] = qnrset
+                        mps_t.qn[imps] = qnrset.copy()
 
                 elif mps.left:
                     islast = imps == len(mps) - 1
                     mps[imps] = u.reshape(shape[:-1] + [-1])
-                    mps_conj[imps] = mps[imps].conj()
 
                     ltensor = environ.GetLR(
-                        "L", imps - 1, mps, mps_conj, mpo, itensor=None, method="System"
+                        "L", imps - 1, environ_mps, mpo, itensor=None, method="System"
                     )
                     rtensor = environ.read("R", imps + 1)
 
-                    epsilon = 1e-10
-                    epsilon = np.sqrt(epsilon)
-                    s = s + epsilon * np.exp(-s / epsilon)
+                    s = _mu_regularize(s)
 
                     svt = Matrix(np.diag(s).dot(vt))
 
@@ -857,9 +856,8 @@ class Mps(MatrixProduct):
 
                     if not islast:
                         mps[imps + 1] = tensordot(svt, mps[imps + 1], axes=(-1, 0))
-                        mps_conj[imps + 1] = mps[imps + 1].conj()
                         mps.qn[imps + 1] = qnlset
-
+                        mps_t.qn[imps + 1] = qnlset.copy()
                 else:
                     assert False
 
@@ -870,7 +868,7 @@ class Mps(MatrixProduct):
                 func = integrand_func_factory(shape, hop, islast, S_inv, mps.left, coef)
 
                 sol = solve_ivp(
-                    func, (0, evolve_dt / 2), mps[imps].ravel().array, method="RK45"
+                    func, (0, evolve_dt / sweep_round), mps[imps].ravel().array, method="RK45"
                 )
                 cmf_rk_steps.append(len(sol.t))
                 ms = sol.y[:, -1].reshape(shape)
@@ -879,14 +877,20 @@ class Mps(MatrixProduct):
                         ms = xp.tensordot(us.array, ms, 1)
                     else:
                         ms = xp.tensordot(ms, svt.array, 1)
-                mps[imps] = ms
-                mps_conj[imps] = ms.conj()
-            mps._switch_direction()
+                mps_t[imps] = ms
+            if self.evolve_config.tdvp_mu_cmf:
+                # environ_mps == mps, mps_t = mps.copy()
+                mps._switch_direction()
+                mps_t._switch_direction()
+            else:
+                # environ_mps == mps == mps_t
+                mps_t._switch_direction()
         steps_stat = stats.describe(cmf_rk_steps)
         logger.debug(f"TDVP-MCTDH CMF steps: {steps_stat}")
         # new_mps.evolve_config.stat = steps_stat
 
-        return mps
+        return mps_t
+
 
     @adaptive_tdvp
     def _evolve_dmrg_tdvp_ps(self, mpo, evolve_dt) -> "Mps":
@@ -901,10 +905,8 @@ class Mps(MatrixProduct):
             mps_conj = mps.conj()  # another copy, so 3x memory is used.
 
         # construct the environment matrix
-        environ = Environ()
         # almost half is not used. Not a big deal.
-        environ.construct(mps, mps_conj, mpo, "L")
-        environ.construct(mps, mps_conj, mpo, "R")
+        environ = Environ(mps, mpo)
 
         # a workaround for https://github.com/scipy/scipy/issues/10164
         if imag_time:
@@ -974,7 +976,7 @@ class Mps(MatrixProduct):
                     mps.qn[imps] = qnrset
 
                     rtensor = environ.GetLR(
-                        "R", imps, mps, mps_conj, mpo, itensor=rtensor, method="System"
+                        "R", imps, mps, mpo, itensor=rtensor, method="System"
                     )
                     r_array = rtensor.array
 
@@ -1007,7 +1009,7 @@ class Mps(MatrixProduct):
                     mps.qn[imps + 1] = qnlset
 
                     ltensor = environ.GetLR(
-                        "L", imps, mps, mps_conj, mpo, itensor=ltensor, method="System"
+                        "L", imps, mps, mpo, itensor=ltensor, method="System"
                     )
                     l_array = ltensor.array
 
@@ -1387,6 +1389,12 @@ def transferMat(mps, mpsconj, domain, siteidx):
             val = tensordot(val, mps[imps], axes=([0, 2], [1, 0]))
 
     return val
+
+
+def _mu_regularize(s):
+    epsilon = 1e-10
+    epsilon = np.sqrt(epsilon)
+    return s + epsilon * np.exp(- s / epsilon)
 
 
 class BraKetPair:
