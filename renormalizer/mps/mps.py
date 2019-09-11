@@ -592,6 +592,7 @@ class Mps(MatrixProduct):
             self.compress_add = True
             new_mps = self._evolve_dmrg_prop_and_compress(mpo, evolve_dt, config)
             self.compress_config = new_mps.compress_config = orig_compress_config
+            # won't be using that much memory anymore after the P&C
             backend.free_all_blocks()
             return new_mps
 
@@ -599,6 +600,7 @@ class Mps(MatrixProduct):
             EvolveMethod.tdvp_mctdh: self._evolve_dmrg_tdvp_mctdh,
             EvolveMethod.tdvp_mctdh_new: self._evolve_dmrg_tdvp_mctdhnew,
             EvolveMethod.tdvp_ps: self._evolve_dmrg_tdvp_ps,
+            EvolveMethod.tdvp_mu: self._evolve_dmrg_tdvp_mu,
         }
         method = method_mapping[self.evolve_config.method]
         new_mps = method(mpo, evolve_dt)
@@ -783,7 +785,7 @@ class Mps(MatrixProduct):
             mps = self.copy()
         else:
             mps = self.to_complex()
-        if self.evolve_config.tdvp_mu_cmf:
+        if self.evolve_config.tdvp_mctdh_cmf:
             # constant environment
             environ_mps = mps
             mps_t = mps.metacopy()
@@ -816,6 +818,7 @@ class Mps(MatrixProduct):
                     full_matrices=False,
                 )
                 vt = v.T
+                regular_s = _mu_regularize(s)
 
                 if not mps.left:
                     islast = imps == 0
@@ -825,8 +828,6 @@ class Mps(MatrixProduct):
                     rtensor = environ.GetLR(
                         "R", imps + 1, environ_mps, mpo, itensor=None, method="System"
                     )
-
-                    s = _mu_regularize(s)
 
                     us = Matrix(u.dot(np.diag(s)))
 
@@ -847,8 +848,6 @@ class Mps(MatrixProduct):
                     )
                     rtensor = environ.read("R", imps + 1)
 
-                    s = _mu_regularize(s)
-
                     svt = Matrix(np.diag(s).dot(vt))
 
                     rtensor = tensordot(rtensor, svt, axes=(2, 1))
@@ -861,7 +860,7 @@ class Mps(MatrixProduct):
                 else:
                     assert False
 
-                S_inv = xp.diag(1.0 / s)
+                S_inv = xp.diag(1.0 / regular_s)
 
                 hop = hop_factory(ltensor, rtensor, mpo[imps], len(shape))
 
@@ -878,7 +877,7 @@ class Mps(MatrixProduct):
                     else:
                         ms = xp.tensordot(ms, svt.array, 1)
                 mps_t[imps] = ms
-            if self.evolve_config.tdvp_mu_cmf:
+            if self.evolve_config.tdvp_mctdh_cmf:
                 # environ_mps == mps, mps_t = mps.copy()
                 mps._switch_direction()
                 mps_t._switch_direction()
@@ -890,6 +889,120 @@ class Mps(MatrixProduct):
         # new_mps.evolve_config.stat = steps_stat
 
         return mps_t
+
+
+    @adaptive_tdvp
+    def _evolve_dmrg_tdvp_mu(self, mpo, evolve_dt) -> "Mps":
+        # new regularization scheme
+        # JCP 148, 124105 (2018)
+        # JCP 149, 044119 (2018)
+
+        # a workaround for https://github.com/scipy/scipy/issues/10164
+        imag_time = np.iscomplex(evolve_dt)
+        if imag_time:
+            evolve_dt = -evolve_dt.imag
+            # used in calculating derivatives
+            coef = -1
+        else:
+            coef = 1j
+
+        imag_time = np.iscomplex(evolve_dt)
+
+        if self.is_right_canon:
+            assert self.check_right_canonical()
+            self.canonicalise()
+        else:
+            if not self.check_left_canonical():
+                self.move_qnidx(0)
+                self.left = True
+                self.canonicalise()
+                assert self.check_left_canonical()
+
+        # `self` should not be modified during the evolution
+        # mps: the mps to return
+        # environ_mps: mps to construct environ
+        if imag_time:
+            mps = self.copy()
+        else:
+            mps = self.to_complex()
+
+
+        if self.evolve_config.tdvp_mu_midpoint:
+            # mps at t/2 as environment
+            orig_config = self.evolve_config.copy()
+            self.evolve_config.tdvp_mu_midpoint = False
+            environ_mps = self.evolve(mpo, evolve_dt / 2)
+            self.evolve_config = orig_config
+        else:
+            # mps at t=0 as environment
+            environ_mps = mps.copy()
+        # construct the environment matrix
+        environ = Environ(environ_mps, mpo, "L")
+        environ.write_r_sentinel(environ_mps)
+
+        # statistics for debug output
+        cmf_rk_steps = []
+
+        for imps in mps.iter_idx_list(full=True):
+            shape = list(mps[imps].shape)
+            ltensor = environ.read("L", imps - 1)
+            if imps == self.site_num - 1:
+                # the coefficient site
+                rtensor = ones((1, 1, 1))
+                hop = hop_factory(ltensor, rtensor, mpo[imps], len(shape))
+
+                def func(y):
+                    return hop(y.reshape(shape)).ravel()
+
+                ms = expm_krylov(func, evolve_dt / coef, mps[imps].ravel().array)
+                mps[imps] = ms.reshape(shape)
+                continue
+
+            # perform qr on the environment mps
+            qnbigl, qnbigr = environ_mps._get_big_qn(imps + 1)
+            u, s, qnlset, v, s, qnrset = svd_qn.Csvd(
+                environ_mps[imps + 1].asnumpy(),
+                qnbigl,
+                qnbigr,
+                environ_mps.qntot,
+                system="R",
+                full_matrices=False,
+            )
+            vt = v.T
+
+            environ_mps[imps + 1] = vt.reshape(environ_mps[imps + 1].shape)
+
+            ltensor = environ.read("L", imps - 1)
+            rtensor = environ.GetLR(
+                "R", imps + 1, environ_mps, mpo, itensor=None, method="System"
+            )
+
+            regular_s = _mu_regularize(s)
+
+            us = Matrix(u.dot(np.diag(s)))
+
+            rtensor = tensordot(rtensor, us, axes=(-1, -1))
+
+            environ_mps[imps] = tensordot(environ_mps[imps], us, axes=(-1, 0))
+            environ_mps.qn[imps + 1] = qnrset
+
+            S_inv = Matrix(u).conj().dot(xp.diag(1.0 / regular_s)).T
+
+            hop = hop_factory(ltensor, rtensor, mpo[imps], len(shape))
+
+            func = integrand_func_factory(shape, hop, False, S_inv.array, True, coef)
+
+            sol = solve_ivp(
+                func, (0, evolve_dt), mps[imps].ravel().array, method="RK45"
+            )
+            cmf_rk_steps.append(len(sol.t))
+            ms = sol.y[:, -1].reshape(shape)
+            mps[imps] = ms
+        steps_stat = stats.describe(cmf_rk_steps)
+        logger.debug(f"TDVP-MCTDH CMF steps: {steps_stat}")
+        # new_mps.evolve_config.stat = steps_stat
+
+        return mps
 
 
     @adaptive_tdvp
@@ -1347,6 +1460,7 @@ def hop_factory(
 
 
 def integrand_func_factory(shape, hop, islast, S_inv: xp.ndarray, left: bool, coef: complex):
+    # left == True: projector operate on the left side of the HC
     def func(t, y):
         y0 = y.reshape(shape)
         HC = hop(y0)

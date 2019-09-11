@@ -23,7 +23,7 @@ class Environ:
         self._construct(mps, mpo, domain, mps_conj)
 
     def _construct(self, mps, mpo, domain=None, mps_conj=None):
-        tensor = ones((1, 1, 1), mps.dtype)
+
         assert domain in ["L", "R", None]
         if domain is None:
             self._construct(mps, mpo, "L", mps_conj)
@@ -31,14 +31,21 @@ class Environ:
             return
         if domain == "L":
             start, end, inc = 0, len(mps) - 1, 1
-            self.write(domain, -1, tensor)
+            self.write_l_sentinel(mps)
         else:
             start, end, inc = len(mps) - 1, 0, -1
-            self.write(domain, len(mps), tensor)
+            self.write_r_sentinel(mps)
 
+        tensor = ones((1, 1, 1), mps.dtype)
         for idx in range(start, end, inc):
             tensor = self.addone(tensor, mps, mpo, idx, domain, mps_conj)
             self.write(domain, idx, tensor)
+
+    def write_l_sentinel(self, mps):
+        self.write("L", -1, ones((1, 1, 1), mps.dtype))
+
+    def write_r_sentinel(self, mps):
+        self.write("R", len(mps), ones((1, 1, 1), mps.dtype))
 
     def GetLR(
         self, domain, siteidx, MPS, MPO, itensor=sentinel, method="Scratch"

@@ -13,16 +13,18 @@ from renormalizer.mps.tests import cur_dir
 
 
 @pytest.mark.parametrize(
-    "method, evolve_dt, nsteps, use_rk, cmf, rtol, interval",
+    "method, evolve_dt, nsteps, use_rk, cmf_or_midpoint, rtol, interval",
     (
         # [EvolveMethod.tdvp_mctdh, 2.0, 1e-2],
-        [EvolveMethod.tdvp_mctdh_new, 6, 70, None, False, 1e-2, 3],
-        [EvolveMethod.tdvp_mctdh_new, 2, 200, None, True, 1e-2, 1],
+        [EvolveMethod.tdvp_mctdh_new, 8, 50, None, False, 1e-2, 4],
+        [EvolveMethod.tdvp_mctdh_new, 4, 100, None, True, 1e-2, 2],
+        [EvolveMethod.tdvp_mu, 6, 70, None, False, 1e-2, 3],
+        [EvolveMethod.tdvp_mu, 12, 35, None, True, 1e-2, 6],
         [EvolveMethod.tdvp_ps, 15.0, 200, True, None, 1e-2, 1],
         [EvolveMethod.tdvp_ps, 15.0, 200, False, None, 1e-2, 1],
     ),
 )
-def test_ZeroTcorr_TDVP(method, evolve_dt, nsteps, use_rk, cmf, rtol, interval):
+def test_ZeroTcorr_TDVP(method, evolve_dt, nsteps, use_rk, cmf_or_midpoint, rtol, interval):
     procedure = [[20, 0], [20, 0], [20, 0]]
     optimize_config = OptimizeConfig(procedure=procedure)
 
@@ -30,7 +32,8 @@ def test_ZeroTcorr_TDVP(method, evolve_dt, nsteps, use_rk, cmf, rtol, interval):
 
     evolve_config = EvolveConfig(method, evolve_dt=evolve_dt, adaptive=False)
     evolve_config.tdvp_ps_rk4 = use_rk
-    evolve_config.tdvp_mu_cmf = cmf
+    evolve_config.tdvp_mctdh_cmf = cmf_or_midpoint
+    evolve_config.tdvp_mu_midpoint = cmf_or_midpoint
 
     zero_t_corr = SpectraTwoWayPropZeroT(
         mol_list,
@@ -54,9 +57,10 @@ def test_ZeroTcorr_TDVP(method, evolve_dt, nsteps, use_rk, cmf, rtol, interval):
 @pytest.mark.parametrize(
     "method, nsteps, evolve_dt, use_rk, rtol, interval",
     (
-       [EvolveMethod.tdvp_mctdh_new, 10, 32, None, 1e-2, 16],
-       [EvolveMethod.tdvp_ps, 30, 30, True, 1e-2, 1],
-       [EvolveMethod.tdvp_ps, 30, 30, False, 1e-2, 1],
+        [EvolveMethod.tdvp_mctdh_new, 10, 32, None, 1e-2, 16],
+        [EvolveMethod.tdvp_mu, 5, 64, None, 1e-2, 32],
+        [EvolveMethod.tdvp_ps, 30, 30, True, 1e-2, 1],
+        [EvolveMethod.tdvp_ps, 30, 30, False, 1e-2, 1],
     ),
 )
 def test_finite_t_spectra_emi_TDVP(method, nsteps, evolve_dt, use_rk, rtol, interval):
