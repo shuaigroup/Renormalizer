@@ -597,10 +597,10 @@ class Mps(MatrixProduct):
             return new_mps
 
         method_mapping = {
-            EvolveMethod.tdvp_mctdh: self._evolve_dmrg_tdvp_mctdh,
-            EvolveMethod.tdvp_mctdh_new: self._evolve_dmrg_tdvp_mctdhnew,
+            EvolveMethod.tdvp_fixed_gauge: self._evolve_dmrg_tdvp_fixed_gauge,
+            EvolveMethod.tdvp_mu_switch_gauge: self._evolve_dmrg_tdvp_mu_switch_gauge,
             EvolveMethod.tdvp_ps: self._evolve_dmrg_tdvp_ps,
-            EvolveMethod.tdvp_mu: self._evolve_dmrg_tdvp_mu,
+            EvolveMethod.tdvp_mu_fixed_gauge: self._evolve_dmrg_tdvp_mu_fixed_gauge,
         }
         method = method_mapping[self.evolve_config.method]
         new_mps = method(mpo, evolve_dt)
@@ -681,7 +681,7 @@ class Mps(MatrixProduct):
                 )
             return compressed_sum(termlist)
 
-    def _evolve_dmrg_tdvp_mctdh(self, mpo, evolve_dt) -> "Mps":
+    def _evolve_dmrg_tdvp_fixed_gauge(self, mpo, evolve_dt) -> "Mps":
         # TDVP for original MCTDH
         if self.is_right_canon:
             assert self.check_right_canonical()
@@ -761,7 +761,7 @@ class Mps(MatrixProduct):
         return new_mps
 
     @adaptive_tdvp
-    def _evolve_dmrg_tdvp_mctdhnew(self, mpo, evolve_dt) -> "Mps":
+    def _evolve_dmrg_tdvp_mu_switch_gauge(self, mpo, evolve_dt) -> "Mps":
         # new regularization scheme
         # JCP 148, 124105 (2018)
         # JCP 149, 044119 (2018)
@@ -885,14 +885,13 @@ class Mps(MatrixProduct):
                 # environ_mps == mps == mps_t
                 mps_t._switch_direction()
         steps_stat = stats.describe(cmf_rk_steps)
-        logger.debug(f"TDVP-MCTDH CMF steps: {steps_stat}")
+        logger.debug(f"{self.evolve_config.method} CMF steps: {steps_stat}")
         # new_mps.evolve_config.stat = steps_stat
 
         return mps_t
 
-
     @adaptive_tdvp
-    def _evolve_dmrg_tdvp_mu(self, mpo, evolve_dt) -> "Mps":
+    def _evolve_dmrg_tdvp_mu_fixed_gauge(self, mpo, evolve_dt) -> "Mps":
         # new regularization scheme
         # JCP 148, 124105 (2018)
         # JCP 149, 044119 (2018)
@@ -999,11 +998,10 @@ class Mps(MatrixProduct):
             ms = sol.y[:, -1].reshape(shape)
             mps[imps] = ms
         steps_stat = stats.describe(cmf_rk_steps)
-        logger.debug(f"TDVP-MCTDH CMF steps: {steps_stat}")
+        logger.debug(f"{self.evolve_config.method} CMF steps: {steps_stat}")
         # new_mps.evolve_config.stat = steps_stat
 
         return mps
-
 
     @adaptive_tdvp
     def _evolve_dmrg_tdvp_ps(self, mpo, evolve_dt) -> "Mps":

@@ -175,11 +175,11 @@ class OptimizeConfig:
 class EvolveMethod(Enum):
     prop_and_compress = "P&C"
     tdvp_ps = "TDVP_PS"
-    tdvp_mctdh = "TDVP_MCTDH"
+    tdvp_fixed_gauge = "TDVP Fixed Gauge"
     # the canonical site is not fixed
-    tdvp_mctdh_new = "TDVP_MCTDHnew"
+    tdvp_mu_switch_gauge = "TDVP Matrix Unfolding Switch Gauge"
     # the canonical site is fixed
-    tdvp_mu = "tdvp_mu"
+    tdvp_mu_fixed_gauge = "TDVP Matrix Unfolding Fixed Gauge"
 
 
 def parse_memory_limit(x) -> float:

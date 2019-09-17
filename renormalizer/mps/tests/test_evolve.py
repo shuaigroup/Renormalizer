@@ -16,10 +16,10 @@ from renormalizer.mps.tests import cur_dir
     "method, evolve_dt, nsteps, use_rk, cmf_or_midpoint, rtol, interval",
     (
         # [EvolveMethod.tdvp_mctdh, 2.0, 1e-2],
-        [EvolveMethod.tdvp_mctdh_new, 8, 50, None, False, 1e-2, 4],
-        [EvolveMethod.tdvp_mctdh_new, 4, 100, None, True, 1e-2, 2],
-        [EvolveMethod.tdvp_mu, 6, 70, None, False, 1e-2, 3],
-        [EvolveMethod.tdvp_mu, 12, 35, None, True, 1e-2, 6],
+        [EvolveMethod.tdvp_mu_switch_gauge, 8, 50, None, False, 1e-2, 4],
+        [EvolveMethod.tdvp_mu_switch_gauge, 4, 100, None, True, 1e-2, 2],
+        [EvolveMethod.tdvp_mu_fixed_gauge, 6, 70, None, False, 1e-2, 3],
+        [EvolveMethod.tdvp_mu_fixed_gauge, 12, 35, None, True, 1e-2, 6],
         [EvolveMethod.tdvp_ps, 15.0, 200, True, None, 1e-2, 1],
         [EvolveMethod.tdvp_ps, 15.0, 200, False, None, 1e-2, 1],
     ),
@@ -44,12 +44,13 @@ def test_ZeroTcorr_TDVP(method, evolve_dt, nsteps, use_rk, cmf_or_midpoint, rtol
     )
     zero_t_corr.info_interval = 30
     zero_t_corr.evolve(evolve_dt, nsteps)
-    with open(
-        os.path.join(
-            cur_dir, "zero_t_%s.npy" % str(evolve_config.method).split(".")[1]
-        ),
-        "rb",
-    ) as f:
+    file_name_mapping = {
+        EvolveMethod.tdvp_mu_switch_gauge: "zero_t_tdvp_mu.npy",
+        EvolveMethod.tdvp_mu_fixed_gauge: "zero_t_tdvp_mu.npy",
+        EvolveMethod.tdvp_ps: "zero_t_tdvp_ps.npy"
+    }
+    fname = file_name_mapping[method]
+    with open(os.path.join(cur_dir, fname),"rb") as f:
         std = np.load(f)
     assert np.allclose(zero_t_corr.autocorr[:nsteps], std[:interval*nsteps:interval], rtol=rtol)
 
@@ -57,8 +58,8 @@ def test_ZeroTcorr_TDVP(method, evolve_dt, nsteps, use_rk, cmf_or_midpoint, rtol
 @pytest.mark.parametrize(
     "method, nsteps, evolve_dt, use_rk, rtol, interval",
     (
-        [EvolveMethod.tdvp_mctdh_new, 10, 32, None, 1e-2, 16],
-        [EvolveMethod.tdvp_mu, 5, 64, None, 1e-2, 32],
+        [EvolveMethod.tdvp_mu_switch_gauge, 10, 32, None, 1e-2, 16],
+        [EvolveMethod.tdvp_mu_fixed_gauge, 5, 64, None, 1e-2, 32],
         [EvolveMethod.tdvp_ps, 30, 30, True, 1e-2, 1],
         [EvolveMethod.tdvp_ps, 30, 30, False, 1e-2, 1],
     ),
@@ -73,13 +74,14 @@ def test_finite_t_spectra_emi_TDVP(method, nsteps, evolve_dt, use_rk, rtol, inte
         mol_list, "emi", temperature, 50, offset, evolve_config=evolve_config
     )
     finite_t_corr.evolve(evolve_dt, nsteps)
-    with open(
-        os.path.join(
-            cur_dir, "finite_t_%s.npy" % str(evolve_config.method).split(".")[1]
-        ),
-        "rb",
-    ) as fin:
-        std = np.load(fin)
+    file_name_mapping = {
+        EvolveMethod.tdvp_mu_switch_gauge: "finite_t_tdvp_mu.npy",
+        EvolveMethod.tdvp_mu_fixed_gauge: "finite_t_tdvp_mu.npy",
+        EvolveMethod.tdvp_ps: "finite_t_tdvp_ps.npy"
+    }
+    fname = file_name_mapping[method]
+    with open(os.path.join(cur_dir, fname),"rb") as f:
+        std = np.load(f)
     assert np.allclose(
         finite_t_corr.autocorr[:nsteps], std[:interval*nsteps:interval], rtol=rtol
     )
