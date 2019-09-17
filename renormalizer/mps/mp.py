@@ -210,18 +210,20 @@ class MatrixProduct:
         assert self.qnidx in (self.site_num - 1, 0)
         return self.qnidx == 0
 
-    def iter_idx_list(self, full: bool):
+    def iter_idx_list(self, full: bool, stop_idx: int=None):
         # if not `full`, the last site is omitted.
-        if self.is_left_canon:
-            last = -1 if full else 0
-            return range(self.site_num - 1, last, -1)
-        elif self.is_right_canon:
-            last = self.site_num if full else self.site_num - 1
-            return range(0, last)
-        else:
-            # this could happen when canonicalization is break at some point
-            last = self.site_num if full else self.site_num - 1
+        if self.left:
+            if stop_idx is not None:
+                last = stop_idx
+            else:
+                last = self.site_num if full else self.site_num - 1
             return range(self.qnidx, last)
+        else:
+            if stop_idx is not None:
+                last = stop_idx
+            else:
+                last = -1 if full else 0
+            return range(self.qnidx, last, -1)
 
     def _update_ms(
         self, idx: int, u: Matrix, vt: Matrix, sigma=None, qnlset=None, qnrset=None, m_trunc=None
@@ -254,6 +256,7 @@ class MatrixProduct:
             )
             if qnlset is not None:
                 self.qn[idx + 1] = qnlset[:m_trunc]
+                self.qnidx = idx + 1
         else:
             self[idx - 1] = tensordot(self[idx - 1], u, axes=1)
             ret_mpsi = vt.reshape(
@@ -261,6 +264,7 @@ class MatrixProduct:
             )
             if qnrset is not None:
                 self.qn[idx] = qnrset[:m_trunc]
+                self.qnidx = idx - 1
         if ret_mpsi.nbytes < ret_mpsi.base.nbytes * 0.8:
             # do copy here to discard unnecessary data. Note that in NumPy common slicing returns
             # a `view` containing the original data. If `ret_mpsi` is used directly the original
@@ -412,10 +416,8 @@ class MatrixProduct:
         return self
 
     def canonicalise(self, stop_idx: int=None):
-        for idx in self.iter_idx_list(full=False):
-            self.qnidx = idx
-            if stop_idx is not None and idx == stop_idx:
-                break
+        # stop_idx: mix canonical site at `stop_idx`
+        for idx in self.iter_idx_list(full=False, stop_idx=stop_idx):
             mt: Matrix = self[idx]
             assert mt.any()
             if self.left:
@@ -436,7 +438,9 @@ class MatrixProduct:
             self._update_ms(
                 idx, Matrix(u), Matrix(v.T), sigma=None, qnlset=qnlset, qnrset=qnrset
             )
-        self._switch_direction()
+        # can't iter to idx == 0 or idx == self.site_num - 1
+        if (not self.left and idx == 1) or (self.left and idx == self.site_num - 2):
+            self._switch_direction()
         return self
 
     def conj(self):

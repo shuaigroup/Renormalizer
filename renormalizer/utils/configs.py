@@ -175,8 +175,11 @@ class OptimizeConfig:
 class EvolveMethod(Enum):
     prop_and_compress = "P&C"
     tdvp_ps = "TDVP_PS"
-    tdvp_mctdh = "TDVP_MCTDH"
-    tdvp_mctdh_new = "TDVP_MCTDHnew"
+    tdvp_fixed_gauge = "TDVP Fixed Gauge"
+    # the canonical site is not fixed
+    tdvp_mu_switch_gauge = "TDVP Matrix Unfolding Switch Gauge"
+    # the canonical site is fixed
+    tdvp_mu_fixed_gauge = "TDVP Matrix Unfolding Fixed Gauge"
 
 
 def parse_memory_limit(x) -> float:
@@ -217,10 +220,13 @@ class EvolveConfig:
 
         self.prop_method = "C_RK4"
         # both rk45 and krylov are ok for tdvp_ps
-        self.tdvp_ps_rk4 = True
+        self.tdvp_ps_rk4: bool = False
+
+        self.tdvp_mctdh_cmf = False
+        self.tdvp_mu_midpoint = True
 
         # should adjust bond order before any tdvp evolution
-        self._adjust_bond_dim_counter = False
+        self._adjust_bond_dim_counter: bool = False
 
     @property
     def adaptive(self):
