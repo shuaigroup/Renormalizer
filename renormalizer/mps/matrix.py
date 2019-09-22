@@ -39,7 +39,7 @@ class Matrix:
                 dtype = backend.complex_dtype
             else:
                 dtype = backend.real_dtype
-        self.array: [xp.ndarray] = xp.asarray(array, dtype=dtype)
+        self.array: xp.ndarray = xp.asarray(array, dtype=dtype)
         self.original_shape = self.array.shape
         self.sigmaqn = None
         self.is_full_mpdm = is_full_mpdm

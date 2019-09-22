@@ -67,7 +67,7 @@ class MatrixProduct:
         self.qn: List[List[int]] = []
         self.qnidx: int = None
         self._qntot: int = None
-        # sweeping from left?
+        # if sweeping from left: True else False
         self.left: bool = None
 
         # compress after add?
@@ -114,7 +114,7 @@ class MatrixProduct:
         )
         # return a list so that the logging result is more pretty
         return bond_dims
-
+    
     @property
     def ephtable(self):
         if self._ephtable is not None:
@@ -202,12 +202,16 @@ class MatrixProduct:
 
     @property
     def is_left_canon(self):
-        assert self.qnidx in (self.site_num - 1, 0)
+        """
+        check the qn center in the L-canonical structure
+        """
         return self.qnidx == self.site_num - 1
 
     @property
     def is_right_canon(self):
-        assert self.qnidx in (self.site_num - 1, 0)
+        """
+        check the qn center in the R-canonical structure
+        """
         return self.qnidx == 0
 
     def iter_idx_list(self, full: bool, stop_idx: int=None):
