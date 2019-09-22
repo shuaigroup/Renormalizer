@@ -180,7 +180,8 @@ class EvolveMethod(Enum):
     tdvp_mu_switch_gauge = "TDVP Matrix Unfolding Switch Gauge"
     # the canonical site is fixed
     tdvp_mu_fixed_gauge = "TDVP Matrix Unfolding Fixed Gauge"
-
+    # variable mean field
+    tdvp_mu_vmf = "TDVP Matrix Unfolding Variable Mean Field"
 
 def parse_memory_limit(x) -> float:
     if x is None:
@@ -207,6 +208,9 @@ class EvolveConfig:
         adaptive=False,
         evolve_dt=1e-1,
         adaptive_rtol=5e-4,
+        reg_epsilon=1e-10,
+        ivp_rtol=1e-5,
+        ivp_atol=1e-8
     ):
 
         self.method = method
@@ -224,6 +228,11 @@ class EvolveConfig:
 
         self.tdvp_mctdh_cmf = False
         self.tdvp_mu_midpoint = True
+        # regularization parameter in tdvp_mu or tdvp_std method
+        self.reg_epsilon: float = reg_epsilon
+        # scipy.ivp rtol and atol
+        self.ivp_rtol: float = ivp_rtol
+        self.ivp_atol: float = ivp_atol
 
         # should adjust bond order before any tdvp evolution
         self._adjust_bond_dim_counter: bool = False

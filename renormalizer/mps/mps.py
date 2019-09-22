@@ -601,6 +601,7 @@ class Mps(MatrixProduct):
             EvolveMethod.tdvp_mu_switch_gauge: self._evolve_dmrg_tdvp_mu_switch_gauge,
             EvolveMethod.tdvp_ps: self._evolve_dmrg_tdvp_ps,
             EvolveMethod.tdvp_mu_fixed_gauge: self._evolve_dmrg_tdvp_mu_fixed_gauge,
+            EvolveMethod.tdvp_mu_vmf: self._evolve_dmrg_tdvp_mu_vmf,
         }
         method = method_mapping[self.evolve_config.method]
         new_mps = method(mpo, evolve_dt)
@@ -721,7 +722,7 @@ class Mps(MatrixProduct):
             # density matrix
             S = transferMat(mps, mps_conj, "R", imps + 1).asnumpy()
 
-            epsilon = 1e-8
+            epsilon = self.evolve_config.reg_epsilon
             w, u = scipy.linalg.eigh(S)
             try:
                 w = w + epsilon * np.exp(-w / epsilon)
@@ -818,7 +819,7 @@ class Mps(MatrixProduct):
                     full_matrices=False,
                 )
                 vt = v.T
-                regular_s = _mu_regularize(s)
+                regular_s = _mu_regularize(s, epsilon=self.evolve_config.reg_epsilon)
 
                 if not mps.left:
                     islast = imps == 0
@@ -889,6 +890,131 @@ class Mps(MatrixProduct):
         # new_mps.evolve_config.stat = steps_stat
 
         return mps_t
+    
+    @adaptive_tdvp
+    def _evolve_dmrg_tdvp_mu_vmf(self, mpo, evolve_dt) -> "Mps":
+        """
+        variable mean field
+        see the difference of VMF and CMF, refer to Z. Phys. D 42, 113–129 (1997)
+        only the RKF45 integration is used.
+        The default RKF45 local step error tolerance is rtol:1e-5, atol:1e-8
+        regulation of S is 1e-10, these default parameters could be changed in
+        /utils/configs.py
+
+        TODO: other IVP integration methods such as predictor-corrector
+        """
+
+        # a workaround for https://github.com/scipy/scipy/issues/10164
+        imag_time = np.iscomplex(evolve_dt)
+        if imag_time:
+            evolve_dt = -evolve_dt.imag
+            # used in calculating derivatives
+            coef = -1
+        else:
+            coef = 1j
+
+        imag_time = np.iscomplex(evolve_dt)
+
+        if self.is_right_canon:
+            assert self.check_right_canonical()
+            self.canonicalise()
+        else:
+            if not self.check_left_canonical():
+                self.move_qnidx(0)
+                self.left = True
+                self.canonicalise()
+                assert self.check_left_canonical()
+
+        # `self` should not be modified during the evolution
+        if imag_time:
+            mps = self.copy()
+        else:
+            mps = self.to_complex()
+
+        def func_vmf(t,y):
+            
+            # update mps: from left to right
+            offset = 0
+            for imps in range(mps.site_num):
+                mps[imps] = y[offset:offset+mps[imps].size].reshape(mps[imps].shape)
+                offset += mps[imps].size
+            
+            environ_mps = mps.copy()
+            environ = Environ(environ_mps, mpo, "L")
+            environ.write_r_sentinel(environ_mps)
+            
+            # calculate hop_y: from right to left
+            hop_y = xp.empty_like(y)
+
+            offset = 0
+            for imps in mps.iter_idx_list(full=True):
+                shape = list(mps[imps].shape)
+                ltensor = environ.read("L", imps - 1)
+                
+                if imps == self.site_num - 1:
+                    # the coefficient site
+                    rtensor = ones((1, 1, 1))
+                    hop = hop_factory(ltensor, rtensor, mpo[imps], len(shape))
+
+                    hop_y[offset-mps[imps].size:] = hop(mps[imps].array).ravel()/coef
+                    offset -= mps[imps].size
+
+                    continue
+                
+                # perform qr on the environment mps
+                qnbigl, qnbigr = environ_mps._get_big_qn(imps + 1)
+                u, s, qnlset, v, s, qnrset = svd_qn.Csvd(
+                    environ_mps[imps + 1].asnumpy(),
+                    qnbigl,
+                    qnbigr,
+                    environ_mps.qntot,
+                    system="R",
+                    full_matrices=False,
+                )
+                vt = v.T
+
+                environ_mps[imps + 1] = vt.reshape(environ_mps[imps + 1].shape)
+                
+                ltensor = environ.read("L", imps - 1)
+                rtensor = environ.GetLR(
+                    "R", imps + 1, environ_mps, mpo, itensor=None, method="System"
+                )
+
+                regular_s = _mu_regularize(s, epsilon=self.evolve_config.reg_epsilon)
+
+                us = Matrix(u.dot(np.diag(s)))
+
+                rtensor = tensordot(rtensor, us, axes=(-1, -1))
+                
+                environ_mps[imps] = tensordot(environ_mps[imps], us, axes=(-1, 0))
+                environ_mps.qn[imps + 1] = qnrset
+                
+                S_inv = Matrix(u).conj().dot(xp.diag(1.0 / regular_s)).T
+
+                hop = hop_factory(ltensor, rtensor, mpo[imps], len(shape))
+
+                func = integrand_func_factory(shape, hop, False, S_inv.array, True, coef)
+                hop_y[offset-mps[imps].size:offset] = func(0, mps[imps].array.ravel())
+                offset -= mps[imps].size
+            
+            return hop_y
+
+        init_y = xp.concatenate([ms.array for ms in mps],axis=None)
+        # the ivp local error, please refer to the Scipy default setting
+        sol = solve_ivp( func_vmf, (0, evolve_dt), init_y, method="RK45",
+                rtol=self.evolve_config.ivp_rtol,
+                atol=self.evolve_config.ivp_atol)
+        
+        # update mps: from left to right
+        offset = 0
+        for imps in range(mps.site_num):
+            mps[imps] = sol.y[:, -1][offset:offset+mps[imps].size].reshape(mps[imps].shape)
+            offset += mps[imps].size
+        
+        logger.debug(f"{self.evolve_config.method} VMF steps: {len(sol.t)}")
+
+        return mps
+
 
     @adaptive_tdvp
     def _evolve_dmrg_tdvp_mu_fixed_gauge(self, mpo, evolve_dt) -> "Mps":
@@ -976,7 +1102,7 @@ class Mps(MatrixProduct):
                 "R", imps + 1, environ_mps, mpo, itensor=None, method="System"
             )
 
-            regular_s = _mu_regularize(s)
+            regular_s = _mu_regularize(s, epsilon=self.evolve_config.reg_epsilon)
 
             us = Matrix(u.dot(np.diag(s)))
 
@@ -1503,8 +1629,10 @@ def transferMat(mps, mpsconj, domain, siteidx):
     return val
 
 
-def _mu_regularize(s):
-    epsilon = 1e-10
+def _mu_regularize(s, epsilon=1e-10):
+    """
+    regularization of the singular value of the reduced density matrix
+    """
     epsilon = np.sqrt(epsilon)
     return s + epsilon * np.exp(- s / epsilon)
 
