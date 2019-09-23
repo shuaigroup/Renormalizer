@@ -24,12 +24,24 @@ class ThermalProp(TdMpsJob):
         # calculated during propagation
         self.approx_eihpt = None
         self.energies = []
+        self._e_occupations_array = []
+        self._ph_occupations_array = []
         super().__init__(evolve_config, dump_dir, job_name)
 
     def init_mps(self):
         self.init_mpdm.evolve_config = self.evolve_config
         self.energies.append(self.init_mpdm.expectation(self.h_mpo))
         return self.init_mpdm
+
+    def process_mps(self, mps):
+        new_energy = mps.expectation(self.h_mpo)
+        self.energies.append(new_energy)
+        logger.info(f"Energy: {new_energy}, total electron: {mps.e_occupations.sum()}")
+        for attr_str in ["e_occupations", "ph_occupations"]:
+            attr = getattr(mps, attr_str)
+            logger.info(f"{attr_str}: {attr}")
+            self_array = getattr(self, f"_{attr_str}_array")
+            self_array.append(attr)
 
     def evolve_exact(self, old_mpdm, evolve_dt):
         MPOprop, HAM, Etot = old_mpdm.hybrid_exact_propagator(
@@ -55,9 +67,6 @@ class ThermalProp(TdMpsJob):
             new_mpdm = self.evolve_exact(old_mpdm, evolve_dt)
         else:
             new_mpdm = self.evolve_prop(old_mpdm, evolve_dt)
-        new_energy = new_mpdm.expectation(self.h_mpo)
-        self.energies.append(new_energy)
-        logger.info(f"Energy: {new_energy}, total electron: {new_mpdm.e_occupations.sum()}")
         return new_mpdm
 
     def evolve(self, evolve_dt=None, nsteps=None, evolve_time=None):
@@ -75,11 +84,11 @@ class ThermalProp(TdMpsJob):
 
     @property
     def e_occupations_array(self):
-        return np.array([mps.e_occupations for mps in self.tdmps_list])
+        return np.array(self._e_occupations_array)
 
     @property
     def ph_occupations_array(self):
-        return np.array([mps.ph_occupations for mps in self.tdmps_list])
+        return np.array(self._ph_occupations_array)
 
     def get_dump_dict(self):
         dump_dict = dict()

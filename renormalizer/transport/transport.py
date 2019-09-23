@@ -48,14 +48,14 @@ class ChargeTransport(TdMpsJob):
             self.compress_config: CompressConfig = CompressConfig()
         else:
             self.compress_config: CompressConfig = compress_config
+        self.energies = []
+        self._r_square_array = []
+        self._e_occupations_array = []
+        self._ph_occupations_array = []
+        self.reduced_density_matrices = [] if rdm else None
         super(ChargeTransport, self).__init__(evolve_config)
         assert self.mpo is not None
-        self.energies = [self.tdmps_list[0].expectation(self.mpo)]
-        self.reduced_density_matrices = []
-        if rdm:
-            self.reduced_density_matrices.append(
-                self.tdmps_list[0].calc_reduced_density_matrix()
-            )
+
         self.elocalex_arrays = []
         self.j_arrays = []
         self.custom_dump_info = OrderedDict()
@@ -137,6 +137,23 @@ class ChargeTransport(TdMpsJob):
         # init_mp.invalidate_cache()
         return init_mp
 
+
+    def process_mps(self, mps):
+        new_energy = mps.expectation(self.mpo)
+        self.energies.append(new_energy)
+        logger.debug(f"Energy: {new_energy}")
+        for attr_str in ["r_square", "e_occupations", "ph_occupations"]:
+            attr = getattr(mps, attr_str)
+            logger.info(f"{attr_str}: {attr}")
+            self_array = getattr(self, f"_{attr_str}_array")
+            self_array.append(attr)
+
+        if self.reduced_density_matrices is not None:
+            logger.debug("Calculating reduced density matrix")
+            self.reduced_density_matrices.append(mps.calc_reduced_density_matrix())
+            logger.debug("Calculate reduced density matrix finished")
+
+
     def evolve_single_step(self, evolve_dt):
         old_mps = self.latest_mps
         #mol_list = self.mol_list.get_fluctuation_mollist(self.latest_evolve_time)
@@ -145,13 +162,6 @@ class ChargeTransport(TdMpsJob):
         #mpo = Mpo(mol_list, 3, offset=self.mpo.offset)
         mpo = self.mpo
         new_mps = old_mps.evolve(mpo, evolve_dt)
-        new_energy = new_mps.expectation(self.mpo)
-        self.energies.append(new_energy)
-        logger.info(f"r_square: {new_mps.r_square}")
-        if self.reduced_density_matrices:
-            logger.debug("Calculating reduced density matrix")
-            self.reduced_density_matrices.append(new_mps.calc_reduced_density_matrix())
-            logger.debug("Calculate reduced density matrix finished")
         return new_mps
 
     def stop_evolve_criteria(self):
@@ -162,10 +172,8 @@ class ChargeTransport(TdMpsJob):
         dump_dict = OrderedDict()
         dump_dict["mol list"] = self.mol_list.to_dict()
         dump_dict["tempearture"] = self.temperature.as_au()
-        dump_dict["total steps"] = len(self.tdmps_list)
         dump_dict["total time"] = self.evolve_times[-1]
         dump_dict["diffusion"] = self.latest_mps.r_square / self.evolve_times[-1]
-        dump_dict["thresholds"] = [tdmps.threshold for tdmps in self.tdmps_list]
         dump_dict["other info"] = self.custom_dump_info
         # make np array json serializable
         dump_dict["r square array"] = cast_float(self.r_square_array)
@@ -181,24 +189,16 @@ class ChargeTransport(TdMpsJob):
         return dump_dict
 
     @property
-    def initial_energy(self):
-        return float(self.energies[0])
-
-    @property
-    def latest_energy(self):
-        return float(self.energies[-1])
-
-    @property
     def r_square_array(self):
-        return np.array([mps.r_square for mps in self.tdmps_list])
+        return np.array(self._r_square_array)
 
     @property
     def e_occupations_array(self):
-        return np.array([mps.e_occupations for mps in self.tdmps_list])
+        return np.array(self._e_occupations_array)
 
     @property
     def ph_occupations_array(self):
-        return np.array([mps.ph_occupations for mps in self.tdmps_list])
+        return np.array(self._ph_occupations_array)
 
     @property
     def coherent_length_array(self):
@@ -211,9 +211,9 @@ class ChargeTransport(TdMpsJob):
             ]
         )
 
-    def is_similar(self, other, rtol=1e-3):
+    def is_similar(self, other: "ChargeTransport", rtol=1e-3):
         all_close_with_tol = partial(np.allclose, rtol=rtol, atol=1e-3)
-        if len(self.tdmps_list) != len(other.tdmps_list):
+        if len(self.evolve_times) != len(other.evolve_times):
             return False
         attrs = [
             "evolve_times",

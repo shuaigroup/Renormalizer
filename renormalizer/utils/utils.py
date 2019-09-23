@@ -5,8 +5,8 @@
 useful utilities
 """
 
-from itertools import islice, cycle
 import sys
+from itertools import islice, cycle
 
 
 def roundrobin(*iterables):
@@ -38,6 +38,7 @@ def sizeof_fmt(num, suffix="B"):
 
 
 def cast_float(l):
+    # cast from numpy float to python float
     try:
         # try array first
         return list([list(map(float, t)) for t in l])

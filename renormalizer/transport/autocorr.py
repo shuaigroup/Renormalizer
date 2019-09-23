@@ -44,6 +44,7 @@ class TransportAutoCorr(TdMpsJob):
             self.compress_config = compress_config
 
         self.impdm = None
+        self._auto_corr = []
         super().__init__(evolve_config, dump_dir, job_name)
 
 
@@ -95,6 +96,9 @@ class TransportAutoCorr(TdMpsJob):
         bra_mpdm = mpdm.copy()
         return BraKetPair(bra_mpdm, ket_mpdm, self.j_oper)
 
+    def process_mps(self, mps):
+        self._auto_corr.append(mps.ft)
+
     def evolve_single_step(self, evolve_dt):
         prev_bra_mpdm, prev_ket_mpdm = self.latest_mps
         latest_ket_mpdm = prev_ket_mpdm.evolve(self.h_mpo, evolve_dt)
@@ -117,7 +121,7 @@ class TransportAutoCorr(TdMpsJob):
 
     @property
     def auto_corr(self):
-        return np.array([m.ft for m in self.tdmps_list])
+        return np.array(self._auto_corr)
 
     def get_dump_dict(self):
         dump_dict = dict()

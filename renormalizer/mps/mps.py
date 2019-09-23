@@ -7,7 +7,7 @@ from typing import Union
 import numpy as np
 import scipy
 from scipy import stats
-from cached_property import cached_property
+from cached_property import cached_property as _cached_property
 
 
 from renormalizer.model import MolList
@@ -40,9 +40,9 @@ logger = logging.getLogger(__name__)
 cached_property_set = set()
 
 
-def _cached_property(func):
+def cached_property(func):
     cached_property_set.add(func.__name__)
-    return cached_property(func)
+    return _cached_property(func)
 
 
 def invalidate_cache_decorator(f):
@@ -469,7 +469,7 @@ class Mps(MatrixProduct):
         # the naive way, slow and time consuming
         # return np.array([self.expectation(mpo) for mpo in mpos])
 
-    @_cached_property
+    @cached_property
     def ph_occupations(self):
         key = "ph_occupations"
         if key not in self.mol_list.mpos:
@@ -482,7 +482,7 @@ class Mps(MatrixProduct):
             mpos = self.mol_list.mpos[key]
         return self.expectations(mpos)
 
-    @_cached_property
+    @cached_property
     def e_occupations(self):
         if self.mol_list.scheme < 4:
             key = "e_occupations"
@@ -502,7 +502,7 @@ class Mps(MatrixProduct):
         else:
             assert False
 
-    @_cached_property
+    @cached_property
     def r_square(self):
         r_list = np.arange(0, self.mol_num)
         if np.allclose(self.e_occupations, np.zeros_like(self.e_occupations)):
@@ -523,15 +523,6 @@ class Mps(MatrixProduct):
         # evolve_config has its own data
         new.evolve_config = self.evolve_config.copy()
         return new
-
-    def calc_energy(self, h_mpo):
-        return self.expectation(h_mpo)
-
-    def clear_memory(self):
-        # make a cache
-        for prop in cached_property_set:
-            _ = getattr(self, prop)
-        self.clear()
 
     def _dmrg_normalize(self):
         return self.scale(1.0 / self.dmrg_norm, inplace=True)
@@ -999,7 +990,7 @@ class Mps(MatrixProduct):
             
             return hop_y
 
-        init_y = xp.concatenate([ms.array for ms in mps],axis=None)
+        init_y = xp.concatenate([ms.array.flatten() for ms in mps])
         # the ivp local error, please refer to the Scipy default setting
         sol = solve_ivp( func_vmf, (0, evolve_dt), init_y, method="RK45",
                 rtol=self.evolve_config.ivp_rtol,
@@ -1470,15 +1461,10 @@ class Mps(MatrixProduct):
 
 
     def __str__(self):
-        # too many digits in the default format
-        e_occupations_str = ", ".join(
-            ["%.2f" % number for number in self.e_occupations]
-        )
-        template_str = "current size: {}, Matrix product bond dim:{}, electron occupations: {}"
+        template_str = "current size: {}, Matrix product bond dim:{}"
         return template_str.format(
             sizeof_fmt(self.total_bytes),
             self.bond_dims,
-            e_occupations_str,
         )
 
     def __setitem__(self, key, value):
@@ -1658,10 +1644,6 @@ class BraKetPair:
             dot * np.conjugate(self.bra_mps.coeff)
             * self.ket_mps.coeff
         )
-
-    def clear_memory(self):
-        self.bra_mps.clear_memory()
-        self.ket_mps.clear_memory()
 
     def __str__(self):
         if np.iscomplexobj(self.ft):
