@@ -30,15 +30,6 @@ def test_mps():
     check_property(mps)
 
 
-def test_clear():
-    gs_mps = Mps.gs(mol_list, max_entangled=False)
-    mps = creation_operator.apply(gs_mps)
-    new_mps = mps.copy()
-    new_mps.clear_memory()
-    assert new_mps.total_bytes < mps.total_bytes
-    check_property(new_mps)
-
-
 def test_mpo():
     gs_dm = MpDm.max_entangled_gs(mol_list)
     beta = Quantity(10, "K").to_beta()

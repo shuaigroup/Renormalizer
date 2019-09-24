@@ -26,8 +26,12 @@ class SpectraTdMpsJobBase(TdMpsJob):
             self.nexciton = 0
         self.temperature = temperature
         self.h_mpo = Mpo(mol_list, offset=offset)
+        self._autocorr = []
         super(SpectraTdMpsJobBase, self).__init__(evolve_config=evolve_config)
+
+    def process_mps(self, braket_pair):
+        self._autocorr.append(braket_pair.ft)
 
     @property
     def autocorr(self):
-        return np.array([pair.ft for pair in self.tdmps_list])
+        return np.array(self._autocorr)
