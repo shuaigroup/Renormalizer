@@ -993,6 +993,7 @@ class Mps(MatrixProduct):
         init_y = xp.concatenate([ms.array.flatten() for ms in mps])
         # the ivp local error, please refer to the Scipy default setting
         sol = solve_ivp( func_vmf, (0, evolve_dt), init_y, method="RK45",
+                t_eval=[evolve_dt],
                 rtol=self.evolve_config.ivp_rtol,
                 atol=self.evolve_config.ivp_atol)
         
@@ -1001,8 +1002,9 @@ class Mps(MatrixProduct):
         for imps in range(mps.site_num):
             mps[imps] = sol.y[:, -1][offset:offset+mps[imps].size].reshape(mps[imps].shape)
             offset += mps[imps].size
-        
-        logger.debug(f"{self.evolve_config.method} VMF steps: {len(sol.t)}")
+
+        # (sol.t) not working because corresponding states are discarded
+        logger.debug(f"{self.evolve_config.method} VMF func called: {sol.nfev}")
 
         return mps
 
