@@ -6,7 +6,7 @@ from typing import Union
 
 import numpy as np
 import scipy
-import scipy.integrate
+
 from scipy import stats
 from cached_property import cached_property as _cached_property
 
