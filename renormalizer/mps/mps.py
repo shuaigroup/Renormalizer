@@ -6,6 +6,7 @@ from typing import Union
 
 import numpy as np
 import scipy
+
 from scipy import stats
 from cached_property import cached_property as _cached_property
 
@@ -588,7 +589,7 @@ class Mps(MatrixProduct):
             return new_mps
 
         method_mapping = {
-            EvolveMethod.tdvp_fixed_gauge: self._evolve_dmrg_tdvp_fixed_gauge,
+            EvolveMethod.tdvp_vmf: self._evolve_dmrg_tdvp_vmf,
             EvolveMethod.tdvp_mu_switch_gauge: self._evolve_dmrg_tdvp_mu_switch_gauge,
             EvolveMethod.tdvp_ps: self._evolve_dmrg_tdvp_ps,
             EvolveMethod.tdvp_mu_fixed_gauge: self._evolve_dmrg_tdvp_mu_fixed_gauge,
@@ -673,12 +674,19 @@ class Mps(MatrixProduct):
                 )
             return compressed_sum(termlist)
 
-    def _evolve_dmrg_tdvp_fixed_gauge(self, mpo, evolve_dt) -> "Mps":
-        # TDVP for original MCTDH
-        if self.is_right_canon:
-            assert self.check_right_canonical()
-            self.canonicalise()
 
+    def _evolve_dmrg_tdvp_vmf(self, mpo, evolve_dt) -> "Mps":
+        """
+        variable mean field
+        see the difference between VMF and CMF, refer to Z. Phys. D 42, 113–129 (1997)
+        only the RKF45 integration is used.
+        The default RKF45 local step error tolerance is rtol:1e-5, atol:1e-8
+        regulation of S is 1e-10, these default parameters could be changed in
+        /utils/configs.py
+
+        TODO: other IVP integration methods such as predictor-corrector
+        """
+        
         # a workaround for https://github.com/scipy/scipy/issues/10164
         imag_time = np.iscomplex(evolve_dt)
         if imag_time:
@@ -688,69 +696,91 @@ class Mps(MatrixProduct):
         else:
             coef = 1j
 
-        # qn for this method has not been implemented
-        self.use_dummy_qn = True
-        self.clear_qn()
-        mps = self.to_complex(inplace=True)
-        mps_conj = mps.conj()
-        environ = Environ(mps, mpo, "R")
+        if not self.check_left_canonical():
+            self.move_qnidx(0)
+            self.left = True
+            self.canonicalise()
+            assert self.check_left_canonical()
+        
+        # `self` should not be modified during the evolution
+        if imag_time:
+            mps = self.copy()
+        else:
+            mps = self.to_complex()
 
-        # initial matrix
-        ltensor = np.ones((1, 1, 1))
-        rtensor = np.ones((1, 1, 1))
 
-        new_mps = self.metacopy()
+        def func_vmf(t,y):
+            
+            # update mps: from left to right
+            offset = 0
+            for imps in range(mps.site_num):
+                mps[imps] = y[offset:offset+mps[imps].size].reshape(mps[imps].shape)
+                offset += mps[imps].size
+            
+            mps_conj = mps.conj()
 
-        cmf_rk_steps = []
+            environ = Environ(mps, mpo, "L")
+            environ.write_r_sentinel(mps)
+            
+            # calculate hop_y: from right to left
+            hop_y = xp.empty_like(y)
+            
+            offset = 0
+            for imps in mps.iter_idx_list(full=True):
+                shape = list(mps[imps].shape)
+                ltensor = environ.read("L", imps - 1)
+                
+                if imps == self.site_num - 1:
+                    # the coefficient site
+                    rtensor = ones((1, 1, 1))
+                    hop = hop_factory(ltensor, rtensor, mpo[imps], len(shape))
 
-        for imps in range(len(mps)):
-            ltensor = environ.GetLR(
-                "L", imps - 1, mps, mpo, itensor=ltensor, method="System"
-            )
-            rtensor = environ.GetLR(
-                "R", imps + 1, mps, mpo, itensor=rtensor, method="Enviro"
-            )
-            # density matrix
-            S = transferMat(mps, mps_conj, "R", imps + 1).asnumpy()
+                    hop_y[offset-mps[imps].size:] = hop(mps[imps].array).ravel()/coef
+                    offset -= mps[imps].size
 
-            epsilon = self.evolve_config.reg_epsilon
-            w, u = scipy.linalg.eigh(S)
-            try:
+                    continue
+                
+                rtensor = environ.GetLR(
+                    "R", imps + 1, mps, mpo, itensor=None, method="System")
+                
+                # regularize density matrix
+                # Note that S is mps.conj() \dot mps
+                S = transferMat(mps, mps_conj, "R", imps + 1).asnumpy()
+                w, u = scipy.linalg.eigh(S)
+                
+                # discard the negative eigenvalues due to numerical error
+                w = np.where(w>0, w, 0)
+                epsilon = self.evolve_config.reg_epsilon
                 w = w + epsilon * np.exp(-w / epsilon)
-            except FloatingPointError:
-                logger.warning(f"eigenvalue of density matrix contains negative value")
-                w -= 2 * w.min()
-                w = w + epsilon * np.exp(-w / epsilon)
-            # print
-            # "sum w=", np.sum(w)
-            # S  = u.dot(np.diag(w)).dot(np.conj(u.T))
-            S_inv = xp.asarray(u.dot(np.diag(1.0 / w)).dot(np.conj(u.T)))
+                
+                S_inv = xp.asarray(u.dot(np.diag(1.0 / w)).dot(u.T.conj())).T
 
-            # pseudo inverse
-            # S_inv = scipy.linalg.pinvh(S,rcond=1e-2)
+                hop = hop_factory(ltensor, rtensor, mpo[imps], len(shape))
 
-            shape = mps[imps].shape
+                func = integrand_func_factory(shape, hop, False, S_inv, True, coef)
+                hop_y[offset-mps[imps].size:offset] = func(0, mps[imps].array.ravel())
+                offset -= mps[imps].size
+            
+            return hop_y
+        
+        init_y = xp.concatenate([ms.array.flatten() for ms in mps])
+        # the ivp local error, please refer to the Scipy default setting
+        sol = solve_ivp( func_vmf, (0, evolve_dt), init_y,
+                method="RK45",
+                rtol=self.evolve_config.ivp_rtol,
+                atol=self.evolve_config.ivp_atol)
+        
+        # update mps: from left to right
+        offset = 0
+        for imps in range(mps.site_num):
+            mps[imps] = sol.y[:, -1][offset:offset+mps[imps].size].reshape(mps[imps].shape)
+            offset += mps[imps].size
 
-            hop = hop_factory(ltensor, rtensor, mpo[imps], len(shape))
+        # (sol.t) not working because corresponding states are discarded
+        logger.debug(f"{self.evolve_config.method} VMF func called: {sol.nfev}")
 
-            func = integrand_func_factory(shape, hop, imps == len(mps) - 1, S_inv, True, coef)
+        return mps
 
-            sol = solve_ivp(
-                func, (0, evolve_dt), mps[imps].ravel().array, method="RK45"
-            )
-            # print
-            # "CMF steps:", len(sol.t)
-            cmf_rk_steps.append(len(sol.t))
-            new_mps[imps] = sol.y[:, -1].reshape(shape)
-            new_mps[imps].check_lortho()
-            # print
-            # "orthogonal1", np.allclose(np.tensordot(MPSnew[imps],
-            #                                        np.conj(MPSnew[imps]), axes=([0, 1], [0, 1])),
-            #                           np.diag(np.ones(MPSnew[imps].shape[2])))
-        steps_stat = stats.describe(cmf_rk_steps)
-        logger.debug(f"TDVP-MCTDH CMF steps: {steps_stat}")
-
-        return new_mps
 
     @adaptive_tdvp
     def _evolve_dmrg_tdvp_mu_switch_gauge(self, mpo, evolve_dt) -> "Mps":
@@ -766,8 +796,6 @@ class Mps(MatrixProduct):
             coef = -1
         else:
             coef = 1j
-
-        imag_time = np.iscomplex(evolve_dt)
 
 
         # `self` should not be modified during the evolution
@@ -882,11 +910,11 @@ class Mps(MatrixProduct):
 
         return mps_t
     
-    @adaptive_tdvp
+
     def _evolve_dmrg_tdvp_mu_vmf(self, mpo, evolve_dt) -> "Mps":
         """
-        variable mean field
-        see the difference of VMF and CMF, refer to Z. Phys. D 42, 113–129 (1997)
+        variable mean field combined with matrix unfolding technique
+        see the difference between VMF and CMF, refer to Z. Phys. D 42, 113–129 (1997)
         only the RKF45 integration is used.
         The default RKF45 local step error tolerance is rtol:1e-5, atol:1e-8
         regulation of S is 1e-10, these default parameters could be changed in
@@ -904,17 +932,11 @@ class Mps(MatrixProduct):
         else:
             coef = 1j
 
-        imag_time = np.iscomplex(evolve_dt)
-
-        if self.is_right_canon:
-            assert self.check_right_canonical()
+        if not self.check_left_canonical():
+            self.move_qnidx(0)
+            self.left = True
             self.canonicalise()
-        else:
-            if not self.check_left_canonical():
-                self.move_qnidx(0)
-                self.left = True
-                self.canonicalise()
-                assert self.check_left_canonical()
+            assert self.check_left_canonical()
 
         # `self` should not be modified during the evolution
         if imag_time:
@@ -966,7 +988,6 @@ class Mps(MatrixProduct):
 
                 environ_mps[imps + 1] = vt.reshape(environ_mps[imps + 1].shape)
                 
-                ltensor = environ.read("L", imps - 1)
                 rtensor = environ.GetLR(
                     "R", imps + 1, environ_mps, mpo, itensor=None, method="System"
                 )
@@ -993,7 +1014,6 @@ class Mps(MatrixProduct):
         init_y = xp.concatenate([ms.array.flatten() for ms in mps])
         # the ivp local error, please refer to the Scipy default setting
         sol = solve_ivp( func_vmf, (0, evolve_dt), init_y, method="RK45",
-                t_eval=[evolve_dt],
                 rtol=self.evolve_config.ivp_rtol,
                 atol=self.evolve_config.ivp_atol)
         
@@ -1024,17 +1044,11 @@ class Mps(MatrixProduct):
         else:
             coef = 1j
 
-        imag_time = np.iscomplex(evolve_dt)
-
-        if self.is_right_canon:
-            assert self.check_right_canonical()
+        if not self.check_left_canonical():
+            self.move_qnidx(0)
+            self.left = True
             self.canonicalise()
-        else:
-            if not self.check_left_canonical():
-                self.move_qnidx(0)
-                self.left = True
-                self.canonicalise()
-                assert self.check_left_canonical()
+            assert self.check_left_canonical()
 
         # `self` should not be modified during the evolution
         # mps: the mps to return
@@ -1090,7 +1104,6 @@ class Mps(MatrixProduct):
 
             environ_mps[imps + 1] = vt.reshape(environ_mps[imps + 1].shape)
 
-            ltensor = environ.read("L", imps - 1)
             rtensor = environ.GetLR(
                 "R", imps + 1, environ_mps, mpo, itensor=None, method="System"
             )
@@ -1581,14 +1594,11 @@ def integrand_func_factory(shape, hop, islast, S_inv: xp.ndarray, left: bool, co
             if y0.ndim == 3:
                 if left:
                     HC = tensordot(proj, HC, axes=([2, 3], [0, 1]))
-                    # uncomment this might resolve some numerical problem
-                    # HC = tensordot(proj, HC, axes=([2, 3], [0, 1]))
                 else:
                     HC = tensordot(HC, proj, axes=([1, 2], [2, 3]))
             elif y0.ndim == 4:
                 if left:
                     HC = tensordot(proj, HC, axes=([3, 4, 5], [0, 1, 2]))
-                    # HC = tensordot(proj, HC, axes=([3, 4, 5], [0, 1, 2]))
                 else:
                     HC = tensordot(HC, proj, axes=([1, 2, 3], [3, 4, 5]))
 
@@ -1604,15 +1614,29 @@ def transferMat(mps, mpsconj, domain, siteidx):
     """
     calculate the transfer matrix from the left hand or the right hand
     """
-    val = ones([1, 1])
-    if domain == "R":
-        for imps in range(len(mps) - 1, siteidx - 1, -1):
-            val = tensordot(mpsconj[imps], val, axes=(2, 0))
-            val = tensordot(val, mps[imps], axes=([1, 2], [1, 2]))
-    elif domain == "L":
-        for imps in range(0, siteidx + 1, 1):
-            val = tensordot(mpsconj[imps], val, axes=(0, 0))
-            val = tensordot(val, mps[imps], axes=([0, 2], [1, 0]))
+    val = ones([1, 1], dtype=mps.dtype)
+    
+    if mps[0].ndim == 3:
+        if domain == "R":
+            for imps in range(len(mps) - 1, siteidx - 1, -1):
+                val = tensordot(mpsconj[imps], val, axes=(2, 0))
+                val = tensordot(val, mps[imps], axes=([1, 2], [1, 2]))
+        elif domain == "L":
+            for imps in range(0, siteidx + 1, 1):
+                val = tensordot(mpsconj[imps], val, axes=(0, 0))
+                val = tensordot(val, mps[imps], axes=([0, 2], [1, 0]))
+    
+    elif mps[0].ndim == 4:
+        if domain == "R":
+            for imps in range(len(mps) - 1, siteidx - 1, -1):
+                val = tensordot(mpsconj[imps], val, axes=(3, 0))
+                val = tensordot(val, mps[imps], axes=([1, 2, 3], [1, 2, 3]))
+        elif domain == "L":
+            for imps in range(0, siteidx + 1, 1):
+                val = tensordot(mpsconj[imps], val, axes=(0, 0))
+                val = tensordot(val, mps[imps], axes=([0, 3, 1], [1, 0, 2]))
+    else:
+        raise ValueError(f"the dim of local mps is not correct: {mps[0].ndim}")
 
     return val
 

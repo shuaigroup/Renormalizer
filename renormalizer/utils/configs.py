@@ -175,7 +175,7 @@ class OptimizeConfig:
 class EvolveMethod(Enum):
     prop_and_compress = "P&C"
     tdvp_ps = "TDVP_PS"
-    tdvp_fixed_gauge = "TDVP Fixed Gauge"
+    tdvp_vmf = "TDVP Variable Mean Field"
     # the canonical site is not fixed
     tdvp_mu_switch_gauge = "TDVP Matrix Unfolding Switch Gauge"
     # the canonical site is fixed
