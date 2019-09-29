@@ -525,7 +525,7 @@ def solve_ivp(
 
         if t_eval is None:
             ts.append(t)
-            ys.append(y)
+            ys[-1] = y
         else:
             # The value in t_eval equal to t will be included.
             if solver.direction > 0:

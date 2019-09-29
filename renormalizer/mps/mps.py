@@ -696,11 +696,7 @@ class Mps(MatrixProduct):
         else:
             coef = 1j
 
-        if not self.check_left_canonical():
-            self.move_qnidx(0)
-            self.left = True
-            self.canonicalise()
-            assert self.check_left_canonical()
+        self.ensure_left_canon()
         
         # `self` should not be modified during the evolution
         if imag_time:
@@ -721,7 +717,9 @@ class Mps(MatrixProduct):
 
             environ = Environ(mps, mpo, "L")
             environ.write_r_sentinel(mps)
-            
+
+            # the first S
+            S = ones([1, 1], dtype=mps.dtype)
             # calculate hop_y: from right to left
             hop_y = xp.empty_like(y)
             
@@ -745,7 +743,7 @@ class Mps(MatrixProduct):
                 
                 # regularize density matrix
                 # Note that S is mps.conj() \dot mps
-                S = transferMat(mps, mps_conj, "R", imps + 1).asnumpy()
+                S = transferMat(mps, mps_conj, "R", imps + 1, Matrix(S)).asnumpy()
                 w, u = scipy.linalg.eigh(S)
                 
                 # discard the negative eigenvalues due to numerical error
@@ -776,8 +774,7 @@ class Mps(MatrixProduct):
             mps[imps] = sol.y[:, -1][offset:offset+mps[imps].size].reshape(mps[imps].shape)
             offset += mps[imps].size
 
-        # (sol.t) not working because corresponding states are discarded
-        logger.debug(f"{self.evolve_config.method} VMF func called: {sol.nfev}")
+        logger.debug(f"{self.evolve_config.method} VMF func called: {sol.nfev}. RKF steps: {len(sol.t)}")
 
         return mps
 
@@ -932,11 +929,7 @@ class Mps(MatrixProduct):
         else:
             coef = 1j
 
-        if not self.check_left_canonical():
-            self.move_qnidx(0)
-            self.left = True
-            self.canonicalise()
-            assert self.check_left_canonical()
+        self.ensure_left_canon()
 
         # `self` should not be modified during the evolution
         if imag_time:
@@ -1023,8 +1016,7 @@ class Mps(MatrixProduct):
             mps[imps] = sol.y[:, -1][offset:offset+mps[imps].size].reshape(mps[imps].shape)
             offset += mps[imps].size
 
-        # (sol.t) not working because corresponding states are discarded
-        logger.debug(f"{self.evolve_config.method} VMF func called: {sol.nfev}")
+        logger.debug(f"{self.evolve_config.method} VMF func called: {sol.nfev}. RKF steps: {len(sol.t)}")
 
         return mps
 
@@ -1044,11 +1036,7 @@ class Mps(MatrixProduct):
         else:
             coef = 1j
 
-        if not self.check_left_canonical():
-            self.move_qnidx(0)
-            self.left = True
-            self.canonicalise()
-            assert self.check_left_canonical()
+        self.ensure_left_canon()
 
         # `self` should not be modified during the evolution
         # mps: the mps to return
@@ -1610,31 +1598,26 @@ def integrand_func_factory(shape, hop, islast, S_inv: xp.ndarray, left: bool, co
     return func
 
 
-def transferMat(mps, mpsconj, domain, siteidx):
+def transferMat(mps, mpsconj, domain, imps, val):
     """
     calculate the transfer matrix from the left hand or the right hand
     """
-    val = ones([1, 1], dtype=mps.dtype)
     
     if mps[0].ndim == 3:
         if domain == "R":
-            for imps in range(len(mps) - 1, siteidx - 1, -1):
-                val = tensordot(mpsconj[imps], val, axes=(2, 0))
-                val = tensordot(val, mps[imps], axes=([1, 2], [1, 2]))
+            val = tensordot(mpsconj[imps], val, axes=(2, 0))
+            val = tensordot(val, mps[imps], axes=([1, 2], [1, 2]))
         elif domain == "L":
-            for imps in range(0, siteidx + 1, 1):
-                val = tensordot(mpsconj[imps], val, axes=(0, 0))
-                val = tensordot(val, mps[imps], axes=([0, 2], [1, 0]))
+            val = tensordot(mpsconj[imps], val, axes=(0, 0))
+            val = tensordot(val, mps[imps], axes=([0, 2], [1, 0]))
     
     elif mps[0].ndim == 4:
         if domain == "R":
-            for imps in range(len(mps) - 1, siteidx - 1, -1):
-                val = tensordot(mpsconj[imps], val, axes=(3, 0))
-                val = tensordot(val, mps[imps], axes=([1, 2, 3], [1, 2, 3]))
+            val = tensordot(mpsconj[imps], val, axes=(3, 0))
+            val = tensordot(val, mps[imps], axes=([1, 2, 3], [1, 2, 3]))
         elif domain == "L":
-            for imps in range(0, siteidx + 1, 1):
-                val = tensordot(mpsconj[imps], val, axes=(0, 0))
-                val = tensordot(val, mps[imps], axes=([0, 3, 1], [1, 0, 2]))
+            val = tensordot(mpsconj[imps], val, axes=(0, 0))
+            val = tensordot(val, mps[imps], axes=([0, 3, 1], [1, 0, 2]))
     else:
         raise ValueError(f"the dim of local mps is not correct: {mps[0].ndim}")
 
