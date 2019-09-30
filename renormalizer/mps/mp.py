@@ -182,21 +182,21 @@ class MatrixProduct:
             self.qn[idx] = [self.qntot - i for i in self.qn[idx]]
         self.qnidx = dstidx
 
-    def check_left_canonical(self):
+    def check_left_canonical(self, atol=1e-3):
         """
         check L-canonical
         """
         for mt in self[:-1]:
-            if not mt.check_lortho():
+            if not mt.check_lortho(atol):
                 return False
         return True
 
-    def check_right_canonical(self):
+    def check_right_canonical(self, atol=1e-3):
         """
         check R-canonical
         """
         for mt in self[1:]:
-            if not mt.check_rortho():
+            if not mt.check_rortho(atol):
                 return False
         return True
 
@@ -213,6 +213,13 @@ class MatrixProduct:
         check the qn center in the R-canonical structure
         """
         return self.qnidx == 0
+
+    def ensure_left_canon(self, atol=1e-3):
+        if not self.check_left_canonical(atol):
+            self.move_qnidx(0)
+            self.left = True
+            self.canonicalise()
+            assert self.check_left_canonical(atol)
 
     def iter_idx_list(self, full: bool, stop_idx: int=None):
         # if not `full`, the last site is omitted.
@@ -287,7 +294,6 @@ class MatrixProduct:
             self.qnidx = 0
             self.left = True
             # assert self.check_right_canonical()
-
 
     def _get_big_qn(self, idx):
         mt: Matrix = self[idx]
