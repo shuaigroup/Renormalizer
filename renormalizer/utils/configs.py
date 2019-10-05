@@ -222,11 +222,17 @@ class EvolveConfig:
         self.adaptive_rtol = adaptive_rtol
         self.d_energy = 1e-3
 
-        self.prop_method = "C_RK4"
         # both rk45 and krylov are ok for tdvp_ps
         self.tdvp_ps_rk4: bool = False
 
-        self.tdvp_mctdh_cmf = False
+        # abm configs
+        # todo: merge with evolve_dt
+        self.abm_adaptive = True
+        self.abm_derivatives = None
+        # first step size in ABM
+        self.tdvp_vmf_suggest_h = None
+
+        self.tdvp_mu_switch_gauge_cmf = False
         self.tdvp_mu_midpoint = True
         # regularization parameter in tdvp_mu or tdvp_std method
         self.reg_epsilon: float = reg_epsilon
@@ -279,7 +285,7 @@ class EvolveConfig:
         return new
 
     def __str__(self):
-        attrs = ["method", "adaptive", "evolve_dt", "adaptive_rtol", "d_energy", "tdvp_ps_rk4"]
+        attrs = [a for a in self.__dict__ if not a.startswith("_")]
         lines = []
         for attr in attrs:
             attr_value = getattr(self, attr)

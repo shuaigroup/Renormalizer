@@ -317,6 +317,14 @@ class Mps(MatrixProduct):
         self.optimize_config: OptimizeConfig = OptimizeConfig()
         self.evolve_config: EvolveConfig = EvolveConfig()
 
+
+    def canonicalise(self, stop_idx: int=None):
+        # abm derivatives not useful after the canonicalization
+        # other parts may have the same problem. What can be done?
+        if self.evolve_config.method in [EvolveMethod.tdvp_mu_vmf, EvolveMethod.tdvp_vmf]:
+            self.evolve_config.abm_derivatives = None
+        return super().canonicalise(stop_idx)
+
     def conj(self):
         new_mps = super().conj()
         for idx, wfn in enumerate(new_mps.wfns):
@@ -762,19 +770,18 @@ class Mps(MatrixProduct):
             return hop_y
         
         init_y = xp.concatenate([ms.array.flatten() for ms in mps])
-        # the ivp local error, please refer to the Scipy default setting
+
         sol = solve_ivp( func_vmf, (0, evolve_dt), init_y,
-                method="RK45",
-                rtol=self.evolve_config.ivp_rtol,
-                atol=self.evolve_config.ivp_atol)
-        
+                method="ABM",
+                evolve_config = mps.evolve_config)
+
+        logger.debug(f"{self.evolve_config.method} VMF func called: {sol.nfev}. ABM steps: {sol.nsteps}, h:{mps.evolve_config.tdvp_vmf_suggest_h}")
+
         # update mps: from left to right
         offset = 0
         for imps in range(mps.site_num):
             mps[imps] = sol.y[:, -1][offset:offset+mps[imps].size].reshape(mps[imps].shape)
             offset += mps[imps].size
-
-        logger.debug(f"{self.evolve_config.method} VMF func called: {sol.nfev}. RKF steps: {len(sol.t)}")
 
         return mps
 
@@ -802,7 +809,7 @@ class Mps(MatrixProduct):
             mps = self.copy()
         else:
             mps = self.to_complex()
-        if self.evolve_config.tdvp_mctdh_cmf:
+        if self.evolve_config.tdvp_mu_switch_gauge_cmf:
             # constant environment
             environ_mps = mps
             mps_t = mps.metacopy()
@@ -894,7 +901,7 @@ class Mps(MatrixProduct):
                     else:
                         ms = xp.tensordot(ms, svt.array, 1)
                 mps_t[imps] = ms
-            if self.evolve_config.tdvp_mctdh_cmf:
+            if self.evolve_config.tdvp_mu_switch_gauge_cmf:
                 # environ_mps == mps, mps_t = mps.copy()
                 mps._switch_direction()
                 mps_t._switch_direction()
@@ -1005,18 +1012,18 @@ class Mps(MatrixProduct):
             return hop_y
 
         init_y = xp.concatenate([ms.array.flatten() for ms in mps])
-        # the ivp local error, please refer to the Scipy default setting
-        sol = solve_ivp( func_vmf, (0, evolve_dt), init_y, method="RK45",
-                rtol=self.evolve_config.ivp_rtol,
-                atol=self.evolve_config.ivp_atol)
+
+        sol = solve_ivp(func_vmf, (0, evolve_dt), init_y,
+                        method="ABM",
+                        evolve_config=mps.evolve_config)
+
+        logger.debug(f"{self.evolve_config.method} VMF func called: {sol.nfev}. ABM steps: {sol.nsteps}, h:{mps.evolve_config.tdvp_vmf_suggest_h}")
         
         # update mps: from left to right
         offset = 0
         for imps in range(mps.site_num):
             mps[imps] = sol.y[:, -1][offset:offset+mps[imps].size].reshape(mps[imps].shape)
             offset += mps[imps].size
-
-        logger.debug(f"{self.evolve_config.method} VMF func called: {sol.nfev}. RKF steps: {len(sol.t)}")
 
         return mps
 

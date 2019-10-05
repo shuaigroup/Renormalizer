@@ -15,14 +15,14 @@ from renormalizer.mps.tests import cur_dir
 @pytest.mark.parametrize(
     "method, evolve_dt, nsteps, use_rk, cmf_or_midpoint, rtol, interval",
     (
-        [EvolveMethod.tdvp_vmf, 15., 100, False, None, 1e-2, 1],
+        [EvolveMethod.tdvp_vmf, 150., 10, False, None, 1e-2, 10],
         [EvolveMethod.tdvp_mu_switch_gauge, 8, 50, None, False, 1e-2, 4],
         [EvolveMethod.tdvp_mu_switch_gauge, 4, 100, None, True, 1e-2, 2],
         [EvolveMethod.tdvp_mu_fixed_gauge, 6, 70, None, False, 1e-2, 3],
         [EvolveMethod.tdvp_mu_fixed_gauge, 12, 35, None, True, 1e-2, 6],
         [EvolveMethod.tdvp_ps, 15.0, 200, True, None, 1e-2, 1],
         [EvolveMethod.tdvp_ps, 15.0, 200, False, None, 1e-2, 1],
-        [EvolveMethod.tdvp_mu_vmf, 15.0, 100, False, None, 1e-2, 1],
+        [EvolveMethod.tdvp_mu_vmf, 150., 10, False, None, 1e-2, 10],
     ),
 )
 def test_ZeroTcorr_TDVP(method, evolve_dt, nsteps, use_rk, cmf_or_midpoint, rtol, interval):
@@ -33,10 +33,14 @@ def test_ZeroTcorr_TDVP(method, evolve_dt, nsteps, use_rk, cmf_or_midpoint, rtol
 
     evolve_config = EvolveConfig(method, evolve_dt=evolve_dt, adaptive=False)
     evolve_config.tdvp_ps_rk4 = use_rk
-    evolve_config.tdvp_mctdh_cmf = cmf_or_midpoint
+    evolve_config.tdvp_mu_switch_gauge_cmf = cmf_or_midpoint
     evolve_config.tdvp_mu_midpoint = cmf_or_midpoint
-    if method is EvolveMethod.tdvp_vmf:
+    if method in [EvolveMethod.tdvp_vmf, EvolveMethod.tdvp_mu_vmf]:
         evolve_config.reg_epsilon = 1e-5
+        evolve_config.ivp_rtol = 1e-3
+        evolve_config.ivp_atol = 1e-6
+        evolve_config.abm_adaptive = False
+        evolve_config.tdvp_vmf_suggest_h = evolve_dt / 20
 
     zero_t_corr = SpectraTwoWayPropZeroT(
         mol_list,
@@ -63,12 +67,12 @@ def test_ZeroTcorr_TDVP(method, evolve_dt, nsteps, use_rk, cmf_or_midpoint, rtol
 @pytest.mark.parametrize(
     "method, nsteps, evolve_dt, use_rk, rtol, interval",
     (
-        [EvolveMethod.tdvp_vmf, 30, 6.,False, 1e-2, 3],
+        [EvolveMethod.tdvp_vmf, 15, 60,False, 1e-2, 2],
         [EvolveMethod.tdvp_mu_switch_gauge, 10, 32, None, 1e-2, 16],
         [EvolveMethod.tdvp_mu_fixed_gauge, 5, 64, None, 1e-2, 32],
         [EvolveMethod.tdvp_ps, 30, 30, True, 1e-2, 1],
         [EvolveMethod.tdvp_ps, 30, 30, False, 1e-2, 1],
-        [EvolveMethod.tdvp_mu_vmf, 30, 6, False, 1e-2, 3],
+        [EvolveMethod.tdvp_mu_vmf, 10, 90, False, 1e-2, 3],
     ),
 )
 def test_finite_t_spectra_emi_TDVP(method, nsteps, evolve_dt, use_rk, rtol, interval):
@@ -77,8 +81,10 @@ def test_finite_t_spectra_emi_TDVP(method, nsteps, evolve_dt, use_rk, rtol, inte
     offset = Quantity(2.28614053, "ev")
     evolve_config = EvolveConfig(method)
     evolve_config.tdvp_ps_rk4 = use_rk
-    if method is EvolveMethod.tdvp_vmf:
+    if method in [EvolveMethod.tdvp_vmf, EvolveMethod.tdvp_mu_vmf]:
         evolve_config.reg_epsilon = 1e-5
+        evolve_config.ivp_rtol = 1e-3
+        evolve_config.ivp_atol = 1e-6
     
     finite_t_corr = SpectraFiniteT(
         mol_list, "emi", temperature, 50, offset, evolve_config=evolve_config
@@ -89,8 +95,8 @@ def test_finite_t_spectra_emi_TDVP(method, nsteps, evolve_dt, use_rk, rtol, inte
         EvolveMethod.tdvp_mu_switch_gauge: "finite_t_tdvp_mu.npy",
         EvolveMethod.tdvp_mu_fixed_gauge: "finite_t_tdvp_mu.npy",
         EvolveMethod.tdvp_ps: "finite_t_tdvp_ps.npy",
-        EvolveMethod.tdvp_mu_vmf: "finite_t_tdvp_mu.npy",
-        EvolveMethod.tdvp_vmf: "finite_t_tdvp_mu.npy"
+        EvolveMethod.tdvp_mu_vmf: "finite_t_tdvp_ps.npy",
+        EvolveMethod.tdvp_vmf: "finite_t_tdvp_ps.npy"
     }
     fname = file_name_mapping[method]
     with open(os.path.join(cur_dir, fname),"rb") as f:

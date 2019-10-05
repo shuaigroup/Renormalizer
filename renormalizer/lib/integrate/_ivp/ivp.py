@@ -1,6 +1,8 @@
 from __future__ import division, print_function, absolute_import
 import inspect
 
+import numpy as np
+
 
 from .rk import RK23, RK45
 from scipy.optimize import OptimizeResult
@@ -437,21 +439,21 @@ def solve_ivp(
     t0, tf = float(t_span[0]), float(t_span[1])
 
     if t_eval is not None:
-        t_eval = xp.asarray(t_eval)
+        t_eval = np.asarray(t_eval)
         if t_eval.ndim != 1:
             raise ValueError("`t_eval` must be 1-dimensional.")
 
-        if xp.any(t_eval < min(t0, tf)) or xp.any(t_eval > max(t0, tf)):
+        if np.any(t_eval < min(t0, tf)) or np.any(t_eval > max(t0, tf)):
             raise ValueError("Values in `t_eval` are not within `t_span`.")
 
-        d = xp.diff(t_eval)
-        if tf > t0 and xp.any(d <= 0) or tf < t0 and xp.any(d >= 0):
+        d = np.diff(t_eval)
+        if tf > t0 and np.any(d <= 0) or tf < t0 and np.any(d >= 0):
             raise ValueError("Values in `t_eval` are not properly sorted.")
 
         if tf > t0:
             t_eval_i = 0
         else:
-            # Make order of t_eval decreasing to use xp.searchsorted.
+            # Make order of t_eval decreasing to use np.searchsorted.
             t_eval = t_eval[::-1]
             # This will be an upper bound for slices.
             t_eval_i = t_eval.shape[0]
@@ -525,14 +527,15 @@ def solve_ivp(
 
         if t_eval is None:
             ts.append(t)
-            ys[-1] = y
+            ys.append(y)
+            #ys[-1] = y
         else:
             # The value in t_eval equal to t will be included.
             if solver.direction > 0:
-                t_eval_i_new = xp.searchsorted(t_eval, t, side="right")
+                t_eval_i_new = np.searchsorted(t_eval, t, side="right")
                 t_eval_step = t_eval[t_eval_i:t_eval_i_new]
             else:
-                t_eval_i_new = xp.searchsorted(t_eval, t, side="left")
+                t_eval_i_new = np.searchsorted(t_eval, t, side="left")
                 # It has to be done with two slice operations, because
                 # you can't slice to 0-th element inclusive using backward
                 # slicing.

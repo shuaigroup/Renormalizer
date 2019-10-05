@@ -253,7 +253,7 @@ class DenseOutput(object):
             Computed values. Shape depends on whether `t` was a scalar or a
             1-d array.
         """
-        t = xp.asarray(t)
+        t = np.asarray(t)
         if t.ndim > 1:
             raise ValueError("`t` must be float or 1-d array.")
         return self._call_impl(t)
