@@ -536,15 +536,19 @@ class MatrixProduct:
         return new_mp
 
     def distance(self, other):
-        res =  np.sqrt(
-            self.conj().dot(self)
+        l1 = self.conj().dot(self) 
+        l2 = other.conj().dot(other)
+        dis_square = (l1 + l2
             - self.conj().dot(other)
-            - other.conj().dot(self)
-            + other.conj().dot(other)
-        )
-        # corresponds to < 1e-6 before sqrt
-        assert res.imag < 1e-3
-        return res.real
+            - other.conj().dot(self)).real 
+        
+        if dis_square < 0:
+            assert dis_square/l1.real < 1e-8
+            res = 0.
+        else:
+            res = np.sqrt(dis_square)
+        
+        return res
 
     def copy(self):
         new = self.metacopy()
