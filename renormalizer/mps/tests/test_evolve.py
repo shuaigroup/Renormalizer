@@ -67,7 +67,7 @@ def test_ZeroTcorr_TDVP(method, evolve_dt, nsteps, use_rk, force_Ovlp, cmf_or_mi
     (
         [EvolveMethod.tdvp_vmf, 30, 6., None, False, 1e-2, 3],
         [EvolveMethod.tdvp_mu_vmf, 30, 6, None, False, 1e-2, 3],
-        [EvolveMethod.tdvp_mu_vmf, 30, 6, None, True, 1e-2, 3],
+        #[EvolveMethod.tdvp_mu_vmf, 30, 6, None, True, 1e-2, 3],
         [EvolveMethod.tdvp_mu_switch_gauge, 10, 32, None, False, 1e-2, 16],
         [EvolveMethod.tdvp_mu_fixed_gauge, 5, 64, None, False, 1e-2, 32],
         [EvolveMethod.tdvp_ps, 30, 30, True, False, 1e-2, 1],
