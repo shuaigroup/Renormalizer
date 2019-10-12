@@ -21,7 +21,7 @@ from renormalizer.mps.tests import cur_dir
         [EvolveMethod.tdvp_mu_switch_gauge, 8, 50, None, False, False, 1e-2, 4],
         [EvolveMethod.tdvp_mu_switch_gauge, 4, 100, None, False, True, 1e-2, 2],
         [EvolveMethod.tdvp_mu_fixed_gauge, 6, 70, None, False, False, 1e-2, 3],
-        [EvolveMethod.tdvp_mu_fixed_gauge, 12, 35, None, False, True, 1e-2, 6],
+        [EvolveMethod.tdvp_mu_fixed_gauge, 6, 35, None, False, True, 1e-2, 3],
         [EvolveMethod.tdvp_ps, 15.0, 200, True, False,  None, 1e-2, 1],
         [EvolveMethod.tdvp_ps, 15.0, 200, False, False, None, 1e-2, 1],
     ),
@@ -67,7 +67,7 @@ def test_ZeroTcorr_TDVP(method, evolve_dt, nsteps, use_rk, force_Ovlp, cmf_or_mi
     (
         [EvolveMethod.tdvp_vmf, 30, 6., None, False, 1e-2, 3],
         [EvolveMethod.tdvp_mu_vmf, 30, 6, None, False, 1e-2, 3],
-        #[EvolveMethod.tdvp_mu_vmf, 30, 6, None, True, 1e-2, 3],
+        [EvolveMethod.tdvp_mu_vmf, 30, 6, None, True, 1e-2, 3],
         [EvolveMethod.tdvp_mu_switch_gauge, 10, 32, None, False, 1e-2, 16],
         [EvolveMethod.tdvp_mu_fixed_gauge, 5, 64, None, False, 1e-2, 32],
         [EvolveMethod.tdvp_ps, 30, 30, True, False, 1e-2, 1],
