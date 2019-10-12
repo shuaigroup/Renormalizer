@@ -695,7 +695,7 @@ class Mps(MatrixProduct):
             coef = -1
         else:
             coef = 1j
-
+        
         self.ensure_left_canon()
         
         # `self` should not be modified during the evolution
@@ -718,8 +718,28 @@ class Mps(MatrixProduct):
             environ = Environ(mps, mpo, "L")
             environ.write_r_sentinel(mps)
 
-            # the first S
-            S = ones([1, 1], dtype=mps.dtype)
+            # the first S_R
+            S_R = ones([1, 1], dtype=mps.dtype)
+            
+            if self.evolve_config.force_Ovlp:
+                # construct the S_L list (type: Matrix) and S_L_inv list (type: xp.array)
+                # len: mps.site_num+1
+                S_L_list = [ones([1, 1], dtype=mps.dtype),]
+                for imps in range(mps.site_num):
+                    S_L_list.append(transferMat(mps, mps_conj, "L", imps,
+                        S_L_list[imps]))
+                
+                S_L_inv_list = []    
+                for imps in range(mps.site_num+1):
+                    w, u = scipy.linalg.eigh(S_L_list[imps].asnumpy())
+                    S_L_inv = xp.asarray(u.dot(np.diag(1.0 / w)).dot(u.T.conj()))
+                    S_L_inv_list.append(S_L_inv)
+                    S_L_list[imps] = S_L_list[imps].array
+                
+            else:
+                S_L_list = [None,] * (mps.site_num+1)
+                S_L_inv_list = [None,] * (mps.site_num+1)
+
             # calculate hop_y: from right to left
             hop_y = xp.empty_like(y)
             
@@ -732,8 +752,12 @@ class Mps(MatrixProduct):
                     # the coefficient site
                     rtensor = ones((1, 1, 1))
                     hop = hop_factory(ltensor, rtensor, mpo[imps], len(shape))
-
-                    hop_y[offset-mps[imps].size:] = hop(mps[imps].array).ravel()/coef
+                    S_inv = xp.diag(xp.ones(1,dtype=mps.dtype))
+                    func = integrand_func_factory(shape, hop, True, S_inv, True,
+                            coef, Ovlp_inv1=S_L_inv_list[imps+1],
+                            Ovlp_inv0=S_L_inv_list[imps], Ovlp0=S_L_list[imps])
+                               
+                    hop_y[offset-mps[imps].size:] = func(0, mps[imps].array.ravel())
                     offset -= mps[imps].size
 
                     continue
@@ -742,20 +766,24 @@ class Mps(MatrixProduct):
                     "R", imps + 1, mps, mpo, itensor=None, method="System")
                 
                 # regularize density matrix
-                # Note that S is mps.conj() \dot mps
-                S = transferMat(mps, mps_conj, "R", imps + 1, Matrix(S)).asnumpy()
-                w, u = scipy.linalg.eigh(S)
+                # Note that S_R is (#.conj, #)
+                S_R = transferMat(mps, mps_conj, "R", imps + 1, Matrix(S_R)).asnumpy()
+                w, u = scipy.linalg.eigh(S_R)
                 
                 # discard the negative eigenvalues due to numerical error
                 w = np.where(w>0, w, 0)
                 epsilon = self.evolve_config.reg_epsilon
                 w = w + epsilon * np.exp(-w / epsilon)
                 
+                # S_inv is (#.conj, #)
                 S_inv = xp.asarray(u.dot(np.diag(1.0 / w)).dot(u.T.conj())).T
 
                 hop = hop_factory(ltensor, rtensor, mpo[imps], len(shape))
+                
+                func = integrand_func_factory(shape, hop, False, S_inv, True,
+                        coef, Ovlp_inv1=S_L_inv_list[imps+1],
+                        Ovlp_inv0=S_L_inv_list[imps], Ovlp0=S_L_list[imps])
 
-                func = integrand_func_factory(shape, hop, False, S_inv, True, coef)
                 hop_y[offset-mps[imps].size:offset] = func(0, mps[imps].array.ravel())
                 offset -= mps[imps].size
             
@@ -949,6 +977,24 @@ class Mps(MatrixProduct):
             environ = Environ(environ_mps, mpo, "L")
             environ.write_r_sentinel(environ_mps)
             
+            if self.evolve_config.force_Ovlp:
+                # construct the S_L list (type: Matrix) and S_L_inv list (type: xp.array)
+                # len: mps.site_num+1
+                S_L_list = [ones([1, 1], dtype=mps.dtype),]
+                for imps in range(mps.site_num):
+                    S_L_list.append(transferMat(mps, mps.conj(), "L", imps,
+                        S_L_list[imps]))
+                
+                S_L_inv_list = []    
+                for imps in range(mps.site_num+1):
+                    w, u = scipy.linalg.eigh(S_L_list[imps].asnumpy())
+                    S_L_inv = xp.asarray(u.dot(np.diag(1.0 / w)).dot(u.T.conj()))
+                    S_L_inv_list.append(S_L_inv)
+                    S_L_list[imps] = S_L_list[imps].array
+            else:
+                S_L_list = [None,] * (mps.site_num+1)
+                S_L_inv_list = [None,] * (mps.site_num+1)
+            
             # calculate hop_y: from right to left
             hop_y = xp.empty_like(y)
 
@@ -961,8 +1007,13 @@ class Mps(MatrixProduct):
                     # the coefficient site
                     rtensor = ones((1, 1, 1))
                     hop = hop_factory(ltensor, rtensor, mpo[imps], len(shape))
-
-                    hop_y[offset-mps[imps].size:] = hop(mps[imps].array).ravel()/coef
+                    
+                    S_inv = xp.diag(xp.ones(1,dtype=mps.dtype))
+                    func = integrand_func_factory(shape, hop, True, S_inv, True,
+                            coef, Ovlp_inv1=S_L_inv_list[imps+1],
+                            Ovlp_inv0=S_L_inv_list[imps], Ovlp0=S_L_list[imps])
+                               
+                    hop_y[offset-mps[imps].size:] = func(0, mps[imps].array.ravel())
                     offset -= mps[imps].size
 
                     continue
@@ -998,7 +1049,10 @@ class Mps(MatrixProduct):
 
                 hop = hop_factory(ltensor, rtensor, mpo[imps], len(shape))
 
-                func = integrand_func_factory(shape, hop, False, S_inv.array, True, coef)
+                func = integrand_func_factory(shape, hop, False, S_inv.array, True,
+                        coef, Ovlp_inv1=S_L_inv_list[imps+1],
+                        Ovlp_inv0=S_L_inv_list[imps], Ovlp0=S_L_list[imps])
+                
                 hop_y[offset-mps[imps].size:offset] = func(0, mps[imps].array.ravel())
                 offset -= mps[imps].size
             
@@ -1481,12 +1535,25 @@ class Mps(MatrixProduct):
         return self.add(other.scale(-1))
 
 
-def projector(ms: xp.ndarray, left: bool) -> xp.ndarray:
+def projector(ms: xp.ndarray, left: bool, Ovlp_inv1: xp.ndarray =None, Ovlp0: xp.ndarray =None) -> xp.ndarray:
     if left:
         axes = (-1, -1)
     else:
         axes = (0, 0)
-    proj = xp.tensordot(ms, ms.conj(), axes=axes)
+    
+    if Ovlp_inv1 is None:
+        proj = xp.tensordot(ms, ms.conj(), axes=axes)
+    else:
+        # consider the case that the canonical condition is not fulfilled
+        if left:
+            proj = xp.tensordot(Ovlp0, ms, axes=(-1, 0))
+            proj = xp.tensordot(proj, Ovlp_inv1, axes=(-1, 0))
+            proj = xp.tensordot(proj, ms.conj(), axes=(-1, -1))
+        else:
+            proj = xp.tensordot(ms, Ovlp0, axes=(-1, 0))
+            proj = xp.tensordot(Ovlp_inv1, proj,  axes=(-1, 0))
+            proj = xp.tensordot(proj, ms.conj(), axes=(0, 0))
+
     if left:
         sz = int(np.prod(ms.shape[:-1]))
     else:
@@ -1572,13 +1639,16 @@ def hop_factory(
     return hop
 
 
-def integrand_func_factory(shape, hop, islast, S_inv: xp.ndarray, left: bool, coef: complex):
+def integrand_func_factory(shape, hop, islast, S_inv: xp.ndarray, left: bool,
+        coef: complex, Ovlp_inv1: xp.ndarray =None, Ovlp_inv0: xp.ndarray =None, Ovlp0: xp.ndarray =None):
     # left == True: projector operate on the left side of the HC
+    # Ovlp0 is (#.conj, #), Ovlp_inv0 = (#, #.conj), Ovlp_inv1 = (#, #.conj)
+    # S_inv is (#.conj, #)
     def func(t, y):
         y0 = y.reshape(shape)
         HC = hop(y0)
         if not islast:
-            proj = projector(y0, left)
+            proj = projector(y0, left, Ovlp_inv1, Ovlp0)
             if y0.ndim == 3:
                 if left:
                     HC = tensordot(proj, HC, axes=([2, 3], [0, 1]))
@@ -1589,12 +1659,16 @@ def integrand_func_factory(shape, hop, islast, S_inv: xp.ndarray, left: bool, co
                     HC = tensordot(proj, HC, axes=([3, 4, 5], [0, 1, 2]))
                 else:
                     HC = tensordot(HC, proj, axes=([1, 2, 3], [3, 4, 5]))
-
+        
         if left:
+            if Ovlp_inv0 is not None:
+                HC = tensordot(Ovlp_inv0, HC, axes=(-1, 0))
             return tensordot(HC, S_inv, axes=(-1, 0)).ravel() / coef
         else:
+            if Ovlp_inv0 is not None:
+                HC = tensordot(HC, Ovlp_inv0, axes=(-1, -1))
             return tensordot(S_inv, HC, axes=(0, 0)).ravel() / coef
-
+        
     return func
 
 
