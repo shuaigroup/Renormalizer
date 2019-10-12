@@ -51,14 +51,16 @@ class TdMpsJob(object):
     def evolve(self, evolve_dt=None, nsteps=None, evolve_time=None):
         # deal with arguments
         if nsteps is not None and evolve_time is not None:
-            logger.debug("calculate evolve_dt according to the rest two args")
+            logger.debug("calculate evolve_dt according to evolve_time / nsteps")
             evolve_dt = evolve_time / nsteps
+                   
         if evolve_dt is None:
             # adaptive mode
             if not self.evolve_config.rk_config.adaptive:
                 raise ValueError("in non-adaptive mode evolve_dt is not given")
             if evolve_time is None:
-                target_time = None  # stop by `stop_evolve_criteria`
+                logger.info("evolution will stop by `stop_evolve_criteria`")
+                target_time = None
             else:
                 target_time = self.evolve_times[-1] + evolve_time
             target_steps = "?"

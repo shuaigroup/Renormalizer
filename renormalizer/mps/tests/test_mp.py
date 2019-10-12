@@ -6,6 +6,7 @@ import numpy as np
 import pytest
 
 from renormalizer.mps import Mps, Mpo
+from renormalizer.mps.matrix import tensordot
 from renormalizer.mps.lib import Environ
 from renormalizer.tests import parameter
 
@@ -28,8 +29,8 @@ def test_save_load():
 def check_distance(a: Mps ,b: Mps):
     d1 = (a - b).dmrg_norm
     d2 = a.distance(b)
-    a_array = a.full_wfn().array
-    b_array = b.full_wfn().array
+    a_array = a.full_wfn().asnumpy()
+    b_array = b.full_wfn().asnumpy()
     d3 = np.linalg.norm(a_array - b_array)
     assert d1 == pytest.approx(d2) == pytest.approx(d3)
 
@@ -54,6 +55,6 @@ def test_environ():
     for i in range(len(mps)-1):
         l = environ.read("L", i)
         r = environ.read("R", i+1)
-        e = np.tensordot(l, r, axes=((0, 1, 2), (0, 1, 2)))
+        e = tensordot(l, r, axes=((0, 1, 2), (0, 1, 2))).asnumpy()
         assert pytest.approx(e) == mps.expectation(mpo)
 
