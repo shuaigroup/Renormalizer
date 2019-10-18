@@ -13,19 +13,20 @@ from renormalizer.mps.tests import cur_dir
 
 
 @pytest.mark.parametrize(
-    "method, evolve_dt, nsteps, use_rk, cmf_or_midpoint, rtol, interval",
+    "method, evolve_dt, nsteps, use_rk, force_Ovlp, cmf_or_midpoint, rtol, interval",
     (
-        [EvolveMethod.tdvp_vmf, 15., 100, False, None, 1e-2, 1],
-        [EvolveMethod.tdvp_mu_switch_gauge, 8, 50, None, False, 1e-2, 4],
-        [EvolveMethod.tdvp_mu_switch_gauge, 4, 100, None, True, 1e-2, 2],
-        [EvolveMethod.tdvp_mu_fixed_gauge, 6, 70, None, False, 1e-2, 3],
-        [EvolveMethod.tdvp_mu_fixed_gauge, 12, 35, None, True, 1e-2, 6],
-        [EvolveMethod.tdvp_ps, 15.0, 200, True, None, 1e-2, 1],
-        [EvolveMethod.tdvp_ps, 15.0, 200, False, None, 1e-2, 1],
-        [EvolveMethod.tdvp_mu_vmf, 15.0, 100, False, None, 1e-2, 1],
+        [EvolveMethod.tdvp_vmf, 15., 100, None, False, None, 1e-2, 1],
+        [EvolveMethod.tdvp_vmf, 15., 100, None, True, None, 1e-2, 1],
+        [EvolveMethod.tdvp_mu_vmf, 15.0, 100, None, False, None, 1e-2, 1],
+        [EvolveMethod.tdvp_mu_switch_gauge, 8, 50, None, False, False, 1e-2, 4],
+        [EvolveMethod.tdvp_mu_switch_gauge, 4, 100, None, False, True, 1e-2, 2],
+        [EvolveMethod.tdvp_mu_fixed_gauge, 6, 70, None, False, False, 1e-2, 3],
+        [EvolveMethod.tdvp_mu_fixed_gauge, 6, 35, None, False, True, 1e-2, 3],
+        [EvolveMethod.tdvp_ps, 15.0, 200, True, False,  None, 1e-2, 1],
+        [EvolveMethod.tdvp_ps, 15.0, 200, False, False, None, 1e-2, 1],
     ),
 )
-def test_ZeroTcorr_TDVP(method, evolve_dt, nsteps, use_rk, cmf_or_midpoint, rtol, interval):
+def test_ZeroTcorr_TDVP(method, evolve_dt, nsteps, use_rk, force_Ovlp, cmf_or_midpoint, rtol, interval):
     procedure = [[20, 0], [20, 0], [20, 0]]
     optimize_config = OptimizeConfig(procedure=procedure)
 
@@ -33,6 +34,7 @@ def test_ZeroTcorr_TDVP(method, evolve_dt, nsteps, use_rk, cmf_or_midpoint, rtol
 
     evolve_config = EvolveConfig(method, evolve_dt=evolve_dt, adaptive=False)
     evolve_config.tdvp_ps_rk4 = use_rk
+    evolve_config.force_Ovlp = force_Ovlp
     evolve_config.tdvp_mctdh_cmf = cmf_or_midpoint
     evolve_config.tdvp_mu_midpoint = cmf_or_midpoint
     if method is EvolveMethod.tdvp_vmf:
@@ -61,22 +63,25 @@ def test_ZeroTcorr_TDVP(method, evolve_dt, nsteps, use_rk, cmf_or_midpoint, rtol
 
 
 @pytest.mark.parametrize(
-    "method, nsteps, evolve_dt, use_rk, rtol, interval",
+    "method, nsteps, evolve_dt, use_rk, force_Ovlp, rtol, interval",
     (
-        [EvolveMethod.tdvp_vmf, 30, 6.,False, 1e-2, 3],
-        [EvolveMethod.tdvp_mu_switch_gauge, 10, 32, None, 1e-2, 16],
-        [EvolveMethod.tdvp_mu_fixed_gauge, 5, 64, None, 1e-2, 32],
-        [EvolveMethod.tdvp_ps, 30, 30, True, 1e-2, 1],
-        [EvolveMethod.tdvp_ps, 30, 30, False, 1e-2, 1],
-        [EvolveMethod.tdvp_mu_vmf, 30, 6, False, 1e-2, 3],
+        [EvolveMethod.tdvp_vmf, 30, 6., None, False, 1e-2, 3],
+        [EvolveMethod.tdvp_mu_vmf, 30, 6, None, False, 1e-2, 3],
+        [EvolveMethod.tdvp_mu_vmf, 30, 6, None, True, 1e-2, 3],
+        [EvolveMethod.tdvp_mu_switch_gauge, 10, 32, None, False, 1e-2, 16],
+        [EvolveMethod.tdvp_mu_fixed_gauge, 5, 64, None, False, 1e-2, 32],
+        [EvolveMethod.tdvp_ps, 30, 30, True, False, 1e-2, 1],
+        [EvolveMethod.tdvp_ps, 30, 30, False, False, 1e-2, 1],
     ),
 )
-def test_finite_t_spectra_emi_TDVP(method, nsteps, evolve_dt, use_rk, rtol, interval):
+def test_finite_t_spectra_emi_TDVP(method, nsteps, evolve_dt, use_rk,
+        force_Ovlp, rtol, interval):
     mol_list = parameter.mol_list
     temperature = Quantity(298, "K")
     offset = Quantity(2.28614053, "ev")
     evolve_config = EvolveConfig(method)
     evolve_config.tdvp_ps_rk4 = use_rk
+    evolve_config.force_Ovlp = force_Ovlp
     if method is EvolveMethod.tdvp_vmf:
         evolve_config.reg_epsilon = 1e-5
     

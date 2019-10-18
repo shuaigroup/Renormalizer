@@ -210,7 +210,8 @@ class EvolveConfig:
         adaptive_rtol=5e-4,
         reg_epsilon=1e-10,
         ivp_rtol=1e-5,
-        ivp_atol=1e-8
+        ivp_atol=1e-8,
+        force_Ovlp=False
     ):
 
         self.method = method
@@ -233,6 +234,7 @@ class EvolveConfig:
         # scipy.ivp rtol and atol
         self.ivp_rtol: float = ivp_rtol
         self.ivp_atol: float = ivp_atol
+        self.force_Ovlp: bool = force_Ovlp
 
         # should adjust bond order before any tdvp evolution
         self._adjust_bond_dim_counter: bool = False
@@ -279,7 +281,8 @@ class EvolveConfig:
         return new
 
     def __str__(self):
-        attrs = ["method", "adaptive", "evolve_dt", "adaptive_rtol", "d_energy", "tdvp_ps_rk4"]
+        attrs = ["method", "adaptive", "evolve_dt", "adaptive_rtol", "d_energy",
+                "tdvp_ps_rk4", "reg_epsilon", "ivp_rtol", "ivp_atol", "force_Ovlp"]
         lines = []
         for attr in attrs:
             attr_value = getattr(self, attr)
