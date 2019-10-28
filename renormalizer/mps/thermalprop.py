@@ -31,6 +31,8 @@ class ThermalProp(TdMpsJob):
     def init_mps(self):
         self.init_mpdm.evolve_config = self.evolve_config
         self.energies.append(self.init_mpdm.expectation(self.h_mpo))
+        if self.evolve_config.is_tdvp:
+            self.init_mpdm = self.init_mpdm.expand_bond_dimension(self.h_mpo)
         return self.init_mpdm
 
     def process_mps(self, mps):

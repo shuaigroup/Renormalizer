@@ -114,7 +114,11 @@ class MatrixProduct:
         )
         # return a list so that the logging result is more pretty
         return bond_dims
-    
+
+    @property
+    def bond_dims_max(self) -> int:
+        return np.max(self.bond_dims)
+
     @property
     def ephtable(self):
         if self._ephtable is not None:
@@ -386,6 +390,8 @@ class MatrixProduct:
         returns:
              truncated MPS
         """
+        if self.compress_config.bonddim_should_set:
+            self.compress_config.set_bonddim(len(self)+1)
         # used for logging at exit
         sz_before = self.total_bytes
         if not self.is_mpo:

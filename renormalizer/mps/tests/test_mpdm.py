@@ -3,7 +3,7 @@
 import numpy as np
 import pytest
 
-from renormalizer.mps import Mpo, MpDm, MpDmFull, ThermalProp
+from renormalizer.mps import Mps, Mpo, MpDm, MpDmFull, ThermalProp
 from renormalizer.model import MolList, Mol, Phonon
 from renormalizer.tests import parameter
 from renormalizer.utils import Quantity, EvolveConfig, EvolveMethod
@@ -30,6 +30,16 @@ def test_mpdm_full(nmols, phonon_freq):
     assert np.allclose(mpdm_full.ph_occupations, e_gs_dm.ph_occupations, rtol=1e-3)
 
 
+def test_from_mps():
+    gs = Mps.random(parameter.mol_list, 1, 20)
+    gs_mpdm = MpDm.from_mps(gs)
+    assert np.allclose(gs.e_occupations, gs_mpdm.e_occupations)
+    gs = gs.canonicalise()
+    gs_mpdm = gs_mpdm.canonicalise()
+    assert np.allclose(gs.e_occupations, gs_mpdm.e_occupations)
+
+
+
 @pytest.mark.parametrize(
     "mol_list, etot_std, occ_std, rtol",
     (
@@ -46,14 +56,13 @@ def test_mpdm_full(nmols, phonon_freq):
         100,
         None,
 ))
-@pytest.mark.parametrize("evolve_method, use_rk", (
-        (EvolveMethod.prop_and_compress, None),
-        # in principle should work, but in 32 bits is not numerically stable
-        # (EvolveMethod.tdvp_mctdh_new, None),
-        (EvolveMethod.tdvp_ps, True),
-        (EvolveMethod.tdvp_ps, False),
+@pytest.mark.parametrize("evolve_method", (
+        EvolveMethod.prop_and_compress,
+        # overflow in krylov exp. Need extra effort to find out why
+        # EvolveMethod.tdvp_mu_cmf,
+        EvolveMethod.tdvp_ps
 ))
-def test_thermal_prop(mol_list, etot_std, occ_std, nsteps, evolve_method, use_rk, rtol):
+def test_thermal_prop(mol_list, etot_std, occ_std, nsteps, evolve_method, rtol):
     init_mps = MpDm.max_entangled_ex(mol_list)
     mpo = Mpo(mol_list)
     beta = Quantity(298, "K").to_beta()
@@ -62,8 +71,6 @@ def test_thermal_prop(mol_list, etot_std, occ_std, nsteps, evolve_method, use_rk
         evolve_config = EvolveConfig(evolve_method, adaptive=True, evolve_dt=beta/100j)
     else:
         evolve_config = EvolveConfig(evolve_method)
-    if evolve_method is EvolveMethod.tdvp_ps:
-        evolve_config.tdvp_ps_rk4 = use_rk
     tp = ThermalProp(init_mps, mpo, evolve_config=evolve_config)
     tp.evolve(nsteps=nsteps, evolve_time=evolve_time)
     mps = tp.latest_mps

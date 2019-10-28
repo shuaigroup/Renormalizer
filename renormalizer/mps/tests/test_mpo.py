@@ -97,7 +97,7 @@ def test_displacement():
     gs = Mps.gs(mol_list, max_entangled=False)
     gs = Mpo.onsite(mol_list, r"a^\dagger", mol_idx_set={0}).apply(gs).compress()
     assert np.allclose(gs.e_occupations, get_e_occu(0))
-    gs = Mpo.displacement(mol_list, 0, 2).apply(gs)
+    gs = Mpo.displacement(mol_list, 0, 2) @ gs
     assert np.allclose(gs.e_occupations, get_e_occu(2))
-    gs = Mpo.displacement(mol_list, 2, 0).apply(gs)
+    gs = Mpo.displacement(mol_list, 2, 0) @ gs
     assert np.allclose(gs.e_occupations ,get_e_occu(0))
