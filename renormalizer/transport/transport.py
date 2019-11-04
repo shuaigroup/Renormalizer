@@ -110,6 +110,9 @@ class ChargeTransport(TdMpsJob):
             gs_mp = Mps.gs(self.mol_list, max_entangled=False)
             if self.dissipation != 0:
                 gs_mp = MpDm.from_mps(gs_mp)
+            init_mp = self.create_electron(gs_mp)
+            if self.evolve_config.is_tdvp:
+                init_mp = init_mp.expand_bond_dimension(self.mpo)
         else:
             gs_mp = MpDm.max_entangled_gs(self.mol_list)
             # subtract the energy otherwise might cause numeric error because of large offset * dbeta
@@ -118,7 +121,7 @@ class ChargeTransport(TdMpsJob):
             tp = ThermalProp(gs_mp, mpo, exact=True, space="GS")
             tp.evolve(None, len(gs_mp), self.temperature.to_beta() / 2j)
             gs_mp = tp.latest_mps
-        init_mp = self.create_electron(gs_mp)
+            init_mp = self.create_electron(gs_mp)
         if self.dissipation != 0:
             init_mp = MpDmFull.from_mpdm(init_mp)
         energy = Quantity(init_mp.expectation(tentative_mpo))
@@ -129,12 +132,7 @@ class ChargeTransport(TdMpsJob):
             self.mpo = SuperLiouville(self.mpo, self.dissipation)
         init_mp.canonicalise()
         init_mp.evolve_config = self.evolve_config
-        # init the compress config if not using threshold and not set
-        if self.compress_config.criteria is not CompressCriteria.threshold\
-                and self.compress_config.max_dims is None:
-            self.compress_config.set_bonddim(length=len(init_mp) + 1)
         init_mp.compress_config = self.compress_config
-        # init_mp.invalidate_cache()
         return init_mp
 
 

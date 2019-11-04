@@ -2,7 +2,7 @@
 
 import logging
 from functools import wraps
-from typing import Union
+from typing import Union, List
 
 import numpy as np
 import scipy
@@ -130,57 +130,6 @@ def adaptive_tdvp(fun):
 
     return f
 
-"""
-Tried to just use substeps. Result not so good. Can't control step well.
-Sometimes steps too large, sometimes too small
-def adaptive_tdvp(fun):
-    @functools.wraps(fun)
-    def f(self: "Mps", mpo, evolve_dt):
-        if not self.evolve_config.adaptive:
-            return fun(self, mpo, evolve_dt)
-        if evolve_dt < 0:
-            raise NotImplementedError("adaptive tdvp with negative evolve dt not implemented")
-        config = self.evolve_config
-        # requires exactly divisible
-        assert evolve_dt % config.evolve_dt == 0
-        accumulated_dt = 0
-        # Tried to use angle and energy as adaptive descriptor. Angle not working well, the
-        # threshold is too flexible. A simple, useful threshold that balances accuracy and
-        # time cost can't be found. Energy is too simple, can't guarantee accuracy.
-        start = self  # the mps to start with
-        while True:
-            start_energy = start.expectation(mpo)
-            logger.debug(f"adaptive dt: {config.evolve_dt}, start energy: {start_energy}")
-            mps = fun(start, mpo, config.evolve_dt)
-            energy = mps.expectation(mpo)
-            stat: DescribeResult = mps.evolve_config.stat
-            if 1e-3 < abs(energy - start_energy) or 4 < stat.mean:
-                # not converged
-                logger.debug(f"tdvp not converged, energy: {energy}")
-                if config.evolve_dt / (evolve_dt - accumulated_dt) < 1e-2:
-                    raise RuntimeError("too many sub-steps required in a single step")
-                config.evolve_dt /= 2
-                continue
-            else:
-                # converged
-                accumulated_dt += config.evolve_dt
-                logger.debug(
-                    f"evolution converged with dt: {config.evolve_dt}, accumulated: {accumulated_dt}"
-                )
-                if np.isclose(accumulated_dt, evolve_dt):
-                    break
-                start = mps
-        if mps.evolve_config.stat.mean < 3:
-            # a larger dt could be used
-            config.enlarge_evolve_dt()
-            logger.debug(
-                f"evolution easily converged, new evolve_dt: {config.evolve_dt}"
-            )
-            mps.evolve_config = config
-        return mps
-
-    return f
-"""
 
 class Mps(MatrixProduct):
     @classmethod
@@ -550,6 +499,34 @@ class Mps(MatrixProduct):
         # suppose length is only determined by dmrg part
         return self.normalize(self.dmrg_norm)
 
+    def expand_bond_dimension(self, hint_mpo=None, coef=1e-10):
+        """
+        expand bond dimension as required in compress_config
+        """
+        m_target = self.compress_config.bond_dim_max_value
+        if hint_mpo is None:
+            expander = self.__class__.random(self.mol_list, 1, m_target)
+        else:
+            # fill states related to `hint_mpo`
+            lastone: MatrixProduct = hint_mpo @ self
+            expander_list: List["MatrixProduct"] = [lastone]
+            while True:
+                lastone.compress_config.criteria = CompressCriteria.fixed
+                cumulated_m = sum(mps.bond_dims_max for mps in expander_list)
+                if m_target < cumulated_m:
+                    break
+                if m_target < lastone.bond_dims_max * hint_mpo.bond_dims_max:
+                    lastone.compress_config.bond_dim_max_value = round(m_target // hint_mpo.bond_dims_max)
+                    lastone.compress_config.set_bonddim(len(lastone) + 1)
+                    lastone = lastone.canonicalise().compress()
+                lastone = hint_mpo @ lastone
+                expander_list.append(lastone)
+            expander = compressed_sum(expander_list, batchsize=np.inf)
+            # no further compress now
+            expander.compress_config = self.compress_config
+        # do twice to completely eliminate redundant bonds
+        return (self + expander.scale(coef, inplace=True)).canonicalise().canonicalise().canonical_normalize()
+
     def evolve(self, mpo, evolve_dt, approx_eiht=None):
         if self.hybrid_tdh:
             hybrid_mpo, HAM, Etot = self.construct_hybrid_Ham(mpo)
@@ -568,34 +545,13 @@ class Mps(MatrixProduct):
         if approx_eiht is not None:
             return approx_eiht.contract(self)
 
-        if self.evolve_config.method == EvolveMethod.prop_and_compress:
-            new_mps = self._evolve_dmrg_prop_and_compress(mpo, evolve_dt)
-            return new_mps
-
-        if self.evolve_config.should_adjust_bond_dim:
-            logger.debug("adjusting bond order")
-            # use this custom compress method for tdvp
-            orig_compress_config: CompressConfig = self.compress_config.copy()
-            self.compress_config.criteria = CompressCriteria.fixed
-            self.compress_config.set_bonddim(len(self) + 1)
-            config = self.evolve_config.copy()
-            config.adaptive = True
-            config.evolve_dt = evolve_dt
-            self.compress_add = True
-            new_mps = self._evolve_dmrg_prop_and_compress(mpo, evolve_dt, config)
-            self.compress_config = new_mps.compress_config = orig_compress_config
-            # won't be using that much memory anymore after the P&C
-            backend.free_all_blocks()
-            return new_mps
-
-        method_mapping = {
-            EvolveMethod.tdvp_vmf: self._evolve_dmrg_tdvp_vmf,
-            EvolveMethod.tdvp_mu_switch_gauge: self._evolve_dmrg_tdvp_mu_switch_gauge,
-            EvolveMethod.tdvp_ps: self._evolve_dmrg_tdvp_ps,
-            EvolveMethod.tdvp_mu_fixed_gauge: self._evolve_dmrg_tdvp_mu_fixed_gauge,
+        method = {
+            EvolveMethod.prop_and_compress: self._evolve_dmrg_prop_and_compress,
             EvolveMethod.tdvp_mu_vmf: self._evolve_dmrg_tdvp_mu_vmf,
-        }
-        method = method_mapping[self.evolve_config.method]
+            EvolveMethod.tdvp_vmf: self._evolve_dmrg_tdvp_vmf,
+            EvolveMethod.tdvp_mu_cmf: self._evolve_dmrg_tdvp_mu_cmf,
+            EvolveMethod.tdvp_ps: self._evolve_dmrg_tdvp_ps,
+        }[self.evolve_config.method]
         new_mps = method(mpo, evolve_dt)
         return new_mps
 
@@ -684,7 +640,6 @@ class Mps(MatrixProduct):
         regulation of S is 1e-10, these default parameters could be changed in
         /utils/configs.py
 
-        TODO: other IVP integration methods such as predictor-corrector
         """
         
         # a workaround for https://github.com/scipy/scipy/issues/10164
@@ -721,7 +676,7 @@ class Mps(MatrixProduct):
             # the first S_R
             S_R = ones([1, 1], dtype=mps.dtype)
             
-            if self.evolve_config.force_Ovlp:
+            if self.evolve_config.force_ovlp:
                 # construct the S_L list (type: Matrix) and S_L_inv list (type: xp.array)
                 # len: mps.site_num+1
                 S_L_list = [ones([1, 1], dtype=mps.dtype),]
@@ -806,136 +761,6 @@ class Mps(MatrixProduct):
 
         return mps
 
-
-    @adaptive_tdvp
-    def _evolve_dmrg_tdvp_mu_switch_gauge(self, mpo, evolve_dt) -> "Mps":
-        # new regularization scheme
-        # JCP 148, 124105 (2018)
-        # JCP 149, 044119 (2018)
-
-        # a workaround for https://github.com/scipy/scipy/issues/10164
-        imag_time = np.iscomplex(evolve_dt)
-        if imag_time:
-            evolve_dt = -evolve_dt.imag
-            # used in calculating derivatives
-            coef = -1
-        else:
-            coef = 1j
-
-
-        # `self` should not be modified during the evolution
-        # mps: the mps at time 0
-        # environ_mps: mps to construct environ
-        if imag_time:
-            mps = self.copy()
-        else:
-            mps = self.to_complex()
-        if self.evolve_config.tdvp_mctdh_cmf:
-            # constant environment
-            environ_mps = mps
-            mps_t = mps.metacopy()
-            sweep_round = 1
-        else:
-            # evolving environment
-            environ_mps = mps
-            mps_t = mps
-            sweep_round = 2
-        # construct the environment matrix
-        environ = Environ(environ_mps, mpo)
-
-
-        # statistics for debug output
-        cmf_rk_steps = []
-
-        for i in range(sweep_round):
-            for imps in mps.iter_idx_list(full=True):
-                shape = list(mps[imps].shape)
-
-                system = "L" if mps.left else "R"
-
-                qnbigl, qnbigr = mps._get_big_qn(imps)
-                u, s, qnlset, v, s, qnrset = svd_qn.Csvd(
-                    mps[imps].asnumpy(),
-                    qnbigl,
-                    qnbigr,
-                    mps.qntot,
-                    system=system,
-                    full_matrices=False,
-                )
-                vt = v.T
-                regular_s = _mu_regularize(s, epsilon=self.evolve_config.reg_epsilon)
-
-                if not mps.left:
-                    islast = imps == 0
-                    mps[imps] = vt.reshape([-1] + shape[1:])
-
-                    ltensor = environ.read("L", imps - 1)
-                    rtensor = environ.GetLR(
-                        "R", imps + 1, environ_mps, mpo, itensor=None, method="System"
-                    )
-
-                    us = Matrix(u.dot(np.diag(s)))
-
-                    ltensor = tensordot(ltensor, us, axes=(2, 0))
-                    ltensor = tensordot(Matrix(u.conj()), ltensor, axes=(0, 0))
-
-                    if not islast:
-                        mps[imps - 1] = tensordot(mps[imps - 1], us , axes=(-1, 0))
-                        mps.qn[imps] = qnrset
-                        mps_t.qn[imps] = qnrset.copy()
-
-                elif mps.left:
-                    islast = imps == len(mps) - 1
-                    mps[imps] = u.reshape(shape[:-1] + [-1])
-
-                    ltensor = environ.GetLR(
-                        "L", imps - 1, environ_mps, mpo, itensor=None, method="System"
-                    )
-                    rtensor = environ.read("R", imps + 1)
-
-                    svt = Matrix(np.diag(s).dot(vt))
-
-                    rtensor = tensordot(rtensor, svt, axes=(2, 1))
-                    rtensor = tensordot(Matrix(vt.conj()), rtensor, axes=(1, 0))
-
-                    if not islast:
-                        mps[imps + 1] = tensordot(svt, mps[imps + 1], axes=(-1, 0))
-                        mps.qn[imps + 1] = qnlset
-                        mps_t.qn[imps + 1] = qnlset.copy()
-                else:
-                    assert False
-
-                S_inv = xp.diag(1.0 / regular_s)
-
-                hop = hop_factory(ltensor, rtensor, mpo[imps], len(shape))
-
-                func = integrand_func_factory(shape, hop, islast, S_inv, mps.left, coef)
-
-                sol = solve_ivp(
-                    func, (0, evolve_dt / sweep_round), mps[imps].ravel().array, method="RK45"
-                )
-                cmf_rk_steps.append(len(sol.t))
-                ms = sol.y[:, -1].reshape(shape)
-                if islast:
-                    if not mps.left:
-                        ms = xp.tensordot(us.array, ms, 1)
-                    else:
-                        ms = xp.tensordot(ms, svt.array, 1)
-                mps_t[imps] = ms
-            if self.evolve_config.tdvp_mctdh_cmf:
-                # environ_mps == mps, mps_t = mps.copy()
-                mps._switch_direction()
-                mps_t._switch_direction()
-            else:
-                # environ_mps == mps == mps_t
-                mps_t._switch_direction()
-        steps_stat = stats.describe(cmf_rk_steps)
-        logger.debug(f"{self.evolve_config.method} CMF steps: {steps_stat}")
-        # new_mps.evolve_config.stat = steps_stat
-
-        return mps_t
-    
-
     def _evolve_dmrg_tdvp_mu_vmf(self, mpo, evolve_dt) -> "Mps":
         """
         variable mean field combined with matrix unfolding technique
@@ -945,7 +770,6 @@ class Mps(MatrixProduct):
         regulation of S is 1e-10, these default parameters could be changed in
         /utils/configs.py
 
-        TODO: other IVP integration methods such as predictor-corrector
         """
 
         # a workaround for https://github.com/scipy/scipy/issues/10164
@@ -977,7 +801,7 @@ class Mps(MatrixProduct):
             environ = Environ(environ_mps, mpo, "L")
             environ.write_r_sentinel(environ_mps)
             
-            if self.evolve_config.force_Ovlp:
+            if self.evolve_config.force_ovlp:
                 # construct the S_L list (type: Matrix) and S_L_inv list (type: xp.array)
                 # len: mps.site_num+1
                 S_L_list = [ones([1, 1], dtype=mps.dtype),]
@@ -1074,23 +898,13 @@ class Mps(MatrixProduct):
 
         return mps
 
-
     @adaptive_tdvp
-    def _evolve_dmrg_tdvp_mu_fixed_gauge(self, mpo, evolve_dt) -> "Mps":
+    def _evolve_dmrg_tdvp_mu_cmf(self, mpo, evolve_dt) -> "Mps":
         # new regularization scheme
         # JCP 148, 124105 (2018)
         # JCP 149, 044119 (2018)
 
-        # a workaround for https://github.com/scipy/scipy/issues/10164
         imag_time = np.iscomplex(evolve_dt)
-        if imag_time:
-            evolve_dt = -evolve_dt.imag
-            # used in calculating derivatives
-            coef = -1
-        else:
-            coef = 1j
-
-        self.ensure_left_canon()
 
         # `self` should not be modified during the evolution
         # mps: the mps to return
@@ -1101,11 +915,12 @@ class Mps(MatrixProduct):
             mps = self.to_complex()
 
 
-        if self.evolve_config.tdvp_mu_midpoint:
+        if self.evolve_config.tdvp_cmf_midpoint:
             # mps at t/2 as environment
             orig_config = self.evolve_config.copy()
-            self.evolve_config.tdvp_mu_midpoint = False
-            environ_mps = self.evolve(mpo, evolve_dt / 2)
+            self.evolve_config.tdvp_cmf_midpoint = False
+            self.evolve_config.adaptive = False
+            environ_mps = self.evolve_dmrg(mpo, evolve_dt / 2)
             self.evolve_config = orig_config
         else:
             # mps at t=0 as environment
@@ -1114,6 +929,15 @@ class Mps(MatrixProduct):
         environ = Environ(environ_mps, mpo, "L")
         environ.write_r_sentinel(environ_mps)
 
+        # a workaround for https://github.com/scipy/scipy/issues/10164
+        if imag_time:
+            evolve_dt = -evolve_dt.imag
+            # used in calculating derivatives
+            coef = -1
+        else:
+            coef = 1j
+
+        self.ensure_left_canon()
         # statistics for debug output
         cmf_rk_steps = []
 
@@ -1201,9 +1025,10 @@ class Mps(MatrixProduct):
         else:
             coef = 1j
 
+        # todo: remove USE_RK if proved to be useless
+        USE_RK = False
         # statistics for debug output
         cmf_rk_steps = []
-        USE_RK = self.evolve_config.tdvp_ps_rk4
         # sweep for 2 rounds
         for i in range(2):
             for imps in mps.iter_idx_list(full=True):
@@ -1281,6 +1106,7 @@ class Mps(MatrixProduct):
                             return hop_svt(y.reshape(shape_u)).ravel()
                         mps_t = expm_krylov(func_u, (-evolve_dt / 2) / coef, u.ravel())
                     mps_t = mps_t.reshape(shape_u)
+
                     mps[imps - 1] = tensordot(
                         mps[imps - 1].array,
                         mps_t,
@@ -1314,6 +1140,7 @@ class Mps(MatrixProduct):
                             return hop_svt(y.reshape(shape_svt)).ravel()
                         mps_t = expm_krylov(func_svt, (-evolve_dt / 2) / coef, vt.ravel())
                     mps_t = mps_t.reshape(shape_svt)
+
                     mps[imps + 1] = tensordot(
                         mps_t,
                         mps[imps + 1].array,
@@ -1467,7 +1294,7 @@ class Mps(MatrixProduct):
             )
         return np.array(res)
 
-    def full_wfn(self):
+    def full_wfn(self) -> xp.array:
         dim = np.prod(self.pbond_list)
         if 20000 < dim:
             raise ValueError("wavefunction too large")
@@ -1476,7 +1303,7 @@ class Mps(MatrixProduct):
             dim1 = res.shape[1] * mt.shape[1]
             dim2 = mt.shape[-1]
             res = tensordot(res, mt, axes=1).reshape(1, dim1, dim2)
-        return res[0, :, 0]
+        return res[0, :, 0].array
 
     def _calc_reduced_density_matrix(self, mp1, mp2):
         # further optimization is difficult. There are totally N^2 intermediate results to remember.

@@ -146,6 +146,10 @@ class CompressConfig:
             new.min_dims = self.min_dims.copy()
         return new
 
+    @property
+    def bonddim_should_set(self):
+        return self.criteria is not CompressCriteria.threshold and self.max_dims is None
+
     def __str__(self):
         attrs = ["criteria", "threshold"]
         lines = []
@@ -176,10 +180,8 @@ class EvolveMethod(Enum):
     prop_and_compress = "P&C"
     tdvp_ps = "TDVP_PS"
     tdvp_vmf = "TDVP Variable Mean Field"
-    # the canonical site is not fixed
-    tdvp_mu_switch_gauge = "TDVP Matrix Unfolding Switch Gauge"
     # the canonical site is fixed
-    tdvp_mu_fixed_gauge = "TDVP Matrix Unfolding Fixed Gauge"
+    tdvp_mu_cmf = "TDVP Matrix Unfolding Constant Mean Field"
     # variable mean field
     tdvp_mu_vmf = "TDVP Matrix Unfolding Variable Mean Field"
 
@@ -211,33 +213,25 @@ class EvolveConfig:
         reg_epsilon=1e-10,
         ivp_rtol=1e-5,
         ivp_atol=1e-8,
-        force_Ovlp=False
+        force_ovlp=False
     ):
 
         self.method = method
 
-        # tdvp also requires prop and compress
         self._adaptive = None
         self.adaptive = adaptive
         self.evolve_dt: complex = evolve_dt  # a wild guess
         self.adaptive_rtol = adaptive_rtol
         self.d_energy = 1e-3
 
-        self.prop_method = "C_RK4"
-        # both rk45 and krylov are ok for tdvp_ps
-        self.tdvp_ps_rk4: bool = False
-
-        self.tdvp_mctdh_cmf = False
-        self.tdvp_mu_midpoint = True
+        self.tdvp_cmf_midpoint = True
         # regularization parameter in tdvp_mu or tdvp_std method
         self.reg_epsilon: float = reg_epsilon
         # scipy.ivp rtol and atol
         self.ivp_rtol: float = ivp_rtol
         self.ivp_atol: float = ivp_atol
-        self.force_Ovlp: bool = force_Ovlp
+        self.force_ovlp: bool = force_ovlp
 
-        # should adjust bond order before any tdvp evolution
-        self._adjust_bond_dim_counter: bool = False
 
     @property
     def adaptive(self):
@@ -251,26 +245,23 @@ class EvolveConfig:
         else:
             self.rk_config = RungeKutta()
 
+    @property
+    def is_tdvp(self):
+        return self.method is not EvolveMethod.prop_and_compress
+
     def enlarge_evolve_dt(self, ratio=1.5):
         self.evolve_dt *= ratio
-        self._adjust_bond_dim_counter += 3 * ratio
-
-    @property
-    def should_adjust_bond_dim(self):
-        assert self.method != EvolveMethod.prop_and_compress
-        if not self._adjust_bond_dim_counter:
-            self._adjust_bond_dim_counter = True
-            return True
-        else:
-            return False
 
     def check_valid_dt(self, evolve_dt: complex):
         info_str = f"in config: {self.evolve_dt}, in arg: {evolve_dt}"
+
         if np.iscomplex(evolve_dt) ^ np.iscomplex(self.evolve_dt):
             raise ValueError("real and imag not compatible. " + info_str)
+
         if (np.iscomplex(evolve_dt) and evolve_dt.imag * self.evolve_dt.imag < 0) or \
                 (not np.iscomplex(evolve_dt) and evolve_dt * self.evolve_dt < 0):
             raise ValueError("evolve into wrong direction. " + info_str)
+
         div = abs(evolve_dt) / abs(self.evolve_dt)
         if not np.isclose(div, round(div)):
             raise ValueError("requires exactly divisible. " + info_str)
@@ -281,8 +272,7 @@ class EvolveConfig:
         return new
 
     def __str__(self):
-        attrs = ["method", "adaptive", "evolve_dt", "adaptive_rtol", "d_energy",
-                "tdvp_ps_rk4", "reg_epsilon", "ivp_rtol", "ivp_atol", "force_Ovlp"]
+        attrs = list(self.__dict__.keys())
         lines = []
         for attr in attrs:
             attr_value = getattr(self, attr)

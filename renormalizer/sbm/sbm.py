@@ -39,6 +39,7 @@ class SpinBosonModel(TdMpsJob):
         init_mps.evolve_config = self.evolve_config
         init_mps.use_dummy_qn = True
         self.h_mpo = Mpo(self.mol_list, offset=Quantity(init_mps.expectation(self.h_mpo)))
+        init_mps = init_mps.expand_bond_dimension(self.h_mpo)
         return init_mps
 
     def process_mps(self, mps):
