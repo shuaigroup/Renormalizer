@@ -699,6 +699,8 @@ class Mpo(MatrixProduct):
         if rep is None:
             assert mol_list.scheme == 4
 
+        if not isinstance(offset, Quantity):
+            raise ValueError("offset must be Quantity object")
         super(Mpo, self).__init__()
         if mol_list is None:
             return
@@ -1194,3 +1196,7 @@ class Mpo(MatrixProduct):
     def is_hermitian(self):
         full = self.full_operator()
         return xp.allclose(full.array.conj().T, full, atol=1e-7)
+
+    def __matmul__(self, other):
+        return self.apply(other)
+

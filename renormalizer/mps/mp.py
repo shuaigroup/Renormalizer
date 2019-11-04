@@ -31,7 +31,7 @@ class MatrixProduct:
 
     @classmethod
     def load(cls, mol_list: MolList, fname: str):
-        npload = np.load(fname)
+        npload = np.load(fname, allow_pickle=True)
         mp = cls()
         mp.mol_list = mol_list
         for i in range(int(npload["nsites"])):
@@ -67,7 +67,7 @@ class MatrixProduct:
         self.qn: List[List[int]] = []
         self.qnidx: int = None
         self._qntot: int = None
-        # sweeping from left?
+        # if sweeping from left: True else False
         self.left: bool = None
 
         # compress after add?
@@ -114,6 +114,10 @@ class MatrixProduct:
         )
         # return a list so that the logging result is more pretty
         return bond_dims
+
+    @property
+    def bond_dims_max(self) -> int:
+        return np.max(self.bond_dims)
 
     @property
     def ephtable(self):
@@ -182,46 +186,59 @@ class MatrixProduct:
             self.qn[idx] = [self.qntot - i for i in self.qn[idx]]
         self.qnidx = dstidx
 
-    def check_left_canonical(self):
+    def check_left_canonical(self, atol=1e-3):
         """
         check L-canonical
         """
         for mt in self[:-1]:
-            if not mt.check_lortho():
+            if not mt.check_lortho(atol):
                 return False
         return True
 
-    def check_right_canonical(self):
+    def check_right_canonical(self, atol=1e-3):
         """
         check R-canonical
         """
         for mt in self[1:]:
-            if not mt.check_rortho():
+            if not mt.check_rortho(atol):
                 return False
         return True
 
     @property
     def is_left_canon(self):
-        assert self.qnidx in (self.site_num - 1, 0)
+        """
+        check the qn center in the L-canonical structure
+        """
         return self.qnidx == self.site_num - 1
 
     @property
     def is_right_canon(self):
-        assert self.qnidx in (self.site_num - 1, 0)
+        """
+        check the qn center in the R-canonical structure
+        """
         return self.qnidx == 0
 
-    def iter_idx_list(self, full: bool):
+    def ensure_left_canon(self, atol=1e-3):
+        if not self.check_left_canonical(atol):
+            self.move_qnidx(0)
+            self.left = True
+            self.canonicalise()
+            assert self.check_left_canonical(atol)
+
+    def iter_idx_list(self, full: bool, stop_idx: int=None):
         # if not `full`, the last site is omitted.
-        if self.is_left_canon:
-            last = -1 if full else 0
-            return range(self.site_num - 1, last, -1)
-        elif self.is_right_canon:
-            last = self.site_num if full else self.site_num - 1
-            return range(0, last)
-        else:
-            # this could happen when canonicalization is break at some point
-            last = self.site_num if full else self.site_num - 1
+        if self.left:
+            if stop_idx is not None:
+                last = stop_idx
+            else:
+                last = self.site_num if full else self.site_num - 1
             return range(self.qnidx, last)
+        else:
+            if stop_idx is not None:
+                last = stop_idx
+            else:
+                last = -1 if full else 0
+            return range(self.qnidx, last, -1)
 
     def _update_ms(
         self, idx: int, u: Matrix, vt: Matrix, sigma=None, qnlset=None, qnrset=None, m_trunc=None
@@ -254,6 +271,7 @@ class MatrixProduct:
             )
             if qnlset is not None:
                 self.qn[idx + 1] = qnlset[:m_trunc]
+                self.qnidx = idx + 1
         else:
             self[idx - 1] = tensordot(self[idx - 1], u, axes=1)
             ret_mpsi = vt.reshape(
@@ -261,6 +279,7 @@ class MatrixProduct:
             )
             if qnrset is not None:
                 self.qn[idx] = qnrset[:m_trunc]
+                self.qnidx = idx - 1
         if ret_mpsi.nbytes < ret_mpsi.base.nbytes * 0.8:
             # do copy here to discard unnecessary data. Note that in NumPy common slicing returns
             # a `view` containing the original data. If `ret_mpsi` is used directly the original
@@ -279,7 +298,6 @@ class MatrixProduct:
             self.qnidx = 0
             self.left = True
             # assert self.check_right_canonical()
-
 
     def _get_big_qn(self, idx):
         mt: Matrix = self[idx]
@@ -372,6 +390,8 @@ class MatrixProduct:
         returns:
              truncated MPS
         """
+        if self.compress_config.bonddim_should_set:
+            self.compress_config.set_bonddim(len(self)+1)
         # used for logging at exit
         sz_before = self.total_bytes
         if not self.is_mpo:
@@ -412,10 +432,8 @@ class MatrixProduct:
         return self
 
     def canonicalise(self, stop_idx: int=None):
-        for idx in self.iter_idx_list(full=False):
-            self.qnidx = idx
-            if stop_idx is not None and idx == stop_idx:
-                break
+        # stop_idx: mix canonical site at `stop_idx`
+        for idx in self.iter_idx_list(full=False, stop_idx=stop_idx):
             mt: Matrix = self[idx]
             assert mt.any()
             if self.left:
@@ -436,7 +454,9 @@ class MatrixProduct:
             self._update_ms(
                 idx, Matrix(u), Matrix(v.T), sigma=None, qnlset=qnlset, qnrset=qnrset
             )
-        self._switch_direction()
+        # can't iter to idx == 0 or idx == self.site_num - 1
+        if (not self.left and idx == 1) or (self.left and idx == self.site_num - 2):
+            self._switch_direction()
         return self
 
     def conj(self):
@@ -520,12 +540,19 @@ class MatrixProduct:
         return new_mp
 
     def distance(self, other):
-        return (
-            self.conj().dot(self)
-            - abs(self.conj().dot(other))
-            - abs(other.conj().dot(self))
-            + other.conj().dot(other)
-        )
+        l1 = self.conj().dot(self) 
+        l2 = other.conj().dot(other)
+        dis_square = (l1 + l2
+            - self.conj().dot(other)
+            - other.conj().dot(self)).real 
+        
+        if dis_square < 0:
+            assert dis_square/l1.real < 1e-8
+            res = 0.
+        else:
+            res = np.sqrt(dis_square)
+        
+        return res
 
     def copy(self):
         new = self.metacopy()

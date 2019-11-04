@@ -361,7 +361,7 @@ class LinearSpectra(TdHartree):
         particle="hardcore boson",
         prop_method="unitary",
         E_offset=0.0,
-        temperature=0,
+        temperature=Quantity(0),
         insteps=None,
     ):
         assert spectratype in ["abs", "emi"]
@@ -391,7 +391,8 @@ class LinearSpectra(TdHartree):
 
         return Etot_bra, Etot_ket
 
-    def calc_autocorr(self, WFNbra, WFNket):
+    def process_mps(self, wfn):
+        WFNbra, WFNket = wfn
         # E_offset to add a prefactor
         autocorr = (
             np.conj(WFNbra[-1])
@@ -449,8 +450,6 @@ class LinearSpectra(TdHartree):
         else:
             WFNbra = copy.deepcopy(WFN)
 
-        self.calc_autocorr(WFNbra, WFNket)
-
         return WFNbra, WFNket
 
     def evolve_single_step(self, evolve_dt):
@@ -465,21 +464,18 @@ class LinearSpectra(TdHartree):
             WFNket = self._evolve_single_step(evolve_dt, WFNket, self.nexciton)
             WFNbra = self._evolve_single_step(evolve_dt, WFNbra, 1 - self.nexciton)
 
-        self.calc_autocorr(WFNbra, WFNket)
         return WFNbra, WFNket
 
 
 class Dynamics(TdHartree):
     def __init__(
-        self, mol_list, property_ops, temperature=Quantity(0, "K"), insteps=None, init_idx=0
+        self, mol_list, temperature=Quantity(0, "K"), insteps=None, init_idx=0
     ):
-        self.property_ops = property_ops
-        self.properties = [[] for _ in property_ops]
+        self._e_occupations_array = []
         self.init_idx = init_idx
         super(Dynamics, self).__init__(
             mol_list, 1, "hardcore boson", "unitary", temperature, insteps
         )
-        self.update_properties(self.latest_mps)
 
     def init_zt(self):
         WFN, Etot = SCF(self.mol_list, 0)
@@ -510,17 +506,15 @@ class Dynamics(TdHartree):
         else:
             return self.init_ft()
 
-    def update_properties(self, WFN):
-        # calculate the expectation value
-        for iO, O in enumerate(self.property_ops):
-            ft = mflib.exp_value(WFN[0], O, WFN[0])
-            ft *= np.conj(WFN[-1]) * WFN[-1]
-            self.properties[iO].append(ft)
+    def process_mps(self, wfn):
+        self._e_occupations_array.append((wfn[0].conj()* wfn[0]).real.flatten())
 
     def evolve_single_step(self, evolve_dt):
-        WFN = self._evolve_single_step(evolve_dt, self.latest_mps, 1)
-        self.update_properties(WFN)
-        return WFN
+        return self._evolve_single_step(evolve_dt, self.latest_mps, 1)
+
+    @property
+    def e_occupations_array(self):
+        return np.array(self._e_occupations_array)
 
 
 def construct_intersiteO(mol, idxmol, j_matrixdxmol):

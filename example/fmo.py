@@ -162,6 +162,6 @@ if __name__ == "__main__":
     ct.job_name = 'hybrid'
     ct.stop_at_edge = False
     ct.evolve(evolve_dt=evolve_dt, nsteps=10)
-    new_evolve_config = EvolveConfig(EvolveMethod.tdvp_mctdh_new)
+    new_evolve_config = EvolveConfig(EvolveMethod.tdvp_mu_switch_gauge)
     ct.latest_mps.evolve_config = ct.evolve_config = new_evolve_config
     ct.evolve(evolve_dt=evolve_dt, nsteps=100000)

@@ -7,7 +7,7 @@ import numpy as np
 import scipy
 
 
-from renormalizer.lib.davidson import davidson
+from renormalizer.lib import davidson
 from renormalizer.mps.matrix import (
     Matrix,
     multi_tensor_contract,
@@ -118,8 +118,7 @@ def optimize_mps_dmrg(mps, mpo):
     nexciton = mps.nexciton
 
     # construct the environment matrix
-    environ = Environ()
-    environ.construct(mps, mps, mpo, "L")
+    environ = Environ(mps, mpo, "L")
 
     nMPS = len(mps)
     # construct each sweep cycle scheme
@@ -156,10 +155,10 @@ def optimize_mps_dmrg(mps, mpo):
                 addlist = [imps - 1, imps]
 
             ltensor = environ.GetLR(
-                "L", lsite, mps, mps, mpo, itensor=ltensor, method=lmethod
+                "L", lsite, mps, mpo, itensor=ltensor, method=lmethod
             )
             rtensor = environ.GetLR(
-                "R", imps + 1, mps, mps, mpo, itensor=rtensor, method=rmethod
+                "R", imps + 1, mps, mpo, itensor=rtensor, method=rmethod
             )
 
             # get the quantum number pattern

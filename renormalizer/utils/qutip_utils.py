@@ -49,6 +49,14 @@ def get_hamiltonian(nsites, J, omega, g, clist, blist):
     return H
 
 
+def get_gs(nsites, ph_levels):
+    basis = []
+    for i in range(nsites):
+        basis.append(qutip.states.basis(2))
+        basis.append(qutip.states.basis(ph_levels))
+    return qutip.tensor(basis)
+
+
 def get_qnidx(ph_levels, nsites):
     particles = np.array(list(product(*[[0, 1], [0] * ph_levels] * nsites))).sum(axis=1)
     return np.where(particles == 1)[0]

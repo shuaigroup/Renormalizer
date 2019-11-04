@@ -75,7 +75,7 @@ class SpectraFiniteT(SpectraTdMpsJobBase):
 
     def evolve_single_step(self, evolve_dt):
         latest_bra_mpo, latest_ket_mpo = self.latest_mps
-        if len(self.tdmps_list) % 2 == 1:
+        if len(self.evolve_times) % 2 == 1:
             latest_ket_mpo = latest_ket_mpo.evolve_exact(self.h_mpo, -evolve_dt, "GS")
             latest_ket_mpo = latest_ket_mpo.evolve(self.h_mpo, evolve_dt)
         else:

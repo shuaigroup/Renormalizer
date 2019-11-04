@@ -6,7 +6,7 @@ import numpy as np
 
 
 from renormalizer.utils.log import DEFAULT_NP_ERRCONFIG
-from renormalizer.lib import _ivp
+from renormalizer.lib.integrate import _ivp
 
 
 def solve_ivp(*args, **kwargs):

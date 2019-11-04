@@ -29,9 +29,8 @@ class SpinBosonModel(TdMpsJob):
 
         super().__init__(evolve_config=evolve_config, dump_dir=dump_dir, job_name=job_name)
 
-
     def init_mps(self):
-        logger.debug(f"mpo dimension: {self.h_mpo.bond_dims}, {self.h_mpo.pbond_list}")
+        logger.debug(f"mpo bond and physical dimension: {self.h_mpo.bond_dims}, {self.h_mpo.pbond_list}")
         if self.temperature == 0:
             init_mps = Mps.gs(self.mol_list, False)
         else:
@@ -39,21 +38,20 @@ class SpinBosonModel(TdMpsJob):
         init_mps.compress_config = self.compress_config
         init_mps.evolve_config = self.evolve_config
         init_mps.use_dummy_qn = True
-        self._update_sigma(init_mps)
         self.h_mpo = Mpo(self.mol_list, offset=Quantity(init_mps.expectation(self.h_mpo)))
+        init_mps = init_mps.expand_bond_dimension(self.h_mpo)
         return init_mps
 
-    def evolve_single_step(self, evolve_dt):
-        new_mps = self.latest_mps.evolve(self.h_mpo, evolve_dt)
-        self._update_sigma(new_mps)
-        logger.info(f"sigma_z: {self.sigma_z[-1]}. sigma_x: {self.sigma_x[-1]}")
-        return new_mps
-
-    def _update_sigma(self, mps):
-        self.sigma_z.append(1 - 2 * mps.e_occupations[0])
+    def process_mps(self, mps):
+        sigma_z = 1 - 2 * mps.e_occupations[0]
+        self.sigma_z.append(sigma_z)
         sigmax_mpo = self.mol_list.get_mpos("sigma_x", partial(Mpo.onsite, opera="sigmax"))
-        self.sigma_x.append(mps.expectation(sigmax_mpo))
+        sigma_x = mps.expectation(sigmax_mpo)
+        self.sigma_x.append(sigma_x)
+        logger.info(f"sigma_z: {self.sigma_z[-1]}. sigma_x: {self.sigma_x[-1]}")
 
+    def evolve_single_step(self, evolve_dt):
+        return self.latest_mps.evolve(self.h_mpo, evolve_dt)
 
     def get_dump_dict(self):
         dump_dict = dict()

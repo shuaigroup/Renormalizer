@@ -26,17 +26,8 @@ def check_property(mp):
 
 def test_mps():
     gs_mps = Mps.gs(mol_list, max_entangled=False)
-    mps = creation_operator.apply(gs_mps)
+    mps = creation_operator @ gs_mps
     check_property(mps)
-
-
-def test_clear():
-    gs_mps = Mps.gs(mol_list, max_entangled=False)
-    mps = creation_operator.apply(gs_mps)
-    new_mps = mps.copy()
-    new_mps.clear_memory()
-    assert new_mps.total_bytes < mps.total_bytes
-    check_property(new_mps)
 
 
 def test_mpo():
@@ -45,5 +36,5 @@ def test_mpo():
     tp = ThermalProp(gs_dm, Mpo(gs_dm.mol_list), exact=True, space="GS")
     tp.evolve(None, 500, beta / 1j)
     gs_dm = tp.latest_mps
-    mp = creation_operator.apply(gs_dm)
+    mp = creation_operator @ gs_dm
     check_property(mp)

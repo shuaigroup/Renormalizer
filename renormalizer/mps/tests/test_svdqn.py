@@ -25,4 +25,6 @@ def test_csvd(switch_to_64backend):
     optimize_mps(mps1, mpo)
     mps1.compress()
     mps2 = Mps.load(mol_list, os.path.join(cur_dir, "test_svd_qn.npz"))
-    assert mps1.distance(mps2) == pytest.approx(0, abs=1e-5)
+    d = pytest.approx(mps1.distance(mps2), abs=1e-4)
+    # the same direction or opposite direction
+    assert d == 0 or d == 2

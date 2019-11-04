@@ -16,9 +16,7 @@ def test_FT_DM():
     nexciton = 1
     T = Quantity(298, "K")
     insteps = 100
-    tdHartree = tdh.Dynamics(
-        hartree_mol_list, property_ops=[], temperature=T, insteps=insteps
-    )
+    tdHartree = tdh.Dynamics(hartree_mol_list, temperature=T, insteps=insteps)
     DM = tdHartree._FT_DM(nexciton)
     HAM, Etot, A_el = tdHartree.construct_H_Ham(nexciton, DM, debug=True)
     assert Etot == pytest.approx(0.0856330141528)

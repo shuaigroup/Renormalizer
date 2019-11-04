@@ -15,33 +15,47 @@ sentinel = ones((1, 1, 1))
 
 
 class Environ:
-    def __init__(self):
+    def __init__(self, mps, mpo, domain=None, mps_conj=None):
         # todo: real disk and other backend
-        self.virtual_disk = {}
+        # idx indicates the exact position of L or R, like
+        # L(idx-1) - mpo(idx) - R(idx+1)
+        self._virtual_disk = {}
+        self._construct(mps, mpo, domain, mps_conj)
 
-    def construct(self, mps, mps_conj, mpo, domain):
-        tensor = ones((1, 1, 1), mps.dtype)
-        assert domain in ["L", "R", "l", "r"]
-        if domain == "L" or domain == "l":
+    def _construct(self, mps, mpo, domain=None, mps_conj=None):
+
+        assert domain in ["L", "R", None]
+        if domain is None:
+            self._construct(mps, mpo, "L", mps_conj)
+            self._construct(mps, mpo, "R", mps_conj)
+            return
+        if domain == "L":
             start, end, inc = 0, len(mps) - 1, 1
-            self.write(domain, -1, tensor)
+            self.write_l_sentinel(mps)
         else:
             start, end, inc = len(mps) - 1, 0, -1
-            self.write(domain, len(mps), tensor)
+            self.write_r_sentinel(mps)
 
+        tensor = ones((1, 1, 1), mps.dtype)
         for idx in range(start, end, inc):
-            tensor = self.addone(tensor, mps, mps_conj, mpo, idx, domain)
+            tensor = self.addone(tensor, mps, mpo, idx, domain, mps_conj)
             self.write(domain, idx, tensor)
 
+    def write_l_sentinel(self, mps):
+        self.write("L", -1, ones((1, 1, 1), mps.dtype))
+
+    def write_r_sentinel(self, mps):
+        self.write("R", len(mps), ones((1, 1, 1), mps.dtype))
+
     def GetLR(
-        self, domain, siteidx, MPS, MPSconj, MPO, itensor=sentinel, method="Scratch"
+        self, domain, siteidx, MPS, MPO, itensor=sentinel, method="Scratch"
     ):
         """
         get the L/R Hamiltonian matrix at a random site(siteidx): 3d tensor
         S-     -S     MPSconj
         O- or  -O     MPO
         S-     -S     MPS
-        enviroment part from disc,  system part from one step calculation
+        enviroment part from self.virtual_disk,  system part from one step calculation
         support from scratch calculation: from two open boundary np.ones((1,1,1))
         """
 
@@ -58,16 +72,19 @@ class Environ:
             else:
                 sitelist = range(len(MPS) - 1, siteidx - 1, -1)
             for imps in sitelist:
-                itensor = self.addone(itensor, MPS, MPSconj, MPO, imps, domain)
+                itensor = self.addone(itensor, MPS, MPO, imps, domain)
         elif method == "Enviro":
             itensor = self.read(domain, siteidx)
         elif method == "System":
-            itensor = self.addone(itensor, MPS, MPSconj, MPO, siteidx, domain)
+            if itensor is None:
+                offset = -1 if domain == "L" else 1
+                itensor = self.read(domain, siteidx + offset)
+            itensor = self.addone(itensor, MPS, MPO, siteidx, domain)
             self.write(domain, siteidx, itensor)
 
         return itensor
 
-    def addone(self, intensor, MPS, MPSconj, MPO, isite, domain):
+    def addone(self, intensor, MPS, MPO, isite, domain, mps_conj=None):
         """
         add one MPO/MPS(MPO) site
                  _   _
@@ -77,12 +94,17 @@ class Environ:
         S-S-    | S-|-S-
                 |_| |_|
         """
-        assert domain in ["L", "R", "l", "r"]
-
-        if domain == "L" or domain == "l":
-            assert intensor.shape[0] == MPSconj[isite].shape[0]
-            assert intensor.shape[1] == MPO[isite].shape[0]
-            assert intensor.shape[2] == MPS[isite].shape[0]
+        assert domain in ["L", "R"]
+        ms = MPS[isite]
+        mo = MPO[isite]
+        if mps_conj is None:
+            ms_conj = ms.conj()
+        else:
+            ms_conj = mps_conj[isite]
+        if domain == "L":
+            assert intensor.shape[0] == ms_conj.shape[0]
+            assert intensor.shape[1] == mo.shape[0]
+            assert intensor.shape[2] == ms.shape[0]
             """
                            l 
             S-a-S-f    O-a-O-f
@@ -107,16 +129,14 @@ class Environ:
                 ]
             else:
                 raise ValueError(
-                    "MPS ndim at %d is not 3 or 4, got %s" % (isite, MPS[isite].ndim)
+                    "MPS ndim at %d is not 3 or 4, got %s" % (isite, mo.ndim)
                 )
-            outtensor = multi_tensor_contract(
-                path, intensor, MPSconj[isite], MPO[isite], MPS[isite]
-            )
+            outtensor = multi_tensor_contract(path, intensor, ms_conj, mo, ms)
 
         else:
-            assert intensor.shape[0] == MPSconj[isite].shape[-1]
-            assert intensor.shape[1] == MPO[isite].shape[-1]
-            assert intensor.shape[2] == MPS[isite].shape[-1]
+            assert intensor.shape[0] == ms_conj.shape[-1]
+            assert intensor.shape[1] == mo.shape[-1]
+            assert intensor.shape[2] == ms.shape[-1]
             """
                            l
             -f-S-a-S    -f-S-a-S
@@ -141,19 +161,17 @@ class Environ:
                 ]
             else:
                 raise ValueError(
-                    "MPS ndim at %d is not 3 or 4, got %s" % (isite, MPS[isite].ndim)
+                    "MPS ndim at %d is not 3 or 4, got %s" % (isite, mo.ndim)
                 )
-            outtensor = multi_tensor_contract(
-                path, MPSconj[isite], intensor, MPO[isite], MPS[isite]
-            )
+            outtensor = multi_tensor_contract(path, ms_conj, intensor, mo, ms)
 
         return outtensor
 
     def write(self, domain, siteidx, tensor):
-        self.virtual_disk[(domain, siteidx)] = tensor
+        self._virtual_disk[(domain, siteidx)] = tensor
 
     def read(self, domain: str, siteidx: int):
-        return self.virtual_disk[(domain, siteidx)]
+        return self._virtual_disk[(domain, siteidx)]
 
 
 def select_basis(qnset, Sset, qnlist, Mmax, percent=0):

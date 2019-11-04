@@ -73,14 +73,6 @@ def test_adaptive_zero_t(method, init_dt):
     assert_band_limit(ct, 1e-2)
 
 
-def test_32backend(switch_to_32backend):
-    evolve_config = EvolveConfig(evolve_dt=4, adaptive=True)
-    ct = ChargeTransport(band_limit_mol_list, evolve_config=evolve_config)
-    ct.stop_at_edge = True
-    ct.evolve()
-    assert_band_limit(ct, 1e-2)
-
-
 def test_gaussian_bond_dim():
     compress_config = CompressConfig(
         criteria=CompressCriteria.fixed,
