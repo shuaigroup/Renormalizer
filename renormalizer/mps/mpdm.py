@@ -180,13 +180,15 @@ class MpDm(MpDmBase):
         return cls.from_mps(Mps.gs(mol_list, max_entangled=True))
 
     def _get_sigmaqn(self, idx):
-        if self.ephtable.is_electron(idx):
-            return np.array([0, 0, 1, 1])
-        elif self.ephtable.is_phonon(idx):
+        if self.ephtable.is_phonon(idx):
             return np.array([0] * self.pbond_list[idx] ** 2)
+        # for electron: auxiliary space all 0.
+        if self.mol_list.scheme < 4 and self.ephtable.is_electron(idx):
+            return np.array([0, 0, 1, 1])
+        elif self.mol_list.scheme == 4 and self.ephtable.is_electrons(idx):
+            n = self.pbond_list[idx]
+            return np.array([0] * n + [1] * (n * (n - 1)))
         else:
-            if self.mol_list.scheme == 4:
-                return np.array([0] * self.pbond_list[idx] ** 2)
             assert False
 
     def calc_reduced_density_matrix(self) -> np.ndarray:
@@ -194,7 +196,7 @@ class MpDm(MpDmBase):
             return self._calc_reduced_density_matrix(self, self.conj_trans())
         elif self.mol_list.scheme == 4:
             # be careful this method should be read-only
-            copy = self.copy()
+            copy = self.copy().canonicalise()
             copy.canonicalise(self.mol_list.e_idx())
             e_mo = copy[self.mol_list.e_idx()]
             return tensordot(e_mo, e_mo.conj(), axes=((0, 2 ,3), (0, 2, 3))).asnumpy()

@@ -185,12 +185,7 @@ class Mps(MatrixProduct):
 
         mps.qnidx = len(mps) - 1
         mps.left = False
-        if mol_list.scheme < 4:
-            mps.qntot = nexciton
-        elif mol_list.scheme == 4:
-            mps.qntot = 0
-        else:
-            assert False
+        mps.qntot = nexciton
 
         # print("self.dim", self.dim)
 
@@ -228,7 +223,9 @@ class Mps(MatrixProduct):
             elif mol_list.scheme == 4:
                 assert not mol.sbm
                 if imol == mol_list.mol_num // 2:
-                    mps.append(np.zeros((1, mol_list.mol_num, 1)))
+                    array = np.zeros(mol_list.mol_num + 1)
+                    array[0] = 1
+                    mps.append(array.reshape((1, -1, 1)))
             else:
                 assert False
             # ph mps
@@ -289,13 +286,13 @@ class Mps(MatrixProduct):
         return new_mp
 
     def _get_sigmaqn(self, idx):
-        if self.ephtable.is_electron(idx):
-            return [0, 1]
-        elif self.ephtable.is_phonon(idx):
+        if self.ephtable.is_phonon(idx):
             return [0] * self.pbond_list[idx]
+        if self.mol_list.scheme < 4 and self.ephtable.is_electron(idx):
+            return [0, 1]
+        elif self.mol_list.scheme == 4 and self.ephtable.is_electrons(idx):
+            return [0] + [1] * (self.pbond_list[idx] - 1)
         else:
-            if self.mol_list.scheme == 4:
-                return [0] * self.pbond_list[idx]
             assert False
 
     @property
@@ -340,24 +337,9 @@ class Mps(MatrixProduct):
             assert self.check_right_canonical()
             return np.linalg.norm(np.ravel(self[0]))
         """
-        replacement_idx = self.mol_list.e_idx()
-        orig_ms = self[replacement_idx]
-        if self.mol_list.scheme == 4:
-            ms = orig_ms.copy()
-            if xp.linalg.norm(ms.array) == 0:
-                assert ms.shape[0] == ms.shape[-1] == 1
-                if self.is_mps:
-                    ms[0, 0, 0] = 1
-                elif self.is_mpdm:
-                    ms[0, 0, 0, 0] = 1
-                else:
-                    assert False
-                self[replacement_idx] = ms
         res = np.sqrt(self.conj().dot(self, with_hartree=False).real)
-        assert res != 0
-        self[replacement_idx] = orig_ms
-        assert not np.iscomplex(res)
         return res.real
+
 
     def _expectation_path(self):
         # S--a--S--e--S
@@ -448,7 +430,7 @@ class Mps(MatrixProduct):
         elif self.mol_list.scheme == 4:
             # get rdm is very fast
             rdm = self.calc_reduced_density_matrix()
-            return np.diag(rdm).real
+            return np.diag(rdm).real[1:]
         else:
             assert False
 
@@ -1337,6 +1319,8 @@ class Mps(MatrixProduct):
         elif self.mol_list.scheme == 4:
             # be careful this method should be read-only
             copy = self.copy()
+            # make sure it's canonicalised before calculating reduced density matrix
+            copy.canonicalise()
             copy.canonicalise(self.mol_list.e_idx())
             e_mo = copy[self.mol_list.e_idx()]
             return tensordot(e_mo.conj(), e_mo, axes=((0, 2), (0, 2))).asnumpy()

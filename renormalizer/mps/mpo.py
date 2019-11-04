@@ -14,9 +14,11 @@ from renormalizer.utils.elementop import (
     construct_e_op_dict,
     ph_op_matrix,
 )
-from renormalizer.utils.utils import roundrobin, sizeof_fmt
+from renormalizer.utils.utils import roundrobin
+
 
 logger = logging.getLogger(__name__)
+
 
 # todo: refactor init
 # the code is hard to understand...... need some closer look
@@ -217,7 +219,7 @@ class Mpo(MatrixProduct):
             elif mol_list.scheme == 4:
                 if len(mpo) == mol_list.e_idx():
                     n = mol_list.mol_num
-                    mpo.append(np.eye(n).reshape(1, n, n, 1))
+                    mpo.append(np.eye(n+1).reshape(1, n+1, n+1, 1))
             else:
                 assert False
 
@@ -394,7 +396,40 @@ class Mpo(MatrixProduct):
     def onsite(cls, mol_list: MolList, opera, dipole=False, mol_idx_set=None):
         assert opera in ["a", r"a^\dagger", r"a^\dagger a", "sigmax"]
         if mol_list.scheme == 4:
-            return VirtualOnSite(mol_list, opera, dipole, mol_idx_set)
+            assert not dipole
+            mpo = cls()
+            mpo.mol_list = mol_list
+            mpo.qn = [0]
+            qn = 0
+            for imol, mol in enumerate(mol_list):
+                if imol == mol_list.mol_num // 2:
+                    mo = np.zeros((1, mol_list.mol_num+1, mol_list.mol_num+1, 1))
+                    if mol_idx_set is None:
+                        mol_idx_set = list(range(mol_list.mol_num))
+                    for idx in mol_idx_set:
+                        if opera == "a":
+                            mo[0, 0, idx+1, 0] = 1
+                            mpo.qntot = -1
+                        elif opera == r"a^\dagger":
+                            mo[0, idx+1, 0, 0] = 1
+                            mpo.qntot = 1
+                        elif opera == r"a^\dagger a":
+                            mo[0, idx+1, idx+1, 0] = 1
+                            mpo.qntot = 0
+                        elif opera == "sigmax":
+                            raise NotImplementedError
+                        else:
+                            assert False
+                        qn += mpo.qntot
+                        mpo.qn.append(qn)
+                        mpo.append(mo)
+                for ph in mol.dmrg_phs:
+                    n = ph.n_phys_dim
+                    mpo.append(np.diag(np.ones(n)).reshape((1, n, n, 1)))
+                    mpo.qn.append(qn)
+            mpo.qnidx = len(mpo) - 1
+            mpo.qn[-1] = 0
+            return mpo
         nmols = len(mol_list)
         if mol_idx_set is None:
             mol_idx_set = set(np.arange(nmols))
@@ -496,7 +531,7 @@ class Mpo(MatrixProduct):
             elif mol_list.scheme == 4:
                 if len(mpo) == mol_list.e_idx():
                     n = mol_list.mol_num
-                    mpo.append(xp.eye(n).reshape(1, n, n, 1))
+                    mpo.append(xp.eye(n+1).reshape(1, n+1, n+1, 1))
             else:
                 assert False
             iph = 0
@@ -556,6 +591,7 @@ class Mpo(MatrixProduct):
 
     def _scheme4(self, mol_list: MolList, elocal_offset, offset):
 
+        # sbm not supported
         for m in mol_list:
             assert m.tunnel == 0
 
@@ -565,6 +601,7 @@ class Mpo(MatrixProduct):
         self.offset = offset
 
         def get_marginal_phonon_mo(pdim, bdim, ph, phop):
+            # [ w b^d b,  gw(b^d+b), I]
             mo = np.zeros((1, pdim, pdim, bdim))
             mo[0, :, :, 0] = phop[r"b^\dagger b"] * ph.omega[0]
             mo[0, :, :, 1] = phop[r"b^\dagger + b"] * ph.term10
@@ -572,6 +609,15 @@ class Mpo(MatrixProduct):
             return mo
 
         def get_phonon_mo(pdim, bdim, ph, phop, isfirst):
+            # `isfirst`:
+            # [I,       0,     0        , 0]
+            # [0,       I,     0        , 0]
+            # [w b^d b, 0,     gw(b^d+b), I]
+            # not `isfirst`:
+            # [I,       0,     0        , 0]
+            # [0,       I,     0        , 0]
+            # [0,       0,     I        , 0]
+            # [w b^d b, 0,     gw(b^d+b), I]
             if isfirst:
                 mo = np.zeros((bdim - 1, pdim, pdim, bdim))
             else:
@@ -579,10 +625,7 @@ class Mpo(MatrixProduct):
             mo[-1, :, :, 0] = phop[r"b^\dagger b"] * ph.omega[0]
             for i in range(bdim - 1):
                 mo[i, :, :, i] = phop[r"Iden"]
-            if isfirst:
-                mo[bdim - 2, :, :, bdim - 2] = phop[r"b^\dagger + b"] * ph.term10
-            else:
-                mo[bdim - 1, :, :, bdim - 2] = phop[r"b^\dagger + b"] * ph.term10
+            mo[-1, :, :, -2] = phop[r"b^\dagger + b"] * ph.term10
             mo[-1, :, :, -1] = phop[r"Iden"]
             return mo
 
@@ -604,17 +647,20 @@ class Mpo(MatrixProduct):
                     mo = get_phonon_mo(pdim, bdim, ph, phop, iph == 0)
                 self.append(mo)
         # the electronic part
-        center_mo = np.zeros((n_left_mol+2, nmol, nmol, n_right_mol+2))
-        center_mo[0, :, :, 0] = center_mo[-1, :, :, -1] = np.eye(nmol)
+        # [ I,        0,       0]
+        # [ a1^d a1,  0,       0]
+        # [ J_matrix, a2^d a2, I]
+        center_mo = np.zeros((n_left_mol+2, nmol+1, nmol+1, n_right_mol+2))
+        center_mo[0, :, :, 0] = center_mo[-1, :, :, -1] = np.eye(nmol+1)
         j_matrix = mol_list.j_matrix.copy()
         for i in range(mol_list.mol_num):
             j_matrix[i, i] = mol_list[i].elocalex + mol_list[i].reorganization_energy
         if elocal_offset is not None:
             j_matrix += np.diag(elocal_offset)
-        center_mo[-1, :, :, 0] = j_matrix
+        center_mo[-1, 1:, 1:, 0] = j_matrix
         for i in range(nmol):
-            m = np.zeros((nmol, nmol))
-            m[i, i] = 1
+            m = np.zeros((nmol+1, nmol+1))
+            m[i+1, i+1] = 1
             if i < n_left_mol:
                 center_mo[i+1, :, :, 0] = m
             else:
@@ -1012,10 +1058,15 @@ class Mpo(MatrixProduct):
                         impo += 1
 
     def _get_sigmaqn(self, idx):
-        if self.ephtable.is_electron(idx):
-            return np.array([0, -1, 1, 0])
-        else:
+        if self.ephtable.is_phonon(idx):
             return np.array([0] * self.pbond_list[idx] ** 2)
+        if self.mol_list.scheme < 4 and self.ephtable.is_electron(idx):
+            return np.array([0, -1, 1, 0])
+        elif self.mol_list.scheme == 4 and self.ephtable.is_electrons(idx):
+            v = np.array([0] + [1] * (self.pbond_list[idx] - 1))
+            return list((v.reshape(-1, 1) - v.reshape(1, -1)).flatten())
+        else:
+            assert False
 
     @property
     def is_mps(self):
@@ -1149,46 +1200,3 @@ class Mpo(MatrixProduct):
     def __matmul__(self, other):
         return self.apply(other)
 
-class VirtualOnSite(Mpo):
-    """
-    acts like a mpo but manipulates mps or mpdm directly
-    """
-
-    def __init__(self, mol_list, opera, dipole=False, mol_idx_set=None):
-        super().__init__(None)
-        assert mol_list.scheme == 4
-        self.mol_list = mol_list
-        self.type = "onsite"
-        self.opera = opera
-        assert not dipole  # not implemented
-        self.dipole = dipole
-        if mol_idx_set is None:
-            self.mol_idx_set = np.arange(len(mol_list))
-        else:
-            self.mol_idx_set = mol_idx_set
-        assert len(self.mol_idx_set) != 0
-
-    def apply(self, mp: MatrixProduct, canonicalise=False):
-        assert mp.mol_list.scheme == 4
-        new_mp = mp.copy()
-        e_ms = mp[self.mol_list.e_idx()]
-        new_ms = xp.zeros_like(e_ms.array)
-        if self.opera == r"a^\dagger a":
-            for idx in self.mol_idx_set:
-                new_ms[:, idx, ...] = e_ms[:, idx, ...]
-        elif self.opera == r"a^\dagger":
-            assert (e_ms.original_shape[0], e_ms.original_shape[-1]) == (1, 1)
-            for idx in self.mol_idx_set:
-                if mp.is_mps:
-                    new_ms[0, idx, 0] = 1
-                elif mp.is_mpdm:
-                    new_ms[0, idx, idx, 0] = 1
-                else:
-                    assert False
-        else:
-            assert False
-        new_mp[self.mol_list.e_idx()] = new_ms
-
-        if canonicalise:
-            new_mp.canonicalise()
-        return new_mp

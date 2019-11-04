@@ -60,7 +60,7 @@ def test_scheme4():
     mps4.mol_list = mlist1
     mps4.use_dummy_qn = True
     mps4.append(np.array([1, 0]).reshape((1,2,1)))
-    mps4.append(np.array([0, 1]).reshape((1,2,1)))
+    mps4.append(np.array([0, 0, 1]).reshape((1,-1,1)))
     mps4.append(np.array([0.707, 0.707]).reshape((1,2,1)))
     mps4.append(np.array([1, 0]).reshape((1,2,1)))
     mps4.build_empty_qn()

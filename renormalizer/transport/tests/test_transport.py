@@ -42,7 +42,10 @@ def test_init_state():
     ),
 )
 @pytest.mark.parametrize(
-    "scheme", (3, 4)
+    "scheme", (
+            3,
+            4,
+    )
 )
 def test_bandlimit_zero_t(method, evolve_dt, nsteps, rtol, scheme):
     np.random.seed(0)

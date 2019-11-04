@@ -519,10 +519,8 @@ class MatrixProduct:
             new_mp[self.qnidx] = new_mp[self.qnidx] * val
         else:
             # The second way. High time complexity but numerically more feasible.
-            # take care of emtpy matrices. happens at zero electron state at scheme 4
-            candidates = list(filter(lambda x: x[1].array.any(), enumerate(self)))
-            root_val = val ** (1 / len(candidates))
-            for idx, mt in candidates:
+            root_val = val ** (1 / len(self))
+            for idx, mt in enumerate(self):
                 new_mp[idx] = mt * root_val
         if negative:
             new_mp[0] *= -1
