@@ -91,10 +91,10 @@ class TdMpsJob(object):
                 evolve_dt = self.evolve_config.evolve_dt
                 assert not (np.iscomplex(evolve_dt) ^ np.iscomplex(target_time))
             new_evolve_time = self.latest_evolve_time + evolve_dt
-            self.evolve_times.append(new_evolve_time)
             step_str = "step {}/{}, time {}/{}".format(
                 len(self.evolve_times), target_steps, new_evolve_time, target_time
             )
+            self.evolve_times.append(new_evolve_time)
             logger.info("{} begin.".format(step_str))
             # XXX: the actual evolve step here
             new_mps = self.evolve_single_step(evolve_dt=evolve_dt)

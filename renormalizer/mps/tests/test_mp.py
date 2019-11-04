@@ -8,19 +8,20 @@ import pytest
 from renormalizer.mps import Mps, Mpo
 from renormalizer.mps.matrix import tensordot
 from renormalizer.mps.lib import Environ
-from renormalizer.tests import parameter
+from renormalizer.tests.parameter import custom_mol_list, mol_list
 
 
 def test_save_load():
-    mps = Mpo.onsite(parameter.mol_list, "a^\dagger", mol_idx_set={0}).apply(Mps.gs(parameter.mol_list, False))
-    mpo = Mpo(parameter.mol_list)
+    mol_list = custom_mol_list(hartrees=[True, False])
+    mps = Mpo.onsite(mol_list, "a^\dagger", mol_idx_set={0}) @ Mps.gs(mol_list, False)
+    mpo = Mpo(mol_list)
     mps1 = mps.copy()
     for i in range(2):
         mps1 = mps1.evolve(mpo, 10)
     mps2 = mps.evolve(mpo, 10)
     fname = "test.npz"
     mps2.dump(fname)
-    mps2 = Mps.load(parameter.mol_list, fname)
+    mps2 = Mps.load(mol_list, fname)
     mps2 = mps2.evolve(mpo, 10)
     assert np.allclose(mps1.e_occupations, mps2.e_occupations)
     os.remove(fname)
@@ -36,7 +37,7 @@ def check_distance(a: Mps ,b: Mps):
 
 
 def test_distance():
-    mol_list = parameter.custom_mol_list(n_phys_dim=(2, 2))
+    mol_list = custom_mol_list(n_phys_dim=(2, 2))
     a = Mps.random(mol_list, 1, 10)
     b = Mps.random(mol_list, 1, 10)
     check_distance(a, b)
@@ -48,8 +49,8 @@ def test_distance():
 
 
 def test_environ():
-    mps = Mps.random(parameter.mol_list, 1, 10)
-    mpo = Mpo(parameter.mol_list)
+    mps = Mps.random(mol_list, 1, 10)
+    mpo = Mpo(mol_list)
     mps = mps.evolve(mpo, 10)
     environ = Environ(mps, mpo)
     for i in range(len(mps)-1):

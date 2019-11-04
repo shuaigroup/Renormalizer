@@ -10,3 +10,4 @@ install:
 
 script:
     - pytest --durations=0
+    - cd example; bash run.sh

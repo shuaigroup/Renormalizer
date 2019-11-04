@@ -8,27 +8,22 @@ import qutip
 
 from renormalizer.model import Phonon, Mol, MolList
 from renormalizer.transport.autocorr import TransportAutoCorr
-from renormalizer.utils import Quantity, CompressConfig
+from renormalizer.utils import Quantity, CompressConfig, EvolveConfig, EvolveMethod
 from renormalizer.utils.qutip_utils import get_clist, get_blist, get_hamiltonian, get_qnidx
 
 
-@pytest.mark.parametrize(
-    "insteps, atol",
-    (
-        (50, 1e-2),
-        (None, 1e-2)
-    ),
-)
-def test_autocorr(insteps, atol):
+def test_autocorr():
     ph = Phonon.simple_phonon(Quantity(1), Quantity(1), 2)
     mol = Mol(Quantity(0), [ph])
     mol_list = MolList([mol] * 5, Quantity(1), 3)
     temperature = Quantity(50000, 'K')
     compress_config = CompressConfig(threshold=1e-3)
-    ac = TransportAutoCorr(mol_list, temperature, insteps, compress_config=compress_config)
+    evolve_config = EvolveConfig(EvolveMethod.prop_and_compress)
+    ac = TransportAutoCorr(mol_list, temperature, compress_config=compress_config, evolve_config=evolve_config)
     ac.evolve(0.2, 50)
     corr_real = ac.auto_corr.real
     exact_real = get_exact_autocorr(mol_list, temperature, ac.evolve_times_array).real
+    atol = 1e-2
     # direct comparison may fail because of different sign
     assert np.allclose(corr_real, exact_real, atol=atol) or np.allclose(corr_real, -exact_real, atol=atol)
 

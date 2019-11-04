@@ -62,10 +62,10 @@ class MpDmBase(Mps, Mpo):
 
     def conj_trans(self):
         logger.warning("use conj_trans on mpdm leads to dummy qn")
-        new_mpdm = super().conj_trans()
+        new_mpdm: "MpDmBase" = super().conj_trans()
         new_mpdm.use_dummy_qn = True
-        for idx, wfn in enumerate(new_mpdm.wfns):
-            new_mpdm.wfns[idx] = np.conj(wfn).T
+        for idx, wfn in enumerate(new_mpdm.tdh_wfns):
+            new_mpdm.tdh_wfns[idx] = np.conj(wfn).T
         return new_mpdm
 
     def apply(self, mp, canonicalise=False) -> "MpDmBase":
@@ -101,11 +101,11 @@ class MpDmBase(Mps, Mpo):
             new_mpdm.canonicalise()
         return new_mpdm
 
-    def dot(self, other, with_hartree=True):
+    def dot(self, other: "MpDmBase", with_hartree=True):
         e = super().dot(other, with_hartree=False)
         if with_hartree:
-            assert len(self.wfns) == len(other.wfns)
-            for wfn1, wfn2 in zip(self.wfns[:-1], other.wfns[:-1]):
+            assert len(self.tdh_wfns) == len(other.tdh_wfns)
+            for wfn1, wfn2 in zip(self.tdh_wfns[:-1], other.tdh_wfns[:-1]):
                 # using vdot is buggy here, because vdot will take conjugation automatically
                 # note the difference between np.dot(wfn1, wfn2).trace()
                 # probably the wfn part should be better wrapped?
@@ -148,9 +148,9 @@ class MpDm(MpDmBase):
                 mo[:, iaxis, iaxis, :] = ms[:, iaxis, :].array
             mpo.append(mo)
 
-        for wfn in mps.wfns[:-1]:
+        for wfn in mps.tdh_wfns[:-1]:
             assert wfn.ndim == 2
-        mpo.wfns = mps.wfns
+        mpo.tdh_wfns = mps.tdh_wfns
 
         mpo.optimize_config = mps.optimize_config
         mpo.evolve_config = mps.evolve_config
@@ -211,14 +211,14 @@ class MpDm(MpDmBase):
         new_mpdm = self.apply(MPOprop, canonicalise=True)
         for iham, ham in enumerate(ham):
             w, v = scipy.linalg.eigh(ham)
-            new_mpdm.wfns[iham] = (
-                new_mpdm.wfns[iham]
+            new_mpdm.tdh_wfns[iham] = (
+                new_mpdm.tdh_wfns[iham]
                     .dot(v)
                     .dot(np.diag(np.exp(-1.0j * evolve_dt * w)))
                     .dot(v.T)
             )
-        new_mpdm.wfns[-1] *= np.exp(-1.0j * Etot * evolve_dt)
-        # unitary_propagation(new_mpdm.wfns, HAM, Etot, evolve_dt)
+        new_mpdm.tdh_wfns[-1] *= np.exp(-1.0j * Etot * evolve_dt)
+        # unitary_propagation(new_mpdm.tdh_wfns, HAM, Etot, evolve_dt)
         return new_mpdm
 
     def full_wfn(self):

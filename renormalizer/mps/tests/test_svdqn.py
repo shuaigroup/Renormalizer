@@ -16,8 +16,7 @@ nexciton = 1
 procedure = [[20, 0.4], [20, 0.2], [20, 0.1], [20, 0], [20, 0]]
 
 
-def test_csvd(switch_to_64backend):
-    # the pickle file is in 64bit backend
+def test_csvd():
     np.random.seed(0)
     mps1, mpo = construct_mps_mpo_2(mol_list, procedure[0][0], nexciton)
     mps1.threshold = 1e-6

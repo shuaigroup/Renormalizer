@@ -3,7 +3,7 @@
 from renormalizer.model import Phonon, Mol, MolList
 from renormalizer.utils import Quantity, EvolveConfig, CompressConfig, CompressCriteria, EvolveMethod
 from renormalizer.utils.constant import cm2au
-from renormalizer.transport import ChargeTransport
+from renormalizer.transport import ChargeTransport, InitElectron
 
 import numpy as np
 
@@ -154,14 +154,11 @@ if __name__ == "__main__":
     mol_arangement = np.array([7, 5, 3, 1, 2, 4, 6]) - 1
     mol_list = MolList(list(np.array(mlist)[mol_arangement]), j_matrix_au[mol_arangement][:, mol_arangement])
 
-    evolve_dt = 40
-    evolve_config = EvolveConfig(evolve_dt=evolve_dt)
-    compress_config = CompressConfig(CompressCriteria.fixed, max_bonddim=16)
-    ct = ChargeTransport(mol_list, evolve_config=evolve_config, compress_config=compress_config)
-    ct.dump_dir = "./fmo"
-    ct.job_name = 'hybrid'
+    evolve_dt = 160
+    evolve_config = EvolveConfig(EvolveMethod.tdvp_ps, evolve_dt=evolve_dt)
+    compress_config = CompressConfig(CompressCriteria.fixed, max_bonddim=32)
+    ct = ChargeTransport(mol_list, evolve_config=evolve_config, compress_config=compress_config, init_electron=InitElectron.fc, logging_output=["r_square", "e_occupations"])
+    ct.dump_dir = "./"
+    ct.job_name = 'fmo'
     ct.stop_at_edge = False
-    ct.evolve(evolve_dt=evolve_dt, nsteps=10)
-    new_evolve_config = EvolveConfig(EvolveMethod.tdvp_mu_switch_gauge)
-    ct.latest_mps.evolve_config = ct.evolve_config = new_evolve_config
-    ct.evolve(evolve_dt=evolve_dt, nsteps=100000)
+    ct.evolve(evolve_dt=evolve_dt, evolve_time=40000)
