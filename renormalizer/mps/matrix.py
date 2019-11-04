@@ -161,7 +161,7 @@ class Matrix:
         if res.ndim != 0:
             return self.__class__(res)
         else:
-            return complex(res)
+            return res
 
     def __setitem__(self, key, value):
         if isinstance(value, Matrix):
