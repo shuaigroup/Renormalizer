@@ -7,6 +7,19 @@ install:
     - pip install -r requirements.txt
     - pip install qutip==4.3.1
 
-
 script:
     - pytest --durations=0
+
+before_deploy:
+    - pip install recommonmark=0.6.0
+    - pip install sphinx_rtd_theme=0.4.3
+    - cd doc; make html
+
+deploy:
+    provider: pages
+    skip_cleanup: true
+    github_token: $github_token
+    local_dir: doc/html
+    verbose: true
+    on:
+        branch: master
