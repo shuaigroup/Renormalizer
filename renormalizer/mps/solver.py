@@ -328,13 +328,13 @@ def optimize_mps_dmrg(mps, mpo):
     return energies
 
 
-def optimize_mps_hartree(mps, HAM):
-    mps.wfns = []
+def optimize_mps_hartree(mps: "Mps", HAM):
+    mps.tdh_wfns = []
     for ham in HAM:
         w, v = scipy.linalg.eigh(ham)
-        mps.wfns.append(v[:, 0])
+        mps.tdh_wfns.append(v[:, 0])
     # append the coefficient a
-    mps.wfns.append(1.0)
+    mps.tdh_wfns.append(1.0)
 
 
 def renormalization_svd(cstruct, qnbigl, qnbigr, domain, nexciton, Mmax, percent=0):

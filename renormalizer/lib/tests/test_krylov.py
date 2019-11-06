@@ -22,5 +22,5 @@ def test_expm(N, imag):
     if imag:
         v = v + v / 1j
     res1 = expm(a1) @ v
-    res2 = expm_krylov(lambda x: a2.dot(x), 1, xp.array(v))
+    res2, _ = expm_krylov(lambda x: a2.dot(x), 1, xp.array(v))
     assert xp.allclose(res1, res2)

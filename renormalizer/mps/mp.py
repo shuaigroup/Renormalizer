@@ -29,24 +29,6 @@ logger = logging.getLogger(__name__)
 
 class MatrixProduct:
 
-    @classmethod
-    def load(cls, mol_list: MolList, fname: str):
-        npload = np.load(fname, allow_pickle=True)
-        mp = cls()
-        mp.mol_list = mol_list
-        for i in range(int(npload["nsites"])):
-            mt = npload[f"mt_{i}"]
-            if np.iscomplexobj(mt):
-                mp.dtype = backend.complex_dtype
-            else:
-                mp.dtype = backend.real_dtype
-            mp.append(mt)
-        mp.qn = npload["qn"]
-        mp.qnidx = int(npload["qnidx"])
-        mp.qntot = int(npload["qntot"])
-        mp.left = bool(npload["left"])
-        return mp
-
     def __init__(self):
         # XXX: when modify theses codes, keep in mind to update `metacopy` method
         # set to a list of None upon metacopy
@@ -601,20 +583,6 @@ class MatrixProduct:
 
     def set_threshold(self, val):
         self.compress_config.threshold = val
-
-    def dump(self, fname):
-        data_dict = dict()
-        # version of the protocol
-        data_dict["version"] = "0.1"
-        data_dict["nsites"] = len(self)
-        for idx, mt in enumerate(self):
-            data_dict[f"mt_{idx}"] = mt.asnumpy()
-        for attr in ["qn", "qnidx", "qntot", "left"]:
-            data_dict[attr] = getattr(self, attr)
-        try:
-            np.savez(fname, **data_dict)
-        except Exception as e:
-            logger.error(f"Dump mps failed, exception info: f{e}")
 
     def __eq__(self, other):
         for m1, m2 in zip(self, other):

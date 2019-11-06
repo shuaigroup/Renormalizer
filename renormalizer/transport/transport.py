@@ -9,9 +9,11 @@ from enum import Enum
 from collections import OrderedDict
 from functools import partial
 
-from renormalizer.mps import Mpo, Mps, MpDm, solver, MpDmFull, SuperLiouville, ThermalProp
+from typing import List
+
+from renormalizer.mps import Mpo, Mps, MpDm, MpDmFull, SuperLiouville, ThermalProp
 from renormalizer.model import MolList
-from renormalizer.utils import TdMpsJob, Quantity, CompressCriteria, CompressConfig
+from renormalizer.utils import TdMpsJob, Quantity, CompressConfig
 from renormalizer.utils.utils import cast_float
 
 import numpy as np
@@ -24,7 +26,6 @@ EDGE_THRESHOLD = 1e-4
 class InitElectron(Enum):
     fc = "franc-condon excitation"
     relaxed = "analytically relaxed phonon(s)"
-    polaron = "optimized polaron"
 
 
 class ChargeTransport(TdMpsJob):
@@ -36,11 +37,19 @@ class ChargeTransport(TdMpsJob):
         evolve_config=None,
         stop_at_edge=True,
         init_electron=InitElectron.relaxed,
-        rdm=False,
-        dissipation=0
+        logging_output: List[str] =None,
+        rdm: bool =False,
+        dissipation: float =0
     ):
         self.mol_list: MolList = mol_list
         self.temperature = temperature
+        all_logging_output = ["r_square", "e_occupations", "ph_occupations"]
+        if logging_output is None:
+            self.logging_output = all_logging_output
+        else:
+            if not set(logging_output) < set(all_logging_output):
+                raise ValueError(f"Invalid logging output option. Expected chosen from {all_logging_output}. Got {logging_output}")
+            self.logging_output = logging_output
         self.mpo = None
         self.init_electron = init_electron
         self.dissipation = dissipation
@@ -102,6 +111,7 @@ class ChargeTransport(TdMpsJob):
         method_mapping = {InitElectron.fc: self.create_electron_fc,
                           InitElectron.relaxed: self.create_electron_relaxed,
                           }
+        logger.info(f"Creating electron using {self.init_electron}")
         return method_mapping[self.init_electron](gs_mp)
 
     def init_mps(self):
@@ -110,9 +120,6 @@ class ChargeTransport(TdMpsJob):
             gs_mp = Mps.gs(self.mol_list, max_entangled=False)
             if self.dissipation != 0:
                 gs_mp = MpDm.from_mps(gs_mp)
-            init_mp = self.create_electron(gs_mp)
-            if self.evolve_config.is_tdvp:
-                init_mp = init_mp.expand_bond_dimension(self.mpo)
         else:
             gs_mp = MpDm.max_entangled_gs(self.mol_list)
             # subtract the energy otherwise might cause numeric error because of large offset * dbeta
@@ -121,18 +128,20 @@ class ChargeTransport(TdMpsJob):
             tp = ThermalProp(gs_mp, mpo, exact=True, space="GS")
             tp.evolve(None, len(gs_mp), self.temperature.to_beta() / 2j)
             gs_mp = tp.latest_mps
-            init_mp = self.create_electron(gs_mp)
+        init_mp = self.create_electron(gs_mp)
         if self.dissipation != 0:
             init_mp = MpDmFull.from_mpdm(init_mp)
         energy = Quantity(init_mp.expectation(tentative_mpo))
         self.mpo = Mpo(self.mol_list, offset=energy)
         logger.info(f"mpo bond dims: {self.mpo.bond_dims}")
         logger.info(f"mpo physical dims: {self.mpo.pbond_list}")
+        init_mp.evolve_config = self.evolve_config
+        init_mp.compress_config = self.compress_config
+        if self.evolve_config.is_tdvp and self.temperature == 0:
+            init_mp = init_mp.expand_bond_dimension(self.mpo)
         if self.dissipation != 0:
             self.mpo = SuperLiouville(self.mpo, self.dissipation)
         init_mp.canonicalise()
-        init_mp.evolve_config = self.evolve_config
-        init_mp.compress_config = self.compress_config
         return init_mp
 
 
@@ -140,7 +149,7 @@ class ChargeTransport(TdMpsJob):
         new_energy = mps.expectation(self.mpo)
         self.energies.append(new_energy)
         logger.debug(f"Energy: {new_energy}")
-        for attr_str in ["r_square", "e_occupations", "ph_occupations"]:
+        for attr_str in self.logging_output:
             attr = getattr(mps, attr_str)
             logger.info(f"{attr_str}: {attr}")
             self_array = getattr(self, f"_{attr_str}_array")

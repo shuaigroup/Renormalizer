@@ -50,7 +50,7 @@ class ThermalProp(TdMpsJob):
             self.h_mpo, evolve_dt.imag, space=self.space
         )
         new_mpdm = MPOprop.apply(old_mpdm)
-        unitary_propagation(new_mpdm.wfns, HAM, Etot, evolve_dt)
+        unitary_propagation(new_mpdm.tdh_wfns, HAM, Etot, evolve_dt)
         # partition function can't be obtained. It's not practical anyway.
         # The function is too large to be fit into float64 even float128
         new_mpdm.normalize(1.0)

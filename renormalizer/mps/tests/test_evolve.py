@@ -1,8 +1,6 @@
 # -*- coding: utf-8 -*-
 # Author: Jiajun Ren <jiajunren0522@gmail.com>
 
-import os
-
 import qutip
 import pytest
 import numpy as np

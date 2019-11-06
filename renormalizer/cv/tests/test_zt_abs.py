@@ -7,7 +7,7 @@ import os
 from renormalizer.cv.tests import cur_dir
 import pytest
 
-def test_zt_abs(switch_to_64backend):
+def test_zt_abs():
 
     with open(os.path.join(cur_dir, "standard_value.npy"), "rb") as fin:
         standard_value = np.load(fin)

@@ -42,6 +42,5 @@ if __name__ == "__main__":
     ct.job_name = param["fname"]
     ct.custom_dump_info["comment"] = param["comment"]
     # ct.latest_mps.compress_add = True
-    logger.debug(f"ground energy of the Hamiltonian: {ct.mpo_e_lbound:g}")
     ct.evolve(param.get("evolve dt"), param.get("nsteps"), param.get("evolve time"))
     # ct.evolve(evolve_dt, 100, param.get("evolve time"))

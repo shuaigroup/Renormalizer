@@ -66,7 +66,7 @@ def test_quasiboson_constructMPO():
         ],
     ),
 )
-def test_quasiboson_solver(value, switch_to_64backend):
+def test_quasiboson_solver(value):
     np.random.seed(0)
     # normal boson
     mol_list1 = parameter.custom_mol_list(None, *value[0])
