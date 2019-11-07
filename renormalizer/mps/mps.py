@@ -165,7 +165,7 @@ class Mps(MatrixProduct):
         mps.append(last_mt)
 
         mps.qnidx = len(mps) - 1
-        mps.left = False
+        mps.to_right = False
         mps.qntot = nexciton
 
         # print("self.dim", self.dim)
@@ -190,7 +190,7 @@ class Mps(MatrixProduct):
         mps.mol_list = mol_list
         mps.qn = [[0]] * (len(mps.ephtable) + 1)
         mps.qnidx = len(mps.ephtable) - 1
-        mps.left = False
+        mps.to_right = False
         mps.qntot = 0
 
         for imol, mol in enumerate(mol_list):
@@ -251,10 +251,11 @@ class Mps(MatrixProduct):
         mp.qn = npload["qn"]
         mp.qnidx = int(npload["qnidx"])
         mp.qntot = int(npload["qntot"])
-        mp.left = bool(npload["left"])
         if npload["version"] == "0.1":
+            mp.to_right = bool(npload["left"])
             logger.warning("Using old dump/load protocol. TD Hartree part will be lost")
         else:
+            mp.to_right = bool(npload["to_right"])
             mp.tdh_wfns = npload["tdh_wfns"]
         return mp
 
@@ -327,9 +328,8 @@ class Mps(MatrixProduct):
         # return self.dmrg_norm * self.hartree_norm
         return self.tdh_wfns[-1]
 
-    # @_cached_property
     @property
-    def dmrg_norm(self):
+    def dmrg_norm(self) -> float:
         # the fast version in the comment rarely makes sense because in a lot of cases
         # the mps is not canonicalised (though qnidx is set)
         """
@@ -341,8 +341,7 @@ class Mps(MatrixProduct):
             return np.linalg.norm(np.ravel(self[0]))
         """
         res = np.sqrt(self.conj().dot(self, with_hartree=False).real)
-        return res.real
-
+        return float(res.real)
 
     def _expectation_path(self):
         # S--a--S--e--S
@@ -361,7 +360,6 @@ class Mps(MatrixProduct):
             ([1, 0], "hge, egh -> "),
         ]
         return path
-
 
     def _expectation_conj(self):
         return self.conj()
@@ -433,7 +431,7 @@ class Mps(MatrixProduct):
         elif self.mol_list.scheme == 4:
             # get rdm is very fast
             rdm = self.calc_reduced_density_matrix()
-            return np.diag(rdm).real[1:]
+            return np.diag(rdm).real
         else:
             assert False
 
@@ -482,28 +480,31 @@ class Mps(MatrixProduct):
         expand bond dimension as required in compress_config
         """
         m_target = self.compress_config.bond_dim_max_value
+        logger.debug(f"target for expanding: {m_target}")
         if hint_mpo is None:
             expander = self.__class__.random(self.mol_list, 1, m_target)
         else:
+            logger.debug(f"average bond dimension of hint mpo: {hint_mpo.bond_dims_mean}")
             # fill states related to `hint_mpo`
             lastone: MatrixProduct = hint_mpo @ self
             expander_list: List["MatrixProduct"] = [lastone]
             while True:
                 lastone.compress_config.criteria = CompressCriteria.fixed
-                cumulated_m = sum(mps.bond_dims_max for mps in expander_list)
+                cumulated_m = sum(mps.bond_dims_mean for mps in expander_list)
+                logger.debug(f"cumulated bond dimension: {cumulated_m}. lastone bond dimension: {lastone.bond_dims}")
                 if m_target < cumulated_m:
                     break
-                if m_target < lastone.bond_dims_max * hint_mpo.bond_dims_max:
-                    lastone.compress_config.bond_dim_max_value = round(m_target // hint_mpo.bond_dims_max)
-                    lastone.compress_config.set_bonddim(len(lastone) + 1)
-                    lastone = lastone.canonicalise().compress()
+                if m_target < 0.8 * (lastone.bond_dims_mean * hint_mpo.bond_dims_mean):
+                    lastone = lastone.canonicalise().compress(m_target // hint_mpo.bond_dims_mean)
                 lastone = hint_mpo @ lastone
                 expander_list.append(lastone)
             expander = compressed_sum(expander_list, batchsize=np.inf)
-            # no further compress now
-            expander.compress_config = self.compress_config
-        # do twice to completely eliminate redundant bonds
-        return (self + expander.scale(coef, inplace=True)).canonicalise().canonicalise().canonical_normalize()
+        logger.debug(f"expander bond dimension: {expander.bond_dims}")
+        orig_config, self.compress_config = self.compress_config, expander.compress_config
+        # final compression
+        res = (self + expander.scale(coef, inplace=True)).canonicalise().compress().canonical_normalize()
+        res.compress_config = orig_config
+        return res
 
     def evolve(self, mpo, evolve_dt, approx_eiht=None):
         if self.hybrid_tdh:
@@ -1009,7 +1010,7 @@ class Mps(MatrixProduct):
         # sweep for 2 rounds
         for i in range(2):
             for imps in mps.iter_idx_list(full=True):
-                system = "L" if mps.left else "R"
+                system = "L" if mps.to_right else "R"
                 ltensor = environ.read("L", imps - 1)
                 rtensor = environ.read("R", imps + 1)
 
@@ -1058,7 +1059,7 @@ class Mps(MatrixProduct):
                 )
                 vt = v.T
 
-                if not mps.left and imps != 0:
+                if not mps.to_right and imps != 0:
                     mps[imps] = vt.reshape([-1] + shape[1:])
                     mps_conj[imps] = mps[imps].conj()
                     mps.qn[imps] = qnrset
@@ -1093,7 +1094,7 @@ class Mps(MatrixProduct):
                     )
                     mps_conj[imps - 1] = mps[imps - 1].conj()
 
-                elif mps.left and imps != len(mps) - 1:
+                elif mps.to_right and imps != len(mps) - 1:
                     mps[imps] = u.reshape(shape[:-1] + [-1])
                     mps_conj[imps] = mps[imps].conj()
                     mps.qn[imps + 1] = qnlset
@@ -1319,7 +1320,7 @@ class Mps(MatrixProduct):
             copy.canonicalise()
             copy.canonicalise(self.mol_list.e_idx())
             e_mo = copy[self.mol_list.e_idx()]
-            return tensordot(e_mo.conj(), e_mo, axes=((0, 2), (0, 2))).asnumpy()
+            return tensordot(e_mo.conj(), e_mo, axes=((0, 2), (0, 2))).asnumpy()[1:, 1:]
         else:
             assert False
 
@@ -1330,7 +1331,7 @@ class Mps(MatrixProduct):
         data_dict["nsites"] = len(self)
         for idx, mt in enumerate(self):
             data_dict[f"mt_{idx}"] = mt.asnumpy()
-        for attr in ["qn", "qnidx", "qntot", "left", "tdh_wfns"]:
+        for attr in ["qn", "qnidx", "qntot", "to_right", "tdh_wfns"]:
             data_dict[attr] = getattr(self, attr)
         try:
             np.savez(fname, **data_dict)

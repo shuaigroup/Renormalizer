@@ -2,8 +2,6 @@
 # Author: Jiajun Ren <jiajunren0522@gmail.com>
 #         Weitang Li <liwt31@163.com>
 
-from __future__ import division, print_function, absolute_import
-
 import logging
 from enum import Enum
 from collections import OrderedDict
@@ -13,7 +11,7 @@ from typing import List
 
 from renormalizer.mps import Mpo, Mps, MpDm, MpDmFull, SuperLiouville, ThermalProp
 from renormalizer.model import MolList
-from renormalizer.utils import TdMpsJob, Quantity, CompressConfig
+from renormalizer.utils import TdMpsJob, Quantity, CompressConfig, EvolveConfig
 from renormalizer.utils.utils import cast_float
 
 import numpy as np
@@ -24,31 +22,83 @@ EDGE_THRESHOLD = 1e-4
 
 
 class InitElectron(Enum):
+    """
+    Available methods to prepare initial state of charge diffusion
+    """
     fc = "franc-condon excitation"
     relaxed = "analytically relaxed phonon(s)"
 
 
 class ChargeTransport(TdMpsJob):
+    r"""
+    Simulate charge diffusion by TD-DMRG.
+
+    Args:
+        mol_list (:class:`MolList`): system information.
+        temperature (:class:`Quantity`): simulation temperature. Default is zero temperature.
+        compress_config (:class:`CompressConfig`): config when compressing MPS.
+        evolve_config (:class:`EvolveConfig`): config when evolveing MPS.
+        stop_at_edge (bool): whether stop when charge has diffused to the boundary of the system. Default is ``True``.
+        init_electron (:class:`InitElectron`): the method to prepare the initial state.
+        logging_output (List[str]): contents to be put into logging output.
+            Should be a subset of ["r_square", "e_occupations", "ph_occupations"].
+            Note that this does not affect dumped output in JSON format.
+        rdm (bool): whether calculate reduced density matrix and k-space representation for the electron.
+            Default is ``False`` because usually the calculation is time consuming.
+            Using scheme 4 might partly solve the problem.
+        dissipation (float): the dissipation strength. This is a experimental feature. Default is 0.
+            When set to finite value, Lindblad equation is applied to perform time evolution.
+
+    Attributes:
+        energies (np.ndarray): calculated energy of the states during the time evolution.
+            Without dissipation or TD-Hartree the value should remain unchanged and to some extent
+            can be used to measure the error during time evolution.
+        r_square_array (np.ndarray): calculated mean square displacement
+            :math:`\langle \psi | \hat r^2 | \psi \rangle - \langle \psi | \hat r | \psi \rangle^2`
+            at each evolution time step.
+        e_occupations_array (np.ndarray): calculated electron occupations in real space on each site for each evolution time step.
+        ph_occupations_array (np.ndarray): calculated phonon occupations on each site for each evolution time step.
+        k_occupations_array (np.ndarray): calculated electron occupations in momentum (k) space
+            on each site for each evolution time step. Only available when ``rdm`` is set to ``True``.
+            The basis transformation is based on:
+
+            .. math::
+                | k \rangle = \sum_j e^{-ijk} | j \rangle
+
+            where :math:`k` starts from :math:`-\pi` to :math:`\pi`.
+        coherent_length_array (np.ndarray): coherent length :math:`L` calculated for each evolution time step.
+
+            .. math::
+                L = \sum_{i, j, i \neq j} | \rho_{ij} |
+
+            where `\rho` is the density matrix of the electron. Naturally this is only available when
+            ``rdm`` is set to ``True``.
+
+    """
+    # all possible outputs
+    all_outputs = ["r_square", "e_occupations", "ph_occupations"]
+
     def __init__(
         self,
         mol_list: MolList,
-        temperature=Quantity(0, "K"),
-        compress_config=None,
-        evolve_config=None,
-        stop_at_edge=True,
+        temperature: Quantity = Quantity(0, "K"),
+        compress_config: CompressConfig = None,
+        evolve_config: EvolveConfig = None,
+        stop_at_edge: bool = True,
         init_electron=InitElectron.relaxed,
-        logging_output: List[str] =None,
-        rdm: bool =False,
-        dissipation: float =0
+        logging_output: List[str] = None,
+        rdm: bool = False,
+        dissipation: float = 0,
     ):
         self.mol_list: MolList = mol_list
         self.temperature = temperature
-        all_logging_output = ["r_square", "e_occupations", "ph_occupations"]
         if logging_output is None:
-            self.logging_output = all_logging_output
+            self.logging_output = self.all_outputs
         else:
-            if not set(logging_output) < set(all_logging_output):
-                raise ValueError(f"Invalid logging output option. Expected chosen from {all_logging_output}. Got {logging_output}")
+            if not set(logging_output) < set(self.all_outputs):
+                raise ValueError(
+                    f"Invalid logging output option. Expected chosen from {self.all_outputs}. Got {logging_output}"
+                )
             self.logging_output = logging_output
         self.mpo = None
         self.init_electron = init_electron
@@ -62,6 +112,7 @@ class ChargeTransport(TdMpsJob):
         self._e_occupations_array = []
         self._ph_occupations_array = []
         self.reduced_density_matrices = [] if rdm else None
+        self._k_occupations_array = []
         super(ChargeTransport, self).__init__(evolve_config)
         assert self.mpo is not None
 
@@ -108,9 +159,10 @@ class ChargeTransport(TdMpsJob):
         return mps
 
     def create_electron(self, gs_mp):
-        method_mapping = {InitElectron.fc: self.create_electron_fc,
-                          InitElectron.relaxed: self.create_electron_relaxed,
-                          }
+        method_mapping = {
+            InitElectron.fc: self.create_electron_fc,
+            InitElectron.relaxed: self.create_electron_relaxed,
+        }
         logger.info(f"Creating electron using {self.init_electron}")
         return method_mapping[self.init_electron](gs_mp)
 
@@ -144,29 +196,38 @@ class ChargeTransport(TdMpsJob):
         init_mp.canonicalise()
         return init_mp
 
-
     def process_mps(self, mps):
         new_energy = mps.expectation(self.mpo)
         self.energies.append(new_energy)
         logger.debug(f"Energy: {new_energy}")
-        for attr_str in self.logging_output:
+        for attr_str in self.all_outputs:
             attr = getattr(mps, attr_str)
-            logger.info(f"{attr_str}: {attr}")
+            if attr_str in self.logging_output:
+                logger.info(f"{attr_str}: {attr}")
             self_array = getattr(self, f"_{attr_str}_array")
             self_array.append(attr)
 
         if self.reduced_density_matrices is not None:
             logger.debug("Calculating reduced density matrix")
-            self.reduced_density_matrices.append(mps.calc_reduced_density_matrix())
+            rdm = mps.calc_reduced_density_matrix()
             logger.debug("Calculate reduced density matrix finished")
+            self.reduced_density_matrices.append(rdm)
+
+            # k_space transform matrix
+            n = len(self.mol_list)
+            assert rdm.shape == (n, n)
+            transform = np.exp(-1j * (np.arange(-n, n, 2)/n * np.pi).reshape(-1, 1) * np.arange(0, n).reshape(1, -1)) / np.sqrt(n)
+            k = np.diag(transform @ rdm @ transform.conj().T).real
+            logger.info(f"k_occupations: {k}")
+            self._k_occupations_array.append(k)
 
 
     def evolve_single_step(self, evolve_dt):
         old_mps = self.latest_mps
-        #mol_list = self.mol_list.get_fluctuation_mollist(self.latest_evolve_time)
-        #self.elocalex_arrays.append(mol_list.elocalex_array)
-        #self.j_arrays.append(mol_list.adjacent_transfer_integral)
-        #mpo = Mpo(mol_list, 3, offset=self.mpo.offset)
+        # mol_list = self.mol_list.get_fluctuation_mollist(self.latest_evolve_time)
+        # self.elocalex_arrays.append(mol_list.elocalex_array)
+        # self.j_arrays.append(mol_list.adjacent_transfer_integral)
+        # mpo = Mpo(mol_list, 3, offset=self.mpo.offset)
         mpo = self.mpo
         new_mps = old_mps.evolve(mpo, evolve_dt)
         return new_mps
@@ -186,12 +247,17 @@ class ChargeTransport(TdMpsJob):
         dump_dict["r square array"] = cast_float(self.r_square_array)
         dump_dict["electron occupations array"] = cast_float(self.e_occupations_array)
         dump_dict["phonon occupations array"] = cast_float(self.ph_occupations_array)
-        #dump_dict["elocalex arrays"] = [list(e) for e in self.elocalex_arrays]
-        #dump_dict["j arrays"] = [list(j) for j in self.j_arrays]
+        dump_dict["k occupations array"] = cast_float(self.k_occupations_array)
+        # dump_dict["elocalex arrays"] = [list(e) for e in self.elocalex_arrays]
+        # dump_dict["j arrays"] = [list(j) for j in self.j_arrays]
         dump_dict["coherent length array"] = cast_float(self.coherent_length_array.real)
         if self.reduced_density_matrices:
-            dump_dict["final reduced density matrix real"] = cast_float(self.reduced_density_matrices[-1].real)
-            dump_dict["final reduced density matrix imag"] = cast_float(self.reduced_density_matrices[-1].imag)
+            dump_dict["final reduced density matrix real"] = cast_float(
+                self.reduced_density_matrices[-1].real
+            )
+            dump_dict["final reduced density matrix imag"] = cast_float(
+                self.reduced_density_matrices[-1].imag
+            )
         dump_dict["time series"] = list(self.evolve_times)
         return dump_dict
 
@@ -206,6 +272,10 @@ class ChargeTransport(TdMpsJob):
     @property
     def ph_occupations_array(self):
         return np.array(self._ph_occupations_array)
+
+    @property
+    def k_occupations_array(self):
+        return np.array(self._k_occupations_array)
 
     @property
     def coherent_length_array(self):

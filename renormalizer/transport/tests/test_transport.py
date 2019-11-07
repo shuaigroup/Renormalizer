@@ -103,33 +103,6 @@ def assert_iterable_equal(i1, i2):
     for ii1, ii2 in zip(i1, i2):
         assert_iterable_equal(ii1, ii2)
 
-@pytest.mark.parametrize(
-    "mol_num, j_constant_value, elocalex_value, ph_info, ph_phys_dim, evolve_dt, nsteps",
-    ([5, 0.8, 3.87e-3, [[1345.6738910804488, 16.274571056529368]], 4, 2, 50],),
-)
-def test_compress_add(
-    mol_num, j_constant_value, elocalex_value, ph_info, ph_phys_dim, evolve_dt, nsteps
-):
-    ph_list = [
-        Phonon.simple_phonon(
-            Quantity(omega, "cm^{-1}"), Quantity(displacement, "a.u."), ph_phys_dim
-        )
-        for omega, displacement in ph_info
-    ]
-    mol_list = MolList(
-        [Mol(Quantity(elocalex_value, "a.u."), ph_list)] * mol_num,
-        Quantity(j_constant_value, "eV"),
-        scheme=3
-    )
-    ct1 = ChargeTransport(mol_list, temperature=Quantity(298, "K"))
-    ct1.reduced_density_matrices = None
-    ct1.evolve(evolve_dt, nsteps)
-    ct2 = ChargeTransport(mol_list, temperature=Quantity(298, "K"))
-    ct2.reduced_density_matrices = None
-    ct2.latest_mps.compress_add = True
-    ct2.evolve(evolve_dt, nsteps)
-    assert ct1.is_similar(ct2, rtol=1e-2)
-
 
 @pytest.mark.parametrize(
     "mol_num, j_constant_value, elocalex_value, ph_info, ph_phys_dim, evolve_dt, nsteps, temperature",
@@ -137,6 +110,13 @@ def test_compress_add(
         [3, 0.8, 3.87e-3, [[1345.6738910804488, 16.274571056529368]], 4, 2, 15, 0],
         [3, 0.8, 3.87e-3, [[1345.6738910804488, 16.274571056529368]], 4, 2, 15, 100],
     ),
+)
+@pytest.mark.parametrize(
+    "scheme",
+    (
+            3,
+            4,
+     )
 )
 def test_reduced_density_matrix(
     mol_num,
@@ -147,6 +127,7 @@ def test_reduced_density_matrix(
     evolve_dt,
     nsteps,
     temperature,
+    scheme,
 ):
     ph_list = [
         Phonon.simple_phonon(
@@ -157,7 +138,7 @@ def test_reduced_density_matrix(
     mol_list = MolList(
         [Mol(Quantity(elocalex_value, "a.u."), ph_list)] * mol_num,
         Quantity(j_constant_value, "eV"),
-        scheme=3
+        scheme=scheme
     )
     ct = ChargeTransport(mol_list, temperature=Quantity(temperature, "K"), stop_at_edge=False, rdm=True)
     ct.evolve(evolve_dt, nsteps)

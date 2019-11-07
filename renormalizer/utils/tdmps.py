@@ -109,21 +109,22 @@ class TdMpsJob(object):
                 self.evolve_config.evolve_dt = new_dt
             self.latest_mps = new_mps
             self.process_mps(new_mps)
-            new_wall_time = datetime.now()
-            time_cost = new_wall_time - wall_times[-1]
+            evolution_wall_time = datetime.now()
+            time_cost = evolution_wall_time - wall_times[-1]
             if self.info_interval is not None and i % self.info_interval == 0:
                 mps_abstract = str(new_mps)
             else:
                 mps_abstract = ""
-            logger.info(
-                "%s complete, time cost %s. %s" % (step_str, time_cost, mps_abstract)
-            )
-            wall_times.append(new_wall_time)
+            logger.info(f"Evolution of {step_str} complete, time cost {time_cost}. {mps_abstract}")
+            wall_times.append(evolution_wall_time)
             if self._defined_output_path:
                 try:
                     self.dump_dict()
                 except IOError:  # never quit calculation because of IOError
                     logger.exception("dumping dict failed with IOError")
+                dump_wall_time = datetime.now()
+                logger.info(f"Dumping time cost {dump_wall_time - evolution_wall_time}")
+
             if self.stop_evolve_criteria():
                 logger.info(
                     "Criteria to stop the evolution has met. Stop the evolution"

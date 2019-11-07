@@ -14,7 +14,13 @@ logger = logging.getLogger(__name__)
 
 def _expm_krylov(alpha, beta, V, v_norm, dt):
     # diagonalize Hessenberg matrix
-    w_hess, u_hess = eigh_tridiagonal(alpha, beta)
+    try:
+        w_hess, u_hess = eigh_tridiagonal(alpha, beta)
+    except np.linalg.LinAlgError:
+        logger.warning("tridigonal failed")
+        h = np.diag(alpha) + np.diag(beta, k=-1) + np.diag(beta, k=1)
+        w_hess, u_hess = np.linalg.eigh(h)
+
     xp_w_hess = xp.array(w_hess)
     xp_u_hess = xp.array(u_hess)
 
@@ -36,8 +42,8 @@ def expm_krylov(Afunc, dt, vstart):
     nrmv = xp.linalg.norm(vstart)
     assert nrmv > 0
     vstart = vstart / nrmv
-    # max iteration
-    MAX_ITER = 50
+    # max iteration. How to do this more cleverly?
+    MAX_ITER = 300
 
     alpha = np.zeros(MAX_ITER)
     beta  = np.zeros(MAX_ITER-1)

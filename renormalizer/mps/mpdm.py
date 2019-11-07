@@ -159,7 +159,7 @@ class MpDm(MpDmBase):
         mpo.qn = [qn.copy() for qn in mps.qn]
         mpo.qntot = mps.qntot
         mpo.qnidx = mps.qnidx
-        mpo.left = mps.left
+        mpo.to_right = mps.to_right
         mpo.compress_config = mps.compress_config.copy()
         return mpo
 
@@ -199,7 +199,7 @@ class MpDm(MpDmBase):
             copy = self.copy().canonicalise()
             copy.canonicalise(self.mol_list.e_idx())
             e_mo = copy[self.mol_list.e_idx()]
-            return tensordot(e_mo, e_mo.conj(), axes=((0, 2 ,3), (0, 2, 3))).asnumpy()
+            return tensordot(e_mo, e_mo.conj(), axes=((0, 2 ,3), (0, 2, 3))).asnumpy()[1:, 1:]
         else:
             assert False
 
