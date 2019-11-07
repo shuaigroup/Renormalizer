@@ -577,7 +577,7 @@ class Mpo(MatrixProduct):
                 mpo.qn.append([qn])
         mpo.qntot = 0
         mpo.qnidx = len(mpo) - 1
-        mpo.left = False
+        mpo.to_right = False
         return mpo
 
     @classmethod

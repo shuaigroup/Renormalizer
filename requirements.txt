@@ -5,3 +5,5 @@ h5py==2.9.0
 typing==3.6.6
 PyYAML==5.1
 Cython==0.29.6
+recommonmark==0.6.0
+sphinx_rtd_theme==0.4.3

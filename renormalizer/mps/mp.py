@@ -49,8 +49,8 @@ class MatrixProduct:
         self.qn: List[List[int]] = []
         self.qnidx: int = None
         self._qntot: int = None
-        # if sweeping from left: True else False
-        self.left: bool = None
+        # if sweeping to right: True else False
+        self.to_right: bool = None
 
         # compress after add?
         self.compress_add: bool = False
@@ -98,8 +98,8 @@ class MatrixProduct:
         return bond_dims
 
     @property
-    def bond_dims_max(self) -> int:
-        return np.max(self.bond_dims)
+    def bond_dims_mean(self) -> int:
+        return int(np.mean(self.bond_dims))
 
     @property
     def ephtable(self):
@@ -140,14 +140,14 @@ class MatrixProduct:
         if self.qnidx is None:
             self.qnidx = 0
         self.qn = [[0] * dim for dim in self.bond_dims]
-        if self.left is None:
-            self.left = True
+        if self.to_right is None:
+            self.to_right = True
 
     def build_none_qn(self):
         self.qntot = None
         self.qnidx = None
         self.qn = None
-        self.left = None
+        self.to_right = None
 
     def clear_qn(self):
         self.qntot = 0
@@ -203,13 +203,13 @@ class MatrixProduct:
     def ensure_left_canon(self, atol=1e-3):
         if not self.check_left_canonical(atol):
             self.move_qnidx(0)
-            self.left = True
+            self.to_right = True
             self.canonicalise()
             assert self.check_left_canonical(atol)
 
     def iter_idx_list(self, full: bool, stop_idx: int=None):
         # if not `full`, the last site is omitted.
-        if self.left:
+        if self.to_right:
             if stop_idx is not None:
                 last = stop_idx
             else:
@@ -232,7 +232,7 @@ class MatrixProduct:
         if sigma is None:
             # canonicalise, vt is not unitary
             if self.is_mpo:
-                if self.left:
+                if self.to_right:
                     norm = vt.norm()
                     u = Matrix(u.array * norm)
                     vt = Matrix(vt.array / norm)
@@ -242,11 +242,11 @@ class MatrixProduct:
                     vt = Matrix(vt.array * norm)
         else:
             sigma = sigma[:m_trunc]
-            if (not self.is_mpo and self.left) or (self.is_mpo and not self.left):
+            if (not self.is_mpo and self.to_right) or (self.is_mpo and not self.to_right):
                 vt = einsum("i, ij -> ij", sigma, vt)
             else:
                 u = einsum("ji, i -> ji", u, sigma)
-        if self.left:
+        if self.to_right:
             self[idx + 1] = tensordot(vt, self[idx + 1], axes=1)
             ret_mpsi = u.reshape(
                 [u.shape[0] // self[idx].pdim_prod] + list(self[idx].pdim) + [m_trunc]
@@ -271,14 +271,14 @@ class MatrixProduct:
         self[idx] = ret_mpsi
 
     def _switch_direction(self):
-        assert self.left is not None
-        if self.left:
+        assert self.to_right is not None
+        if self.to_right:
             self.qnidx = self.site_num - 1
-            self.left = False
+            self.to_right = False
             # assert self.check_left_canonical()
         else:
             self.qnidx = 0
-            self.left = True
+            self.to_right = True
             # assert self.check_right_canonical()
 
     def _get_big_qn(self, idx):
@@ -289,7 +289,7 @@ class MatrixProduct:
         assert len(qnl) == mt.shape[0]
         assert len(qnr) == mt.shape[-1]
         assert len(sigmaqn) == mt.pdim_prod
-        if self.left:
+        if self.to_right:
             qnbigl = np.add.outer(qnl, sigmaqn)
             qnbigr = qnr
         else:
@@ -359,7 +359,7 @@ class MatrixProduct:
             new_mps.compress()
         return new_mps
 
-    def compress(self):
+    def compress(self, temp_m_trunc=None):
         """
         inp: canonicalise MPS (or MPO)
 
@@ -383,11 +383,11 @@ class MatrixProduct:
                 assert self.check_left_canonical()
             else:
                 assert self.check_right_canonical()
-        system = "L" if self.left else "R"
+        system = "L" if self.to_right else "R"
 
         for idx in self.iter_idx_list(full=False):
             mt: Matrix = self[idx]
-            if self.left:
+            if self.to_right:
                 mt = mt.l_combine()
             else:
                 mt = mt.r_combine()
@@ -401,9 +401,12 @@ class MatrixProduct:
                 full_matrices=False,
             )
             vt = v.T
-            m_trunc = self.compress_config.compute_m_trunc(
-                sigma, idx, self.left
-            )
+            if temp_m_trunc is None:
+                m_trunc = self.compress_config.compute_m_trunc(
+                    sigma, idx, self.to_right
+                )
+            else:
+                m_trunc = min(temp_m_trunc, len(sigma))
             self._update_ms(
                 idx, Matrix(u), Matrix(vt), Matrix(sigma), qnlset, qnrset, m_trunc
             )
@@ -418,12 +421,12 @@ class MatrixProduct:
         for idx in self.iter_idx_list(full=False, stop_idx=stop_idx):
             mt: Matrix = self[idx]
             assert mt.any()
-            if self.left:
+            if self.to_right:
                 mt = mt.l_combine()
             else:
                 mt = mt.r_combine()
             qnbigl, qnbigr = self._get_big_qn(idx)
-            system = "L" if self.left else "R"
+            system = "L" if self.to_right else "R"
             u, qnlset, v, qnrset = svd_qn.Csvd(
                 mt.asnumpy(),
                 qnbigl,
@@ -437,7 +440,7 @@ class MatrixProduct:
                 idx, Matrix(u), Matrix(v.T), sigma=None, qnlset=qnlset, qnrset=qnrset
             )
         # can't iter to idx == 0 or idx == self.site_num - 1
-        if (not self.left and idx == 1) or (self.left and idx == self.site_num - 2):
+        if (not self.to_right and idx == 1) or (self.to_right and idx == self.site_num - 2):
             self._switch_direction()
         return self
 
@@ -556,7 +559,7 @@ class MatrixProduct:
         new.qn = [qn.copy() for qn in self.qn]
         new.qnidx = self.qnidx
         new._qntot = self.qntot
-        new.left = self.left
+        new.to_right = self.to_right
         new.compress_add = self.compress_add
         return new
 

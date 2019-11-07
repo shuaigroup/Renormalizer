@@ -12,8 +12,8 @@ for env in ["MKL_NUM_THREADS", "NUMEXPR_NUM_THREADS", "OMP_NUM_THREADS"]:
     os.environ[env] = "1"
     del env
 
-# NEP-18. Not working. see gh-cupy/cupy#2130
-# os.environ["NUMPY_EXPERIMENTAL_ARRAY_FUNCTION"] = "1"
+# NEP-18 not working. For compatibility of newer NumPy version. See gh-cupy/cupy#2130
+os.environ["NUMPY_EXPERIMENTAL_ARRAY_FUNCTION"] = "0"
 
 del os, sys
 
