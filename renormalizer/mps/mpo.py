@@ -8,12 +8,16 @@ from renormalizer.model.ephtable import EphTable
 from renormalizer.mps.backend import xp
 from renormalizer.mps.matrix import moveaxis, tensordot, ones, EmptyMatrixError
 from renormalizer.mps.mp import MatrixProduct
+from renormalizer.mps import svd_qn
+from renormalizer.mps.lib import update_cv
 from renormalizer.utils import Quantity
 from renormalizer.utils.elementop import (
     construct_ph_op_dict,
     construct_e_op_dict,
     ph_op_matrix,
 )
+import itertools
+
 from renormalizer.utils.utils import roundrobin
 
 
@@ -547,6 +551,94 @@ class Mpo(MatrixProduct):
         mpo.build_empty_qn()
         return mpo
 
+    @classmethod
+    def finiteT_cv(cls, mol_list, nexciton, m_max, spectratype,
+                   percent=1.0):
+        np.random.seed(0)
+
+        X = cls()
+        X.mol_list = mol_list
+        if spectratype == "abs":
+            # quantum number index, |1><0|
+            tag_1, tag_2 = 0, 1
+        elif spectratype == "emi":
+            # quantum number index, |0><1|
+            tag_1, tag_2 = 1, 0
+        X.qn = [[[0, 0]]]
+        for ix in range(len(mol_list.ephtable) - 1):
+            X.qn.append(None)
+        X.qn.append([[0, 0]])
+        dim_list = [1]
+
+        for ix in range(len(mol_list.ephtable) - 1):
+            if mol_list.ephtable.is_electron(ix):
+                qnbig = list(itertools.chain.from_iterable(
+                    [np.add(y, [0, 0]), np.add(y, [0, 1]),
+                     np.add(y, [1, 0]), np.add(y, [1, 1])]
+                    for y in X.qn[ix]))
+            else:
+                qnbig = list(itertools.chain.from_iterable(
+                    [x] * (mol_list.pbond_list[ix] ** 2) for x in X.qn[ix]))
+            # print('qnbig', qnbig)
+            u_set = []
+            s_set = []
+            qnset = []
+            if spectratype != "conductivity":
+                fq = list(itertools.chain.from_iterable([y[tag_1]] for y in qnbig))
+                for iblock in range(min(fq), nexciton+1):
+                    indices = [i for i, y in enumerate(qnbig) if
+                               ((y[tag_1] == iblock) and (y[tag_2] == 0))]
+                    if len(indices) != 0:
+                        np.random.seed(0)
+                        a: np.ndarray = np.random.random([len(indices), len(indices)]) - 0.5
+                        a = a + a.T
+                        s, u = scipy.linalg.eigh(a=a)
+                        u_set.append(svd_qn.blockrecover(indices, u, len(qnbig)))
+                        s_set.append(s)
+                        if spectratype == "abs":
+                            qnset += [iblock, 0] * len(indices)
+                        elif spectratype == "emi":
+                            qnset += [0, iblock] * len(indices)
+            else:
+                fq1 = list(itertools.chain.from_iterable([y[0]] for y in qnbig))
+                fq2 = list(itertools.chain.from_iterable([y[1]] for y in qnbig))
+                # print('fq1, fq2', fq1, fq2)
+                for iblock in range(min(fq1), nexciton+1):
+                    for jblock in range(min(fq2), nexciton+1):
+                        # print('iblock', iblock, jblock)
+                        indices = [i for i, y in enumerate(qnbig) if
+                                   ((y[0] == iblock) and (y[1] == jblock))]
+                        # print('indices', indices)
+                        if len(indices) != 0:
+                            a: np.ndarray = np.random.random([len(indices), len(indices)]) - 0.5
+                            a = a + a.T
+                            s, u = scipy.linalg.eigh(a=a)
+                            u_set.append(svd_qn.blockrecover(indices, u, len(qnbig)))
+                            s_set.append(s)
+                            qnset += [iblock, jblock] * len(indices)
+                            # print('iblock', iblock)
+            list_qnset = []
+            for i in range(0, len(qnset), 2):
+                list_qnset.append([qnset[i], qnset[i + 1]])
+            qnset = list_qnset
+            # print('qnset', qnset)
+            u_set = np.concatenate(u_set, axis=1)
+            s_set = np.concatenate(s_set)
+            # print('uset', u_set.shape)
+            # print('s_set', s_set.shape)
+            x, xdim, xqn, compx = update_cv(u_set, s_set, qnset, None, nexciton, m_max, spectratype, percent=percent)
+            dim_list.append(xdim)
+            X.qn[ix + 1] = xqn
+            x = x.reshape(dim_list[-2], mol_list.pbond_list[ix], mol_list.pbond_list[ix], dim_list[ix + 1])
+            X.append(x)
+        dim_list.append(1)
+        X.append(np.random.random([dim_list[-2], mol_list.pbond_list[-1],
+                                  mol_list.pbond_list[-1], dim_list[-1]]))
+        X.qnidx = len(X) - 1
+        X.left = False
+        X.qntot = nexciton
+        # print('dim', [X[i].shape for i in range(len(X))])
+        return X
 
     @classmethod
     def displacement(cls, mol_list: MolList, start: int, end: int):

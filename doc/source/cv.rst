@@ -7,5 +7,8 @@ cv --- correction vector
    :members:
 
 
+.. automodule:: renormalizer.cv.finitet
+   :members:
+
 chebyshev --- Chebyshev expansion
 ==================================

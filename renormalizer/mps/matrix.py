@@ -46,7 +46,10 @@ class Matrix:
         backend.running = True
 
     def __getattr__(self, item):
-        res = getattr(self.array, item)
+        try:
+            res = getattr(self.array, item)
+        except:
+            res = super().__getattribute__(item)
         if isinstance(res, xp.ndarray):
             return Matrix(res)
         functiontype = type([].append)
