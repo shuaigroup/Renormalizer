@@ -252,6 +252,98 @@ def updatemps(vset, sset, qnset, compset, nexciton, Mmax, percent=0):
     return Matrix(ms), mpsdim, mpsqn, compmps
 
 
+def update_cv(vset, sset, qnset, compset, nexciton, Mmax, spectratype,
+              percent=0):
+    sidx = select_Xbasis(qnset, sset, range(nexciton + 1), Mmax, spectratype,
+                         percent=percent)
+    xdim = len(sidx)
+    x = np.zeros((vset.shape[0], xdim), dtype=vset.dtype)
+    xqn = []
+    if compset is not None:
+        compx = np.zeros((compset.shape[0], xdim), dtype=compset.dtype)
+    else:
+        compx = None
+
+    for idim in range(xdim):
+        x[:, idim] = vset[:, sidx[idim]].copy()
+        if (compset is not None) and (sidx[idim] < compset.shape[1]):
+            compx[:, idim] = compset[:, sidx[idim]].copy() * sset[sidx[idim]]
+        xqn.append(qnset[sidx[idim]])
+    if compx is not None:
+        compx = Matrix(compx)
+    return Matrix(x), xdim, xqn, compx
+
+
+def select_Xbasis(qnset, Sset, qnlist, Mmax, spectratype, percent=0.0):
+    # select basis according to Sset under qnlist requirement
+    # convert to dict
+    basdic = {}
+    sidx = []
+    for i in range(len(qnset)):
+        basdic[i] = [qnset[i], Sset[i]]
+    # print('basdic', basdic)
+    # clean quantum number outiside qnlist
+    flag = []
+    if spectratype != "conductivity":
+        if spectratype == "abs":
+            tag_1, tag_2 = 0, 1
+        else:
+            tag_1, tag_2 = 1, 0
+        for ibas in basdic:
+            if ((basdic[ibas][0][tag_1] not in qnlist) or (
+                    basdic[ibas][0][tag_2] != 0)):
+                flag.append(ibas)
+    else:
+        for ibas in basdic:
+            if (basdic[ibas][0][0] not in qnlist) or (
+                    basdic[ibas][0][1] not in qnlist):
+                flag.append(ibas)
+
+    # i = 0
+    # for j in flag:
+    #     if i == 0:
+    #         del basdic[j]
+    #     else:
+    #         del basdic[j - i]
+
+    def block_select(basdic, qn, n):
+        block_basdic = {i: basdic[i]
+                        for i in basdic if basdic[i][0] == qn}
+        sort_block_basdic = sorted(block_basdic.items(), key=lambda x: x[1][1],
+                                   reverse=True)
+        nget = min(n, len(sort_block_basdic))
+        # print('n', n)
+        # print('len', len(sort_block_basdic))
+        # print('nget', nget)
+        sidx = [i[0] for i in sort_block_basdic[0: nget]]
+        for idx in sidx:
+            del basdic[idx]
+        # print('qn', qn)
+        # print('sidx', sidx)
+        return sidx
+    nbasis = min(len(basdic), Mmax)
+    if percent != 0:
+        # print('percent', percent)
+        if spectratype == "abs":
+            nbas_block = int(nbasis * percent / len(qnlist))
+            for iqn in qnlist:
+                sidx += block_select(basdic, [iqn, 0], nbas_block)
+        elif spectratype == "emi":
+            nbas_block = int(nbasis * percent / len(qnlist))
+            for iqn in qnlist:
+                sidx += block_select(basdic, [0, iqn], nbas_block)
+        else:
+            nbas_block = int(nbasis * percent / 4)
+            for iqn in [[0, 0], [0, 1], [1, 0], [1, 1]]:
+                sidx += block_select(basdic, iqn, nbas_block)
+
+    nbasis = nbasis - len(sidx)
+    sortbasdic = sorted(basdic.items(), key=lambda y: y[1][1], reverse=True)
+    sidx += [i[0] for i in sortbasdic[0: nbasis]]
+    # print('sidx', sidx)
+    return sidx
+
+
 def compressed_sum(mps_list, batchsize=5):
     assert len(mps_list) != 0
     mps_queue = deque(mps_list)
