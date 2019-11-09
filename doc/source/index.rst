@@ -20,7 +20,7 @@ Contents
    install.md
    spectrum.rst
    ct.rst
-   cv.md
+   cv.rst
    lib.md
    mps.md
    model.md

@@ -87,6 +87,12 @@ class TdMpsJob(object):
         for i in range(nsteps):
             if target_time is not None and abs(self.latest_evolve_time - target_time) < 1e-3:
                 break
+            if self.stop_evolve_criteria():
+                logger.info(
+                    "Criteria to stop the evolution has met. Stop the evolution"
+                )
+                break
+
             if self.evolve_config.adaptive:
                 evolve_dt = self.evolve_config.evolve_dt
                 assert not (np.iscomplex(evolve_dt) ^ np.iscomplex(target_time))
@@ -98,8 +104,8 @@ class TdMpsJob(object):
             logger.info("{} begin.".format(step_str))
             # XXX: the actual evolve step here
             new_mps = self.evolve_single_step(evolve_dt=evolve_dt)
+            # update evolve_dt if adaptive
             if self.evolve_config.adaptive:
-                # update evolve_dt
                 if target_time is not None \
                         and abs(target_time) < abs(new_evolve_time) + abs(new_mps.evolve_config.evolve_dt):
                     new_dt = target_time - new_evolve_time
@@ -125,12 +131,6 @@ class TdMpsJob(object):
                 dump_wall_time = datetime.now()
                 logger.info(f"Dumping time cost {dump_wall_time - evolution_wall_time}")
 
-            if self.stop_evolve_criteria():
-                logger.info(
-                    "Criteria to stop the evolution has met. Stop the evolution"
-                )
-                break
-
         logger.info(f"{len(wall_times)-1} steps of evolution complete!")
         logger.info(
             "Normal termination. Time cost: %s" % (wall_times[-1] - wall_times[0])
@@ -153,6 +153,7 @@ class TdMpsJob(object):
     def dump_dict(self):
         if not self._defined_output_path:
             raise ValueError("Dump dir or job name not set")
+        d = self.get_dump_dict()
         os.makedirs(self.dump_dir, exist_ok=True)
         file_path = os.path.join(self.dump_dir, self.job_name + ".json")
         bak_path = file_path + ".bak"
@@ -161,7 +162,6 @@ class TdMpsJob(object):
             if os.path.exists(bak_path):
                 os.remove(bak_path)
             os.rename(file_path, bak_path)
-        d = self.get_dump_dict()
         with open(file_path, "w") as fout:
             json.dump(d, fout, indent=2)
         if os.path.exists(bak_path):
