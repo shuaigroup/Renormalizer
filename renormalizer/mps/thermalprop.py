@@ -13,16 +13,13 @@ logger = logging.getLogger(__name__)
 
 class ThermalProp(TdMpsJob):
 
-    def __init__(self, init_mpdm, h_mpo, exact=False, space="GS", evolve_config=None, approx_eiht=None, dump_dir=None,
+    def __init__(self, init_mpdm, h_mpo, exact=False, space="GS", evolve_config=None, dump_dir=None,
                  job_name=None):
         self.init_mpdm: MpDm = init_mpdm
         self.h_mpo = h_mpo
         self.exact = exact
         assert space in ["GS", "EX"]
         self.space = space
-        self.approx_eiht = approx_eiht
-        # calculated during propagation
-        self.approx_eihpt = None
         self.energies = []
         self._e_occupations_array = []
         self._ph_occupations_array = []
@@ -61,7 +58,7 @@ class ThermalProp(TdMpsJob):
 
     def evolve_prop(self, old_mpdm, evolve_dt):
         h_mpo = Mpo(self.h_mpo.mol_list, offset=Quantity(self.energies[-1]))
-        return old_mpdm.evolve(h_mpo, evolve_dt, self.approx_eihpt)
+        return old_mpdm.evolve(h_mpo, evolve_dt)
 
     def evolve_single_step(self, evolve_dt):
         old_mpdm = self.latest_mps
@@ -76,12 +73,6 @@ class ThermalProp(TdMpsJob):
             assert np.iscomplex(evolve_dt) and evolve_dt.imag < 0
         if evolve_time is not None:
             assert np.iscomplex(evolve_time) and evolve_time.imag < 0
-        if self.approx_eiht is not None:
-            assert not self.init_mpdm.evolve_config.adaptive
-            assert evolve_dt is not None
-            self.approx_eihpt = self.init_mpdm.__class__.approx_propagator(
-                self.h_mpo, evolve_dt, thresh=self.approx_eiht
-            )
         super().evolve(evolve_dt, nsteps, evolve_time)
 
     @property
