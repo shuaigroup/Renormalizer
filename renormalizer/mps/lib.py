@@ -9,7 +9,7 @@ from collections import deque
 
 import numpy as np
 
-from renormalizer.mps.matrix import Matrix, multi_tensor_contract, ones, EmptyMatrixError
+from renormalizer.mps.matrix import Matrix, multi_tensor_contract, ones
 
 sentinel = ones((1, 1, 1))
 

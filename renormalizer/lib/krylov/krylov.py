@@ -52,7 +52,6 @@ def expm_krylov(Afunc, dt, vstart: xp.ndarray, block_size=50):
 
     for j in range(len(vstart) - 1):
         if len(V) - 2 == j:
-            logger.debug(f"expanding blocks with j={j}. Block size={block_size}")
             V, old_V = xp.empty((len(V) + block_size, len(vstart)), dtype=vstart.dtype), V
             V[:len(old_V)] = old_V
             alpha = np.concatenate([alpha, np.zeros(block_size)])
