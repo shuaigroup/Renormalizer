@@ -113,6 +113,7 @@ def adaptive_tdvp(fun):
 
 
 class Mps(MatrixProduct):
+
     @classmethod
     def random(cls, mol_list: MolList, nexciton, m_max, percent=1.0) -> "Mps":
         # a high percent makes the result more random
@@ -506,23 +507,21 @@ class Mps(MatrixProduct):
         res.compress_config = orig_config
         return res
 
-    def evolve(self, mpo, evolve_dt, approx_eiht=None):
+    def evolve(self, mpo, evolve_dt):
         if self.hybrid_tdh:
             hybrid_mpo, HAM, Etot = self.construct_hybrid_Ham(mpo)
-            mps = self.evolve_dmrg(hybrid_mpo, evolve_dt, approx_eiht)
+            mps = self.evolve_dmrg(hybrid_mpo, evolve_dt)
             unitary_propagation(mps.tdh_wfns, HAM, Etot, evolve_dt)
         else:
             # save the cost of calculating energy
-            mps = self.evolve_dmrg(mpo, evolve_dt, approx_eiht)
+            mps = self.evolve_dmrg(mpo, evolve_dt)
         if np.iscomplex(evolve_dt):
             mps.normalize(1.0)
         else:
             mps.normalize(None)
         return mps
 
-    def evolve_dmrg(self, mpo, evolve_dt, approx_eiht=None) -> "Mps":
-        if approx_eiht is not None:
-            return approx_eiht.contract(self)
+    def evolve_dmrg(self, mpo, evolve_dt) -> "Mps":
 
         method = {
             EvolveMethod.prop_and_compress: self._evolve_dmrg_prop_and_compress,

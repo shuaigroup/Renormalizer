@@ -116,29 +116,6 @@ class MpDmBase(Mps, Mpo):
 class MpDm(MpDmBase):
 
     @classmethod
-    def approx_propagator(cls, mpo, dt, thresh=0):
-        """
-        e^-iHdt : approximate propagator MPO from Runge-Kutta methods
-        """
-
-        mps = Mps()
-        mps.mol_list = mpo.mol_list
-        mps.dim = [1] * (mpo.site_num + 1)
-        mps.qn = [[0]] * (mpo.site_num + 1)
-        mps.qnidx = mpo.site_num - 1
-        mps.qntot = 0
-        mps.threshold = thresh
-
-        for impo in range(mpo.site_num):
-            ms = xp.ones((1, mpo[impo].shape[1], 1), dtype=backend.complex_dtype)
-            mps.append(ms)
-        approx_mpo_t0 = cls.from_mps(mps)
-
-        approx_mpo = approx_mpo_t0.evolve(mpo, dt)
-
-        return approx_mpo
-
-    @classmethod
     def from_mps(cls, mps: Mps):
         mpo = cls()
         mpo.mol_list = mps.mol_list
