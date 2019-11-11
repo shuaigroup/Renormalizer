@@ -46,7 +46,10 @@ class Matrix:
         backend.running = True
 
     def __getattr__(self, item):
-        res = getattr(self.array, item)
+        # use this way to obtain ``array`` to prevent infinite recursion during multi-processing
+        # see https://stackoverflow.com/questions/22781872/python-pickle-got-acycle-recursion-with-getattr
+        array = super().__getattribute__("array")
+        res = getattr(array, item)
         if isinstance(res, xp.ndarray):
             return Matrix(res)
         functiontype = type([].append)
