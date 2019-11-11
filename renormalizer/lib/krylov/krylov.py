@@ -27,7 +27,7 @@ def _expm_krylov(alpha, beta, V, v_norm, dt):
     return V @ xp_u_hess @ (v_norm * xp.exp(dt*xp_w_hess) * xp_u_hess[0])
 
 
-def expm_krylov(Afunc, dt, vstart):
+def expm_krylov(Afunc, dt, vstart: xp.ndarray, block_size=50):
     """
     Compute Krylov subspace approximation of the matrix exponential
     applied to input vector: `expm(dt*A)*v`.
@@ -42,19 +42,21 @@ def expm_krylov(Afunc, dt, vstart):
     nrmv = xp.linalg.norm(vstart)
     assert nrmv > 0
     vstart = vstart / nrmv
-    # max iteration. How to do this more cleverly?
-    MAX_ITER = 300
 
-    alpha = np.zeros(MAX_ITER)
-    beta  = np.zeros(MAX_ITER-1)
+    alpha = np.zeros(block_size)
+    beta  = np.zeros(block_size - 1)
 
-    V = xp.zeros((MAX_ITER, len(vstart)), dtype=vstart.dtype)
+    V = xp.empty((block_size, len(vstart)), dtype=vstart.dtype)
     V[0] = vstart
     res = None
 
     for j in range(len(vstart) - 1):
-        if MAX_ITER - 2 == j:
-            raise RuntimeError("krylov not converged")
+        if len(V) - 2 == j:
+            logger.debug(f"expanding blocks with j={j}. Block size={block_size}")
+            V, old_V = xp.empty((len(V) + block_size, len(vstart)), dtype=vstart.dtype), V
+            V[:len(old_V)] = old_V
+            alpha = np.concatenate([alpha, np.zeros(block_size)])
+            beta = np.concatenate([beta, np.zeros(block_size)])
         w = Afunc(V[j])
         alpha[j] = xp.vdot(w, V[j]).real
         w -= alpha[j]*V[j] + (beta[j-1]*V[j-1] if j > 0 else 0)

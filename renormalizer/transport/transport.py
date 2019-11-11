@@ -189,7 +189,7 @@ class ChargeTransport(TdMpsJob):
         logger.info(f"mpo physical dims: {self.mpo.pbond_list}")
         init_mp.evolve_config = self.evolve_config
         init_mp.compress_config = self.compress_config
-        if self.evolve_config.is_tdvp and self.temperature == 0:
+        if self.evolve_config.is_tdvp:
             init_mp = init_mp.expand_bond_dimension(self.mpo)
         if self.dissipation != 0:
             self.mpo = SuperLiouville(self.mpo, self.dissipation)
