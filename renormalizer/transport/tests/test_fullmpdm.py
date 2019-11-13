@@ -8,6 +8,7 @@ import pytest
 from renormalizer.mps import MpDm, Mpo, MpDmFull, SuperLiouville, Mps, ThermalProp
 from renormalizer.utils import Quantity, CompressConfig
 from renormalizer.model import Phonon, Mol, MolList
+from renormalizer.transport.transport import calc_r_square
 from renormalizer.transport.tests.band_param import band_limit_mol_list, low_t, get_analytical_r_square
 
 
@@ -39,12 +40,12 @@ def test_dynamics(dissipation, dt, nsteps):
     # As more compression is involved higher threshold is necessary
     mpdm_full.compress_config = CompressConfig(threshold=1e-4)
     liouville = SuperLiouville(mpo, dissipation)
-    r_square_list = [mpdm_full.r_square]
+    r_square_list = [calc_r_square(mpdm_full.e_occupations)]
     time_series = [0]
     for i in range(nsteps - 1):
         logger.info(mpdm_full)
         mpdm_full = mpdm_full.evolve(liouville, dt)
-        r_square_list.append(mpdm_full.r_square)
+        r_square_list.append(calc_r_square(mpdm_full.e_occupations))
         time_series.append(time_series[-1] + dt)
     time_series = np.array(time_series)
     if dissipation == 0:

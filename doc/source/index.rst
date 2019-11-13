@@ -22,9 +22,10 @@ Contents
    ct.rst
    cv.rst
    lib.md
-   mps.md
-   model.md
    sbm.md
+   configs.rst
+   mps.rst
+   model.md
    utils.md
    develop.md
 

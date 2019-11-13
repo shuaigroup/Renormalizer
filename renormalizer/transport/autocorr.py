@@ -6,7 +6,7 @@ import os
 import numpy as np
 import scipy.integrate
 
-from renormalizer.mps import MpDm, Mpo, BraKetPair, ThermalProp
+from renormalizer.mps import MpDm, Mpo, BraKetPair, ThermalProp, load_thermal_state
 from renormalizer.mps.lib import compressed_sum
 from renormalizer.utils.constant import mobility2au
 from renormalizer.utils import TdMpsJob, Quantity, EvolveConfig, CompressConfig
@@ -15,7 +15,6 @@ from renormalizer.utils.utils import cast_float
 
 logger = logging.getLogger(__name__)
 
-# todo: zero temeprature
 
 class TransportAutoCorr(TdMpsJob):
 
@@ -64,14 +63,7 @@ class TransportAutoCorr(TdMpsJob):
     def init_mps(self):
         # first try to load
         if self._defined_output_path:
-            try:
-                logger.info(f"Try load from {self._thermal_dump_path}")
-                mpdm = MpDm.load(self.mol_list, self._thermal_dump_path)
-                logger.info(f"Init mpdm loaded: {mpdm}")
-                mpdm.compress_config = self.compress_config
-            except FileNotFoundError:
-                logger.debug(f"No file found in {self._thermal_dump_path}")
-                mpdm = None
+            mpdm = load_thermal_state(self.mol_list, self._thermal_dump_path)
         else:
             mpdm = None
         # then try to calculate
@@ -89,6 +81,7 @@ class TransportAutoCorr(TdMpsJob):
             if self._defined_output_path:
                 mpdm.dump(self._thermal_dump_path)
         self.impdm = mpdm
+        self.impdm.compress_config = self.compress_config
         e = mpdm.expectation(self.h_mpo)
         self.h_mpo = Mpo(self.mol_list, offset=Quantity(e))
         mpdm.evolve_config = self.evolve_config
@@ -113,11 +106,6 @@ class TransportAutoCorr(TdMpsJob):
         last_corr = corr[-10:]
         first_corr = corr[0]
         return np.abs(last_corr.mean()) < 1e-5 * np.abs(first_corr) and last_corr.std() < 1e-5 * np.abs(first_corr)
-
-    @property
-    def _thermal_dump_path(self):
-        assert self._defined_output_path
-        return os.path.join(self.dump_dir, self.job_name + '_impdm.npz')
 
     @property
     def auto_corr(self):

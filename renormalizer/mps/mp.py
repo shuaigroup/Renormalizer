@@ -297,11 +297,12 @@ class MatrixProduct:
             qnbigr = np.add.outer(sigmaqn, qnr)
         return qnbigl, qnbigr
 
-    def add(self, other):
+    def add(self, other: "MatrixProduct"):
         assert self.qntot == other.qntot
         assert self.site_num == other.site_num
         assert self.qnidx == other.qnidx
 
+        # sometimes `other` is complex and `self` is real
         new_mps = other.metacopy()
         if self.is_complex:
             new_mps.to_complex(inplace=True)
@@ -351,6 +352,7 @@ class MatrixProduct:
             assert False
 
         new_mps.move_qnidx(self.qnidx)
+        new_mps.to_right = self.to_right
         new_mps.qn = [qn1 + qn2 for qn1, qn2 in zip(self.qn, new_mps.qn)]
         new_mps.qn[0] = [0]
         new_mps.qn[-1] = [0]
@@ -619,6 +621,12 @@ class MatrixProduct:
     def __setitem__(self, key, array):
         new_mt = self._array2mt(array, key)
         self._mp[key] = new_mt
+
+    def __add__(self, other: "MatrixProduct"):
+        return self.add(other)
+
+    def __sub__(self, other: "MatrixProduct"):
+        return self.add(other.scale(-1))
 
     def append(self, array):
         new_mt = self._array2mt(array, len(self))

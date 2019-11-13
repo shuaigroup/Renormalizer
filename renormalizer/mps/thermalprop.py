@@ -4,7 +4,7 @@ import numpy as np
 
 from renormalizer.mps import MpDm, Mpo
 from renormalizer.mps.tdh import unitary_propagation
-from renormalizer.utils import TdMpsJob, Quantity
+from renormalizer.utils import TdMpsJob, Quantity, EvolveConfig
 from renormalizer.utils.utils import cast_float
 
 
@@ -12,9 +12,36 @@ logger = logging.getLogger(__name__)
 
 
 class ThermalProp(TdMpsJob):
+    r"""
+    Thermally Propagate initial matrix product density operator (:class:`~renormalizer.mps.MpDm`) in imaginary time.
 
-    def __init__(self, init_mpdm, h_mpo, exact=False, space="GS", evolve_config=None, dump_dir=None,
-                 job_name=None):
+    Args:
+        init_mpdm (:class:`~renormalizer.mps.MpDm`): the initial density matrix to be propagated. Usually identity.
+        h_mpo (:class:`~renormalizer.mps.Mpo`): the system Hamiltonian.
+        exact (bool): whether propagate assuming Hamiltonian is local
+            :math:`\hat H = \sum_i \hat H_i = \sum_{in} \omega_{in} b^\dagger_{in} b_{in}` and
+            exact propagation is possible through :math:`e^{xH} = e^{xh_1}e^{xh_2} \cdots e^{xh_n}`.
+            If set to ``True``, properties such as occupations are not calculated during
+            time evolution for better efficiency.
+        space (str): the space of exact propagation. Possible options are ``"GS"`` or ``"EX"``.
+            If set to ``"GS"``, then the exact propagation is performed in zero exciton space.
+            If set to ``"EX"``, then the exact propagation is performed in one exciton space,
+            i.e. the vibrations are regarded as displaced oscillator.
+        evolve_config (:class:`~renormalizer.utils.EvolveConfig`): config when evolving the MpDm in imaginary time.
+        dump_dir (str): the directory for logging and numerical result output.
+        job_name (str): the name of the calculation job which determines the name of the logging and numerical result output.
+
+    """
+    def __init__(
+        self,
+        init_mpdm: MpDm,
+        h_mpo: Mpo,
+        exact: bool = False,
+        space: str = "GS",
+        evolve_config: EvolveConfig = None,
+        dump_dir: str = None,
+        job_name: str = None,
+    ):
         self.init_mpdm: MpDm = init_mpdm
         self.h_mpo = h_mpo
         self.exact = exact
@@ -33,14 +60,19 @@ class ThermalProp(TdMpsJob):
         return self.init_mpdm
 
     def process_mps(self, mps):
+        if self.exact:
+            # skip the fuss for efficiency
+            return
         new_energy = mps.expectation(self.h_mpo)
         self.energies.append(new_energy)
-        logger.info(f"Energy: {new_energy}, total electron: {mps.e_occupations.sum()}")
         for attr_str in ["e_occupations", "ph_occupations"]:
             attr = getattr(mps, attr_str)
             logger.info(f"{attr_str}: {attr}")
             self_array = getattr(self, f"_{attr_str}_array")
             self_array.append(attr)
+        logger.info(
+            f"Energy: {new_energy}, total electron: {self._e_occupations_array[-1].sum()}"
+        )
 
     def evolve_exact(self, old_mpdm, evolve_dt):
         MPOprop, HAM, Etot = old_mpdm.hybrid_exact_propagator(
@@ -90,3 +122,23 @@ class ThermalProp(TdMpsJob):
         dump_dict["electron occupations array"] = cast_float(self.e_occupations_array)
         dump_dict["phonon occupations array"] = cast_float(self.ph_occupations_array)
         return dump_dict
+
+
+def load_thermal_state(mol_list, path: str):
+    """
+    Load thermal propagated state from disk. Return None if the file is not found.
+
+    Args:
+        mol_list (:class:`MolList`): system information
+        path (str): the path to load thermal state from. Should be an `npz` file.
+    Returns: Loaded MpDm
+    """
+    try:
+        logger.info(f"Try load from {path}")
+        mpdm = MpDm.load(mol_list, path)
+        logger.info(f"Init mpdm loaded: {mpdm}")
+    except FileNotFoundError:
+        logger.info(f"No file found in {path}")
+        mpdm = None
+
+    return mpdm

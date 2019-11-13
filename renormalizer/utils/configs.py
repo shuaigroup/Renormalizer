@@ -23,6 +23,9 @@ class CompressCriteria(Enum):
 
 
 class CompressConfig:
+    """
+    MPS Compress Configuration.
+    """
     def __init__(
         self,
         criteria: CompressCriteria = CompressCriteria.threshold,
