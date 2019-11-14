@@ -1,9 +1,6 @@
 Calculation Configurations
 **************************
 
-.. autoclass:: renormalizer.utils.CompressConfig
+.. automodule:: renormalizer.utils.configs
     :members:
-
-.. autoclass:: renormalizer.utils.EvolveConfig
-    :members:
-
+    :show-inheritance:

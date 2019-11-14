@@ -7,6 +7,8 @@ import random
 
 import numpy as np
 
+from renormalizer.utils.utils import sizeof_fmt
+
 
 logger = logging.getLogger(__name__)
 
@@ -67,6 +69,12 @@ class Backend:
         # free memory
         mempool = cp.get_default_memory_pool()
         mempool.free_all_blocks()
+
+    def log_memory_usage(self, header=""):
+        if xp == np:
+            return
+        mempool = cp.get_default_memory_pool()
+        logger.info(f"{header} GPU memory used/Total: {sizeof_fmt(mempool.used_bytes())}/{sizeof_fmt(mempool.total_bytes())}")
 
     def sync(self):
         # only works with one GPU

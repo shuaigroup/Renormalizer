@@ -50,7 +50,7 @@ class ChargeTransport(TdMpsJob):
             When set to finite value, Lindblad equation is applied to perform time evolution.
         dump_dir (str): the directory for logging and numerical result output.
             Also the directory from which to load previous thermal propagated initial state (if exists).
-        job_name (str): the name of the calculation job which determines the name of the logging and numerical result output.
+        job_name (str): the name of the calculation job which determines the file name of the logging and numerical result output.
             For thermal propagated initial state input/output the file name is appended with ``"_impdm.npz"``.
 
     Attributes:
