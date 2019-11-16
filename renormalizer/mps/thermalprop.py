@@ -26,10 +26,10 @@ class ThermalProp(TdMpsJob):
         space (str): the space of exact propagation. Possible options are ``"GS"`` or ``"EX"``.
             If set to ``"GS"``, then the exact propagation is performed in zero exciton space.
             If set to ``"EX"``, then the exact propagation is performed in one exciton space,
-            i.e. the vibrations are regarded as displaced oscillator.
+            i.e. the vibrations are regarded as displaced oscillators.
         evolve_config (:class:`~renormalizer.utils.EvolveConfig`): config when evolving the MpDm in imaginary time.
         dump_dir (str): the directory for logging and numerical result output.
-        job_name (str): the name of the calculation job which determines the name of the logging and numerical result output.
+        job_name (str): the name of the calculation job which determines the file name of the logging and numerical result output.
 
     """
     def __init__(

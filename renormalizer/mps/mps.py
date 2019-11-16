@@ -45,7 +45,7 @@ def adaptive_tdvp(fun):
     def f(self: "Mps", mpo, evolve_dt):
         if not self.evolve_config.adaptive:
             return fun(self, mpo, evolve_dt)
-        config = self.evolve_config
+        config: EvolveConfig = self.evolve_config
         config.check_valid_dt(evolve_dt)
         accumulated_dt = 0
         # use 2 descriptors to decide accept or not: angle and energy
@@ -183,12 +183,12 @@ class Mps(MatrixProduct):
     def gs(cls, mol_list: MolList, max_entangled: bool):
         r"""
         Obtain ground state at :math:`T = 0` or :math:`T = \infty` (maximum entangled).
-        Electronic DOFs are always at ground state. and vibronic DOFs depend on ``max_entangled``.
+        Electronic DOFs are always at ground state. and vibrational DOFs depend on ``max_entangled``.
         For Spin-Boson model the electronic DOF also depends on ``max_entangled``.
 
         Args:
             mol_list (:class:`~renormalizer.model.MolList`): system information.
-            max_entanggled (bool): temperature of the vibronic DOFs. If set to ``True``,
+            max_entanggled (bool): temperature of the vibrational DOFs. If set to ``True``,
                 :math:`T = \infty` and if set to ``False``, :math:`T = 0`.
         """
         mps = cls()

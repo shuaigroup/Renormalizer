@@ -11,20 +11,41 @@ logger = logging.getLogger(__name__)
 
 
 class BondDimDistri(Enum):
+    """
+    Bond dimension distribution
+    """
+    # here the `#:` syntax is for sphinx documentation.
+    #: uniform distribution.
     uniform = "uniform"
+    #: Guassian distribution which peaks at the center.
     center_gauss = "center gaussian"
-    runtime = "runtime"
 
 
 class CompressCriteria(Enum):
+    """
+    Criteria for compression.
+    """
+    #: Compress depending on pre-set threshold.
+    #: States with singular value smaller than the threshold are discarded.
     threshold = "threshold"
+    #: Compress depending on pre-set fixed bond dimension.
     fixed = "fixed"
+    #: Compress combining ``threshold`` and ``fixed``. The bond dimension for the two criteria are both
+    #: calculated and the smaller one is used.
     both = "both"
 
 
 class CompressConfig:
     """
     MPS Compress Configuration.
+
+    Args:
+        criteria (:class:`CompressCriteria`): the criteria for compression.
+        threshold (float): the threshold to keep states if ``criteria`` is set to ``CompressCriteria.threshold``
+            or ``CompressCriteria.both``.
+        bonddim_distri (:class:`BondDimDistri`): Bond dimension distribution if ``criteria`` is set to
+            ``CompressCriteria.fixed`` or ``CompressCriteria.both``.
+        max_bonddim (int): Maximum bond dimension under various bond dimension distributions.
     """
     def __init__(
         self,
@@ -80,10 +101,6 @@ class CompressConfig:
             self.max_dims = np.int64(seq)
             assert not (self.max_dims == 0).any()
         self.min_dims = np.full(length, self.bond_dim_min_value, dtype=int)
-
-    def set_runtime_bondorder(self, bond_dims):
-        self.bond_dim_distribution = BondDimDistri.runtime
-        self.max_dims = np.array(bond_dims)
 
     def _threshold_m_trunc(self, sigma: np.ndarray) -> int:
         assert 0 < self.threshold < 1
@@ -180,13 +197,20 @@ class OptimizeConfig:
 
 
 class EvolveMethod(Enum):
+    """
+    Time evolution methods.
+    """
+    #: propagation and compression with RK45 propagator
     prop_and_compress = "P&C"
+    #: TDVP with projector splitting
     tdvp_ps = "TDVP_PS"
+    #: TDVP with variable mean field (VMF)
     tdvp_vmf = "TDVP Variable Mean Field"
-    # the canonical site is fixed
+    #: TDVP with constant mean field (CMF) and matrix unfolding (MU) regularization
     tdvp_mu_cmf = "TDVP Matrix Unfolding Constant Mean Field"
-    # variable mean field
+    #: TDVP with variable mean field (VMF) and matrix unfolding (MU) regularization
     tdvp_mu_vmf = "TDVP Matrix Unfolding Variable Mean Field"
+
 
 def parse_memory_limit(x) -> float:
     if x is None:
