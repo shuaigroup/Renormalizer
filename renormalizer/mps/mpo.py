@@ -200,6 +200,9 @@ def get_qb_mpo_dim_qn(mol_list, old_dim, old_qn, rep):
 
 
 class Mpo(MatrixProduct):
+    """
+    Matrix product operator (MPO)
+    """
     @classmethod
     def exact_propagator(cls, mol_list: MolList, x, space="GS", shift=0.0):
         """

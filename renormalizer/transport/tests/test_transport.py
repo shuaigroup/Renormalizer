@@ -18,7 +18,11 @@ from renormalizer.utils import (
     EvolveMethod,
     EvolveConfig,
 )
-from renormalizer.transport.tests.band_param import band_limit_mol_list, assert_band_limit, low_t
+from renormalizer.transport.tests.band_param import (
+    band_limit_mol_list,
+    assert_band_limit,
+    low_t,
+)
 
 import numpy as np
 
@@ -36,31 +40,23 @@ def test_init_state():
     "method, evolve_dt, nsteps, rtol",
     (
         (EvolveMethod.prop_and_compress, 4, 25, 1e-3),
-        # not working. Moves slightly slower. Dunno why.
-        # (EvolveMethod.tdvp_mctdh_new, 2, 50, 1e-2),
         (EvolveMethod.tdvp_ps, 2, 100, 1e-3),
     ),
 )
-@pytest.mark.parametrize(
-    "scheme", (
-            3,
-            4,
-    )
-)
+@pytest.mark.parametrize("scheme", (3, 4))
 def test_bandlimit_zero_t(method, evolve_dt, nsteps, rtol, scheme):
-    np.random.seed(0)
     evolve_config = EvolveConfig(method)
-    ct = ChargeTransport(band_limit_mol_list.switch_scheme(scheme), evolve_config=evolve_config)
+    ct = ChargeTransport(
+        band_limit_mol_list.switch_scheme(scheme),
+        evolve_config=evolve_config,
+    )
     ct.stop_at_edge = True
     ct.evolve(evolve_dt, nsteps)
     assert_band_limit(ct, rtol)
 
 
 @pytest.mark.parametrize(
-    "method", (
-            EvolveMethod.prop_and_compress,
-            EvolveMethod.tdvp_ps,
-    )
+    "method", (EvolveMethod.prop_and_compress, EvolveMethod.tdvp_ps)
 )
 def test_adaptive_zero_t(method):
     np.random.seed(0)
@@ -110,13 +106,7 @@ def assert_iterable_equal(i1, i2):
         [3, 0.8, 3.87e-3, [[1345.6738910804488, 16.274571056529368]], 4, 2, 15, 100],
     ),
 )
-@pytest.mark.parametrize(
-    "scheme",
-    (
-            3,
-            4,
-     )
-)
+@pytest.mark.parametrize("scheme", (3, 4))
 def test_reduced_density_matrix(
     mol_num,
     j_constant_value,
@@ -137,9 +127,11 @@ def test_reduced_density_matrix(
     mol_list = MolList(
         [Mol(Quantity(elocalex_value, "a.u."), ph_list)] * mol_num,
         Quantity(j_constant_value, "eV"),
-        scheme=scheme
+        scheme=scheme,
     )
-    ct = ChargeTransport(mol_list, temperature=Quantity(temperature, "K"), stop_at_edge=False, rdm=True)
+    ct = ChargeTransport(
+        mol_list, temperature=Quantity(temperature, "K"), stop_at_edge=False, rdm=True
+    )
     ct.evolve(evolve_dt, nsteps)
     for rdm, e in zip(ct.reduced_density_matrices, ct.e_occupations_array):
         # best we can do?
@@ -162,7 +154,7 @@ def test_similar(
     mol_list = MolList(
         [Mol(Quantity(elocalex_value, "a.u."), ph_list)] * mol_num,
         Quantity(j_constant_value, "eV"),
-        scheme=3
+        scheme=3,
     )
     ct1 = ChargeTransport(mol_list)
     ct1.evolve(evolve_dt, nsteps)
@@ -187,7 +179,7 @@ def test_evolve(
     mol_list = MolList(
         [Mol(Quantity(elocalex_value, "a.u."), ph_list)] * mol_num,
         Quantity(j_constant_value, "eV"),
-        scheme=3
+        scheme=3,
     )
     ct1 = ChargeTransport(mol_list, stop_at_edge=False)
     half_nsteps = nsteps // 2
@@ -199,21 +191,26 @@ def test_evolve(
     assert_iterable_equal(ct1.get_dump_dict(), ct2.get_dump_dict())
 
     # test dump
-    ct2.dump_dir = '.'
-    ct2.job_name = 'test'
+    ct2.dump_dir = "."
+    ct2.job_name = "test"
     ct2.dump_dict()
-    os.remove('test.json')
+    os.remove("test.json")
 
 
 @pytest.mark.parametrize(
     "mol_num, j_constant_value, elocalex_value, ph_info, ph_phys_dim, evolve_dt, nsteps",
     ([3, 1, 3.87e-3, [[1e-5, 1e-5]], 2, 2, 50],),
 )
-@pytest.mark.parametrize(
-    "scheme", (3, 4)
-)
+@pytest.mark.parametrize("scheme", (3, 4))
 def test_band_limit_finite_t(
-    mol_num, j_constant_value, elocalex_value, ph_info, ph_phys_dim, evolve_dt, nsteps, scheme
+    mol_num,
+    j_constant_value,
+    elocalex_value,
+    ph_info,
+    ph_phys_dim,
+    evolve_dt,
+    nsteps,
+    scheme,
 ):
     ph_list = [
         Phonon.simple_phonon(
@@ -223,7 +220,8 @@ def test_band_limit_finite_t(
     ]
     mol_list = MolList(
         [Mol(Quantity(elocalex_value, "a.u."), ph_list)] * mol_num,
-        Quantity(j_constant_value, "eV"), scheme=scheme
+        Quantity(j_constant_value, "eV"),
+        scheme=scheme,
     )
     ct1 = ChargeTransport(mol_list, stop_at_edge=False)
     ct1.evolve(evolve_dt, nsteps)
@@ -248,10 +246,14 @@ def test_scheme4_finite_t(
     ]
     mol_list = MolList(
         [Mol(Quantity(elocalex_value, "a.u."), ph_list)] * mol_num,
-        Quantity(j_constant_value, "eV")
+        Quantity(j_constant_value, "eV"),
     )
-    ct1 = ChargeTransport(mol_list.switch_scheme(3), temperature=temperature, stop_at_edge=False)
+    ct1 = ChargeTransport(
+        mol_list.switch_scheme(3), temperature=temperature, stop_at_edge=False
+    )
     ct1.evolve(evolve_dt, nsteps)
-    ct2 = ChargeTransport(mol_list.switch_scheme(4), temperature=temperature, stop_at_edge=False)
+    ct2 = ChargeTransport(
+        mol_list.switch_scheme(4), temperature=temperature, stop_at_edge=False
+    )
     ct2.evolve(evolve_dt, nsteps)
     assert ct1.is_similar(ct2, rtol=1e-2)

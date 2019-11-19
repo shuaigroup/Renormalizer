@@ -20,3 +20,7 @@ example/*.ipynb
 example/*.json
 example/*.bak
 example/.ipynb_checkpoints/
+
+doc/html
+doc/doctrees
+

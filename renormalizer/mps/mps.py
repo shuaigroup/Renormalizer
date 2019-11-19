@@ -47,8 +47,7 @@ def adaptive_tdvp(fun):
         
         if not self.evolve_config.adaptive:
             return fun(self, mpo, evolve_dt)
-        
-        config = self.evolve_config
+        config: EvolveConfig = self.evolve_config
         config.check_valid_dt(evolve_dt)
         
         while True:
@@ -178,11 +177,15 @@ class Mps(MatrixProduct):
 
     @classmethod
     def gs(cls, mol_list: MolList, max_entangled: bool):
-        """
-        T = \\infty maximum entangled GS state
-        electronic site: pbond 0 element 1.0
-                         pbond 1 element 0.0
-        phonon site: diagonal element sqrt(pbond) for normalization
+        r"""
+        Obtain ground state at :math:`T = 0` or :math:`T = \infty` (maximum entangled).
+        Electronic DOFs are always at ground state. and vibrational DOFs depend on ``max_entangled``.
+        For Spin-Boson model the electronic DOF also depends on ``max_entangled``.
+
+        Args:
+            mol_list (:class:`~renormalizer.model.MolList`): system information.
+            max_entanggled (bool): temperature of the vibrational DOFs. If set to ``True``,
+                :math:`T = \infty` and if set to ``False``, :math:`T = 0`.
         """
         mps = cls()
         mps.mol_list = mol_list
@@ -434,15 +437,6 @@ class Mps(MatrixProduct):
         else:
             assert False
 
-    @property
-    def r_square(self):
-        r_list = np.arange(0, self.mol_num)
-        if np.allclose(self.e_occupations, np.zeros_like(self.e_occupations)):
-            return 0
-        r_mean_square = np.average(r_list, weights=self.e_occupations) ** 2
-        mean_r_square = np.average(r_list ** 2, weights=self.e_occupations)
-        return mean_r_square - r_mean_square
-
     def metacopy(self) -> "Mps":
         new = super().metacopy()
         new.tdh_wfns = [wfn.copy() for wfn in self.tdh_wfns[:-1]] + [self.tdh_wfns[-1]]
@@ -478,26 +472,44 @@ class Mps(MatrixProduct):
         """
         expand bond dimension as required in compress_config
         """
+        if not self.use_dummy_qn and self.nexciton == 0:
+            raise ValueError("Expanding bond dimensional without exciton is meaningless")
         m_target = self.compress_config.bond_dim_max_value
         logger.debug(f"target for expanding: {m_target}")
         if hint_mpo is None:
             expander = self.__class__.random(self.mol_list, 1, m_target)
         else:
-            logger.debug(f"average bond dimension of hint mpo: {hint_mpo.bond_dims_mean}")
             # fill states related to `hint_mpo`
-            lastone: MatrixProduct = hint_mpo @ self
-            expander_list: List["MatrixProduct"] = [lastone]
+            logger.debug(f"average bond dimension of hint mpo: {hint_mpo.bond_dims_mean}")
+            # in case of localized `self`
+            if not self.use_dummy_qn:
+                if self.is_mps:
+                    ex_state: MatrixProduct = self.random(self.mol_list, 1, 10)
+                elif self.is_mpdm:
+                    ex_state: MatrixProduct = self.max_entangled_ex(self.mol_list)
+                else:
+                    assert False
+                ex_state.compress_config = self.compress_config
+                lastone = ex_state + self
+
+            else:
+                lastone = self
+            expander_list: List["MatrixProduct"] = []
+            cumulated_m = 0
             while True:
                 lastone.compress_config.criteria = CompressCriteria.fixed
-                cumulated_m = sum(mps.bond_dims_mean for mps in expander_list)
+                expander_list.append(lastone)
+                expander = compressed_sum(expander_list)
+                if cumulated_m == expander.bond_dims_mean:
+                    # probably a small system, the required bond dimension can't be reached
+                    break
+                cumulated_m = expander.bond_dims_mean
                 logger.debug(f"cumulated bond dimension: {cumulated_m}. lastone bond dimension: {lastone.bond_dims}")
                 if m_target < cumulated_m:
                     break
                 if m_target < 0.8 * (lastone.bond_dims_mean * hint_mpo.bond_dims_mean):
                     lastone = lastone.canonicalise().compress(m_target // hint_mpo.bond_dims_mean)
                 lastone = hint_mpo @ lastone
-                expander_list.append(lastone)
-            expander = compressed_sum(expander_list, batchsize=np.inf)
         logger.debug(f"expander bond dimension: {expander.bond_dims}")
         orig_config, self.compress_config = self.compress_config, expander.compress_config
         # final compression
@@ -1381,12 +1393,6 @@ class Mps(MatrixProduct):
 
     def __setitem__(self, key, value):
         return super().__setitem__(key, value)
-
-    def __add__(self, other: "Mps"):
-        return self.add(other)
-
-    def __sub__(self, other: "Mps"):
-        return self.add(other.scale(-1))
 
 
 def projector(ms: xp.ndarray, left: bool, Ovlp_inv1: xp.ndarray =None, Ovlp0: xp.ndarray =None) -> xp.ndarray:

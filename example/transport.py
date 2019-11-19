@@ -11,7 +11,7 @@ import yaml
 
 from renormalizer.model import load_from_dict
 from renormalizer.transport import ChargeTransport
-from renormalizer.utils import log, Quantity, EvolveConfig, EvolveMethod, RungeKutta, CompressConfig, BondDimDistri
+from renormalizer.utils import log, Quantity, EvolveConfig, EvolveMethod, RungeKutta, CompressConfig
 
 logger = logging.getLogger(__name__)
 

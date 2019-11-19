@@ -9,7 +9,7 @@ from functools import partial
 
 from typing import List
 
-from renormalizer.mps import Mpo, Mps, MpDm, MpDmFull, SuperLiouville, ThermalProp
+from renormalizer.mps import Mpo, Mps, MpDm, MpDmFull, SuperLiouville, ThermalProp, load_thermal_state
 from renormalizer.model import MolList
 from renormalizer.utils import TdMpsJob, Quantity, CompressConfig, EvolveConfig
 from renormalizer.utils.utils import cast_float
@@ -34,12 +34,12 @@ class ChargeTransport(TdMpsJob):
     Simulate charge diffusion by TD-DMRG.
 
     Args:
-        mol_list (:class:`MolList`): system information.
-        temperature (:class:`Quantity`): simulation temperature. Default is zero temperature.
-        compress_config (:class:`CompressConfig`): config when compressing MPS.
-        evolve_config (:class:`EvolveConfig`): config when evolveing MPS.
+        mol_list (:class:`~renormalizer.model.MolList`): system information.
+        temperature (:class:`~renormalizer.utils.Quantity`): simulation temperature. Default is zero temperature.
+        compress_config (:class:`~renormalizer.utils.CompressConfig`): config when compressing MPS.
+        evolve_config (:class:`~renormalizer.utils.EvolveConfig`): config when evolving MPS.
         stop_at_edge (bool): whether stop when charge has diffused to the boundary of the system. Default is ``True``.
-        init_electron (:class:`InitElectron`): the method to prepare the initial state.
+        init_electron (:class:`~renormalizer.utils.InitElectron`): the method to prepare the initial state.
         logging_output (List[str]): contents to be put into logging output.
             Should be a subset of ["r_square", "e_occupations", "ph_occupations"].
             Note that this does not affect dumped output in JSON format.
@@ -48,6 +48,10 @@ class ChargeTransport(TdMpsJob):
             Using scheme 4 might partly solve the problem.
         dissipation (float): the dissipation strength. This is a experimental feature. Default is 0.
             When set to finite value, Lindblad equation is applied to perform time evolution.
+        dump_dir (str): the directory for logging and numerical result output.
+            Also the directory from which to load previous thermal propagated initial state (if exists).
+        job_name (str): the name of the calculation job which determines the file name of the logging and numerical result output.
+            For thermal propagated initial state input/output the file name is appended with ``"_impdm.npz"``.
 
     Attributes:
         energies (np.ndarray): calculated energy of the states during the time evolution.
@@ -65,11 +69,12 @@ class ChargeTransport(TdMpsJob):
             .. math::
                 | k \rangle = \sum_j e^{-ijk} | j \rangle
 
-            where :math:`k` starts from :math:`-\pi` to :math:`\pi`.
+            where :math:`k` starts from :math:`-\pi` to :math:`\pi` with interval :math:`2\pi/N`.
+            :math:`N` represents total number of electronic sites.
         coherent_length_array (np.ndarray): coherent length :math:`L` calculated for each evolution time step.
 
             .. math::
-                L = \sum_{i, j, i \neq j} | \rho_{ij} |
+                L = \sum_{ij, i \neq j} | \rho_{ij} |
 
             where `\rho` is the density matrix of the electron. Naturally this is only available when
             ``rdm`` is set to ``True``.
@@ -89,6 +94,8 @@ class ChargeTransport(TdMpsJob):
         logging_output: List[str] = None,
         rdm: bool = False,
         dissipation: float = 0,
+        dump_dir: str = None,
+        job_name: str = None,
     ):
         self.mol_list: MolList = mol_list
         self.temperature = temperature
@@ -113,7 +120,7 @@ class ChargeTransport(TdMpsJob):
         self._ph_occupations_array = []
         self.reduced_density_matrices = [] if rdm else None
         self._k_occupations_array = []
-        super(ChargeTransport, self).__init__(evolve_config)
+        super(ChargeTransport, self).__init__(evolve_config, dump_dir, job_name)
         assert self.mpo is not None
 
         self.elocalex_arrays = []
@@ -173,13 +180,20 @@ class ChargeTransport(TdMpsJob):
             if self.dissipation != 0:
                 gs_mp = MpDm.from_mps(gs_mp)
         else:
-            gs_mp = MpDm.max_entangled_gs(self.mol_list)
-            # subtract the energy otherwise might cause numeric error because of large offset * dbeta
-            energy = Quantity(gs_mp.expectation(tentative_mpo))
-            mpo = Mpo(self.mol_list, offset=energy)
-            tp = ThermalProp(gs_mp, mpo, exact=True, space="GS")
-            tp.evolve(None, len(gs_mp), self.temperature.to_beta() / 2j)
-            gs_mp = tp.latest_mps
+            if self._defined_output_path:
+                gs_mp = load_thermal_state(self.mol_list, self._thermal_dump_path)
+            else:
+                gs_mp = None
+            if gs_mp is None:
+                gs_mp = MpDm.max_entangled_gs(self.mol_list)
+                # subtract the energy otherwise might cause numeric error because of large offset * dbeta
+                energy = Quantity(gs_mp.expectation(tentative_mpo))
+                mpo = Mpo(self.mol_list, offset=energy)
+                tp = ThermalProp(gs_mp, mpo, exact=True, space="GS")
+                tp.evolve(None, len(gs_mp), self.temperature.to_beta() / 2j)
+                gs_mp = tp.latest_mps
+                if self._defined_output_path:
+                    gs_mp.dump(self._thermal_dump_path)
         init_mp = self.create_electron(gs_mp)
         if self.dissipation != 0:
             init_mp = MpDmFull.from_mpdm(init_mp)
@@ -200,12 +214,6 @@ class ChargeTransport(TdMpsJob):
         new_energy = mps.expectation(self.mpo)
         self.energies.append(new_energy)
         logger.debug(f"Energy: {new_energy}")
-        for attr_str in self.all_outputs:
-            attr = getattr(mps, attr_str)
-            if attr_str in self.logging_output:
-                logger.info(f"{attr_str}: {attr}")
-            self_array = getattr(self, f"_{attr_str}_array")
-            self_array.append(attr)
 
         if self.reduced_density_matrices is not None:
             logger.debug("Calculating reduced density matrix")
@@ -221,6 +229,20 @@ class ChargeTransport(TdMpsJob):
             logger.info(f"k_occupations: {k}")
             self._k_occupations_array.append(k)
 
+        else:
+            rdm = None
+
+        if rdm is not None:
+            e_occupations = np.diag(rdm).real
+        else:
+            e_occupations = mps.e_occupations
+        self._e_occupations_array.append(e_occupations)
+        self._r_square_array.append(calc_r_square(e_occupations))
+        self._ph_occupations_array.append(mps.ph_occupations)
+
+        for attr_str in self.logging_output:
+            self_array = getattr(self, f"_{attr_str}_array")
+            logger.info(f"{attr_str}: {self_array[-1]}")
 
     def evolve_single_step(self, evolve_dt):
         old_mps = self.latest_mps
@@ -241,7 +263,6 @@ class ChargeTransport(TdMpsJob):
         dump_dict["mol list"] = self.mol_list.to_dict()
         dump_dict["tempearture"] = self.temperature.as_au()
         dump_dict["total time"] = self.evolve_times[-1]
-        dump_dict["diffusion"] = self.latest_mps.r_square / self.evolve_times[-1]
         dump_dict["other info"] = self.custom_dump_info
         # make np array json serializable
         dump_dict["r square array"] = cast_float(self.r_square_array)
@@ -306,3 +327,12 @@ class ChargeTransport(TdMpsJob):
             if not all_close_with_tol(s, o):
                 return False
         return True
+
+
+def calc_r_square(e_occupations):
+    r_list = np.arange(0, len(e_occupations))
+    if np.allclose(e_occupations, np.zeros_like(e_occupations)):
+        return 0
+    r_mean_square = np.average(r_list, weights=e_occupations) ** 2
+    mean_r_square = np.average(r_list ** 2, weights=e_occupations)
+    return mean_r_square - r_mean_square
