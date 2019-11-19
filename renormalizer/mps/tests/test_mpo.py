@@ -92,12 +92,13 @@ def test_e_intersite():
     assert mpo2.apply(mpo7).distance(mpo6) == pytest.approx(0, abs=1e-5)
     
     mpo8 = Mpo(mol_list)
-    mol_list.scheme = 3
-    mpo9 = Mpo(mol_list)
-    mpo10 = Mpo.e_intersite(mol_list, {0:r"a^\dagger",2:"a"},
-            Quantity(mol_list.j_matrix[0,2]))
-    mpo11 = Mpo.e_intersite(mol_list, {2:r"a^\dagger",0:"a"},
-            Quantity(mol_list.j_matrix[0,2]))
+    mol_list1 = mol_list.switch_scheme(2)
+    mol_list1.scheme=3
+    mpo9 = Mpo(mol_list1)
+    mpo10 = Mpo.e_intersite(mol_list1, {0:r"a^\dagger",2:"a"},
+            Quantity(mol_list1.j_matrix[0,2]))
+    mpo11 = Mpo.e_intersite(mol_list1, {2:r"a^\dagger",0:"a"},
+            Quantity(mol_list1.j_matrix[0,2]))
     
     assert mpo8.distance(mpo9.add(mpo10).add(mpo11)) == pytest.approx(0, abs=1e-6)
     assert mpo8.distance(mpo9.add(mpo10).add(mpo10.conj_trans())) == pytest.approx(0, abs=1e-6)
