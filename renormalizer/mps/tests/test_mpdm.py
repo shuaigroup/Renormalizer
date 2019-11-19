@@ -52,29 +52,32 @@ def test_from_mps():
         [parameter.mol_list, 0.0853413581416, [0.20881782, 0.35239674, 0.43878545], 5e-3],
     ),
 )
-@pytest.mark.parametrize("nsteps", (
-        100,
-        None,
+@pytest.mark.parametrize("adaptive", (
+        True,
+        False,
 ))
 @pytest.mark.parametrize("evolve_method", (
         EvolveMethod.prop_and_compress,
         # overflow in krylov exp. Need extra effort to find out why
         # EvolveMethod.tdvp_mu_cmf,
-        EvolveMethod.tdvp_ps
+        EvolveMethod.tdvp_ps,
 ))
-def test_thermal_prop(mol_list, etot_std, occ_std, nsteps, evolve_method, rtol):
+def test_thermal_prop(mol_list, etot_std, occ_std, adaptive, evolve_method, rtol):
     init_mps = MpDm.max_entangled_ex(mol_list)
     mpo = Mpo(mol_list)
     beta = Quantity(298, "K").to_beta()
     evolve_time = beta / 2j
-    if nsteps is None:
-        evolve_config = EvolveConfig(evolve_method, adaptive=True, evolve_dt=beta/100j)
-    else:
-        evolve_config = EvolveConfig(evolve_method)
+    nsteps = 100
+    dbeta = evolve_time/nsteps
+
+    evolve_config = EvolveConfig(evolve_method, adaptive=adaptive,
+                guess_dt=dbeta/10.)
     tp = ThermalProp(init_mps, mpo, evolve_config=evolve_config)
-    tp.evolve(nsteps=nsteps, evolve_time=evolve_time)
+    tp.evolve(evolve_dt=dbeta, nsteps=nsteps)
     mps = tp.latest_mps
     MPO, HAM, Etot, A_el = mps.construct_hybrid_Ham(mpo, debug=True)
-
+    # exact A_el: 0.20896541050347484, 0.35240029674394463, 0.4386342927525734
+    # exact internal energy: 0.0853388060014744
+    print("Etot", Etot, A_el)
     assert np.allclose(Etot, etot_std, rtol=rtol)
     assert np.allclose(A_el, occ_std, rtol=rtol)

@@ -31,8 +31,9 @@ class TransportAutoCorr(TdMpsJob):
             if insteps is None:
                 self.ievolve_config.adaptive = True
                 # start from a small step
-                self.ievolve_config.evolve_dt = temperature.to_beta() / 1e5j
+                self.ievolve_config.guess_dt = temperature.to_beta() / 1e5j
                 self.ievolve_config.d_energy = 1
+                insteps = 1
         else:
             self.ievolve_config = ievolve_config
         self.insteps = insteps
@@ -102,7 +103,7 @@ class TransportAutoCorr(TdMpsJob):
     def evolve_single_step(self, evolve_dt):
         prev_bra_mpdm, prev_ket_mpdm = self.latest_mps
         latest_ket_mpdm = prev_ket_mpdm.evolve(self.h_mpo, evolve_dt)
-        prev_bra_mpdm.evolve_config.evolve_dt = -prev_ket_mpdm.evolve_config.evolve_dt
+        prev_bra_mpdm.evolve_config.guess_dt = -prev_ket_mpdm.evolve_config.guess_dt
         latest_bra_mpdm = prev_bra_mpdm.evolve(self.h_mpo, evolve_dt)
         return BraKetPair(latest_bra_mpdm, latest_ket_mpdm, self.j_oper)
 

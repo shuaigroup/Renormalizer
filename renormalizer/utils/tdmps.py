@@ -49,80 +49,91 @@ class TdMpsJob(object):
         raise NotImplementedError
 
     def evolve(self, evolve_dt=None, nsteps=None, evolve_time=None):
+        '''
+        Parameters:
+            evolve_dt :
+                the time step to run `process_mps(self, mps)` to obtain the
+                properties
+            nsteps: int
+                the total number of evolution steps
+            evolve_time:
+                the total evolution time
+        
+        Notes:
+            evolve_dt math: `\times` nsteps = evolve_time 
+            otherwise nsteps has a higher priority
+        '''
         # deal with arguments
-        if nsteps is not None and evolve_time is not None:
-            logger.debug("calculate evolve_dt according to evolve_time / nsteps")
-            evolve_dt = evolve_time / nsteps
-                   
-        if evolve_dt is None:
-            # adaptive mode
-            if not self.evolve_config.rk_config.adaptive:
-                raise ValueError("in non-adaptive mode evolve_dt is not given")
-            if evolve_time is None:
-                logger.info("evolution will stop by `stop_evolve_criteria`")
-                target_time = None
-            else:
-                target_time = self.evolve_times[-1] + evolve_time
-            target_steps = "?"
+        if (evolve_dt is not None) and  (nsteps is not None) and (evolve_time is not None):
+            logger.warning("Both evolve_time and nsteps are defined for evolution. The evolve_time is omitted")
+            case = 1
+
+        elif (evolve_dt is None) and  (nsteps is not None) and (evolve_time is not None):
+            evolve_dt = evolve_time / float(nsteps)
+            logger.info(f"The evolve_dt is {evolve_dt}")
+            case = 1
+
+        elif (evolve_dt is not None) and  (nsteps is not None) and (evolve_time is None):
+            case = 1
+            
+        elif (evolve_dt is not None) and  (nsteps is None) and (evolve_time is not None):
+            logger.debug("calculate nsteps according to evolve_time / evolve_dt")
+            nsteps = int(abs(evolve_time) // abs(evolve_dt)) + 1
+            case = 1
+
+        elif (evolve_dt is not None) and  (nsteps is None) and (evolve_time is None):
+            logger.info("evolution will stop by `stop_evolve_criteria`")
             nsteps = int(1e10)  # insanely large
+            case = 2
         else:
-            if nsteps is None and evolve_time is None:
-                raise ValueError(
-                    "Must provide number of steps or evolve time"
-                )
-            if evolve_time is None:
-                evolve_time = nsteps * evolve_dt
-            elif nsteps is None:
-                nsteps = int(evolve_time // evolve_dt)
-            else:
-                logger.warning(
-                    "Both nsteps and evolve_time is defined for evolution. The result may be unexpected."
-                )
+            raise ValueError(f"The input parameters evolve_dt:{evolve_dt}, nsteps:{nsteps}, evolve_time:{evolve_time} do not meet the requirements!")
+
+        if case == 1:
+            # evolution controlled by evolve_dt and nsteps
             target_steps = len(self.evolve_times) + nsteps - 1
-            target_time = self.evolve_times[-1] + evolve_time
+            target_time = self.evolve_times[-1] + nsteps * evolve_dt
+        elif case == 2:
+            # evolution controlled by `stop_evolve_criteria`
+            target_steps = "?"
+            target_time = "?"
 
         wall_times = [datetime.now()]
-        if self.evolve_config.adaptive and evolve_dt is not None:
-            logger.warning("evolve_dt is ignored in adaptive propagation")
+
         for i in range(nsteps):
-            if target_time is not None and abs(self.latest_evolve_time - target_time) < 1e-3:
-                break
+
             if self.stop_evolve_criteria():
                 logger.info(
                     "Criteria to stop the evolution has met. Stop the evolution"
                 )
                 break
 
-            if self.evolve_config.adaptive:
-                evolve_dt = self.evolve_config.evolve_dt
-                assert not (np.iscomplex(evolve_dt) ^ np.iscomplex(target_time))
-            new_evolve_time = self.latest_evolve_time + evolve_dt
-            step_str = "step {}/{}, time {}/{}".format(
-                len(self.evolve_times), target_steps, new_evolve_time, target_time
+            step_str = "step {}/{}, at time {}/{}".format(
+                len(self.evolve_times), target_steps, self.latest_evolve_time, target_time
             )
-            self.evolve_times.append(new_evolve_time)
             logger.info("{} begin.".format(step_str))
-            # XXX: the actual evolve step here
-            new_mps = self.evolve_single_step(evolve_dt=evolve_dt)
-            # update evolve_dt if adaptive
-            if self.evolve_config.adaptive:
-                if target_time is not None \
-                        and abs(target_time) < abs(new_evolve_time) + abs(new_mps.evolve_config.evolve_dt):
-                    new_dt = target_time - new_evolve_time
-                    new_mps.evolve_config.evolve_dt = new_dt
-                else:
-                    new_dt = new_mps.evolve_config.evolve_dt
-                self.evolve_config.evolve_dt = new_dt
+            
+            # evolve
+            new_mps = self.evolve_single_step(evolve_dt)
+            
+            # process
+            self.evolve_times.append(self.latest_evolve_time + evolve_dt)
             self.latest_mps = new_mps
             self.process_mps(new_mps)
+            
+            # wall time
             evolution_wall_time = datetime.now()
+            wall_times.append(evolution_wall_time)
             time_cost = evolution_wall_time - wall_times[-1]
+            
+            # output information
             if self.info_interval is not None and i % self.info_interval == 0:
                 mps_abstract = str(new_mps)
             else:
                 mps_abstract = ""
-            logger.info(f"Evolution of {step_str} complete, time cost {time_cost}. {mps_abstract}")
-            wall_times.append(evolution_wall_time)
+            
+            logger.info(f"step {len(self.evolve_times)-1} complete, time cost {time_cost}. {mps_abstract}")
+            
+            # dump
             if self._defined_output_path:
                 try:
                     self.dump_dict()

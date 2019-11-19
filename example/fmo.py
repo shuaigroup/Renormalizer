@@ -155,7 +155,7 @@ if __name__ == "__main__":
     mol_list = MolList(list(np.array(mlist)[mol_arangement]), j_matrix_au[mol_arangement][:, mol_arangement])
 
     evolve_dt = 160
-    evolve_config = EvolveConfig(EvolveMethod.tdvp_ps, evolve_dt=evolve_dt)
+    evolve_config = EvolveConfig(EvolveMethod.tdvp_ps, guess_dt=evolve_dt)
     compress_config = CompressConfig(CompressCriteria.fixed, max_bonddim=32)
     ct = ChargeTransport(mol_list, evolve_config=evolve_config, compress_config=compress_config, init_electron=InitElectron.fc, logging_output=["r_square", "e_occupations"])
     ct.dump_dir = "./"

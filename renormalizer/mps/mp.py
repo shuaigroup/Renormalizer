@@ -168,21 +168,21 @@ class MatrixProduct:
             self.qn[idx] = [self.qntot - i for i in self.qn[idx]]
         self.qnidx = dstidx
 
-    def check_left_canonical(self, atol=1e-3):
+    def check_left_canonical(self, rtol=1e-5, atol=1e-8):
         """
         check L-canonical
         """
         for mt in self[:-1]:
-            if not mt.check_lortho(atol):
+            if not mt.check_lortho(rtol, atol):
                 return False
         return True
 
-    def check_right_canonical(self, atol=1e-3):
+    def check_right_canonical(self, rtol=1e-5, atol=1e-8):
         """
         check R-canonical
         """
         for mt in self[1:]:
-            if not mt.check_rortho(atol):
+            if not mt.check_rortho(rtol, atol):
                 return False
         return True
 
@@ -200,12 +200,11 @@ class MatrixProduct:
         """
         return self.qnidx == 0
 
-    def ensure_left_canon(self, atol=1e-3):
-        if not self.check_left_canonical(atol):
+    def ensure_left_canon(self, rtol=1e-5, atol=1e-8):
+        if not self.check_left_canonical(rtol, atol):
             self.move_qnidx(0)
             self.to_right = True
             self.canonicalise()
-            assert self.check_left_canonical(atol)
 
     def iter_idx_list(self, full: bool, stop_idx: int=None):
         # if not `full`, the last site is omitted.
@@ -527,9 +526,10 @@ class MatrixProduct:
     def distance(self, other):
         l1 = self.conj().dot(self) 
         l2 = other.conj().dot(other)
+        l1dotl2 = self.conj().dot(other)
         dis_square = (l1 + l2
-            - self.conj().dot(other)
-            - other.conj().dot(self)).real 
+            - l1dotl2
+            - l1dotl2.conj()).real 
         
         if dis_square < 0:
             assert dis_square/l1.real < 1e-8

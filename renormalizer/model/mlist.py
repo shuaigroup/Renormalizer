@@ -16,6 +16,8 @@ class MolList:
 
     def __init__(self, mol_list: List[Mol], j_matrix: Union[Quantity, np.ndarray, None], scheme: int=2, sbm=False):
         self.mol_list: List[Mol] = mol_list
+        
+        # construct the electronic coupling matrix
         if sbm or j_matrix is None:
             assert len(self.mol_list) == 1
             j_matrix = Quantity(0)
@@ -27,10 +29,14 @@ class MolList:
             self.j_matrix = j_matrix
             self.j_constant = None
         self.scheme = scheme
+        
+        assert self.j_matrix.shape[0] == self.mol_num
 
         self.ephtable = EphTable.from_mol_list(mol_list, scheme)
         self.pbond_list: List[int] = []
+
         if scheme < 4:
+            # the order is e0,v00,v01,...,e1,v10,v11,...
             if scheme == 3:
                 assert self.check_nearest_neighbour()
             self._e_idx = []
@@ -40,6 +46,7 @@ class MolList:
                 for ph in mol.dmrg_phs:
                     self.pbond_list += ph.pbond
         else:
+            # the order is v00,v01,..,v10,v11,...,e0/e1/e2,...,v30,v31...
             for imol, mol in enumerate(mol_list):
                 if imol == len(mol_list) // 2:
                     self._e_idx = [len(self.pbond_list)] * len(mol_list)
@@ -47,7 +54,7 @@ class MolList:
                 for ph in mol.dmrg_phs:
                     assert ph.is_simple
                     self.pbond_list += ph.pbond
-        assert self.j_matrix.shape[0] == self.mol_num
+
         # reusable mpos for the system
         self.mpos = dict()
 
