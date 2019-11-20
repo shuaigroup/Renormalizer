@@ -33,7 +33,7 @@ def test_ft_hybrid_dmrg_tdh(mol_list, spectratype, std_fname):
     finite_t.evolve(dt, nsteps)
     with open(os.path.join(cur_dir, std_fname), "rb") as fin:
         std = np.load(fin)
-    assert np.allclose(finite_t.autocorr[:nsteps], std[:nsteps], rtol=1e-2)
+    assert np.allclose(finite_t.autocorr[:nsteps], std[:nsteps], rtol=5e-2)
 
 
 # from matplotlib import pyplot as plt

@@ -388,7 +388,7 @@ class Mps(MatrixProduct):
         common_mpo_ids[mpo0_unique_idx] = mpo_ids[1][mpo0_unique_idx]
         x, unique_idx = np.where(mpo_ids != common_mpo_ids)
         # should find one at each line
-        assert np.allclose(x, np.arange(len(mpos)))
+        assert xp.allclose(x, np.arange(len(mpos)))
         common_mpo = list(mpos[0])
         common_mpo[mpo0_unique_idx] = mpos[1][mpo0_unique_idx]
         self_conj = self._expectation_conj()
@@ -557,8 +557,8 @@ class Mps(MatrixProduct):
         contract_compress_config = self.compress_config.copy()
         if contract_compress_config.criteria is CompressCriteria.threshold:
             contract_compress_config.criteria = CompressCriteria.both
-        contract_compress_config.min_dims = None
-        contract_compress_config.max_dims = np.array(self.bond_dims) + 4
+        #contract_compress_config.min_dims = None
+        #contract_compress_config.max_dims = np.array(self.bond_dims) + 4
         self.compress_config = contract_compress_config
 
         while len(termlist) < len(propagation_c):
@@ -591,7 +591,7 @@ class Mps(MatrixProduct):
                 p = (config.adaptive_rtol / (dis + 1e-30)) ** 0.2    
                 logger.debug(f"RK45 error distance: {dis}, enlarge p parameter: {p}")
                 
-                if np.allclose(dt, evolve_dt):
+                if xp.allclose(dt, evolve_dt):
                     # approahes the end 
                     if p < p_restart:
                         # not accurate in this final sub-step will restart
@@ -659,9 +659,10 @@ class Mps(MatrixProduct):
         else:
             mps = self.to_complex()
 
-
+        w_min_list = []
         def func_vmf(t,y):
             
+            w_min_list.clear()
             # update mps: from left to right
             offset = 0
             for imps in range(mps.site_num):
@@ -727,6 +728,9 @@ class Mps(MatrixProduct):
                 
                 # discard the negative eigenvalues due to numerical error
                 w = np.where(w>0, w, 0)
+                
+                w_min_list.append(w.min())
+
                 epsilon = self.evolve_config.reg_epsilon
                 w = w + epsilon * np.exp(-w / epsilon)
                 
@@ -758,6 +762,13 @@ class Mps(MatrixProduct):
             offset += mps[imps].size
 
         logger.debug(f"{self.evolve_config.method} VMF func called: {sol.nfev}. RKF steps: {len(sol.t)}")
+        
+        # switch to tdvp_mu_vmf
+        w_min_list = xp.array(w_min_list)
+        logger.debug(f"w.min={w_min_list.min()}, Switch to tdvp_mu_vmf")
+        if w_min_list.min() < self.evolve_config.reg_epsilon:
+            logger.debug(f"w.min={w_min_list.min()}, Switch to tdvp_mu_vmf")
+            mps.evolve_config.method =  EvolveMethod.tdvp_mu_vmf
 
         return mps
 
@@ -790,9 +801,13 @@ class Mps(MatrixProduct):
             mps = self.copy()
         else:
             mps = self.to_complex()
-
+        
+        s_min_list = []
+        
         def func_vmf(t,y):
             
+            s_min_list.clear()
+
             # update mps: from left to right
             offset = 0
             for imps in range(mps.site_num):
@@ -861,7 +876,8 @@ class Mps(MatrixProduct):
                 rtensor = environ.GetLR(
                     "R", imps + 1, environ_mps, mpo, itensor=None, method="System"
                 )
-
+                
+                s_min_list.append(s.min())
                 regular_s = _mu_regularize(s, epsilon=self.evolve_config.reg_epsilon)
 
                 us = Matrix(u.dot(np.diag(s)))
@@ -897,6 +913,12 @@ class Mps(MatrixProduct):
             offset += mps[imps].size
         
         logger.debug(f"{self.evolve_config.method} VMF func called: {sol.nfev}. RKF steps: {len(sol.t)}")
+        
+        s_min_list = xp.array(s_min_list)
+        # switch to tdvp_vmf
+        if s_min_list.min() > np.sqrt(self.evolve_config.reg_epsilon*10.):
+            logger.debug(f"s.min={s_min_list.min()},Switch to tdvp_vmf")
+            mps.evolve_config.method =  EvolveMethod.tdvp_vmf
 
         return mps
 
@@ -1328,7 +1350,7 @@ class Mps(MatrixProduct):
             dim1 = res.shape[1] * mt.shape[1]
             dim2 = mt.shape[-1]
             res = tensordot(res, mt, axes=1).reshape(1, dim1, dim2)
-        return res[0, :, 0].array
+        return res[0, :, 0].asnumpy()
 
     def _calc_reduced_density_matrix(self, mp1, mp2):
         # further optimization is difficult. There are totally N^2 intermediate results to remember.

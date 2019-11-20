@@ -48,9 +48,8 @@ def test_ft():
     impdm.use_dummy_qn = True
     temperature = Quantity(3)
     evolve_config = EvolveConfig(adaptive=True, guess_dt=-0.001j)
-    evolve_config.d_energy = 1
     tp = ThermalProp(impdm, mpo, evolve_config=evolve_config)
-    tp.evolve(nsteps=20, evolve_time=temperature.to_beta() / 2j)
+    tp.evolve(nsteps=1, evolve_time=temperature.to_beta() / 2j)
     mpdm = tp.latest_mps
     mpdm = Mpo.onsite(mol_list, r"sigmax").contract(mpdm)
     mpdm.evolve_config = EvolveConfig(adaptive=True, guess_dt=0.1)

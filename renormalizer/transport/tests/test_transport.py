@@ -64,7 +64,7 @@ def test_adaptive_zero_t(method):
     ct = ChargeTransport(
         band_limit_mol_list, evolve_config=evolve_config, stop_at_edge=True
     )
-    ct.evolve(evolve_dt=2.)
+    ct.evolve(evolve_dt=5.)
     assert_band_limit(ct, 1e-2)
 
 

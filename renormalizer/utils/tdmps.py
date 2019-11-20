@@ -122,8 +122,8 @@ class TdMpsJob(object):
             
             # wall time
             evolution_wall_time = datetime.now()
-            wall_times.append(evolution_wall_time)
             time_cost = evolution_wall_time - wall_times[-1]
+            wall_times.append(evolution_wall_time)
             
             # output information
             if self.info_interval is not None and i % self.info_interval == 0:

@@ -31,7 +31,6 @@ class TransportAutoCorr(TdMpsJob):
                 self.ievolve_config.adaptive = True
                 # start from a small step
                 self.ievolve_config.guess_dt = temperature.to_beta() / 1e5j
-                self.ievolve_config.d_energy = 1
                 insteps = 1
         else:
             self.ievolve_config = ievolve_config

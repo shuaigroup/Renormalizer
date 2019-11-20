@@ -44,6 +44,3 @@ def cast_float(l):
     except TypeError:
         return list(map(float, l))
 
-
-
-

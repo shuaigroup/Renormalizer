@@ -249,7 +249,6 @@ class EvolveConfig:
         self.adaptive = adaptive
         self.guess_dt: complex = guess_dt  # a guess of initial adaptive time step
         self.adaptive_rtol = adaptive_rtol
-        self.d_energy = 1e-3
 
         self.tdvp_cmf_midpoint = True
         # regularization parameter in tdvp_mu or tdvp_std method
