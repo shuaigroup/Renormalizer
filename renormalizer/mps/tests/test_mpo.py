@@ -92,6 +92,7 @@ def test_e_intersite():
     assert mpo2.apply(mpo7).distance(mpo6) == pytest.approx(0, abs=1e-5)
     
     mpo8 = Mpo(mol_list)
+    # a dirty hack to switch from scheme 2 to scheme 3
     mol_list1 = mol_list.switch_scheme(2)
     mol_list1.scheme=3
     mpo9 = Mpo(mol_list1)
