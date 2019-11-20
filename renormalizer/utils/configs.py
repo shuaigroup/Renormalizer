@@ -259,7 +259,8 @@ class EvolveConfig:
         # the EOM has already considered the non-orthogonality of the left and right
         # renormalized basis, see arXiv:1907.12044
         self.force_ovlp: bool = force_ovlp
-
+        # auto switch between mu_vmf and vmf for a higher efficiency
+        self.vmf_auto_switch: bool = True
 
     @property
     def adaptive(self):
