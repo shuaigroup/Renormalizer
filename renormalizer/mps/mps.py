@@ -765,7 +765,7 @@ class Mps(MatrixProduct):
         
         # switch to tdvp_mu_vmf
         w_min_list = xp.array(w_min_list)
-        if w_min_list.min() < self.evolve_config.reg_epsilon:
+        if w_min_list.min() < self.evolve_config.reg_epsilon and self.evolve_config.vmf_auto_switch:
             logger.debug(f"w.min={w_min_list.min()}, Switch to tdvp_mu_vmf")
             mps.evolve_config.method =  EvolveMethod.tdvp_mu_vmf
 
@@ -915,7 +915,7 @@ class Mps(MatrixProduct):
         
         s_min_list = xp.array(s_min_list)
         # switch to tdvp_vmf
-        if s_min_list.min() > np.sqrt(self.evolve_config.reg_epsilon*10.):
+        if s_min_list.min() > np.sqrt(self.evolve_config.reg_epsilon*10.) and self.evolve_config.vmf_auto_switch:
             logger.debug(f"s.min={s_min_list.min()},Switch to tdvp_vmf")
             mps.evolve_config.method =  EvolveMethod.tdvp_vmf
 
