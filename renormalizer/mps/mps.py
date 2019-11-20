@@ -650,7 +650,7 @@ class Mps(MatrixProduct):
         else:
             coef = 1j
         
-        if not (self.evolve_config.force_ovlp == True and self.to_right == False):
+        if not (self.evolve_config.force_ovlp and not self.to_right):
             self.ensure_left_canon()
         
         # `self` should not be modified during the evolution
