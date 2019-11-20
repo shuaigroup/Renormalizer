@@ -113,21 +113,21 @@ class Matrix:
     def l_combine(self):
         return self.reshape(self.l_combine_shape)
 
-    def check_lortho(self, atol=1e-8):
+    def check_lortho(self, rtol=1e-5, atol=1e-8):
         """
         check L-orthogonal
         """
         tensm = self.array.reshape([np.prod(self.shape[:-1]), self.shape[-1]])
         s = xp.dot(tensm.T.conj(), tensm)
-        return allclose(s, xp.eye(s.shape[0]), atol=atol)
+        return allclose(s, xp.eye(s.shape[0]), rtol=rtol, atol=atol)
 
-    def check_rortho(self, atol=1e-8):
+    def check_rortho(self, rtol=1e-5, atol=1e-8):
         """
         check R-orthogonal
         """
         tensm = self.array.reshape([self.shape[0], np.prod(self.shape[1:])])
         s = xp.dot(tensm, tensm.T.conj())
-        return allclose(s, xp.eye(s.shape[0]), atol=atol)
+        return allclose(s, xp.eye(s.shape[0]), rtol=rtol, atol=atol)
 
     def to_complex(self, inplace=False):
         # `xp.array` always creates new array, so to_complex means copy, which is

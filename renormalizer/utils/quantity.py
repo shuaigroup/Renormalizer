@@ -37,9 +37,7 @@ class Quantity:
             raise ValueError("Unit not in {}, got {}.".format(allowed_units, unit))
         if value < 0.1 and value != 0 and (unit == "K" or unit == "k"):
             msg = "temperature too low and might cause various numerical errors"
-            # raise ValueError("temperature too low and might cause various numerical errors")
             logger.warning(msg)
-            # such low temperature will lead to very large x in exact propagator
         self.unit = unit
 
     def as_au(self):

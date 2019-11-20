@@ -27,7 +27,7 @@ if __name__ == "__main__":
     )
     mol_list, temperature = load_from_dict(param, 3, False)
     compress_config = CompressConfig(threshold=1e-4)
-    evolve_config = EvolveConfig(adaptive=True, evolve_dt=2)
+    evolve_config = EvolveConfig(adaptive=True, guess_dt=2)
     ct = ChargeTransport(
         mol_list,
         temperature=temperature,

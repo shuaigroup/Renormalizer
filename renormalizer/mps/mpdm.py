@@ -143,7 +143,7 @@ class MpDm(MpDmBase):
     @classmethod
     def max_entangled_ex(cls, mol_list, normalize=True):
         """
-        T = \\infty maximum entangled EX state
+        T = \\infty locally maximal entangled EX state
         """
         mps = Mps.gs(mol_list, max_entangled=True)
         # the creation operator \\sum_i a^\\dagger_i

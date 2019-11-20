@@ -25,13 +25,13 @@ def test_zt():
 
     mps = Mps.gs(mol_list, False)
     mps.compress_config = CompressConfig(threshold=1e-6)
-    mps.evolve_config = EvolveConfig(adaptive=True, evolve_dt=0.1)
+    mps.evolve_config = EvolveConfig(adaptive=True, guess_dt=0.1)
     mps.use_dummy_qn = True
     mpo = Mpo(mol_list)
     time_series = [0]
     spin = [1]
     for i in range(30):
-        dt = mps.evolve_config.evolve_dt
+        dt = mps.evolve_config.guess_dt
         mps = mps.evolve(mpo, evolve_dt=dt)
         time_series.append(time_series[-1] + dt)
         spin.append(1 - 2 * mps.e_occupations[0])
@@ -47,17 +47,16 @@ def test_ft():
     impdm.compress_config = CompressConfig(threshold=1e-6)
     impdm.use_dummy_qn = True
     temperature = Quantity(3)
-    evolve_config = EvolveConfig(adaptive=True, evolve_dt=-0.001j)
-    evolve_config.d_energy = 1
+    evolve_config = EvolveConfig(adaptive=True, guess_dt=-0.001j)
     tp = ThermalProp(impdm, mpo, evolve_config=evolve_config)
-    tp.evolve(evolve_time=temperature.to_beta() / 2j)
+    tp.evolve(nsteps=1, evolve_time=temperature.to_beta() / 2j)
     mpdm = tp.latest_mps
     mpdm = Mpo.onsite(mol_list, r"sigmax").contract(mpdm)
-    mpdm.evolve_config = EvolveConfig(adaptive=True, evolve_dt=0.1)
+    mpdm.evolve_config = EvolveConfig(adaptive=True, guess_dt=0.1)
     time_series = [0]
     spin = [1 - 2 * mpdm.e_occupations[0]]
     for i in range(30):
-        dt = mpdm.evolve_config.evolve_dt
+        dt = mpdm.evolve_config.guess_dt
         mpdm = mpdm.evolve(mpo, evolve_dt=dt)
         time_series.append(time_series[-1] + dt)
         spin.append(1 - 2 * mpdm.e_occupations[0])

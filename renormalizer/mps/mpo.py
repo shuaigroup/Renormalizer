@@ -402,11 +402,15 @@ class Mpo(MatrixProduct):
     @classmethod
     def onsite(cls, mol_list: MolList, opera, dipole=False, mol_idx_set=None):
         assert opera in ["a", r"a^\dagger", r"a^\dagger a", "sigmax"]
+        if mol_idx_set is not None:
+            for i in mol_idx_set:
+                assert i in range(mol_list.mol_num)
+
         if mol_list.scheme == 4:
             assert not dipole
             mpo = cls()
             mpo.mol_list = mol_list
-            mpo.qn = [0]
+            mpo.qn = [[0]]
             qn = 0
             for imol, mol in enumerate(mol_list):
                 if imol == mol_list.mol_num // 2:
@@ -428,14 +432,14 @@ class Mpo(MatrixProduct):
                         else:
                             assert False
                         qn += mpo.qntot
-                        mpo.qn.append(qn)
+                        mpo.qn.append([qn])
                         mpo.append(mo)
                 for ph in mol.dmrg_phs:
                     n = ph.n_phys_dim
                     mpo.append(np.diag(np.ones(n)).reshape((1, n, n, 1)))
-                    mpo.qn.append(qn)
+                    mpo.qn.append([qn])
             mpo.qnidx = len(mpo) - 1
-            mpo.qn[-1] = 0
+            mpo.qn[-1] = [0]
             return mpo
         nmols = len(mol_list)
         if mol_idx_set is None:
@@ -553,6 +557,73 @@ class Mpo(MatrixProduct):
                     iph += 1
         mpo.build_empty_qn()
         return mpo
+
+    @classmethod
+    def e_intersite(cls, mol_list: MolList, opera: dict, scale:
+            Quantity=Quantity(1.)):
+        ''' construct the inter electronic site MPO
+        Parameters:
+            mol_list : MolList
+                the molecular information
+            opera: 
+                the operators such as {1:"a", 3:r"a^\dagger"}
+            scale: Quantity
+                scalar to scale the mpo
+        '''
+
+        if mol_list.scheme == 4:
+            raise NotImplementedError
+
+        for i in opera.keys():
+            assert i in range(mol_list.mol_num)
+        
+        mpo = cls()
+        mpo.mol_list = mol_list
+        mpo.qn = [[0]]
+
+        impo = 0
+        for imol in range(mol_list.mol_num):
+            eop = construct_e_op_dict()
+            mo = np.zeros([1, 2, 2, 1])
+
+            if imol in opera.keys():
+                mo[0, :, :, 0] = eop[opera[imol]]
+                if opera[imol] == r"a^\dagger":
+                    mpo.qn.append([mpo.qn[-1][0]+1])
+                elif opera[imol] == "a":
+                    mpo.qn.append([mpo.qn[-1][0]-1])
+                elif opera[imol] == r"a^\dagger a":
+                    mpo.qn.append(mpo.qn[-1])
+                else:
+                    assert False
+            else:
+                mo[0, :, :, 0] = eop["Iden"]
+                mpo.qn.append(mpo.qn[-1])
+            
+            mpo.append(mo)
+            impo += 1
+
+            for ph in mol_list[imol].dmrg_phs:
+                for iboson in range(ph.nqboson):
+                    pbond = mol_list.pbond_list[impo]
+                    mo = np.zeros([1, pbond, pbond, 1])
+                    for ibra in range(pbond):
+                        mo[0, ibra, ibra, 0] = 1.0
+                    mpo.qn.append(mpo.qn[-1])
+
+                    mpo.append(mo)
+                    impo += 1
+        
+        mpo_dim = [1] * (len(mpo)+1)
+        mpo.qnidx = len(mpo) - 1
+        
+        mpo.qntot = mpo.qn[-1][0]
+        mpo.qn[-1] = [0]
+
+        mpo.offset = Quantity(0.)
+        
+        return mpo.scale(scale.as_au(), inplace=True)
+
 
     @classmethod
     def finiteT_cv(cls, mol_list, nexciton, m_max, spectratype,
@@ -683,6 +754,65 @@ class Mpo(MatrixProduct):
             mpo.append(xp.eye(p).reshape(1, p, p, 1))
         mpo.build_empty_qn()
         return mpo
+    
+    #def _scheme5(self, mol_list: MolList, elocal_offset, offset):
+    #    # electronic part is in the first site
+    #    # [H_e, op1, op2, ..., opn, 0]
+    #    # scheme5 includes scheme4
+    #    # the electronic operator could be set flexsiblely
+    #    # the vibrational site could be set randomly according to the
+    #    # interaction network
+
+    #    if mol_list.sbm == True:
+    #        # Spin-Boson Model
+    #        # e_op_list = [1:"",2:"",3:""]
+    #        pass
+    #    else:
+    #        # Holstein-Frenkel Model
+    #        if space == "GS":
+    #            e_op_list = [1:"H_e",,"Iden"]
+    #            pdim = 1
+    #        elif space == "EX":
+    #            e_op_list = [1:"H_e", "Iden"]
+    #            pdim = mol_list.mol_num
+    #        elif space == "GS+EX"
+    #            e_op_list = [1:"H_e", "Iden"]
+    #            pdim = mol_list.mol_num + 1
+    #        else:
+    #            raise ValueError("scheme5 input space {space} is not in ['GS','EX','GS+EX']")
+    #            
+    #    def get_marginal_phonon_mo(pdim, bdim, ph, iterm, phop):
+    #        # [ w b^d b,  gw(b^d+b), I]
+    #        mo = np.zeros((1, pdim, pdim, bdim))
+    #        mo[0, :, :, 0] = phop[r"b^\dagger b"] * ph.omega[0]
+    #        mo[0, :, :, iterm] = phop[r"b^\dagger + b"] * ph.term10
+    #        mo[0, :, :, -1] = phop[r"Iden"]
+    #        return mo
+
+    #    def get_phonon_mo(pdim, bdim, ph, iterm, phop):
+    #        # [I,       0,     0        , 0]
+    #        # [0,       I,     0        , 0]
+    #        # [0,       0,     I        , 0]
+    #        # [w b^d b, 0,     gw(b^d+b), I]
+    #        mo = np.zeros((bdim, pdim, pdim, bdim))
+    #        mo[-1, :, :, 0] = phop[r"b^\dagger b"] * ph.omega[0]
+    #        for i in range(bdim):
+    #            mo[i, :, :, i] = phop[r"Iden"]
+    #        mo[-1, :, :, iterm] = phop[r"b^\dagger + b"] * ph.term10
+    #        return mo
+
+    #    nmol = mol_list.mol_num
+
+    #    mo_e = np.zeros((1, pdim, pdim, len(e_op_list)))                      
+    #    
+    #    # vibrational site link list
+    #    # left-hand of electronic site
+    #    [(mol.ph,iterm),]
+
+    #    for ph, iterm in enumerate(lvib_list): 
+    #        if 
+    #    # right hand of electronic site
+    #    [(mol.iph,iterm),]
 
     def _scheme4(self, mol_list: MolList, elocal_offset, offset):
 

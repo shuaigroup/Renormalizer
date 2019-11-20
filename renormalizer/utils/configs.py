@@ -54,7 +54,7 @@ class CompressConfig:
         bonddim_distri: BondDimDistri = BondDimDistri.uniform,
         max_bonddim: int = 32,
     ):
-        # two sets of criteria here: threshold and max_bondorder
+        # two sets of criteria here: threshold and max_bonddimension
         # `criteria` is to determine which to use
         self.criteria: CompressCriteria = criteria
         self._threshold = None
@@ -187,7 +187,7 @@ class OptimizeConfig:
             self.procedure = procedure
         self.method = "2site"
         self.nroots = 1
-        # inverse = 1.0 / -1.0
+        # inverse = 1.0 or -1.0
         # -1.0 to get the largest eigenvalue
         self.inverse = 1.0
         # for dmrg-hartree hybrid to check converge. Not to confuse with compress threshold
@@ -235,7 +235,7 @@ class EvolveConfig:
         self,
         method: EvolveMethod = EvolveMethod.prop_and_compress,
         adaptive=False,
-        evolve_dt=1e-1,
+        guess_dt=1e-1,
         adaptive_rtol=5e-4,
         reg_epsilon=1e-10,
         ivp_rtol=1e-5,
@@ -247,9 +247,8 @@ class EvolveConfig:
 
         self._adaptive = None
         self.adaptive = adaptive
-        self.evolve_dt: complex = evolve_dt  # a wild guess
+        self.guess_dt: complex = guess_dt  # a guess of initial adaptive time step
         self.adaptive_rtol = adaptive_rtol
-        self.d_energy = 1e-3
 
         self.tdvp_cmf_midpoint = True
         # regularization parameter in tdvp_mu or tdvp_std method
@@ -257,8 +256,11 @@ class EvolveConfig:
         # scipy.ivp rtol and atol
         self.ivp_rtol: float = ivp_rtol
         self.ivp_atol: float = ivp_atol
+        # the EOM has already considered the non-orthogonality of the left and right
+        # renormalized basis, see arXiv:1907.12044
         self.force_ovlp: bool = force_ovlp
-
+        # auto switch between mu_vmf and vmf for a higher efficiency
+        self.vmf_auto_switch: bool = True
 
     @property
     def adaptive(self):
@@ -276,22 +278,16 @@ class EvolveConfig:
     def is_tdvp(self):
         return self.method is not EvolveMethod.prop_and_compress
 
-    def enlarge_evolve_dt(self, ratio=1.5):
-        self.evolve_dt *= ratio
-
     def check_valid_dt(self, evolve_dt: complex):
-        info_str = f"in config: {self.evolve_dt}, in arg: {evolve_dt}"
+        info_str = f"in config: {self.guess_dt}, in arg: {evolve_dt}"
 
-        if np.iscomplex(evolve_dt) ^ np.iscomplex(self.evolve_dt):
+        if np.iscomplex(evolve_dt) ^ np.iscomplex(self.guess_dt):
             raise ValueError("real and imag not compatible. " + info_str)
 
-        if (np.iscomplex(evolve_dt) and evolve_dt.imag * self.evolve_dt.imag < 0) or \
-                (not np.iscomplex(evolve_dt) and evolve_dt * self.evolve_dt < 0):
+        if (np.iscomplex(evolve_dt) and evolve_dt.imag * self.guess_dt.imag < 0) or \
+                (not np.iscomplex(evolve_dt) and evolve_dt * self.guess_dt < 0):
             raise ValueError("evolve into wrong direction. " + info_str)
 
-        div = abs(evolve_dt) / abs(self.evolve_dt)
-        if not np.isclose(div, round(div)):
-            raise ValueError("requires exactly divisible. " + info_str)
 
     def copy(self):
         new = self.__class__.__new__(self.__class__)

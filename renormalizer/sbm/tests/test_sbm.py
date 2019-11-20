@@ -1,13 +1,13 @@
 # -*- coding: utf-8 -*-
 
 import pytest
-import numpy as np
 
 from renormalizer.model import Phonon, Mol
 from renormalizer.sbm import SpinBosonModel, param2mollist, SpectralDensityFunction
 from renormalizer.utils import Quantity, CompressConfig, EvolveConfig
 from renormalizer.mps.tests.test_sbm import get_exact_zt
 
+import numpy as np
 
 def test_sdf():
     alpha = 0.05
@@ -37,9 +37,9 @@ def test_sbm_zt(alpha):
     mol_list = param2mollist(alpha, raw_delta, raw_omega_c, 5, n_phonons)
 
     compress_config = CompressConfig(threshold=1e-4)
-    evolve_config = EvolveConfig(adaptive=True, evolve_dt=0.1)
+    evolve_config = EvolveConfig(adaptive=True, guess_dt=0.1)
     sbm = SpinBosonModel(mol_list, Quantity(0), compress_config=compress_config, evolve_config=evolve_config)
-    sbm.evolve(evolve_time=20)
+    sbm.evolve(nsteps=20, evolve_time=20)
     spin1 = sbm.sigma_z
     spin2 = get_exact_zt(mol_list[0], sbm.evolve_times)
     assert np.allclose(spin1, spin2, atol=1e-3)

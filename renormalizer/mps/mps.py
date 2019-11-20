@@ -39,76 +39,72 @@ logger = logging.getLogger(__name__)
 
 
 def adaptive_tdvp(fun):
-    # evolve t/2 for 2 times
-    #  J. Chem. Phys. 146, 174107 (2017)
+    # evolve t/2 (twice) and t to obtain the O(dt^3) error term in 2nd-order Trotter decomposition
+    #J. Chem. Phys. 146, 174107 (2017)
+
     @wraps(fun)
     def f(self: "Mps", mpo, evolve_dt):
+        
         if not self.evolve_config.adaptive:
             return fun(self, mpo, evolve_dt)
         config: EvolveConfig = self.evolve_config
         config.check_valid_dt(evolve_dt)
-        accumulated_dt = 0
-        # use 2 descriptors to decide accept or not: angle and energy
-        # the logic about energy is different with that of prop&compress
-        # because here we can compare energies early and restart early
-        mps = None  # the mps after config.evolve_dt
-        start = self  # the mps to start with
-        start_energy = start.expectation(mpo)
+        
         while True:
-            logger.debug(f"adaptive dt: {config.evolve_dt}")
-            mps_half1 = fun(start, mpo, config.evolve_dt / 2)._dmrg_normalize()
-            e_half1 = mps_half1.expectation(mpo)
-            if config.d_energy / 2 < abs(e_half1 - start_energy):
-                # not converged
-                logger.debug(
-                    f"energy not converged in the first sub-step. start energy: {start_energy}, new energy: {e_half1}"
-                )
-                config.evolve_dt /= 2
-                mps = mps_half1
-                continue
-            mps_half2 = fun(mps_half1, mpo, config.evolve_dt / 2)._dmrg_normalize()
-            e_half2 = mps_half2.expectation(mpo)
-            if config.d_energy < abs(e_half2 - start_energy):
-                # not converged
-                logger.debug(
-                    f"energy not converged in the second sub-step. start energy: {start_energy}, new energy: {e_half2}"
-                )
-                config.evolve_dt /= 2
-                mps = mps_half1
-                continue
-            if mps is None:
-                mps = fun(start, mpo, config.evolve_dt)._dmrg_normalize()
-            angle = mps.angle(mps_half2)
+            
+            dt = min_abs(config.guess_dt, evolve_dt)
             logger.debug(
-                f"Adaptive TDVP. angle: {angle}, start_energy: {start_energy}, e_half1: {e_half1}, e_half2: {e_half2}"
+                    f"guess_dt: {config.guess_dt}, try time step size: {dt}"
             )
-            if 0.99995 < angle < 1.00005:
-                # converged
-                accumulated_dt += config.evolve_dt
-                logger.debug(
-                    f"evolution converged with dt: {config.evolve_dt}, accumulated: {accumulated_dt}"
-                )
-                if np.isclose(accumulated_dt, evolve_dt):
-                    break
-                start = mps_half2
-                start_energy = e_half2
-                mps = None
-            else:
-                # not converged
-                config.evolve_dt /= 2
-                logger.debug(f"evolution not converged, angle: {angle}")
-                if abs(config.evolve_dt) / abs(evolve_dt - accumulated_dt) < 1e-2:
-                    raise RuntimeError("too many sub-steps required in a single step")
-                mps = mps_half1
-        if 0.99999 < angle < 1.00001:
-            # a larger dt could be used
-            config.enlarge_evolve_dt()
-            logger.debug(
-                f"evolution easily converged, new evolve_dt: {config.evolve_dt}"
-            )
-            mps_half2.evolve_config = config
-        return mps_half2
 
+            mps_half1 = fun(self, mpo, dt / 2)._dmrg_normalize()
+            mps_half2 = fun(mps_half1, mpo, dt / 2)._dmrg_normalize()
+            mps = fun(self, mpo, dt)._dmrg_normalize()
+            
+            del mps_half1
+
+            dis = mps.distance(mps_half2)
+            p = (0.75 * config.adaptive_rtol / (dis + 1e-30)) ** (1./3)    
+            logger.debug(f"distance: {dis}, enlarge p parameter: {p}")
+            
+            p_restart = 0.5 # restart threshold 
+            p_min = 0.1     # safeguard for minimal allowed p
+            p_max = 2.      # safeguard for maximal allowed p
+
+            if xp.allclose(dt, evolve_dt):  
+                # approahes the end 
+                if p < p_restart:
+                    # not accurate in this final sub-step will restart
+                    config.guess_dt = dt * max(p_min, p)
+                    logger.debug(
+                        f"evolution not converged, new guess_dt: {config.guess_dt}"
+                    )
+                else:
+                    # normal exit
+                    mps_half2.evolve_config.guess_dt = min_abs(dt*p, config.guess_dt)
+                    logger.debug(
+                        f"evolution converged, new guess_dt: {mps_half2.evolve_config.guess_dt}"
+                    )
+                    return mps_half2
+            else:
+                # sub-steps 
+                if p < p_restart:
+                    # not accurate in this sub-step, will restart
+                    config.guess_dt *= max(p_min, p)
+                    logger.debug(
+                        f"evolution not converged, new guess_dt: {config.guess_dt}"
+                    )
+                else:
+                    # sub-step converge
+                    new_dt = evolve_dt - dt
+                    config.guess_dt *= min(p, p_max) 
+                    mps_half2.evolve_config.guess_dt = config.guess_dt
+                    logger.debug(
+                        f"evolution converged, new guess_dt: {config.guess_dt}"
+                    )
+                    logger.debug(f"sub-step {dt} further, remaining: {new_dt}")
+                    return f(mps_half2, mpo, new_dt)
+            
     return f
 
 
@@ -267,6 +263,7 @@ class Mps(MatrixProduct):
     def __init__(self):
         super(Mps, self).__init__()
         # todo: tdh part with GPU backend
+        # tdh part will merge into tdvp evolution scheme in the future
         self.tdh_wfns = [1]
 
         self.optimize_config: OptimizeConfig = OptimizeConfig()
@@ -391,7 +388,7 @@ class Mps(MatrixProduct):
         common_mpo_ids[mpo0_unique_idx] = mpo_ids[1][mpo0_unique_idx]
         x, unique_idx = np.where(mpo_ids != common_mpo_ids)
         # should find one at each line
-        assert np.allclose(x, np.arange(len(mpos)))
+        assert xp.allclose(x, np.arange(len(mpos)))
         common_mpo = list(mpos[0])
         common_mpo[mpo0_unique_idx] = mpos[1][mpo0_unique_idx]
         self_conj = self._expectation_conj()
@@ -546,10 +543,13 @@ class Mps(MatrixProduct):
         new_mps = method(mpo, evolve_dt)
         return new_mps
 
-    def _evolve_dmrg_prop_and_compress(self, mpo, evolve_dt, config: EvolveConfig = None) -> "Mps":
-        if config is None:
-            config = self.evolve_config
+    def _evolve_dmrg_prop_and_compress(self, mpo, evolve_dt) -> "Mps":
+        """
+        The global propagation & compression evolution scheme
+        """
+        config = self.evolve_config
         assert evolve_dt is not None
+
         propagation_c = config.rk_config.coeff
         termlist = [self]
         # don't let bond dim grow when contracting
@@ -557,63 +557,72 @@ class Mps(MatrixProduct):
         contract_compress_config = self.compress_config.copy()
         if contract_compress_config.criteria is CompressCriteria.threshold:
             contract_compress_config.criteria = CompressCriteria.both
-        contract_compress_config.min_dims = None
-        contract_compress_config.max_dims = np.array(self.bond_dims) + 4
+        #contract_compress_config.min_dims = None
+        #contract_compress_config.max_dims = np.array(self.bond_dims) + 4
         self.compress_config = contract_compress_config
+
         while len(termlist) < len(propagation_c):
             termlist.append(mpo.contract(termlist[-1]))
         # bond dim can grow after adding
         for t in termlist:
             t.compress_config = orig_compress_config
+
         if config.adaptive:
             config.check_valid_dt(evolve_dt)
+            
+            p_restart = 0.5 # restart threshold 
+            p_min = 0.1     # safeguard for minimal allowed p
+            p_max = 2.      # safeguard for maximal allowed p
+            
             while True:
                 scaled_termlist = []
+                dt = min_abs(config.guess_dt, evolve_dt)
+                logger.debug(
+                        f"guess_dt: {config.guess_dt}, try time step size: {dt}"
+                )
                 for idx, term in enumerate(termlist):
-                    scale = (-1.0j * config.evolve_dt) ** idx * propagation_c[idx]
+                    scale = (-1.0j * dt) ** idx * propagation_c[idx]
                     scaled_termlist.append(term.scale(scale))
                 del term
                 new_mps1 = compressed_sum(scaled_termlist[:-1])._dmrg_normalize()
                 new_mps2 = compressed_sum([new_mps1, scaled_termlist[-1]])._dmrg_normalize()
-                angle = new_mps1.angle(new_mps2)
-                energy1 = self.expectation(mpo)
-                energy2 = new_mps1.expectation(mpo)
-                rtol = config.adaptive_rtol  # default to 1e-3
-                p = (rtol / (np.sqrt(2 * abs(1 - angle)) + 1e-30)) ** 0.2 * 0.8
-                logger.debug(f"angle: {angle}. e1: {energy1}. e2: {energy2}, p: {p}")
-                d_energy = config.d_energy
-                if abs(energy1 - energy2) < d_energy and 0.5 < p:
-                    # converged
-                    if abs(config.evolve_dt - evolve_dt) / abs(evolve_dt) < 1e-5:
-                        # equal evolve_dt
-                        if abs(energy1 - energy2) < (d_energy/10) and 1.1 < p:
-                            # a larger dt could be used
-                            config.evolve_dt *= min(p, 1.5)
-                            logger.debug(
-                                f"evolution easily converged, new evolve_dt: {config.evolve_dt}"
-                            )
-                        # First exit
-                        new_mps2.evolve_config.evolve_dt = config.evolve_dt
-                        return new_mps2
-                    if abs(config.evolve_dt) < abs(evolve_dt):
-                        # step smaller than required
-                        new_dt = evolve_dt - config.evolve_dt
-                        logger.debug(f"remaining: {new_dt}")
-                        # Second exit
-                        new_mps2.evolve_config.evolve_dt = config.evolve_dt
-                        del new_mps1, termlist, scaled_termlist  # memory consuming and not useful anymore
-                        return new_mps2._evolve_dmrg_prop_and_compress(mpo, new_dt, config)
-                    else:
-                        # shouldn't happen.
-                        raise ValueError(
-                            f"evolve_dt in config: {config.evolve_dt}, in arg: {evolve_dt}"
+                dis = new_mps1.distance(new_mps2)
+                # 0.2 is 1/5 for RK45
+                p = (config.adaptive_rtol / (dis + 1e-30)) ** 0.2    
+                logger.debug(f"RK45 error distance: {dis}, enlarge p parameter: {p}")
+                
+                if xp.allclose(dt, evolve_dt):
+                    # approahes the end 
+                    if p < p_restart:
+                        # not accurate in this final sub-step will restart
+                        config.guess_dt = dt * max(p_min, p)
+                        logger.debug(
+                            f"evolution not converged, new guess_dt: {config.guess_dt}"
                         )
+                    else:
+                        # normal exit
+                        new_mps2.evolve_config.guess_dt = min_abs(dt*p, config.guess_dt)
+                        logger.debug(
+                            f"evolution converged, new guess_dt: {new_mps2.evolve_config.guess_dt}"
+                        )
+                        return new_mps2
                 else:
-                    # not converged
-                    config.evolve_dt /= 2
-                    logger.debug(
-                        f"evolution not converged, new evolve_dt: {config.evolve_dt}"
-                    )
+                    # sub-steps 
+                    if p < p_restart:
+                        config.guess_dt *= max(p_min, p)
+                        logger.debug(
+                            f"evolution not converged, new guess_dt: {config.guess_dt}"
+                        )
+                    else:
+                        new_dt = evolve_dt - dt
+                        config.guess_dt *= min(p, p_max) 
+                        new_mps2.evolve_config.guess_dt = config.guess_dt
+                        del new_mps1, termlist, scaled_termlist  # memory consuming and not useful anymore
+                        logger.debug(
+                            f"evolution converged, new guess_dt: {config.guess_dt}"
+                        )
+                        logger.debug(f"sub-step {dt} further, remaining: {new_dt}")
+                        return new_mps2._evolve_dmrg_prop_and_compress(mpo, new_dt)
         else:
             for idx, term in enumerate(termlist):
                 term.scale(
@@ -641,7 +650,8 @@ class Mps(MatrixProduct):
         else:
             coef = 1j
         
-        self.ensure_left_canon()
+        if not (self.evolve_config.force_ovlp and not self.to_right):
+            self.ensure_left_canon()
         
         # `self` should not be modified during the evolution
         if imag_time:
@@ -649,9 +659,10 @@ class Mps(MatrixProduct):
         else:
             mps = self.to_complex()
 
-
+        w_min_list = []
         def func_vmf(t,y):
             
+            w_min_list.clear()
             # update mps: from left to right
             offset = 0
             for imps in range(mps.site_num):
@@ -717,6 +728,9 @@ class Mps(MatrixProduct):
                 
                 # discard the negative eigenvalues due to numerical error
                 w = np.where(w>0, w, 0)
+                
+                w_min_list.append(w.min())
+
                 epsilon = self.evolve_config.reg_epsilon
                 w = w + epsilon * np.exp(-w / epsilon)
                 
@@ -748,6 +762,12 @@ class Mps(MatrixProduct):
             offset += mps[imps].size
 
         logger.debug(f"{self.evolve_config.method} VMF func called: {sol.nfev}. RKF steps: {len(sol.t)}")
+        
+        # switch to tdvp_mu_vmf
+        w_min_list = xp.array(w_min_list)
+        if w_min_list.min() < self.evolve_config.reg_epsilon and self.evolve_config.vmf_auto_switch:
+            logger.debug(f"w.min={w_min_list.min()}, Switch to tdvp_mu_vmf")
+            mps.evolve_config.method =  EvolveMethod.tdvp_mu_vmf
 
         return mps
 
@@ -770,17 +790,23 @@ class Mps(MatrixProduct):
             coef = -1
         else:
             coef = 1j
-
-        self.ensure_left_canon()
+        
+        # only not canonicalise when force_ovlp=True and to_right=False
+        if not (self.evolve_config.force_ovlp == True and self.to_right == False):
+            self.ensure_left_canon()
 
         # `self` should not be modified during the evolution
         if imag_time:
             mps = self.copy()
         else:
             mps = self.to_complex()
-
+        
+        s_min_list = []
+        
         def func_vmf(t,y):
             
+            s_min_list.clear()
+
             # update mps: from left to right
             offset = 0
             for imps in range(mps.site_num):
@@ -849,7 +875,8 @@ class Mps(MatrixProduct):
                 rtensor = environ.GetLR(
                     "R", imps + 1, environ_mps, mpo, itensor=None, method="System"
                 )
-
+                
+                s_min_list.append(s.min())
                 regular_s = _mu_regularize(s, epsilon=self.evolve_config.reg_epsilon)
 
                 us = Matrix(u.dot(np.diag(s)))
@@ -883,8 +910,14 @@ class Mps(MatrixProduct):
         for imps in range(mps.site_num):
             mps[imps] = sol.y[:, -1][offset:offset+mps[imps].size].reshape(mps[imps].shape)
             offset += mps[imps].size
-
+        
         logger.debug(f"{self.evolve_config.method} VMF func called: {sol.nfev}. RKF steps: {len(sol.t)}")
+        
+        s_min_list = xp.array(s_min_list)
+        # switch to tdvp_vmf
+        if s_min_list.min() > np.sqrt(self.evolve_config.reg_epsilon*10.) and self.evolve_config.vmf_auto_switch:
+            logger.debug(f"s.min={s_min_list.min()},Switch to tdvp_vmf")
+            mps.evolve_config.method =  EvolveMethod.tdvp_vmf
 
         return mps
 
@@ -895,6 +928,7 @@ class Mps(MatrixProduct):
         # JCP 149, 044119 (2018)
 
         imag_time = np.iscomplex(evolve_dt)
+        self.ensure_left_canon()
 
         # `self` should not be modified during the evolution
         # mps: the mps to return
@@ -903,7 +937,6 @@ class Mps(MatrixProduct):
             mps = self.copy()
         else:
             mps = self.to_complex()
-
 
         if self.evolve_config.tdvp_cmf_midpoint:
             # mps at t/2 as environment
@@ -927,9 +960,26 @@ class Mps(MatrixProduct):
         else:
             coef = 1j
 
-        self.ensure_left_canon()
         # statistics for debug output
         cmf_rk_steps = []
+        
+        if self.evolve_config.force_ovlp:
+            # construct the S_L list (type: Matrix) and S_L_inv list (type: xp.array)
+            # len: mps.site_num+1
+            S_L_list = [ones([1, 1], dtype=mps.dtype),]
+            for imps in range(mps.site_num):
+                S_L_list.append(transferMat(environ_mps, environ_mps.conj(), "L", imps,
+                    S_L_list[imps]))
+            
+            S_L_inv_list = []    
+            for imps in range(mps.site_num+1):
+                w, u = scipy.linalg.eigh(S_L_list[imps].asnumpy())
+                S_L_inv = xp.asarray(u.dot(np.diag(1.0 / w)).dot(u.T.conj()))
+                S_L_inv_list.append(S_L_inv)
+                S_L_list[imps] = S_L_list[imps].array
+        else:
+            S_L_list = [None,] * (mps.site_num+1)
+            S_L_inv_list = [None,] * (mps.site_num+1)
 
         for imps in mps.iter_idx_list(full=True):
             shape = list(mps[imps].shape)
@@ -939,10 +989,14 @@ class Mps(MatrixProduct):
                 rtensor = ones((1, 1, 1))
                 hop = hop_factory(ltensor, rtensor, mpo[imps], len(shape))
 
-                def func(y):
-                    return hop(y.reshape(shape)).ravel()
+                S_inv = xp.diag(xp.ones(1,dtype=mps.dtype))
+                def func1(y):
+                    func = integrand_func_factory(shape, hop, True, S_inv, True,
+                            coef, Ovlp_inv1=S_L_inv_list[imps+1],
+                            Ovlp_inv0=S_L_inv_list[imps], Ovlp0=S_L_list[imps])
+                    return func(0, y)
 
-                ms, _ = expm_krylov(func, evolve_dt / coef, mps[imps].ravel().array)
+                ms, _ = expm_krylov(func1, evolve_dt, mps[imps].ravel().array)
                 mps[imps] = ms.reshape(shape)
                 continue
 
@@ -976,8 +1030,9 @@ class Mps(MatrixProduct):
             S_inv = Matrix(u).conj().dot(xp.diag(1.0 / regular_s)).T
 
             hop = hop_factory(ltensor, rtensor, mpo[imps], len(shape))
-
-            func = integrand_func_factory(shape, hop, False, S_inv.array, True, coef)
+            func = integrand_func_factory(shape, hop, False, S_inv.array, True,
+                    coef, Ovlp_inv1=S_L_inv_list[imps+1],
+                    Ovlp_inv0=S_L_inv_list[imps], Ovlp0=S_L_list[imps])
 
             sol = solve_ivp(
                 func, (0, evolve_dt), mps[imps].ravel().array, method="RK45"
@@ -1294,7 +1349,7 @@ class Mps(MatrixProduct):
             dim1 = res.shape[1] * mt.shape[1]
             dim2 = mt.shape[-1]
             res = tensordot(res, mt, axes=1).reshape(1, dim1, dim2)
-        return res[0, :, 0].array
+        return res[0, :, 0].asnumpy()
 
     def _calc_reduced_density_matrix(self, mp1, mp2):
         # further optimization is difficult. There are totally N^2 intermediate results to remember.
@@ -1566,3 +1621,15 @@ class BraKetPair:
     # todo: not used?
     def __iter__(self):
         return iter((self.bra_mps, self.ket_mps))
+
+
+def min_abs(t1, t2):
+    # t1, t2 could be int, float, complex
+    # return the number with smaller norm
+
+    assert xp.iscomplex(t1) == xp.iscomplex(t2)
+
+    if xp.absolute(t1) < xp.absolute(t2):
+        return t1
+    else:
+        return t2

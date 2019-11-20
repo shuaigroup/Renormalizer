@@ -4,7 +4,6 @@
 
 import os
 
-import numpy as np
 import pytest
 
 from renormalizer.model import Phonon, Mol, MolList
@@ -25,6 +24,7 @@ from renormalizer.transport.tests.band_param import (
     low_t,
 )
 
+import numpy as np
 
 def test_init_state():
     ph = Phonon.simple_phonon(Quantity(1), Quantity(1), 10)
@@ -58,14 +58,13 @@ def test_bandlimit_zero_t(method, evolve_dt, nsteps, rtol, scheme):
 @pytest.mark.parametrize(
     "method", (EvolveMethod.prop_and_compress, EvolveMethod.tdvp_ps)
 )
-@pytest.mark.parametrize("init_dt", (1e-1, 20))
-def test_adaptive_zero_t(method, init_dt):
+def test_adaptive_zero_t(method):
     np.random.seed(0)
-    evolve_config = EvolveConfig(method=method, evolve_dt=init_dt, adaptive=True)
+    evolve_config = EvolveConfig(method=method, guess_dt=0.1, adaptive=True)
     ct = ChargeTransport(
         band_limit_mol_list, evolve_config=evolve_config, stop_at_edge=True
     )
-    ct.evolve()
+    ct.evolve(evolve_dt=5.)
     assert_band_limit(ct, 1e-2)
 
 
@@ -75,14 +74,14 @@ def test_gaussian_bond_dim():
         bonddim_distri=BondDimDistri.center_gauss,
         max_bonddim=10,
     )
-    evolve_config = EvolveConfig(evolve_dt=4, adaptive=True)
+    evolve_config = EvolveConfig(guess_dt=0.1, adaptive=True)
     ct = ChargeTransport(
         band_limit_mol_list,
         compress_config=compress_config,
         evolve_config=evolve_config,
     )
     ct.stop_at_edge = True
-    ct.evolve()
+    ct.evolve(evolve_dt=2.)
     assert_band_limit(ct, 1e-2)
 
 
