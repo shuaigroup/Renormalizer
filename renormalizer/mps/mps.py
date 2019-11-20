@@ -1627,8 +1627,8 @@ def min_abs(t1, t2):
     # t1, t2 could be int, float, complex
     # return the number with smaller norm
 
-    if xp.iscomplex(t1) != xp.iscomplex(t2):
-        raise TypeError(f"{xp.iscomplex(t1)} != {xp.iscomplex(t2)}")
+    assert xp.iscomplex(t1) == xp.iscomplex(t2):
+
     if xp.absolute(t1) < xp.absolute(t2):
         return t1
     else:

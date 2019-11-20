@@ -570,6 +570,10 @@ class Mpo(MatrixProduct):
             scale: Quantity
                 scalar to scale the mpo
         '''
+
+        if mol_list.scheme == 4:
+            raise NotImplementedError
+
         for i in opera.keys():
             assert i in range(mol_list.mol_num)
         
