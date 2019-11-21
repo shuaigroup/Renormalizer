@@ -1,12 +1,11 @@
 # -*- coding: utf-8 -*-
 
 import logging
-import os
 
-import numpy as np
 import scipy.integrate
 
 from renormalizer.mps import MpDm, Mpo, BraKetPair, ThermalProp, load_thermal_state
+from renormalizer.mps.backend import np
 from renormalizer.mps.lib import compressed_sum
 from renormalizer.utils.constant import mobility2au
 from renormalizer.utils import TdMpsJob, Quantity, EvolveConfig, CompressConfig

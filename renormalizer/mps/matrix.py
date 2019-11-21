@@ -7,8 +7,7 @@ from typing import List, Union
 
 import numpy as np
 
-from renormalizer.mps.backend import xp, backend, cp
-
+from renormalizer.mps.backend import np, backend, xp, USE_GPU, xp as xp
 
 logger = logging.getLogger(__name__)
 
@@ -31,15 +30,16 @@ class Matrix:
 
     def __init__(self, array, dtype=None, is_full_mpdm=False):
         assert array is not None
+        array = asnumpy(array)
         if dtype == backend.real_dtype:
             # forbid unchecked casting
-            assert not xp.iscomplexobj(array)
+            assert not np.iscomplexobj(array)
         if dtype is None:
-            if xp.iscomplexobj(array):
+            if np.iscomplexobj(array):
                 dtype = backend.complex_dtype
             else:
                 dtype = backend.real_dtype
-        self.array: xp.ndarray = xp.asarray(array, dtype=dtype)
+        self.array: np.ndarray = np.asarray(array, dtype=dtype)
         self.original_shape = self.array.shape
         self.sigmaqn = None
         self.is_full_mpdm = is_full_mpdm
@@ -50,14 +50,14 @@ class Matrix:
         # see https://stackoverflow.com/questions/22781872/python-pickle-got-acycle-recursion-with-getattr
         array = super().__getattribute__("array")
         res = getattr(array, item)
-        if isinstance(res, xp.ndarray):
+        if isinstance(res, np.ndarray):
             return Matrix(res)
         functiontype = type([].append)
         if isinstance(res, functiontype):
 
             def wrapped(*args, **kwargs):
                 res2 = res(*args, **kwargs)
-                if isinstance(res2, xp.ndarray):
+                if isinstance(res2, np.ndarray):
                     return Matrix(res2)
                 return res2
 
@@ -71,20 +71,14 @@ class Matrix:
 
     def astype(self, dtype):
         assert not (self.dtype == backend.complex_dtype and dtype == backend.real_dtype)
-        self.array = xp.asarray(self.array, dtype=dtype)
+        self.array = np.asarray(self.array, dtype=dtype)
         return self
 
     def abs(self):
-        return self.__class__(xp.abs(self.array))
+        return self.__class__(np.abs(self.array))
 
     def norm(self):
-        return xp.linalg.norm(self.array.flatten())
-
-    def asnumpy(self):
-        if xp == np:
-            return self.array
-        else:
-            return xp.asnumpy(self.array)
+        return np.linalg.norm(self.array.flatten())
 
     # physical indices exclude first and last indices
     @property
@@ -117,26 +111,26 @@ class Matrix:
         """
         check L-orthogonal
         """
-        tensm = self.array.reshape([np.prod(self.shape[:-1]), self.shape[-1]])
-        s = xp.dot(tensm.T.conj(), tensm)
-        return allclose(s, xp.eye(s.shape[0]), rtol=rtol, atol=atol)
+        tensm = asxp(self.array.reshape([np.prod(self.shape[:-1]), self.shape[-1]]))
+        s = tensm.T.conj() @ tensm
+        return xp.allclose(s, np.eye(s.shape[0]), rtol=rtol, atol=atol)
 
     def check_rortho(self, rtol=1e-5, atol=1e-8):
         """
         check R-orthogonal
         """
-        tensm = self.array.reshape([self.shape[0], np.prod(self.shape[1:])])
-        s = xp.dot(tensm, tensm.T.conj())
-        return allclose(s, xp.eye(s.shape[0]), rtol=rtol, atol=atol)
+        tensm = asxp(self.array.reshape([self.shape[0], np.prod(self.shape[1:])]))
+        s = tensm @ tensm.T.conj()
+        return xp.allclose(s, np.eye(s.shape[0]), rtol=rtol, atol=atol)
 
     def to_complex(self, inplace=False):
         # `xp.array` always creates new array, so to_complex means copy, which is
         # in accordance with NumPy
         if inplace:
-            self.array = xp.array(self.array, dtype=backend.complex_dtype)
+            self.array = np.array(self.array, dtype=backend.complex_dtype)
             return self
         else:
-            return xp.array(self.array, dtype=backend.complex_dtype)
+            return np.array(self.array, dtype=backend.complex_dtype)
 
     def copy(self):
         new = self.__class__(self.array.copy(), self.array.dtype)
@@ -149,15 +143,10 @@ class Matrix:
             atol = 1e-10
         else:
             atol = 1e-20
-        return xp.allclose(self.array, xp.zeros_like(self.array), atol=atol)
+        return np.allclose(self.array, np.zeros_like(self.array), atol=atol)
 
     def __hash__(self):
-        if xp == np:
-            return hash(self.array.tobytes())
-        else:
-            # the transfer shouldn't be a bottleneck as they are all
-            # small matrices. Could be optimized to hash on device
-            return hash(xp.asnumpy(self.array).tobytes())
+        return hash(self.array.tobytes())
 
     def __getitem__(self, item):
         res = self.array.__getitem__(item)
@@ -209,55 +198,43 @@ class Matrix:
 def zeros(shape, dtype=None):
     if dtype is None:
         dtype = backend.real_dtype
-    return Matrix(xp.zeros(shape), dtype=dtype)
+    return Matrix(np.zeros(shape), dtype=dtype)
 
 
 def eye(N, M=None, dtype=None):
     if dtype is None:
         dtype = backend.real_dtype
-    return Matrix(xp.eye(N, M), dtype=dtype)
+    return Matrix(np.eye(N, M), dtype=dtype)
 
 
 def ones(shape, dtype=None):
     if dtype is None:
         dtype = backend.real_dtype
-    return Matrix(xp.ones(shape), dtype=dtype)
+    return Matrix(np.ones(shape), dtype=dtype)
 
 
 def einsum(subscripts, *operands):
-    return Matrix(xp.einsum(subscripts, *[o.array for o in operands]))
+    return Matrix(np.einsum(subscripts, *[o.array for o in operands]))
 
 
-def tensordot(a: Union[Matrix, xp.ndarray], b: Union[Matrix, xp.ndarray], axes):
-    matrix_flag = False
-    if isinstance(a, Matrix):
-        a = a.array
-        assert isinstance(b, Matrix)
-        b = b.array
-        matrix_flag = True
-    else:
-        assert isinstance(b, xp.ndarray)
-    res = xp.tensordot(a, b, axes)
-    if matrix_flag:
-        return Matrix(res)
-    else:
-        return res
+def tensordot(a: Union[Matrix, np.ndarray], b: Union[Matrix, np.ndarray, xp.ndarray], axes) -> xp.ndarray:
+    return xp.tensordot(asxp(a), asxp(b), axes)
 
 
 def moveaxis(a: Matrix, source, destination):
-    return Matrix(xp.moveaxis(a.array, source, destination))
+    return Matrix(np.moveaxis(a.array, source, destination))
 
 
 def vstack(tup):
-    return Matrix(xp.vstack([m.array for m in tup]))
+    return Matrix(np.vstack([m.array for m in tup]))
 
 
 def dstack(tup):
-    return Matrix(xp.dstack([m.array for m in tup]))
+    return Matrix(np.dstack([m.array for m in tup]))
 
 
 def concatenate(arrays, axis=None):
-    return Matrix(xp.concatenate([m.array for m in arrays], axis))
+    return Matrix(np.concatenate([m.array for m in arrays], axis))
 
 
 # can only use numpy for now. see gh-cupy-1946
@@ -265,26 +242,15 @@ def allclose(a, b, rtol=1.0e-5, atol=1.0e-8):
     if isinstance(a, Matrix):
         a = a.array
     else:
-        a = xp.asarray(a)
+        a = np.asarray(a)
     if isinstance(b, Matrix):
         b = b.array
     else:
-        b = xp.asarray(b)
-    # delete this when CuPy 6.0 is released
-    if xp == cp:
-        a = cp.asnumpy(a)
-        b = cp.asnumpy(b)
+        b = np.asarray(b)
     return np.allclose(a, b, rtol=rtol, atol=atol)
 
 
-def asnumpy(a: xp.ndarray):
-    if xp == np:
-        return a
-    else:
-        return xp.asnumpy(a)
-
-
-def multi_tensor_contract(path, *operands: [List[Union[Matrix, xp.ndarray]]]):
+def multi_tensor_contract(path, *operands: [List[Union[Matrix, np.ndarray, xp.ndarray]]]):
     """
     ipath[0] is the index of the mat
     ipaht[1] is the contraction index
@@ -325,9 +291,9 @@ def multi_tensor_contract(path, *operands: [List[Union[Matrix, xp.ndarray]]]):
 
 
 def pair_tensor_contract(
-    view_left: Union[Matrix, xp.ndarray],
+    view_left: Union[Matrix, np.ndarray, xp.ndarray],
     input_left,
-    view_right: Union[Matrix, xp.ndarray],
+    view_right: Union[Matrix, np.ndarray, xp.ndarray],
     input_right,
     idx_removed,
 ):
@@ -337,6 +303,31 @@ def pair_tensor_contract(
         left_pos += (input_left.find(s),)
         right_pos += (input_right.find(s),)
     return tensordot(view_left, view_right, axes=(left_pos, right_pos))
+
+
+def asnumpy(array: Union[np.ndarray, xp.ndarray, Matrix]) -> np.ndarray:
+    if array is None:
+        return None
+    if isinstance(array, Matrix):
+        return array.array
+    if not USE_GPU:
+        assert isinstance(array, np.ndarray)
+        return array
+    if isinstance(array, np.ndarray):
+        return array
+    stream = xp.cuda.get_current_stream()
+    return xp.asnumpy(array, stream=stream)
+
+
+def asxp(array: Union[np.ndarray, xp.ndarray, Matrix]) -> xp.ndarray:
+    if array is None:
+        return None
+    if isinstance(array, Matrix):
+        array = array.array
+    if not USE_GPU:
+        assert isinstance(array, np.ndarray)
+        return array
+    return xp.asarray(array)
 
 
 class EmptyMatrixError(Exception): pass

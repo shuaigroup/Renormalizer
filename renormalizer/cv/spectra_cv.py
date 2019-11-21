@@ -128,8 +128,11 @@ class SpectraCv(object):
     def oper_prepare(self, omega):
         raise NotImplementedError
 
-    def initialize_LR(self, direction):
-        raise NotImplemented
+    def optimize_cv(self, lr_group, direction, isite, num, percent=0):
+        raise NotImplementedError
 
-    def update_LR(self, direction):
-        raise NotImplemented
+    def initialize_LR(self, direction):
+        raise NotImplementedError
+
+    def update_LR(self, lrgroup, direction, isite):
+        raise NotImplementedError

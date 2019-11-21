@@ -13,36 +13,34 @@ from renormalizer.utils.utils import sizeof_fmt
 logger = logging.getLogger(__name__)
 
 
-GPU_KEY = "EPHMPS_GPU"
+GPU_KEY = "RENO_GPU"
+USE_GPU = False
 
 
 if importlib.util.find_spec("cupy"):
-    import cupy as cp
-    xp = cp
+    import cupy as xp
     gpu_id = os.environ.get(GPU_KEY, 0)
     logger.info(f"Using GPU: {gpu_id}")
-    cp.cuda.Device(gpu_id).use()
+    xp.cuda.Device(gpu_id).use()
+    USE_GPU = True
 else:
     gpu_id = os.environ.get(GPU_KEY, None)
     if gpu_id is not None:
         logger.warning(f"Cupy is not installed. Setting {GPU_KEY} to {gpu_id} has no effect.")
-    cp = None
     xp = np
 
 
 
 # xp = np
 
-if xp is np:
+if not USE_GPU:
     logger.info("use numpy as backend")
-elif xp is cp:
-    logger.info("use cupy as backend")
 else:
-    assert False
+    logger.info("use cupy as backend")
 
 
-np.random.seed(9012)
 xp.random.seed(2019)
+np.random.seed(9012)
 random.seed(1092)
 
 
@@ -64,34 +62,34 @@ class Backend:
         self.use_64bits()
 
     def free_all_blocks(self):
-        if xp == np:
+        if not USE_GPU:
             return
         # free memory
-        mempool = cp.get_default_memory_pool()
+        mempool = xp.get_default_memory_pool()
         mempool.free_all_blocks()
 
     def log_memory_usage(self, header=""):
-        if xp == np:
+        if not USE_GPU:
             return
-        mempool = cp.get_default_memory_pool()
+        mempool = xp.get_default_memory_pool()
         logger.info(f"{header} GPU memory used/Total: {sizeof_fmt(mempool.used_bytes())}/{sizeof_fmt(mempool.total_bytes())}")
 
     def sync(self):
         # only works with one GPU
-        if xp == cp:
-            cp.cuda.device.Device(0).synchronize()
+        if USE_GPU:
+            xp.cuda.device.Device(gpu_id).synchronize()
 
     def use_32bits(self):
         logger.info("use 32 bits")
-        self.dtypes = (xp.float32, xp.complex64)
+        self.dtypes = (np.float32, np.complex64)
 
     def use_64bits(self):
         logger.info("use 64 bits")
-        self.dtypes = (xp.float64, xp.complex128)
+        self.dtypes = (np.float64, np.complex128)
 
     @property
     def is_32bits(self) -> bool:
-        return self._real_dtype == xp.float32
+        return self._real_dtype == np.float32
 
     @property
     def real_dtype(self):

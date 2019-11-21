@@ -3,10 +3,9 @@
 
 from __future__ import absolute_import, print_function, unicode_literals
 
-import numpy as np
 import scipy.linalg
 
-from renormalizer.mps.backend import xp
+from renormalizer.mps.backend import np
 
 
 def blockappend(
@@ -33,7 +32,7 @@ def blockappend(
 
 
 def Csvd(
-    cstruct: xp.ndarray,
+    cstruct: np.ndarray,
     qnbigl,
     qnbigr,
     nexciton,

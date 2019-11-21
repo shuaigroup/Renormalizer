@@ -2,10 +2,10 @@
 # Author: Jiajun Ren <jiajunren0522@gmail.com>
 #         Weitang Li <liwt31@163.com>
 
-import numpy as np
 import pytest
 
 from renormalizer.mps import Mps, Mpo, MpDm, ThermalProp
+from renormalizer.mps.backend import np
 from renormalizer.tests.parameter import mol_list
 from renormalizer.utils import Quantity
 

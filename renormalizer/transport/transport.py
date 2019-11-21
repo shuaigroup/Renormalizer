@@ -147,7 +147,7 @@ class ChargeTransport(TdMpsJob):
         # start from phonon
         for i, ph in enumerate(center_mol.dmrg_phs):
             idx = self.mol_list.ph_idx(center_mol_idx, i)
-            mt = gs_mp[idx][0, ..., 0].asnumpy()
+            mt = gs_mp[idx][0, ..., 0].array
             evecs = ph.get_displacement_evecs()
             if gs_mp.is_mps:
                 mt = evecs.dot(mt)

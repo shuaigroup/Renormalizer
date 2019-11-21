@@ -160,7 +160,7 @@ class OdeSolver(object):
         if self.t_old is None:
             return None
         else:
-            return xp.abs(self.t - self.t_old)
+            return np.abs(self.t - self.t_old)
 
     def step(self):
         """Perform one integration step.
@@ -253,7 +253,7 @@ class DenseOutput(object):
             Computed values. Shape depends on whether `t` was a scalar or a
             1-d array.
         """
-        t = xp.asarray(t)
+        t = np.asarray(t)
         if t.ndim > 1:
             raise ValueError("`t` must be float or 1-d array.")
         return self._call_impl(t)
@@ -277,6 +277,6 @@ class ConstantDenseOutput(DenseOutput):
         if t.ndim == 0:
             return self.value
         else:
-            ret = xp.empty((self.value.shape[0], t.shape[0]))
+            ret = np.empty((self.value.shape[0], t.shape[0]))
             ret[:] = self.value[:, None]
             return ret

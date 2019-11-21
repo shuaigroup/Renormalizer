@@ -54,6 +54,7 @@ def expm_krylov(Afunc, dt, vstart: xp.ndarray, block_size=50):
         if len(V) - 2 == j:
             V, old_V = xp.empty((len(V) + block_size, len(vstart)), dtype=vstart.dtype), V
             V[:len(old_V)] = old_V
+            del old_V
             alpha = np.concatenate([alpha, np.zeros(block_size)])
             beta = np.concatenate([beta, np.zeros(block_size)])
         w = Afunc(V[j])
