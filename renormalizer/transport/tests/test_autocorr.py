@@ -1,14 +1,11 @@
 # -*- coding: utf-8 -*-
 
-import os
-
-import pytest
 import numpy as np
 import qutip
 
 from renormalizer.model import Phonon, Mol, MolList
 from renormalizer.transport.autocorr import TransportAutoCorr
-from renormalizer.utils import Quantity, CompressConfig, EvolveConfig, EvolveMethod
+from renormalizer.utils import Quantity, CompressConfig, EvolveConfig, EvolveMethod, CompressCriteria
 from renormalizer.utils.qutip_utils import get_clist, get_blist, get_hamiltonian, get_qnidx
 
 
@@ -17,10 +14,11 @@ def test_autocorr():
     mol = Mol(Quantity(0), [ph])
     mol_list = MolList([mol] * 5, Quantity(1), 3)
     temperature = Quantity(50000, 'K')
-    compress_config = CompressConfig(threshold=1e-3)
-    evolve_config = EvolveConfig(EvolveMethod.prop_and_compress)
-    ac = TransportAutoCorr(mol_list, temperature, compress_config=compress_config, evolve_config=evolve_config)
-    ac.evolve(0.2, 50)
+    compress_config = CompressConfig(CompressCriteria.fixed, max_bonddim=24)
+    evolve_config = EvolveConfig(EvolveMethod.tdvp_ps)
+    ievolve_config = evolve_config.copy()
+    ac = TransportAutoCorr(mol_list, temperature, compress_config=compress_config, ievolve_config=ievolve_config, evolve_config=evolve_config)
+    ac.evolve(0.4, 25)
     corr_real = ac.auto_corr.real
     exact_real = get_exact_autocorr(mol_list, temperature, ac.evolve_times_array).real
     atol = 1e-2
