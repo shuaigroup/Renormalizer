@@ -205,6 +205,12 @@ class MatrixProduct:
             self.move_qnidx(0)
             self.to_right = True
             self.canonicalise()
+    
+    def ensure_right_canon(self, rtol=1e-5, atol=1e-8):
+        if not self.check_right_canonical(rtol, atol):
+            self.move_qnidx(self.site_num - 1)
+            self.to_right = False
+            self.canonicalise()
 
     def iter_idx_list(self, full: bool, stop_idx: int=None):
         # if not `full`, the last site is omitted.
@@ -281,20 +287,22 @@ class MatrixProduct:
             # assert self.check_right_canonical()
 
     def _get_big_qn(self, idx):
+        assert self.qnidx == idx
         mt: Matrix = self[idx]
-        sigmaqn = mt.sigmaqn
+        sigmaqn = np.array(mt.sigmaqn)
         qnl = np.array(self.qn[idx])
         qnr = np.array(self.qn[idx + 1])
-        assert len(qnl) == mt.shape[0]
-        assert len(qnr) == mt.shape[-1]
-        assert len(sigmaqn) == mt.pdim_prod
+        assert qnl.size == mt.shape[0]
+        assert qnr.size == mt.shape[-1]
+        assert sigmaqn.size == mt.pdim_prod
         if self.to_right:
             qnbigl = np.add.outer(qnl, sigmaqn)
             qnbigr = qnr
         else:
             qnbigl = qnl
             qnbigr = np.add.outer(sigmaqn, qnr)
-        return qnbigl, qnbigr
+        qnmat = np.add.outer(qnbigl, qnbigr)
+        return qnbigl, qnbigr, qnmat
 
     def add(self, other: "MatrixProduct"):
         assert self.qntot == other.qntot
@@ -392,7 +400,7 @@ class MatrixProduct:
                 mt = mt.l_combine()
             else:
                 mt = mt.r_combine()
-            qnbigl, qnbigr = self._get_big_qn(idx)
+            qnbigl, qnbigr, _ = self._get_big_qn(idx)
             u, sigma, qnlset, v, sigma, qnrset = svd_qn.Csvd(
                 mt.asnumpy(),
                 qnbigl,
@@ -426,7 +434,7 @@ class MatrixProduct:
                 mt = mt.l_combine()
             else:
                 mt = mt.r_combine()
-            qnbigl, qnbigr = self._get_big_qn(idx)
+            qnbigl, qnbigr, _ = self._get_big_qn(idx)
             system = "L" if self.to_right else "R"
             u, qnlset, v, qnrset = svd_qn.Csvd(
                 mt.asnumpy(),

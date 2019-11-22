@@ -4,7 +4,7 @@
 
 
 from renormalizer.cv.spectra_cv import SpectraCv
-from renormalizer.mps import Mpo, Mps, solver
+from renormalizer.mps import Mpo, Mps, solver, svd_qn
 from renormalizer.mps.solver import construct_mps_mpo_2, optimize_mps
 from renormalizer.mps.matrix import (
     Matrix,
@@ -153,7 +153,7 @@ class SpectraZtCV(SpectraCv):
             system = 'L'
 
         # this part just be similar with ground state calculation
-        qnmat, qnbigl, qnbigr = solver.construct_qnmat(
+        qnmat, qnbigl, qnbigr = svd_qn.construct_qnmat(
             self.cv_mps, self.mpo.ephtable, self.mpo.pbond_list,
             addlist, self.method, system)
         xshape = qnmat.shape
@@ -193,7 +193,7 @@ class SpectraZtCV(SpectraCv):
 
         def hop(c):
             count[0] += 1
-            xstruct = solver.cvec2cmat(xshape, c, qnmat, constrain_qn)
+            xstruct = svd_qn.cvec2cmat(xshape, c, qnmat, constrain_qn)
             if self.method == "1site":
                 path_a = [([0, 1], "abc, ade->bcde"),
                           ([2, 0], "bcde, bdfg->cefg"),
@@ -228,7 +228,7 @@ class SpectraZtCV(SpectraCv):
         l_value = np.inner(hop(x).reshape(1, nonzeros), x.reshape(1, nonzeros)
                      ) - 2 * np.inner(
                          vec_b.reshape(1, nonzeros), x.reshape(1, nonzeros))
-        xstruct = solver.cvec2cmat(xshape, x, qnmat, constrain_qn)
+        xstruct = svd_qn.cvec2cmat(xshape, x, qnmat, constrain_qn)
         x, xdim, xqn, compx = \
             solver.renormalization_svd(xstruct, qnbigl, qnbigr, system,
                                        constrain_qn, self.m_max, percent)

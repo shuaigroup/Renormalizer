@@ -536,7 +536,7 @@ class Mps(MatrixProduct):
         method = {
             EvolveMethod.prop_and_compress: self._evolve_dmrg_prop_and_compress,
             EvolveMethod.tdvp_mu_vmf: self._evolve_dmrg_tdvp_mu_vmf,
-            EvolveMethod.tdvp_vmf: self._evolve_dmrg_tdvp_vmf,
+            EvolveMethod.tdvp_vmf: self._evolve_dmrg_tdvp_mu_vmf,
             EvolveMethod.tdvp_mu_cmf: self._evolve_dmrg_tdvp_mu_cmf,
             EvolveMethod.tdvp_ps: self._evolve_dmrg_tdvp_ps,
         }[self.evolve_config.method]
@@ -630,151 +630,12 @@ class Mps(MatrixProduct):
                 )
             return compressed_sum(termlist)
 
-    def _evolve_dmrg_tdvp_vmf(self, mpo, evolve_dt) -> "Mps":
-        """
-        variable mean field
-        see the difference between VMF and CMF, refer to Z. Phys. D 42, 113–129 (1997)
-        only the RKF45 integration is used.
-        The default RKF45 local step error tolerance is rtol:1e-5, atol:1e-8
-        regulation of S is 1e-10, these default parameters could be changed in
-        /utils/configs.py
-
-        """
-        
-        # a workaround for https://github.com/scipy/scipy/issues/10164
-        imag_time = np.iscomplex(evolve_dt)
-        if imag_time:
-            evolve_dt = -evolve_dt.imag
-            # used in calculating derivatives
-            coef = -1
-        else:
-            coef = 1j
-        
-        if not (self.evolve_config.force_ovlp and not self.to_right):
-            self.ensure_left_canon()
-        
-        # `self` should not be modified during the evolution
-        if imag_time:
-            mps = self.copy()
-        else:
-            mps = self.to_complex()
-
-        w_min_list = []
-        def func_vmf(t,y):
-            
-            w_min_list.clear()
-            # update mps: from left to right
-            offset = 0
-            for imps in range(mps.site_num):
-                mps[imps] = y[offset:offset+mps[imps].size].reshape(mps[imps].shape)
-                offset += mps[imps].size
-            
-            mps_conj = mps.conj()
-
-            environ = Environ(mps, mpo, "L")
-            environ.write_r_sentinel(mps)
-
-            # the first S_R
-            S_R = ones([1, 1], dtype=mps.dtype)
-            
-            if self.evolve_config.force_ovlp:
-                # construct the S_L list (type: Matrix) and S_L_inv list (type: xp.array)
-                # len: mps.site_num+1
-                S_L_list = [ones([1, 1], dtype=mps.dtype),]
-                for imps in range(mps.site_num):
-                    S_L_list.append(transferMat(mps, mps_conj, "L", imps,
-                        S_L_list[imps]))
-                
-                S_L_inv_list = []    
-                for imps in range(mps.site_num+1):
-                    w, u = scipy.linalg.eigh(S_L_list[imps].asnumpy())
-                    S_L_inv = xp.asarray(u.dot(np.diag(1.0 / w)).dot(u.T.conj()))
-                    S_L_inv_list.append(S_L_inv)
-                    S_L_list[imps] = S_L_list[imps].array
-                
-            else:
-                S_L_list = [None,] * (mps.site_num+1)
-                S_L_inv_list = [None,] * (mps.site_num+1)
-
-            # calculate hop_y: from right to left
-            hop_y = xp.empty_like(y)
-            
-            offset = 0
-            for imps in mps.iter_idx_list(full=True):
-                shape = list(mps[imps].shape)
-                ltensor = environ.read("L", imps - 1)
-                
-                if imps == self.site_num - 1:
-                    # the coefficient site
-                    rtensor = ones((1, 1, 1))
-                    hop = hop_factory(ltensor, rtensor, mpo[imps], len(shape))
-                    S_inv = xp.diag(xp.ones(1,dtype=mps.dtype))
-                    func = integrand_func_factory(shape, hop, True, S_inv, True,
-                            coef, Ovlp_inv1=S_L_inv_list[imps+1],
-                            Ovlp_inv0=S_L_inv_list[imps], Ovlp0=S_L_list[imps])
-                               
-                    hop_y[offset-mps[imps].size:] = func(0, mps[imps].array.ravel())
-                    offset -= mps[imps].size
-
-                    continue
-                
-                rtensor = environ.GetLR(
-                    "R", imps + 1, mps, mpo, itensor=None, method="System")
-                
-                # regularize density matrix
-                # Note that S_R is (#.conj, #)
-                S_R = transferMat(mps, mps_conj, "R", imps + 1, Matrix(S_R)).asnumpy()
-                w, u = scipy.linalg.eigh(S_R)
-                
-                # discard the negative eigenvalues due to numerical error
-                w = np.where(w>0, w, 0)
-                
-                w_min_list.append(w.min())
-
-                epsilon = self.evolve_config.reg_epsilon
-                w = w + epsilon * np.exp(-w / epsilon)
-                
-                # S_inv is (#.conj, #)
-                S_inv = xp.asarray(u.dot(np.diag(1.0 / w)).dot(u.T.conj())).T
-
-                hop = hop_factory(ltensor, rtensor, mpo[imps], len(shape))
-                
-                func = integrand_func_factory(shape, hop, False, S_inv, True,
-                        coef, Ovlp_inv1=S_L_inv_list[imps+1],
-                        Ovlp_inv0=S_L_inv_list[imps], Ovlp0=S_L_list[imps])
-
-                hop_y[offset-mps[imps].size:offset] = func(0, mps[imps].array.ravel())
-                offset -= mps[imps].size
-            
-            return hop_y
-        
-        init_y = xp.concatenate([ms.array.flatten() for ms in mps])
-        # the ivp local error, please refer to the Scipy default setting
-        sol = solve_ivp( func_vmf, (0, evolve_dt), init_y,
-                method="RK45",
-                rtol=self.evolve_config.ivp_rtol,
-                atol=self.evolve_config.ivp_atol)
-        
-        # update mps: from left to right
-        offset = 0
-        for imps in range(mps.site_num):
-            mps[imps] = sol.y[:, -1][offset:offset+mps[imps].size].reshape(mps[imps].shape)
-            offset += mps[imps].size
-
-        logger.debug(f"{self.evolve_config.method} VMF func called: {sol.nfev}. RKF steps: {len(sol.t)}")
-        
-        # switch to tdvp_mu_vmf
-        w_min_list = xp.array(w_min_list)
-        if w_min_list.min() < self.evolve_config.reg_epsilon and self.evolve_config.vmf_auto_switch:
-            logger.debug(f"w.min={w_min_list.min()}, Switch to tdvp_mu_vmf")
-            mps.evolve_config.method =  EvolveMethod.tdvp_mu_vmf
-
-        return mps
 
     def _evolve_dmrg_tdvp_mu_vmf(self, mpo, evolve_dt) -> "Mps":
         """
-        variable mean field combined with matrix unfolding technique
+        variable mean field 
         see the difference between VMF and CMF, refer to Z. Phys. D 42, 113–129 (1997)
+        the matrix unfolding algorithm, see arXiv:1907.12044 
         only the RKF45 integration is used.
         The default RKF45 local step error tolerance is rtol:1e-5, atol:1e-8
         regulation of S is 1e-10, these default parameters could be changed in
@@ -792,7 +653,7 @@ class Mps(MatrixProduct):
             coef = 1j
         
         # only not canonicalise when force_ovlp=True and to_right=False
-        if not (self.evolve_config.force_ovlp == True and self.to_right == False):
+        if not (self.evolve_config.force_ovlp and not self.to_right):
             self.ensure_left_canon()
 
         # `self` should not be modified during the evolution
@@ -801,19 +662,36 @@ class Mps(MatrixProduct):
         else:
             mps = self.to_complex()
         
-        s_min_list = []
-        
+        # the quantum number symmetry is used
+        qnmat_list = []
+        position = [0]
+        qntot = mps.qntot
+        for imps in range(mps.site_num):
+            mps.move_qnidx(imps)
+            qnbigl, qnbigr, qnmat= mps._get_big_qn(imps)
+            qnmat_list.append(qnmat)
+            position.append(position[-1]+np.sum(qnmat == qntot))
+
+        sw_min_list = []
+
         def func_vmf(t,y):
             
-            s_min_list.clear()
+            sw_min_list.clear()
 
             # update mps: from left to right
-            offset = 0
             for imps in range(mps.site_num):
-                mps[imps] = y[offset:offset+mps[imps].size].reshape(mps[imps].shape)
-                offset += mps[imps].size
+                mps[imps] = svd_qn.cvec2cmat(mps[imps].shape, y[position[imps]:position[imps+1]],
+                        qnmat_list[imps], qntot)
             
-            environ_mps = mps.copy()
+            if self.evolve_config.method == EvolveMethod.tdvp_mu_vmf:
+                environ_mps = mps.copy()
+            elif self.evolve_config.method == EvolveMethod.tdvp_vmf:
+                environ_mps = mps
+                # the first S_R
+                S_R = ones([1, 1], dtype=mps.dtype)
+            else:
+                assert False
+
             environ = Environ(environ_mps, mpo, "L")
             environ.write_r_sentinel(environ_mps)
             
@@ -838,7 +716,6 @@ class Mps(MatrixProduct):
             # calculate hop_y: from right to left
             hop_y = xp.empty_like(y)
 
-            offset = 0
             for imps in mps.iter_idx_list(full=True):
                 shape = list(mps[imps].shape)
                 ltensor = environ.read("L", imps - 1)
@@ -853,71 +730,92 @@ class Mps(MatrixProduct):
                             coef, Ovlp_inv1=S_L_inv_list[imps+1],
                             Ovlp_inv0=S_L_inv_list[imps], Ovlp0=S_L_list[imps])
                                
-                    hop_y[offset-mps[imps].size:] = func(0, mps[imps].array.ravel())
-                    offset -= mps[imps].size
+                    hop_y[position[imps]:position[imps+1]] = func(0,
+                            mps[imps].array.ravel()).reshape(mps[imps].shape)[qnmat_list[imps]==qntot]
 
                     continue
                 
-                # perform qr on the environment mps
-                qnbigl, qnbigr = environ_mps._get_big_qn(imps + 1)
-                u, s, qnlset, v, s, qnrset = svd_qn.Csvd(
-                    environ_mps[imps + 1].asnumpy(),
-                    qnbigl,
-                    qnbigr,
-                    environ_mps.qntot,
-                    system="R",
-                    full_matrices=False,
-                )
-                vt = v.T
+                if self.evolve_config.method == EvolveMethod.tdvp_mu_vmf:
+                    # perform qr on the environment mps
+                    qnbigl, qnbigr, _ = environ_mps._get_big_qn(imps + 1)
+                    u, s, qnlset, v, s, qnrset = svd_qn.Csvd(
+                            environ_mps[imps + 1].asnumpy(), qnbigl, qnbigr,
+                            environ_mps.qntot, system="R", full_matrices=False)
+                    vt = v.T
 
-                environ_mps[imps + 1] = vt.reshape(environ_mps[imps + 1].shape)
+                    environ_mps[imps + 1] = vt.reshape(environ_mps[imps + 1].shape)
                 
-                rtensor = environ.GetLR(
-                    "R", imps + 1, environ_mps, mpo, itensor=None, method="System"
-                )
-                
-                s_min_list.append(s.min())
-                regular_s = _mu_regularize(s, epsilon=self.evolve_config.reg_epsilon)
+                    rtensor = environ.GetLR(
+                        "R", imps + 1, environ_mps, mpo, itensor=None, method="System"
+                    )
+                    
+                    sw_min_list.append(s.min())
+                    regular_s = _mu_regularize(s, epsilon=self.evolve_config.reg_epsilon)
+                    
+                    u = xp.asarray(u)
+                    us = Matrix(u.dot(xp.diag(s)))
 
-                us = Matrix(u.dot(np.diag(s)))
+                    rtensor = tensordot(rtensor, us, axes=(-1, -1))
+                    
+                    environ_mps[imps] = tensordot(environ_mps[imps], us, axes=(-1, 0))
+                    environ_mps.qn[imps + 1] = qnrset
+                    environ_mps.qnidx = imps
 
-                rtensor = tensordot(rtensor, us, axes=(-1, -1))
+                    S_inv = u.conj().dot(xp.diag(1.0 / regular_s)).T
                 
-                environ_mps[imps] = tensordot(environ_mps[imps], us, axes=(-1, 0))
-                environ_mps.qn[imps + 1] = qnrset
-                
-                S_inv = Matrix(u).conj().dot(xp.diag(1.0 / regular_s)).T
+                elif self.evolve_config.method == EvolveMethod.tdvp_vmf:
+                    rtensor = environ.GetLR(
+                        "R", imps + 1, environ_mps, mpo, itensor=None, method="System")
+                    
+                    # regularize density matrix
+                    # Note that S_R is (#.conj, #)
+                    S_R = transferMat(environ_mps, environ_mps.conj(), "R", imps + 1, Matrix(S_R)).asnumpy()
+                    w, u = scipy.linalg.eigh(S_R)
+                    
+                    # discard the negative eigenvalues due to numerical error
+                    w = np.where(w>0, w, 0)
+                    
+                    sw_min_list.append(w.min())
+
+                    epsilon = self.evolve_config.reg_epsilon
+                    w = w + epsilon * np.exp(-w / epsilon)
+                    
+                    u = xp.asarray(u)
+                    # S_inv is (#.conj, #)
+                    S_inv = u.dot(xp.diag(1.0 / w)).dot(u.T.conj()).T
 
                 hop = hop_factory(ltensor, rtensor, mpo[imps], len(shape))
 
-                func = integrand_func_factory(shape, hop, False, S_inv.array, True,
+                func = integrand_func_factory(shape, hop, False, S_inv, True,
                         coef, Ovlp_inv1=S_L_inv_list[imps+1],
                         Ovlp_inv0=S_L_inv_list[imps], Ovlp0=S_L_list[imps])
                 
-                hop_y[offset-mps[imps].size:offset] = func(0, mps[imps].array.ravel())
-                offset -= mps[imps].size
+                hop_y[position[imps]:position[imps+1]] = func(0,
+                        mps[imps].array.ravel()).reshape(mps[imps].shape)[qnmat_list[imps]==qntot]
             
             return hop_y
 
-        init_y = xp.concatenate([ms.array.flatten() for ms in mps])
+        init_y = xp.concatenate([ms.array[qnmat_list[ims]==qntot] for ims, ms in enumerate(mps)])
         # the ivp local error, please refer to the Scipy default setting
         sol = solve_ivp( func_vmf, (0, evolve_dt), init_y, method="RK45",
                 rtol=self.evolve_config.ivp_rtol,
                 atol=self.evolve_config.ivp_atol)
         
         # update mps: from left to right
-        offset = 0
         for imps in range(mps.site_num):
-            mps[imps] = sol.y[:, -1][offset:offset+mps[imps].size].reshape(mps[imps].shape)
-            offset += mps[imps].size
+            mps[imps] = svd_qn.cvec2cmat(mps[imps].shape, sol.y[:,-1][position[imps]:position[imps+1]],
+                    qnmat_list[imps], qntot)
         
         logger.debug(f"{self.evolve_config.method} VMF func called: {sol.nfev}. RKF steps: {len(sol.t)}")
         
-        s_min_list = xp.array(s_min_list)
-        # switch to tdvp_vmf
-        if s_min_list.min() > np.sqrt(self.evolve_config.reg_epsilon*10.) and self.evolve_config.vmf_auto_switch:
-            logger.debug(f"s.min={s_min_list.min()},Switch to tdvp_vmf")
+        sw_min_list = xp.array(sw_min_list)
+        # auto-switch between tdvp_mu_vmf and tdvp_vmf
+        if sw_min_list.min() > np.sqrt(self.evolve_config.reg_epsilon*10.) and self.evolve_config.vmf_auto_switch:
+            logger.debug(f"sw.min={sw_min_list.min()},Switch to tdvp_vmf")
             mps.evolve_config.method =  EvolveMethod.tdvp_vmf
+        elif sw_min_list.min() < self.evolve_config.reg_epsilon and self.evolve_config.vmf_auto_switch:
+            logger.debug(f"ww.min={sw_min_list.min()}, Switch to tdvp_mu_vmf")
+            mps.evolve_config.method =  EvolveMethod.tdvp_mu_vmf
 
         return mps
 
@@ -1001,7 +899,7 @@ class Mps(MatrixProduct):
                 continue
 
             # perform qr on the environment mps
-            qnbigl, qnbigr = environ_mps._get_big_qn(imps + 1)
+            qnbigl, qnbigr, _ = environ_mps._get_big_qn(imps + 1)
             u, s, qnlset, v, s, qnrset = svd_qn.Csvd(
                 environ_mps[imps + 1].asnumpy(),
                 qnbigl,
@@ -1026,6 +924,7 @@ class Mps(MatrixProduct):
 
             environ_mps[imps] = tensordot(environ_mps[imps], us, axes=(-1, 0))
             environ_mps.qn[imps + 1] = qnrset
+            environ_mps.qnidx = imps
 
             S_inv = Matrix(u).conj().dot(xp.diag(1.0 / regular_s)).T
 
@@ -1114,7 +1013,7 @@ class Mps(MatrixProduct):
                     local_steps.append(j)
                 mps_t = mps_t.reshape(shape)
 
-                qnbigl, qnbigr = mps._get_big_qn(imps)
+                qnbigl, qnbigr, _ = mps._get_big_qn(imps)
                 u, qnlset, v, qnrset = svd_qn.Csvd(
                     asnumpy(mps_t),
                     qnbigl,
@@ -1130,6 +1029,7 @@ class Mps(MatrixProduct):
                     mps[imps] = vt.reshape([-1] + shape[1:])
                     mps_conj[imps] = mps[imps].conj()
                     mps.qn[imps] = qnrset
+                    mps.qnidx = imps-1
 
                     rtensor = environ.GetLR(
                         "R", imps, mps, mpo, itensor=rtensor, method="System"
@@ -1165,6 +1065,7 @@ class Mps(MatrixProduct):
                     mps[imps] = u.reshape(shape[:-1] + [-1])
                     mps_conj[imps] = mps[imps].conj()
                     mps.qn[imps + 1] = qnlset
+                    mps.qnidx = imps+1
 
                     ltensor = environ.GetLR(
                         "L", imps, mps, mpo, itensor=ltensor, method="System"
