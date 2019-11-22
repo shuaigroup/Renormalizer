@@ -240,7 +240,7 @@ class EvolveConfig:
         reg_epsilon=1e-10,
         ivp_rtol=1e-5,
         ivp_atol=1e-8,
-        force_ovlp=False
+        force_ovlp=True
     ):
 
         self.method = method

@@ -613,7 +613,6 @@ class Mpo(MatrixProduct):
 
                     mpo.append(mo)
                     impo += 1
-
         mpo.qnidx = len(mpo) - 1
         mpo.to_right = False
         

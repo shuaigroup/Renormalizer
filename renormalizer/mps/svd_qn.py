@@ -214,3 +214,56 @@ def blockrecover(indices, U, dim):
     resortU[indices, :] = U
 
     return resortU
+
+
+def cvec2cmat(cshape, c, qnmat, nexciton, nroots=1):
+    # recover good quantum number vector c to matrix format
+    if nroots == 1:
+        cstruct = np.zeros(cshape, dtype=c.dtype)
+        np.place(cstruct, qnmat == nexciton, c)
+    else:
+        cstruct = []
+        for ic in c:
+            icstruct = np.zeros(cshape, dtype=ic.dtype)
+            np.place(icstruct, qnmat == nexciton, ic)
+            cstruct.append(icstruct)
+
+    return cstruct
+
+
+def construct_qnmat(mps, ephtable, pbond, addlist, method, system):
+    """
+    construct the quantum number pattern, the structure is as the coefficient
+    QN: quantum number list at each bond
+    ephtable : e-ph table 1 is electron and 0 is phonon 
+    pbond : physical pbond
+    addlist : the sigma orbital set
+    """
+    # print(method)
+    assert method in ["1site", "2site"]
+    assert system in ["L", "R"]
+    qnl = np.array(mps.qn[addlist[0]])
+    qnr = np.array(mps.qn[addlist[-1] + 1])
+    qnmat = qnl.copy()
+    qnsigmalist = []
+
+    for idx in addlist:
+
+        qnsigma = mps[idx].sigmaqn
+        qnmat = np.add.outer(qnmat, qnsigma)
+        qnsigmalist.append(qnsigma)
+
+    qnmat = np.add.outer(qnmat, qnr)
+
+    if method == "1site":
+        if system == "R":
+            qnbigl = qnl
+            qnbigr = np.add.outer(qnsigmalist[-1], qnr)
+        else:
+            qnbigl = np.add.outer(qnl, qnsigmalist[0])
+            qnbigr = qnr
+    else:
+        qnbigl = np.add.outer(qnl, qnsigmalist[0])
+        qnbigr = np.add.outer(qnsigmalist[-1], qnr)
+
+    return qnmat, qnbigl, qnbigr
