@@ -431,9 +431,9 @@ class Mpo(MatrixProduct):
                             raise NotImplementedError
                         else:
                             assert False
-                        qn += mpo.qntot
-                        mpo.qn.append([qn])
-                        mpo.append(mo)
+                    qn += mpo.qntot
+                    mpo.qn.append([qn])
+                    mpo.append(mo)
                 for ph in mol.dmrg_phs:
                     n = ph.n_phys_dim
                     mpo.append(np.diag(np.ones(n)).reshape((1, n, n, 1)))
@@ -613,9 +613,8 @@ class Mpo(MatrixProduct):
 
                     mpo.append(mo)
                     impo += 1
-        
-        mpo_dim = [1] * (len(mpo)+1)
         mpo.qnidx = len(mpo) - 1
+        mpo.to_right = False
         
         mpo.qntot = mpo.qn[-1][0]
         mpo.qn[-1] = [0]
@@ -714,37 +713,6 @@ class Mpo(MatrixProduct):
         # print('dim', [X[i].shape for i in range(len(X))])
         return X
 
-    @classmethod
-    def displacement(cls, mol_list: MolList, start: int, end: int):
-        if mol_list.scheme == 4:
-            raise NotImplementedError
-        mpo = cls()
-        mpo.mol_list = mol_list
-        e_op = construct_e_op_dict()
-        mpo.qn = [[0]]
-        qn = 0
-        for imol, mol in enumerate(mol_list):
-            if imol == start == end:
-                mt = e_op[r"a^\dagger a"]
-            elif imol == start:
-                mt = e_op[r"a"]
-                qn -= 1
-            elif imol == end:
-                mt = e_op[r"a^\dagger"]
-                qn += 1
-            else:
-                mt = e_op["Iden"]
-            mpo.append(mt.reshape(1, 2, 2, 1))
-            mpo.qn.append([qn])
-            for ph in mol.dmrg_phs:
-                assert ph.is_simple
-                n = ph.n_phys_dim
-                mpo.append(ph_op_matrix("Iden", n).reshape(1, n, n, 1))
-                mpo.qn.append([qn])
-        mpo.qntot = 0
-        mpo.qnidx = len(mpo) - 1
-        mpo.to_right = False
-        return mpo
 
     @classmethod
     def identity(cls, mol_list: MolList):

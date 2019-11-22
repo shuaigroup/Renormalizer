@@ -18,7 +18,7 @@ logger = logging.getLogger(__name__)
 
 class TransportAutoCorr(TdMpsJob):
 
-    def __init__(self, mol_list, temperature: Quantity, insteps: int=None, ievolve_config=None, compress_config=None, evolve_config=None, dump_dir: str=None, job_name: str=None):
+    def __init__(self, mol_list, temperature: Quantity, insteps: int=1, ievolve_config=None, compress_config=None, evolve_config=None, dump_dir: str=None, job_name: str=None):
         self.mol_list = mol_list
         self.h_mpo = Mpo(mol_list)
         self.j_oper = self._construct_flux_operator()
@@ -52,7 +52,7 @@ class TransportAutoCorr(TdMpsJob):
         logger.debug("constructing flux operator")
         j_list = []
         for i in range(len(self.mol_list) - 1):
-            j1 = Mpo.displacement(self.mol_list, i, i + 1).scale(self.mol_list.j_matrix[i, i + 1])
+            j1 = Mpo.e_intersite(self.mol_list, {i:r"a", i+1:r"a^\dagger"}, Quantity(self.mol_list.j_matrix[i, i + 1]))
             j1.compress_config.threshold = 1e-5
             j2 = j1.conj_trans().scale(-1)
             j_list.extend([j1, j2])

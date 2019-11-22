@@ -3,6 +3,9 @@
 # correction vector base
 import numpy as np
 from multiprocessing import Pool
+from renormalizer.mps import Mpo
+from renormalizer.utils import Quantity
+from renormalizer.utils.elementop import construct_e_op_dict, ph_op_matrix
 import logging
 import time
 
@@ -34,11 +37,10 @@ class SpectraCv(object):
         # percent used to update correction vector for each sweep process
         # see function mps.lib.select_basis
         if procedure_cv is None:
-            procedure_cv = [0.4, 0.4, 0.2, 0.2, 0.1, 0.1] + [0] * 15
+            procedure_cv = [0.4, 0.4, 0.2, 0.2, 0.1, 0.1] + [0] * 45
         self.procedure_cv = procedure_cv
         self.method = method
         self.cores = cores
-
     '''
     def check_qn(self, X):
         check_op = Mpo.onsite(self.mol_list, r"a^\dagger a", dipole=False)
@@ -48,6 +50,8 @@ class SpectraCv(object):
     def run(self):
         start = time.time()
         pool = Pool(processes=self.cores)
+        logger.info(f"{len(self.freq_reg)} total frequency to do")
+        logger.info(f"{self.cores} multiprocess parallelization activated")
         freq_reg = self.freq_reg
         spectra = []
         for i_spec in pool.imap(
@@ -60,11 +64,10 @@ class SpectraCv(object):
     def cv_solve(self, omega):
         self.hop_time = []
         logger.info(f'begin calculate omega:{omega}')
-        # progress = (omega-self.freq_reg[0])/(self.freq_reg[-1]-self.freq_reg[0])*100
+        # progress = (omega-self.freq_reg[0])/(
+        # self.freq_reg[-1]-self.freq_reg[0])*100
         # logger.info(f"procesees:{progress}/{100}")
 
-        # self.init_oper()
-        # self.init_mps()
         total_num = 1
         spectra = []
 
@@ -105,7 +108,8 @@ class SpectraCv(object):
                 result.append(l_value)
                 num += 1
                 total_num += 1
-                # breaking condition, depending on problem, can make it more strict
+                # breaking condition, depending on problem,
+                # can make it more strict
                 # by requiring the minimum sweep number as well as the tol
                 if num > 3:
                     if abs((result[-1] - result[-3]) / result[-1]) < 0.001:

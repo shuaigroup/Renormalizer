@@ -12,7 +12,12 @@ from renormalizer.mps.matrix import (
 from renormalizer.cv.spectra_cv import SpectraCv
 from renormalizer.mps import (Mpo, svd_qn, MpDm, ThermalProp)
 from renormalizer.mps.lib import update_cv
+from renormalizer.utils import (
+    CompressConfig, EvolveConfig,
+    CompressCriteria, EvolveMethod
+)
 import copy
+import os
 import logging
 import numpy as np
 import scipy
@@ -69,9 +74,12 @@ class SpectraFtCV(SpectraCv):
         m_max,
         eta,
         icompress_config=None,
+        ievolve_config=None,
         insteps=None,
         method='1site',
         procedure_cv=None,
+        dump_dir: str=None,
+        job_name=None,
         cores=1
     ):
         super().__init__(
@@ -79,8 +87,19 @@ class SpectraFtCV(SpectraCv):
             cores
         )
         self.temperature = temperature
+        self.evolve_config = ievolve_config
         self.compress_config = icompress_config
+        if self.evolve_config is None:
+            self.evolve_config = \
+                EvolveConfig()
+        if self.compress_config is None:
+            self.compress_config = \
+                CompressConfig(CompressCriteria.fixed,
+                               max_bonddim=m_max)
+            self.compress_config.set_bonddim(len(mol_list.pbond_list))
         self.insteps = insteps
+        self.job_name = job_name
+        self.dump_dir = dump_dir
 
     def init_mps(self):
         beta = self.temperature.to_beta()
@@ -90,13 +109,30 @@ class SpectraFtCV(SpectraCv):
             i_mpo = MpDm.max_entangled_gs(self.mol_list)
             tp = ThermalProp(i_mpo, self.h_mpo, exact=True, space='GS')
             tp.evolve(None, 1, beta / 2j)
+            ket_mpo = tp.latest_mps
         else:
-            dipole_mpo = Mpo.onsite(self.mol_list, "a", dipole=True)
             impo = MpDm.max_entangled_ex(self.mol_list)
+            dipole_mpo = Mpo.onsite(self.mol_list, "a", dipole=True)
+            if self.job_name is None:
+                job_name = None
+            else:
+                job_name = self.job_name + "_thermal_prop"
             impo.compress_config = self.compress_config
-            tp = ThermalProp(impo, self.h_mpo)
-            tp.evolve(None, self.insteps, beta / 2j)
-        ket_mpo = tp.latest_mps
+            tp = ThermalProp(
+                impo, self.h_mpo, evolve_config=self.evolve_config,
+                dump_dir=self.dump_dir, job_name=job_name)
+            self._defined_output_path = tp._defined_output_path
+            if tp._defined_output_path:
+                try:
+                    logger.info(f"load density matrix from {self._thermal_dump_path}")
+                    ket_mpo = MpDm.load(self.mol_list, self._thermal_dump_path)
+                    logger.info(f"density matrix loaded: {ket_mpo}")
+                except FileNotFoundError:
+                    logger.debug(f"no file found in {self._thermal_dump_path}")
+                    tp.evolve(None, self.insteps, beta / 2j)
+                    ket_mpo = tp.latest_mps
+        if tp._defined_output_path:
+            ket_mpo.dump(self._thermal_dump_path)
         self.a_ket_mpo = dipole_mpo.apply(ket_mpo, canonicalise=True)
         self.cv_mpo = Mpo.finiteT_cv(self.mol_list, 1, self.m_max,
                                      self.spectratype, percent=1.0)
@@ -104,6 +140,11 @@ class SpectraFtCV(SpectraCv):
 
     def init_oper(self):
         pass
+
+    @property
+    def _thermal_dump_path(self):
+        assert self._defined_output_path
+        return os.path.join(self.dump_dir, self.job_name + "_impo.npz")
 
     def oper_prepare(self, omega):
         omega_minus_H = copy.deepcopy(self.h_mpo)
@@ -274,6 +315,7 @@ class SpectraFtCV(SpectraCv):
         else:
             x, info = scipy.sparse.linalg.cg(
                 mata, vecb, tol=1.e-5, x0=guess, maxiter=500, M=M, atol=0)
+        # logger.info(f"linear eq dim: {nonzeros}")
         # logger.info(f'times for hop:{count[0]}')
         self.hop_time.append(count[0])
         if info != 0:

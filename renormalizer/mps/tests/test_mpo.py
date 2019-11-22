@@ -116,17 +116,3 @@ def test_phonon_onsite():
     b = b2.conj_trans()
     assert b.distance(Mpo.ph_onsite(mol_list, r"b", 0, 0)) == 0
     assert b.apply(p2).normalize().distance(p1) == pytest.approx(0, abs=1e-5)
-
-
-def test_displacement():
-    def get_e_occu(idx):
-        res = np.zeros(len(mol_list))
-        res[idx] = 1
-        return res
-    gs = Mps.gs(mol_list, max_entangled=False)
-    gs = Mpo.onsite(mol_list, r"a^\dagger", mol_idx_set={0}).apply(gs).compress()
-    assert np.allclose(gs.e_occupations, get_e_occu(0))
-    gs = Mpo.displacement(mol_list, 0, 2) @ gs
-    assert np.allclose(gs.e_occupations, get_e_occu(2))
-    gs = Mpo.displacement(mol_list, 2, 0) @ gs
-    assert np.allclose(gs.e_occupations ,get_e_occu(0))

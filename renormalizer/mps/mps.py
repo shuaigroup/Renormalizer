@@ -630,7 +630,6 @@ class Mps(MatrixProduct):
                 )
             return compressed_sum(termlist)
 
-
     def _evolve_dmrg_tdvp_mu_vmf(self, mpo, evolve_dt) -> "Mps":
         """
         variable mean field 
