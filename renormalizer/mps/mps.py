@@ -474,8 +474,14 @@ class Mps(MatrixProduct):
         """
         if not self.use_dummy_qn and self.nexciton == 0:
             raise ValueError("Expanding bond dimensional without exciton is meaningless")
-        m_target = self.compress_config.bond_dim_max_value
-        logger.debug(f"target for expanding: {m_target}")
+        # expander m target
+        m_target = self.compress_config.bond_dim_max_value - self.bond_dims_mean
+        # will be restored at exit
+        self.compress_config.bond_dim_max_value = m_target
+        if self.compress_config.criteria is not CompressCriteria.fixed:
+            logger.warning("Setting compress criteria to fixed")
+            self.compress_config.criteria = CompressCriteria.fixed
+        logger.debug(f"target for expander: {m_target}")
         if hint_mpo is None:
             expander = self.__class__.random(self.mol_list, 1, m_target)
         else:
@@ -511,11 +517,8 @@ class Mps(MatrixProduct):
                     lastone = lastone.canonicalise().compress(m_target // hint_mpo.bond_dims_mean)
                 lastone = hint_mpo @ lastone
         logger.debug(f"expander bond dimension: {expander.bond_dims}")
-        orig_config, self.compress_config = self.compress_config, expander.compress_config
-        # final compression
-        res = (self + expander.scale(coef, inplace=True)).canonicalise().compress().canonical_normalize()
-        res.compress_config = orig_config
-        return res
+        self.compress_config.bond_dim_max_value += self.bond_dims_mean
+        return (self + expander.scale(coef, inplace=True)).canonicalise().canonicalise().canonical_normalize()
 
     def evolve(self, mpo, evolve_dt):
         if self.hybrid_tdh:
