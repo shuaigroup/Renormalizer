@@ -320,7 +320,7 @@ class SpectraFtCV(SpectraCv):
             x, info = scipy.sparse.linalg.cg(
                 mata, vecb, tol=1.e-5, x0=guess, maxiter=500, M=M, atol=0)
         # logger.info(f"linear eq dim: {nonzeros}")
-        # logger.info(f'times for hop:{count[0]}')
+        # logger.info(f'times for hop:{count}')
         self.hop_time.append(count)
         if info != 0:
             logger.warning(
