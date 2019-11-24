@@ -13,6 +13,7 @@ import scipy
 from renormalizer.mps.tdh import mflib
 from renormalizer.mps.tdh.propagation import unitary_propagation
 from renormalizer.utils import Quantity
+from renormalizer.utils.utils import cast_float
 from renormalizer.utils.rk import RungeKutta
 
 # This module relies on tdmps which relies on Mps and Mpdm. Be careful on cyclic dependence.
@@ -217,9 +218,9 @@ def construct_H_Ham(
             iwfn += 1
 
     if debug:
-        return HAM, Etot, A_el
+        return HAM, float(Etot), A_el
     else:
-        return HAM, Etot
+        return HAM, float(Etot)
 
 
 class TdHartree(TdMpsJob):
@@ -249,6 +250,7 @@ class TdHartree(TdMpsJob):
             self.fv += len(mol.hartree_phs)
 
         super(TdHartree, self).__init__()
+        self.info_interval = np.inf
 
     def init_mps(self):
         raise NotImplementedError
@@ -515,6 +517,11 @@ class Dynamics(TdHartree):
     @property
     def e_occupations_array(self):
         return np.array(self._e_occupations_array)
+
+    def get_dump_dict(self):
+        return {
+            "e": cast_float(self._e_occupations_array),
+            "time series": cast_float(self.evolve_times_array)}
 
 
 def construct_intersiteO(mol, idxmol, j_matrixdxmol):
