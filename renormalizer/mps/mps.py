@@ -60,10 +60,10 @@ def adaptive_tdvp(fun):
             mps_half1 = fun(self, mpo, dt / 2)._dmrg_normalize()
             mps_half2 = fun(mps_half1, mpo, dt / 2)._dmrg_normalize()
             mps = fun(self, mpo, dt)._dmrg_normalize()
-            
-            del mps_half1
-
             dis = mps.distance(mps_half2)
+
+            del mps_half1, mps
+
             p = (0.75 * config.adaptive_rtol / (dis + 1e-30)) ** (1./3)    
             logger.debug(f"distance: {dis}, enlarge p parameter: {p}")
             
@@ -72,7 +72,7 @@ def adaptive_tdvp(fun):
             p_max = 2.      # safeguard for maximal allowed p
 
             if xp.allclose(dt, evolve_dt):  
-                # approahes the end 
+                # approaches the end
                 if p < p_restart:
                     # not accurate in this final sub-step will restart
                     config.guess_dt = dt * max(p_min, p)
