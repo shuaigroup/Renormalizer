@@ -191,7 +191,7 @@ class SpectraZtCV(SpectraCv):
         else:
             pre_a_mat = xp.einsum(
                 'aba, bccd, deef, gfg->aceg', first_L, a_oper_isite2,
-                self.a_oper[isite - 1], first_R)[qnmat == constrain_qn]
+                a_oper_isite1, first_R)[qnmat == constrain_qn]
 
         pre_a_mat = np.diag(1./pre_a_mat)
 
