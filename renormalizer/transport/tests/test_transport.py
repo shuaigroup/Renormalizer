@@ -7,7 +7,7 @@ import os
 import pytest
 
 from renormalizer.model import Phonon, Mol, MolList
-from renormalizer.mps import Mps, Mpo
+from renormalizer.mps import Mps, Mpo, ThermalProp, MpDm, MpDmFull
 from renormalizer.mps.solver import optimize_mps
 from renormalizer.transport import ChargeTransport
 from renormalizer.utils import Quantity
@@ -26,7 +26,8 @@ from renormalizer.transport.tests.band_param import (
 
 import numpy as np
 
-def test_init_state():
+
+def test_zt_init_state():
     ph = Phonon.simple_phonon(Quantity(1), Quantity(1), 10)
     mol_list = MolList([Mol(Quantity(0), [ph])], Quantity(0), scheme=3)
     mpo = Mpo(mol_list)
@@ -34,6 +35,20 @@ def test_init_state():
     optimize_mps(mps, mpo)
     ct = ChargeTransport(mol_list)
     assert mps.angle(ct.latest_mps) == pytest.approx(1)
+
+
+def test_ft_init_state():
+    ph = Phonon.simple_phonon(Quantity(1), Quantity(1), 10)
+    mol_list = MolList([Mol(Quantity(0), [ph])], Quantity(0), scheme=3)
+    temperature = Quantity(0.1)
+    mpo = Mpo(mol_list)
+    init_mpdm = MpDm.max_entangled_ex(mol_list)
+    tp = ThermalProp(init_mpdm, mpo, space="EX", exact=True)
+    tp.evolve(nsteps=20, evolve_time=temperature.to_beta() / 2j)
+    ct = ChargeTransport(mol_list, temperature=temperature)
+    tp_mpdm = MpDmFull.from_mpdm(tp.latest_mps)
+    ct_mpdm = MpDmFull.from_mpdm(ct.latest_mps)
+    assert tp_mpdm.angle(ct_mpdm) == pytest.approx(1)
 
 
 @pytest.mark.parametrize(
