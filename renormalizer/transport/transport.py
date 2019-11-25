@@ -149,13 +149,7 @@ class ChargeTransport(TdMpsJob):
             idx = self.mol_list.ph_idx(center_mol_idx, i)
             mt = gs_mp[idx][0, ..., 0].asnumpy()
             evecs = ph.get_displacement_evecs()
-            if gs_mp.is_mps:
-                mt = evecs.dot(mt)
-            elif gs_mp.is_mpdm:
-                assert np.allclose(np.diag(np.diag(mt)), mt)
-                mt = evecs.dot(evecs.T).dot(mt)
-            else:
-                assert False
+            mt = evecs.dot(mt)
             logger.debug(f"relaxed mt: {mt}")
             gs_mp[idx] = mt.reshape([1] + list(mt.shape) + [1])
 
@@ -190,7 +184,7 @@ class ChargeTransport(TdMpsJob):
                 energy = Quantity(gs_mp.expectation(tentative_mpo))
                 mpo = Mpo(self.mol_list, offset=energy)
                 tp = ThermalProp(gs_mp, mpo, exact=True, space="GS")
-                tp.evolve(None, len(gs_mp), self.temperature.to_beta() / 2j)
+                tp.evolve(None, max(20, len(gs_mp)), self.temperature.to_beta() / 2j)
                 gs_mp = tp.latest_mps
                 if self._defined_output_path:
                     gs_mp.dump(self._thermal_dump_path)

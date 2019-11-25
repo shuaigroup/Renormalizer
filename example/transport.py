@@ -35,12 +35,8 @@ if __name__ == "__main__":
         evolve_config=evolve_config,
         rdm=False,
     )
-    # ct.stop_at_edge = True
-    # ct.memory_limit = 2 ** 30  # 1 GB
-    # ct.memory_limit /= 10 # 100 MB
     ct.dump_dir = param["output dir"]
     ct.job_name = param["fname"]
     ct.custom_dump_info["comment"] = param["comment"]
-    # ct.latest_mps.compress_add = True
     ct.evolve(param.get("evolve dt"), param.get("nsteps"), param.get("evolve time"))
     # ct.evolve(evolve_dt, 100, param.get("evolve time"))
