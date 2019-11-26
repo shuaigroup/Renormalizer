@@ -13,6 +13,7 @@ from renormalizer.mps.matrix import (
     multi_tensor_contract,
 )
 from renormalizer.mps.solver import construct_mps_mpo_2, optimize_mps
+from renormalizer.utils import OptimizeConfig
 import logging
 import scipy
 import copy
@@ -96,7 +97,7 @@ class SpectraZtCV(SpectraCv):
                 self.mol_list, self.procedure_gs[0][0], self.nexciton
             )
         # ground state calculation
-        mps.optimize_config.procdure = self.procedure_gs
+        mps.optimize_config = OptimizeConfig(procedure=self.procedure_gs)
         mps.optimize_config.method = "2site"
         self.lowest_e = optimize_mps(mps, self.mpo)
         ket_mps = dipole_mpo.apply(mps, canonicalise=True)
