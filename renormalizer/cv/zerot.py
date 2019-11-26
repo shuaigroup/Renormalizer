@@ -40,6 +40,7 @@ class SpectraZtCV(SpectraCv):
         procedure_gs : list, optional
             the procedure for ground state calculation
             if not provided, procedure_gs = [[10, 0.4], [20, 0.2], [30, 0.1], [40, 0], [40, 0]]
+            warning: the default one won't be enough for large systems!
         procedure_cv : list
             percent used for each sweep
         cores : int
