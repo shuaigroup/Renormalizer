@@ -1255,44 +1255,61 @@ class Mps(MatrixProduct):
         return res[0, :, 0].asnumpy()
 
     def _calc_reduced_density_matrix(self, mp1, mp2):
-        # further optimization is difficult. There are totally N^2 intermediate results to remember.
-        reduced_density_matrix = np.zeros(
-            (self.mol_list.mol_num, self.mol_list.mol_num), dtype=backend.complex_dtype
-        )
-        for i in range(self.mol_list.mol_num):
-            for j in range(self.mol_list.mol_num):
-                elem = ones((1, 1))
-                e_idx = -1
-                for mt_idx, (mt1, mt2) in enumerate(zip(mp1, mp2)):
-                    if self.ephtable.is_electron(mt_idx):
-                        e_idx += 1
-                        axis_idx1 = int(e_idx == i)
-                        axis_idx2 = int(e_idx == j)
-                        sub_mt1 = mt1[:, axis_idx1, :, :]
-                        sub_mt2 = mt2[:, :, axis_idx2, :]
-                        elem = tensordot(elem, sub_mt1, axes=(0, 0))
-                        elem = tensordot(elem, sub_mt2, axes=[(0, 1), (0, 1)])
-                    else:
-                        elem = tensordot(elem, mt1, axes=(0, 0))
-                        elem = tensordot(elem, mt2, axes=[(0, 1, 2), (0, 2, 1)])
-                reduced_density_matrix[i][j] = elem.flatten()[0]
+        if self.mol_list.scheme < 4:
+            # further optimization is difficult. There are totally N^2 intermediate results to remember.
+            reduced_density_matrix = np.zeros(
+                (self.mol_list.mol_num, self.mol_list.mol_num), dtype=backend.complex_dtype
+            )
+            for i in range(self.mol_list.mol_num):
+                for j in range(self.mol_list.mol_num):
+                    elem = ones((1, 1))
+                    e_idx = -1
+                    for mt_idx, (mt1, mt2) in enumerate(zip(mp1, mp2)):
+                        if self.ephtable.is_electron(mt_idx):
+                            e_idx += 1
+                            axis_idx1 = int(e_idx == i)
+                            axis_idx2 = int(e_idx == j)
+                            sub_mt1 = mt1[:, axis_idx1, :, :]
+                            sub_mt2 = mt2[:, :, axis_idx2, :]
+                            elem = tensordot(elem, sub_mt1, axes=(0, 0))
+                            elem = tensordot(elem, sub_mt2, axes=[(0, 1), (0, 1)])
+                        else:
+                            elem = tensordot(elem, mt1, axes=(0, 0))
+                            elem = tensordot(elem, mt2, axes=[(0, 1, 2), (0, 2, 1)])
+                    reduced_density_matrix[i][j] = elem.flatten()[0]
+        elif self.mol_list.scheme == 4:
+            e_idx = self.mol_list.e_idx()
+            l = ones((1, 1))
+            for i in range(e_idx):
+                l = tensordot(l, mp1[i], axes=(0, 0))
+                l = tensordot(l, mp2[i], axes=([0, 1, 2], [0, 2, 1]))
+            r = ones((1, 1))
+            for i in range(len(self)-1, e_idx, -1):
+                r = tensordot(mp1[i], r, axes=(3, 0))
+                r = tensordot(r, mp2[i], axes=([1, 2, 3], [2, 1, 3]))
+            #       f
+            #       |
+            # S--b--S--g--S
+            # |     |     |
+            # |     c     |
+            # |     |     |
+            # S--a--S--e--S
+            #       |
+            #       d
+            path = [
+                ([0, 1], "ab, adce -> bdce"),
+                ([2, 0], "bdce, bcfg -> defg"),
+                ([1, 0], "defg, eg -> df"),
+            ]
+            reduced_density_matrix = asnumpy(multi_tensor_contract(path, l, mp1[e_idx], mp2[e_idx], r).array)[1:, 1:]
+        else:
+            assert False
         return reduced_density_matrix
 
     def calc_reduced_density_matrix(self) -> np.ndarray:
-        if self.mol_list.scheme < 4:
-            mp1 = [mt.reshape(mt.shape[0], mt.shape[1], 1, mt.shape[2]) for mt in self]
-            mp2 = [mt.reshape(mt.shape[0], 1, mt.shape[1], mt.shape[2]).conj() for mt in self]
-            return self._calc_reduced_density_matrix(mp1, mp2)
-        elif self.mol_list.scheme == 4:
-            # be careful this method should be read-only
-            copy = self.copy()
-            # make sure it's canonicalised before calculating reduced density matrix
-            copy.canonicalise()
-            copy.canonicalise(self.mol_list.e_idx())
-            e_mo = copy[self.mol_list.e_idx()]
-            return tensordot(e_mo.conj(), e_mo, axes=((0, 2), (0, 2))).asnumpy()[1:, 1:]
-        else:
-            assert False
+        mp1 = [mt.reshape(mt.shape[0], mt.shape[1], 1, mt.shape[2]) for mt in self]
+        mp2 = [mt.reshape(mt.shape[0], 1, mt.shape[1], mt.shape[2]).conj() for mt in self]
+        return self._calc_reduced_density_matrix(mp1, mp2)
 
     def dump(self, fname):
         data_dict = dict()
@@ -1468,6 +1485,8 @@ def transferMat(mps, mpsconj, domain, imps, val):
         elif domain == "L":
             val = tensordot(mpsconj[imps], val, axes=(0, 0))
             val = tensordot(val, mps[imps], axes=([0, 2], [1, 0]))
+        else:
+            assert False
     
     elif mps[0].ndim == 4:
         if domain == "R":
@@ -1476,6 +1495,8 @@ def transferMat(mps, mpsconj, domain, imps, val):
         elif domain == "L":
             val = tensordot(mpsconj[imps], val, axes=(0, 0))
             val = tensordot(val, mps[imps], axes=([0, 3, 1], [1, 0, 2]))
+        else:
+            assert False
     else:
         raise ValueError(f"the dim of local mps is not correct: {mps[0].ndim}")
 

@@ -169,16 +169,7 @@ class MpDm(MpDmBase):
             assert False
 
     def calc_reduced_density_matrix(self) -> np.ndarray:
-        if self.mol_list.scheme < 4:
-            return self._calc_reduced_density_matrix(self, self.conj_trans())
-        elif self.mol_list.scheme == 4:
-            # be careful this method should be read-only
-            copy = self.copy().canonicalise()
-            copy.canonicalise(self.mol_list.e_idx())
-            e_mo = copy[self.mol_list.e_idx()]
-            return tensordot(e_mo, e_mo.conj(), axes=((0, 2 ,3), (0, 2, 3))).asnumpy()[1:, 1:]
-        else:
-            assert False
+        return self._calc_reduced_density_matrix(self, self.conj_trans())
 
     def evolve_exact(self, h_mpo, evolve_dt, space):
         MPOprop, ham, Etot = self.hybrid_exact_propagator(
