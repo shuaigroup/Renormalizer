@@ -121,7 +121,6 @@ def assert_iterable_equal(i1, i2):
         [3, 0.8, 3.87e-3, [[1345.6738910804488, 16.274571056529368]], 4, 2, 15, 100],
     ),
 )
-@pytest.mark.parametrize("scheme", (3, 4))
 def test_reduced_density_matrix(
     mol_num,
     j_constant_value,
@@ -131,7 +130,6 @@ def test_reduced_density_matrix(
     evolve_dt,
     nsteps,
     temperature,
-    scheme,
 ):
     ph_list = [
         Phonon.simple_phonon(
@@ -139,18 +137,25 @@ def test_reduced_density_matrix(
         )
         for omega, displacement in ph_info
     ]
-    mol_list = MolList(
+    mol_list3 = MolList(
         [Mol(Quantity(elocalex_value, "a.u."), ph_list)] * mol_num,
         Quantity(j_constant_value, "eV"),
-        scheme=scheme,
+        scheme=3,
     )
-    ct = ChargeTransport(
-        mol_list, temperature=Quantity(temperature, "K"), stop_at_edge=False, rdm=True
+
+    ct3 = ChargeTransport(
+        mol_list3, temperature=Quantity(temperature, "K"), stop_at_edge=False, rdm=True
     )
-    ct.evolve(evolve_dt, nsteps)
-    for rdm, e in zip(ct.reduced_density_matrices, ct.e_occupations_array):
-        # best we can do?
-        assert np.allclose(np.diag(rdm), e)
+    ct3.evolve(evolve_dt, nsteps)
+
+    mol_list4 = mol_list3.switch_scheme(4)
+    ct4 = ChargeTransport(
+        mol_list4, temperature=Quantity(temperature, "K"), stop_at_edge=False, rdm=True
+    )
+    ct4.evolve(evolve_dt, nsteps)
+    for rdm3, rdm4, e in zip(ct3.reduced_density_matrices, ct4.reduced_density_matrices, ct3.e_occupations_array):
+        assert np.allclose(rdm3, rdm4, atol=1e-3)
+        assert np.allclose(np.diag(rdm3), e)
 
 
 @pytest.mark.parametrize(

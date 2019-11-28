@@ -8,6 +8,7 @@ from collections import OrderedDict
 from functools import partial
 
 from typing import List
+from scipy.linalg import logm
 
 from renormalizer.mps import Mpo, Mps, MpDm, MpDmFull, SuperLiouville, ThermalProp, load_thermal_state
 from renormalizer.model import MolList
@@ -80,8 +81,6 @@ class ChargeTransport(TdMpsJob):
             ``rdm`` is set to ``True``.
 
     """
-    # all possible outputs
-    all_outputs = ["r_square", "e_occupations", "ph_occupations"]
 
     def __init__(
         self,
@@ -91,7 +90,6 @@ class ChargeTransport(TdMpsJob):
         evolve_config: EvolveConfig = None,
         stop_at_edge: bool = True,
         init_electron=InitElectron.relaxed,
-        logging_output: List[str] = None,
         rdm: bool = False,
         dissipation: float = 0,
         dump_dir: str = None,
@@ -99,14 +97,6 @@ class ChargeTransport(TdMpsJob):
     ):
         self.mol_list: MolList = mol_list
         self.temperature = temperature
-        if logging_output is None:
-            self.logging_output = self.all_outputs
-        else:
-            if not set(logging_output) < set(self.all_outputs):
-                raise ValueError(
-                    f"Invalid logging output option. Expected chosen from {self.all_outputs}. Got {logging_output}"
-                )
-            self.logging_output = logging_output
         self.mpo = None
         self.init_electron = init_electron
         self.dissipation = dissipation
@@ -115,11 +105,14 @@ class ChargeTransport(TdMpsJob):
         else:
             self.compress_config: CompressConfig = compress_config
         self.energies = []
-        self._r_square_array = []
-        self._e_occupations_array = []
-        self._ph_occupations_array = []
+        self.r_square_array = []
+        self.e_occupations_array = []
+        self.ph_occupations_array = []
         self.reduced_density_matrices = [] if rdm else None
-        self._k_occupations_array = []
+        self.k_occupations_array = []
+        # von Neumann entropy
+        self.vn_entropy_array = []
+        self.coherent_length_array = []
         super(ChargeTransport, self).__init__(evolve_config, dump_dir, job_name)
         assert self.mpo is not None
 
@@ -220,8 +213,13 @@ class ChargeTransport(TdMpsJob):
             assert rdm.shape == (n, n)
             transform = np.exp(-1j * (np.arange(-n, n, 2)/n * np.pi).reshape(-1, 1) * np.arange(0, n).reshape(1, -1)) / np.sqrt(n)
             k = np.diag(transform @ rdm @ transform.conj().T).real
-            logger.info(f"k_occupations: {k}")
-            self._k_occupations_array.append(k)
+            self.k_occupations_array.append(k)
+
+            # von Neumann entropy
+            entropy = -np.trace(rdm @ logm(rdm))
+            self.vn_entropy_array.append(entropy)
+
+            self.coherent_length_array.append(np.abs(rdm).sum() - np.trace(rdm).real)
 
         else:
             rdm = None
@@ -230,13 +228,11 @@ class ChargeTransport(TdMpsJob):
             e_occupations = np.diag(rdm).real
         else:
             e_occupations = mps.e_occupations
-        self._e_occupations_array.append(e_occupations)
-        self._r_square_array.append(calc_r_square(e_occupations))
-        self._ph_occupations_array.append(mps.ph_occupations)
+        self.e_occupations_array.append(e_occupations)
+        self.r_square_array.append(calc_r_square(e_occupations))
+        self.ph_occupations_array.append(mps.ph_occupations)
 
-        for attr_str in self.logging_output:
-            self_array = getattr(self, f"_{attr_str}_array")
-            logger.info(f"{attr_str}: {self_array[-1]}")
+        logger.info(f"e occupations: {self.e_occupations_array[-1]}")
 
     def evolve_single_step(self, evolve_dt):
         old_mps = self.latest_mps
@@ -259,13 +255,14 @@ class ChargeTransport(TdMpsJob):
         dump_dict["total time"] = self.evolve_times[-1]
         dump_dict["other info"] = self.custom_dump_info
         # make np array json serializable
-        dump_dict["r square array"] = cast_float(self.r_square_array)
+        dump_dict["r square array"] = self.r_square_array
         dump_dict["electron occupations array"] = cast_float(self.e_occupations_array)
         dump_dict["phonon occupations array"] = cast_float(self.ph_occupations_array)
         dump_dict["k occupations array"] = cast_float(self.k_occupations_array)
+        dump_dict["entropy"] = self.vn_entropy_array
         # dump_dict["elocalex arrays"] = [list(e) for e in self.elocalex_arrays]
         # dump_dict["j arrays"] = [list(j) for j in self.j_arrays]
-        dump_dict["coherent length array"] = cast_float(self.coherent_length_array.real)
+        dump_dict["coherent length array"] = cast_float(self.coherent_length_array)
         if self.reduced_density_matrices:
             dump_dict["final reduced density matrix real"] = cast_float(
                 self.reduced_density_matrices[-1].real
@@ -275,33 +272,6 @@ class ChargeTransport(TdMpsJob):
             )
         dump_dict["time series"] = list(self.evolve_times)
         return dump_dict
-
-    @property
-    def r_square_array(self):
-        return np.array(self._r_square_array)
-
-    @property
-    def e_occupations_array(self):
-        return np.array(self._e_occupations_array)
-
-    @property
-    def ph_occupations_array(self):
-        return np.array(self._ph_occupations_array)
-
-    @property
-    def k_occupations_array(self):
-        return np.array(self._k_occupations_array)
-
-    @property
-    def coherent_length_array(self):
-        if self.reduced_density_matrices is None:
-            return np.array([])
-        return np.array(
-            [
-                np.abs(rdm).sum() - np.trace(rdm).real
-                for rdm in self.reduced_density_matrices
-            ]
-        )
 
     def is_similar(self, other: "ChargeTransport", rtol=1e-3):
         all_close_with_tol = partial(np.allclose, rtol=rtol, atol=1e-3)
@@ -329,4 +299,4 @@ def calc_r_square(e_occupations):
         return 0
     r_mean_square = np.average(r_list, weights=e_occupations) ** 2
     mean_r_square = np.average(r_list ** 2, weights=e_occupations)
-    return mean_r_square - r_mean_square
+    return float(mean_r_square - r_mean_square)
