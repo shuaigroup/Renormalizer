@@ -1,7 +1,9 @@
 import logging
+from functools import wraps
 
 import numpy as np
 import scipy
+from scipy.linalg import expm
 
 from renormalizer.model import MolList
 from renormalizer.model.ephtable import EphTable
@@ -27,9 +29,6 @@ logger = logging.getLogger(__name__)
 # todo: refactor init
 # the code is hard to understand...... need some closer look
 
-# todo: refactor scheme4, add QN and the 0 electron state!
-# the problem of the current scheme4 is that there are states (0 electron state) that the
-# scheme can not represent
 
 def base_convert(n, base):
     """
@@ -199,12 +198,84 @@ def get_qb_mpo_dim_qn(mol_list, old_dim, old_qn, rep):
     return qbopera, new_dim, new_qn
 
 
+def interaction_picture(fun):
+    @wraps(fun)
+    def wrapped(*args, **kwargs):
+        mpo = fun(*args, **kwargs)
+        mol_list: MolList = args[0]
+        t = mol_list.inter_t
+        if t is None:
+            return mpo
+        prop1: Mpo = mpo.__class__.exact_propagator(mol_list, 1j * t, include_e=True)
+        prop2: Mpo = mpo.__class__.exact_propagator(mol_list, -1j * t, include_e=True)
+        return prop1 @ mpo @ prop2
+    return wrapped
+
 class Mpo(MatrixProduct):
     """
     Matrix product operator (MPO)
     """
     @classmethod
-    def exact_propagator(cls, mol_list: MolList, x, space="GS", shift=0.0):
+    def diagonal(cls, mol_list: MolList):
+
+        mpo = cls()
+        mpo.mol_list = mol_list
+
+        for imol, mol in enumerate(mol_list):
+            if mol_list.scheme < 4:
+                mo = np.zeros((2, 2))
+                mo[1, 1] = mol.elocalex + mol.reorganization_energy
+                mpo.append(mo.reshape(1, 2, 2, 1))
+            elif mol_list.scheme == 4:
+                if len(mpo) == mol_list.e_idx():
+                    n = mol_list.mol_num
+                    e = [0] + [mol.elocalex + mol.reorganization_energy for mol in mol_list]
+                    mo = np.diag(e)
+                    mpo.append(mo.reshape(1, n+1, n+1, 1))
+            else:
+                assert False
+
+            for ph in mol.dmrg_phs:
+                anharmo = False
+                # for the ground state space, yet doesn't support 3rd force
+                # potential quasiboson algorithm
+                ph_pbond = ph.pbond[0]
+                for i in range(len(ph.force3rd)):
+                    anharmo = not np.allclose(
+                        ph.force3rd[i] * ph.dis[i] / ph.omega[i], 0.0
+                    )
+                    if anharmo:
+                        break
+                if not anharmo:
+                    for iboson in range(ph.nqboson):
+                        d = ph.omega[0] \
+                                * ph.base ** (ph.nqboson - iboson - 1) \
+                                * np.arange(ph_pbond)
+                        mo = np.diag(d).reshape(1, ph_pbond, ph_pbond, 1)
+                        mpo.append(mo)
+                else:
+                    assert ph.nqboson == 1
+                    # construct the matrix exponential by diagonalize the matrix first
+                    phop = construct_ph_op_dict(ph_pbond)
+                    h_mo = (
+                        phop[r"b^\dagger b"] * ph.omega[0]
+                        + phop[r"(b^\dagger + b)^3"] * ph.term30
+                    )
+
+                    mo = np.zeros([1, ph_pbond, ph_pbond, 1])
+                    mo[0, :, :, 0] = h_mo
+
+                    mpo.append(mo)
+        # shift the H by plus a constant
+
+        mpo.qn = [[0]] * (len(mpo) + 1)
+        mpo.qnidx = len(mpo) - 1
+        mpo.qntot = 0
+
+        return mpo
+
+    @classmethod
+    def exact_propagator(cls, mol_list: MolList, x, space="GS", shift=0.0, include_e=False):
         """
         construct the GS space propagator e^{xH} exact MPO
         H=\\sum_{in} \\omega_{in} b^\\dagger_{in} b_{in}
@@ -215,18 +286,27 @@ class Mpo(MatrixProduct):
         assert space in ["GS", "EX"]
 
         mpo = cls()
-        if np.iscomplex(x):
+        if np.iscomplexobj(x):
             mpo.to_complex(inplace=True)
         mpo.mol_list = mol_list
 
         for imol, mol in enumerate(mol_list):
             if mol_list.scheme < 4:
-                mo = np.eye(2).reshape(1, 2, 2, 1)
-                mpo.append(mo)
+                if include_e:
+                    mo = np.zeros((2, 2))
+                    mo[1, 1] = mol.elocalex + mol.reorganization_energy
+                else:
+                    mo = np.eye(2)
+                mpo.append(expm(x * mo).reshape(1, 2, 2, 1))
             elif mol_list.scheme == 4:
                 if len(mpo) == mol_list.e_idx():
                     n = mol_list.mol_num
-                    mpo.append(np.eye(n+1).reshape(1, n+1, n+1, 1))
+                    if include_e:
+                        e = [0] + [mol.elocalex + mol.reorganization_energy for mol in mol_list]
+                        mo = np.diag(e)
+                    else:
+                        mo = np.eye(n+1)
+                    mpo.append(expm(x * mo).reshape(1, n+1, n+1, 1))
             else:
                 assert False
 
@@ -788,6 +868,7 @@ class Mpo(MatrixProduct):
         for m in mol_list:
             assert m.tunnel == 0
 
+        is_inter = mol_list.inter_t is not None
         # setup some metadata
         self.rep = None
         self.use_dummy_qn = True
@@ -796,7 +877,8 @@ class Mpo(MatrixProduct):
         def get_marginal_phonon_mo(pdim, bdim, ph, phop):
             # [ w b^d b,  gw(b^d+b), I]
             mo = np.zeros((1, pdim, pdim, bdim))
-            mo[0, :, :, 0] = phop[r"b^\dagger b"] * ph.omega[0]
+            if not is_inter:
+                mo[0, :, :, 0] = phop[r"b^\dagger b"] * ph.omega[0]
             mo[0, :, :, 1] = phop[r"b^\dagger + b"] * ph.term10
             mo[0, :, :, -1] = phop[r"Iden"]
             return mo
@@ -815,7 +897,8 @@ class Mpo(MatrixProduct):
                 mo = np.zeros((bdim - 1, pdim, pdim, bdim))
             else:
                 mo = np.zeros((bdim, pdim, pdim, bdim))
-            mo[-1, :, :, 0] = phop[r"b^\dagger b"] * ph.omega[0]
+            if not is_inter:
+                mo[-1, :, :, 0] = phop[r"b^\dagger b"] * ph.omega[0]
             for i in range(bdim - 1):
                 mo[i, :, :, i] = phop[r"Iden"]
             mo[-1, :, :, -2] = phop[r"b^\dagger + b"] * ph.term10
@@ -846,10 +929,11 @@ class Mpo(MatrixProduct):
         center_mo = np.zeros((n_left_mol+2, nmol+1, nmol+1, n_right_mol+2))
         center_mo[0, :, :, 0] = center_mo[-1, :, :, -1] = np.eye(nmol+1)
         j_matrix = mol_list.j_matrix.copy()
-        for i in range(mol_list.mol_num):
-            j_matrix[i, i] = mol_list[i].elocalex + mol_list[i].reorganization_energy
-        if elocal_offset is not None:
-            j_matrix += np.diag(elocal_offset)
+        if not is_inter:
+            for i in range(mol_list.mol_num):
+                j_matrix[i, i] = mol_list[i].elocalex + mol_list[i].reorganization_energy
+            if elocal_offset is not None:
+                j_matrix += np.diag(elocal_offset)
         center_mo[-1, 1:, 1:, 0] = j_matrix
         for i in range(nmol):
             m = np.zeros((nmol+1, nmol+1))
@@ -917,6 +1001,8 @@ class Mpo(MatrixProduct):
         self.offset = offset
         j_matrix = self.mol_list.j_matrix
         nmols = len(mol_list)
+        # if in interaction picture, then discard diagonal part
+        is_inter = self.mol_list.inter_t is not None
 
 
         mpo_dim, mpo_qn = get_mpo_dim_qn(mol_list, scheme, rep)
@@ -925,8 +1011,6 @@ class Mpo(MatrixProduct):
 
         self.qnidx = len(self.qn) - 2
         self.qntot = 0  # the total quantum number of each bond, for Hamiltonian it's 0
-
-        # print "MPOdim", MPOdim
 
         # MPO
         impo = 0
@@ -939,14 +1023,17 @@ class Mpo(MatrixProduct):
             eop = construct_e_op_dict()
             # last row operator
             if not mol.sbm:
-                elocal = mol.elocalex
-                if elocal_offset is not None:
-                    elocal += elocal_offset[imol]
-                mo[-1, :, :, 0] = eop[r"a^\dagger a"] * (elocal + mol.dmrg_e0)
+                if not is_inter:
+                    elocal = mol.elocalex
+                    if elocal_offset is not None:
+                        elocal += elocal_offset[imol]
+                    mo[-1, :, :, 0] = eop[r"a^\dagger a"] * (elocal + mol.dmrg_e0)
+                else:
+                    assert elocal_offset is None
                 mo[-1, :, :, -1] = eop["Iden"]
                 mo[-1, :, :, 1] = eop[r"a^\dagger a"]
             else:
-                assert len(mol_list) == 1
+                assert len(mol_list) == 1 and not is_inter
                 mo[-1, :, :, 0] = eop["sigmaz"] * mol.elocalex + eop["sigmax"] * mol.tunnel
                 mo[-1, :, :, -1] = eop["Iden"]
                 mo[-1, :, :, 1] = eop["sigmaz"]
@@ -1025,10 +1112,11 @@ class Mpo(MatrixProduct):
                     mo = np.zeros([mpo_dim[impo], pbond, pbond, mpo_dim[impo + 1]])
                     # first column
                     mo[0, :, :, 0] = phop["Iden"]
-                    mo[-1, :, :, 0] = (
-                        phop[r"b^\dagger b"] * ph.omega[0]
-                        + phop[r"(b^\dagger + b)^3"] * ph.term30
-                    )
+                    if not is_inter:
+                        mo[-1, :, :, 0] = (
+                            phop[r"b^\dagger b"] * ph.omega[0]
+                            + phop[r"(b^\dagger + b)^3"] * ph.term30
+                        )
                     if rep == "chain" and iph != 0:
                         mo[1, :, :, 0] = phop["b"] * mol.phhop[iph, iph - 1]
                         mo[2, :, :, 0] = phop[r"b^\dagger"] * mol.phhop[iph, iph - 1]
@@ -1064,6 +1152,7 @@ class Mpo(MatrixProduct):
                     self.append(mo)
                     impo += 1
                 else:
+                    assert not is_inter
                     # b + b^\dagger in Mpo representation
                     for iqb in range(nqb):
                         pbond = self.pbond_list[impo]
@@ -1384,7 +1473,7 @@ class Mpo(MatrixProduct):
             dim2 = res.shape[2] * mt.shape[2]
             dim3 = mt.shape[-1]
             res = tensordot(res, mt, axes=1).transpose((0, 1, 3, 2, 4, 5)).reshape(1, dim1, dim2, dim3)
-        return res[0, :, :, 0]
+        return res[0, :, :, 0].asnumpy()
 
     def is_hermitian(self):
         full = self.full_operator()

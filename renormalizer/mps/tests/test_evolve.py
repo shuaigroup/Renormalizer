@@ -102,3 +102,13 @@ def compare():
     print(mps.bond_dims)
     print(all_values)
 
+
+@pytest.mark.parametrize("init_state", (
+        init_mps,
+        init_mpdm,))
+def test_interaction(init_state):
+    mps = init_state.copy()
+    mps.mol_list.inter_t = 0
+    mpo = Mpo(mps.mol_list)
+    mps.evolve_config  = EvolveConfig(EvolveMethod.tdvp_mu_cmf)
+    check_result(mps, mpo, 0.02, 0.5, 5e-4)

@@ -14,11 +14,12 @@ from renormalizer.utils.utils import cast_float
 
 class MolList:
 
-    def __init__(self, mol_list: List[Mol], j_matrix: Union[Quantity, np.ndarray, None], scheme: int=2, sbm=False):
+    def __init__(self, mol_list: List[Mol], j_matrix: Union[Quantity, np.ndarray, None], scheme: int=2, inter_t: complex=None):
         self.mol_list: List[Mol] = mol_list
         
         # construct the electronic coupling matrix
-        if sbm or j_matrix is None:
+        # sbm model, one mol, no j, tunneling term in the mol
+        if j_matrix is None:
             assert len(self.mol_list) == 1
             j_matrix = Quantity(0)
 
@@ -26,6 +27,7 @@ class MolList:
             self.j_matrix = construct_j_matrix(self.mol_num, j_matrix)
             self.j_constant = j_matrix
         else:
+            assert np.allclose(j_matrix.conj().T, j_matrix)
             self.j_matrix = j_matrix
             self.j_constant = None
         self.scheme = scheme
@@ -55,6 +57,8 @@ class MolList:
                     assert ph.is_simple
                     self.pbond_list += ph.pbond
 
+        # whether use interaction picture
+        self.inter_t = inter_t
         # reusable mpos for the system
         self.mpos = dict()
 
@@ -81,7 +85,10 @@ class MolList:
         return True
 
     def switch_scheme(self, scheme):
-        return self.__class__(self.mol_list, self.j_matrix, scheme)
+        return self.__class__(self.mol_list, self.j_matrix, scheme, inter_t=self.inter_t)
+
+    def copy(self):
+        return self.__class__(self.mol_list, self.j_matrix, scheme=self.scheme, inter_t=self.inter_t)
 
     def e_idx(self, idx=0):
         return self._e_idx[idx]

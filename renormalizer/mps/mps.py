@@ -6,7 +6,7 @@ from typing import Union, List
 
 import numpy as np
 import scipy
-
+from scipy.linalg import expm
 from scipy import stats
 
 
@@ -406,29 +406,24 @@ class Mps(MatrixProduct):
 
     @property
     def ph_occupations(self):
-        key = "ph_occupations"
-        if key not in self.mol_list.mpos:
+        def generator(mol_list: MolList):
             mpos = []
-            for imol, mol in enumerate(self.mol_list):
+            for imol, mol in enumerate(mol_list):
                 for iph in range(len(mol.dmrg_phs)):
-                    mpos.append(Mpo.ph_onsite(self.mol_list, r"b^\dagger b", imol, iph))
-            self.mol_list.mpos[key] = mpos
-        else:
-            mpos = self.mol_list.mpos[key]
+                    mpos.append(Mpo.ph_onsite(mol_list, r"b^\dagger b", imol, iph))
+            return mpos
+        mpos = self.mol_list.get_mpos("ph_occupations", generator)
         return self.expectations(mpos)
 
     @property
     def e_occupations(self):
         if self.mol_list.scheme < 4:
-            key = "e_occupations"
-            if key not in self.mol_list.mpos:
-                mpos = [
-                    Mpo.onsite(self.mol_list, r"a^\dagger a", mol_idx_set={i})
-                    for i in range(self.mol_num)
+            def generator(mol_list: MolList):
+                return [
+                    Mpo.onsite(mol_list, r"a^\dagger a", mol_idx_set={i})
+                    for i in range(mol_list.mol_num)
                 ]
-                self.mol_list.mpos[key] = mpos
-            else:
-                mpos = self.mol_list.mpos[key]
+            mpos = self.mol_list.get_mpos("e_occupations", generator)
             return self.expectations(mpos)
         elif self.mol_list.scheme == 4:
             # get rdm is very fast
@@ -526,7 +521,6 @@ class Mps(MatrixProduct):
             mps = self.evolve_dmrg(hybrid_mpo, evolve_dt)
             unitary_propagation(mps.tdh_wfns, HAM, Etot, evolve_dt)
         else:
-            # save the cost of calculating energy
             mps = self.evolve_dmrg(mpo, evolve_dt)
         if np.iscomplex(evolve_dt):
             mps.normalize(1.0)
@@ -838,6 +832,11 @@ class Mps(MatrixProduct):
         else:
             mps = self.to_complex()
 
+        inter_t = self.mol_list.inter_t
+        if inter_t is not None:
+            diag_mpo = Mpo.diagonal(self.mol_list)
+        else:
+            diag_mpo = [None] * len(self)
         if self.evolve_config.tdvp_cmf_midpoint:
             # mps at t/2 as environment
             orig_config = self.evolve_config.copy()
@@ -890,13 +889,24 @@ class Mps(MatrixProduct):
                 hop = hop_factory(ltensor, rtensor, mpo[imps], len(shape))
 
                 S_inv = xp.diag(xp.ones(1,dtype=mps.dtype))
-                def func1(y):
-                    func = integrand_func_factory(shape, hop, True, S_inv, True,
-                            coef, Ovlp_inv1=S_L_inv_list[imps+1],
-                            Ovlp_inv0=S_L_inv_list[imps], Ovlp0=S_L_list[imps])
-                    return func(0, y)
+                if False:
+                    def func1(y):
+                        func = integrand_func_factory(shape, hop, True, S_inv, True,
+                                coef, Ovlp_inv1=S_L_inv_list[imps+1],
+                                Ovlp_inv0=S_L_inv_list[imps], Ovlp0=S_L_list[imps])
+                        return func(0, y)
 
-                ms, _ = expm_krylov(func1, evolve_dt, mps[imps].ravel().array)
+                    ms, _ = expm_krylov(func1, evolve_dt, mps[imps].ravel().array)
+                else:
+                    func = integrand_func_factory(shape, hop, True, S_inv, True,
+                                                  coef, Ovlp_inv1=S_L_inv_list[imps + 1],
+                                                  Ovlp_inv0=S_L_inv_list[imps], Ovlp0=S_L_list[imps],
+                                          local_mo=diag_mpo[imps][0, :, :, 0].asnumpy())
+                    sol = solve_ivp(
+                        func, (0, evolve_dt), mps[imps].ravel().array, method="RK45"
+                    )
+                    cmf_rk_steps.append(len(sol.t))
+                    ms = sol.y[:, -1]
                 mps[imps] = ms.reshape(shape)
                 continue
 
@@ -933,7 +943,8 @@ class Mps(MatrixProduct):
             hop = hop_factory(ltensor, rtensor, mpo[imps], len(shape))
             func = integrand_func_factory(shape, hop, False, S_inv.array, True,
                     coef, Ovlp_inv1=S_L_inv_list[imps+1],
-                    Ovlp_inv0=S_L_inv_list[imps], Ovlp0=S_L_list[imps])
+                    Ovlp_inv0=S_L_inv_list[imps], Ovlp0=S_L_list[imps],
+                                          local_mo=diag_mpo[imps][0, :, :, 0].asnumpy())
 
             sol = solve_ivp(
                 func, (0, evolve_dt), mps[imps].ravel().array, method="RK45"
@@ -945,6 +956,8 @@ class Mps(MatrixProduct):
         logger.debug(f"{self.evolve_config.method} CMF steps: {steps_stat}")
         # new_mps.evolve_config.stat = steps_stat
 
+        if inter_t is not None:
+            mps = Mpo.exact_propagator(self.mol_list, -1j * evolve_dt, include_e=True) @ mps
         return mps
 
     @adaptive_tdvp
@@ -1424,13 +1437,27 @@ def hop_factory(
 
 
 def integrand_func_factory(shape, hop, islast, S_inv: xp.ndarray, left: bool,
-        coef: complex, Ovlp_inv1: xp.ndarray =None, Ovlp_inv0: xp.ndarray =None, Ovlp0: xp.ndarray =None):
+        coef: complex, Ovlp_inv1: xp.ndarray =None, Ovlp_inv0: xp.ndarray =None, Ovlp0: xp.ndarray =None, local_mo=None):
     # left == True: projector operate on the left side of the HC
     # Ovlp0 is (#.conj, #), Ovlp_inv0 = (#, #.conj), Ovlp_inv1 = (#, #.conj)
     # S_inv is (#.conj, #)
     def func(t, y):
         y0 = y.reshape(shape)
-        HC = hop(y0)
+        if local_mo is not None:
+            e_miht = xp.asarray(expm(t * local_mo / coef))
+            e_iht = e_miht.conj()
+            if y0.ndim == 3:
+                y0 = xp.tensordot(y0, e_miht, axes=(1, 1)).transpose((0, 2, 1))
+                HC = hop(y0)
+                HC = xp.tensordot(HC, e_iht, axes=(1, 1)).transpose((0, 2, 1))
+            elif y0.ndim == 4:
+                y0 = xp.tensordot(y0, e_miht, axes=(1, 1)).transpose((0, 3, 1, 2))
+                HC = hop(y0)
+                HC = xp.tensordot(HC, e_iht, axes=(1, 1)).transpose((0, 3, 1, 2))
+            else:
+                assert False
+        else:
+            HC = hop(y0)
         if not islast:
             proj = projector(y0, left, Ovlp_inv1, Ovlp0)
             if y0.ndim == 3:

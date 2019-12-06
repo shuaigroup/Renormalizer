@@ -1,26 +1,27 @@
 # -*- coding: utf-8 -*-
 # Author: Jiajun Ren <jiajunren0522@gmail.com>
 
-import pickle
-import os
-
 import pytest
 import numpy as np
+from scipy.linalg import expm, logm
 
 from renormalizer.model import MolList, Mol, Phonon
-from renormalizer.mps import Mpo, Mps, solver
+from renormalizer.mps import Mpo, Mps
 from renormalizer.tests.parameter import mol_list
-from renormalizer.mps.tests import cur_dir
 from renormalizer.utils import Quantity
 
 
-@pytest.mark.parametrize("dt, space, shift", ([30, "GS", 0.0], [30, "EX", 0.0]))
-def test_exact_propagator(dt, space, shift):
-    prop_mpo = Mpo.exact_propagator(mol_list, -1.0j * dt, space, shift)
-    with open(os.path.join(cur_dir, "test_exact_propagator.pickle"), "rb") as fin:
-        std_dict = pickle.load(fin)
-    std_mpo = std_dict[space]
-    assert prop_mpo == std_mpo
+@pytest.mark.parametrize("scheme", (1,2,3,4))
+def test_exact_propagator_with_e(scheme):
+    ph = Phonon.simple_phonon(Quantity(2), Quantity(1e-10), 2)
+    m1 = Mol(Quantity(1), [ph] * 2)
+    m2 = Mol(Quantity(2), [ph])
+    mlist = MolList([m2, m1, m2], Quantity(1e-10), scheme=scheme)
+    for t in np.linspace(1, 5, 10):
+        f1 = expm(-1j * t * Mpo(mlist).full_operator())
+        f2 = Mpo.exact_propagator(mlist, -1j * t, include_e=True).full_operator()
+        assert np.allclose(f1, f2)
+
 
 @pytest.mark.parametrize("scheme", (1, 2, 3, 4))
 def test_offset(scheme):
@@ -37,9 +38,12 @@ def test_offset(scheme):
     evals2, _ = np.linalg.eigh(f2.asnumpy())
     assert np.allclose(evals1 - offset.as_au(), evals2)
 
-def test_identity():
-    identity = Mpo.identity(mol_list)
-    mps = Mps.random(mol_list, nexciton=1, m_max=5)
+
+@pytest.mark.parametrize("scheme", (1, 2, 3, 4))
+def test_identity(scheme):
+    m = MolList(mol_list.mol_list, Quantity(0.01), scheme=scheme)
+    identity = Mpo.identity(m)
+    mps = Mps.random(m, nexciton=1, m_max=5)
     assert mps.expectation(identity) == pytest.approx(mps.dmrg_norm) == pytest.approx(1)
 
 
@@ -116,3 +120,21 @@ def test_phonon_onsite():
     b = b2.conj_trans()
     assert b.distance(Mpo.ph_onsite(mol_list, r"b", 0, 0)) == 0
     assert b.apply(p2).normalize().distance(p1) == pytest.approx(0, abs=1e-5)
+
+
+@pytest.mark.parametrize("scheme", (1, 2, 3, 4))
+def test_interaction_mpo(scheme):
+    # as many random values as possible
+    ph1 = Phonon.simple_phonon(Quantity(1), Quantity(2), 2)
+    ph2 = Phonon.simple_phonon(Quantity(2), Quantity(3), 2)
+    ph3 = Phonon.simple_phonon(Quantity(.1), Quantity(.5), 2)
+    m1 = Mol(Quantity(1), [ph1, ph3])
+    m2 = Mol(Quantity(2), [ph2])
+    j = np.array([[0, .5, 0], [.5, 0, .4], [0, .4, 0]])
+    mlist = MolList([m2, m1, m2], j, scheme=scheme)
+    mlist_inter = MolList([m2, m1, m2], j, scheme=scheme, inter_t=0)
+    exact_prop = Mpo.exact_propagator(mlist, 1, include_e=True)
+    h0 = logm(exact_prop.full_operator())
+    h1 = Mpo(mlist_inter).full_operator()
+    h = Mpo(mlist).full_operator()
+    assert np.allclose(h1+h0, h)

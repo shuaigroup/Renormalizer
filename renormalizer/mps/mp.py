@@ -559,7 +559,7 @@ class MatrixProduct:
         new = self.__class__.__new__(self.__class__)
         new._mp = [None] * len(self)
         new.dtype = self.dtype
-        new.mol_list = self.mol_list
+        new.mol_list = self.mol_list.copy()
         new._ephtable = self._ephtable
         new._pbond_list = self._pbond_list
         # need to deep copy compress_config because threshold might change dynamically
