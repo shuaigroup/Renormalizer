@@ -295,9 +295,11 @@ class Mpo(MatrixProduct):
                 if include_e:
                     mo = np.zeros((2, 2))
                     mo[1, 1] = mol.elocalex + mol.reorganization_energy
+                    #mpo.append(expm(x * mo).reshape(1, 2, 2, 1))
+                    mpo.append(xp.diag(xp.exp(x * xp.diag(mo))).reshape(1,2,2,1))
                 else:
                     mo = np.eye(2)
-                mpo.append(expm(x * mo).reshape(1, 2, 2, 1))
+                    mpo.append(mo.reshape(1, 2, 2, 1))
             elif mol_list.scheme == 4:
                 if len(mpo) == mol_list.e_idx():
                     n = mol_list.mol_num

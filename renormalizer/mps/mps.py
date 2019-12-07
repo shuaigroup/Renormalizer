@@ -1461,11 +1461,12 @@ def integrand_func_factory(shape, hop, islast, S_inv: xp.ndarray, left: bool,
     def func(t, y):
         y0 = y.reshape(shape)
         if local_mo is not None:
-            e_miht = xp.asarray(expm(t * local_mo / coef))
+            #e_miht = xp.asarray(expm(t * local_mo / coef))
+            e_miht = xp.diag(xp.exp(t * xp.diag(local_mo) / coef))
             e_iht = e_miht.conj()
             if y0.ndim == 3:
-                y0 = xp.tensordot(y0, e_miht, axes=(1, 1)).transpose((0, 2, 1))
-                HC = hop(y0)
+                y1 = xp.tensordot(y0, e_miht, axes=(1, 1)).transpose((0, 2, 1))
+                HC = hop(y1)
                 HC = xp.tensordot(HC, e_iht, axes=(1, 1)).transpose((0, 2, 1))
             elif y0.ndim == 4:
                 y0 = xp.tensordot(y0, e_miht, axes=(1, 1)).transpose((0, 3, 1, 2))
