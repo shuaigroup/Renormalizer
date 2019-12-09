@@ -42,7 +42,7 @@ class ThermalProp(TdMpsJob):
         dump_dir: str = None,
         job_name: str = None,
     ):
-        self.init_mpdm: MpDm = init_mpdm
+        self.init_mpdm: MpDm = init_mpdm.canonicalise()
         self.h_mpo = h_mpo
         self.exact = exact
         assert space in ["GS", "EX"]
@@ -50,6 +50,7 @@ class ThermalProp(TdMpsJob):
         self.energies = []
         self._e_occupations_array = []
         self._ph_occupations_array = []
+        self._vn_entropy_array = []
         super().__init__(evolve_config, dump_dir, job_name)
 
     def init_mps(self):
@@ -69,6 +70,9 @@ class ThermalProp(TdMpsJob):
             logger.info(f"{attr_str}: {attr}")
             self_array = getattr(self, f"_{attr_str}_array")
             self_array.append(attr)
+        vn_entropy = mps.calc_vn_entropy()
+        self._vn_entropy_array.append(vn_entropy)
+        logger.info(f"vn entropy: {vn_entropy}")
         logger.info(
             f"Energy: {new_energy}, total electron: {self._e_occupations_array[-1].sum()}"
         )
@@ -114,12 +118,17 @@ class ThermalProp(TdMpsJob):
     def ph_occupations_array(self):
         return np.array(self._ph_occupations_array)
 
+    @property
+    def vn_entropy_array(self):
+        return np.array(self._vn_entropy_array)
+
     def get_dump_dict(self):
         dump_dict = dict()
         dump_dict["time series"] = [-t.imag for t in self.evolve_times]
         dump_dict["energies"] = self.energies
-        dump_dict["electron occupations array"] = cast_float(self.e_occupations_array)
-        dump_dict["phonon occupations array"] = cast_float(self.ph_occupations_array)
+        dump_dict["electron occupations array"] = self.e_occupations_array.tolist()
+        dump_dict["phonon occupations array"] = self.ph_occupations_array.tolist()
+        dump_dict["vn entropy array"] = self.vn_entropy_array.tolist()
         return dump_dict
 
 
