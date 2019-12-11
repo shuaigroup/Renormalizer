@@ -533,7 +533,7 @@ class MatrixProduct:
             new_mp[i] = mt.to_complex(inplace)
         return new_mp
 
-    def distance(self, other):
+    def distance(self, other) -> float:
         l1 = self.conj().dot(self) 
         l2 = other.conj().dot(other)
         l1dotl2 = self.conj().dot(other)
@@ -547,7 +547,7 @@ class MatrixProduct:
         else:
             res = np.sqrt(dis_square)
         
-        return res
+        return float(res)
 
     def copy(self):
         new = self.metacopy()

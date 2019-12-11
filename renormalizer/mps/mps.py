@@ -43,69 +43,71 @@ def adaptive_tdvp(fun):
     #J. Chem. Phys. 146, 174107 (2017)
 
     @wraps(fun)
-    def f(self: "Mps", mpo, evolve_dt):
+    def adaptive_fun(self: "Mps", mpo, evolve_target_t):
         
         if not self.evolve_config.adaptive:
-            return fun(self, mpo, evolve_dt)
-        config: EvolveConfig = self.evolve_config
-        config.check_valid_dt(evolve_dt)
+            return fun(self, mpo, evolve_target_t)
+        config: EvolveConfig = self.evolve_config.copy()
+        config.check_valid_dt(evolve_target_t)
+
+        cur_mps = self
+        # prevent bug
+        del self
+
+        # setup some constant
+        p_restart = 0.5  # restart threshold
+        p_min = 0.1  # safeguard for minimal allowed p
+        p_max = 2.  # safeguard for maximal allowed p
+
+        evolved_t = 0
         
         while True:
             
-            dt = min_abs(config.guess_dt, evolve_dt)
+            dt = min_abs(config.guess_dt, evolve_target_t - evolved_t)
             logger.debug(
                     f"guess_dt: {config.guess_dt}, try time step size: {dt}"
             )
 
-            mps_half1 = fun(self, mpo, dt / 2)._dmrg_normalize()
+            mps_half1 = fun(cur_mps, mpo, dt / 2)._dmrg_normalize()
             mps_half2 = fun(mps_half1, mpo, dt / 2)._dmrg_normalize()
-            mps = fun(self, mpo, dt)._dmrg_normalize()
+            mps = fun(cur_mps, mpo, dt)._dmrg_normalize()
             dis = mps.distance(mps_half2)
 
+            # prevent bug. save "some" memory.
             del mps_half1, mps
 
             p = (0.75 * config.adaptive_rtol / (dis + 1e-30)) ** (1./3)    
             logger.debug(f"distance: {dis}, enlarge p parameter: {p}")
-            
-            p_restart = 0.5 # restart threshold 
-            p_min = 0.1     # safeguard for minimal allowed p
-            p_max = 2.      # safeguard for maximal allowed p
+            if p < p_min:
+                p = p_min
+            if p_max < p:
+                p = p_max
 
-            if xp.allclose(dt, evolve_dt):  
-                # approaches the end
-                if p < p_restart:
-                    # not accurate in this final sub-step will restart
-                    config.guess_dt = dt * max(p_min, p)
-                    logger.debug(
-                        f"evolution not converged, new guess_dt: {config.guess_dt}"
-                    )
-                else:
-                    # normal exit
-                    mps_half2.evolve_config.guess_dt = min_abs(dt*p, config.guess_dt)
-                    logger.debug(
-                        f"evolution converged, new guess_dt: {mps_half2.evolve_config.guess_dt}"
-                    )
-                    return mps_half2
+            # rejected
+            if p < p_restart:
+                config.guess_dt = dt * p
+                logger.debug(
+                    f"evolution not converged, new guess_dt: {config.guess_dt}"
+                )
+                continue
+
+            # accepted
+            evolved_t += dt
+            if np.allclose(evolved_t, evolve_target_t):
+                # normal exit. Note that `dt` could be much less than actually tolerated for the last step
+                # so use `guess_dt` for the last step. Slight inaccuracy won't harm.
+                mps_half2.evolve_config.guess_dt = config.guess_dt
+                logger.debug(
+                    f"evolution converged, new guess_dt: {mps_half2.evolve_config.guess_dt}"
+                )
+                return mps_half2
             else:
-                # sub-steps 
-                if p < p_restart:
-                    # not accurate in this sub-step, will restart
-                    config.guess_dt *= max(p_min, p)
-                    logger.debug(
-                        f"evolution not converged, new guess_dt: {config.guess_dt}"
-                    )
-                else:
-                    # sub-step converge
-                    new_dt = evolve_dt - dt
-                    config.guess_dt *= min(p, p_max) 
-                    mps_half2.evolve_config.guess_dt = config.guess_dt
-                    logger.debug(
-                        f"evolution converged, new guess_dt: {config.guess_dt}"
-                    )
-                    logger.debug(f"sub-step {dt} further, remaining: {new_dt}")
-                    return f(mps_half2, mpo, new_dt)
+                # in this case `config.guess_dt == dt`
+                config.guess_dt *= p
+                logger.debug(f"sub-step {dt} further, evolved: {evolved_t}, new guess_dt: {config.guess_dt}")
+                cur_mps = mps_half2
             
-    return f
+    return adaptive_fun
 
 
 class Mps(MatrixProduct):
