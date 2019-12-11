@@ -430,7 +430,7 @@ class MatrixProduct:
             # return singular value list
             return self, s_list
 
-    def canonicalise(self, stop_idx: int=None):
+    def canonicalise(self, stop_idx: int=None, normalize=False):
         # stop_idx: mix canonical site at `stop_idx`
         for idx in self.iter_idx_list(full=False, stop_idx=stop_idx):
             mt: Matrix = self[idx]
@@ -450,6 +450,9 @@ class MatrixProduct:
                 system=system,
                 full_matrices=False,
             )
+            if normalize:
+                # roughly normalize. Used when the each site of the mps is scaled such as in exact thermal prop
+                v /= np.linalg.norm(v[:, 0])
             self._update_ms(
                 idx, Matrix(u), Matrix(v.T), sigma=None, qnlset=qnlset, qnrset=qnrset
             )

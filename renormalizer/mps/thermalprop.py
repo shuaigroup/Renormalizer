@@ -85,10 +85,8 @@ class ThermalProp(TdMpsJob):
         unitary_propagation(new_mpdm.tdh_wfns, HAM, Etot, evolve_dt)
         # partition function can't be obtained. It's not practical anyway.
         # The function is too large to be fit into float64 even float128
+        new_mpdm.canonicalise(normalize=True)
         new_mpdm.normalize(1.0)
-        # the mpdm may not be canonicalised due to distributed scaling. It's not wise to do
-        # so currently because scheme4 might have empty matrices
-        # new_mpdm.canonicalise()
         return new_mpdm
 
     def evolve_prop(self, old_mpdm, evolve_dt):

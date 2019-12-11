@@ -33,4 +33,6 @@ def nm2au(l):
 def au2nm(e):
     return 1.0e7 / (e / cm2au)
 
+# 1 cm^2/V s = mobility2au a.u.
+# mobility2au = 23.505175500558234
 mobility2au = au2ev * c["atomic unit of time"][0] / (c["atomic unit of length"][0] * 100) ** 2
