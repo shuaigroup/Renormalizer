@@ -368,14 +368,21 @@ class Mps(MatrixProduct):
     def _expectation_conj(self):
         return self.conj()
 
-    def expectation(self, mpo, self_conj=None) -> float:
+    def expectation(self, mpo, self_conj=None) -> Union[float, complex]:
         if self_conj is None:
             self_conj = self._expectation_conj()
+            ret_float = True
+        else:
+            ret_float = False
         environ = Environ(self, mpo, "R", mps_conj=self_conj)
         l = ones((1, 1, 1))
         r = environ.read("R", 1)
         path = self._expectation_path()
-        return float(multi_tensor_contract(path, l, self[0], mpo[0], self_conj[0], r).real)
+        val = multi_tensor_contract(path, l, self[0], mpo[0], self_conj[0], r).array
+        if ret_float:
+            return float(val.real)
+        else:
+            return complex(val)
         # This is time and memory consuming
         # return self_conj.dot(mpo.apply(self), with_hartree=False).real
 
@@ -1519,17 +1526,13 @@ class BraKetPair:
         self.bra_mps = bra_mps.copy()
         self.ket_mps = ket_mps.copy()
         self.mpo = mpo
-        # for adaptive evolution. This is not an ideal solution but
-        # I can't find anyone better. Bra and Ket have the same step size during
-        # the evolution. Is this necessary?
-        self.evolve_config = ket_mps.evolve_config
         self.ft = self.calc_ft()
 
     def calc_ft(self):
         if self.mpo is None:
             dot = self.bra_mps.conj().dot(self.ket_mps)
         else:
-            dot = self.bra_mps.conj().dot(self.mpo @ self.ket_mps)
+            dot = self.bra_mps.conj().expectation(self.mpo, self.ket_mps)
         return (
             dot * np.conjugate(self.bra_mps.coeff)
             * self.ket_mps.coeff

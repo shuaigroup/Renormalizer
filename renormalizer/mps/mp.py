@@ -530,7 +530,7 @@ class MatrixProduct:
             if mt is None:
                 # dummy mt after metacopy. Bad idea. Remove the dummy thing when feasible
                 continue
-            new_mp[i] = mt.to_complex(inplace)
+            new_mp[i] = mt.to_complex()
         return new_mp
 
     def distance(self, other) -> float:

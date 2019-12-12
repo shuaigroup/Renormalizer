@@ -129,14 +129,10 @@ class Matrix:
         s = xp.dot(tensm, tensm.T.conj())
         return allclose(s, xp.eye(s.shape[0]), rtol=rtol, atol=atol)
 
-    def to_complex(self, inplace=False):
+    def to_complex(self):
         # `xp.array` always creates new array, so to_complex means copy, which is
         # in accordance with NumPy
-        if inplace:
-            self.array = xp.array(self.array, dtype=backend.complex_dtype)
-            return self
-        else:
-            return xp.array(self.array, dtype=backend.complex_dtype)
+        return xp.array(self.array, dtype=backend.complex_dtype)
 
     def copy(self):
         new = self.__class__(self.array.copy(), self.array.dtype)
@@ -204,6 +200,9 @@ class Matrix:
 
     def __float__(self):
         return self.array.__float__()
+
+    def __complex__(self):
+        return self.array.__complex__()
 
 
 def zeros(shape, dtype=None):
