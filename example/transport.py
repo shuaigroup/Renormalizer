@@ -26,8 +26,8 @@ if __name__ == "__main__":
         os.path.join(param["output dir"], param["fname"] + ".log"), "w"
     )
     mol_list, temperature = load_from_dict(param, 3, False)
-    compress_config = CompressConfig(threshold=1e-4)
-    evolve_config = EvolveConfig(adaptive=True, guess_dt=2)
+    compress_config = CompressConfig(max_bonddim=16)
+    evolve_config = EvolveConfig(EvolveMethod.tdvp_ps, adaptive=True, guess_dt=2)
     ct = ChargeTransport(
         mol_list,
         temperature=temperature,
@@ -35,12 +35,8 @@ if __name__ == "__main__":
         evolve_config=evolve_config,
         rdm=False,
     )
-    # ct.stop_at_edge = True
-    # ct.memory_limit = 2 ** 30  # 1 GB
-    # ct.memory_limit /= 10 # 100 MB
     ct.dump_dir = param["output dir"]
     ct.job_name = param["fname"]
     ct.custom_dump_info["comment"] = param["comment"]
-    # ct.latest_mps.compress_add = True
     ct.evolve(param.get("evolve dt"), param.get("nsteps"), param.get("evolve time"))
     # ct.evolve(evolve_dt, 100, param.get("evolve time"))

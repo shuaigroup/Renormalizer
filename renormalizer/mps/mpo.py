@@ -27,10 +27,6 @@ logger = logging.getLogger(__name__)
 # todo: refactor init
 # the code is hard to understand...... need some closer look
 
-# todo: refactor scheme4, add QN and the 0 electron state!
-# the problem of the current scheme4 is that there are states (0 electron state) that the
-# scheme can not represent
-
 def base_convert(n, base):
     """
     convert 10 base number to any base number

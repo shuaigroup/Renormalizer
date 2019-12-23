@@ -21,10 +21,7 @@ def _expm_krylov(alpha, beta, V, v_norm, dt):
         h = np.diag(alpha) + np.diag(beta, k=-1) + np.diag(beta, k=1)
         w_hess, u_hess = np.linalg.eigh(h)
 
-    xp_w_hess = xp.array(w_hess)
-    xp_u_hess = xp.array(u_hess)
-    
-    return V @ xp_u_hess @ (v_norm * xp.exp(dt*xp_w_hess) * xp_u_hess[0])
+    return V @ xp.asarray(u_hess @ (v_norm * np.exp(dt*w_hess) * u_hess[0]))
 
 
 def expm_krylov(Afunc, dt, vstart: xp.ndarray, block_size=50):
@@ -39,7 +36,7 @@ def expm_krylov(Afunc, dt, vstart: xp.ndarray, block_size=50):
 
     # normalize starting vector
     vstart = xp.asarray(vstart)
-    nrmv = xp.linalg.norm(vstart)
+    nrmv = float(xp.linalg.norm(vstart))
     assert nrmv > 0
     vstart = vstart / nrmv
 
