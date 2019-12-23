@@ -15,10 +15,10 @@ def test_autocorr():
     mol_list = MolList([mol] * 5, Quantity(1), 3)
     temperature = Quantity(50000, 'K')
     compress_config = CompressConfig(CompressCriteria.fixed, max_bonddim=24)
-    evolve_config = EvolveConfig(EvolveMethod.tdvp_ps)
-    ievolve_config = evolve_config.copy()
+    evolve_config = EvolveConfig(EvolveMethod.tdvp_ps, adaptive=True, guess_dt=0.5, adaptive_rtol=1e-3)
+    ievolve_config = EvolveConfig(EvolveMethod.tdvp_ps, adaptive=True, guess_dt=-0.1j)
     ac = TransportAutoCorr(mol_list, temperature, compress_config=compress_config, ievolve_config=ievolve_config, evolve_config=evolve_config)
-    ac.evolve(0.4, 25)
+    ac.evolve(nsteps=5, evolve_time=5)
     corr_real = ac.auto_corr.real
     exact_real = get_exact_autocorr(mol_list, temperature, ac.evolve_times_array).real
     atol = 1e-2
