@@ -498,7 +498,9 @@ class Mps(MatrixProduct):
                 else:
                     assert False
                 ex_state.compress_config = self.compress_config
-                lastone = ex_state + self
+                ex_state.move_qnidx(self.qnidx)
+                ex_state.to_right = self.to_right
+                lastone = self + ex_state
 
             else:
                 lastone = self
@@ -821,7 +823,8 @@ class Mps(MatrixProduct):
             logger.debug(f"ww.min={sw_min_list.min()}, Switch to tdvp_mu_vmf")
             mps.evolve_config.method =  EvolveMethod.tdvp_mu_vmf
 
-        return mps
+        # The caller do not want to deal with an MPS that is not canonicalised
+        return mps.canonicalise()
 
     @adaptive_tdvp
     def _evolve_dmrg_tdvp_mu_cmf(self, mpo, evolve_dt) -> "Mps":
@@ -1122,7 +1125,7 @@ class Mps(MatrixProduct):
 
     @property
     def digest(self):
-        if 10 < self.site_num:
+        if 10 < self.site_num or self.is_mpdm:
             return None
         prod = np.eye(1).reshape(1, 1, 1)
         for ms in self:
@@ -1312,6 +1315,24 @@ class Mps(MatrixProduct):
         mp1 = [mt.reshape(mt.shape[0], mt.shape[1], 1, mt.shape[2]) for mt in self]
         mp2 = [mt.reshape(mt.shape[0], 1, mt.shape[1], mt.shape[2]).conj() for mt in self]
         return self._calc_reduced_density_matrix(mp1, mp2)
+
+    def calc_vn_entropy(self) -> np.ndarray:
+        r"""
+        Calculate von Neumann entropy at each bond according to :math:`S = -\textrm{Tr}(\rho \ln \rho)`
+        where :math:`\rho` is the density matrix.
+
+        Returns:
+            a NumPy array containing the entropy values.
+        """
+        _, s_list = self.compress(temp_m_trunc=np.inf, ret_s=True)
+        entropy_list = []
+        for sigma in s_list:
+            rho = sigma ** 2
+            normed_rho = rho / rho.sum()
+            truncate_rho = normed_rho[0 < normed_rho]
+            entropy = - (truncate_rho * np.log(truncate_rho)).sum()
+            entropy_list.append(entropy)
+        return np.array(entropy_list)
 
     def dump(self, fname):
         data_dict = dict()

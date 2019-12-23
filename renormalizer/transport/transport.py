@@ -41,9 +41,6 @@ class ChargeTransport(TdMpsJob):
         evolve_config (:class:`~renormalizer.utils.EvolveConfig`): config when evolving MPS.
         stop_at_edge (bool): whether stop when charge has diffused to the boundary of the system. Default is ``True``.
         init_electron (:class:`~renormalizer.utils.InitElectron`): the method to prepare the initial state.
-        logging_output (List[str]): contents to be put into logging output.
-            Should be a subset of ["r_square", "e_occupations", "ph_occupations"].
-            Note that this does not affect dumped output in JSON format.
         rdm (bool): whether calculate reduced density matrix and k-space representation for the electron.
             Default is ``False`` because usually the calculation is time consuming.
             Using scheme 4 might partly solve the problem.
@@ -110,8 +107,10 @@ class ChargeTransport(TdMpsJob):
         self.ph_occupations_array = []
         self.reduced_density_matrices = [] if rdm else None
         self.k_occupations_array = []
-        # von Neumann entropy
-        self.vn_entropy_array = []
+        # von Neumann entropy between e and ph
+        self.eph_vn_entropy_array = []
+        # entropy at each bond
+        self.bond_vn_entropy_array = []
         self.coherent_length_array = []
         super(ChargeTransport, self).__init__(evolve_config, dump_dir, job_name)
         assert self.mpo is not None
@@ -217,7 +216,7 @@ class ChargeTransport(TdMpsJob):
 
             # von Neumann entropy
             entropy = -np.trace(rdm @ logm(rdm))
-            self.vn_entropy_array.append(entropy)
+            self.eph_vn_entropy_array.append(entropy)
 
             self.coherent_length_array.append(np.abs(rdm).sum() - np.trace(rdm).real)
 
@@ -231,8 +230,11 @@ class ChargeTransport(TdMpsJob):
         self.e_occupations_array.append(e_occupations)
         self.r_square_array.append(calc_r_square(e_occupations))
         self.ph_occupations_array.append(mps.ph_occupations)
-
         logger.info(f"e occupations: {self.e_occupations_array[-1]}")
+
+        bond_vn_entropy = mps.calc_vn_entropy()
+        logger.info(f"bond entropy: {bond_vn_entropy}")
+        self.bond_vn_entropy_array.append(bond_vn_entropy)
 
     def evolve_single_step(self, evolve_dt):
         old_mps = self.latest_mps
@@ -259,7 +261,8 @@ class ChargeTransport(TdMpsJob):
         dump_dict["electron occupations array"] = cast_float(self.e_occupations_array)
         dump_dict["phonon occupations array"] = cast_float(self.ph_occupations_array)
         dump_dict["k occupations array"] = cast_float(self.k_occupations_array)
-        dump_dict["entropy"] = self.vn_entropy_array
+        dump_dict["eph entropy"] = self.eph_vn_entropy_array
+        dump_dict["bond entropy"] = np.array(self.bond_vn_entropy_array).tolist()
         # dump_dict["elocalex arrays"] = [list(e) for e in self.elocalex_arrays]
         # dump_dict["j arrays"] = [list(j) for j in self.j_arrays]
         dump_dict["coherent length array"] = cast_float(self.coherent_length_array)
