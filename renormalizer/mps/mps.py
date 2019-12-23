@@ -387,8 +387,10 @@ class Mps(MatrixProduct):
         # return self_conj.dot(mpo.apply(self), with_hartree=False).real
 
     def expectations(self, mpos, opt=True) -> np.ndarray:
-        if not opt:
+        if (not opt) or (len(mpos) < 3):
             return np.array([self.expectation(mpo) for mpo in mpos])
+
+        # todo: figure out when the `else` part can work.
         else:
             # only supports local operator now
             # id can be used as efficient hash because of `Matrix` implementation
