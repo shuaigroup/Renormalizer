@@ -545,7 +545,7 @@ class MatrixProduct:
             assert dis_square/l1.real < 1e-8
             res = 0.
         else:
-            res = np.sqrt(dis_square)
+            res = np.sqrt(dis_square).item()
         
         return res
 

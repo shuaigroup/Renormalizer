@@ -365,7 +365,7 @@ class Mps(MatrixProduct):
 
     def _expectation_conj(self):
         return self.conj()
-
+    
     def expectation(self, mpo, self_conj=None) -> float:
         if self_conj is None:
             self_conj = self._expectation_conj()
@@ -377,32 +377,33 @@ class Mps(MatrixProduct):
         # This is time and memory consuming
         # return self_conj.dot(mpo.apply(self), with_hartree=False).real
 
-    def expectations(self, mpos) -> np.ndarray:
-        if len(mpos) < 3:
+    def expectations(self, mpos, opt=True) -> np.ndarray:
+        if not opt:
             return np.array([self.expectation(mpo) for mpo in mpos])
-        assert 2 < len(mpos)
-        # id can be used as efficient hash because of `Matrix` implementation
-        mpo_ids = np.array([[id(m) for m in mpo] for mpo in mpos])
-        common_mpo_ids = mpo_ids[0].copy()
-        mpo0_unique_idx = np.where(np.sum(mpo_ids == common_mpo_ids, axis=0) == 1)[0][0]
-        common_mpo_ids[mpo0_unique_idx] = mpo_ids[1][mpo0_unique_idx]
-        x, unique_idx = np.where(mpo_ids != common_mpo_ids)
-        # should find one at each line
-        assert xp.allclose(x, np.arange(len(mpos)))
-        common_mpo = list(mpos[0])
-        common_mpo[mpo0_unique_idx] = mpos[1][mpo0_unique_idx]
-        self_conj = self._expectation_conj()
-        environ = Environ(self, common_mpo, mps_conj=self_conj)
-        res_list = []
-        for idx, mpo in zip(unique_idx, mpos):
-            l = environ.read("L", idx - 1)
-            r = environ.read("R", idx + 1)
-            path = self._expectation_path()
-            res = multi_tensor_contract(path, l, self[idx], mpo[idx], self_conj[idx], r)
-            res_list.append(float(res.real))
-        return np.array(res_list)
-        # the naive way, slow and time consuming
-        # return np.array([self.expectation(mpo) for mpo in mpos])
+        else:
+            # only supports local operator now
+            # id can be used as efficient hash because of `Matrix` implementation
+            mpo_ids = np.array([[id(m) for m in mpo] for mpo in mpos])
+            common_mpo_ids = mpo_ids[0].copy()
+            mpo0_unique_idx = np.where(np.sum(mpo_ids == common_mpo_ids, axis=0) == 1)[0][0]
+            common_mpo_ids[mpo0_unique_idx] = mpo_ids[1][mpo0_unique_idx]
+            x, unique_idx = np.where(mpo_ids != common_mpo_ids)
+            # should find one at each line
+            assert xp.allclose(x, np.arange(len(mpos)))
+            common_mpo = list(mpos[0])
+            common_mpo[mpo0_unique_idx] = mpos[1][mpo0_unique_idx]
+            self_conj = self._expectation_conj()
+            environ = Environ(self, common_mpo, mps_conj=self_conj)
+            res_list = []
+            for idx, mpo in zip(unique_idx, mpos):
+                l = environ.read("L", idx - 1)
+                r = environ.read("R", idx + 1)
+                path = self._expectation_path()
+                res = multi_tensor_contract(path, l, self[idx], mpo[idx], self_conj[idx], r)
+                res_list.append(float(res.real))
+            return np.array(res_list)
+            # the naive way, slow and time consuming
+            # return np.array([self.expectation(mpo) for mpo in mpos])
 
     @property
     def ph_occupations(self):
@@ -809,22 +810,47 @@ class Mps(MatrixProduct):
         
         sw_min_list = xp.array(sw_min_list)
         # auto-switch between tdvp_mu_vmf and tdvp_vmf
-        if sw_min_list.min() > np.sqrt(self.evolve_config.reg_epsilon*10.) and self.evolve_config.vmf_auto_switch:
-            logger.debug(f"sw.min={sw_min_list.min()},Switch to tdvp_vmf")
-            mps.evolve_config.method =  EvolveMethod.tdvp_vmf
-        elif sw_min_list.min() < self.evolve_config.reg_epsilon and self.evolve_config.vmf_auto_switch:
-            logger.debug(f"ww.min={sw_min_list.min()}, Switch to tdvp_mu_vmf")
-            mps.evolve_config.method =  EvolveMethod.tdvp_mu_vmf
+        if self.evolve_config.vmf_auto_switch:
+            if sw_min_list.min() > np.sqrt(self.evolve_config.reg_epsilon*10.) and \
+                mps.evolve_config.method == EvolveMethod.tdvp_mu_vmf:
+
+                logger.debug(f"sw.min={sw_min_list.min()}, Switch to tdvp_vmf")
+                mps.evolve_config.method =  EvolveMethod.tdvp_vmf
+
+            elif sw_min_list.min() < self.evolve_config.reg_epsilon and \
+                mps.evolve_config.method == EvolveMethod.tdvp_vmf:
+                
+                logger.debug(f"sw.min={sw_min_list.min()}, Switch to tdvp_mu_vmf")
+                mps.evolve_config.method =  EvolveMethod.tdvp_mu_vmf
 
         return mps
 
     @adaptive_tdvp
     def _evolve_dmrg_tdvp_mu_cmf(self, mpo, evolve_dt) -> "Mps":
-        # new regularization scheme
-        # JCP 148, 124105 (2018)
-        # JCP 149, 044119 (2018)
+        """
+        evolution scheme: TDVP + constant mean field + matrix-unfolding
+        regularization
+        MPS :  LLLLLLC
+        1st / 2nd order(default) CMF
+
+        for 2nd order CMF:
+        L is evolved with midpoint scheme
+        C is evolved with midpoint(default) / trapz scheme
+        """
+        
+        if self.evolve_config.tdvp_cmf_c_trapz:
+            assert self.evolve_config.tdvp_cmf_midpoint
 
         imag_time = np.iscomplex(evolve_dt)
+        
+        # a workaround for https://github.com/scipy/scipy/issues/10164
+        if imag_time:
+            evolve_dt = -evolve_dt.imag
+            # used in calculating derivatives
+            coef = -1
+        else:
+            coef = 1j
+        
         self.ensure_left_canon()
 
         # `self` should not be modified during the evolution
@@ -836,111 +862,126 @@ class Mps(MatrixProduct):
             mps = self.to_complex()
 
         if self.evolve_config.tdvp_cmf_midpoint:
-            # mps at t/2 as environment
+            # mps at t/2 (1st order) as environment
             orig_config = self.evolve_config.copy()
             self.evolve_config.tdvp_cmf_midpoint = False
+            self.evolve_config.tdvp_cmf_c_trapz = False
             self.evolve_config.adaptive = False
             environ_mps = self.evolve_dmrg(mpo, evolve_dt / 2)
             self.evolve_config = orig_config
         else:
             # mps at t=0 as environment
             environ_mps = mps.copy()
-        # construct the environment matrix
-        environ = Environ(environ_mps, mpo, "L")
-        environ.write_r_sentinel(environ_mps)
-
-        # a workaround for https://github.com/scipy/scipy/issues/10164
-        if imag_time:
-            evolve_dt = -evolve_dt.imag
-            # used in calculating derivatives
-            coef = -1
-        else:
-            coef = 1j
-
-        # statistics for debug output
-        cmf_rk_steps = []
         
-        if self.evolve_config.force_ovlp:
-            # construct the S_L list (type: Matrix) and S_L_inv list (type: xp.array)
-            # len: mps.site_num+1
-            S_L_list = [ones([1, 1], dtype=mps.dtype),]
-            for imps in range(mps.site_num):
-                S_L_list.append(transferMat(environ_mps, environ_mps.conj(), "L", imps,
-                    S_L_list[imps]))
-            
-            S_L_inv_list = []    
-            for imps in range(mps.site_num+1):
-                w, u = scipy.linalg.eigh(S_L_list[imps].asnumpy())
-                S_L_inv = xp.asarray(u.dot(np.diag(1.0 / w)).dot(u.T.conj()))
-                S_L_inv_list.append(S_L_inv)
-                S_L_list[imps] = S_L_list[imps].array
+        if self.evolve_config.tdvp_cmf_c_trapz:
+            loop = 2
+            mps[-1] = environ_mps[-1].copy()
         else:
-            S_L_list = [None,] * (mps.site_num+1)
-            S_L_inv_list = [None,] * (mps.site_num+1)
+            loop = 1
 
-        for imps in mps.iter_idx_list(full=True):
-            shape = list(mps[imps].shape)
-            ltensor = environ.read("L", imps - 1)
-            if imps == self.site_num - 1:
-                # the coefficient site
-                rtensor = ones((1, 1, 1))
+        while loop > 0:
+        
+            # construct the environment matrix
+            environ = Environ(environ_mps, mpo, "L")
+            environ.write_r_sentinel(environ_mps)
+
+            # statistics for debug output
+            cmf_rk_steps = []
+            
+            if self.evolve_config.force_ovlp:
+                # construct the S_L list (type: Matrix) and S_L_inv list (type: xp.array)
+                # len: mps.site_num+1
+                S_L_list = [ones([1, 1], dtype=mps.dtype),]
+                for imps in range(mps.site_num):
+                    S_L_list.append(transferMat(environ_mps, environ_mps.conj(), "L", imps,
+                        S_L_list[imps]))
+                
+                S_L_inv_list = []    
+                for imps in range(mps.site_num+1):
+                    w, u = scipy.linalg.eigh(S_L_list[imps].asnumpy())
+                    S_L_inv = xp.asarray(u.dot(np.diag(1.0 / w)).dot(u.T.conj()))
+                    S_L_inv_list.append(S_L_inv)
+                    S_L_list[imps] = S_L_list[imps].array
+            else:
+                S_L_list = [None,] * (mps.site_num+1)
+                S_L_inv_list = [None,] * (mps.site_num+1)
+
+            for imps in mps.iter_idx_list(full=True):
+                shape = list(mps[imps].shape)
+                ltensor = environ.read("L", imps - 1)
+                if imps == self.site_num - 1:
+                    if loop == 1:
+                        # the coefficient site
+                        rtensor = ones((1, 1, 1))
+                        hop = hop_factory(ltensor, rtensor, mpo[imps], len(shape))
+
+                        S_inv = xp.diag(xp.ones(1,dtype=mps.dtype))
+                        def func1(y):
+                            func = integrand_func_factory(shape, hop, True, S_inv, True,
+                                    coef, Ovlp_inv1=S_L_inv_list[imps+1],
+                                    Ovlp_inv0=S_L_inv_list[imps], Ovlp0=S_L_list[imps])
+                            return func(0, y)
+
+                        ms, Lanczos_vectors = expm_krylov(func1, evolve_dt, mps[imps].ravel().array)
+                        logger.debug(f"# of Lanczos_vectors, {Lanczos_vectors}")
+                        mps[imps] = ms.reshape(shape)
+                    
+                    if loop == 1 and self.evolve_config.tdvp_cmf_c_trapz:
+                        break
+                    else:
+                        continue
+
+                # perform qr on the environment mps
+                qnbigl, qnbigr, _ = environ_mps._get_big_qn(imps + 1)
+                u, s, qnlset, v, s, qnrset = svd_qn.Csvd(
+                    environ_mps[imps + 1].asnumpy(),
+                    qnbigl,
+                    qnbigr,
+                    environ_mps.qntot,
+                    system="R",
+                    full_matrices=False,
+                )
+                vt = v.T
+
+                environ_mps[imps + 1] = vt.reshape(environ_mps[imps + 1].shape)
+
+                rtensor = environ.GetLR(
+                    "R", imps + 1, environ_mps, mpo, itensor=None, method="System"
+                )
+
+                regular_s = _mu_regularize(s, epsilon=self.evolve_config.reg_epsilon)
+
+                us = Matrix(u.dot(np.diag(s)))
+
+                rtensor = tensordot(rtensor, us, axes=(-1, -1))
+
+                environ_mps[imps] = tensordot(environ_mps[imps], us, axes=(-1, 0))
+                environ_mps.qn[imps + 1] = qnrset
+                environ_mps.qnidx = imps
+
+                S_inv = Matrix(u).conj().dot(xp.diag(1.0 / regular_s)).T
+
                 hop = hop_factory(ltensor, rtensor, mpo[imps], len(shape))
+                func = integrand_func_factory(shape, hop, False, S_inv.array, True,
+                        coef, Ovlp_inv1=S_L_inv_list[imps+1],
+                        Ovlp_inv0=S_L_inv_list[imps], Ovlp0=S_L_list[imps])
 
-                S_inv = xp.diag(xp.ones(1,dtype=mps.dtype))
-                def func1(y):
-                    func = integrand_func_factory(shape, hop, True, S_inv, True,
-                            coef, Ovlp_inv1=S_L_inv_list[imps+1],
-                            Ovlp_inv0=S_L_inv_list[imps], Ovlp0=S_L_list[imps])
-                    return func(0, y)
-
-                ms, _ = expm_krylov(func1, evolve_dt, mps[imps].ravel().array)
-                mps[imps] = ms.reshape(shape)
-                continue
-
-            # perform qr on the environment mps
-            qnbigl, qnbigr, _ = environ_mps._get_big_qn(imps + 1)
-            u, s, qnlset, v, s, qnrset = svd_qn.Csvd(
-                environ_mps[imps + 1].asnumpy(),
-                qnbigl,
-                qnbigr,
-                environ_mps.qntot,
-                system="R",
-                full_matrices=False,
-            )
-            vt = v.T
-
-            environ_mps[imps + 1] = vt.reshape(environ_mps[imps + 1].shape)
-
-            rtensor = environ.GetLR(
-                "R", imps + 1, environ_mps, mpo, itensor=None, method="System"
-            )
-
-            regular_s = _mu_regularize(s, epsilon=self.evolve_config.reg_epsilon)
-
-            us = Matrix(u.dot(np.diag(s)))
-
-            rtensor = tensordot(rtensor, us, axes=(-1, -1))
-
-            environ_mps[imps] = tensordot(environ_mps[imps], us, axes=(-1, 0))
-            environ_mps.qn[imps + 1] = qnrset
-            environ_mps.qnidx = imps
-
-            S_inv = Matrix(u).conj().dot(xp.diag(1.0 / regular_s)).T
-
-            hop = hop_factory(ltensor, rtensor, mpo[imps], len(shape))
-            func = integrand_func_factory(shape, hop, False, S_inv.array, True,
-                    coef, Ovlp_inv1=S_L_inv_list[imps+1],
-                    Ovlp_inv0=S_L_inv_list[imps], Ovlp0=S_L_list[imps])
-
-            sol = solve_ivp(
-                func, (0, evolve_dt), mps[imps].ravel().array, method="RK45"
-            )
-            cmf_rk_steps.append(len(sol.t))
-            ms = sol.y[:, -1].reshape(shape)
-            mps[imps] = ms
-        steps_stat = stats.describe(cmf_rk_steps)
-        logger.debug(f"{self.evolve_config.method} CMF steps: {steps_stat}")
-        # new_mps.evolve_config.stat = steps_stat
+                sol = solve_ivp(
+                    func, (0, evolve_dt), mps[imps].ravel().array, method="RK45"
+                )
+                cmf_rk_steps.append(len(sol.t))
+                ms = sol.y[:, -1].reshape(shape)
+                mps[imps] = ms
+            
+            if len(cmf_rk_steps) > 0:
+                steps_stat = stats.describe(cmf_rk_steps)
+                logger.debug(f"{self.evolve_config.method} CMF steps: {steps_stat}")
+            
+            if loop == 2:
+                environ_mps = mps
+                evolve_dt /= 2.
+            loop -= 1
+            # new_mps.evolve_config.stat = steps_stat
 
         return mps
 

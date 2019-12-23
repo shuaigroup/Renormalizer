@@ -52,7 +52,7 @@ class TransportAutoCorr(TdMpsJob):
         logger.debug("constructing flux operator")
         j_list = []
         for i in range(len(self.mol_list) - 1):
-            j1 = Mpo.e_intersite(self.mol_list, {i:r"a", i+1:r"a^\dagger"}, Quantity(self.mol_list.j_matrix[i, i + 1]))
+            j1 = Mpo.intersite(self.mol_list, {i:r"a", i+1:r"a^\dagger"}, {}, Quantity(self.mol_list.j_matrix[i, i + 1]))
             j1.compress_config.threshold = 1e-5
             j2 = j1.conj_trans().scale(-1)
             j_list.extend([j1, j2])

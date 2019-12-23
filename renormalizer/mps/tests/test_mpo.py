@@ -75,19 +75,19 @@ def test_scheme4():
     e3 = mps3.expectation(mpo3)
     assert pytest.approx(e4) == e3
 
-def test_e_intersite():
-    mpo1 = Mpo.e_intersite(mol_list, {0:r"a^\dagger"}, Quantity(1.0))
+def test_intersite():
+    mpo1 = Mpo.intersite(mol_list, {0:r"a^\dagger"}, {}, Quantity(1.0))
     mpo2 = Mpo.onsite(mol_list, r"a^\dagger", mol_idx_set=[0])
     assert mpo1.distance(mpo2) == pytest.approx(0, abs=1e-5)
     
-    mpo3 = Mpo.e_intersite(mol_list, {2:r"a^\dagger a"}, Quantity(1.0))
+    mpo3 = Mpo.intersite(mol_list, {2:r"a^\dagger a"}, {}, Quantity(1.0))
     mpo4 = Mpo.onsite(mol_list, r"a^\dagger a", mol_idx_set=[2])
     assert mpo3.distance(mpo4) == pytest.approx(0, abs=1e-5)
     
-    mpo5 = Mpo.e_intersite(mol_list, {2:r"a^\dagger a"}, Quantity(0.5))
+    mpo5 = Mpo.intersite(mol_list, {2:r"a^\dagger a"}, {}, Quantity(0.5))
     assert mpo5.add(mpo5).distance(mpo4) == pytest.approx(0, abs=1e-5)
     
-    mpo6 = Mpo.e_intersite(mol_list, {0:r"a^\dagger",2:"a"}, Quantity(1.0))
+    mpo6 = Mpo.intersite(mol_list, {0:r"a^\dagger",2:"a"}, {}, Quantity(1.0))
     mpo7 = Mpo.onsite(mol_list, "a", mol_idx_set=[2])
     assert mpo2.apply(mpo7).distance(mpo6) == pytest.approx(0, abs=1e-5)
     
@@ -96,13 +96,17 @@ def test_e_intersite():
     mol_list1 = mol_list.switch_scheme(2)
     mol_list1.scheme=3
     mpo9 = Mpo(mol_list1)
-    mpo10 = Mpo.e_intersite(mol_list1, {0:r"a^\dagger",2:"a"},
+    mpo10 = Mpo.intersite(mol_list1, {0:r"a^\dagger",2:"a"}, {},
             Quantity(mol_list1.j_matrix[0,2]))
-    mpo11 = Mpo.e_intersite(mol_list1, {2:r"a^\dagger",0:"a"},
+    mpo11 = Mpo.intersite(mol_list1, {2:r"a^\dagger",0:"a"}, {},
             Quantity(mol_list1.j_matrix[0,2]))
     
     assert mpo8.distance(mpo9.add(mpo10).add(mpo11)) == pytest.approx(0, abs=1e-6)
     assert mpo8.distance(mpo9.add(mpo10).add(mpo10.conj_trans())) == pytest.approx(0, abs=1e-6)
+    
+    ph_mpo1 = Mpo.ph_onsite(mol_list, "b", 1, 1)
+    ph_mpo2 = Mpo.intersite(mol_list, {}, {(1,1):"b"})
+    assert ph_mpo1.distance(ph_mpo2) == pytest.approx(0, abs=1e-6)
 
 
 def test_phonon_onsite():
