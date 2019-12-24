@@ -272,7 +272,7 @@ class SpectraFtCV(SpectraCv):
         indices = np.array(range(nonzeros))
         indptr = np.array(range(nonzeros+1))
         pre_M = scipy.sparse.csc_matrix(
-            (pre_M, indices, indptr), shape=(nonzeros, nonzeros))
+            (asnumpy(pre_M), indices, indptr), shape=(nonzeros, nonzeros))
 
         M_x = lambda x: scipy.sparse.linalg.spsolve(pre_M, x)
         M = scipy.sparse.linalg.LinearOperator((nonzeros, nonzeros), M_x)
@@ -302,7 +302,7 @@ class SpectraFtCV(SpectraCv):
             cout = cout[
                 self.condition(dag_qnmat, [down_exciton, up_exciton])
             ].reshape(nonzeros, 1)
-            return cout
+            return asnumpy(cout)
 
         # Matrix A and Vector b
         vecb = asnumpy(vecb)[

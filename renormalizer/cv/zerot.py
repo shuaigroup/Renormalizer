@@ -195,7 +195,7 @@ class SpectraZtCV(SpectraCv):
                 'aba, bccd, deef, gfg->aceg', first_L, a_oper_isite2,
                 a_oper_isite1, first_R)[qnmat == constrain_qn]
 
-        pre_a_mat = np.diag(1./pre_a_mat)
+        pre_a_mat = np.diag(1./asnumpy(pre_a_mat))
 
         count = 0
         def hop(c):
@@ -235,7 +235,7 @@ class SpectraZtCV(SpectraCv):
         # the value of the functional L
         l_value = np.inner(hop(x).reshape(1, nonzeros), x.reshape(1, nonzeros)
                      ) - 2 * np.inner(
-                         vec_b.reshape(1, nonzeros), x.reshape(1, nonzeros))
+                         asnumpy(vec_b).reshape(1, nonzeros), x.reshape(1, nonzeros))
         xstruct = svd_qn.cvec2cmat(xshape, x, qnmat, constrain_qn)
         x, xdim, xqn, compx = \
             solver.renormalization_svd(xstruct, qnbigl, qnbigr, system,
