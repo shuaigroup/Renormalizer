@@ -555,40 +555,49 @@ class Mpo(MatrixProduct):
         return mpo
 
     @classmethod
-    def e_intersite(cls, mol_list: MolList, opera: dict, scale:
+    def intersite(cls, mol_list: MolList, e_opera: dict, ph_opera: dict, scale:
             Quantity=Quantity(1.)):
-        ''' construct the inter electronic site MPO
+        ''' construct the inter site MPO
         Parameters:
             mol_list : MolList
                 the molecular information
-            opera: 
-                the operators such as {1:"a", 3:r"a^\dagger"}
+            e_opera: 
+                the electronic operators. {imol: operator}, such as {1:"a", 3:r"a^\dagger"}
+            ph_opera:
+                the vibrational operators. {(imol,iph): operator}, such as {(0,5):"b"}
             scale: Quantity
                 scalar to scale the mpo
+
+        Note:
+            the operator index starts from 0,1,2...
         '''
 
         if mol_list.scheme == 4:
             raise NotImplementedError
 
-        for i in opera.keys():
+        for i in e_opera.keys():
             assert i in range(mol_list.mol_num)
+        for j in ph_opera.keys():
+            assert j[0] in range(mol_list.mol_num)
+            assert j[1] in range(mol_list[j[0]].n_dmrg_phs)
         
         mpo = cls()
         mpo.mol_list = mol_list
         mpo.qn = [[0]]
 
         impo = 0
+        eop = construct_e_op_dict()
+
         for imol in range(mol_list.mol_num):
-            eop = construct_e_op_dict()
             mo = np.zeros([1, 2, 2, 1])
 
-            if imol in opera.keys():
-                mo[0, :, :, 0] = eop[opera[imol]]
-                if opera[imol] == r"a^\dagger":
+            if imol in e_opera.keys():
+                mo[0, :, :, 0] = eop[e_opera[imol]]
+                if e_opera[imol] == r"a^\dagger":
                     mpo.qn.append([mpo.qn[-1][0]+1])
-                elif opera[imol] == "a":
+                elif e_opera[imol] == "a":
                     mpo.qn.append([mpo.qn[-1][0]-1])
-                elif opera[imol] == r"a^\dagger a":
+                elif e_opera[imol] == r"a^\dagger a":
                     mpo.qn.append(mpo.qn[-1])
                 else:
                     assert False
@@ -598,17 +607,24 @@ class Mpo(MatrixProduct):
             
             mpo.append(mo)
             impo += 1
+            
+            assert mol_list[imol].no_qboson
 
-            for ph in mol_list[imol].dmrg_phs:
-                for iboson in range(ph.nqboson):
-                    pbond = mol_list.pbond_list[impo]
-                    mo = np.zeros([1, pbond, pbond, 1])
-                    for ibra in range(pbond):
-                        mo[0, ibra, ibra, 0] = 1.0
-                    mpo.qn.append(mpo.qn[-1])
+            for iph in range(mol_list[imol].n_dmrg_phs):
+                pbond = mol_list.pbond_list[impo]
+                mo = np.zeros([1, pbond, pbond, 1])
+                phop = construct_ph_op_dict(pbond)
+                
+                if (imol, iph) in ph_opera.keys():
+                    mo[0, :, :, 0] = phop[ph_opera[(imol,iph)]]
+                else:
+                    mo[0, :, :, 0] = phop["Iden"]
 
-                    mpo.append(mo)
-                    impo += 1
+                mpo.qn.append(mpo.qn[-1])
+
+                mpo.append(mo)
+                impo += 1
+
         mpo.qnidx = len(mpo) - 1
         mpo.to_right = False
         
