@@ -131,8 +131,7 @@ class SpectraFtCV(SpectraCv):
                     logger.debug(f"no file found in {self._thermal_dump_path}")
                     tp.evolve(None, self.insteps, beta / 2j)
                     ket_mpo = tp.latest_mps
-        if tp._defined_output_path:
-            ket_mpo.dump(self._thermal_dump_path)
+                    ket_mpo.dump(self._thermal_dump_path)
         self.a_ket_mpo = dipole_mpo.apply(ket_mpo, canonicalise=True)
         self.cv_mpo = Mpo.finiteT_cv(self.mol_list, 1, self.m_max,
                                      self.spectratype, percent=1.0)

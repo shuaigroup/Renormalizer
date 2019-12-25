@@ -218,13 +218,13 @@ def blockrecover(indices, U, dim):
 def cvec2cmat(cshape, c, qnmat, nexciton, nroots=1):
     # recover good quantum number vector c to matrix format
     if nroots == 1:
-        cstruct = np.zeros(cshape, dtype=c.dtype)
-        np.place(cstruct, qnmat == nexciton, c)
+        cstruct = xp.zeros(cshape, dtype=c.dtype)
+        xp.place(cstruct, qnmat == nexciton, c)
     else:
         cstruct = []
         for ic in c:
-            icstruct = np.zeros(cshape, dtype=ic.dtype)
-            np.place(icstruct, qnmat == nexciton, ic)
+            icstruct = xp.zeros(cshape, dtype=ic.dtype)
+            xp.place(icstruct, qnmat == nexciton, ic)
             cstruct.append(icstruct)
 
     return cstruct

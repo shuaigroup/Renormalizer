@@ -16,6 +16,8 @@ class SpectraTdMpsJobBase(TdMpsJob):
         temperature,
         evolve_config=None,
         offset=Quantity(0),
+        dump_dir=None,
+        job_name=None
     ):
         self.mol_list = mol_list
         assert spectratype in ["emi", "abs"]
@@ -27,7 +29,7 @@ class SpectraTdMpsJobBase(TdMpsJob):
         self.temperature = temperature
         self.h_mpo = Mpo(mol_list, offset=offset)
         self._autocorr = []
-        super(SpectraTdMpsJobBase, self).__init__(evolve_config=evolve_config)
+        super(SpectraTdMpsJobBase, self).__init__(evolve_config=evolve_config, dump_dir=dump_dir, job_name=job_name)
 
     def process_mps(self, braket_pair):
         self._autocorr.append(braket_pair.ft)

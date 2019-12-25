@@ -21,10 +21,7 @@ def _expm_krylov(alpha, beta, V, v_norm, dt):
         h = np.diag(alpha) + np.diag(beta, k=-1) + np.diag(beta, k=1)
         w_hess, u_hess = np.linalg.eigh(h)
 
-    xp_w_hess = xp.array(w_hess)
-    xp_u_hess = xp.array(u_hess)
-
-    return V @ xp_u_hess @ (v_norm * xp.exp(dt*xp_w_hess) * xp_u_hess[0])
+    return V @ xp.asarray(u_hess @ (v_norm * np.exp(dt*w_hess) * u_hess[0]))
 
 
 def expm_krylov(Afunc, dt, vstart: xp.ndarray, block_size=50):
@@ -39,7 +36,7 @@ def expm_krylov(Afunc, dt, vstart: xp.ndarray, block_size=50):
 
     # normalize starting vector
     vstart = xp.asarray(vstart)
-    nrmv = xp.linalg.norm(vstart)
+    nrmv = float(xp.linalg.norm(vstart))
     assert nrmv > 0
     vstart = vstart / nrmv
 
@@ -63,16 +60,15 @@ def expm_krylov(Afunc, dt, vstart: xp.ndarray, block_size=50):
         beta[j] = xp.linalg.norm(w)
         if beta[j] < 100*len(vstart)*np.finfo(float).eps:
             logger.warning(f'beta[{j}] ~= 0 encountered during Lanczos iteration.')
-            return _expm_krylov(alpha[:j+1], beta[:j], V[:j+1, :].T, nrmv, dt), j
+            return _expm_krylov(alpha[:j+1], beta[:j], V[:j+1, :].T, nrmv, dt), j+1
 
         if 3 < j and j % 2 == 0:
             new_res = _expm_krylov(alpha[:j+1], beta[:j], V[:j+1].T, nrmv, dt)
             if res is not None and xp.allclose(res, new_res):
-                return new_res, j
+                return new_res, j+1
             else:
                 res = new_res
         V[j + 1] = w / beta[j]
-    return _expm_krylov(alpha, beta, V.T, nrmv, dt), j
-
+    return _expm_krylov(alpha[:j+1], beta[:j], V[:j+1].T, nrmv, dt), j+1
 
 

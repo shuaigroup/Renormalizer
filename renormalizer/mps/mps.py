@@ -43,67 +43,71 @@ def adaptive_tdvp(fun):
     # J. Chem. Phys. 146, 174107 (2017)
 
     @wraps(fun)
-    def f(self: "Mps", mpo, evolve_dt):
+    def adaptive_fun(self: "Mps", mpo, evolve_target_t):
 
         if not self.evolve_config.adaptive:
-            return fun(self, mpo, evolve_dt)
-        config: EvolveConfig = self.evolve_config
-        config.check_valid_dt(evolve_dt)
+            return fun(self, mpo, evolve_target_t)
+        config: EvolveConfig = self.evolve_config.copy()
+        config.check_valid_dt(evolve_target_t)
+
+        cur_mps = self
+        # prevent bug
+        del self
+
+        # setup some constant
+        p_restart = 0.5  # restart threshold
+        p_min = 0.1  # safeguard for minimal allowed p
+        p_max = 2.  # safeguard for maximal allowed p
+
+        evolved_t = 0
 
         while True:
 
-            dt = min_abs(config.guess_dt, evolve_dt)
-            logger.debug(f"guess_dt: {config.guess_dt}, try time step size: {dt}")
+            dt = min_abs(config.guess_dt, evolve_target_t - evolved_t)
+            logger.debug(
+                    f"guess_dt: {config.guess_dt}, try time step size: {dt}"
+            )
 
-            mps_half1 = fun(self, mpo, dt / 2)._dmrg_normalize()
+            mps_half1 = fun(cur_mps, mpo, dt / 2)._dmrg_normalize()
             mps_half2 = fun(mps_half1, mpo, dt / 2)._dmrg_normalize()
-            mps = fun(self, mpo, dt)._dmrg_normalize()
-
-            del mps_half1
-
+            mps = fun(cur_mps, mpo, dt)._dmrg_normalize()
             dis = mps.distance(mps_half2)
-            p = (0.75 * config.adaptive_rtol / (dis + 1e-30)) ** (1.0 / 3)
+
+            # prevent bug. save "some" memory.
+            del mps_half1, mps
+
+            p = (0.75 * config.adaptive_rtol / (dis + 1e-30)) ** (1./3)
             logger.debug(f"distance: {dis}, enlarge p parameter: {p}")
+            if p < p_min:
+                p = p_min
+            if p_max < p:
+                p = p_max
 
-            p_restart = 0.5  # restart threshold
-            p_min = 0.1  # safeguard for minimal allowed p
-            p_max = 2.0  # safeguard for maximal allowed p
+            # rejected
+            if p < p_restart:
+                config.guess_dt = dt * p
+                logger.debug(
+                    f"evolution not converged, new guess_dt: {config.guess_dt}"
+                )
+                continue
 
-            if xp.allclose(dt, evolve_dt):
-                # approahes the end
-                if p < p_restart:
-                    # not accurate in this final sub-step will restart
-                    config.guess_dt = dt * max(p_min, p)
-                    logger.debug(
-                        f"evolution not converged, new guess_dt: {config.guess_dt}"
-                    )
-                else:
-                    # normal exit
-                    mps_half2.evolve_config.guess_dt = min_abs(dt * p, config.guess_dt)
-                    logger.debug(
-                        f"evolution converged, new guess_dt: {mps_half2.evolve_config.guess_dt}"
-                    )
-                    return mps_half2
+            # accepted
+            evolved_t += dt
+            if np.allclose(evolved_t, evolve_target_t):
+                # normal exit. Note that `dt` could be much less than actually tolerated for the last step
+                # so use `guess_dt` for the last step. Slight inaccuracy won't harm.
+                mps_half2.evolve_config.guess_dt = config.guess_dt
+                logger.debug(
+                    f"evolution converged, new guess_dt: {mps_half2.evolve_config.guess_dt}"
+                )
+                return mps_half2
             else:
-                # sub-steps
-                if p < p_restart:
-                    # not accurate in this sub-step, will restart
-                    config.guess_dt *= max(p_min, p)
-                    logger.debug(
-                        f"evolution not converged, new guess_dt: {config.guess_dt}"
-                    )
-                else:
-                    # sub-step converge
-                    new_dt = evolve_dt - dt
-                    config.guess_dt *= min(p, p_max)
-                    mps_half2.evolve_config.guess_dt = config.guess_dt
-                    logger.debug(
-                        f"evolution converged, new guess_dt: {config.guess_dt}"
-                    )
-                    logger.debug(f"sub-step {dt} further, remaining: {new_dt}")
-                    return f(mps_half2, mpo, new_dt)
+                # in this case `config.guess_dt == dt`
+                config.guess_dt *= p
+                logger.debug(f"sub-step {dt} further, evolved: {evolved_t}, new guess_dt: {config.guess_dt}")
+                cur_mps = mps_half2
 
-    return f
+    return adaptive_fun
 
 
 class Mps(MatrixProduct):
@@ -361,49 +365,52 @@ class Mps(MatrixProduct):
     def _expectation_conj(self):
         return self.conj()
 
-    def expectation(self, mpo, self_conj=None) -> float:
+    def expectation(self, mpo, self_conj=None) -> Union[float, complex]:
         if self_conj is None:
             self_conj = self._expectation_conj()
+            ret_float = True
+        else:
+            ret_float = False
         environ = Environ(self, mpo, "R", mps_conj=self_conj)
         l = xp.ones((1, 1, 1), dtype=self.dtype)
         r = environ.read("R", 1)
         path = self._expectation_path()
-        return float(
-            multi_tensor_contract(
-                path, l, self[0].array, mpo[0].array, self_conj[0].array, r
-            ).real
-        )
+        val = multi_tensor_contract(path, l, self[0], mpo[0], self_conj[0], r)
+        if ret_float:
+            return float(val.real)
+        else:
+            return complex(val)
         # This is time and memory consuming
         # return self_conj.dot(mpo.apply(self), with_hartree=False).real
 
-    def expectations(self, mpos) -> np.ndarray:
-        if len(mpos) < 3:
+    def expectations(self, mpos, opt=True) -> np.ndarray:
+        if (not opt) or (len(mpos) < 3):
             return np.array([self.expectation(mpo) for mpo in mpos])
-        assert 2 < len(mpos)
-        # id can be used as efficient hash because of `Matrix` implementation
-        mpo_ids = np.array([[id(m) for m in mpo] for mpo in mpos])
-        common_mpo_ids = mpo_ids[0].copy()
-        mpo0_unique_idx = np.where(np.sum(mpo_ids == common_mpo_ids, axis=0) == 1)[0][0]
-        common_mpo_ids[mpo0_unique_idx] = mpo_ids[1][mpo0_unique_idx]
-        x, unique_idx = np.where(mpo_ids != common_mpo_ids)
-        # should find one at each line
-        assert xp.allclose(x, np.arange(len(mpos)))
-        common_mpo = list(mpos[0])
-        common_mpo[mpo0_unique_idx] = mpos[1][mpo0_unique_idx]
-        self_conj = self._expectation_conj()
-        environ = Environ(self, common_mpo, mps_conj=self_conj)
-        res_list = []
-        for idx, mpo in zip(unique_idx, mpos):
-            l = environ.read("L", idx - 1)
-            r = environ.read("R", idx + 1)
-            path = self._expectation_path()
-            res = multi_tensor_contract(
-                path, l, self[idx].array, mpo[idx].array, self_conj[idx].array, r
-            )
-            res_list.append(float(res.real))
-        return np.array(res_list)
-        # the naive way, slow and time consuming
-        # return np.array([self.expectation(mpo) for mpo in mpos])
+        # todo: figure out when the `else` part can work.
+        else:
+            # only supports local operator now
+            # id can be used as efficient hash because of `Matrix` implementation
+            mpo_ids = np.array([[id(m) for m in mpo] for mpo in mpos])
+            common_mpo_ids = mpo_ids[0].copy()
+            mpo0_unique_idx = np.where(np.sum(mpo_ids == common_mpo_ids, axis=0) == 1)[0][0]
+            common_mpo_ids[mpo0_unique_idx] = mpo_ids[1][mpo0_unique_idx]
+            x, unique_idx = np.where(mpo_ids != common_mpo_ids)
+            # should find one at each line
+            assert xp.allclose(x, np.arange(len(mpos)))
+            common_mpo = list(mpos[0])
+            common_mpo[mpo0_unique_idx] = mpos[1][mpo0_unique_idx]
+            self_conj = self._expectation_conj()
+            environ = Environ(self, common_mpo, mps_conj=self_conj)
+            res_list = []
+            for idx, mpo in zip(unique_idx, mpos):
+                l = environ.read("L", idx - 1)
+                r = environ.read("R", idx + 1)
+                path = self._expectation_path()
+                res = multi_tensor_contract(path, l, self[idx], mpo[idx], self_conj[idx], r)
+                res_list.append(float(res.real))
+            return np.array(res_list)
+            # the naive way, slow and time consuming
+            # return np.array([self.expectation(mpo) for mpo in mpos])
 
     @property
     def ph_occupations(self):
@@ -474,11 +481,15 @@ class Mps(MatrixProduct):
         expand bond dimension as required in compress_config
         """
         if not self.use_dummy_qn and self.nexciton == 0:
-            raise ValueError(
-                "Expanding bond dimensional without exciton is meaningless"
-            )
-        m_target = self.compress_config.bond_dim_max_value
-        logger.debug(f"target for expanding: {m_target}")
+            raise ValueError("Expanding bond dimensional without exciton is meaningless")
+        # expander m target
+        m_target = self.compress_config.bond_dim_max_value - self.bond_dims_mean
+        # will be restored at exit
+        self.compress_config.bond_dim_max_value = m_target
+        if self.compress_config.criteria is not CompressCriteria.fixed:
+            logger.warning("Setting compress criteria to fixed")
+            self.compress_config.criteria = CompressCriteria.fixed
+        logger.debug(f"target for expander: {m_target}")
         if hint_mpo is None:
             expander = self.__class__.random(self.mol_list, 1, m_target)
         else:
@@ -495,7 +506,9 @@ class Mps(MatrixProduct):
                 else:
                     assert False
                 ex_state.compress_config = self.compress_config
-                lastone = ex_state + self
+                ex_state.move_qnidx(self.qnidx)
+                ex_state.to_right = self.to_right
+                lastone = self + ex_state
 
             else:
                 lastone = self
@@ -520,19 +533,8 @@ class Mps(MatrixProduct):
                     )
                 lastone = hint_mpo @ lastone
         logger.debug(f"expander bond dimension: {expander.bond_dims}")
-        orig_config, self.compress_config = (
-            self.compress_config,
-            expander.compress_config,
-        )
-        # final compression
-        res = (
-            (self + expander.scale(coef, inplace=True))
-            .canonicalise()
-            .compress()
-            .canonical_normalize()
-        )
-        res.compress_config = orig_config
-        return res
+        self.compress_config.bond_dim_max_value += self.bond_dims_mean
+        return (self + expander.scale(coef, inplace=True)).canonicalise().canonicalise().canonical_normalize()
 
     def evolve(self, mpo, evolve_dt):
         if self.hybrid_tdh:
@@ -836,22 +838,48 @@ class Mps(MatrixProduct):
 
         sw_min_list = xp.array(sw_min_list)
         # auto-switch between tdvp_mu_vmf and tdvp_vmf
-        if sw_min_list.min() > np.sqrt(self.evolve_config.reg_epsilon*10.) and self.evolve_config.vmf_auto_switch:
-            logger.debug(f"sw.min={sw_min_list.min()},Switch to tdvp_vmf")
-            mps.evolve_config.method =  EvolveMethod.tdvp_vmf
-        elif sw_min_list.min() < self.evolve_config.reg_epsilon and self.evolve_config.vmf_auto_switch:
-            logger.debug(f"ww.min={sw_min_list.min()}, Switch to tdvp_mu_vmf")
-            mps.evolve_config.method =  EvolveMethod.tdvp_mu_vmf
+        if self.evolve_config.vmf_auto_switch:
+            if sw_min_list.min() > np.sqrt(self.evolve_config.reg_epsilon*10.) and \
+                mps.evolve_config.method == EvolveMethod.tdvp_mu_vmf:
 
-        return mps
+                logger.debug(f"sw.min={sw_min_list.min()}, Switch to tdvp_vmf")
+                mps.evolve_config.method =  EvolveMethod.tdvp_vmf
+
+            elif sw_min_list.min() < self.evolve_config.reg_epsilon and \
+                mps.evolve_config.method == EvolveMethod.tdvp_vmf:
+
+                logger.debug(f"sw.min={sw_min_list.min()}, Switch to tdvp_mu_vmf")
+                mps.evolve_config.method =  EvolveMethod.tdvp_mu_vmf
+
+        # The caller do not want to deal with an MPS that is not canonicalised
+        return mps.canonicalise()
 
     @adaptive_tdvp
     def _evolve_dmrg_tdvp_mu_cmf(self, mpo, evolve_dt) -> "Mps":
-        # new regularization scheme
-        # JCP 148, 124105 (2018)
-        # JCP 149, 044119 (2018)
+        """
+        evolution scheme: TDVP + constant mean field + matrix-unfolding
+        regularization
+        MPS :  LLLLLLC
+        1st / 2nd order(default) CMF
+
+        for 2nd order CMF:
+        L is evolved with midpoint scheme
+        C is evolved with midpoint(default) / trapz scheme
+        """
+
+        if self.evolve_config.tdvp_cmf_c_trapz:
+            assert self.evolve_config.tdvp_cmf_midpoint
 
         imag_time = np.iscomplex(evolve_dt)
+
+        # a workaround for https://github.com/scipy/scipy/issues/10164
+        if imag_time:
+            evolve_dt = -evolve_dt.imag
+            # used in calculating derivatives
+            coef = -1
+        else:
+            coef = 1j
+
         self.ensure_left_canon()
 
         # `self` should not be modified during the evolution
@@ -863,132 +891,126 @@ class Mps(MatrixProduct):
             mps = self.to_complex()
 
         if self.evolve_config.tdvp_cmf_midpoint:
-            # mps at t/2 as environment
+            # mps at t/2 (1st order) as environment
             orig_config = self.evolve_config.copy()
             self.evolve_config.tdvp_cmf_midpoint = False
+            self.evolve_config.tdvp_cmf_c_trapz = False
             self.evolve_config.adaptive = False
             environ_mps = self.evolve_dmrg(mpo, evolve_dt / 2)
             self.evolve_config = orig_config
         else:
             # mps at t=0 as environment
             environ_mps = mps.copy()
-        # construct the environment matrix
-        environ = Environ(environ_mps, mpo, "L")
-        environ.write_r_sentinel(environ_mps)
 
-        # a workaround for https://github.com/scipy/scipy/issues/10164
-        if imag_time:
-            evolve_dt = -evolve_dt.imag
-            # used in calculating derivatives
-            coef = -1
+        if self.evolve_config.tdvp_cmf_c_trapz:
+            loop = 2
+            mps[-1] = environ_mps[-1].copy()
         else:
-            coef = 1j
+            loop = 1
 
-        # statistics for debug output
-        cmf_rk_steps = []
+        while loop > 0:
 
-        if self.evolve_config.force_ovlp:
-            # construct the S_L list (type: Matrix) and S_L_inv list (type: xp.array)
-            # len: mps.site_num+1
-            S_L_list = [
-                np.ones([1, 1], dtype=mps.dtype),
-            ]
-            for imps in range(mps.site_num):
-                S_L_list.append(
-                    transferMat(
-                        environ_mps, environ_mps.conj(), "L", imps, S_L_list[imps]
-                    )
+            # construct the environment matrix
+            environ = Environ(environ_mps, mpo, "L")
+            environ.write_r_sentinel(environ_mps)
+
+            # statistics for debug output
+            cmf_rk_steps = []
+
+            if self.evolve_config.force_ovlp:
+                # construct the S_L list (type: Matrix) and S_L_inv list (type: xp.array)
+                # len: mps.site_num+1
+                S_L_list = [ones([1, 1], dtype=mps.dtype),]
+                for imps in range(mps.site_num):
+                    S_L_list.append(transferMat(environ_mps, environ_mps.conj(), "L", imps,
+                        S_L_list[imps]))
+
+                S_L_inv_list = []
+                for imps in range(mps.site_num+1):
+                    w, u = scipy.linalg.eigh(S_L_list[imps].asnumpy())
+                    S_L_inv = xp.asarray(u.dot(np.diag(1.0 / w)).dot(u.T.conj()))
+                    S_L_inv_list.append(S_L_inv)
+                    S_L_list[imps] = S_L_list[imps].array
+            else:
+                S_L_list = [None,] * (mps.site_num+1)
+                S_L_inv_list = [None,] * (mps.site_num+1)
+
+            for imps in mps.iter_idx_list(full=True):
+                shape = list(mps[imps].shape)
+                ltensor = environ.read("L", imps - 1)
+                if imps == self.site_num - 1:
+                    if loop == 1:
+                        # the coefficient site
+                        rtensor = ones((1, 1, 1))
+                        hop = hop_factory(ltensor, rtensor, mpo[imps], len(shape))
+
+                        S_inv = xp.diag(xp.ones(1,dtype=mps.dtype))
+                        def func1(y):
+                            func = integrand_func_factory(shape, hop, True, S_inv, True,
+                                    coef, Ovlp_inv1=S_L_inv_list[imps+1],
+                                    Ovlp_inv0=S_L_inv_list[imps], Ovlp0=S_L_list[imps])
+                            return func(0, y)
+
+                        ms, Lanczos_vectors = expm_krylov(func1, evolve_dt, mps[imps].ravel().array)
+                        logger.debug(f"# of Lanczos_vectors, {Lanczos_vectors}")
+                        mps[imps] = ms.reshape(shape)
+
+                    if loop == 1 and self.evolve_config.tdvp_cmf_c_trapz:
+                        break
+                    else:
+                        continue
+
+                # perform qr on the environment mps
+                qnbigl, qnbigr, _ = environ_mps._get_big_qn(imps + 1)
+                u, s, qnlset, v, s, qnrset = svd_qn.Csvd(
+                    environ_mps[imps + 1].arrray,
+                    qnbigl,
+                    qnbigr,
+                    environ_mps.qntot,
+                    system="R",
+                    full_matrices=False,
+                )
+                vt = v.T
+
+                environ_mps[imps + 1] = vt.reshape(environ_mps[imps + 1].shape)
+
+                rtensor = environ.GetLR(
+                    "R", imps + 1, environ_mps, mpo, itensor=None, method="System"
                 )
 
-            S_L_inv_list = []
-            for imps in range(mps.site_num + 1):
-                w, u = scipy.linalg.eigh(S_L_list[imps])
-                S_L_inv = xp.asarray(u.dot(np.diag(1.0 / w)).dot(u.T.conj()))
-                S_L_inv_list.append(S_L_inv)
-        else:
-            S_L_list = [None,] * (mps.site_num + 1)
-            S_L_inv_list = [None,] * (mps.site_num + 1)
+                regular_s = _mu_regularize(s, epsilon=self.evolve_config.reg_epsilon)
 
-        for imps in mps.iter_idx_list(full=True):
-            shape = list(mps[imps].shape)
-            ltensor = environ.read("L", imps - 1)
-            if imps == self.site_num - 1:
-                # the coefficient site
-                rtensor = xp.ones((1, 1, 1), dtype=mps.dtype)
-                hop = hop_factory(ltensor, rtensor, asxp(mpo[imps]), len(shape))
+                us = Matrix(u.dot(np.diag(s)))
 
-                S_inv = xp.diag(xp.ones(1, dtype=mps.dtype))
+                rtensor = tensordot(rtensor, us, axes=(-1, -1))
 
-                def func1(y):
-                    func = integrand_func_factory(
-                        shape,
-                        hop,
-                        True,
-                        S_inv,
-                        True,
-                        coef,
-                        ovlp_inv1=S_L_inv_list[imps + 1],
-                        ovlp_inv0=S_L_inv_list[imps],
-                        ovlp0=S_L_list[imps],
-                    )
-                    return func(0, y)
+                environ_mps[imps] = tensordot(environ_mps[imps], us, axes=(-1, 0))
+                environ_mps.qn[imps + 1] = qnrset
+                environ_mps.qnidx = imps
 
-                ms, _ = expm_krylov(func1, evolve_dt, mps[imps].ravel().array)
-                mps[imps] = ms.reshape(shape)
-                continue
+                S_inv = Matrix(u).conj().dot(xp.diag(1.0 / regular_s)).T
 
-            # perform qr on the environment mps
-            qnbigl, qnbigr, _ = environ_mps._get_big_qn(imps + 1)
-            u, s, qnlset, v, s, qnrset = svd_qn.Csvd(
-                environ_mps[imps + 1].array,
-                qnbigl,
-                qnbigr,
-                environ_mps.qntot,
-                system="R",
-                full_matrices=False,
-            )
-            vt = v.T
+                hop = hop_factory(ltensor, rtensor, mpo[imps], len(shape))
+                func = integrand_func_factory(shape, hop, False, S_inv.array, True,
+                        coef, Ovlp_inv1=S_L_inv_list[imps+1],
+                        Ovlp_inv0=S_L_inv_list[imps], Ovlp0=S_L_list[imps])
 
-            environ_mps[imps + 1] = vt.reshape(environ_mps[imps + 1].shape)
+                sol = solve_ivp(
+                    func, (0, evolve_dt), mps[imps].ravel().array, method="RK45"
+                )
+                cmf_rk_steps.append(len(sol.t))
+                ms = sol.y[:, -1].reshape(shape)
+                mps[imps] = ms
 
-            rtensor = environ.GetLR(
-                "R", imps + 1, environ_mps, mpo, itensor=None, method="System"
-            )
+            if len(cmf_rk_steps) > 0:
+                steps_stat = stats.describe(cmf_rk_steps)
+                logger.debug(f"{self.evolve_config.method} CMF steps: {steps_stat}")
 
-            regular_s = _mu_regularize(s, epsilon=self.evolve_config.reg_epsilon)
-
-            us = asxp(u.dot(np.diag(s)))
-
-            rtensor = xp.tensordot(rtensor, us, axes=(-1, -1))
-
-            environ_mps[imps] = tensordot(asxp(environ_mps[imps].array), us, axes=(-1, 0))
-            environ_mps.qn[imps + 1] = qnrset
-            environ_mps.qnidx = imps
-
-            S_inv = u.conj().dot(np.diag(1.0 / regular_s)).T
-
-            hop = hop_factory(ltensor, rtensor, mpo[imps], len(shape))
-            func = integrand_func_factory(
-                shape,
-                hop,
-                False,
-                S_inv,
-                True,
-                coef,
-                ovlp_inv1=S_L_inv_list[imps + 1],
-                ovlp_inv0=S_L_inv_list[imps],
-                ovlp0=S_L_list[imps],
-            )
-
-            sol = solve_ivp(
-                func, (0, evolve_dt), mps[imps].ravel().array, method="RK45"
-            )
-            cmf_rk_steps.append(len(sol.t))
-            ms = sol.y[:, -1].reshape(shape)
-            mps[imps] = ms
-        steps_stat = stats.describe(cmf_rk_steps)
-        logger.debug(f"{self.evolve_config.method} CMF steps: {steps_stat}")
-        # new_mps.evolve_config.stat = steps_stat
+            if loop == 2:
+                environ_mps = mps
+                evolve_dt /= 2.
+            loop -= 1
+            # new_mps.evolve_config.stat = steps_stat
 
         return mps
 
@@ -1173,7 +1195,7 @@ class Mps(MatrixProduct):
 
     @property
     def digest(self):
-        if 10 < self.site_num:
+        if 10 < self.site_num or self.is_mpdm:
             return None
         prod = np.eye(1).reshape(1, 1, 1)
         for ms in self:
@@ -1307,47 +1329,79 @@ class Mps(MatrixProduct):
         return res[0, :, 0]
 
     def _calc_reduced_density_matrix(self, mp1, mp2):
-        # further optimization is difficult. There are totally N^2 intermediate results to remember.
-        reduced_density_matrix = np.zeros(
-            (self.mol_list.mol_num, self.mol_list.mol_num), dtype=backend.complex_dtype
-        )
-        for i in range(self.mol_list.mol_num):
-            for j in range(self.mol_list.mol_num):
-                elem = ones((1, 1))
-                e_idx = -1
-                for mt_idx, (mt1, mt2) in enumerate(zip(mp1, mp2)):
-                    if self.ephtable.is_electron(mt_idx):
-                        e_idx += 1
-                        axis_idx1 = int(e_idx == i)
-                        axis_idx2 = int(e_idx == j)
-                        sub_mt1 = mt1[:, axis_idx1, :, :]
-                        sub_mt2 = mt2[:, :, axis_idx2, :]
-                        elem = tensordot(elem, sub_mt1, axes=(0, 0))
-                        elem = tensordot(elem, sub_mt2, axes=[(0, 1), (0, 1)])
-                    else:
-                        elem = tensordot(elem, mt1, axes=(0, 0))
-                        elem = tensordot(elem, mt2, axes=[(0, 1, 2), (0, 2, 1)])
-                reduced_density_matrix[i][j] = elem.flatten()[0]
+        if self.mol_list.scheme < 4:
+            # further optimization is difficult. There are totally N^2 intermediate results to remember.
+            reduced_density_matrix = np.zeros(
+                (self.mol_list.mol_num, self.mol_list.mol_num), dtype=backend.complex_dtype
+            )
+            for i in range(self.mol_list.mol_num):
+                for j in range(self.mol_list.mol_num):
+                    elem = ones((1, 1))
+                    e_idx = -1
+                    for mt_idx, (mt1, mt2) in enumerate(zip(mp1, mp2)):
+                        if self.ephtable.is_electron(mt_idx):
+                            e_idx += 1
+                            axis_idx1 = int(e_idx == i)
+                            axis_idx2 = int(e_idx == j)
+                            sub_mt1 = mt1[:, axis_idx1, :, :]
+                            sub_mt2 = mt2[:, :, axis_idx2, :]
+                            elem = tensordot(elem, sub_mt1, axes=(0, 0))
+                            elem = tensordot(elem, sub_mt2, axes=[(0, 1), (0, 1)])
+                        else:
+                            elem = tensordot(elem, mt1, axes=(0, 0))
+                            elem = tensordot(elem, mt2, axes=[(0, 1, 2), (0, 2, 1)])
+                    reduced_density_matrix[i][j] = elem.flatten()[0]
+        elif self.mol_list.scheme == 4:
+            e_idx = self.mol_list.e_idx()
+            l = ones((1, 1))
+            for i in range(e_idx):
+                l = tensordot(l, mp1[i], axes=(0, 0))
+                l = tensordot(l, mp2[i], axes=([0, 1, 2], [0, 2, 1]))
+            r = ones((1, 1))
+            for i in range(len(self)-1, e_idx, -1):
+                r = tensordot(mp1[i], r, axes=(3, 0))
+                r = tensordot(r, mp2[i], axes=([1, 2, 3], [2, 1, 3]))
+            #       f
+            #       |
+            # S--b--S--g--S
+            # |     |     |
+            # |     c     |
+            # |     |     |
+            # S--a--S--e--S
+            #       |
+            #       d
+            path = [
+                ([0, 1], "ab, adce -> bdce"),
+                ([2, 0], "bdce, bcfg -> defg"),
+                ([1, 0], "defg, eg -> df"),
+            ]
+            reduced_density_matrix = asnumpy(multi_tensor_contract(path, l, mp1[e_idx], mp2[e_idx], r).array)[1:, 1:]
+        else:
+            assert False
         return reduced_density_matrix
 
     def calc_reduced_density_matrix(self) -> np.ndarray:
-        if self.mol_list.scheme < 4:
-            mp1 = [mt.reshape(mt.shape[0], mt.shape[1], 1, mt.shape[2]) for mt in self]
-            mp2 = [
-                mt.reshape(mt.shape[0], 1, mt.shape[1], mt.shape[2]).conj()
-                for mt in self
-            ]
-            return self._calc_reduced_density_matrix(mp1, mp2)
-        elif self.mol_list.scheme == 4:
-            # be careful this method should be read-only
-            copy = self.copy()
-            # make sure it's canonicalised before calculating reduced density matrix
-            copy.canonicalise()
-            copy.canonicalise(self.mol_list.e_idx())
-            e_mo = copy[self.mol_list.e_idx()]
-            return asnumpy(tensordot(e_mo.conj(), e_mo, axes=((0, 2), (0, 2)))[1:, 1:])
-        else:
-            assert False
+        mp1 = [mt.reshape(mt.shape[0], mt.shape[1], 1, mt.shape[2]) for mt in self]
+        mp2 = [mt.reshape(mt.shape[0], 1, mt.shape[1], mt.shape[2]).conj() for mt in self]
+        return self._calc_reduced_density_matrix(mp1, mp2)
+
+    def calc_vn_entropy(self) -> np.ndarray:
+        r"""
+        Calculate von Neumann entropy at each bond according to :math:`S = -\textrm{Tr}(\rho \ln \rho)`
+        where :math:`\rho` is the density matrix.
+
+        Returns:
+            a NumPy array containing the entropy values.
+        """
+        _, s_list = self.compress(temp_m_trunc=np.inf, ret_s=True)
+        entropy_list = []
+        for sigma in s_list:
+            rho = sigma ** 2
+            normed_rho = rho / rho.sum()
+            truncate_rho = normed_rho[0 < normed_rho]
+            entropy = - (truncate_rho * np.log(truncate_rho)).sum()
+            entropy_list.append(entropy)
+        return np.array(entropy_list)
 
     def dump(self, fname):
         data_dict = dict()
@@ -1532,7 +1586,8 @@ def transferMat(mps, mpsconj, domain, imps, val) -> np.ndarray:
         elif domain == "L":
             val = tensordot(ms_conj, val, axes=(0, 0))
             val = tensordot(val, ms, axes=([0, 2], [1, 0]))
-
+        else:
+            assert False
     elif mps[0].ndim == 4:
         if domain == "R":
             val = tensordot(ms_conj, val, axes=(3, 0))
@@ -1540,6 +1595,8 @@ def transferMat(mps, mpsconj, domain, imps, val) -> np.ndarray:
         elif domain == "L":
             val = tensordot(ms_conj, val, axes=(0, 0))
             val = tensordot(val, ms, axes=([0, 3, 1], [1, 0, 2]))
+        else:
+            assert False
     else:
         raise ValueError(f"the dim of local mps is not correct: {mps[0].ndim}")
 
@@ -1560,18 +1617,17 @@ class BraKetPair:
         self.bra_mps = bra_mps.copy()
         self.ket_mps = ket_mps.copy()
         self.mpo = mpo
-        # for adaptive evolution. This is not an ideal solution but
-        # I can't find anyone better. Bra and Ket have the same step size during
-        # the evolution. Is this necessary?
-        self.evolve_config = ket_mps.evolve_config
         self.ft = self.calc_ft()
 
     def calc_ft(self):
         if self.mpo is None:
             dot = self.bra_mps.conj().dot(self.ket_mps)
         else:
-            dot = self.bra_mps.conj().dot(self.mpo @ self.ket_mps)
-        return complex(dot * np.conjugate(self.bra_mps.coeff) * self.ket_mps.coeff)
+            dot = self.bra_mps.conj().expectation(self.mpo, self.ket_mps)
+        return complex(
+            dot * np.conjugate(self.bra_mps.coeff)
+            * self.ket_mps.coeff
+        )
 
     def __str__(self):
         if np.iscomplexobj(self.ft):

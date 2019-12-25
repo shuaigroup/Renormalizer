@@ -14,8 +14,10 @@ ph modes: [[[6.128e-3, a.u.], [16.274571056529368, a.u.]]]
 # temperature
 temperature: [298, K]
 
+# output time interval
+evolve dt: 100
 # total time of evolution in au
-evolve tim: 30000
+evolve time: 30000
 
 # output parameters
 output dir: ./

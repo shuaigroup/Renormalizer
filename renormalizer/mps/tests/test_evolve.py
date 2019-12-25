@@ -80,7 +80,7 @@ def test_tdvp_cmf(init_state):
 def test_tdvp_ps(init_state):
     mps = init_state.copy()
     mps.evolve_config  = EvolveConfig(EvolveMethod.tdvp_ps)
-    check_result(mps, mpo, 0.5, 5)
+    check_result(mps, mpo, 0.4, 5)
 
 
 # used for debugging

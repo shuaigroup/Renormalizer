@@ -7,7 +7,7 @@ import numpy as np
 import pytest
 
 from renormalizer.mps import Mps, Mpo, MpDm, ThermalProp
-from renormalizer.utils import Quantity, CompressConfig
+from renormalizer.utils import Quantity, CompressConfig, EvolveMethod, EvolveConfig
 from renormalizer.tests import parameter_PBI
 from renormalizer.transport.tests import cur_dir
 
@@ -52,14 +52,16 @@ def test_FT_dynamics_hybrid_TDDMRG_TDH(n_dmrg_phs, scheme):
     mpdm = (
         Mpo.onsite(mol_list, r"a^\dagger", mol_idx_set={0}).apply(tp.latest_mps).normalize(1.0)
     )
-    mpdm.compress_config = CompressConfig(threshold=5e-4)
+    mpdm.compress_config = CompressConfig(max_bonddim=12)
+    mpdm.evolve_config = EvolveConfig(EvolveMethod.tdvp_ps)
     offset = mpdm.expectation(tentative_mpo)
     mpo = Mpo(mol_list, offset=Quantity(offset, "a.u."))
+    mpdm = mpdm.expand_bond_dimension(mpo)
 
     # do the evolution
     # nsteps = 90  # too many steps, may take hours to finish
-    nsteps = 40
-    dt = 10.0
+    nsteps = 20
+    dt = 20.0
 
     occ = [mpdm.e_occupations]
     for i in range(nsteps):
@@ -70,4 +72,4 @@ def test_FT_dynamics_hybrid_TDDMRG_TDH(n_dmrg_phs, scheme):
 
     with open(os.path.join(cur_dir, "FT_occ" + str(n_dmrg_phs) + ".npy"), "rb") as f:
         std = np.load(f)
-    assert np.allclose(occ[:, :nsteps], std[:, :nsteps], atol=1e-3, rtol=1e-3)
+    assert np.allclose(occ[:, :nsteps], std[:, :2*nsteps:2], atol=1e-3, rtol=1e-3)

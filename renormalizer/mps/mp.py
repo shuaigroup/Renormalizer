@@ -305,8 +305,9 @@ class MatrixProduct:
         assert self.site_num == other.site_num
         assert self.qnidx == other.qnidx
 
-        # sometimes `other` is complex and `self` is real
-        new_mps = other.metacopy()
+        new_mps = self.metacopy()
+        if other.dtype == backend.complex_dtype:
+            new_mps.dtype = backend.complex_dtype
         if self.is_complex:
             new_mps.to_complex(inplace=True)
         new_mps.compress_config.update(self.compress_config)
@@ -354,9 +355,9 @@ class MatrixProduct:
         else:
             assert False
 
-        new_mps.move_qnidx(self.qnidx)
-        new_mps.to_right = self.to_right
-        new_mps.qn = [qn1 + qn2 for qn1, qn2 in zip(self.qn, new_mps.qn)]
+        new_mps.move_qnidx(other.qnidx)
+        new_mps.to_right = other.to_right
+        new_mps.qn = [qn1 + qn2 for qn1, qn2 in zip(self.qn, other.qn)]
         new_mps.qn[0] = [0]
         new_mps.qn[-1] = [0]
         if self.compress_add:
@@ -364,7 +365,7 @@ class MatrixProduct:
             new_mps.compress()
         return new_mps
 
-    def compress(self, temp_m_trunc=None):
+    def compress(self, temp_m_trunc=None, ret_s=False):
         """
         inp: canonicalise MPS (or MPO)
 
@@ -390,6 +391,7 @@ class MatrixProduct:
                 assert self.check_right_canonical()
         system = "L" if self.to_right else "R"
 
+        s_list = []
         for idx in self.iter_idx_list(full=False):
             mt: Matrix = self[idx]
             if self.to_right:
@@ -406,6 +408,7 @@ class MatrixProduct:
                 full_matrices=False,
             )
             vt = v.T
+            s_list.append(sigma)
             if temp_m_trunc is None:
                 m_trunc = self.compress_config.compute_m_trunc(
                     sigma, idx, self.to_right
@@ -419,9 +422,14 @@ class MatrixProduct:
         self._switch_direction()
         compress_ratio = sz_before / self.total_bytes
         logger.debug(f"size before/after compress: {sizeof_fmt(sz_before)}/{sizeof_fmt(self.total_bytes)}, ratio: {compress_ratio}")
-        return self
+        if not ret_s:
+            # usual exit
+            return self
+        else:
+            # return singular value list
+            return self, s_list
 
-    def canonicalise(self, stop_idx: int=None):
+    def canonicalise(self, stop_idx: int=None, normalize=False):
         # stop_idx: mix canonical site at `stop_idx`
         for idx in self.iter_idx_list(full=False, stop_idx=stop_idx):
             mt: Matrix = self[idx]
@@ -441,6 +449,9 @@ class MatrixProduct:
                 system=system,
                 full_matrices=False,
             )
+            if normalize:
+                # roughly normalize. Used when the each site of the mps is scaled such as in exact thermal prop
+                v /= np.linalg.norm(v[:, 0])
             self._update_ms(
                 idx, u, v.T, sigma=None, qnlset=qnlset, qnrset=qnrset
             )
@@ -492,28 +503,10 @@ class MatrixProduct:
         # regards 1+0j as complex. The former is the desired behavior
         if np.iscomplex(val):
             new_mp.to_complex(inplace=True)
-            # no need to care about negative because no `abs` will be done
-            negative = False
         else:
             val = val.real
-            negative = val < 0
-            val = abs(val)
-        # Note matrices are read-only
-        # there are two ways to do the scaling
-        if np.abs(np.log(np.abs(val))) < 0.01:
-            # Thr first way. The operation performs very quickly,
-            # but leads to high float point error when val is very large or small
-            # val = 2 is considered as very large because the normalization can
-            # be done successively
-            assert new_mp[self.qnidx].array.any()
-            new_mp[self.qnidx] = new_mp[self.qnidx] * val
-        else:
-            # The second way. High time complexity but numerically more feasible.
-            root_val = val ** (1 / len(self))
-            for idx, mt in enumerate(self):
-                new_mp[idx] = mt * root_val
-        if negative:
-            new_mp[0] *= -1
+        assert new_mp[self.qnidx].array.any()
+        new_mp[self.qnidx] = new_mp[self.qnidx] * val
         return new_mp
 
     def to_complex(self, inplace=False):
@@ -526,7 +519,7 @@ class MatrixProduct:
             if mt is None:
                 # dummy mt after metacopy. Bad idea. Remove the dummy thing when feasible
                 continue
-            new_mp[i] = mt.to_complex(inplace)
+            new_mp[i] = mt.to_complex()
         return new_mp
 
     def distance(self, other) -> float:
@@ -541,9 +534,9 @@ class MatrixProduct:
             assert dis_square/l1.real < 1e-8
             res = 0.
         else:
-            res = np.sqrt(dis_square)
+            res = np.sqrt(dis_square).item()
         
-        return res
+        return float(res)
 
     def copy(self):
         new = self.metacopy()

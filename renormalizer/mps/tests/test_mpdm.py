@@ -78,7 +78,7 @@ def test_thermal_prop(mol_list, etot_std, occ_std, adaptive, evolve_method, rtol
         nsteps = 20
         evolve_config.ivp_rtol=1e-3
         evolve_config.ivp_atol=1e-6
-        init_mps.compress_config.bond_dim_max_value=16
+        init_mps.compress_config.bond_dim_max_value = 16
 
     dbeta = evolve_time/nsteps
 

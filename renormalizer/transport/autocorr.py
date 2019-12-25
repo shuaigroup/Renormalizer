@@ -51,7 +51,7 @@ class TransportAutoCorr(TdMpsJob):
         logger.debug("constructing flux operator")
         j_list = []
         for i in range(len(self.mol_list) - 1):
-            j1 = Mpo.e_intersite(self.mol_list, {i:r"a", i+1:r"a^\dagger"}, Quantity(self.mol_list.j_matrix[i, i + 1]))
+            j1 = Mpo.intersite(self.mol_list, {i:r"a", i+1:r"a^\dagger"}, {}, Quantity(self.mol_list.j_matrix[i, i + 1]))
             j1.compress_config.threshold = 1e-5
             j2 = j1.conj_trans().scale(-1)
             j_list.extend([j1, j2])
@@ -94,7 +94,6 @@ class TransportAutoCorr(TdMpsJob):
     def evolve_single_step(self, evolve_dt):
         prev_bra_mpdm, prev_ket_mpdm = self.latest_mps
         latest_ket_mpdm = prev_ket_mpdm.evolve(self.h_mpo, evolve_dt)
-        prev_bra_mpdm.evolve_config.guess_dt = -prev_ket_mpdm.evolve_config.guess_dt
         latest_bra_mpdm = prev_bra_mpdm.evolve(self.h_mpo, evolve_dt)
         return BraKetPair(latest_bra_mpdm, latest_ket_mpdm, self.j_oper)
 
