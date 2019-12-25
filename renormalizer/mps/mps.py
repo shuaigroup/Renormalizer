@@ -368,15 +368,12 @@ class Mps(MatrixProduct):
     def expectation(self, mpo, self_conj=None) -> Union[float, complex]:
         if self_conj is None:
             self_conj = self._expectation_conj()
-            ret_float = True
-        else:
-            ret_float = False
         environ = Environ(self, mpo, "R", mps_conj=self_conj)
         l = xp.ones((1, 1, 1), dtype=self.dtype)
         r = environ.read("R", 1)
         path = self._expectation_path()
         val = multi_tensor_contract(path, l, self[0], mpo[0], self_conj[0], r)
-        if ret_float:
+        if np.isclose(val.imag, 0):
             return float(val.real)
         else:
             return complex(val)
@@ -920,17 +917,17 @@ class Mps(MatrixProduct):
             if self.evolve_config.force_ovlp:
                 # construct the S_L list (type: Matrix) and S_L_inv list (type: xp.array)
                 # len: mps.site_num+1
-                S_L_list = [ones([1, 1], dtype=mps.dtype),]
+                S_L_list = [np.ones([1, 1], dtype=mps.dtype),]
                 for imps in range(mps.site_num):
                     S_L_list.append(transferMat(environ_mps, environ_mps.conj(), "L", imps,
                         S_L_list[imps]))
 
                 S_L_inv_list = []
                 for imps in range(mps.site_num+1):
-                    w, u = scipy.linalg.eigh(S_L_list[imps].asnumpy())
+                    w, u = scipy.linalg.eigh(S_L_list[imps])
                     S_L_inv = xp.asarray(u.dot(np.diag(1.0 / w)).dot(u.T.conj()))
                     S_L_inv_list.append(S_L_inv)
-                    S_L_list[imps] = S_L_list[imps].array
+                    S_L_list[imps] = S_L_list[imps]
             else:
                 S_L_list = [None,] * (mps.site_num+1)
                 S_L_inv_list = [None,] * (mps.site_num+1)
@@ -947,8 +944,8 @@ class Mps(MatrixProduct):
                         S_inv = xp.diag(xp.ones(1,dtype=mps.dtype))
                         def func1(y):
                             func = integrand_func_factory(shape, hop, True, S_inv, True,
-                                    coef, Ovlp_inv1=S_L_inv_list[imps+1],
-                                    Ovlp_inv0=S_L_inv_list[imps], Ovlp0=S_L_list[imps])
+                                    coef, ovlp_inv1=S_L_inv_list[imps+1],
+                                    ovlp_inv0=S_L_inv_list[imps], ovlp0=S_L_list[imps])
                             return func(0, y)
 
                         ms, Lanczos_vectors = expm_krylov(func1, evolve_dt, mps[imps].ravel().array)
@@ -963,7 +960,7 @@ class Mps(MatrixProduct):
                 # perform qr on the environment mps
                 qnbigl, qnbigr, _ = environ_mps._get_big_qn(imps + 1)
                 u, s, qnlset, v, s, qnrset = svd_qn.Csvd(
-                    environ_mps[imps + 1].arrray,
+                    environ_mps[imps + 1].array,
                     qnbigl,
                     qnbigr,
                     environ_mps.qntot,
@@ -980,7 +977,7 @@ class Mps(MatrixProduct):
 
                 regular_s = _mu_regularize(s, epsilon=self.evolve_config.reg_epsilon)
 
-                us = Matrix(u.dot(np.diag(s)))
+                us = u.dot(np.diag(s))
 
                 rtensor = tensordot(rtensor, us, axes=(-1, -1))
 
@@ -988,12 +985,12 @@ class Mps(MatrixProduct):
                 environ_mps.qn[imps + 1] = qnrset
                 environ_mps.qnidx = imps
 
-                S_inv = Matrix(u).conj().dot(xp.diag(1.0 / regular_s)).T
+                S_inv = u.conj().dot(np.diag(1.0 / regular_s)).T
 
                 hop = hop_factory(ltensor, rtensor, mpo[imps], len(shape))
-                func = integrand_func_factory(shape, hop, False, S_inv.array, True,
-                        coef, Ovlp_inv1=S_L_inv_list[imps+1],
-                        Ovlp_inv0=S_L_inv_list[imps], Ovlp0=S_L_list[imps])
+                func = integrand_func_factory(shape, hop, False, S_inv, True,
+                        coef, ovlp_inv1=S_L_inv_list[imps+1],
+                        ovlp_inv0=S_L_inv_list[imps], ovlp0=S_L_list[imps])
 
                 sol = solve_ivp(
                     func, (0, evolve_dt), mps[imps].ravel().array, method="RK45"
@@ -1375,7 +1372,7 @@ class Mps(MatrixProduct):
                 ([2, 0], "bdce, bcfg -> defg"),
                 ([1, 0], "defg, eg -> df"),
             ]
-            reduced_density_matrix = asnumpy(multi_tensor_contract(path, l, mp1[e_idx], mp2[e_idx], r).array)[1:, 1:]
+            reduced_density_matrix = asnumpy(multi_tensor_contract(path, l, mp1[e_idx], mp2[e_idx], r))[1:, 1:]
         else:
             assert False
         return reduced_density_matrix

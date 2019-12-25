@@ -43,7 +43,7 @@ def Csvd(
 ):
     """
     block svd the coefficient matrix (l, sigmal, sigmar, r) or (l,sigma,r)
-    according to the quantum number 
+    according to the quantum number
     ddm is the direct diagonalization the reduced density matrix
     """
 
@@ -218,13 +218,13 @@ def blockrecover(indices, U, dim):
 def cvec2cmat(cshape, c, qnmat, nexciton, nroots=1):
     # recover good quantum number vector c to matrix format
     if nroots == 1:
-        cstruct = xp.zeros(cshape, dtype=c.dtype)
-        xp.place(cstruct, qnmat == nexciton, c)
+        cstruct = np.zeros(cshape, dtype=c.dtype)
+        np.place(cstruct, qnmat == nexciton, c)
     else:
         cstruct = []
         for ic in c:
-            icstruct = xp.zeros(cshape, dtype=ic.dtype)
-            xp.place(icstruct, qnmat == nexciton, ic)
+            icstruct = np.zeros(cshape, dtype=ic.dtype)
+            np.place(icstruct, qnmat == nexciton, ic)
             cstruct.append(icstruct)
 
     return cstruct
@@ -234,7 +234,7 @@ def construct_qnmat(mps, ephtable, pbond, addlist, method, system):
     """
     construct the quantum number pattern, the structure is as the coefficient
     QN: quantum number list at each bond
-    ephtable : e-ph table 1 is electron and 0 is phonon 
+    ephtable : e-ph table 1 is electron and 0 is phonon
     pbond : physical pbond
     addlist : the sigma orbital set
     """

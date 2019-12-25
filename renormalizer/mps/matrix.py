@@ -5,9 +5,7 @@ import weakref
 import logging
 from typing import List, Union
 
-import numpy as np
-
-from renormalizer.mps.backend import np, backend, xp, USE_GPU, xp as xp
+from renormalizer.mps.backend import np, backend, xp, USE_GPU
 
 logger = logging.getLogger(__name__)
 
@@ -113,7 +111,7 @@ class Matrix:
         """
         tensm = asxp(self.array.reshape([np.prod(self.shape[:-1]), self.shape[-1]]))
         s = tensm.T.conj() @ tensm
-        return xp.allclose(s, np.eye(s.shape[0]), rtol=rtol, atol=atol)
+        return xp.allclose(s, xp.eye(s.shape[0]), rtol=rtol, atol=atol)
 
     def check_rortho(self, rtol=1e-5, atol=1e-8):
         """
@@ -121,7 +119,7 @@ class Matrix:
         """
         tensm = asxp(self.array.reshape([self.shape[0], np.prod(self.shape[1:])]))
         s = tensm @ tensm.T.conj()
-        return xp.allclose(s, np.eye(s.shape[0]), rtol=rtol, atol=atol)
+        return xp.allclose(s, xp.eye(s.shape[0]), rtol=rtol, atol=atol)
 
     def to_complex(self):
         # `xp.array` always creates new array, so to_complex means copy, which is
