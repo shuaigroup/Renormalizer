@@ -27,7 +27,7 @@ def test_save_load():
     os.remove(fname)
 
 
-def check_distance(a: Mps ,b: Mps):
+def check_distance(a: Mps, b: Mps):
     d1 = (a - b).dmrg_norm
     d2 = a.distance(b)
     a_array = a.full_wfn()
@@ -56,6 +56,6 @@ def test_environ():
     for i in range(len(mps)-1):
         l = environ.read("L", i)
         r = environ.read("R", i+1)
-        e = tensordot(l, r, axes=((0, 1, 2), (0, 1, 2))).asnumpy()
+        e = complex(tensordot(l, r, axes=((0, 1, 2), (0, 1, 2)))).real
         assert pytest.approx(e) == mps.expectation(mpo)
 

@@ -6,8 +6,8 @@ from typing import List
 import numpy as np
 import scipy.linalg
 
-from renormalizer.mps.backend import xp, backend
-from renormalizer.mps.matrix import tensordot, ones
+from renormalizer.mps.backend import xp
+from renormalizer.mps.matrix import tensordot, asnumpy
 from renormalizer.mps import Mpo, Mps
 from renormalizer.mps.tdh import unitary_propagation
 
@@ -79,7 +79,7 @@ class MpDmBase(Mps, Mpo):
             assert mt_self.shape[2] == mt_other.shape[1]
             # mt=np.einsum("apqb,cqrd->acprbd",mt_s,mt_o)
             mt = xp.moveaxis(
-                xp.tensordot(mt_self.array, mt_other.array, axes=([2], [1])),
+                tensordot(mt_self.array, mt_other.array, axes=([2], [1])),
                 [-3, -2],
                 [1, 3],
             )
@@ -120,7 +120,7 @@ class MpDm(MpDmBase):
         mpo = cls()
         mpo.mol_list = mps.mol_list
         for ms in mps:
-            mo = xp.zeros(tuple([ms.shape[0]] + [ms.shape[1]] * 2 + [ms.shape[2]]))
+            mo = np.zeros(tuple([ms.shape[0]] + [ms.shape[1]] * 2 + [ms.shape[2]]))
             for iaxis in range(ms.shape[1]):
                 mo[:, iaxis, iaxis, :] = ms[:, iaxis, :].array
             mpo.append(mo)

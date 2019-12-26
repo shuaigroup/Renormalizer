@@ -1,9 +1,6 @@
 # -*- coding: utf-8 -*-
 from typing import List, Tuple
 
-
-import numpy as np
-
 from renormalizer.mps.matrix import EmptyMatrixError
 from renormalizer.mps.mpo import Mpo
 from renormalizer.mps.mpdm import MpDmFull

@@ -3,6 +3,7 @@
 # correction vector base
 import numpy as np
 from multiprocessing import Pool
+import multiprocessing
 from renormalizer.mps import Mpo
 from renormalizer.utils import Quantity
 from renormalizer.utils.elementop import construct_e_op_dict, ph_op_matrix
@@ -48,18 +49,22 @@ class SpectraCv(object):
         print('Quantum number of X', check_1)
     '''
     def run(self):
-        start = time.time()
-        pool = Pool(processes=self.cores)
-        logger.info(f"{len(self.freq_reg)} total frequency to do")
-        logger.info(f"{self.cores} multiprocess parallelization activated")
-        freq_reg = self.freq_reg
-        spectra = []
-        for i_spec in pool.imap(
-                unwrap_self, zip([self]*len(freq_reg), freq_reg)
-        ):
-            spectra.append(i_spec)
-        logger.info(f"time used:{time.time()-start}")
-        return spectra
+        try:
+            multiprocessing.set_start_method('forkserver', force=True)
+            start = time.time()
+            pool = Pool(processes=self.cores)
+            logger.info(f"{len(self.freq_reg)} total frequency to do")
+            logger.info(f"{self.cores} multiprocess parallelization activated")
+            freq_reg = self.freq_reg
+            spectra = []
+            for i_spec in pool.imap(
+                    unwrap_self, zip([self]*len(freq_reg), freq_reg)
+            ):
+                spectra.append(i_spec)
+            logger.info(f"time used:{time.time()-start}")
+            return spectra
+        except RuntimeError:
+            pass
 
     def cv_solve(self, omega):
         self.hop_time = []
@@ -128,8 +133,11 @@ class SpectraCv(object):
     def oper_prepare(self, omega):
         raise NotImplementedError
 
-    def initialize_LR(self, direction):
-        raise NotImplemented
+    def optimize_cv(self, lr_group, direction, isite, num, percent=0):
+        raise NotImplementedError
 
-    def update_LR(self, direction):
-        raise NotImplemented
+    def initialize_LR(self, direction):
+        raise NotImplementedError
+
+    def update_LR(self, lrgroup, direction, isite):
+        raise NotImplementedError
