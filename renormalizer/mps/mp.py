@@ -4,9 +4,8 @@
 import logging
 from typing import List, Union
 
-import numpy as np
-
 from renormalizer.model import MolList, EphTable
+from renormalizer.mps.backend import np, xp
 from renormalizer.mps import svd_qn
 from renormalizer.mps.matrix import (
     einsum,
@@ -225,7 +224,7 @@ class MatrixProduct:
             return range(self.qnidx, last, -1)
 
     def _update_ms(
-        self, idx: int, u: Matrix, vt: Matrix, sigma=None, qnlset=None, qnrset=None, m_trunc=None
+        self, idx: int, u: np.ndarray, vt: np.ndarray, sigma=None, qnlset=None, qnrset=None, m_trunc=None
     ):
         if m_trunc is None:
             m_trunc = u.shape[1]
@@ -235,21 +234,21 @@ class MatrixProduct:
             # canonicalise, vt is not unitary
             if self.is_mpo:
                 if self.to_right:
-                    norm = vt.norm()
-                    u = Matrix(u.array * norm)
-                    vt = Matrix(vt.array / norm)
+                    norm = np.linalg.norm(vt)
+                    u *= norm
+                    vt /= norm
                 else:
-                    norm = u.norm()
-                    u = Matrix(u.array / norm)
-                    vt = Matrix(vt.array * norm)
+                    norm = np.linalg.norm(u)
+                    u /= norm
+                    vt *= norm
         else:
             sigma = sigma[:m_trunc]
             if (not self.is_mpo and self.to_right) or (self.is_mpo and not self.to_right):
-                vt = einsum("i, ij -> ij", sigma, vt)
+                vt = np.einsum("i, ij -> ij", sigma, vt)
             else:
-                u = einsum("ji, i -> ji", u, sigma)
+                u = np.einsum("ji, i -> ji", u, sigma)
         if self.to_right:
-            self[idx + 1] = tensordot(vt, self[idx + 1], axes=1)
+            self[idx + 1] = tensordot(vt, self[idx + 1].array, axes=1)
             ret_mpsi = u.reshape(
                 [u.shape[0] // self[idx].pdim_prod] + list(self[idx].pdim) + [m_trunc]
             )
@@ -257,7 +256,7 @@ class MatrixProduct:
                 self.qn[idx + 1] = qnlset[:m_trunc]
                 self.qnidx = idx + 1
         else:
-            self[idx - 1] = tensordot(self[idx - 1], u, axes=1)
+            self[idx - 1] = tensordot(self[idx - 1].array, u, axes=1)
             ret_mpsi = vt.reshape(
                 [m_trunc] + list(self[idx].pdim) + [vt.shape[1] // self[idx].pdim_prod]
             )
@@ -401,7 +400,7 @@ class MatrixProduct:
                 mt = mt.r_combine()
             qnbigl, qnbigr, _ = self._get_big_qn(idx)
             u, sigma, qnlset, v, sigma, qnrset = svd_qn.Csvd(
-                mt.asnumpy(),
+                mt.array,
                 qnbigl,
                 qnbigr,
                 self.qntot,
@@ -417,7 +416,7 @@ class MatrixProduct:
             else:
                 m_trunc = min(temp_m_trunc, len(sigma))
             self._update_ms(
-                idx, Matrix(u), Matrix(vt), Matrix(sigma), qnlset, qnrset, m_trunc
+                idx, u, vt, sigma, qnlset, qnrset, m_trunc
             )
 
         self._switch_direction()
@@ -442,7 +441,7 @@ class MatrixProduct:
             qnbigl, qnbigr, _ = self._get_big_qn(idx)
             system = "L" if self.to_right else "R"
             u, qnlset, v, qnrset = svd_qn.Csvd(
-                mt.asnumpy(),
+                mt.array,
                 qnbigl,
                 qnbigr,
                 self.qntot,
@@ -454,7 +453,7 @@ class MatrixProduct:
                 # roughly normalize. Used when the each site of the mps is scaled such as in exact thermal prop
                 v /= np.linalg.norm(v[:, 0])
             self._update_ms(
-                idx, Matrix(u), Matrix(v.T), sigma=None, qnlset=qnlset, qnrset=qnrset
+                idx, u, v.T, sigma=None, qnlset=qnlset, qnrset=qnrset
             )
         # can't iter to idx == 0 or idx == self.site_num - 1
         if (not self.to_right and idx == 1) or (self.to_right and idx == self.site_num - 2):
@@ -470,30 +469,30 @@ class MatrixProduct:
             new_mp[idx] = mt.conj()
         return new_mp
 
-    def dot(self, other):
+    def dot(self, other: "MatrixProduct") -> complex:
         """
         dot product of two mps / mpo 
         """
 
         assert len(self) == len(other)
-        e0 = eye(1, 1)
+        e0 = xp.eye(1, 1)
         # for debugging. It has little computational cost anyway
         debug_t = []
         for mt1, mt2 in zip(self, other):
             # sum_x e0[:,x].m[x,:,:]
             debug_t.append(e0)
-            e0 = tensordot(e0, mt2, 1)
+            e0 = tensordot(e0, mt2.array, 1)
             # sum_ij e0[i,p,:] self[i,p,:]
             # note, need to flip a (:) index onto top,
             # therefore take transpose
             if mt1.ndim == 3:
-                e0 = tensordot(e0, mt1, ([0, 1], [0, 1])).T
+                e0 = tensordot(e0, mt1.array, ([0, 1], [0, 1])).T
             elif mt1.ndim == 4:
-                e0 = tensordot(e0, mt1, ([0, 1, 2], [0, 1, 2])).T
+                e0 = tensordot(e0, mt1.array, ([0, 1, 2], [0, 1, 2])).T
             else:
                 assert False
 
-        return e0[0, 0]
+        return complex(e0[0, 0])
 
     def angle(self, other):
         return abs(self.conj().dot(other))
@@ -529,7 +528,7 @@ class MatrixProduct:
         l1dotl2 = self.conj().dot(other)
         dis_square = (l1 + l2
             - l1dotl2
-            - l1dotl2.conj()).real 
+            - l1dotl2.conjugate()).real
         
         if dis_square < 0:
             assert dis_square/l1.real < 1e-8

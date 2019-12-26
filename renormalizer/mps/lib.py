@@ -7,11 +7,10 @@ construct the operator matrix in the MPS sweep procedure
 from functools import reduce
 from collections import deque
 
-import numpy as np
+from renormalizer.mps.backend import np, backend
+from renormalizer.mps.matrix import Matrix, multi_tensor_contract, asxp, asnumpy
 
-from renormalizer.mps.matrix import Matrix, multi_tensor_contract, ones
-
-sentinel = ones((1, 1, 1))
+sentinel = np.ones((1, 1, 1), dtype=backend.real_dtype)
 
 
 class Environ:
@@ -36,16 +35,16 @@ class Environ:
             start, end, inc = len(mps) - 1, 0, -1
             self.write_r_sentinel(mps)
 
-        tensor = ones((1, 1, 1), mps.dtype)
+        tensor = sentinel
         for idx in range(start, end, inc):
             tensor = self.addone(tensor, mps, mpo, idx, domain, mps_conj)
             self.write(domain, idx, tensor)
 
     def write_l_sentinel(self, mps):
-        self.write("L", -1, ones((1, 1, 1), mps.dtype))
+        self.write("L", -1, sentinel)
 
     def write_r_sentinel(self, mps):
-        self.write("R", len(mps), ones((1, 1, 1), mps.dtype))
+        self.write("R", len(mps), sentinel)
 
     def GetLR(
         self, domain, siteidx, MPS, MPO, itensor=sentinel, method="Scratch"
@@ -95,24 +94,24 @@ class Environ:
                 |_| |_|
         """
         assert domain in ["L", "R"]
-        ms = MPS[isite]
-        mo = MPO[isite]
+        ms = MPS[isite].array
+        mo = MPO[isite].array
         if mps_conj is None:
             ms_conj = ms.conj()
         else:
-            ms_conj = mps_conj[isite]
+            ms_conj = mps_conj[isite].array
         if domain == "L":
             assert intensor.shape[0] == ms_conj.shape[0]
             assert intensor.shape[1] == mo.shape[0]
             assert intensor.shape[2] == ms.shape[0]
             """
-                           l 
+                           l
             S-a-S-f    O-a-O-f
                 d          d
-            O-b-O-g or O-b-O-g  
+            O-b-O-g or O-b-O-g
                 e          e
             S-c-S-h    O-c-O-h
-                           l  
+                           l
             """
 
             if MPS[isite].ndim == 3:
@@ -168,10 +167,10 @@ class Environ:
         return outtensor
 
     def write(self, domain, siteidx, tensor):
-        self._virtual_disk[(domain, siteidx)] = tensor
+        self._virtual_disk[(domain, siteidx)] = asnumpy(tensor)
 
     def read(self, domain: str, siteidx: int):
-        return self._virtual_disk[(domain, siteidx)]
+        return asxp(self._virtual_disk[(domain, siteidx)])
 
 
 def select_basis(qnset, Sset, qnlist, Mmax, percent=0):
@@ -247,9 +246,9 @@ def updatemps(vset, sset, qnset, compset, nexciton, Mmax, percent=0):
 
     # print("discard:", 1.0 - stot)
     if compmps is not None:
-        compmps = Matrix(compmps)
+        compmps = asxp(compmps)
 
-    return Matrix(ms), mpsdim, mpsqn, compmps
+    return asxp(ms), mpsdim, mpsqn, compmps
 
 
 def update_cv(vset, sset, qnset, compset, nexciton, Mmax, spectratype,

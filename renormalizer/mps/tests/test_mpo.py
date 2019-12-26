@@ -30,11 +30,11 @@ def test_offset(scheme):
     mpo1 = Mpo(mlist)
     assert mpo1.is_hermitian()
     f1 = mpo1.full_operator()
-    evals1, _ = np.linalg.eigh(f1.asnumpy())
+    evals1, _ = np.linalg.eigh(f1)
     offset = Quantity(0.123)
     mpo2 = Mpo(mlist, offset=offset)
     f2 = mpo2.full_operator()
-    evals2, _ = np.linalg.eigh(f2.asnumpy())
+    evals2, _ = np.linalg.eigh(f2)
     assert np.allclose(evals1 - offset.as_au(), evals2)
 
 def test_identity():

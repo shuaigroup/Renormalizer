@@ -6,7 +6,7 @@ import scipy
 from renormalizer.model import MolList
 from renormalizer.model.ephtable import EphTable
 from renormalizer.mps.backend import xp
-from renormalizer.mps.matrix import moveaxis, tensordot, ones, EmptyMatrixError
+from renormalizer.mps.matrix import moveaxis, tensordot, asnumpy, EmptyMatrixError
 from renormalizer.mps.mp import MatrixProduct
 from renormalizer.mps import svd_qn
 from renormalizer.mps.lib import update_cv
@@ -534,11 +534,11 @@ class Mpo(MatrixProduct):
         mpo.mol_list = mol_list
         for imol, mol in enumerate(mol_list):
             if mol_list.scheme < 4:
-                mpo.append(xp.eye(2).reshape(1, 2, 2, 1))
+                mpo.append(np.eye(2).reshape(1, 2, 2, 1))
             elif mol_list.scheme == 4:
                 if len(mpo) == mol_list.e_idx():
                     n = mol_list.mol_num
-                    mpo.append(xp.eye(n+1).reshape(1, n+1, n+1, 1))
+                    mpo.append(np.eye(n+1).reshape(1, n+1, n+1, 1))
             else:
                 assert False
             iph = 0
@@ -561,7 +561,7 @@ class Mpo(MatrixProduct):
         Parameters:
             mol_list : MolList
                 the molecular information
-            e_opera: 
+            e_opera:
                 the electronic operators. {imol: operator}, such as {1:"a", 3:r"a^\dagger"}
             ph_opera:
                 the vibrational operators. {(imol,iph): operator}, such as {(0,5):"b"}
@@ -580,7 +580,7 @@ class Mpo(MatrixProduct):
         for j in ph_opera.keys():
             assert j[0] in range(mol_list.mol_num)
             assert j[1] in range(mol_list[j[0]].n_dmrg_phs)
-        
+
         mpo = cls()
         mpo.mol_list = mol_list
         mpo.qn = [[0]]
@@ -604,17 +604,17 @@ class Mpo(MatrixProduct):
             else:
                 mo[0, :, :, 0] = eop["Iden"]
                 mpo.qn.append(mpo.qn[-1])
-            
+
             mpo.append(mo)
             impo += 1
-            
+
             assert mol_list[imol].no_qboson
 
             for iph in range(mol_list[imol].n_dmrg_phs):
                 pbond = mol_list.pbond_list[impo]
                 mo = np.zeros([1, pbond, pbond, 1])
                 phop = construct_ph_op_dict(pbond)
-                
+
                 if (imol, iph) in ph_opera.keys():
                     mo[0, :, :, 0] = phop[ph_opera[(imol,iph)]]
                 else:
@@ -627,12 +627,12 @@ class Mpo(MatrixProduct):
 
         mpo.qnidx = len(mpo) - 1
         mpo.to_right = False
-        
+
         mpo.qntot = mpo.qn[-1][0]
         mpo.qn[-1] = [0]
 
         mpo.offset = Quantity(0.)
-        
+
         return mpo.scale(scale.as_au(), inplace=True)
 
 
@@ -731,10 +731,10 @@ class Mpo(MatrixProduct):
         mpo = cls()
         mpo.mol_list = mol_list
         for p in mol_list.pbond_list:
-            mpo.append(xp.eye(p).reshape(1, p, p, 1))
+            mpo.append(np.eye(p).reshape(1, p, p, 1))
         mpo.build_empty_qn()
         return mpo
-    
+
     #def _scheme5(self, mol_list: MolList, elocal_offset, offset):
     #    # electronic part is in the first site
     #    # [H_e, op1, op2, ..., opn, 0]
@@ -760,7 +760,7 @@ class Mpo(MatrixProduct):
     #            pdim = mol_list.mol_num + 1
     #        else:
     #            raise ValueError("scheme5 input space {space} is not in ['GS','EX','GS+EX']")
-    #            
+    #
     #    def get_marginal_phonon_mo(pdim, bdim, ph, iterm, phop):
     #        # [ w b^d b,  gw(b^d+b), I]
     #        mo = np.zeros((1, pdim, pdim, bdim))
@@ -783,14 +783,14 @@ class Mpo(MatrixProduct):
 
     #    nmol = mol_list.mol_num
 
-    #    mo_e = np.zeros((1, pdim, pdim, len(e_op_list)))                      
-    #    
+    #    mo_e = np.zeros((1, pdim, pdim, len(e_op_list)))
+    #
     #    # vibrational site link list
     #    # left-hand of electronic site
     #    [(mol.ph,iterm),]
 
-    #    for ph, iterm in enumerate(lvib_list): 
-    #        if 
+    #    for ph, iterm in enumerate(lvib_list):
+    #        if
     #    # right hand of electronic site
     #    [(mol.iph,iterm),]
 
@@ -1083,9 +1083,9 @@ class Mpo(MatrixProduct):
                         mo = np.zeros([mpo_dim[impo], pbond, pbond, mpo_dim[impo + 1]])
 
                         if rep == "star":
-                            bpbdagger = qbopera[imol]["bpbdagger" + str(iph)][
+                            bpbdagger = asnumpy(qbopera[imol]["bpbdagger" + str(iph)][
                                 iqb
-                            ].asnumpy()
+                            ])
 
                             mo[0, :, :, 0] = phop["Iden"]
                             mo[-1, :, :, 0] = (
@@ -1390,17 +1390,17 @@ class Mpo(MatrixProduct):
         dim = np.prod(self.pbond_list)
         if 20000 < dim:
             raise ValueError("operator too large")
-        res = ones((1, 1, 1, 1))
+        res = np.ones((1, 1, 1, 1))
         for mt in self:
             dim1 = res.shape[1] * mt.shape[1]
             dim2 = res.shape[2] * mt.shape[2]
             dim3 = mt.shape[-1]
-            res = tensordot(res, mt, axes=1).transpose((0, 1, 3, 2, 4, 5)).reshape(1, dim1, dim2, dim3)
+            res = np.tensordot(res, mt.array, axes=1).transpose((0, 1, 3, 2, 4, 5)).reshape(1, dim1, dim2, dim3)
         return res[0, :, :, 0]
 
     def is_hermitian(self):
         full = self.full_operator()
-        return xp.allclose(full.array.conj().T, full, atol=1e-7)
+        return np.allclose(full.conj().T, full, atol=1e-7)
 
     def __matmul__(self, other):
         return self.apply(other)
