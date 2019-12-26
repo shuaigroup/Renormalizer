@@ -67,43 +67,27 @@ period = Mpo.intersite(mol_list, {0:r"a^\dagger",nmols-1:"a"}, {},
         Quantity(j_value))
 mpo = mpo.add(period).add(period.conj_trans())
 
-# define properties
-# periodic case
-prop1_mpos = ops.e_ph_static_correlation(mol_list, periodic=True)
-prop1_strs = list(prop1_mpos.keys())
-prop1_strs.append("e_rdm")
-prop1 = Property(prop1_strs, prop1_mpos)
 
-# non-periodic case (though actually periodic)
-prop2_mpos = {}
-for imol in range(nmols):
-    prop_mpo = ops.e_ph_static_correlation(mol_list, imol=imol)
-    prop2_mpos.update(prop_mpo)
-prop2_strs = list(prop2_mpos.keys())
-prop2_strs.append("e_rdm")
-prop2 = Property(prop2_strs, prop2_mpos)
+@pytest.mark.parametrize("periodic",(True, False))
+def test_thermal_equilibrium(periodic):
 
-def test_gs():
-    # GS polaron structure
-    procedure = [[20, 0.4], [30, 0.4], [40, 0.2], [40, 0.1], [40, 0]]
-    nexciton = 1
-    mps, _ = solver.construct_mps_mpo_2(mol_list, procedure[0][0], nexciton)
-    mps.optimize_config.procedure = procedure
-    energies = solver.optimize_mps_dmrg(mps, mpo)
-    prop2.calc_properties(mps, None)
+    if periodic:
+        # define properties
+        # periodic case
+        prop_mpos = ops.e_ph_static_correlation(mol_list, periodic=True)
+        prop_strs = list(prop_mpos.keys())
+        prop_strs.append("e_rdm")
+        prop = Property(prop_strs, prop_mpos)
+    else:
+        # non-periodic case (though actually periodic)
+        prop_mpos = {}
+        for imol in range(nmols):
+            prop_mpo = ops.e_ph_static_correlation(mol_list, imol=imol)
+            prop_mpos.update(prop_mpo)
+        prop_strs = list(prop_mpos.keys())
+        prop_strs.append("e_rdm")
+        prop = Property(prop_strs, prop_mpos)
     
-    e_ph_static_corr = []
-    for dis in range(nmols):
-        res = 0.
-        for i in range(nmols):
-            res = res + np.array(prop2.prop_res["S_"+str(i)+"_"+str((i+dis)%nmols)+"_0"][0])
-        e_ph_static_corr.append(res)
-        
-    assert np.allclose(e_ph_static_corr, gs_std["e_ph_static_corr"])
-    assert np.allclose(prop2.prop_res["e_rdm"][0], gs_std["e_rdm"])
-
-
-def test_thermal_equilibrium():
     beta = Quantity(1500., "K").to_beta()
     logger.info(f"beta:{beta}")
     
@@ -118,75 +102,32 @@ def test_thermal_equilibrium():
     init_mpdm.compress_config.threshold = 1e-4
     
     td = ThermalProp(init_mpdm, mpo, evolve_config=evolve_config,
-            dump_dir=dump_dir, job_name=job_name, properties=prop1)
+            dump_dir=dump_dir, job_name=job_name, properties=prop)
     td.evolve(dbeta, nsteps=nsteps)
     
-    def combine(local_prop):
-        res = []
-        for dis in range(nmols):
-            res.append(local_prop.prop_res["S_"+str(dis)+"_0"][-1])
-        return res
+    if periodic:
+        def combine(local_prop):
+            res = []
+            for dis in range(nmols):
+                res.append(local_prop.prop_res["S_"+str(dis)+"_0"][-1])
+            return res
+    else:
+        def combine(local_prop):
+            e_ph_static_corr = []
+            for dis in range(nmols):
+                res = 0.
+                for i in range(nmols):
+                    res = res + np.array(local_prop.prop_res["S_"+str(i)+"_"+str((i+dis)%nmols)+"_0"][-1])
+                e_ph_static_corr.append(res)
+            return  e_ph_static_corr
 
     assert np.allclose(td.properties.prop_res["e_rdm"][-1], thermal_std["e_rdm"])
     assert np.allclose(combine(td.properties), thermal_std["e_ph_static_corr"])
-
+	
     # directly calculate properties
     mpdm = td.latest_mps
-    prop1.calc_properties(mpdm, None)
-    assert np.allclose(prop1.prop_res["e_rdm"][-1], prop1.prop_res["e_rdm"][-2])
-    assert np.allclose(prop1.prop_res["S_0_0"][-1], prop1.prop_res["S_0_0"][-2])
-
-
-gs_std =  {
-  "e_ph_static_corr": [
-    [
-      0.30114911623340346,
-      0.1977447412985298,
-      0.07388507471529682,
-      0.07388519097890262,
-      0.1977445815467342
-    ]
-  ],
-  "e_rdm": [
-    [
-      [
-        0.0980443058515825,
-        -0.04360281931763898,
-        -0.01810478498853198,
-        0.09062264037135453,
-        -0.12657954283383493
-      ],
-      [
-        -0.043602819317639006,
-        0.09269310552881745,
-        -0.11891340044695571,
-        0.08441690594974843,
-        -0.014268144191290771
-      ],
-      [
-        -0.018104784988532012,
-        -0.11891340044695564,
-        0.23563553156198247,
-        -0.24845413414772166,
-        0.15161742787603338
-      ],
-      [
-        0.09062264037135453,
-        0.08441690594974839,
-        -0.2484541341477214,
-        0.3293390488907635,
-        -0.25318880604481175
-      ],
-      [
-        -0.12657954283383485,
-        -0.014268144191290761,
-        0.15161742787603336,
-        -0.25318880604481164,
-        0.24428800816685414
-      ]
-    ]
-  ]
-}
+    prop.calc_properties(mpdm, None)
+    assert np.allclose(prop.prop_res["e_rdm"][-1], prop.prop_res["e_rdm"][-2])
 
 thermal_std = {
 "e_ph_static_corr": [
