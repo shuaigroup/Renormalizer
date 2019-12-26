@@ -26,7 +26,7 @@ class InitElectron(Enum):
     """
     Available methods to prepare initial state of charge diffusion
     """
-    fc = "franc-condon excitation"
+    fc = "franck-condon excitation"
     relaxed = "analytically relaxed phonon(s)"
 
 
