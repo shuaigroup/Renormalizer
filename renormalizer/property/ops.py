@@ -9,9 +9,15 @@ def e_ph_static_correlation(mol_list: MolList, imol:int =0, jph:int =0,
         periodic:bool =False, name:str="S"):
     '''
     construct the electron-phonon static correlation operator in polaron problem
+    The details of the definition, see 
+    Qiang Shi et al. J. Chem. Phys. 142, 174103 (2015) or
+    Romero et al. Journal of Luminescence 83-84 (1999) 147-153
+
     if periodic:
-        S_(m, jph) = \frac{1}{D} \sum_n \langle x_{m+n,jph} a_n^\dagger a_n \rangle
-        op_name = "_".join([name, str(n), str(jph)])
+        # D is the displacement between different PES of each mode
+        S_(m, jph) = \frac{1}{D_m+n,jph} \sum_n \langle x_{m+n,jph} a_n^\dagger a_n \rangle
+        operator name = "_".join([name, str(m), str(jph)])
+        m stands for distance if periodic
     else:
         S_(n,m,jph) = \frac{1}{D_m,jph} \langle x_{m, jph} a_n^\dagger a_n \rangle
         operator name: "_".join([name, str(n), str(m), str(jph)]) 
@@ -28,6 +34,8 @@ def e_ph_static_correlation(mol_list: MolList, imol:int =0, jph:int =0,
             if homogenous periodic system
         name: str
             the name of the operator
+    
+    Note: Only one mode Holstein Model has been tested
     '''
     
     if mol_list.scheme == 4:
