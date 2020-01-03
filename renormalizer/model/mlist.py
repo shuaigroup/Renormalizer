@@ -114,7 +114,10 @@ class MolList:
 
     def check_nearest_neighbour(self):
         d = np.diag(np.diag(self.j_matrix, k=1), k=1)
-        return np.allclose(d + d.T, self.j_matrix)
+        d = d + d.T
+        d[0, -1] = self.j_matrix[-1, 0]
+        d[-1, 0] = self.j_matrix[0, -1]
+        return np.allclose(d, self.j_matrix)
 
     def get_sub_mollist(self, span=None):
         assert self.mol_num % 2 == 1
