@@ -373,7 +373,7 @@ class Mps(MatrixProduct):
         r = environ.read("R", 1)
         path = self._expectation_path()
         val = multi_tensor_contract(path, l, self[0], mpo[0], self_conj[0], r)
-        if np.isclose(val.imag, 0):
+        if np.isclose(float(val.imag), 0):
             return float(val.real)
         else:
             return complex(val)

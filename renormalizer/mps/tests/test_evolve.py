@@ -68,9 +68,11 @@ def test_tdvp_vmf(init_state, with_mu, force_ovlp, atol):
 
 
 @pytest.mark.parametrize("init_state", (init_mps, init_mpdm))
-def test_tdvp_cmf(init_state):
+@pytest.mark.parametrize("tdvp_cmf_c_trapz", (True, False))
+def test_tdvp_cmf(init_state,tdvp_cmf_c_trapz):
     mps = init_state.copy()
     mps.evolve_config  = EvolveConfig(EvolveMethod.tdvp_mu_cmf)
+    mps.evolve_config.tdvp_cmf_c_trapz = tdvp_cmf_c_trapz
     check_result(mps, mpo, 0.01, 0.5, 5e-4)
 
 

@@ -6,7 +6,7 @@ from renormalizer.mps import MpDm, Mpo
 from renormalizer.mps.tdh import unitary_propagation
 from renormalizer.utils import TdMpsJob, Quantity, EvolveConfig
 from renormalizer.utils.utils import cast_float
-
+from renormalizer.property import Property
 
 logger = logging.getLogger(__name__)
 
@@ -40,7 +40,9 @@ class ThermalProp(TdMpsJob):
         space: str = "GS",
         evolve_config: EvolveConfig = None,
         dump_dir: str = None,
+        dump_type = ".npz",
         job_name: str = None,
+        properties: Property = None
     ):
         self.init_mpdm: MpDm = init_mpdm.canonicalise()
         self.h_mpo = h_mpo
@@ -51,7 +53,10 @@ class ThermalProp(TdMpsJob):
         self._e_occupations_array = []
         self._ph_occupations_array = []
         self._vn_entropy_array = []
-        super().__init__(evolve_config, dump_dir, job_name)
+        self.properties = properties
+
+        super().__init__(evolve_config=evolve_config, dump_dir=dump_dir,
+                dump_type=dump_type, job_name=job_name)
 
     def init_mps(self):
         self.init_mpdm.evolve_config = self.evolve_config
@@ -76,6 +81,10 @@ class ThermalProp(TdMpsJob):
         logger.info(
             f"Energy: {new_energy}, total electron: {self._e_occupations_array[-1].sum()}"
         )
+        
+        # calculate other properties defined in Property
+        if self.properties is not None:
+            self.properties.calc_properties(mps)
 
     def evolve_exact(self, old_mpdm, evolve_dt):
         MPOprop, HAM, Etot = old_mpdm.hybrid_exact_propagator(
@@ -127,6 +136,11 @@ class ThermalProp(TdMpsJob):
         dump_dict["electron occupations array"] = self.e_occupations_array.tolist()
         dump_dict["phonon occupations array"] = self.ph_occupations_array.tolist()
         dump_dict["vn entropy array"] = self.vn_entropy_array.tolist()
+        
+        if self.properties is not None:
+            for prop_str in self.properties.prop_res.keys():
+                dump_dict[prop_str] = self.properties.prop_res[prop_str]
+
         return dump_dict
 
 
