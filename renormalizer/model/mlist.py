@@ -14,9 +14,10 @@ from renormalizer.utils.utils import cast_float
 
 class MolList:
 
-    def __init__(self, mol_list: List[Mol], j_matrix: Union[Quantity, np.ndarray, None], scheme: int=2, sbm=False):
+    def __init__(self, mol_list: List[Mol], j_matrix: Union[Quantity, np.ndarray, None], scheme: int=2, sbm=False, period=False):
+        self.period = period
         self.mol_list: List[Mol] = mol_list
-        
+
         # construct the electronic coupling matrix
         if sbm or j_matrix is None:
             assert len(self.mol_list) == 1
@@ -29,7 +30,7 @@ class MolList:
             self.j_matrix = j_matrix
             self.j_constant = None
         self.scheme = scheme
-        
+
         assert self.j_matrix.shape[0] == self.mol_num
 
         self.ephtable = EphTable.from_mol_list(mol_list, scheme)
