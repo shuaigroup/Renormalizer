@@ -3,7 +3,6 @@
 # finite temperature absorption/emission spectrum based on Correction vector
 
 from renormalizer.mps.matrix import (
-    Matrix,
     multi_tensor_contract,
     tensordot,
     moveaxis
@@ -15,12 +14,13 @@ from renormalizer.mps import (Mpo, svd_qn, MpDm, ThermalProp)
 from renormalizer.mps.lib import update_cv
 from renormalizer.utils import (
     CompressConfig, EvolveConfig,
-    CompressCriteria, EvolveMethod
+    CompressCriteria
 )
 import copy
 import os
 import logging
 import scipy
+import itertools
 
 logger = logging.getLogger(__name__)
 
@@ -58,12 +58,16 @@ class SpectraFtCV(SpectraCv):
     >>> from renormalizer.tests.parameter import mol_list
     >>> import numpy as np
     >>> from renormalizer.utils import Quantity
-    >>> freq_reg = np.arange(0.08, 0.10, 5.e-4).tolist()
-    >>> T = Quantity(298, unit='K')
-    >>> spectra = SpectraFtCV(mol_list, "abs", T, test_freq, 10, 1.e-3, cores=1)
-    >>> spectra.init_oper()
-    >>> spectra.init_mps()
-    >>> result = spectra.run()
+    >>> def run():
+    ...     freq_reg = np.arange(0.08, 0.10, 5.e-4).tolist()
+    ...     T = Quantity(298, unit='K')
+    ...     spectra = SpectraFtCV(mol_list, "abs", T, test_freq,
+    ...                           10, 1.e-3, cores=1)
+    ...     spectra.init_oper()
+    ...     spectra.init_mps()
+    ...     result = spectra.run()
+    >>> if __name__ == "__main__":
+    ...     run()
     '''
     def __init__(
         self,
@@ -124,7 +128,9 @@ class SpectraFtCV(SpectraCv):
             self._defined_output_path = tp._defined_output_path
             if tp._defined_output_path:
                 try:
-                    logger.info(f"load density matrix from {self._thermal_dump_path}")
+                    logger.info(
+                        f"load density matrix from {self._thermal_dump_path}"
+                    )
                     ket_mpo = MpDm.load(self.mol_list, self._thermal_dump_path)
                     logger.info(f"density matrix loaded: {ket_mpo}")
                 except FileNotFoundError:
@@ -167,24 +173,24 @@ class SpectraFtCV(SpectraCv):
 
         if self.method == "1site":
             add_list = [isite - 1]
-            first_L =  asxp(first_LR[isite - 1])
-            first_R =  asxp(first_LR[isite])
+            first_L = asxp(first_LR[isite - 1])
+            first_R = asxp(first_LR[isite])
             second_L = asxp(second_LR[isite - 1])
             second_R = asxp(second_LR[isite])
-            third_L =  asxp(third_LR[isite - 1])
-            third_R =  asxp(third_LR[isite])
-            forth_L =  asxp(forth_LR[isite - 1])
-            forth_R =  asxp(forth_LR[isite])
+            third_L = asxp(third_LR[isite - 1])
+            third_R = asxp(third_LR[isite])
+            forth_L = asxp(forth_LR[isite - 1])
+            forth_R = asxp(forth_LR[isite])
         else:
             add_list = [isite - 2, isite - 1]
-            first_L =  asxp(first_LR[isite - 2])
-            first_R =  asxp(first_LR[isite])
+            first_L = asxp(first_LR[isite - 2])
+            first_R = asxp(first_LR[isite])
             second_L = asxp(second_LR[isite - 2])
             second_R = asxp(second_LR[isite])
-            third_L =  asxp(third_LR[isite - 2])
-            third_R =  asxp(third_LR[isite])
-            forth_L =  asxp(forth_LR[isite - 2])
-            forth_R =  asxp(forth_LR[isite])
+            third_L = asxp(third_LR[isite - 2])
+            third_R = asxp(third_LR[isite])
+            forth_L = asxp(forth_LR[isite - 2])
+            forth_R = asxp(forth_LR[isite])
 
         xqnmat, xqnbigl, xqnbigr, xshape = \
             self.construct_X_qnmat(add_list, direction)
@@ -429,86 +435,49 @@ class SpectraFtCV(SpectraCv):
         return xqnmat, xqnbigl, xqnbigr, xshape
 
     def swap(self, mat, qnbigl, qnbigr, direction):
-        list_mat = mat.ravel()
-        dag_qnmat = []
-        for i in range(0, len(list_mat), 2):
-            dag_qnmat.append([list_mat[i + 1], list_mat[i]])
-        dag_qnmat = np.array(dag_qnmat).reshape(mat.shape)
+
+        def inter_change(ori_mat):
+            matshape = ori_mat.shape
+            len_mat = int(np.prod(np.array(matshape[:-1])))
+            ori_mat = ori_mat.reshape(len_mat, 2)
+            change_mat = copy.deepcopy(ori_mat)
+            change_mat[:, 0], change_mat[:, 1] = ori_mat[:, 1], ori_mat[:, 0]
+            return change_mat.reshape(matshape)
+
+        dag_qnmat = inter_change(mat)
         if self.method == "1site":
             dag_qnmat = np.moveaxis(dag_qnmat, [1, 2], [2, 1])
+            dag_qnbigl = inter_change(qnbigl)
+            dag_qnbigr = inter_change(qnbigr)
             if direction == "left":
-                list_qnbigl = qnbigl.ravel()
-                dag_qnbigl = []
-                for i in range(0, len(list_qnbigl), 2):
-                    dag_qnbigl.append([list_qnbigl[i + 1], list_qnbigl[i]])
-                dag_qnbigl = np.array(dag_qnbigl)
-                list_qnbigr = qnbigr.ravel()
-                dag_qnbigr = []
-                for i in range(0, len(list_qnbigr), 2):
-                    dag_qnbigr.append([list_qnbigr[i + 1], list_qnbigr[i]])
-                dag_qnbigr = np.array(dag_qnbigr).reshape(qnbigr.shape)
                 dag_qnbigr = np.moveaxis(dag_qnbigr, [0, 1], [1, 0])
             else:
-
-                list_qnbigr = qnbigr.ravel()
-                dag_qnbigr = []
-                for i in range(0, len(list_qnbigr), 2):
-                    dag_qnbigr.append([list_qnbigr[i + 1], list_qnbigr[i]])
-                dag_qnbigr = np.array(dag_qnbigr)
-
-                list_qnbigl = qnbigl.ravel()
-                dag_qnbigl = []
-                for i in range(0, len(list_qnbigl), 2):
-                    dag_qnbigl.append([list_qnbigl[i + 1], list_qnbigl[i]])
-                dag_qnbigl = np.array(dag_qnbigl).reshape(qnbigl.shape)
                 dag_qnbigl = np.moveaxis(dag_qnbigl, [1, 2], [2, 1])
         else:
-            dag_qnmat = np.moveaxis(dag_qnmat, [1, 2, 3, 4], [2, 1, 4, 3])
-            list_qnbigl = qnbigl.ravel()
-            dag_qnbigl = []
-            for i in range(0, len(list_qnbigl), 2):
-                dag_qnbigl.append([list_qnbigl[i + 1], list_qnbigl[i]])
-            dag_qnbigl = np.array(dag_qnbigl).reshape(qnbigl.shape)
-            dag_qnbigl = np.moveaxis(dag_qnbigl, [1, 2], [2, 1])
-            list_qnbigr = qnbigr.ravel()
-            dag_qnbigr = []
-            for i in range(0, len(list_qnbigr), 2):
-                dag_qnbigr.append([list_qnbigr[i + 1], list_qnbigr[i]])
-            dag_qnbigr = np.array(dag_qnbigr).reshape(qnbigr.shape)
-            dag_qnbigr = np.moveaxis(dag_qnbigr, [0, 1], [1, 0])
+            raise NotImplementedError
+            # we don't recommend 2-site CV-DMRG, which is a huge cost
 
         return dag_qnmat, dag_qnbigl, dag_qnbigr
 
     def condition(self, mat, qn):
-
-        list_qnmat = np.array(mat == qn).ravel()
-        mat_shape = list(mat.shape)
+        condition = (mat == qn)
+        mat_shape = list(condition.shape)
         del mat_shape[-1]
-        condition = []
-        for i in range(0, len(list_qnmat), 2):
-            if (list_qnmat[i] == 0) or (list_qnmat[i + 1] == 0):
-                condition.append(False)
-            else:
-                condition.append(True)
-        condition = np.array(condition)
+        condition = condition.all(axis=-1)
         condition = condition.reshape(mat_shape)
         return condition
 
     def qnmat_add(self, mat_l, mat_r):
-
-        list_matl = mat_l.ravel()
-        list_matr = mat_r.ravel()
-        matl = []
-        matr = []
-        lr = []
-        for i in range(0, len(list_matl), 2):
-            matl.append([list_matl[i], list_matl[i + 1]])
-        for i in range(0, len(list_matr), 2):
-            matr.append([list_matr[i], list_matr[i + 1]])
-        for i in range(len(matl)):
-            for j in range(len(matr)):
-                lr.append(np.add(matl[i], matr[j]))
-        lr = np.array(lr)
+        lshape, rshape = mat_l.shape, mat_r.shape
+        lena = int(np.prod(np.array(lshape)) / 2)
+        lenb = int(np.prod(np.array(rshape)) / 2)
+        matl = mat_l.reshape(lena, 2)
+        matr = mat_r.reshape(lenb, 2)
+        lr1 = np.add.outer(matl[:, 0], matr[:, 0]).flatten()
+        lr2 = np.add.outer(matl[:, 1], matr[:, 1]).flatten()
+        lr = np.zeros((len(lr1), 2))
+        lr[:, 0] = lr1
+        lr[:, 1] = lr2
         shapel = list(mat_l.shape)
         del shapel[-1]
         shaper = list(mat_r.shape)
