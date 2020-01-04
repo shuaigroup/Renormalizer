@@ -26,7 +26,7 @@ class InitElectron(Enum):
     """
     Available methods to prepare initial state of charge diffusion
     """
-    fc = "franc-condon excitation"
+    fc = "franck-condon excitation"
     relaxed = "analytically relaxed phonon(s)"
 
 
@@ -112,7 +112,8 @@ class ChargeTransport(TdMpsJob):
         # entropy at each bond
         self.bond_vn_entropy_array = []
         self.coherent_length_array = []
-        super(ChargeTransport, self).__init__(evolve_config, dump_dir, job_name)
+        super(ChargeTransport, self).__init__(evolve_config=evolve_config,
+                dump_dir=dump_dir, job_name=job_name)
         assert self.mpo is not None
 
         self.elocalex_arrays = []

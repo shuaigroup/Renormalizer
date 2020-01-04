@@ -25,6 +25,7 @@ ev2cm = 1./cm2ev
 
 # 1 fs = fs2au a.u
 fs2au = 1.0e-15 / c["atomic unit of time"][0]
+au2fs = 1. / fs2au
 K2au = c["kelvin-hartree relationship"][0]
 au2K = c["hartree-kelvin relationship"][0]
 

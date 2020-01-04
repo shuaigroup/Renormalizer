@@ -43,7 +43,8 @@ class TransportAutoCorr(TdMpsJob):
 
         self.impdm = None
         self._auto_corr = []
-        super().__init__(evolve_config, dump_dir, job_name)
+        super().__init__(evolve_config=evolve_config, dump_dir=dump_dir,
+                job_name=job_name)
 
 
     def _construct_flux_operator(self):
