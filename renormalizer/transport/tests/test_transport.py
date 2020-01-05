@@ -214,7 +214,7 @@ def test_evolve(
     ct2.dump_dir = "."
     ct2.job_name = "test"
     ct2.dump_dict()
-    os.remove("test.json")
+    os.remove("test.npz")
 
 
 @pytest.mark.parametrize(

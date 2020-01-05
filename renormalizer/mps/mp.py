@@ -95,7 +95,7 @@ class MatrixProduct:
 
     @property
     def bond_dims_mean(self) -> int:
-        return int(np.mean(self.bond_dims))
+        return int(round(np.mean(self.bond_dims)))
 
     @property
     def ephtable(self):
@@ -201,7 +201,7 @@ class MatrixProduct:
             self.move_qnidx(0)
             self.to_right = True
             self.canonicalise()
-    
+
     def ensure_right_canon(self, rtol=1e-5, atol=1e-8):
         if not self.check_right_canonical(rtol, atol):
             self.move_qnidx(self.site_num - 1)
@@ -471,7 +471,7 @@ class MatrixProduct:
 
     def dot(self, other: "MatrixProduct") -> complex:
         """
-        dot product of two mps / mpo 
+        dot product of two mps / mpo
         """
 
         assert len(self) == len(other)
@@ -523,19 +523,19 @@ class MatrixProduct:
         return new_mp
 
     def distance(self, other) -> float:
-        l1 = self.conj().dot(self) 
+        l1 = self.conj().dot(self)
         l2 = other.conj().dot(other)
         l1dotl2 = self.conj().dot(other)
         dis_square = (l1 + l2
             - l1dotl2
             - l1dotl2.conjugate()).real
-        
+
         if dis_square < 0:
             assert dis_square/l1.real < 1e-8
             res = 0.
         else:
             res = np.sqrt(dis_square).item()
-        
+
         return float(res)
 
     def copy(self):

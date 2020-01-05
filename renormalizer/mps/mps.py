@@ -373,7 +373,7 @@ class Mps(MatrixProduct):
         r = environ.read("R", 1)
         path = self._expectation_path()
         val = multi_tensor_contract(path, l, self[0], mpo[0], self_conj[0], r)
-        if np.isclose(val.imag, 0):
+        if np.isclose(float(val.imag), 0):
             return float(val.real)
         else:
             return complex(val)
@@ -383,9 +383,12 @@ class Mps(MatrixProduct):
     def expectations(self, mpos, opt=True) -> np.ndarray:
         if (not opt) or (len(mpos) < 3):
             return np.array([self.expectation(mpo) for mpo in mpos])
-        # todo: figure out when the `else` part can work.
         else:
-            # only supports local operator now
+            # only supports `mpos` with bond dimension 1, and all `mpos`
+            # must be only one site different from another standard MPO. For example
+            # [XBCDE, AXCDE, ABXDE, ABCXE, ABCDX]
+            # and the order does not matter
+
             # id can be used as efficient hash because of `Matrix` implementation
             mpo_ids = np.array([[id(m) for m in mpo] for mpo in mpos])
             common_mpo_ids = mpo_ids[0].copy()
@@ -497,7 +500,8 @@ class Mps(MatrixProduct):
             # in case of localized `self`
             if not self.use_dummy_qn:
                 if self.is_mps:
-                    ex_state: MatrixProduct = self.random(self.mol_list, 1, 10)
+                    ex_state: MatrixProduct = self.gs(self.mol_list, False)
+                    ex_state = Mpo.onsite(self.mol_list, r"a^\dagger") @ ex_state
                 elif self.is_mpdm:
                     ex_state: MatrixProduct = self.max_entangled_ex(self.mol_list)
                 else:
@@ -528,7 +532,7 @@ class Mps(MatrixProduct):
                     lastone = lastone.canonicalise().compress(
                         m_target // hint_mpo.bond_dims_mean
                     )
-                lastone = hint_mpo @ lastone
+                lastone = (hint_mpo @ lastone)._dmrg_normalize()
         logger.debug(f"expander bond dimension: {expander.bond_dims}")
         self.compress_config.bond_dim_max_value += self.bond_dims_mean
         return (self + expander.scale(coef, inplace=True)).canonicalise().canonicalise().canonical_normalize()
