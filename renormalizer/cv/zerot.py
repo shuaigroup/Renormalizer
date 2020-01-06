@@ -51,14 +51,16 @@ class SpectraZtCV(SpectraCv):
     >>> from renormalizer.cv.zerot import SpectraZtCV
     >>> from renormalizer.tests.parameter import mol_list
     >>> import numpy as np
-    >>> freq_reg = np.arange(0, 0.1, 1.e-3)
-    >>> m_max = 10
-    >>> eta = 1.e-3
-    >>> spectra = SpectraZtCV(mol_list, "abs", freq_reg, m_max, eta, cores=4)
-    >>> spectra.init_oper()
-    >>> spectra.init_mps()
-    >>> result = spectra.run()
-    >>> # then plot the spectrum
+    >>> def run():
+    ...     freq_reg = np.arange(0, 0.1, 1.e-3)
+    ...     m_max = 10
+    ...     eta = 1.e-3
+    ...     spectra = SpectraZtCV(mol_list, "abs", freq_reg, m_max, eta, cores=4)
+    ...     spectra.init_oper()
+    ...     spectra.init_mps()
+    ...     result = spectra.run()
+    >>> if __name__ == "__main__":
+    ...     run()
     '''
     def __init__(
         self,
