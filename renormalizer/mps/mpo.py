@@ -16,6 +16,7 @@ from renormalizer.utils.elementop import (
     construct_e_op_dict,
     ph_op_matrix,
 )
+import copy
 import itertools
 
 from renormalizer.utils.utils import roundrobin
@@ -1261,6 +1262,22 @@ class Mpo(MatrixProduct):
 
                         self.append(mo)
                         impo += 1
+        if mol_list.period is True:
+            if scheme == 2:
+                pass
+            elif scheme == 4:
+                raise NotImplementedError
+            else:
+                sup_h1 = Mpo.intersite(
+                    mol_list,
+                    {0: "a", mol_list.mol_num-1: r"a^\dagger"}, {},
+                    Quantity(mol_list.j_matrix[0, mol_list.mol_num-1]))
+                sup_h2 = Mpo.intersite(
+                    mol_list,
+                    {mol_list.mol_num-1: "a", 0: r"a^\dagger"}, {},
+                    Quantity(mol_list.j_matrix[mol_list.mol_num-1, 0]))
+                sup_mpo = self.add(sup_h1.add(sup_h2))
+                self.__dict__ = copy.deepcopy(sup_mpo.__dict__)
 
     def _get_sigmaqn(self, idx):
         if self.ephtable.is_phonon(idx):

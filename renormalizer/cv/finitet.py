@@ -58,12 +58,15 @@ class SpectraFtCV(SpectraCv):
     >>> from renormalizer.tests.parameter import mol_list
     >>> import numpy as np
     >>> from renormalizer.utils import Quantity
-    >>> freq_reg = np.arange(0.08, 0.10, 5.e-4).tolist()
-    >>> T = Quantity(298, unit='K')
-    >>> spectra = SpectraFtCV(mol_list, "abs", T, test_freq, 10, 1.e-3, cores=1)
-    >>> spectra.init_oper()
-    >>> spectra.init_mps()
-    >>> result = spectra.run()
+    >>> def run():
+    ...     freq_reg = np.arange(0.08, 0.10, 5.e-4).tolist()
+    ...     T = Quantity(298, unit='K')
+    ...     spectra = SpectraFtCV(mol_list, "abs", T, test_freq, 10, 1.e-3, cores=1)
+    ...     spectra.init_oper()
+    ...     spectra.init_mps()
+    ...     result = spectra.run()
+    >>> if __name__ == "__main__":
+    ...     run()
     '''
     def __init__(
         self,
