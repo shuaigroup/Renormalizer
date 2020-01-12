@@ -91,3 +91,45 @@ def test_thermal_prop(mol_list, etot_std, occ_std, adaptive, evolve_method, rtol
     print("Etot", Etot, A_el)
     assert np.allclose(Etot, etot_std, rtol=rtol)
     assert np.allclose(A_el, occ_std, rtol=rtol)
+
+
+
+def test_bogoliubov():
+    evolve_config = EvolveConfig(EvolveMethod.tdvp_ps)
+    #evolve_config = EvolveConfig()
+    omega = 1
+    D = 1
+    nlevel=10
+    T = Quantity(1)
+    ph1 = Phonon.simple_phonon(Quantity(omega), Quantity(D), nlevel)
+    mol1 = Mol(Quantity(0), [ph1])
+    mlist = MolList([mol1]*2, Quantity(1), scheme=4)
+    mpdm1 = MpDm.max_entangled_gs(mlist)
+    mpdm1.evolve_config = evolve_config
+    mpo1 = Mpo(mlist)
+    tp = ThermalProp(mpdm1, mpo1, exact=True)
+    tp.evolve(nsteps=20, evolve_time=T.to_beta()/2j)
+    mpdm2 = tp.latest_mps
+    e1 = mpdm2.expectation(mpo1)
+    mpdm3 = (Mpo.onsite(mlist, r"a^\dagger", False, {0}) @ mpdm2).expand_bond_dimension(mpo1)
+    es1 = [mpdm3.e_occupations]
+    for i in range(40):
+        mpdm3 = mpdm3.evolve(mpo1, 0.1)
+        es1.append(mpdm3.e_occupations)
+
+    theta = np.arctanh(np.exp(-T.to_beta() * omega / 2))
+    ph2 = Phonon.simple_phonon(Quantity(omega), Quantity(D * np.cosh(theta)), nlevel)
+    ph3 = Phonon.simple_phonon(Quantity(-omega), Quantity(-D * np.sinh(theta)), nlevel)
+    mol2 = Mol(Quantity(0), [ph2, ph3])
+    mlist2 = MolList([mol2]*2, Quantity(1), scheme=4)
+    mps1 = Mps.gs(mlist2, False)
+    mps1.evolve_config = evolve_config
+    mpo2 = Mpo(mlist2)
+    e2 = mps1.expectation(mpo2)
+    mps2 = (Mpo.onsite(mlist2, r"a^\dagger", False, {0}) @ mps1).expand_bond_dimension(mpo2)
+    es2 = [mps2.e_occupations]
+    for i in range(20):
+        mps2 = mps2.evolve(mpo2, 0.2)
+        es2.append(mps2.e_occupations)
+    assert np.allclose(es1[::2], es2, atol=5e-3)
+
