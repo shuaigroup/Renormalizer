@@ -14,12 +14,13 @@ from renormalizer.utils.utils import cast_float
 
 class MolList:
 
-    def __init__(self, mol_list: List[Mol], j_matrix: Union[Quantity, np.ndarray, None], scheme: int=2, sbm=False, period=False):
+    def __init__(self, mol_list: List[Mol], j_matrix: Union[Quantity, np.ndarray, None], scheme: int=2, period=False):
         self.period = period
         self.mol_list: List[Mol] = mol_list
 
         # construct the electronic coupling matrix
-        if sbm or j_matrix is None:
+        if j_matrix is None:
+            # spin-boson model
             assert len(self.mol_list) == 1
             j_matrix = Quantity(0)
 
@@ -82,7 +83,10 @@ class MolList:
         return True
 
     def switch_scheme(self, scheme):
-        return self.__class__(self.mol_list, self.j_matrix, scheme)
+        return self.__class__(self.mol_list.copy(), self.j_matrix.copy(), scheme, self.period)
+
+    def copy(self):
+        return self.switch_scheme(self.scheme)
 
     def e_idx(self, idx=0):
         return self._e_idx[idx]

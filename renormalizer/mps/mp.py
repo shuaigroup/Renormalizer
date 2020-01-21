@@ -132,12 +132,12 @@ class MatrixProduct:
 
     def build_empty_qn(self):
         self.qntot = 0
-        # retain qnidx to indicate left or right canonicalise
+        # set qnidx to the right to be consistent with most MPS/MPO setups
         if self.qnidx is None:
-            self.qnidx = 0
+            self.qnidx = len(self) - 1
         self.qn = [[0] * dim for dim in self.bond_dims]
         if self.to_right is None:
-            self.to_right = True
+            self.to_right = False
 
     def build_none_qn(self):
         self.qntot = None
@@ -602,6 +602,7 @@ class MatrixProduct:
         return iter(self._mp)
 
     def __len__(self):
+        # The same semantic with `list`
         return len(self._mp)
 
     def __mul__(self, other):
