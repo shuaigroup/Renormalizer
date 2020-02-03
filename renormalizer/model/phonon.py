@@ -176,10 +176,15 @@ class Phonon(object):
 
     @property
     def term10(self):
+        if self.is_simple and self.omega[0] < 0:
+            # capable of handle negative frequency, which is used in tfd with bogoliubov transformation
+            return np.sqrt(1/2 * np.abs(self.omega[0])) * (-self.dis[1]) * self.omega[0]
         return self.omega[1] ** 2 / np.sqrt(2.0 * self.omega[0]) * (-self.dis[1])
 
     @property
     def term11(self):
+        if self.is_simple and self.omega[0] < 0:
+            return 0
         return 3.0 * self.dis[1] ** 2 * self.force3rd[1] / np.sqrt(2.0 * self.omega[0])
 
     @property

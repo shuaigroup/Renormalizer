@@ -7,6 +7,7 @@ import multiprocessing
 from renormalizer.mps import Mpo
 from renormalizer.utils import Quantity
 from renormalizer.utils.elementop import construct_e_op_dict, ph_op_matrix
+import importlib.util
 import logging
 import time
 
@@ -49,22 +50,20 @@ class SpectraCv(object):
         print('Quantum number of X', check_1)
     '''
     def run(self):
-        try:
+        if importlib.util.find_spec("cupy"):
             multiprocessing.set_start_method('forkserver', force=True)
-            start = time.time()
-            pool = Pool(processes=self.cores)
-            logger.info(f"{len(self.freq_reg)} total frequency to do")
-            logger.info(f"{self.cores} multiprocess parallelization activated")
-            freq_reg = self.freq_reg
-            spectra = []
-            for i_spec in pool.imap(
-                    unwrap_self, zip([self]*len(freq_reg), freq_reg)
-            ):
-                spectra.append(i_spec)
-            logger.info(f"time used:{time.time()-start}")
-            return spectra
-        except RuntimeError:
-            pass
+        start = time.time()
+        pool = Pool(processes=self.cores)
+        logger.info(f"{len(self.freq_reg)} total frequency to do")
+        logger.info(f"{self.cores} multiprocess parallelization activated")
+        freq_reg = self.freq_reg
+        spectra = []
+        for i_spec in pool.imap(
+                unwrap_self, zip([self]*len(freq_reg), freq_reg)
+        ):
+            spectra.append(i_spec)
+        logger.info(f"time used:{time.time()-start}")
+        return spectra
 
     def cv_solve(self, omega):
         self.hop_time = []

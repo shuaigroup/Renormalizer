@@ -14,9 +14,10 @@ from renormalizer.utils.utils import cast_float
 
 class MolList:
 
-    def __init__(self, mol_list: List[Mol], j_matrix: Union[Quantity, np.ndarray, None], scheme: int=2, sbm=False):
+    def __init__(self, mol_list: List[Mol], j_matrix: Union[Quantity, np.ndarray, None], scheme: int=2, sbm=False, period=False):
+        self.period = period
         self.mol_list: List[Mol] = mol_list
-        
+
         # construct the electronic coupling matrix
         if sbm or j_matrix is None:
             assert len(self.mol_list) == 1
@@ -29,7 +30,7 @@ class MolList:
             self.j_matrix = j_matrix
             self.j_constant = None
         self.scheme = scheme
-        
+
         assert self.j_matrix.shape[0] == self.mol_num
 
         self.ephtable = EphTable.from_mol_list(mol_list, scheme)
@@ -113,7 +114,10 @@ class MolList:
 
     def check_nearest_neighbour(self):
         d = np.diag(np.diag(self.j_matrix, k=1), k=1)
-        return np.allclose(d + d.T, self.j_matrix)
+        d = d + d.T
+        d[0, -1] = self.j_matrix[-1, 0]
+        d[-1, 0] = self.j_matrix[0, -1]
+        return np.allclose(d, self.j_matrix)
 
     def get_sub_mollist(self, span=None):
         assert self.mol_num % 2 == 1
