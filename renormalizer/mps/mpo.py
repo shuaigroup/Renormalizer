@@ -596,16 +596,21 @@ class Mpo(MatrixProduct):
                     it = iter(e_opera.items())
                     if len(e_opera) == 0:
                         mo = np.diag(np.ones(pdim))
+                        mpo.qn.append(mpo.qn[-1])
                     elif len(e_opera) == 1:
                         idx, op = next(it)
                         if op == r"a^\dagger a":
                             mo[idx+1, idx+1] = 1
+                            qn = 0
                         elif op == r"a^\dagger":
                             mo[idx+1, 0] = 1
+                            qn = 1
                         elif op == r"a":
                             mo[0, idx+1] = 1
+                            qn = -1
                         else:
                             assert False
+                        mpo.qn.append([qn])
                     elif len(e_opera) == 2:
                         idx1, op1 = next(it)
                         idx2, op2 = next(it)
@@ -615,9 +620,9 @@ class Mpo(MatrixProduct):
                             mo[idx2+1, idx1+1] = 1
                         else:
                             mo[idx1+1, idx2+1] = 1
+                        mpo.qn.append(mpo.qn[-1])
                     else:
                         assert False
-                    mpo.qn.append(mpo.qn[-1])
                     mpo.append(mo.reshape(1, pdim, pdim, 1))
                 # else do nothing. Wait for the right time.
             else:
