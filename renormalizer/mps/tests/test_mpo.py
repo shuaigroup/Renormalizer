@@ -113,7 +113,7 @@ def test_intersite(scheme):
         assert mpo11.conj_trans().distance(mpo10) == pytest.approx(0, abs=1e-6)
         assert mpo8.distance(mpo9 + mpo10 + mpo11) == pytest.approx(0, abs=1e-6)
 
-        test_mlist.period = True
+        test_mlist.periodic = True
         mpo12 = Mpo(test_mlist)
         assert mpo12.distance(mpo9 + mpo10 + mpo11) == pytest.approx(0, abs=1e-6)
 

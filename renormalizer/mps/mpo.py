@@ -1297,7 +1297,7 @@ class Mpo(MatrixProduct):
 
                         self.append(mo)
                         impo += 1
-        if mol_list.period is True:
+        if mol_list.periodic is True:
             if scheme == 2 or scheme == 4:
                 assert not np.allclose(mol_list.j_matrix[0, -1], 0)
                 assert not np.allclose(mol_list.j_matrix[-1, 0], 0)

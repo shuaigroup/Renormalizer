@@ -15,7 +15,7 @@ from renormalizer.utils.utils import cast_float
 class MolList:
 
     def __init__(self, mol_list: List[Mol], j_matrix: Union[Quantity, np.ndarray, None], scheme: int = 2, periodic: bool = False):
-        self.period = periodic
+        self.periodic = periodic
         self.mol_list: List[Mol] = mol_list
 
         # construct the electronic coupling matrix
@@ -85,7 +85,7 @@ class MolList:
         return True
 
     def switch_scheme(self, scheme):
-        return self.__class__(self.mol_list.copy(), self.j_matrix.copy(), scheme, self.period)
+        return self.__class__(self.mol_list.copy(), self.j_matrix.copy(), scheme, self.periodic)
 
     def copy(self):
         return self.switch_scheme(self.scheme)
