@@ -14,19 +14,22 @@ from renormalizer.utils.utils import cast_float
 
 class MolList:
 
-    def __init__(self, mol_list: List[Mol], j_matrix: Union[Quantity, np.ndarray, None], scheme: int=2, sbm=False, period=False):
-        self.period = period
+    def __init__(self, mol_list: List[Mol], j_matrix: Union[Quantity, np.ndarray, None], scheme: int = 2, periodic: bool = False):
+        self.periodic = periodic
         self.mol_list: List[Mol] = mol_list
 
         # construct the electronic coupling matrix
-        if sbm or j_matrix is None:
+        if j_matrix is None:
+            # spin-boson model
             assert len(self.mol_list) == 1
             j_matrix = Quantity(0)
 
         if isinstance(j_matrix, Quantity):
-            self.j_matrix = construct_j_matrix(self.mol_num, j_matrix)
+            self.j_matrix = construct_j_matrix(self.mol_num, j_matrix, periodic)
             self.j_constant = j_matrix
         else:
+            if periodic:
+                assert j_matrix[0][-1] != 0 and j_matrix[-1][0] != 0
             self.j_matrix = j_matrix
             self.j_constant = None
         self.scheme = scheme
@@ -82,7 +85,10 @@ class MolList:
         return True
 
     def switch_scheme(self, scheme):
-        return self.__class__(self.mol_list, self.j_matrix, scheme)
+        return self.__class__(self.mol_list.copy(), self.j_matrix.copy(), scheme, self.periodic)
+
+    def copy(self):
+        return self.switch_scheme(self.scheme)
 
     def e_idx(self, idx=0):
         return self._e_idx[idx]
@@ -155,14 +161,13 @@ class MolList:
         return info_dict
 
 
-def construct_j_matrix(mol_num, j_constant):
+def construct_j_matrix(mol_num, j_constant, periodic):
     # nearest neighbour interaction
     j_constant_au = j_constant.as_au()
-    j_matrix = np.zeros((mol_num, mol_num))
-    for i in range(mol_num):
-        for j in range(mol_num):
-            if i - j == 1 or i - j == -1:
-                j_matrix[i][j] = j_constant_au
+    j_list = np.ones(mol_num - 1) * j_constant_au
+    j_matrix = np.diag(j_list, k=-1) + np.diag(j_list, k=1)
+    if periodic:
+        j_matrix[-1, 0] = j_matrix[0, -1] = j_constant_au
     return j_matrix
 
 

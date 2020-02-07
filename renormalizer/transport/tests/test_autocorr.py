@@ -2,6 +2,7 @@
 
 import numpy as np
 import qutip
+import pytest
 
 from renormalizer.model import Phonon, Mol, MolList
 from renormalizer.transport.autocorr import TransportAutoCorr
@@ -9,10 +10,14 @@ from renormalizer.utils import Quantity, CompressConfig, EvolveConfig, EvolveMet
 from renormalizer.utils.qutip_utils import get_clist, get_blist, get_hamiltonian, get_qnidx
 
 
-def test_autocorr():
+@pytest.mark.parametrize("scheme", (
+        3,
+        4,
+))
+def test_autocorr(scheme):
     ph = Phonon.simple_phonon(Quantity(1), Quantity(1), 2)
     mol = Mol(Quantity(0), [ph])
-    mol_list = MolList([mol] * 5, Quantity(1), 3)
+    mol_list = MolList([mol] * 5, Quantity(1), scheme)
     temperature = Quantity(50000, 'K')
     compress_config = CompressConfig(CompressCriteria.fixed, max_bonddim=24)
     evolve_config = EvolveConfig(EvolveMethod.tdvp_ps, adaptive=True, guess_dt=0.5, adaptive_rtol=1e-3)
