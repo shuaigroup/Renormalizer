@@ -6,12 +6,14 @@ from renormalizer.utils import basis as ba
 from renormalizer.vibronic import VibronicModelDynamics
 from renormalizer.utils import EvolveConfig, CompressConfig, CompressCriteria, EvolveMethod
 from renormalizer.mps import Mps, Mpo
+from renormalizer.vibronic.tests import cur_dir
 
 import logging
 import numpy as np
 import itertools
 import pytest
 from collections import defaultdict
+import os
 
 logger = logging.getLogger(__name__)
 
@@ -190,7 +192,7 @@ def test_vibronic_model(multi_e):
     job.latest_mps.evolve_config = evolve_config
     job.evolve(evolve_dt=80.0, nsteps=60)
 
-    std = np.load("std.npz")
+    std = np.load(os.path.join(cur_dir, "std.npz"))
     assert np.allclose(std['electron occupations array'], job.e_occupations_array)
 
 @pytest.mark.parametrize("multi_e", (False, True))
@@ -354,5 +356,5 @@ def test_general_model(multi_e):
     job.latest_mps.evolve_config = evolve_config
     job.evolve(evolve_dt=80.0, nsteps=60)
     
-    std = np.load("std.npz")
+    std = np.load(os.path.join(cur_dir, "std.npz"))
     assert np.allclose(std['electron occupations array'], job.e_occupations_array)
