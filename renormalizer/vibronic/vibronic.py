@@ -4,6 +4,7 @@ from renormalizer.property import Property
 from renormalizer.model import MolList2
 
 import logging
+import numpy as np
 
 logger = logging.getLogger(__name__)
 
@@ -49,6 +50,7 @@ class VibronicModelDynamics(TdMpsJob):
         self.e_occupations_array = []
         self.autocorr_array = []
         self.energies = []
+        self.autocorr_time = []
 
         super().__init__(evolve_config=evolve_config, dump_mps=dump_mps, dump_dir=dump_dir,
                 dump_type=dump_type, job_name=job_name)
@@ -85,8 +87,21 @@ class VibronicModelDynamics(TdMpsJob):
         self.e_occupations_array.append(e_occupations)
         logger.debug(f"e occupations: {self.e_occupations_array[-1]}")
         # autocorrelation function
-        autocorr = mps.conj().dot(self.mps0)
-        self.autocorr_array.append(autocorr)
+        if self.mps0.is_complex:
+            autocorr = mps.conj().dot(self.mps0)
+            self.autocorr_array.append(autocorr)
+            self.autocorr_time.append(self.evolve_times[-1])
+        else:
+            # make sure the latest mps is the last step mps and not ruined by
+            # evolve_single_step
+            # in tdmps latest_mps = new_mps after process_mps
+            if not np.allclose(self.evolve_times[-1], 0):
+                autocorr = mps.dot(self.latest_mps)
+                self.autocorr_array.append(autocorr)
+                self.autocorr_time.append(self.evolve_times[-1] + self.evolve_times[-2])
+            autocorr = mps.dot(mps)
+            self.autocorr_array.append(autocorr)
+            self.autocorr_time.append(self.evolve_times[-1] + self.evolve_times[-1])
 
     def get_dump_dict(self):
         """
@@ -96,6 +111,7 @@ class VibronicModelDynamics(TdMpsJob):
         dump_dict["time series"] = list(self.evolve_times)
         dump_dict["electron occupations array"] = self.e_occupations_array
         dump_dict["autocorrelation function"] = self.autocorr_array
+        dump_dict["autocorrelation time"] = self.autocorr_time
         dump_dict["energy"] = self.energies
 
         return dump_dict

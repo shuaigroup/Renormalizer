@@ -119,8 +119,8 @@ class TdMpsJob(object):
             
             # process
             self.evolve_times.append(self.latest_evolve_time + evolve_dt)
-            self.latest_mps = new_mps
             self.process_mps(new_mps)
+            self.latest_mps = new_mps
             
             # wall time
             evolution_wall_time = datetime.now()
