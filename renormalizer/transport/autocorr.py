@@ -10,7 +10,7 @@ from renormalizer.mps.lib import compressed_sum
 from renormalizer.utils.constant import mobility2au
 from renormalizer.utils import TdMpsJob, Quantity, EvolveConfig, CompressConfig, Op
 from renormalizer.utils.utils import cast_float
-from renormalizer.model import MolList2, ModelTranslator
+from renormalizer.model import MolList, MolList2, ModelTranslator
 
 logger = logging.getLogger(__name__)
 
@@ -53,37 +53,40 @@ class TransportAutoCorr(TdMpsJob):
     def _construct_flux_operator(self):
         # construct flux operator
         logger.info("constructing 1-d Holstein model flux operator ")
-
-        #j_list = []
-        #for i in itera:
-        #    conne = (i+1) % len(self.mol_list) # connect site index 
-        #    j1 = Mpo.intersite(self.mol_list, {i:r"a", conne:r"a^\dagger"}, {},
-        #            Quantity(self.mol_list.j_matrix[i, conne]))
-        #    j1.compress_config.threshold = 1e-10
-        #    j2 = j1.conj_trans().scale(-1)
-        #    j_list.extend([j1, j2])
-        #j_oper = compressed_sum(j_list, batchsize=10)
-        #logger.debug(f"flux operator bond dim: {j_oper.bond_dims}")
         
-        if not isinstance(self.mol_list, MolList2):
-            #if self.mol_list.period:
-            #    itera = range(len(self.mol_list)) 
-            #else:
-            #    itera = range(len(self.mol_list)-1) 
-            # construct the basis, order
-            self.mol_list.mol_list2_para()
-            e_nsite = len(self.mol_list)
-        else:
+        if isinstance(self.mol_list, MolList):
+            if self.mol_list.periodic:
+                itera = range(len(self.mol_list)) 
+            else:
+                itera = range(len(self.mol_list)-1) 
+            j_list = []
+            for i in itera:
+                conne = (i+1) % len(self.mol_list) # connect site index 
+                j1 = Mpo.intersite(self.mol_list, {i:r"a", conne:r"a^\dagger"}, {},
+                        Quantity(self.mol_list.j_matrix[i, conne]))
+                j1.compress_config.threshold = 1e-8
+                j2 = j1.conj_trans().scale(-1)
+                j_list.extend([j1, j2])
+            j_oper = compressed_sum(j_list, batchsize=10)
+        
+        elif isinstance(self.mol_list, MolList2):
+            
+            # In multi_electron case, the zero-exciton state is not guaranteed to be added as
+            # scheme4, it is more flexiable depending on the definition of
+            # mol_list.order and mol_list.model
+            assert not self.mol_list.multi_electron
+            
             e_nsite = self.mol_list.e_nsite
-
-        model = {}
-        for i in range(e_nsite):
-            conne = (i+1) % e_nsite # connect site index 
-            model[(f"e_{i}", f"e_{conne}")] = [(Op(r"a^\dagger",1), Op("a", -1),
-                -self.mol_list.j_matrix[i, conne]), (Op(r"a",-1), Op(r"a^\dagger", 1),
-                self.mol_list.j_matrix[conne, i])]
-        j_oper = Mpo.general_mpo(self.mol_list, model=model,
-                model_translator=ModelTranslator.general_model)
+            model = {}
+            for i in range(e_nsite):
+                conne = (i+1) % e_nsite # connect site index 
+                model[(f"e_{i}", f"e_{conne}")] = [(Op(r"a^\dagger",1), Op("a", -1),
+                    -self.mol_list.j_matrix[i, conne]), (Op(r"a",-1), Op(r"a^\dagger", 1),
+                    self.mol_list.j_matrix[conne, i])]
+            j_oper = Mpo.general_mpo(self.mol_list, model=model,
+                    model_translator=ModelTranslator.general_model)
+        else:
+            assert False
         logger.debug(f"flux operator bond dim: {j_oper.bond_dims}")
         
         return j_oper

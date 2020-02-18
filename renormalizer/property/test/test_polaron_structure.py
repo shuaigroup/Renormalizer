@@ -63,9 +63,9 @@ mol_list = MolList([Mol(Quantity(elocalex), [ph], dipole_abs)] * nmols,
 
 # periodic nearest-neighbour interaction
 mpo = Mpo(mol_list)
-period = Mpo.intersite(mol_list, {0:r"a^\dagger",nmols-1:"a"}, {},
-        Quantity(j_value))
-mpo = mpo.add(period).add(period.conj_trans())
+periodic = Mpo.intersite(mol_list, {0: r"a^\dagger", nmols - 1: "a"}, {},
+                         Quantity(j_value))
+mpo = mpo.add(periodic).add(periodic.conj_trans())
 
 
 @pytest.mark.parametrize("periodic",(True, False))

@@ -12,27 +12,30 @@ from renormalizer.tests.parameter_exact import qutip_clist, qutip_h, mol_list
 
 
 # the init state
-def f(mol_list): 
+def f(mol_list, run_qutip=True): 
     tentative_mpo = Mpo(mol_list)
     init_mps = (Mpo.onsite(mol_list, r"a^\dagger", mol_idx_set={0}) @ Mps.gs(mol_list, False)).expand_bond_dimension(hint_mpo=tentative_mpo)
     init_mpdm = MpDm.from_mps(init_mps).expand_bond_dimension(hint_mpo=tentative_mpo)
     e = init_mps.expectation(tentative_mpo)
     mpo = Mpo(mol_list, offset=Quantity(e))
     
-    # calculate exact result in ZT. FT result is exactly the same
-    TIME_LIMIT = 10
-    QUTIP_STEP = 0.01
-    N_POINTS = TIME_LIMIT / QUTIP_STEP + 1
-    qutip_time_series = np.linspace(0, TIME_LIMIT, N_POINTS)
-    init = qutip.Qobj(init_mps.full_wfn(), [qutip_h.dims[0], [1] * len(qutip_h.dims[0])])
-    # the result is not exact and the error scale is approximately 1e-5
-    res = qutip.sesolve(qutip_h-e, init, qutip_time_series, e_ops=[c.dag() * c for c in qutip_clist])
-    qutip_expectations = np.array(res.expect).T
+    if run_qutip:
+        # calculate exact result in ZT. FT result is exactly the same
+        TIME_LIMIT = 10
+        QUTIP_STEP = 0.01
+        N_POINTS = TIME_LIMIT / QUTIP_STEP + 1
+        qutip_time_series = np.linspace(0, TIME_LIMIT, N_POINTS)
+        init = qutip.Qobj(init_mps.full_wfn(), [qutip_h.dims[0], [1] * len(qutip_h.dims[0])])
+        # the result is not exact and the error scale is approximately 1e-5
+        res = qutip.sesolve(qutip_h-e, init, qutip_time_series, e_ops=[c.dag() * c for c in qutip_clist])
+        qutip_expectations = np.array(res.expect).T
 
-    return qutip_expectations, QUTIP_STEP, init_mps, init_mpdm, mpo
+        return qutip_expectations, QUTIP_STEP, init_mps, init_mpdm, mpo
+    else:
+        return init_mps, init_mpdm, mpo
 
-qutip_expectations, QUTIP_STEP, init_mps, init_mpdm, mpo = f(mol_list)
-_, _, init_mps2, init_mpdm2, mpo2 = f(MolList2.MolList_to_MolList2(mol_list))
+qutip_expectations, QUTIP_STEP, init_mps, init_mpdm, mpo = f(mol_list, True)
+init_mps2, init_mpdm2, mpo2 = f(MolList2.MolList_to_MolList2(mol_list), False)
 
 
 def check_result(mps, mpo, time_step, final_time, atol=1e-4):
@@ -70,7 +73,8 @@ def test_pc(init_state):
 def test_tdvp_vmf(init_state, with_mu, force_ovlp, atol):
     mps = init_state.copy()
     method = EvolveMethod.tdvp_mu_vmf if with_mu else EvolveMethod.tdvp_vmf
-    mps.evolve_config  = EvolveConfig(method, ivp_rtol=1e-3, ivp_atol=1e-6, force_ovlp=force_ovlp)
+    mps.evolve_config  = EvolveConfig(method, ivp_rtol=1e-4, ivp_atol=1e-7, force_ovlp=force_ovlp)
+    mps.evolve_config.vmf_auto_switch = False
     check_result(mps, mpo, 0.5, 2, atol)
 
 

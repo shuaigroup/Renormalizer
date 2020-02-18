@@ -29,6 +29,7 @@ logger = logging.getLogger(__name__)
 
 # todo: refactor init
 # the code is hard to understand...... need some closer look
+# a good starting point is to delete the quasi-boson code (gh-25)
 
 def symbolic_mpo(table, factor):
     r"""
@@ -637,7 +638,6 @@ def _model_translator_general_model(mol_list, const=Quantity(0.)):
 
     for dof, value in model.items():
         for term in value:
-            # print("term", term)
             if not np.allclose(term[-1], 0.):
                 ta = [Op.identity() for i in range(nsite)]
                 for iop, op in enumerate(term[:-1]):
@@ -1223,20 +1223,20 @@ class Mpo(MatrixProduct):
     @classmethod
     def intersite(cls, mol_list: MolList, e_opera: dict, ph_opera: dict, scale:
             Quantity=Quantity(1.)):
-        ''' construct the inter site MPO
+        """ construct the inter site MPO
         Parameters:
             mol_list : MolList
                 the molecular information
             e_opera:
                 the electronic operators. {imol: operator}, such as {1:"a", 3:r"a^\dagger"}
             ph_opera:
-                the vibrational operators. {(imol,iph): operator}, such as {(0,5):"b"}
+                the vibrational operators. {(imol, iph): operator}, such as {(0,5):"b"}
             scale: Quantity
                 scalar to scale the mpo
 
         Note:
             the operator index starts from 0,1,2...
-        '''
+        """
         if isinstance(mol_list, MolList2):
             
             assert mol_list.map is not None
@@ -1259,9 +1259,7 @@ class Mpo(MatrixProduct):
             return mpo
 
         elif isinstance(mol_list, MolList):
-            if mol_list.scheme == 4:
-                raise NotImplementedError
-
+        
             for i in e_opera.keys():
                 assert i in range(mol_list.mol_num)
             for j in ph_opera.keys():
@@ -1272,45 +1270,81 @@ class Mpo(MatrixProduct):
             mpo.mol_list = mol_list
             mpo.qn = [[0]]
 
-            impo = 0
             eop = construct_e_op_dict()
 
             for imol in range(mol_list.mol_num):
-                mo = np.zeros([1, 2, 2, 1])
-
-                if imol in e_opera.keys():
-                    mo[0, :, :, 0] = eop[e_opera[imol]]
-                    if e_opera[imol] == r"a^\dagger":
-                        mpo.qn.append([mpo.qn[-1][0]+1])
-                    elif e_opera[imol] == "a":
-                        mpo.qn.append([mpo.qn[-1][0]-1])
-                    elif e_opera[imol] == r"a^\dagger a":
-                        mpo.qn.append(mpo.qn[-1])
-                    else:
-                        assert False
+                if mol_list.scheme == 4:
+                    if len(mpo) == mol_list.e_idx(0):
+                        pdim = mol_list.mol_num + 1
+                        mo = np.zeros([pdim, pdim])
+                        # can't support general operations due to limitations of scheme4
+                        it = iter(e_opera.items())
+                        if len(e_opera) == 0:
+                            mo = np.diag(np.ones(pdim))
+                            mpo.qn.append(mpo.qn[-1])
+                        elif len(e_opera) == 1:
+                            idx, op = next(it)
+                            if op == r"a^\dagger a":
+                                mo[idx+1, idx+1] = 1
+                                qn = 0
+                            elif op == r"a^\dagger":
+                                mo[idx+1, 0] = 1
+                                qn = 1
+                            elif op == r"a":
+                                mo[0, idx+1] = 1
+                                qn = -1
+                            else:
+                                assert False
+                            mpo.qn.append([qn])
+                        elif len(e_opera) == 2:
+                            idx1, op1 = next(it)
+                            idx2, op2 = next(it)
+                            assert idx1 != idx2
+                            assert {op1, op2} == {r"a^\dagger", "a"}
+                            if op1 == "a":
+                                mo[idx2+1, idx1+1] = 1
+                            else:
+                                mo[idx1+1, idx2+1] = 1
+                            mpo.qn.append(mpo.qn[-1])
+                        else:
+                            assert False
+                        mpo.append(mo.reshape(1, pdim, pdim, 1))
+                    # else do nothing. Wait for the right time.
                 else:
-                    mo[0, :, :, 0] = eop["Iden"]
-                    mpo.qn.append(mpo.qn[-1])
+                    mo = np.zeros([1, 2, 2, 1])
 
-                mpo.append(mo)
-                impo += 1
+                    if imol in e_opera.keys():
+                        mo[0, :, :, 0] = eop[e_opera[imol]]
+                        if e_opera[imol] == r"a^\dagger":
+                            mpo.qn.append([mpo.qn[-1][0]+1])
+                        elif e_opera[imol] == "a":
+                            mpo.qn.append([mpo.qn[-1][0]-1])
+                        elif e_opera[imol] == r"a^\dagger a":
+                            mpo.qn.append(mpo.qn[-1])
+                        else:
+                            assert False
+                    else:
+                        mo[0, :, :, 0] = eop["Iden"]
+                        mpo.qn.append(mpo.qn[-1])
+
+                    mpo.append(mo)
 
                 assert mol_list[imol].no_qboson
 
                 for iph in range(mol_list[imol].n_dmrg_phs):
-                    pbond = mol_list.pbond_list[impo]
+                    pbond = mol_list.pbond_list[len(mpo)]
                     mo = np.zeros([1, pbond, pbond, 1])
                     phop = construct_ph_op_dict(pbond)
 
                     if (imol, iph) in ph_opera.keys():
-                        mo[0, :, :, 0] = phop[ph_opera[(imol,iph)]]
+                        mo[0, :, :, 0] = phop[ph_opera[(imol, iph)]]
                     else:
                         mo[0, :, :, 0] = phop["Iden"]
 
                     mpo.qn.append(mpo.qn[-1])
 
                     mpo.append(mo)
-                    impo += 1
+
 
             mpo.qnidx = len(mpo) - 1
             mpo.to_right = False
@@ -1321,10 +1355,10 @@ class Mpo(MatrixProduct):
             mpo.offset = Quantity(0.)
 
             return mpo.scale(scale.as_au(), inplace=True)
+
         else:
             assert False
 
-        return mpo
 
     @classmethod
     def finiteT_cv(cls, mol_list, nexciton, m_max, spectratype,
@@ -1512,7 +1546,7 @@ class Mpo(MatrixProduct):
                 if imol == n_right_mol - 1 and iph == mol.n_dmrg_phs - 1:
                     mo = get_marginal_phonon_mo(pdim, bdim, ph, phop)
                 else:
-                    islast =  iph == (mol.n_dmrg_phs - 1)
+                    islast = iph == (mol.n_dmrg_phs - 1)
                     mo = get_phonon_mo(pdim, bdim, ph, phop, islast)
                 self.append(mo.transpose((3, 1, 2, 0))[::-1, :, :, ::-1])
         self.build_empty_qn()
@@ -1552,7 +1586,8 @@ class Mpo(MatrixProduct):
         self.dtype = factor.dtype
         
         mpo_symbol, mpo_qn, qntot, qnidx = symbolic_mpo(table, factor)
-        logger.debug(f"mpo_symbol: \n {np.array(mpo_symbol)}")
+        # todo: elegant way to express the symbolic mpo
+        # logger.debug(f"symbolic mpo: \n {np.array(mpo_symbol)}")
         self.mol_list = mol_list
         self.qnidx = qnidx
         self.qntot = qntot
@@ -1957,11 +1992,11 @@ class Mpo(MatrixProduct):
 
                         self.append(mo)
                         impo += 1
-        if mol_list.period:
-            if scheme == 2:
-                pass
-            elif scheme == 4:
-                raise NotImplementedError
+        
+        if mol_list.periodic is True:
+            if scheme == 2 or scheme == 4:
+                assert not np.allclose(mol_list.j_matrix[0, -1], 0)
+                assert not np.allclose(mol_list.j_matrix[-1, 0], 0)
             else:
                 sup_h1 = Mpo.intersite(
                     mol_list,

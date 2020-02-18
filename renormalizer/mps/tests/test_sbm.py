@@ -34,8 +34,7 @@ def check_result(mpo, mpo_std):
     print("new mpo bond dims:", mpo.bond_dims)
     print("std mpo qn:", mpo_std.qn, mpo_std.qntot)
     print("new mpo qn:", mpo.qn, mpo_std.qntot)
-    print("length", np.sqrt(mpo_std.dot(mpo_std)))
-    assert mpo_std.distance(mpo) == pytest.approx(0, abs=1e-5)
+    assert mpo_std.distance(mpo)/np.sqrt(mpo_std.dot(mpo_std)) == pytest.approx(0, abs=1e-5)
 
 def test_zt():
     mol = get_mol()

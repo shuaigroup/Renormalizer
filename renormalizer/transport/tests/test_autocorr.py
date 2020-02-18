@@ -10,14 +10,15 @@ from renormalizer.utils import Quantity, CompressConfig, EvolveConfig, EvolveMet
 from renormalizer.utils.qutip_utils import get_clist, get_blist, get_hamiltonian, get_qnidx
 
 
-
-@pytest.mark.parametrize(
-    "mollist2", (True, False),
-)
-def test_autocorr(mollist2):
+@pytest.mark.parametrize("scheme, mollist2", (
+        [3, False],
+        [4, False],
+        [3, True],
+))
+def test_autocorr(scheme, mollist2):
     ph = Phonon.simple_phonon(Quantity(1), Quantity(1), 2)
     mol = Mol(Quantity(0), [ph])
-    mol_list1 = MolList([mol] * 5, Quantity(1), 3)
+    mol_list1 = MolList([mol] * 5, Quantity(1), scheme)
     if mollist2 == True:
         mol_list = MolList2.MolList_to_MolList2(mol_list1)
     else:

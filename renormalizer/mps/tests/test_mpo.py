@@ -36,6 +36,7 @@ def test_offset(scheme):
     evals2, _ = np.linalg.eigh(f2)
     assert np.allclose(evals1 - offset.as_au(), evals2)
 
+
 def test_identity():
     identity = Mpo.identity(mol_list)
     mps = Mps.random(mol_list, nexciton=1, m_max=5)
@@ -74,42 +75,49 @@ def test_scheme4():
     e3 = mps3.expectation(mpo3)
     assert pytest.approx(e4) == e3
 
-def test_intersite():
-    mpo1 = Mpo.intersite(mol_list, {0:r"a^\dagger"}, {}, Quantity(1.0))
-    mpo2 = Mpo.onsite(mol_list, r"a^\dagger", mol_idx_set=[0])
+
+@pytest.mark.parametrize("scheme", (2, 3, 4))
+def test_intersite(scheme):
+
+    local_mlist = mol_list.switch_scheme(scheme)
+
+    mpo1 = Mpo.intersite(local_mlist, {0:r"a^\dagger"}, {}, Quantity(1.0))
+    mpo2 = Mpo.onsite(local_mlist, r"a^\dagger", mol_idx_set=[0])
     assert mpo1.distance(mpo2) == pytest.approx(0, abs=1e-5)
 
-    mpo3 = Mpo.intersite(mol_list, {2:r"a^\dagger a"}, {}, Quantity(1.0))
-    mpo4 = Mpo.onsite(mol_list, r"a^\dagger a", mol_idx_set=[2])
+    mpo3 = Mpo.intersite(local_mlist, {2:r"a^\dagger a"}, {}, Quantity(1.0))
+    mpo4 = Mpo.onsite(local_mlist, r"a^\dagger a", mol_idx_set=[2])
     assert mpo3.distance(mpo4) == pytest.approx(0, abs=1e-5)
 
-    mpo5 = Mpo.intersite(mol_list, {2:r"a^\dagger a"}, {}, Quantity(0.5))
+    mpo5 = Mpo.intersite(local_mlist, {2:r"a^\dagger a"}, {}, Quantity(0.5))
     assert mpo5.add(mpo5).distance(mpo4) == pytest.approx(0, abs=1e-5)
 
-    mpo6 = Mpo.intersite(mol_list, {0:r"a^\dagger",2:"a"}, {}, Quantity(1.0))
-    mpo7 = Mpo.onsite(mol_list, "a", mol_idx_set=[2])
+    mpo6 = Mpo.intersite(local_mlist, {0:r"a^\dagger",2:"a"}, {}, Quantity(1.0))
+    mpo7 = Mpo.onsite(local_mlist, "a", mol_idx_set=[2])
     assert mpo2.apply(mpo7).distance(mpo6) == pytest.approx(0, abs=1e-5)
 
-    mpo8 = Mpo(mol_list)
-    # a dirty hack to switch from scheme 2 to scheme 3
-    mol_list1 = mol_list.switch_scheme(2)
-    mol_list1.scheme=3
-    mpo9 = Mpo(mol_list1)
-    mpo10 = Mpo.intersite(mol_list1, {0:r"a^\dagger",2:"a"}, {},
-            Quantity(mol_list1.j_matrix[0,2]))
-    mpo11 = Mpo.intersite(mol_list1, {2:r"a^\dagger",0:"a"}, {},
-            Quantity(mol_list1.j_matrix[0,2]))
+    # the tests are based on the similarity between scheme 2 and scheme 3
+    # so scheme 3 and scheme 4 will be skipped
+    if scheme == 2:
+        mpo8 = Mpo(local_mlist)
+        # a dirty hack to switch from scheme 2 to scheme 3
+        test_mlist = local_mlist.switch_scheme(2)
+        test_mlist.scheme = 3
+        mpo9 = Mpo(test_mlist)
+        mpo10 = Mpo.intersite(test_mlist, {0:r"a^\dagger",2:"a"}, {},
+                Quantity(local_mlist.j_matrix[0,2]))
+        mpo11 = Mpo.intersite(test_mlist, {2:r"a^\dagger",0:"a"}, {},
+                Quantity(local_mlist.j_matrix[0,2]))
 
-    assert mpo8.distance(mpo9.add(mpo10).add(mpo11)) == pytest.approx(0, abs=1e-6)
-    assert mpo8.distance(mpo9.add(mpo10).add(mpo10.conj_trans())) == pytest.approx(0, abs=1e-6)
+        assert mpo11.conj_trans().distance(mpo10) == pytest.approx(0, abs=1e-6)
+        assert mpo8.distance(mpo9 + mpo10 + mpo11) == pytest.approx(0, abs=1e-6)
 
-    mol_list1.period = True
-    mpo12 = Mpo(mol_list1)
-    assert mpo12.distance(mpo9.add(mpo10).add(mpo11)) == pytest.approx(0, abs=1e-6)
+        test_mlist.periodic = True
+        mpo12 = Mpo(test_mlist)
+        assert mpo12.distance(mpo9 + mpo10 + mpo11) == pytest.approx(0, abs=1e-6)
 
-
-    ph_mpo1 = Mpo.ph_onsite(mol_list, "b", 1, 1)
-    ph_mpo2 = Mpo.intersite(mol_list, {}, {(1,1):"b"})
+    ph_mpo1 = Mpo.ph_onsite(local_mlist, "b", 1, 1)
+    ph_mpo2 = Mpo.intersite(local_mlist, {}, {(1,1):"b"})
     assert ph_mpo1.distance(ph_mpo2) == pytest.approx(0, abs=1e-6)
 
 
@@ -212,5 +220,4 @@ def check_result(mpo, mpo_std):
     print("new mpo bond dims:", mpo.bond_dims)
     print("std mpo qn:", mpo_std.qn, mpo_std.qntot)
     print("new mpo qn:", mpo.qn, mpo_std.qntot)
-    print("length", np.sqrt(mpo_std.dot(mpo_std)))
-    assert mpo_std.distance(mpo) == pytest.approx(0, abs=1e-5)
+    assert mpo_std.distance(mpo)/np.sqrt(mpo_std.dot(mpo_std)) == pytest.approx(0, abs=1e-5)
