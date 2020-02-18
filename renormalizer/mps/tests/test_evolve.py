@@ -5,27 +5,34 @@ import qutip
 import pytest
 import numpy as np
 
+from renormalizer.model import MolList2
 from renormalizer.mps import Mps, Mpo, MpDm
 from renormalizer.utils import EvolveMethod, EvolveConfig, CompressConfig, CompressCriteria, Quantity
 from renormalizer.tests.parameter_exact import qutip_clist, qutip_h, mol_list
 
 
 # the init state
-tentative_mpo = Mpo(mol_list)
-init_mps = (Mpo.onsite(mol_list, r"a^\dagger", mol_idx_set={0}) @ Mps.gs(mol_list, False)).expand_bond_dimension(hint_mpo=tentative_mpo)
-init_mpdm = MpDm.from_mps(init_mps).expand_bond_dimension(hint_mpo=tentative_mpo)
-e = init_mps.expectation(tentative_mpo)
-mpo = Mpo(mol_list, offset=Quantity(e))
+def f(mol_list): 
+    tentative_mpo = Mpo(mol_list)
+    init_mps = (Mpo.onsite(mol_list, r"a^\dagger", mol_idx_set={0}) @ Mps.gs(mol_list, False)).expand_bond_dimension(hint_mpo=tentative_mpo)
+    init_mpdm = MpDm.from_mps(init_mps).expand_bond_dimension(hint_mpo=tentative_mpo)
+    e = init_mps.expectation(tentative_mpo)
+    mpo = Mpo(mol_list, offset=Quantity(e))
+    
+    # calculate exact result in ZT. FT result is exactly the same
+    TIME_LIMIT = 10
+    QUTIP_STEP = 0.01
+    N_POINTS = TIME_LIMIT / QUTIP_STEP + 1
+    qutip_time_series = np.linspace(0, TIME_LIMIT, N_POINTS)
+    init = qutip.Qobj(init_mps.full_wfn(), [qutip_h.dims[0], [1] * len(qutip_h.dims[0])])
+    # the result is not exact and the error scale is approximately 1e-5
+    res = qutip.sesolve(qutip_h-e, init, qutip_time_series, e_ops=[c.dag() * c for c in qutip_clist])
+    qutip_expectations = np.array(res.expect).T
 
-# calculate exact result in ZT. FT result is exactly the same
-TIME_LIMIT = 10
-QUTIP_STEP = 0.01
-N_POINTS = TIME_LIMIT / QUTIP_STEP + 1
-qutip_time_series = np.linspace(0, TIME_LIMIT, N_POINTS)
-init = qutip.Qobj(init_mps.full_wfn(), [qutip_h.dims[0], [1] * len(qutip_h.dims[0])])
-# the result is not exact and the error scale is approximately 1e-5
-res = qutip.sesolve(qutip_h-e, init, qutip_time_series, e_ops=[c.dag() * c for c in qutip_clist])
-qutip_expectations = np.array(res.expect).T
+    return qutip_expectations, QUTIP_STEP, init_mps, init_mpdm, mpo
+
+qutip_expectations, QUTIP_STEP, init_mps, init_mpdm, mpo = f(mol_list)
+_, _, init_mps2, init_mpdm2, mpo2 = f(MolList2.MolList_to_MolList2(mol_list))
 
 
 def check_result(mps, mpo, time_step, final_time, atol=1e-4):
@@ -63,7 +70,7 @@ def test_pc(init_state):
 def test_tdvp_vmf(init_state, with_mu, force_ovlp, atol):
     mps = init_state.copy()
     method = EvolveMethod.tdvp_mu_vmf if with_mu else EvolveMethod.tdvp_vmf
-    mps.evolve_config  = EvolveConfig(method, force_ovlp=force_ovlp)
+    mps.evolve_config  = EvolveConfig(method, ivp_rtol=1e-3, ivp_atol=1e-6, force_ovlp=force_ovlp)
     check_result(mps, mpo, 0.5, 2, atol)
 
 
@@ -76,14 +83,23 @@ def test_tdvp_cmf(init_state,tdvp_cmf_c_trapz):
     check_result(mps, mpo, 0.01, 0.5, 5e-4)
 
 
-@pytest.mark.parametrize("init_state", (
-        init_mps,
-        init_mpdm,))
-def test_tdvp_ps(init_state):
+@pytest.mark.parametrize("init_state, mpo", (
+        [init_mps, mpo],
+        [init_mpdm, mpo],
+        [init_mps2, mpo2],
+        [init_mpdm2, mpo2]))
+def test_tdvp_ps(init_state, mpo):
     mps = init_state.copy()
     mps.evolve_config  = EvolveConfig(EvolveMethod.tdvp_ps)
     check_result(mps, mpo, 0.4, 5)
 
+@pytest.mark.parametrize("init_state, atol, mpo", ([init_mps2, 1e-4, mpo2],
+    [init_mpdm2, 1e-3, mpo2]))
+def test_tdvp_vmf2(init_state, atol, mpo):
+    mps = init_state.copy()
+    method = EvolveMethod.tdvp_mu_vmf 
+    mps.evolve_config  = EvolveConfig(method, ivp_rtol=1e-3,ivp_atol=1e-6)
+    check_result(mps, mpo2, 0.5, 2, atol)
 
 # used for debugging
 def compare():

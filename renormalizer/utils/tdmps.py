@@ -17,7 +17,7 @@ logger = logging.getLogger(__name__)
 
 
 class TdMpsJob(object):
-    def __init__(self, evolve_config: EvolveConfig = None, dump_dir: str=None, dump_type=".npz", job_name: str=None):
+    def __init__(self, evolve_config: EvolveConfig = None, dump_mps: bool=False, dump_dir: str=None, dump_type=".npz", job_name: str=None):
         logger.info(f"Creating TDMPS job. dump_dir: {dump_dir}. job_name: {job_name}")
         if evolve_config is None:
             logger.debug("using default evolve config")
@@ -29,6 +29,7 @@ class TdMpsJob(object):
         self.evolve_times = [0]
         # output abstract of current mps every x steps
         self.info_interval = 1
+        self.dump_mps = dump_mps
         self.dump_dir = dump_dir
         assert dump_type in [".npz",".json"]
         self.dump_type = dump_type
@@ -183,6 +184,12 @@ class TdMpsJob(object):
             raise ValueError(f"self.dump_type={self.dump_type} is invalid")
         if os.path.exists(bak_path):
             os.remove(bak_path)
+
+        # dump_mps
+        if self.dump_mps:
+            mps_path = os.path.join(self.dump_dir,
+                    self.job_name+"_mps_"+str(len(self.evolve_times)-1) + ".npz")
+            self.latest_mps.dump(mps_path)
 
     def stop_evolve_criteria(self):
         return False

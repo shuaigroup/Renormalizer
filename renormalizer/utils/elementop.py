@@ -8,6 +8,38 @@ written in Latex format. <bra|op|ket>
 
 import numpy as np
 
+class Op:
+    r"""
+    The primary operator class
+    
+    Args:
+        symbol (str): the string of the operator
+        qn (int): the quantum number of the operator
+        factor (float, complex): the prefactor of the operator
+    """
+
+    @classmethod
+    def identity(cls):
+        return cls("I", 0)
+        
+    def __init__(self, symbol, qn, factor=1.0):
+        self.symbol = symbol
+        assert type(qn) is int
+        self.qn = qn
+        self.factor = factor
+
+    def __eq__(self, other): 
+        if isinstance(other, self.__class__): 
+            return (self.symbol == other.symbol) and  (self.qn == other.qn) and (np.allclose(self.factor, other.factor))
+        else:
+            return False 
+
+    def __hash__(self):
+        return hash((self.symbol, self.qn, self.factor))
+    
+    def __repr__(self):
+        return f"({self.symbol}, {self.qn}, {self.factor})"
+
 
 def get_op_matrix(op, size, op_type):
     assert op_type in ["e", "ph"]
@@ -106,7 +138,7 @@ def ph_element_op(op, bra, ket):
             return 0.0
 
 
-e_op_list = [r"a^\dagger", "a", r"a^\dagger a", "Iden", "sigmax", "sigmaz"]
+e_op_list = [r"a^\dagger", "a", r"a^\dagger a", "Iden", "sigma_x", "sigma_z"]
 
 
 def e_element_op(op, bra, ket):
@@ -141,13 +173,13 @@ def e_element_op(op, bra, ket):
         else:
             return 0.0
 
-    elif op == "sigmax":
+    elif op == "sigma_x":
         if abs(bra - ket) == 1:
             return 1.0
         else:
             return 0
 
-    elif op == "sigmaz":
+    elif op == "sigma_z":
         if bra == ket == 1:
             return -1
         elif bra == ket == 0:

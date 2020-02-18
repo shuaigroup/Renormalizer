@@ -4,7 +4,7 @@ import numpy as np
 import pytest
 
 from renormalizer.mps import Mps, Mpo, MpDm, MpDmFull, ThermalProp
-from renormalizer.model import MolList, Mol, Phonon
+from renormalizer.model import MolList, MolList2, Mol, Phonon
 from renormalizer.tests import parameter
 from renormalizer.utils import Quantity, EvolveConfig, EvolveMethod
 
@@ -41,25 +41,31 @@ def test_from_mps():
 
 
 @pytest.mark.parametrize(
-    "mol_list, etot_std, occ_std, rtol",
+    "mol_list, etot_std, occ_std, rtol, adaptive, evolve_method",
     (
-        # explicit hybrid algorithm will be removed
-        #[
-        #    parameter.hybrid_mol_list,
-        #    0.0853441664951,
-        #    [0.20881609, 0.35239430, 0.43878960],
-        #    5e-3,
-        #],
-        [parameter.mol_list, 0.0853413581416, [0.20881782, 0.35239674, 0.43878545], 5e-3],
+        [parameter.mol_list, 0.0853413581416, [0.20881782, 0.35239674,
+            0.43878545], 5e-3, True,  EvolveMethod.tdvp_ps],
+        [parameter.mol_list, 0.0853413581416, [0.20881782, 0.35239674, 
+            0.43878545], 5e-3, False, EvolveMethod.prop_and_compress],
+        [parameter.mol_list, 0.0853413581416, [0.20881782, 0.35239674, 
+            0.43878545], 5e-3, False, EvolveMethod.tdvp_mu_vmf],
+        [MolList2.MolList_to_MolList2(parameter.mol_list),
+            0.0853388060014744 + parameter.mol_list[0].gs_zpe *
+            parameter.mol_list.mol_num , [0.20896541050347484,
+                0.35240029674394463, 0.4386342927525734], 5e-3, 
+            True, EvolveMethod.prop_and_compress],
+        [MolList2.MolList_to_MolList2(parameter.mol_list),
+            0.0853388060014744 + parameter.mol_list[0].gs_zpe *
+            parameter.mol_list.mol_num , [0.20896541050347484,
+                0.35240029674394463, 0.4386342927525734], 5e-3, 
+            False, EvolveMethod.tdvp_ps],
+        [MolList2.MolList_to_MolList2(parameter.mol_list),
+            0.0853388060014744 + parameter.mol_list[0].gs_zpe *
+            parameter.mol_list.mol_num , [0.20896541050347484,
+                0.35240029674394463, 0.4386342927525734], 5e-3, 
+            False, EvolveMethod.tdvp_mu_vmf],
     ),
 )
-@pytest.mark.parametrize("adaptive, evolve_method", (
-        [True,  EvolveMethod.prop_and_compress],
-        [False, EvolveMethod.prop_and_compress],
-        [True, EvolveMethod.tdvp_ps],
-        [False, EvolveMethod.tdvp_ps],
-        [False, EvolveMethod.tdvp_mu_vmf],
-))
 def test_thermal_prop(mol_list, etot_std, occ_std, adaptive, evolve_method, rtol):
     init_mps = MpDm.max_entangled_ex(mol_list)
     mpo = Mpo(mol_list)
@@ -78,19 +84,19 @@ def test_thermal_prop(mol_list, etot_std, occ_std, adaptive, evolve_method, rtol
         nsteps = 20
         evolve_config.ivp_rtol=1e-3
         evolve_config.ivp_atol=1e-6
-        init_mps.compress_config.bond_dim_max_value = 16
+        evolve_config.reg_epsilon=1e-8
+        init_mps.compress_config.bond_dim_max_value = 12
 
     dbeta = evolve_time/nsteps
 
     tp = ThermalProp(init_mps, mpo, evolve_config=evolve_config)
     tp.evolve(evolve_dt=dbeta, nsteps=nsteps)
     mps = tp.latest_mps
-    MPO, HAM, Etot, A_el = mps.construct_hybrid_Ham(mpo, debug=True)
+    #MPO, HAM, Etot, A_el = mps.construct_hybrid_Ham(mpo, debug=True)
     # exact A_el: 0.20896541050347484, 0.35240029674394463, 0.4386342927525734
     # exact internal energy: 0.0853388060014744
-    print("Etot", Etot, A_el)
-    assert np.allclose(Etot, etot_std, rtol=rtol)
-    assert np.allclose(A_el, occ_std, rtol=rtol)
+    assert np.allclose(tp.energies[-1], etot_std, rtol=rtol)
+    assert np.allclose(tp.e_occupations_array[-1], occ_std, rtol=rtol)
 
 
 

@@ -2,10 +2,11 @@
 
 import numpy as np
 import qutip
+import pytest
 
 from renormalizer.model import Phonon, Mol, MolList
 from renormalizer.mps import Mps, Mpo, MpDm, ThermalProp
-from renormalizer.utils import Quantity, CompressConfig, EvolveConfig
+from renormalizer.utils import Quantity, CompressConfig, EvolveConfig, basis
 
 
 def get_mol():
@@ -18,6 +19,23 @@ def get_mol():
     ph_list = [Phonon.simple_phonon(Quantity(1), Quantity(1), ph_levels)] * nphonons
     m = Mol(Quantity(epsilon), ph_list, tunnel=Quantity(-delta))
     return m
+
+def test_general_mpo_sbm():
+    mol = get_mol()
+    mol_list = MolList([mol], Quantity(0))
+    mol_list.mol_list2_para()
+    mpo = Mpo.general_mpo(mol_list, const=Quantity(-mol_list[0].gs_zpe*mol_list.mol_num))
+    mpo_std = Mpo(mol_list)
+    check_result(mpo, mpo_std)
+    
+
+def check_result(mpo, mpo_std):
+    print("std mpo bond dims:", mpo_std.bond_dims)
+    print("new mpo bond dims:", mpo.bond_dims)
+    print("std mpo qn:", mpo_std.qn, mpo_std.qntot)
+    print("new mpo qn:", mpo.qn, mpo_std.qntot)
+    print("length", np.sqrt(mpo_std.dot(mpo_std)))
+    assert mpo_std.distance(mpo) == pytest.approx(0, abs=1e-5)
 
 def test_zt():
     mol = get_mol()
@@ -51,7 +69,7 @@ def test_ft():
     tp = ThermalProp(impdm, mpo, evolve_config=evolve_config)
     tp.evolve(nsteps=1, evolve_time=temperature.to_beta() / 2j)
     mpdm = tp.latest_mps
-    mpdm = Mpo.onsite(mol_list, r"sigmax").contract(mpdm)
+    mpdm = Mpo.onsite(mol_list, r"sigma_x").contract(mpdm)
     mpdm.evolve_config = EvolveConfig(adaptive=True, guess_dt=0.1)
     time_series = [0]
     spin = [1 - 2 * mpdm.e_occupations[0]]
@@ -78,29 +96,29 @@ def get_exact_operator(mol):
 
     ph_iden = [qutip.identity(ph.n_phys_dim) for ph in mol.dmrg_phs]
 
-    sigmax = qutip.tensor([qutip.sigmax()] + ph_iden)
-    sigmaz = qutip.tensor([qutip.sigmaz()] + ph_iden)
+    sigma_x = qutip.tensor([qutip.sigmax()] + ph_iden)
+    sigma_z = qutip.tensor([qutip.sigmaz()] + ph_iden)
     delta = mol.tunnel
     epsilon = mol.elocalex
-    terms = [-delta * sigmax, epsilon * sigmaz]
+    terms = [-delta * sigma_x, epsilon * sigma_z]
     for i, ph in enumerate(mol.dmrg_phs):
         g = ph.coupling_constant
         terms.append(ph.omega[0] * blist[i].dag() * blist[i])
-        terms.append(ph.omega[0] * g * sigmaz * (blist[i].dag() + blist[i]))
+        terms.append(ph.omega[0] * g * sigma_z * (blist[i].dag() + blist[i]))
     H = sum(terms)
 
-    return H, sigmax, sigmaz
+    return H, sigma_x, sigma_z
 
 
 def get_exact_zt(mol, time_series):
-    H, _, sigmaz = get_exact_operator(mol)
+    H, _, sigma_z = get_exact_operator(mol)
     init_state = qutip.tensor([qutip.basis(2)] + [qutip.basis(ph.n_phys_dim) for ph in mol.dmrg_phs])
-    result = qutip.mesolve(H, init_state, time_series, e_ops=[sigmaz])
+    result = qutip.mesolve(H, init_state, time_series, e_ops=[sigma_z])
     return result.expect[0]
 
 
 def get_exact_ft(mol, temperature, time_series):
-    H, sigmax, sigmaz = get_exact_operator(mol)
-    init_state =  sigmax * (-temperature.to_beta() * H).expm().unit() * sigmax.dag()
-    result = qutip.mesolve(H, init_state, time_series, e_ops=[sigmaz])
+    H, sigma_x, sigma_z = get_exact_operator(mol)
+    init_state =  sigma_x * (-temperature.to_beta() * H).expm().unit() * sigma_x.dag()
+    result = qutip.mesolve(H, init_state, time_series, e_ops=[sigma_z])
     return result.expect[0]

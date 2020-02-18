@@ -7,12 +7,11 @@ import os
 import pytest
 import numpy as np
 
-from renormalizer.model import MolList, Mol, Phonon
-from renormalizer.mps import Mpo, Mps, solver
-from renormalizer.tests.parameter import mol_list
+from renormalizer.model import MolList, MolList2, ModelTranslator, Mol, Phonon
+from renormalizer.mps import Mpo, Mps
+from renormalizer.tests.parameter import mol_list, ph_phys_dim, omega_quantities
 from renormalizer.mps.tests import cur_dir
-from renormalizer.utils import Quantity
-
+from renormalizer.utils import Quantity, Op
 
 @pytest.mark.parametrize("dt, space, shift", ([30, "GS", 0.0], [30, "EX", 0.0]))
 def test_exact_propagator(dt, space, shift):
@@ -125,3 +124,93 @@ def test_phonon_onsite():
     b = b2.conj_trans()
     assert b.distance(Mpo.ph_onsite(mol_list, r"b", 0, 0)) == 0
     assert b.apply(p2).normalize().distance(p1) == pytest.approx(0, abs=1e-5)
+
+
+from renormalizer.tests.parameter_PBI import construct_mol
+
+@pytest.mark.parametrize("mol_list", (mol_list, construct_mol(10,10,0)))
+@pytest.mark.parametrize("scheme", (123, 4))
+def test_general_mpo_MolList(mol_list, scheme):
+    
+    if scheme == 4:
+        mol_list1 = mol_list.switch_scheme(4)
+    else:
+        mol_list1 = mol_list
+
+    mol_list1.mol_list2_para()
+    mpo = Mpo.general_mpo(mol_list1,
+            const=Quantity(-mol_list1[0].gs_zpe*mol_list1.mol_num))
+    mpo_std = Mpo(mol_list1)
+    check_result(mpo, mpo_std)
+    
+@pytest.mark.parametrize("mol_list", (mol_list, construct_mol(10,10,0)))
+@pytest.mark.parametrize("scheme", (123, 4))
+@pytest.mark.parametrize("formula", ("vibronic", "general"))
+def test_general_mpo_MolList2(mol_list, scheme, formula):
+    if scheme == 4:
+        mol_list1 = mol_list.switch_scheme(4)
+    else:
+        mol_list1 = mol_list
+
+    # scheme123
+    mol_list2 = MolList2.MolList_to_MolList2(mol_list1, formula=formula)
+    mpo_std = Mpo(mol_list1)
+    # classmethod method
+    mpo = Mpo.general_mpo(mol_list2, const=Quantity(-mol_list[0].gs_zpe*mol_list.mol_num))
+    check_result(mpo, mpo_std)
+    # __init__ method, same api
+    mpo = Mpo(mol_list2, offset=Quantity(mol_list[0].gs_zpe*mol_list.mol_num))
+    check_result(mpo, mpo_std)
+    
+
+def test_general_mpo_others():
+    
+    mol_list2 = MolList2.MolList_to_MolList2(mol_list)
+    
+    # onsite 
+    mpo_std = Mpo.onsite(mol_list, r"a^\dagger", mol_idx_set=[0])
+    mpo = Mpo.onsite(mol_list2, r"a^\dagger", mol_idx_set=[0])
+    check_result(mpo, mpo_std)
+    # general method 
+    mpo = Mpo.general_mpo(mol_list2, model={("e_0",):[(Op(r"a^\dagger",0),1.0)]},
+            model_translator=ModelTranslator.general_model)
+    check_result(mpo, mpo_std)
+
+    mpo_std = Mpo.onsite(mol_list, r"a^\dagger a", dipole=True)
+    mpo = Mpo.onsite(mol_list2, r"a^\dagger a", dipole=True)
+    check_result(mpo, mpo_std)
+    mpo = Mpo.general_mpo(mol_list2,  
+            model={("e_0",):[(Op(r"a^\dagger a",0),mol_list2.dipole[("e_0",)])],
+                ("e_1",):[(Op(r"a^\dagger a",0),mol_list2.dipole[("e_1",)])], 
+                ("e_2",):[(Op(r"a^\dagger a",0),mol_list2.dipole[("e_2",)])]},
+            model_translator=ModelTranslator.general_model)
+    check_result(mpo, mpo_std)
+    
+    # intersite
+    mpo_std = Mpo.intersite(mol_list, {0:r"a^\dagger",2:"a"},
+            {(0,1):"b^\dagger"}, Quantity(2.0))
+    mpo = Mpo.intersite(mol_list2, {0:r"a^\dagger",2:"a"},
+            {(0,1):r"b^\dagger"}, Quantity(2.0))
+    check_result(mpo, mpo_std)
+    mpo = Mpo.general_mpo(mol_list2, 
+            model={("e_0","e_2","v_1"):[(Op(r"a^\dagger",1), Op(r"a",-1),
+            Op(r"b^\dagger", 0), 2.0)]},
+            model_translator=ModelTranslator.general_model)
+    check_result(mpo, mpo_std)
+    
+    # phsite
+    mpo_std = Mpo.ph_onsite(mol_list, r"b^\dagger", 0, 0)
+    mpo = Mpo.ph_onsite(mol_list2, r"b^\dagger", 0, 0)
+    check_result(mpo, mpo_std)
+    mpo = Mpo.general_mpo(mol_list2, 
+            model={(mol_list2.map[(0,0)],):[(Op(r"b^\dagger",0), 1.0)]},
+            model_translator=ModelTranslator.general_model)
+    check_result(mpo, mpo_std)
+
+def check_result(mpo, mpo_std):
+    print("std mpo bond dims:", mpo_std.bond_dims)
+    print("new mpo bond dims:", mpo.bond_dims)
+    print("std mpo qn:", mpo_std.qn, mpo_std.qntot)
+    print("new mpo qn:", mpo.qn, mpo_std.qntot)
+    print("length", np.sqrt(mpo_std.dot(mpo_std)))
+    assert mpo_std.distance(mpo) == pytest.approx(0, abs=1e-5)

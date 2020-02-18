@@ -572,6 +572,9 @@ class MatrixProduct:
         else:
             mt.sigmaqn = self._get_sigmaqn(idx)
         return mt
+    
+    def build_empty_mp(self, num):
+        self._mp = [[None]] * num
 
     @property
     def total_bytes(self):
