@@ -105,7 +105,7 @@ class MolList2:
     @property
     def multi_electron(self):
         for b in self.basis:
-            if isinstance(b, ba.Basis_Multi_Electron):
+            if isinstance(b, ba.BasisMultiElectron):
                 return True
         return False
 
@@ -216,14 +216,14 @@ class MolList2:
             for imol, mol in enumerate(mol_list):
                 order[f"e_{e_idx(imol)}"] = idx
                 if np.allclose(mol.tunnel, 0):
-                    basis.append(ba.Basis_Simple_Electron())
+                    basis.append(ba.BasisSimpleElectron())
                 else:
-                    basis.append(ba.Basis_Half_Spin())
+                    basis.append(ba.BasisHalfSpin())
                 idx += 1
                 for iph, ph in enumerate(mol.dmrg_phs):
                     order[f"v_{nv}"] = idx
                     mapping[(imol, iph)] = f"v_{nv}"
-                    basis.append(ba.Basis_SHO(ph.omega[0], ph.n_phys_dim))
+                    basis.append(ba.BasisSHO(ph.omega[0], ph.n_phys_dim))
                     idx += 1
                     nv += 1
 
@@ -242,7 +242,7 @@ class MolList2:
                     else:
                         order[f"v_{nv}"] = idx+1
                     
-                    basis.append(ba.Basis_SHO(ph.omega[0], ph.n_phys_dim))
+                    basis.append(ba.BasisSHO(ph.omega[0], ph.n_phys_dim))
                     mapping[(imol, iph)] = f"v_{nv}"
 
                     nv += 1
@@ -253,7 +253,7 @@ class MolList2:
             # the gs state
             order["e_0"] = n_left_ph
             basis.insert(n_left_ph,
-                    ba.Basis_Multi_Electron(mol_list.mol_num+1,[0,]+[1,]*mol_list.mol_num))
+                         ba.BasisMultiElectron(mol_list.mol_num + 1, [0, ] + [1, ] * mol_list.mol_num))
 
         else:
             raise ValueError(f"invalid mol_list.scheme: {mol_list.scheme}")

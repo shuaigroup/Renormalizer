@@ -321,11 +321,11 @@ class Mps(MatrixProduct):
                     ms = np.zeros((1, pdim, 1))
                     
                     if isinstance(mol_list.basis[isite],
-                            ba.Basis_Simple_Electron):
+                                  ba.BasisSimpleElectron):
                         # simple electron site
                         ms[0,0,0] = 1.
                     elif isinstance(mol_list.basis[isite],
-                            ba.Basis_Multi_Electron):
+                                    ba.BasisMultiElectron):
                         # multi electron site 
                         ms[0,0,0] = 1.
                     elif isinstance(mol_list.basis[isite],

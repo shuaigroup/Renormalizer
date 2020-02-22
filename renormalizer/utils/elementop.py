@@ -8,6 +8,7 @@ written in Latex format. <bra|op|ket>
 
 import numpy as np
 
+
 class Op:
     r"""
     The primary operator class
@@ -21,18 +22,18 @@ class Op:
     @classmethod
     def identity(cls):
         return cls("I", 0)
-        
-    def __init__(self, symbol, qn, factor=1.0):
+
+    def __init__(self, symbol: str, qn: int, factor: float = 1.0):
         self.symbol = symbol
         assert type(qn) is int
         self.qn = qn
         self.factor = factor
 
-    def __eq__(self, other): 
-        if isinstance(other, self.__class__): 
-            return (self.symbol == other.symbol) and  (self.qn == other.qn) and (np.allclose(self.factor, other.factor))
-        else:
-            return False 
+    def __eq__(self, other):
+        return other.__class__ == self.__class__ \
+               and (self.symbol == other.symbol) \
+               and (self.qn == other.qn) \
+               and (np.allclose(self.factor, other.factor))
 
     def __hash__(self):
         return hash((self.symbol, self.qn, self.factor))
