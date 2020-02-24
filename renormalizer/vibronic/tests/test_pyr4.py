@@ -195,7 +195,7 @@ def vibronic_to_general(model):
 
 @pytest.mark.parametrize("multi_e", (False, True))
 @pytest.mark.parametrize("translator", (ModelTranslator.vibronic_model, ModelTranslator.general_model))
-def test_vibronic_model(multi_e, translator):
+def test_pyr_4mode(multi_e, translator):
 
     order, basis, vibronic_model = construct_vibronic_model(multi_e)
     if translator is ModelTranslator.vibronic_model:

@@ -37,7 +37,7 @@ def symbolic_mpo(table, factor):
     
     Args:
     
-    table: an operator table with shape (operator nterm, nsite) matrix 
+    table: an operator table with shape (operator nterm, nsite). Each entry contains elementary operators on each site.
     factor (np.ndarray): one prefactor vector (dim: operator nterm) 
     
     Return:
@@ -50,92 +50,94 @@ def symbolic_mpo(table, factor):
 
     the index of the primary ops {0:"I", 1:"a", 2:r"a^\dagger"}
     
-    for example: H = 2.0 * a_1^dagger a_0  + 3.0 * a_1^\dagger a_2 + 4.0*a_0^\dagger a_2
-                        0    1    2    3   4  factor
-    a_0 a_1^dagger      0    1    2    0   0   2.0
-    a_1^\dagger a_2     0    0    2    1   0   3.0
-    a_0^\dagger a_2     0    2    0    1   0   4.0
-    for convenience the first and last column means that the operator of the left and right hand of the system is I 
+    for example: H = 2.0 * a_1 a_2^dagger   + 3.0 * a_2^\dagger a_3 + 4.0*a_0^\dagger a_3
+    The column names are the site indeces with 0 and 4 imaginary (see the note below)
+    and the content of the table is the index of primary operators.
+                        s0   s1   s2   s3  s4  factor
+    a_1 a_2^dagger      0    1    2    0   0   2.0
+    a_2^\dagger a_3     0    0    2    1   0   3.0
+    a_1^\dagger a_3     0    2    0    1   0   4.0
+    for convenience the first and last column mean that the operator of the left and right hand of the system is I
     
     cut the string to construct the row(left) and column(right) operator and find the duplicated/independent terms 
-                        0    1  |  2    3   4  factor
-    a_0 a_1^dagger      0    1  |  2    0   0  2.0
-    a_1^\dagger a_2     0    0  |  2    1   0  3.0
-    a_0^\dagger a_2     0    2  |  0    1   0  4.0
-    
-       0 1 2   0,1,2 represents (2,0,0), (2,1,0), (0,1,0)
-     0 1 0 0
-     1 0 1 0
-     2 0 0 1
-     0,1,2 represents (0,1), (0,0), (0,2)
+                        s0   s1 |  s2   s3  s4 factor
+    a_1 a_2^dagger      0    1  |  2    0   0  2.0
+    a_2^\dagger a_3     0    0  |  2    1   0  3.0
+    a_1^\dagger a_3     0    2  |  0    1   0  4.0
+
+     The content of the table below means matrix elements with basis explained in the notes.
+     In the matrix elements, 1 means combination and 0 means no combination.
+          (2,0,0) (2,1,0) (0,1,0)  -> right side of the above table
+     (0,1)   1       0       0
+     (0,0)   0       1       0
+     (0,2)   0       0       1
+       |
+       v
+     left side of the above table
+     In this case all operators are independent so the content of the matrix is diagonal
     
     and select the terms and rearange the table 
     The selection rule is to find the minimal number of rows+cols that can eliminate the
     matrix
-          0    1  |  2  3  factor
-          0'   2  |  0  0  2.0
-          1'   2  |  1  0  3.0
-          2'   0  |  1  0  4.0
+                      s1   s2 |  s3 s4 factor
+    a_1 a_2^dagger    0'   2  |  0  0  2.0
+    a_2^\dagger a_3   1'   2  |  1  0  3.0
+    a_1^\dagger a_3   2'   0  |  1  0  4.0
     0'/1'/2' are three new operators(could be non-elementary)
-    The local mpo is the transformation matrix between 0,0,0 to 0',1',2'
+    The local mpo is the transformation matrix between 0,0,0 to 0',1',2'.
+    In this case, the local mpo is simply (1, 0, 2)
     
     cut the string and find the duplicated/independent terms 
-       0 1   (0,0), (1,0)
-     0 1 0 
-     1 0 1 
-     2 0 1 
-     (0',2), (1',2), (2',0)
+            (0,0), (1,0)
+     (0',2)   1      0
+     (1',2)   0      1
+     (2',0)   0      1
     
-    and select the terms and rearange the table 
-    apparently choose the 1 index column and construct the complementary operator 1+2 is better
-    0'' =  3*(1 0) + 4*(2 0)
-         -1      2  | 3 factor
-          0''    1  | 0  1.0
-          1''    0  | 0  2.0
+    and select the terms and rearrange the table
+    apparently choose the (1,0) column and construct the complementary operator (1',2)+(2',0) is better
+    0'' =  3.0 * (1', 2) + 4.0 * (2', 0)
+                                                 s2     s3 | s4 factor
+    (4.0 * a_1^dagger + 3.0 * a_2^dagger) a_3    0''    1  | 0  1.0
+    a_1 a_2^dagger                               1''    0  | 0  2.0
     0''/1'' are another two new operators(non-elementary)
     The local mpo is the transformation matrix between 0',1',2' to 0'',1''
     
-       0    (0)
-     0 1  
-     1 0  
-     (0'',1), (1'',0)
+             (0)
+     (0'',1)  1
+     (1'',0)  1
     
     The local mpo is the transformation matrix between 0'',1'' to 0'''
     """
 
     table = copy.deepcopy(table)
     factor = factor.copy()
-    
+
     # combine the same terms but with different factors(add them together)
-    table = [tuple(ta) for ta in table]
-    tally = defaultdict(list)
-    for i, item in enumerate(table):
-        tally[item].append(factor[i])
-    
-    table = []
-    factor = []
-    for key, value in tally.items():
-        table.append(list(key))
-        factor.append(np.sum(value))
+    deduplicated_table = defaultdict(float)
+    for t, f in zip(table, factor):
+        deduplicated_table[tuple(t)] += f
+    table, factor = list(map(list, deduplicated_table.keys())), list(deduplicated_table.values())
+    del deduplicated_table
 
     nterm = len(table)
     nsite = len(table[0])
 
     # translate the symbolic operator table to an easy to manipulate numpy array
-    primary_ops = {}
-    primary_ops_inv = {}
-    
-    idx = 0 
-    for irow in range(nterm):
-        for icol in range(nsite):
-            if not table[irow][icol] in primary_ops.values():
-                primary_ops[idx] = table[irow][icol]
-                primary_ops_inv[table[irow][icol]] = idx
-                idx += 1
-            table[irow][icol] = primary_ops_inv[table[irow][icol]]
+    # for convenience identity is set to 0
+    primary_ops = {0: Op.identity()}
+    primary_ops_inv = {Op.identity(): 0}
+
+    for irow, row in enumerate(table):
+        for icol, op in enumerate(row):
+            assert op.factor == 1.0
+            if op not in primary_ops_inv.keys():
+                idx = len(primary_ops)
+                primary_ops[idx] = op
+                primary_ops_inv[op] = idx
+            table[irow][icol] = primary_ops_inv[op]
         
     # add the first and last column for convenience
-    ta = np.zeros((nterm,1),dtype=np.int32)
+    ta = np.zeros((nterm, 1), dtype=np.int32)
     table = np.concatenate((ta, table, ta), axis=1)
 
     mpo = []
@@ -150,72 +152,72 @@ def symbolic_mpo(table, factor):
         
         # get the non_redudant ops
         def list2dict(ta):
-            term = {}
-            idx = 0
-            for it in range(table.shape[0]):
-                if tuple(ta[it,:]) not in term.keys():
-                    term[tuple(ta[it,:])] = idx
-                    term[idx] = tuple(ta[it,:])
-                    idx += 1
+            ta_set = set(map(tuple, ta))
+            term = {k: v for k, v in enumerate(ta_set)}
+            term.update({v: k for k, v in term.items()})
             return term
 
         term_row = list2dict(ta_row)
         term_col = list2dict(ta_col)
         
         # construct the non_redudant table
-        non_red = np.zeros((len(term_row),len(term_col)), dtype=np.int32)
-        for it in range(table.shape[0]):
-            idx1, idx2 = term_row[tuple(ta_row[it,:])], term_col[tuple(ta_col[it,:])]
-            non_red[idx1, idx2] = it+1
+        # non-existing term is denoted as -1
+        non_red = -np.ones((len(term_row) // 2, len(term_col) // 2), dtype=np.int32)
+        for i in range(len(table)):
+            idx1, idx2 = term_row[tuple(ta_row[i])], term_col[tuple(ta_col[i])]
+            non_red[idx1, idx2] = i
         
         # select the reserved ops
         out_ops = []
         new_table = []
         new_factor = []
-        
-        while np.sum(non_red) != 0:
-            # count the # of nonzero (the interaction) in each row and col
-            nint_row = np.count_nonzero(non_red, axis=1)
-            nint_col = np.count_nonzero(non_red, axis=0)
+
+        # loop until every term is taken care of
+        while not (non_red == -1).all():
+            # count the # of interaction in each row and col
+            nint_row = np.sum(non_red != -1, axis=1)
+            nint_col = np.sum(non_red != -1, axis=0)
             
             # obtain the largest index
             row_idx = np.argmax(nint_row)
             col_idx = np.argmax(nint_col)
             
             if nint_row[row_idx] >= nint_col[col_idx]:
-                
+                # dealing with row (left side of the table). One row corresponds to multiple cols.
+                # Produce one out operator and multiple new_table entries
+
+                # construct out_op
                 symbol = term_row[row_idx]
                 qn = in_ops[term_row[row_idx][0]][0].qn + primary_ops[term_row[row_idx][1]].qn
-                out_op = Op(symbol,qn,factor=1.0)
-
+                out_op = Op(symbol, qn, factor=1.0)
                 out_ops.append([out_op])
                 
                 for j in range(non_red.shape[1]):
-                    if non_red[row_idx, j] != 0:
-                        array = np.zeros(table.shape[1]-1, dtype=np.int32)
-                        array[0] = len(out_ops)-1
-                        array[1:] = term_col[j]
-                        new_table.append(array)
-                        new_factor.append(factor[non_red[row_idx, j]-1]) 
+                    term_idx = non_red[row_idx, j]
+                    if term_idx == -1:
+                        continue
+                    new_table.append([len(out_ops)-1] + list(term_col[j]))
+                    new_factor.append(factor[term_idx])
 
-                non_red[row_idx, :] = 0
+                non_red[row_idx, :] = -1
             else:
+                # dealing with column (right side of the table). One col correspond to multiple rows.
+                # Produce multiple out operators and one new_table entry
 
                 out_ops.append([])
                 # complementary operator
                 for i in range(non_red.shape[0]):
-                    if non_red[i, col_idx] != 0:
-                        symbol = term_row[i]
-                        qn = in_ops[term_row[i][0]][0].qn + primary_ops[term_row[i][1]].qn
-                        out_op = Op(symbol,qn,factor=factor[non_red[i, col_idx]-1])
-                        out_ops[-1].append(out_op)
+                    term_idx = non_red[i, col_idx]
+                    if term_idx == -1:
+                        continue
+                    symbol = term_row[i]
+                    qn = in_ops[term_row[i][0]][0].qn + primary_ops[term_row[i][1]].qn
+                    out_op = Op(symbol, qn, factor=factor[term_idx])
+                    out_ops[-1].append(out_op)
 
-                array = np.zeros(table.shape[1]-1, dtype=np.int32)
-                array[0] = len(out_ops)-1
-                array[1:] = term_col[col_idx]
-                new_table.append(array)
+                new_table.append([len(out_ops)-1] + list(term_col[col_idx]))
                 new_factor.append(1.0)
-                non_red[:, col_idx] = 0
+                non_red[:, col_idx] = -1
             
         # translate the numpy array back to symbolic mpo
         mo = [[[] for o in range(len(out_ops))] for i in range(len(in_ops))]
@@ -223,12 +225,15 @@ def symbolic_mpo(table, factor):
 
         for iop, out_op in enumerate(out_ops):
             for composed_op in out_op:
+                in_idx = composed_op.symbol[0]
+                symbol = primary_ops[composed_op.symbol[1]].symbol
+                qn = primary_ops[composed_op.symbol[1]].qn
                 if isite != nsite-1:
-                    mo[composed_op.symbol[0]][iop].append(Op(primary_ops[composed_op.symbol[1]].symbol,
-                        primary_ops[composed_op.symbol[1]].qn, composed_op.factor))
+                    factor = composed_op.factor
                 else:
-                    mo[composed_op.symbol[0]][iop].append(Op(primary_ops[composed_op.symbol[1]].symbol,
-                        primary_ops[composed_op.symbol[1]].qn, composed_op.factor*new_factor[0]))
+                    factor = composed_op.factor*new_factor[0]
+                new_op = Op(symbol, qn, factor)
+                mo[in_idx][iop].append(new_op)
             moqn.append(out_op[0].qn)
 
         mpo.append(mo)
@@ -421,7 +426,8 @@ def _model_translator_Holstein_model_scheme4(mol_list, const=Quantity(0.)):
     logger.debug(f"# of operator terms: {len(table)}")
     
     return table, factor
-        
+
+
 def _model_translator_sbm(mol_list, const=Quantity(0.)):
     """
     construct a spin-boson model operator table
@@ -579,11 +585,13 @@ def _model_translator_vibronic_model(mol_list, const=Quantity(0.)):
 
     return table, factor
 
+
 def add_idx(symbol, idx):
     symbols = symbol.split(" ")
     for i in range(len(symbols)):
         symbols[i] = symbols[i]+f"_{idx}"
     return " ".join(symbols)
+
 
 def _model_translator_general_model(mol_list, const=Quantity(0.)):
     r"""
@@ -617,7 +625,7 @@ def _model_translator_general_model(mol_list, const=Quantity(0.)):
                 qn = 0
                 for iop in v:
                     if list(order.values()).count(order[key[iop]]) > 1 or len(v) > 1:
-                        # add the index to the operator in multi elecron case
+                        # add the index to the operator in multi electron case
                         # two cases, one is "a^\dagger a" on a single e_dof
                         # another is "a^\dagger" "a" on two different e_dof
                         symbols.append(add_idx(term[iop].symbol,
@@ -638,6 +646,7 @@ def _model_translator_general_model(mol_list, const=Quantity(0.)):
 
     for dof, value in model.items():
         for term in value:
+            # terms with factor 0 are eliminated
             if not np.allclose(term[-1], 0.):
                 ta = [Op.identity() for i in range(nsite)]
                 for iop, op in enumerate(term[:-1]):
@@ -1576,10 +1585,10 @@ class Mpo(MatrixProduct):
                 }
         
         if model is None:
-            # internal model
+            # internal model (model is provided by `mol_list`)
             table, factor = translator_list[mol_list.model_translator](mol_list, const)
         else:
-            # external model
+            # external model (model is provided by `model` and `model_translator`. `mol_list` is just a ref.)
             assert model_translator is not None
             table, factor = translator_list[model_translator](mol_list.rewrite_model(model, model_translator), const)
     

@@ -104,7 +104,7 @@ class BasisSHO(BasisSet):
 
         elif op_symbol == "p":
             # <m|p|n> = -i sqrt(w/2) <m| b^\dagger - b |n>
-            mat = -1j * np.sqrt(self.omega / 2) * (self.op_mat(r"b^\dagger") - self.op_mat("b"))
+            mat = 1j * np.sqrt(self.omega / 2) * (self.op_mat(r"b^\dagger") - self.op_mat("b"))
 
         elif op_symbol == "p^2":
             mat = -self.omega / 2 * (self.op_mat(r"b^\dagger b^\dagger")

@@ -40,7 +40,7 @@ class MolList2:
             model (Dict): model of the system or any operator of the system, two
             formats are supported: 'vibronic type' or 'general type'. All terms
             must be included, without assuming hermitian or something else.
-            model_translator(:class:`~renormaizer.model.ModelTranslator`): Translator from user input model to renormalizer's internal formats
+            model_translator(:class:`~renormalizer.model.ModelTranslator`): Translator from user input model to renormalizer's internal formats
             dipole (Dict): contains the transition dipole matrix element
         
         Note:
@@ -64,7 +64,7 @@ class MolList2:
             'vibronic type': each key is a tuple of electronic DoFs represents
             a^\dagger_i a_j or the key is "I" represents the pure vibrational
             terms, the value is a dict. 
-            The sub-key of the dict has two types, one is 'J' with value (float or complex) for pure electronic coupling,  
+            The sub-key of the dict has two types, one is 'J' with value (float or complex) for pure electronic coupling,
             one is tuple of vibrational DoF with a list as value. Inside the
             list is sevaral tuples, each tuple is a operator term. the last one
             of the tuple is factor of the term, the others represents a local

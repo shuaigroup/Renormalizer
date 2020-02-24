@@ -19,7 +19,7 @@ def test_autocorr(scheme, mollist2):
     ph = Phonon.simple_phonon(Quantity(1), Quantity(1), 2)
     mol = Mol(Quantity(0), [ph])
     mol_list1 = MolList([mol] * 5, Quantity(1), scheme)
-    if mollist2 == True:
+    if mollist2:
         mol_list = MolList2.MolList_to_MolList2(mol_list1)
     else:
         mol_list = mol_list1
