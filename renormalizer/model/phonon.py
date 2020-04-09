@@ -73,6 +73,7 @@ class Phonon(object):
         omega,
         displacement,
         n_phys_dim: int =None,
+        nac = None,
         force3rd=None,
         nqboson=1,
         qbtrunc=0.0,
@@ -82,6 +83,11 @@ class Phonon(object):
         self.omega = [o.as_au() for o in omega]
         # dis is a list for different PES dis[0]=0.0, dis[1]...
         self.dis = [d.as_au() for d in displacement]
+
+        # nac is a list for different PES nac[0], nac[1]...
+        if nac is not None:     
+            self.nac = [n.as_au() for n in nac]
+
 
         if force3rd is None:
             self.force3rd = (0.0, 0.0)
