@@ -157,11 +157,14 @@ class MpDm(MpDmBase):
                 for dof in mol_list.e_dofs:
                     model[(dof,)] = [(Op("a^\dagger",1), 1.0)]
             else:
+                bas = mol_list.basis[mol_list.multi_e_idx]
+                assert bas.sigmaqn == [0,] + [1,] * (bas.nbas - 1)
                 for dof_idx in range(1, mol_list.e_nsite):
                     model[(f"e_{dof_idx}","e_0")] = [(Op(r"a^\dagger",1),
-                        Op("a",-1), 1.0)]
+                        Op("a",0), 1.0)]
             ex_mps = Mpo.general_mpo(mol_list, model=model,
                     model_translator=ModelTranslator.general_model).apply(mps)
+
         if normalize:
             ex_mps.normalize(1.0)
         return cls.from_mps(ex_mps)
@@ -189,7 +192,12 @@ class MpDm(MpDmBase):
 
 
     def calc_reduced_density_matrix(self) -> np.ndarray:
-        return self._calc_reduced_density_matrix(self, self.conj_trans())
+        if isinstance(self.mol_list, MolList):
+            return self._calc_reduced_density_matrix(self, self.conj_trans())
+        elif isinstance(self.mol_list, MolList2):
+            return self._calc_reduced_density_matrix(None, None)
+        else:
+            assert False
 
     def evolve_exact(self, h_mpo, evolve_dt, space):
         MPOprop, ham, Etot = self.hybrid_exact_propagator(

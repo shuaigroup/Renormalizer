@@ -45,7 +45,8 @@ class ThermalProp(TdMpsJob):
         dump_dir: str = None,
         dump_type = ".npz",
         job_name: str = None,
-        properties: Property = None
+        properties: Property = None,
+        auto_expand: bool = True,
     ):
         self.init_mpdm: MpDm = init_mpdm.canonicalise()
         self.h_mpo = h_mpo
@@ -57,13 +58,14 @@ class ThermalProp(TdMpsJob):
         self._ph_occupations_array = []
         self._vn_entropy_array = []
         self.properties = properties
+        self.auto_expand = auto_expand
 
         super().__init__(evolve_config=evolve_config, dump_mps=dump_mps, dump_dir=dump_dir,
                 dump_type=dump_type, job_name=job_name)
 
     def init_mps(self):
         self.init_mpdm.evolve_config = self.evolve_config
-        if self.evolve_config.is_tdvp:
+        if self.evolve_config.is_tdvp and self.auto_expand:
             self.init_mpdm = self.init_mpdm.expand_bond_dimension(self.h_mpo)
         return self.init_mpdm
 

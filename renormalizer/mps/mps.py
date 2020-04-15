@@ -122,15 +122,16 @@ class Mps(MatrixProduct):
         mps.qn = [[0]]
         dim_list = [1]
 
-        for imps in range(len(mol_list.ephtable) - 1):
+        for imps in range(mol_list.nsite - 1):
 
             # quantum number
             qnbig = np.add.outer(mps.qn[imps], mps._get_sigmaqn(imps)).flatten()
             u_set = []
             s_set = []
             qnset = []
-
+            
             for iblock in range(min(qnbig), nexciton + 1):
+            #for iblock in range(min(qnbig), max(qnbig)+1):
                 # find the quantum number index
                 indices = [i for i, x in enumerate(qnbig) if x == iblock]
 
@@ -167,12 +168,13 @@ class Mps(MatrixProduct):
         mps.qntot = nexciton
 
         # print("self.dim", self.dim)
-
-        mps.tdh_wfns = []
-        for mol in mps.mol_list:
-            for ph in mol.hartree_phs:
-                mps.tdh_wfns.append(np.random.random(ph.n_phys_dim))
-        mps.tdh_wfns.append(1.0)
+        
+        if isinstance(mps.mol_list, MolList):
+            mps.tdh_wfns = []
+            for mol in mps.mol_list:
+                for ph in mol.hartree_phs:
+                    mps.tdh_wfns.append(np.random.random(ph.n_phys_dim))
+            mps.tdh_wfns.append(1.0)
 
         return mps
 
@@ -326,8 +328,16 @@ class Mps(MatrixProduct):
                         ms[0,0,0] = 1.
                     elif isinstance(mol_list.basis[isite],
                             ba.Basis_Multi_Electron):
-                        # multi electron site 
-                        ms[0,0,0] = 1.
+                        if max_entangled:
+                            # Note the multi_electron gs is defined differently
+                            nzeros = mol_list.basis[isite].sigmaqn.count(0)
+                            qn = mol_list.basis[isite].sigmaqn[dof.split("_")[1]]
+                            if qn == 0:
+                                ms[0, dof.split("_"), 0] = 1. / np.sqrt(nzeros) 
+                        else:
+                            assert mol_list.basis[isite].sigmaqn[0] == 0
+                            logger.warning("The electron occupies e_0 !!")
+                            ms[0,0,0] = 1.
                     elif isinstance(mol_list.basis[isite],
                             ba.Basis_half_spin):
                         if max_entangled:
@@ -530,13 +540,14 @@ class Mps(MatrixProduct):
                 self.mol_list.mpos[key] = mpos
             else:
                 mpos = self.mol_list.mpos[key]
+        
         elif isinstance(self.mol_list, MolList2):
             if key not in self.mol_list.mpos:
                 mpos = []
                 for dof in self.mol_list.v_dofs:
                     mpos.append(
                         Mpo.general_mpo(self.mol_list,
-                            model={(dof,):[(Op(r"b^\dagger b",0), 1.)]},
+                            model={(dof,):[(Op("n",0), 1.)]},
                             model_translator=ModelTranslator.general_model)
                         )
                 # the order is v_dofs order
@@ -1472,7 +1483,51 @@ class Mps(MatrixProduct):
 
     def _calc_reduced_density_matrix(self, mp1, mp2):
         if isinstance(self.mol_list, MolList2):
-            raise NotImplementedError
+            if not self.mol_list.multi_electron:
+                reduced_density_matrix = np.zeros(
+                    (self.mol_list.e_nsite, self.mol_list.e_nsite),
+                    dtype=backend.complex_dtype)
+                for idx in range(self.mol_list.e_nsite):
+                    for jdx in range(idx, self.mol_list.e_nsite):
+                        model = {(f"e_{idx}", f"e_{jdx}"):[(Op(r"a^\dagger", 1),
+                            Op("a",-1), 1.0)]}
+                        mpo = Mpo.general_mpo(self.mol_list, model=model,
+                                model_translator=ModelTranslator.general_model)
+                        reduced_density_matrix[idx, jdx] = self.expectation(mpo)
+                        reduced_density_matrix[jdx, idx] = np.conj(reduced_density_matrix[idx, jdx])
+            else:
+                e_idx = self.mol_list.order["e_0"]
+                l = ones((1, 1))
+                for i in range(e_idx):
+                    mat = self[i].reshape(self[i].shape[0], -1, self[i].shape[-1])
+                    l = tensordot(l, mat, axes=(0, 0))
+                    l = tensordot(l, mat.conj(), axes=([0, 1], [0, 1]))
+                r = ones((1, 1))
+                for i in range(len(self)-1, e_idx, -1):
+                    mat = self[i].reshape(self[i].shape[0], -1, self[i].shape[-1])
+                    r = tensordot(mat, r, axes=(-1, 0))
+                    r = tensordot(r, mat.conj(), axes=([1, 2], [1, 2]))
+                #       f
+                #       |
+                # S--a--S--g--S
+                # |     |     |
+                # |     c     |
+                # |     |     |
+                # S--b--S--e--S
+                #       |
+                #       d
+                path = [
+                    ([0, 1], "ab, afcg -> bfcg"),
+                    ([2, 1], "bfcg, ge -> bfce"),
+                    ([1, 0], "bfce, bdce -> fd"),
+                ]
+                # note the different output between MolListscheme4
+                #reduced_density_matrix = asnumpy(multi_tensor_contract(path, l, mp1[e_idx], mp2[e_idx], r))[1:, 1:]
+                mat = self[e_idx].reshape(self[e_idx].shape[0],
+                        self[e_idx].shape[1], -1, self[e_idx].shape[-1])
+                reduced_density_matrix = asnumpy(multi_tensor_contract(path, l,
+                    mat, mat.conj(), r))[1:,1:]
+
         elif isinstance(self.mol_list, MolList):
             if self.mol_list.scheme < 4:
                 # further optimization is difficult. There are totally N^2 intermediate results to remember.
@@ -1517,20 +1572,29 @@ class Mps(MatrixProduct):
                 #       d
                 path = [
                     ([0, 1], "ab, adce -> bdce"),
-                    ([2, 0], "bdce, bcfg -> defg"),
-                    ([1, 0], "defg, eg -> df"),
+                    #([2, 0], "bdce, bcfg -> defg"),
+                    #([1, 0], "defg, eg -> df"),
+                    ([2, 1], "bdce, eg -> bdcg"),
+                    ([1, 0], "bdcg, bcfg -> df"),
                 ]
                 reduced_density_matrix = asnumpy(multi_tensor_contract(path, l, mp1[e_idx], mp2[e_idx], r))[1:, 1:]
             else:
                 assert False
-            return reduced_density_matrix
         else:
             assert False
 
+        return reduced_density_matrix
+
     def calc_reduced_density_matrix(self) -> np.ndarray:
-        mp1 = [mt.reshape(mt.shape[0], mt.shape[1], 1, mt.shape[2]) for mt in self]
-        mp2 = [mt.reshape(mt.shape[0], 1, mt.shape[1], mt.shape[2]).conj() for mt in self]
-        return self._calc_reduced_density_matrix(mp1, mp2)
+        
+        if isinstance(self.mol_list, MolList):
+            mp1 = [mt.reshape(mt.shape[0], mt.shape[1], 1, mt.shape[2]) for mt in self]
+            mp2 = [mt.reshape(mt.shape[0], 1, mt.shape[1], mt.shape[2]).conj() for mt in self]
+            return self._calc_reduced_density_matrix(mp1, mp2)
+        elif isinstance(self.mol_list, MolList2):
+            return self._calc_reduced_density_matrix(None, None)
+        else:
+            assert False
 
     def calc_vn_entropy(self) -> np.ndarray:
         r"""

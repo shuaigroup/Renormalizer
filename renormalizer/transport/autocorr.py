@@ -11,13 +11,16 @@ from renormalizer.utils.constant import mobility2au
 from renormalizer.utils import TdMpsJob, Quantity, EvolveConfig, CompressConfig, Op
 from renormalizer.utils.utils import cast_float
 from renormalizer.model import MolList, MolList2, ModelTranslator
+from renormalizer.property import Property
 
 logger = logging.getLogger(__name__)
 
 
 class TransportAutoCorr(TdMpsJob):
 
-    def __init__(self, mol_list, temperature: Quantity, j_oper: Mpo =None, insteps: int=1, ievolve_config=None, compress_config=None, evolve_config=None, dump_dir: str=None, job_name: str=None):
+    def __init__(self, mol_list, temperature: Quantity, j_oper: Mpo =None,
+            insteps: int=1, ievolve_config=None, compress_config=None,
+            evolve_config=None, dump_dir: str=None, job_name: str=None, properties: Property = None,):
         self.mol_list = mol_list
         self.h_mpo = Mpo(mol_list)
         if j_oper is None:
@@ -45,6 +48,7 @@ class TransportAutoCorr(TdMpsJob):
             self.compress_config = compress_config
 
         self.impdm = None
+        self.properties = properties
         self._auto_corr = []
         super().__init__(evolve_config=evolve_config, dump_dir=dump_dir,
                 job_name=job_name)
@@ -123,6 +127,10 @@ class TransportAutoCorr(TdMpsJob):
     def process_mps(self, mps):
         self._auto_corr.append(mps.ft)
 
+        # calculate other properties defined in Property
+        if self.properties is not None:
+            self.properties.calc_properties_braketpair(mps)
+
     def evolve_single_step(self, evolve_dt):
         prev_bra_mpdm, prev_ket_mpdm = self.latest_mps
         latest_ket_mpdm = prev_ket_mpdm.evolve(self.h_mpo, evolve_dt)
@@ -149,6 +157,10 @@ class TransportAutoCorr(TdMpsJob):
         dump_dict["auto correlation real"] = cast_float(self.auto_corr.real)
         dump_dict["auto correlation imag"] = cast_float(self.auto_corr.imag)
         dump_dict["mobility"] = self.calc_mobility()[1]
+        if self.properties is not None:
+            for prop_str in self.properties.prop_res.keys():
+                dump_dict[prop_str] = self.properties.prop_res[prop_str]
+        
         return dump_dict
 
     def calc_mobility(self):

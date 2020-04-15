@@ -94,7 +94,6 @@ class MolList2:
         self.basis = basis
         self.model = model
         self.model_translator = model_translator
-        
         # array(n_e, n_e)
         self.dipole = dipole
         # map: to be compatible with MolList {(imol, iph):"v_n"}
@@ -108,6 +107,11 @@ class MolList2:
             if isinstance(b, ba.Basis_Multi_Electron):
                 return True
         return False
+    
+    @property
+    def multi_e_idx(self):
+        assert self.multi_electron
+        return self.order["e_0"]
 
     @property
     def pbond_list(self):

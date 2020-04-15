@@ -10,6 +10,7 @@ from renormalizer.mps.matrix import moveaxis, tensordot, asnumpy, EmptyMatrixErr
 from renormalizer.mps.mp import MatrixProduct
 from renormalizer.mps import svd_qn
 from renormalizer.mps.lib import update_cv
+from renormalizer.lib import bipartite_vertex_cover
 from renormalizer.utils import Quantity, Op
 from renormalizer.utils.elementop import (
     construct_ph_op_dict,
@@ -22,7 +23,7 @@ import copy
 import itertools
 from typing import List, Tuple, Union
 from collections import defaultdict
-
+import scipy.sparse
 
 logger = logging.getLogger(__name__)
 
@@ -31,7 +32,7 @@ logger = logging.getLogger(__name__)
 # the code is hard to understand...... need some closer look
 # a good starting point is to delete the quasi-boson code (gh-25)
 
-def symbolic_mpo(table, factor):
+def symbolic_mpo(table, factor, algo="Hopcroft-Karp"):
     r"""
     A General Compact (Symbolic) MPO Construction Routine
     
@@ -39,7 +40,14 @@ def symbolic_mpo(table, factor):
     
     table: an operator table with shape (operator nterm, nsite) matrix 
     factor (np.ndarray): one prefactor vector (dim: operator nterm) 
-    
+    algo: the algorithm used to select local ops,
+          "Hopcroft-Karp"(default), "Hungarian", "greedy".
+          The first two are both global optimal and have only minor performance
+          difference. "greedy" should not be used for productive calculation.
+
+    Note:
+    op with the same op.symbol must have the same op.qn and op.factor
+
     Return:
     mpo: symbolic mpo
     mpoqn: quantum number 
@@ -102,41 +110,40 @@ def symbolic_mpo(table, factor):
     
     The local mpo is the transformation matrix between 0'',1'' to 0'''
     """
-
-    table = copy.deepcopy(table)
-    factor = factor.copy()
     
-    # combine the same terms but with different factors(add them together)
-    table = [tuple(ta) for ta in table]
-    tally = defaultdict(list)
-    for i, item in enumerate(table):
-        tally[item].append(factor[i])
-    
-    table = []
-    factor = []
-    for key, value in tally.items():
-        table.append(list(key))
-        factor.append(np.sum(value))
+    logger.debug(f"symbolic mpo algorithm: {algo}")
 
-    nterm = len(table)
     nsite = len(table[0])
 
     # translate the symbolic operator table to an easy to manipulate numpy array
-    primary_ops = {}
-    primary_ops_inv = {}
+    # extract the op symbol, qn, factor to a numpy array
+    symbol_table = np.array([[x.symbol for x in ta] for ta in table])
+    qn_table = np.array([[x.qn for x in ta] for ta in table])
+    factor_table = np.array([[x.factor for x in ta] for ta in table])
     
-    idx = 0 
-    for irow in range(nterm):
-        for icol in range(nsite):
-            if not table[irow][icol] in primary_ops.values():
-                primary_ops[idx] = table[irow][icol]
-                primary_ops_inv[table[irow][icol]] = idx
-                idx += 1
-            table[irow][icol] = primary_ops_inv[table[irow][icol]]
-        
+    new_table = np.zeros((len(table), nsite),dtype=np.int64)
+    
+    primary_ops = {}
+    # check that op with the same symbol has the same factor and qn
+    unique_symbol = np.unique(symbol_table)
+    for idx, s in enumerate(unique_symbol):
+        coord = np.nonzero(symbol_table == s)
+        assert np.unique(qn_table[coord]).size == 1
+        assert np.allclose(factor_table[coord], factor_table[coord][0])
+        new_table[coord] = idx
+        primary_ops[idx] = table[coord[0][0]][coord[1][0]]   
+    
+    # combine the same terms but with different factors(add them together)
+    unique_term, unique_inverse = np.unique(new_table, axis=0, return_inverse=True)
+    # it is efficient to vectorize the operation that moves the rows and cols
+    # and sum them together
+    coord = np.array([[newidx, oldidx] for oldidx, newidx in enumerate(unique_inverse)])
+    mask = scipy.sparse.csr_matrix((np.ones(len(coord)), (coord[:,0], coord[:,1])))
+    factor = mask.dot(factor)
+    
     # add the first and last column for convenience
-    ta = np.zeros((nterm,1),dtype=np.int32)
-    table = np.concatenate((ta, table, ta), axis=1)
+    ta = np.zeros((unique_term.shape[0],1),dtype=np.int64)
+    table = np.concatenate((ta, unique_term, ta), axis=1)
 
     mpo = []
     mpoqn = [[0]]
@@ -146,76 +153,99 @@ def symbolic_mpo(table, factor):
     for isite in range(nsite):
 
         # split table into the row and col part
-        ta_row, ta_col = table[:, :2], table[:, 2:]
+        term_row, row_unique_inverse = np.unique(table[:,:2], axis=0, return_inverse=True)
+        term_col, col_unique_inverse = np.unique(table[:,2:], axis=0, return_inverse=True)
         
-        # get the non_redudant ops
-        def list2dict(ta):
-            term = {}
-            idx = 0
-            for it in range(table.shape[0]):
-                if tuple(ta[it,:]) not in term.keys():
-                    term[tuple(ta[it,:])] = idx
-                    term[idx] = tuple(ta[it,:])
-                    idx += 1
-            return term
+	# get the non_redudant ops
+        # the +1, -1 trick is to use the csr sparse matrix format
+        non_red = scipy.sparse.diags(np.arange(1,table.shape[0]+1), format="csr", dtype=np.int64)
+        coord = np.array([[newidx, oldidx] for oldidx, newidx in enumerate(row_unique_inverse)])
+        mask = scipy.sparse.csr_matrix((np.ones(len(coord), dtype=np.int64), (coord[:,0], coord[:,1])))
+        non_red = mask.dot(non_red)
+        coord = np.array([[oldidx, newidx] for oldidx, newidx in enumerate(col_unique_inverse)])
+        mask = scipy.sparse.csr_matrix((np.ones(len(coord), dtype=np.int64), (coord[:,0], coord[:,1])))
+        non_red = np.asarray(non_red.dot(mask).todense())-1
 
-        term_row = list2dict(ta_row)
-        term_col = list2dict(ta_col)
-        
-        # construct the non_redudant table
-        non_red = np.zeros((len(term_row),len(term_col)), dtype=np.int32)
-        for it in range(table.shape[0]):
-            idx1, idx2 = term_row[tuple(ta_row[it,:])], term_col[tuple(ta_col[it,:])]
-            non_red[idx1, idx2] = it+1
-        
         # select the reserved ops
         out_ops = []
         new_table = []
         new_factor = []
         
-        while np.sum(non_red) != 0:
-            # count the # of nonzero (the interaction) in each row and col
-            nint_row = np.count_nonzero(non_red, axis=1)
-            nint_col = np.count_nonzero(non_red, axis=0)
-            
-            # obtain the largest index
-            row_idx = np.argmax(nint_row)
-            col_idx = np.argmax(nint_col)
-            
-            if nint_row[row_idx] >= nint_col[col_idx]:
+        if algo == "greedy":
+            row_select = []
+            col_select = []
+            non_red_duplicate = non_red.copy()
+            # loop until every term is taken care of
+            while not (non_red_duplicate == -1).all():
+                # count the # of interaction in each row and col
+                nint_row = np.sum(non_red_duplicate != -1, axis=1)
+                nint_col = np.sum(non_red_duplicate != -1, axis=0)
                 
-                symbol = term_row[row_idx]
-                qn = in_ops[term_row[row_idx][0]][0].qn + primary_ops[term_row[row_idx][1]].qn
-                out_op = Op(symbol,qn,factor=1.0)
-
-                out_ops.append([out_op])
+                # obtain the largest index
+                row_idx = np.argmax(nint_row)
+                col_idx = np.argmax(nint_col)
                 
-                for j in range(non_red.shape[1]):
-                    if non_red[row_idx, j] != 0:
-                        array = np.zeros(table.shape[1]-1, dtype=np.int32)
-                        array[0] = len(out_ops)-1
-                        array[1:] = term_col[j]
-                        new_table.append(array)
-                        new_factor.append(factor[non_red[row_idx, j]-1]) 
+                if nint_row[row_idx] >= nint_col[col_idx]:
+                    # dealing with row (left side of the table). One row corresponds to multiple cols.
+                    # Produce one out operator and multiple new_table entries
+                    row_select.append(row_idx)
+                    
+                    non_red_duplicate[row_idx, :] = -1
+                else:
+                    # dealing with column (right side of the table). One col correspond to multiple rows.
+                    # Produce multiple out operators and one new_table entry
+                    col_select.append(col_idx)
 
-                non_red[row_idx, :] = 0
-            else:
-
-                out_ops.append([])
-                # complementary operator
+                    non_red_duplicate[:, col_idx] = -1
+        
+        elif algo == "Hopcroft-Karp" or algo == "Hungarian":
+            
+            bigraph = []
+            if non_red.shape[0] < non_red.shape[1]:
                 for i in range(non_red.shape[0]):
-                    if non_red[i, col_idx] != 0:
-                        symbol = term_row[i]
-                        qn = in_ops[term_row[i][0]][0].qn + primary_ops[term_row[i][1]].qn
-                        out_op = Op(symbol,qn,factor=factor[non_red[i, col_idx]-1])
-                        out_ops[-1].append(out_op)
+                    bigraph.append(np.nonzero(non_red[i,:] != -1)[0].tolist())
+                rowbool, colbool = bipartite_vertex_cover(bigraph, algo=algo)
+            else:
+                for i in range(non_red.shape[1]):
+                    bigraph.append(np.nonzero(non_red[:,i] != -1)[0].tolist())
+                colbool, rowbool = bipartite_vertex_cover(bigraph, algo=algo)
 
-                array = np.zeros(table.shape[1]-1, dtype=np.int32)
-                array[0] = len(out_ops)-1
-                array[1:] = term_col[col_idx]
-                new_table.append(array)
-                new_factor.append(1.0)
-                non_red[:, col_idx] = 0
+            row_select = np.nonzero(rowbool)[0]
+            col_select = np.nonzero(colbool)[0]
+            if len(row_select) > 0:
+                assert np.amax(row_select) < non_red.shape[0]
+            if len(col_select) > 0:
+                assert np.amax(col_select) < non_red.shape[1]
+        else:
+            assert False
+        
+        for row_idx in row_select:
+            # construct out_op
+            symbol = term_row[row_idx]
+            qn = in_ops[term_row[row_idx][0]][0].qn + primary_ops[term_row[row_idx][1]].qn
+            out_op = Op(symbol, qn, factor=1.0)
+            out_ops.append([out_op])
+            
+            col_link = np.nonzero(non_red[row_idx, :] != -1)[0]
+            stack = np.array([len(out_ops)-1]*len(col_link)).reshape(-1,1)
+            new_table.append(np.hstack((stack,term_col[col_link])))
+            new_factor.append(factor[non_red[row_idx, col_link]])
+
+            non_red[row_idx, :] = -1
+        
+        for col_idx in col_select:
+            out_ops.append([])
+            # complementary operator
+            for i in np.nonzero(non_red[:, col_idx] != -1)[0]:
+                symbol = term_row[i]
+                qn = in_ops[term_row[i][0]][0].qn + primary_ops[term_row[i][1]].qn
+                out_op = Op(symbol, qn, factor=factor[non_red[i, col_idx]])
+                out_ops[-1].append(out_op)
+            
+            new_table.append(np.array([len(out_ops)-1] + list(term_col[col_idx])).reshape(1,-1))
+            new_factor.append(1.0)
+            
+            non_red[:, col_idx] = -1
             
         # translate the numpy array back to symbolic mpo
         mo = [[[] for o in range(len(out_ops))] for i in range(len(in_ops))]
@@ -234,8 +264,8 @@ def symbolic_mpo(table, factor):
         mpo.append(mo)
         mpoqn.append(moqn)
         # reconstruct the table in new operator 
-        table = np.array(new_table)
-        factor = np.array(new_factor)        
+        table = np.concatenate(new_table)
+        factor = np.concatenate(new_factor, axis=None)
            
         #debug
         #logger.debug(f"in_ops: {in_ops}")
@@ -599,52 +629,70 @@ def _model_translator_general_model(mol_list, const=Quantity(0.)):
     order = mol_list.order
     model = mol_list.model
     
+    # clean up 
+    # for example 
+    # in simple_e case
+    # ("e_0", "e_0"):[(Op("a^\dagger"), Op("a"), factor)] is not a standard
+    # format for general model since "e_0" is a single site, the standard is
+    # ("e_0"):[(Op("a^\dagger a"), factor)]
+    # in multi_e case
+    # ("e_0", "e_1"):[(Op("a^\dagger"), Op("a"), factor)] is not a standard
+    # format for general model since "e_0" "e_1" is a single site, the standard
+    # is ("e_0",):[(Op("a^\dagger_0 a_1"), factor)] 
+    
     model_new = defaultdict(list)
-    # combine the same site operator together for case that multi electronic
-    # state on a single site
-
     for key, value in model.items():
-        dofdict = defaultdict(list)
-        for idof, dof in enumerate(key):
-            dofdict[order[dof]].append(idof)
         
-        new_key = tuple(dofdict.keys())
-        new_value = []
-        for term in value:
-            new_term = []
-            for v in dofdict.values():
-                symbols = []
-                qn = 0
-                for iop in v:
-                    if list(order.values()).count(order[key[iop]]) > 1 or len(v) > 1:
-                        # add the index to the operator in multi elecron case
-                        # two cases, one is "a^\dagger a" on a single e_dof
-                        # another is "a^\dagger" "a" on two different e_dof
-                        symbols.append(add_idx(term[iop].symbol,
-                            key[iop].split("_")[1]))
-                    else:
-                        symbols.append(term[iop].symbol)
-                    qn += term[iop].qn
-                op = Op(" ".join(symbols), qn)
-                new_term.append(op)
+        dof_site_idx = [order[k] for k in key]
+        
+        if len(dof_site_idx) != len(set(dof_site_idx)) or mol_list.multi_electron:
+            dofdict = defaultdict(list)
+            for idof, dof in enumerate(key):
+                dofdict[order[dof]].append(idof)
             
-            new_term.append(term[-1])
-            new_value.append(tuple(new_term))
+            new_key = tuple(dofdict.keys())
+            new_value = []
+            for term in value:
+                new_term = []
+                for v in dofdict.values():
+                    symbols = []
+                    qn = 0
+                    for iop in v:
+                        if list(order.values()).count(order[key[iop]]) > 1:
+                            # add the index to the operator in multi elecron case
+                            # two cases, one is "a^\dagger a" on a single e_dof
+                            # another is "a^\dagger" "a" on two different e_dof
+                            symbols.append(add_idx(term[iop].symbol,
+                                key[iop].split("_")[1]))
+                        else:
+                            symbols.append(term[iop].symbol)
+                        qn += term[iop].qn
+                    op = Op(" ".join(symbols), qn)
+                    new_term.append(op)
+                
+                new_term.append(term[-1])
+                new_value.append(tuple(new_term))
 
-        model_new[new_key] += new_value
-
+            model_new[new_key] += new_value
+        else:
+            model_new[tuple(dof_site_idx)] += value
 
     model = model_new
 
     for dof, value in model.items():
-        for term in value:
-            if not np.allclose(term[-1], 0.):
-                ta = [Op.identity() for i in range(nsite)]
-                for iop, op in enumerate(term[:-1]):
-                    ta[dof[iop]] = op
-                table.append(ta)
-                factor.append(term[-1])
-
+        op_factor = np.array([term[-1] for term in value])
+        nonzero_idx = np.nonzero(np.isclose(op_factor, 0, rtol=1e-5, atol=1e-8) == 0)[0]
+        
+        mapping = {j:i for i,j in enumerate(dof)}
+        for idx in nonzero_idx:
+            term = value[idx]
+            # note that all the list element point to the same identity
+            # it will not destroy the following operation since identity is not changed
+            identity = Op.identity()
+            ta = [term[mapping[isite]] if isite in mapping.keys() else identity for isite in range(nsite)]
+            table.append(ta)
+            factor.append(term[-1])
+        
     # const
     if not np.allclose(const.as_au(), 0.):
         ta = [Op.identity() for i in range(nsite)]
@@ -1561,7 +1609,7 @@ class Mpo(MatrixProduct):
                 model_translator=model_translator)
         
         return mpo
-
+    
     def _general_mpo(self, mol_list, const=Quantity(0.), model=None, model_translator=None):
         # construct a real mpo matrix elements into mpo shell
         
@@ -1587,7 +1635,7 @@ class Mpo(MatrixProduct):
         
         mpo_symbol, mpo_qn, qntot, qnidx = symbolic_mpo(table, factor)
         # todo: elegant way to express the symbolic mpo
-        # logger.debug(f"symbolic mpo: \n {np.array(mpo_symbol)}")
+        #logger.debug(f"symbolic mpo: \n {np.array(mpo_symbol)}")
         self.mol_list = mol_list
         self.qnidx = qnidx
         self.qntot = qntot
@@ -2158,4 +2206,13 @@ class Mpo(MatrixProduct):
     def __matmul__(self, other):
         return self.apply(other)
 
+    @classmethod
+    def from_mp(cls, mol_list, mp):
+        # mpo from matrix product
+        mpo = cls()
+        mpo.mol_list = mol_list
+        for mt in mp:
+            mpo.append(mt)
+        mpo.build_empty_qn()
+        return mpo
 

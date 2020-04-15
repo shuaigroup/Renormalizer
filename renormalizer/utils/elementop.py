@@ -33,10 +33,11 @@ class Op:
             return (self.symbol == other.symbol) and  (self.qn == other.qn) and (np.allclose(self.factor, other.factor))
         else:
             return False 
-
-    def __hash__(self):
-        return hash((self.symbol, self.qn, self.factor))
     
+    # since the object value is mutable, it should not implement hash 
+    #def __hash__(self):
+    #    return hash((self.symbol, self.qn, self.factor))
+
     def __repr__(self):
         return f"({self.symbol}, {self.qn}, {self.factor})"
 

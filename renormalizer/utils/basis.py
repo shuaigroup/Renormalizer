@@ -137,7 +137,13 @@ class Basis_SHO(BasisSet):
             # b^dagger b = n delta(n,n)
             for iket in range(self.nbas):
                 mat[iket, iket] = float(iket)
-
+        
+        elif op_symbol == "n":
+            # since b^\dagger b is not allowed to shift the origin, 
+            # n is designed for occupation number of the SHO basis
+            mat = np.zeros((self.nbas, self.nbas))
+            for iket in range(self.nbas):
+                mat[iket, iket] = float(iket)
         else:
             raise ValueError(f"op_symbol:{op_symbol} is not supported")
 
@@ -232,8 +238,8 @@ class Basis_Half_Spin(BasisSet):
     r"""
     The basis the for 1/2 spin DoF
     """
-    def __init__(self):
-        super().__init__(2, [0,0])
+    def __init__(self, sigmaqn:List[int]=[0,0]):
+        super().__init__(2, sigmaqn)
 
 
     def op_mat(self, op):
@@ -243,17 +249,30 @@ class Basis_Half_Spin(BasisSet):
         else:
             op_symbol, op_factor = op, 1.0
         
-        if op_symbol == "I":
-            mat = np.eye(2)
-        elif op_symbol == "sigma_x":
-            mat = np.diag([1.], k=1)
-            mat = mat + mat.T.conj()
-        elif op_symbol == "sigma_y":
-            mat = np.diag([-1.0j], k=1)
-            mat = mat + mat.T.conj()
-        elif op_symbol == "sigma_z":
-            mat = np.diag([1.,-1.], k=0)
+        op_symbol = op_symbol.split(" ")
+        
+        if len(op_symbol) == 1:       
+            op_symbol = op_symbol[0]
+            
+            if op_symbol == "I":
+                mat = np.eye(2)
+            elif op_symbol == "sigma_x":
+                mat = np.diag([1.], k=1)
+                mat = mat + mat.T.conj()
+            elif op_symbol == "sigma_y":
+                mat = np.diag([-1.0j], k=1)
+                mat = mat + mat.T.conj()
+            elif op_symbol == "sigma_z":
+                mat = np.diag([1.,-1.], k=0)
+            elif op_symbol == "sigma_-":
+                mat = np.diag([1.], k=-1)
+            elif op_symbol == "sigma_+":
+                mat = np.diag([1.,], k=1)
+            else:
+                raise ValueError(f"op_symbol:{op_symbol} is not supported")
         else:
-            raise ValueError(f"op_symbol:{op_symbol} is not supported")
+            mat = np.eye(2)
+            for o in op_symbol:
+                mat = mat @ self.op_mat(o)
 
         return mat * op_factor
