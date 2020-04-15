@@ -2,10 +2,10 @@
 
 import logging
 from functools import wraps
-from typing import Union, List
+from typing import Union, List, Dict
+from collections import Counter
 
 import scipy
-
 from scipy import stats
 
 
@@ -20,7 +20,7 @@ from renormalizer.mps.matrix import (
     asnumpy,
     asxp)
 from renormalizer.mps.backend import backend, np, xp
-from renormalizer.mps.lib import Environ, updatemps, compressed_sum
+from renormalizer.mps.lib import Environ, updatemps, compressed_sum, contract_one_site
 from renormalizer.mps.mp import MatrixProduct
 from renormalizer.mps.mpo import Mpo
 from renormalizer.mps.tdh import mflib
@@ -381,36 +381,34 @@ class Mps(MatrixProduct):
         # return self_conj.dot(mpo.apply(self), with_hartree=False).real
 
     def expectations(self, mpos, opt=True) -> np.ndarray:
-        if (not opt) or (len(mpos) < 3):
-            return np.array([self.expectation(mpo) for mpo in mpos])
-        else:
-            # only supports `mpos` with bond dimension 1, and all `mpos`
-            # must be only one site different from another standard MPO. For example
-            # [XBCDE, AXCDE, ABXDE, ABCXE, ABCDX]
-            # and the order does not matter
 
-            # id can be used as efficient hash because of `Matrix` implementation
-            mpo_ids = np.array([[id(m) for m in mpo] for mpo in mpos])
-            common_mpo_ids = mpo_ids[0].copy()
-            mpo0_unique_idx = np.where(np.sum(mpo_ids == common_mpo_ids, axis=0) == 1)[0][0]
-            common_mpo_ids[mpo0_unique_idx] = mpo_ids[1][mpo0_unique_idx]
-            x, unique_idx = np.where(mpo_ids != common_mpo_ids)
-            # should find one at each line
-            assert xp.allclose(x, np.arange(len(mpos)))
-            common_mpo = list(mpos[0])
-            common_mpo[mpo0_unique_idx] = mpos[1][mpo0_unique_idx]
-            self_conj = self._expectation_conj()
-            environ = Environ(self, common_mpo, mps_conj=self_conj)
-            res_list = []
-            for idx, mpo in zip(unique_idx, mpos):
-                l = environ.read("L", idx - 1)
-                r = environ.read("R", idx + 1)
-                path = self._expectation_path()
-                res = multi_tensor_contract(path, l, self[idx], mpo[idx], self_conj[idx], r)
-                res_list.append(float(res.real))
-            return np.array(res_list)
-            # the naive way, slow and time consuming
-            # return np.array([self.expectation(mpo) for mpo in mpos])
+        if not opt:
+            # the naive way, slow and time consuming. Yet predictable and reliable
+            return np.array([self.expectation(mpo) for mpo in mpos])
+
+        # optimized way, cache for intermediates
+        # id can be used as an efficient hash because of `Matrix` implementation
+        id_to_obj = dict()
+        for mpo in mpos:
+            for m in mpo:
+                id_to_obj[id(m)] = m
+
+        self_conj = self._expectation_conj()
+        l_environ_dict = _construct_freq_environ(mpos, id_to_obj, self, "L", self_conj)
+        r_environ_dict = _construct_freq_environ(mpos, id_to_obj, self, "R", self_conj)
+        results = []
+        for mpo in mpos:
+            l_environ, l_idx = _get_freq_environ(l_environ_dict, mpo, "L")
+            r_environ, r_idx = _get_freq_environ(r_environ_dict, mpo, "R")
+            for i in range(l_idx+1, r_idx):
+                l_environ = contract_one_site(l_environ, self[i], mpo[i], "L", self_conj[i])
+            results.append(complex(l_environ.flatten() @ r_environ.flatten()))  # cast to python type
+
+        results = np.array(results)
+        if np.allclose(results.imag, 0):
+            return results.real
+        else:
+            return results
 
     @property
     def ph_occupations(self):
@@ -1029,7 +1027,7 @@ class Mps(MatrixProduct):
 
         # construct the environment matrix
         # almost half is not used. Not a big deal.
-        environ = Environ(mps, mpo)
+        environ = Environ(mps, mpo, mps_conj=mps_conj)
 
         # a workaround for https://github.com/scipy/scipy/issues/10164
         if imag_time:
@@ -1654,3 +1652,84 @@ def min_abs(t1, t2):
         return t1
     else:
         return t2
+
+
+def _construct_freq_environ(mpos: List[Mpo], id_to_obj: Dict[int, Matrix], mps: Mps, domain: str, mps_conj):
+    """
+    Construct environment tensors that are most frequently shown in the group of MPOs
+    """
+    assert domain in ["L", "R"]
+    # count mpo sequence frequency
+    counter = Counter()
+    for mpo in mpos:
+        mpo_ids = []
+        if domain == "L":
+            it = mpo
+        else:
+            it = reversed(mpo)
+        for m in it:
+            mpo_ids.append(id(m))
+            counter.update([tuple(mpo_ids)])
+
+    # transform the counter into a list of matrices.
+    # The most frequent sequences first. If the same freq, then shorter sequences first
+    # Note that shorter sequences are not less frequent than longer sequences
+    most_common = list(counter.items())
+    most_common.sort(key=lambda x: (-x[1], len(x[0])))
+    matrices_list = []
+    id_list = []
+    # a flag to determined when to exit
+    last_n = counter.most_common(1)[0][1]
+    for ids, n in most_common:
+        # discard unique ones because they do not need to be cached
+        if n == 1:
+            break
+        # cache approximately ``len(mps)`` sequences
+        # and make sure sequences  with the same length is not divided.
+        if len(mps) < len(matrices_list) and last_n != n:
+            break
+        last_n = n
+        id_list.append(ids)
+        matrices_list.append(list(map(id_to_obj.get, ids)))
+
+    # contract the tensors
+    result = dict()
+    sentinel = xp.ones((1, 1, 1), dtype=backend.real_dtype)
+    for m_ids, matrices in zip(id_list, matrices_list):
+        if len(m_ids) == 1:
+            environ = sentinel
+        else:
+            environ = result[tuple(m_ids[:-1])]
+        if domain == "L":
+            idx = len(matrices)-1
+        else:
+            idx = -len(matrices)
+        ms, ms_conj = mps[idx], mps_conj[idx]
+        result[tuple(m_ids)] = contract_one_site(environ, ms, matrices[-1], domain=domain, ms_conj=ms_conj)
+    return result
+
+
+def _get_freq_environ(environ_dict, mpo, domain):
+    assert domain in ["L", "R"]
+
+    if domain == "L":
+        it = mpo
+    else:
+        it = reversed(mpo)
+
+    ids = []
+    for mo in it:
+        ids.append(id(mo))
+        if not tuple(ids) in environ_dict:
+            ids.pop()
+            break
+    if domain == "L":
+        i = len(ids) - 1
+    else:
+        i = len(mpo) - len(ids)
+
+    if len(ids) == 0:
+        environ = xp.ones((1, 1, 1), dtype=backend.real_dtype)
+    else:
+        environ = environ_dict[tuple(ids)]
+    return environ, i
