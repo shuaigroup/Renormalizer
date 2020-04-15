@@ -185,7 +185,7 @@ class Mps(MatrixProduct):
         
         Args:
             mol_list (class: MolList2)
-            condition (Dict): {dof:local_state} 
+            condition (Dict): {dof:local_state}, default is the "0" state
             for example {"e_1":1, "v_0":0...}
 
         Returns:
@@ -218,6 +218,9 @@ class Mps(MatrixProduct):
                 mps[isite] = ms
                 qn_single[isite] = mol_list.basis[isite].sigmaqn[local_state]
         else:
+            # check that only 1 electron state is occupied
+            occ = [condition.get(e_dof, 0) for e_dof in mol_list.e_dofs]  
+            assert sum(occ) == 1
             for e_dof in mol_list.e_dofs:
                 local_state = condition.get(e_dof,0)
                 if local_state == 1:
@@ -330,11 +333,13 @@ class Mps(MatrixProduct):
                             ba.Basis_Multi_Electron):
                         if max_entangled:
                             # Note the multi_electron gs is defined differently
+                            # all the local state with qn == 0 will be occupied
                             nzeros = mol_list.basis[isite].sigmaqn.count(0)
                             qn = mol_list.basis[isite].sigmaqn[dof.split("_")[1]]
                             if qn == 0:
                                 ms[0, dof.split("_")[1], 0] = 1. / np.sqrt(nzeros) 
                         else:
+                            # only "e_0" is occupied
                             assert mol_list.basis[isite].sigmaqn[0] == 0
                             logger.warning("The electron occupies e_0 !!")
                             ms[0,0,0] = 1.
@@ -542,6 +547,7 @@ class Mps(MatrixProduct):
                 mpos = self.mol_list.mpos[key]
         
         elif isinstance(self.mol_list, MolList2):
+            # ph_occupations is actually the occupation of the basis
             if key not in self.mol_list.mpos:
                 mpos = []
                 for dof in self.mol_list.v_dofs:
@@ -550,7 +556,7 @@ class Mps(MatrixProduct):
                             model={(dof,):[(Op("n",0), 1.)]},
                             model_translator=ModelTranslator.general_model)
                         )
-                # the order is v_dofs order
+                # the order is v_dofs order, "v_0", "v_1",...
                 self.mol_list.mpos[key] = mpos
             else:
                 mpos = self.mol_list.mpos[key]
@@ -1483,6 +1489,7 @@ class Mps(MatrixProduct):
 
     def _calc_reduced_density_matrix(self, mp1, mp2):
         if isinstance(self.mol_list, MolList2):
+            assert mp1 is None and mp2 is None
             if not self.mol_list.multi_electron:
                 reduced_density_matrix = np.zeros(
                     (self.mol_list.e_nsite, self.mol_list.e_nsite),
@@ -1496,7 +1503,7 @@ class Mps(MatrixProduct):
                         reduced_density_matrix[idx, jdx] = self.expectation(mpo)
                         reduced_density_matrix[jdx, idx] = np.conj(reduced_density_matrix[idx, jdx])
             else:
-                e_idx = self.mol_list.order["e_0"]
+                e_idx = self.mol_list.multi_e_idx
                 l = ones((1, 1))
                 for i in range(e_idx):
                     mat = self[i].reshape(self[i].shape[0], -1, self[i].shape[-1])
@@ -1521,12 +1528,12 @@ class Mps(MatrixProduct):
                     ([2, 1], "bfcg, ge -> bfce"),
                     ([1, 0], "bfce, bdce -> fd"),
                 ]
-                # note the different output between MolListscheme4
-                #reduced_density_matrix = asnumpy(multi_tensor_contract(path, l, mp1[e_idx], mp2[e_idx], r))[1:, 1:]
                 mat = self[e_idx].reshape(self[e_idx].shape[0],
                         self[e_idx].shape[1], -1, self[e_idx].shape[-1])
                 reduced_density_matrix = asnumpy(multi_tensor_contract(path, l,
-                    mat, mat.conj(), r))[1:,1:]
+                    mat, mat.conj(), r))
+                # note the different output between MolList scheme4
+                # the 0 state is also included
 
         elif isinstance(self.mol_list, MolList):
             if self.mol_list.scheme < 4:

@@ -103,7 +103,7 @@ class BasisSHO(BasisSet):
                                      )
 
         elif op_symbol == "p":
-            # <m|p|n> = -i sqrt(w/2) <m| b^\dagger - b |n>
+            # <m|p|n> = -i sqrt(w/2) <m| b - b^\dagger |n>
             mat = 1j * np.sqrt(self.omega / 2) * (self.op_mat(r"b^\dagger") - self.op_mat("b"))
 
         elif op_symbol == "p^2":
@@ -130,7 +130,8 @@ class BasisSHO(BasisSet):
 
 class BasisMultiElectron(BasisSet):
     r"""
-    The basis set for multi electronic state on one single site
+    The basis set for multi electronic state on one single site,
+    the basis order is ["e_0", "e_1", "e_2",...]
     Args:
         nstate (int): the # of electronic states
         sigmaqn (List(int)): the sigmaqn of each basis

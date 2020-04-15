@@ -226,6 +226,8 @@ def symbolic_mpo(table, factor, algo="Hopcroft-Karp"):
         
         for row_idx in row_select:
             # construct out_op
+            # dealing with row (left side of the table). One row corresponds to multiple cols.
+            # Produce one out operator and multiple new_table entries
             symbol = term_row[row_idx]
             qn = in_ops[term_row[row_idx][0]][0].qn + primary_ops[term_row[row_idx][1]].qn
             out_op = Op(symbol, qn, factor=1.0)
@@ -241,6 +243,8 @@ def symbolic_mpo(table, factor, algo="Hopcroft-Karp"):
         for col_idx in col_select:
             out_ops.append([])
             # complementary operator
+            # dealing with column (right side of the table). One col correspond to multiple rows.
+            # Produce multiple out operators and one new_table entry
             for i in np.nonzero(non_red[:, col_idx] != -1)[0]:
                 symbol = term_row[i]
                 qn = in_ops[term_row[i][0]][0].qn + primary_ops[term_row[i][1]].qn
