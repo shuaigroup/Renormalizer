@@ -2,6 +2,7 @@ import numpy as np
 from renormalizer.utils import Op
 from typing import Dict, List
 
+
 class BasisSet:
     r"""
     the class for local basis set
@@ -24,7 +25,7 @@ class BasisSet:
         raise NotImplementedError
 
 
-class Basis_SHO(BasisSet):
+class BasisSHO(BasisSet):
     """
     simple harmonic oscillator basis set
     Args:
@@ -35,7 +36,7 @@ class Basis_SHO(BasisSet):
     def __init__(self, omega, nbas, x0=0.):
         self.omega = omega
         self.x0 = x0  # origin = x0
-        super().__init__(nbas, [0,] * nbas)
+        super().__init__(nbas, [0] * nbas)
         
     def __repr__(self):
         return f"(x0: {self.x0}, omega: {self.omega}, nbas: {self.nbas})"
@@ -46,97 +47,74 @@ class Basis_SHO(BasisSet):
         else:
             op_symbol, op_factor = op, 1.0
 
-        if op_symbol in ["b", r"b^\dagger", r"b^\dagger b", r"b^\dagger + b"]:
+        if op_symbol in ["b", "b b", r"b^\dagger", r"b^\dagger b^\dagger", r"b^\dagger b", r"b b^\dagger", r"b^\dagger + b"]:
             assert np.allclose(self.x0, 0)
 
-        if op_symbol == "x":
-            # define x-x0 = y or x = y+x0
+        # so many if-else might be a potential performance problem in the future
+        # change to lazy-evaluation dict should be better
 
-            mat = np.eye(self.nbas) * self.x0
-            # <m|y|n> = sqrt(1/2w) <m|b^dagger b |n> = sqrt(n+1) delta(m, n+1) +
-            # sqrt(n) delta(m, n-1)
-            for iket in range(self.nbas-1):
-                mat[iket+1, iket] += np.sqrt(iket+1) * np.sqrt(0.5/self.omega)
-            for iket in range(1, self.nbas):
-                mat[iket-1, iket] += np.sqrt(iket) * np.sqrt(0.5/self.omega)
+        # second quantization formula
+        if op_symbol == "b":
+            mat = np.diag(np.sqrt(np.arange(1, self.nbas)), k=1)
+
+        elif op_symbol == "b b":
+            # b b = sqrt(n*(n-1)) delta(m,n-2)
+            mat = np.diag(np.sqrt(np.arange(1, self.nbas - 1) * np.arange(2, self.nbas)), k=2)
+
+        elif op_symbol == r"b^\dagger":
+            mat = np.diag(np.sqrt(np.arange(1, self.nbas)), k=-1)
+
+        elif op_symbol == r"b^\dagger b^\dagger":
+            # b^\dagger b^\dagger = sqrt((n+2)*(n+1)) delta(m,n+2)
+            mat = np.diag(np.sqrt(np.arange(1, self.nbas - 1) * np.arange(2, self.nbas)), k=-2)
+
+        elif op_symbol == r"b^\dagger + b":
+            mat = self.op_mat(r"b^\dagger") + self.op_mat("b")
+
+        elif op_symbol == r"b^\dagger b":
+            # b^dagger b = n delta(n,n)
+            mat = np.diag(np.arange(self.nbas))
+
+        elif op_symbol == r"b b^\dagger":
+            mat = np.diag(np.arange(self.nbas) + 1)
+
+        elif op_symbol == "x":
+            # define x-x0 = y or x = y+x0, return x
+            # <m|y|n> = sqrt(1/2w) <m| b^\dagger + b |n>
+            mat = np.sqrt(0.5/self.omega) * self.op_mat(r"b^\dagger + b") + np.eye(self.nbas) * self.x0
 
         elif op_symbol == "x^2":
+            # can't do things like the commented code below due to numeric error around highest quantum number
+            # x_mat = self.op_mat("x")
+            # mat = x_mat @ x_mat
+
+            # x^2 = x0^2 + 2 x0 * y + y^2
             # x0^2
             mat = np.eye(self.nbas) * self.x0**2
-            
-            # 2 x0 * y 
-            for iket in range(self.nbas-1):
-                mat[iket+1, iket] += np.sqrt(iket+1) * np.sqrt(0.5/self.omega) * 2. * self.x0
-            for iket in range(1, self.nbas):
-                mat[iket-1, iket] += np.sqrt(iket) * np.sqrt(0.5/self.omega) * 2. * self.x0
-            
-            #  y^2: b^dagger b + b b^\dagger = (n+1+n) delta(m,n)
-            for iket in range(self.nbas):
-                mat[iket, iket] += (2*iket+1) * 0.5/self.omega
-            
-            #  y^2: bb = sqrt(n*(n-1)) delta(m,n-2)
-            for iket in range(2, self.nbas):
-                mat[iket-2, iket] += np.sqrt(iket*(iket-1)) * 0.5/self.omega
 
-            #  y^2: b^\dagger b^\dagger = sqrt((n+2)*(n+1)) delta(m,n+2)
-            for iket in range(0, self.nbas-2):
-                mat[iket+2, iket] += np.sqrt((iket+2)*(iket+1)) * 0.5/self.omega
-        
+            # 2 x0 * y
+            mat += 2 * self.x0 * np.sqrt(0.5/self.omega) * self.op_mat(r"b^\dagger + b")
+
+            #  y^2: 1/2w * (b^\dagger b^\dagger + b^dagger b + b b^\dagger + bb)
+            mat += 0.5/self.omega * (self.op_mat(r"b^\dagger b^\dagger")
+                                     + self.op_mat(r"b^\dagger b")
+                                     + self.op_mat(r"b b^\dagger")
+                                     + self.op_mat(r"b b")
+                                     )
+
         elif op_symbol == "p":
-            #<m|p|n> = -i sqrt(w/2) sqrt(n) delta(m,n-1) - sqrt(n+1) delta(m,n+1)
-            mat = np.zeros((self.nbas, self.nbas), dtype=np.complex128)
-            
-            for iket in range(1, self.nbas):
-                mat[iket-1, iket] += -1.0j * np.sqrt(0.5*self.omega) * np.sqrt(iket) 
-            for iket in range(self.nbas-1):
-                mat[iket+1, iket] -= -1.0j * np.sqrt(0.5*self.omega) * np.sqrt(iket+1)
+            # <m|p|n> = -i sqrt(w/2) <m| b^\dagger - b |n>
+            mat = 1j * np.sqrt(self.omega / 2) * (self.op_mat(r"b^\dagger") - self.op_mat("b"))
 
         elif op_symbol == "p^2":
-            
-            mat = np.zeros((self.nbas, self.nbas))
-            
-            #  -(b^dagger b + b b^\dagger) = (n+1+n) delta(m,n)
-            for iket in range(self.nbas):
-                mat[iket, iket] -= (-0.5*self.omega) * (2*iket+1)  
-            
-            #  bb = sqrt(n*(n-1)) delta(m,n-2)
-            for iket in range(2, self.nbas):
-                mat[iket-2, iket] += (-0.5*self.omega) * np.sqrt(iket*(iket-1))  
-
-            #  b^\dagger b^\dagger = sqrt((n+2)*(n+1)) delta(m,n+2)
-            for iket in range(0, self.nbas-2):
-                mat[iket+2, iket] += (-0.5*self.omega) * np.sqrt((iket+2)*(iket+1)) 
+            mat = -self.omega / 2 * (self.op_mat(r"b^\dagger b^\dagger")
+                                     - self.op_mat(r"b^\dagger b")
+                                     - self.op_mat(r"b b^\dagger")
+                                     + self.op_mat(r"b b")
+                                     )
 
         elif op_symbol == "I":
             mat = np.eye(self.nbas)
-        
-        # second quantization formula
-        elif op_symbol == "b":
-            mat = np.zeros((self.nbas, self.nbas))
-            # b = sqrt(n) delta(n-1,n)
-            for iket in range(1, self.nbas):
-                mat[iket-1, iket] = np.sqrt(iket) 
-
-        elif op_symbol == r"b^\dagger":
-            mat = np.zeros((self.nbas, self.nbas))
-            # b^\dagger = sqrt(n+1) delta(n+1,n)
-            for iket in range(0, self.nbas-1):
-                mat[iket+1, iket] = np.sqrt(iket+1) 
-        
-        elif op_symbol == r"b^\dagger + b":
-            mat = np.zeros((self.nbas, self.nbas))
-            # b = sqrt(n) delta(n-1,n)
-            for iket in range(1, self.nbas):
-                mat[iket-1, iket] = np.sqrt(iket) 
-            # b^\dagger = sqrt(n+1) delta(n+1,n)
-            for iket in range(0, self.nbas-1):
-                mat[iket+1, iket] = np.sqrt(iket+1) 
-        
-        elif op_symbol == r"b^\dagger b":
-            mat = np.zeros((self.nbas, self.nbas))
-            # b^dagger b = n delta(n,n)
-            for iket in range(self.nbas):
-                mat[iket, iket] = float(iket)
         
         elif op_symbol == "n":
             # since b^\dagger b is not allowed to shift the origin, 
@@ -150,7 +128,7 @@ class Basis_SHO(BasisSet):
         return mat * op_factor
 
 
-class Basis_Multi_Electron(BasisSet):
+class BasisMultiElectron(BasisSet):
     r"""
     The basis set for multi electronic state on one single site
     Args:
@@ -158,7 +136,7 @@ class Basis_Multi_Electron(BasisSet):
         sigmaqn (List(int)): the sigmaqn of each basis
     """
     
-    def __init__(self, nstate, sigmaqn:List[int]):
+    def __init__(self, nstate, sigmaqn: List[int]):
         
         assert len(sigmaqn) == nstate
         super().__init__(nstate, sigmaqn)
@@ -199,13 +177,13 @@ class Basis_Multi_Electron(BasisSet):
         return mat * op_factor
 
 
-class Basis_Simple_Electron(BasisSet):
+class BasisSimpleElectron(BasisSet):
     r"""
     The basis set for simple electron DoF, two state with 0: unoccupied, 1: occupied
 
     """
     def __init__(self):
-        super().__init__(2, [0,1])
+        super().__init__(2, [0, 1])
 
     def op_mat(self, op):
         
@@ -214,33 +192,28 @@ class Basis_Simple_Electron(BasisSet):
         else:
             op_symbol, op_factor = op, 1.0
         
-        mat = np.zeros((2,2))
+        mat = np.zeros((2, 2))
         
         if op_symbol == r"a^\dagger":
-            mat[1,0] = 1.
-        
-        elif  op_symbol == "a":
-            mat[0,1] = 1.
-        
+            mat[1, 0] = 1.
+        elif op_symbol == "a":
+            mat[0, 1] = 1.
         elif op_symbol == r"a^\dagger a":
-            mat[1,1] = 1.
-        
+            mat[1, 1] = 1.
         elif op_symbol == "I":
             mat = np.eye(2)
-
         else:
             raise ValueError(f"op_symbol:{op_symbol} is not supported")
         
         return mat * op_factor
 
 
-class Basis_Half_Spin(BasisSet):
+class BasisHalfSpin(BasisSet):
     r"""
     The basis the for 1/2 spin DoF
     """
     def __init__(self, sigmaqn:List[int]=[0,0]):
         super().__init__(2, sigmaqn)
-
 
     def op_mat(self, op):
         

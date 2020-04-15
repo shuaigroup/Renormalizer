@@ -38,7 +38,7 @@ def symbolic_mpo(table, factor, algo="Hopcroft-Karp"):
     
     Args:
     
-    table: an operator table with shape (operator nterm, nsite) matrix 
+    table: an operator table with shape (operator nterm, nsite). Each entry contains elementary operators on each site.
     factor (np.ndarray): one prefactor vector (dim: operator nterm) 
     algo: the algorithm used to select local ops,
           "Hopcroft-Karp"(default), "Hungarian", "greedy".
@@ -58,59 +58,64 @@ def symbolic_mpo(table, factor, algo="Hopcroft-Karp"):
 
     the index of the primary ops {0:"I", 1:"a", 2:r"a^\dagger"}
     
-    for example: H = 2.0 * a_1^dagger a_0  + 3.0 * a_1^\dagger a_2 + 4.0*a_0^\dagger a_2
-                        0    1    2    3   4  factor
-    a_0 a_1^dagger      0    1    2    0   0   2.0
-    a_1^\dagger a_2     0    0    2    1   0   3.0
-    a_0^\dagger a_2     0    2    0    1   0   4.0
-    for convenience the first and last column means that the operator of the left and right hand of the system is I 
+    for example: H = 2.0 * a_1 a_2^dagger   + 3.0 * a_2^\dagger a_3 + 4.0*a_0^\dagger a_3
+    The column names are the site indeces with 0 and 4 imaginary (see the note below)
+    and the content of the table is the index of primary operators.
+                        s0   s1   s2   s3  s4  factor
+    a_1 a_2^dagger      0    1    2    0   0   2.0
+    a_2^\dagger a_3     0    0    2    1   0   3.0
+    a_1^\dagger a_3     0    2    0    1   0   4.0
+    for convenience the first and last column mean that the operator of the left and right hand of the system is I
     
     cut the string to construct the row(left) and column(right) operator and find the duplicated/independent terms 
-                        0    1  |  2    3   4  factor
-    a_0 a_1^dagger      0    1  |  2    0   0  2.0
-    a_1^\dagger a_2     0    0  |  2    1   0  3.0
-    a_0^\dagger a_2     0    2  |  0    1   0  4.0
-    
-       0 1 2   0,1,2 represents (2,0,0), (2,1,0), (0,1,0)
-     0 1 0 0
-     1 0 1 0
-     2 0 0 1
-     0,1,2 represents (0,1), (0,0), (0,2)
+                        s0   s1 |  s2   s3  s4 factor
+    a_1 a_2^dagger      0    1  |  2    0   0  2.0
+    a_2^\dagger a_3     0    0  |  2    1   0  3.0
+    a_1^\dagger a_3     0    2  |  0    1   0  4.0
+
+     The content of the table below means matrix elements with basis explained in the notes.
+     In the matrix elements, 1 means combination and 0 means no combination.
+          (2,0,0) (2,1,0) (0,1,0)  -> right side of the above table
+     (0,1)   1       0       0
+     (0,0)   0       1       0
+     (0,2)   0       0       1
+       |
+       v
+     left side of the above table
+     In this case all operators are independent so the content of the matrix is diagonal
     
     and select the terms and rearange the table 
     The selection rule is to find the minimal number of rows+cols that can eliminate the
     matrix
-          0    1  |  2  3  factor
-          0'   2  |  0  0  2.0
-          1'   2  |  1  0  3.0
-          2'   0  |  1  0  4.0
+                      s1   s2 |  s3 s4 factor
+    a_1 a_2^dagger    0'   2  |  0  0  2.0
+    a_2^\dagger a_3   1'   2  |  1  0  3.0
+    a_1^\dagger a_3   2'   0  |  1  0  4.0
     0'/1'/2' are three new operators(could be non-elementary)
-    The local mpo is the transformation matrix between 0,0,0 to 0',1',2'
+    The local mpo is the transformation matrix between 0,0,0 to 0',1',2'.
+    In this case, the local mpo is simply (1, 0, 2)
     
     cut the string and find the duplicated/independent terms 
-       0 1   (0,0), (1,0)
-     0 1 0 
-     1 0 1 
-     2 0 1 
-     (0',2), (1',2), (2',0)
+            (0,0), (1,0)
+     (0',2)   1      0
+     (1',2)   0      1
+     (2',0)   0      1
     
-    and select the terms and rearange the table 
-    apparently choose the 1 index column and construct the complementary operator 1+2 is better
-    0'' =  3*(1 0) + 4*(2 0)
-         -1      2  | 3 factor
-          0''    1  | 0  1.0
-          1''    0  | 0  2.0
+    and select the terms and rearrange the table
+    apparently choose the (1,0) column and construct the complementary operator (1',2)+(2',0) is better
+    0'' =  3.0 * (1', 2) + 4.0 * (2', 0)
+                                                 s2     s3 | s4 factor
+    (4.0 * a_1^dagger + 3.0 * a_2^dagger) a_3    0''    1  | 0  1.0
+    a_1 a_2^dagger                               1''    0  | 0  2.0
     0''/1'' are another two new operators(non-elementary)
     The local mpo is the transformation matrix between 0',1',2' to 0'',1''
     
-       0    (0)
-     0 1  
-     1 0  
-     (0'',1), (1'',0)
+             (0)
+     (0'',1)  1
+     (1'',0)  1
     
     The local mpo is the transformation matrix between 0'',1'' to 0'''
     """
-    
     logger.debug(f"symbolic mpo algorithm: {algo}")
 
     nsite = len(table[0])
@@ -253,12 +258,15 @@ def symbolic_mpo(table, factor, algo="Hopcroft-Karp"):
 
         for iop, out_op in enumerate(out_ops):
             for composed_op in out_op:
+                in_idx = composed_op.symbol[0]
+                symbol = primary_ops[composed_op.symbol[1]].symbol
+                qn = primary_ops[composed_op.symbol[1]].qn
                 if isite != nsite-1:
-                    mo[composed_op.symbol[0]][iop].append(Op(primary_ops[composed_op.symbol[1]].symbol,
-                        primary_ops[composed_op.symbol[1]].qn, composed_op.factor))
+                    factor = composed_op.factor
                 else:
-                    mo[composed_op.symbol[0]][iop].append(Op(primary_ops[composed_op.symbol[1]].symbol,
-                        primary_ops[composed_op.symbol[1]].qn, composed_op.factor*new_factor[0]))
+                    factor = composed_op.factor*new_factor[0]
+                new_op = Op(symbol, qn, factor)
+                mo[in_idx][iop].append(new_op)
             moqn.append(out_op[0].qn)
 
         mpo.append(mo)
@@ -451,7 +459,8 @@ def _model_translator_Holstein_model_scheme4(mol_list, const=Quantity(0.)):
     logger.debug(f"# of operator terms: {len(table)}")
     
     return table, factor
-        
+
+
 def _model_translator_sbm(mol_list, const=Quantity(0.)):
     """
     construct a spin-boson model operator table
@@ -609,11 +618,13 @@ def _model_translator_vibronic_model(mol_list, const=Quantity(0.)):
 
     return table, factor
 
+
 def add_idx(symbol, idx):
     symbols = symbol.split(" ")
     for i in range(len(symbols)):
         symbols[i] = symbols[i]+f"_{idx}"
     return " ".join(symbols)
+
 
 def _model_translator_general_model(mol_list, const=Quantity(0.)):
     r"""
@@ -1624,10 +1635,10 @@ class Mpo(MatrixProduct):
                 }
         
         if model is None:
-            # internal model
+            # internal model (model is provided by `mol_list`)
             table, factor = translator_list[mol_list.model_translator](mol_list, const)
         else:
-            # external model
+            # external model (model is provided by `model` and `model_translator`. `mol_list` is just a ref.)
             assert model_translator is not None
             table, factor = translator_list[model_translator](mol_list.rewrite_model(model, model_translator), const)
     

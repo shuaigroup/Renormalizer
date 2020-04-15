@@ -323,7 +323,7 @@ class Mps(MatrixProduct):
                     ms = np.zeros((1, pdim, 1))
                     
                     if isinstance(mol_list.basis[isite],
-                            ba.Basis_Simple_Electron):
+                                  ba.BasisSimpleElectron):
                         # simple electron site
                         ms[0,0,0] = 1.
                     elif isinstance(mol_list.basis[isite],
@@ -333,7 +333,7 @@ class Mps(MatrixProduct):
                             nzeros = mol_list.basis[isite].sigmaqn.count(0)
                             qn = mol_list.basis[isite].sigmaqn[dof.split("_")[1]]
                             if qn == 0:
-                                ms[0, dof.split("_"), 0] = 1. / np.sqrt(nzeros) 
+                                ms[0, dof.split("_")[1], 0] = 1. / np.sqrt(nzeros) 
                         else:
                             assert mol_list.basis[isite].sigmaqn[0] == 0
                             logger.warning("The electron occupies e_0 !!")
