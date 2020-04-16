@@ -120,7 +120,6 @@ class SpectraZtCV(SpectraCv):
         # depending on the spectratype, to restrict the exction
         first_LR = lr_group[0]
         second_LR = lr_group[1]
-        eta2_LR = lr_group[2]
         if self.spectratype == "abs":
             constrain_qn = 1
         else:
@@ -142,16 +141,12 @@ class SpectraZtCV(SpectraCv):
             first_R = asxp(first_LR[isite])
             second_L = asxp(second_LR[isite - 1])
             second_R = asxp(second_LR[isite])
-            eta2_L = asxp(eta2_LR[isite - 1])
-            eta2_R = asxp(eta2_LR[isite])
         else:
             addlist = [isite - 2, isite - 1]
             first_L = asxp(first_LR[isite - 2])
             first_R = asxp(first_LR[isite])
             second_L = asxp(second_LR[isite - 2])
             second_R = asxp(second_LR[isite])
-            eta2_L = asxp(eta2_LR[isite - 2])
-            eta2_R = asxp(eta2_LR[isite])
 
         if direction == 'left':
             system = 'R'
@@ -193,24 +188,34 @@ class SpectraZtCV(SpectraCv):
 
         # use the diagonal part of mat_a to construct the preconditinoner for linear solver
         if self.method == "1site":
-            pre_a_mat1 = xp.einsum('abca, bdef, cedg, hfgh->adh', first_L, a_oper_isite1,
-                                   a_oper_isite1, first_R)[qnmat == constrain_qn]
-            ident = xp.identity(a_oper_isite1.shape[1])
-            pre_a_mat2 = xp.einsum('aa, bb, cc->abc', eta2_L, ident, eta2_R)[qnmat == constrain_qn]
+            part_l = xp.einsum('abca->abc', first_L)
+            part_r = xp.einsum('hfgh->hfg', first_R)
+            path_pre = [([0, 1], "abc, bdef->acdef"),
+                        ([1, 0], "acdef, hfg->acdehg")]
+            pre_a_mat1 = multi_tensor_contract(path_pre, part_l, a_oper_isite1,
+                                               part_r)
+            path_pre2 = [([0, 1], "acdehg, ceig->adhi")]
+            pre_a_mat1 = multi_tensor_contract(path_pre2, pre_a_mat1, a_oper_isite1)
+            pre_a_mat1 = xp.einsum('adhd->adh', pre_a_mat1)[qnmat == constrain_qn]
+            # pre_a_mat1 = xp.einsum('abca, bdef, cedg, hfgh->adh', first_L, a_oper_isite1,
+            #                        a_oper_isite1, first_R)[qnmat == constrain_qn]
+            cv_shape = self.cv_mps[isite - 1].shape
+            pre_a_mat2 = xp.ones(cv_shape)[qnmat == constrain_qn]
             pre_a_mat = pre_a_mat1 + pre_a_mat2 * self.eta**2
         else:
             pre_a_mat1 = xp.einsum(
                 'abca, bdef, cedg, fhij, gihk, ljkl->adhl', first_L, a_oper_isite2, a_oper_isite2,
                 a_oper_isite1, a_oper_isite1, first_R)[qnmat == constrain_qn]
-            ident = xp.identity(a_oper_isite1.shape[1])
-            pre_a_mat2 = xp.einsum(
-                'aa, bb, cc, dd->abcd', eta2_L, ident, ident, eta2_R
-            )[qnmat == constrain_qn]
+            cv_shape1 = self.cv_mps[isite - 2].shape
+            cv_shape2 = self.cv_mps[isite - 1].shape
+            new_shape = [cv_shape1[0], cv_shape1[1], cv_shape2[1], cv_shape2[2]]
+            pre_a_mat2 = xp.ones(new_shape)[qnmat == constrain_qn]
             pre_a_mat = pre_a_mat1 + pre_a_mat2 * self.eta**2
 
         pre_a_mat = np.diag(1./asnumpy(pre_a_mat))
 
         count = 0
+
         def hop(c):
             nonlocal count
             count += 1
@@ -222,14 +227,12 @@ class SpectraZtCV(SpectraCv):
                           ([1, 0], "dfhij, fhjk->dik")]
                 ax1 = multi_tensor_contract(path_a, first_L, xstruct,
                                            a_oper_isite1, a_oper_isite1, first_R)
-                path_eta = [([0, 1], "ab, acd->bcd"),
-                            ([[1, 0], "bcd, de->bce"])]
-                ax2 = multi_tensor_contract(path_eta, eta2_L, xstruct, eta2_R)
+                ax2 = xstruct
                 ax = ax1 + ax2 * self.eta**2
             else:
                 path_a = [([0, 1], "abcd, aefg->bcdefg"),
-                          ([5, 0], "bcdefg, behi->cefghi"),
-                          ([4, 0], "cefghi, ifjk->cdghjk"),
+                          ([5, 0], "bcdefg, behi->cdfghi"),
+                          ([4, 0], "cdfghi, ifjk->cdghjk"),
                           ([3, 0], "cdghjk, chlm->dgjklm"),
                           ([2, 0], "dgjklm, mjno->dgklno"),
                           ([1, 0], "dgklno, gkop->dlnp")]
@@ -237,9 +240,7 @@ class SpectraZtCV(SpectraCv):
                                            a_oper_isite2, a_oper_isite1,
                                            a_oper_isite2, a_oper_isite1,
                                            first_R)
-                path_eta = [([0, 1], "ab, acde->bcde"),
-                            ([1, 0], "bcde, ef->bcdf")]
-                ax2 = multi_tensor_contract(path_eta, eta2_L, xstruct, eta2_R)
+                ax2 = xstruct
                 ax = ax1 + ax2 * self.eta**2
             cout = ax[qnmat == constrain_qn].reshape(nonzeros, 1)
             return asnumpy(cout)
@@ -304,15 +305,11 @@ class SpectraZtCV(SpectraCv):
         first_LR.append(np.ones((1, 1, 1, 1)))
         second_LR = []
         second_LR.append(np.ones((1, 1)))
-        eta2_LR = []
-        eta2_LR.append(np.ones((1, 1)))
         for isite in range(1, len(self.cv_mps)):
             first_LR.append(None)
             second_LR.append(None)
-            eta2_LR.append(None)
         first_LR.append(np.ones((1, 1, 1, 1)))
         second_LR.append(np.ones((1, 1)))
-        eta2_LR.append(np.ones((1, 1)))
         if direction == "right":
             path1 = [([0, 1], "abcd, efa->bcdef"),
                      ([3, 0], "bcdef, gfhb->cdegh"),
@@ -326,8 +323,6 @@ class SpectraZtCV(SpectraCv):
                     self.a_oper[isite - 1], self.a_oper[isite - 1], self.cv_mps[isite - 1]))
                 second_LR[isite - 1] = asnumpy(multi_tensor_contract(
                     path2, second_LR[isite], self.b_oper[isite - 1], self.cv_mps[isite - 1]))
-                eta2_LR[isite - 1] = asnumpy(multi_tensor_contract(
-                    path2, eta2_LR[isite], self.cv_mps[isite - 1], self.cv_mps[isite - 1]))
         else:
             path1 = [([0, 1], "abcd, aef->bcdef"),
                      ([3, 0], "bcdef, begh->cdfgh"),
@@ -342,14 +337,11 @@ class SpectraZtCV(SpectraCv):
                     self.a_oper[isite - 1], self.a_oper[isite - 1], self.cv_mps[isite - 1]))
                 second_LR[isite] = asnumpy(multi_tensor_contract(
                     path2, second_LR[isite - 1], self.b_oper[isite - 1], mps_isite))
-                eta2_LR[isite] = asnumpy(multi_tensor_contract(
-                    path2, eta2_LR[isite - 1], mps_isite, mps_isite))
-        return [first_LR, second_LR, eta2_LR]
+        return [first_LR, second_LR]
 
     def update_LR(self, lr_group, direction, isite):
         first_LR = lr_group[0]
         second_LR = lr_group[1]
-        eta2_LR = lr_group[2]
         # use the updated local site of cv_mps to update LR
         if self.method == "1site":
             if direction == "left":
@@ -364,8 +356,6 @@ class SpectraZtCV(SpectraCv):
                     self.a_oper[isite - 1], self.a_oper[isite - 1], self.cv_mps[isite - 1])
                 second_LR[isite - 1] = multi_tensor_contract(
                     path2, second_LR[isite], self.b_oper[isite - 1], self.cv_mps[isite - 1])
-                eta2_LR[isite - 1] = multi_tensor_contract(
-                    path2, eta2_LR[isite], self.cv_mps[isite - 1], self.cv_mps[isite - 1])
 
             else:
                 path1 = [([0, 1], "abcd, aef->bcdef"),
@@ -379,8 +369,6 @@ class SpectraZtCV(SpectraCv):
                     self.a_oper[isite - 1], self.a_oper[isite - 1], self.cv_mps[isite - 1])
                 second_LR[isite] = multi_tensor_contract(
                     path2, second_LR[isite - 1], self.b_oper[isite - 1], self.cv_mps[isite - 1])
-                eta2_LR[isite] = multi_tensor_contract(
-                    path2, eta2_LR[isite - 1], self.cv_mps[isite - 1], self.cv_mps[isite - 1])
 
         else:
             if direction == "left":
@@ -395,8 +383,6 @@ class SpectraZtCV(SpectraCv):
                     self.a_oper[isite - 1], self.a_oper[isite - 1], self.cv_mps[isite - 1])
                 second_LR[isite - 1] = multi_tensor_contract(
                     path2, second_LR[isite], self.b_oper[isite - 1], self.cv_mps[isite - 1])
-                eta2_LR[isite - 1] = multi_tensor_contract(
-                    path2, eta2_LR[isite], self.cv_mps[isite - 1], self.cv_mps[isite - 1])
 
             else:
                 path1 = [([0, 1], "abc, aef->bcdef"),
@@ -410,7 +396,5 @@ class SpectraZtCV(SpectraCv):
                     self.a_oper[isite - 2], self.a_oper[isite - 2], self.cv_mps[isite - 2])
                 second_LR[isite - 1] = multi_tensor_contract(
                     path2, second_LR[isite - 2], self.b_oper[isite - 2], self.cv_mps[isite - 2])
-                eta2_LR[isite - 1] = multi_tensor_contract(
-                    path2, eta2_LR[isite - 2], self.cv_mps[isite - 2], self.cv_mps[isite - 2])
 
-        return [first_LR, second_LR, eta2_LR]
+        return [first_LR, second_LR]
