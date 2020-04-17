@@ -119,9 +119,7 @@ class BasisSHO(BasisSet):
         elif op_symbol == "n":
             # since b^\dagger b is not allowed to shift the origin, 
             # n is designed for occupation number of the SHO basis
-            mat = np.zeros((self.nbas, self.nbas))
-            for iket in range(self.nbas):
-                mat[iket, iket] = float(iket)
+            mat = np.diag(np.arange(self.nbas))
         else:
             raise ValueError(f"op_symbol:{op_symbol} is not supported")
 

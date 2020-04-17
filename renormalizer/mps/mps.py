@@ -309,42 +309,38 @@ class Mps(MatrixProduct):
             mps.build_empty_mp(mol_list.nsite)
 
             for dof in mol_list.dofs:
+                isite = mol_list.order[dof]
+                pdim = mol_list.basis[isite].nbas
+                ms = np.zeros((1, pdim, 1))
                 if dof.split("_")[0] == "v":
-                    isite = mol_list.order[dof]
-                    pdim = mol_list.basis[isite].nbas
-                    ms = np.zeros((1, pdim, 1))
                     if max_entangled:
                         ms[0, :, 0] = 1.0 / np.sqrt(pdim)
                     else:
                         ms[0, 0, 0] = 1.0
                     mps[isite] = ms
-                
+
                 elif dof.split("_")[0] == "e":
-                    
-                    isite = mol_list.order[dof]
-                    pdim = mol_list.basis[isite].nbas
-                    ms = np.zeros((1, pdim, 1))
-                    
+
                     if isinstance(mol_list.basis[isite],
                                   ba.BasisSimpleElectron):
                         # simple electron site
                         ms[0,0,0] = 1.
                     elif isinstance(mol_list.basis[isite],
-                            ba.Basis_Multi_Electron):
+                                    ba.Basis_Multi_Electron):
                         if max_entangled:
                             # Note the multi_electron gs is defined differently
                             # all the local state with qn == 0 will be occupied
                             nzeros = mol_list.basis[isite].sigmaqn.count(0)
                             qn = mol_list.basis[isite].sigmaqn[dof.split("_")[1]]
                             if qn == 0:
-                                ms[0, dof.split("_")[1], 0] = 1. / np.sqrt(nzeros) 
+                                ms[0, dof.split("_")[1], 0] = 1. / np.sqrt(nzeros)
                         else:
                             # only "e_0" is occupied
                             assert mol_list.basis[isite].sigmaqn[0] == 0
                             logger.warning("The electron occupies e_0 !!")
                             ms[0,0,0] = 1.
                     elif isinstance(mol_list.basis[isite],
-                            ba.Basis_half_spin):
+                                    ba.Basis_half_spin):
                         if max_entangled:
                             ms[0,:,0] = np.sqrt(0.5)
                         else:

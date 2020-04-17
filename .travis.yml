@@ -9,7 +9,8 @@ install:
 
 script:
     - pytest --durations=0
-    - cd example; bash run.sh; cd ..
+    - cd example; bash run.sh
+    - cd ..
     - cd doc; make html; cd ..
 
 deploy:

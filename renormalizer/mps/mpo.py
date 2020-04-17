@@ -161,7 +161,7 @@ def symbolic_mpo(table, factor, algo="Hopcroft-Karp"):
         term_row, row_unique_inverse = np.unique(table[:,:2], axis=0, return_inverse=True)
         term_col, col_unique_inverse = np.unique(table[:,2:], axis=0, return_inverse=True)
         
-	# get the non_redudant ops
+        # get the non_redudant ops
         # the +1, -1 trick is to use the csr sparse matrix format
         non_red = scipy.sparse.diags(np.arange(1,table.shape[0]+1), format="csr", dtype=np.int64)
         coord = np.array([[newidx, oldidx] for oldidx, newidx in enumerate(row_unique_inverse)])
