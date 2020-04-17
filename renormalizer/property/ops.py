@@ -1,7 +1,6 @@
 from renormalizer.mps import Mpo
-from renormalizer.utils import Quantity
-from renormalizer.model import MolList
-
+from renormalizer.utils import Quantity, Op
+from renormalizer.model import MolList, MolList2, ModelTranslator
 import numpy as np
 
 
@@ -69,4 +68,32 @@ def e_ph_static_correlation(mol_list: MolList, imol:int =0, jph:int =0,
 
     return prop_mpos
 
+def x_average(mol_list: MolList2):
+    """
+    <x> of vibrational DoF
+    """
+    assert isinstance(mol_list, MolList2)
 
+    mpos = []
+    for v_dof in mol_list.v_dofs:
+        model = {(v_dof,):[(Op("x",0),1.0)]}
+        mpo = Mpo.general_mpo(mol_list, model=model,
+                model_translator=ModelTranslator.general_model)
+        mpos.append(mpo)
+
+    return {"x": mpos}
+
+def x_square_average(mol_list: MolList2):
+    """
+    <x^2> of vibrational DoF
+    """
+    assert isinstance(mol_list, MolList2)
+
+    mpos = []
+    for v_dof in mol_list.v_dofs:
+        model = {(v_dof,):[(Op("x^2",0),1.0)]}
+        mpo = Mpo.general_mpo(mol_list, model=model,
+                model_translator=ModelTranslator.general_model)
+        mpos.append(mpo)
+
+    return {r"x^2": mpos}

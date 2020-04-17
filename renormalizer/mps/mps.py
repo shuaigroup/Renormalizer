@@ -9,7 +9,7 @@ import scipy
 from scipy import stats
 
 
-from renormalizer.model import MolList
+from renormalizer.model import MolList, MolList2, ModelTranslator
 from renormalizer.lib import solve_ivp, expm_krylov
 from renormalizer.mps import svd_qn
 from renormalizer.mps.matrix import (
@@ -33,7 +33,9 @@ from renormalizer.utils import (
     EvolveConfig,
     EvolveMethod,
     sizeof_fmt,
+    Op
 )
+from renormalizer.utils import basis as ba
 
 logger = logging.getLogger(__name__)
 
@@ -120,15 +122,16 @@ class Mps(MatrixProduct):
         mps.qn = [[0]]
         dim_list = [1]
 
-        for imps in range(len(mol_list.ephtable) - 1):
+        for imps in range(mol_list.nsite - 1):
 
             # quantum number
             qnbig = np.add.outer(mps.qn[imps], mps._get_sigmaqn(imps)).flatten()
             u_set = []
             s_set = []
             qnset = []
-
+            
             for iblock in range(min(qnbig), nexciton + 1):
+            #for iblock in range(min(qnbig), max(qnbig)+1):
                 # find the quantum number index
                 indices = [i for i, x in enumerate(qnbig) if x == iblock]
 
@@ -165,12 +168,78 @@ class Mps(MatrixProduct):
         mps.qntot = nexciton
 
         # print("self.dim", self.dim)
+        
+        if isinstance(mps.mol_list, MolList):
+            mps.tdh_wfns = []
+            for mol in mps.mol_list:
+                for ph in mol.hartree_phs:
+                    mps.tdh_wfns.append(np.random.random(ph.n_phys_dim))
+            mps.tdh_wfns.append(1.0)
 
-        mps.tdh_wfns = []
-        for mol in mps.mol_list:
-            for ph in mol.hartree_phs:
-                mps.tdh_wfns.append(np.random.random(ph.n_phys_dim))
-        mps.tdh_wfns.append(1.0)
+        return mps
+
+    @classmethod
+    def hartree_product_state(cls, mol_list, condition):
+        r"""
+        construct a hartree product state
+        
+        Args:
+            mol_list (class: MolList2)
+            condition (Dict): {dof:local_state}, default is the "0" state
+            for example {"e_1":1, "v_0":0...}
+
+        Returns:
+            mps (class: Mps)
+        """
+        assert isinstance(mol_list, MolList2)
+        
+        mps = cls()
+        mps.mol_list = mol_list
+        mps.build_empty_mp(mol_list.nsite)
+        
+        qn_single = [[],] * mol_list.nsite
+        
+        for v_dof in mol_list.v_dofs:
+            isite = mol_list.order[v_dof]
+            pdim = mol_list.basis[isite].nbas
+            ms = np.zeros((1, pdim, 1))
+            local_state = condition.get(v_dof,0)
+            ms[0, local_state, 0] = 1.
+            mps[isite] = ms
+            qn_single[isite] = mol_list.basis[isite].sigmaqn[local_state]
+        
+        if not mol_list.multi_electron:
+            for e_dof in mol_list.e_dofs:
+                isite = mol_list.order[e_dof]
+                pdim = mol_list.basis[isite].nbas
+                ms = np.zeros((1, pdim, 1))
+                local_state = condition.get(e_dof,0)
+                ms[0, local_state, 0] = 1.
+                mps[isite] = ms
+                qn_single[isite] = mol_list.basis[isite].sigmaqn[local_state]
+        else:
+            # check that only 1 electron state is occupied
+            occ = [condition.get(e_dof, 0) for e_dof in mol_list.e_dofs]  
+            assert sum(occ) == 1
+            for e_dof in mol_list.e_dofs:
+                local_state = condition.get(e_dof,0)
+                if local_state == 1:
+                    isite = mol_list.order[e_dof]
+                    pdim = mol_list.basis[isite].nbas
+                    ms = np.zeros((1, pdim, 1))
+                    idx = int(e_dof.split("_")[1])
+                    ms[0,idx,0] = 1.
+                    mps[isite] = ms
+                    qn_single[isite] = mol_list.basis[isite].sigmaqn[idx]
+
+        qn_single = np.array(qn_single)
+        mps.qn = [[0]]
+        for isite in range(mol_list.nsite):
+            mps.qn.append([np.sum(qn_single[:isite+1])])
+        mps.qnidx = mol_list.nsite - 1
+        mps.qntot = mps.qn[-1][0]
+        mps.qn[-1] = [0]
+        mps.to_right = False
 
         return mps
 
@@ -188,52 +257,97 @@ class Mps(MatrixProduct):
         """
         mps = cls()
         mps.mol_list = mol_list
-        mps.qn = [[0]] * (len(mps.ephtable) + 1)
-        mps.qnidx = len(mps.ephtable) - 1
+        mps.qn = [[0]] * (mol_list.nsite + 1)
+        mps.qnidx = mol_list.nsite - 1
         mps.to_right = False
         mps.qntot = 0
-
-        for imol, mol in enumerate(mol_list):
-            # electron mps
-            if 0 < mol_list.scheme < 4:
-                if mol.sbm and max_entangled:
-                    array = np.array([1 / np.sqrt(2), 1 / np.sqrt(2)])
+        
+        if isinstance(mol_list, MolList):
+            for imol, mol in enumerate(mol_list):
+                # electron mps
+                if 0 < mol_list.scheme < 4:
+                    if mol.sbm and max_entangled:
+                        array = np.array([1 / np.sqrt(2), 1 / np.sqrt(2)])
+                    else:
+                        array = np.array([1, 0])
+                    mps.append(array.reshape((1, 2, 1)))
+                elif mol_list.scheme == 4:
+                    assert not mol.sbm
+                    if imol == mol_list.mol_num // 2:
+                        array = np.zeros(mol_list.mol_num + 1)
+                        array[0] = 1
+                        mps.append(array.reshape((1, -1, 1)))
                 else:
-                    array = np.array([1, 0])
-                mps.append(array.reshape((1, 2, 1)))
-            elif mol_list.scheme == 4:
-                assert not mol.sbm
-                if imol == mol_list.mol_num // 2:
-                    array = np.zeros(mol_list.mol_num + 1)
-                    array[0] = 1
-                    mps.append(array.reshape((1, -1, 1)))
-            else:
-                assert False
-            # ph mps
-            for ph in mol.dmrg_phs:
-                for iboson in range(ph.nqboson):
-                    ms = np.zeros((1, ph.base, 1))
+                    assert False
+                # ph mps
+                for ph in mol.dmrg_phs:
+                    for iboson in range(ph.nqboson):
+                        ms = np.zeros((1, ph.base, 1))
+                        if max_entangled:
+                            ms[0, :, 0] = 1.0 / np.sqrt(ph.base)
+                        else:
+                            ms[0, 0, 0] = 1.0
+                        mps.append(ms)
+
+            mps.tdh_wfns = []
+
+            for mol in mol_list:
+                for ph in mol.hartree_phs:
                     if max_entangled:
-                        ms[0, :, 0] = 1.0 / np.sqrt(ph.base)
+                        diag_elems = [1.0] * ph.n_phys_dim
+                        mps.tdh_wfns.append(np.diag(diag_elems))
+                    else:
+                        diag_elems = [1.0] + [0.0] * (ph.n_phys_dim - 1)
+                        mps.tdh_wfns.append(np.array(diag_elems))
+            # the coefficent a
+            mps.tdh_wfns.append(1.0)
+
+            mflib.normalize(mps.tdh_wfns, 1.0)
+
+        elif isinstance(mol_list, MolList2):
+            
+            mps.build_empty_mp(mol_list.nsite)
+
+            for dof in mol_list.dofs:
+                isite = mol_list.order[dof]
+                pdim = mol_list.basis[isite].nbas
+                ms = np.zeros((1, pdim, 1))
+                if dof.split("_")[0] == "v":
+                    if max_entangled:
+                        ms[0, :, 0] = 1.0 / np.sqrt(pdim)
                     else:
                         ms[0, 0, 0] = 1.0
-                    mps.append(ms)
+                    mps[isite] = ms
 
-        mps.tdh_wfns = []
+                elif dof.split("_")[0] == "e":
 
-        for mol in mol_list:
-            for ph in mol.hartree_phs:
-                if max_entangled:
-                    diag_elems = [1.0] * ph.n_phys_dim
-                    mps.tdh_wfns.append(np.diag(diag_elems))
-                else:
-                    diag_elems = [1.0] + [0.0] * (ph.n_phys_dim - 1)
-                    mps.tdh_wfns.append(np.array(diag_elems))
-        # the coefficent a
-        mps.tdh_wfns.append(1.0)
-
-        mflib.normalize(mps.tdh_wfns, 1.0)
-
+                    if isinstance(mol_list.basis[isite],
+                                  ba.BasisSimpleElectron):
+                        # simple electron site
+                        ms[0,0,0] = 1.
+                    elif isinstance(mol_list.basis[isite],
+                                    ba.Basis_Multi_Electron):
+                        if max_entangled:
+                            # Note the multi_electron gs is defined differently
+                            # all the local state with qn == 0 will be occupied
+                            nzeros = mol_list.basis[isite].sigmaqn.count(0)
+                            qn = mol_list.basis[isite].sigmaqn[dof.split("_")[1]]
+                            if qn == 0:
+                                ms[0, dof.split("_")[1], 0] = 1. / np.sqrt(nzeros)
+                        else:
+                            # only "e_0" is occupied
+                            assert mol_list.basis[isite].sigmaqn[0] == 0
+                            logger.warning("The electron occupies e_0 !!")
+                            ms[0,0,0] = 1.
+                    elif isinstance(mol_list.basis[isite],
+                                    ba.Basis_half_spin):
+                        if max_entangled:
+                            ms[0,:,0] = np.sqrt(0.5)
+                        else:
+                            ms[0,0,0] = 1.
+                    mps[isite] = ms
+        else:
+            assert False
         return mps
 
     @classmethod
@@ -291,14 +405,17 @@ class Mps(MatrixProduct):
         return new_mp
 
     def _get_sigmaqn(self, idx):
-        if self.ephtable.is_phonon(idx):
-            return [0] * self.pbond_list[idx]
-        if self.mol_list.scheme < 4 and self.ephtable.is_electron(idx):
-            return [0, 1]
-        elif self.mol_list.scheme == 4 and self.ephtable.is_electrons(idx):
-            return [0] + [1] * (self.pbond_list[idx] - 1)
+        if isinstance(self.mol_list, MolList2):
+            return self.mol_list.basis[idx].sigmaqn
         else:
-            assert False
+            if self.ephtable.is_phonon(idx):
+                return [0] * self.pbond_list[idx]
+            if self.mol_list.scheme < 4 and self.ephtable.is_electron(idx):
+                return [0, 1]
+            elif self.mol_list.scheme == 4 and self.ephtable.is_electrons(idx):
+                return [0] + [1] * (self.pbond_list[idx] - 1)
+            else:
+                assert False
 
     @property
     def is_mps(self):
@@ -415,33 +532,70 @@ class Mps(MatrixProduct):
     @property
     def ph_occupations(self):
         key = "ph_occupations"
-        if key not in self.mol_list.mpos:
-            mpos = []
-            for imol, mol in enumerate(self.mol_list):
-                for iph in range(len(mol.dmrg_phs)):
-                    mpos.append(Mpo.ph_onsite(self.mol_list, r"b^\dagger b", imol, iph))
-            self.mol_list.mpos[key] = mpos
+        if isinstance(self.mol_list, MolList):
+            if key not in self.mol_list.mpos:
+                mpos = []
+                for imol, mol in enumerate(self.mol_list):
+                    for iph in range(len(mol.dmrg_phs)):
+                        mpos.append(Mpo.ph_onsite(self.mol_list, r"b^\dagger b", imol, iph))
+                self.mol_list.mpos[key] = mpos
+            else:
+                mpos = self.mol_list.mpos[key]
+        
+        elif isinstance(self.mol_list, MolList2):
+            # ph_occupations is actually the occupation of the basis
+            if key not in self.mol_list.mpos:
+                mpos = []
+                for dof in self.mol_list.v_dofs:
+                    mpos.append(
+                        Mpo.general_mpo(self.mol_list,
+                            model={(dof,):[(Op("n",0), 1.)]},
+                            model_translator=ModelTranslator.general_model)
+                        )
+                # the order is v_dofs order, "v_0", "v_1",...
+                self.mol_list.mpos[key] = mpos
+            else:
+                mpos = self.mol_list.mpos[key]
+        
         else:
-            mpos = self.mol_list.mpos[key]
+            assert False
         return self.expectations(mpos)
 
     @property
     def e_occupations(self):
-        if self.mol_list.scheme < 4:
+        if isinstance(self.mol_list, MolList):
+            if self.mol_list.scheme < 4:
+                key = "e_occupations"
+                if key not in self.mol_list.mpos:
+                    mpos = [
+                        Mpo.onsite(self.mol_list, r"a^\dagger a", mol_idx_set={i})
+                        for i in range(self.mol_num)
+                    ]
+                    self.mol_list.mpos[key] = mpos
+                else:
+                    mpos = self.mol_list.mpos[key]
+                return self.expectations(mpos)
+            elif self.mol_list.scheme == 4:
+                # get rdm is very fast
+                rdm = self.calc_reduced_density_matrix()
+                return np.diag(rdm).real
+            else:
+                assert False
+        elif isinstance(self.mol_list, MolList2):
             key = "e_occupations"
             if key not in self.mol_list.mpos:
-                mpos = [
-                    Mpo.onsite(self.mol_list, r"a^\dagger a", mol_idx_set={i})
-                    for i in range(self.mol_num)
-                ]
+                mpos = []
+                for dof in self.mol_list.e_dofs:
+                        mpos.append(
+                            Mpo.general_mpo(self.mol_list,
+                                model={(dof,):[(Op(r"a^\dagger a", 0),1.0)]},
+                                model_translator=ModelTranslator.general_model)
+                            )
+                # the order is e_dofs order
                 self.mol_list.mpos[key] = mpos
             else:
                 mpos = self.mol_list.mpos[key]
             return self.expectations(mpos)
-        elif self.mol_list.scheme == 4:
-            # get rdm is very fast
-            rdm = self.calc_reduced_density_matrix()
-            return np.diag(rdm).real
         else:
             assert False
 
@@ -1330,61 +1484,120 @@ class Mps(MatrixProduct):
         return res[0, :, 0]
 
     def _calc_reduced_density_matrix(self, mp1, mp2):
-        if self.mol_list.scheme < 4:
-            # further optimization is difficult. There are totally N^2 intermediate results to remember.
-            reduced_density_matrix = np.zeros(
-                (self.mol_list.mol_num, self.mol_list.mol_num), dtype=backend.complex_dtype
-            )
-            for i in range(self.mol_list.mol_num):
-                for j in range(self.mol_list.mol_num):
-                    elem = ones((1, 1))
-                    e_idx = -1
-                    for mt_idx, (mt1, mt2) in enumerate(zip(mp1, mp2)):
-                        if self.ephtable.is_electron(mt_idx):
-                            e_idx += 1
-                            axis_idx1 = int(e_idx == i)
-                            axis_idx2 = int(e_idx == j)
-                            sub_mt1 = mt1[:, axis_idx1, :, :]
-                            sub_mt2 = mt2[:, :, axis_idx2, :]
-                            elem = tensordot(elem, sub_mt1, axes=(0, 0))
-                            elem = tensordot(elem, sub_mt2, axes=[(0, 1), (0, 1)])
-                        else:
-                            elem = tensordot(elem, mt1, axes=(0, 0))
-                            elem = tensordot(elem, mt2, axes=[(0, 1, 2), (0, 2, 1)])
-                    reduced_density_matrix[i][j] = elem.flatten()[0]
-        elif self.mol_list.scheme == 4:
-            e_idx = self.mol_list.e_idx()
-            l = ones((1, 1))
-            for i in range(e_idx):
-                l = tensordot(l, mp1[i], axes=(0, 0))
-                l = tensordot(l, mp2[i], axes=([0, 1, 2], [0, 2, 1]))
-            r = ones((1, 1))
-            for i in range(len(self)-1, e_idx, -1):
-                r = tensordot(mp1[i], r, axes=(3, 0))
-                r = tensordot(r, mp2[i], axes=([1, 2, 3], [2, 1, 3]))
-            #       f
-            #       |
-            # S--b--S--g--S
-            # |     |     |
-            # |     c     |
-            # |     |     |
-            # S--a--S--e--S
-            #       |
-            #       d
-            path = [
-                ([0, 1], "ab, adce -> bdce"),
-                ([2, 0], "bdce, bcfg -> defg"),
-                ([1, 0], "defg, eg -> df"),
-            ]
-            reduced_density_matrix = asnumpy(multi_tensor_contract(path, l, mp1[e_idx], mp2[e_idx], r))[1:, 1:]
+        if isinstance(self.mol_list, MolList2):
+            assert mp1 is None and mp2 is None
+            if not self.mol_list.multi_electron:
+                reduced_density_matrix = np.zeros(
+                    (self.mol_list.e_nsite, self.mol_list.e_nsite),
+                    dtype=backend.complex_dtype)
+                for idx in range(self.mol_list.e_nsite):
+                    for jdx in range(idx, self.mol_list.e_nsite):
+                        model = {(f"e_{idx}", f"e_{jdx}"):[(Op(r"a^\dagger", 1),
+                            Op("a",-1), 1.0)]}
+                        mpo = Mpo.general_mpo(self.mol_list, model=model,
+                                model_translator=ModelTranslator.general_model)
+                        reduced_density_matrix[idx, jdx] = self.expectation(mpo)
+                        reduced_density_matrix[jdx, idx] = np.conj(reduced_density_matrix[idx, jdx])
+            else:
+                e_idx = self.mol_list.multi_e_idx
+                l = ones((1, 1))
+                for i in range(e_idx):
+                    mat = self[i].reshape(self[i].shape[0], -1, self[i].shape[-1])
+                    l = tensordot(l, mat, axes=(0, 0))
+                    l = tensordot(l, mat.conj(), axes=([0, 1], [0, 1]))
+                r = ones((1, 1))
+                for i in range(len(self)-1, e_idx, -1):
+                    mat = self[i].reshape(self[i].shape[0], -1, self[i].shape[-1])
+                    r = tensordot(mat, r, axes=(-1, 0))
+                    r = tensordot(r, mat.conj(), axes=([1, 2], [1, 2]))
+                #       f
+                #       |
+                # S--a--S--g--S
+                # |     |     |
+                # |     c     |
+                # |     |     |
+                # S--b--S--e--S
+                #       |
+                #       d
+                path = [
+                    ([0, 1], "ab, afcg -> bfcg"),
+                    ([2, 1], "bfcg, ge -> bfce"),
+                    ([1, 0], "bfce, bdce -> fd"),
+                ]
+                mat = self[e_idx].reshape(self[e_idx].shape[0],
+                        self[e_idx].shape[1], -1, self[e_idx].shape[-1])
+                reduced_density_matrix = asnumpy(multi_tensor_contract(path, l,
+                    mat, mat.conj(), r))
+                # note the different output between MolList scheme4
+                # the 0 state is also included
+
+        elif isinstance(self.mol_list, MolList):
+            if self.mol_list.scheme < 4:
+                # further optimization is difficult. There are totally N^2 intermediate results to remember.
+                reduced_density_matrix = np.zeros(
+                    (self.mol_list.mol_num, self.mol_list.mol_num), dtype=backend.complex_dtype
+                )
+                for i in range(self.mol_list.mol_num):
+                    for j in range(self.mol_list.mol_num):
+                        elem = ones((1, 1))
+                        e_idx = -1
+                        for mt_idx, (mt1, mt2) in enumerate(zip(mp1, mp2)):
+                            if self.ephtable.is_electron(mt_idx):
+                                e_idx += 1
+                                axis_idx1 = int(e_idx == i)
+                                axis_idx2 = int(e_idx == j)
+                                sub_mt1 = mt1[:, axis_idx1, :, :]
+                                sub_mt2 = mt2[:, :, axis_idx2, :]
+                                elem = tensordot(elem, sub_mt1, axes=(0, 0))
+                                elem = tensordot(elem, sub_mt2, axes=[(0, 1), (0, 1)])
+                            else:
+                                elem = tensordot(elem, mt1, axes=(0, 0))
+                                elem = tensordot(elem, mt2, axes=[(0, 1, 2), (0, 2, 1)])
+                        reduced_density_matrix[i][j] = elem.flatten()[0]
+            elif self.mol_list.scheme == 4:
+                e_idx = self.mol_list.e_idx()
+                l = ones((1, 1))
+                for i in range(e_idx):
+                    l = tensordot(l, mp1[i], axes=(0, 0))
+                    l = tensordot(l, mp2[i], axes=([0, 1, 2], [0, 2, 1]))
+                r = ones((1, 1))
+                for i in range(len(self)-1, e_idx, -1):
+                    r = tensordot(mp1[i], r, axes=(3, 0))
+                    r = tensordot(r, mp2[i], axes=([1, 2, 3], [2, 1, 3]))
+                #       f
+                #       |
+                # S--b--S--g--S
+                # |     |     |
+                # |     c     |
+                # |     |     |
+                # S--a--S--e--S
+                #       |
+                #       d
+                path = [
+                    ([0, 1], "ab, adce -> bdce"),
+                    #([2, 0], "bdce, bcfg -> defg"),
+                    #([1, 0], "defg, eg -> df"),
+                    ([2, 1], "bdce, eg -> bdcg"),
+                    ([1, 0], "bdcg, bcfg -> df"),
+                ]
+                reduced_density_matrix = asnumpy(multi_tensor_contract(path, l, mp1[e_idx], mp2[e_idx], r))[1:, 1:]
+            else:
+                assert False
         else:
             assert False
+
         return reduced_density_matrix
 
     def calc_reduced_density_matrix(self) -> np.ndarray:
-        mp1 = [mt.reshape(mt.shape[0], mt.shape[1], 1, mt.shape[2]) for mt in self]
-        mp2 = [mt.reshape(mt.shape[0], 1, mt.shape[1], mt.shape[2]).conj() for mt in self]
-        return self._calc_reduced_density_matrix(mp1, mp2)
+        
+        if isinstance(self.mol_list, MolList):
+            mp1 = [mt.reshape(mt.shape[0], mt.shape[1], 1, mt.shape[2]) for mt in self]
+            mp2 = [mt.reshape(mt.shape[0], 1, mt.shape[1], mt.shape[2]).conj() for mt in self]
+            return self._calc_reduced_density_matrix(mp1, mp2)
+        elif isinstance(self.mol_list, MolList2):
+            return self._calc_reduced_density_matrix(None, None)
+        else:
+            assert False
 
     def calc_vn_entropy(self) -> np.ndarray:
         r"""

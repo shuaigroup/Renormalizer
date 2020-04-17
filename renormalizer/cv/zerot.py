@@ -155,7 +155,7 @@ class SpectraZtCV(SpectraCv):
 
         # this part just be similar with ground state calculation
         qnmat, qnbigl, qnbigr = svd_qn.construct_qnmat(
-            self.cv_mps, self.mpo.ephtable, self.mpo.pbond_list,
+            self.cv_mps, self.mpo.pbond_list,
             addlist, self.method, system)
         xshape = qnmat.shape
         nonzeros = np.sum(qnmat == constrain_qn)

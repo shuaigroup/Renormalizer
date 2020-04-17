@@ -99,6 +99,20 @@ class Mol:
     def sbm(self):
         return self.tunnel != 0
 
+    @property
+    def gs_zpe(self):
+        e = 0.
+        for ph in self.dmrg_phs:
+            e += ph.omega[0]
+        return e/2
+    
+    @property
+    def ex_zpe(self):
+        e = 0.
+        for ph in self.dmrg_phs:
+            e += ph.omega[1]
+        return e/2
+
     def to_dict(self):
         info_dict = OrderedDict()
         info_dict["elocalex"] = self.elocalex

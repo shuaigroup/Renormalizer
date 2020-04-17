@@ -45,8 +45,8 @@ class SpinBosonModel(TdMpsJob):
     def process_mps(self, mps):
         sigma_z = 1 - 2 * mps.e_occupations[0]
         self.sigma_z.append(sigma_z)
-        sigmax_mpo = self.mol_list.get_mpos("sigma_x", partial(Mpo.onsite, opera="sigmax"))
-        sigma_x = mps.expectation(sigmax_mpo)
+        sigma_x_mpo = self.mol_list.get_mpos("sigma_x", partial(Mpo.onsite, opera="sigma_x"))
+        sigma_x = mps.expectation(sigma_x_mpo)
         self.sigma_x.append(sigma_x)
         logger.info(f"sigma_z: {self.sigma_z[-1]}. sigma_x: {self.sigma_x[-1]}")
 
@@ -58,6 +58,6 @@ class SpinBosonModel(TdMpsJob):
         dump_dict["mol list"] = self.mol_list.to_dict()
         dump_dict["tempearture"] = self.temperature.as_au()
         dump_dict["time series"] = self.evolve_times
-        dump_dict["sigmax"] = cast_float(self.sigma_x)
-        dump_dict["sigmaz"] = cast_float(self.sigma_z)
+        dump_dict["sigma_x"] = cast_float(self.sigma_x)
+        dump_dict["sigma_z"] = cast_float(self.sigma_z)
         return dump_dict

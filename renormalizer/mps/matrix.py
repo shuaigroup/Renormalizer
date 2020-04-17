@@ -140,7 +140,7 @@ class Matrix:
         return np.allclose(self.array, np.zeros_like(self.array), atol=atol)
 
     def __hash__(self):
-        return hash(self.array.tobytes())
+        return hash((self.array.shape, self.array.tobytes()))
 
     def __getitem__(self, item):
         res = self.array.__getitem__(item)

@@ -22,7 +22,28 @@ class Property():
         self.prop_res = {}
         for prop_str in prop_strs:
             self.prop_res[prop_str] = []
-        
+
+
+    def calc_properties_braketpair(self, mps):
+        bra, ket = mps.bra_mps, mps.ket_mps
+        for prop_str in self.prop_strs:
+            mpo = self.prop_mpos[prop_str]
+            if prop_str in ["x", "x^2", "n"]:
+                # <bra|op|bra>, <ket|op|ket>
+                res = []
+                if isinstance(mpo, Mpo):
+                    res.append(bra.expectation(mpo, None))
+                    res.append(ket.expectation(mpo, None))
+                elif isinstance(mpo, list):
+                    # mpos
+                    res.append(bra.expectations(mpo))
+                    res.append(ket.expectations(mpo))
+
+                self.prop_res[prop_str].append(res)
+            else:
+                # <bra |op|ket>
+                self.prop_res[prop_str].append(ket.expectation(mpo, bra))
+
 
     def calc_properties(self, mps: Union[Mps, MpDm], 
             mps_conj:Union[Mps, MpDm, None] =None):
@@ -42,7 +63,14 @@ class Property():
                 self.prop_res[prop_str].append(mps.calc_reduced_density_matrix())
             elif prop_str in self.prop_mpos.keys():
                 mpo = self.prop_mpos[prop_str]
-                self.prop_res[prop_str].append(mps.expectation(mpo, mps_conj))
+                if isinstance(mpo, Mpo):
+                    self.prop_res[prop_str].append(mps.expectation(mpo, mps_conj))
+                elif isinstance(mpo, list):
+                    # mpos
+                    assert mps_conj is None
+                    self.prop_res[prop_str].append(mps.expectations(mpo))
+                else:
+                    assert False
             else:
                 # on-the-fly constructed 
                 raise NotImplementedError
