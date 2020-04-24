@@ -566,7 +566,7 @@ class MatrixProduct:
         if isinstance(array, Matrix):
             mt = array.astype(self.dtype)
         else:
-            mt = Matrix.interned(array, self.is_mpo, dtype=self.dtype)
+            mt = Matrix(array, dtype=self.dtype)
         if self.use_dummy_qn:
             mt.sigmaqn = np.zeros(mt.pdim_prod, dtype=np.int)
         else:

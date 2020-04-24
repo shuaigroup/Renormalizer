@@ -387,15 +387,26 @@ class Mps(MatrixProduct):
             return np.array([self.expectation(mpo) for mpo in mpos])
 
         # optimized way, cache for intermediates
-        # id can be used as an efficient hash because of `Matrix` implementation
-        id_to_obj = dict()
+        # hash is used as indeces of the matrices.
+        # The chance for collision (the same hash for two different matrices) is
+        # about 0.9999999999999729 in 1000 matrices
+        hash_to_obj = dict()
+        mpos_hash: List[List] = []
         for mpo in mpos:
+            mpo_hash = []
             for m in mpo:
-                id_to_obj[id(m)] = m
+                m_hash = hash(m)
+                if m_hash not in hash_to_obj:
+                    hash_to_obj[m_hash] = m
+                else:
+                    if not np.allclose(hash_to_obj[m_hash], m.array):
+                        raise RuntimeError("Rare hash collision")
+                mpo_hash.append(m_hash)
+            mpos_hash.append(mpo_hash)
 
         self_conj = self._expectation_conj()
-        l_environ_dict = _construct_freq_environ(mpos, id_to_obj, self, "L", self_conj)
-        r_environ_dict = _construct_freq_environ(mpos, id_to_obj, self, "R", self_conj)
+        l_environ_dict = _construct_freq_environ(mpos_hash, hash_to_obj, self, "L", self_conj)
+        r_environ_dict = _construct_freq_environ(mpos_hash, hash_to_obj, self, "R", self_conj)
         results = []
         for mpo in mpos:
             l_environ, l_idx = _get_freq_environ(l_environ_dict, mpo, "L")
@@ -1654,22 +1665,20 @@ def min_abs(t1, t2):
         return t2
 
 
-def _construct_freq_environ(mpos: List[Mpo], id_to_obj: Dict[int, Matrix], mps: Mps, domain: str, mps_conj):
+def _construct_freq_environ(mpos_hash: List[List[int]], hash_to_obj: Dict[int, Matrix], mps: Mps, domain: str, mps_conj):
     """
     Construct environment tensors that are most frequently shown in the group of MPOs
     """
     assert domain in ["L", "R"]
     # count mpo sequence frequency
     counter = Counter()
-    for mpo in mpos:
-        mpo_ids = []
-        if domain == "L":
-            it = mpo
-        else:
-            it = reversed(mpo)
-        for m in it:
-            mpo_ids.append(id(m))
-            counter.update([tuple(mpo_ids)])
+    for mpo_hash in mpos_hash:
+        for i in range(1, len(mpo_hash)+1):
+            if domain == "L":
+                mpo_seq = mpo_hash[:i]
+            else:
+                mpo_seq = reversed(mpo_hash[-i:])
+            counter.update([tuple(mpo_seq)])
 
     # transform the counter into a list of matrices.
     # The most frequent sequences first. If the same freq, then shorter sequences first
@@ -1677,35 +1686,28 @@ def _construct_freq_environ(mpos: List[Mpo], id_to_obj: Dict[int, Matrix], mps: 
     most_common = list(counter.items())
     most_common.sort(key=lambda x: (-x[1], len(x[0])))
     matrices_list = []
-    id_list = []
-    # a flag to determined when to exit
-    last_n = counter.most_common(1)[0][1]
-    for ids, n in most_common:
+    hash_list = []
+    for hashes, n in most_common:
         # discard unique ones because they do not need to be cached
         if n == 1:
             break
-        # cache approximately ``len(mps)`` sequences
-        # and make sure sequences  with the same length is not divided.
-        if len(mps) < len(matrices_list) and last_n != n:
+        # cache ``len(mps)`` sequences
+        # sequences with the same length may be treated differently.
+        if len(mps) < len(matrices_list):
             break
-        last_n = n
-        id_list.append(ids)
-        matrices_list.append(list(map(id_to_obj.get, ids)))
+        hash_list.append(hashes)
+        matrices_list.append(list(map(hash_to_obj.get, hashes)))
 
     # contract the tensors
-    result = dict()
-    sentinel = xp.ones((1, 1, 1), dtype=backend.real_dtype)
-    for m_ids, matrices in zip(id_list, matrices_list):
-        if len(m_ids) == 1:
-            environ = sentinel
-        else:
-            environ = result[tuple(m_ids[:-1])]
+    result = {(): xp.ones((1, 1, 1), dtype=backend.real_dtype)}
+    for m_hashes, matrices in zip(hash_list, matrices_list):
+        environ = result[tuple(m_hashes[:-1])]
         if domain == "L":
             idx = len(matrices)-1
         else:
             idx = -len(matrices)
         ms, ms_conj = mps[idx], mps_conj[idx]
-        result[tuple(m_ids)] = contract_one_site(environ, ms, matrices[-1], domain=domain, ms_conj=ms_conj)
+        result[tuple(m_hashes)] = contract_one_site(environ, ms, matrices[-1], domain=domain, ms_conj=ms_conj)
     return result
 
 
@@ -1717,19 +1719,16 @@ def _get_freq_environ(environ_dict, mpo, domain):
     else:
         it = reversed(mpo)
 
-    ids = []
+    hashes = []
     for mo in it:
-        ids.append(id(mo))
-        if not tuple(ids) in environ_dict:
-            ids.pop()
+        hashes.append(hash(mo))
+        if not tuple(hashes) in environ_dict:
+            hashes.pop()
             break
     if domain == "L":
-        i = len(ids) - 1
+        i = len(hashes) - 1
     else:
-        i = len(mpo) - len(ids)
+        i = len(mpo) - len(hashes)
 
-    if len(ids) == 0:
-        environ = xp.ones((1, 1, 1), dtype=backend.real_dtype)
-    else:
-        environ = environ_dict[tuple(ids)]
+    environ = environ_dict[tuple(hashes)]
     return environ, i
