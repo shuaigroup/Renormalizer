@@ -3,24 +3,27 @@ import logging
 import numpy as np
 import scipy
 
-from renormalizer.model import MolList
+from renormalizer.model import MolList, MolList2, ModelTranslator
 from renormalizer.model.ephtable import EphTable
 from renormalizer.mps.backend import xp
 from renormalizer.mps.matrix import moveaxis, tensordot, asnumpy, EmptyMatrixError
 from renormalizer.mps.mp import MatrixProduct
 from renormalizer.mps import svd_qn
 from renormalizer.mps.lib import update_cv
-from renormalizer.utils import Quantity
+from renormalizer.lib import bipartite_vertex_cover
+from renormalizer.utils import Quantity, Op
 from renormalizer.utils.elementop import (
     construct_ph_op_dict,
     construct_e_op_dict,
     ph_op_matrix,
 )
-import copy
-import itertools
-
 from renormalizer.utils.utils import roundrobin
 
+import copy
+import itertools
+from typing import List, Tuple, Union
+from collections import defaultdict
+import scipy.sparse
 
 logger = logging.getLogger(__name__)
 
@@ -28,6 +31,694 @@ logger = logging.getLogger(__name__)
 # todo: refactor init
 # the code is hard to understand...... need some closer look
 # a good starting point is to delete the quasi-boson code (gh-25)
+
+def symbolic_mpo(table, factor, algo="Hopcroft-Karp"):
+    r"""
+    A General Compact (Symbolic) MPO Construction Routine
+    
+    Args:
+    
+    table: an operator table with shape (operator nterm, nsite). Each entry contains elementary operators on each site.
+    factor (np.ndarray): one prefactor vector (dim: operator nterm) 
+    algo: the algorithm used to select local ops,
+          "Hopcroft-Karp"(default), "Hungarian", "greedy".
+          The first two are both global optimal and have only minor performance
+          difference. "greedy" should not be used for productive calculation.
+
+    Note:
+    op with the same op.symbol must have the same op.qn and op.factor
+
+    Return:
+    mpo: symbolic mpo
+    mpoqn: quantum number 
+    qntot: total quantum number of the operator 
+    qnidx: the index of the qn
+
+    The idea: 
+
+    the index of the primary ops {0:"I", 1:"a", 2:r"a^\dagger"}
+    
+    for example: H = 2.0 * a_1 a_2^dagger   + 3.0 * a_2^\dagger a_3 + 4.0*a_0^\dagger a_3
+    The column names are the site indeces with 0 and 4 imaginary (see the note below)
+    and the content of the table is the index of primary operators.
+                        s0   s1   s2   s3  s4  factor
+    a_1 a_2^dagger      0    1    2    0   0   2.0
+    a_2^\dagger a_3     0    0    2    1   0   3.0
+    a_1^\dagger a_3     0    2    0    1   0   4.0
+    for convenience the first and last column mean that the operator of the left and right hand of the system is I
+    
+    cut the string to construct the row(left) and column(right) operator and find the duplicated/independent terms 
+                        s0   s1 |  s2   s3  s4 factor
+    a_1 a_2^dagger      0    1  |  2    0   0  2.0
+    a_2^\dagger a_3     0    0  |  2    1   0  3.0
+    a_1^\dagger a_3     0    2  |  0    1   0  4.0
+
+     The content of the table below means matrix elements with basis explained in the notes.
+     In the matrix elements, 1 means combination and 0 means no combination.
+          (2,0,0) (2,1,0) (0,1,0)  -> right side of the above table
+     (0,1)   1       0       0
+     (0,0)   0       1       0
+     (0,2)   0       0       1
+       |
+       v
+     left side of the above table
+     In this case all operators are independent so the content of the matrix is diagonal
+    
+    and select the terms and rearange the table 
+    The selection rule is to find the minimal number of rows+cols that can eliminate the
+    matrix
+                      s1   s2 |  s3 s4 factor
+    a_1 a_2^dagger    0'   2  |  0  0  2.0
+    a_2^\dagger a_3   1'   2  |  1  0  3.0
+    a_1^\dagger a_3   2'   0  |  1  0  4.0
+    0'/1'/2' are three new operators(could be non-elementary)
+    The local mpo is the transformation matrix between 0,0,0 to 0',1',2'.
+    In this case, the local mpo is simply (1, 0, 2)
+    
+    cut the string and find the duplicated/independent terms 
+            (0,0), (1,0)
+     (0',2)   1      0
+     (1',2)   0      1
+     (2',0)   0      1
+    
+    and select the terms and rearrange the table
+    apparently choose the (1,0) column and construct the complementary operator (1',2)+(2',0) is better
+    0'' =  3.0 * (1', 2) + 4.0 * (2', 0)
+                                                 s2     s3 | s4 factor
+    (4.0 * a_1^dagger + 3.0 * a_2^dagger) a_3    0''    1  | 0  1.0
+    a_1 a_2^dagger                               1''    0  | 0  2.0
+    0''/1'' are another two new operators(non-elementary)
+    The local mpo is the transformation matrix between 0',1',2' to 0'',1''
+    
+             (0)
+     (0'',1)  1
+     (1'',0)  1
+    
+    The local mpo is the transformation matrix between 0'',1'' to 0'''
+    """
+    logger.debug(f"symbolic mpo algorithm: {algo}")
+
+    nsite = len(table[0])
+
+    # translate the symbolic operator table to an easy to manipulate numpy array
+    # extract the op symbol, qn, factor to a numpy array
+    symbol_table = np.array([[x.symbol for x in ta] for ta in table])
+    qn_table = np.array([[x.qn for x in ta] for ta in table])
+    factor_table = np.array([[x.factor for x in ta] for ta in table])
+    
+    new_table = np.zeros((len(table), nsite),dtype=np.int64)
+    
+    primary_ops = {}
+    # check that op with the same symbol has the same factor and qn
+    unique_symbol = np.unique(symbol_table)
+    for idx, s in enumerate(unique_symbol):
+        coord = np.nonzero(symbol_table == s)
+        assert np.unique(qn_table[coord]).size == 1
+        assert np.allclose(factor_table[coord], factor_table[coord][0])
+        new_table[coord] = idx
+        primary_ops[idx] = table[coord[0][0]][coord[1][0]]   
+    
+    # combine the same terms but with different factors(add them together)
+    unique_term, unique_inverse = np.unique(new_table, axis=0, return_inverse=True)
+    # it is efficient to vectorize the operation that moves the rows and cols
+    # and sum them together
+    coord = np.array([[newidx, oldidx] for oldidx, newidx in enumerate(unique_inverse)])
+    mask = scipy.sparse.csr_matrix((np.ones(len(coord)), (coord[:,0], coord[:,1])))
+    factor = mask.dot(factor)
+    
+    # add the first and last column for convenience
+    ta = np.zeros((unique_term.shape[0],1),dtype=np.int64)
+    table = np.concatenate((ta, unique_term, ta), axis=1)
+
+    mpo = []
+    mpoqn = [[0]]
+
+    in_ops = [[Op.identity()]]
+    
+    for isite in range(nsite):
+
+        # split table into the row and col part
+        term_row, row_unique_inverse = np.unique(table[:,:2], axis=0, return_inverse=True)
+        term_col, col_unique_inverse = np.unique(table[:,2:], axis=0, return_inverse=True)
+        
+        # get the non_redudant ops
+        # the +1, -1 trick is to use the csr sparse matrix format
+        non_red = scipy.sparse.diags(np.arange(1,table.shape[0]+1), format="csr", dtype=np.int64)
+        coord = np.array([[newidx, oldidx] for oldidx, newidx in enumerate(row_unique_inverse)])
+        mask = scipy.sparse.csr_matrix((np.ones(len(coord), dtype=np.int64), (coord[:,0], coord[:,1])))
+        non_red = mask.dot(non_red)
+        coord = np.array([[oldidx, newidx] for oldidx, newidx in enumerate(col_unique_inverse)])
+        mask = scipy.sparse.csr_matrix((np.ones(len(coord), dtype=np.int64), (coord[:,0], coord[:,1])))
+        non_red = np.asarray(non_red.dot(mask).todense())-1
+
+        # select the reserved ops
+        out_ops = []
+        new_table = []
+        new_factor = []
+        
+        if algo == "greedy":
+            row_select = []
+            col_select = []
+            non_red_duplicate = non_red.copy()
+            # loop until every term is taken care of
+            while not (non_red_duplicate == -1).all():
+                # count the # of interaction in each row and col
+                nint_row = np.sum(non_red_duplicate != -1, axis=1)
+                nint_col = np.sum(non_red_duplicate != -1, axis=0)
+                
+                # obtain the largest index
+                row_idx = np.argmax(nint_row)
+                col_idx = np.argmax(nint_col)
+                
+                if nint_row[row_idx] >= nint_col[col_idx]:
+                    # dealing with row (left side of the table). One row corresponds to multiple cols.
+                    # Produce one out operator and multiple new_table entries
+                    row_select.append(row_idx)
+                    
+                    non_red_duplicate[row_idx, :] = -1
+                else:
+                    # dealing with column (right side of the table). One col correspond to multiple rows.
+                    # Produce multiple out operators and one new_table entry
+                    col_select.append(col_idx)
+
+                    non_red_duplicate[:, col_idx] = -1
+        
+        elif algo == "Hopcroft-Karp" or algo == "Hungarian":
+            
+            bigraph = []
+            if non_red.shape[0] < non_red.shape[1]:
+                for i in range(non_red.shape[0]):
+                    bigraph.append(np.nonzero(non_red[i,:] != -1)[0].tolist())
+                rowbool, colbool = bipartite_vertex_cover(bigraph, algo=algo)
+            else:
+                for i in range(non_red.shape[1]):
+                    bigraph.append(np.nonzero(non_red[:,i] != -1)[0].tolist())
+                colbool, rowbool = bipartite_vertex_cover(bigraph, algo=algo)
+
+            row_select = np.nonzero(rowbool)[0]
+            col_select = np.nonzero(colbool)[0]
+            if len(row_select) > 0:
+                assert np.amax(row_select) < non_red.shape[0]
+            if len(col_select) > 0:
+                assert np.amax(col_select) < non_red.shape[1]
+        else:
+            assert False
+        
+        for row_idx in row_select:
+            # construct out_op
+            # dealing with row (left side of the table). One row corresponds to multiple cols.
+            # Produce one out operator and multiple new_table entries
+            symbol = term_row[row_idx]
+            qn = in_ops[term_row[row_idx][0]][0].qn + primary_ops[term_row[row_idx][1]].qn
+            out_op = Op(symbol, qn, factor=1.0)
+            out_ops.append([out_op])
+            
+            col_link = np.nonzero(non_red[row_idx, :] != -1)[0]
+            stack = np.array([len(out_ops)-1]*len(col_link)).reshape(-1,1)
+            new_table.append(np.hstack((stack,term_col[col_link])))
+            new_factor.append(factor[non_red[row_idx, col_link]])
+
+            non_red[row_idx, :] = -1
+        
+        for col_idx in col_select:
+            out_ops.append([])
+            # complementary operator
+            # dealing with column (right side of the table). One col correspond to multiple rows.
+            # Produce multiple out operators and one new_table entry
+            for i in np.nonzero(non_red[:, col_idx] != -1)[0]:
+                symbol = term_row[i]
+                qn = in_ops[term_row[i][0]][0].qn + primary_ops[term_row[i][1]].qn
+                out_op = Op(symbol, qn, factor=factor[non_red[i, col_idx]])
+                out_ops[-1].append(out_op)
+            
+            new_table.append(np.array([len(out_ops)-1] + list(term_col[col_idx])).reshape(1,-1))
+            new_factor.append(1.0)
+            
+            non_red[:, col_idx] = -1
+            
+        # translate the numpy array back to symbolic mpo
+        mo = [[[] for o in range(len(out_ops))] for i in range(len(in_ops))]
+        moqn = []
+
+        for iop, out_op in enumerate(out_ops):
+            for composed_op in out_op:
+                in_idx = composed_op.symbol[0]
+                symbol = primary_ops[composed_op.symbol[1]].symbol
+                qn = primary_ops[composed_op.symbol[1]].qn
+                if isite != nsite-1:
+                    factor = composed_op.factor
+                else:
+                    factor = composed_op.factor*new_factor[0]
+                new_op = Op(symbol, qn, factor)
+                mo[in_idx][iop].append(new_op)
+            moqn.append(out_op[0].qn)
+
+        mpo.append(mo)
+        mpoqn.append(moqn)
+        # reconstruct the table in new operator 
+        table = np.concatenate(new_table)
+        factor = np.concatenate(new_factor, axis=None)
+           
+        #debug
+        #logger.debug(f"in_ops: {in_ops}")
+        #logger.debug(f"out_ops: {out_ops}")
+        #logger.debug(f"new_factor: {new_factor}")
+        
+        in_ops = out_ops
+   
+    qntot = mpoqn[-1][0] 
+    mpoqn[-1] = [0]
+    qnidx = len(mpo)-1
+    
+    return mpo, mpoqn, qntot, qnidx
+
+
+def _model_translator_Holstein_model_scheme123(mol_list, const=Quantity(0.)):
+    r"""
+    construct a Frenkel-Holstein Model Hamiltonian operator table corresponding
+    to the scheme 1/2/3 but only with omega_e = omega_g and no 3rd order terms
+    
+    Args:
+        mol_list(class: MolList)
+        const (float, complex): constant added to the operator
+
+    Returns:
+        table, factor for `symbolic_mpo`
+    """
+    assert isinstance(mol_list, MolList)
+
+    # the site order: corresponds to scheme1/2/3
+
+    order = {}
+    idx = 0
+    for imol in range(mol_list.mol_num):
+        order[(imol,-1)] = idx
+        idx += 1
+        for jph in range(mol_list[imol].n_dmrg_phs):
+            order[(imol,jph)] = idx
+            idx += 1
+    
+    nsite = len(order)
+    
+    factor = []
+    table = []
+
+    #electronic term
+    for imol in range(mol_list.mol_num):
+        for jmol in range(mol_list.mol_num):
+            ta = [Op.identity() for i in range(nsite)]
+            if imol == jmol:
+                ta[order[(imol,-1)]] = Op(r"a^\dagger a", 0)
+                factor.append(mol_list[imol].elocalex + mol_list[imol].dmrg_e0)
+            else:
+                J = mol_list.j_matrix[imol, jmol]
+                # scheme3 
+                if np.allclose(J, 0.0):
+                    continue
+                ta[order[(imol,-1)]] = Op(r"a^\dagger", 1)
+                ta[order[(jmol,-1)]] = Op("a", -1)
+                factor.append(J)
+
+            table.append(ta)
+    
+    # electron-vibration term
+    for imol in range(mol_list.mol_num):
+        for iph in range(mol_list[imol].n_dmrg_phs):
+            ta = [Op.identity() for i in range(nsite)]
+            ta[order[(imol,-1)]] = Op(r"a^\dagger a", 0)
+            ta[order[(imol,iph)]] = Op("x", 0)
+            table.append(ta)
+
+            factor.append(-mol_list[imol].dmrg_phs[iph].dis[1]*mol_list[imol].dmrg_phs[iph].omega[0]**2)
+
+    # vibration term 
+    for imol in range(mol_list.mol_num):
+        for iph in range(mol_list[imol].n_dmrg_phs):
+            assert mol_list[imol].dmrg_phs[iph].is_simple
+            # kinetic
+            ta = [Op.identity() for i in range(nsite)]
+            ta[order[(imol,iph)]] = Op("p^2",0)
+            factor.append(0.5)
+            table.append(ta)
+            # potential
+            ta = [Op.identity() for i in range(nsite)]
+            ta[order[(imol,iph)]] = Op("x^2",0)
+            factor.append(0.5*mol_list[imol].dmrg_phs[iph].omega[0]**2)
+            table.append(ta)
+    
+    # const
+    if not np.allclose(const.as_au(), 0.):
+        ta = [Op.identity() for i in range(nsite)]
+        factor.append(const.as_au())
+        table.append(ta)
+
+    factor = np.array(factor)
+    logger.debug(f"# of operator terms: {len(table)}")
+    
+    return table, factor
+
+
+def _model_translator_Holstein_model_scheme4(mol_list, const=Quantity(0.)):
+    r"""
+    construct a Frenkel-Holstein Model Hamiltonian operator table corresponding
+    to the scheme 4 but only with omega_e = omega_g and no 3rd order terms
+    
+    Args:
+        mol_list(class: MolList)
+        const (float, complex): constant added to the operator
+
+    Returns:
+        table, factor for `symbolic_mpo`
+    """
+    
+    assert isinstance(mol_list, MolList)
+
+    # the site order corresponds to scheme4
+    order = {}
+    nmol = mol_list.mol_num
+    n_left_mol = nmol // 2
+    
+    idx = 0
+    n_left_ph = 0
+    for imol, mol in enumerate(mol_list):
+        for iph, ph in enumerate(mol.dmrg_phs):
+            assert ph.is_simple
+            if imol < n_left_mol:
+                order[(imol,iph)] = idx
+                n_left_ph += 1
+            else:
+                order[(imol,iph)] = idx+1
+            idx += 1
+    order["e"] = n_left_ph
+        
+    nsite = len(order)
+    
+    factor = []
+    table = []
+    
+    # electronic term
+    for imol in range(mol_list.mol_num):
+        for jmol in range(mol_list.mol_num):
+            ta = [Op.identity() for i in range(nsite)]
+            ta[order["e"]] = Op(rf"a^\dagger_{imol+1} a_{jmol+1}", 0)
+            if imol == jmol:
+                factor.append(mol_list[imol].elocalex + mol_list[imol].dmrg_e0)
+            else:
+                factor.append(mol_list.j_matrix[imol, jmol])
+
+            table.append(ta)
+    
+    # electron-vibration term
+    for imol in range(mol_list.mol_num):
+        for iph in range(mol_list[imol].n_dmrg_phs):
+            ta = [Op.identity() for i in range(nsite)]
+            ta[order["e"]] = Op(rf"a^\dagger_{imol+1} a_{imol+1}", 0)
+            ta[order[(imol,iph)]] = Op("x", 0)
+            table.append(ta)
+
+            factor.append(-mol_list[imol].dmrg_phs[iph].dis[1]*mol_list[imol].dmrg_phs[iph].omega[0]**2)
+
+    # vibration term 
+    for imol in range(mol_list.mol_num):
+        for iph in range(mol_list[imol].n_dmrg_phs):
+            assert mol_list[imol].dmrg_phs[iph].is_simple
+            # kinetic
+            ta = [Op.identity() for i in range(nsite)]
+            ta[order[(imol,iph)]] = Op("p^2", 0)
+            factor.append(0.5)
+            table.append(ta)
+            # potential
+            ta = [Op.identity() for i in range(nsite)]
+            ta[order[(imol,iph)]] = Op("x^2", 0)
+            factor.append(0.5*mol_list[imol].dmrg_phs[iph].omega[0]**2)
+            table.append(ta)
+    
+    # const
+    if not np.allclose(const.as_au(), 0.):
+        ta = [Op.identity() for i in range(nsite)]
+        factor.append(const.as_au())
+        table.append(ta)
+
+    factor = np.array(factor)
+    logger.debug(f"# of operator terms: {len(table)}")
+    
+    return table, factor
+
+
+def _model_translator_sbm(mol_list, const=Quantity(0.)):
+    """
+    construct a spin-boson model operator table
+    """
+    assert isinstance(mol_list, MolList)
+    assert mol_list.mol_num == 1
+    
+    # the site order   
+    order = {}
+    order["spin"] = 0
+    idx = 1
+    for iph in range(mol_list[0].n_dmrg_phs):
+        order[iph] = idx
+        idx += 1
+        
+    nsite = len(order)
+    
+    factor = []
+    table = []
+    
+    # system part
+    ta = [Op.identity() for i in range(nsite)]
+    ta[order["spin"]] = Op("sigma_z", 0)
+    factor.append(mol_list[0].elocalex)
+    table.append(ta)
+
+    ta = [Op.identity() for i in range(nsite)]
+    ta[order["spin"]] = Op("sigma_x", 0)
+    factor.append(mol_list[0].tunnel)
+    table.append(ta)
+
+    # environment part and
+    # system-environment coupling
+    for iph in range(mol_list[0].n_dmrg_phs):
+        assert mol_list[0].dmrg_phs[iph].is_simple
+        # kinetic
+        ta = [Op.identity() for i in range(nsite)]
+        ta[order[iph]] = Op("p^2", 0)
+        factor.append(0.5)
+        table.append(ta)
+        # potential
+        ta = [Op.identity() for i in range(nsite)]
+        ta[order[iph]] = Op("x^2", 0)
+        factor.append(0.5*mol_list[0].dmrg_phs[iph].omega[0]**2)
+        table.append(ta)
+        # coupling
+        ta = [Op.identity() for i in range(nsite)]
+        ta[order["spin"]] = Op("sigma_z", 0)
+        ta[order[iph]] = Op("x", 0)
+        factor.append(-mol_list[0].dmrg_phs[iph].dis[1]*mol_list[0].dmrg_phs[iph].omega[0]**2)
+        table.append(ta)
+    
+    # const
+    if not np.allclose(const.as_au(), 0.):
+        ta = [Op.identity() for i in range(nsite)]
+        factor.append(const.as_au())
+        table.append(ta)
+
+    factor = np.array(factor)
+    logger.debug(f"# of operator terms: {len(table)}")
+   
+    return table, factor
+
+
+def _model_translator_vibronic_model(mol_list, const=Quantity(0.)):
+    r"""
+    construct a general vibronic model operator table
+    according to mol_list.model and mol_list.order
+    """
+
+    assert mol_list.model is not None 
+    assert mol_list.model_translator == ModelTranslator.vibronic_model 
+    
+    factor = []
+    table = []
+    nsite = mol_list.nsite
+    order = mol_list.order
+    model = mol_list.model
+
+    for e_dof, value in model.items():
+        if e_dof == "I":
+            # pure vibrational term (electron part is identity)
+            for v_dof, ops in value.items():
+                for term in ops:
+                    if not np.allclose(term[-1], 0):
+                        ta = [Op.identity() for i in range(nsite)]
+                        for iop, op in enumerate(term[:-1]):
+                            ta[order[v_dof[iop]]] = op
+                        table.append(ta)
+                        factor.append(term[-1])
+
+        else:
+            if order[e_dof[0]] == order[e_dof[1]]:
+                # same site
+                e_idx = (e_dof[0].split("_")[1], e_dof[1].split("_")[1])
+            
+                for v_dof, ops in value.items():
+                
+                    if v_dof == "J":
+                        if not np.allclose(ops, 0):
+                            ta = [Op.identity() for i in range(nsite)]
+                            if list(order.values()).count(order[e_dof[0]]) > 1:
+                                #multi electron site
+                                ta[order[e_dof[0]]] = Op(rf"a^\dagger_{e_idx[0]} a_{e_idx[1]}", 0)
+                            else:
+                                assert e_idx[0] == e_idx[1]
+                                ta[order[e_dof[0]]] = Op(r"a^\dagger a", 0)
+                            table.append(ta)
+                            factor.append(ops)
+                    else:
+                        for term in ops:
+                            if not np.allclose(term[-1], 0):
+                                ta = [Op.identity() for i in range(nsite)]
+                                if list(order.values()).count(order[e_dof[0]]) > 1:
+                                    #multi electron site
+                                    ta[order[e_dof[0]]] = Op(rf"a^\dagger_{e_idx[0]} a_{e_idx[1]}", 0)
+                                else:
+                                    assert e_idx[0] == e_idx[1]
+                                    ta[order[e_dof[0]]] = Op(r"a^\dagger a", 0)
+                                for iop, op in enumerate(term[:-1]):
+                                    ta[order[v_dof[iop]]] = op
+                                table.append(ta)
+                                factor.append(term[-1])
+
+            else:                
+                
+                for v_dof, ops in value.items():
+                
+                    if v_dof == "J":
+                        if not np.allclose(ops, 0):
+                            ta = [Op.identity() for i in range(nsite)]
+                            ta[order[e_dof[0]]] = Op(r"a^\dagger", 1)
+                            ta[order[e_dof[1]]] = Op("a", -1)
+                            table.append(ta)
+                            factor.append(ops)
+                    else:
+                        for term in ops:
+                            if not np.allclose(term[-1], 0):
+                                ta = [Op.identity() for i in range(nsite)]
+                                ta[order[e_dof[0]]] = Op(r"a^\dagger", 1)
+                                ta[order[e_dof[1]]] = Op("a", -1)
+                                for iop, op in enumerate(term[:-1]):
+                                    ta[order[v_dof[iop]]] = op
+                                table.append(ta)
+                                factor.append(term[-1])
+        
+    # const
+    if not np.allclose(const.as_au(), 0.):
+        ta = [Op.identity() for i in range(nsite)]
+        factor.append(const.as_au())
+        table.append(ta)
+    
+    factor = np.array(factor)
+    logger.debug(f"# of operator terms: {len(table)}")
+
+    return table, factor
+
+
+def add_idx(symbol, idx):
+    symbols = symbol.split(" ")
+    for i in range(len(symbols)):
+        symbols[i] = symbols[i]+f"_{idx}"
+    return " ".join(symbols)
+
+
+def _model_translator_general_model(mol_list, const=Quantity(0.)):
+    r"""
+    constructing a general operator table
+    according to mol_list.model and mol_list.order
+    """
+    assert mol_list.model is not None 
+    assert mol_list.model_translator == ModelTranslator.general_model
+    
+    factor = []
+    table = []
+    nsite = mol_list.nsite
+    order = mol_list.order
+    model = mol_list.model
+    
+    # clean up 
+    # for example 
+    # in simple_e case
+    # ("e_0", "e_0"):[(Op("a^\dagger"), Op("a"), factor)] is not a standard
+    # format for general model since "e_0" is a single site, the standard is
+    # ("e_0"):[(Op("a^\dagger a"), factor)]
+    # in multi_e case
+    # ("e_0", "e_1"):[(Op("a^\dagger"), Op("a"), factor)] is not a standard
+    # format for general model since "e_0" "e_1" is a single site, the standard
+    # is ("e_0",):[(Op("a^\dagger_0 a_1"), factor)] 
+    
+    model_new = defaultdict(list)
+    for key, value in model.items():
+        
+        dof_site_idx = [order[k] for k in key]
+        
+        if len(dof_site_idx) != len(set(dof_site_idx)) or mol_list.multi_electron:
+            dofdict = defaultdict(list)
+            for idof, dof in enumerate(key):
+                dofdict[order[dof]].append(idof)
+            
+            new_key = tuple(dofdict.keys())
+            new_value = []
+            for term in value:
+                new_term = []
+                for v in dofdict.values():
+                    symbols = []
+                    qn = 0
+                    for iop in v:
+                        if list(order.values()).count(order[key[iop]]) > 1:
+                            # add the index to the operator in multi elecron case
+                            # two cases, one is "a^\dagger a" on a single e_dof
+                            # another is "a^\dagger" "a" on two different e_dof
+                            symbols.append(add_idx(term[iop].symbol,
+                                key[iop].split("_")[1]))
+                        else:
+                            symbols.append(term[iop].symbol)
+                        qn += term[iop].qn
+                    op = Op(" ".join(symbols), qn)
+                    new_term.append(op)
+                
+                new_term.append(term[-1])
+                new_value.append(tuple(new_term))
+
+            model_new[new_key] += new_value
+        else:
+            model_new[tuple(dof_site_idx)] += value
+
+    model = model_new
+
+    for dof, value in model.items():
+        op_factor = np.array([term[-1] for term in value])
+        nonzero_idx = np.nonzero(np.isclose(op_factor, 0, rtol=1e-5, atol=1e-8) == 0)[0]
+        
+        mapping = {j:i for i,j in enumerate(dof)}
+        for idx in nonzero_idx:
+            term = value[idx]
+            # note that all the list element point to the same identity
+            # it will not destroy the following operation since identity is not changed
+            identity = Op.identity()
+            ta = [term[mapping[isite]] if isite in mapping.keys() else identity for isite in range(nsite)]
+            table.append(ta)
+            factor.append(term[-1])
+        
+    # const
+    if not np.allclose(const.as_au(), 0.):
+        ta = [Op.identity() for i in range(nsite)]
+        factor.append(const.as_au())
+        table.append(ta)
+    
+    factor = np.array(factor)
+    logger.debug(f"# of operator terms: {len(table)}")
+
+    return table, factor
+
 
 def base_convert(n, base):
     """
@@ -201,6 +892,7 @@ class Mpo(MatrixProduct):
     """
     Matrix product operator (MPO)
     """
+
     @classmethod
     def exact_propagator(cls, mol_list: MolList, x, space="GS", shift=0.0):
         """
@@ -399,161 +1091,196 @@ class Mpo(MatrixProduct):
 
     @classmethod
     def onsite(cls, mol_list: MolList, opera, dipole=False, mol_idx_set=None):
-        assert opera in ["a", r"a^\dagger", r"a^\dagger a", "sigmax"]
-        if mol_idx_set is not None:
-            for i in mol_idx_set:
-                assert i in range(mol_list.mol_num)
+        
+        if isinstance(mol_list, MolList2):
+            # the onsite method is tricky for multi electron case in general
+            # for example the creation operator "a^\dagger" is not well defined
+            assert not mol_list.multi_electron
+            qn_dict= {"a":-1, r"a^\dagger":1, r"a^\dagger a":0, "sigma_x":0}
+            if mol_idx_set is None:
+                mol_idx_set = range(len(mol_list.e_dofs))
+            model = {}
+            for idx in mol_idx_set:
+                if dipole:
+                    factor = mol_list.dipole[(f"e_{idx}",)]
+                else:
+                    factor = 1.
+                model[(f"e_{idx}",)] = [(Op(opera, qn_dict[opera]),factor)]
+            
+            mpo = cls.general_mpo(mol_list, model=model,
+                    model_translator=ModelTranslator.general_model)
 
-        if mol_list.scheme == 4:
-            assert not dipole
+        elif isinstance(mol_list, MolList):
+            assert opera in ["a", r"a^\dagger", r"a^\dagger a", "sigma_x"]
+            if mol_idx_set is not None:
+                for i in mol_idx_set:
+                    assert i in range(mol_list.mol_num)
+
+            if mol_list.scheme == 4:
+                assert not dipole
+                mpo = cls()
+                mpo.mol_list = mol_list
+                mpo.qn = [[0]]
+                qn = 0
+                for imol, mol in enumerate(mol_list):
+                    if imol == mol_list.mol_num // 2:
+                        mo = np.zeros((1, mol_list.mol_num+1, mol_list.mol_num+1, 1))
+                        if mol_idx_set is None:
+                            mol_idx_set = list(range(mol_list.mol_num))
+                        for idx in mol_idx_set:
+                            if opera == "a":
+                                mo[0, 0, idx+1, 0] = 1
+                                mpo.qntot = -1
+                            elif opera == r"a^\dagger":
+                                mo[0, idx+1, 0, 0] = 1
+                                mpo.qntot = 1
+                            elif opera == r"a^\dagger a":
+                                mo[0, idx+1, idx+1, 0] = 1
+                                mpo.qntot = 0
+                            elif opera == "sigma_x":
+                                raise NotImplementedError
+                            else:
+                                assert False
+                        qn += mpo.qntot
+                        mpo.qn.append([qn])
+                        mpo.append(mo)
+                    for ph in mol.dmrg_phs:
+                        n = ph.n_phys_dim
+                        mpo.append(np.diag(np.ones(n)).reshape((1, n, n, 1)))
+                        mpo.qn.append([qn])
+                mpo.qnidx = len(mpo) - 1
+                mpo.qn[-1] = [0]
+                return mpo
+            nmols = len(mol_list)
+            if mol_idx_set is None:
+                mol_idx_set = set(np.arange(nmols))
+            mpo_dim = []
+            for imol in range(nmols):
+                mpo_dim.append(2)
+                for ph in mol_list[imol].dmrg_phs:
+                    for iboson in range(ph.nqboson):
+                        if imol != nmols - 1:
+                            mpo_dim.append(2)
+                        else:
+                            mpo_dim.append(1)
+
+            mpo_dim[0] = 1
+            mpo_dim.append(1)
+            # print opera, "operator MPOdim", MPOdim
+
             mpo = cls()
             mpo.mol_list = mol_list
-            mpo.qn = [[0]]
-            qn = 0
-            for imol, mol in enumerate(mol_list):
-                if imol == mol_list.mol_num // 2:
-                    mo = np.zeros((1, mol_list.mol_num+1, mol_list.mol_num+1, 1))
-                    if mol_idx_set is None:
-                        mol_idx_set = list(range(mol_list.mol_num))
-                    for idx in mol_idx_set:
-                        if opera == "a":
-                            mo[0, 0, idx+1, 0] = 1
-                            mpo.qntot = -1
-                        elif opera == r"a^\dagger":
-                            mo[0, idx+1, 0, 0] = 1
-                            mpo.qntot = 1
-                        elif opera == r"a^\dagger a":
-                            mo[0, idx+1, idx+1, 0] = 1
-                            mpo.qntot = 0
-                        elif opera == "sigmax":
-                            raise NotImplementedError
-                        else:
-                            assert False
-                    qn += mpo.qntot
-                    mpo.qn.append([qn])
-                    mpo.append(mo)
-                for ph in mol.dmrg_phs:
-                    n = ph.n_phys_dim
-                    mpo.append(np.diag(np.ones(n)).reshape((1, n, n, 1)))
-                    mpo.qn.append([qn])
-            mpo.qnidx = len(mpo) - 1
-            mpo.qn[-1] = [0]
-            return mpo
-        nmols = len(mol_list)
-        if mol_idx_set is None:
-            mol_idx_set = set(np.arange(nmols))
-        mpo_dim = []
-        for imol in range(nmols):
-            mpo_dim.append(2)
-            for ph in mol_list[imol].dmrg_phs:
-                for iboson in range(ph.nqboson):
-                    if imol != nmols - 1:
-                        mpo_dim.append(2)
+            impo = 0
+            for imol in range(nmols):
+                eop = construct_e_op_dict()
+                mo = np.zeros([mpo_dim[impo], 2, 2, mpo_dim[impo + 1]])
+
+                if imol in mol_idx_set:
+                    if dipole:
+                        factor = mol_list[imol].dipole
                     else:
-                        mpo_dim.append(1)
-
-        mpo_dim[0] = 1
-        mpo_dim.append(1)
-        # print opera, "operator MPOdim", MPOdim
-
-        mpo = cls()
-        mpo.mol_list = mol_list
-        impo = 0
-        for imol in range(nmols):
-            eop = construct_e_op_dict()
-            mo = np.zeros([mpo_dim[impo], 2, 2, mpo_dim[impo + 1]])
-
-            if imol in mol_idx_set:
-                if dipole:
-                    factor = mol_list[imol].dipole
+                        factor = 1.0
                 else:
-                    factor = 1.0
+                    factor = 0.0
+
+                mo[-1, :, :, 0] = factor * eop[opera]
+
+                if imol != 0:
+                    mo[0, :, :, 0] = eop["Iden"]
+                if imol != nmols - 1:
+                    mo[-1, :, :, -1] = eop["Iden"]
+                mpo.append(mo)
+                impo += 1
+
+                for ph in mol_list[imol].dmrg_phs:
+                    for iboson in range(ph.nqboson):
+                        pbond = mol_list.pbond_list[impo]
+                        mo = np.zeros([mpo_dim[impo], pbond, pbond, mpo_dim[impo + 1]])
+                        for ibra in range(pbond):
+                            for idiag in range(mpo_dim[impo]):
+                                mo[idiag, ibra, ibra, idiag] = 1.0
+
+                        mpo.append(mo)
+                        impo += 1
+
+            # quantum number part
+            # len(MPO)-1 = len(MPOQN)-2, the L-most site is R-qn
+            mpo.qnidx = len(mpo) - 1
+
+            totnqboson = 0
+            for ph in mol_list[-1].dmrg_phs:
+                totnqboson += ph.nqboson
+
+            if opera == "a":
+                mpo.qn = (
+                    [[0]]
+                    + [[-1, 0]] * (len(mpo) - totnqboson - 1)
+                    + [[-1]] * (totnqboson + 1)
+                )
+                mpo.qntot = -1
+            elif opera == r"a^\dagger":
+                mpo.qn = (
+                    [[0]]
+                    + [[1, 0]] * (len(mpo) - totnqboson - 1)
+                    + [[1]] * (totnqboson + 1)
+                )
+                mpo.qntot = 1
+            elif opera == r"a^\dagger a":
+                mpo.qn = (
+                    [[0]]
+                    + [[0, 0]] * (len(mpo) - totnqboson - 1)
+                    + [[0]] * (totnqboson + 1)
+                )
+                mpo.qntot = 0
+            elif opera == "sigma_x":
+                mpo.build_empty_qn()
+                mpo.use_dummy_qn = True
             else:
-                factor = 0.0
-
-            mo[-1, :, :, 0] = factor * eop[opera]
-
-            if imol != 0:
-                mo[0, :, :, 0] = eop["Iden"]
-            if imol != nmols - 1:
-                mo[-1, :, :, -1] = eop["Iden"]
-            mpo.append(mo)
-            impo += 1
-
-            for ph in mol_list[imol].dmrg_phs:
-                for iboson in range(ph.nqboson):
-                    pbond = mol_list.pbond_list[impo]
-                    mo = np.zeros([mpo_dim[impo], pbond, pbond, mpo_dim[impo + 1]])
-                    for ibra in range(pbond):
-                        for idiag in range(mpo_dim[impo]):
-                            mo[idiag, ibra, ibra, idiag] = 1.0
-
-                    mpo.append(mo)
-                    impo += 1
-
-        # quantum number part
-        # len(MPO)-1 = len(MPOQN)-2, the L-most site is R-qn
-        mpo.qnidx = len(mpo) - 1
-
-        totnqboson = 0
-        for ph in mol_list[-1].dmrg_phs:
-            totnqboson += ph.nqboson
-
-        if opera == "a":
-            mpo.qn = (
-                [[0]]
-                + [[-1, 0]] * (len(mpo) - totnqboson - 1)
-                + [[-1]] * (totnqboson + 1)
-            )
-            mpo.qntot = -1
-        elif opera == r"a^\dagger":
-            mpo.qn = (
-                [[0]]
-                + [[1, 0]] * (len(mpo) - totnqboson - 1)
-                + [[1]] * (totnqboson + 1)
-            )
-            mpo.qntot = 1
-        elif opera == r"a^\dagger a":
-            mpo.qn = (
-                [[0]]
-                + [[0, 0]] * (len(mpo) - totnqboson - 1)
-                + [[0]] * (totnqboson + 1)
-            )
-            mpo.qntot = 0
-        elif opera == "sigmax":
-            mpo.build_empty_qn()
-            mpo.use_dummy_qn = True
+                assert False
+            mpo.qn[-1] = [0]
         else:
             assert False
-        mpo.qn[-1] = [0]
 
         return mpo
 
     @classmethod
     def ph_onsite(cls, mol_list: MolList, opera: str, mol_idx:int, ph_idx=0):
         assert opera in ["b", r"b^\dagger", r"b^\dagger b"]
-        mpo = cls()
-        mpo.mol_list = mol_list
-        for imol, mol in enumerate(mol_list):
-            if mol_list.scheme < 4:
-                mpo.append(np.eye(2).reshape(1, 2, 2, 1))
-            elif mol_list.scheme == 4:
-                if len(mpo) == mol_list.e_idx():
-                    n = mol_list.mol_num
-                    mpo.append(np.eye(n+1).reshape(1, n+1, n+1, 1))
-            else:
-                assert False
-            iph = 0
-            for ph in mol.dmrg_phs:
-                for iqph in range(ph.nqboson):
-                    ph_pbond = ph.pbond[iqph]
-                    if imol == mol_idx and iph == ph_idx:
-                        mt = ph_op_matrix(opera, ph_pbond)
-                    else:
-                        mt = ph_op_matrix("Iden", ph_pbond)
-                    mpo.append(mt.reshape(1, ph_pbond, ph_pbond, 1))
-                    iph += 1
-        mpo.build_empty_qn()
+        if isinstance(mol_list, MolList2):
+            assert mol_list.map is not None
+            
+            model = {(mol_list.map[(mol_idx, ph_idx)],): [(Op(opera,0), 1.0)]}
+            mpo = cls.general_mpo(mol_list, model=model,
+                    model_translator=ModelTranslator.general_model)
+
+        elif isinstance(mol_list, MolList):
+        
+            mpo = cls()
+            mpo.mol_list = mol_list
+            for imol, mol in enumerate(mol_list):
+                if mol_list.scheme < 4:
+                    mpo.append(np.eye(2).reshape(1, 2, 2, 1))
+                elif mol_list.scheme == 4:
+                    if len(mpo) == mol_list.e_idx():
+                        n = mol_list.mol_num
+                        mpo.append(np.eye(n+1).reshape(1, n+1, n+1, 1))
+                else:
+                    assert False
+                iph = 0
+                for ph in mol.dmrg_phs:
+                    for iqph in range(ph.nqboson):
+                        ph_pbond = ph.pbond[iqph]
+                        if imol == mol_idx and iph == ph_idx:
+                            mt = ph_op_matrix(opera, ph_pbond)
+                        else:
+                            mt = ph_op_matrix("Iden", ph_pbond)
+                        mpo.append(mt.reshape(1, ph_pbond, ph_pbond, 1))
+                        iph += 1
+            mpo.build_empty_qn()
+        
+        else:
+            assert False
+
         return mpo
 
     @classmethod
@@ -573,103 +1300,127 @@ class Mpo(MatrixProduct):
         Note:
             the operator index starts from 0,1,2...
         """
+        if isinstance(mol_list, MolList2):
+            
+            assert mol_list.map is not None
+            qn_dict= {"a":-1, r"a^\dagger":1, r"a^\dagger a":0, "sigma_x":0}
+            
+            key = []
+            ops = []
+            for e_key, e_op in e_opera.items():
+                key.append(f"e_{e_key}")
+                ops.append(Op(e_op, qn_dict[e_op]))
+            for v_key, v_op in ph_opera.items():
+                key.append(mol_list.map[v_key])
+                ops.append(Op(v_op, 0))
+            ops.append(scale.as_au())
+            
+            model = {tuple(key):[tuple(ops)]}
+            mpo = cls.general_mpo(mol_list, model=model,
+                    model_translator=ModelTranslator.general_model)
+            
+            return mpo
 
+        elif isinstance(mol_list, MolList):
+        
+            for i in e_opera.keys():
+                assert i in range(mol_list.mol_num)
+            for j in ph_opera.keys():
+                assert j[0] in range(mol_list.mol_num)
+                assert j[1] in range(mol_list[j[0]].n_dmrg_phs)
 
-        for i in e_opera.keys():
-            assert i in range(mol_list.mol_num)
-        for j in ph_opera.keys():
-            assert j[0] in range(mol_list.mol_num)
-            assert j[1] in range(mol_list[j[0]].n_dmrg_phs)
+            mpo = cls()
+            mpo.mol_list = mol_list
+            mpo.qn = [[0]]
 
-        mpo = cls()
-        mpo.mol_list = mol_list
-        mpo.qn = [[0]]
+            eop = construct_e_op_dict()
 
-        eop = construct_e_op_dict()
-
-        for imol in range(mol_list.mol_num):
-            if mol_list.scheme == 4:
-                if len(mpo) == mol_list.e_idx(0):
-                    pdim = mol_list.mol_num + 1
-                    mo = np.zeros([pdim, pdim])
-                    # can't support general operations due to limitations of scheme4
-                    it = iter(e_opera.items())
-                    if len(e_opera) == 0:
-                        mo = np.diag(np.ones(pdim))
-                        mpo.qn.append(mpo.qn[-1])
-                    elif len(e_opera) == 1:
-                        idx, op = next(it)
-                        if op == r"a^\dagger a":
-                            mo[idx+1, idx+1] = 1
-                            qn = 0
-                        elif op == r"a^\dagger":
-                            mo[idx+1, 0] = 1
-                            qn = 1
-                        elif op == r"a":
-                            mo[0, idx+1] = 1
-                            qn = -1
+            for imol in range(mol_list.mol_num):
+                if mol_list.scheme == 4:
+                    if len(mpo) == mol_list.e_idx(0):
+                        pdim = mol_list.mol_num + 1
+                        mo = np.zeros([pdim, pdim])
+                        # can't support general operations due to limitations of scheme4
+                        it = iter(e_opera.items())
+                        if len(e_opera) == 0:
+                            mo = np.diag(np.ones(pdim))
+                            mpo.qn.append(mpo.qn[-1])
+                        elif len(e_opera) == 1:
+                            idx, op = next(it)
+                            if op == r"a^\dagger a":
+                                mo[idx+1, idx+1] = 1
+                                qn = 0
+                            elif op == r"a^\dagger":
+                                mo[idx+1, 0] = 1
+                                qn = 1
+                            elif op == r"a":
+                                mo[0, idx+1] = 1
+                                qn = -1
+                            else:
+                                assert False
+                            mpo.qn.append([qn])
+                        elif len(e_opera) == 2:
+                            idx1, op1 = next(it)
+                            idx2, op2 = next(it)
+                            assert idx1 != idx2
+                            assert {op1, op2} == {r"a^\dagger", "a"}
+                            if op1 == "a":
+                                mo[idx2+1, idx1+1] = 1
+                            else:
+                                mo[idx1+1, idx2+1] = 1
+                            mpo.qn.append(mpo.qn[-1])
                         else:
                             assert False
-                        mpo.qn.append([qn])
-                    elif len(e_opera) == 2:
-                        idx1, op1 = next(it)
-                        idx2, op2 = next(it)
-                        assert idx1 != idx2
-                        assert {op1, op2} == {r"a^\dagger", "a"}
-                        if op1 == "a":
-                            mo[idx2+1, idx1+1] = 1
-                        else:
-                            mo[idx1+1, idx2+1] = 1
-                        mpo.qn.append(mpo.qn[-1])
-                    else:
-                        assert False
-                    mpo.append(mo.reshape(1, pdim, pdim, 1))
-                # else do nothing. Wait for the right time.
-            else:
-                mo = np.zeros([1, 2, 2, 1])
-
-                if imol in e_opera.keys():
-                    mo[0, :, :, 0] = eop[e_opera[imol]]
-                    if e_opera[imol] == r"a^\dagger":
-                        mpo.qn.append([mpo.qn[-1][0]+1])
-                    elif e_opera[imol] == "a":
-                        mpo.qn.append([mpo.qn[-1][0]-1])
-                    elif e_opera[imol] == r"a^\dagger a":
-                        mpo.qn.append(mpo.qn[-1])
-                    else:
-                        assert False
+                        mpo.append(mo.reshape(1, pdim, pdim, 1))
+                    # else do nothing. Wait for the right time.
                 else:
-                    mo[0, :, :, 0] = eop["Iden"]
+                    mo = np.zeros([1, 2, 2, 1])
+
+                    if imol in e_opera.keys():
+                        mo[0, :, :, 0] = eop[e_opera[imol]]
+                        if e_opera[imol] == r"a^\dagger":
+                            mpo.qn.append([mpo.qn[-1][0]+1])
+                        elif e_opera[imol] == "a":
+                            mpo.qn.append([mpo.qn[-1][0]-1])
+                        elif e_opera[imol] == r"a^\dagger a":
+                            mpo.qn.append(mpo.qn[-1])
+                        else:
+                            assert False
+                    else:
+                        mo[0, :, :, 0] = eop["Iden"]
+                        mpo.qn.append(mpo.qn[-1])
+
+                    mpo.append(mo)
+
+                assert mol_list[imol].no_qboson
+
+                for iph in range(mol_list[imol].n_dmrg_phs):
+                    pbond = mol_list.pbond_list[len(mpo)]
+                    mo = np.zeros([1, pbond, pbond, 1])
+                    phop = construct_ph_op_dict(pbond)
+
+                    if (imol, iph) in ph_opera.keys():
+                        mo[0, :, :, 0] = phop[ph_opera[(imol, iph)]]
+                    else:
+                        mo[0, :, :, 0] = phop["Iden"]
+
                     mpo.qn.append(mpo.qn[-1])
 
-                mpo.append(mo)
-
-            assert mol_list[imol].no_qboson
-
-            for iph in range(mol_list[imol].n_dmrg_phs):
-                pbond = mol_list.pbond_list[len(mpo)]
-                mo = np.zeros([1, pbond, pbond, 1])
-                phop = construct_ph_op_dict(pbond)
-
-                if (imol, iph) in ph_opera.keys():
-                    mo[0, :, :, 0] = phop[ph_opera[(imol, iph)]]
-                else:
-                    mo[0, :, :, 0] = phop["Iden"]
-
-                mpo.qn.append(mpo.qn[-1])
-
-                mpo.append(mo)
+                    mpo.append(mo)
 
 
-        mpo.qnidx = len(mpo) - 1
-        mpo.to_right = False
+            mpo.qnidx = len(mpo) - 1
+            mpo.to_right = False
 
-        mpo.qntot = mpo.qn[-1][0]
-        mpo.qn[-1] = [0]
+            mpo.qntot = mpo.qn[-1][0]
+            mpo.qn[-1] = [0]
 
-        mpo.offset = Quantity(0.)
+            mpo.offset = Quantity(0.)
 
-        return mpo.scale(scale.as_au(), inplace=True)
+            return mpo.scale(scale.as_au(), inplace=True)
+
+        else:
+            assert False
 
 
     @classmethod
@@ -771,65 +1522,6 @@ class Mpo(MatrixProduct):
         mpo.build_empty_qn()
         return mpo
 
-    #def _scheme5(self, mol_list: MolList, elocal_offset, offset):
-    #    # electronic part is in the first site
-    #    # [H_e, op1, op2, ..., opn, 0]
-    #    # scheme5 includes scheme4
-    #    # the electronic operator could be set flexsiblely
-    #    # the vibrational site could be set randomly according to the
-    #    # interaction network
-
-    #    if mol_list.sbm == True:
-    #        # Spin-Boson Model
-    #        # e_op_list = [1:"",2:"",3:""]
-    #        pass
-    #    else:
-    #        # Holstein-Frenkel Model
-    #        if space == "GS":
-    #            e_op_list = [1:"H_e",,"Iden"]
-    #            pdim = 1
-    #        elif space == "EX":
-    #            e_op_list = [1:"H_e", "Iden"]
-    #            pdim = mol_list.mol_num
-    #        elif space == "GS+EX"
-    #            e_op_list = [1:"H_e", "Iden"]
-    #            pdim = mol_list.mol_num + 1
-    #        else:
-    #            raise ValueError("scheme5 input space {space} is not in ['GS','EX','GS+EX']")
-    #
-    #    def get_marginal_phonon_mo(pdim, bdim, ph, iterm, phop):
-    #        # [ w b^d b,  gw(b^d+b), I]
-    #        mo = np.zeros((1, pdim, pdim, bdim))
-    #        mo[0, :, :, 0] = phop[r"b^\dagger b"] * ph.omega[0]
-    #        mo[0, :, :, iterm] = phop[r"b^\dagger + b"] * ph.term10
-    #        mo[0, :, :, -1] = phop[r"Iden"]
-    #        return mo
-
-    #    def get_phonon_mo(pdim, bdim, ph, iterm, phop):
-    #        # [I,       0,     0        , 0]
-    #        # [0,       I,     0        , 0]
-    #        # [0,       0,     I        , 0]
-    #        # [w b^d b, 0,     gw(b^d+b), I]
-    #        mo = np.zeros((bdim, pdim, pdim, bdim))
-    #        mo[-1, :, :, 0] = phop[r"b^\dagger b"] * ph.omega[0]
-    #        for i in range(bdim):
-    #            mo[i, :, :, i] = phop[r"Iden"]
-    #        mo[-1, :, :, iterm] = phop[r"b^\dagger + b"] * ph.term10
-    #        return mo
-
-    #    nmol = mol_list.mol_num
-
-    #    mo_e = np.zeros((1, pdim, pdim, len(e_op_list)))
-    #
-    #    # vibrational site link list
-    #    # left-hand of electronic site
-    #    [(mol.ph,iterm),]
-
-    #    for ph, iterm in enumerate(lvib_list):
-    #        if
-    #    # right hand of electronic site
-    #    [(mol.iph,iterm),]
-
     def _scheme4(self, mol_list: MolList, elocal_offset, offset):
 
         # sbm not supported
@@ -921,6 +1613,64 @@ class Mpo(MatrixProduct):
                     mo = get_phonon_mo(pdim, bdim, ph, phop, islast)
                 self.append(mo.transpose((3, 1, 2, 0))[::-1, :, :, ::-1])
         self.build_empty_qn()
+    
+    @classmethod
+    def general_mpo(cls, mol_list, const=Quantity(0.), model=None, model_translator=None):
+        """
+        MolList2 or MolList with MolList2 parameters
+        """
+        mpo = cls()
+        mpo._general_mpo(mol_list, const=const, model=model,
+                model_translator=model_translator)
+        
+        return mpo
+    
+    def _general_mpo(self, mol_list, const=Quantity(0.), model=None, model_translator=None):
+        # construct a real mpo matrix elements into mpo shell
+        
+        assert len(self) == 0
+    
+        translator_list = {
+                ModelTranslator.Holstein_model_scheme123: _model_translator_Holstein_model_scheme123,
+                ModelTranslator.Holstein_model_scheme4: _model_translator_Holstein_model_scheme4,
+                ModelTranslator.sbm: _model_translator_sbm,
+                ModelTranslator.vibronic_model: _model_translator_vibronic_model,
+                ModelTranslator.general_model: _model_translator_general_model
+                }
+        
+        if model is None:
+            # internal model (model is provided by `mol_list`)
+            table, factor = translator_list[mol_list.model_translator](mol_list, const)
+        else:
+            # external model (model is provided by `model` and `model_translator`. `mol_list` is just a ref.)
+            assert model_translator is not None
+            table, factor = translator_list[model_translator](mol_list.rewrite_model(model, model_translator), const)
+    
+        self.dtype = factor.dtype
+        
+        mpo_symbol, mpo_qn, qntot, qnidx = symbolic_mpo(table, factor)
+        # todo: elegant way to express the symbolic mpo
+        #logger.debug(f"symbolic mpo: \n {np.array(mpo_symbol)}")
+        self.mol_list = mol_list
+        self.qnidx = qnidx
+        self.qntot = qntot
+        self.qn = mpo_qn
+        
+        # evaluate the symbolic mpo
+        assert mol_list.basis is not None
+        basis = mol_list.basis
+        
+        for impo, mo in enumerate(mpo_symbol):
+            pdim = basis[impo].nbas
+            nrow, ncol = len(mo), len(mo[0])
+            mo_mat = np.zeros((nrow, pdim, pdim, ncol), dtype=self.dtype)
+            
+            for irow, icol in itertools.product(range(nrow), range(ncol)):
+                for term in mo[irow][icol]:
+                    mo_mat[irow,:,:,icol] += basis[impo].op_mat(term) 
+    
+            self.append(mo_mat)
+
 
     def __init__(
         self,
@@ -929,6 +1679,7 @@ class Mpo(MatrixProduct):
         elocal_offset=None,
         offset=Quantity(0),
     ):
+
         """
         scheme 1: l to r
         scheme 2: l,r to middle, the bond dimension is smaller than scheme 1
@@ -936,24 +1687,32 @@ class Mpo(MatrixProduct):
         rep (representation) has "star" or "chain"
         please see doc
         """
+        # check the input
         assert rep in ["star", "chain", None]
         if rep is None:
-            assert mol_list.scheme == 4
-
-        if not isinstance(offset, Quantity):
-            raise ValueError("offset must be Quantity object")
-        super(Mpo, self).__init__()
-        if mol_list is None:
-            return
-        if mol_list.pure_hartree:
-            raise ValueError("Can't construct MPO for pure hartree model")
+            assert mol_list.scheme == 4 or isinstance(mol_list, MolList2)
 
         # used in the hybrid TDDMRG/TDH algorithm
         if elocal_offset is not None:
             assert len(elocal_offset) == mol_list.mol_num
+            assert not isinstance(mol_list, MolList2)
+
+        if not isinstance(offset, Quantity):
+            raise ValueError("offset must be Quantity object")
+        super(Mpo, self).__init__()
+        
+        if mol_list is None:
+            return
+        
+        if isinstance(mol_list, MolList2):
+            self.offset = offset
+            self._general_mpo(mol_list, const=-offset)
+            return 
+
+        if mol_list.pure_hartree:
+            raise ValueError("Can't construct MPO for pure hartree model")
 
         self.mol_list = mol_list
-
         self.scheme = scheme = self.mol_list.scheme
 
         if scheme == 4:
@@ -965,7 +1724,6 @@ class Mpo(MatrixProduct):
         self.offset = offset
         j_matrix = self.mol_list.j_matrix
         nmols = len(mol_list)
-
 
         mpo_dim, mpo_qn = get_mpo_dim_qn(mol_list, scheme, rep)
 
@@ -995,9 +1753,9 @@ class Mpo(MatrixProduct):
                 mo[-1, :, :, 1] = eop[r"a^\dagger a"]
             else:
                 assert len(mol_list) == 1
-                mo[-1, :, :, 0] = eop["sigmaz"] * mol.elocalex + eop["sigmax"] * mol.tunnel
+                mo[-1, :, :, 0] = eop["sigma_z"] * mol.elocalex + eop["sigma_x"] * mol.tunnel
                 mo[-1, :, :, -1] = eop["Iden"]
-                mo[-1, :, :, 1] = eop["sigmaz"]
+                mo[-1, :, :, 1] = eop["sigma_z"]
 
             # first column operator
             if imol != 0:
@@ -1297,6 +2055,7 @@ class Mpo(MatrixProduct):
 
                         self.append(mo)
                         impo += 1
+        
         if mol_list.periodic is True:
             if scheme == 2 or scheme == 4:
                 assert not np.allclose(mol_list.j_matrix[0, -1], 0)
@@ -1313,16 +2072,21 @@ class Mpo(MatrixProduct):
                 sup_mpo = self.add(sup_h1.add(sup_h2))
                 self.__dict__ = copy.deepcopy(sup_mpo.__dict__)
 
+
     def _get_sigmaqn(self, idx):
-        if self.ephtable.is_phonon(idx):
-            return np.array([0] * self.pbond_list[idx] ** 2)
-        if self.mol_list.scheme < 4 and self.ephtable.is_electron(idx):
-            return np.array([0, -1, 1, 0])
-        elif self.mol_list.scheme == 4 and self.ephtable.is_electrons(idx):
-            v = np.array([0] + [1] * (self.pbond_list[idx] - 1))
+        if isinstance(self.mol_list, MolList2):
+            v = np.array(self.mol_list.basis[idx].sigmaqn)
             return list((v.reshape(-1, 1) - v.reshape(1, -1)).flatten())
         else:
-            assert False
+            if self.ephtable.is_phonon(idx):
+                return np.array([0] * self.pbond_list[idx] ** 2)
+            if self.mol_list.scheme < 4 and self.ephtable.is_electron(idx):
+                return np.array([0, -1, 1, 0])
+            elif self.mol_list.scheme == 4 and self.ephtable.is_electrons(idx):
+                v = np.array([0] + [1] * (self.pbond_list[idx] - 1))
+                return list((v.reshape(-1, 1) - v.reshape(1, -1)).flatten())
+            else:
+                assert False
 
     @property
     def is_mps(self):
@@ -1361,6 +2125,7 @@ class Mpo(MatrixProduct):
     def apply(self, mp: MatrixProduct, canonicalise: bool=False) -> MatrixProduct:
         # todo: use meta copy to save time, could be subtle when complex type is involved
         # todo: inplace version (saved memory and can be used in `hybrid_exact_propagator`)
+        # the mol_list is the same as the mps.mol_list
         new_mps = self.promote_mt_type(mp.copy())
         if mp.is_mps:
             # mpo x mps
@@ -1455,4 +2220,14 @@ class Mpo(MatrixProduct):
 
     def __matmul__(self, other):
         return self.apply(other)
+
+    @classmethod
+    def from_mp(cls, mol_list, mp):
+        # mpo from matrix product
+        mpo = cls()
+        mpo.mol_list = mol_list
+        for mt in mp:
+            mpo.append(mt)
+        mpo.build_empty_qn()
+        return mpo
 

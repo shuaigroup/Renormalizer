@@ -125,12 +125,15 @@ class SpectraFiniteT(SpectraTdMpsJobBase):
     def init_mps_abs(self):
         dipole_mpo = Mpo.onsite(self.mol_list, r"a^\dagger", dipole=True)
         i_mpo = MpDm.max_entangled_gs(self.mol_list)
+        i_mpo.compress_config = self.icompress_config
         beta = self.temperature.to_beta()
         tp = ThermalProp(i_mpo, self.h_mpo, exact=True, space="GS")
         tp.evolve(None, 1, beta / 2j)
         ket_mpo = tp.latest_mps
         ket_mpo.evolve_config = self.evolve_config
         a_ket_mpo = dipole_mpo.apply(ket_mpo, canonicalise=True)
+        if self.evolve_config.is_tdvp:
+            a_ket_mpo = a_ket_mpo.expand_bond_dimension(self.h_mpo)
         a_ket_mpo.canonical_normalize()
         a_bra_mpo = a_ket_mpo.copy()
         return BraKetPairAbsFiniteT(a_bra_mpo, a_ket_mpo)

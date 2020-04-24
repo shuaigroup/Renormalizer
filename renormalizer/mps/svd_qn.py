@@ -230,11 +230,10 @@ def cvec2cmat(cshape, c, qnmat, nexciton, nroots=1):
     return cstruct
 
 
-def construct_qnmat(mps, ephtable, pbond, addlist, method, system):
+def construct_qnmat(mps, pbond, addlist, method, system):
     """
     construct the quantum number pattern, the structure is as the coefficient
     QN: quantum number list at each bond
-    ephtable : e-ph table 1 is electron and 0 is phonon
     pbond : physical pbond
     addlist : the sigma orbital set
     """
