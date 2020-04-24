@@ -28,9 +28,11 @@ class ThermalProp(TdMpsJob):
             If set to ``"EX"``, then the exact propagation is performed in one exciton space,
             i.e. the vibrations are regarded as displaced oscillators.
         evolve_config (:class:`~renormalizer.utils.EvolveConfig`): config when evolving the MpDm in imaginary time.
+        dump_mps (bool): if dump mps when dumping
         dump_dir (str): the directory for logging and numerical result output.
+        dump_type (str): the format of the dump file, ".npz" or ".json", the former supports numpy.ndarry 
         job_name (str): the name of the calculation job which determines the file name of the logging and numerical result output.
-
+        properties (:class:`~renormalizer.property.Property`) calculate other properties with interface in Property
     """
     def __init__(
         self,
@@ -39,10 +41,12 @@ class ThermalProp(TdMpsJob):
         exact: bool = False,
         space: str = "GS",
         evolve_config: EvolveConfig = None,
+        dump_mps: bool = False, 
         dump_dir: str = None,
         dump_type = ".npz",
         job_name: str = None,
-        properties: Property = None
+        properties: Property = None,
+        auto_expand: bool = True,
     ):
         self.init_mpdm: MpDm = init_mpdm.canonicalise()
         self.h_mpo = h_mpo
@@ -54,13 +58,14 @@ class ThermalProp(TdMpsJob):
         self._ph_occupations_array = []
         self._vn_entropy_array = []
         self.properties = properties
+        self.auto_expand = auto_expand
 
-        super().__init__(evolve_config=evolve_config, dump_dir=dump_dir,
+        super().__init__(evolve_config=evolve_config, dump_mps=dump_mps, dump_dir=dump_dir,
                 dump_type=dump_type, job_name=job_name)
 
     def init_mps(self):
         self.init_mpdm.evolve_config = self.evolve_config
-        if self.evolve_config.is_tdvp:
+        if self.evolve_config.is_tdvp and self.auto_expand:
             self.init_mpdm = self.init_mpdm.expand_bond_dimension(self.h_mpo)
         return self.init_mpdm
 

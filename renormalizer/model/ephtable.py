@@ -21,13 +21,16 @@ class EphTable(tuple):
                 eph_list.append(electron)
                 for ph in mol.dmrg_phs:
                     eph_list.extend([phonon] * ph.nqboson)
-        else:
+        elif scheme == 4:
             for imol, mol in enumerate(mol_list):
                 if imol == len(mol_list) // 2:
                     eph_list.append(electrons)
                 eph_list.extend([phonon] * mol.n_dmrg_phs)
                 for ph in mol.dmrg_phs:
                     assert ph.is_simple
+        else:
+            raise ValueError(f"scheme:{scheme} has no ephtable")
+
         return cls(eph_list)
 
     def is_electron(self, idx):

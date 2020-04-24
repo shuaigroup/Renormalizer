@@ -4,20 +4,25 @@ import numpy as np
 import qutip
 import pytest
 
-from renormalizer.model import Phonon, Mol, MolList
+from renormalizer.model import Phonon, Mol, MolList, MolList2
 from renormalizer.transport.autocorr import TransportAutoCorr
 from renormalizer.utils import Quantity, CompressConfig, EvolveConfig, EvolveMethod, CompressCriteria
 from renormalizer.utils.qutip_utils import get_clist, get_blist, get_hamiltonian, get_qnidx
 
 
-@pytest.mark.parametrize("scheme", (
-        3,
-        4,
+@pytest.mark.parametrize("scheme, mollist2", (
+        [3, False],
+        [4, False],
+        [3, True],
 ))
-def test_autocorr(scheme):
+def test_autocorr(scheme, mollist2):
     ph = Phonon.simple_phonon(Quantity(1), Quantity(1), 2)
     mol = Mol(Quantity(0), [ph])
-    mol_list = MolList([mol] * 5, Quantity(1), scheme)
+    mol_list1 = MolList([mol] * 5, Quantity(1), scheme)
+    if mollist2:
+        mol_list = MolList2.MolList_to_MolList2(mol_list1)
+    else:
+        mol_list = mol_list1
     temperature = Quantity(50000, 'K')
     compress_config = CompressConfig(CompressCriteria.fixed, max_bonddim=24)
     evolve_config = EvolveConfig(EvolveMethod.tdvp_ps, adaptive=True, guess_dt=0.5, adaptive_rtol=1e-3)
@@ -25,7 +30,7 @@ def test_autocorr(scheme):
     ac = TransportAutoCorr(mol_list, temperature, compress_config=compress_config, ievolve_config=ievolve_config, evolve_config=evolve_config)
     ac.evolve(nsteps=5, evolve_time=5)
     corr_real = ac.auto_corr.real
-    exact_real = get_exact_autocorr(mol_list, temperature, ac.evolve_times_array).real
+    exact_real = get_exact_autocorr(mol_list1, temperature, ac.evolve_times_array).real
     atol = 1e-2
     # direct comparison may fail because of different sign
     assert np.allclose(corr_real, exact_real, atol=atol) or np.allclose(corr_real, -exact_real, atol=atol)

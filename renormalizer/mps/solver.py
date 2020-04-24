@@ -164,7 +164,7 @@ def optimize_mps_dmrg(mps, mpo):
 
             # get the quantum number pattern
             qnmat, qnbigl, qnbigr = svd_qn.construct_qnmat(
-                mps, mpo.ephtable, mpo.pbond_list, addlist, method, system
+                mps, mpo.pbond_list, addlist, method, system
             )
             cshape = qnmat.shape
 
