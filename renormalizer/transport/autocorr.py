@@ -9,7 +9,6 @@ from renormalizer.mps.backend import np
 from renormalizer.mps.lib import compressed_sum
 from renormalizer.utils.constant import mobility2au
 from renormalizer.utils import TdMpsJob, Quantity, EvolveConfig, CompressConfig, Op
-from renormalizer.utils.utils import cast_float
 from renormalizer.model import MolList, MolList2, ModelTranslator
 from renormalizer.property import Property
 
@@ -154,8 +153,7 @@ class TransportAutoCorr(TdMpsJob):
         dump_dict["mol list"] = self.mol_list.to_dict()
         dump_dict["temperature"] = self.temperature.as_au()
         dump_dict["time series"] = self.evolve_times
-        dump_dict["auto correlation real"] = cast_float(self.auto_corr.real)
-        dump_dict["auto correlation imag"] = cast_float(self.auto_corr.imag)
+        dump_dict["auto correlation"] = self.auto_corr
         dump_dict["mobility"] = self.calc_mobility()[1]
         if self.properties is not None:
             for prop_str in self.properties.prop_res.keys():

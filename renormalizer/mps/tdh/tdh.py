@@ -13,7 +13,6 @@ import scipy
 from renormalizer.mps.tdh import mflib
 from renormalizer.mps.tdh.propagation import unitary_propagation
 from renormalizer.utils import Quantity
-from renormalizer.utils.utils import cast_float
 from renormalizer.utils.rk import RungeKutta
 
 # This module relies on tdmps which relies on Mps and Mpdm. Be careful on cyclic dependence.
@@ -535,9 +534,9 @@ class Dynamics(TdHartree):
 
     def get_dump_dict(self):
         return {
-            "e": cast_float(self._e_occupations_array),
-            "ph": cast_float(self._ph_occupations_array),
-            "time series": cast_float(self.evolve_times_array)}
+            "e": self._e_occupations_array,
+            "ph": self._ph_occupations_array,
+            "time series": self.evolve_times_array}
 
 
 def construct_intersiteO(mol, idxmol, j_matrixdxmol):

@@ -17,7 +17,7 @@ logger = logging.getLogger(__name__)
 
 
 class TdMpsJob(object):
-    def __init__(self, evolve_config: EvolveConfig = None, dump_mps: bool=False, dump_dir: str=None, dump_type=".npz", job_name: str=None):
+    def __init__(self, evolve_config: EvolveConfig = None, dump_mps: bool=False, dump_dir: str=None, job_name: str=None):
         logger.info(f"Creating TDMPS job. dump_dir: {dump_dir}. job_name: {job_name}")
         if evolve_config is None:
             logger.debug("using default evolve config")
@@ -31,8 +31,6 @@ class TdMpsJob(object):
         self.info_interval = 1
         self.dump_mps = dump_mps
         self.dump_dir = dump_dir
-        assert dump_type in [".npz",".json"]
-        self.dump_type = dump_type
         self.job_name = job_name
         mps = self.init_mps()
         if mps is None:
@@ -168,20 +166,16 @@ class TdMpsJob(object):
             raise ValueError("Dump dir or job name not set")
         d = self.get_dump_dict()
         os.makedirs(self.dump_dir, exist_ok=True)
-        file_path = os.path.join(self.dump_dir, self.job_name + self.dump_type)
+        file_path = os.path.join(self.dump_dir, self.job_name + ".npz")
         bak_path = file_path + ".bak"
         if os.path.exists(file_path):
             # in case of shutdown while dumping
             if os.path.exists(bak_path):
                 os.remove(bak_path)
             os.rename(file_path, bak_path)
-        if self.dump_type == ".json":
-            with open(file_path, "w") as fout:
-                json.dump(d, fout, indent=2)
-        elif self.dump_type == ".npz":
-            np.savez(file_path, **d)
-        else:
-            raise ValueError(f"self.dump_type={self.dump_type} is invalid")
+
+        np.savez(file_path, **d)
+
         if os.path.exists(bak_path):
             os.remove(bak_path)
 
