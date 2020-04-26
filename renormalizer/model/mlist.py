@@ -10,8 +10,8 @@ import numpy as np
 from renormalizer.model.ephtable import EphTable
 from renormalizer.model.mol import Mol, Phonon
 from renormalizer.utils import Quantity, Op
-from renormalizer.utils.utils import cast_float
 from renormalizer.utils import basis as ba
+
 
 class ModelTranslator(Enum):
     """
@@ -529,7 +529,7 @@ class MolList:
         info_dict["electron phonon table"] = self.ephtable
         info_dict["mol list"] = [mol.to_dict() for mol in self.mol_list]
         if self.j_constant is None:
-            info_dict["J matrix"] = cast_float(self.j_matrix)
+            info_dict["J matrix"] = self.j_matrix
         else:
             info_dict["J constant"] = self.j_constant.as_au()
         return info_dict

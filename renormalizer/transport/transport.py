@@ -13,7 +13,6 @@ from scipy.linalg import logm
 from renormalizer.mps import Mpo, Mps, MpDm, MpDmFull, SuperLiouville, ThermalProp, load_thermal_state
 from renormalizer.model import MolList
 from renormalizer.utils import TdMpsJob, Quantity, CompressConfig, EvolveConfig
-from renormalizer.utils.utils import cast_float
 
 import numpy as np
 
@@ -60,6 +59,8 @@ class ChargeTransport(TdMpsJob):
             at each evolution time step.
         e_occupations_array (np.ndarray): calculated electron occupations in real space on each site for each evolution time step.
         ph_occupations_array (np.ndarray): calculated phonon occupations on each site for each evolution time step.
+        reduced_density_matrices (list): calculated reduced density matrices of the electron for each evolution time step.
+            Only available when ``rdm`` is set to ``True``.
         k_occupations_array (np.ndarray): calculated electron occupations in momentum (k) space
             on each site for each evolution time step. Only available when ``rdm`` is set to ``True``.
             The basis transformation is based on:
@@ -259,21 +260,14 @@ class ChargeTransport(TdMpsJob):
         dump_dict["other info"] = self.custom_dump_info
         # make np array json serializable
         dump_dict["r square array"] = self.r_square_array
-        dump_dict["electron occupations array"] = cast_float(self.e_occupations_array)
-        dump_dict["phonon occupations array"] = cast_float(self.ph_occupations_array)
-        dump_dict["k occupations array"] = cast_float(self.k_occupations_array)
+        dump_dict["electron occupations array"] = self.e_occupations_array
+        dump_dict["phonon occupations array"] = self.ph_occupations_array
+        dump_dict["k occupations array"] = self.k_occupations_array
         dump_dict["eph entropy"] = self.eph_vn_entropy_array
-        dump_dict["bond entropy"] = np.array(self.bond_vn_entropy_array).tolist()
-        # dump_dict["elocalex arrays"] = [list(e) for e in self.elocalex_arrays]
-        # dump_dict["j arrays"] = [list(j) for j in self.j_arrays]
-        dump_dict["coherent length array"] = cast_float(self.coherent_length_array)
+        dump_dict["bond entropy"] = self.bond_vn_entropy_array
+        dump_dict["coherent length array"] = self.coherent_length_array
         if self.reduced_density_matrices:
-            dump_dict["final reduced density matrix real"] = cast_float(
-                self.reduced_density_matrices[-1].real
-            )
-            dump_dict["final reduced density matrix imag"] = cast_float(
-                self.reduced_density_matrices[-1].imag
-            )
+            dump_dict["reduced density matrices"] = self.reduced_density_matrices[-1]
         dump_dict["time series"] = list(self.evolve_times)
         return dump_dict
 

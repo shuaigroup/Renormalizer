@@ -8,6 +8,7 @@ import numpy as np
 
 logger = logging.getLogger(__name__)
 
+
 class VibronicModelDynamics(TdMpsJob):
     r"""
     Vibronic Hamiltonian Dynamics
@@ -27,7 +28,6 @@ class VibronicModelDynamics(TdMpsJob):
             init_condition = None, 
             dump_mps: bool = False,
             dump_dir: str = None,
-            dump_type = ".npz",
             job_name: str = None,
         ):
 
@@ -53,7 +53,7 @@ class VibronicModelDynamics(TdMpsJob):
         self.autocorr_time = []
 
         super().__init__(evolve_config=evolve_config, dump_mps=dump_mps, dump_dir=dump_dir,
-                dump_type=dump_type, job_name=job_name)
+                job_name=job_name)
     
 
     def init_mps(self):

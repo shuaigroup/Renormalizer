@@ -5,7 +5,6 @@ import numpy as np
 from renormalizer.mps import MpDm, Mpo
 from renormalizer.mps.tdh import unitary_propagation
 from renormalizer.utils import TdMpsJob, Quantity, EvolveConfig
-from renormalizer.utils.utils import cast_float
 from renormalizer.property import Property
 
 logger = logging.getLogger(__name__)
@@ -30,7 +29,6 @@ class ThermalProp(TdMpsJob):
         evolve_config (:class:`~renormalizer.utils.EvolveConfig`): config when evolving the MpDm in imaginary time.
         dump_mps (bool): if dump mps when dumping
         dump_dir (str): the directory for logging and numerical result output.
-        dump_type (str): the format of the dump file, ".npz" or ".json", the former supports numpy.ndarry 
         job_name (str): the name of the calculation job which determines the file name of the logging and numerical result output.
         properties (:class:`~renormalizer.property.Property`) calculate other properties with interface in Property
     """
@@ -43,7 +41,6 @@ class ThermalProp(TdMpsJob):
         evolve_config: EvolveConfig = None,
         dump_mps: bool = False, 
         dump_dir: str = None,
-        dump_type = ".npz",
         job_name: str = None,
         properties: Property = None,
         auto_expand: bool = True,
@@ -61,7 +58,7 @@ class ThermalProp(TdMpsJob):
         self.auto_expand = auto_expand
 
         super().__init__(evolve_config=evolve_config, dump_mps=dump_mps, dump_dir=dump_dir,
-                dump_type=dump_type, job_name=job_name)
+                job_name=job_name)
 
     def init_mps(self):
         self.init_mpdm.evolve_config = self.evolve_config
