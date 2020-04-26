@@ -15,8 +15,6 @@
 # Author: Qiming Sun <osirpt.sun@gmail.com>
 #
 
-from __future__ import print_function
-
 import numpy
 import h5py
 import tempfile

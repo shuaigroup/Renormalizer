@@ -6,7 +6,6 @@ from functools import partial
 from renormalizer.model import MolList
 from renormalizer.mps import Mpo, Mps
 from renormalizer.utils import TdMpsJob, Quantity, CompressConfig
-from renormalizer.utils.utils import cast_float
 
 
 logger = logging.getLogger(__name__)
@@ -58,6 +57,6 @@ class SpinBosonModel(TdMpsJob):
         dump_dict["mol list"] = self.mol_list.to_dict()
         dump_dict["tempearture"] = self.temperature.as_au()
         dump_dict["time series"] = self.evolve_times
-        dump_dict["sigma_x"] = cast_float(self.sigma_x)
-        dump_dict["sigma_z"] = cast_float(self.sigma_z)
+        dump_dict["sigma_x"] = self.sigma_x
+        dump_dict["sigma_z"] = self.sigma_z
         return dump_dict

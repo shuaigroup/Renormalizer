@@ -6,7 +6,7 @@ from renormalizer.mps import Mpo, MpDm, ThermalProp
 from renormalizer.spectra.base import SpectraTdMpsJobBase
 from renormalizer.mps.mps import BraKetPair
 from renormalizer.utils import CompressConfig, EvolveConfig
-from renormalizer.utils.utils import cast_float
+
 import os
 import logging
 
@@ -110,8 +110,7 @@ class SpectraFiniteT(SpectraTdMpsJobBase):
         dump_dict = dict()
         dump_dict['temperature'] = self.temperature.as_au()
         dump_dict['time series'] = self.evolve_times
-        dump_dict['autocorr_real'] = cast_float(self.autocorr.real)
-        dump_dict['autocorr_imag'] = cast_float(self.autocorr.imag)
+        dump_dict['autocorr'] = self.autocorr
         return dump_dict
 
     def stop_evolve_criteria(self):
