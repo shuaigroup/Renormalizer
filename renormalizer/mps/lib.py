@@ -24,6 +24,10 @@ class Environ:
     def _construct(self, mps, mpo, domain=None, mps_conj=None):
 
         assert domain in ["L", "R", None]
+
+        if mps_conj is None:
+            mps_conj = mps.conj()
+
         if domain is None:
             self._construct(mps, mpo, "L", mps_conj)
             self._construct(mps, mpo, "R", mps_conj)
@@ -37,7 +41,7 @@ class Environ:
 
         tensor = sentinel
         for idx in range(start, end, inc):
-            tensor = self.addone(tensor, mps, mpo, idx, domain, mps_conj)
+            tensor = contract_one_site(tensor, mps[idx], mpo[idx], domain, ms_conj=mps_conj[idx])
             self.write(domain, idx, tensor)
 
     def write_l_sentinel(self, mps):
@@ -71,106 +75,107 @@ class Environ:
             else:
                 sitelist = range(len(MPS) - 1, siteidx - 1, -1)
             for imps in sitelist:
-                itensor = self.addone(itensor, MPS, MPO, imps, domain)
+                itensor = contract_one_site(itensor, MPS[imps], MPO[imps], domain)
         elif method == "Enviro":
             itensor = self.read(domain, siteidx)
         elif method == "System":
             if itensor is None:
                 offset = -1 if domain == "L" else 1
                 itensor = self.read(domain, siteidx + offset)
-            itensor = self.addone(itensor, MPS, MPO, siteidx, domain)
+            itensor = contract_one_site(itensor, MPS[siteidx], MPO[siteidx], domain)
             self.write(domain, siteidx, itensor)
 
         return itensor
-
-    def addone(self, intensor, MPS, MPO, isite, domain, mps_conj=None):
-        """
-        add one MPO/MPS(MPO) site
-                 _   _
-                | | | |
-        S-S-    | S-|-S-
-        O-O- or | O-|-O- (the ancillary bond is traced)
-        S-S-    | S-|-S-
-                |_| |_|
-        """
-        assert domain in ["L", "R"]
-        ms = MPS[isite].array
-        mo = MPO[isite].array
-        if mps_conj is None:
-            ms_conj = ms.conj()
-        else:
-            ms_conj = mps_conj[isite].array
-        if domain == "L":
-            assert intensor.shape[0] == ms_conj.shape[0]
-            assert intensor.shape[1] == mo.shape[0]
-            assert intensor.shape[2] == ms.shape[0]
-            """
-                           l
-            S-a-S-f    O-a-O-f
-                d          d
-            O-b-O-g or O-b-O-g
-                e          e
-            S-c-S-h    O-c-O-h
-                           l
-            """
-
-            if MPS[isite].ndim == 3:
-                path = [
-                    ([0, 1], "abc, adf -> bcdf"),
-                    ([2, 0], "bcdf, bdeg -> cfeg"),
-                    ([1, 0], "cfeg, ceh -> fgh"),
-                ]
-            elif MPS[isite].ndim == 4:
-                path = [
-                    ([0, 1], "abc, adlf -> bcdlf"),
-                    ([2, 0], "bcdlf, bdeg -> clfeg"),
-                    ([1, 0], "clfeg, celh -> fgh"),
-                ]
-            else:
-                raise ValueError(
-                    "MPS ndim at %d is not 3 or 4, got %s" % (isite, mo.ndim)
-                )
-            outtensor = multi_tensor_contract(path, intensor, ms_conj, mo, ms)
-
-        else:
-            assert intensor.shape[0] == ms_conj.shape[-1]
-            assert intensor.shape[1] == mo.shape[-1]
-            assert intensor.shape[2] == ms.shape[-1]
-            """
-                           l
-            -f-S-a-S    -f-S-a-S
-               d           d
-            -g-O-b-O or -g-O-b-O
-               e           e
-            -h-S-c-S    -h-S-c-S
-                           l
-            """
-
-            if MPS[isite].ndim == 3:
-                path = [
-                    ([0, 1], "fda, abc -> fdbc"),
-                    ([2, 0], "fdbc, gdeb -> fcge"),
-                    ([1, 0], "fcge, hec -> fgh"),
-                ]
-            elif MPS[isite].ndim == 4:
-                path = [
-                    ([0, 1], "fdla, abc -> fdlbc"),
-                    ([2, 0], "fdlbc, gdeb -> flcge"),
-                    ([1, 0], "flcge, helc -> fgh"),
-                ]
-            else:
-                raise ValueError(
-                    "MPS ndim at %d is not 3 or 4, got %s" % (isite, mo.ndim)
-                )
-            outtensor = multi_tensor_contract(path, ms_conj, intensor, mo, ms)
-
-        return outtensor
 
     def write(self, domain, siteidx, tensor):
         self._virtual_disk[(domain, siteidx)] = asnumpy(tensor)
 
     def read(self, domain: str, siteidx: int):
         return asxp(self._virtual_disk[(domain, siteidx)])
+
+
+def contract_one_site(environ, ms, mo, domain, ms_conj=None):
+    """
+    contract one MPO/MPS(MPDM) site
+             _   _
+            | | | |
+    S-S-    | S-|-S-
+    O-O- or | O-|-O- (the ancillary bond is traced)
+    S-S-    | S-|-S-
+            |_| |_|
+    """
+    assert domain in ["L", "R"]
+    if isinstance(ms, Matrix):
+        ms = ms.array
+    if isinstance(mo, Matrix):
+        mo = mo.array
+    if ms_conj is None:
+        ms_conj = ms.conj()
+    if domain == "L":
+        assert environ.shape[0] == ms_conj.shape[0]
+        assert environ.shape[1] == mo.shape[0]
+        assert environ.shape[2] == ms.shape[0]
+        """
+                       l
+        S-a-S-f    O-a-O-f
+            d          d
+        O-b-O-g or O-b-O-g
+            e          e
+        S-c-S-h    O-c-O-h
+                       l
+        """
+
+        if ms.ndim == 3:
+            path = [
+                ([0, 1], "abc, adf -> bcdf"),
+                ([2, 0], "bcdf, bdeg -> cfeg"),
+                ([1, 0], "cfeg, ceh -> fgh"),
+            ]
+        elif ms.ndim == 4:
+            path = [
+                ([0, 1], "abc, adlf -> bcdlf"),
+                ([2, 0], "bcdlf, bdeg -> clfeg"),
+                ([1, 0], "clfeg, celh -> fgh"),
+            ]
+        else:
+            raise ValueError(
+                f"MPS ndim is not 3 or 4, got {mo.ndim}"
+            )
+        outtensor = multi_tensor_contract(path, environ, ms_conj, mo, ms)
+
+    else:
+        assert environ.shape[0] == ms_conj.shape[-1]
+        assert environ.shape[1] == mo.shape[-1]
+        assert environ.shape[2] == ms.shape[-1]
+        """
+                       l
+        -f-S-a-S    -f-S-a-S
+           d           d
+        -g-O-b-O or -g-O-b-O
+           e           e
+        -h-S-c-S    -h-S-c-S
+                       l
+        """
+
+        if ms.ndim == 3:
+            path = [
+                ([0, 1], "fda, abc -> fdbc"),
+                ([2, 0], "fdbc, gdeb -> fcge"),
+                ([1, 0], "fcge, hec -> fgh"),
+            ]
+        elif ms.ndim == 4:
+            path = [
+                ([0, 1], "fdla, abc -> fdlbc"),
+                ([2, 0], "fdlbc, gdeb -> flcge"),
+                ([1, 0], "flcge, helc -> fgh"),
+            ]
+        else:
+            raise ValueError(
+                f"MPS ndim is not 3 or 4, got {mo.ndim}"
+            )
+        outtensor = multi_tensor_contract(path, ms_conj, environ, mo, ms)
+
+    return outtensor
 
 
 def select_basis(qnset, Sset, qnlist, Mmax, percent=0):

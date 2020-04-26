@@ -12,21 +12,7 @@ logger = logging.getLogger(__name__)
 
 class Matrix:
 
-    _mo_dict = weakref.WeakValueDictionary()  # dummy value
-
-    @classmethod
-    def interned(cls, array, is_mpo, dtype):
-        new_matrix = cls(array, dtype)
-        if is_mpo:
-            h = hash(new_matrix)
-            old_matrix = cls._mo_dict.get(h, None)
-            if old_matrix is not None:
-                assert allclose(old_matrix.array, new_matrix.array)
-                return old_matrix
-            cls._mo_dict[h] = new_matrix
-        return new_matrix
-
-    def __init__(self, array, dtype=None, is_full_mpdm=False):
+    def __init__(self, array, dtype=None):
         assert array is not None
         array = asnumpy(array)
         if dtype == backend.real_dtype:
@@ -40,7 +26,6 @@ class Matrix:
         self.array: np.ndarray = np.asarray(array, dtype=dtype)
         self.original_shape = self.array.shape
         self.sigmaqn = None
-        self.is_full_mpdm = is_full_mpdm
         backend.running = True
 
     def __getattr__(self, item):
