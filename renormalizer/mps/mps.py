@@ -526,8 +526,8 @@ class Mps(MatrixProduct):
         r_environ_dict = _construct_freq_environ(mpos_hash, hash_to_obj, self, "R", self_conj)
         results = []
         for mpo in mpos:
-            l_environ, l_idx = _get_freq_environ(l_environ_dict, mpo, "L")
-            r_environ, r_idx = _get_freq_environ(r_environ_dict, mpo, "R")
+            l_environ, l_idx = _get_freq_environ(l_environ_dict, mpo, "L", np.inf)
+            r_environ, r_idx = _get_freq_environ(r_environ_dict, mpo, "R", len(mpo)-l_idx-1)
             for i in range(l_idx+1, r_idx):
                 l_environ = contract_one_site(l_environ, self[i], mpo[i], "L", self_conj[i])
             results.append(complex(l_environ.flatten() @ r_environ.flatten()))  # cast to python type
@@ -1924,7 +1924,7 @@ def _construct_freq_environ(mpos_hash: List[List[int]], hash_to_obj: Dict[int, M
     return result
 
 
-def _get_freq_environ(environ_dict, mpo, domain):
+def _get_freq_environ(environ_dict, mpo, domain, max_length):
     assert domain in ["L", "R"]
 
     if domain == "L":
@@ -1935,7 +1935,7 @@ def _get_freq_environ(environ_dict, mpo, domain):
     hashes = []
     for mo in it:
         hashes.append(hash(mo))
-        if not tuple(hashes) in environ_dict:
+        if (not tuple(hashes) in environ_dict) or (max_length < len(hashes)):
             hashes.pop()
             break
     if domain == "L":

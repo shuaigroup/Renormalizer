@@ -15,6 +15,13 @@ from renormalizer.tests import parameter
         [
             Mpo.intersite(parameter.mol_list, {i: "a", i + 1: r"a^\dagger"}, {})
             for i in range(parameter.mol_list.mol_num - 1)
+        ],
+        [
+            Mpo.intersite(parameter.mol_list, {i: "a", i + 1: r"a^\dagger"}, {})
+            for i in range(parameter.mol_list.mol_num - 1)
+        ] + [
+            Mpo.intersite(parameter.mol_list, {i: "a"}, {})
+            for i in range(parameter.mol_list.mol_num - 1)
         ]
 ))
 def test_expectations(mpos):
