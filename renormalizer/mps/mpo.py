@@ -1090,7 +1090,7 @@ class Mpo(MatrixProduct):
         return mpo
 
     @classmethod
-    def onsite(cls, mol_list: MolList, opera, dipole=False, mol_idx_set=None):
+    def onsite(cls, mol_list: MolList, opera, dipole=False, mol_idx_set=None,nrd=False):
         
         if isinstance(mol_list, MolList2):
             # the onsite method is tricky for multi electron case in general
@@ -1115,6 +1115,78 @@ class Mpo(MatrixProduct):
             if mol_idx_set is not None:
                 for i in mol_idx_set:
                     assert i in range(mol_list.mol_num)
+
+            #  NAC operator part
+            if nrd:
+                assert opera in ["a"]
+                nmols = len(mol_list)
+                if mol_idx_set is None:
+                    mol_idx_set = set(np.arange(nmols))
+                mpo_dim = []
+                for imol in range(nmols):
+                    mpo_dim.append(2)  # re
+                    for ph in mol_list[imol].dmrg_phs:
+                        mpo_dim.append(3)
+
+                mpo_dim[0] = 1
+                mpo_dim.append(1)
+
+
+                mpo = cls()
+                mpo.mol_list = mol_list
+                impo = 0
+                for imol in range(nmols):
+                    pbond = mol_list.pbond_list[impo]
+                    eop = construct_e_op_dict()
+                    mo = np.zeros([mpo_dim[impo], pbond, pbond, mpo_dim[impo + 1]])
+                    mo[-1, :, :, -1] = eop["Iden"]
+                    mo[-1, :, :, -2] = eop["a"]
+                    if imol != 0:
+                        mo[0, :, :, 0] = eop["Iden"]
+                    mpo.append(mo)
+                    impo += 1
+                    nphss = len(mol_list[imol].dmrg_phs)  # number of phonons considered
+                    for iph in range(len(mol_list[imol].dmrg_phs)):  # use iph instead of ph
+                        pbond = mol_list.pbond_list[impo]
+                        phop = construct_ph_op_dict(pbond)
+                        mo = np.zeros([mpo_dim[impo], pbond, pbond, mpo_dim[impo + 1]])
+                        mo[0, :, :, 0] = phop["Iden"]
+                        mo[1, :, :, 0] = mol_list[imol].dmrg_phs[iph].nac[1] * np.sqrt(
+                            0.5 * mol_list[imol].dmrg_phs[iph].omega[0]) * (phop["b"] - phop[r"b^\dagger"])
+                        if imol != nmols - 1:
+                            mo[-1, :, :, -1] = phop["Iden"]
+                        if iph != nphss - 1:
+                            # print(impo)
+                            mo[-2, :, :, -2] = phop["Iden"]
+                        mpo.append(mo)
+                        impo += 1
+
+                # quantum number part
+                # len(MPO)-1 = len(MPOQN)-2, the L-most site is R-qn
+                mpo.qnidx = len(mpo) - 1
+
+                totnqboson = 0
+                for ph in mol_list[-1].dmrg_phs:
+                    totnqboson += ph.nqboson
+
+                if opera == "a":
+                    mpo.qn = [[0]]
+                    for jmol in range(nmols):
+                        mpo.qn += [[-1, -1, 0]]
+                        nphss = len(mol_list[jmol].dmrg_phs)  # number of phonons considered
+                        for jphs in range(nphss):
+                            if jphs != nphss - 1:
+                                mpo.qn += [[-1, -1, 0]]
+                            else:
+                                if jmol != nmols - 1:
+                                    mpo.qn += [[-1, 0]]
+                                else:
+                                    mpo.qn += [[-1]]
+                    mpo.qntot = -1
+                    mpo.qn[1] = [0, -1, 0]
+                mpo.qn[-1] = [0]
+
+                return mpo
 
             if mol_list.scheme == 4:
                 assert not dipole
