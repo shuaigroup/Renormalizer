@@ -71,7 +71,7 @@ class Phonon(object):
         omega,
         displacement,
         n_phys_dim: int =None,
-        nac=None
+        nac=None,
         force3rd=None,
         nqboson=1,
         qbtrunc=0.0,
