@@ -32,7 +32,10 @@ class SpectraZeroT(SpectraTdMpsJobBase):
         optimize_config=None,
         evolve_config=None,
         offset=Quantity(0),
+        nonradiativedecay=False
     ):
+        self.nonradiativedecay = nonradiativedecay
+
         if optimize_config is None:
             self.optimize_config = OptimizeConfig()
         else:
@@ -47,7 +50,17 @@ class SpectraZeroT(SpectraTdMpsJobBase):
             operator = "a"
         else:
             operator = r"a^\dagger"
-        dipole_mpo = Mpo.onsite(self.mol_list, operator, dipole=True)
+
+
+        if self.nonradiativedecay:
+            dipole_mpo = Mpo.onsite(self.mol_list, operator, dipole=True, nrd =True) # H1_mpo
+        else:
+            dipole_mpo = Mpo.onsite(self.mol_list, operator, dipole=True)
+
+
+
+
+
         a_ket_mps = dipole_mpo.apply(self.get_imps(), canonicalise=True)
         a_ket_mps.canonical_normalize()
         a_ket_mps.evolve_config = self.evolve_config

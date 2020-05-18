@@ -36,8 +36,10 @@ class SpectraExact(SpectraTdMpsJobBase):
         offset=Quantity(0),
         ex_shift=0,
         gs_shift=0,
+        nonradiativedecay=False
     ):
         # != 0 cases not tested
+        self.nonradiativedecay = nonradiativedecay
         assert ex_shift == gs_shift == 0
         assert temperature == 0
         if spectratype == "emi":
@@ -71,7 +73,13 @@ class SpectraExact(SpectraTdMpsJobBase):
             operator = "a"
         else:
             operator = r"a^\dagger"
-        dipole_mpo = Mpo.onsite(self.mol_list, operator, dipole=True)
+
+        if self.nonradiativedecay:
+            dipole_mpo = Mpo.onsite(self.mol_list, operator, dipole=True, nrd =True) # H1_mpo
+        else:
+            dipole_mpo = Mpo.onsite(self.mol_list, operator, dipole=True)
+
+
         if self.temperature != 0:
             beta = self.temperature.to_beta()
             # print "beta=", beta

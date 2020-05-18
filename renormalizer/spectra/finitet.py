@@ -36,7 +36,9 @@ class SpectraFiniteT(SpectraTdMpsJobBase):
         gs_shift=0,
         dump_dir: str=None,
         job_name=None,
+        nonradiativedecay=None
     ):
+        self.nonradiativedecay = nonradiativedecay
         self.temperature = temperature
         self.insteps = insteps
         self.gs_shift = gs_shift
@@ -65,7 +67,14 @@ class SpectraFiniteT(SpectraTdMpsJobBase):
             return self.init_mps_abs()
 
     def init_mps_emi(self):
-        dipole_mpo = Mpo.onsite(self.mol_list, "a", dipole=True)
+        if self.nonradiativedecay:
+            dipole_mpo = Mpo.onsite(self.mol_list, "a", dipole=True, nrd=True) # H1_mpo
+        else:
+            dipole_mpo = Mpo.onsite(self.mol_list, "a", dipole=True)
+
+
+
+
         i_mpo = MpDm.max_entangled_ex(self.mol_list)
         i_mpo.compress_config = self.icompress_config
         if self.job_name is None:

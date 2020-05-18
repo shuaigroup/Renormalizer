@@ -49,6 +49,7 @@ def custom_mol_list(
     dis=None,
     hartrees=None,
     nmols=3,
+    nac= None
 ) -> MolList:
     if custom_j_matrix is None:
         custom_j_matrix = _j_matrix
@@ -68,7 +69,7 @@ def custom_mol_list(
     ph_list = [
         Phonon(*args)
         for args in zip(
-            omega, displacement, n_phys_dim, force3rd, nqboson, qbtrunc, hartrees
+            omega, displacement, n_phys_dim, nac,force3rd, nqboson, qbtrunc, hartrees
         )
     ]
     return MolList([Mol(elocalex, ph_list, dipole_abs)] * nmols, custom_j_matrix)
