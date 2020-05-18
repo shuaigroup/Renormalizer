@@ -65,6 +65,8 @@ def custom_mol_list(
         dis = displacement_quantities
     if hartrees is None:
         hartrees = [False, False]
+    if hartrees is None:
+        hartrees = [None, None]
     displacement = [[Quantity(0), dis[0]], [Quantity(0), dis[1]]]
     ph_list = [
         Phonon(*args)
