@@ -684,7 +684,9 @@ def _model_translator_general_model(mol_list, const=Quantity(0.)):
                         qn += term[iop].qn
                     op = Op(" ".join(symbols), qn)
                     new_term.append(op)
-                
+
+                if isinstance(term[-1], Quantity):
+                    raise TypeError("term factor should be float instead of Quantity")
                 new_term.append(term[-1])
                 new_value.append(tuple(new_term))
 
@@ -1647,6 +1649,7 @@ class Mpo(MatrixProduct):
             table, factor = translator_list[model_translator](mol_list.rewrite_model(model, model_translator), const)
     
         self.dtype = factor.dtype
+        self.rep = "star"
         
         mpo_symbol, mpo_qn, qntot, qnidx = symbolic_mpo(table, factor)
         # todo: elegant way to express the symbolic mpo
