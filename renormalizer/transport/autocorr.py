@@ -22,6 +22,7 @@ class TransportAutoCorr(TdMpsJob):
             evolve_config=None, dump_dir: str=None, job_name: str=None, properties: Property = None,):
         self.mol_list = mol_list
         self.h_mpo = Mpo(mol_list)
+        logger.info(f"Bond dim of h_mpo: {self.h_mpo.bond_dims}")
         if j_oper is None:
             self.j_oper = self._construct_flux_operator()
         else:
@@ -72,11 +73,6 @@ class TransportAutoCorr(TdMpsJob):
             j_oper = compressed_sum(j_list, batchsize=10)
         
         elif isinstance(self.mol_list, MolList2):
-            
-            # In multi_electron case, the zero-exciton state is not guaranteed to be added as
-            # scheme4, it is more flexiable depending on the definition of
-            # mol_list.order and mol_list.model
-            assert not self.mol_list.multi_electron
             
             e_nsite = self.mol_list.n_edofs
             model = {}

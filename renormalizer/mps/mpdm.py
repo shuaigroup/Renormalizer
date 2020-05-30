@@ -150,21 +150,14 @@ class MpDm(MpDmBase):
         mps = Mps.gs(mol_list, max_entangled=True)
         # the creation operator \\sum_i a^\\dagger_i
         if isinstance(mol_list, MolList):
-            ex_mps = Mpo.onsite(mol_list, r"a^\dagger").apply(mps)
+            ex_mpo = Mpo.onsite(mol_list, r"a^\dagger")
         else:
             model = {}
-            if not mol_list.multi_electron:
-                for dof in mol_list.e_dofs:
-                    model[(dof,)] = [(Op("a^\dagger",1), 1.0)]
-            else:
-                bas = mol_list.basis[mol_list.multi_e_idx]
-                assert bas.sigmaqn == [0,] + [1,] * (bas.nbas - 1)
-                for dof_idx in range(1, mol_list.n_edofs):
-                    model[(f"e_{dof_idx}","e_0")] = [(Op(r"a^\dagger",1),
-                        Op("a",0), 1.0)]
-            ex_mps = Mpo.general_mpo(mol_list, model=model,
-                    model_translator=ModelTranslator.general_model).apply(mps)
+            for dof in mol_list.e_dofs:
+                model[(dof,)] = [(Op("a^\dagger", 1), 1.0)]
+            ex_mpo = Mpo.general_mpo(mol_list, model=model, model_translator=ModelTranslator.general_model)
 
+        ex_mps = ex_mpo @ mps
         if normalize:
             ex_mps.normalize(1.0)
         return cls.from_mps(ex_mps)

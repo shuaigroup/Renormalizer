@@ -20,7 +20,7 @@ def f(mol_list, run_qutip=True):
     mpo = Mpo(mol_list, offset=Quantity(e))
     
     if run_qutip:
-        # calculate exact result in ZT. FT result is exactly the same
+        # calculate result in ZT. FT result is exactly the same
         TIME_LIMIT = 10
         QUTIP_STEP = 0.01
         N_POINTS = TIME_LIMIT / QUTIP_STEP + 1

@@ -5,18 +5,21 @@ from typing import Dict, List
 
 class BasisSet:
     r"""
-    the class for local basis set
+    the parent class for local basis set
+
     Args:
-        nbas (int): # of the basis set
+        nbas (int): number of dimension of the basis set
         sigmaqn (List(int)): the qn of each basis
+        multi_dof (bool) : if multiple dof is contained in this basis
     """
-    def __init__(self, nbas: int, sigmaqn: List[int]):
+    def __init__(self, nbas: int, sigmaqn: List[int], multi_dof=False):
         assert type(nbas) is int
         self.nbas = nbas
 
         for qn in sigmaqn:
             assert type(qn) is int
         self.sigmaqn = sigmaqn
+        self.multi_dof = multi_dof
     
     def __repr__(self):
         return f"(nbas: {self.nbas}, qn: {self.sigmaqn})"
@@ -28,6 +31,7 @@ class BasisSet:
 class BasisSHO(BasisSet):
     """
     simple harmonic oscillator basis set
+
     Args:
         omega (float): the frequency of the oscillator.
         x0 (float): the origin of the harmonic oscillator. Default = 0.
@@ -130,6 +134,7 @@ class BasisMultiElectron(BasisSet):
     r"""
     The basis set for multi electronic state on one single site,
     the basis order is ["e_0", "e_1", "e_2",...]
+
     Args:
         nstate (int): the # of electronic states
         sigmaqn (List(int)): the sigmaqn of each basis
@@ -138,7 +143,7 @@ class BasisMultiElectron(BasisSet):
     def __init__(self, nstate, sigmaqn: List[int]):
         
         assert len(sigmaqn) == nstate
-        super().__init__(nstate, sigmaqn)
+        super().__init__(nstate, sigmaqn, True)
 
     def op_mat(self, op):
         
@@ -150,8 +155,10 @@ class BasisMultiElectron(BasisSet):
         op_symbol = op_symbol.split(" ")
         
         if len(op_symbol) == 1:
-            assert op_symbol[0] == "I"
-            mat = np.eye(self.nbas)
+            if op_symbol[0] == "I":
+                mat = np.eye(self.nbas)
+            elif op_symbol[0] == "a" or op_symbol[0] == r"a^\dagger":
+                raise ValueError(f"op_symbol:{op_symbol} is not supported. Try use BasisMultiElectronVac.")
             
         elif len(op_symbol) == 2:
             op_symbol1, op_symbol2 = op_symbol
@@ -161,16 +168,81 @@ class BasisMultiElectron(BasisSet):
             mat = np.zeros((self.nbas, self.nbas))
             
             if op_symbol1_term == r"a^\dagger" and op_symbol2_term == "a":
-            
                 mat[int(op_symbol1_idx), int(op_symbol2_idx)] = 1.
-            
             elif op_symbol1_term == r"a" and op_symbol2_term == r"a^\dagger":
-                
                 mat[int(op_symbol2_idx), int(op_symbol1_idx)] = 1.
-
             else:
                 assert False
         else:
+            raise ValueError(f"op_symbol:{op_symbol} is not supported")
+
+        return mat * op_factor
+
+
+class BasisMultiElectronVac(BasisSet):
+    r"""
+    Another basis set for multi electronic state on one single site.
+    Vacuum state is included.
+    The basis order is [vacuum, "e_0", "e_1", "e_2",...].
+    sigma qn is [0, 1, 1, 1, ...]
+
+    Args:
+        nstate (int): the number of electronic states without counting the vacuum state.
+        dof_idx (list): the indices of the electronic dofs used to define the whole model
+        that are represented by this basis. The default value is ``list(range(nstate))``.
+        The arg is necessary when you have multiple basis of this class in the model.
+    """
+
+    def __init__(self, nstate, dof_idx=None):
+
+        sigmaqn = [0] + [1] * nstate
+        if dof_idx is None:
+            dof_idx = list(range(nstate))
+        # map external dof index into internal dof index
+        # the index 0 is reserved for vacuum
+        self.dof_idx_map = {k: v+1 for v, k in enumerate(dof_idx)}
+        super().__init__(nstate+1, sigmaqn, True)
+
+    def _split_sym_idx(self, op_symbol):
+        op_symbol_term, op_symbol_idx = op_symbol.split("_")
+        op_symbol_idx = self.dof_idx_map[int(op_symbol_idx)]
+        return op_symbol_term, op_symbol_idx
+
+    def op_mat(self, op):
+
+        if isinstance(op, Op):
+            op_symbol, op_factor = op.symbol, op.factor
+        else:
+            op_symbol, op_factor = op, 1.0
+
+        op_symbol = op_symbol.split(" ")
+
+        mat = None
+        if len(op_symbol) == 1:
+            op_symbol = op_symbol[0]
+            if op_symbol == "I":
+                mat = np.eye(self.nbas)
+            else:
+                mat = np.zeros((self.nbas, self.nbas))
+                op_symbol_term, op_symbol_idx = self._split_sym_idx(op_symbol)
+                if op_symbol_term == r"a^\dagger":
+                    mat[op_symbol_idx, 0] = 1.
+                elif op_symbol_term == r"a":
+                    mat[0, op_symbol_idx] = 1.
+
+        elif len(op_symbol) == 2:
+            op_symbol1, op_symbol2 = op_symbol
+            op_symbol1_term, op_symbol1_idx = self._split_sym_idx(op_symbol1)
+            op_symbol2_term, op_symbol2_idx = self._split_sym_idx(op_symbol2)
+
+            mat = np.zeros((self.nbas, self.nbas))
+
+            if op_symbol1_term == r"a^\dagger" and op_symbol2_term == "a":
+                mat[op_symbol1_idx, op_symbol2_idx] = 1.
+            elif op_symbol1_term == r"a" and op_symbol2_term == r"a^\dagger":
+                mat[op_symbol2_idx, op_symbol1_idx] = 1.
+
+        if mat is None:
             raise ValueError(f"op_symbol:{op_symbol} is not supported")
 
         return mat * op_factor
@@ -211,7 +283,9 @@ class BasisHalfSpin(BasisSet):
     r"""
     The basis the for 1/2 spin DoF
     """
-    def __init__(self, sigmaqn:List[int]=[0,0]):
+    def __init__(self, sigmaqn:List[int]=None):
+        if sigmaqn is None:
+            sigmaqn = [0, 0]
         super().__init__(2, sigmaqn)
 
     def op_mat(self, op):
