@@ -50,18 +50,13 @@ class TdMpsJob(object):
 
     def evolve(self, evolve_dt=None, nsteps=None, evolve_time=None):
         '''
-        Parameters:
-            evolve_dt :
-                the time step to run `process_mps(self, mps)` to obtain the
-                properties
-            nsteps: int
-                the total number of evolution steps
-            evolve_time:
-                the total evolution time
+        Args:
+            evolve_dt (float): the time step to run `evolve_single_step` and `process_mps`.
+            nsteps (int): the total number of evolution steps
+            evolve_time (float): the total evolution time
         
-        Notes:
-            evolve_dt math: `\times` nsteps = evolve_time 
-            otherwise nsteps has a higher priority
+        .. Notes::
+            ``evolve_dt`` math: `\times` ``nsteps`` = ``evolve_time``,  otherwise nsteps has a higher priority.
         '''
         # deal with arguments
         if (evolve_dt is not None) and  (nsteps is not None) and (evolve_time is not None):
@@ -150,14 +145,17 @@ class TdMpsJob(object):
 
     def evolve_single_step(self, evolve_dt):
         """
+        Evolve the mps for a single step with step size ``evolve_dt``.
+
         :return: new mps after the evolution
         """
         raise NotImplementedError
 
     def get_dump_dict(self):
         """
+        Obtain calculated properties to dump in ``dict`` type.
 
-        :return: return a (ordered) dict to dump as json or npz
+        :return: return a (ordered) dict to dump as npz
         """
         raise NotImplementedError
 

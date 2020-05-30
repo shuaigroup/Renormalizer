@@ -29,17 +29,19 @@ class InitElectron(Enum):
     relaxed = "analytically relaxed phonon(s)"
 
 
-class ChargeTransport(TdMpsJob):
+class ChargeDiffusionDynamics(TdMpsJob):
     r"""
-    Simulate charge diffusion by TD-DMRG.
+    Simulate charge diffusion dynamics by TD-DMRG. It is possible to obtain mobility from the simulation,
+    but care must be taken to ensure that mean square displacement grows linearly with time.
 
     Args:
-        mol_list (:class:`~renormalizer.model.MolList`): system information.
-        temperature (:class:`~renormalizer.utils.Quantity`): simulation temperature. Default is zero temperature.
-        compress_config (:class:`~renormalizer.utils.CompressConfig`): config when compressing MPS.
-        evolve_config (:class:`~renormalizer.utils.EvolveConfig`): config when evolving MPS.
+        mol_list (:class:`~renormalizer.model.mlist.MolList`): system information.
+        temperature (:class:`~renormalizer.utils.quantity.Quantity`): simulation temperature. Default is zero temperature.
+        compress_config (:class:`~renormalizer.utils.configs.CompressConfig`): config when compressing MPS.
+        evolve_config (:class:`~renormalizer.utils.configs.EvolveConfig`): config when evolving MPS.
         stop_at_edge (bool): whether stop when charge has diffused to the boundary of the system. Default is ``True``.
-        init_electron (:class:`~renormalizer.utils.InitElectron`): the method to prepare the initial state.
+        init_electron (:class:`~renormalizer.transport.transport.InitElectron`):
+            the method to prepare the initial state.
         rdm (bool): whether calculate reduced density matrix and k-space representation for the electron.
             Default is ``False`` because usually the calculation is time consuming.
             Using scheme 4 might partly solve the problem.
@@ -113,8 +115,8 @@ class ChargeTransport(TdMpsJob):
         # entropy at each bond
         self.bond_vn_entropy_array = []
         self.coherent_length_array = []
-        super(ChargeTransport, self).__init__(evolve_config=evolve_config,
-                dump_dir=dump_dir, job_name=job_name)
+        super(ChargeDiffusionDynamics, self).__init__(evolve_config=evolve_config,
+                                                      dump_dir=dump_dir, job_name=job_name)
         assert self.mpo is not None
 
         self.elocalex_arrays = []
@@ -271,7 +273,7 @@ class ChargeTransport(TdMpsJob):
         dump_dict["time series"] = list(self.evolve_times)
         return dump_dict
 
-    def is_similar(self, other: "ChargeTransport", rtol=1e-3):
+    def is_similar(self, other: "ChargeDiffusionDynamics", rtol=1e-3):
         all_close_with_tol = partial(np.allclose, rtol=rtol, atol=1e-3)
         if len(self.evolve_times) != len(other.evolve_times):
             return False

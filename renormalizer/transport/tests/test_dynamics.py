@@ -9,7 +9,7 @@ import pytest
 from renormalizer.model import Phonon, Mol, MolList
 from renormalizer.mps import Mps, Mpo, ThermalProp, MpDm, MpDmFull
 from renormalizer.mps.solver import optimize_mps
-from renormalizer.transport import ChargeTransport
+from renormalizer.transport import ChargeDiffusionDynamics
 from renormalizer.utils import Quantity
 from renormalizer.utils import (
     BondDimDistri,
@@ -33,7 +33,7 @@ def test_zt_init_state():
     mpo = Mpo(mol_list)
     mps = Mps.random(mol_list, 1, 10)
     optimize_mps(mps, mpo)
-    ct = ChargeTransport(mol_list)
+    ct = ChargeDiffusionDynamics(mol_list)
     assert mps.angle(ct.latest_mps) == pytest.approx(1)
 
 
@@ -45,7 +45,7 @@ def test_ft_init_state():
     init_mpdm = MpDm.max_entangled_ex(mol_list)
     tp = ThermalProp(init_mpdm, mpo, space="EX", exact=True)
     tp.evolve(nsteps=20, evolve_time=temperature.to_beta() / 2j)
-    ct = ChargeTransport(mol_list, temperature=temperature)
+    ct = ChargeDiffusionDynamics(mol_list, temperature=temperature)
     tp_mpdm = MpDmFull.from_mpdm(tp.latest_mps)
     ct_mpdm = MpDmFull.from_mpdm(ct.latest_mps)
     assert tp_mpdm.angle(ct_mpdm) == pytest.approx(1)
@@ -61,7 +61,7 @@ def test_ft_init_state():
 @pytest.mark.parametrize("scheme", (3, 4))
 def test_bandlimit_zero_t(method, evolve_dt, nsteps, rtol, scheme):
     evolve_config = EvolveConfig(method)
-    ct = ChargeTransport(
+    ct = ChargeDiffusionDynamics(
         band_limit_mol_list.switch_scheme(scheme),
         evolve_config=evolve_config,
     )
@@ -76,7 +76,7 @@ def test_bandlimit_zero_t(method, evolve_dt, nsteps, rtol, scheme):
 def test_adaptive_zero_t(method):
     np.random.seed(0)
     evolve_config = EvolveConfig(method=method, guess_dt=0.1, adaptive=True)
-    ct = ChargeTransport(
+    ct = ChargeDiffusionDynamics(
         band_limit_mol_list, evolve_config=evolve_config, stop_at_edge=True
     )
     ct.evolve(evolve_dt=5.)
@@ -90,7 +90,7 @@ def test_gaussian_bond_dim():
         max_bonddim=10,
     )
     evolve_config = EvolveConfig(guess_dt=0.1, adaptive=True)
-    ct = ChargeTransport(
+    ct = ChargeDiffusionDynamics(
         band_limit_mol_list,
         compress_config=compress_config,
         evolve_config=evolve_config,
@@ -143,13 +143,13 @@ def test_reduced_density_matrix(
         scheme=3,
     )
 
-    ct3 = ChargeTransport(
+    ct3 = ChargeDiffusionDynamics(
         mol_list3, temperature=Quantity(temperature, "K"), stop_at_edge=False, rdm=True
     )
     ct3.evolve(evolve_dt, nsteps)
 
     mol_list4 = mol_list3.switch_scheme(4)
-    ct4 = ChargeTransport(
+    ct4 = ChargeDiffusionDynamics(
         mol_list4, temperature=Quantity(temperature, "K"), stop_at_edge=False, rdm=True
     )
     ct4.evolve(evolve_dt, nsteps)
@@ -176,9 +176,9 @@ def test_similar(
         Quantity(j_constant_value, "eV"),
         scheme=3,
     )
-    ct1 = ChargeTransport(mol_list)
+    ct1 = ChargeDiffusionDynamics(mol_list)
     ct1.evolve(evolve_dt, nsteps)
-    ct2 = ChargeTransport(mol_list)
+    ct2 = ChargeDiffusionDynamics(mol_list)
     ct2.evolve(evolve_dt + 1e-5, nsteps)
     assert ct1.is_similar(ct2)
 
@@ -201,11 +201,11 @@ def test_evolve(
         Quantity(j_constant_value, "eV"),
         scheme=3,
     )
-    ct1 = ChargeTransport(mol_list, stop_at_edge=False)
+    ct1 = ChargeDiffusionDynamics(mol_list, stop_at_edge=False)
     half_nsteps = nsteps // 2
     ct1.evolve(evolve_dt, half_nsteps)
     ct1.evolve(evolve_dt, nsteps - half_nsteps)
-    ct2 = ChargeTransport(mol_list, stop_at_edge=False)
+    ct2 = ChargeDiffusionDynamics(mol_list, stop_at_edge=False)
     ct2.evolve(evolve_dt, nsteps)
     assert ct1.is_similar(ct2)
     assert_iterable_equal(ct1.get_dump_dict(), ct2.get_dump_dict())
@@ -243,9 +243,9 @@ def test_band_limit_finite_t(
         Quantity(j_constant_value, "eV"),
         scheme=scheme,
     )
-    ct1 = ChargeTransport(mol_list, stop_at_edge=False)
+    ct1 = ChargeDiffusionDynamics(mol_list, stop_at_edge=False)
     ct1.evolve(evolve_dt, nsteps)
-    ct2 = ChargeTransport(mol_list, temperature=low_t, stop_at_edge=False)
+    ct2 = ChargeDiffusionDynamics(mol_list, temperature=low_t, stop_at_edge=False)
     ct2.evolve(evolve_dt, nsteps)
     assert ct1.is_similar(ct2)
 
@@ -268,11 +268,11 @@ def test_scheme4_finite_t(
         [Mol(Quantity(elocalex_value, "a.u."), ph_list)] * mol_num,
         Quantity(j_constant_value, "eV"),
     )
-    ct1 = ChargeTransport(
+    ct1 = ChargeDiffusionDynamics(
         mol_list.switch_scheme(3), temperature=temperature, stop_at_edge=False
     )
     ct1.evolve(evolve_dt, nsteps)
-    ct2 = ChargeTransport(
+    ct2 = ChargeDiffusionDynamics(
         mol_list.switch_scheme(4), temperature=temperature, stop_at_edge=False
     )
     ct2.evolve(evolve_dt, nsteps)

@@ -1837,7 +1837,6 @@ class BraKetPair:
             ft_str = "%g" % self.ft
         return "bra: %s, ket: %s, ft: %s" % (self.bra_mps, self.ket_mps, ft_str)
 
-    # todo: not used?
     def __iter__(self):
         return iter((self.bra_mps, self.ket_mps))
 

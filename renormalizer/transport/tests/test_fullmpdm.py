@@ -8,7 +8,7 @@ import pytest
 from renormalizer.mps import MpDm, Mpo, MpDmFull, SuperLiouville, Mps, ThermalProp
 from renormalizer.utils import Quantity, CompressConfig
 from renormalizer.model import Phonon, Mol, MolList
-from renormalizer.transport.transport import calc_r_square
+from renormalizer.transport.dynamics import calc_r_square
 from renormalizer.transport.tests.band_param import band_limit_mol_list, low_t, get_analytical_r_square
 
 

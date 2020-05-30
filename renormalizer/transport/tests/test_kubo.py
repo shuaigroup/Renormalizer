@@ -1,0 +1,152 @@
+# -*- coding: utf-8 -*-
+
+import numpy as np
+import qutip
+import pytest
+
+from renormalizer.model import Phonon, Mol, MolList, MolList2, ModelTranslator
+from renormalizer.transport.kubo import TransportKubo
+from renormalizer.utils import Quantity, CompressConfig, EvolveConfig, EvolveMethod, CompressCriteria, Op
+from renormalizer.utils.basis import BasisSimpleElectron, BasisSHO
+from renormalizer.utils.qutip_utils import get_clist, get_blist, get_holstein_hamiltonian, get_qnidx, get_peierls_hamiltonian
+
+
+@pytest.mark.parametrize("scheme", (
+        3,
+        4,
+))
+@pytest.mark.parametrize("mollist2", (
+        True,
+        False,
+))
+def test_holstein_kubo(scheme, mollist2):
+    ph = Phonon.simple_phonon(Quantity(1), Quantity(1), 2)
+    mol = Mol(Quantity(0), [ph])
+    mol_list1 = MolList([mol] * 5, Quantity(1), scheme)
+    if mollist2:
+        mol_list = MolList2.MolList_to_MolList2(mol_list1, "general")
+    else:
+        mol_list = mol_list1
+    temperature = Quantity(50000, 'K')
+    compress_config = CompressConfig(CompressCriteria.fixed, max_bonddim=24)
+    evolve_config = EvolveConfig(EvolveMethod.tdvp_ps, adaptive=True, guess_dt=0.5, adaptive_rtol=1e-3)
+    ievolve_config = EvolveConfig(EvolveMethod.tdvp_ps, adaptive=True, guess_dt=-0.1j)
+    kubo = TransportKubo(mol_list, temperature, compress_config=compress_config, ievolve_config=ievolve_config, evolve_config=evolve_config)
+    kubo.evolve(nsteps=5, evolve_time=5)
+    qutip_res = get_qutip_holstein_kubo(mol_list1, temperature, kubo.evolve_times_array)
+    rtol = 5e-2
+    # direct comparison may fail because of different sign
+    assert np.allclose(kubo.auto_corr, qutip_res, rtol=rtol) or np.allclose(kubo.auto_corr, -qutip_res, rtol=rtol)
+
+
+def get_qutip_holstein_kubo(mol_list, temperature, time_series):
+
+    nsites = len(mol_list)
+    J = mol_list.j_constant.as_au()
+    ph = mol_list[0].dmrg_phs[0]
+    ph_levels = ph.n_phys_dim
+    omega = ph.omega[0]
+    g = - ph.coupling_constant
+    clist = get_clist(nsites, ph_levels)
+    blist = get_blist(nsites, ph_levels)
+
+    qn_idx = get_qnidx(ph_levels, nsites)
+    H = get_holstein_hamiltonian(nsites, J, omega, g, clist, blist).extract_states(qn_idx)
+    init_state = (-temperature.to_beta() * H).expm().unit()
+
+    terms = []
+    for i in range(nsites - 1):
+        terms.append(J * clist[i].dag() * clist[i + 1])
+        terms.append(-J * clist[i] * clist[i + 1].dag())
+    j_oper = sum(terms).extract_states(qn_idx)
+
+    corr = qutip.correlation(H, init_state, [0], time_series, [], j_oper, j_oper)[0]
+    return corr
+
+
+def test_peierls_kubo():
+    # number of mol
+    n = 4
+    # electronic coupling
+    V = -Quantity(120, "meV").as_au()
+    # intermolecular vibration freq
+    omega = Quantity(50, "cm-1").as_au()
+    # intermolecular coupling constant
+    g = 4
+    # number of quanta
+    nlevels = 2
+    # temperature
+    temperature = Quantity(300, "K")
+
+    # the Peierls model
+    model = {}
+    # H_e
+    e_dofs = [f"e_{i}" for i in range(n)]
+    e_pairs = []
+    for i in range(n):
+        i1, i2 = i, (i+1) % n
+        e_pairs.append([e_dofs[i1], e_dofs[i2]])
+
+    for e_pair in e_pairs:
+        hop1 = (Op(r"a^\dagger", 1), Op(r"a", -1), V)
+        hop2 = (Op(r"a", -1), Op(r"a^\dagger", 1), V)
+        model[tuple(e_pair)] = [hop1, hop2]
+
+    # H_ph and H_(e-ph)
+    for ni in range(n):
+        v_str = f"v_{ni}"
+        model[(v_str,)] = [(Op(r"b^\dagger b", 0), omega)]
+        coup1 = (Op(r"b^\dagger + b", 0), Op(r"a^\dagger", 1), Op(r"a", -1), g * omega)
+        coup2 = (Op(r"b^\dagger + b", 0), Op(r"a", -1), Op(r"a^\dagger", 1), g * omega)
+        model[tuple([v_str] + e_pairs[ni])] = [coup1, coup2]
+
+    order = []
+    basis = []
+    for ni in range(n):
+        order.append(f"e_{ni}")
+        basis.append(BasisSimpleElectron())
+        order.append(f"v_{ni}")
+        basis.append(BasisSHO(omega, nlevels))
+
+    mol_list = MolList2(order, basis, model, ModelTranslator.general_model)
+    compress_config = CompressConfig(CompressCriteria.fixed, max_bonddim=24)
+    ievolve_config = EvolveConfig(EvolveMethod.tdvp_vmf, ivp_atol=1e-3, ivp_rtol=1e-5)
+    evolve_config = EvolveConfig(EvolveMethod.tdvp_vmf, ivp_atol=1e-3, ivp_rtol=1e-5)
+    kubo = TransportKubo(mol_list, temperature, compress_config=compress_config, ievolve_config=ievolve_config, evolve_config=evolve_config)
+    kubo.evolve(nsteps=5, evolve_time=1000)
+
+    qutip_corr, qutip_corr_decomp = get_qutip_peierls_kubo(V, n, nlevels, omega, g, temperature, kubo.evolve_times_array)
+    atol = 1e-7
+    rtol = 5e-2
+    # direct comparison may fail because of different sign
+    assert np.allclose(kubo.auto_corr, qutip_corr, atol=atol, rtol=rtol) \
+           or np.allclose(kubo.auto_corr, -qutip_corr, atol=atol, rtol=rtol)
+    assert np.allclose(kubo.auto_corr_decomposition, qutip_corr_decomp, atol=atol, rtol=rtol) \
+           or np.allclose(kubo.auto_corr_decomposition, -qutip_corr_decomp, atol=atol, rtol=rtol)
+
+
+def get_qutip_peierls_kubo(J, nsites, ph_levels, omega, g, temperature, time_series):
+    clist = get_clist(nsites, ph_levels)
+    blist = get_blist(nsites, ph_levels)
+
+    qn_idx = get_qnidx(ph_levels, nsites)
+    H = get_peierls_hamiltonian(nsites, J, omega, g, clist, blist).extract_states(qn_idx)
+    init_state = (-temperature.to_beta() * H).expm().unit()
+
+    holstein_terms = []
+    peierls_terms = []
+    for i in range(nsites):
+        next_i = (i + 1) % nsites
+        holstein_terms.append( J * clist[i].dag() * clist[next_i])
+        holstein_terms.append(-J * clist[i] * clist[next_i].dag())
+        peierls_terms.append( g * omega * clist[i].dag() * clist[next_i] * (blist[i].dag() + blist[i]))
+        peierls_terms.append(-g * omega * clist[i] * clist[next_i].dag() * (blist[i].dag() + blist[i]))
+    j_oper1 = sum(holstein_terms).extract_states(qn_idx)
+    j_oper2 = sum(peierls_terms).extract_states(qn_idx)
+
+    corr1 = qutip.correlation(H, init_state, [0], time_series, [], j_oper1, j_oper1)[0]
+    corr2 = qutip.correlation(H, init_state, [0], time_series, [], j_oper1, j_oper2)[0]
+    corr3 = qutip.correlation(H, init_state, [0], time_series, [], j_oper2, j_oper1)[0]
+    corr4 = qutip.correlation(H, init_state, [0], time_series, [], j_oper2, j_oper2)[0]
+    corr = corr1 + corr2 + corr3 + corr4
+    return corr, np.array([corr1, corr2, corr3, corr4]).T

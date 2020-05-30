@@ -40,10 +40,11 @@ class CompressConfig:
     MPS Compress Configuration.
 
     Args:
-        criteria (:class:`CompressCriteria`): the criteria for compression.
+        criteria (:class:`renormalization.utils.configs.CompressCriteria`): the criteria for compression.
         threshold (float): the threshold to keep states if ``criteria`` is set to ``CompressCriteria.threshold``
             or ``CompressCriteria.both``.
-        bonddim_distri (:class:`BondDimDistri`): Bond dimension distribution if ``criteria`` is set to
+        bonddim_distri (:class:`renormalization.utils.configs.BondDimDistri`):
+            Bond dimension distribution if ``criteria`` is set to
             ``CompressCriteria.fixed`` or ``CompressCriteria.both``.
         max_bonddim (int): Maximum bond dimension under various bond dimension distributions.
     """
