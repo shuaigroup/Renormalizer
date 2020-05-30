@@ -102,9 +102,9 @@ class MolList2:
             self.basis = basis
         else:
             assert isinstance(basis, dict)
-            self.basis = []
-            for dof in self.order:
-                self.basis.append(basis[dof])
+            self.basis = [None] * len(self.order)
+            for dof_name, dof_idx in self.order.items():
+                self.basis[dof_idx] = basis[dof_name]
         self.model = model
         self.model_translator = model_translator
         # array(n_e, n_e)
