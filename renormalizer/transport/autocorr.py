@@ -46,7 +46,6 @@ class TransportAutoCorr(TdMpsJob):
         else:
             self.compress_config = compress_config
 
-        self.impdm = None
         self.properties = properties
         self._auto_corr = []
         super().__init__(evolve_config=evolve_config, dump_dir=dump_dir,
@@ -79,7 +78,7 @@ class TransportAutoCorr(TdMpsJob):
             # mol_list.order and mol_list.model
             assert not self.mol_list.multi_electron
             
-            e_nsite = self.mol_list.e_nsite
+            e_nsite = self.mol_list.n_edofs
             model = {}
             for i in range(e_nsite):
                 conne = (i+1) % e_nsite # connect site index 
@@ -114,8 +113,7 @@ class TransportAutoCorr(TdMpsJob):
             mpdm = tp.latest_mps
             if self._defined_output_path:
                 mpdm.dump(self._thermal_dump_path)
-        self.impdm = mpdm
-        self.impdm.compress_config = self.compress_config
+        mpdm.compress_config = self.compress_config
         e = mpdm.expectation(self.h_mpo)
         self.h_mpo = Mpo(self.mol_list, offset=Quantity(e))
         mpdm.evolve_config = self.evolve_config

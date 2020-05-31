@@ -159,7 +159,7 @@ class MpDm(MpDmBase):
             else:
                 bas = mol_list.basis[mol_list.multi_e_idx]
                 assert bas.sigmaqn == [0,] + [1,] * (bas.nbas - 1)
-                for dof_idx in range(1, mol_list.e_nsite):
+                for dof_idx in range(1, mol_list.n_edofs):
                     model[(f"e_{dof_idx}","e_0")] = [(Op(r"a^\dagger",1),
                         Op("a",0), 1.0)]
             ex_mps = Mpo.general_mpo(mol_list, model=model,

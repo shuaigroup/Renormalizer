@@ -326,7 +326,7 @@ class Mps(MatrixProduct):
                         # simple electron site
                         ms[0,0,0] = 1.
                     elif isinstance(mol_list.basis[isite],
-                                    ba.Basis_Multi_Electron):
+                                    ba.BasisMultiElectron):
                         if max_entangled:
                             # Note the multi_electron gs is defined differently
                             # all the local state with qn == 0 will be occupied
@@ -340,7 +340,7 @@ class Mps(MatrixProduct):
                             logger.warning("The electron occupies e_0 !!")
                             ms[0,0,0] = 1.
                     elif isinstance(mol_list.basis[isite],
-                                    ba.Basis_half_spin):
+                                    ba.BasisHalfSpin):
                         if max_entangled:
                             ms[0,:,0] = np.sqrt(0.5)
                         else:
@@ -1497,10 +1497,10 @@ class Mps(MatrixProduct):
             assert mp1 is None and mp2 is None
             if not self.mol_list.multi_electron:
                 reduced_density_matrix = np.zeros(
-                    (self.mol_list.e_nsite, self.mol_list.e_nsite),
+                    (self.mol_list.n_edofs, self.mol_list.n_edofs),
                     dtype=backend.complex_dtype)
-                for idx in range(self.mol_list.e_nsite):
-                    for jdx in range(idx, self.mol_list.e_nsite):
+                for idx in range(self.mol_list.n_edofs):
+                    for jdx in range(idx, self.mol_list.n_edofs):
                         model = {(f"e_{idx}", f"e_{jdx}"):[(Op(r"a^\dagger", 1),
                             Op("a",-1), 1.0)]}
                         mpo = Mpo.general_mpo(self.mol_list, model=model,

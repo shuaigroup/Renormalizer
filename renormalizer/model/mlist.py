@@ -1,6 +1,7 @@
 # -*- coding: utf-8 -*-
 # Author: Jiajun Ren <jiajunren0522@gmail.com>
 
+import copy
 from collections import OrderedDict
 from typing import List, Union, Dict
 from enum import Enum
@@ -30,68 +31,80 @@ class ModelTranslator(Enum):
 
 
 class MolList2:
-    def __init__(self, order:Dict, basis:List, model:Dict, model_translator: ModelTranslator, dipole:Dict=None):
-        r"""
-        User-defined model
-        
-        Args:
-            order (Dict): order of degrees of freedom.
-            basis (List[class:`~renormalizer.utils.basis]): local basis of each DoF
-            model (Dict): model of the system or any operator of the system, two
-            formats are supported: 'vibronic type' or 'general type'. All terms
+    r"""
+    User-defined model
+
+    Args:
+        order (dict or list): order of degrees of freedom.
+        basis (dict or list): local basis (:class:`~renormalizer.utils.basis`) of each DoF
+        model (dict): model of the system or any operator of the system,
+            two formats are supported: 'vibronic type' or 'general type'. All terms
             must be included, without assuming hermitian or something else.
-            model_translator(:class:`~renormalizer.model.ModelTranslator`): Translator from user input model to renormalizer's internal formats
-            dipole (Dict): contains the transition dipole matrix element
-        
-        Note:
-            the key of order starts from "v" or "e" for vibrational DoF or electronic DoF respectively. 
-            after the linker '_' combined with an index. The rule is that
-            the index of both 'e' and 'v' starts from 0,1,2... and the 
-            properties such as `e_occupations` are reported with such order.
-            the value of order is the position of the specific DoF, starting from 0,2,...,nsite-1
-            For cases that all electronic DoFs gathered in a single site,
-            the value of each DoF should be the same.
-            for example: MolList scheme1/2/3 order = {"e_0":0, "v_0":1, "v_1":2,
-                "e_1":3, "v_2":4, "v_3":5}
-                         MolList scheme4 order ={"e_0":0, "v_0":1, "v_1":2,
-                         "e_1":0, "v_2":3, "v_3":4}
-        
-            The order of basis corresponds to the site, each element is a Basis
-            class, refer to `~renormalizer.utils.basis`
-            for example: basis = [b0,b1,b2,b3] 
+        model_translator(:class:`~renormalizer.model.ModelTranslator`): Translator from user input model to renormalizer's internal formats
+        dipole (dict): contains the transition dipole matrix element
 
-            two formats are supported for model:
-            'vibronic type': each key is a tuple of electronic DoFs represents
-            a^\dagger_i a_j or the key is "I" represents the pure vibrational
-            terms, the value is a dict. 
-            The sub-key of the dict has two types, one is 'J' with value (float or complex) for pure electronic coupling,
-            one is tuple of vibrational DoF with a list as value. Inside the
-            list is sevaral tuples, each tuple is a operator term. the last one
-            of the tuple is factor of the term, the others represents a local
-            operator (refer to `~renormalizer.utils.Op`) on each Dof in the
-            sub-key (one-to-one map between the sub-key and tuple).
-            The model_translator is ModelTranslator.vibronic_model
-            for example:
-            {"I": {("v_1"):[(Op,factor),]}, ("e_i","e_j") : {"J":factor, ("v_0",):[(Op, factor), (Op, factor)],
-            ("v_1","v_2"):[(Op1, Op2, factor), (Op1, Op2, factor)]...}...}
-            
-            'general type': each key is a tuple of DoFs,
-            each value is list. Inside the list, each element is a tuple, the
-            last one is the factor of each operator term, the others are local
-            operator of the operator term.
-            The model_translator is ModelTranslator.general_model
-            for example: 
-            {("e_i","e_j") : [(Op1, Op2, factor)], ("e_i", "v_0",):[(Op1, Op2,
-            factor), (Op1, Op2, factor)], ("v_1","v_2"):[(Op1, Op2, factor), (Op1, Op2, factor)]...}
+    Note:
+        the key of order starts from "v" or "e" for vibrational DoF or electronic DoF respectively.
+        after the linker '_' combined with an index. The rule is that
+        the index of both 'e' and 'v' starts from 0,1,2... and the
+        properties such as `e_occupations` are reported with such order.
+        the value of order is the position of the specific DoF, starting from 0,2,...,nsite-1
+        For cases that all electronic DoFs gathered in a single site,
+        the value of each DoF should be the same.
+        for example: MolList scheme1/2/3 order = {"e_0":0, "v_0":1, "v_1":2, "e_1":3, "v_2":4, "v_3":5}
+        MolList scheme4 order ={"e_0":0, "v_0":1, "v_1":2, "e_1":0, "v_2":3, "v_3":4}
 
-            dipole contains transtion dipole matrix elements between the
-            electronic DoFs. For simple electron case, dipole = {("e_0",):tdm1,
-            ("e_1",):tdm2}, the key has 1 e_dof. For multi electron case, dipole =
-            {("e_0","e_1"):tdm1, ("e_1","e_0"):tdm1}, the key has 2 e_dofs
-            represents the transition.
-        """
-        self.order = order
-        self.basis = basis
+        The order of basis corresponds to the site, each element is a Basis
+        class, refer to `~renormalizer.utils.basis`
+        for example: basis = [b0,b1,b2,b3]
+
+        two formats are supported for model:
+        'vibronic type': each key is a tuple of electronic DoFs represents
+        a^\dagger_i a_j or the key is "I" represents the pure vibrational
+        terms, the value is a dict.
+        The sub-key of the dict has two types, one is 'J' with value (float or complex) for pure electronic coupling,
+        one is tuple of vibrational DoF with a list as value. Inside the
+        list is sevaral tuples, each tuple is a operator term. the last one
+        of the tuple is factor of the term, the others represents a local
+        operator (refer to `~renormalizer.utils.Op`) on each Dof in the
+        sub-key (one-to-one map between the sub-key and tuple).
+        The model_translator is ModelTranslator.vibronic_model
+        for example:
+        {"I": {("v_1"):[(Op,factor),]}, ("e_i","e_j") : {"J":factor, ("v_0",):[(Op, factor), (Op, factor)],
+        ("v_1","v_2"):[(Op1, Op2, factor), (Op1, Op2, factor)]...}...}
+
+        'general type': each key is a tuple of DoFs,
+        each value is list. Inside the list, each element is a tuple, the
+        last one is the factor of each operator term, the others are local
+        operator of the operator term.
+        The model_translator is ModelTranslator.general_model
+        for example:
+        {("e_i","e_j") : [(Op1, Op2, factor)], ("e_i", "v_0",):[(Op1, Op2,
+        factor), (Op1, Op2, factor)], ("v_1","v_2"):[(Op1, Op2, factor), (Op1, Op2, factor)]...}
+
+        dipole contains transtion dipole matrix elements between the
+        electronic DoFs. For simple electron case, dipole = {("e_0",):tdm1,
+        ("e_1",):tdm2}, the key has 1 e_dof. For multi electron case, dipole =
+        {("e_0","e_1"):tdm1, ("e_1","e_0"):tdm1}, the key has 2 e_dofs
+        represents the transition.
+    """
+    def __init__(self, order: Union[Dict, List], basis:Union[Dict, List], model:Dict, model_translator: ModelTranslator, dipole:Dict=None):
+
+        if isinstance(order, dict):
+            self.order = order
+        else:
+            assert isinstance(order, list)
+            self.order = dict()
+            for i, o in enumerate(order):
+                self.order[o] = i
+
+        if isinstance(basis, list):
+            self.basis = basis
+        else:
+            assert isinstance(basis, dict)
+            self.basis = [None] * len(self.order)
+            for dof_name, dof_idx in self.order.items():
+                self.basis[dof_idx] = basis[dof_name]
         self.model = model
         self.model_translator = model_translator
         # array(n_e, n_e)
@@ -131,7 +144,7 @@ class MolList2:
     
     @property
     def j_matrix(self):
-        J = np.zeros((self.e_nsite, self.e_nsite))
+        J = np.zeros((self.n_edofs, self.n_edofs))
         for i, idof in enumerate(self.e_dofs):
             for j, jdof in enumerate(self.e_dofs):
                 if self.model_translator == ModelTranslator.vibronic_model:
@@ -175,13 +188,13 @@ class MolList2:
                 dofs.append(int(key.split("_")[1]))
         assert sorted(dofs) == list(range(len(dofs)))
         return [f"v_{i}" for i in range(len(dofs))]
-   
+
     @property
-    def e_nsite(self):
+    def n_edofs(self):
         return len(self.e_dofs)
     
     @property
-    def v_nsite(self):
+    def n_vdofs(self):
         return len(self.v_dofs)
 
     

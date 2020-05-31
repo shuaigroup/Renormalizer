@@ -86,8 +86,8 @@ def test_thermal_prop(mol_list, adaptive, evolve_method):
     rtol = 5e-3
     if mol_list is mollist2:
         etot_std += parameter.mol_list[0].gs_zpe * parameter.mol_list.mol_num
-    assert np.allclose(tp.energies[-1], etot_std, rtol=rtol)
     assert np.allclose(tp.e_occupations_array[-1], occ_std, rtol=rtol)
+    assert np.allclose(tp.energies[-1], etot_std, rtol=rtol)
 
 
 def test_bogoliubov():
