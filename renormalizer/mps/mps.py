@@ -3,7 +3,7 @@
 import logging
 from functools import wraps
 from typing import Union, List, Dict
-from collections import Counter
+from collections import Counter, deque
 
 import scipy
 from scipy import stats
@@ -1509,11 +1509,11 @@ class Mps(MatrixProduct):
                 self.mol_list.mpos[key] = mpos
             else:
                 mpos = self.mol_list.mpos[key]
-            expectations = self.expectations(mpos)
+            expectations = deque(self.expectations(mpos))
             reduced_density_matrix = np.zeros((n_e, n_e), dtype=backend.complex_dtype)
             for idx in range(n_e):
                 for jdx in range(idx, n_e):
-                    reduced_density_matrix[idx, jdx] = expectations[n_e * idx + jdx]
+                    reduced_density_matrix[idx, jdx] = expectations.popleft()
                     reduced_density_matrix[jdx, idx] = np.conj(reduced_density_matrix[idx, jdx])
 
         elif isinstance(self.mol_list, MolList):

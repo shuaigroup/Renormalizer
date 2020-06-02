@@ -508,7 +508,7 @@ def _model_translator_general_model(mol_list, const=Quantity(0.)):
                     for iop in iops:
                         dof_name, dof_op = model_key[iop], op_term[iop]
                         dof_basis = basis[order[dof_name]]
-                        if dof_basis.multi_dof:
+                        if dof_basis.multi_dof and "_" not in dof_op.symbol:
                             # add the index to the operator in multi elecron case
                             # for example, "a^\dagger a" on a single e_dof
                             # "a^\dagger" "a" on two different e_dofs
@@ -1487,6 +1487,7 @@ class Mpo(MatrixProduct):
         self.qnidx = qnidx
         self.qntot = qntot
         self.qn = mpo_qn
+        self.to_right = False
         
         # evaluate the symbolic mpo
         assert mol_list.basis is not None
