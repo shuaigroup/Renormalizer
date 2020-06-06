@@ -509,7 +509,7 @@ def _model_translator_general_model(mol_list, const=Quantity(0.)):
                         dof_name, dof_op = model_key[iop], op_term[iop]
                         dof_basis = basis[order[dof_name]]
                         if dof_basis.multi_dof and "_" not in dof_op.symbol:
-                            # add the index to the operator in multi elecron case
+                            # add the index to the operator in multi electron case
                             # for example, "a^\dagger a" on a single e_dof
                             # "a^\dagger" "a" on two different e_dofs
                             symbols.append(add_idx(dof_op.symbol, dof_name.split("_")[1]))

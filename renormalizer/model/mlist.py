@@ -336,11 +336,7 @@ class MolList2:
         
         dipole = {}
         for imol, mol in enumerate(mol_list):
-            if mol_list.scheme < 4:
-                dipole[(f"e_{imol}", )] = mol.dipole
-            elif mol_list.scheme == 4:
-                dipole[(f"e_{imol}", "e_0")] = mol.dipole
-                dipole[("e_0", f"e_{imol}")] = mol.dipole
+            dipole[(f"e_{imol}", )] = mol.dipole
 
         mol_list2 = cls(order, basis, model, model_translator, dipole=dipole)
         mol_list2.map = mapping

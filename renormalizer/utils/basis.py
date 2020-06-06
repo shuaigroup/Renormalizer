@@ -159,6 +159,8 @@ class BasisMultiElectron(BasisSet):
                 mat = np.eye(self.nbas)
             elif op_symbol[0] == "a" or op_symbol[0] == r"a^\dagger":
                 raise ValueError(f"op_symbol:{op_symbol} is not supported. Try use BasisMultiElectronVac.")
+            else:
+                raise ValueError(f"op_symbol:{op_symbol} is not supported")
             
         elif len(op_symbol) == 2:
             op_symbol1, op_symbol2 = op_symbol
@@ -172,7 +174,7 @@ class BasisMultiElectron(BasisSet):
             elif op_symbol1_term == r"a" and op_symbol2_term == r"a^\dagger":
                 mat[int(op_symbol2_idx), int(op_symbol1_idx)] = 1.
             else:
-                assert False
+                raise ValueError(f"op_symbol:{op_symbol} is not supported")
         else:
             raise ValueError(f"op_symbol:{op_symbol} is not supported")
 
@@ -190,7 +192,7 @@ class BasisMultiElectronVac(BasisSet):
         nstate (int): the number of electronic states without counting the vacuum state.
         dof_idx (list): the indices of the electronic dofs used to define the whole model
         that are represented by this basis. The default value is ``list(range(nstate))``.
-        The arg is necessary when you have multiple basis of this class in the model.
+        The arg is necessary when more than one basis of this class present in the model.
     """
 
     def __init__(self, nstate, dof_idx=None):
@@ -217,7 +219,6 @@ class BasisMultiElectronVac(BasisSet):
 
         op_symbol = op_symbol.split(" ")
 
-        mat = None
         if len(op_symbol) == 1:
             op_symbol = op_symbol[0]
             if op_symbol == "I":
@@ -229,6 +230,8 @@ class BasisMultiElectronVac(BasisSet):
                     mat[op_symbol_idx, 0] = 1.
                 elif op_symbol_term == r"a":
                     mat[0, op_symbol_idx] = 1.
+                else:
+                    raise ValueError(f"op_symbol:{op_symbol} is not supported")
 
         elif len(op_symbol) == 2:
             op_symbol1, op_symbol2 = op_symbol
@@ -241,8 +244,9 @@ class BasisMultiElectronVac(BasisSet):
                 mat[op_symbol1_idx, op_symbol2_idx] = 1.
             elif op_symbol1_term == r"a" and op_symbol2_term == r"a^\dagger":
                 mat[op_symbol2_idx, op_symbol1_idx] = 1.
-
-        if mat is None:
+            else:
+                raise ValueError(f"op_symbol:{op_symbol} is not supported")
+        else:
             raise ValueError(f"op_symbol:{op_symbol} is not supported")
 
         return mat * op_factor
