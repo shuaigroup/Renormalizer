@@ -18,10 +18,6 @@ class ModelTranslator(Enum):
     """
     Available Translator from user input model to renormalizer's internal formats 
     """
-    # from MolList scheme1/2/3
-    Holstein_model_scheme123 = "Holstein Model Scheme123 (MolList)"
-    # from MolList scheme4
-    Holstein_model_scheme4 = "Holstein Model Scheme4 (MolList)"
     # from MolList sbm
     sbm = "Spin Boson Model (MolList)"
     # from MolList2 or MolList augmented with MolList2 parameters
@@ -99,12 +95,24 @@ class MolList2:
                 self.order[o] = i
 
         if isinstance(basis, list):
-            self.basis = basis
+            self.basis: List[ba.BasisSet] = basis
         else:
             assert isinstance(basis, dict)
-            self.basis = [None] * len(self.order)
+            order_value_set = set(self.order.values())
+            if min(order_value_set) != 0 or max(order_value_set) != len(order_value_set) - 1:
+                raise ValueError("order is not continuous integers from 0")
+            self.basis = [None] * (max(self.order.values()) + 1)
             for dof_name, dof_idx in self.order.items():
                 self.basis[dof_idx] = basis[dof_name]
+
+        for b in self.basis:
+            if b.multi_dof:
+                self.multi_dof_basis = True
+                break
+        else:
+            self.multi_dof_basis = False
+
+
         self.model = model
         self.model_translator = model_translator
         # array(n_e, n_e)
@@ -113,18 +121,6 @@ class MolList2:
         self.map = None
         # reusable mpos for the system
         self.mpos = dict()
-            
-    @property
-    def multi_electron(self):
-        for b in self.basis:
-            if isinstance(b, ba.BasisMultiElectron):
-                return True
-        return False
-    
-    @property
-    def multi_e_idx(self):
-        assert self.multi_electron
-        return self.order["e_0"]
 
     @property
     def pbond_list(self):
@@ -219,19 +215,12 @@ class MolList2:
         basis = []
         model = {}
         mapping = {}
-        
-        def e_idx(idx):
-            if mol_list.scheme < 4:
-                return idx
-            elif mol_list.scheme == 4:
-                # add the gs state
-                return idx + 1
 
         if mol_list.scheme < 4:
             idx = 0
             nv = 0
             for imol, mol in enumerate(mol_list):
-                order[f"e_{e_idx(imol)}"] = idx
+                order[f"e_{imol}"] = idx
                 if np.allclose(mol.tunnel, 0):
                     basis.append(ba.BasisSimpleElectron())
                 else:
@@ -266,11 +255,8 @@ class MolList2:
                     idx += 1
             
             for imol in range(mol_list.mol_num):
-                order[f"e_{e_idx(imol)}"] = n_left_ph
-            # the gs state
-            order["e_0"] = n_left_ph
-            basis.insert(n_left_ph,
-                         ba.BasisMultiElectron(mol_list.mol_num + 1, [0, ] + [1, ] * mol_list.mol_num))
+                order[f"e_{imol}"] = n_left_ph
+            basis.insert(n_left_ph, ba.BasisMultiElectronVac(mol_list.mol_num))
 
         else:
             raise ValueError(f"invalid mol_list.scheme: {mol_list.scheme}")
@@ -282,9 +268,9 @@ class MolList2:
             for imol in range(mol_list.mol_num):
                 for jmol in range(mol_list.mol_num):
                     if imol == jmol:
-                        model[(f"e_{e_idx(imol)}", f"e_{e_idx(jmol)}")] = {"J": mol_list[imol].elocalex + mol_list[imol].dmrg_e0}
+                        model[(f"e_{imol}", f"e_{jmol}")] = {"J": mol_list[imol].elocalex + mol_list[imol].dmrg_e0}
                     else:
-                        model[(f"e_{e_idx(imol)}", f"e_{e_idx(jmol)}")] = {"J": mol_list.j_matrix[imol, jmol]}
+                        model[(f"e_{imol}", f"e_{jmol}")] = {"J": mol_list.j_matrix[imol, jmol]}
             
             # vibration part
             model["I"] = {}
@@ -299,11 +285,11 @@ class MolList2:
             for imol, mol in enumerate(mol_list):
                 for iph, ph in enumerate(mol.dmrg_phs):
                     if np.allclose(ph.omega[0], ph.omega[1]):
-                        model[(f"e_{e_idx(imol)}", f"e_{e_idx(imol)}")][(mapping[(imol,iph)],)] \
+                        model[(f"e_{imol}", f"e_{imol}")][(mapping[(imol,iph)],)] \
                             = [(Op("x", 0), -ph.omega[1]**2*ph.dis[1])]
                     
                     else:
-                        model[(f"e_{e_idx(imol)}", f"e_{e_idx(imol)}")][(mapping[(imol,iph)],)] \
+                        model[(f"e_{imol}", f"e_{imol}")][(mapping[(imol,iph)],)] \
                             = [
                                 (Op("x^2", 0), 0.5*(ph.omega[1]**2-ph.omega[0]**2)),
                                 (Op("x", 0), -ph.omega[1]**2*ph.dis[1]),
@@ -316,11 +302,11 @@ class MolList2:
             for imol in range(mol_list.mol_num):
                 for jmol in range(mol_list.mol_num):
                     if imol == jmol:
-                        model[(f"e_{e_idx(imol)}",)] = \
+                        model[(f"e_{imol}",)] = \
                         [(Op(r"a^\dagger a", 0),
                             mol_list[imol].elocalex + mol_list[imol].dmrg_e0)]
                     else:
-                        model[(f"e_{e_idx(imol)}", f"e_{e_idx(jmol)}")] = \
+                        model[(f"e_{imol}", f"e_{jmol}")] = \
                             [(Op(r"a^\dagger", 1), Op("a", -1),
                                 mol_list.j_matrix[imol, jmol])]
             # vibration part
@@ -335,11 +321,11 @@ class MolList2:
             for imol, mol in enumerate(mol_list):
                 for iph, ph in enumerate(mol.dmrg_phs):
                     if np.allclose(ph.omega[0], ph.omega[1]):
-                        model[(f"e_{e_idx(imol)}", f"{mapping[(imol,iph)]}")] = [
+                        model[(f"e_{imol}", f"{mapping[(imol,iph)]}")] = [
                                 (Op(r"a^\dagger a", 0), Op("x", 0), -ph.omega[1]**2*ph.dis[1]),
                                 ]
                     else:
-                        model[(f"e_{e_idx(imol)}", f"{mapping[(imol,iph)]}")] = [
+                        model[(f"e_{imol}", f"{mapping[(imol,iph)]}")] = [
                                 (Op(r"a^\dagger a", 0), Op("x^2", 0), 0.5*(ph.omega[1]**2-ph.omega[0]**2)),
                                 (Op(r"a^\dagger a", 0), Op("x", 0), -ph.omega[1]**2*ph.dis[1]),
                                 ]
@@ -350,11 +336,7 @@ class MolList2:
         
         dipole = {}
         for imol, mol in enumerate(mol_list):
-            if mol_list.scheme < 4:
-                dipole[(f"e_{e_idx(imol)}", )] = mol.dipole
-            elif mol_list.scheme == 4:
-                dipole[(f"e_{e_idx(imol)}", "e_0")] = mol.dipole
-                dipole[("e_0", f"e_{e_idx(imol)}")] = mol.dipole
+            dipole[(f"e_{imol}", )] = mol.dipole
 
         mol_list2 = cls(order, basis, model, model_translator, dipole=dipole)
         mol_list2.map = mapping
@@ -514,10 +496,10 @@ class MolList:
             #sbm
             self.model_translator = ModelTranslator.sbm
         else:
-            if self.scheme == 4:
-                self.model_translator = ModelTranslator.Holstein_model_scheme4
-            elif self.scheme < 4:
-                self.model_translator = ModelTranslator.Holstein_model_scheme123
+            if formula == "vibronic":
+                self.model_translator = ModelTranslator.vibronic_model
+            elif formula == "general":
+                self.model_translator = ModelTranslator.general_model
             else:
                 raise ValueError
     

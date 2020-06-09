@@ -137,7 +137,10 @@ def test_phonon_onsite():
 from renormalizer.tests.parameter_PBI import construct_mol
 
 @pytest.mark.parametrize("mol_list", (mol_list, construct_mol(10,10,0)))
-@pytest.mark.parametrize("scheme", (123, 4))
+@pytest.mark.parametrize("scheme", (
+        123,
+        4,
+))
 def test_general_mpo_MolList(mol_list, scheme):
     
     if scheme == 4:

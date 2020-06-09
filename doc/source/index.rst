@@ -26,7 +26,7 @@ Contents
    configs.rst
    mps.rst
    model.rst
-   utils.md
+   utils.rst
    develop.md
 
 
