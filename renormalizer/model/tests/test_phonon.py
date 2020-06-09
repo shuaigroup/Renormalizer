@@ -1,13 +1,13 @@
 # -*- coding: utf-8 -*-
 
-from math import sqrt
-from functools import reduce
-
-import pytest
-import numpy as np
 
 from renormalizer.model.phonon import Phonon
 from renormalizer.utils import Quantity
+
+import pytest
+import numpy as np
+from math import sqrt
+from functools import reduce
 
 
 def test_property():
@@ -47,7 +47,9 @@ def test_simplest_phonon():
 def test_split():
     ph = Phonon.simplest_phonon(Quantity(100, "cm-1"), Quantity(1))
     ph1, ph2 = ph.split(width=Quantity(20, "cm-1"))
-    assert ph1.e0 == ph2.e0 == ph.e0 / 2
+    assert np.allclose(ph1.e0.as_au(), ph.e0.as_au() / 2)
+    assert np.allclose(ph2.e0.as_au(), ph.e0.as_au() / 2)
     assert ph1.omega[0] == Quantity(80, "cm-1").as_au()
     ph_list = ph.split(n=100)
-    assert reduce(lambda x, y: x+y, map(lambda x: x.e0, ph_list)) == ph.e0
+    assert np.allclose(reduce(lambda x, y: x+y, map(lambda x: x.e0,
+        ph_list)).as_au(), ph.e0.as_au())

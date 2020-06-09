@@ -49,48 +49,38 @@ class SpectraFtCV(SpectraCv):
             "1site"
         procedure_cv : list
             percent used for each sweep
-        cores : int
-            cores used for parallel
 
     Example::
-
-    >>> from renormalizer.cv.finitet import SpectraFtCV
-    >>> from renormalizer.tests.parameter import mol_list
-    >>> import numpy as np
-    >>> from renormalizer.utils import Quantity
-    >>> def run():
-    ...     freq_reg = np.arange(0.08, 0.10, 5.e-4).tolist()
-    ...     T = Quantity(298, unit='K')
-    ...     spectra = SpectraFtCV(mol_list, "abs", T, test_freq,
-    ...                           10, 1.e-3, cores=1)
-    ...     spectra.init_oper()
-    ...     spectra.init_mps()
-    ...     result = spectra.run()
-    >>> if __name__ == "__main__":
-    ...     run()
+        see test/test_abs.py for example
     '''
     def __init__(
         self,
         mol_list,
         spectratype,
-        temperature,
-        freq_reg,
         m_max,
         eta,
+        temperature,
+        h_mpo = None,
+        method='1site',
+        procedure_cv=None,
+        rtol=1e-5,
+        b_mps = None,
+        cv_mps = None,
         icompress_config=None,
         ievolve_config=None,
         insteps=None,
-        method='1site',
-        procedure_cv=None,
         dump_dir: str=None,
         job_name=None,
-        cores=1
     ):
-        super().__init__(
-            mol_list, spectratype, freq_reg, m_max, eta, method, procedure_cv,
-            cores
-        )
+        
         self.temperature = temperature
+        
+        super().__init__(
+            mol_list, spectratype, m_max, eta, h_mpo=h_mpo, 
+            method=method, procedure_cv=procedure_cv,
+            rtol=rtol, b_mps=b_mps, cv_mps=cv_mps,
+        )
+        
         self.evolve_config = ievolve_config
         self.compress_config = icompress_config
         if self.evolve_config is None:
@@ -104,19 +94,35 @@ class SpectraFtCV(SpectraCv):
         self.insteps = insteps
         self.job_name = job_name
         self.dump_dir = dump_dir
+        
+        self.cv_mpo = self.cv_mps
+        self.b_mpo = self.b_mps
 
-    def init_mps(self):
+        self.a_oper = None
+        self.b_oper = None
+
+    def init_cv_mpo(self):
+        cv_mpo = Mpo.finiteT_cv(self.mol_list, 1, self.m_max,
+                                     self.spectratype, percent=1.0)
+        return cv_mpo
+
+    init_cv_mps = init_cv_mpo
+    
+    def init_b_mpo(self):
+        # get the right hand site vector b, Ax=b
+        # b = -eta * dipole * \psi_0
+        
+        # only support Holstine model 0/1 exciton manifold
         beta = self.temperature.to_beta()
-        self.h_mpo = Mpo(self.mol_list)
         if self.spectratype == "abs":
             dipole_mpo = Mpo.onsite(self.mol_list, r"a^\dagger", dipole=True)
             i_mpo = MpDm.max_entangled_gs(self.mol_list)
             tp = ThermalProp(i_mpo, self.h_mpo, exact=True, space='GS')
             tp.evolve(None, 1, beta / 2j)
             ket_mpo = tp.latest_mps
-        else:
-            impo = MpDm.max_entangled_ex(self.mol_list)
+        elif self.spectratype == "emi":
             dipole_mpo = Mpo.onsite(self.mol_list, "a", dipole=True)
+            impo = MpDm.max_entangled_ex(self.mol_list)
             if self.job_name is None:
                 job_name = None
             else:
@@ -138,13 +144,13 @@ class SpectraFtCV(SpectraCv):
                     tp.evolve(None, self.insteps, beta / 2j)
                     ket_mpo = tp.latest_mps
                     ket_mpo.dump(self._thermal_dump_path)
-        self.a_ket_mpo = dipole_mpo.apply(ket_mpo, canonicalise=True)
-        self.cv_mpo = Mpo.finiteT_cv(self.mol_list, 1, self.m_max,
-                                     self.spectratype, percent=1.0)
-        self.cv_mps = self.cv_mpo
+        else:
+            assert False
+        ket_mpo = dipole_mpo.apply(ket_mpo.scale(-self.eta))
 
-    def init_oper(self):
-        pass
+        return ket_mpo, None
+    
+    init_b_mps = init_b_mpo
 
     @property
     def _thermal_dump_path(self):
@@ -152,14 +158,11 @@ class SpectraFtCV(SpectraCv):
         return os.path.join(self.dump_dir, self.job_name + "_impo.npz")
 
     def oper_prepare(self, omega):
-        omega_minus_H = copy.deepcopy(self.h_mpo)
-        for ibra in range(self.h_mpo.pbond_list[0]):
-            omega_minus_H[0][0, ibra, ibra, 0] -= omega
-        omega_minus_H = omega_minus_H.scale(-1)
-        self.a_oper = omega_minus_H.apply(omega_minus_H)
-        for ibra in range(self.a_oper[0].shape[1]):
-            self.a_oper[0][0, ibra, ibra, 0] += (self.eta**2)
+        identity = Mpo.identity(self.mol_list).scale(omega)
+        omega_minus_H = identity.add(self.h_mpo.scale(-1, inplace=False))
         self.b_oper = omega_minus_H
+        # huge cost to construct a_oper explicitly very slow, needs optimization
+        self.a_oper = omega_minus_H.apply(omega_minus_H)
 
     def optimize_cv(self, lr_group, direction, isite, num, percent=0):
         if self.spectratype == "abs":
@@ -196,11 +199,10 @@ class SpectraFtCV(SpectraCv):
             self.construct_X_qnmat(add_list, direction)
         dag_qnmat, dag_qnbigl, dag_qnbigr = self.swap(xqnmat, xqnbigl, xqnbigr,
                                                       direction)
-
-        nonzeros = np.sum(
+        nonzeros = int(np.sum(
             self.condition(
                 dag_qnmat, [down_exciton, up_exciton])
-        )
+        ))
 
         if self.method == "1site":
             guess = moveaxis(self.cv_mpo[isite - 1], (1, 2), (2, 1))
@@ -209,7 +211,7 @@ class SpectraFtCV(SpectraCv):
                               moveaxis(self.cv_mpo[isite - 1]), axes=(-1, 0))
         guess = guess[
             self.condition(
-                dag_qnmat, [down_exciton, up_exciton])].reshape(nonzeros, 1)
+                dag_qnmat, [down_exciton, up_exciton])]
 
         if self.method == "1site":
             # define dot path
@@ -225,9 +227,8 @@ class SpectraFtCV(SpectraCv):
 
             vecb = multi_tensor_contract(
                 path_4, forth_L,
-                moveaxis(self.a_ket_mpo[isite - 1], (1, 2), (2, 1)),
-                forth_R)
-            vecb = - self.eta * vecb
+                moveaxis(self.b_mpo[isite - 1], (1, 2), (2, 1)),
+                forth_R)[self.condition(dag_qnmat, [down_exciton, up_exciton])]
 
         a_oper_isite = asxp(self.a_oper[isite - 1])
         b_oper_isite = asxp(self.b_oper[isite - 1])
@@ -272,15 +273,8 @@ class SpectraFtCV(SpectraCv):
         pre_M4 = xp.moveaxis(pre_M4, [2, 3], [3, 2])[
             self.condition(dag_qnmat, [down_exciton, up_exciton])]
 
-        pre_M = (pre_M1 + 2 * pre_M2 + pre_M4)
-
-        indices = np.array(range(nonzeros))
-        indptr = np.array(range(nonzeros+1))
-        pre_M = scipy.sparse.csc_matrix(
-            (asnumpy(pre_M), indices, indptr), shape=(nonzeros, nonzeros))
-
-        M_x = lambda x: scipy.sparse.linalg.spsolve(pre_M, x)
-        M = scipy.sparse.linalg.LinearOperator((nonzeros, nonzeros), M_x)
+        M_x = lambda x: asnumpy(asxp(x) / (pre_M1 + 2 * pre_M2 + pre_M4 + xp.ones(nonzeros)*self.eta**2)) 
+        pre_M = scipy.sparse.linalg.LinearOperator((nonzeros, nonzeros), M_x)
 
         count = 0
 
@@ -303,36 +297,25 @@ class SpectraFtCV(SpectraCv):
                     path_2, third_L, h_mpo_isite, dag_struct,
                     h_mpo_isite, third_R)
                 M3 = xp.moveaxis(M3, (1, 2), (2, 1))
-                cout = M1 + 2 * M2 + M3
+                cout = M1 + 2 * M2 + M3 + dag_struct * self.eta**2
             cout = cout[
                 self.condition(dag_qnmat, [down_exciton, up_exciton])
-            ].reshape(nonzeros, 1)
+            ]
             return asnumpy(cout)
 
-        # Matrix A and Vector b
-        vecb = asnumpy(vecb)[
-            self.condition(dag_qnmat, [down_exciton, up_exciton])
-        ].reshape(nonzeros, 1)
-        mata = scipy.sparse.linalg.LinearOperator((nonzeros, nonzeros),
-                                                  matvec=hop)
+        # Matrix A 
+        mat_a = scipy.sparse.linalg.LinearOperator((nonzeros, nonzeros), matvec=hop)
 
-        # conjugate gradient method
-        # x, info = scipy.sparse.linalg.cg(MatA, VecB, atol=0)
-        if num == 1:
-            x, info = scipy.sparse.linalg.cg(
-                mata, vecb, tol=1.e-5, maxiter=500, M=M, atol=0)
-        else:
-            x, info = scipy.sparse.linalg.cg(
-                mata, vecb, tol=1.e-5, x0=guess, maxiter=500, M=M, atol=0)
+        x, info = scipy.sparse.linalg.cg(
+            mat_a, asnumpy(vecb), tol=1.e-5, x0=asnumpy(guess), maxiter=500,
+            M=pre_M, atol=0)
         # logger.info(f"linear eq dim: {nonzeros}")
         # logger.info(f'times for hop:{count}')
         self.hop_time.append(count)
         if info != 0:
             logger.warning(
                 f"cg not converged, vecb.norm:{np.linalg.norm(vecb)}")
-        l_value = np.inner(
-            hop(x).reshape(1, nonzeros), x.reshape(1, nonzeros)) - \
-            2 * np.inner(vecb.reshape(1, nonzeros), x.reshape(1, nonzeros))
+        l_value = xp.dot(asxp(hop(x)), asxp(x)) - 2 * xp.dot(vecb, asxp(x))
 
         x = self.dag2mat(xshape, x, dag_qnmat, direction)
         if self.method == "1site":
@@ -369,7 +352,7 @@ class SpectraFtCV(SpectraCv):
                 self.cv_mpo[isite - 1] = compx
             self.cv_mpo.qn[isite - 1] = xqn
 
-        return l_value[0][0]
+        return float(l_value)
 
     def construct_X_qnmat(self, addlist, direction):
 
@@ -639,7 +622,7 @@ class SpectraFtCV(SpectraCv):
                     self.cv_mpo[isite - 1], self.h_mpo[isite - 1]))
                 forth_LR[isite - 1] = asnumpy(multi_tensor_contract(
                     path4, forth_LR[isite],
-                    moveaxis(self.a_ket_mpo[isite - 1], (1, 2), (2, 1)),
+                    moveaxis(self.b_mpo[isite - 1], (1, 2), (2, 1)),
                     self.cv_mpo[isite - 1]))
 
         if direction == "left":
@@ -669,7 +652,7 @@ class SpectraFtCV(SpectraCv):
                     self.cv_mpo[isite - 1], self.h_mpo[isite - 1]))
                 forth_LR[isite] = asnumpy(multi_tensor_contract(
                     path4, forth_LR[isite - 1],
-                    moveaxis(self.a_ket_mpo[isite - 1], (1, 2), (2, 1)),
+                    moveaxis(self.b_mpo[isite - 1], (1, 2), (2, 1)),
                     self.cv_mpo[isite - 1]))
         return [first_LR, second_LR, third_LR, forth_LR]
 
@@ -702,7 +685,7 @@ class SpectraFtCV(SpectraCv):
                     self.cv_mpo[isite - 1], self.h_mpo[isite - 1])
                 forth_LR[isite - 1] = multi_tensor_contract(
                     path4, forth_LR[isite],
-                    moveaxis(self.a_ket_mpo[isite - 1], (1, 2), (2, 1)),
+                    moveaxis(self.b_mpo[isite - 1], (1, 2), (2, 1)),
                     self.cv_mpo[isite - 1])
 
             elif direction == "right":
@@ -730,7 +713,7 @@ class SpectraFtCV(SpectraCv):
                     self.cv_mpo[isite - 1], self.h_mpo[isite - 1])
                 forth_LR[isite] = multi_tensor_contract(
                     path4, forth_LR[isite - 1],
-                    moveaxis(self.a_ket_mpo[isite - 1], (1, 2), (2, 1)),
+                    moveaxis(self.b_mpo[isite - 1], (1, 2), (2, 1)),
                     self.cv_mpo[isite - 1])
         else:
             # 2site for finite temperature is too expensive, so I drop it

@@ -12,11 +12,12 @@ from renormalizer.mps.matrix import (
     tensordot,
     multi_tensor_contract,
 )
-from renormalizer.mps.solver import construct_mps_mpo_2, optimize_mps
 from renormalizer.utils import OptimizeConfig
 import logging
 import scipy
 import copy
+
+import opt_einsum as oe
 
 logger = logging.getLogger(__name__)
 
@@ -27,103 +28,117 @@ class SpectraZtCV(SpectraCv):
     Paramters:
         mol_list : MolList
             provide the molecular information,
-        spectratype : string
-            "abs" or "emi"
+        h_mpo : Mpo
+            mpo of Hamiltonian
         freq_reg : list
             frequency window to be calculated (a.u.)
+        spectratype : string
+            "abs" or "emi"
         m_max : int
             maximal bond dimension of correction vector
         eta : float
             Lorentizian broadening width
         method : string
             "1site" or "2site"
+        procedure_cv : list
+            percent used for each sweep
+        rtol: float
+            the relative tolerance of the spectrum strength, default: 1e-5
+        b_mps : Mps 
+            the b vector -eta * dipole * \psi_0, default: None (Holstein model
+            could construct b_mps implicitly)
+        e0 : float
+            gs energy, default: None (Holstein model could calculate e0
+            implicitly)
+        cv_mps : Mps
+            initial guess of cv_mps, default: None
         procedure_gs : list, optional
             the procedure for ground state calculation
             if not provided, procedure_gs = [[10, 0.4], [20, 0.2], [30, 0.1], [40, 0], [40, 0]]
             warning: the default one won't be enough for large systems!
-        procedure_cv : list
-            percent used for each sweep
-        cores : int
-            cores for prallelization
 
     Example::
+        see test/test_abs.py for example
 
-    >>> from renormalizer.cv.zerot import SpectraZtCV
-    >>> from renormalizer.tests.parameter import mol_list
-    >>> import numpy as np
-    >>> def run():
-    ...     freq_reg = np.arange(0, 0.1, 1.e-3)
-    ...     m_max = 10
-    ...     eta = 1.e-3
-    ...     spectra = SpectraZtCV(mol_list, "abs", freq_reg, m_max, eta, cores=4)
-    ...     spectra.init_oper()
-    ...     spectra.init_mps()
-    ...     result = spectra.run()
-    >>> if __name__ == "__main__":
-    ...     run()
     '''
     def __init__(
         self,
         mol_list,
         spectratype,
-        freq_reg,
         m_max,
         eta,
-        method="1site",
-        procedure_gs=None,
-        procedure_cv=None,
-        cores=1
+        h_mpo = None,
+        method = "1site",
+        procedure_cv = None,
+        rtol = 1e-5,
+        b_mps = None,
+        e0 = None,
+        cv_mps = None,
+        procedure_gs = None,
     ):
-        super().__init__(
-            mol_list, spectratype, freq_reg, m_max, eta, method, procedure_cv,
-            cores
-        )
-        # procedure for ground state calculation
-        if procedure_gs is None:
-            procedure_gs = [[10, 0.4], [20, 0.2], [30, 0.1], [40, 0], [40, 0]]
         self.procedure_gs = procedure_gs
+        
+        super().__init__(
+            mol_list, spectratype, m_max, eta, h_mpo=h_mpo, 
+            method=method, procedure_cv=procedure_cv,
+            rtol=rtol, b_mps=b_mps, e0=e0, cv_mps=cv_mps,
+        )
+        
+        self.a_oper = None
 
-    def init_oper(self):
+    def init_b_mps(self):
+        # get the right hand site vector b, Ax=b
+        # b = -eta * dipole * \psi_0
+
+        # only support Holstine model 0/1 exciton manifold
         if self.spectratype == "abs":
-            self.nexciton = 0
+            nexciton = 0
             dipoletype = r"a^\dagger"
-        else:
-            self.nexciton = 1
+        elif self.spectratype == "emi":
+            nexciton = 1
             dipoletype = "a"
+        
+        # procedure for ground state calculation
+        if self.procedure_gs is None:
+            self.procedure_gs = [[10, 0.4], [20, 0.2], [30, 0.1], [40, 0], [40, 0]]
 
+        # ground state calculation
+        mps = Mps.random(
+            self.mol_list, nexciton, self.procedure_gs[0][0], percent=1.0)
+        mps.optimize_config = OptimizeConfig(procedure=self.procedure_gs)
+        mps.optimize_config.method = "2site"
+        
+        energies = solver.optimize_mps_dmrg(mps, self.h_mpo)
+        e0 = min(energies)
+        
         dipole_mpo = \
             Mpo.onsite(
                 self.mol_list, dipoletype, dipole=True
             )
-        mps, self.mpo = \
-            construct_mps_mpo_2(
-                self.mol_list, self.procedure_gs[0][0], self.nexciton
-            )
-        # ground state calculation
-        mps.optimize_config = OptimizeConfig(procedure=self.procedure_gs)
-        mps.optimize_config.method = "2site"
-        self.lowest_e = optimize_mps(mps, self.mpo)
-        ket_mps = dipole_mpo.apply(mps, canonicalise=True)
-        self.b_oper = ket_mps.scale(-self.eta)
-
-    def init_mps(self):
-        self.cv_mps = Mps.random(
-            self.mol_list, 1-self.nexciton, self.m_max, percent=1.0)
+        b_mps = dipole_mpo.apply(mps.scale(-self.eta))
+        
+        return b_mps, e0
+            
+    def init_cv_mps(self):
+        # random guess of cv_mps with same qn as b_mps
+        assert self.b_mps is not None
+        # initialize guess of cv_mps
+        cv_mps = Mps.random(
+            self.mol_list, self.b_mps.qntot, self.m_max, percent=1.0)
+        logger.info(f"cv_mps random guess qntot: {cv_mps.qntot}")
+        
+        return cv_mps
 
     def oper_prepare(self, omega):
-        h_mpo = copy.deepcopy(self.mpo)
-        for ibra in range(self.mpo.pbond_list[0]):
-            h_mpo[0][0, ibra, ibra, 0] -= (self.lowest_e + omega)
-        self.a_oper = h_mpo
-
+        # set up a_oper = (H_0 - e0 - omega)
+        identity = Mpo.identity(self.mol_list).scale(-self.e0-omega)
+        self.a_oper = self.h_mpo.add(identity)
+    
     def optimize_cv(self, lr_group, direction, isite, num, percent=0.0):
         # depending on the spectratype, to restrict the exction
         first_LR = lr_group[0]
         second_LR = lr_group[1]
-        if self.spectratype == "abs":
-            constrain_qn = 1
-        else:
-            constrain_qn = 0
+        constrain_qn = self.cv_mps.qntot
         # this function aims at solving the work equation of ZT CV-DMRG
         # L = <CV|op_a|CV>+2\eta<op_b|CV>, take a derivative to local CV
         # S-a-S-e-S                          S-a-S-d-S
@@ -155,30 +170,28 @@ class SpectraZtCV(SpectraCv):
 
         # this part just be similar with ground state calculation
         qnmat, qnbigl, qnbigr = svd_qn.construct_qnmat(
-            self.cv_mps, self.mpo.pbond_list,
-            addlist, self.method, system)
+            self.cv_mps, addlist, self.method, system)
         xshape = qnmat.shape
-        nonzeros = np.sum(qnmat == constrain_qn)
-
+        nonzeros = int(np.sum(qnmat == constrain_qn))
+        #logger.debug(f"nonzeros: {nonzeros}")
         if self.method == '1site':
-            guess = self.cv_mps[isite - 1][qnmat == constrain_qn].reshape(nonzeros, 1)
+            guess = self.cv_mps[isite - 1][qnmat == constrain_qn]
             path_b = [([0, 1], "ab, acd->bcd"),
                       ([1, 0], "bcd, de->bce")]
             vec_b = multi_tensor_contract(
-                path_b, second_L, self.b_oper[isite - 1], second_R
-            )[qnmat == constrain_qn].reshape(nonzeros, 1)
+                path_b, second_L, self.b_mps[isite - 1], second_R
+            )[qnmat == constrain_qn]
         else:
             guess = tensordot(
                 self.cv_mps[isite - 2], self.cv_mps[isite - 1], axes=(-1, 0)
-            )
-            guess = guess[qnmat == constrain_qn].reshape(nonzeros, 1)
+            )[qnmat == constrain_qn]
             path_b = [([0, 1], "ab, acd->bcd"),
                       ([2, 0], "bcd, def->bcef"),
                       ([1, 0], "bcef, fg->bceg")]
             vec_b = multi_tensor_contract(
-                path_b, second_L, self.b_oper[isite - 2],
-                self.b_oper[isite - 1], second_R
-            )[qnmat == constrain_qn].reshape(nonzeros, 1)
+                path_b, second_L, self.b_mps[isite - 2],
+                self.b_mps[isite - 1], second_R
+            )[qnmat == constrain_qn]
 
         if self.method == "2site":
             a_oper_isite2 = asxp(self.a_oper[isite - 2])
@@ -187,34 +200,53 @@ class SpectraZtCV(SpectraCv):
         a_oper_isite1 = asxp(self.a_oper[isite - 1])
 
         # use the diagonal part of mat_a to construct the preconditinoner for linear solver
+        part_l = xp.einsum('abca->abc', first_L)
+        part_r = xp.einsum('hfgh->hfg', first_R)
         if self.method == "1site":
-            part_l = xp.einsum('abca->abc', first_L)
-            part_r = xp.einsum('hfgh->hfg', first_R)
-            path_pre = [([0, 1], "abc, bdef->acdef"),
-                        ([1, 0], "acdef, hfg->acdehg")]
-            pre_a_mat1 = multi_tensor_contract(path_pre, part_l, a_oper_isite1,
-                                               part_r)
-            path_pre2 = [([0, 1], "acdehg, ceig->adhi")]
-            pre_a_mat1 = multi_tensor_contract(path_pre2, pre_a_mat1, a_oper_isite1)
-            pre_a_mat1 = xp.einsum('adhd->adh', pre_a_mat1)[qnmat == constrain_qn]
-            # pre_a_mat1 = xp.einsum('abca, bdef, cedg, hfgh->adh', first_L, a_oper_isite1,
-            #                        a_oper_isite1, first_R)[qnmat == constrain_qn]
-            cv_shape = self.cv_mps[isite - 1].shape
-            pre_a_mat2 = xp.ones(cv_shape)[qnmat == constrain_qn]
-            pre_a_mat = pre_a_mat1 + pre_a_mat2 * self.eta**2
+            #  S-a   d    h-S
+            #  O-b  -O-   f-O
+            #  |     e      |
+            #  O-c  -O-   g-O
+            #  S-a   i    h-S
+            path_pre = [([0, 1], "abc, bdef -> acdef"),
+                        ([1, 0], "acdef, ceig -> adfig")]
+            a_diag = multi_tensor_contract(path_pre, part_l, a_oper_isite1,
+                                               a_oper_isite1)
+            a_diag = xp.einsum("adfdg -> adfg", a_diag)
+            a_diag = xp.tensordot(a_diag, part_r, axes=([2,3],[1,2]))[qnmat == constrain_qn]
         else:
-            pre_a_mat1 = xp.einsum(
-                'abca, bdef, cedg, fhij, gihk, ljkl->adhl', first_L, a_oper_isite2, a_oper_isite2,
-                a_oper_isite1, a_oper_isite1, first_R)[qnmat == constrain_qn]
-            cv_shape1 = self.cv_mps[isite - 2].shape
-            cv_shape2 = self.cv_mps[isite - 1].shape
-            new_shape = [cv_shape1[0], cv_shape1[1], cv_shape2[1], cv_shape2[2]]
-            pre_a_mat2 = xp.ones(new_shape)[qnmat == constrain_qn]
-            pre_a_mat = pre_a_mat1 + pre_a_mat2 * self.eta**2
+            #  S-a   d     k   h-S
+            #  O-b  -O- j -O-  f-O
+            #  |     e     l   |
+            #  O-c  -O- m -O-  g-O
+            #  S-a   i     n   h-S
+            # first left half, second right half, last contraction
+            
+            path_pre = [([0, 1], "abc, bdej -> acdej"),
+                        ([1, 0], "acdej, ceim -> adjim")]
+            a_diagl = multi_tensor_contract(path_pre, part_l, a_oper_isite2,
+                                               a_oper_isite2)
+            a_diagl = xp.einsum("adjdm -> adjm", a_diagl)
 
-        pre_a_mat = np.diag(1./asnumpy(pre_a_mat))
+            path_pre = [([0, 1], "hfg, jklf -> hgjkl"),
+                        ([1, 0], "hgjkl, mlng -> hjkmn")]
+            a_diagr = multi_tensor_contract(path_pre, part_r, a_oper_isite1,
+                                               a_oper_isite1)
+            a_diagr = xp.einsum("hjkmk -> khjm", a_diagr)
+            
+            a_diag = xp.tensordot(a_diagl, a_diagr, axes=([2,3],[2,3]))[qnmat == constrain_qn]
+        
+        a_diag = asnumpy(a_diag + xp.ones(nonzeros) * self.eta**2)
+        M_x = lambda x: x / a_diag  
+        pre_M = scipy.sparse.linalg.LinearOperator((nonzeros, nonzeros), M_x)
 
         count = 0
+        
+        # cache oe path
+        if self.method == "2site":
+            expr = oe.contract_expression("abcd, befh, cfgi, hjkn, iklo, mnop, dglp -> aejm",
+                    first_L, a_oper_isite2, a_oper_isite2, a_oper_isite1,
+                    a_oper_isite1, first_R, xshape, constants=[0,1,2,3,4,5])
 
         def hop(c):
             nonlocal count
@@ -227,41 +259,48 @@ class SpectraZtCV(SpectraCv):
                           ([1, 0], "dfhij, fhjk->dik")]
                 ax1 = multi_tensor_contract(path_a, first_L, xstruct,
                                            a_oper_isite1, a_oper_isite1, first_R)
-                ax2 = xstruct
-                ax = ax1 + ax2 * self.eta**2
             else:
-                path_a = [([0, 1], "abcd, aefg->bcdefg"),
-                          ([5, 0], "bcdefg, behi->cdfghi"),
-                          ([4, 0], "cdfghi, ifjk->cdghjk"),
-                          ([3, 0], "cdghjk, chlm->dgjklm"),
-                          ([2, 0], "dgjklm, mjno->dgklno"),
-                          ([1, 0], "dgklno, gkop->dlnp")]
-                ax1 = multi_tensor_contract(path_a, first_L, xstruct,
-                                           a_oper_isite2, a_oper_isite1,
-                                           a_oper_isite2, a_oper_isite1,
-                                           first_R)
-                ax2 = xstruct
-                ax = ax1 + ax2 * self.eta**2
-            cout = ax[qnmat == constrain_qn].reshape(nonzeros, 1)
+                # opt_einsum v3.2.1 is not bad, ~10% faster than the hand-design
+                # contraction path for this complicated cases and consumes a little bit less memory
+                # this is the only place in renormalizer we use opt_einsum now.
+                # we keep it here just for a demo.
+                #ax1 = oe.contract("abcd, befh, cfgi, hjkn, iklo, mnop, dglp -> aejm",
+                #        first_L, a_oper_isite2, a_oper_isite2, a_oper_isite1,
+                #        a_oper_isite1, first_R, xstruct)
+                
+                ax1 = expr(xstruct)   
+                #print(oe.contract_path("abcd, befh, cfgi, hjkn, iklo, mnop, dglp -> aejm",
+                #        first_L, a_oper_isite2, a_oper_isite2, a_oper_isite1,
+                #        a_oper_isite1, first_R, xstruct))
+
+                #path_a = [([0, 1], "abcd, aefg->bcdefg"),
+                #          ([5, 0], "bcdefg, behi->cdfghi"),
+                #          ([4, 0], "cdfghi, ifjk->cdghjk"),
+                #          ([3, 0], "cdghjk, chlm->dgjklm"),
+                #          ([2, 0], "dgjklm, mjno->dgklno"),
+                #          ([1, 0], "dgklno, gkop->dlnp")]
+                #ax1 = multi_tensor_contract(path_a, first_L, xstruct,
+                #                           a_oper_isite2, a_oper_isite1,
+                #                           a_oper_isite2, a_oper_isite1,
+                #                           first_R)
+            ax2 = xstruct
+            ax = ax1 + ax2 * self.eta**2
+            cout = ax[qnmat == constrain_qn]
             return asnumpy(cout)
 
         mat_a = scipy.sparse.linalg.LinearOperator((nonzeros, nonzeros), matvec=hop)
-        # for the first two sweep, not use the previous matrix as initial guess
-        # at the inital stage, they are far from from the optimized one
-        if num in [1, 2]:
-            x, info = scipy.sparse.linalg.cg(mat_a, asnumpy(vec_b), atol=0)
-        else:
-            x, info = scipy.sparse.linalg.cg(mat_a, asnumpy(vec_b), tol=1.e-5,
-                                             x0=guess, M=pre_a_mat, atol=0)
-        # logger.info(f'hop times:{count}')
+        
+        x, info = scipy.sparse.linalg.cg(mat_a, asnumpy(vec_b), tol=1.e-5,
+                                             x0=asnumpy(guess),
+                                             M=pre_M, atol=0)
+        
+        #logger.debug(f'hop times:{count}')
         self.hop_time.append(count)
         if info != 0:
             logger.info(f"iteration solver not converged")
 
         # the value of the functional L
-        l_value = np.inner(hop(x).reshape(1, nonzeros), x.reshape(1, nonzeros)
-                     ) - 2 * np.inner(
-                         asnumpy(vec_b).reshape(1, nonzeros), x.reshape(1, nonzeros))
+        l_value = xp.dot(asxp(hop(x)), asxp(x)) - 2 * xp.dot(vec_b, asxp(x))
         xstruct = svd_qn.cvec2cmat(xshape, x, qnmat, constrain_qn)
         x, xdim, xqn, compx = \
             solver.renormalization_svd(xstruct, qnbigl, qnbigr, system,
@@ -294,7 +333,8 @@ class SpectraZtCV(SpectraCv):
                 self.cv_mps[isite - 2] = x
                 self.cv_mps[isite - 1] = compx
             self.cv_mps.qn[isite - 1] = xqn
-        return l_value[0][0]
+
+        return float(l_value)
 
     # It is suggested the initial_LR and update_LR can make use of Environ
     # just as in mps.lib
@@ -322,7 +362,7 @@ class SpectraZtCV(SpectraCv):
                     path1, first_LR[isite], self.cv_mps[isite - 1],
                     self.a_oper[isite - 1], self.a_oper[isite - 1], self.cv_mps[isite - 1]))
                 second_LR[isite - 1] = asnumpy(multi_tensor_contract(
-                    path2, second_LR[isite], self.b_oper[isite - 1], self.cv_mps[isite - 1]))
+                    path2, second_LR[isite], self.b_mps[isite - 1], self.cv_mps[isite - 1]))
         else:
             path1 = [([0, 1], "abcd, aef->bcdef"),
                      ([3, 0], "bcdef, begh->cdfgh"),
@@ -336,7 +376,7 @@ class SpectraZtCV(SpectraCv):
                     path1, first_LR[isite - 1], mps_isite,
                     self.a_oper[isite - 1], self.a_oper[isite - 1], self.cv_mps[isite - 1]))
                 second_LR[isite] = asnumpy(multi_tensor_contract(
-                    path2, second_LR[isite - 1], self.b_oper[isite - 1], mps_isite))
+                    path2, second_LR[isite - 1], self.b_mps[isite - 1], mps_isite))
         return [first_LR, second_LR]
 
     def update_LR(self, lr_group, direction, isite):
@@ -351,11 +391,13 @@ class SpectraZtCV(SpectraCv):
                          ([1, 0], "degij, kjd->egik")]
                 path2 = [([0, 1], "ab, cda->bcd"),
                          ([1, 0], "bcd, edb->ce")]
-                first_LR[isite - 1] = multi_tensor_contract(
+                first_LR[isite - 1] = asnumpy(multi_tensor_contract(
                     path1, first_LR[isite], self.cv_mps[isite - 1],
-                    self.a_oper[isite - 1], self.a_oper[isite - 1], self.cv_mps[isite - 1])
-                second_LR[isite - 1] = multi_tensor_contract(
-                    path2, second_LR[isite], self.b_oper[isite - 1], self.cv_mps[isite - 1])
+                    self.a_oper[isite - 1], self.a_oper[isite - 1],
+                    self.cv_mps[isite - 1]))
+                second_LR[isite - 1] = asnumpy(multi_tensor_contract(
+                    path2, second_LR[isite], self.b_mps[isite - 1],
+                    self.cv_mps[isite - 1]))
 
             else:
                 path1 = [([0, 1], "abcd, aef->bcdef"),
@@ -364,11 +406,13 @@ class SpectraZtCV(SpectraCv):
                          ([1, 0], "dfhij, dik->fhjk")]
                 path2 = [([0, 1], "ab, acd->bcd"),
                          ([1, 0], "bcd, bce->de")]
-                first_LR[isite] = multi_tensor_contract(
+                first_LR[isite] = asnumpy(multi_tensor_contract(
                     path1, first_LR[isite - 1], self.cv_mps[isite - 1],
-                    self.a_oper[isite - 1], self.a_oper[isite - 1], self.cv_mps[isite - 1])
-                second_LR[isite] = multi_tensor_contract(
-                    path2, second_LR[isite - 1], self.b_oper[isite - 1], self.cv_mps[isite - 1])
+                    self.a_oper[isite - 1], self.a_oper[isite - 1],
+                    self.cv_mps[isite - 1]))
+                second_LR[isite] = asnumpy(multi_tensor_contract(
+                    path2, second_LR[isite - 1], self.b_mps[isite - 1],
+                    self.cv_mps[isite - 1]))
 
         else:
             if direction == "left":
@@ -378,11 +422,13 @@ class SpectraZtCV(SpectraCv):
                          ([1, 0], "degij, kjd->egik")]
                 path2 = [([0, 1], "ab, cda->bcd"),
                          ([1, 0], "bcd, edb->ce")]
-                first_LR[isite - 1] = multi_tensor_contract(
+                first_LR[isite - 1] = asnumpy(multi_tensor_contract(
                     path1, first_LR[isite], self.cv_mps[isite - 1],
-                    self.a_oper[isite - 1], self.a_oper[isite - 1], self.cv_mps[isite - 1])
-                second_LR[isite - 1] = multi_tensor_contract(
-                    path2, second_LR[isite], self.b_oper[isite - 1], self.cv_mps[isite - 1])
+                    self.a_oper[isite - 1], self.a_oper[isite - 1],
+                    self.cv_mps[isite - 1]))
+                second_LR[isite - 1] = asnumpy(multi_tensor_contract(
+                    path2, second_LR[isite], self.b_mps[isite - 1],
+                    self.cv_mps[isite - 1]))
 
             else:
                 path1 = [([0, 1], "abc, aef->bcdef"),
@@ -391,10 +437,12 @@ class SpectraZtCV(SpectraCv):
                          ([1, 0], "dfhij, dik->fhjk")]
                 path2 = [([0, 1], "ab, acd->bcd"),
                          ([1, 0], "bcd, bce->de")]
-                first_LR[isite - 1] = multi_tensor_contract(
+                first_LR[isite - 1] = asnumpy(multi_tensor_contract(
                     path1, first_LR[isite - 2], self.cv_mps[isite - 2],
-                    self.a_oper[isite - 2], self.a_oper[isite - 2], self.cv_mps[isite - 2])
-                second_LR[isite - 1] = multi_tensor_contract(
-                    path2, second_LR[isite - 2], self.b_oper[isite - 2], self.cv_mps[isite - 2])
+                    self.a_oper[isite - 2], self.a_oper[isite - 2],
+                    self.cv_mps[isite - 2]))
+                second_LR[isite - 1] = asnumpy(multi_tensor_contract(
+                    path2, second_LR[isite - 2], self.b_mps[isite - 2],
+                    self.cv_mps[isite - 2]))
 
         return [first_LR, second_LR]

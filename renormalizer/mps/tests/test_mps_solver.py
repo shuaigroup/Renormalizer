@@ -61,6 +61,8 @@ def test_multistate():
     mps.optimize_config.procedure = procedure
     mps.optimize_config.nroots = 5
     mps.optimize_config.method = "1site"
+    mps.optimize_config.e_atol = 1e-6
+    mps.optimize_config.e_rtol = 1e-6
     energy1 = optimize_mps(mps.copy(), mpo)
     mps.optimize_config.method = "2site"
     energy2 = optimize_mps(mps.copy(), mpo)

@@ -46,7 +46,8 @@ def expm_krylov(Afunc, dt, vstart: xp.ndarray, block_size=50):
     V = xp.empty((block_size, len(vstart)), dtype=vstart.dtype)
     V[0] = vstart
     res = None
-
+    
+    j = 0
     for j in range(len(vstart) - 1):
         if len(V) - 2 == j:
             V, old_V = xp.empty((len(V) + block_size, len(vstart)), dtype=vstart.dtype), V

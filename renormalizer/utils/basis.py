@@ -1,7 +1,12 @@
 import numpy as np
 from renormalizer.utils import Op
 from typing import Dict, List
+import scipy.linalg
+import scipy.special
+import itertools
+import logging
 
+logger = logging.getLogger(__name__)
 
 class BasisSet:
     r"""
@@ -37,11 +42,23 @@ class BasisSHO(BasisSet):
         x0 (float): the origin of the harmonic oscillator. Default = 0.
     """
     
-    def __init__(self, omega, nbas, x0=0.):
+    def __init__(self, omega, nbas, x0=0., dvr=False):
         self.omega = omega
         self.x0 = x0  # origin = x0
         super().__init__(nbas, [0] * nbas)
         
+        # calculate x, p power generally, but not efficient for x/p or x^2/p^2
+        # which have been hard-coded already.
+        self.general_xp_power = False
+
+        self.dvr = False
+        self.dvr_x = None  # the expectation value of x on SHO_dvr
+        self.dvr_v = None  # the rotation matrix between SHO to SHO_dvr
+        if dvr:
+            self.dvr_x, self.dvr_v = scipy.linalg.eigh(self.op_mat("x"))
+            self.dvr = True
+
+
     def __repr__(self):
         return f"(x0: {self.x0}, omega: {self.omega}, nbas: {self.nbas})"
     
@@ -52,25 +69,32 @@ class BasisSHO(BasisSet):
             op_symbol, op_factor = op, 1.0
 
         if op_symbol in ["b", "b b", r"b^\dagger", r"b^\dagger b^\dagger", r"b^\dagger b", r"b b^\dagger", r"b^\dagger + b"]:
-            assert np.allclose(self.x0, 0)
+            if not np.allclose(self.x0, 0):
+                logger.warning("the second quantization doesn't support nonzero x0")
 
         # so many if-else might be a potential performance problem in the future
         # change to lazy-evaluation dict should be better
-
+        
         # second quantization formula
         if op_symbol == "b":
             mat = np.diag(np.sqrt(np.arange(1, self.nbas)), k=1)
 
         elif op_symbol == "b b":
             # b b = sqrt(n*(n-1)) delta(m,n-2)
-            mat = np.diag(np.sqrt(np.arange(1, self.nbas - 1) * np.arange(2, self.nbas)), k=2)
+            if self.nbas == 1:
+                mat = np.zeros((1,1))
+            else:
+                mat = np.diag(np.sqrt(np.arange(1, self.nbas - 1) * np.arange(2, self.nbas)), k=2)
 
         elif op_symbol == r"b^\dagger":
             mat = np.diag(np.sqrt(np.arange(1, self.nbas)), k=-1)
 
         elif op_symbol == r"b^\dagger b^\dagger":
             # b^\dagger b^\dagger = sqrt((n+2)*(n+1)) delta(m,n+2)
-            mat = np.diag(np.sqrt(np.arange(1, self.nbas - 1) * np.arange(2, self.nbas)), k=-2)
+            if self.nbas == 1:
+                mat = np.zeros((1,1))
+            else:
+                mat = np.diag(np.sqrt(np.arange(1, self.nbas - 1) * np.arange(2, self.nbas)), k=-2)
 
         elif op_symbol == r"b^\dagger + b":
             mat = self.op_mat(r"b^\dagger") + self.op_mat("b")
@@ -82,40 +106,99 @@ class BasisSHO(BasisSet):
         elif op_symbol == r"b b^\dagger":
             mat = np.diag(np.arange(self.nbas) + 1)
 
-        elif op_symbol == "x":
-            # define x-x0 = y or x = y+x0, return x
-            # <m|y|n> = sqrt(1/2w) <m| b^\dagger + b |n>
-            mat = np.sqrt(0.5/self.omega) * self.op_mat(r"b^\dagger + b") + np.eye(self.nbas) * self.x0
+        elif op_symbol == "x" and (not self.general_xp_power):
+            if not self.dvr:
+                # define x-x0 = y or x = y+x0, return x
+                # <m|y|n> = sqrt(1/2w) <m| b^\dagger + b |n>
+                mat = np.sqrt(0.5/self.omega) * self.op_mat(r"b^\dagger + b") + np.eye(self.nbas) * self.x0
+            else:
+                mat = np.diag(self.dvr_x)
 
-        elif op_symbol == "x^2":
-            # can't do things like the commented code below due to numeric error around highest quantum number
-            # x_mat = self.op_mat("x")
-            # mat = x_mat @ x_mat
+        elif op_symbol == "x^2" and (not self.general_xp_power):
+            
+            if not self.dvr:
+                # can't do things like the commented code below due to numeric error around highest quantum number
+                # x_mat = self.op_mat("x")
+                # mat = x_mat @ x_mat
+                # x^2 = x0^2 + 2 x0 * y + y^2
+                # x0^2
+                mat = np.eye(self.nbas) * self.x0**2
 
-            # x^2 = x0^2 + 2 x0 * y + y^2
-            # x0^2
-            mat = np.eye(self.nbas) * self.x0**2
+                # 2 x0 * y
+                mat += 2 * self.x0 * np.sqrt(0.5/self.omega) * self.op_mat(r"b^\dagger + b")
 
-            # 2 x0 * y
-            mat += 2 * self.x0 * np.sqrt(0.5/self.omega) * self.op_mat(r"b^\dagger + b")
+                #  y^2: 1/2w * (b^\dagger b^\dagger + b^dagger b + b b^\dagger + bb)
+                mat += 0.5/self.omega * (self.op_mat(r"b^\dagger b^\dagger")
+                                         + self.op_mat(r"b^\dagger b")
+                                         + self.op_mat(r"b b^\dagger")
+                                         + self.op_mat(r"b b")
+                                         )
+            else:
+                mat = np.diag(self.dvr_x**2)
+        
+        elif op_symbol.split("^")[0] == "x":
+            # moments of x
+            if len(op_symbol.split("^")) == 1:
+                moment = 1
+            else:
+                moment = float(op_symbol.split("^")[1])
+            
+            if not self.dvr:
+                # the analytical expression should be integer
+                assert np.allclose(moment, round(moment)) 
+                moment = round(moment)
+                mat = np.zeros((self.nbas, self.nbas))
+                for imoment in range(moment+1):
+                    factor = scipy.special.comb(moment, imoment) * np.sqrt(1/self.omega) ** imoment
+                    for i,j in itertools.product(range(self.nbas), repeat=2):
+                        mat[i,j] += factor * x_power_k(imoment, i, j) * self.x0**(moment-imoment)
+                
+            else:
+                mat = np.diag(self.dvr_x ** moment)
 
-            #  y^2: 1/2w * (b^\dagger b^\dagger + b^dagger b + b b^\dagger + bb)
-            mat += 0.5/self.omega * (self.op_mat(r"b^\dagger b^\dagger")
-                                     + self.op_mat(r"b^\dagger b")
-                                     + self.op_mat(r"b b^\dagger")
-                                     + self.op_mat(r"b b")
-                                     )
-
-        elif op_symbol == "p":
+        elif op_symbol == "p" and (not self.general_xp_power):
             # <m|p|n> = -i sqrt(w/2) <m| b - b^\dagger |n>
             mat = 1j * np.sqrt(self.omega / 2) * (self.op_mat(r"b^\dagger") - self.op_mat("b"))
+            if self.dvr:
+                mat = self.dvr_v.T @ mat 
+                mat = mat @ self.dvr_v
 
-        elif op_symbol == "p^2":
+        elif op_symbol == "p^2" and (not self.general_xp_power):
             mat = -self.omega / 2 * (self.op_mat(r"b^\dagger b^\dagger")
                                      - self.op_mat(r"b^\dagger b")
                                      - self.op_mat(r"b b^\dagger")
                                      + self.op_mat(r"b b")
                                      )
+            if self.dvr:
+                mat = self.dvr_v.T @ mat 
+                mat = mat @ self.dvr_v
+        
+        elif op_symbol.split("^")[0] == "p":
+            # moments of p
+            if len(op_symbol.split("^")) == 1:
+                moment = 1
+            else:
+                moment = float(op_symbol.split("^")[1])
+            
+            # the moment for p should be integer
+            assert np.allclose(moment, round(moment)) 
+            moment = round(moment)
+            if moment % 2 == 0:
+                dtype = np.float64
+            else:
+                dtype = np.complex128
+            mat = np.zeros((self.nbas, self.nbas), dtype=dtype)
+
+            for i,j in itertools.product(range(self.nbas), repeat=2):
+                res = p_power_k(moment, i, j) * np.sqrt(self.omega) ** moment
+                if moment % 2 == 0:
+                    mat[i,j] = np.real(res)
+                else:
+                    mat[i,j] = res
+                
+            if self.dvr:
+                mat = self.dvr_v.T @ mat 
+                mat = mat @ self.dvr_v
 
         elif op_symbol == "I":
             mat = np.eye(self.nbas)
@@ -126,7 +209,7 @@ class BasisSHO(BasisSet):
             mat = np.diag(np.arange(self.nbas))
         else:
             raise ValueError(f"op_symbol:{op_symbol} is not supported")
-
+        
         return mat * op_factor
 
 
@@ -303,7 +386,9 @@ class BasisHalfSpin(BasisSet):
         
         if len(op_symbol) == 1:       
             op_symbol = op_symbol[0]
-            
+            # Todo: the string itself may sometimes consume a lot of memory when
+            # the number of terms in O is very huge
+            # replace sigma_x with s_x in the furture
             if op_symbol == "I":
                 mat = np.eye(2)
             elif op_symbol == "sigma_x":
@@ -326,3 +411,32 @@ class BasisHalfSpin(BasisSet):
                 mat = mat @ self.op_mat(o)
 
         return mat * op_factor
+
+def x_power_k(k, m, n):
+# <m|x^k|n>, origin is 0
+#\left\langle m\left|X^{k}\right| n\right\rangle=2^{-\frac{k}{2}} \sqrt{n ! m !}
+#\quad \sum_{s=\max \left\{0, \frac{m+n-k}{2}\right\}} \frac{k !}{(m-s) !
+# s !(n-s) !(k-m-n+2 s) ! !}
+# the problem is that large factorial may meet overflow problem
+    assert type(k) is int
+    assert type(m) is int
+    assert type(n) is int
+
+    if (m+n-k) % 2 == 1:
+        return 0
+    else:
+        factorial = scipy.special.factorial
+        factorial2 = scipy.special.factorial2
+        s_start = max(0, (m+n-k)//2)
+        res =  2**(-k/2) * np.sqrt(float(factorial(m,exact=True))) * \
+                np.sqrt(float(factorial(n, exact=True)))
+        sum0 = 0.
+        for s in range(s_start, min(m,n)+1):
+            sum0 +=  factorial(k, exact=True) / factorial(m-s, exact=True) / factorial(s, exact=True) /\
+               factorial(n-s, exact=True) / factorial2(k-m-n+2*s, exact=True)
+
+        return res*sum0
+
+def p_power_k(k,m,n):
+# <m|p^k|n>
+    return x_power_k(k,m,n) * (1j)**(m-n)

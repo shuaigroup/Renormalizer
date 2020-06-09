@@ -114,7 +114,9 @@ def optimize_mps_dmrg(mps, mpo):
     nroots = mps.optimize_config.nroots
 
     assert method in ["2site", "1site"]
-    # print("optimization method", method)
+    logger.info(f"optimization method: {mps.optimize_config.method}")
+    logger.info(f"e_rtol: {mps.optimize_config.e_rtol}")
+    logger.info(f"e_atol: {mps.optimize_config.e_atol}")
 
     nexciton = mps.nexciton
 
@@ -136,12 +138,14 @@ def optimize_mps_dmrg(mps, mpo):
     ltensor = ones((1, 1, 1))
     rtensor = ones((1, 1, 1))
 
-    energies = []
+    macro_iteration_result = []
+    converged = False
     for isweep, (mmax, percent) in enumerate(procedure):
+        logger.debug(f"isweep: {isweep}")
         logger.debug(f"mmax, percent: {mmax}, {percent}")
-        logger.debug(f"energy: {mps.expectation(mpo)}")
         logger.debug(f"{mps}")
 
+        micro_iteration_result = []
         for system, imps in loop:
             if system == "R":
                 lmethod, rmethod = "Enviro", "System"
@@ -151,9 +155,11 @@ def optimize_mps_dmrg(mps, mpo):
             if method == "1site":
                 lsite = imps - 1
                 addlist = [imps]
+                logger.debug(f"optimize site: {imps}")
             else:
                 lsite = imps - 2
                 addlist = [imps - 1, imps]
+                logger.debug(f"optimize site: {imps-1}, {imps}")
 
             ltensor = environ.GetLR(
                 "L", lsite, mps, mpo, itensor=ltensor, method=lmethod
@@ -164,7 +170,7 @@ def optimize_mps_dmrg(mps, mpo):
 
             # get the quantum number pattern
             qnmat, qnbigl, qnbigr = svd_qn.construct_qnmat(
-                mps, mpo.pbond_list, addlist, method, system
+                mps, addlist, method, system
             )
             cshape = qnmat.shape
 
@@ -201,7 +207,7 @@ def optimize_mps_dmrg(mps, mpo):
                 cguess = asnumpy(tensordot(mps[imps - 1], mps[imps], axes=1)[qnmat == nexciton])
             hdiag *= inverse
             nonzeros = np.sum(qnmat == nexciton)
-            # print("Hmat dim", nonzeros)
+            logger.debug(f"Hmat dim: {nonzeros}")
 
             mo1 = asxp(mpo[imps-1])
             mo2 = asxp(mpo[imps])
@@ -262,13 +268,18 @@ def optimize_mps_dmrg(mps, mpo):
             e, c = davidson(
                 hop, cguess, precond, max_cycle=100, nroots=nroots, max_memory=64000
             )
+            # if one root, davidson return np.float
+            # if multi roots, davidson return np.ndarray
+            if nroots > 1:
+                e = e.tolist()
+
             # scipy arpack solver : much slower than davidson
             # A = spslinalg.LinearOperator((nonzeros,nonzeros), matvec=hop)
             # e, c = spslinalg.eigsh(A,k=1, which="SA",v0=cguess)
-            # print("HC loops:", count[0])
-            # logger.debug(f"isweep: {isweep}, e: {e}")
+            #logger.debug("HC loops, count[0])
+            logger.debug(f"energy: {e}")
 
-            energies.append(e)
+            micro_iteration_result.append(e)
 
             cstruct = svd_qn.cvec2cmat(cshape, c, qnmat, nexciton, nroots=nroots)
 
@@ -322,12 +333,26 @@ def optimize_mps_dmrg(mps, mpo):
 
                 # mps.dim_list[imps] = mpsdim
                 mps.qn[imps] = mpsqn
+        # if multi states are calculated, compare them state by state
+        # see Comparing Sequences in python 
+        macro_iteration_result.append(min(micro_iteration_result))
+        # check if convergence
+        if isweep > 0 and np.allclose(percent, 0, atol=1e-20):
+            v1, v2 = sorted(macro_iteration_result)[:2]
+            if np.allclose(v1, v2, rtol=mps.optimize_config.e_rtol,
+                    atol=mps.optimize_config.e_atol):
+                converged = True
+                break
 
-    energies = np.array(energies)
-    if nroots == 1:
-        logger.debug("Optimization complete, lowest energy = %g", energies.min())
+    logger.debug(f"{isweep+1} sweeps are finished, lowest energy = {sorted(macro_iteration_result)[0]}")
+    if converged:
+        logger.info("DMRG is converged!")
+    else:
+        logger.warning("DMRG is not converged! Please increase the procedure!")
+        logger.info(f"The lowest two energies: {sorted(macro_iteration_result)[:2]}.")
+    
+    return macro_iteration_result
 
-    return energies
 
 
 def optimize_mps_hartree(mps: "Mps", HAM):
