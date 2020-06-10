@@ -17,7 +17,7 @@ def test_BasisSHO(op, x0):
 
     sho_dvr = Ba.BasisSHO(0.1, 10, x0=x0, dvr=True)
     sho_dvr_general = Ba.BasisSHO(0.1, 10, x0=x0, dvr=True)
-    sho_dvr_general.general = True
+    sho_dvr_general.general_xp_power = True
     a_dvr = sho_dvr.op_mat(op)
     b_dvr = sho_dvr_general.op_mat(op)
     a_dvr = sho_dvr.dvr_v  @ a_dvr @ sho_dvr.dvr_v.T
