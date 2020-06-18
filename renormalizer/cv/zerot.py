@@ -4,7 +4,7 @@
 
 
 from renormalizer.cv.spectra_cv import SpectraCv
-from renormalizer.mps.backend import np, xp
+from renormalizer.mps.backend import np, xp, USE_GPU
 from renormalizer.mps import Mpo, Mps, solver, svd_qn
 from renormalizer.mps.matrix import (
     asnumpy,
@@ -134,7 +134,7 @@ class SpectraZtCV(SpectraCv):
         identity = Mpo.identity(self.mol_list).scale(-self.e0-omega)
         self.a_oper = self.h_mpo.add(identity)
     
-    def optimize_cv(self, lr_group, direction, isite, num, percent=0.0):
+    def optimize_cv(self, lr_group, isite, percent=0.0):
         # depending on the spectratype, to restrict the exction
         first_LR = lr_group[0]
         second_LR = lr_group[1]
@@ -163,10 +163,10 @@ class SpectraZtCV(SpectraCv):
             second_L = asxp(second_LR[isite - 2])
             second_R = asxp(second_LR[isite])
 
-        if direction == 'left':
-            system = 'R'
-        else:
+        if self.cv_mps.to_right:
             system = 'L'
+        else:
+            system = 'R'
 
         # this part just be similar with ground state calculation
         qnmat, qnbigl, qnbigr = svd_qn.construct_qnmat(
@@ -267,8 +267,10 @@ class SpectraZtCV(SpectraCv):
                 #ax1 = oe.contract("abcd, befh, cfgi, hjkn, iklo, mnop, dglp -> aejm",
                 #        first_L, a_oper_isite2, a_oper_isite2, a_oper_isite1,
                 #        a_oper_isite1, first_R, xstruct)
-                
-                ax1 = expr(xstruct)   
+                if USE_GPU:
+                    ax1 = expr(xstruct, backend="cupy")   
+                else:
+                    ax1 = expr(xstruct, backend="numpy")   
                 #print(oe.contract_path("abcd, befh, cfgi, hjkn, iklo, mnop, dglp -> aejm",
                 #        first_L, a_oper_isite2, a_oper_isite2, a_oper_isite1,
                 #        a_oper_isite1, first_R, xstruct))
@@ -298,7 +300,6 @@ class SpectraZtCV(SpectraCv):
         self.hop_time.append(count)
         if info != 0:
             logger.info(f"iteration solver not converged")
-
         # the value of the functional L
         l_value = xp.dot(asxp(hop(x)), asxp(x)) - 2 * xp.dot(vec_b, asxp(x))
         xstruct = svd_qn.cvec2cmat(xshape, x, qnmat, constrain_qn)
@@ -307,31 +308,35 @@ class SpectraZtCV(SpectraCv):
                                        constrain_qn, self.m_max, percent)
         if self.method == "1site":
             self.cv_mps[isite - 1] = x
-            if direction == "left":
+            if not self.cv_mps.to_right:
                 if isite != 1:
                     self.cv_mps[isite - 2] = tensordot(
                         self.cv_mps[isite - 2], compx, axes=(-1, 0))
                     self.cv_mps.qn[isite - 1] = xqn
+                    self.cv_mps.qnidx = isite-2
                 else:
                     self.cv_mps[isite - 1] = tensordot(
                         compx, self.cv_mps[isite - 1], axes=(-1, 0))
-                    self.cv_mps.qn[isite - 1] = [0]
-            elif direction == "right":
+                    self.cv_mps.qnidx = 0
+            else:
                 if isite != len(self.cv_mps):
                     self.cv_mps[isite] = tensordot(
                         compx, self.cv_mps[isite], axes=(-1, 0))
                     self.cv_mps.qn[isite] = xqn
+                    self.cv_mps.qnidx = isite
                 else:
                     self.cv_mps[isite - 1] = tensordot(
                         self.cv_mps[isite - 1], compx, axes=(-1, 0))
-                    self.cv_mps.qn[isite] = [0]
+                    self.cv_mps.qnidx = self.cv_mps.site_num-1
         else:
-            if direction == "left":
+            if not self.cv_mps.to_right:
                 self.cv_mps[isite - 1] = x
                 self.cv_mps[isite - 2] = compx
+                self.cv_mps.qnidx = isite-2
             else:
                 self.cv_mps[isite - 2] = x
                 self.cv_mps[isite - 1] = compx
+                self.cv_mps.qnidx = isite-1
             self.cv_mps.qn[isite - 1] = xqn
 
         return float(l_value)
@@ -339,7 +344,7 @@ class SpectraZtCV(SpectraCv):
     # It is suggested the initial_LR and update_LR can make use of Environ
     # just as in mps.lib
     # I may go back to have a try once I add the finite temeprature code
-    def initialize_LR(self, direction):
+    def initialize_LR(self):
         # initialize the Lpart and Rpart
         first_LR = []
         first_LR.append(np.ones((1, 1, 1, 1)))
@@ -350,7 +355,7 @@ class SpectraZtCV(SpectraCv):
             second_LR.append(None)
         first_LR.append(np.ones((1, 1, 1, 1)))
         second_LR.append(np.ones((1, 1)))
-        if direction == "right":
+        if self.cv_mps.to_right:
             path1 = [([0, 1], "abcd, efa->bcdef"),
                      ([3, 0], "bcdef, gfhb->cdegh"),
                      ([2, 0], "cdegh, ihjc->degij"),
@@ -379,12 +384,12 @@ class SpectraZtCV(SpectraCv):
                     path2, second_LR[isite - 1], self.b_mps[isite - 1], mps_isite))
         return [first_LR, second_LR]
 
-    def update_LR(self, lr_group, direction, isite):
+    def update_LR(self, lr_group, isite):
         first_LR = lr_group[0]
         second_LR = lr_group[1]
         # use the updated local site of cv_mps to update LR
         if self.method == "1site":
-            if direction == "left":
+            if not self.cv_mps.to_right:
                 path1 = [([0, 1], "abcd, efa->bcdef"),
                          ([3, 0], "bcdef, gfhb->cdegh"),
                          ([2, 0], "cdegh, ihjc->degij"),
@@ -415,7 +420,7 @@ class SpectraZtCV(SpectraCv):
                     self.cv_mps[isite - 1]))
 
         else:
-            if direction == "left":
+            if not self.cv_mps.to_right:
                 path1 = [([0, 1], "abc, efa->bcdef"),
                          ([3, 0], "bcdef, gfhb->cdegh"),
                          ([2, 0], "cdegh, ihgc->degij"),

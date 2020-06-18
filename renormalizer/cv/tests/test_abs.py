@@ -24,7 +24,7 @@ def test_zt_abs(method):
     
     spectra = SpectraZtCV(mol_list, "abs", 10,
                           5.e-5, method=method, rtol=1e-3)
-    result = batch_run(test_freq, 1, spectra)
+    result = batch_run(test_freq, 2, spectra)
     assert np.allclose(result, standard_value, rtol=1.e-2)
 
 

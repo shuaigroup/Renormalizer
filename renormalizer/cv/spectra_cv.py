@@ -13,7 +13,7 @@ from typing import List
 
 logger = logging.getLogger(__name__)
 
-def batch_run(freq_reg, cores, obj):
+def batch_run(freq_reg, cores, obj, filename=None):
     """
     batch run of cv calculation
     freq_reg: list object, frequecny windown
@@ -22,6 +22,7 @@ def batch_run(freq_reg, cores, obj):
     """
     logger.info(f"{len(freq_reg)} total frequency points to do")
     spectra = []
+    obj.batch_run = True
 
     if cores > 1:
         # multiprocessing
@@ -31,13 +32,16 @@ def batch_run(freq_reg, cores, obj):
         logger.info(f"{cores} multiprocess parallelization activated")
         for i_spec in pool.imap(obj.cv_solve, freq_reg):
             spectra.append(i_spec)
-
+            if filename is not None:
+                np.save(f"{filename}", spectra)
+        pool.close()
+        pool.join()
     elif cores == 1:
         # single process
         for omega in freq_reg:
             spectra.append(obj.cv_solve(omega))
-            #obj.cv_mps.ensure_left_canon()
-            obj.clear_res()
+            if filename is not None:
+                np.save(f"{filename}", spectra)
     else:
         assert False
 
@@ -102,6 +106,7 @@ class SpectraCv(object):
         # results
         self.hop_time = []
         self.macro_iteration_result = []
+        self.batch_run = False
 
         logger.info("DDMRG job created.")
 
@@ -113,61 +118,64 @@ class SpectraCv(object):
     def cv_solve(self, omega):
         
         converged = False
-        isweep = 1
         len_cv = len(self.cv_mps)
         self.oper_prepare(omega)
         
-        while isweep < len(self.procedure_cv):
-            if isweep % 2 == 0:
-                direction = 'right'
+        for idx, procedure in enumerate(self.procedure_cv):
+            isweep = idx + 1
+            if self.cv_mps.to_right and self.cv_mps.qnidx == 0:
                 if self.method == '1site':
                     irange = np.arange(1, len_cv+1)
                 else:
                     irange = np.arange(2, len_cv+1)
-            else:
-                direction = 'left'
+            elif (not self.cv_mps.to_right) and self.cv_mps.qnidx == self.cv_mps.site_num-1:
                 if self.method == '1site':
                     irange = np.arange(len_cv, 0, -1)
                 else:
                     irange = np.arange(len_cv, 1, -1)
+            else:
+                assert False
+
             if isweep == 1:
-                lr_group = self.initialize_LR(direction)
+                lr_group = self.initialize_LR()
             
             micro_iteration_result = []
             for isite in irange:
                 l_value = self.optimize_cv(
-                    lr_group, direction,
-                    isite, isweep, percent=self.procedure_cv[isweep-1])
+                    lr_group, isite, percent=procedure)
                 if (self.method == '1site') & (
-                    ((direction == 'left') & (isite == 1)) or (
-                        (direction == 'right') & (isite == len_cv))):
+                    ((not self.cv_mps.to_right) & (isite == 1)) or (
+                        self.cv_mps.to_right & (isite == len_cv))):
                     pass
                 else:
                     lr_group = \
-                        self.update_LR(lr_group, direction, isite)
+                        self.update_LR(lr_group, isite)
                 micro_iteration_result.append(-1./(np.pi * self.eta)*l_value)
                 logger.info(f"cv_bond_dims: {self.cv_mps.bond_dims}")
                 logger.debug(f"omega:{omega}, isweep:{isweep}, isite:{isite}, response result:{micro_iteration_result[-1]}")
             
+            self.cv_mps.to_right = not self.cv_mps.to_right
+
             self.macro_iteration_result.append(max(micro_iteration_result))
-            isweep += 1
-            
-            # breaking condition, depending on problem,
-            # can make it more strict
-            # by requiring the minimum isweep number as well as the tol
-            if (isweep > 1) and self.procedure_cv[isweep-1] == 0:
+            if (idx > 0) and procedure == 0:
                 v1, v2 = sorted(self.macro_iteration_result)[-2:]
                 if abs((v1-v2)/v1) < self.rtol:
                     converged = True
                     break
+        
         if converged:
             logger.info("cv converged!")
         else:
             logger.warning("cv *NOT* converged!")
 
         logger.info(f"omega:{omega}, sweeps:{isweep}, average_hop:{int(np.mean(self.hop_time))},res:{max(self.macro_iteration_result)}")
+        res = max(self.macro_iteration_result)
         
-        return max(self.macro_iteration_result)
+        # for batch run, clean up the results list
+        if self.batch_run:
+            self.clear_res()
+
+        return res 
     
     def clear_res(self):
         # reuse the same object to calculate another frequency
@@ -183,11 +191,11 @@ class SpectraCv(object):
     def oper_prepare(self, omgea):
         raise NotImplementedError
 
-    def optimize_cv(self, lr_group, direction, isite, isweep, percent=0):
+    def optimize_cv(self, lr_group, isite, percent=0):
         raise NotImplementedError
 
-    def initialize_LR(self, direction):
+    def initialize_LR(self):
         raise NotImplementedError
 
-    def update_LR(self, lrgroup, direction, isite):
+    def update_LR(self, lrgroup, isite):
         raise NotImplementedError

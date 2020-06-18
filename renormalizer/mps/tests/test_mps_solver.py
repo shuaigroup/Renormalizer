@@ -55,18 +55,17 @@ def test_optimization(scheme):
     energy = optimize_mps(mps.copy(), mpo)
     assert energy * constant.au2ev == pytest.approx(2.28614053133, rel=1e-5)
 
-
-def test_multistate():
+@pytest.mark.parametrize("method", (
+        "1site",
+        "2site",
+))
+def test_multistate(method):
     mps, mpo = construct_mps_mpo_2(mol_list, procedure[0][0], nexciton)
     mps.optimize_config.procedure = procedure
-    mps.optimize_config.nroots = 5
-    mps.optimize_config.method = "1site"
+    mps.optimize_config.nroots = 4
+    mps.optimize_config.method = method
     mps.optimize_config.e_atol = 1e-6
     mps.optimize_config.e_rtol = 1e-6
-    energy1 = optimize_mps(mps.copy(), mpo)
-    mps.optimize_config.method = "2site"
-    energy2 = optimize_mps(mps.copy(), mpo)
-    # print energy1[-1], energy2[-1]
+    energy = optimize_mps(mps.copy(), mpo)
     energy_std = [0.08401412, 0.08449771, 0.08449801, 0.08449945]
-    assert np.allclose(energy1[:4], energy_std)
-    assert np.allclose(energy2[:4], energy_std)
+    assert np.allclose(energy, energy_std)

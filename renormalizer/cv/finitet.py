@@ -164,7 +164,7 @@ class SpectraFtCV(SpectraCv):
         # huge cost to construct a_oper explicitly very slow, needs optimization
         self.a_oper = omega_minus_H.apply(omega_minus_H)
 
-    def optimize_cv(self, lr_group, direction, isite, num, percent=0):
+    def optimize_cv(self, lr_group, isite, percent=0):
         if self.spectratype == "abs":
             # quantum number restriction, |1><0|
             up_exciton, down_exciton = 1, 0
@@ -196,9 +196,8 @@ class SpectraFtCV(SpectraCv):
             forth_R = asxp(forth_LR[isite])
 
         xqnmat, xqnbigl, xqnbigr, xshape = \
-            self.construct_X_qnmat(add_list, direction)
-        dag_qnmat, dag_qnbigl, dag_qnbigr = self.swap(xqnmat, xqnbigl, xqnbigr,
-                                                      direction)
+            self.construct_X_qnmat(add_list)
+        dag_qnmat, dag_qnbigl, dag_qnbigr = self.swap(xqnmat, xqnbigl, xqnbigr)
         nonzeros = int(np.sum(
             self.condition(
                 dag_qnmat, [down_exciton, up_exciton])
@@ -282,7 +281,7 @@ class SpectraFtCV(SpectraCv):
             nonlocal count
             count += 1
             dag_struct = asxp(self.dag2mat(
-                xshape, x, dag_qnmat, direction))
+                xshape, x, dag_qnmat))
             if self.method == "1site":
 
                 M1 = multi_tensor_contract(
@@ -317,44 +316,50 @@ class SpectraFtCV(SpectraCv):
                 f"cg not converged, vecb.norm:{np.linalg.norm(vecb)}")
         l_value = xp.dot(asxp(hop(x)), asxp(x)) - 2 * xp.dot(vecb, asxp(x))
 
-        x = self.dag2mat(xshape, x, dag_qnmat, direction)
+        x = self.dag2mat(xshape, x, dag_qnmat)
         if self.method == "1site":
             x = np.moveaxis(x, [1, 2], [2, 1])
         x, xdim, xqn, compx = self.x_svd(
-            x, xqnbigl, xqnbigr, nexciton, direction,
+            x, xqnbigl, xqnbigr, nexciton,
             percent=percent)
 
         if self.method == "1site":
             self.cv_mpo[isite - 1] = x
-            if direction == "left":
+            if not self.cv_mpo.to_right:
                 if isite != 1:
                     self.cv_mpo[isite - 2] = \
                         tensordot(self.cv_mpo[isite - 2], compx, axes=(-1, 0))
                     self.cv_mpo.qn[isite - 1] = xqn
+                    self.cv_mpo.qnidx = isite-2
                 else:
                     self.cv_mpo[isite - 1] = \
                         tensordot(compx, self.cv_mpo[isite - 1], axes=(-1, 0))
-            elif direction == "right":
+                    self.cv_mpo.qnidx = 0
+            else:
                 if isite != len(self.cv_mpo):
                     self.cv_mpo[isite] = \
                         tensordot(compx, self.cv_mpo[isite], axes=(-1, 0))
                     self.cv_mpo.qn[isite] = xqn
+                    self.cv_mpo.qnidx = isite
                 else:
                     self.cv_mpo[isite - 1] = \
                         tensordot(self.cv_mpo[isite - 1], compx, axes=(-1, 0))
+                    self.cv_mpo.qnidx = self.cv_mpo.site_num-1
 
         else:
-            if direction == "left":
+            if not self.cv_mpo.to_right:
                 self.cv_mpo[isite - 2] = compx
                 self.cv_mpo[isite - 1] = x
+                self.cv_mpo.qnidx = isite-2
             else:
                 self.cv_mpo[isite - 2] = x
                 self.cv_mpo[isite - 1] = compx
+                self.cv_mpo.qnidx = isite-1
             self.cv_mpo.qn[isite - 1] = xqn
 
         return float(l_value)
 
-    def construct_X_qnmat(self, addlist, direction):
+    def construct_X_qnmat(self, addlist):
 
         pbond = self.mol_list.pbond_list
         xqnl = np.array(self.cv_mpo.qn[addlist[0]])
@@ -378,11 +383,11 @@ class SpectraFtCV(SpectraCv):
         matshape = list(xqnmat.shape)
         if self.method == "1site":
             if xqnmat.ndim == 4:
-                if direction == "left":
+                if not self.cv_mpo.to_right:
                     xqnmat = np.moveaxis(xqnmat.reshape(matshape+[1]), -1, -2)
                 else:
                     xqnmat = xqnmat.reshape([1] + matshape)
-            if direction == "left":
+            if not self.cv_mpo.to_right:
                 xqnbigl = xqnl.copy()
                 xqnbigr = self.qnmat_add(xqnsigmalist[0], xqnr)
                 if xqnbigr.ndim == 3:
@@ -411,13 +416,13 @@ class SpectraFtCV(SpectraCv):
         xshape = list(xqnmat.shape)
         del xshape[-1]
         if len(xshape) == 3:
-            if direction == "left":
+            if not self.cv_mpo.to_right:
                 xshape = xshape + [1]
-            elif direction == "right":
+            else:
                 xshape = [1] + xshape
         return xqnmat, xqnbigl, xqnbigr, xshape
 
-    def swap(self, mat, qnbigl, qnbigr, direction):
+    def swap(self, mat, qnbigl, qnbigr):
 
         def inter_change(ori_mat):
             matshape = ori_mat.shape
@@ -432,7 +437,7 @@ class SpectraFtCV(SpectraCv):
             dag_qnmat = np.moveaxis(dag_qnmat, [1, 2], [2, 1])
             dag_qnbigl = inter_change(qnbigl)
             dag_qnbigr = inter_change(qnbigr)
-            if direction == "left":
+            if not self.cv_mpo.to_right:
                 dag_qnbigr = np.moveaxis(dag_qnbigr, [0, 1], [1, 0])
             else:
                 dag_qnbigl = np.moveaxis(dag_qnbigl, [1, 2], [2, 1])
@@ -468,7 +473,7 @@ class SpectraFtCV(SpectraCv):
         lr = lr.reshape(shapel + shaper + [2])
         return lr
 
-    def dag2mat(self, xshape, x, dag_qnmat, direction):
+    def dag2mat(self, xshape, x, dag_qnmat):
         if self.spectratype == "abs":
             up_exciton, down_exciton = 1, 0
         else:
@@ -478,13 +483,13 @@ class SpectraFtCV(SpectraCv):
         np.place(xdag, mask, x)
         shape = list(xdag.shape)
         if xdag.ndim == 3:
-            if direction == 'left':
+            if not self.cv_mpo.to_right:
                 xdag = xdag.reshape(shape + [1])
             else:
                 xdag = xdag.reshape([1] + shape)
         return xdag
 
-    def x_svd(self, xstruct, xqnbigl, xqnbigr, nexciton, direction, percent=0):
+    def x_svd(self, xstruct, xqnbigl, xqnbigr, nexciton, percent=0):
         Gamma = xstruct.reshape(
             np.prod(xqnbigl.shape) // 2, np.prod(xqnbigr.shape) // 2)
 
@@ -560,7 +565,7 @@ class SpectraFtCV(SpectraCv):
         del bigl_shape[-1]
         bigr_shape = list(xqnbigr.shape)
         del bigr_shape[-1]
-        if direction == "left":
+        if not self.cv_mpo.to_right:
             x, xdim, xqn, compx = update_cv(
                 xvset, xsvset, xqnrset, xuset, nexciton, self.m_max,
                 self.spectratype, percent=percent)
@@ -571,7 +576,7 @@ class SpectraFtCV(SpectraCv):
             else:
                 return np.moveaxis(x.reshape(bigr_shape + [xdim]), -1, 0),\
                     xdim, xqn, compx.reshape(bigl_shape + [xdim])
-        elif direction == "right":
+        else:
             x, xdim, xqn, compx = update_cv(
                 xuset, xsuset, xqnlset, xvset, nexciton,
                 self.m_max, self.spectratype, percent=percent)
@@ -582,7 +587,7 @@ class SpectraFtCV(SpectraCv):
                 return x.reshape(bigl_shape + [xdim]), xdim, xqn, \
                     np.moveaxis(compx.reshape(bigr_shape + [xdim]), -1, 0)
 
-    def initialize_LR(self, direction):
+    def initialize_LR(self):
 
         first_LR = [np.ones((1, 1, 1))]
         second_LR = [np.ones((1, 1, 1, 1))]
@@ -596,7 +601,7 @@ class SpectraFtCV(SpectraCv):
         third_LR = copy.deepcopy(second_LR)
         forth_LR.append(np.ones((1, 1)))
 
-        if direction == "right":
+        if self.cv_mpo.to_right:
             for isite in range(len(self.cv_mpo), 1, -1):
                 path1 = [([0, 1], "abc, defa -> bcdef"),
                          ([2, 0], "bcdef, gfhb -> cdegh"),
@@ -625,7 +630,7 @@ class SpectraFtCV(SpectraCv):
                     moveaxis(self.b_mpo[isite - 1], (1, 2), (2, 1)),
                     self.cv_mpo[isite - 1]))
 
-        if direction == "left":
+        else:
 
             for isite in range(1, len(self.cv_mpo)):
                 path1 = [([0, 1], "abc, adef -> bcdef"),
@@ -656,11 +661,10 @@ class SpectraFtCV(SpectraCv):
                     self.cv_mpo[isite - 1]))
         return [first_LR, second_LR, third_LR, forth_LR]
 
-    def update_LR(self, lr_group, direction, isite):
+    def update_LR(self, lr_group, isite):
         first_LR, second_LR, third_LR, forth_LR = lr_group
-        assert direction in ["left", "right"]
         if self.method == "1site":
-            if direction == "left":
+            if not self.cv_mpo.to_right:
                 path1 = [([0, 1], "abc, defa -> bcdef"),
                          ([2, 0], "bcdef, gfhb -> cdegh"),
                          ([1, 0], "cdegh, ihec -> dgi")]
@@ -688,7 +692,7 @@ class SpectraFtCV(SpectraCv):
                     moveaxis(self.b_mpo[isite - 1], (1, 2), (2, 1)),
                     self.cv_mpo[isite - 1])
 
-            elif direction == "right":
+            else:
                 path1 = [([0, 1], "abc, adef -> bcdef"),
                          ([2, 0], "bcdef, begh -> cdfgh"),
                          ([1, 0], "cdfgh, cgdi -> fhi")]

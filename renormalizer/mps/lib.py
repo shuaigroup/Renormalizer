@@ -7,10 +7,10 @@ construct the operator matrix in the MPS sweep procedure
 from functools import reduce
 from collections import deque
 
-from renormalizer.mps.backend import np, backend
+from renormalizer.mps.backend import np, backend, xp
 from renormalizer.mps.matrix import Matrix, multi_tensor_contract, asxp, asnumpy
 
-sentinel = np.ones((1, 1, 1), dtype=backend.real_dtype)
+sentinel = xp.ones((1, 1, 1), dtype=backend.real_dtype)
 
 
 class Environ:

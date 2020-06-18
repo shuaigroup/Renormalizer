@@ -186,6 +186,9 @@ class OptimizeConfig:
         else:
             self.procedure = procedure
         self.method = "2site"
+        # algo: arpack(Implicitly Restarted Lanczos Method)
+        #       davidson(pyscf/davidson)
+        self.algo = "davidson"  
         self.nroots = 1
         # the ground state energy convergence tolerance
         self.e_rtol = 1e-6
