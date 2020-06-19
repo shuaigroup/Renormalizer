@@ -180,7 +180,7 @@ def optimize_mps_dmrg(mps, mpo):
             mo2 = asxp(mpo[imps])
             if method == "2site":
                 mo1 = asxp(mpo[imps-1])
-            if nonzeros > 1000:
+            if qnmat.size > 1000:
                 # iterative algorithm
                 # hdiag
                 tmp_ltensor = xp.einsum("aba -> ba", ltensor)
@@ -275,8 +275,7 @@ def optimize_mps_dmrg(mps, mpo):
                     )
                     # if one root, davidson return np.float
                 elif algo == "arpack":
-                    # scipy arpack solver : much slower than pyscf/davidson but more
-                    # robust
+                    # scipy arpack solver : much slower than pyscf/davidson
                     solver_algo = "arpack"
                     A = scipy.sparse.linalg.LinearOperator((nonzeros,nonzeros), matvec=hop)
                     e, c = scipy.sparse.linalg.eigsh(A, k=nroots, which="SA", v0=cguess)

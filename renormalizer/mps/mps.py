@@ -181,15 +181,23 @@ class Mps(MatrixProduct):
     @classmethod
     def hartree_product_state(cls, mol_list, condition):
         r"""
-        construct a hartree product state
+        Construct a Hartree product state
         
         Args:
-            mol_list (class: MolList2)
-            condition (Dict): {dof:local_state}, default is the "0" state
-            for example {"e_1":1, "v_0":0...}
+            mol_list (:class:`~renormalizer.model.MolList2`): Model information.
+            condition (Dict): Dict with format ``{dof:local_state}``.
+                The default local state for dofs not specified is the "0" state.
+                An example is ``{"e_1":1, "v_0":2, "v_3":[0, 0.707, 0.707]}``.
+
+                Note:
+                    If there are bases that contain multiple dofs in the model, the value of the dict
+                    is the state of all dofs of the basis. For example,
+                    if a basis contains ``"e_1"``, ``"e_2"`` and ``"e_3"``,
+                    ``{"e_1": 2}`` (``{"e_1": [0, 0, 1]}``) means ``"e_3"`` is occupied and
+                    ``{"e_1": 1}`` (``{"e_1": [0, 1, 0]}``) means ``"e_2"`` is occupied.
 
         Returns:
-            mps (class: Mps)
+            Constructed mps (:class:`Mps`)
         """
         assert isinstance(mol_list, MolList2)
         
@@ -199,38 +207,24 @@ class Mps(MatrixProduct):
         
         qn_single = [[],] * mol_list.nsite
         
-        for v_dof in mol_list.v_dofs:
+        for v_dof in mol_list.e_dofs + mol_list.v_dofs:
             isite = mol_list.order[v_dof]
             pdim = mol_list.basis[isite].nbas
             ms = np.zeros((1, pdim, 1))
             local_state = condition.get(v_dof,0)
-            ms[0, local_state, 0] = 1.
-            mps[isite] = ms
-            qn_single[isite] = mol_list.basis[isite].sigmaqn[local_state]
-        
-        if not mol_list.multi_dof_basis:
-            for e_dof in mol_list.e_dofs:
-                isite = mol_list.order[e_dof]
-                pdim = mol_list.basis[isite].nbas
-                ms = np.zeros((1, pdim, 1))
-                local_state = condition.get(e_dof,0)
+            if isinstance(local_state, int):
                 ms[0, local_state, 0] = 1.
-                mps[isite] = ms
-                qn_single[isite] = mol_list.basis[isite].sigmaqn[local_state]
-        else:
-            # check that only 1 electron state is occupied
-            occ = [condition.get(e_dof, 0) for e_dof in mol_list.e_dofs]  
-            assert sum(occ) == 1
-            for e_dof in mol_list.e_dofs:
-                local_state = condition.get(e_dof,0)
-                if local_state == 1:
-                    isite = mol_list.order[e_dof]
-                    pdim = mol_list.basis[isite].nbas
-                    ms = np.zeros((1, pdim, 1))
-                    idx = int(e_dof.split("_")[1])
-                    ms[0,idx,0] = 1.
-                    mps[isite] = ms
-                    qn_single[isite] = mol_list.basis[isite].sigmaqn[idx]
+                qn = mol_list.basis[isite].sigmaqn[local_state]
+            else:
+                ms[0, :, 0] = local_state
+                # quantum numbers for all states occupied
+                all_qn = np.array(mol_list.basis[isite].sigmaqn)[np.nonzero(local_state)]
+                if all_qn.std() != 0:
+                    raise ValueError("Quantum numbers are mixed in the condition.")
+                qn = all_qn[0]
+
+            mps[isite] = ms
+            qn_single[isite] = qn
 
         qn_single = np.array(qn_single)
         mps.qn = [[0]]

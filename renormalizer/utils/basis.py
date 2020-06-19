@@ -39,17 +39,21 @@ class BasisSHO(BasisSet):
 
     Args:
         omega (float): the frequency of the oscillator.
+        nbas (int): number of dimension of the basis set (highest occupation number of the harmonic oscillator)
         x0 (float): the origin of the harmonic oscillator. Default = 0.
+        dvr (bool): whether to use discrete variable representation. Default = False.
+        general_xp_power (bool): whether calculate :math:`x` and :math:`x^2` (or :math:`p` and :math:`p^2`)
+            through general expression for :math:`x`power or :math:`p` power. This is not efficient because
+            :math:`x` and :math:`x^2` (or :math:`p` and :math:`p^2`) have been hard-coded already.
+            The option is only used for testing.
     """
     
-    def __init__(self, omega, nbas, x0=0., dvr=False):
+    def __init__(self, omega, nbas, x0=0., dvr=False, general_xp_power=False):
         self.omega = omega
         self.x0 = x0  # origin = x0
         super().__init__(nbas, [0] * nbas)
-        
-        # calculate x, p power generally, but not efficient for x/p or x^2/p^2
-        # which have been hard-coded already.
-        self.general_xp_power = False
+
+        self.general_xp_power = general_xp_power
 
         self.dvr = False
         self.dvr_x = None  # the expectation value of x on SHO_dvr
@@ -73,7 +77,7 @@ class BasisSHO(BasisSet):
                 logger.warning("the second quantization doesn't support nonzero x0")
 
         # so many if-else might be a potential performance problem in the future
-        # change to lazy-evaluation dict should be better
+        # changing to lazy-evaluation dict should be better
         
         # second quantization formula
         if op_symbol == "b":
@@ -144,7 +148,7 @@ class BasisSHO(BasisSet):
                 moment = float(op_symbol.split("^")[1])
             
             if not self.dvr:
-                # the analytical expression should be integer
+                # Analytical expression for integer moment
                 assert np.allclose(moment, round(moment)) 
                 moment = round(moment)
                 mat = np.zeros((self.nbas, self.nbas))
@@ -160,8 +164,7 @@ class BasisSHO(BasisSet):
             # <m|p|n> = -i sqrt(w/2) <m| b - b^\dagger |n>
             mat = 1j * np.sqrt(self.omega / 2) * (self.op_mat(r"b^\dagger") - self.op_mat("b"))
             if self.dvr:
-                mat = self.dvr_v.T @ mat 
-                mat = mat @ self.dvr_v
+                mat = self.dvr_v.T @ mat @ self.dvr_v
 
         elif op_symbol == "p^2" and (not self.general_xp_power):
             mat = -self.omega / 2 * (self.op_mat(r"b^\dagger b^\dagger")
@@ -170,8 +173,7 @@ class BasisSHO(BasisSet):
                                      + self.op_mat(r"b b")
                                      )
             if self.dvr:
-                mat = self.dvr_v.T @ mat 
-                mat = mat @ self.dvr_v
+                mat = self.dvr_v.T @ mat @ self.dvr_v
         
         elif op_symbol.split("^")[0] == "p":
             # moments of p
@@ -197,8 +199,7 @@ class BasisSHO(BasisSet):
                     mat[i,j] = res
                 
             if self.dvr:
-                mat = self.dvr_v.T @ mat 
-                mat = mat @ self.dvr_v
+                mat = self.dvr_v.T @ mat @ self.dvr_v
 
         elif op_symbol == "I":
             mat = np.eye(self.nbas)
@@ -208,7 +209,7 @@ class BasisSHO(BasisSet):
             # n is designed for occupation number of the SHO basis
             mat = np.diag(np.arange(self.nbas))
         else:
-            raise ValueError(f"op_symbol:{op_symbol} is not supported")
+            raise ValueError(f"op_symbol:{op_symbol} is not supported. ")
         
         return mat * op_factor
 
@@ -274,8 +275,8 @@ class BasisMultiElectronVac(BasisSet):
     Args:
         nstate (int): the number of electronic states without counting the vacuum state.
         dof_idx (list): the indices of the electronic dofs used to define the whole model
-        that are represented by this basis. The default value is ``list(range(nstate))``.
-        The arg is necessary when more than one basis of this class present in the model.
+            that are represented by this basis. The default value is ``list(range(nstate))``.
+            The arg is necessary when more than one basis of this class present in the model.
     """
 
     def __init__(self, nstate, dof_idx=None):

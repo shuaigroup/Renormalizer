@@ -40,10 +40,8 @@ def symbolic_mpo(table, factor, algo="Hopcroft-Karp"):
     
     table: an operator table with shape (operator nterm, nsite). Each entry contains elementary operators on each site.
     factor (np.ndarray): one prefactor vector (dim: operator nterm) 
-    algo: the algorithm used to select local ops,
-          "Hopcroft-Karp"(default), "Hungarian".
-          The first two are both global optimal and have only minor performance
-          difference. 
+    algo: the algorithm used to select local ops, "Hopcroft-Karp"(default), "Hungarian".
+          They are both global optimal and have only minor performance difference.
 
     Note:
     op with the same op.symbol must have the same op.qn and op.factor

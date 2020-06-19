@@ -211,11 +211,13 @@ def test_pyr_4mode(multi_e, translator, dvr):
     mol_list2 = MolList2(order, basis, model, model_translator=translator)
     mpo = Mpo(mol_list2)
     logger.info(f"mpo_bond_dims:{mpo.bond_dims}")
-    mps = Mps.hartree_product_state(mol_list2, condition={"e_1": 1})
+    # same form whether multi_e is True or False
+    init_condition = {"e_1": 1}
     if dvr:
         for dof in mol_list2.v_dofs:
             idx = order[dof]
-            mps[idx] = np.einsum("abc, bd -> adc", mps[idx], basis[idx].dvr_v)
+            init_condition[dof] = basis[idx].dvr_v[0]
+    mps = Mps.hartree_product_state(mol_list2, condition=init_condition)
 
     # for multi-e case the `expand bond dimension` routine is currently not working
     # because creation operator is not defined yet
