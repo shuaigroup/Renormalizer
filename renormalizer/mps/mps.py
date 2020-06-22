@@ -195,6 +195,8 @@ class Mps(MatrixProduct):
                     if a basis contains ``"e_1"``, ``"e_2"`` and ``"e_3"``,
                     ``{"e_1": 2}`` (``{"e_1": [0, 0, 1]}``) means ``"e_3"`` is occupied and
                     ``{"e_1": 1}`` (``{"e_1": [0, 1, 0]}``) means ``"e_2"`` is occupied.
+                    Beaware that in :class:`renormalizer.utils.basis.BasisMultiElectronVac` the vacuum state
+                    is added to the ``0`` index.
 
         Returns:
             Constructed mps (:class:`Mps`)
