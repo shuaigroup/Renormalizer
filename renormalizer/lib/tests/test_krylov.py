@@ -1,14 +1,18 @@
 # -*- coding: utf-8 -*-
 
+
+from renormalizer.mps.backend import xp
+from renormalizer.lib import expm_krylov
 import pytest
 import numpy as np
 from scipy.linalg import expm
 
-from renormalizer.mps.backend import xp
-from renormalizer.lib import expm_krylov
-
 
 @pytest.mark.parametrize("N", (
+    1,
+    2,
+    4,
+    10,
     200,
     800
 ))
@@ -18,6 +22,8 @@ def test_expm(N, imag, block_size):
     a1 = np.random.rand(N, N) / N
     if imag:
         a1 = a1 + np.random.rand(N, N) / N / 1j
+    a1 += a1.T.conj()
+    
     a2 = xp.array(a1)
     v = np.random.rand(N)
     if imag:

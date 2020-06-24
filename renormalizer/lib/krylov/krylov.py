@@ -13,7 +13,7 @@ logger = logging.getLogger(__name__)
 
 
 def _expm_krylov(alpha, beta, V, v_norm, dt):
-    # diagonalize Hessenberg matrix
+    # diagonalize Hessenberg matrix (tridiagonal matrix for hermitian matrix A)
     try:
         w_hess, u_hess = eigh_tridiagonal(alpha, beta)
     except np.linalg.LinAlgError:
@@ -28,6 +28,7 @@ def expm_krylov(Afunc, dt, vstart: xp.ndarray, block_size=50):
     """
     Compute Krylov subspace approximation of the matrix exponential
     applied to input vector: `expm(dt*A)*v`.
+    A is a hermitian matrix.
     Reference:
         M. Hochbruck and C. Lubich
         On Krylov subspace approximations to the matrix exponential operator
@@ -46,17 +47,24 @@ def expm_krylov(Afunc, dt, vstart: xp.ndarray, block_size=50):
     V = xp.empty((block_size, len(vstart)), dtype=vstart.dtype)
     V[0] = vstart
     res = None
-    
-    j = 0
-    for j in range(len(vstart) - 1):
-        if len(V) - 2 == j:
+
+
+    for j in range(len(vstart)):
+        
+        w = Afunc(V[j])
+        alpha[j] = xp.vdot(w, V[j]).real
+
+        if j == len(vstart)-1:
+            logger.debug("the krylov subspace is equal to the full space")
+            return _expm_krylov(alpha[:j+1], beta[:j], V[:j+1, :].T, nrmv, dt), j+1
+        
+        if len(V) == j+1:
             V, old_V = xp.empty((len(V) + block_size, len(vstart)), dtype=vstart.dtype), V
             V[:len(old_V)] = old_V
             del old_V
             alpha = np.concatenate([alpha, np.zeros(block_size)])
             beta = np.concatenate([beta, np.zeros(block_size)])
-        w = Afunc(V[j])
-        alpha[j] = xp.vdot(w, V[j]).real
+
         w -= alpha[j]*V[j] + (beta[j-1]*V[j-1] if j > 0 else 0)
         beta[j] = xp.linalg.norm(w)
         if beta[j] < 100*len(vstart)*np.finfo(float).eps:
@@ -70,6 +78,5 @@ def expm_krylov(Afunc, dt, vstart: xp.ndarray, block_size=50):
             else:
                 res = new_res
         V[j + 1] = w / beta[j]
-    return _expm_krylov(alpha[:j+1], beta[:j], V[:j+1].T, nrmv, dt), j+1
 
 
