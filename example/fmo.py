@@ -3,7 +3,7 @@
 from renormalizer.model import Phonon, Mol, MolList
 from renormalizer.utils import Quantity, EvolveConfig, CompressConfig, CompressCriteria, EvolveMethod
 from renormalizer.utils.constant import cm2au
-from renormalizer.transport import ChargeTransport, InitElectron
+from renormalizer.transport import ChargeDiffusionDynamics, InitElectron
 
 import numpy as np
 
@@ -157,7 +157,7 @@ if __name__ == "__main__":
     evolve_dt = 160
     evolve_config = EvolveConfig(EvolveMethod.tdvp_ps, guess_dt=evolve_dt)
     compress_config = CompressConfig(CompressCriteria.fixed, max_bonddim=32)
-    ct = ChargeTransport(mol_list, evolve_config=evolve_config, compress_config=compress_config, init_electron=InitElectron.fc)
+    ct = ChargeDiffusionDynamics(mol_list, evolve_config=evolve_config, compress_config=compress_config, init_electron=InitElectron.fc)
     ct.dump_dir = "./"
     ct.job_name = 'fmo'
     ct.stop_at_edge = False
