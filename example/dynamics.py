@@ -9,8 +9,8 @@ import logging
 import yaml
 
 from renormalizer.model import load_from_dict
-from renormalizer.transport import ChargeTransport
-from renormalizer.utils import log, Quantity, EvolveConfig, EvolveMethod, RungeKutta, CompressConfig
+from renormalizer.transport import ChargeDiffusionDynamics
+from renormalizer.utils import log, EvolveConfig, EvolveMethod, CompressConfig
 
 logger = logging.getLogger(__name__)
 
@@ -27,15 +27,15 @@ if __name__ == "__main__":
     mol_list, temperature = load_from_dict(param, 3, False)
     compress_config = CompressConfig(max_bonddim=16)
     evolve_config = EvolveConfig(EvolveMethod.tdvp_ps, adaptive=True, guess_dt=2)
-    ct = ChargeTransport(
+    cdd = ChargeDiffusionDynamics(
         mol_list,
         temperature=temperature,
         compress_config=compress_config,
         evolve_config=evolve_config,
         rdm=False,
     )
-    ct.dump_dir = param["output dir"]
-    ct.job_name = param["fname"]
-    ct.custom_dump_info["comment"] = param["comment"]
-    ct.evolve(param.get("evolve dt"), param.get("nsteps"), param.get("evolve time"))
+    cdd.dump_dir = param["output dir"]
+    cdd.job_name = param["fname"]
+    cdd.custom_dump_info["comment"] = param["comment"]
+    cdd.evolve(param.get("evolve dt"), param.get("nsteps"), param.get("evolve time"))
     # ct.evolve(evolve_dt, 100, param.get("evolve time"))
