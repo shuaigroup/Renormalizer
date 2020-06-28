@@ -18,7 +18,7 @@ from renormalizer.mps.backend import np
 logger = logging.getLogger(__name__)
 
 
-def construct_vibronic_model(multi_e):
+def construct_vibronic_model(multi_e, dvr):
     r"""
     Bi-linear vibronic coupling model for Pyrazine, 4 modes
     See: Raab, Worth, Meyer, Cederbaum.  J.Chem.Phys. 110 (1999) 936
@@ -154,7 +154,7 @@ def construct_vibronic_model(multi_e):
 
     for v_idx, v_isymbol in enumerate(v_list):
         order[f"v_{v_idx}"] = idx
-        basis.append(ba.BasisSHO(locals()[f"w{v_isymbol}"], 30))
+        basis.append(ba.BasisSHO(locals()[f"w{v_isymbol}"], 30, dvr=dvr))
         idx += 1
 
     logger.info(f"order:{order}")
@@ -193,17 +193,15 @@ def vibronic_to_general(model):
     return new_model
 
 
-@pytest.mark.parametrize("multi_e", (
-        False,
-        True,
+@pytest.mark.parametrize("multi_e, translator, dvr", (
+          [False, ModelTranslator.vibronic_model, True],
+          [False, ModelTranslator.general_model,  False],
+          [True, ModelTranslator.vibronic_model, False],
+          [True, ModelTranslator.general_model, True],
 ))
-@pytest.mark.parametrize("translator", (
-        ModelTranslator.vibronic_model,
-        ModelTranslator.general_model,
-))
-def test_pyr_4mode(multi_e, translator):
+def test_pyr_4mode(multi_e, translator, dvr):
 
-    order, basis, vibronic_model = construct_vibronic_model(multi_e)
+    order, basis, vibronic_model = construct_vibronic_model(multi_e, dvr)
     if translator is ModelTranslator.vibronic_model:
         model = vibronic_model
     elif translator is ModelTranslator.general_model:
@@ -213,7 +211,14 @@ def test_pyr_4mode(multi_e, translator):
     mol_list2 = MolList2(order, basis, model, model_translator=translator)
     mpo = Mpo(mol_list2)
     logger.info(f"mpo_bond_dims:{mpo.bond_dims}")
-    mps = Mps.hartree_product_state(mol_list2, condition={"e_1": 1})
+    # same form whether multi_e is True or False
+    init_condition = {"e_1": 1}
+    if dvr:
+        for dof in mol_list2.v_dofs:
+            idx = order[dof]
+            init_condition[dof] = basis[idx].dvr_v[0]
+    mps = Mps.hartree_product_state(mol_list2, condition=init_condition)
+
     # for multi-e case the `expand bond dimension` routine is currently not working
     # because creation operator is not defined yet
     mps.use_dummy_qn = True
@@ -227,7 +232,8 @@ def test_pyr_4mode(multi_e, translator):
                     compress_config=compress_config,
                     evolve_config=evolve_config)
     time_step_fs = 2
-    job.evolve(evolve_dt=time_step_fs * fs2au, nsteps=59)
+    job.evolve(evolve_dt=time_step_fs * fs2au, nsteps=60)
 
     from renormalizer.vibronic.tests.mctdh_data import mctdh_data
-    assert np.allclose(mctdh_data[::round(time_step_fs/0.5)][:, 1:], job.e_occupations_array, atol=5e-2)
+    assert np.allclose(mctdh_data[::round(time_step_fs/0.5)][:61, 1:],
+            job.e_occupations_array, atol=2e-2)

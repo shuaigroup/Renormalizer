@@ -64,7 +64,6 @@ def _alternate(u, bigraph, visitU, visitV, matchV):
             assert matchV[v] is not None  # otherwise match is not maximum
             _alternate(matchV[v], bigraph, visitU, visitV, matchV)
 
-
 def bipartite_vertex_cover(bigraph, algo="Hopcroft-Karp"):
     """Bipartite minimum vertex cover by Koenig's theorem
 
@@ -96,11 +95,34 @@ def bipartite_vertex_cover(bigraph, algo="Hopcroft-Karp"):
     for v in range(nV):       # -- build the mapping from U to V
         if matchV[v] is not None:
             matchU[matchV[v]] = v
-
-    visitU = [False] * nU     # -- build max alternating forest
-    visitV = [False] * nV
-    for u in range(nU):
-        if matchU[u] is None:        # -- starting with free vertices in U
-            _alternate(u, bigraph, visitU, visitV, matchV)
-    inverse = [not b for b in visitU]
-    return (inverse, visitV)
+    
+    def old_konig():
+        visitU = [False] * nU     # -- build max alternating forest
+        visitV = [False] * nV
+        for u in range(nU):
+            if matchU[u] is None:        # -- starting with free vertices in U
+                _alternate(u, bigraph, visitU, visitV, matchV)
+        inverse = [not b for b in visitU]
+        return (inverse, visitV)
+    
+    def new_konig():
+        # solve the limitation of huge number of recursive calls
+        visitU = [False] * nU     # -- build max alternating forest
+        visitV = [False] * nV
+        wait_u = set(range(nU)) - set(matchV) 
+        while len(wait_u) > 0:
+            u = wait_u.pop()
+            visitU[u] = True
+            for v in bigraph[u]:
+                if not visitV[v]:
+                    visitV[v] = True
+                    assert matchV[v] is not None  # otherwise match is not maximum
+                    assert matchV[v] not in wait_u
+                    wait_u.add(matchV[v])
+        inverse = [not b for b in visitU]
+        return (inverse, visitV)
+    
+    #res_old = old_konig()
+    res_new = new_konig()
+    #assert res_old == res_new
+    return res_new

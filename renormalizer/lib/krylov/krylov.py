@@ -48,6 +48,7 @@ def expm_krylov(Afunc, dt, vstart: xp.ndarray, block_size=50):
     V[0] = vstart
     res = None
 
+
     for j in range(len(vstart)):
         
         w = Afunc(V[j])

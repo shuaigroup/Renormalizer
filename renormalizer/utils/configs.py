@@ -186,7 +186,13 @@ class OptimizeConfig:
         else:
             self.procedure = procedure
         self.method = "2site"
+        # algo: arpack(Implicitly Restarted Lanczos Method)
+        #       davidson(pyscf/davidson)
+        self.algo = "davidson"  
         self.nroots = 1
+        # the ground state energy convergence tolerance
+        self.e_rtol = 1e-6
+        self.e_atol = 1e-8
         # inverse = 1.0 or -1.0
         # -1.0 to get the largest eigenvalue
         self.inverse = 1.0
