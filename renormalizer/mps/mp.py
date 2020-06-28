@@ -156,11 +156,11 @@ class MatrixProduct:
         and R system is tot.
         """
         # construct the L system qn
-        for idx in range(self.qnidx + 1, len(self.qn) - 1):
+        for idx in range(self.qnidx + 1, self.site_num):
             self.qn[idx] = [self.qntot - i for i in self.qn[idx]]
 
         # set boundary to fsite:
-        for idx in range(len(self.qn) - 2, dstidx, -1):
+        for idx in range(self.site_num - 1, dstidx, -1):
             self.qn[idx] = [self.qntot - i for i in self.qn[idx]]
         self.qnidx = dstidx
 
@@ -303,7 +303,7 @@ class MatrixProduct:
     def add(self, other: "MatrixProduct"):
         assert self.qntot == other.qntot
         assert self.site_num == other.site_num
-        assert self.qnidx == other.qnidx
+        #assert self.qnidx == other.qnidx
 
         new_mps = self.metacopy()
         if other.dtype == backend.complex_dtype:
@@ -378,6 +378,11 @@ class MatrixProduct:
         returns:
              truncated MPS
         """
+        if self.to_right:
+            assert self.qnidx == 0
+        else:
+            assert self.qnidx == self.site_num-1
+        
         if self.compress_config.bonddim_should_set:
             self.compress_config.set_bonddim(len(self)+1)
         # used for logging at exit
@@ -431,6 +436,11 @@ class MatrixProduct:
 
     def canonicalise(self, stop_idx: int=None, normalize=False):
         # stop_idx: mix canonical site at `stop_idx`
+        if self.to_right:
+            assert self.qnidx == 0
+        else:
+            assert self.qnidx == self.site_num-1
+
         for idx in self.iter_idx_list(full=False, stop_idx=stop_idx):
             mt: Matrix = self[idx]
             assert mt.any()
