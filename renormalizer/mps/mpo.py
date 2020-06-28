@@ -40,10 +40,8 @@ def symbolic_mpo(table, factor, algo="Hopcroft-Karp"):
     
     table: an operator table with shape (operator nterm, nsite). Each entry contains elementary operators on each site.
     factor (np.ndarray): one prefactor vector (dim: operator nterm) 
-    algo: the algorithm used to select local ops,
-          "Hopcroft-Karp"(default), "Hungarian", "greedy".
-          The first two are both global optimal and have only minor performance
-          difference. "greedy" should not be used for productive calculation.
+    algo: the algorithm used to select local ops, "Hopcroft-Karp"(default), "Hungarian".
+          They are both global optimal and have only minor performance difference.
 
     Note:
     op with the same op.symbol must have the same op.qn and op.factor
@@ -117,26 +115,33 @@ def symbolic_mpo(table, factor, algo="Hopcroft-Karp"):
     The local mpo is the transformation matrix between 0'',1'' to 0'''
     """
     logger.debug(f"symbolic mpo algorithm: {algo}")
-
+    # use np.uint32, np.uint16 to save memory
+    max_uint32 = np.iinfo(np.uint32).max
+    max_uint16 = np.iinfo(np.uint16).max
+    
     nsite = len(table[0])
-
+    logger.debug(f"Input operator terms: {len(table)}")
     # translate the symbolic operator table to an easy to manipulate numpy array
     # extract the op symbol, qn, factor to a numpy array
     symbol_table = np.array([[x.symbol for x in ta] for ta in table])
     qn_table = np.array([[x.qn for x in ta] for ta in table])
     factor_table = np.array([[x.factor for x in ta] for ta in table])
     
-    new_table = np.zeros((len(table), nsite),dtype=np.int64)
+    new_table = np.zeros((len(table), nsite),dtype=np.uint16)
     
     primary_ops = {}
     # check that op with the same symbol has the same factor and qn
     unique_symbol = np.unique(symbol_table)
+    # check the index of different operators could be represented with np.uint16
+    assert len(unique_symbol) < max_uint16
     for idx, s in enumerate(unique_symbol):
         coord = np.nonzero(symbol_table == s)
         assert np.unique(qn_table[coord]).size == 1
-        assert np.allclose(factor_table[coord], factor_table[coord][0])
+        assert np.all(factor_table[coord] == factor_table[coord][0])
         new_table[coord] = idx
         primary_ops[idx] = table[coord[0][0]][coord[1][0]]   
+    
+    del symbol_table, factor_table, qn_table
     
     # combine the same terms but with different factors(add them together)
     unique_term, unique_inverse = np.unique(new_table, axis=0, return_inverse=True)
@@ -147,82 +152,60 @@ def symbolic_mpo(table, factor, algo="Hopcroft-Karp"):
     factor = mask.dot(factor)
     
     # add the first and last column for convenience
-    ta = np.zeros((unique_term.shape[0],1),dtype=np.int64)
+    ta = np.zeros((unique_term.shape[0],1),dtype=np.uint16)
     table = np.concatenate((ta, unique_term, ta), axis=1)
+    logger.debug(f"After combination of the same terms: {table.shape[0]}")
+    # check the index of interaction could be represented with np.uint32
+    assert table.shape[0] < max_uint32
+    
+    del unique_term, unique_inverse
 
     mpo = []
     mpoqn = [[0]]
 
     in_ops = [[Op.identity()]]
-    
-    for isite in range(nsite):
 
+    for isite in range(nsite):
         # split table into the row and col part
         term_row, row_unique_inverse = np.unique(table[:,:2], axis=0, return_inverse=True)
         term_col, col_unique_inverse = np.unique(table[:,2:], axis=0, return_inverse=True)
         
         # get the non_redudant ops
-        # the +1, -1 trick is to use the csr sparse matrix format
-        non_red = scipy.sparse.diags(np.arange(1,table.shape[0]+1), format="csr", dtype=np.int64)
+        # the +1 trick is to use the csr sparse matrix format
+        non_red = scipy.sparse.diags(np.arange(1,table.shape[0]+1), format="csr", dtype=np.uint32)
         coord = np.array([[newidx, oldidx] for oldidx, newidx in enumerate(row_unique_inverse)])
-        mask = scipy.sparse.csr_matrix((np.ones(len(coord), dtype=np.int64), (coord[:,0], coord[:,1])))
+        mask = scipy.sparse.csr_matrix((np.ones(len(coord), dtype=np.uint32), (coord[:,0], coord[:,1])))
         non_red = mask.dot(non_red)
         coord = np.array([[oldidx, newidx] for oldidx, newidx in enumerate(col_unique_inverse)])
-        mask = scipy.sparse.csr_matrix((np.ones(len(coord), dtype=np.int64), (coord[:,0], coord[:,1])))
-        non_red = np.asarray(non_red.dot(mask).todense())-1
+        mask = scipy.sparse.csr_matrix((np.ones(len(coord), dtype=np.uint32), (coord[:,0], coord[:,1])))
+        non_red = non_red.dot(mask)
+        # use sparse matrix to represent non_red will be inefficient a little
+        # bit compared to dense matrix, but saves a lot of memory when the
+        # number of terms is huge
+        # logger.info(f"isite: {isite}, bipartite graph size: {non_red.shape}")
 
         # select the reserved ops
         out_ops = []
         new_table = []
         new_factor = []
         
-        if algo == "greedy":
-            row_select = []
-            col_select = []
-            non_red_duplicate = non_red.copy()
-            # loop until every term is taken care of
-            while not (non_red_duplicate == -1).all():
-                # count the # of interaction in each row and col
-                nint_row = np.sum(non_red_duplicate != -1, axis=1)
-                nint_col = np.sum(non_red_duplicate != -1, axis=0)
-                
-                # obtain the largest index
-                row_idx = np.argmax(nint_row)
-                col_idx = np.argmax(nint_col)
-                
-                if nint_row[row_idx] >= nint_col[col_idx]:
-                    # dealing with row (left side of the table). One row corresponds to multiple cols.
-                    # Produce one out operator and multiple new_table entries
-                    row_select.append(row_idx)
-                    
-                    non_red_duplicate[row_idx, :] = -1
-                else:
-                    # dealing with column (right side of the table). One col correspond to multiple rows.
-                    # Produce multiple out operators and one new_table entry
-                    col_select.append(col_idx)
-
-                    non_red_duplicate[:, col_idx] = -1
-        
-        elif algo == "Hopcroft-Karp" or algo == "Hungarian":
-            
-            bigraph = []
-            if non_red.shape[0] < non_red.shape[1]:
-                for i in range(non_red.shape[0]):
-                    bigraph.append(np.nonzero(non_red[i,:] != -1)[0].tolist())
-                rowbool, colbool = bipartite_vertex_cover(bigraph, algo=algo)
-            else:
-                for i in range(non_red.shape[1]):
-                    bigraph.append(np.nonzero(non_red[:,i] != -1)[0].tolist())
-                colbool, rowbool = bipartite_vertex_cover(bigraph, algo=algo)
-
-            row_select = np.nonzero(rowbool)[0]
-            col_select = np.nonzero(colbool)[0]
-            if len(row_select) > 0:
-                assert np.amax(row_select) < non_red.shape[0]
-            if len(col_select) > 0:
-                assert np.amax(col_select) < non_red.shape[1]
+        bigraph = []
+        if non_red.shape[0] < non_red.shape[1]:
+            for i in range(non_red.shape[0]):
+                bigraph.append(non_red.indices[non_red.indptr[i]:non_red.indptr[i+1]])
+            rowbool, colbool = bipartite_vertex_cover(bigraph, algo=algo)
         else:
-            assert False
+            non_red_csc = non_red.tocsc()
+            for i in range(non_red.shape[1]):
+                bigraph.append(non_red_csc.indices[non_red_csc.indptr[i]:non_red_csc.indptr[i+1]])
+            colbool, rowbool = bipartite_vertex_cover(bigraph, algo=algo)
+
+        row_select = np.nonzero(rowbool)[0]
+        col_select = np.nonzero(colbool)[0]
+        if len(row_select) > 0:
+            assert np.amax(row_select) < non_red.shape[0]
+        if len(col_select) > 0:
+            assert np.amax(col_select) < non_red.shape[1]
         
         for row_idx in row_select:
             # construct out_op
@@ -233,28 +216,34 @@ def symbolic_mpo(table, factor, algo="Hopcroft-Karp"):
             out_op = Op(symbol, qn, factor=1.0)
             out_ops.append([out_op])
             
-            col_link = np.nonzero(non_red[row_idx, :] != -1)[0]
-            stack = np.array([len(out_ops)-1]*len(col_link)).reshape(-1,1)
+            col_link = non_red.indices[non_red.indptr[row_idx]:non_red.indptr[row_idx+1]]
+            stack = np.array([len(out_ops)-1]*len(col_link), dtype=np.uint16).reshape(-1,1)
             new_table.append(np.hstack((stack,term_col[col_link])))
-            new_factor.append(factor[non_red[row_idx, col_link]])
-
-            non_red[row_idx, :] = -1
+            new_factor.append(factor[non_red[row_idx, col_link].toarray()-1])
         
+            non_red.data[non_red.indptr[row_idx]:non_red.indptr[row_idx+1]] = 0
+        non_red.eliminate_zeros()
+        
+        nonzero_row_idx, nonzero_col_idx = non_red.nonzero()
         for col_idx in col_select:
+            
             out_ops.append([])
             # complementary operator
             # dealing with column (right side of the table). One col correspond to multiple rows.
             # Produce multiple out operators and one new_table entry
-            for i in np.nonzero(non_red[:, col_idx] != -1)[0]:
+            non_red_one_col = non_red[:, col_idx].toarray()
+            for i in nonzero_row_idx[np.nonzero(nonzero_col_idx == col_idx)[0]]:
                 symbol = term_row[i]
                 qn = in_ops[term_row[i][0]][0].qn + primary_ops[term_row[i][1]].qn
-                out_op = Op(symbol, qn, factor=factor[non_red[i, col_idx]])
+                out_op = Op(symbol, qn, factor=factor[non_red_one_col[i]-1])
                 out_ops[-1].append(out_op)
             
-            new_table.append(np.array([len(out_ops)-1] + list(term_col[col_idx])).reshape(1,-1))
+            new_table.append(np.array([len(out_ops)-1] + list(term_col[col_idx]), dtype=np.uint16).reshape(1,-1))
             new_factor.append(1.0)
             
-            non_red[:, col_idx] = -1
+            # it is not necessary to remove the column nonzero elements
+            #non_red[:, col_idx] = 0
+            #non_red.eliminate_zeros()
             
         # translate the numpy array back to symbolic mpo
         mo = [[[] for o in range(len(out_ops))] for i in range(len(in_ops))]
@@ -277,8 +266,9 @@ def symbolic_mpo(table, factor, algo="Hopcroft-Karp"):
         mpoqn.append(moqn)
         # reconstruct the table in new operator 
         table = np.concatenate(new_table)
+        # check the number of incoming operators could be represent as np.uint16
+        assert len(out_ops) <= max_uint16
         factor = np.concatenate(new_factor, axis=None)
-           
         #debug
         #logger.debug(f"in_ops: {in_ops}")
         #logger.debug(f"out_ops: {out_ops}")
@@ -346,7 +336,7 @@ def _model_translator_sbm(mol_list, const=Quantity(0.)):
         table.append(ta)
     
     # const
-    if not np.allclose(const.as_au(), 0.):
+    if const != 0:
         ta = [Op.identity() for i in range(nsite)]
         factor.append(const.as_au())
         table.append(ta)
@@ -377,7 +367,7 @@ def _model_translator_vibronic_model(mol_list, const=Quantity(0.)):
             # pure vibrational term (electron part is identity)
             for v_dof, ops in value.items():
                 for term in ops:
-                    if not np.allclose(term[-1], 0):
+                    if term[-1] != 0:
                         ta = [Op.identity() for i in range(nsite)]
                         for iop, op in enumerate(term[:-1]):
                             ta[order[v_dof[iop]]] = op
@@ -392,7 +382,7 @@ def _model_translator_vibronic_model(mol_list, const=Quantity(0.)):
                 for v_dof, ops in value.items():
                 
                     if v_dof == "J":
-                        if not np.allclose(ops, 0):
+                        if ops != 0:
                             ta = [Op.identity() for i in range(nsite)]
                             if list(order.values()).count(order[e_dof[0]]) > 1:
                                 #multi electron site
@@ -404,7 +394,7 @@ def _model_translator_vibronic_model(mol_list, const=Quantity(0.)):
                             factor.append(ops)
                     else:
                         for term in ops:
-                            if not np.allclose(term[-1], 0):
+                            if term[-1] != 0:
                                 ta = [Op.identity() for i in range(nsite)]
                                 if list(order.values()).count(order[e_dof[0]]) > 1:
                                     #multi electron site
@@ -422,7 +412,7 @@ def _model_translator_vibronic_model(mol_list, const=Quantity(0.)):
                 for v_dof, ops in value.items():
                 
                     if v_dof == "J":
-                        if not np.allclose(ops, 0):
+                        if ops != 0:
                             ta = [Op.identity() for i in range(nsite)]
                             ta[order[e_dof[0]]] = Op(r"a^\dagger", 1)
                             ta[order[e_dof[1]]] = Op("a", -1)
@@ -430,7 +420,7 @@ def _model_translator_vibronic_model(mol_list, const=Quantity(0.)):
                             factor.append(ops)
                     else:
                         for term in ops:
-                            if not np.allclose(term[-1], 0):
+                            if term[-1] != 0:
                                 ta = [Op.identity() for i in range(nsite)]
                                 ta[order[e_dof[0]]] = Op(r"a^\dagger", 1)
                                 ta[order[e_dof[1]]] = Op("a", -1)
@@ -440,7 +430,7 @@ def _model_translator_vibronic_model(mol_list, const=Quantity(0.)):
                                 factor.append(term[-1])
         
     # const
-    if not np.allclose(const.as_au(), 0.):
+    if const != 0:
         ta = [Op.identity() for i in range(nsite)]
         factor.append(const.as_au())
         table.append(ta)
@@ -483,6 +473,10 @@ def _model_translator_general_model(mol_list, const=Quantity(0.)):
     # ("e_0", "e_1"):[(Op("a^\dagger"), Op("a"), factor)] is not a standard
     # format for general model since "e_0" "e_1" is a single site, the standard
     # is ("e_0",):[(Op("a^\dagger_0 a_1"), factor)] 
+    # or 
+    # ("e_0",):[(Op("a^\dagger"), factor)] is not a standard
+    # format for general model since "e_0" is a multi_e site, the standard
+    # is ("e_0",):[(Op("a^\dagger_0"), factor)] 
     
     model_new = defaultdict(list)
     for model_key, model_value in model.items():
@@ -532,8 +526,7 @@ def _model_translator_general_model(mol_list, const=Quantity(0.)):
 
     for dof, model_value in model.items():
         op_factor = np.array([term[-1] for term in model_value])
-        nonzero_idx = np.nonzero(np.isclose(op_factor, 0, rtol=1e-5, atol=1e-8) == 0)[0]
-        
+        nonzero_idx = np.nonzero(op_factor != 0)[0]
         mapping = {j:i for i,j in enumerate(dof)}
         for idx in nonzero_idx:
             op_term = model_value[idx]
@@ -545,7 +538,7 @@ def _model_translator_general_model(mol_list, const=Quantity(0.)):
             factor.append(op_term[-1])
         
     # const
-    if not np.allclose(const.as_au(), 0.):
+    if const != 0:
         ta = [Op.identity() for i in range(nsite)]
         factor.append(const.as_au())
         table.append(ta)

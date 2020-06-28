@@ -1,3 +1,3 @@
 # -*- coding: utf-8 -*-
 
-#from renormalizer.cv.zerot import SpectraZtCV
+from renormalizer.cv.spectra_cv import batch_run

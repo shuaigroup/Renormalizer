@@ -82,7 +82,7 @@ class Quantity:
 
     def __eq__(self, other):
         if hasattr(other, "as_au"):
-            return abs (self.as_au() - other.as_au()) < 1e-10
+            return self.as_au() == other.as_au()
         elif other == 0:
             return self.value == 0
         else:

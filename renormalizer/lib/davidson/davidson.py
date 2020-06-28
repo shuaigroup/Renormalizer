@@ -90,7 +90,7 @@ def davidson1(
     if (not isinstance(x0, list)) and x0.ndim == 1:
         x0 = [x0]
     # max_cycle = min(max_cycle, x0[0].size)
-    max_space = max_space + nroots * 3
+    max_space = min(max_space + nroots * 3, max(1,x0[0].size//2))
     # max_space*2 for holding ax and xs, nroots*2 for holding axt and xt
     _incore = max_memory * 1e6 / x0[0].nbytes > max_space * 2 + nroots * 3
     lessio = lessio and not _incore
