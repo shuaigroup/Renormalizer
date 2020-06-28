@@ -9,6 +9,7 @@ from renormalizer.mps.backend import np
 from renormalizer.utils.constant import mobility2au
 from renormalizer.utils import TdMpsJob, Quantity, EvolveConfig, CompressConfig
 from renormalizer.model import MolList, ModelTranslator
+from renormalizer.model.mlist import vibronic_to_general
 from renormalizer.property import Property
 
 logger = logging.getLogger(__name__)
@@ -129,8 +130,15 @@ class TransportKubo(TdMpsJob):
         if isinstance(self.mol_list, MolList):
             self.mol_list.mol_list2_para("general")
             mol_num = self.mol_list.mol_num
+            model = self.mol_list.model
         else:
             mol_num = self.mol_list.n_edofs
+            if self.mol_list.model_translator == ModelTranslator.general_model:
+                model = self.mol_list.model
+            elif self.mol_list.model_translator == ModelTranslator.vibronic_model:
+                model = vibronic_to_general(self.mol_list.model)
+            else:
+                raise ValueError(f"Unsupported model {self.mol_list.model_translator}")
         if self.distance_matrix is None:
             logger.info("Constructing distance matrix based on a periodic one-dimension chain.")
             self.distance_matrix = np.arange(mol_num).reshape(-1, 1) - np.arange(mol_num).reshape(1, -1)
@@ -141,8 +149,14 @@ class TransportKubo(TdMpsJob):
         holstein_current_model = {}
         # current related to phonons
         peierls_current_model = {}
+        # checkout that things like r"a^\dagger_0 a_1" are not present
+        for terms in model.values():
+            for term in terms:
+                for op in term[:-1]:
+                    if "_" in op.symbol:
+                        raise ValueError(f"{op} not supported.")
         # loop through the Hamiltonian to construct current operator
-        for dof_names, terms in self.mol_list.model.items():
+        for dof_names, terms in model.items():
             # find out terms that contains two electron operators
             # idx of the dof for the model
             dof_idx1 = dof_idx2 = None
@@ -183,7 +197,7 @@ class TransportKubo(TdMpsJob):
                     assert term[phonon_term_idx].symbol in (r"b^\dagger + b", "x")
                 symbol1, symbol2 = term[term_idx1].symbol, term[term_idx2].symbol
                 if not {symbol1, symbol2} == {r"a^\dagger", "a"}:
-                    raise ValueError(f"Unknwon symbol: {symbol1}, {symbol2}")
+                    raise ValueError(f"Unknown symbol: {symbol1}, {symbol2}")
                 if symbol1 == r"a^\dagger":
                     factor = self.distance_matrix[dof_idx1][dof_idx2]
                 else:
@@ -233,21 +247,22 @@ class TransportKubo(TdMpsJob):
             return BraKetPair(bra_mpdm, ket_mpdm, self.j_oper), BraKetPair(bra_mpdm, ket_mpdm2, self.j_oper2)
 
     def process_mps(self, mps):
+        # add the negative sign because `self.j_oper` is taken to be real
         if self.j_oper2 is None:
-            self._auto_corr.append(mps.ft)
+            self._auto_corr.append(-mps.ft)
             # calculate other properties defined in Property
             if self.properties is not None:
                 self.properties.calc_properties_braketpair(mps)
         else:
             (bra_mpdm, ket_mpdm), (bra_mpdm, ket_mpdm2) = mps
             # <J_1(t) J_1(0)>
-            ft1 = BraKetPair(bra_mpdm, ket_mpdm, self.j_oper).ft
+            ft1 = -BraKetPair(bra_mpdm, ket_mpdm, self.j_oper).ft
             # <J_1(t) J_2(0)>
-            ft2 = BraKetPair(bra_mpdm, ket_mpdm2, self.j_oper).ft
+            ft2 = -BraKetPair(bra_mpdm, ket_mpdm2, self.j_oper).ft
             # <J_2(t) J_1(0)>
-            ft3 = BraKetPair(bra_mpdm, ket_mpdm, self.j_oper2).ft
+            ft3 = -BraKetPair(bra_mpdm, ket_mpdm, self.j_oper2).ft
             # <J_2(t) J_2(0)>
-            ft4 = BraKetPair(bra_mpdm, ket_mpdm2, self.j_oper2).ft
+            ft4 = -BraKetPair(bra_mpdm, ket_mpdm2, self.j_oper2).ft
             self._auto_corr.append(ft1 + ft2 + ft3 + ft4)
             self._auto_corr_deomposition.append([ft1, ft2, ft3, ft4])
 

@@ -1812,9 +1812,8 @@ def _mu_regularize(s, epsilon=1e-10):
 
 class BraKetPair:
     def __init__(self, bra_mps, ket_mps, mpo=None):
-        # do copy so that clear_memory won't clear previous braket
-        self.bra_mps = bra_mps.copy()
-        self.ket_mps = ket_mps.copy()
+        self.bra_mps = bra_mps
+        self.ket_mps = ket_mps
         self.mpo = mpo
         self.ft = self.calc_ft()
 
@@ -1822,7 +1821,7 @@ class BraKetPair:
         if self.mpo is None:
             dot = self.bra_mps.conj().dot(self.ket_mps)
         else:
-            dot = self.bra_mps.conj().expectation(self.mpo, self.ket_mps)
+            dot = self.ket_mps.expectation(self.mpo, self.bra_mps.conj())
         return complex(
             dot * np.conjugate(self.bra_mps.coeff)
             * self.ket_mps.coeff

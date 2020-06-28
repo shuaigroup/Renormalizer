@@ -35,8 +35,7 @@ def test_holstein_kubo(scheme, mollist2):
     kubo.evolve(nsteps=5, evolve_time=5)
     qutip_res = get_qutip_holstein_kubo(mol_list1, temperature, kubo.evolve_times_array)
     rtol = 5e-2
-    # direct comparison may fail because of different sign
-    assert np.allclose(kubo.auto_corr, qutip_res, rtol=rtol) or np.allclose(kubo.auto_corr, -qutip_res, rtol=rtol)
+    assert np.allclose(kubo.auto_corr, qutip_res, rtol=rtol)
 
 
 def get_qutip_holstein_kubo(mol_list, temperature, time_series):
@@ -60,8 +59,8 @@ def get_qutip_holstein_kubo(mol_list, temperature, time_series):
         terms.append(-J * clist[i] * clist[i + 1].dag())
     j_oper = sum(terms).extract_states(qn_idx)
 
-    corr = qutip.correlation(H, init_state, [0], time_series, [], j_oper, j_oper)[0]
-    return corr
+    # Add the negative sign because j is taken to be real
+    return -qutip.correlation(H, init_state, [0], time_series, [], j_oper, j_oper)[0]
 
 
 def test_peierls_kubo():
@@ -119,10 +118,8 @@ def test_peierls_kubo():
     atol = 1e-7
     rtol = 5e-2
     # direct comparison may fail because of different sign
-    assert np.allclose(kubo.auto_corr, qutip_corr, atol=atol, rtol=rtol) \
-           or np.allclose(kubo.auto_corr, -qutip_corr, atol=atol, rtol=rtol)
-    assert np.allclose(kubo.auto_corr_decomposition, qutip_corr_decomp, atol=atol, rtol=rtol) \
-           or np.allclose(kubo.auto_corr_decomposition, -qutip_corr_decomp, atol=atol, rtol=rtol)
+    assert np.allclose(kubo.auto_corr, qutip_corr, atol=atol, rtol=rtol)
+    assert np.allclose(kubo.auto_corr_decomposition, qutip_corr_decomp, atol=atol, rtol=rtol)
 
 
 def get_qutip_peierls_kubo(J, nsites, ph_levels, omega, g, temperature, time_series):
@@ -144,9 +141,10 @@ def get_qutip_peierls_kubo(J, nsites, ph_levels, omega, g, temperature, time_ser
     j_oper1 = sum(holstein_terms).extract_states(qn_idx)
     j_oper2 = sum(peierls_terms).extract_states(qn_idx)
 
-    corr1 = qutip.correlation(H, init_state, [0], time_series, [], j_oper1, j_oper1)[0]
-    corr2 = qutip.correlation(H, init_state, [0], time_series, [], j_oper1, j_oper2)[0]
-    corr3 = qutip.correlation(H, init_state, [0], time_series, [], j_oper2, j_oper1)[0]
-    corr4 = qutip.correlation(H, init_state, [0], time_series, [], j_oper2, j_oper2)[0]
+    # Add negative signs because j is taken to be real
+    corr1 = -qutip.correlation(H, init_state, [0], time_series, [], j_oper1, j_oper1)[0]
+    corr2 = -qutip.correlation(H, init_state, [0], time_series, [], j_oper1, j_oper2)[0]
+    corr3 = -qutip.correlation(H, init_state, [0], time_series, [], j_oper2, j_oper1)[0]
+    corr4 = -qutip.correlation(H, init_state, [0], time_series, [], j_oper2, j_oper2)[0]
     corr = corr1 + corr2 + corr3 + corr4
     return corr, np.array([corr1, corr2, corr3, corr4]).T
