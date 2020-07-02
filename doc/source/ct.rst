@@ -1,13 +1,15 @@
 Charge Transport
 *************************************
 
-charge diffusion simulation
-===========================
-.. automodule:: renormalizer.transport.transport
-   :members:
-
-
-obtain mobility by Kubo formula
+Obtain mobility by Green-Kubo formula
 ===============================
-.. automodule:: renormalizer.transport.autocorr
+.. automodule:: renormalizer.transport.kubo
    :members:
+
+Charge diffusion simulation dynamics
+===========================
+.. automodule:: renormalizer.transport.dynamics
+   :members:
+
+
+

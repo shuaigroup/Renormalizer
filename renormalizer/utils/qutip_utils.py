@@ -35,7 +35,7 @@ def get_blist(nsites, ph_levels):
     return blist
 
 
-def get_hamiltonian(nsites, J, omega, g, clist, blist):
+def get_holstein_hamiltonian(nsites, J, omega, g, clist, blist):
     lam = g ** 2 * omega
     terms = []
     for i in range(nsites):
@@ -45,8 +45,25 @@ def get_hamiltonian(nsites, J, omega, g, clist, blist):
     for i in range(nsites - 1):
         terms.append(J * clist[i].dag() * clist[i + 1])
         terms.append(J * clist[i] * clist[i + 1].dag())
-    H = sum(terms)
-    return H
+
+    return sum(terms)
+
+
+def get_peierls_hamiltonian(nsites, J, omega, g, clist, blist):
+    terms = []
+    for i in range(nsites):
+        next_i = (i + 1) % nsites
+        # electronic coupling
+        terms.append(J * clist[i].dag() * clist[next_i])
+        terms.append(J * clist[i] * clist[next_i].dag())
+        # phonon energy
+        terms.append(omega * blist[i].dag() * blist[i])
+        # electron-phonon coupling
+        terms.append(g * omega * clist[i].dag() * clist[next_i] * (blist[i].dag() + blist[i]))
+        terms.append(g * omega * clist[i] * clist[next_i].dag() * (blist[i].dag() + blist[i]))
+
+
+    return sum(terms)
 
 
 def get_gs(nsites, ph_levels):

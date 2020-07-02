@@ -1,19 +1,19 @@
 import logging
+from collections import defaultdict
 from itertools import permutations as permut
 from itertools import product
-from collections import defaultdict
 
 import pytest
 
-from renormalizer.utils.constant import ev2au, fs2au
-from renormalizer.utils import Op
 from renormalizer.model import MolList2, ModelTranslator
-from renormalizer.utils import basis as ba
-from renormalizer.vibronic import VibronicModelDynamics
-from renormalizer.utils import EvolveConfig, CompressConfig, CompressCriteria, EvolveMethod
+from renormalizer.model.mlist import vibronic_to_general
 from renormalizer.mps import Mps, Mpo
 from renormalizer.mps.backend import np
-
+from renormalizer.utils import EvolveConfig, CompressConfig, CompressCriteria, EvolveMethod
+from renormalizer.utils import Op
+from renormalizer.utils import basis as ba
+from renormalizer.utils.constant import ev2au, fs2au
+from renormalizer.vibronic import VibronicModelDynamics
 
 logger = logging.getLogger(__name__)
 
@@ -161,36 +161,6 @@ def construct_vibronic_model(multi_e, dvr):
     logger.info(f"basis:{basis}")
 
     return order, basis, model
-
-
-def vibronic_to_general(model):
-    new_model = defaultdict(list)
-    for e_k, e_v in model.items():
-        for kk, vv in e_v.items():
-            # it's difficult to rename `kk` because sometimes it's related to
-            # phonons sometimes it's `"J"`
-            if e_k == "I":
-                # operators without electronic dof, simple phonon
-                new_model[kk] = vv
-            else:
-                # operators with electronic dof
-                assert isinstance(e_k, tuple) and len(e_k) == 2
-                if e_k[0] == e_k[1]:
-                    # diagonal
-                    new_e_k = (e_k[0],)
-                    e_op = (Op(r"a^\dagger a", 0),)
-                else:
-                    # off-diagonal
-                    new_e_k = e_k
-                    e_op = (Op(r"a^\dagger", 1), Op("a", -1))
-                if kk == "J":
-                    new_model[new_e_k] = [e_op + (vv,)]
-                else:
-                    for term in vv:
-                        new_key = new_e_k + kk
-                        new_value = e_op + term
-                        new_model[new_key].append(new_value)
-    return new_model
 
 
 @pytest.mark.parametrize("multi_e, translator, dvr", (

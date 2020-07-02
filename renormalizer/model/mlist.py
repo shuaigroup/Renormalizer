@@ -2,7 +2,7 @@
 # Author: Jiajun Ren <jiajunren0522@gmail.com>
 
 import copy
-from collections import OrderedDict
+from collections import OrderedDict, defaultdict
 from typing import List, Union, Dict
 from enum import Enum
 
@@ -489,6 +489,7 @@ class MolList:
     
     def mol_list2_para(self, formula="vibronic"):
         mol_list2 = MolList2.MolList_to_MolList2(self, formula)
+        self.multi_dof_basis = self.scheme == 4
         self.order = mol_list2.order
         self.basis = mol_list2.basis
         self.model = mol_list2.model
@@ -510,6 +511,7 @@ class MolList:
         mol_list_new.basis = self.basis
         mol_list_new.model = model
         mol_list_new.model_translator = model_translator
+        mol_list_new.multi_dof_basis = self.multi_dof_basis
         return mol_list_new
 
     def __getitem__(self, idx):
@@ -553,3 +555,33 @@ def load_from_dict(param, scheme, lam: bool):
                        j_constant, scheme=scheme
                        )
     return mol_list, temperature
+
+
+def vibronic_to_general(model):
+    new_model = defaultdict(list)
+    for e_k, e_v in model.items():
+        for kk, vv in e_v.items():
+            # it's difficult to rename `kk` because sometimes it's related to
+            # phonons sometimes it's `"J"`
+            if e_k == "I":
+                # operators without electronic dof, simple phonon
+                new_model[kk] = vv
+            else:
+                # operators with electronic dof
+                assert isinstance(e_k, tuple) and len(e_k) == 2
+                if e_k[0] == e_k[1]:
+                    # diagonal
+                    new_e_k = (e_k[0],)
+                    e_op = (Op(r"a^\dagger a", 0),)
+                else:
+                    # off-diagonal
+                    new_e_k = e_k
+                    e_op = (Op(r"a^\dagger", 1), Op("a", -1))
+                if kk == "J":
+                    new_model[new_e_k] = [e_op + (vv,)]
+                else:
+                    for term in vv:
+                        new_key = new_e_k + kk
+                        new_value = e_op + term
+                        new_model[new_key].append(new_value)
+    return new_model
