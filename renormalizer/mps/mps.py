@@ -8,7 +8,6 @@ from collections import Counter, deque
 import scipy
 from scipy import stats
 
-
 from renormalizer.model import MolList, MolList2, ModelTranslator
 from renormalizer.lib import solve_ivp, expm_krylov
 from renormalizer.mps import svd_qn
@@ -20,7 +19,13 @@ from renormalizer.mps.matrix import (
     asnumpy,
     asxp)
 from renormalizer.mps.backend import backend, np, xp
-from renormalizer.mps.lib import Environ, updatemps, compressed_sum, contract_one_site
+from renormalizer.mps.lib import (
+    Environ, 
+    select_basis, 
+    compressed_sum, 
+    contract_one_site,
+    cvec2cmat
+    )
 from renormalizer.mps.mp import MatrixProduct
 from renormalizer.mps.mpo import Mpo
 from renormalizer.mps.tdh import mflib
@@ -32,7 +37,6 @@ from renormalizer.utils import (
     CompressConfig,
     EvolveConfig,
     EvolveMethod,
-    sizeof_fmt,
     Op
 )
 from renormalizer.utils import basis as ba
@@ -130,8 +134,8 @@ class Mps(MatrixProduct):
             s_set = []
             qnset = []
             
+            # this random state is only suitable for positive quantum number is 0,1,2,3...
             for iblock in range(min(qnbig), nexciton + 1):
-            #for iblock in range(min(qnbig), max(qnbig)+1):
                 # find the quantum number index
                 indices = [i for i, x in enumerate(qnbig) if x == iblock]
 
@@ -145,8 +149,8 @@ class Mps(MatrixProduct):
 
             u_set = np.concatenate(u_set, axis=1)
             s_set = np.concatenate(s_set)
-            mt, mpsdim, mpsqn, nouse = updatemps(
-                u_set, s_set, qnset, u_set, nexciton, m_max, percent=percent
+            mt, mpsdim, mpsqn, nouse = select_basis(
+                u_set, s_set, qnset, u_set, m_max, percent=percent
             )
             # add the next mpsdim
             dim_list.append(mpsdim)
@@ -240,7 +244,7 @@ class Mps(MatrixProduct):
         return mps
 
     @classmethod
-    def gs(cls, mol_list: MolList, max_entangled: bool):
+    def ground_state(cls, mol_list: MolList, max_entangled: bool):
         r"""
         Obtain ground state at :math:`T = 0` or :math:`T = \infty` (maximum entangled).
         Electronic DOFs are always at ground state. and vibrational DOFs depend on ``max_entangled``.
@@ -659,7 +663,7 @@ class Mps(MatrixProduct):
             # in case of localized `self`
             if not self.use_dummy_qn:
                 if self.is_mps:
-                    ex_state: MatrixProduct = self.gs(self.mol_list, False)
+                    ex_state: MatrixProduct = self.ground_state(self.mol_list, False)
                     ex_state = Mpo.onsite(self.mol_list, r"a^\dagger") @ ex_state
                 elif self.is_mpdm:
                     ex_state: MatrixProduct = self.max_entangled_ex(self.mol_list)
@@ -849,7 +853,7 @@ class Mps(MatrixProduct):
         qntot = mps.qntot
         for imps in range(mps.site_num):
             mps.move_qnidx(imps)
-            qnbigl, qnbigr, qnmat= mps._get_big_qn(imps)
+            qnbigl, qnbigr, qnmat= mps._get_big_qn([imps])
             qnmat_list.append(qnmat)
             position.append(position[-1]+np.sum(qnmat == qntot))
 
@@ -861,8 +865,8 @@ class Mps(MatrixProduct):
 
             # update mps: from left to right
             for imps in range(mps.site_num):
-                mps[imps] = svd_qn.cvec2cmat(mps[imps].shape, asnumpy(y[position[imps]:position[imps+1]]),
-                        qnmat_list[imps], qntot)
+                mps[imps] = cvec2cmat(mps[imps].shape, asnumpy(y[position[imps]:position[imps + 1]]),
+                                                           qnmat_list[imps], qntot)
 
             if self.evolve_config.method == EvolveMethod.tdvp_mu_vmf:
                 environ_mps = mps.copy()
@@ -874,7 +878,6 @@ class Mps(MatrixProduct):
                 assert False
 
             environ = Environ(environ_mps, mpo, "L")
-            environ.write_r_sentinel(environ_mps)
 
             if self.evolve_config.force_ovlp:
                 # construct the S_L list (type: Matrix) and S_L_inv list (type: xp.array)
@@ -920,7 +923,7 @@ class Mps(MatrixProduct):
 
                 if self.evolve_config.method == EvolveMethod.tdvp_mu_vmf:
                     # perform qr on the environment mps
-                    qnbigl, qnbigr, _ = environ_mps._get_big_qn(imps + 1)
+                    qnbigl, qnbigr, _ = environ_mps._get_big_qn([imps + 1])
                     u, s, qnlset, v, s, qnrset = svd_qn.Csvd(
                             environ_mps[imps + 1].array, qnbigl, qnbigr,
                             environ_mps.qntot, system="R", full_matrices=False)
@@ -991,8 +994,8 @@ class Mps(MatrixProduct):
 
         # update mps: from left to right
         for imps in range(mps.site_num):
-            mps[imps] = svd_qn.cvec2cmat(mps[imps].shape, asnumpy(sol.y[:,-1][position[imps]:position[imps+1]]),
-                    qnmat_list[imps], qntot)
+            mps[imps] = cvec2cmat(mps[imps].shape, asnumpy(sol.y[:, -1][position[imps]:position[imps + 1]]),
+                                                       qnmat_list[imps], qntot)
 
         logger.debug(f"{self.evolve_config.method} VMF func called: {sol.nfev}. RKF steps: {len(sol.t)}")
 
@@ -1072,7 +1075,6 @@ class Mps(MatrixProduct):
 
             # construct the environment matrix
             environ = Environ(environ_mps, mpo, "L")
-            environ.write_r_sentinel(environ_mps)
 
             # statistics for debug output
             cmf_rk_steps = []
@@ -1121,7 +1123,7 @@ class Mps(MatrixProduct):
                         continue
 
                 # perform qr on the environment mps
-                qnbigl, qnbigr, _ = environ_mps._get_big_qn(imps + 1)
+                qnbigl, qnbigr, _ = environ_mps._get_big_qn([imps + 1])
                 u, s, qnlset, v, s, qnrset = svd_qn.Csvd(
                     environ_mps[imps + 1].array,
                     qnbigl,
@@ -1248,7 +1250,7 @@ class Mps(MatrixProduct):
                     local_steps.append(j)
                 mps_t = mps_t.reshape(shape)
 
-                qnbigl, qnbigr, _ = mps._get_big_qn(imps)
+                qnbigl, qnbigr, _ = mps._get_big_qn([imps])
                 u, qnlset, v, qnrset = svd_qn.Csvd(
                     asnumpy(mps_t),
                     qnbigl,
@@ -1612,9 +1614,6 @@ class Mps(MatrixProduct):
         except Exception as e:
             logger.error(f"Dump mps failed, exception info: f{e}")
 
-    def __str__(self):
-        template_str = "current size: {}, Matrix product bond dim:{}"
-        return template_str.format(sizeof_fmt(self.total_bytes), self.bond_dims,)
 
     def __setitem__(self, key, value):
         return super().__setitem__(key, value)

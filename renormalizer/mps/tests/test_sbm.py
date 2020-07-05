@@ -40,7 +40,7 @@ def test_zt():
     mol = get_mol()
     mol_list = MolList([mol], Quantity(0))
 
-    mps = Mps.gs(mol_list, False)
+    mps = Mps.ground_state(mol_list, False)
     mps.compress_config = CompressConfig(threshold=1e-6)
     mps.evolve_config = EvolveConfig(adaptive=True, guess_dt=0.1)
     mps.use_dummy_qn = True

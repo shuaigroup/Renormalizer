@@ -17,7 +17,7 @@ from renormalizer.transport.tests import cur_dir
 def test_zt(n_dmrg_phs, scheme):
 
     mol_list = parameter_PBI.construct_mol(4, n_dmrg_phs, 10 - n_dmrg_phs).switch_scheme(scheme)
-    mps = Mps.gs(mol_list, False)
+    mps = Mps.ground_state(mol_list, False)
     # create electron
     mps = Mpo.onsite(mol_list, r"a^\dagger", mol_idx_set={0}).apply(mps).normalize(1.0)
     tentative_mpo = Mpo(mol_list)

@@ -8,7 +8,7 @@ import pytest
 
 from renormalizer.model import Phonon, Mol, MolList
 from renormalizer.mps import Mps, Mpo, ThermalProp, MpDm, MpDmFull
-from renormalizer.mps.solver import optimize_mps
+from renormalizer.mps.gs import optimize_mps
 from renormalizer.transport import ChargeDiffusionDynamics
 from renormalizer.utils import Quantity
 from renormalizer.utils import (

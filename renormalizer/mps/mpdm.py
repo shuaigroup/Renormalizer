@@ -23,7 +23,7 @@ class MpDmBase(Mps, Mpo):
         raise ValueError("MpDm don't have to produce random state")
 
     @classmethod
-    def gs(cls, mol_list, max_entangled):
+    def ground_state(cls, mol_list, max_entangled):
         raise ValueError(
             "Use max_entangled_ex or max_entangled_gs for matrix product density matrix"
         )
@@ -147,7 +147,7 @@ class MpDm(MpDmBase):
         """
         T = \\infty locally maximal entangled EX state
         """
-        mps = Mps.gs(mol_list, max_entangled=True)
+        mps = Mps.ground_state(mol_list, max_entangled=True)
         # the creation operator \\sum_i a^\\dagger_i
         if isinstance(mol_list, MolList):
             ex_mpo = Mpo.onsite(mol_list, r"a^\dagger")
@@ -164,7 +164,7 @@ class MpDm(MpDmBase):
 
     @classmethod
     def max_entangled_gs(cls, mol_list):
-        return cls.from_mps(Mps.gs(mol_list, max_entangled=True))
+        return cls.from_mps(Mps.ground_state(mol_list, max_entangled=True))
 
     def _get_sigmaqn(self, idx):
         if isinstance(self.mol_list, MolList2):

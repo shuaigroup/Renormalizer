@@ -3,7 +3,7 @@ from renormalizer.utils import basis as ba
 from renormalizer.utils import Op
 from renormalizer.cv import batch_run
 from renormalizer.cv.zerot import SpectraZtCV
-from renormalizer.mps import Mpo, Mps, solver
+from renormalizer.mps import Mpo, Mps, gs
 from renormalizer.cv.tests import cur_dir
 import numpy as np
 import os
@@ -37,7 +37,7 @@ def test_H_chain_LDOS():
     
     mps.optimize_config.procedure = procedure
     mps.optimize_config.method = "2site"
-    energies = solver.optimize_mps_dmrg(mps, mpo)
+    energies, mps = gs.optimize_mps_dmrg(mps, mpo)
     gs_e = min(energies)+nuc
     
     assert np.allclose(gs_e, -2.190384218792706)

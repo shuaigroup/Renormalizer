@@ -34,10 +34,10 @@ class Environ:
             return
         if domain == "L":
             start, end, inc = 0, len(mps) - 1, 1
-            self.write_l_sentinel(mps)
         else:
             start, end, inc = len(mps) - 1, 0, -1
-            self.write_r_sentinel(mps)
+        self.write_l_sentinel(mps)
+        self.write_r_sentinel(mps)
 
         tensor = sentinel
         for idx in range(start, end, inc):
@@ -51,21 +51,22 @@ class Environ:
         self.write("R", len(mps), sentinel)
 
     def GetLR(
-        self, domain, siteidx, MPS, MPO, itensor=sentinel, method="Scratch"
-    ):
+        self, domain, siteidx, mps, mpo, itensor=sentinel, method="Scratch", mps_conj=None):
         """
         get the L/R Hamiltonian matrix at a random site(siteidx): 3d tensor
-        S-     -S     MPSconj
-        O- or  -O     MPO
-        S-     -S     MPS
+        S-     -S     mpsconj
+        O- or  -O     mpo
+        S-     -S     mps
         enviroment part from self.virtual_disk,  system part from one step calculation
         support from scratch calculation: from two open boundary np.ones((1,1,1))
         """
 
         assert domain in ["L", "R"]
         assert method in ["Enviro", "System", "Scratch"]
+        if mps_conj is None:
+            mps_conj = mps.conj()
 
-        if siteidx not in range(len(MPS)):
+        if siteidx not in range(len(mps)):
             return sentinel
 
         if method == "Scratch":
@@ -73,16 +74,18 @@ class Environ:
             if domain == "L":
                 sitelist = range(siteidx + 1)
             else:
-                sitelist = range(len(MPS) - 1, siteidx - 1, -1)
+                sitelist = range(len(mps) - 1, siteidx - 1, -1)
             for imps in sitelist:
-                itensor = contract_one_site(itensor, MPS[imps], MPO[imps], domain)
+                itensor = contract_one_site(itensor, mps[imps], mpo[imps],
+                        domain, mps_conj[imps])
         elif method == "Enviro":
             itensor = self.read(domain, siteidx)
         elif method == "System":
             if itensor is None:
                 offset = -1 if domain == "L" else 1
                 itensor = self.read(domain, siteidx + offset)
-            itensor = contract_one_site(itensor, MPS[siteidx], MPO[siteidx], domain)
+            itensor = contract_one_site(itensor, mps[siteidx], mpo[siteidx],
+                    domain, mps_conj[siteidx])
             self.write(domain, siteidx, itensor)
 
         return itensor
@@ -96,7 +99,7 @@ class Environ:
 
 def contract_one_site(environ, ms, mo, domain, ms_conj=None):
     """
-    contract one MPO/MPS(MPDM) site
+    contract one mpo/mps(mpdm) site
              _   _
             | | | |
     S-S-    | S-|-S-
@@ -178,17 +181,19 @@ def contract_one_site(environ, ms, mo, domain, ms_conj=None):
     return outtensor
 
 
-def select_basis(qnset, Sset, qnlist, Mmax, percent=0):
+def select_basis(vset, sset, qnset, compset, Mmax, percent=0):
     """
-    select basis according to Sset under qnlist requirement
+    select basis to construct new mps, and complementary mps
+    vset, compset is the column vector
     """
-
+    # allowed qn subsection
+    qnlist = set(qnset)
     # convert to dict
     basdic = dict()
     for i in range(len(qnset)):
         # clean quantum number outside qnlist
         if qnset[i] in qnlist:
-            basdic[i] = [qnset[i], Sset[i]]
+            basdic[i] = [qnset[i], sset[i]]
 
     # each good quantum number block equally get percent/nblocks
     def block_select(basdic, qn, n):
@@ -222,15 +227,6 @@ def select_basis(qnset, Sset, qnlist, Mmax, percent=0):
 
     assert len(sidx) == len(set(sidx))  # there must be no duplicated
 
-    return sidx
-
-
-def updatemps(vset, sset, qnset, compset, nexciton, Mmax, percent=0):
-    """
-    select basis to construct new mps, and complementary mps
-    vset, compset is the column vector
-    """
-    sidx = select_basis(qnset, sset, range(nexciton + 1), Mmax, percent=percent)
     mpsdim = len(sidx)
     # need to set value column by column. better in CPU
     ms = np.zeros((vset.shape[0], mpsdim), dtype=vset.dtype)
@@ -366,3 +362,18 @@ def _sum(mps_list, compress=True):
         new_mps.canonicalise()
         new_mps.compress()
     return new_mps
+
+
+def cvec2cmat(cshape, c, qnmat, nexciton, nroots=1):
+    # recover good quantum number vector c to matrix format
+    if nroots == 1:
+        cstruct = np.zeros(cshape, dtype=c.dtype)
+        np.place(cstruct, qnmat == nexciton, c)
+    else:
+        cstruct = []
+        for ic in c:
+            icstruct = np.zeros(cshape, dtype=ic.dtype)
+            np.place(icstruct, qnmat == nexciton, ic)
+            cstruct.append(icstruct)
+
+    return cstruct

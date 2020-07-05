@@ -1548,6 +1548,7 @@ class Mpo(MatrixProduct):
         self.rep = rep
         # offset of the hamiltonian, might be useful when doing td-hartree job
         self.offset = offset
+        self.to_right = False
         j_matrix = self.mol_list.j_matrix
         nmols = len(mol_list)
 
@@ -1901,18 +1902,17 @@ class Mpo(MatrixProduct):
 
     def _get_sigmaqn(self, idx):
         if isinstance(self.mol_list, MolList2):
-            v = np.array(self.mol_list.basis[idx].sigmaqn)
-            return list((v.reshape(-1, 1) - v.reshape(1, -1)).flatten())
+            array_up = self.mol_list.basis[idx].sigmaqn
         else:
             if self.ephtable.is_phonon(idx):
-                return np.array([0] * self.pbond_list[idx] ** 2)
-            if self.mol_list.scheme < 4 and self.ephtable.is_electron(idx):
-                return np.array([0, -1, 1, 0])
+                array_up = np.array([0]*self.pbond_list[idx])
+            elif self.mol_list.scheme < 4 and self.ephtable.is_electron(idx):
+                array_up = np.array([0,1])
             elif self.mol_list.scheme == 4 and self.ephtable.is_electrons(idx):
-                v = np.array([0] + [1] * (self.pbond_list[idx] - 1))
-                return list((v.reshape(-1, 1) - v.reshape(1, -1)).flatten())
+                array_up = np.array([0] + [1] * (self.pbond_list[idx] - 1))
             else:
                 assert False
+        return np.subtract.outer(array_up, array_up)
 
     @property
     def is_mps(self):
@@ -2056,4 +2056,9 @@ class Mpo(MatrixProduct):
             mpo.append(mt)
         mpo.build_empty_qn()
         return mpo
-
+    
+    @property
+    def dmrg_norm(self) -> float:
+        res = np.sqrt(self.conj().dot(self).real)
+        return float(res.real)
+    

@@ -166,7 +166,7 @@ class ChargeDiffusionDynamics(TdMpsJob):
     def init_mps(self):
         tentative_mpo = Mpo(self.mol_list)
         if self.temperature == 0:
-            gs_mp = Mps.gs(self.mol_list, max_entangled=False)
+            gs_mp = Mps.ground_state(self.mol_list, max_entangled=False)
             if self.dissipation != 0:
                 gs_mp = MpDm.from_mps(gs_mp)
         else:

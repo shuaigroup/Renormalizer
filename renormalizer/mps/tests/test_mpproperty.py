@@ -24,7 +24,7 @@ def check_property(mp):
 
 
 def test_mps():
-    gs_mps = Mps.gs(mol_list, max_entangled=False)
+    gs_mps = Mps.ground_state(mol_list, max_entangled=False)
     mps = creation_operator @ gs_mps
     check_property(mps)
 

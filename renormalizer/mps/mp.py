@@ -5,11 +5,10 @@ import logging
 from typing import List, Union
 
 from renormalizer.model import MolList, EphTable
-from renormalizer.mps.backend import np, xp
+from renormalizer.mps.backend import np, xp, USE_GPU
 from renormalizer.mps import svd_qn
 from renormalizer.mps.matrix import (
-    einsum,
-    eye,
+    asxp,
     allclose,
     backend,
     vstack,
@@ -17,8 +16,15 @@ from renormalizer.mps.matrix import (
     concatenate,
     zeros,
     tensordot,
+    multi_tensor_contract,
     Matrix)
 from renormalizer.utils import sizeof_fmt, CompressConfig
+from renormalizer.mps.lib import (
+    Environ,
+    select_basis,
+    )
+
+import opt_einsum as oe
 
 logger = logging.getLogger(__name__)
 
@@ -226,6 +232,10 @@ class MatrixProduct:
     def _update_ms(
         self, idx: int, u: np.ndarray, vt: np.ndarray, sigma=None, qnlset=None, qnrset=None, m_trunc=None
     ):
+        r""" update mps directly after svd
+        
+        """
+        
         if m_trunc is None:
             m_trunc = u.shape[1]
         u = u[:, :m_trunc]
@@ -282,21 +292,46 @@ class MatrixProduct:
             self.to_right = True
             # assert self.check_right_canonical()
 
-    def _get_big_qn(self, idx):
-        assert self.qnidx == idx
-        mt: Matrix = self[idx]
-        sigmaqn = np.array(mt.sigmaqn)
-        qnl = np.array(self.qn[idx])
-        qnr = np.array(self.qn[idx + 1])
-        assert qnl.size == mt.shape[0]
-        assert qnr.size == mt.shape[-1]
-        assert sigmaqn.size == mt.pdim_prod
-        if self.to_right:
-            qnbigl = np.add.outer(qnl, sigmaqn)
-            qnbigr = qnr
+    def _get_big_qn(self, cidx: List[int]):
+        r""" get the quantum number of L-block and R-block renormalized basis 
+        
+        Parameters
+        ----------
+        cidx : list
+            a list of center(active) site index. For 1site/2site algorithm, cidx
+            has one/two elements.
+
+        Returns
+        -------
+        qnbigl : np.ndarray
+            super-L-block (L-block + active site if necessary) quantum number
+        qnbigr : np.ndarray
+            super-R-block (active site + R-block if necessary) quantum number
+        qnmat : np.ndarray
+            L-block + active site + R-block quantum number
+        
+        """
+
+        if len(cidx) == 2:
+            cidx = sorted(cidx)
+            assert cidx[0]+1 == cidx[1]
+        elif len(cidx) > 2:
+            assert False
+        assert self.qnidx in cidx
+        
+        sigmaqn = [np.array(self[idx].sigmaqn) for idx in cidx]
+        qnl = np.array(self.qn[cidx[0]])
+        qnr = np.array(self.qn[cidx[-1]+1])
+        if len(cidx) == 1:
+            if self.to_right:
+                qnbigl = np.add.outer(qnl, sigmaqn[0])
+                qnbigr = qnr
+            else:
+                qnbigl = qnl
+                qnbigr = np.add.outer(sigmaqn[0], qnr)
         else:
-            qnbigl = qnl
-            qnbigr = np.add.outer(sigmaqn, qnr)
+            qnbigl = np.add.outer(qnl, sigmaqn[0])
+            qnbigr = np.add.outer(sigmaqn[1], qnr)
         qnmat = np.add.outer(qnbigl, qnbigr)
         return qnbigl, qnbigr, qnmat
 
@@ -375,7 +410,8 @@ class MatrixProduct:
 
         side='r': reverse of 'l'
 
-        returns:
+        Returns
+        -------
              truncated MPS
         """
         if self.to_right:
@@ -403,7 +439,7 @@ class MatrixProduct:
                 mt = mt.l_combine()
             else:
                 mt = mt.r_combine()
-            qnbigl, qnbigr, _ = self._get_big_qn(idx)
+            qnbigl, qnbigr, _ = self._get_big_qn([idx])
             u, sigma, qnlset, v, sigma, qnrset = svd_qn.Csvd(
                 mt.array,
                 qnbigl,
@@ -433,6 +469,306 @@ class MatrixProduct:
         else:
             # return singular value list
             return self, s_list
+    
+    def variational_compress(self, mpo=None, guess=None):
+        r"""Variational compress an mps/mpdm/mpo
+        
+        Parameters
+        ----------
+        mpo : renormalizer.mps.Mpo, optional 
+            Default is ``None``. if mpo is not ``None``, the returned mps is
+            an approximation of ``mpo @ self``
+        guess : renormalizer.mps.MatrixProduct, optional
+            Initial guess of compressed mps/mpdm/mpo. Default is ``None``. 
+        
+        Note
+        ----
+        the variational compress related configurations is defined in
+        ``self`` if ``guess=None``, otherwise is defined in ``guess``
+
+        Returns
+        -------
+        mp : renormalizer.mps.MatrixProduct
+            a new compressed mps/mpdm/mpo, ``self`` is not overwritten.
+            ``guess`` is overwritten.
+        
+        """
+
+        if mpo is None:
+            logger.info("Recommend to use svd to compress a single mps/mpo/mpdm.")
+            raise NotImplementedError
+        
+        if guess is None:
+            # a minimal representation of self and mpo
+            compressed_mpo = mpo.copy().canonicalise().compress(temp_m_trunc=5)
+            compressed_mps = self.copy().canonicalise().compress(temp_m_trunc=5)
+            # the attributes of guess would be the same as self
+            guess = compressed_mpo.apply(compressed_mps)
+        mps = guess
+        mps.ensure_left_canon()
+        logger.info(f"initial guess bond dims: {mps.bond_dims}")
+
+        procedure = mps.compress_config.vprocedure
+        method = mps.compress_config.vmethod
+
+        environ = Environ(self, mpo, "L", mps_conj=mps.conj())
+        
+        converged = False
+        for isweep, (mmax, percent) in enumerate(procedure):
+            logger.debug(f"isweep: {isweep}")
+            logger.debug(f"mmax, percent: {mmax}, {percent}")
+            logger.debug(f"mps bond dims: {mps.bond_dims}")
+            
+            for imps in mps.iter_idx_list(full=True):
+                if method == "2site" and \
+                    ((mps.to_right and imps == mps.site_num-1)
+                    or ((not mps.to_right) and imps == 0)):
+                    break
+                
+                if mps.to_right:
+                    lmethod, rmethod = "System", "Enviro"
+                    system = "L"
+                else:
+                    lmethod, rmethod = "Enviro", "System"
+                    system = "R"
+
+                if method == "1site":
+                    lidx = imps - 1
+                    cidx= [imps]
+                    ridx = imps + 1
+                elif method == "2site":
+                    if mps.to_right:
+                        lidx = imps - 1
+                        cidx = [imps, imps+1] 
+                        ridx = imps + 2
+                    else:
+                        lidx = imps - 2
+                        cidx = [imps-1, imps]  # center site
+                        ridx = imps + 1
+                else:
+                    assert False
+                logger.debug(f"optimize site: {cidx}")
+
+                ltensor = environ.GetLR(
+                    "L", lidx, self, mpo, itensor=None, method=lmethod, 
+                    mps_conj = mps.conj()
+                )
+                rtensor = environ.GetLR(
+                    "R", ridx, self, mpo, itensor=None, method=rmethod,
+                    mps_conj = mps.conj()
+                )
+
+                # get the quantum number pattern
+                qnbigl, qnbigr, qnmat = mps._get_big_qn(cidx)
+                
+                # center mo
+                cmo = [asxp(mpo[idx]) for idx in cidx] 
+                cms = [asxp(self[idx]) for idx in cidx]
+                if method == "1site":
+                    if cms[0].ndim == 3:
+                        # S-a   l-S
+                        #     d
+                        # O-b-O-f-O
+                        #     e
+                        # S-c   k-S
+
+                        path = [
+                            ([0, 1], "abc, cek -> abek"),
+                            ([2, 0], "abek, bdef -> akdf"),
+                            ([1, 0], "akdf, lfk -> adl"),
+                        ]
+                    elif cms[0].ndim == 4:
+                        # S-a   l-S
+                        #     d
+                        # O-b-O-f-O
+                        #     e
+                        # S-c   k-S
+                        #     g
+                        path = [
+                            ([0, 2], "abc, bdef -> acdef"),
+                            ([2, 0], "acdef, cegk -> adfgk"),
+                            ([1, 0], "adfgk, lfk -> adgl"),
+                        ]
+                    cout = multi_tensor_contract(
+                        path, ltensor, cms[0], cmo[0], rtensor
+                    )
+                else:
+                    if USE_GPU:
+                        oe_backend = "cupy"
+                    else:
+                        oe_backend = "numpy"
+                    if cms[0].ndim == 3:
+                        # S-a       l-S
+                        #     d   g
+                        # O-b-O-f-O-j-O
+                        #     e   h
+                        # S-c   m   k-S
+                    
+                        cout = oe.contract("abc, bdef, fghj, ljk, cem, mhk -> adgl",
+                                ltensor, cmo[0], cmo[1], rtensor, cms[0], cms[1],
+                                backend=oe_backend)
+                    elif cms[0].ndim == 4:
+                        # S-a       l-S
+                        #     d   g
+                        # O-b-O-f-O-j-O
+                        #     e   h
+                        # S-c   m   k-S
+                        #     n   p
+                        cout = oe.contract("abc, bdef, fghj, ljk, cenm, mhpk -> adngpl",
+                                ltensor, cmo[0], cmo[1], rtensor, cms[0], cms[1],
+                                backend=oe_backend)
+                # clean up the elements which do not meet the qn requirements
+                cout[qnmat!=mps.qntot] = 0
+                mps._update_mps(cout, cidx, qnbigl, qnbigr, mmax, percent)
+            
+            mps._switch_direction()
+            
+            # check if convergence
+            if isweep > 0 and percent == 0 and \
+                    mps.distance(mps_old) / np.sqrt(mps.dot(mps.conj()).real) < mps.compress_config.vrtol:
+                converged = True
+                break
+            
+            mps_old = mps.copy()
+
+        if converged:
+            logger.info("Variational compress is converged!")
+        else:
+            logger.warning("Variational compress is not converged! Please increase the procedure!")
+        
+        # remove the redundant bond dimension near the boundary of the MPS
+        mps.canonicalise()
+        logger.info(f"{mps}")
+        
+        return mps
+    
+    def _update_mps(self, cstruct, cidx, qnbigl, qnbigr, Mmax, percent=0):
+        r"""update mps with basis selection algorithm of J. Chem. Phys. 120,
+        3172 (2004).
+        
+        
+        Parameters
+        ---------
+        cstruct : ndarray
+            The active site coefficient.
+        cidx : list
+            The List of active site index.
+        qnbigl : ndarray
+            The super-L-block quantum number.
+        qnbigr : ndarray
+            The super-R-block quantum number.
+        Mmax : int
+            The maximal bond dimension.
+        percent : float, int
+            The percentage of renormalized basis which is equally selected from
+            each quantum number section rather than according to singular
+            values. `percent` is defined in  
+            `renormalizer.utils.configs.OptimizeConfig.procedure` and
+            `renormalizer.utils.configs.CompressConfig.vprocedure`.
+
+        Returns
+        -------
+        None : 
+            ``self`` is overwritten inplace.
+
+        """
+        
+        system = "L" if self.to_right else "R"
+
+        # step 1: get the selected U, S, V
+        if type(cstruct) is not list:
+            # SVD method
+            # full_matrices = True here to enable increase the bond dimension
+            Uset, SUset, qnlnew, Vset, SVset, qnrnew = svd_qn.Csvd(
+                cstruct, qnbigl, qnbigr, self.qntot, system=system
+            )
+
+            if self.to_right:
+                ms, msdim, msqn, compms = select_basis(
+                    Uset, SUset, qnlnew, Vset, Mmax, percent=percent
+                )
+                ms = ms.reshape(list(qnbigl.shape) + [msdim])
+                compms = xp.moveaxis(compms.reshape(list(qnbigr.shape) + [msdim]), -1, 0)
+
+            else:
+                ms, msdim, msqn, compms = select_basis(
+                    Vset, SVset, qnrnew, Uset, Mmax, percent=percent
+                )
+                ms = xp.moveaxis(ms.reshape(list(qnbigr.shape) + [msdim]), -1, 0) 
+                compms = compms.reshape(list(qnbigl.shape) + [msdim])
+        
+        else:
+            # state-averaged method
+            ddm = 0.0
+            for iroot in range(len(cstruct)):
+                if self.to_right:
+                    ddm += tensordot(
+                        cstruct[iroot],
+                        cstruct[iroot],
+                        axes=(
+                            range(qnbigl.ndim, cstruct[iroot].ndim),
+                            range(qnbigl.ndim, cstruct[iroot].ndim),
+                        ),
+                    )
+                else:
+                    ddm += tensordot(
+                        cstruct[iroot],
+                        cstruct[iroot],
+                        axes=(range(qnbigl.ndim), range(qnbigl.ndim)),
+                    )
+            ddm /= len(cstruct)
+            Uset, Sset, qnnew = svd_qn.Csvd(ddm, qnbigl, qnbigr, self.qntot,
+                    system=system, ddm=True)
+            ms, msdim, msqn, compms = select_basis(
+                Uset, Sset, qnnew, None, Mmax, percent=percent
+            )
+
+            if self.to_right:
+                ms = ms.reshape(list(qnbigl.shape) + [msdim])
+                compms = tensordot(
+                        ms.reshape(list(qnbigl.shape) + [msdim]),
+                        asxp(cstruct[0]),
+                        axes=(range(qnbigl.ndim), range(qnbigl.ndim)),
+                        )
+            else:
+                ms = xp.moveaxis(ms.reshape(list(qnbigr.shape) + [msdim]), -1, 0)
+                compms = tensordot(
+                        asxp(cstruct[0]),
+                        ms.reshape(list(qnbigr.shape) + [msdim]),
+                        axes=(range(qnbigl.ndim, cstruct[0].ndim), range(qnbigr.ndim)),
+                        )
+        # step 2, put updated U, S, V back to self
+        if len(cidx) == 1:
+            # 1site method
+            self[cidx[0]] = ms
+            if self.to_right:
+                if cidx[0] != self.site_num - 1:
+                    self[cidx[0] + 1] = tensordot(compms, self[cidx[0] + 1].array, axes=1)
+                    self.qn[cidx[0] + 1] = msqn
+                    self.qnidx = cidx[0] + 1
+                else:
+                    self[cidx[0]] = tensordot(self[cidx[0]].array, compms, axes=1)
+                    self.qnidx = self.site_num - 1
+            else:
+                if cidx[0] != 0:
+                    self[cidx[0] - 1] = tensordot(self[cidx[0] - 1].array, compms, axes=1)
+                    self.qn[cidx[0]] = msqn
+                    self.qnidx = cidx[0] - 1
+                else:
+                    self[cidx[0]] = tensordot(compms, self[cidx[0]].array, axes=1)
+                    self.qnidx = 0
+        else:
+            if self.to_right:
+                self[cidx[0]] = ms
+                self[cidx[1]] = compms
+                self.qnidx = cidx[1]
+            else:
+                self[cidx[1]] = ms
+                self[cidx[0]] = compms
+                self.qnidx = cidx[0]
+
+            self.qn[cidx[1]] = msqn
+
 
     def canonicalise(self, stop_idx: int=None, normalize=False):
         # stop_idx: mix canonical site at `stop_idx`
@@ -448,7 +784,7 @@ class MatrixProduct:
                 mt = mt.l_combine()
             else:
                 mt = mt.r_combine()
-            qnbigl, qnbigr, _ = self._get_big_qn(idx)
+            qnbigl, qnbigr, _ = self._get_big_qn([idx])
             system = "L" if self.to_right else "R"
             u, qnlset, v, qnrset = svd_qn.Csvd(
                 mt.array,
@@ -645,3 +981,7 @@ class MatrixProduct:
 
     def clear(self):
         self._mp.clear()
+    
+    def __str__(self):
+        template_str = "current size: {}, Matrix product bond dim:{}"
+        return template_str.format(sizeof_fmt(self.total_bytes), self.bond_dims,)

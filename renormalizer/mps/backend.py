@@ -30,8 +30,8 @@ else:
     xp = np
 
 
-
-# xp = np
+#USE_GPU = False
+#xp = np
 
 if not USE_GPU:
     logger.info("use numpy as backend")

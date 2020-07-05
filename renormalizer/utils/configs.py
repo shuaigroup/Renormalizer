@@ -54,6 +54,9 @@ class CompressConfig:
         threshold: float = 1e-3,
         bonddim_distri: BondDimDistri = BondDimDistri.uniform,
         max_bonddim: int = 32,
+        vmethod: str = "2site",
+        vprocedure = None,
+        vrtol = 1e-5
     ):
         # two sets of criteria here: threshold and max_bonddimension
         # `criteria` is to determine which to use
@@ -67,6 +70,19 @@ class CompressConfig:
         # the length should be len(mps) + 1, the terminals are also counted. This is for accordance with mps.bond_dims
         self.max_dims: np.ndarray = None
         self.min_dims: np.ndarray = None
+        
+        # variational compression parameters
+        self.vmethod = vmethod
+        if vprocedure is None:
+            if vmethod == "1site":
+                vprocedure = [[max_bonddim,1.0],[max_bonddim,0.7],
+                              [max_bonddim,0.5],[max_bonddim,0.3],
+                              [max_bonddim,0.1]] + [[max_bonddim,0],]*10
+            else:
+                vprocedure = [[max_bonddim,0.5],[max_bonddim,0.3],
+                              [max_bonddim,0.1]] + [[max_bonddim,0],]*10
+        self.vprocedure = vprocedure
+        self.vrtol = vrtol
 
     @property
     def threshold(self):
@@ -181,6 +197,10 @@ class CompressConfig:
 
 
 class OptimizeConfig:
+    r""" DMRG ground state algorithm optimization configuration
+
+    """
+
     def __init__(self, procedure=None):
         if procedure is None:
             self.procedure = [[10, 0.4], [20, 0.2], [30, 0.1], [40, 0], [40, 0]]

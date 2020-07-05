@@ -8,7 +8,7 @@ import numpy as np
 import pytest
 
 from renormalizer.mps import Mps
-from renormalizer.mps.solver import construct_mps_mpo_2, optimize_mps
+from renormalizer.mps.gs import construct_mps_mpo_2, optimize_mps
 from renormalizer.mps.tests import cur_dir
 from renormalizer.tests.parameter import mol_list
 

@@ -123,7 +123,7 @@ def test_intersite(scheme):
 
 
 def test_phonon_onsite():
-    gs = Mps.gs(mol_list, max_entangled=False)
+    gs = Mps.ground_state(mol_list, max_entangled=False)
     assert not gs.ph_occupations.any()
     b2 = Mpo.ph_onsite(mol_list, r"b^\dagger", 0, 0)
     p1 = b2.apply(gs).normalize()

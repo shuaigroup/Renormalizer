@@ -200,7 +200,8 @@ def test_pyr_4mode(multi_e, translator, dvr):
     job = VibronicModelDynamics(mol_list2, mps0=mps,
                     h_mpo = mpo,
                     compress_config=compress_config,
-                    evolve_config=evolve_config)
+                    evolve_config=evolve_config,
+                    expand=True)
     time_step_fs = 2
     job.evolve(evolve_dt=time_step_fs * fs2au, nsteps=60)
 

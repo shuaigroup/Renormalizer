@@ -1,28 +1,29 @@
 # -*- coding: utf-8 -*-
-# Author: Jiajun Ren <jiajunren0522@gmail.com>
+"""
+
+This module contains functions to optimize mps for a single ground state or
+several lowest excited states with state-averaged algorithm.
+
+"""
 
 import logging
 
 import numpy as np
 import scipy
-
+import opt_einsum as oe
 
 from renormalizer.lib import davidson
 from renormalizer.mps.backend import xp, USE_GPU
 from renormalizer.mps.matrix import (
-    Matrix,
     multi_tensor_contract,
-    ones,
-    einsum,
-    moveaxis,
     tensordot,
-    asnumpy, asxp)
-from renormalizer.mps import Mpo, Mps, svd_qn
-from renormalizer.mps.lib import updatemps, Environ
+    asnumpy, 
+    asxp)
+from renormalizer.mps import Mpo, Mps
+from renormalizer.mps.lib import Environ, cvec2cmat
 from renormalizer.utils import Quantity
-import opt_einsum as oe
-logger = logging.getLogger(__name__)
 
+logger = logging.getLogger(__name__)
 
 def find_lowest_energy(h_mpo: Mpo, nexciton, Mmax, with_hartree=True):
     logger.debug("begin finding lowest energy")
@@ -70,11 +71,9 @@ def construct_mps_mpo_2(
 
 
 def optimize_mps(mps: Mps, mpo: Mpo):
-    energies = optimize_mps_dmrg(mps, mpo)
+    energies, mps = optimize_mps_dmrg(mps, mpo)
     if not mps.hybrid_tdh:
         return energies[-1]
-    # from matplotlib import pyplot as plt
-    # plt.plot(energies); plt.show()
 
     HAM = []
 
@@ -89,7 +88,7 @@ def optimize_mps(mps: Mps, mpo: Mpo):
         MPO, HAM, Etot = mps.construct_hybrid_Ham(mpo)
 
         MPS_old = mps.copy()
-        optimize_mps_dmrg(mps, MPO)
+        energyies, mps = optimize_mps_dmrg(mps, MPO)
         optimize_mps_hartree(mps, HAM)
 
         # check convergence
@@ -104,8 +103,28 @@ def optimize_mps(mps: Mps, mpo: Mpo):
 
 
 def optimize_mps_dmrg(mps, mpo):
-    """
-    1 or 2 site optimization procedure
+    r""" DMRG ground state algorithm and state-averaged excited states algorithm
+    
+    Parameters
+    ----------
+    mps : renormalizer.mps.Mps
+        initial guess of mps
+    mpo : renormalizer.mps.Mpo 
+        mpo of Hamiltonian
+    
+    Returns
+    -------
+    energy : list
+        list of energy of each marco sweep.
+        :math:`[e_0, e_0, \cdots, e_0]` if `nroots=1`.
+        :math:`[[e_0, \cdots, e_n], \dots, [e_0, \cdots, e_n]]` if `nroots=n`.
+    mps : renormalizer.mps.Mps
+        optimized ground state mps. 
+    
+    See Also
+    --------
+    renormalizer.utils.configs.OptimizeConfig : The optimization configuration.
+    
     """
     algo = mps.optimize_config.algo
     method = mps.optimize_config.method
@@ -114,29 +133,20 @@ def optimize_mps_dmrg(mps, mpo):
     nroots = mps.optimize_config.nroots
 
     assert method in ["2site", "1site"]
-    logger.info(f"optimization method: {mps.optimize_config.method}")
+    logger.info(f"optimization method: {method}")
     logger.info(f"e_rtol: {mps.optimize_config.e_rtol}")
     logger.info(f"e_atol: {mps.optimize_config.e_atol}")
-
-    nexciton = mps.nexciton
-
-    # construct the environment matrix
-    environ = Environ(mps, mpo, "L")
-
-    nMPS = len(mps)
-    # construct each sweep cycle scheme
-    if method == "1site":
-        loop = [["R", i] for i in range(nMPS - 1, -1, -1)] + [
-            ["L", i] for i in range(0, nMPS)
-        ]
+    
+    # ensure that mps is left or right-canonical
+    # TODO: start from a mix-canonical MPS
+    if mps.is_left_canon:
+        mps.ensure_left_canon()
+        env = "L"
     else:
-        loop = [["R", i] for i in range(nMPS - 1, 0, -1)] + [
-            ["L", i] for i in range(1, nMPS)
-        ]
-
-    # initial matrix
-    ltensor = xp.ones((1, 1, 1))
-    rtensor = xp.ones((1, 1, 1))
+        mps.ensure_right_canon()
+        env = "R"
+    # construct the environment matrix
+    environ = Environ(mps, mpo, env)
 
     macro_iteration_result = []
     converged = False
@@ -144,47 +154,59 @@ def optimize_mps_dmrg(mps, mpo):
         logger.debug(f"isweep: {isweep}")
         logger.debug(f"mmax, percent: {mmax}, {percent}")
         logger.debug(f"{mps}")
-
+        
         micro_iteration_result = []
-        for system, imps in loop:
-            if system == "R":
-                lmethod, rmethod = "Enviro", "System"
-            else:
+        for imps in mps.iter_idx_list(full=True):
+            if method == "2site" and \
+                ((mps.to_right and imps == mps.site_num-1)
+                or ((not mps.to_right) and imps == 0)):
+                break
+            
+            if mps.to_right:
                 lmethod, rmethod = "System", "Enviro"
+                system = "L"
+            else:
+                lmethod, rmethod = "Enviro", "System"
+                system = "R"
 
             if method == "1site":
-                lsite = imps - 1
-                addlist = [imps]
-                logger.debug(f"optimize site: {imps}")
+                lidx = imps - 1
+                cidx= [imps]
+                ridx = imps + 1
+            elif method == "2site":
+                if mps.to_right:
+                    lidx = imps - 1
+                    cidx = [imps, imps+1] 
+                    ridx = imps + 2
+                else:
+                    lidx = imps - 2
+                    cidx = [imps-1, imps]  # center site
+                    ridx = imps + 1
             else:
-                lsite = imps - 2
-                addlist = [imps - 1, imps]
-                logger.debug(f"optimize site: {imps-1}, {imps}")
+                assert False
+            logger.debug(f"optimize site: {cidx}")
 
             ltensor = environ.GetLR(
-                "L", lsite, mps, mpo, itensor=ltensor, method=lmethod
+                "L", lidx, mps, mpo, itensor=None, method=lmethod
             )
             rtensor = environ.GetLR(
-                "R", imps + 1, mps, mpo, itensor=rtensor, method=rmethod
+                "R", ridx, mps, mpo, itensor=None, method=rmethod
             )
 
             # get the quantum number pattern
-            qnmat, qnbigl, qnbigr = svd_qn.construct_qnmat(
-                mps, addlist, method, system
-            )
+            qnbigl, qnbigr, qnmat = mps._get_big_qn(cidx)
             cshape = qnmat.shape
-            nonzeros = np.sum(qnmat == nexciton)
+            nonzeros = np.sum(qnmat == mps.qntot)
             logger.debug(f"Hmat dim: {nonzeros}")
             
+            # center mo
+            cmo = [asxp(mpo[idx]) for idx in cidx] 
             
-            mo2 = asxp(mpo[imps])
-            if method == "2site":
-                mo1 = asxp(mpo[imps-1])
             if qnmat.size > 1000:
                 # iterative algorithm
                 # hdiag
                 tmp_ltensor = xp.einsum("aba -> ba", ltensor)
-                tmp_MPOimps = xp.einsum("abbc -> abc", mo2)
+                tmp_cmo0 = xp.einsum("abbc -> abc", cmo[0])
                 tmp_rtensor = xp.einsum("aba -> ba", rtensor)
                 if method == "1site":
                     #   S-a c f-S
@@ -192,35 +214,35 @@ def optimize_mps_dmrg(mps, mpo):
                     #   S-a c f-S
                     path = [([0, 1], "ba, bcg -> acg"), ([1, 0], "acg, gf -> acf")]
                     hdiag = multi_tensor_contract(
-                        path, tmp_ltensor, tmp_MPOimps, tmp_rtensor
-                    )[(qnmat == nexciton)]
+                        path, tmp_ltensor, tmp_cmo0, tmp_rtensor
+                    )[(qnmat == mps.qntot)]
                     # initial guess   b-S-c
                     #                   a
-                    cguess = mps[imps][qnmat == nexciton].array
+                    cguess = mps[cidx[0]][qnmat == mps.qntot].array
                 else:
                     #   S-a c   d f-S
                     #   O-b-O-e-O-g-O
                     #   S-a c   d f-S
-                    tmp_MPOimpsm1 = xp.einsum("abbc -> abc", mo1)
+                    tmp_cmo1 = xp.einsum("abbc -> abc", cmo[1])
                     path = [
                         ([0, 1], "ba, bce -> ace"),
                         ([0, 1], "edg, gf -> edf"),
                         ([0, 1], "ace, edf -> acdf"),
                     ]
                     hdiag = multi_tensor_contract(
-                        path, tmp_ltensor, tmp_MPOimpsm1, tmp_MPOimps, tmp_rtensor
-                    )[(qnmat == nexciton)]
+                        path, tmp_ltensor, tmp_cmo0, tmp_cmo1, tmp_rtensor
+                    )[(qnmat == mps.qntot)]
                     # initial guess b-S-c-S-e
                     #                 a   d
-                    cguess = asnumpy(tensordot(mps[imps - 1], mps[imps], axes=1)[qnmat == nexciton])
-                hdiag *= inverse
+                    cguess = asnumpy(tensordot(mps[cidx[0]], mps[cidx[1]], axes=1)[qnmat == mps.qntot])
+                hdiag = asnumpy(hdiag * inverse)
 
                 count = 0
                 def hop(c):
                     nonlocal count
                     count += 1
                     # convert c to initial structure according to qn pattern
-                    cstruct = asxp(svd_qn.cvec2cmat(cshape, c, qnmat, nexciton))
+                    cstruct = asxp(cvec2cmat(cshape, c, qnmat, mps.qntot))
 
                     if method == "1site":
                         # S-a   l-S
@@ -235,7 +257,7 @@ def optimize_mps_dmrg(mps, mpo):
                             ([1, 0], "clef, lfk -> cek"),
                         ]
                         cout = multi_tensor_contract(
-                            path, ltensor, cstruct, mo2, rtensor
+                            path, ltensor, cstruct, cmo[0], rtensor
                         )
                     else:
                         # S-a       l-S
@@ -253,12 +275,12 @@ def optimize_mps_dmrg(mps, mpo):
                             path,
                             ltensor,
                             cstruct,
-                            mo1,
-                            mo2,
+                            cmo[0],
+                            cmo[1],
                             rtensor,
                         )
                     # convert structure c to 1d according to qn
-                    return inverse * asnumpy(cout)[qnmat == nexciton]
+                    return inverse * asnumpy(cout)[qnmat == mps.qntot]
 
                 
                 if algo == "davidson": 
@@ -266,17 +288,16 @@ def optimize_mps_dmrg(mps, mpo):
                         cguess = [cguess]
                         for iroot in range(nroots - 1):
                             cguess.append(np.random.random([nonzeros]) - 0.5)
-                    # one full sweep in mix
-                    precond = lambda x, e, *args: x / (asnumpy(hdiag) - e + 1e-4)
+                    precond = lambda x, e, *args: x / (hdiag - e + 1e-4)
                     
                     e, c = davidson(
                         hop, cguess, precond, max_cycle=100,
                         nroots=nroots, max_memory=64000
                     )
-                    # if one root, davidson return np.float
+                    # if one root, davidson return e as np.float
+
                 elif algo == "arpack":
                     # scipy arpack solver : much slower than pyscf/davidson
-                    solver_algo = "arpack"
                     A = scipy.sparse.linalg.LinearOperator((nonzeros,nonzeros), matvec=hop)
                     e, c = scipy.sparse.linalg.eigsh(A, k=nroots, which="SA", v0=cguess)
                     # scipy return numpy.array
@@ -300,9 +321,8 @@ def optimize_mps_dmrg(mps, mpo):
                     #     e
                     # S-c   k-S
                     ham = oe.contract("abc,bdef,lfk->adlcek",
-                            ltensor, mo2, rtensor, backend=oe_backend)
-                    ham = ham[:,:,:,qnmat==nexciton][qnmat==nexciton,:] * inverse
-                        
+                            ltensor, cmo[0], rtensor, backend=oe_backend)
+                    ham = ham[:,:,:,qnmat==mps.qntot][qnmat==mps.qntot,:] * inverse
                 elif method == "2site":
                     # S-a       l-S
                     #     d   g
@@ -310,11 +330,11 @@ def optimize_mps_dmrg(mps, mpo):
                     #     e   h
                     # S-c       k-S
                     ham = oe.contract("abc,bdef,fghj,ljk->adglcehk",
-                            ltensor, mo1, mo2, rtensor)
-                    ham = ham[:,:,:,:,qnmat==nexciton][qnmat==nexciton,:] * inverse
+                            ltensor, cmo[0], cmo[1], rtensor)
+                    ham = ham[:,:,:,:,qnmat==mps.qntot][qnmat==mps.qntot,:] * inverse
                 else:
-                    
                     assert False
+                
                 w, v = scipy.linalg.eigh(asnumpy(ham))
                 if nroots == 1:
                     e = w[0]
@@ -330,63 +350,15 @@ def optimize_mps_dmrg(mps, mpo):
 
             micro_iteration_result.append(e)
 
-            cstruct = svd_qn.cvec2cmat(cshape, c, qnmat, nexciton, nroots=nroots)
-
-            if nroots == 1:
-                # direct svd the coefficient matrix
-                mt, mpsdim, mpsqn, compmps = renormalization_svd(
-                    cstruct,
-                    qnbigl,
-                    qnbigr,
-                    system,
-                    nexciton,
-                    Mmax=mmax,
-                    percent=percent,
-                )
-            else:
-                # diagonalize the reduced density matrix
-                mt, mpsdim, mpsqn, compmps = renormalization_ddm(
-                    cstruct,
-                    qnbigl,
-                    qnbigr,
-                    system,
-                    nexciton,
-                    Mmax=mmax,
-                    percent=percent,
-                )
-
-            if method == "1site":
-                mps[imps] = mt
-                if system == "L":
-                    if imps != len(mps) - 1:
-                        mps[imps + 1] = tensordot(compmps, mps[imps + 1].array, axes=1)
-                        mps.qn[imps + 1] = mpsqn
-                    else:
-                        mps[imps] = tensordot(mps[imps].array, compmps, axes=1)
-                        mps.qn[imps + 1] = [0]
-
-                else:
-                    if imps != 0:
-                        mps[imps - 1] = tensordot(mps[imps - 1].array, compmps, axes=1)
-                        mps.qn[imps] = mpsqn
-                    else:
-                        mps[imps] = tensordot(compmps, mps[imps].array, axes=1)
-                        mps.qn[imps] = [0]
-            else:
-                if system == "L":
-                    mps[imps - 1] = mt
-                    mps[imps] = compmps
-                else:
-                    mps[imps] = mt
-                    mps[imps - 1] = compmps
-
-                # mps.dim_list[imps] = mpsdim
-                mps.qn[imps] = mpsqn
+            cstruct = cvec2cmat(cshape, c, qnmat, mps.qntot, nroots=nroots)
+            mps._update_mps(cstruct, cidx, qnbigl, qnbigr, mmax, percent)
+        
+        mps._switch_direction()
         # if multi states are calculated, compare them state by state
         # see Comparing Sequences in python 
         macro_iteration_result.append(min(micro_iteration_result))
         # check if convergence
-        if isweep > 0 and np.allclose(percent, 0, atol=1e-20):
+        if isweep > 0 and percent == 0:
             v1, v2 = sorted(macro_iteration_result)[:2]
             if np.allclose(v1, v2, rtol=mps.optimize_config.e_rtol,
                     atol=mps.optimize_config.e_atol):
@@ -400,8 +372,11 @@ def optimize_mps_dmrg(mps, mpo):
         logger.warning("DMRG is not converged! Please increase the procedure!")
         logger.info(f"The lowest two energies: {sorted(macro_iteration_result)[:2]}.")
     
-    return macro_iteration_result
-
+    # remove the redundant bond dimension near the boundary of the MPS
+    mps.canonicalise()
+    logger.info(f"{mps}")
+    
+    return macro_iteration_result, mps
 
 
 def optimize_mps_hartree(mps: "Mps", HAM):
@@ -412,91 +387,4 @@ def optimize_mps_hartree(mps: "Mps", HAM):
     # append the coefficient a
     mps.tdh_wfns.append(1.0)
 
-
-def renormalization_svd(cstruct, qnbigl, qnbigr, domain, nexciton, Mmax, percent=0):
-    """
-        get the new mps, mpsdim, mpdqn, complementary mps to get the next guess
-        with singular value decomposition method (1 root)
-    """
-    assert domain in ["R", "L"]
-
-    Uset, SUset, qnlnew, Vset, SVset, qnrnew = svd_qn.Csvd(
-        cstruct, qnbigl, qnbigr, nexciton, system=domain
-    )
-    if domain == "R":
-        mps, mpsdim, mpsqn, compmps = updatemps(
-            Vset, SVset, qnrnew, Uset, nexciton, Mmax, percent=percent
-        )
-        return (
-            xp.moveaxis(mps.reshape(list(qnbigr.shape) + [mpsdim]), -1, 0),
-            mpsdim,
-            mpsqn,
-            compmps.reshape(list(qnbigl.shape) + [mpsdim]),
-        )
-    else:
-        mps, mpsdim, mpsqn, compmps = updatemps(
-            Uset, SUset, qnlnew, Vset, nexciton, Mmax, percent=percent
-        )
-        return (
-            mps.reshape(list(qnbigl.shape) + [mpsdim]),
-            mpsdim,
-            mpsqn,
-            xp.moveaxis(compmps.reshape(list(qnbigr.shape) + [mpsdim]), -1, 0),
-        )
-
-
-def renormalization_ddm(cstruct, qnbigl, qnbigr, domain, nexciton, Mmax, percent=0):
-    """
-        get the new mps, mpsdim, mpdqn, complementary mps to get the next guess
-        with diagonalize reduced density matrix method (> 1 root)
-    """
-    nroots = len(cstruct)
-    ddm = 0.0
-    for iroot in range(nroots):
-        if domain == "R":
-            ddm += np.tensordot(
-                cstruct[iroot],
-                cstruct[iroot],
-                axes=(range(qnbigl.ndim), range(qnbigl.ndim)),
-            )
-        else:
-            ddm += np.tensordot(
-                cstruct[iroot],
-                cstruct[iroot],
-                axes=(
-                    range(qnbigl.ndim, cstruct[0].ndim),
-                    range(qnbigl.ndim, cstruct[0].ndim),
-                ),
-            )
-    ddm /= float(nroots)
-    if domain == "L":
-        Uset, Sset, qnnew = svd_qn.Csvd(ddm, qnbigl, qnbigl, nexciton, ddm=True)
-    else:
-        Uset, Sset, qnnew = svd_qn.Csvd(ddm, qnbigr, qnbigr, nexciton, ddm=True)
-    mps, mpsdim, mpsqn, compmps = updatemps(
-        Uset, Sset, qnnew, None, nexciton, Mmax, percent=percent
-    )
-
-    if domain == "R":
-        return (
-            xp.moveaxis(mps.reshape(list(qnbigr.shape) + [mpsdim]), -1, 0),
-            mpsdim,
-            mpsqn,
-            tensordot(
-                asxp(cstruct[0]),
-                mps.reshape(list(qnbigr.shape) + [mpsdim]),
-                axes=(range(qnbigl.ndim, cstruct[0].ndim), range(qnbigr.ndim)),
-            ),
-        )
-    else:
-        return (
-            mps.reshape(list(qnbigl.shape) + [mpsdim]),
-            mpsdim,
-            mpsqn,
-            tensordot(
-                mps.reshape(list(qnbigl.shape) + [mpsdim]),
-                asxp(cstruct[0]),
-                axes=(range(qnbigl.ndim), range(qnbigl.ndim)),
-            ),
-        )
 

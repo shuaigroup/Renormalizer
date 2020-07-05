@@ -4,4 +4,4 @@ from renormalizer.mps.mps import Mps, BraKetPair
 from renormalizer.mps.mpdm import MpDm, MpDmFull
 from renormalizer.mps.thermalprop import ThermalProp, load_thermal_state
 from renormalizer.mps.supermpo import SuperLiouville
-from renormalizer.mps.solver import optimize_mps
+from renormalizer.mps.gs import optimize_mps
