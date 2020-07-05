@@ -8,6 +8,7 @@ from renormalizer.model import MolList, EphTable
 from renormalizer.mps.backend import np, xp, USE_GPU
 from renormalizer.mps import svd_qn
 from renormalizer.mps.matrix import (
+    asnumpy,
     asxp,
     allclose,
     backend,
@@ -258,7 +259,7 @@ class MatrixProduct:
             else:
                 u = np.einsum("ji, i -> ji", u, sigma)
         if self.to_right:
-            self[idx + 1] = tensordot(vt, self[idx + 1].array, axes=1)
+            self[idx + 1] = tensordot(vt, self[idx + 1], axes=1)
             ret_mpsi = u.reshape(
                 [u.shape[0] // self[idx].pdim_prod] + list(self[idx].pdim) + [m_trunc]
             )
@@ -266,7 +267,7 @@ class MatrixProduct:
                 self.qn[idx + 1] = qnlset[:m_trunc]
                 self.qnidx = idx + 1
         else:
-            self[idx - 1] = tensordot(self[idx - 1].array, u, axes=1)
+            self[idx - 1] = tensordot(self[idx - 1], u, axes=1)
             ret_mpsi = vt.reshape(
                 [m_trunc] + list(self[idx].pdim) + [vt.shape[1] // self[idx].pdim_prod]
             )
@@ -680,7 +681,7 @@ class MatrixProduct:
             # SVD method
             # full_matrices = True here to enable increase the bond dimension
             Uset, SUset, qnlnew, Vset, SVset, qnrnew = svd_qn.Csvd(
-                cstruct, qnbigl, qnbigr, self.qntot, system=system
+                asnumpy(cstruct), qnbigl, qnbigr, self.qntot, system=system
             )
 
             if self.to_right:
@@ -717,7 +718,7 @@ class MatrixProduct:
                         axes=(range(qnbigl.ndim), range(qnbigl.ndim)),
                     )
             ddm /= len(cstruct)
-            Uset, Sset, qnnew = svd_qn.Csvd(ddm, qnbigl, qnbigr, self.qntot,
+            Uset, Sset, qnnew = svd_qn.Csvd(asnumpy(ddm), qnbigl, qnbigr, self.qntot,
                     system=system, ddm=True)
             ms, msdim, msqn, compms = select_basis(
                 Uset, Sset, qnnew, None, Mmax, percent=percent
@@ -727,13 +728,13 @@ class MatrixProduct:
                 ms = ms.reshape(list(qnbigl.shape) + [msdim])
                 compms = tensordot(
                         ms.reshape(list(qnbigl.shape) + [msdim]),
-                        asxp(cstruct[0]),
+                        cstruct[0],
                         axes=(range(qnbigl.ndim), range(qnbigl.ndim)),
                         )
             else:
                 ms = xp.moveaxis(ms.reshape(list(qnbigr.shape) + [msdim]), -1, 0)
                 compms = tensordot(
-                        asxp(cstruct[0]),
+                        cstruct[0],
                         ms.reshape(list(qnbigr.shape) + [msdim]),
                         axes=(range(qnbigl.ndim, cstruct[0].ndim), range(qnbigr.ndim)),
                         )
@@ -743,19 +744,19 @@ class MatrixProduct:
             self[cidx[0]] = ms
             if self.to_right:
                 if cidx[0] != self.site_num - 1:
-                    self[cidx[0] + 1] = tensordot(compms, self[cidx[0] + 1].array, axes=1)
+                    self[cidx[0] + 1] = tensordot(compms, self[cidx[0] + 1], axes=1)
                     self.qn[cidx[0] + 1] = msqn
                     self.qnidx = cidx[0] + 1
                 else:
-                    self[cidx[0]] = tensordot(self[cidx[0]].array, compms, axes=1)
+                    self[cidx[0]] = tensordot(self[cidx[0]], compms, axes=1)
                     self.qnidx = self.site_num - 1
             else:
                 if cidx[0] != 0:
-                    self[cidx[0] - 1] = tensordot(self[cidx[0] - 1].array, compms, axes=1)
+                    self[cidx[0] - 1] = tensordot(self[cidx[0] - 1], compms, axes=1)
                     self.qn[cidx[0]] = msqn
                     self.qnidx = cidx[0] - 1
                 else:
-                    self[cidx[0]] = tensordot(compms, self[cidx[0]].array, axes=1)
+                    self[cidx[0]] = tensordot(compms, self[cidx[0]], axes=1)
                     self.qnidx = 0
         else:
             if self.to_right:
