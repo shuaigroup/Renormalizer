@@ -2,10 +2,9 @@
 from enum import Enum
 import logging
 
+from renormalizer.utils.rk import RungeKutta
 import scipy.linalg
 import numpy as np
-
-from renormalizer.utils.rk import RungeKutta
 
 logger = logging.getLogger(__name__)
 
@@ -56,7 +55,8 @@ class CompressConfig:
         max_bonddim: int = 32,
         vmethod: str = "2site",
         vprocedure = None,
-        vrtol = 1e-5
+        vrtol = 1e-5,
+        vguess_m = (5,5),
     ):
         # two sets of criteria here: threshold and max_bonddimension
         # `criteria` is to determine which to use
@@ -83,6 +83,7 @@ class CompressConfig:
                               [max_bonddim,0.1]] + [[max_bonddim,0],]*10
         self.vprocedure = vprocedure
         self.vrtol = vrtol
+        self.vguess_m = vguess_m
 
     @property
     def threshold(self):

@@ -501,8 +501,10 @@ class MatrixProduct:
         
         if guess is None:
             # a minimal representation of self and mpo
-            compressed_mpo = mpo.copy().canonicalise().compress(temp_m_trunc=5)
-            compressed_mps = self.copy().canonicalise().compress(temp_m_trunc=5)
+            compressed_mpo = mpo.copy().canonicalise().compress(
+                    temp_m_trunc=self.compress_config.vguess_m[0])
+            compressed_mps = self.copy().canonicalise().compress(
+                    temp_m_trunc=self.compress_config.vguess_m[1])
             # the attributes of guess would be the same as self
             guess = compressed_mpo.apply(compressed_mps)
         mps = guess
@@ -646,7 +648,6 @@ class MatrixProduct:
     def _update_mps(self, cstruct, cidx, qnbigl, qnbigr, Mmax, percent=0):
         r"""update mps with basis selection algorithm of J. Chem. Phys. 120,
         3172 (2004).
-        
         
         Parameters
         ---------

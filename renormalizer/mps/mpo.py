@@ -829,9 +829,15 @@ class Mpo(MatrixProduct):
     @classmethod
     def quasi_boson(cls, opera, nqb, trunc, base=2, c1=1.0, c2=1.0):
         """
-        nqb : # of quasi boson sites
-        opera : operator to be decomposed
+
+        Parameters
+        ----------
+        nqb : 
+            # of quasi boson sites
+        opera : 
+            operator to be decomposed
                 r"b + b^\\dagger"
+
         """
         assert opera in [
             r"b + b^\dagger",
@@ -1113,18 +1119,22 @@ class Mpo(MatrixProduct):
     def intersite(cls, mol_list: MolList, e_opera: dict, ph_opera: dict, scale:
             Quantity=Quantity(1.)):
         """ construct the inter site MPO
-        Parameters:
-            mol_list : MolList
-                the molecular information
-            e_opera:
-                the electronic operators. {imol: operator}, such as {1:"a", 3:r"a^\dagger"}
-            ph_opera:
-                the vibrational operators. {(imol, iph): operator}, such as {(0,5):"b"}
-            scale: Quantity
-                scalar to scale the mpo
+        
+        Parameters
+        ----------
+        mol_list : MolList
+            the molecular information
+        e_opera:
+            the electronic operators. {imol: operator}, such as {1:"a", 3:r"a^\dagger"}
+        ph_opera:
+            the vibrational operators. {(imol, iph): operator}, such as {(0,5):"b"}
+        scale: Quantity
+            scalar to scale the mpo
 
-        Note:
-            the operator index starts from 0,1,2...
+        Note
+        -----
+        the operator index starts from 0,1,2...
+        
         """
         if isinstance(mol_list, MolList2):
             
@@ -2007,18 +2017,49 @@ class Mpo(MatrixProduct):
             new_mps.canonicalise()
         return new_mps
 
-    def contract(self, mps, check_emtpy=False):
+    def contract(self, mps, check_emtpy=False, algo="svd"):
+        r""" an approximation of mpo @ mps/mpdm/mpo
+        
+        Parameters
+        ----------
+        mps : renormalizer.mps.Mps, renormalizer.mps.Mpo, renormalizer.mps.MpDm,
+        check_emtpy : bool, optional
+            Check if the obtained new mps has zero local matrix. Default is
+            ``False``.
+        algo: str, optional
+            The algorithm to compress mpo @ mps/mpdm/mpo.  It could be `svd`
+            (default) and `variational`. 
+        
+        Returns
+        -------
+        new_mps : an approximation of mpo @ mps/mpdm/mpo. The original `mps` is
+            not overwritten.
+
+        See Also
+        --------
+        renormalizer.mps.mp.MatrixProduct.compress
+        renormalizer.mps.mp.MatrixProduct.variational_compress
+
 
         """
-        mapply->canonicalise->compress
-        """
-        new_mps = self.apply(mps)
-        if check_emtpy:
-            for mt in new_mps:
-                if mt.nearly_zero():
-                    raise EmptyMatrixError
-        new_mps.canonicalise()
-        new_mps.compress()
+        if algo == "svd":
+            # mapply->canonicalise->compress
+            new_mps = self.apply(mps)
+            if check_emtpy:
+                for mt in new_mps:
+                    if mt.nearly_zero():
+                        raise EmptyMatrixError
+            new_mps.canonicalise()
+            new_mps.compress()
+        elif algo == "variational":
+            new_mps = mps.variational_compress(self)
+            if check_emtpy:
+                for mt in new_mps:
+                    if mt.nearly_zero():
+                        raise EmptyMatrixError
+        else:
+            assert False
+
         return new_mps
 
     def conj_trans(self):

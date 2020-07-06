@@ -8,10 +8,6 @@ several lowest excited states with state-averaged algorithm.
 
 import logging
 
-import numpy as np
-import scipy
-import opt_einsum as oe
-
 from renormalizer.lib import davidson
 from renormalizer.mps.backend import xp, USE_GPU
 from renormalizer.mps.matrix import (
@@ -22,6 +18,10 @@ from renormalizer.mps.matrix import (
 from renormalizer.mps import Mpo, Mps
 from renormalizer.mps.lib import Environ, cvec2cmat
 from renormalizer.utils import Quantity
+
+import numpy as np
+import scipy
+import opt_einsum as oe
 
 logger = logging.getLogger(__name__)
 
