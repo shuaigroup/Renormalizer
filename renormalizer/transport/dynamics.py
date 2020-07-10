@@ -77,7 +77,7 @@ class ChargeDiffusionDynamics(TdMpsJob):
             .. math::
                 L = \sum_{ij, i \neq j} | \rho_{ij} |
 
-            where `\rho` is the density matrix of the electron. Naturally this is only available when
+            where :math:`\rho` is the density matrix of the electron. Naturally this is only available when
             ``rdm`` is set to ``True``.
 
     """
@@ -166,7 +166,7 @@ class ChargeDiffusionDynamics(TdMpsJob):
     def init_mps(self):
         tentative_mpo = Mpo(self.mol_list)
         if self.temperature == 0:
-            gs_mp = Mps.gs(self.mol_list, max_entangled=False)
+            gs_mp = Mps.ground_state(self.mol_list, max_entangled=False)
             if self.dissipation != 0:
                 gs_mp = MpDm.from_mps(gs_mp)
         else:

@@ -9,7 +9,7 @@ import pytest
 
 from renormalizer.model import MolList, Mol
 from renormalizer.mps import Mpo
-from renormalizer.mps.solver import construct_mps_mpo_2, optimize_mps
+from renormalizer.mps.gs import construct_mps_mpo_2, optimize_mps
 from renormalizer.mps.tdh import tdh
 from renormalizer.tests.parameter import (
     hartree_mol_list,

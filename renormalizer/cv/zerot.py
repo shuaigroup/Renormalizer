@@ -1,11 +1,10 @@
 # -*- coding: utf-8 -*-
 # Author: Tong Jiang <tongjiang1000@gmail.com>
 # zero temperature absorption/emission spectrum based on DDMRG
-
-
 from renormalizer.cv.spectra_cv import SpectraCv
 from renormalizer.mps.backend import np, xp, USE_GPU
-from renormalizer.mps import Mpo, Mps, solver, svd_qn
+from renormalizer.mps.lib import cvec2cmat
+from renormalizer.mps import Mpo, Mps, gs, svd_qn
 from renormalizer.mps.matrix import (
     asnumpy,
     asxp,
@@ -99,7 +98,7 @@ class SpectraZtCV(SpectraCv):
         mps.optimize_config = OptimizeConfig(procedure=self.procedure_gs)
         mps.optimize_config.method = "2site"
 
-        energies = solver.optimize_mps_dmrg(mps, self.h_mpo)
+        energies, mps = gs.optimize_mps_dmrg(mps, self.h_mpo)
         e0 = min(energies)
 
         dipole_mpo = \
@@ -142,13 +141,13 @@ class SpectraZtCV(SpectraCv):
         # the environment matrix
 
         if self.method == "1site":
-            addlist = [isite - 1]
+            cidx = [isite - 1]
             first_L = asxp(first_LR[isite - 1])
             first_R = asxp(first_LR[isite])
             second_L = asxp(second_LR[isite - 1])
             second_R = asxp(second_LR[isite])
         else:
-            addlist = [isite - 2, isite - 1]
+            cidx = [isite - 2, isite - 1]
             first_L = asxp(first_LR[isite - 2])
             first_R = asxp(first_LR[isite])
             second_L = asxp(second_LR[isite - 2])
@@ -160,8 +159,7 @@ class SpectraZtCV(SpectraCv):
             system = 'R'
 
         # this part just be similar with ground state calculation
-        qnmat, qnbigl, qnbigr = svd_qn.construct_qnmat(
-            self.cv_mps, addlist, self.method, system)
+        qnbigl, qnbigr, qnmat = self.cv_mps._get_big_qn(cidx)
         xshape = qnmat.shape
         nonzeros = int(np.sum(qnmat == constrain_qn))
         if self.method == '1site':
@@ -246,7 +244,7 @@ class SpectraZtCV(SpectraCv):
         def hop(c):
             nonlocal count
             count += 1
-            xstruct = asxp(svd_qn.cvec2cmat(xshape, c, qnmat, constrain_qn))
+            xstruct = asxp(cvec2cmat(xshape, c, qnmat, constrain_qn))
             if self.method == "1site":
                 path_a = [([0, 1], "abcd, aef->bcdef"),
                           ([3, 0], "bcdef, begh->cdfgh"),
@@ -297,43 +295,9 @@ class SpectraZtCV(SpectraCv):
             logger.info(f"iteration solver not converged")
         # the value of the functional L
         l_value = xp.dot(asxp(hop(x)), asxp(x)) - 2 * xp.dot(vec_b, asxp(x))
-        xstruct = svd_qn.cvec2cmat(xshape, x, qnmat, constrain_qn)
-        x, xdim, xqn, compx = \
-            solver.renormalization_svd(xstruct, qnbigl, qnbigr, system,
-                                       constrain_qn, self.m_max, percent)
-        if self.method == "1site":
-            self.cv_mps[isite - 1] = x
-            if not self.cv_mps.to_right:
-                if isite != 1:
-                    self.cv_mps[isite - 2] = tensordot(
-                        self.cv_mps[isite - 2], compx, axes=(-1, 0))
-                    self.cv_mps.qn[isite - 1] = xqn
-                    self.cv_mps.qnidx = isite-2
-                else:
-                    self.cv_mps[isite - 1] = tensordot(
-                        compx, self.cv_mps[isite - 1], axes=(-1, 0))
-                    self.cv_mps.qnidx = 0
-            else:
-                if isite != len(self.cv_mps):
-                    self.cv_mps[isite] = tensordot(
-                        compx, self.cv_mps[isite], axes=(-1, 0))
-                    self.cv_mps.qn[isite] = xqn
-                    self.cv_mps.qnidx = isite
-                else:
-                    self.cv_mps[isite - 1] = tensordot(
-                        self.cv_mps[isite - 1], compx, axes=(-1, 0))
-                    self.cv_mps.qnidx = self.cv_mps.site_num-1
-        else:
-            if not self.cv_mps.to_right:
-                self.cv_mps[isite - 1] = x
-                self.cv_mps[isite - 2] = compx
-                self.cv_mps.qnidx = isite-2
-            else:
-                self.cv_mps[isite - 2] = x
-                self.cv_mps[isite - 1] = compx
-                self.cv_mps.qnidx = isite-1
-            self.cv_mps.qn[isite - 1] = xqn
-
+        xstruct = cvec2cmat(xshape, x, qnmat, constrain_qn)
+        self.cv_mps._update_mps(xstruct, cidx, qnbigl, qnbigr, self.m_max, percent)
+        
         return float(l_value)
 
     # It is suggested the initial_LR and update_LR can make use of Environ

@@ -829,9 +829,15 @@ class Mpo(MatrixProduct):
     @classmethod
     def quasi_boson(cls, opera, nqb, trunc, base=2, c1=1.0, c2=1.0):
         """
-        nqb : # of quasi boson sites
-        opera : operator to be decomposed
+
+        Parameters
+        ----------
+        nqb : 
+            # of quasi boson sites
+        opera : 
+            operator to be decomposed
                 r"b + b^\\dagger"
+
         """
         assert opera in [
             r"b + b^\dagger",
@@ -1113,18 +1119,22 @@ class Mpo(MatrixProduct):
     def intersite(cls, mol_list: MolList, e_opera: dict, ph_opera: dict, scale:
             Quantity=Quantity(1.)):
         """ construct the inter site MPO
-        Parameters:
-            mol_list : MolList
-                the molecular information
-            e_opera:
-                the electronic operators. {imol: operator}, such as {1:"a", 3:r"a^\dagger"}
-            ph_opera:
-                the vibrational operators. {(imol, iph): operator}, such as {(0,5):"b"}
-            scale: Quantity
-                scalar to scale the mpo
+        
+        Parameters
+        ----------
+        mol_list : MolList
+            the molecular information
+        e_opera:
+            the electronic operators. {imol: operator}, such as {1:"a", 3:r"a^\dagger"}
+        ph_opera:
+            the vibrational operators. {(imol, iph): operator}, such as {(0,5):"b"}
+        scale: Quantity
+            scalar to scale the mpo
 
-        Note:
-            the operator index starts from 0,1,2...
+        Note
+        -----
+        the operator index starts from 0,1,2...
+        
         """
         if isinstance(mol_list, MolList2):
             
@@ -1548,6 +1558,7 @@ class Mpo(MatrixProduct):
         self.rep = rep
         # offset of the hamiltonian, might be useful when doing td-hartree job
         self.offset = offset
+        self.to_right = False
         j_matrix = self.mol_list.j_matrix
         nmols = len(mol_list)
 
@@ -1901,18 +1912,17 @@ class Mpo(MatrixProduct):
 
     def _get_sigmaqn(self, idx):
         if isinstance(self.mol_list, MolList2):
-            v = np.array(self.mol_list.basis[idx].sigmaqn)
-            return list((v.reshape(-1, 1) - v.reshape(1, -1)).flatten())
+            array_up = self.mol_list.basis[idx].sigmaqn
         else:
             if self.ephtable.is_phonon(idx):
-                return np.array([0] * self.pbond_list[idx] ** 2)
-            if self.mol_list.scheme < 4 and self.ephtable.is_electron(idx):
-                return np.array([0, -1, 1, 0])
+                array_up = np.array([0]*self.pbond_list[idx])
+            elif self.mol_list.scheme < 4 and self.ephtable.is_electron(idx):
+                array_up = np.array([0,1])
             elif self.mol_list.scheme == 4 and self.ephtable.is_electrons(idx):
-                v = np.array([0] + [1] * (self.pbond_list[idx] - 1))
-                return list((v.reshape(-1, 1) - v.reshape(1, -1)).flatten())
+                array_up = np.array([0] + [1] * (self.pbond_list[idx] - 1))
             else:
                 assert False
+        return np.subtract.outer(array_up, array_up)
 
     @property
     def is_mps(self):
@@ -2007,18 +2017,51 @@ class Mpo(MatrixProduct):
             new_mps.canonicalise()
         return new_mps
 
-    def contract(self, mps, check_emtpy=False):
+    def contract(self, mps, check_emtpy=False, algo="svd"):
+        r""" an approximation of mpo @ mps/mpdm/mpo
+        
+        Parameters
+        ----------
+        mps : `Mps`, `Mpo`, `MpDm`
+        check_emtpy : bool, optional
+            Check if the obtained new mps has zero local matrix. Default is
+            ``False``.
+        algo: str, optional
+            The algorithm to compress mpo @ mps/mpdm/mpo.  It could be ``svd``
+            (default) and ``variational``. 
+        
+        Returns
+        -------
+        new_mps : `Mps`
+            an approximation of mpo @ mps/mpdm/mpo. The input ``mps`` is not
+            overwritten.
+
+        See Also
+        --------
+        renormalizer.mps.mp.MatrixProduct.compress : svd compression.
+        renormalizer.mps.mp.MatrixProduct.variational_compress : variational
+            compression.
+
 
         """
-        mapply->canonicalise->compress
-        """
-        new_mps = self.apply(mps)
-        if check_emtpy:
-            for mt in new_mps:
-                if mt.nearly_zero():
-                    raise EmptyMatrixError
-        new_mps.canonicalise()
-        new_mps.compress()
+        if algo == "svd":
+            # mapply->canonicalise->compress
+            new_mps = self.apply(mps)
+            if check_emtpy:
+                for mt in new_mps:
+                    if mt.nearly_zero():
+                        raise EmptyMatrixError
+            new_mps.canonicalise()
+            new_mps.compress()
+        elif algo == "variational":
+            new_mps = mps.variational_compress(self)
+            if check_emtpy:
+                for mt in new_mps:
+                    if mt.nearly_zero():
+                        raise EmptyMatrixError
+        else:
+            assert False
+
         return new_mps
 
     def conj_trans(self):
@@ -2056,4 +2099,9 @@ class Mpo(MatrixProduct):
             mpo.append(mt)
         mpo.build_empty_qn()
         return mpo
-
+    
+    @property
+    def dmrg_norm(self) -> float:
+        res = np.sqrt(self.conj().dot(self).real)
+        return float(res.real)
+    

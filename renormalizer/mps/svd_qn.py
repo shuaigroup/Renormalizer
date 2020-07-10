@@ -44,8 +44,16 @@ def Csvd(
     according to the quantum number
     ddm is the direct diagonalization the reduced density matrix
     """
+    if not ddm:
+        Gamma = cstruct.reshape((np.prod(qnbigl.shape), np.prod(qnbigr.shape)))
+    else:
+        if system == "L":
+            Gamma = cstruct.reshape((np.prod(qnbigl.shape), np.prod(qnbigl.shape)))
+        elif system == "R":
+            Gamma = cstruct.reshape((np.prod(qnbigr.shape), np.prod(qnbigr.shape)))
+        else:
+            assert False
 
-    Gamma = cstruct.reshape((np.prod(qnbigl.shape), np.prod(qnbigr.shape)))
     localqnl = qnbigl.ravel()
     localqnr = qnbigr.ravel()
 
@@ -63,19 +71,24 @@ def Csvd(
 
     if not ddm:
         # different combination
-        if cstruct.ndim == 4:  # density matrix
-            combine = [[x, nexciton - x] for x in range(nexciton + 1)]
-        else:
-            min0 = min(np.min(localqnl), np.min(localqnr))
-            max0 = max(np.max(localqnl), np.max(localqnr))
-            combine = [[x, nexciton - x] for x in range(min0, max0 + 1)]
+        combine = [[x, nexciton - x] for x in set(localqnl)]
     else:
         # ddm is for diagonlize the reduced density matrix for multistate
-        combine = [[x, x] for x in range(nexciton + 1)]
-
+        if system == "L":
+            combine = [[x, x] for x in set(localqnl) if (nexciton-x) in set(localqnr)]
+        else:
+            combine = [[x, x] for x in set(localqnr) if (nexciton-x) in set(localqnl)]
+    
     for nl, nr in combine:
-        lset = np.where(localqnl == nl)[0]
-        rset = np.where(localqnr == nr)[0]
+        if not ddm:
+            lset = np.where(localqnl == nl)[0]
+            rset = np.where(localqnr == nr)[0]
+        else:
+            if system == "L":
+                lset = rset = np.where(localqnl == nl)[0]
+            else:
+                lset = rset = np.where(localqnr == nr)[0]
+
         if len(lset) == 0 or len(rset) == 0:
             continue
         # Gamma_block = Gamma[np.ix_(lset,rset)]
@@ -213,52 +226,3 @@ def blockrecover(indices, U, dim):
     return resortU
 
 
-def cvec2cmat(cshape, c, qnmat, nexciton, nroots=1):
-    # recover good quantum number vector c to matrix format
-    if nroots == 1:
-        cstruct = np.zeros(cshape, dtype=c.dtype)
-        np.place(cstruct, qnmat == nexciton, c)
-    else:
-        cstruct = []
-        for ic in c:
-            icstruct = np.zeros(cshape, dtype=ic.dtype)
-            np.place(icstruct, qnmat == nexciton, ic)
-            cstruct.append(icstruct)
-
-    return cstruct
-
-
-def construct_qnmat(mps, addlist, method, system):
-    """
-    construct the quantum number pattern, the structure is as the coefficient
-    QN: quantum number list at each bond
-    addlist : the sigma orbital set
-    """
-    # print(method)
-    assert method in ["1site", "2site"]
-    assert system in ["L", "R"]
-    qnl = np.array(mps.qn[addlist[0]])
-    qnr = np.array(mps.qn[addlist[-1] + 1])
-    qnmat = qnl.copy()
-    qnsigmalist = []
-
-    for idx in addlist:
-
-        qnsigma = mps[idx].sigmaqn
-        qnmat = np.add.outer(qnmat, qnsigma)
-        qnsigmalist.append(qnsigma)
-
-    qnmat = np.add.outer(qnmat, qnr)
-
-    if method == "1site":
-        if system == "R":
-            qnbigl = qnl
-            qnbigr = np.add.outer(qnsigmalist[-1], qnr)
-        else:
-            qnbigl = np.add.outer(qnl, qnsigmalist[0])
-            qnbigr = qnr
-    else:
-        qnbigl = np.add.outer(qnl, qnsigmalist[0])
-        qnbigr = np.add.outer(qnsigmalist[-1], qnr)
-
-    return qnmat, qnbigl, qnbigr

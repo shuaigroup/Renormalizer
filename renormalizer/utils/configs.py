@@ -2,10 +2,9 @@
 from enum import Enum
 import logging
 
+from renormalizer.utils.rk import RungeKutta
 import scipy.linalg
 import numpy as np
-
-from renormalizer.utils.rk import RungeKutta
 
 logger = logging.getLogger(__name__)
 
@@ -36,17 +35,68 @@ class CompressCriteria(Enum):
 
 
 class CompressConfig:
-    """
-    MPS Compress Configuration.
+    """MPS Compress Configuration.
 
-    Args:
-        criteria (:class:`renormalization.utils.configs.CompressCriteria`): the criteria for compression.
-        threshold (float): the threshold to keep states if ``criteria`` is set to ``CompressCriteria.threshold``
-            or ``CompressCriteria.both``.
-        bonddim_distri (:class:`renormalization.utils.configs.BondDimDistri`):
-            Bond dimension distribution if ``criteria`` is set to
-            ``CompressCriteria.fixed`` or ``CompressCriteria.both``.
-        max_bonddim (int): Maximum bond dimension under various bond dimension distributions.
+    Parameters
+    ----------
+    criteria : `CompressCriteria`, optional
+        The criteria for compression. Default is
+        `CompressCriteria.threshold`.
+    threshold : float, optional 
+        The threshold to keep states if ``criteria`` is set to
+        `CompressCriteria.threshold` or `CompressCriteria.both`.
+        Default is :math:`10^{-3}`.
+    bonddim_distri : `BondDimDistri`, optional
+        Bond dimension distribution if ``criteria`` is set to
+        `CompressCriteria.fixed` or `CompressCriteria.both`.
+        Default is `BondDimDistri.uniform`.
+    max_bonddim : int, optional
+        Maximum bond dimension ``M`` under various bond dimension distributions.
+        Default is 32.
+    vmethod : str, optional
+        The algorithm used in variational compression. The default is ``2site``.
+
+        - ``1site``:  optimize one site at a time during sweep.
+        - ``2site``:  optimize two site at a time during sweep.
+    vprocedure : list, optional
+        The procedure to do variational compression.
+        The Default is
+        
+        .. code-block::
+
+            if vmethod == "1site":
+                vprocedure = [[max_bonddim,1.0],[max_bonddim,0.7],
+                              [max_bonddim,0.5],[max_bonddim,0.3],
+                              [max_bonddim,0.1]] + [[max_bonddim,0],]*10
+            else:
+                vprocedure = [[max_bonddim,0.5],[max_bonddim,0.3],
+                              [max_bonddim,0.1]] + [[max_bonddim,0],]*10
+    
+    vrtol : float, optional
+        The threshold of convergence in variational compression. Default is
+        :math:`10^-5`.
+    vguess_m : tuple(int), optional
+        The bond dimension of ``compressed_mpo`` and ``compressed_mps`` to construct the initial guess 
+        ``compressed_mpo @ compressed_mps`` in `MatrixProduct.variational_compress`.
+        The default is (5,5).
+    
+    Note
+    ----
+    It is recommended to use the 2site algorithm in variational optimization,
+    though 1site algorithm is much cheaper. The reason is that 1site algorithm
+    is easy to stuck into local mimima while 2site algorithm is more robust. For
+    complicated Hamiltonian, the problem is severer.  The renormalized basis
+    selection rule used here to partly solve the local minimal problem is
+    according to Chan. J.  Chem. Phys. 2004, 120, 3172. For efficiency, you
+    could use 2site algorithm for several sweeps and then switch to 1site
+    algorithm to converge the final mps.
+
+    See Also
+    --------
+    CompressCriteria : Compression criteria
+    renormalizer.mps.mp.MatrixProduct.variational_compress : Variational compression
+    renormalizer.mps.Mpo.contract : compress ``mpo @ mps/mpdm/mpo``
+    
     """
     def __init__(
         self,
@@ -54,6 +104,10 @@ class CompressConfig:
         threshold: float = 1e-3,
         bonddim_distri: BondDimDistri = BondDimDistri.uniform,
         max_bonddim: int = 32,
+        vmethod: str = "2site",
+        vprocedure = None,
+        vrtol = 1e-5,
+        vguess_m = (5,5),
     ):
         # two sets of criteria here: threshold and max_bonddimension
         # `criteria` is to determine which to use
@@ -67,6 +121,20 @@ class CompressConfig:
         # the length should be len(mps) + 1, the terminals are also counted. This is for accordance with mps.bond_dims
         self.max_dims: np.ndarray = None
         self.min_dims: np.ndarray = None
+        
+        # variational compression parameters
+        self.vmethod = vmethod
+        if vprocedure is None:
+            if vmethod == "1site":
+                vprocedure = [[max_bonddim,1.0],[max_bonddim,0.7],
+                              [max_bonddim,0.5],[max_bonddim,0.3],
+                              [max_bonddim,0.1]] + [[max_bonddim,0],]*10
+            else:
+                vprocedure = [[max_bonddim,0.5],[max_bonddim,0.3],
+                              [max_bonddim,0.1]] + [[max_bonddim,0],]*10
+        self.vprocedure = vprocedure
+        self.vrtol = vrtol
+        self.vguess_m = vguess_m
 
     @property
     def threshold(self):
@@ -181,6 +249,10 @@ class CompressConfig:
 
 
 class OptimizeConfig:
+    r""" DMRG ground state algorithm optimization configuration
+
+    """
+
     def __init__(self, procedure=None):
         if procedure is None:
             self.procedure = [[10, 0.4], [20, 0.2], [30, 0.1], [40, 0], [40, 0]]

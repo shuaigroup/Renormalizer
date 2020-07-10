@@ -5,8 +5,15 @@
 
 Welcome to Renormalizer's documentation!
 ========================================
-Renormalizer is a python package based on tensor network states for electron-phonon
-quantum dynamics.
+Renormalizer is a quantum dynamics package based on density matrix
+renormalization group (DMRG) and its time dependent formulation written in
+Python. All (TD-)DMRG algorithms are implemented within the framework of matrix
+product states (MPS) and matrix product operators (MPO). The package aims to
+provide a powerful and efficient platform for quantum dynamics simulation
+and method development with (TD-)DMRG.
+The package is still under heavy development. Please refer to our recent papers
+for the new developments.
+
 
 Contents
 --------
@@ -16,18 +23,19 @@ Contents
    :numbered:
 
    overview.rst
-   tutorial.md
    install.md
+   develop.md
+   tutorial.md
+   model.rst
+   basis.rst
+   mps.rst
+   gs.rst
    spectrum.rst
    ct.rst
    cv.rst
+   configs.rst
    lib.md
    sbm.md
-   configs.rst
-   mps.rst
-   model.rst
-   utils.rst
-   develop.md
 
 
 

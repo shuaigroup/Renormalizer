@@ -64,7 +64,7 @@ def test_2site():
     ph = Phonon.simple_phonon(Quantity(1), Quantity(1), 2)
     m = Mol(Quantity(0), [ph])
     mol_list = MolList([m] * 2, Quantity(1), scheme=3)
-    gs_mp = Mpo.onsite(mol_list, opera=r"a^\dagger", mol_idx_set={0}).apply(Mps.gs(mol_list, max_entangled=False))
+    gs_mp = Mpo.onsite(mol_list, opera=r"a^\dagger", mol_idx_set={0}).apply(Mps.ground_state(mol_list, max_entangled=False))
     mpdm = MpDm.from_mps(gs_mp)
     mpdm_full = MpDmFull.from_mpdm(mpdm)
     mpdm_full.compress_config = CompressConfig(threshold=1e-4)

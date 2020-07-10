@@ -12,6 +12,7 @@ from renormalizer.mps import Mpo, Mps
 from renormalizer.tests.parameter import mol_list, ph_phys_dim, omega_quantities
 from renormalizer.mps.tests import cur_dir
 from renormalizer.utils import Quantity, Op
+from renormalizer.utils import basis as ba
 
 @pytest.mark.parametrize("dt, space, shift", ([30, "GS", 0.0], [30, "EX", 0.0]))
 def test_exact_propagator(dt, space, shift):
@@ -122,7 +123,7 @@ def test_intersite(scheme):
 
 
 def test_phonon_onsite():
-    gs = Mps.gs(mol_list, max_entangled=False)
+    gs = Mps.ground_state(mol_list, max_entangled=False)
     assert not gs.ph_occupations.any()
     b2 = Mpo.ph_onsite(mol_list, r"b^\dagger", 0, 0)
     p1 = b2.apply(gs).normalize()
@@ -224,3 +225,23 @@ def check_result(mpo, mpo_std):
     print("std mpo qn:", mpo_std.qn, mpo_std.qntot)
     print("new mpo qn:", mpo.qn, mpo_std.qntot)
     assert mpo_std.distance(mpo)/np.sqrt(mpo_std.dot(mpo_std)) == pytest.approx(0, abs=1e-5)
+
+def test_different_general_mpo_format():
+    model1 = {("e_0","e_1"):[(Op("a^\dagger_0",1), Op("a_1",-1), 0.1)]}
+    model2 = {("e_0","e_1"):[(Op("a^\dagger",1), Op("a",-1), 0.1)]}
+    model3 = {("e_0",):[(Op("a^\dagger_0 a_1",0), 0.1)]}
+    model4 = {("e_1",):[(Op("a^\dagger_0 a_1",0), 0.1)]}
+    order = {"e_0":0, "e_1":0}
+    basis = [ba.BasisMultiElectron(2,[0,0])]
+    mollist = MolList2(order, basis, model1, ModelTranslator.general_model)
+    mpo1 = Mpo.general_mpo(mollist, model=model1,
+            model_translator=ModelTranslator.general_model)
+    mpo2 = Mpo.general_mpo(mollist, model=model2,
+            model_translator=ModelTranslator.general_model)
+    mpo3 = Mpo.general_mpo(mollist, model=model3,
+            model_translator=ModelTranslator.general_model)
+    mpo4 = Mpo.general_mpo(mollist, model=model4,
+            model_translator=ModelTranslator.general_model)
+    check_result(mpo1, mpo2)
+    check_result(mpo1, mpo3)
+    check_result(mpo1, mpo4)

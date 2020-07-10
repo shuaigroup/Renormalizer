@@ -1,6 +1,13 @@
 Low Level Data Structure and Algorithms
 ***************************************
 
+Matrix Product (MP)
+==========================
+.. autoclass:: renormalizer.mps.mp.MatrixProduct
+    :members:
+    :inherited-members:
+    :private-members:
+
 Matrix Product State (MPS)
 ==========================
 .. autoclass:: renormalizer.mps.Mps

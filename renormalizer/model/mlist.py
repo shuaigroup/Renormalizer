@@ -43,7 +43,7 @@ class MolList2:
         the key of order starts from "v" or "e" for vibrational DoF or electronic DoF respectively.
         after the linker '_' combined with an index. The rule is that
         the index of both 'e' and 'v' starts from 0,1,2... and the
-        properties such as `e_occupations` are reported with such order.
+        properties such as :meth:`~renormalizer.mps.Mps.e_occupations` are reported with such order.
         the value of order is the position of the specific DoF, starting from 0,2,...,nsite-1
         For cases that all electronic DoFs gathered in a single site,
         the value of each DoF should be the same.
@@ -51,7 +51,7 @@ class MolList2:
         MolList scheme4 order ={"e_0":0, "v_0":1, "v_1":2, "e_1":0, "v_2":3, "v_3":4}
 
         The order of basis corresponds to the site, each element is a Basis
-        class, refer to `~renormalizer.utils.basis`
+        class, refer to :class:`~renormalizer.utils.basis.BasisSet`
         for example: basis = [b0,b1,b2,b3]
 
         two formats are supported for model:
@@ -62,7 +62,7 @@ class MolList2:
         one is tuple of vibrational DoF with a list as value. Inside the
         list is sevaral tuples, each tuple is a operator term. the last one
         of the tuple is factor of the term, the others represents a local
-        operator (refer to `~renormalizer.utils.Op`) on each Dof in the
+        operator (refer to :class:`~renormalizer.utils.elementop.Op`) on each Dof in the
         sub-key (one-to-one map between the sub-key and tuple).
         The model_translator is ModelTranslator.vibronic_model
         for example:

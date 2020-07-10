@@ -22,10 +22,12 @@ class TransportKubo(TdMpsJob):
         .. math::
             \mu = \frac{1}{k_B T} \int_0^\infty dt \langle \hat j (t) \hat j(0) \rangle
             = \frac{1}{k_B T} \int_0^\infty dt C(t)
+    
     where
 
         .. math::
            \hat j = -\frac{i}{\hbar}[\hat P, \hat H]
+    
     and :math:`\hat P = e_0 \sum_m R_m a^\dagger_m a_m` is the polarization operator.
 
     .. note::
@@ -35,6 +37,7 @@ class TransportKubo(TdMpsJob):
 
         .. math::
             C(t) = \textrm{Tr}\{\rho(T) e^{i \hat H t} \hat j(0) e^{- i \hat H t} \hat j (0)\}
+    
     where we have assumed :math:`\rho(T)` is normalized
     (i.e. it is divided by the partition function :math:`\textrm{Tr}\{\rho(T)\}`).
 
@@ -313,15 +316,18 @@ class TransportKubo(TdMpsJob):
             \hat H = \sum_{mn}  [\epsilon_{mn} + \sum_\lambda \hbar g_{mn\lambda} \omega_\lambda
             (b^\dagger_\lambda + b_\lambda) ] a^\dagger_m a_n
             + \sum_\lambda \hbar \omega_\lambda b^\dagger_\lambda  b_\lambda
+        
         Then current operator without phonon assistance is defined as:
 
         .. math::
             \hat j_1 = \frac{e_0}{i\hbar} \sum_{mn} (R_m - R_n) \epsilon_{mn} a^\dagger_m a_n
+        
         and the current operator with phonon assistance is defined as:
 
         .. math::
             \hat j_2 = \frac{e_0}{i\hbar} \sum_{mn} (R_m - R_n) \hbar g_{mn\lambda} \omega_\lambda
             (b^\dagger_\lambda + b_\lambda) a^\dagger_m a_n
+        
         With :math:`\hat j = \hat j_1 + \hat j_2`, the correlation function can be
         decomposed into four parts:
 

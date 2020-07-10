@@ -119,7 +119,7 @@ def test_bogoliubov():
     ph3 = Phonon.simple_phonon(Quantity(-omega), Quantity(-D * np.sinh(theta)), nlevel)
     mol2 = Mol(Quantity(0), [ph2, ph3])
     mlist2 = MolList([mol2]*2, Quantity(1), scheme=4)
-    mps1 = Mps.gs(mlist2, False)
+    mps1 = Mps.ground_state(mlist2, False)
     mps1.evolve_config = evolve_config
     mpo2 = Mpo(mlist2)
     e2 = mps1.expectation(mpo2)

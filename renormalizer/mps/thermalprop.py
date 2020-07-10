@@ -152,7 +152,7 @@ def load_thermal_state(mol_list, path: str):
 
     Args:
         mol_list (:class:`MolList`): system information
-        path (str): the path to load thermal state from. Should be an `npz` file.
+        path (str): the path to load thermal state from. Should be an numpy ``.npz`` file.
     Returns: Loaded MpDm
     """
     try:

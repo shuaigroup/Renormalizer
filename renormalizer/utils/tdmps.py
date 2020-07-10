@@ -55,7 +55,7 @@ class TdMpsJob(object):
             nsteps (int): the total number of evolution steps
             evolve_time (float): the total evolution time
         
-        .. Notes::
+        .. note::
             ``evolve_dt`` math: `\times` ``nsteps`` = ``evolve_time``,  otherwise nsteps has a higher priority.
         '''
         # deal with arguments

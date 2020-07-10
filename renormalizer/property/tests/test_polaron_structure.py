@@ -14,7 +14,7 @@ the unit of coupling constant c in our code has unit energy / mass^{1/2} * lengt
 '''
 from renormalizer.utils import constant
 from renormalizer.model import  Phonon, Mol, MolList
-from renormalizer.mps import Mpo, MpDm, ThermalProp, solver
+from renormalizer.mps import Mpo, MpDm, ThermalProp, gs
 from renormalizer.utils import Quantity, EvolveConfig, EvolveMethod
 
 from renormalizer.property import Property, ops

@@ -4,7 +4,7 @@
 import numpy as np
 import pytest
 
-from renormalizer.mps import solver
+from renormalizer.mps import gs
 from renormalizer.tests import parameter
 
 
@@ -18,13 +18,13 @@ from renormalizer.tests import parameter
 def test_hybrid_DMRG_H_SCF(mol_list, target):
 
     nexciton = 1
-    mps, mpo = solver.construct_mps_mpo_2(mol_list, 10, nexciton)
-    Etot = solver.optimize_mps(mps, mpo)
+    mps, mpo = gs.construct_mps_mpo_2(mol_list, 10, nexciton)
+    Etot = gs.optimize_mps(mps, mpo)
     # print("Etot", Etot)
     assert Etot == pytest.approx(target, abs=1e-5)
 
     nexciton = 0
-    mps, mpo = solver.construct_mps_mpo_2(mol_list, 10, nexciton)
-    Etot = solver.optimize_mps(mps, mpo)
+    mps, mpo = gs.construct_mps_mpo_2(mol_list, 10, nexciton)
+    Etot = gs.optimize_mps(mps, mpo)
     # print("Etot", Etot)
     assert Etot == pytest.approx(0.0, abs=1e-5)

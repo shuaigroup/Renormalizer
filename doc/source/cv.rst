@@ -28,5 +28,3 @@ at finite temperature, where :math:`\hat{\rho}_{\beta}^{1/2}` represents :math:`
 .. automodule:: renormalizer.cv.finitet
    :members:
 
-chebyshev --- Chebyshev expansion
-==================================

@@ -29,8 +29,10 @@ class VibronicModelDynamics(TdMpsJob):
             dump_mps: bool = False,
             dump_dir: str = None,
             job_name: str = None,
+            expand: bool = False
         ):
 
+        assert isinstance(mol_list, MolList2)
         self.mol_list = mol_list
         
         if compress_config is None:
@@ -46,6 +48,7 @@ class VibronicModelDynamics(TdMpsJob):
         self.mps0 = mps0
         self.init_condition = init_condition
         self.properties = properties
+        self.expand = expand
         
         self.e_occupations_array = []
         self.autocorr_array = []
@@ -66,7 +69,7 @@ class VibronicModelDynamics(TdMpsJob):
         init_mp.compress_config = self.compress_config
         init_mp.evolve_config = self.evolve_config
         init_mp.mol_list = self.mol_list
-        if self.evolve_config.is_tdvp:
+        if self.evolve_config.is_tdvp and self.expand:
             init_mp = init_mp.expand_bond_dimension(self.h_mpo)
         return init_mp
 
@@ -88,7 +91,7 @@ class VibronicModelDynamics(TdMpsJob):
         logger.debug(f"e occupations: {self.e_occupations_array[-1]}")
         # autocorrelation function
         if self.mps0.is_complex:
-            autocorr = mps.conj().dot(self.mps0)
+            autocorr = self.mps0.conj().dot(mps)
             self.autocorr_array.append(autocorr)
             self.autocorr_time.append(self.evolve_times[-1])
         else:
