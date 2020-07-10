@@ -55,7 +55,7 @@ def test_ft_init_state():
     "method, evolve_dt, nsteps, rtol",
     (
         (EvolveMethod.prop_and_compress, 4, 25, 1e-3),
-        (EvolveMethod.tdvp_ps, 2, 100, 1e-3),
+        (EvolveMethod.tdvp_ps, 2, 50, 1e-3),
     ),
 )
 @pytest.mark.parametrize("scheme", (3, 4))
@@ -113,49 +113,6 @@ def assert_iterable_equal(i1, i2):
     for ii1, ii2 in zip(i1, i2):
         assert_iterable_equal(ii1, ii2)
 
-
-@pytest.mark.parametrize(
-    "mol_num, j_constant_value, elocalex_value, ph_info, ph_phys_dim, evolve_dt, nsteps, temperature",
-    (
-        [3, 0.8, 3.87e-3, [[1345.6738910804488, 16.274571056529368]], 4, 2, 15, 0],
-        [3, 0.8, 3.87e-3, [[1345.6738910804488, 16.274571056529368]], 4, 2, 15, 100],
-    ),
-)
-def test_reduced_density_matrix(
-    mol_num,
-    j_constant_value,
-    elocalex_value,
-    ph_info,
-    ph_phys_dim,
-    evolve_dt,
-    nsteps,
-    temperature,
-):
-    ph_list = [
-        Phonon.simple_phonon(
-            Quantity(omega, "cm^{-1}"), Quantity(displacement, "a.u."), ph_phys_dim
-        )
-        for omega, displacement in ph_info
-    ]
-    mol_list3 = MolList(
-        [Mol(Quantity(elocalex_value, "a.u."), ph_list)] * mol_num,
-        Quantity(j_constant_value, "eV"),
-        scheme=3,
-    )
-
-    ct3 = ChargeDiffusionDynamics(
-        mol_list3, temperature=Quantity(temperature, "K"), stop_at_edge=False, rdm=True
-    )
-    ct3.evolve(evolve_dt, nsteps)
-
-    mol_list4 = mol_list3.switch_scheme(4)
-    ct4 = ChargeDiffusionDynamics(
-        mol_list4, temperature=Quantity(temperature, "K"), stop_at_edge=False, rdm=True
-    )
-    ct4.evolve(evolve_dt, nsteps)
-    for rdm3, rdm4, e in zip(ct3.reduced_density_matrices, ct4.reduced_density_matrices, ct3.e_occupations_array):
-        assert np.allclose(rdm3, rdm4, atol=1e-3)
-        assert np.allclose(np.diag(rdm3), e)
 
 
 @pytest.mark.parametrize(
@@ -248,32 +205,3 @@ def test_band_limit_finite_t(
     ct2 = ChargeDiffusionDynamics(mol_list, temperature=low_t, stop_at_edge=False)
     ct2.evolve(evolve_dt, nsteps)
     assert ct1.is_similar(ct2)
-
-
-@pytest.mark.parametrize(
-    "mol_num, j_constant_value, elocalex_value, ph_info, ph_phys_dim, evolve_dt, nsteps",
-    ([3, 1, 3.87e-3, [[1400, 17]], 8, 2, 50],),
-)
-def test_scheme4_finite_t(
-    mol_num, j_constant_value, elocalex_value, ph_info, ph_phys_dim, evolve_dt, nsteps
-):
-    temperature = Quantity(1, "a.u.")
-    ph_list = [
-        Phonon.simple_phonon(
-            Quantity(omega, "cm^{-1}"), Quantity(displacement, "a.u."), ph_phys_dim
-        )
-        for omega, displacement in ph_info
-    ]
-    mol_list = MolList(
-        [Mol(Quantity(elocalex_value, "a.u."), ph_list)] * mol_num,
-        Quantity(j_constant_value, "eV"),
-    )
-    ct1 = ChargeDiffusionDynamics(
-        mol_list.switch_scheme(3), temperature=temperature, stop_at_edge=False
-    )
-    ct1.evolve(evolve_dt, nsteps)
-    ct2 = ChargeDiffusionDynamics(
-        mol_list.switch_scheme(4), temperature=temperature, stop_at_edge=False
-    )
-    ct2.evolve(evolve_dt, nsteps)
-    assert ct1.is_similar(ct2, rtol=1e-2)

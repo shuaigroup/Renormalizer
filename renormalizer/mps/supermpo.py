@@ -1,7 +1,6 @@
 # -*- coding: utf-8 -*-
 from typing import List, Tuple
 
-from renormalizer.mps.matrix import EmptyMatrixError
 from renormalizer.mps.mpo import Mpo
 from renormalizer.mps.mpdm import MpDmFull
 from renormalizer.mps.lib import compressed_sum
@@ -39,10 +38,7 @@ class SuperLiouville(Mpo):
         summed_term = compressed_sum(applied_terms)
         bdb_operator: Mpo = mp.mol_list.get_mpos("lindblad_bdb", calc_lindblad_bdb)
         # any room for optimization? are there any simple relations between the two terms?
-        try:
-            lindblad = summed_term - 0.5 * (bdb_operator.contract(mp, True) + mp.contract(bdb_operator, True))
-        except EmptyMatrixError:
-            lindblad = summed_term
+        lindblad = summed_term - 0.5 * (bdb_operator.contract(mp, True) + mp.contract(bdb_operator, True))
         ret = no_dissipation + 1j * self.dissipation * lindblad
         return ret
 
