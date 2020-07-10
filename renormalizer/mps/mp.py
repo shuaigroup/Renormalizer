@@ -664,9 +664,9 @@ class MatrixProduct:
         percent : float, int
             The percentage of renormalized basis which is equally selected from
             each quantum number section rather than according to singular
-            values. `percent` is defined in  
-            `renormalizer.utils.configs.OptimizeConfig.procedure` and
-            `renormalizer.utils.configs.CompressConfig.vprocedure`.
+            values. ``percent`` is defined in ``procedure`` of 
+            `renormalizer.utils.configs.OptimizeConfig` and ``vprocedure`` of
+            `renormalizer.utils.configs.CompressConfig`.
 
         Returns
         -------

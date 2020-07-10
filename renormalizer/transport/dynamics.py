@@ -77,7 +77,7 @@ class ChargeDiffusionDynamics(TdMpsJob):
             .. math::
                 L = \sum_{ij, i \neq j} | \rho_{ij} |
 
-            where `\rho` is the density matrix of the electron. Naturally this is only available when
+            where :math:`\rho` is the density matrix of the electron. Naturally this is only available when
             ``rdm`` is set to ``True``.
 
     """

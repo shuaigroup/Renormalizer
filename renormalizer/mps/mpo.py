@@ -2022,23 +2022,25 @@ class Mpo(MatrixProduct):
         
         Parameters
         ----------
-        mps : renormalizer.mps.Mps, renormalizer.mps.Mpo, renormalizer.mps.MpDm,
+        mps : `Mps`, `Mpo`, `MpDm`
         check_emtpy : bool, optional
             Check if the obtained new mps has zero local matrix. Default is
             ``False``.
         algo: str, optional
-            The algorithm to compress mpo @ mps/mpdm/mpo.  It could be `svd`
-            (default) and `variational`. 
+            The algorithm to compress mpo @ mps/mpdm/mpo.  It could be ``svd``
+            (default) and ``variational``. 
         
         Returns
         -------
-        new_mps : an approximation of mpo @ mps/mpdm/mpo. The original `mps` is
-            not overwritten.
+        new_mps : `Mps`
+            an approximation of mpo @ mps/mpdm/mpo. The input ``mps`` is not
+            overwritten.
 
         See Also
         --------
-        renormalizer.mps.mp.MatrixProduct.compress
-        renormalizer.mps.mp.MatrixProduct.variational_compress
+        renormalizer.mps.mp.MatrixProduct.compress : svd compression.
+        renormalizer.mps.mp.MatrixProduct.variational_compress : variational
+            compression.
 
 
         """

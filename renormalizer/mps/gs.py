@@ -116,10 +116,10 @@ def optimize_mps_dmrg(mps, mpo):
     -------
     energy : list
         list of energy of each marco sweep.
-        :math:`[e_0, e_0, \cdots, e_0]` if `nroots=1`.
-        :math:`[[e_0, \cdots, e_n], \dots, [e_0, \cdots, e_n]]` if `nroots=n`.
+        :math:`[e_0, e_0, \cdots, e_0]` if ``nroots=1``.
+        :math:`[[e_0, \cdots, e_n], \dots, [e_0, \cdots, e_n]]` if ``nroots=n``.
     mps : renormalizer.mps.Mps
-        optimized ground state mps. 
+        optimized ground state mps. The input mps is overwritten.
     
     See Also
     --------
