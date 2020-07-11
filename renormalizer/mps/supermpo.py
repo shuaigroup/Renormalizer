@@ -38,7 +38,7 @@ class SuperLiouville(Mpo):
         summed_term = compressed_sum(applied_terms)
         bdb_operator: Mpo = mp.mol_list.get_mpos("lindblad_bdb", calc_lindblad_bdb)
         # any room for optimization? are there any simple relations between the two terms?
-        lindblad = summed_term - 0.5 * (bdb_operator.contract(mp, True) + mp.contract(bdb_operator, True))
+        lindblad = summed_term - 0.5 * (bdb_operator.contract(mp) + mp.contract(bdb_operator))
         ret = no_dissipation + 1j * self.dissipation * lindblad
         return ret
 
