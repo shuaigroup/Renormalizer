@@ -153,11 +153,6 @@ class SpectraZtCV(SpectraCv):
             second_L = asxp(second_LR[isite - 2])
             second_R = asxp(second_LR[isite])
 
-        if self.cv_mps.to_right:
-            system = 'L'
-        else:
-            system = 'R'
-
         # this part just be similar with ground state calculation
         qnbigl, qnbigr, qnmat = self.cv_mps._get_big_qn(cidx)
         xshape = qnmat.shape

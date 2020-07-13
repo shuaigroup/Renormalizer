@@ -68,7 +68,7 @@ class TransportKubo(TdMpsJob):
             Zero temperature is not supported.
         distance_matrix (np.ndarray): two-dimensional array :math:`D_{ij} = P_i - P_j` representing
             distance between the :math:`i` th electronic degree of freedom and the :math:`j` th degree of freedom.
-            The parameter takes the roll of :math:`\hat P` and can better handle periodic boundary condition.
+            The parameter takes the role of :math:`\hat P` and can better handle periodic boundary condition.
             The default value is ``None`` in which case the distance matrix is constructed assuming the system
             is a one-dimensional chain.
 
@@ -241,11 +241,13 @@ class TransportKubo(TdMpsJob):
         e = mpdm.expectation(self.h_mpo)
         self.h_mpo = Mpo(self.mol_list, offset=Quantity(e))
         mpdm.evolve_config = self.evolve_config
+        logger.debug("Applying current operator")
         ket_mpdm = self.j_oper.contract(mpdm).canonical_normalize()
         bra_mpdm = mpdm.copy()
         if self.j_oper2 is None:
             return BraKetPair(bra_mpdm, ket_mpdm, self.j_oper)
         else:
+            logger.debug("Applying the second current operator")
             ket_mpdm2 = self.j_oper2.contract(mpdm).canonical_normalize()
             return BraKetPair(bra_mpdm, ket_mpdm, self.j_oper), BraKetPair(bra_mpdm, ket_mpdm2, self.j_oper2)
 

@@ -68,7 +68,7 @@ def expm_krylov(Afunc, dt, vstart: xp.ndarray, block_size=50):
         w -= alpha[j]*V[j] + (beta[j-1]*V[j-1] if j > 0 else 0)
         beta[j] = xp.linalg.norm(w)
         if beta[j] < 100*len(vstart)*np.finfo(float).eps:
-            logger.warning(f'beta[{j}] ~= 0 encountered during Lanczos iteration.')
+            # logger.warning(f'beta[{j}] ~= 0 encountered during Lanczos iteration.')
             return _expm_krylov(alpha[:j+1], beta[:j], V[:j+1, :].T, nrmv, dt), j+1
 
         if 3 < j and j % 2 == 0:

@@ -11,7 +11,7 @@ import scipy.sparse
 from renormalizer.model import MolList, MolList2, ModelTranslator
 from renormalizer.model.ephtable import EphTable
 from renormalizer.mps.backend import xp
-from renormalizer.mps.matrix import moveaxis, tensordot, asnumpy, EmptyMatrixError
+from renormalizer.mps.matrix import moveaxis, tensordot, asnumpy
 from renormalizer.mps.mp import MatrixProduct
 from renormalizer.mps import svd_qn
 from renormalizer.mps.lib import update_cv
@@ -2017,15 +2017,12 @@ class Mpo(MatrixProduct):
             new_mps.canonicalise()
         return new_mps
 
-    def contract(self, mps, check_emtpy=False, algo="svd"):
+    def contract(self, mps, algo="svd"):
         r""" an approximation of mpo @ mps/mpdm/mpo
         
         Parameters
         ----------
         mps : `Mps`, `Mpo`, `MpDm`
-        check_emtpy : bool, optional
-            Check if the obtained new mps has zero local matrix. Default is
-            ``False``.
         algo: str, optional
             The algorithm to compress mpo @ mps/mpdm/mpo.  It could be ``svd``
             (default) and ``variational``. 
@@ -2047,18 +2044,10 @@ class Mpo(MatrixProduct):
         if algo == "svd":
             # mapply->canonicalise->compress
             new_mps = self.apply(mps)
-            if check_emtpy:
-                for mt in new_mps:
-                    if mt.nearly_zero():
-                        raise EmptyMatrixError
             new_mps.canonicalise()
             new_mps.compress()
         elif algo == "variational":
             new_mps = mps.variational_compress(self)
-            if check_emtpy:
-                for mt in new_mps:
-                    if mt.nearly_zero():
-                        raise EmptyMatrixError
         else:
             assert False
 

@@ -530,10 +530,8 @@ class MatrixProduct:
                 
                 if mps.to_right:
                     lmethod, rmethod = "System", "Enviro"
-                    system = "L"
                 else:
                     lmethod, rmethod = "Enviro", "System"
-                    system = "R"
 
                 if method == "1site":
                     lidx = imps - 1
@@ -980,9 +978,6 @@ class MatrixProduct:
     def append(self, array):
         new_mt = self._array2mt(array, len(self))
         self._mp.append(new_mt)
-
-    def clear(self):
-        self._mp.clear()
     
     def __str__(self):
         template_str = "current size: {}, Matrix product bond dim:{}"

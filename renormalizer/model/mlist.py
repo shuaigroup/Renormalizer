@@ -16,7 +16,7 @@ from renormalizer.utils import basis as ba
 
 class ModelTranslator(Enum):
     """
-    Available Translator from user input model to renormalizer's internal formats 
+    Available Translator from user input model to renormalizer's internal formats
     """
     # from MolList sbm
     sbm = "Spin Boson Model (MolList)"

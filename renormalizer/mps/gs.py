@@ -164,10 +164,8 @@ def optimize_mps_dmrg(mps, mpo):
             
             if mps.to_right:
                 lmethod, rmethod = "System", "Enviro"
-                system = "L"
             else:
                 lmethod, rmethod = "Enviro", "System"
-                system = "R"
 
             if method == "1site":
                 lidx = imps - 1

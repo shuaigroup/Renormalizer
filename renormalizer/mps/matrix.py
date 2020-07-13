@@ -310,6 +310,3 @@ def asxp(array: Union[np.ndarray, xp.ndarray, Matrix]) -> xp.ndarray:
         assert isinstance(array, np.ndarray)
         return array
     return xp.asarray(array)
-
-
-class EmptyMatrixError(Exception): pass
