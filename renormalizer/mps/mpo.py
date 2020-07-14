@@ -123,12 +123,16 @@ def symbolic_mpo(table, factor, algo="Hopcroft-Karp"):
     logger.debug(f"Input operator terms: {len(table)}")
     # Simplest case. Cut to the chase
     if len(table) == 1:
-        mpo = []
+        # The first layer: number of sites. The 2nd and 3rd layer: in and out virtual bond
+        # the 4th layer: operator sums
+        mpo: List[List[List[List[[Op]]]]] = []
         mpoqn = [[0]]
         for op in table[0]:
             mpo.append([[[op]]])
             qn = mpoqn[-1][0] + op.qn
             mpoqn.append([qn])
+        old_op = mpo[-1][0][0][0]
+        mpo[-1][0][0][0] = Op(old_op.symbol, old_op.qn, old_op.factor * factor[0])
         qntot = qn
         mpoqn[-1] = [0]
         qnidx = len(mpo) - 1
