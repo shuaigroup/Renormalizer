@@ -206,7 +206,7 @@ class MolList2:
         return info_dict
 
     @classmethod
-    def MolList_to_MolList2(cls, mol_list, formula="vibronic"):
+    def MolList_to_MolList2(cls, mol_list):
         """
         switch from MolList to MolList2
         """
@@ -221,7 +221,7 @@ class MolList2:
             nv = 0
             for imol, mol in enumerate(mol_list):
                 order[f"e_{imol}"] = idx
-                if np.allclose(mol.tunnel, 0):
+                if not mol.sbm:
                     basis.append(ba.BasisSimpleElectron())
                 else:
                     basis.append(ba.BasisHalfSpin())
@@ -263,76 +263,52 @@ class MolList2:
         
 
         # model
-        if formula == "vibronic":
-            # electronic term
-            for imol in range(mol_list.mol_num):
-                for jmol in range(mol_list.mol_num):
-                    if imol == jmol:
-                        model[(f"e_{imol}", f"e_{jmol}")] = {"J": mol_list[imol].elocalex + mol_list[imol].dmrg_e0}
-                    else:
-                        model[(f"e_{imol}", f"e_{jmol}")] = {"J": mol_list.j_matrix[imol, jmol]}
-            
-            # vibration part
-            model["I"] = {}
-            for imol, mol in enumerate(mol_list):
-                for iph, ph in enumerate(mol.dmrg_phs):
-                    assert np.allclose(np.array(ph.force3rd), [0.0, 0.0])
 
-                    model["I"][(mapping[(imol, iph)],)] = [(Op("p^2", 0), 0.5),
-                            (Op("x^2", 0), 0.5*ph.omega[0]**2)]
-
-            # vibration potential part
-            for imol, mol in enumerate(mol_list):
-                for iph, ph in enumerate(mol.dmrg_phs):
-                    if np.allclose(ph.omega[0], ph.omega[1]):
-                        model[(f"e_{imol}", f"e_{imol}")][(mapping[(imol,iph)],)] \
-                            = [(Op("x", 0), -ph.omega[1]**2*ph.dis[1])]
-                    
-                    else:
-                        model[(f"e_{imol}", f"e_{imol}")][(mapping[(imol,iph)],)] \
-                            = [
-                                (Op("x^2", 0), 0.5*(ph.omega[1]**2-ph.omega[0]**2)),
-                                (Op("x", 0), -ph.omega[1]**2*ph.dis[1]),
-                                ]
-
-            model_translator = ModelTranslator.vibronic_model
-        
-        elif formula == "general":
-            # electronic term
-            for imol in range(mol_list.mol_num):
-                for jmol in range(mol_list.mol_num):
-                    if imol == jmol:
+        # electronic term
+        for imol in range(mol_list.mol_num):
+            for jmol in range(mol_list.mol_num):
+                if imol == jmol:
+                    if mol_list[imol].sbm:
                         model[(f"e_{imol}",)] = \
-                        [(Op(r"a^\dagger a", 0),
-                            mol_list[imol].elocalex + mol_list[imol].dmrg_e0)]
+                            [(Op(r"sigma_z", 0), mol_list[imol].elocalex)]
+                        model[(f"e_{imol}",)].append(
+                            (Op("sigma_x", 0), mol_list[imol].tunnel)
+                        )
                     else:
-                        model[(f"e_{imol}", f"e_{jmol}")] = \
-                            [(Op(r"a^\dagger", 1), Op("a", -1),
-                                mol_list.j_matrix[imol, jmol])]
-            # vibration part
-            for imol, mol in enumerate(mol_list):
-                for iph, ph in enumerate(mol.dmrg_phs):
-                    assert np.allclose(np.array(ph.force3rd), [0.0, 0.0])
+                        model[(f"e_{imol}",)] = \
+                            [(Op(r"a^\dagger a", 0), mol_list[imol].elocalex + mol_list[imol].dmrg_e0)]
+                else:
+                    model[(f"e_{imol}", f"e_{jmol}")] = \
+                        [(Op(r"a^\dagger", 1), Op("a", -1), mol_list.j_matrix[imol, jmol])]
+        # vibration part
+        for imol, mol in enumerate(mol_list):
+            for iph, ph in enumerate(mol.dmrg_phs):
+                assert np.allclose(np.array(ph.force3rd), [0.0, 0.0])
 
-                    model[(mapping[(imol, iph)],)] = [(Op("p^2", 0), 0.5),
-                            (Op("x^2", 0), 0.5*ph.omega[0]**2)]
+                model[(mapping[(imol, iph)],)] = [
+                    (Op("p^2", 0), 0.5),
+                    (Op("x^2", 0), 0.5 * ph.omega[0]**2)
+                ]
 
-            # vibration potential part
-            for imol, mol in enumerate(mol_list):
-                for iph, ph in enumerate(mol.dmrg_phs):
-                    if np.allclose(ph.omega[0], ph.omega[1]):
-                        model[(f"e_{imol}", f"{mapping[(imol,iph)]}")] = [
-                                (Op(r"a^\dagger a", 0), Op("x", 0), -ph.omega[1]**2*ph.dis[1]),
-                                ]
-                    else:
-                        model[(f"e_{imol}", f"{mapping[(imol,iph)]}")] = [
-                                (Op(r"a^\dagger a", 0), Op("x^2", 0), 0.5*(ph.omega[1]**2-ph.omega[0]**2)),
-                                (Op(r"a^\dagger a", 0), Op("x", 0), -ph.omega[1]**2*ph.dis[1]),
-                                ]
+        # vibration potential part
+        for imol, mol in enumerate(mol_list):
+            for iph, ph in enumerate(mol.dmrg_phs):
+                if mol_list[imol].sbm:
+                    op_str = r"sigma_z"
+                else:
+                    op_str = r"a^\dagger a"
+                if np.allclose(ph.omega[0], ph.omega[1]):
+                    model[(f"e_{imol}", f"{mapping[(imol,iph)]}")] = [
+                            (Op(op_str, 0), Op("x", 0), -ph.omega[1]**2*ph.dis[1]),
+                            ]
+                else:
+                    model[(f"e_{imol}", f"{mapping[(imol,iph)]}")] = [
+                            (Op(op_str, 0), Op("x^2", 0), 0.5*(ph.omega[1]**2-ph.omega[0]**2)),
+                            (Op(op_str, 0), Op("x", 0), -ph.omega[1]**2*ph.dis[1]),
+                            ]
 
-            model_translator = ModelTranslator.general_model
-        else:
-            raise ValueError(f"invalid formula: {formula}")
+        model_translator = ModelTranslator.general_model
+
         
         dipole = {}
         for imol, mol in enumerate(mol_list):
@@ -380,7 +356,7 @@ class MolList:
                 self._e_idx.append(len(self.pbond_list))
                 self.pbond_list.append(2)
                 for ph in mol.dmrg_phs:
-                    self.pbond_list += ph.pbond
+                    self.pbond_list.append(ph.pbond)
         else:
             # the order is v00,v01,..,v10,v11,...,e0/e1/e2,...,v30,v31...
             for imol, mol in enumerate(mol_list):
@@ -389,18 +365,22 @@ class MolList:
                     self.pbond_list.append(len(mol_list)+1)
                 for ph in mol.dmrg_phs:
                     assert ph.is_simple
-                    self.pbond_list += ph.pbond
+                    self.pbond_list.append(ph.pbond)
 
         # reusable mpos for the system
         self.mpos = dict()
         
         # MolList2 type parameter
         # for use in MolList2 routine
-        self.order = None
-        self.basis = None
-        self.model = None
-        self.model_translator = None
-
+        mollist2 = MolList2.MolList_to_MolList2(self)
+        self.order = mollist2.order
+        self.basis = mollist2.basis
+        self.model = mollist2.model
+        self.model_translator = mollist2.model_translator
+        self.dipole = mollist2.dipole
+        self.map = mollist2.map
+        self.e_dofs = mollist2.e_dofs
+        self.v_dofs = mollist2.v_dofs
 
     @property
     def mol_num(self):
@@ -413,6 +393,10 @@ class MolList:
     @property
     def ph_modes_num(self):
         return sum([mol.n_dmrg_phs for mol in self.mol_list])
+
+    @property
+    def gs_zpe(self):
+        return sum(mol.gs_zpe for mol in self)
 
     @property
     def pure_dmrg(self):
@@ -487,8 +471,8 @@ class MolList:
             l.append(mol)
         return self.__class__(l, self.j_matrix, scheme=self.scheme)
     
-    def mol_list2_para(self, formula="vibronic"):
-        mol_list2 = MolList2.MolList_to_MolList2(self, formula)
+    def mol_list2_para(self):
+        mol_list2 = MolList2.MolList_to_MolList2(self)
         self.multi_dof_basis = self.scheme == 4
         self.order = mol_list2.order
         self.basis = mol_list2.basis
@@ -497,12 +481,7 @@ class MolList:
             #sbm
             self.model_translator = ModelTranslator.sbm
         else:
-            if formula == "vibronic":
-                self.model_translator = ModelTranslator.vibronic_model
-            elif formula == "general":
-                self.model_translator = ModelTranslator.general_model
-            else:
-                raise ValueError
+            self.model_translator = ModelTranslator.general_model
     
     def rewrite_model(self, model, model_translator):
         mol_list_new = self.__class__(self.mol_list.copy(),

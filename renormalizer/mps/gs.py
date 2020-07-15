@@ -49,7 +49,7 @@ def find_highest_energy(h_mpo: Mpo, nexciton, Mmax, with_hartree=True):
 
 
 def construct_mps_mpo_2(
-    mol_list, Mmax, nexciton, rep="star", offset=Quantity(0)
+    mol_list, Mmax, nexciton, offset=Quantity(0)
 ):
     """
     MPO/MPS structure 2
@@ -59,7 +59,7 @@ def construct_mps_mpo_2(
     """
     initialize MPO
     """
-    mpo = Mpo(mol_list, rep=rep, offset=offset)
+    mpo = Mpo(mol_list, offset=offset)
 
     """
     initialize MPS according to quantum number

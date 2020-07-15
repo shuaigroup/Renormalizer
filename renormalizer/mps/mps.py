@@ -281,13 +281,12 @@ class Mps(MatrixProduct):
                     assert False
                 # ph mps
                 for ph in mol.dmrg_phs:
-                    for iboson in range(ph.nqboson):
-                        ms = np.zeros((1, ph.base, 1))
-                        if max_entangled:
-                            ms[0, :, 0] = 1.0 / np.sqrt(ph.base)
-                        else:
-                            ms[0, 0, 0] = 1.0
-                        mps.append(ms)
+                    ms = np.zeros((1, ph.pbond, 1))
+                    if max_entangled:
+                        ms[0, :, 0] = 1.0 / np.sqrt(ph.pbond)
+                    else:
+                        ms[0, 0, 0] = 1.0
+                    mps.append(ms)
 
             mps.tdh_wfns = []
 
@@ -373,7 +372,7 @@ class Mps(MatrixProduct):
         return mp
 
     def __init__(self):
-        super(Mps, self).__init__()
+        super().__init__()
         # todo: tdh part with GPU backend
         # tdh part will merge into tdvp evolution scheme in the future
         self.tdh_wfns = [1]
@@ -541,72 +540,38 @@ class Mps(MatrixProduct):
     @property
     def ph_occupations(self):
         key = "ph_occupations"
-        if isinstance(self.mol_list, MolList):
-            if key not in self.mol_list.mpos:
-                mpos = []
-                for imol, mol in enumerate(self.mol_list):
-                    for iph in range(len(mol.dmrg_phs)):
-                        mpos.append(Mpo.ph_onsite(self.mol_list, r"b^\dagger b", imol, iph))
-                self.mol_list.mpos[key] = mpos
-            else:
-                mpos = self.mol_list.mpos[key]
-        
-        elif isinstance(self.mol_list, MolList2):
-            # ph_occupations is actually the occupation of the basis
-            if key not in self.mol_list.mpos:
-                mpos = []
-                for dof in self.mol_list.v_dofs:
-                    mpos.append(
-                        Mpo.general_mpo(self.mol_list,
-                            model={(dof,):[(Op("n",0), 1.)]},
-                            model_translator=ModelTranslator.general_model)
-                        )
-                # the order is v_dofs order, "v_0", "v_1",...
-                self.mol_list.mpos[key] = mpos
-            else:
-                mpos = self.mol_list.mpos[key]
-        
+        # ph_occupations is actually the occupation of the basis
+        if key not in self.mol_list.mpos:
+            mpos = []
+            for dof in self.mol_list.v_dofs:
+                mpos.append(
+                    Mpo.general_mpo(self.mol_list,
+                        model={(dof,):[(Op("n",0), 1.)]},
+                        model_translator=ModelTranslator.general_model)
+                    )
+            # the order is v_dofs order, "v_0", "v_1",...
+            self.mol_list.mpos[key] = mpos
         else:
-            assert False
+            mpos = self.mol_list.mpos[key]
+
         return self.expectations(mpos)
 
     @property
     def e_occupations(self):
-        if isinstance(self.mol_list, MolList):
-            if self.mol_list.scheme < 4:
-                key = "e_occupations"
-                if key not in self.mol_list.mpos:
-                    mpos = [
-                        Mpo.onsite(self.mol_list, r"a^\dagger a", mol_idx_set={i})
-                        for i in range(self.mol_num)
-                    ]
-                    self.mol_list.mpos[key] = mpos
-                else:
-                    mpos = self.mol_list.mpos[key]
-                return self.expectations(mpos)
-            elif self.mol_list.scheme == 4:
-                # get rdm is very fast
-                rdm = self.calc_reduced_density_matrix()
-                return np.diag(rdm).real
-            else:
-                assert False
-        elif isinstance(self.mol_list, MolList2):
-            key = "e_occupations"
-            if key not in self.mol_list.mpos:
-                mpos = []
-                for dof in self.mol_list.e_dofs:
-                        mpos.append(
-                            Mpo.general_mpo(self.mol_list,
-                                model={(dof,):[(Op(r"a^\dagger a", 0),1.0)]},
-                                model_translator=ModelTranslator.general_model)
-                            )
-                # the order is e_dofs order
-                self.mol_list.mpos[key] = mpos
-            else:
-                mpos = self.mol_list.mpos[key]
-            return self.expectations(mpos)
+        key = "e_occupations"
+        if key not in self.mol_list.mpos:
+            mpos = []
+            for dof in self.mol_list.e_dofs:
+                    mpos.append(
+                        Mpo.general_mpo(self.mol_list,
+                            model={(dof,):[(Op(r"a^\dagger a", 0),1.0)]},
+                            model_translator=ModelTranslator.general_model)
+                        )
+            # the order is e_dofs order
+            self.mol_list.mpos[key] = mpos
         else:
-            assert False
+            mpos = self.mol_list.mpos[key]
+        return self.expectations(mpos)
 
     def metacopy(self) -> "Mps":
         new = super().metacopy()
@@ -1398,9 +1363,7 @@ class Mps(MatrixProduct):
         ).real
         e_mean += A_el.dot(elocal_offset)
         total_offset = mpo_indep.offset + Quantity(e_mean.real)
-        MPO = Mpo(
-            mol_list, mpo_indep.rep, elocal_offset=elocal_offset, offset=total_offset,
-        )
+        MPO = Mpo(mol_list, offset=total_offset)
 
         Etot += e_mean
 

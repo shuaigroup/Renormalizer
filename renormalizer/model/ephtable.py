@@ -19,8 +19,7 @@ class EphTable(tuple):
         if scheme < 4:
             for mol in mol_list:
                 eph_list.append(electron)
-                for ph in mol.dmrg_phs:
-                    eph_list.extend([phonon] * ph.nqboson)
+                eph_list.extend([phonon] * len(mol.dmrg_phs))
         elif scheme == 4:
             for imol, mol in enumerate(mol_list):
                 if imol == len(mol_list) // 2:

@@ -54,11 +54,9 @@ class Quantity:
     # a simplified and incomplete model for + - * /
     # + - only allowed between Quantities
     # * / only allowed between Quantities and non-Quantities
-    # todo: retain their own unit
 
     def __neg__(self):
-        self.value = -self.value
-        return self
+        return Quantity(-self.value, self.unit)
 
     def __add__(self, other):
         assert isinstance(other, Quantity)

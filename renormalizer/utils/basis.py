@@ -389,7 +389,7 @@ class BasisHalfSpin(BasisSet):
             op_symbol = op_symbol[0]
             # Todo: the string itself may sometimes consume a lot of memory when
             # the number of terms in O is very huge
-            # replace sigma_x with s_x in the furture
+            # replace sigma_x with s_x in the future
             if op_symbol == "I":
                 mat = np.eye(2)
             elif op_symbol == "sigma_x":

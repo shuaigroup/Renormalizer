@@ -59,14 +59,14 @@ def test_thermal_prop(mol_list, adaptive, evolve_method):
     mpo = Mpo(mol_list)
     beta = Quantity(298, "K").to_beta()
     evolve_time = beta / 2j
-    
+
     evolve_config = EvolveConfig(evolve_method, adaptive=adaptive, guess_dt=0.1/1j)
-    
+
     if adaptive:
         nsteps = 1
     else:
         nsteps = 100
-    
+
     if evolve_method == EvolveMethod.tdvp_mu_vmf:
         nsteps = 20
         evolve_config.ivp_rtol = 1e-3
@@ -81,15 +81,14 @@ def test_thermal_prop(mol_list, adaptive, evolve_method):
     # MPO, HAM, Etot, A_el = mps.construct_hybrid_Ham(mpo, debug=True)
     # exact A_el: 0.20896541050347484, 0.35240029674394463, 0.4386342927525734
     # exact internal energy: 0.0853388060014744
-    etot_std = 0.0853388
+    etot_std = 0.0853388 + parameter.mol_list.gs_zpe
     occ_std = [0.20896541050347484, 0.35240029674394463, 0.4386342927525734]
     rtol = 5e-3
-    if mol_list is mollist2:
-        etot_std += parameter.mol_list[0].gs_zpe * parameter.mol_list.mol_num
     assert np.allclose(tp.e_occupations_array[-1], occ_std, rtol=rtol)
     assert np.allclose(tp.energies[-1], etot_std, rtol=rtol)
 
-
+# todo: move to transport module
+@pytest.mark.xfail(reason="negative frequency not suited for MolList2")
 def test_bogoliubov():
     # REF: JCP, 2016, 145, 224101
     evolve_config = EvolveConfig(EvolveMethod.tdvp_ps)

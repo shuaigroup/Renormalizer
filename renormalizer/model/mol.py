@@ -86,9 +86,6 @@ class Mol:
 
     @property
     def no_qboson(self):
-        for ph in self.dmrg_phs:
-            if ph.nqboson != 1:
-                return False
         return True
 
     @property
@@ -97,7 +94,7 @@ class Mol:
 
     @property
     def sbm(self):
-        return self.tunnel != 0
+        return not np.allclose(self.tunnel, 0)
 
     @property
     def gs_zpe(self):

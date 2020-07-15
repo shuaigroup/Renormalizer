@@ -9,7 +9,7 @@ import numpy as np
 
 from renormalizer.model import MolList, MolList2, ModelTranslator, Mol, Phonon
 from renormalizer.mps import Mpo, Mps
-from renormalizer.tests.parameter import mol_list, ph_phys_dim, omega_quantities
+from renormalizer.tests.parameter import mol_list
 from renormalizer.mps.tests import cur_dir
 from renormalizer.utils import Quantity, Op
 from renormalizer.utils import basis as ba
@@ -22,7 +22,7 @@ def test_exact_propagator(dt, space, shift):
     std_mpo = std_dict[space]
     assert prop_mpo == std_mpo
 
-@pytest.mark.parametrize("scheme", (1, 2, 3, 4))
+@pytest.mark.parametrize("scheme", (1, 4))
 def test_offset(scheme):
     ph = Phonon.simple_phonon(Quantity(3.33), Quantity(1), 2)
     m = Mol(Quantity(0), [ph] * 2)
@@ -77,7 +77,7 @@ def test_scheme4():
     assert pytest.approx(e4) == e3
 
 
-@pytest.mark.parametrize("scheme", (2, 3, 4))
+@pytest.mark.parametrize("scheme", (1, 4))
 def test_intersite(scheme):
 
     local_mlist = mol_list.switch_scheme(scheme)
@@ -97,25 +97,12 @@ def test_intersite(scheme):
     mpo7 = Mpo.onsite(local_mlist, "a", mol_idx_set=[2])
     assert mpo2.apply(mpo7).distance(mpo6) == pytest.approx(0, abs=1e-5)
 
-    # the tests are based on the similarity between scheme 2 and scheme 3
-    # so scheme 3 and scheme 4 will be skipped
-    if scheme == 2:
-        mpo8 = Mpo(local_mlist)
-        # a dirty hack to switch from scheme 2 to scheme 3
-        test_mlist = local_mlist.switch_scheme(2)
-        test_mlist.scheme = 3
-        mpo9 = Mpo(test_mlist)
-        mpo10 = Mpo.intersite(test_mlist, {0:r"a^\dagger",2:"a"}, {},
-                Quantity(local_mlist.j_matrix[0,2]))
-        mpo11 = Mpo.intersite(test_mlist, {2:r"a^\dagger",0:"a"}, {},
-                Quantity(local_mlist.j_matrix[0,2]))
+    mpo8 = Mpo.intersite(local_mlist, {0: r"a^\dagger", 2: "a"}, {},
+                         Quantity(local_mlist.j_matrix[0,2]))
+    mpo9 = Mpo.intersite(local_mlist, {2:r"a^\dagger",0:"a"}, {},
+            Quantity(local_mlist.j_matrix[0,2]))
 
-        assert mpo11.conj_trans().distance(mpo10) == pytest.approx(0, abs=1e-6)
-        assert mpo8.distance(mpo9 + mpo10 + mpo11) == pytest.approx(0, abs=1e-6)
-
-        test_mlist.periodic = True
-        mpo12 = Mpo(test_mlist)
-        assert mpo12.distance(mpo9 + mpo10 + mpo11) == pytest.approx(0, abs=1e-6)
+    assert mpo9.conj_trans().distance(mpo8) == pytest.approx(0, abs=1e-6)
 
     ph_mpo1 = Mpo.ph_onsite(local_mlist, "b", 1, 1)
     ph_mpo2 = Mpo.intersite(local_mlist, {}, {(1,1):"b"})
@@ -139,41 +126,21 @@ from renormalizer.tests.parameter_PBI import construct_mol
 
 @pytest.mark.parametrize("mol_list", (mol_list, construct_mol(10,10,0)))
 @pytest.mark.parametrize("scheme", (
-        123,
+        1,
         4,
 ))
 def test_general_mpo_MolList(mol_list, scheme):
-    
+
     if scheme == 4:
         mol_list1 = mol_list.switch_scheme(4)
     else:
         mol_list1 = mol_list
 
     mol_list1.mol_list2_para()
-    mpo = Mpo.general_mpo(mol_list1,
-            const=Quantity(-mol_list1[0].gs_zpe*mol_list1.mol_num))
+    mpo = Mpo.general_mpo(mol_list1)
     mpo_std = Mpo(mol_list1)
     check_result(mpo, mpo_std)
-    
-@pytest.mark.parametrize("mol_list", (mol_list, construct_mol(10,10,0)))
-@pytest.mark.parametrize("scheme", (123, 4))
-@pytest.mark.parametrize("formula", ("vibronic", "general"))
-def test_general_mpo_MolList2(mol_list, scheme, formula):
-    if scheme == 4:
-        mol_list1 = mol_list.switch_scheme(4)
-    else:
-        mol_list1 = mol_list
 
-    # scheme123
-    mol_list2 = MolList2.MolList_to_MolList2(mol_list1, formula=formula)
-    mpo_std = Mpo(mol_list1)
-    # classmethod method
-    mpo = Mpo.general_mpo(mol_list2, const=Quantity(-mol_list[0].gs_zpe*mol_list.mol_num))
-    check_result(mpo, mpo_std)
-    # __init__ method, same api
-    mpo = Mpo(mol_list2, offset=Quantity(mol_list[0].gs_zpe*mol_list.mol_num))
-    check_result(mpo, mpo_std)
-    
 
 def test_general_mpo_others():
     

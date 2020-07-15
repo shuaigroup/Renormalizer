@@ -24,7 +24,7 @@ def test_general_mpo_sbm():
     mol = get_mol()
     mol_list = MolList([mol], Quantity(0))
     mol_list.mol_list2_para()
-    mpo = Mpo.general_mpo(mol_list, const=Quantity(-mol_list[0].gs_zpe*mol_list.mol_num))
+    mpo = Mpo.general_mpo(mol_list)
     mpo_std = Mpo(mol_list)
     check_result(mpo, mpo_std)
     
@@ -51,11 +51,12 @@ def test_zt():
         dt = mps.evolve_config.guess_dt
         mps = mps.evolve(mpo, evolve_dt=dt)
         time_series.append(time_series[-1] + dt)
-        spin.append(1 - 2 * mps.e_occupations[0])
-    exact = get_exact_zt(mol, time_series)
-    assert np.allclose(exact, spin, atol=1e-3)
+        spin.append(mps.expectation(Mpo.onsite(mol_list, "sigma_z")))
+    qutip_res = get_qutip_zt(mol, time_series)
+    assert np.allclose(qutip_res, spin, atol=1e-3)
 
 
+@pytest.mark.xfail(reason="thermal prop calculate electron occupations (not valid for spin)")
 def test_ft():
     mol = get_mol()
     mol_list = MolList([mol], Quantity(0))
@@ -76,12 +77,12 @@ def test_ft():
         dt = mpdm.evolve_config.guess_dt
         mpdm = mpdm.evolve(mpo, evolve_dt=dt)
         time_series.append(time_series[-1] + dt)
-        spin.append(1 - 2 * mpdm.e_occupations[0])
-    exact = get_exact_ft(mol, temperature, time_series)
-    assert np.allclose(exact, spin, atol=1e-3)
+        spin.append(mpdm.expectation(Mpo.onsite(mol_list, "sigma_z")))
+    qutip_res = get_qutip_ft(mol, temperature, time_series)
+    assert np.allclose(qutip_res, spin, atol=1e-3)
 
 
-def get_exact_operator(mol):
+def get_qutip_operator(mol):
     blist = []
     for i, ph1 in enumerate(mol.dmrg_phs):
         basis = [qutip.identity(2)]
@@ -109,15 +110,15 @@ def get_exact_operator(mol):
     return H, sigma_x, sigma_z
 
 
-def get_exact_zt(mol, time_series):
-    H, _, sigma_z = get_exact_operator(mol)
+def get_qutip_zt(mol, time_series):
+    H, _, sigma_z = get_qutip_operator(mol)
     init_state = qutip.tensor([qutip.basis(2)] + [qutip.basis(ph.n_phys_dim) for ph in mol.dmrg_phs])
     result = qutip.mesolve(H, init_state, time_series, e_ops=[sigma_z])
     return result.expect[0]
 
 
-def get_exact_ft(mol, temperature, time_series):
-    H, sigma_x, sigma_z = get_exact_operator(mol)
+def get_qutip_ft(mol, temperature, time_series):
+    H, sigma_x, sigma_z = get_qutip_operator(mol)
     init_state =  sigma_x * (-temperature.to_beta() * H).expm().unit() * sigma_x.dag()
     result = qutip.mesolve(H, init_state, time_series, e_ops=[sigma_z])
     return result.expect[0]

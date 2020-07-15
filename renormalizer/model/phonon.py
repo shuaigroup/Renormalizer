@@ -72,8 +72,6 @@ class Phonon(object):
         displacement,
         n_phys_dim: int =None,
         force3rd=None,
-        nqboson=1,
-        qbtrunc=0.0,
         hartree=False,
     ):
         # omega is a list for different PES omega[0], omega[1]...
@@ -86,9 +84,6 @@ class Phonon(object):
         else:
             self.force3rd = force3rd
         self.n_phys_dim: int = n_phys_dim
-        self.nqboson = nqboson
-        self.qbtrunc = qbtrunc
-        self.base = int(round(n_phys_dim ** (1.0 / nqboson)))
         self.hartree = hartree
         if hartree:
             phop = construct_ph_op_dict(self.n_phys_dim)
@@ -105,7 +100,6 @@ class Phonon(object):
             self.h_indep = self.h_dep = None
 
     def get_displacement_evecs(self) -> np.ndarray:
-        assert self.nqboson == 1
         h = np.zeros((self.n_phys_dim, self.n_phys_dim))
         for i in range(self.n_phys_dim):
             h[i, i] = i
@@ -141,7 +135,7 @@ class Phonon(object):
 
     @property
     def pbond(self):
-        return [self.base] * self.nqboson
+        return self.n_phys_dim
 
     @property
     def nlevels(self):
@@ -161,7 +155,7 @@ class Phonon(object):
 
     @property
     def is_simple(self):
-        return self.force3rd == (0.0, 0.0) and self.nqboson == 1 and self.omega[0] == self.omega[1]
+        return self.force3rd == (0.0, 0.0)  and self.omega[0] == self.omega[1]
 
     @property
     def coupling_constant(self):  # the $g$
@@ -205,9 +199,6 @@ class Phonon(object):
         print("omega   = ", self.omega)
         print("displacement = ", self.dis)
         print("nlevels = ", self.n_phys_dim)
-        print("nqboson = ", self.nqboson)
-        print("qbtrunc = ", self.qbtrunc)
-        print("base =", self.base)
 
     def __eq__(self, other):
         a = self.__dict__

@@ -131,7 +131,7 @@ class TransportKubo(TdMpsJob):
         logger.info("constructing current operator ")
 
         if isinstance(self.mol_list, MolList):
-            self.mol_list.mol_list2_para("general")
+            self.mol_list.mol_list2_para()
             mol_num = self.mol_list.mol_num
             model = self.mol_list.model
         else:
