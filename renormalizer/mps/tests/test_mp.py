@@ -61,12 +61,16 @@ def test_environ():
 
 
 @pytest.mark.parametrize("comp", (True, False))
-@pytest.mark.parametrize("mp", ("mps", "mpdm", "mpo" ))
+@pytest.mark.parametrize("mp", (
+        "mps",
+        "mpdm",
+        "mpo",
+))
 def test_svd_compress(comp, mp):
     
     if mp == "mpo":
         mps = Mpo(mol_list)
-        M = 20
+        M = 22
     else:
         mps = Mps.random(mol_list, 1, 10)
         if mp == "mpdm":

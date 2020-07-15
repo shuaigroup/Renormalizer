@@ -24,7 +24,7 @@ def test_holstein_kubo(scheme, mollist2):
     mol = Mol(Quantity(0), [ph])
     mol_list1 = MolList([mol] * 5, Quantity(1), scheme)
     if mollist2:
-        mol_list = MolList2.MolList_to_MolList2(mol_list1, "general")
+        mol_list = MolList2.MolList_to_MolList2(mol_list1)
     else:
         mol_list = mol_list1
     temperature = Quantity(50000, 'K')

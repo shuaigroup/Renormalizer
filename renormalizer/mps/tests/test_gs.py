@@ -41,7 +41,6 @@ def test_construct_MPO_scheme3():
 
 @pytest.mark.parametrize("scheme", (
         1,
-        2,
         4,
 ))
 def test_optimization(scheme):
@@ -49,11 +48,11 @@ def test_optimization(scheme):
     mps.optimize_config.procedure = procedure
     mps.optimize_config.method = "2site"
     energy = optimize_mps(mps.copy(), mpo)
-    assert energy * constant.au2ev == pytest.approx(2.28614053133, rel=1e-5)
+    assert energy == pytest.approx(0.08401412 + mol_list.gs_zpe, rel=1e-5)
 
     mps.optimize_config.method = "1site"
     energy = optimize_mps(mps.copy(), mpo)
-    assert energy * constant.au2ev == pytest.approx(2.28614053133, rel=1e-5)
+    assert energy == pytest.approx(0.08401412 + mol_list.gs_zpe, rel=1e-5)
 
 @pytest.mark.parametrize("method", (
         "1site",
@@ -67,5 +66,5 @@ def test_multistate(method):
     mps.optimize_config.e_atol = 1e-6
     mps.optimize_config.e_rtol = 1e-6
     energy = optimize_mps(mps.copy(), mpo)
-    energy_std = [0.08401412, 0.08449771, 0.08449801, 0.08449945]
+    energy_std = np.array([0.08401412, 0.08449771, 0.08449801, 0.08449945]) + mol_list.gs_zpe
     assert np.allclose(energy, energy_std)

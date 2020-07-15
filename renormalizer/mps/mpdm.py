@@ -183,7 +183,6 @@ class MpDm(MpDmBase):
             else:
                 assert False
 
-
     def calc_reduced_density_matrix(self) -> np.ndarray:
         if isinstance(self.mol_list, MolList):
             return self._calc_reduced_density_matrix(self, self.conj_trans())

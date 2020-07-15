@@ -79,7 +79,7 @@ def test_2site():
         energies.append(mpdm_full.expectation(liouville))
         mpdm_full = mpdm_full.evolve(liouville, 0.4)
     ph_occupations_array = np.array(ph_occupations_array)
-    assert energies[-1] == pytest.approx(-0.340162, rel=1e-2)
+    assert energies[-1] == pytest.approx(-0.340162 + mol_list.gs_zpe, rel=1e-2)
     assert np.allclose(ph_occupations_array[-1], [0.0930588, 0.099115], rtol=1e-2)
 
 

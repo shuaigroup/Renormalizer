@@ -38,13 +38,11 @@ hybrid_mol_list = MolList(
     [Mol(elocalex, hybrid_ph_list, dipole_abs)] * nmols, _j_matrix
 )
 
-offset = Quantity(2.28614053, "ev")
+offset = Quantity(2.28614053, "ev") + Quantity(mol_list.gs_zpe)
 
 def custom_mol_list(
     custom_j_matrix=None,
     n_phys_dim=None,
-    nqboson=None,
-    qbtrunc=None,
     force3rd=None,
     dis=None,
     hartrees=None,
@@ -54,10 +52,6 @@ def custom_mol_list(
         custom_j_matrix = _j_matrix
     if n_phys_dim is None:
         n_phys_dim = ph_phys_dim
-    if nqboson is None:
-        nqboson = [1, 1]
-    if qbtrunc is None:
-        qbtrunc = [0.0, 0.0]
     if force3rd is None:
         force3rd = [None, None]
     if dis is None:
@@ -68,7 +62,7 @@ def custom_mol_list(
     ph_list = [
         Phonon(*args)
         for args in zip(
-            omega, displacement, n_phys_dim, force3rd, nqboson, qbtrunc, hartrees
+            omega, displacement, n_phys_dim, force3rd, hartrees
         )
     ]
     return MolList([Mol(elocalex, ph_list, dipole_abs)] * nmols, custom_j_matrix)
