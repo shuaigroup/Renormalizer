@@ -10,6 +10,6 @@ Use the class :class:`~renormalizer.model.MolList` or :class:`~renormalizer.mode
     :inherited-members:
 
 
-.. autoclass:: renormalizer.model.mlist.MolList
+.. autoclass:: renormalizer.model.mlist.HolsteinModel
     :members:
     :inherited-members:

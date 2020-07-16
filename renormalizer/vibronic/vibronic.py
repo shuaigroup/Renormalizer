@@ -32,7 +32,6 @@ class VibronicModelDynamics(TdMpsJob):
             expand: bool = False
         ):
 
-        assert isinstance(mol_list, MolList2)
         self.mol_list = mol_list
         
         if compress_config is None:

@@ -1,10 +1,10 @@
 import numpy as np
 
 from renormalizer.utils import Quantity, constant
-from renormalizer.model import MolList, Mol, Phonon
+from renormalizer.model import HolsteinModel, Mol, Phonon
 
 
-def construct_mol(nmols, dmrg_nphs, hartree_nphs) -> MolList:
+def construct_mol(nmols, dmrg_nphs, hartree_nphs) -> HolsteinModel:
     assert dmrg_nphs + hartree_nphs == 10
     elocalex = Quantity(2.13 / constant.au2ev)
     dipole_abs = 1.0
@@ -39,7 +39,7 @@ def construct_mol(nmols, dmrg_nphs, hartree_nphs) -> MolList:
         for args in zip(omega, displacement, ph_phys_dim, is_hartree)
     ]
 
-    mol_list = MolList([Mol(elocalex, ph_list, dipole_abs)] * nmols, Quantity(500, "cm-1"), scheme=3)
+    mol_list = HolsteinModel([Mol(elocalex, ph_list, dipole_abs)] * nmols, Quantity(500, "cm-1"), )
     #mol_list = MolList([Mol(elocalex, ph_list, dipole_abs, heatbath=True)] * nmols, Quantity(0.0124, "eV"))
 
     return mol_list

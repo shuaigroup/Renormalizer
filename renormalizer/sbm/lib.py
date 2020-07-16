@@ -7,7 +7,7 @@ import scipy
 import scipy.special
 import scipy.optimize
 
-from renormalizer.model import Phonon, Mol, MolList
+from renormalizer.model import Phonon, Mol, HolsteinModel
 from renormalizer.utils import Quantity
 
 
@@ -161,4 +161,4 @@ def param2mollist(alpha: float, raw_delta: Quantity, omega_c: Quantity, renormal
 
     ph_list = [Phonon.simplest_phonon(o, d) for o,d in zip(omega_list, displacement_list)]
     mol = Mol(Quantity(0), ph_list, tunnel=delta)
-    return MolList([mol], None)
+    return HolsteinModel([mol], None, )

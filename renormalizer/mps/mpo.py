@@ -7,7 +7,7 @@ import numpy as np
 import scipy
 import scipy.sparse
 
-from renormalizer.model import MolList, MolList2, ModelTranslator
+from renormalizer.model import MolList2
 from renormalizer.mps.backend import xp
 from renormalizer.mps.matrix import moveaxis, tensordot, asnumpy
 from renormalizer.mps.mp import MatrixProduct
@@ -292,164 +292,6 @@ def symbolic_mpo(table, factor, algo="Hopcroft-Karp"):
     return mpo, mpoqn, qntot, qnidx
 
 
-def _model_translator_sbm(mol_list, const=Quantity(0.)):
-    """
-    construct a spin-boson model operator table
-    """
-    assert isinstance(mol_list, MolList)
-    assert mol_list.mol_num == 1
-    
-    # the site order   
-    order = {}
-    order["spin"] = 0
-    idx = 1
-    for iph in range(mol_list[0].n_dmrg_phs):
-        order[iph] = idx
-        idx += 1
-        
-    nsite = len(order)
-    
-    factor = []
-    table = []
-    
-    # system part
-    ta = [Op.identity() for i in range(nsite)]
-    ta[order["spin"]] = Op("sigma_z", 0)
-    factor.append(mol_list[0].elocalex)
-    table.append(ta)
-
-    ta = [Op.identity() for i in range(nsite)]
-    ta[order["spin"]] = Op("sigma_x", 0)
-    factor.append(mol_list[0].tunnel)
-    table.append(ta)
-
-    # environment part and
-    # system-environment coupling
-    for iph in range(mol_list[0].n_dmrg_phs):
-        assert mol_list[0].dmrg_phs[iph].is_simple
-        # kinetic
-        ta = [Op.identity() for i in range(nsite)]
-        ta[order[iph]] = Op("p^2", 0)
-        factor.append(0.5)
-        table.append(ta)
-        # potential
-        ta = [Op.identity() for i in range(nsite)]
-        ta[order[iph]] = Op("x^2", 0)
-        factor.append(0.5*mol_list[0].dmrg_phs[iph].omega[0]**2)
-        table.append(ta)
-        # coupling
-        ta = [Op.identity() for i in range(nsite)]
-        ta[order["spin"]] = Op("sigma_z", 0)
-        ta[order[iph]] = Op("x", 0)
-        factor.append(-mol_list[0].dmrg_phs[iph].dis[1]*mol_list[0].dmrg_phs[iph].omega[0]**2)
-        table.append(ta)
-    
-    # const
-    if const != 0:
-        ta = [Op.identity() for i in range(nsite)]
-        factor.append(const.as_au())
-        table.append(ta)
-
-    factor = np.array(factor)
-    logger.debug(f"# of operator terms: {len(table)}")
-   
-    return table, factor
-
-
-def _model_translator_vibronic_model(mol_list, const=Quantity(0.)):
-    r"""
-    construct a general vibronic model operator table
-    according to mol_list.model and mol_list.order
-    """
-
-    assert mol_list.model is not None 
-    assert mol_list.model_translator == ModelTranslator.vibronic_model 
-    
-    factor = []
-    table = []
-    nsite = mol_list.nsite
-    order = mol_list.order
-    model = mol_list.model
-
-    for e_dof, value in model.items():
-        if e_dof == "I":
-            # pure vibrational term (electron part is identity)
-            for v_dof, ops in value.items():
-                for term in ops:
-                    if term[-1] != 0:
-                        ta = [Op.identity() for i in range(nsite)]
-                        for iop, op in enumerate(term[:-1]):
-                            ta[order[v_dof[iop]]] = op
-                        table.append(ta)
-                        factor.append(term[-1])
-
-        else:
-            if order[e_dof[0]] == order[e_dof[1]]:
-                # same site
-                e_idx = (e_dof[0].split("_")[1], e_dof[1].split("_")[1])
-            
-                for v_dof, ops in value.items():
-                
-                    if v_dof == "J":
-                        if ops != 0:
-                            ta = [Op.identity() for i in range(nsite)]
-                            if list(order.values()).count(order[e_dof[0]]) > 1:
-                                #multi electron site
-                                ta[order[e_dof[0]]] = Op(rf"a^\dagger_{e_idx[0]} a_{e_idx[1]}", 0)
-                            else:
-                                assert e_idx[0] == e_idx[1]
-                                ta[order[e_dof[0]]] = Op(r"a^\dagger a", 0)
-                            table.append(ta)
-                            factor.append(ops)
-                    else:
-                        for term in ops:
-                            if term[-1] != 0:
-                                ta = [Op.identity() for i in range(nsite)]
-                                if list(order.values()).count(order[e_dof[0]]) > 1:
-                                    #multi electron site
-                                    ta[order[e_dof[0]]] = Op(rf"a^\dagger_{e_idx[0]} a_{e_idx[1]}", 0)
-                                else:
-                                    assert e_idx[0] == e_idx[1]
-                                    ta[order[e_dof[0]]] = Op(r"a^\dagger a", 0)
-                                for iop, op in enumerate(term[:-1]):
-                                    ta[order[v_dof[iop]]] = op
-                                table.append(ta)
-                                factor.append(term[-1])
-
-            else:                
-                
-                for v_dof, ops in value.items():
-                
-                    if v_dof == "J":
-                        if ops != 0:
-                            ta = [Op.identity() for i in range(nsite)]
-                            ta[order[e_dof[0]]] = Op(r"a^\dagger", 1)
-                            ta[order[e_dof[1]]] = Op("a", -1)
-                            table.append(ta)
-                            factor.append(ops)
-                    else:
-                        for term in ops:
-                            if term[-1] != 0:
-                                ta = [Op.identity() for i in range(nsite)]
-                                ta[order[e_dof[0]]] = Op(r"a^\dagger", 1)
-                                ta[order[e_dof[1]]] = Op("a", -1)
-                                for iop, op in enumerate(term[:-1]):
-                                    ta[order[v_dof[iop]]] = op
-                                table.append(ta)
-                                factor.append(term[-1])
-        
-    # const
-    if const != 0:
-        ta = [Op.identity() for i in range(nsite)]
-        factor.append(const.as_au())
-        table.append(ta)
-    
-    factor = np.array(factor)
-    logger.debug(f"# of operator terms: {len(table)}")
-
-    return table, factor
-
-
 def add_idx(symbol, idx):
     symbols = symbol.split(" ")
     for i in range(len(symbols)):
@@ -457,20 +299,17 @@ def add_idx(symbol, idx):
     return " ".join(symbols)
 
 
-def _model_translator_general_model(mol_list, const=Quantity(0.)):
+def _model_translator_general_model(mol_list, model, const=Quantity(0.)):
     r"""
     constructing a general operator table
     according to mol_list.model and mol_list.order
     """
-    assert mol_list.model is not None 
-    assert mol_list.model_translator == ModelTranslator.general_model
     
     factor = []
     table = []
     nsite = mol_list.nsite
     order = mol_list.order
     basis = mol_list.basis
-    model = mol_list.model
     
     # clean up 
     # for example 
@@ -564,7 +403,7 @@ class Mpo(MatrixProduct):
     """
 
     @classmethod
-    def exact_propagator(cls, mol_list: MolList, x, space="GS", shift=0.0):
+    def exact_propagator(cls, mol_list: MolList2, x, space="GS", shift=0.0):
         """
         construct the GS space propagator e^{xH} exact MPO
         H=\\sum_{in} \\omega_{in} b^\\dagger_{in} b_{in}
@@ -664,7 +503,7 @@ class Mpo(MatrixProduct):
         return mpo
 
     @classmethod
-    def onsite(cls, mol_list: MolList, opera, dipole=False, mol_idx_set=None):
+    def onsite(cls, mol_list: MolList2, opera, dipole=False, mol_idx_set=None):
 
         qn_dict= {"a":-1, r"a^\dagger":1, r"a^\dagger a":0, "sigma_x":0, "sigma_z": 0}
         if mol_idx_set is None:
@@ -682,24 +521,23 @@ class Mpo(MatrixProduct):
         return mpo
 
     @classmethod
-    def ph_onsite(cls, mol_list: MolList, opera: str, mol_idx:int, ph_idx=0):
+    def ph_onsite(cls, mol_list: MolList2, opera: str, mol_idx:int, ph_idx=0):
         assert opera in ["b", r"b^\dagger", r"b^\dagger b"]
         assert mol_list.map is not None
 
         model = {(mol_list.map[(mol_idx, ph_idx)],): [(Op(opera,0), 1.0)]}
-        mpo = cls.general_mpo(mol_list, model=model,
-                model_translator=ModelTranslator.general_model)
+        mpo = cls.general_mpo(mol_list, model=model)
 
         return mpo
 
     @classmethod
-    def intersite(cls, mol_list: MolList, e_opera: dict, ph_opera: dict, scale:
+    def intersite(cls, mol_list: MolList2, e_opera: dict, ph_opera: dict, scale:
             Quantity=Quantity(1.)):
         """ construct the inter site MPO
         
         Parameters
         ----------
-        mol_list : MolList
+        mol_list : MolList2
             the molecular information
         e_opera:
             the electronic operators. {imol: operator}, such as {1:"a", 3:r"a^\dagger"}
@@ -747,13 +585,13 @@ class Mpo(MatrixProduct):
             # quantum number index, |0><1|
             tag_1, tag_2 = 1, 0
         X.qn = [[[0, 0]]]
-        for ix in range(len(mol_list.ephtable) - 1):
+        for ix in range(mol_list.nsite - 1):
             X.qn.append(None)
         X.qn.append([[0, 0]])
         dim_list = [1]
 
-        for ix in range(len(mol_list.ephtable) - 1):
-            if mol_list.ephtable.is_electron(ix):
+        for ix in range(mol_list.nsite - 1):
+            if mol_list.is_electron(ix):
                 qnbig = list(itertools.chain.from_iterable(
                     [np.add(y, [0, 0]), np.add(y, [0, 1]),
                      np.add(y, [1, 0]), np.add(y, [1, 1])]
@@ -824,7 +662,7 @@ class Mpo(MatrixProduct):
 
 
     @classmethod
-    def identity(cls, mol_list: MolList):
+    def identity(cls, mol_list: MolList2):
         mpo = cls()
         mpo.mol_list = mol_list
         for p in mol_list.pbond_list:
@@ -833,42 +671,28 @@ class Mpo(MatrixProduct):
         return mpo
     
     @classmethod
-    def general_mpo(cls, mol_list, offset=Quantity(0.), model=None, model_translator=ModelTranslator.general_model):
+    def general_mpo(cls, mol_list, offset=Quantity(0.), model=None):
         """
         MolList2 or MolList with MolList2 parameters
         """
-        return cls(mol_list, offset, model, model_translator)
+        return cls(mol_list, offset, model)
     
-    def _general_mpo(self, mol_list, const=Quantity(0.), model=None, model_translator=None):
+    def _general_mpo(self, mol_list, const=Quantity(0.), model=None):
         # construct a real mpo matrix elements into mpo shell
 
         assert len(self) == 0
 
-        orig_mol_list = mol_list
-        if isinstance(mol_list, MolList):
-            mol_list = MolList2.MolList_to_MolList2(mol_list)
-
-
-        translator_list = {
-                ModelTranslator.sbm: _model_translator_sbm,
-                ModelTranslator.vibronic_model: _model_translator_vibronic_model,
-                ModelTranslator.general_model: _model_translator_general_model
-                }
-
         if model is None:
-            # internal model (model is provided by `mol_list`)
-            table, factor = translator_list[mol_list.model_translator](mol_list, const)
-        else:
-            # external model (model is provided by `model` and `model_translator`. `mol_list` is just a ref.)
-            assert model_translator is not None
-            table, factor = translator_list[model_translator](mol_list.rewrite_model(model, model_translator), const)
+            model = mol_list.model
+
+        table, factor = _model_translator_general_model(mol_list, model, const)
 
         self.dtype = factor.dtype
 
         mpo_symbol, mpo_qn, qntot, qnidx = symbolic_mpo(table, factor)
         # todo: elegant way to express the symbolic mpo
         #logger.debug(f"symbolic mpo: \n {np.array(mpo_symbol)}")
-        self.mol_list = orig_mol_list
+        self.mol_list = mol_list
         self.qnidx = qnidx
         self.qntot = qntot
         self.qn = mpo_qn
@@ -890,13 +714,7 @@ class Mpo(MatrixProduct):
             self.append(mo_mat)
 
 
-    def __init__(
-        self,
-        mol_list: MolList=None,
-        offset: Quantity=Quantity(0),
-        model: Dict=None,
-        model_translator=ModelTranslator.general_model,
-    ):
+    def __init__(self, mol_list: MolList2 = None, offset: Quantity = Quantity(0), model: Dict = None):
 
         """
         scheme 1: l to r
@@ -905,33 +723,18 @@ class Mpo(MatrixProduct):
         please see doc
         """
         # leave the possibility to construct MPO by hand
+        super(Mpo, self).__init__()
         if mol_list is None:
-            super(Mpo, self).__init__()
             return
-        if isinstance(mol_list, MolList):
-            if mol_list.pure_hartree:
-                raise ValueError("Can't construct MPO for pure hartree model")
         if not isinstance(offset, Quantity):
             raise ValueError("offset must be Quantity object")
-        super(Mpo, self).__init__()
 
         self.offset = offset
-        self._general_mpo(mol_list, const=-offset, model=model,
-                model_translator=model_translator)
+        self._general_mpo(mol_list, const=-offset, model=model)
 
 
     def _get_sigmaqn(self, idx):
-        if isinstance(self.mol_list, MolList2):
-            array_up = self.mol_list.basis[idx].sigmaqn
-        else:
-            if self.ephtable.is_phonon(idx):
-                array_up = np.array([0]*self.pbond_list[idx])
-            elif self.mol_list.scheme < 4 and self.ephtable.is_electron(idx):
-                array_up = np.array([0,1])
-            elif self.mol_list.scheme == 4 and self.ephtable.is_electrons(idx):
-                array_up = np.array([0] + [1] * (self.pbond_list[idx] - 1))
-            else:
-                assert False
+        array_up = self.mol_list.basis[idx].sigmaqn
         return np.subtract.outer(array_up, array_up)
 
     @property

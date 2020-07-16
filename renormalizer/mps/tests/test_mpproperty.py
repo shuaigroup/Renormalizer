@@ -20,7 +20,7 @@ def check_property(mp):
     electron_occupation[mol_list.mol_num // 2] = 1
     assert mp.norm == pytest.approx(1)
     assert np.allclose(mp.e_occupations, electron_occupation)
-    assert np.allclose(mp.ph_occupations, np.zeros((mol_list.ph_modes_num)))
+    assert np.allclose(mp.ph_occupations, 0)
 
 
 def test_mps():

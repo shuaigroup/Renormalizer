@@ -25,7 +25,7 @@ class SpectraZtCV(SpectraCv):
     Use DDMRG to calculate the zero temperature spectrum from frequency domain
 
     Args:
-        mol_list (:class:`~renormalizer.model.MolList`): system information.
+        mol_list (:class:`~renormalizer.model.MolList2`): system information.
         spectratype (str): "abs" or "emi".
         m_max (int): maximal bond dimension of correction vector.
         eta (float): Lorentzian broadening width (a.u.).

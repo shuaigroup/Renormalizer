@@ -7,11 +7,10 @@ from enum import Enum
 from collections import OrderedDict
 from functools import partial
 
-from typing import List
 from scipy.linalg import logm
 
 from renormalizer.mps import Mpo, Mps, MpDm, MpDmFull, SuperLiouville, ThermalProp, load_thermal_state
-from renormalizer.model import MolList
+from renormalizer.model import HolsteinModel
 from renormalizer.utils import TdMpsJob, Quantity, CompressConfig, EvolveConfig
 
 import numpy as np
@@ -35,7 +34,8 @@ class ChargeDiffusionDynamics(TdMpsJob):
     but care must be taken to ensure that mean square displacement grows linearly with time.
 
     Args:
-        mol_list (:class:`~renormalizer.model.mlist.MolList`): system information.
+        mol_list (:class:`~renormalizer.model.mlist.HolsteinModel`): system information.
+            Currently only support :class:`~renormalizer.model.mlist.HolsteinModel`.
         temperature (:class:`~renormalizer.utils.quantity.Quantity`): simulation temperature. Default is zero temperature.
         compress_config (:class:`~renormalizer.utils.configs.CompressConfig`): config when compressing MPS.
         evolve_config (:class:`~renormalizer.utils.configs.EvolveConfig`): config when evolving MPS.
@@ -84,7 +84,7 @@ class ChargeDiffusionDynamics(TdMpsJob):
 
     def __init__(
         self,
-        mol_list: MolList,
+        mol_list: HolsteinModel,
         temperature: Quantity = Quantity(0, "K"),
         compress_config: CompressConfig = None,
         evolve_config: EvolveConfig = None,
@@ -95,7 +95,7 @@ class ChargeDiffusionDynamics(TdMpsJob):
         dump_dir: str = None,
         job_name: str = None,
     ):
-        self.mol_list: MolList = mol_list
+        self.mol_list: HolsteinModel = mol_list
         self.temperature = temperature
         self.mpo = None
         self.init_electron = init_electron
@@ -142,7 +142,8 @@ class ChargeDiffusionDynamics(TdMpsJob):
         center_mol = self.mol_list[center_mol_idx]
         # start from phonon
         for i, ph in enumerate(center_mol.dmrg_phs):
-            idx = self.mol_list.ph_idx(center_mol_idx, i)
+            v_dof = self.mol_list.map[(center_mol_idx, i)]
+            idx = self.mol_list.order[v_dof]
             mt = gs_mp[idx][0, ..., 0].array
             evecs = ph.get_displacement_evecs()
             mt = evecs.dot(mt)

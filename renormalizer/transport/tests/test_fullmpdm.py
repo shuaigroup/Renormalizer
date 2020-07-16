@@ -7,7 +7,7 @@ import pytest
 
 from renormalizer.mps import MpDm, Mpo, MpDmFull, SuperLiouville, Mps, ThermalProp
 from renormalizer.utils import Quantity, CompressConfig
-from renormalizer.model import Phonon, Mol, MolList
+from renormalizer.model import Phonon, Mol, HolsteinModel
 from renormalizer.transport.dynamics import calc_r_square
 from renormalizer.transport.tests.band_param import band_limit_mol_list, low_t, get_analytical_r_square
 
@@ -63,7 +63,7 @@ def test_dynamics(dissipation, dt, nsteps):
 def test_2site():
     ph = Phonon.simple_phonon(Quantity(1), Quantity(1), 2)
     m = Mol(Quantity(0), [ph])
-    mol_list = MolList([m] * 2, Quantity(1), scheme=3)
+    mol_list = HolsteinModel([m] * 2, Quantity(1))
     gs_mp = Mpo.onsite(mol_list, opera=r"a^\dagger", mol_idx_set={0}).apply(Mps.ground_state(mol_list, max_entangled=False))
     mpdm = MpDm.from_mps(gs_mp)
     mpdm_full = MpDmFull.from_mpdm(mpdm)

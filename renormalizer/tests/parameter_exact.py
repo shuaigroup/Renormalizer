@@ -1,8 +1,7 @@
 # -*- coding: utf-8 -*-
 import numpy as np
 
-from renormalizer.mps import Mpo
-from renormalizer.model import Phonon, Mol, MolList
+from renormalizer.model import Phonon, Mol, HolsteinModel
 from renormalizer.utils import Quantity
 from renormalizer.utils.qutip_utils import get_clist, get_blist, get_holstein_hamiltonian, get_gs
 
@@ -15,7 +14,7 @@ J = 1
 
 ph = Phonon.simple_phonon(Quantity(OMEGA), Quantity(DISPLACEMENT), N_LEVELS)
 mol = Mol(Quantity(0), [ph])
-mol_list = MolList([mol] * N_SITES, Quantity(J), 3)
+mol_list = HolsteinModel([mol] * N_SITES, Quantity(J), 3)
 
 qutip_clist = get_clist(N_SITES, N_LEVELS)
 qutip_blist = get_blist(N_SITES, N_LEVELS)

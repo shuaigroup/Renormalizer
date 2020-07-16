@@ -1,4 +1,4 @@
-from renormalizer.model import h_qc, MolList2, ModelTranslator
+from renormalizer.model import h_qc, MolList2
 from renormalizer.utils import basis as ba
 from renormalizer.utils import Op
 from renormalizer.cv import batch_run
@@ -27,7 +27,7 @@ def test_H_chain_LDOS():
         order[f"e_{iorb}"] = iorb
         basis.append(ba.BasisHalfSpin(sigmaqn=[0,1]))
     
-    mol_list2 = MolList2(order, basis, model, ModelTranslator.general_model)
+    mol_list2 = MolList2(order, basis, model)
     mpo = Mpo(mol_list2)
     
     nelec = spatial_norbs
@@ -59,8 +59,7 @@ def test_H_chain_LDOS():
         return model
 
     dipole_model = photoelectron_operator(nelec-1)
-    dipole_op = Mpo.general_mpo(mol_list2, model=dipole_model,
-            model_translator=ModelTranslator.general_model)
+    dipole_op = Mpo.general_mpo(mol_list2, model=dipole_model)
     b_mps = dipole_op.apply(mps)
 
     #std 

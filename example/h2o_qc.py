@@ -1,5 +1,5 @@
 from renormalizer.mps import Mps, Mpo, gs
-from renormalizer.model import MolList2, ModelTranslator, h_qc
+from renormalizer.model import MolList2, h_qc
 from renormalizer.utils import basis as ba
 from renormalizer.utils import Op
 from renormalizer.utils import log
@@ -42,7 +42,7 @@ for iorb in range(spin_norbs):
     order[f"e_{iorb}"] = iorb
     basis.append(ba.BasisHalfSpin(sigmaqn=[0,1]))
 
-mol_list2 = MolList2(order, basis, model, ModelTranslator.general_model)
+mol_list2 = MolList2(order, basis, model)
 mpo = Mpo(mol_list2)
 logger.info(f"mpo_bond_dims:{mpo.bond_dims}")
 

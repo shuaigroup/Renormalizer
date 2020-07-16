@@ -22,7 +22,7 @@ def normalize(WFN, norm=None):
     """
     factor = 1.0
     for wfn in WFN[:-1]:
-        lnorm = scipy.linalg.norm(wfn)
+        lnorm = np.linalg.norm(wfn)
         wfn /= lnorm
         # prevent overflow when creating max entangled state
         if norm is None:
@@ -37,6 +37,6 @@ def normalize(WFN, norm=None):
 def canonical_normalize(WFN):
     factor = 1.0
     for wfn in WFN:
-        lnorm = scipy.linalg.norm(wfn)
+        lnorm = np.linalg.norm(wfn)
         factor *= lnorm
     normalize(WFN, factor)

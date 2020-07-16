@@ -4,7 +4,7 @@ import numpy as np
 import pytest
 
 from renormalizer.mps import Mps, Mpo
-from renormalizer.model import MolList2, ModelTranslator
+from renormalizer.model import MolList2
 from renormalizer.utils.basis import BasisSHO, BasisMultiElectronVac, BasisMultiElectron, BasisSimpleElectron, Op
 from renormalizer.tests import parameter
 
@@ -36,13 +36,12 @@ def test_expectations(mpos):
 
 
 def check_reduced_density_matrix(order, basis):
-    mol_list = MolList2(order, basis, {}, ModelTranslator.general_model)
+    mol_list = MolList2(order, basis, {})
     mps = Mps.random(mol_list, 1, 20)
     rdm = mps.calc_reduced_density_matrix().real
     assert np.allclose(np.diag(rdm), mps.e_occupations)
     # only test a sample. Should be enough.
-    mpo = Mpo.general_mpo(mol_list, model={(f"e_0", f"e_3"): [(Op(r"a^\dagger", 1), Op("a", -1), 1.0)]},
-                          model_translator=ModelTranslator.general_model)
+    mpo = Mpo.general_mpo(mol_list, model={(f"e_0", f"e_3"): [(Op(r"a^\dagger", 1), Op("a", -1), 1.0)]})
     assert rdm[-1][0] == pytest.approx(mps.expectation(mpo))
 
 

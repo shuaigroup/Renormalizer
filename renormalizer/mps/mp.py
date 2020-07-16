@@ -4,7 +4,7 @@
 import logging
 from typing import List, Union
 
-from renormalizer.model import MolList, EphTable
+from renormalizer.model import MolList2
 from renormalizer.mps.backend import np, xp, USE_GPU
 from renormalizer.mps import svd_qn
 from renormalizer.mps.matrix import (
@@ -38,10 +38,7 @@ class MatrixProduct:
         self._mp: List[Union[Matrix, None]] = []
         self.dtype = backend.real_dtype
 
-        # in mpo.quasi_boson, mol_list is not set, then _ephtable and _pbond_list should be used
-        self.mol_list: MolList = None
-        self._ephtable: EphTable = None
-        self._pbond_list: List[int] = None
+        self.mol_list: MolList2 = None
 
         # mpo also need to be compressed sometimes
         self.compress_config: CompressConfig = CompressConfig()
@@ -105,25 +102,8 @@ class MatrixProduct:
         return int(round(np.mean(self.bond_dims)))
 
     @property
-    def ephtable(self):
-        if self._ephtable is not None:
-            return self._ephtable
-        else:
-            return self.mol_list.ephtable
-
-    @ephtable.setter
-    def ephtable(self, ephtable: EphTable):
-        self._ephtable = ephtable
-
-    @property
     def pbond_list(self):
-        if self._pbond_list is None:
-            self._pbond_list = self.mol_list.pbond_list
-        return self._pbond_list
-
-    @pbond_list.setter
-    def pbond_list(self, pbond_list):
-        self._pbond_list = pbond_list
+        return self.mol_list.pbond_list
 
     @property
     def qntot(self):
@@ -895,8 +875,6 @@ class MatrixProduct:
         new._mp = [None] * len(self)
         new.dtype = self.dtype
         new.mol_list = self.mol_list
-        new._ephtable = self._ephtable
-        new._pbond_list = self._pbond_list
         # need to deep copy compress_config because threshold might change dynamically
         new.compress_config = self.compress_config.copy()
         new.peak_bytes = 0

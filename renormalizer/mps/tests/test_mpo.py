@@ -7,7 +7,7 @@ import os
 import pytest
 import numpy as np
 
-from renormalizer.model import MolList, MolList2, ModelTranslator, Mol, Phonon
+from renormalizer.model import MolList2, Mol, Phonon, HolsteinModel
 from renormalizer.mps import Mpo, Mps
 from renormalizer.tests.parameter import mol_list
 from renormalizer.mps.tests import cur_dir
@@ -26,7 +26,7 @@ def test_exact_propagator(dt, space, shift):
 def test_offset(scheme):
     ph = Phonon.simple_phonon(Quantity(3.33), Quantity(1), 2)
     m = Mol(Quantity(0), [ph] * 2)
-    mlist = MolList([m] * 2, Quantity(17), scheme=scheme)
+    mlist = HolsteinModel([m] * 2, Quantity(17), )
     mpo1 = Mpo(mlist)
     assert mpo1.is_hermitian()
     f1 = mpo1.full_operator()
@@ -48,8 +48,8 @@ def test_scheme4():
     ph = Phonon.simple_phonon(Quantity(3.33), Quantity(1), 2)
     m1 = Mol(Quantity(0), [ph])
     m2 = Mol(Quantity(0), [ph]*2)
-    mlist1 = MolList([m1, m2], Quantity(17), 4)
-    mlist2 = MolList([m1, m2], Quantity(17), 3)
+    mlist1 = HolsteinModel([m1, m2], Quantity(17), 4)
+    mlist2 = HolsteinModel([m1, m2], Quantity(17), 3)
     mpo4 = Mpo(mlist1)
     assert mpo4.is_hermitian()
     # for debugging
@@ -122,76 +122,13 @@ def test_phonon_onsite():
     assert b.apply(p2).normalize().distance(p1) == pytest.approx(0, abs=1e-5)
 
 
-from renormalizer.tests.parameter_PBI import construct_mol
-
-@pytest.mark.parametrize("mol_list", (mol_list, construct_mol(10,10,0)))
-@pytest.mark.parametrize("scheme", (
-        1,
-        4,
-))
-def test_general_mpo_MolList(mol_list, scheme):
-
-    if scheme == 4:
-        mol_list1 = mol_list.switch_scheme(4)
-    else:
-        mol_list1 = mol_list
-
-    mol_list1.mol_list2_para()
-    mpo = Mpo.general_mpo(mol_list1)
-    mpo_std = Mpo(mol_list1)
-    check_result(mpo, mpo_std)
-
-
-def test_general_mpo_others():
-    
-    mol_list2 = MolList2.MolList_to_MolList2(mol_list)
-    
-    # onsite 
-    mpo_std = Mpo.onsite(mol_list, r"a^\dagger", mol_idx_set=[0])
-    mpo = Mpo.onsite(mol_list2, r"a^\dagger", mol_idx_set=[0])
-    check_result(mpo, mpo_std)
-    # general method 
-    mpo = Mpo.general_mpo(mol_list2, model={("e_0",):[(Op(r"a^\dagger",0),1.0)]},
-            model_translator=ModelTranslator.general_model)
-    check_result(mpo, mpo_std)
-
-    mpo_std = Mpo.onsite(mol_list, r"a^\dagger a", dipole=True)
-    mpo = Mpo.onsite(mol_list2, r"a^\dagger a", dipole=True)
-    check_result(mpo, mpo_std)
-    mpo = Mpo.general_mpo(mol_list2,  
-            model={("e_0",):[(Op(r"a^\dagger a",0),mol_list2.dipole[("e_0",)])],
-                ("e_1",):[(Op(r"a^\dagger a",0),mol_list2.dipole[("e_1",)])], 
-                ("e_2",):[(Op(r"a^\dagger a",0),mol_list2.dipole[("e_2",)])]},
-            model_translator=ModelTranslator.general_model)
-    check_result(mpo, mpo_std)
-    
-    # intersite
-    mpo_std = Mpo.intersite(mol_list, {0:r"a^\dagger",2:"a"},
-            {(0,1):"b^\dagger"}, Quantity(2.0))
-    mpo = Mpo.intersite(mol_list2, {0:r"a^\dagger",2:"a"},
-            {(0,1):r"b^\dagger"}, Quantity(2.0))
-    check_result(mpo, mpo_std)
-    mpo = Mpo.general_mpo(mol_list2, 
-            model={("e_0","e_2","v_1"):[(Op(r"a^\dagger",1), Op(r"a",-1),
-            Op(r"b^\dagger", 0), 2.0)]},
-            model_translator=ModelTranslator.general_model)
-    check_result(mpo, mpo_std)
-    
-    # phsite
-    mpo_std = Mpo.ph_onsite(mol_list, r"b^\dagger", 0, 0)
-    mpo = Mpo.ph_onsite(mol_list2, r"b^\dagger", 0, 0)
-    check_result(mpo, mpo_std)
-    mpo = Mpo.general_mpo(mol_list2, 
-            model={(mol_list2.map[(0,0)],):[(Op(r"b^\dagger",0), 1.0)]},
-            model_translator=ModelTranslator.general_model)
-    check_result(mpo, mpo_std)
-
 def check_result(mpo, mpo_std):
     print("std mpo bond dims:", mpo_std.bond_dims)
     print("new mpo bond dims:", mpo.bond_dims)
     print("std mpo qn:", mpo_std.qn, mpo_std.qntot)
     print("new mpo qn:", mpo.qn, mpo_std.qntot)
     assert mpo_std.distance(mpo)/np.sqrt(mpo_std.dot(mpo_std)) == pytest.approx(0, abs=1e-5)
+
 
 def test_different_general_mpo_format():
     model1 = {("e_0","e_1"):[(Op("a^\dagger_0",1), Op("a_1",-1), 0.1)]}
@@ -200,15 +137,11 @@ def test_different_general_mpo_format():
     model4 = {("e_1",):[(Op("a^\dagger_0 a_1",0), 0.1)]}
     order = {"e_0":0, "e_1":0}
     basis = [ba.BasisMultiElectron(2,[0,0])]
-    mollist = MolList2(order, basis, model1, ModelTranslator.general_model)
-    mpo1 = Mpo.general_mpo(mollist, model=model1,
-            model_translator=ModelTranslator.general_model)
-    mpo2 = Mpo.general_mpo(mollist, model=model2,
-            model_translator=ModelTranslator.general_model)
-    mpo3 = Mpo.general_mpo(mollist, model=model3,
-            model_translator=ModelTranslator.general_model)
-    mpo4 = Mpo.general_mpo(mollist, model=model4,
-            model_translator=ModelTranslator.general_model)
+    mollist = MolList2(order, basis, model1)
+    mpo1 = Mpo.general_mpo(mollist, model=model1)
+    mpo2 = Mpo.general_mpo(mollist, model=model2)
+    mpo3 = Mpo.general_mpo(mollist, model=model3)
+    mpo4 = Mpo.general_mpo(mollist, model=model4)
     check_result(mpo1, mpo2)
     check_result(mpo1, mpo3)
     check_result(mpo1, mpo4)

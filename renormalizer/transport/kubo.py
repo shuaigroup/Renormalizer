@@ -8,8 +8,7 @@ from renormalizer.mps import MpDm, Mpo, BraKetPair, ThermalProp, load_thermal_st
 from renormalizer.mps.backend import np
 from renormalizer.utils.constant import mobility2au
 from renormalizer.utils import TdMpsJob, Quantity, EvolveConfig, CompressConfig
-from renormalizer.model import MolList, ModelTranslator
-from renormalizer.model.mlist import vibronic_to_general
+from renormalizer.model import MolList2
 from renormalizer.property import Property
 
 logger = logging.getLogger(__name__)
@@ -63,7 +62,7 @@ class TransportKubo(TdMpsJob):
         state directly in this class.
 
     Args:
-        mol_list (:class:`~renormalizer.model.mlist.MolList`): system information.
+        mol_list (:class:`~renormalizer.model.mlist.MolList2`): system information.
         temperature (:class:`~renormalizer.utils.quantity.Quantity`): simulation temperature.
             Zero temperature is not supported.
         distance_matrix (np.ndarray): two-dimensional array :math:`D_{ij} = P_i - P_j` representing
@@ -90,7 +89,7 @@ class TransportKubo(TdMpsJob):
         properties (:class:`~renormalizer.property.property.Property`): other properties to calculate during real time evolution.
             Currently only supports Holstein model.
     """
-    def __init__(self, mol_list, temperature: Quantity, distance_matrix: np.ndarray = None,
+    def __init__(self, mol_list: MolList2, temperature: Quantity, distance_matrix: np.ndarray = None,
             insteps: int=1, ievolve_config=None, compress_config=None,
             evolve_config=None, dump_dir: str=None, job_name: str=None, properties: Property = None):
         self.mol_list = mol_list
@@ -130,18 +129,10 @@ class TransportKubo(TdMpsJob):
         # Construct current operator. The operator is taken to be real as an optimization.
         logger.info("constructing current operator ")
 
-        if isinstance(self.mol_list, MolList):
-            self.mol_list.mol_list2_para()
-            mol_num = self.mol_list.mol_num
-            model = self.mol_list.model
-        else:
-            mol_num = self.mol_list.n_edofs
-            if self.mol_list.model_translator == ModelTranslator.general_model:
-                model = self.mol_list.model
-            elif self.mol_list.model_translator == ModelTranslator.vibronic_model:
-                model = vibronic_to_general(self.mol_list.model)
-            else:
-                raise ValueError(f"Unsupported model {self.mol_list.model_translator}")
+
+        mol_num = self.mol_list.n_edofs
+        model = self.mol_list.model
+
         if self.distance_matrix is None:
             logger.info("Constructing distance matrix based on a periodic one-dimension chain.")
             self.distance_matrix = np.arange(mol_num).reshape(-1, 1) - np.arange(mol_num).reshape(1, -1)
@@ -209,10 +200,10 @@ class TransportKubo(TdMpsJob):
                 current_model[dof_names].append(tuple(current_term))
 
         assert len(holstein_current_model) != 0
-        self.j_oper = Mpo.general_mpo(self.mol_list, model=holstein_current_model, model_translator=ModelTranslator.general_model)
+        self.j_oper = Mpo.general_mpo(self.mol_list, model=holstein_current_model)
         logger.info(f"current operator bond dim: {self.j_oper.bond_dims}")
         if len(peierls_current_model) != 0:
-            self.j_oper2  = Mpo.general_mpo(self.mol_list, model=peierls_current_model,  model_translator=ModelTranslator.general_model)
+            self.j_oper2  = Mpo.general_mpo(self.mol_list, model=peierls_current_model)
             logger.info(f"Peierls coupling induced current operator bond dim: {self.j_oper2.bond_dims}")
         else:
             self.j_oper2 = None

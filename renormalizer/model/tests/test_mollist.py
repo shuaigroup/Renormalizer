@@ -1,19 +1,19 @@
 # -*- coding: utf-8 -*-
 
-from renormalizer.model.mlist import ModelTranslator, MolList2
+from renormalizer.model.mlist import MolList2
 from renormalizer.utils.basis import BasisSimpleElectron, BasisSHO
 from renormalizer.tests.parameter import mol_list
 
 
 def test_idx():
-    assert mol_list.e_idx(0) == 0
-    assert mol_list.e_idx(1) == 3
-    assert mol_list.switch_scheme(4).e_idx(0) == 2
-    assert mol_list.ph_idx(0, 0) == 1
-    assert mol_list.ph_idx(0, 1) == 2
-    assert mol_list.ph_idx(2, 1) == 8
-    assert mol_list.switch_scheme(4).ph_idx(2, 1) == 6
-    assert mol_list.switch_scheme(4).ph_idx(1, 0) == 3
+    assert mol_list.order["e_0"] == 0
+    assert mol_list.order["e_1"] == 3
+    assert mol_list.switch_scheme(4).order["e_0"] == 2
+    assert mol_list.order["v_0"] == 1
+    assert mol_list.order["v_1"] == 2
+    assert mol_list.order["v_5"] == 8
+    assert mol_list.switch_scheme(4).order["v_5"] == 6
+    assert mol_list.switch_scheme(4).order["v_2"] == 3
 
 
 def test_mollist2():
@@ -43,10 +43,10 @@ def test_mollist2():
             order_dict[dof] = len(order_list) - 1
             basis_dict[dof] = basis
 
-    mlist1 = MolList2(order_list, basis_list, {}, ModelTranslator.general_model)
-    mlist2 = MolList2(order_list, basis_dict, {}, ModelTranslator.general_model)
-    mlist3 = MolList2(order_dict, basis_list, {}, ModelTranslator.general_model)
-    mlist4 = MolList2(order_dict, basis_dict, {}, ModelTranslator.general_model)
+    mlist1 = MolList2(order_list, basis_list, {})
+    mlist2 = MolList2(order_list, basis_dict, {})
+    mlist3 = MolList2(order_dict, basis_list, {})
+    mlist4 = MolList2(order_dict, basis_dict, {})
 
     def check_eq(m1: MolList2, m2: MolList2):
         assert m1.order == m2.order
