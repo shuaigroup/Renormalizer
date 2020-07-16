@@ -3,4 +3,4 @@
 
 from renormalizer.model.phonon import Phonon
 from renormalizer.model.mol import Mol
-from renormalizer.model.mlist import MolList2, construct_j_matrix, load_from_dict, HolsteinModel
+from renormalizer.model.mlist import MolList2, construct_j_matrix, load_from_dict, HolsteinModel, VibronicModel

@@ -93,7 +93,7 @@ def test_svd_compress(comp, mp):
     svd_mps = mpo.contract(mps)
     dis = svd_mps.distance(std_mps)/std_mps.dmrg_norm
     print(f"svd_mps: {svd_mps}, dis: {dis}")
-    assert np.allclose(dis, 0.0, atol=1e-4)
+    assert np.allclose(dis, 0.0, atol=1e-3)
     assert np.allclose(svd_mps.dmrg_norm, std_mps.dmrg_norm, atol=1e-4)
     
     
