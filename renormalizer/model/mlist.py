@@ -1,10 +1,8 @@
 # -*- coding: utf-8 -*-
 # Author: Jiajun Ren <jiajunren0522@gmail.com>
 
-import copy
 from collections import OrderedDict, defaultdict
 from typing import List, Union, Dict
-from enum import Enum
 
 import numpy as np
 
@@ -40,22 +38,7 @@ class MolList2:
         class, refer to :class:`~renormalizer.utils.basis.BasisSet`
         for example: basis = [b0,b1,b2,b3]
 
-        two formats are supported for model:
-        'vibronic type': each key is a tuple of electronic DoFs represents
-        a^\dagger_i a_j or the key is "I" represents the pure vibrational
-        terms, the value is a dict.
-        The sub-key of the dict has two types, one is 'J' with value (float or complex) for pure electronic coupling,
-        one is tuple of vibrational DoF with a list as value. Inside the
-        list is sevaral tuples, each tuple is a operator term. the last one
-        of the tuple is factor of the term, the others represents a local
-        operator (refer to :class:`~renormalizer.utils.elementop.Op`) on each Dof in the
-        sub-key (one-to-one map between the sub-key and tuple).
-        The model_translator is ModelTranslator.vibronic_model
-        for example:
-        {"I": {("v_1"):[(Op,factor),]}, ("e_i","e_j") : {"J":factor, ("v_0",):[(Op, factor), (Op, factor)],
-        ("v_1","v_2"):[(Op1, Op2, factor), (Op1, Op2, factor)]...}...}
-
-        'general type': each key is a tuple of DoFs,
+        in ``model``, each key is a tuple of DoFs,
         each value is list. Inside the list, each element is a tuple, the
         last one is the factor of each operator term, the others are local
         operator of the operator term.
@@ -342,6 +325,52 @@ class HolsteinModel(MolList2):
         return len(self.mol_list)
 
 
+class VibronicModel(MolList2):
+    """The same with :class:`MolList2`. But the defination of ``model`` is different.
+        each key is a tuple of electronic DoFs represents
+        a^\dagger_i a_j or the key is "I" represents the pure vibrational
+        terms, the value is a dict.
+        The sub-key of the dict has two types, one is 'J' with value (float or complex) for pure electronic coupling,
+        one is tuple of vibrational DoF with a list as value. Inside the
+        list is sevaral tuples, each tuple is a operator term. the last one
+        of the tuple is factor of the term, the others represents a local
+        operator (refer to :class:`~renormalizer.utils.elementop.Op`) on each Dof in the
+        sub-key (one-to-one map between the sub-key and tuple).
+        The model_translator is ModelTranslator.vibronic_model
+        for example:
+        ``{"I": {("v_1"):[(Op,factor),]}, ("e_i","e_j") : {"J":factor, ("v_0",):[(Op, factor), (Op, factor)],
+        ("v_1","v_2"):[(Op1, Op2, factor), (Op1, Op2, factor)]...}...}``
+    """
+    def __init__(self, order: Union[Dict, List], basis: Union[Dict, List], model: Dict, dipole: Dict = None):
+        new_model = defaultdict(list)
+        for e_k, e_v in model.items():
+            for kk, vv in e_v.items():
+                # it's difficult to rename `kk` because sometimes it's related to
+                # phonons sometimes it's `"J"`
+                if e_k == "I":
+                    # operators without electronic dof, simple phonon
+                    new_model[kk] = vv
+                else:
+                    # operators with electronic dof
+                    assert isinstance(e_k, tuple) and len(e_k) == 2
+                    if e_k[0] == e_k[1]:
+                        # diagonal
+                        new_e_k = (e_k[0],)
+                        e_op = (Op(r"a^\dagger a", 0),)
+                    else:
+                        # off-diagonal
+                        new_e_k = e_k
+                        e_op = (Op(r"a^\dagger", 1), Op("a", -1))
+                    if kk == "J":
+                        new_model[new_e_k] = [e_op + (vv,)]
+                    else:
+                        for term in vv:
+                            new_key = new_e_k + kk
+                            new_value = e_op + term
+                            new_model[new_key].append(new_value)
+
+        super().__init__(order, basis, new_model, dipole)
+
 def construct_j_matrix(mol_num, j_constant, periodic):
     # nearest neighbour interaction
     j_constant_au = j_constant.as_au()
@@ -361,35 +390,5 @@ def load_from_dict(param, scheme, lam: bool):
         for omega, displacement in param["ph modes"]
     ]
     j_constant = Quantity(*param["j constant"])
-    mol_list = HolsteinModel([Mol(Quantity(0), ph_list)] * param["mol num"], j_constant, )
+    mol_list = HolsteinModel([Mol(Quantity(0), ph_list)] * param["mol num"], j_constant, scheme)
     return mol_list, temperature
-
-
-def vibronic_to_general(model):
-    new_model = defaultdict(list)
-    for e_k, e_v in model.items():
-        for kk, vv in e_v.items():
-            # it's difficult to rename `kk` because sometimes it's related to
-            # phonons sometimes it's `"J"`
-            if e_k == "I":
-                # operators without electronic dof, simple phonon
-                new_model[kk] = vv
-            else:
-                # operators with electronic dof
-                assert isinstance(e_k, tuple) and len(e_k) == 2
-                if e_k[0] == e_k[1]:
-                    # diagonal
-                    new_e_k = (e_k[0],)
-                    e_op = (Op(r"a^\dagger a", 0),)
-                else:
-                    # off-diagonal
-                    new_e_k = e_k
-                    e_op = (Op(r"a^\dagger", 1), Op("a", -1))
-                if kk == "J":
-                    new_model[new_e_k] = [e_op + (vv,)]
-                else:
-                    for term in vv:
-                        new_key = new_e_k + kk
-                        new_value = e_op + term
-                        new_model[new_key].append(new_value)
-    return new_model
