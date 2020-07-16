@@ -30,7 +30,7 @@ class SpectraFtCV(SpectraCv):
     Use DDMRG to calculate the finite temperature spectrum from frequency domain
 
     Args:
-        mol_list (:class:`~renormalizer.model.MolList`): system information.
+        mol_list (:class:`~renormalizer.model.MolList2`): system information.
         spectratype (string): "abs" or "emi".
         m_max (int): maximal bond dimension of correction vector.
         eta (float): Lorentzian broadening width (a.u.).
@@ -363,7 +363,7 @@ class SpectraFtCV(SpectraCv):
         xqnmat = xqnl.copy()
         xqnsigmalist = []
         for idx in addlist:
-            if self.mol_list.ephtable.is_electron(idx):
+            if self.mol_list.is_electron(idx):
                 xqnsigma = np.array([[[0, 0], [0, 1]], [[1, 0], [1, 1]]])
             else:
                 xqnsigma = []

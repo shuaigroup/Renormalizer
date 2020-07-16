@@ -5,7 +5,7 @@ from itertools import product
 
 import pytest
 
-from renormalizer.model import MolList2, ModelTranslator
+from renormalizer.model import MolList2
 from renormalizer.model.mlist import vibronic_to_general
 from renormalizer.mps import Mps, Mpo
 from renormalizer.mps.backend import np
@@ -163,22 +163,23 @@ def construct_vibronic_model(multi_e, dvr):
     return order, basis, model
 
 
+# todo: vibronic model class
 @pytest.mark.parametrize("multi_e, translator, dvr", (
-          [False, ModelTranslator.vibronic_model, True],
-          [False, ModelTranslator.general_model,  False],
-          [True, ModelTranslator.vibronic_model, False],
-          [True, ModelTranslator.general_model, True],
+          [False, "vibronic", True],
+          [False, "general",  False],
+          [True,  "vibronic", False],
+          [True,  "general", True],
 ))
 def test_pyr_4mode(multi_e, translator, dvr):
 
     order, basis, vibronic_model = construct_vibronic_model(multi_e, dvr)
-    if translator is ModelTranslator.vibronic_model:
+    if translator == "vibronic":
         model = vibronic_model
-    elif translator is ModelTranslator.general_model:
+    elif translator == "general":
         model = vibronic_to_general(vibronic_model)
     else:
         assert False
-    mol_list2 = MolList2(order, basis, model, model_translator=translator)
+    mol_list2 = MolList2(order, basis, model)
     mpo = Mpo(mol_list2)
     logger.info(f"mpo_bond_dims:{mpo.bond_dims}")
     # same form whether multi_e is True or False

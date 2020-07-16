@@ -4,7 +4,7 @@ import numpy as np
 import qutip
 import pytest
 
-from renormalizer.model import Phonon, Mol, MolList, MolList2, ModelTranslator
+from renormalizer.model import Phonon, Mol, HolsteinModel, MolList2
 from renormalizer.transport.kubo import TransportKubo
 from renormalizer.utils import Quantity, CompressConfig, EvolveConfig, EvolveMethod, CompressCriteria, Op
 from renormalizer.utils.basis import BasisSimpleElectron, BasisSHO
@@ -15,25 +15,17 @@ from renormalizer.utils.qutip_utils import get_clist, get_blist, get_holstein_ha
         3,
         4,
 ))
-@pytest.mark.parametrize("mollist2", (
-        True,
-        False,
-))
-def test_holstein_kubo(scheme, mollist2):
+def test_holstein_kubo(scheme):
     ph = Phonon.simple_phonon(Quantity(1), Quantity(1), 2)
     mol = Mol(Quantity(0), [ph])
-    mol_list1 = MolList([mol] * 5, Quantity(1), scheme)
-    if mollist2:
-        mol_list = MolList2.MolList_to_MolList2(mol_list1)
-    else:
-        mol_list = mol_list1
+    mol_list = HolsteinModel([mol] * 5, Quantity(1), scheme)
     temperature = Quantity(50000, 'K')
     compress_config = CompressConfig(CompressCriteria.fixed, max_bonddim=24)
     evolve_config = EvolveConfig(EvolveMethod.tdvp_ps, adaptive=True, guess_dt=0.5, adaptive_rtol=1e-3)
     ievolve_config = EvolveConfig(EvolveMethod.tdvp_ps, adaptive=True, guess_dt=-0.1j)
     kubo = TransportKubo(mol_list, temperature, compress_config=compress_config, ievolve_config=ievolve_config, evolve_config=evolve_config)
     kubo.evolve(nsteps=5, evolve_time=5)
-    qutip_res = get_qutip_holstein_kubo(mol_list1, temperature, kubo.evolve_times_array)
+    qutip_res = get_qutip_holstein_kubo(mol_list, temperature, kubo.evolve_times_array)
     rtol = 5e-2
     assert np.allclose(kubo.auto_corr, qutip_res, rtol=rtol)
 
@@ -41,7 +33,7 @@ def test_holstein_kubo(scheme, mollist2):
 def get_qutip_holstein_kubo(mol_list, temperature, time_series):
 
     nsites = len(mol_list)
-    J = mol_list.j_constant.as_au()
+    J = mol_list.j_constant
     ph = mol_list[0].dmrg_phs[0]
     ph_levels = ph.n_phys_dim
     omega = ph.omega[0]
@@ -107,7 +99,7 @@ def test_peierls_kubo():
         order.append(f"v_{ni}")
         basis.append(BasisSHO(omega, nlevels))
 
-    mol_list = MolList2(order, basis, model, ModelTranslator.general_model)
+    mol_list = MolList2(order, basis, model)
     compress_config = CompressConfig(CompressCriteria.fixed, max_bonddim=24)
     ievolve_config = EvolveConfig(EvolveMethod.tdvp_vmf, ivp_atol=1e-3, ivp_rtol=1e-5)
     evolve_config = EvolveConfig(EvolveMethod.tdvp_vmf, ivp_atol=1e-3, ivp_rtol=1e-5)

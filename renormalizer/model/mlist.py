@@ -8,22 +8,9 @@ from enum import Enum
 
 import numpy as np
 
-from renormalizer.model.ephtable import EphTable
 from renormalizer.model.mol import Mol, Phonon
 from renormalizer.utils import Quantity, Op
 from renormalizer.utils import basis as ba
-
-
-class ModelTranslator(Enum):
-    """
-    Available Translator from user input model to renormalizer's internal formats
-    """
-    # from MolList sbm
-    sbm = "Spin Boson Model (MolList)"
-    # from MolList2 or MolList augmented with MolList2 parameters
-    vibronic_model = "Vibronic Model (MolList2)"
-    # from MolList2 or MolList augmented with MolList2 parameters
-    general_model = "General Model (MolList2)"
 
 
 class MolList2:
@@ -36,7 +23,6 @@ class MolList2:
         model (dict): model of the system or any operator of the system,
             two formats are supported: 'vibronic type' or 'general type'. All terms
             must be included, without assuming hermitian or something else.
-        model_translator(:class:`~renormalizer.model.ModelTranslator`): Translator from user input model to renormalizer's internal formats
         dipole (dict): contains the transition dipole matrix element
 
     Note:
@@ -84,7 +70,7 @@ class MolList2:
         {("e_0","e_1"):tdm1, ("e_1","e_0"):tdm1}, the key has 2 e_dofs
         represents the transition.
     """
-    def __init__(self, order: Union[Dict, List], basis:Union[Dict, List], model:Dict, model_translator: ModelTranslator, dipole:Dict=None):
+    def __init__(self, order: Union[Dict, List], basis: Union[Dict, List], model: Dict, dipole: Dict = None):
 
         if isinstance(order, dict):
             self.order = order
@@ -101,7 +87,7 @@ class MolList2:
             order_value_set = set(self.order.values())
             if min(order_value_set) != 0 or max(order_value_set) != len(order_value_set) - 1:
                 raise ValueError("order is not continuous integers from 0")
-            self.basis = [None] * (max(self.order.values()) + 1)
+            self.basis: List[ba.BasisSet] = [None] * (max(self.order.values()) + 1)
             for dof_name, dof_idx in self.order.items():
                 self.basis[dof_idx] = basis[dof_name]
 
@@ -114,21 +100,14 @@ class MolList2:
 
 
         self.model = model
-        self.model_translator = model_translator
         # array(n_e, n_e)
         self.dipole = dipole
-        # map: to be compatible with MolList {(imol, iph):"v_n"}
-        self.map = None
         # reusable mpos for the system
         self.mpos = dict()
 
     @property
     def pbond_list(self):
         return [bas.nbas for bas in self.basis]
-    
-    def rewrite_model(self, model, model_translator):
-        return self.__class__(self.order, self.basis, model, model_translator,
-                self.dipole)   
 
     @property
     def dofs(self):
@@ -137,31 +116,6 @@ class MolList2:
         # dictionary, the lists will directly correspond.
         
         return list(self.order.keys())
-    
-    @property
-    def j_matrix(self):
-        J = np.zeros((self.n_edofs, self.n_edofs))
-        for i, idof in enumerate(self.e_dofs):
-            for j, jdof in enumerate(self.e_dofs):
-                if self.model_translator == ModelTranslator.vibronic_model:
-                    if (f"{idof}", f"{jdof}") in self.model.keys():
-                        J[i,j] = self.model[(f"{idof}", f"{jdof}")]["J"]
-                elif self.model_translator == ModelTranslator.general_model:
-                    if (f"{idof}", f"{jdof}") in self.model.keys():
-                        for term in self.model[(f"{idof}", f"{jdof}")]:
-                            if term[0].symbol == r"a^\dagger" and term[1].symbol == "a":
-                                J[i,j] = term[-1]
-                                break
-                    
-                    if (f"{jdof}", f"{idof}") in self.model.keys():
-                        for term in self.model[(f"{jdof}", f"{idof}")]:
-                            if term[0].symbol == r"a" and term[1].symbol == r"a^\dagger":
-                                J[i,j] = term[-1]
-                                break
-                else:
-                    raise ValueError("j_matrix doesn't support {self.model_translator}")
-        assert np.allclose(J, J.T)            
-        return J
     
     @property
     def nsite(self):
@@ -193,30 +147,58 @@ class MolList2:
     def n_vdofs(self):
         return len(self.v_dofs)
 
-    
+    def is_electron(self, idx):
+        return self.basis[idx].is_electron
+
     @property
     def pure_dmrg(self):
         return True
-    
+
+    def get_mpos(self, key, fun):
+        if key not in self.mpos:
+            mpos = fun(self)
+            self.mpos[key] = mpos
+        else:
+            mpos = self.mpos[key]
+        return mpos
+
     def to_dict(self):
         info_dict = OrderedDict()
         info_dict["order"] = self.order
         info_dict["model"] = self.model
-        info_dict["model_translator"] = self.model_translator
         return info_dict
 
-    @classmethod
-    def MolList_to_MolList2(cls, mol_list):
-        """
-        switch from MolList to MolList2
-        """
-        
+
+class HolsteinModel(MolList2):
+
+    def __init__(self,  mol_list: List[Mol], j_matrix: Union[Quantity, np.ndarray, None], scheme: int = 2, periodic: bool = False):
+        # construct the electronic coupling matrix
+
+        mol_num = len(mol_list)
+        self.mol_list = mol_list
+
+        if j_matrix is None:
+            # spin-boson model
+            assert len(mol_list) == 1
+            j_matrix = Quantity(0)
+
+        if isinstance(j_matrix, Quantity):
+            j_matrix = construct_j_matrix(mol_num, j_matrix, periodic)
+        else:
+            if periodic:
+                assert j_matrix[0][-1] != 0 and j_matrix[-1][0] != 0
+            assert j_matrix.shape[0] == mol_num
+
+        self.j_matrix = j_matrix
+        self.scheme = scheme
+        self.periodic = periodic
+
         order = {}
         basis = []
         model = {}
         mapping = {}
 
-        if mol_list.scheme < 4:
+        if scheme < 4:
             idx = 0
             nv = 0
             for imol, mol in enumerate(mol_list):
@@ -233,10 +215,10 @@ class MolList2:
                     idx += 1
                     nv += 1
 
-        elif mol_list.scheme == 4:
-            
-            n_left_mol = mol_list.mol_num // 2
-            
+        elif scheme == 4:
+
+            n_left_mol = mol_num // 2
+
             idx = 0
             n_left_ph = 0
             nv = 0
@@ -246,27 +228,26 @@ class MolList2:
                         order[f"v_{nv}"] = idx
                         n_left_ph += 1
                     else:
-                        order[f"v_{nv}"] = idx+1
-                    
+                        order[f"v_{nv}"] = idx + 1
+
                     basis.append(ba.BasisSHO(ph.omega[0], ph.n_phys_dim))
                     mapping[(imol, iph)] = f"v_{nv}"
 
                     nv += 1
                     idx += 1
-            
-            for imol in range(mol_list.mol_num):
+
+            for imol in range(mol_num):
                 order[f"e_{imol}"] = n_left_ph
-            basis.insert(n_left_ph, ba.BasisMultiElectronVac(mol_list.mol_num))
+            basis.insert(n_left_ph, ba.BasisMultiElectronVac(mol_num))
 
         else:
-            raise ValueError(f"invalid mol_list.scheme: {mol_list.scheme}")
-        
+            raise ValueError(f"invalid mol_list.scheme: {scheme}")
 
         # model
 
         # electronic term
-        for imol in range(mol_list.mol_num):
-            for jmol in range(mol_list.mol_num):
+        for imol in range(mol_num):
+            for jmol in range(mol_num):
                 if imol == jmol:
                     if mol_list[imol].sbm:
                         model[(f"e_{imol}",)] = \
@@ -279,7 +260,7 @@ class MolList2:
                             [(Op(r"a^\dagger a", 0), mol_list[imol].elocalex + mol_list[imol].dmrg_e0)]
                 else:
                     model[(f"e_{imol}", f"e_{jmol}")] = \
-                        [(Op(r"a^\dagger", 1), Op("a", -1), mol_list.j_matrix[imol, jmol])]
+                        [(Op(r"a^\dagger", 1), Op("a", -1), j_matrix[imol, jmol])]
         # vibration part
         for imol, mol in enumerate(mol_list):
             for iph, ph in enumerate(mol.dmrg_phs):
@@ -287,7 +268,7 @@ class MolList2:
 
                 model[(mapping[(imol, iph)],)] = [
                     (Op("p^2", 0), 0.5),
-                    (Op("x^2", 0), 0.5 * ph.omega[0]**2)
+                    (Op("x^2", 0), 0.5 * ph.omega[0] ** 2)
                 ]
 
         # vibration potential part
@@ -299,111 +280,30 @@ class MolList2:
                     op_str = r"a^\dagger a"
                 if np.allclose(ph.omega[0], ph.omega[1]):
                     model[(f"e_{imol}", f"{mapping[(imol,iph)]}")] = [
-                            (Op(op_str, 0), Op("x", 0), -ph.omega[1]**2*ph.dis[1]),
-                            ]
+                        (Op(op_str, 0), Op("x", 0), -ph.omega[1] ** 2 * ph.dis[1]),
+                    ]
                 else:
                     model[(f"e_{imol}", f"{mapping[(imol,iph)]}")] = [
-                            (Op(op_str, 0), Op("x^2", 0), 0.5*(ph.omega[1]**2-ph.omega[0]**2)),
-                            (Op(op_str, 0), Op("x", 0), -ph.omega[1]**2*ph.dis[1]),
-                            ]
+                        (Op(op_str, 0), Op("x^2", 0), 0.5 * (ph.omega[1] ** 2 - ph.omega[0] ** 2)),
+                        (Op(op_str, 0), Op("x", 0), -ph.omega[1] ** 2 * ph.dis[1]),
+                    ]
 
-        model_translator = ModelTranslator.general_model
 
-        
         dipole = {}
         for imol, mol in enumerate(mol_list):
-            dipole[(f"e_{imol}", )] = mol.dipole
+            dipole[(f"e_{imol}",)] = mol.dipole
 
-        mol_list2 = cls(order, basis, model, model_translator, dipole=dipole)
-        mol_list2.map = mapping
+        super().__init__(order, basis, model, dipole=dipole)
+        # map: to be compatible with MolList {(imol, iph):"v_n"}
+        self.map = mapping
+        self.mol_num = self.n_edofs
 
-        return mol_list2
-
-
-class MolList:
-
-    def __init__(self, mol_list: List[Mol], j_matrix: Union[Quantity, np.ndarray, None], scheme: int = 2, periodic: bool = False):
-        self.periodic = periodic
-        self.mol_list: List[Mol] = mol_list
-
-        # construct the electronic coupling matrix
-        if j_matrix is None:
-            # spin-boson model
-            assert len(self.mol_list) == 1
-            j_matrix = Quantity(0)
-
-        if isinstance(j_matrix, Quantity):
-            self.j_matrix = construct_j_matrix(self.mol_num, j_matrix, periodic)
-            self.j_constant = j_matrix
-        else:
-            if periodic:
-                assert j_matrix[0][-1] != 0 and j_matrix[-1][0] != 0
-            self.j_matrix = j_matrix
-            self.j_constant = None
-        self.scheme = scheme
-
-        assert self.j_matrix.shape[0] == self.mol_num
-
-        self.ephtable = EphTable.from_mol_list(mol_list, scheme)
-        self.pbond_list: List[int] = []
-
-        if scheme < 4:
-            # the order is e0,v00,v01,...,e1,v10,v11,...
-            if scheme == 3:
-                assert self.check_nearest_neighbour()
-            self._e_idx = []
-            for mol in mol_list:
-                self._e_idx.append(len(self.pbond_list))
-                self.pbond_list.append(2)
-                for ph in mol.dmrg_phs:
-                    self.pbond_list.append(ph.pbond)
-        else:
-            # the order is v00,v01,..,v10,v11,...,e0/e1/e2,...,v30,v31...
-            for imol, mol in enumerate(mol_list):
-                if imol == len(mol_list) // 2:
-                    self._e_idx = [len(self.pbond_list)] * len(mol_list)
-                    self.pbond_list.append(len(mol_list)+1)
-                for ph in mol.dmrg_phs:
-                    assert ph.is_simple
-                    self.pbond_list.append(ph.pbond)
-
-        # reusable mpos for the system
-        self.mpos = dict()
-        
-        # MolList2 type parameter
-        # for use in MolList2 routine
-        mollist2 = MolList2.MolList_to_MolList2(self)
-        self.order = mollist2.order
-        self.basis = mollist2.basis
-        self.model = mollist2.model
-        self.model_translator = mollist2.model_translator
-        self.dipole = mollist2.dipole
-        self.map = mollist2.map
-        self.e_dofs = mollist2.e_dofs
-        self.v_dofs = mollist2.v_dofs
-
-    @property
-    def mol_num(self):
-        return len(self.mol_list)
-    
-    @property
-    def nsite(self):
-        return len(self.ephtable)
-
-    @property
-    def ph_modes_num(self):
-        return sum([mol.n_dmrg_phs for mol in self.mol_list])
+    def switch_scheme(self, scheme):
+        return HolsteinModel(self.mol_list, self.j_matrix, scheme)
 
     @property
     def gs_zpe(self):
-        return sum(mol.gs_zpe for mol in self)
-
-    @property
-    def pure_dmrg(self):
-        for mol in self:
-            if not mol.pure_dmrg:
-                return False
-        return True
+        return sum([mol.gs_zpe for mol in self.mol_list])
 
     @property
     def pure_hartree(self):
@@ -412,103 +312,34 @@ class MolList:
                 return False
         return True
 
-    def switch_scheme(self, scheme):
-        return self.__class__(self.mol_list.copy(), self.j_matrix.copy(), scheme, self.periodic)
+    @property
+    def j_constant(self):
+        """Extract electronic coupling constant from ``self.j_matrix``.
+        Useful in transport model.
+        If J is actually not a constant, a value error will be raised.
 
-    def copy(self):
-        return self.switch_scheme(self.scheme)
-
-    def e_idx(self, idx=0):
-        return self._e_idx[idx]
-
-    def ph_idx(self, eidx, phidx):
-        if self.scheme < 4:
-            start = self.e_idx(eidx)
-            assert self.mol_list[eidx].no_qboson
-            # skip the electron site
-            return start + 1 + phidx
-        elif self.scheme == 4:
-            res = 0
-            for mol in self.mol_list[:eidx]:
-                assert mol.no_qboson
-                res += mol.n_dmrg_phs
-            if self.mol_num // 2 <= eidx:
-                res += 1
-            return res + phidx
+        Returns
+        -------
+        j constant: float
+            J constant extracted from ``self.j_matrix``.
+        """
+        j_set = set(self.j_matrix.ravel())
+        if len(j_set) == 0:
+            return j_set.pop()
+        elif len(j_set) == 2 and 0 in j_set:
+            j_set.remove(0)
+            return j_set.pop()
         else:
-            assert False
+            raise ValueError("J is not constant")
 
-    def get_mpos(self, key, fun):
-        if key not in self.mpos:
-            mpos = fun(self)
-            self.mpos[key] = mpos
-        else:
-            mpos = self.mpos[key]
-        return mpos
+    def __getitem__(self, item):
+        return self.mol_list[item]
 
-    def check_nearest_neighbour(self):
-        d = np.diag(np.diag(self.j_matrix, k=1), k=1)
-        d = d + d.T
-        d[0, -1] = self.j_matrix[-1, 0]
-        d[-1, 0] = self.j_matrix[0, -1]
-        return np.allclose(d, self.j_matrix)
-
-    def get_sub_mollist(self, span=None):
-        assert self.mol_num % 2 == 1
-        center_idx = self.mol_num // 2
-        if span is None:
-            span = self.mol_num // 10
-        start_idx = center_idx-span
-        end_idx = center_idx+span+1
-        sub_list =self.mol_list[start_idx:end_idx]
-        sub_matrix = self.j_matrix[start_idx:end_idx, start_idx:end_idx]
-        return self.__class__(sub_list, sub_matrix, scheme=self.scheme), start_idx
-
-    def get_pure_dmrg_mollist(self):
-        l = []
-        for mol in self.mol_list:
-            mol = Mol(Quantity(mol.elocalex), mol.dmrg_phs, mol.dipole)
-            l.append(mol)
-        return self.__class__(l, self.j_matrix, scheme=self.scheme)
-    
-    def mol_list2_para(self):
-        mol_list2 = MolList2.MolList_to_MolList2(self)
-        self.multi_dof_basis = self.scheme == 4
-        self.order = mol_list2.order
-        self.basis = mol_list2.basis
-        self.model = mol_list2.model
-        if not np.allclose(self.mol_list[0].tunnel, 0):
-            #sbm
-            self.model_translator = ModelTranslator.sbm
-        else:
-            self.model_translator = ModelTranslator.general_model
-    
-    def rewrite_model(self, model, model_translator):
-        mol_list_new = self.__class__(self.mol_list.copy(),
-                self.j_matrix.copy(), self.scheme, self.periodic)
-        mol_list_new.order = self.order
-        mol_list_new.basis = self.basis
-        mol_list_new.model = model
-        mol_list_new.model_translator = model_translator
-        mol_list_new.multi_dof_basis = self.multi_dof_basis
-        return mol_list_new
-
-    def __getitem__(self, idx):
-        return self.mol_list[idx]
+    def __iter__(self):
+        return iter(self.mol_list)
 
     def __len__(self):
         return len(self.mol_list)
-
-    def to_dict(self):
-        info_dict = OrderedDict()
-        info_dict["mol num"] = len(self)
-        info_dict["electron phonon table"] = self.ephtable
-        info_dict["mol list"] = [mol.to_dict() for mol in self.mol_list]
-        if self.j_constant is None:
-            info_dict["J matrix"] = self.j_matrix
-        else:
-            info_dict["J constant"] = self.j_constant.as_au()
-        return info_dict
 
 
 def construct_j_matrix(mol_num, j_constant, periodic):
@@ -530,9 +361,7 @@ def load_from_dict(param, scheme, lam: bool):
         for omega, displacement in param["ph modes"]
     ]
     j_constant = Quantity(*param["j constant"])
-    mol_list = MolList([Mol(Quantity(0), ph_list)] * param["mol num"],
-                       j_constant, scheme=scheme
-                       )
+    mol_list = HolsteinModel([Mol(Quantity(0), ph_list)] * param["mol num"], j_constant, )
     return mol_list, temperature
 
 

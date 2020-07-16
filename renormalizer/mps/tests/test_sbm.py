@@ -4,9 +4,9 @@ import numpy as np
 import qutip
 import pytest
 
-from renormalizer.model import Phonon, Mol, MolList
+from renormalizer.model import Phonon, Mol, HolsteinModel
 from renormalizer.mps import Mps, Mpo, MpDm, ThermalProp
-from renormalizer.utils import Quantity, CompressConfig, EvolveConfig, basis
+from renormalizer.utils import Quantity, CompressConfig, EvolveConfig
 
 
 def get_mol():
@@ -20,25 +20,9 @@ def get_mol():
     m = Mol(Quantity(epsilon), ph_list, tunnel=Quantity(-delta))
     return m
 
-def test_general_mpo_sbm():
-    mol = get_mol()
-    mol_list = MolList([mol], Quantity(0))
-    mol_list.mol_list2_para()
-    mpo = Mpo.general_mpo(mol_list)
-    mpo_std = Mpo(mol_list)
-    check_result(mpo, mpo_std)
-    
-
-def check_result(mpo, mpo_std):
-    print("std mpo bond dims:", mpo_std.bond_dims)
-    print("new mpo bond dims:", mpo.bond_dims)
-    print("std mpo qn:", mpo_std.qn, mpo_std.qntot)
-    print("new mpo qn:", mpo.qn, mpo_std.qntot)
-    assert mpo_std.distance(mpo)/np.sqrt(mpo_std.dot(mpo_std)) == pytest.approx(0, abs=1e-5)
-
 def test_zt():
     mol = get_mol()
-    mol_list = MolList([mol], Quantity(0))
+    mol_list = HolsteinModel([mol], Quantity(0), )
 
     mps = Mps.ground_state(mol_list, False)
     mps.compress_config = CompressConfig(threshold=1e-6)
@@ -59,7 +43,7 @@ def test_zt():
 @pytest.mark.xfail(reason="thermal prop calculate electron occupations (not valid for spin)")
 def test_ft():
     mol = get_mol()
-    mol_list = MolList([mol], Quantity(0))
+    mol_list = HolsteinModel([mol], Quantity(0), )
     mpo = Mpo(mol_list)
     impdm = MpDm.max_entangled_gs(mol_list)
     impdm.compress_config = CompressConfig(threshold=1e-6)

@@ -86,7 +86,7 @@ def SCF(mol_list, nexciton, niterations=20, thresh=1e-5, particle="hardcore boso
 
         # density matrix residual
         res = [
-            scipy.linalg.norm(
+            np.linalg.norm(
                 np.tensordot(WFN[iwfn], WFN[iwfn], axes=0)
                 - np.tensordot(WFN_old[iwfn], WFN_old[iwfn], axes=0)
             )

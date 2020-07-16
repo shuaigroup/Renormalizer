@@ -1,6 +1,6 @@
 import numpy as np
 
-from renormalizer.model import Phonon, Mol, MolList
+from renormalizer.model import Phonon, Mol, HolsteinModel
 from renormalizer.utils import constant, Quantity
 
 # todo: make `custom_mol_list` or even the whole file a (class) method of `MolList`
@@ -30,13 +30,9 @@ hartree_ph_list = [
 ]
 hybrid_ph_list = [ph_list[1], hartree_ph_list[0]]
 
-mol_list = MolList([Mol(elocalex, ph_list, dipole_abs)] * nmols, _j_matrix)
-hartree_mol_list = MolList(
-    [Mol(elocalex, hartree_ph_list, dipole_abs)] * nmols, _j_matrix
-)
-hybrid_mol_list = MolList(
-    [Mol(elocalex, hybrid_ph_list, dipole_abs)] * nmols, _j_matrix
-)
+mol_list = HolsteinModel([Mol(elocalex, ph_list, dipole_abs)] * nmols, _j_matrix, )
+hartree_mol_list = HolsteinModel([Mol(elocalex, hartree_ph_list, dipole_abs)] * nmols, _j_matrix, )
+hybrid_mol_list = HolsteinModel([Mol(elocalex, hybrid_ph_list, dipole_abs)] * nmols, _j_matrix, )
 
 offset = Quantity(2.28614053, "ev") + Quantity(mol_list.gs_zpe)
 
@@ -47,7 +43,7 @@ def custom_mol_list(
     dis=None,
     hartrees=None,
     nmols=3,
-) -> MolList:
+) -> HolsteinModel:
     if custom_j_matrix is None:
         custom_j_matrix = _j_matrix
     if n_phys_dim is None:
@@ -65,4 +61,4 @@ def custom_mol_list(
             omega, displacement, n_phys_dim, force3rd, hartrees
         )
     ]
-    return MolList([Mol(elocalex, ph_list, dipole_abs)] * nmols, custom_j_matrix)
+    return HolsteinModel([Mol(elocalex, ph_list, dipole_abs)] * nmols, custom_j_matrix, )

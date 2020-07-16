@@ -8,7 +8,7 @@ from collections import Counter, deque
 import scipy
 from scipy import stats
 
-from renormalizer.model import MolList, MolList2, ModelTranslator
+from renormalizer.model import MolList2
 from renormalizer.lib import solve_ivp, expm_krylov
 from renormalizer.mps import svd_qn
 from renormalizer.mps.matrix import (
@@ -118,7 +118,7 @@ def adaptive_tdvp(fun):
 
 class Mps(MatrixProduct):
     @classmethod
-    def random(cls, mol_list: MolList, nexciton, m_max, percent=1.0) -> "Mps":
+    def random(cls, mol_list: MolList2, nexciton, m_max, percent=1.0) -> "Mps":
         # a high percent makes the result more random
         # sometimes critical for getting correct optimization result
         mps = cls()
@@ -171,15 +171,6 @@ class Mps(MatrixProduct):
         mps.to_right = False
         mps.qntot = nexciton
 
-        # print("self.dim", self.dim)
-        
-        if isinstance(mps.mol_list, MolList):
-            mps.tdh_wfns = []
-            for mol in mps.mol_list:
-                for ph in mol.hartree_phs:
-                    mps.tdh_wfns.append(np.random.random(ph.n_phys_dim))
-            mps.tdh_wfns.append(1.0)
-
         return mps
 
     @classmethod
@@ -205,7 +196,6 @@ class Mps(MatrixProduct):
         Returns:
             Constructed mps (:class:`Mps`)
         """
-        assert isinstance(mol_list, MolList2)
         
         mps = cls()
         mps.mol_list = mol_list
@@ -244,14 +234,14 @@ class Mps(MatrixProduct):
         return mps
 
     @classmethod
-    def ground_state(cls, mol_list: MolList, max_entangled: bool):
+    def ground_state(cls, mol_list: MolList2, max_entangled: bool):
         r"""
         Obtain ground state at :math:`T = 0` or :math:`T = \infty` (maximum entangled).
         Electronic DOFs are always at ground state. and vibrational DOFs depend on ``max_entangled``.
         For Spin-Boson model the electronic DOF also depends on ``max_entangled``.
 
         Args:
-            mol_list (:class:`~renormalizer.model.MolList`): system information.
+            mol_list (:class:`~renormalizer.model.MolList2`): system information.
             max_entanggled (bool): temperature of the vibrational DOFs. If set to ``True``,
                 :math:`T = \infty` and if set to ``False``, :math:`T = 0`.
         """
@@ -261,95 +251,50 @@ class Mps(MatrixProduct):
         mps.qnidx = mol_list.nsite - 1
         mps.to_right = False
         mps.qntot = 0
-        
-        if isinstance(mol_list, MolList):
-            for imol, mol in enumerate(mol_list):
-                # electron mps
-                if 0 < mol_list.scheme < 4:
-                    if mol.sbm and max_entangled:
-                        array = np.array([1 / np.sqrt(2), 1 / np.sqrt(2)])
-                    else:
-                        array = np.array([1, 0])
-                    mps.append(array.reshape((1, 2, 1)))
-                elif mol_list.scheme == 4:
-                    assert not mol.sbm
-                    if imol == mol_list.mol_num // 2:
-                        array = np.zeros(mol_list.mol_num + 1)
-                        array[0] = 1
-                        mps.append(array.reshape((1, -1, 1)))
-                else:
-                    assert False
-                # ph mps
-                for ph in mol.dmrg_phs:
-                    ms = np.zeros((1, ph.pbond, 1))
-                    if max_entangled:
-                        ms[0, :, 0] = 1.0 / np.sqrt(ph.pbond)
-                    else:
-                        ms[0, 0, 0] = 1.0
-                    mps.append(ms)
-
-            mps.tdh_wfns = []
-
-            for mol in mol_list:
-                for ph in mol.hartree_phs:
-                    if max_entangled:
-                        diag_elems = [1.0] * ph.n_phys_dim
-                        mps.tdh_wfns.append(np.diag(diag_elems))
-                    else:
-                        diag_elems = [1.0] + [0.0] * (ph.n_phys_dim - 1)
-                        mps.tdh_wfns.append(np.array(diag_elems))
-            # the coefficent a
-            mps.tdh_wfns.append(1.0)
-
-            mflib.normalize(mps.tdh_wfns, 1.0)
-
-        elif isinstance(mol_list, MolList2):
             
-            mps.build_empty_mp(mol_list.nsite)
+        mps.build_empty_mp(mol_list.nsite)
 
-            for dof in mol_list.dofs:
-                isite = mol_list.order[dof]
-                basis = mol_list.basis[isite]
-                pdim = basis.nbas
-                ms = np.zeros((1, pdim, 1))
-                if dof.split("_")[0] == "v":
+        for dof in mol_list.dofs:
+            isite = mol_list.order[dof]
+            basis = mol_list.basis[isite]
+            pdim = basis.nbas
+            ms = np.zeros((1, pdim, 1))
+            if dof.split("_")[0] == "v":
+                if max_entangled:
+                    ms[0, :, 0] = 1.0 / np.sqrt(pdim)
+                else:
+                    ms[0, 0, 0] = 1.0
+                mps[isite] = ms
+
+            elif dof.split("_")[0] == "e":
+
+                if isinstance(basis, ba.BasisSimpleElectron):
+                    # simple electron site
+                    ms[0,0,0] = 1.
+                elif isinstance(basis, ba.BasisMultiElectron):
                     if max_entangled:
-                        ms[0, :, 0] = 1.0 / np.sqrt(pdim)
+                        # Note the multi_electron gs is defined differently
+                        # all the local state with qn == 0 will be occupied
+                        nzeros = basis.sigmaqn.count(0)
+                        qn = basis.sigmaqn[dof.split("_")[1]]
+                        if qn == 0:
+                            ms[0, dof.split("_")[1], 0] = 1. / np.sqrt(nzeros)
                     else:
-                        ms[0, 0, 0] = 1.0
-                    mps[isite] = ms
-
-                elif dof.split("_")[0] == "e":
-
-                    if isinstance(basis, ba.BasisSimpleElectron):
-                        # simple electron site
+                        raise NotImplementedError # not well defined
+                elif isinstance(basis, ba.BasisMultiElectronVac):
                         ms[0,0,0] = 1.
-                    elif isinstance(basis, ba.BasisMultiElectron):
-                        if max_entangled:
-                            # Note the multi_electron gs is defined differently
-                            # all the local state with qn == 0 will be occupied
-                            nzeros = basis.sigmaqn.count(0)
-                            qn = basis.sigmaqn[dof.split("_")[1]]
-                            if qn == 0:
-                                ms[0, dof.split("_")[1], 0] = 1. / np.sqrt(nzeros)
-                        else:
-                            raise NotImplementedError # not well defined
-                    elif isinstance(basis, ba.BasisMultiElectronVac):
-                            ms[0,0,0] = 1.
-                    elif isinstance(basis, ba.BasisHalfSpin):
-                        if max_entangled:
-                            ms[0,:,0] = np.sqrt(0.5)
-                        else:
-                            ms[0,0,0] = 1.
+                elif isinstance(basis, ba.BasisHalfSpin):
+                    if max_entangled:
+                        ms[0,:,0] = np.sqrt(0.5)
                     else:
-                        raise NotImplementedError
-                    mps[isite] = ms
-        else:
-            assert False
+                        ms[0,0,0] = 1.
+                else:
+                    raise NotImplementedError
+                mps[isite] = ms
         return mps
 
     @classmethod
-    def load(cls, mol_list: MolList, fname: str):
+    def load(cls, mol_list: MolList2, fname: str):
         npload = np.load(fname, allow_pickle=True)
         mp = cls()
         mp.mol_list = mol_list
@@ -403,17 +348,7 @@ class Mps(MatrixProduct):
         return new_mp
 
     def _get_sigmaqn(self, idx):
-        if isinstance(self.mol_list, MolList2):
-            return self.mol_list.basis[idx].sigmaqn
-        else:
-            if self.ephtable.is_phonon(idx):
-                return [0] * self.pbond_list[idx]
-            if self.mol_list.scheme < 4 and self.ephtable.is_electron(idx):
-                return [0, 1]
-            elif self.mol_list.scheme == 4 and self.ephtable.is_electrons(idx):
-                return [0] + [1] * (self.pbond_list[idx] - 1)
-            else:
-                assert False
+        return self.mol_list.basis[idx].sigmaqn
 
     @property
     def is_mps(self):
@@ -546,8 +481,7 @@ class Mps(MatrixProduct):
             for dof in self.mol_list.v_dofs:
                 mpos.append(
                     Mpo.general_mpo(self.mol_list,
-                        model={(dof,):[(Op("n",0), 1.)]},
-                        model_translator=ModelTranslator.general_model)
+                        model={(dof,):[(Op("n",0), 1.)]})
                     )
             # the order is v_dofs order, "v_0", "v_1",...
             self.mol_list.mpos[key] = mpos
@@ -564,8 +498,7 @@ class Mps(MatrixProduct):
             for dof in self.mol_list.e_dofs:
                     mpos.append(
                         Mpo.general_mpo(self.mol_list,
-                            model={(dof,):[(Op(r"a^\dagger a", 0),1.0)]},
-                            model_translator=ModelTranslator.general_model)
+                            model={(dof,):[(Op(r"a^\dagger a", 0),1.0)]})
                         )
             # the order is e_dofs order
             self.mol_list.mpos[key] = mpos
@@ -1436,7 +1369,7 @@ class Mps(MatrixProduct):
         res = []
         for wfn1, wfn2 in zip(self.tdh_wfns, other.tdh_wfns):
             res.append(
-                scipy.linalg.norm(
+                np.linalg.norm(
                     np.tensordot(wfn1, wfn1, axes=0) - np.tensordot(wfn2, wfn2, axes=0)
                 )
             )
@@ -1453,97 +1386,29 @@ class Mps(MatrixProduct):
             res = np.tensordot(res, mt.array, axes=1).reshape(1, dim1, dim2)
         return res[0, :, 0]
 
-    def _calc_reduced_density_matrix(self, mp1, mp2):
-        if isinstance(self.mol_list, MolList2):
-            assert mp1 is None and mp2 is None
-            key = "reduced_density_matrix"
-            n_e = self.mol_list.n_edofs
-            if key not in self.mol_list.mpos:
-                mpos = []
-                for idx in range(n_e):
-                    for jdx in range(idx, n_e):
-                        model = {(f"e_{idx}", f"e_{jdx}"): [(Op(r"a^\dagger", 1),
-                                                             Op("a", -1), 1.0)]}
-                        mpo = Mpo.general_mpo(self.mol_list, model=model,
-                                              model_translator=ModelTranslator.general_model)
-                        mpos.append(mpo)
-                self.mol_list.mpos[key] = mpos
-            else:
-                mpos = self.mol_list.mpos[key]
-            expectations = deque(self.expectations(mpos))
-            reduced_density_matrix = np.zeros((n_e, n_e), dtype=backend.complex_dtype)
+    def calc_reduced_density_matrix(self) -> np.ndarray:
+
+        key = "reduced_density_matrix"
+        n_e = self.mol_list.n_edofs
+        if key not in self.mol_list.mpos:
+            mpos = []
             for idx in range(n_e):
                 for jdx in range(idx, n_e):
-                    reduced_density_matrix[idx, jdx] = expectations.popleft()
-                    reduced_density_matrix[jdx, idx] = np.conj(reduced_density_matrix[idx, jdx])
-
-        elif isinstance(self.mol_list, MolList):
-            if self.mol_list.scheme < 4:
-                # further optimization is difficult. There are totally N^2 intermediate results to remember.
-                reduced_density_matrix = np.zeros(
-                    (self.mol_list.mol_num, self.mol_list.mol_num), dtype=backend.complex_dtype
-                )
-                for i in range(self.mol_list.mol_num):
-                    for j in range(self.mol_list.mol_num):
-                        elem = ones((1, 1))
-                        e_idx = -1
-                        for mt_idx, (mt1, mt2) in enumerate(zip(mp1, mp2)):
-                            if self.ephtable.is_electron(mt_idx):
-                                e_idx += 1
-                                axis_idx1 = int(e_idx == i)
-                                axis_idx2 = int(e_idx == j)
-                                sub_mt1 = mt1[:, axis_idx1, :, :]
-                                sub_mt2 = mt2[:, :, axis_idx2, :]
-                                elem = tensordot(elem, sub_mt1, axes=(0, 0))
-                                elem = tensordot(elem, sub_mt2, axes=[(0, 1), (0, 1)])
-                            else:
-                                elem = tensordot(elem, mt1, axes=(0, 0))
-                                elem = tensordot(elem, mt2, axes=[(0, 1, 2), (0, 2, 1)])
-                        reduced_density_matrix[i][j] = elem.flatten()[0]
-            elif self.mol_list.scheme == 4:
-                e_idx = self.mol_list.e_idx()
-                l = ones((1, 1))
-                for i in range(e_idx):
-                    l = tensordot(l, mp1[i], axes=(0, 0))
-                    l = tensordot(l, mp2[i], axes=([0, 1, 2], [0, 2, 1]))
-                r = ones((1, 1))
-                for i in range(len(self)-1, e_idx, -1):
-                    r = tensordot(mp1[i], r, axes=(3, 0))
-                    r = tensordot(r, mp2[i], axes=([1, 2, 3], [2, 1, 3]))
-                #       f
-                #       |
-                # S--b--S--g--S
-                # |     |     |
-                # |     c     |
-                # |     |     |
-                # S--a--S--e--S
-                #       |
-                #       d
-                path = [
-                    ([0, 1], "ab, adce -> bdce"),
-                    #([2, 0], "bdce, bcfg -> defg"),
-                    #([1, 0], "defg, eg -> df"),
-                    ([2, 1], "bdce, eg -> bdcg"),
-                    ([1, 0], "bdcg, bcfg -> df"),
-                ]
-                reduced_density_matrix = asnumpy(multi_tensor_contract(path, l, mp1[e_idx], mp2[e_idx], r))[1:, 1:]
-            else:
-                assert False
+                    model = {(f"e_{idx}", f"e_{jdx}"): [(Op(r"a^\dagger", 1),
+                                                         Op("a", -1), 1.0)]}
+                    mpo = Mpo.general_mpo(self.mol_list, model=model)
+                    mpos.append(mpo)
+            self.mol_list.mpos[key] = mpos
         else:
-            assert False
+            mpos = self.mol_list.mpos[key]
+        expectations = deque(self.expectations(mpos))
+        reduced_density_matrix = np.zeros((n_e, n_e), dtype=backend.complex_dtype)
+        for idx in range(n_e):
+            for jdx in range(idx, n_e):
+                reduced_density_matrix[idx, jdx] = expectations.popleft()
+                reduced_density_matrix[jdx, idx] = np.conj(reduced_density_matrix[idx, jdx])
 
         return reduced_density_matrix
-
-    def calc_reduced_density_matrix(self) -> np.ndarray:
-        
-        if isinstance(self.mol_list, MolList):
-            mp1 = [mt.reshape(mt.shape[0], mt.shape[1], 1, mt.shape[2]) for mt in self]
-            mp2 = [mt.reshape(mt.shape[0], 1, mt.shape[1], mt.shape[2]).conj() for mt in self]
-            return self._calc_reduced_density_matrix(mp1, mp2)
-        elif isinstance(self.mol_list, MolList2):
-            return self._calc_reduced_density_matrix(None, None)
-        else:
-            assert False
 
     def calc_vn_entropy(self) -> np.ndarray:
         r"""

@@ -6,7 +6,9 @@ import scipy.special
 import itertools
 import logging
 
+
 logger = logging.getLogger(__name__)
+
 
 class BasisSet:
     r"""
@@ -17,6 +19,11 @@ class BasisSet:
         sigmaqn (List(int)): the qn of each basis
         multi_dof (bool) : if multiple dof is contained in this basis
     """
+
+    is_electron = False
+    is_phonon = False
+    is_spin = False
+
     def __init__(self, nbas: int, sigmaqn: List[int], multi_dof=False):
         assert type(nbas) is int
         self.nbas = nbas
@@ -47,7 +54,9 @@ class BasisSHO(BasisSet):
             :math:`x` and :math:`x^2` (or :math:`p` and :math:`p^2`) have been hard-coded already.
             The option is only used for testing.
     """
-    
+
+    is_phonon = True
+
     def __init__(self, omega, nbas, x0=0., dvr=False, general_xp_power=False):
         self.omega = omega
         self.x0 = x0  # origin = x0
@@ -223,6 +232,8 @@ class BasisMultiElectron(BasisSet):
         nstate (int): the # of electronic states
         sigmaqn (List(int)): the sigmaqn of each basis
     """
+
+    is_electron = True
     
     def __init__(self, nstate, sigmaqn: List[int]):
         
@@ -278,6 +289,8 @@ class BasisMultiElectronVac(BasisSet):
             that are represented by this basis. The default value is ``list(range(nstate))``.
             The arg is necessary when more than one basis of this class present in the model.
     """
+
+    is_electron = True
 
     def __init__(self, nstate, dof_idx=None):
 
@@ -341,6 +354,8 @@ class BasisSimpleElectron(BasisSet):
     The basis set for simple electron DoF, two state with 0: unoccupied, 1: occupied
 
     """
+    is_electron = True
+
     def __init__(self):
         super().__init__(2, [0, 1])
 
@@ -371,6 +386,9 @@ class BasisHalfSpin(BasisSet):
     r"""
     The basis the for 1/2 spin DoF
     """
+
+    is_spin = True
+
     def __init__(self, sigmaqn:List[int]=None):
         if sigmaqn is None:
             sigmaqn = [0, 0]
@@ -413,6 +431,7 @@ class BasisHalfSpin(BasisSet):
 
         return mat * op_factor
 
+
 def x_power_k(k, m, n):
 # <m|x^k|n>, origin is 0
 #\left\langle m\left|X^{k}\right| n\right\rangle=2^{-\frac{k}{2}} \sqrt{n ! m !}
@@ -437,6 +456,7 @@ def x_power_k(k, m, n):
                factorial(n-s, exact=True) / factorial2(k-m-n+2*s, exact=True)
 
         return res*sum0
+
 
 def p_power_k(k,m,n):
 # <m|p^k|n>

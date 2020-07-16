@@ -3,7 +3,7 @@
 import logging
 from functools import partial
 
-from renormalizer.model import MolList
+from renormalizer.model import MolList2
 from renormalizer.mps import Mpo, Mps
 from renormalizer.utils import TdMpsJob, Quantity, CompressConfig
 
@@ -13,7 +13,7 @@ logger = logging.getLogger(__name__)
 
 class SpinBosonModel(TdMpsJob):
 
-    def __init__(self, mol_list: MolList, temperature: Quantity, compress_config=None, evolve_config=None, dump_dir=None, job_name=None):
+    def __init__(self, mol_list: MolList2, temperature: Quantity, compress_config=None, evolve_config=None, dump_dir=None, job_name=None):
         self.mol_list = mol_list
         self.h_mpo = Mpo(mol_list)
         self.temperature = temperature

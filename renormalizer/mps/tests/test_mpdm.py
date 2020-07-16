@@ -4,7 +4,7 @@ import numpy as np
 import pytest
 
 from renormalizer.mps import Mps, Mpo, MpDm, MpDmFull, ThermalProp
-from renormalizer.model import MolList, MolList2, Mol, Phonon
+from renormalizer.model import HolsteinModel, Mol, Phonon
 from renormalizer.tests import parameter
 from renormalizer.utils import Quantity, EvolveConfig, EvolveMethod
 
@@ -14,7 +14,7 @@ from renormalizer.utils import Quantity, EvolveConfig, EvolveMethod
 def test_mpdm_full(nmols, phonon_freq):
     ph = Phonon.simple_phonon(Quantity(phonon_freq), Quantity(1), 2)
     m = Mol(Quantity(0), [ph])
-    mol_list = MolList([m] * nmols, Quantity(1))
+    mol_list = HolsteinModel([m] * nmols, Quantity(1), )
 
     gs_dm = MpDm.max_entangled_gs(mol_list)
     beta = Quantity(1000, "K").to_beta()
@@ -39,22 +39,16 @@ def test_from_mps():
     assert np.allclose(gs.e_occupations, gs_mpdm.e_occupations)
 
 
-# type 2 MolList used in the next test
-mollist2 = MolList2.MolList_to_MolList2(parameter.mol_list)
-
-
 @pytest.mark.parametrize(
-    "mol_list, adaptive, evolve_method",
+    "adaptive, evolve_method",
     (
-        [parameter.mol_list, True,  EvolveMethod.tdvp_ps],
-        [parameter.mol_list, False, EvolveMethod.prop_and_compress],
-        [parameter.mol_list, False, EvolveMethod.tdvp_mu_vmf],
-        [mollist2, True, EvolveMethod.prop_and_compress],
-        [mollist2, False, EvolveMethod.tdvp_ps],
-        [mollist2, False, EvolveMethod.tdvp_mu_vmf],
+        [True,  EvolveMethod.tdvp_ps],
+        [False, EvolveMethod.prop_and_compress],
+        [False, EvolveMethod.tdvp_mu_vmf],
     ),
 )
-def test_thermal_prop(mol_list, adaptive, evolve_method):
+def test_thermal_prop(adaptive, evolve_method):
+    mol_list = parameter.mol_list
     init_mps = MpDm.max_entangled_ex(mol_list)
     mpo = Mpo(mol_list)
     beta = Quantity(298, "K").to_beta()
@@ -99,7 +93,7 @@ def test_bogoliubov():
     T = Quantity(1)
     ph1 = Phonon.simple_phonon(Quantity(omega), Quantity(D), nlevel)
     mol1 = Mol(Quantity(0), [ph1])
-    mlist = MolList([mol1]*2, Quantity(1), scheme=4)
+    mlist = HolsteinModel([mol1] * 2, Quantity(1), )
     mpdm1 = MpDm.max_entangled_gs(mlist)
     mpdm1.evolve_config = evolve_config
     mpo1 = Mpo(mlist)
@@ -117,7 +111,7 @@ def test_bogoliubov():
     ph2 = Phonon.simple_phonon(Quantity(omega), Quantity(D * np.cosh(theta)), nlevel)
     ph3 = Phonon.simple_phonon(Quantity(-omega), Quantity(-D * np.sinh(theta)), nlevel)
     mol2 = Mol(Quantity(0), [ph2, ph3])
-    mlist2 = MolList([mol2]*2, Quantity(1), scheme=4)
+    mlist2 = HolsteinModel([mol2] * 2, Quantity(1), )
     mps1 = Mps.ground_state(mlist2, False)
     mps1.evolve_config = evolve_config
     mpo2 = Mpo(mlist2)

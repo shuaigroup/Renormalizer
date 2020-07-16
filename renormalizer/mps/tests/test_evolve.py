@@ -5,7 +5,6 @@ import qutip
 import pytest
 import numpy as np
 
-from renormalizer.model import MolList2
 from renormalizer.mps import Mps, Mpo, MpDm
 from renormalizer.utils import EvolveMethod, EvolveConfig, CompressConfig, CompressCriteria, Quantity
 from renormalizer.tests.parameter_exact import qutip_clist, qutip_h, mol_list
@@ -35,7 +34,6 @@ def f(mol_list, run_qutip=True):
         return init_mps, init_mpdm, mpo
 
 qutip_expectations, QUTIP_STEP, init_mps, init_mpdm, mpo = f(mol_list, True)
-init_mps2, init_mpdm2, mpo2 = f(MolList2.MolList_to_MolList2(mol_list), False)
 
 
 def check_result(mps, mpo, time_step, final_time, atol=1e-4):
@@ -90,20 +88,11 @@ def test_tdvp_cmf(init_state,tdvp_cmf_c_trapz):
 @pytest.mark.parametrize("init_state, mpo", (
         [init_mps, mpo],
         [init_mpdm, mpo],
-        [init_mps2, mpo2],
-        [init_mpdm2, mpo2]))
+))
 def test_tdvp_ps(init_state, mpo):
     mps = init_state.copy()
     mps.evolve_config  = EvolveConfig(EvolveMethod.tdvp_ps)
     check_result(mps, mpo, 0.4, 5)
-
-@pytest.mark.parametrize("init_state, atol, mpo", ([init_mps2, 1e-4, mpo2],
-    [init_mpdm2, 1e-3, mpo2]))
-def test_tdvp_vmf2(init_state, atol, mpo):
-    mps = init_state.copy()
-    method = EvolveMethod.tdvp_mu_vmf 
-    mps.evolve_config  = EvolveConfig(method, ivp_rtol=1e-3,ivp_atol=1e-6)
-    check_result(mps, mpo2, 0.5, 2, atol)
 
 # used for debugging
 def compare():

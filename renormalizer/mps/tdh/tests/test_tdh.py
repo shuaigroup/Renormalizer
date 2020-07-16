@@ -7,7 +7,7 @@ import os
 import numpy as np
 import pytest
 
-from renormalizer.model import MolList, Mol
+from renormalizer.model import HolsteinModel, Mol
 from renormalizer.mps import Mpo
 from renormalizer.mps.gs import construct_mps_mpo_2, optimize_mps
 from renormalizer.mps.tdh import tdh
@@ -56,6 +56,7 @@ def test_SCF_exact():
 
     nexciton = 1
 
+    # e-ph coupling constant is set to zero
     dmrg_mol_list = custom_mol_list(None, ph_phys_dim, dis=[Quantity(0), Quantity(0)])
     # DMRG calculation
     procedure = [[40, 0.4], [40, 0.2], [40, 0.1], [40, 0], [40, 0]]
@@ -75,13 +76,13 @@ def test_SCF_exact():
         None, ph_phys_dim, dis=[Quantity(0), Quantity(0)], hartrees=[True, True]
     )
     WFN, Etot = tdh.SCF(hartree_mol_list, nexciton)
-    assert Etot == pytest.approx(dmrg_e)
+    assert Etot + dmrg_mol_list.gs_zpe == pytest.approx(dmrg_e)
 
     fe, fv = 1, 6
     HAM, Etot, A_el = tdh.construct_H_Ham(
         hartree_mol_list, nexciton, WFN, fe, fv, debug=True
     )
-    assert Etot == pytest.approx(dmrg_e)
+    assert Etot + dmrg_mol_list.gs_zpe == pytest.approx(dmrg_e)
     assert np.allclose(A_el.flatten(), dmrg_occ, rtol=1e-4)
 
 
@@ -134,10 +135,7 @@ def test_1mol_ZTabs():
     log.init_log(logging.WARNING)
     nmols = 1
 
-    mol_list = MolList(
-        [Mol(elocalex, hartree_ph_list, dipole_abs) for _ in range(nmols)],
-        np.zeros([1, 1]),
-    )
+    mol_list = HolsteinModel([Mol(elocalex, hartree_ph_list, dipole_abs) for _ in range(nmols)], np.zeros([1, 1]), )
 
     E_offset = -mol_list[0].elocalex - mol_list[0].hartree_e0
 

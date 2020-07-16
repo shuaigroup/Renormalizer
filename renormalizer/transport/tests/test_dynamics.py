@@ -6,7 +6,7 @@ import os
 
 import pytest
 
-from renormalizer.model import Phonon, Mol, MolList
+from renormalizer.model import Phonon, Mol, HolsteinModel
 from renormalizer.mps import Mps, Mpo, ThermalProp, MpDm, MpDmFull
 from renormalizer.mps.gs import optimize_mps
 from renormalizer.transport import ChargeDiffusionDynamics
@@ -29,7 +29,7 @@ import numpy as np
 
 def test_zt_init_state():
     ph = Phonon.simple_phonon(Quantity(1), Quantity(1), 10)
-    mol_list = MolList([Mol(Quantity(0), [ph])], Quantity(0), scheme=3)
+    mol_list = HolsteinModel([Mol(Quantity(0), [ph])], Quantity(0), )
     mpo = Mpo(mol_list)
     mps = Mps.random(mol_list, 1, 10)
     optimize_mps(mps, mpo)
@@ -39,7 +39,7 @@ def test_zt_init_state():
 
 def test_ft_init_state():
     ph = Phonon.simple_phonon(Quantity(1), Quantity(1), 10)
-    mol_list = MolList([Mol(Quantity(0), [ph])], Quantity(0), scheme=3)
+    mol_list = HolsteinModel([Mol(Quantity(0), [ph])], Quantity(0), )
     temperature = Quantity(0.1)
     mpo = Mpo(mol_list)
     init_mpdm = MpDm.max_entangled_ex(mol_list)
@@ -128,11 +128,8 @@ def test_similar(
         )
         for omega, displacement in ph_info
     ]
-    mol_list = MolList(
-        [Mol(Quantity(elocalex_value, "a.u."), ph_list)] * mol_num,
-        Quantity(j_constant_value, "eV"),
-        scheme=3,
-    )
+    mol_list = HolsteinModel([Mol(Quantity(elocalex_value, "a.u."), ph_list)] * mol_num,
+                             Quantity(j_constant_value, "eV"), )
     ct1 = ChargeDiffusionDynamics(mol_list)
     ct1.evolve(evolve_dt, nsteps)
     ct2 = ChargeDiffusionDynamics(mol_list)
@@ -153,11 +150,8 @@ def test_evolve(
         )
         for omega, displacement in ph_info
     ]
-    mol_list = MolList(
-        [Mol(Quantity(elocalex_value, "a.u."), ph_list)] * mol_num,
-        Quantity(j_constant_value, "eV"),
-        scheme=3,
-    )
+    mol_list = HolsteinModel([Mol(Quantity(elocalex_value, "a.u."), ph_list)] * mol_num,
+                             Quantity(j_constant_value, "eV"), )
     ct1 = ChargeDiffusionDynamics(mol_list, stop_at_edge=False)
     half_nsteps = nsteps // 2
     ct1.evolve(evolve_dt, half_nsteps)
@@ -195,11 +189,8 @@ def test_band_limit_finite_t(
         )
         for omega, displacement in ph_info
     ]
-    mol_list = MolList(
-        [Mol(Quantity(elocalex_value, "a.u."), ph_list)] * mol_num,
-        Quantity(j_constant_value, "eV"),
-        scheme=scheme,
-    )
+    mol_list = HolsteinModel([Mol(Quantity(elocalex_value, "a.u."), ph_list)] * mol_num,
+                             Quantity(j_constant_value, "eV"), )
     ct1 = ChargeDiffusionDynamics(mol_list, stop_at_edge=False)
     ct1.evolve(evolve_dt, nsteps)
     ct2 = ChargeDiffusionDynamics(mol_list, temperature=low_t, stop_at_edge=False)

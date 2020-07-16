@@ -13,7 +13,7 @@ the unit of coupling constant c in our code has unit energy / mass^{1/2} * lengt
 3500 cm^-1 / (1*agstrom2au) mass^(1/2))
 '''
 from renormalizer.utils import constant
-from renormalizer.model import  Phonon, Mol, MolList
+from renormalizer.model import  Phonon, Mol, HolsteinModel
 from renormalizer.mps import Mpo, MpDm, ThermalProp, gs
 from renormalizer.utils import Quantity, EvolveConfig, EvolveMethod
 
@@ -58,8 +58,7 @@ D = [Quantity(0.),Quantity(D_value)]
 
 ph = Phonon(omega, D, ph_phys_dim)
 
-mol_list = MolList([Mol(Quantity(elocalex), [ph], dipole_abs)] * nmols,
-        j_matrix, scheme=3)
+mol_list = HolsteinModel([Mol(Quantity(elocalex), [ph], dipole_abs)] * nmols, j_matrix, )
 
 # periodic nearest-neighbour interaction
 mpo = Mpo(mol_list)

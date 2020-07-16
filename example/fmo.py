@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 
-from renormalizer.model import Phonon, Mol, MolList
+from renormalizer.model import Phonon, Mol, HolsteinModel
 from renormalizer.utils import Quantity, EvolveConfig, CompressConfig, CompressCriteria, EvolveMethod
 from renormalizer.utils.constant import cm2au
 from renormalizer.transport import ChargeDiffusionDynamics, InitElectron
@@ -152,7 +152,7 @@ if __name__ == "__main__":
 
     # starts from 1
     mol_arangement = np.array([7, 5, 3, 1, 2, 4, 6]) - 1
-    mol_list = MolList(list(np.array(mlist)[mol_arangement]), j_matrix_au[mol_arangement][:, mol_arangement])
+    mol_list = HolsteinModel(list(np.array(mlist)[mol_arangement]), j_matrix_au[mol_arangement][:, mol_arangement], )
 
     evolve_dt = 160
     evolve_config = EvolveConfig(EvolveMethod.tdvp_ps, guess_dt=evolve_dt)
