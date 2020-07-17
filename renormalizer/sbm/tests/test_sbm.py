@@ -3,7 +3,7 @@
 import pytest
 
 from renormalizer.model import Phonon, Mol
-from renormalizer.sbm import SpinBosonModel, param2mollist, SpectralDensityFunction
+from renormalizer.sbm import SpinBosonDynamics, param2mollist, SpectralDensityFunction
 from renormalizer.utils import Quantity, EvolveConfig, EvolveMethod
 from renormalizer.mps.tests.test_sbm import get_qutip_zt
 
@@ -16,8 +16,7 @@ def test_sdf():
     omega_list, displacement_list = sdf.trapz(200, 0.0, 50)
 
     ph_list = [Phonon.simplest_phonon(o, d) for o,d in zip(omega_list, displacement_list)]
-    mol = Mol(Quantity(0), ph_list, tunnel=Quantity(1))
-    mol_reor = mol.reorganization_energy
+    mol_reor = sum(ph.reorganization_energy.as_au() for ph in ph_list)
 
     assert mol_reor == pytest.approx(alpha * omega_c.as_au() / 2, abs=0.005)
 
@@ -37,8 +36,8 @@ def test_sbm_zt(alpha):
     mol_list = param2mollist(alpha, raw_delta, raw_omega_c, 5, n_phonons)
 
     evolve_config = EvolveConfig(method=EvolveMethod.tdvp_ps, adaptive=True, guess_dt=0.1)
-    sbm = SpinBosonModel(mol_list, Quantity(0), evolve_config=evolve_config)
+    sbm = SpinBosonDynamics(mol_list, Quantity(0), evolve_config=evolve_config)
     sbm.evolve(nsteps=20, evolve_time=20)
     spin1 = sbm.sigma_z
-    spin2 = get_qutip_zt(mol_list[0], sbm.evolve_times)
+    spin2 = get_qutip_zt(mol_list, sbm.evolve_times)
     assert np.allclose(spin1, spin2, atol=1e-3)

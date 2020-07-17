@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 
-from renormalizer.sbm import SpinBosonModel, param2mollist
+from renormalizer.sbm import SpinBosonDynamics, param2mollist
 from renormalizer.utils import Quantity, CompressConfig, EvolveConfig
 
 
@@ -14,5 +14,5 @@ if __name__ == "__main__":
 
     compress_config = CompressConfig(threshold=1e-4)
     evolve_config = EvolveConfig(adaptive=True, guess_dt=0.1)
-    sbm = SpinBosonModel(mol_list, Quantity(0), compress_config=compress_config, evolve_config=evolve_config, dump_dir="./", job_name="sbm")
+    sbm = SpinBosonDynamics(mol_list, Quantity(0), compress_config=compress_config, evolve_config=evolve_config, dump_dir="./", job_name="sbm")
     sbm.evolve(evolve_dt=0.1, evolve_time=20)

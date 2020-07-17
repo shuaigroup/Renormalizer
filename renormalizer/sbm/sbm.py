@@ -11,7 +11,7 @@ from renormalizer.utils import TdMpsJob, Quantity, CompressConfig
 logger = logging.getLogger(__name__)
 
 
-class SpinBosonModel(TdMpsJob):
+class SpinBosonDynamics(TdMpsJob):
 
     def __init__(self, mol_list: MolList2, temperature: Quantity, compress_config=None, evolve_config=None, dump_dir=None, job_name=None):
         self.mol_list = mol_list
