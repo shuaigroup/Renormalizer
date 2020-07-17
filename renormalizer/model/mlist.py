@@ -186,10 +186,7 @@ class HolsteinModel(MolList2):
             nv = 0
             for imol, mol in enumerate(mol_list):
                 order[f"e_{imol}"] = idx
-                if not mol.sbm:
-                    basis.append(ba.BasisSimpleElectron())
-                else:
-                    basis.append(ba.BasisHalfSpin())
+                basis.append(ba.BasisSimpleElectron())
                 idx += 1
                 for iph, ph in enumerate(mol.dmrg_phs):
                     order[f"v_{nv}"] = idx
@@ -232,15 +229,8 @@ class HolsteinModel(MolList2):
         for imol in range(mol_num):
             for jmol in range(mol_num):
                 if imol == jmol:
-                    if mol_list[imol].sbm:
-                        model[(f"e_{imol}",)] = \
-                            [(Op(r"sigma_z", 0), mol_list[imol].elocalex)]
-                        model[(f"e_{imol}",)].append(
-                            (Op("sigma_x", 0), mol_list[imol].tunnel)
-                        )
-                    else:
-                        model[(f"e_{imol}",)] = \
-                            [(Op(r"a^\dagger a", 0), mol_list[imol].elocalex + mol_list[imol].dmrg_e0)]
+                    model[(f"e_{imol}",)] = \
+                        [(Op(r"a^\dagger a", 0), mol_list[imol].elocalex + mol_list[imol].dmrg_e0)]
                 else:
                     model[(f"e_{imol}", f"e_{jmol}")] = \
                         [(Op(r"a^\dagger", 1), Op("a", -1), j_matrix[imol, jmol])]
@@ -257,18 +247,14 @@ class HolsteinModel(MolList2):
         # vibration potential part
         for imol, mol in enumerate(mol_list):
             for iph, ph in enumerate(mol.dmrg_phs):
-                if mol_list[imol].sbm:
-                    op_str = r"sigma_z"
-                else:
-                    op_str = r"a^\dagger a"
                 if np.allclose(ph.omega[0], ph.omega[1]):
                     model[(f"e_{imol}", f"{mapping[(imol,iph)]}")] = [
-                        (Op(op_str, 0), Op("x", 0), -ph.omega[1] ** 2 * ph.dis[1]),
+                        (Op(r"a^\dagger a", 0), Op("x", 0), -ph.omega[1] ** 2 * ph.dis[1]),
                     ]
                 else:
                     model[(f"e_{imol}", f"{mapping[(imol,iph)]}")] = [
-                        (Op(op_str, 0), Op("x^2", 0), 0.5 * (ph.omega[1] ** 2 - ph.omega[0] ** 2)),
-                        (Op(op_str, 0), Op("x", 0), -ph.omega[1] ** 2 * ph.dis[1]),
+                        (Op(r"a^\dagger a", 0), Op("x^2", 0), 0.5 * (ph.omega[1] ** 2 - ph.omega[0] ** 2)),
+                        (Op(r"a^\dagger a", 0), Op("x", 0), -ph.omega[1] ** 2 * ph.dis[1]),
                     ]
 
 
@@ -338,8 +324,19 @@ class VibronicModel(MolList2):
         sub-key (one-to-one map between the sub-key and tuple).
         The model_translator is ModelTranslator.vibronic_model
         for example:
-        ``{"I": {("v_1"):[(Op,factor),]}, ("e_i","e_j") : {"J":factor, ("v_0",):[(Op, factor), (Op, factor)],
-        ("v_1","v_2"):[(Op1, Op2, factor), (Op1, Op2, factor)]...}...}``
+
+        ::
+
+            {
+              "I"           : {("v_1"):[(Op,factor),]},
+              ("e_i","e_j") : {
+                "J":factor,
+                ("v_0",):[(Op, factor), (Op, factor)],
+                ("v_1","v_2"):[(Op1, Op2, factor), (Op1, Op2, factor)]
+                ...
+                }
+              ...
+            }
     """
     def __init__(self, order: Union[Dict, List], basis: Union[Dict, List], model: Dict, dipole: Dict = None):
         new_model = defaultdict(list)
@@ -370,6 +367,50 @@ class VibronicModel(MolList2):
                             new_model[new_key].append(new_value)
 
         super().__init__(order, basis, new_model, dipole)
+
+
+class SpinBosonModel(MolList2):
+    r"""
+    Spin-Boson model
+
+        .. math::
+            \hat{H} = \epsilon \sigma_z + \Delta \sigma_x
+                + \frac{1}{2} \sum_i(p_i^2+\omega^2_i q_i^2)
+                + \sigma_z \sum_i c_i q_i
+
+    """
+    def __init__(self, epsilon: Quantity, delta: Quantity, ph_list: List[Phonon], dipole: float=None):
+
+        self.epsilon = epsilon.as_au()
+        self.delta = delta.as_au()
+        self.ph_list = ph_list
+
+        order = {}
+        basis = []
+        model = {}
+
+        order[f"e_0"] = 0
+        basis.append(ba.BasisHalfSpin())
+        for iph, ph in enumerate(ph_list):
+            order[f"v_{iph}"] = iph+1
+            basis.append(ba.BasisSHO(ph.omega[0], ph.n_phys_dim))
+
+        # spin
+        model[(f"e_0",)] = [(Op(r"sigma_z", 0), self.epsilon),(Op("sigma_x", 0), self.delta)]
+        # vibration energy and potential
+        for iph, ph in enumerate(ph_list):
+            assert ph.is_simple
+            model[(f"v_{iph}",)] = [
+                (Op("p^2", 0), 0.5),
+                (Op("x^2", 0), 0.5 * ph.omega[0] ** 2)
+            ]
+            model[(f"e_0", f"v_{iph}")] = [
+                (Op("sigma_z", 0), Op("x", 0), -ph.omega[1] ** 2 * ph.dis[1]),
+            ]
+        if dipole is None:
+            dipole = 0
+        super().__init__(order, basis, model, dipole={"e_0": dipole})
+
 
 def construct_j_matrix(mol_num, j_constant, periodic):
     # nearest neighbour interaction

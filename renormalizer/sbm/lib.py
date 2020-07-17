@@ -7,7 +7,7 @@ import scipy
 import scipy.special
 import scipy.optimize
 
-from renormalizer.model import Phonon, Mol, HolsteinModel
+from renormalizer.model import Phonon, Mol, SpinBosonModel
 from renormalizer.utils import Quantity
 
 
@@ -160,5 +160,4 @@ def param2mollist(alpha: float, raw_delta: Quantity, omega_c: Quantity, renormal
     omega_list, displacement_list = sdf.trapz(n_phonons, 0.0, max_omega.as_au())
 
     ph_list = [Phonon.simplest_phonon(o, d) for o,d in zip(omega_list, displacement_list)]
-    mol = Mol(Quantity(0), ph_list, tunnel=delta)
-    return HolsteinModel([mol], None, )
+    return SpinBosonModel(Quantity(0), delta, ph_list)

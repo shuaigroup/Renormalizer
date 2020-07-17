@@ -49,10 +49,9 @@ class Mol:
     phonon information : ph
     """
 
-    def __init__(self, elocalex, ph_list: List[Phonon], dipole=None, heatbath=False, tunnel=Quantity(0)):
+    def __init__(self, elocalex, ph_list: List[Phonon], dipole=None, heatbath=False):
         self.elocalex = elocalex.as_au()
         self.dipole = dipole
-        self.tunnel = tunnel.as_au()
         if len(ph_list) == 0:
             raise ValueError("No phonon mode in phonon list")
         self.dmrg_phs = [ph for ph in ph_list if not ph.hartree]
@@ -93,10 +92,6 @@ class Mol:
         return self.dmrg_phs + self.hartree_phs
 
     @property
-    def sbm(self):
-        return not np.allclose(self.tunnel, 0)
-
-    @property
     def gs_zpe(self):
         e = 0.
         for ph in self.dmrg_phs:
@@ -115,7 +110,6 @@ class Mol:
         info_dict["elocalex"] = self.elocalex
         info_dict["dipole"] = self.dipole
         info_dict["reorganization energy in a.u."] = self.reorganization_energy
-        info_dict["tunnel"] = self.tunnel
         info_dict["dmrg phonon modes"] = self.n_dmrg_phs
         if self.n_hartree_phs:
             info_dict["dmrg phonon modes"] = self.n_dmrg_phs

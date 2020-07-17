@@ -125,7 +125,6 @@ class Phonon(object):
             phonons.append(ph)
         return phonons
 
-
     def to_dict(self):
         info_dict = OrderedDict()
         info_dict["omega"] = self.omega
