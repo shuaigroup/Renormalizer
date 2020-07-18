@@ -54,7 +54,7 @@ mps = Mps.random(mol_list2, nelec, M, percent=1.0)
 
 mps.optimize_config.procedure = procedure
 mps.optimize_config.method = "2site"
-energies, mps = gs.optimize_mps_dmrg(mps.copy(), mpo)
+energies, mps = gs.optimize_mps(mps.copy(), mpo)
 gs_e = min(energies)+nuc
 logger.info(f"lowest energy: {gs_e}")
 # fci result

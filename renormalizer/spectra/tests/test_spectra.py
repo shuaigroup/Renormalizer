@@ -86,8 +86,7 @@ def test_zero_t_emi(algorithm):
     assert np.allclose(zero_t_corr.autocorr[:nsteps], std[:nsteps], rtol=1e-2)
 
 
-@pytest.mark.parametrize("algorithm", (2,))
-def test_finite_t_spectra_emi(algorithm):
+def test_finite_t_spectra_emi():
     np.random.seed(0)
     # print "data", value
     mol_list = parameter.mol_list
@@ -98,19 +97,12 @@ def test_finite_t_spectra_emi(algorithm):
     nsteps = 30
     dt = 30.0
     finite_t_emi.evolve(dt, nsteps)
-    with open(
-        os.path.join(
-            cur_dir, "TTemi_" + str(algorithm) + "svd.npy"
-        ),
-        "rb",
-    ) as fin:
+    with open(os.path.join(cur_dir, "TTemi_2svd.npy"),"rb") as fin:
         std = np.load(fin)
     assert np.allclose(finite_t_emi.autocorr[:nsteps], std[:nsteps], rtol=1e-2)
 
 
-@pytest.mark.parametrize("algorithm", (1,2))
-def test_finite_t_spectra_abs(algorithm):
-    # print "data", value
+def test_finite_t_spectra_abs():
     mol_list = parameter.mol_list
     insteps = 50
     finite_t_abs = SpectraFiniteT(
@@ -120,7 +112,7 @@ def test_finite_t_spectra_abs(algorithm):
     dt = 30.0
     finite_t_abs.evolve(dt, nsteps)
     with open(
-        os.path.join(cur_dir, "TTabs_" + "svd.npy"), "rb"
+        os.path.join(cur_dir, "TTabs_svd.npy"), "rb"
     ) as fin:
         std = np.load(fin)
     assert np.allclose(finite_t_abs.autocorr[:nsteps], std[:nsteps], rtol=1e-2)

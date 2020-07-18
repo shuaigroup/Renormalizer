@@ -7,7 +7,7 @@ import numpy as np
 import scipy
 import scipy.sparse
 
-from renormalizer.model import MolList2
+from renormalizer.model import MolList2, HolsteinModel
 from renormalizer.mps.backend import xp
 from renormalizer.mps.matrix import moveaxis, tensordot, asnumpy
 from renormalizer.mps.mp import MatrixProduct
@@ -387,7 +387,7 @@ class Mpo(MatrixProduct):
     """
 
     @classmethod
-    def exact_propagator(cls, mol_list: MolList2, x, space="GS", shift=0.0):
+    def exact_propagator(cls, mol_list: HolsteinModel, x, space="GS", shift=0.0):
         """
         construct the GS space propagator e^{xH} exact MPO
         H=\\sum_{in} \\omega_{in} b^\\dagger_{in} b_{in}
@@ -407,13 +407,13 @@ class Mpo(MatrixProduct):
                 mo = np.eye(2).reshape(1, 2, 2, 1)
                 mpo.append(mo)
             elif mol_list.scheme == 4:
-                if len(mpo) == mol_list.e_idx():
+                if len(mpo) == mol_list.order["e_0"]:
                     n = mol_list.mol_num
                     mpo.append(np.eye(n+1).reshape(1, n+1, n+1, 1))
             else:
                 assert False
 
-            for ph in mol.dmrg_phs:
+            for ph in mol.ph_list:
 
                 if space == "EX":
                     # for the EX space, with quasiboson algorithm, the b^\dagger + b
@@ -505,7 +505,7 @@ class Mpo(MatrixProduct):
         return mpo
 
     @classmethod
-    def ph_onsite(cls, mol_list: MolList2, opera: str, mol_idx:int, ph_idx=0):
+    def ph_onsite(cls, mol_list: HolsteinModel, opera: str, mol_idx:int, ph_idx=0):
         assert opera in ["b", r"b^\dagger", r"b^\dagger b"]
         assert mol_list.map is not None
 
@@ -515,13 +515,13 @@ class Mpo(MatrixProduct):
         return mpo
 
     @classmethod
-    def intersite(cls, mol_list: MolList2, e_opera: dict, ph_opera: dict, scale:
+    def intersite(cls, mol_list: HolsteinModel, e_opera: dict, ph_opera: dict, scale:
             Quantity=Quantity(1.)):
         """ construct the inter site MPO
         
         Parameters
         ----------
-        mol_list : MolList2
+        mol_list : HolsteinModel
             the molecular information
         e_opera:
             the electronic operators. {imol: operator}, such as {1:"a", 3:r"a^\dagger"}
@@ -701,10 +701,7 @@ class Mpo(MatrixProduct):
     def __init__(self, mol_list: MolList2 = None, offset: Quantity = Quantity(0), model: Dict = None):
 
         """
-        scheme 1: l to r
-        scheme 2: l,r to middle, the bond dimension is smaller than scheme 1
-        scheme 3: l to r, nearest neighbour exciton interaction
-        please see doc
+        todo: document
         """
         # leave the possibility to construct MPO by hand
         super(Mpo, self).__init__()
@@ -713,7 +710,7 @@ class Mpo(MatrixProduct):
         if not isinstance(offset, Quantity):
             raise ValueError("offset must be Quantity object")
 
-        self.offset = offset
+        self.offset = offset.as_au()
         self._general_mpo(mol_list, const=-offset, model=model)
 
 

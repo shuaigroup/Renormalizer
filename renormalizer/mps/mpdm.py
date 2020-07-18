@@ -63,11 +63,10 @@ class MpDmBase(Mps, Mpo):
         return path
 
     def conj_trans(self):
-        logger.warning("use conj_trans on mpdm leads to dummy qn")
+        logger.warning("using conj_trans on mpdm leads to dummy qn")
         new_mpdm: "MpDmBase" = super().conj_trans()
         new_mpdm.use_dummy_qn = True
-        for idx, wfn in enumerate(new_mpdm.tdh_wfns):
-            new_mpdm.tdh_wfns[idx] = np.conj(wfn).T
+        new_mpdm.coeff = new_mpdm.coeff.conjugate()
         return new_mpdm
 
     def apply(self, mp, canonicalise=False) -> "MpDmBase":
@@ -103,17 +102,6 @@ class MpDmBase(Mps, Mpo):
             new_mpdm.canonicalise()
         return new_mpdm
 
-    def dot(self, other: "MpDmBase", with_hartree=True):
-        e = super().dot(other, with_hartree=False)
-        if with_hartree:
-            assert len(self.tdh_wfns) == len(other.tdh_wfns)
-            for wfn1, wfn2 in zip(self.tdh_wfns[:-1], other.tdh_wfns[:-1]):
-                # using vdot is buggy here, because vdot will take conjugation automatically
-                # note the difference between np.dot(wfn1, wfn2).trace()
-                # probably the wfn part should be better wrapped?
-                e *= np.dot(wfn1.flatten(), wfn2.flatten())
-        return e
-
 
 class MpDm(MpDmBase):
 
@@ -127,9 +115,7 @@ class MpDm(MpDmBase):
                 mo[:, iaxis, iaxis, :] = ms[:, iaxis, :].array
             mpo.append(mo)
 
-        for wfn in mps.tdh_wfns[:-1]:
-            assert wfn.ndim == 2
-        mpo.tdh_wfns = mps.tdh_wfns
+        mpo.coeff = mps.coeff
 
         mpo.optimize_config = mps.optimize_config
         mpo.evolve_config = mps.evolve_config
@@ -166,21 +152,12 @@ class MpDm(MpDmBase):
         return np.add.outer(array_up, array_down)
 
     def evolve_exact(self, h_mpo, evolve_dt, space):
-        MPOprop, ham, Etot = self.hybrid_exact_propagator(
-            h_mpo, -1.0j * evolve_dt, space
+        MPOprop = Mpo.exact_propagator(
+            self.mol_list, -1.0j * evolve_dt, space=space, shift=-h_mpo.offset
         )
         # Mpdm is applied on the propagator, different from base method
         new_mpdm = self.apply(MPOprop, canonicalise=True)
-        for iham, ham in enumerate(ham):
-            w, v = scipy.linalg.eigh(ham)
-            new_mpdm.tdh_wfns[iham] = (
-                new_mpdm.tdh_wfns[iham]
-                    .dot(v)
-                    .dot(np.diag(np.exp(-1.0j * evolve_dt * w)))
-                    .dot(v.T)
-            )
-        new_mpdm.tdh_wfns[-1] *= np.exp(-1.0j * Etot * evolve_dt)
-        # unitary_propagation(new_mpdm.tdh_wfns, HAM, Etot, evolve_dt)
+        new_mpdm.coeff *= np.exp(-1.0j * h_mpo.offset * evolve_dt)
         return new_mpdm
 
     def full_wfn(self):
@@ -243,7 +220,7 @@ class MpDmFull(MpDmBase):
     def _evolve_dmrg_tdvp_mu_switch_gauge(self, mpo, evolve_dt):
         raise NotImplementedError
 
-    def _evolve_dmrg_tdvp_ps(self, mpo, evolve_dt):
+    def _evolve_tdvp_ps(self, mpo, evolve_dt):
         raise NotImplementedError
 
     # todo: implement this

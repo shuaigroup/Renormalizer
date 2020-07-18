@@ -25,14 +25,14 @@ displacement = [
 ]
 ph_phys_dim = [4, 4]
 ph_list = [Phonon(*args) for args in zip(omega, displacement, ph_phys_dim)]
+# useful in TDH module
 hartree_ph_list = [
     Phonon(*args, hartree=True) for args in zip(omega, displacement, ph_phys_dim)
 ]
-hybrid_ph_list = [ph_list[1], hartree_ph_list[0]]
 
 mol_list = HolsteinModel([Mol(elocalex, ph_list, dipole_abs)] * nmols, _j_matrix, )
+# useful in TDH module
 hartree_mol_list = HolsteinModel([Mol(elocalex, hartree_ph_list, dipole_abs)] * nmols, _j_matrix, )
-hybrid_mol_list = HolsteinModel([Mol(elocalex, hybrid_ph_list, dipole_abs)] * nmols, _j_matrix, )
 
 offset = Quantity(2.28614053, "ev") + Quantity(mol_list.gs_zpe)
 

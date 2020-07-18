@@ -269,10 +269,6 @@ class OptimizeConfig:
         # inverse = 1.0 or -1.0
         # -1.0 to get the largest eigenvalue
         self.inverse = 1.0
-        # for dmrg-hartree hybrid to check converge. Not to confuse with compress threshold
-        self.niterations = 20
-        self.dmrg_thresh = 1e-5
-        self.hartree_thresh = 1e-5
 
 
 class EvolveMethod(Enum):

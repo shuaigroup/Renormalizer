@@ -75,7 +75,7 @@ def test_svd_compress(comp, mp):
         mps = Mps.random(mol_list, 1, 10)
         if mp == "mpdm":
             mps = MpDm.from_mps(mps)
-        mps.canonicalise()._dmrg_normalize()
+        mps.canonicalise().normalize()
         M = 36
     if comp:
         mps = mps.to_complex(inplace=True)
@@ -108,7 +108,7 @@ def test_variational_compress(comp, mp):
         mps = Mps.random(mol_list, 1, 10)
         if mp == "mpdm":
             mps = MpDm.from_mps(mps)
-        mps.canonicalise()._dmrg_normalize()
+        mps.canonicalise().normalize()
         M = 36
     if comp:
         mps = mps.to_complex(inplace=True)

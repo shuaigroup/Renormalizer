@@ -28,7 +28,6 @@ def SCF(mol_list, nexciton, niterations=20, thresh=1e-5, particle="hardcore boso
     each electron has 1 orbital, but if electronic part is hardcore boson, only
     one many-body wfn is used for electronic DOF
     """
-    assert mol_list.pure_hartree
     assert particle in ["hardcore boson", "fermion"]
 
     # initial guess
@@ -57,8 +56,8 @@ def SCF(mol_list, nexciton, niterations=20, thresh=1e-5, particle="hardcore boso
 
     # vibrational part
     for mol in mol_list:
-        for iph in range(mol.n_hartree_phs):
-            vw, vv = scipy.linalg.eigh(a=mol.hartree_phs[iph].h_indep)
+        for ph in mol.ph_list:
+            vw, vv = scipy.linalg.eigh(a=ph.h_indep)
             WFN.append(vv[:, 0])
             fv += 1
 
@@ -118,7 +117,7 @@ def Ham_elec(mol_list, nexciton, indirect=None, particle="hardcore boson"):
         for imol, mol in enumerate(mol_list):
             for jmol in range(nmols):
                 if imol == jmol:
-                    H_el_indep[imol, imol] = mol.elocalex + mol.hartree_e0
+                    H_el_indep[imol, imol] = mol.elocalex + mol.e0
                 else:
                     H_el_indep[imol, jmol] = mol_list.j_matrix[imol, jmol]
 
@@ -183,7 +182,7 @@ def construct_H_Ham(
     iwfn = fe
     for mol in mol_list:
         B_vib.append([])
-        for ph in mol.hartree_phs:
+        for ph in mol.ph_list:
             B_vib[-1].append(mflib.exp_value(WFN[iwfn], ph.h_dep, WFN[iwfn]))
             iwfn += 1
     B_vib_mol = [np.sum(np.array(i)) for i in B_vib]
@@ -192,9 +191,8 @@ def construct_H_Ham(
     HAM = []
     for ife in range(fe):
         # the mean field energy of ife state
-        e_mean = mflib.exp_value(WFN[ife], H_el_indep, WFN[ife]) + A_el[:, ife].dot(
-            B_vib_mol
-        )
+        e_mean = mflib.exp_value(WFN[ife], H_el_indep, WFN[ife]) \
+                 + A_el[:, ife].dot(B_vib_mol)
         ham = H_el_indep - np.diag([e_mean] * H_el_indep.shape[0])
         for imol in range(nmols):
             ham += H_el_dep[imol] * B_vib_mol[imol]
@@ -203,9 +201,9 @@ def construct_H_Ham(
 
     iwfn = fe
     for imol, mol in enumerate(mol_list):
-        for iph in range(mol.n_hartree_phs):
-            h_indep = mol.hartree_phs[iph].h_indep
-            h_dep = mol.hartree_phs[iph].h_dep
+        for iph in range(len(mol.ph_list)):
+            h_indep = mol.ph_list[iph].h_indep
+            h_dep = mol.ph_list[iph].h_dep
             e_mean = mflib.exp_value(WFN[iwfn], h_indep, WFN[iwfn])
             Etot += e_mean  # no double counting of e-ph coupling energy
             e_mean += np.sum(A_el[imol, :]) * B_vib[imol][iph]
@@ -232,7 +230,6 @@ class TdHartree(TdMpsJob):
         temperature=Quantity(0, "K"),
         insteps=None,
     ):
-        assert mol_list.pure_hartree
         self.mol_list = mol_list
         self.nexciton = nexciton
         assert particle in ["hardcore boson", "fermion"]
@@ -246,7 +243,7 @@ class TdHartree(TdMpsJob):
         elif particle == "fermion":
             raise NotImplementedError
         for mol in self.mol_list:
-            self.fv += len(mol.hartree_phs)
+            self.fv += len(mol.ph_list)
 
         super(TdHartree, self).__init__()
         self.info_interval = np.inf
@@ -326,7 +323,7 @@ class TdHartree(TdMpsJob):
         DM.append(np.diag([1.0] * dim))
 
         for mol in self.mol_list:
-            for ph in mol.hartree_phs:
+            for ph in mol.ph_list:
                 dim = ph.h_indep.shape[0]
                 DM.append(np.diag([1.0] * dim))
 
@@ -550,7 +547,6 @@ def construct_onsiteO(mol_list, opera, dipole=False, mol_idx_set=None):
     """
     construct the electronic onsite operator \\sum_i opera_i MPO
     """
-    assert mol_list.pure_hartree
     assert opera in ["a", r"a^\dagger", r"a^\dagger a"]
     nmols = len(mol_list)
     if mol_idx_set is None:

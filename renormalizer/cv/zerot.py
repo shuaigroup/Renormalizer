@@ -98,7 +98,7 @@ class SpectraZtCV(SpectraCv):
         mps.optimize_config = OptimizeConfig(procedure=self.procedure_gs)
         mps.optimize_config.method = "2site"
 
-        energies, mps = gs.optimize_mps_dmrg(mps, self.h_mpo)
+        energies, mps = gs.optimize_mps(mps, self.h_mpo)
         e0 = min(energies)
 
         dipole_mpo = \

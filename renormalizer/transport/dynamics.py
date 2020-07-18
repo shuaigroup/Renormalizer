@@ -141,7 +141,7 @@ class ChargeDiffusionDynamics(TdMpsJob):
         center_mol_idx = self.mol_num // 2
         center_mol = self.mol_list[center_mol_idx]
         # start from phonon
-        for i, ph in enumerate(center_mol.dmrg_phs):
+        for i, ph in enumerate(center_mol.ph_list):
             v_dof = self.mol_list.map[(center_mol_idx, i)]
             idx = self.mol_list.order[v_dof]
             mt = gs_mp[idx][0, ..., 0].array

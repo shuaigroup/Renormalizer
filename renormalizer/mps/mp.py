@@ -869,7 +869,7 @@ class MatrixProduct:
         new._mp = [m.copy() for m in self._mp]
         return new
 
-    # only (shalow) copy metadata because usually after been copied the real data is overwritten
+    # only (shallow) copy metadata because usually after been copied the real data is overwritten
     def metacopy(self) -> "MatrixProduct":
         new = self.__class__.__new__(self.__class__)
         new._mp = [None] * len(self)
@@ -877,7 +877,6 @@ class MatrixProduct:
         new.mol_list = self.mol_list
         # need to deep copy compress_config because threshold might change dynamically
         new.compress_config = self.compress_config.copy()
-        new.peak_bytes = 0
         new.use_dummy_qn = self.use_dummy_qn
         new.qn = [qn.copy() for qn in self.qn]
         new.qnidx = self.qnidx
@@ -891,6 +890,8 @@ class MatrixProduct:
             mt = array.astype(self.dtype)
         else:
             mt = Matrix(array, dtype=self.dtype)
+        if mt.pdim[0] != self.pbond_list[idx]:
+            raise ValueError("Matrix physical bond dimension does not match system information")
         if self.use_dummy_qn:
             mt.sigmaqn = np.zeros(mt.pdim_prod, dtype=np.int)
         else:

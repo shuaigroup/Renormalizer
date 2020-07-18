@@ -37,7 +37,7 @@ def test_H_chain_LDOS():
     
     mps.optimize_config.procedure = procedure
     mps.optimize_config.method = "2site"
-    energies, mps = gs.optimize_mps_dmrg(mps, mpo)
+    energies, mps = gs.optimize_mps(mps, mpo)
     gs_e = min(energies)+nuc
     
     assert np.allclose(gs_e, -2.190384218792706)

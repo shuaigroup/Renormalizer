@@ -6,6 +6,7 @@ several lowest excited states with state-averaged algorithm.
 
 """
 
+from typing import Tuple, List
 import logging
 
 from renormalizer.lib import davidson
@@ -25,27 +26,21 @@ import opt_einsum as oe
 
 logger = logging.getLogger(__name__)
 
-def find_lowest_energy(h_mpo: Mpo, nexciton, Mmax, with_hartree=True):
+def find_lowest_energy(h_mpo: Mpo, nexciton, Mmax):
     logger.debug("begin finding lowest energy")
-    if with_hartree:
-        mol_list = h_mpo.mol_list
-    else:
-        mol_list = h_mpo.mol_list.get_pure_dmrg_mollist()
+    mol_list = h_mpo.mol_list
     mps = Mps.random(mol_list, nexciton, Mmax)
-    energy = optimize_mps(mps, h_mpo)
-    return energy.min()
+    energies, _ = optimize_mps(mps, h_mpo)
+    return energies[-1]
 
 
-def find_highest_energy(h_mpo: Mpo, nexciton, Mmax, with_hartree=True):
+def find_highest_energy(h_mpo: Mpo, nexciton, Mmax):
     logger.debug("begin finding highest energy")
-    if with_hartree:
-        mol_list = h_mpo.mol_list
-    else:
-        mol_list = h_mpo.mol_list.get_pure_dmrg_mollist()
+    mol_list = h_mpo.mol_list
     mps = Mps.random(mol_list, nexciton, Mmax)
     mps.optimize_config.inverse = -1.0
-    energy = optimize_mps(mps, h_mpo)
-    return -energy.min()
+    energies, _ = optimize_mps(mps, h_mpo)
+    return -energies[-1]
 
 
 def construct_mps_mpo_2(
@@ -70,39 +65,7 @@ def construct_mps_mpo_2(
     return mps, mpo
 
 
-def optimize_mps(mps: Mps, mpo: Mpo):
-    energies, mps = optimize_mps_dmrg(mps, mpo)
-    if not mps.hybrid_tdh:
-        return energies[-1]
-
-    HAM = []
-
-    for mol in mps.mol_list:
-        for ph in mol.hartree_phs:
-            HAM.append(ph.h_indep)
-
-    optimize_mps_hartree(mps, HAM)
-
-    for itera in range(mps.optimize_config.niterations):
-        logging.info("Loop: %d" % itera)
-        MPO, HAM, Etot = mps.construct_hybrid_Ham(mpo)
-
-        MPS_old = mps.copy()
-        energyies, mps = optimize_mps_dmrg(mps, MPO)
-        optimize_mps_hartree(mps, HAM)
-
-        # check convergence
-        dmrg_converge = abs(mps.angle(MPS_old) - 1) < mps.optimize_config.dmrg_thresh
-        hartree_converge = np.all(
-            mps.hartree_wfn_diff(MPS_old) < mps.optimize_config.hartree_thresh
-        )
-        if dmrg_converge and hartree_converge:
-            logger.info("SCF converge!")
-            break
-    return Etot
-
-
-def optimize_mps_dmrg(mps, mpo):
+def optimize_mps(mps: Mps, mpo: Mpo) -> Tuple[List, Mps]:
     r""" DMRG ground state algorithm and state-averaged excited states algorithm
     
     Parameters
@@ -376,13 +339,5 @@ def optimize_mps_dmrg(mps, mpo):
     
     return macro_iteration_result, mps
 
-
-def optimize_mps_hartree(mps: "Mps", HAM):
-    mps.tdh_wfns = []
-    for ham in HAM:
-        w, v = scipy.linalg.eigh(ham)
-        mps.tdh_wfns.append(v[:, 0])
-    # append the coefficient a
-    mps.tdh_wfns.append(1.0)
 
 

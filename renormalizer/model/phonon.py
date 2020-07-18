@@ -84,7 +84,7 @@ class Phonon(object):
         else:
             self.force3rd = force3rd
         self.n_phys_dim: int = n_phys_dim
-        self.hartree = hartree
+
         if hartree:
             phop = construct_ph_op_dict(self.n_phys_dim)
             self.h_indep = (
@@ -200,8 +200,8 @@ class Phonon(object):
         print("nlevels = ", self.n_phys_dim)
 
     def __eq__(self, other):
-        a = self.__dict__
-        b = other.__dict__
+        a = self.__dict__.copy()
+        b = other.__dict__.copy()
         for d in [a, b]:
             # numpy arrays tricky to handle
             d.pop("h_dep")
