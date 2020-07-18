@@ -51,7 +51,7 @@ def calc_lindblad_pm(mol_list):
     # b and b^\dagger
     ph_operators = []
     for imol, m in enumerate(mol_list):
-        for jph in range(m.n_dmrg_phs):
+        for jph in range(len(m.ph_list)):
             b = Mpo.ph_onsite(mol_list, r"b", imol, jph)
             b_dag = Mpo.ph_onsite(mol_list, r"b^\dagger", imol, jph)
             ph_operators.append((b, b_dag))
@@ -61,7 +61,7 @@ def calc_lindblad_pm(mol_list):
 def calc_lindblad_bdb(mol_list):
     ph_operators = []
     for imol, m in enumerate(mol_list):
-        for jph in range(m.n_dmrg_phs):
+        for jph in range(len(m.ph_list)):
             bdb = Mpo.ph_onsite(mol_list, r"b^\dagger b", imol, jph)
             bdb.set_threshold(1e-5)
             ph_operators.append(bdb)

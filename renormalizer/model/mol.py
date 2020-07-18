@@ -10,36 +10,6 @@ from renormalizer.model.phonon import Phonon
 from renormalizer.utils import Quantity
 
 
-def create_heatbath(heatbath_energy, method="ohmic") -> List[Phonon]:
-    modes = 200
-    if method == "ohmic":
-        s = 0.5
-        omega_c = Quantity(100, "cm-1").as_au()
-        start = Quantity(10, "cm-1").as_au()
-        end = 6 * omega_c
-        omegas = np.arange(start, end, (end - start) / modes)
-        spectral_density = omega_c ** (1 - s) * omegas ** s * np.exp(-omegas / omega_c)
-        hr_factors = spectral_density / (omegas ** 2)
-    elif method == "debye":
-        omega_c = 2 * heatbath_energy
-        start = Quantity(10, "cm-1").as_au()
-        end = 5 * omega_c
-        omegas = np.arange(start, end, (end-start) / modes)
-        spectral_density = omegas * omega_c / (omegas ** 2 + omega_c ** 2)
-        hr_factors = spectral_density / (omegas ** 2)
-    elif method == "test":
-        start = Quantity(490, "cm-1").as_au()
-        end = Quantity(510, "cm-1").as_au()
-        omegas = np.arange(start, end, (end-start) / modes)
-        hr_factors = np.ones_like(omegas)
-    else:
-        raise ValueError(f'unknown method: {method}')
-    total_energy = np.sum(hr_factors * omegas)
-    hr_factors *= heatbath_energy / total_energy
-    displacements = np.sqrt(2 * hr_factors / omegas)
-    return [Phonon.simplest_phonon(Quantity(omega), Quantity(displacement), hartree=True) for omega, displacement in zip(omegas, displacements)]
-
-
 class Mol:
     """
     molecule class property:
@@ -49,59 +19,29 @@ class Mol:
     phonon information : ph
     """
 
-    def __init__(self, elocalex, ph_list: List[Phonon], dipole=None, heatbath=False):
+    def __init__(self, elocalex, ph_list: List[Phonon], dipole=None):
         self.elocalex = elocalex.as_au()
         self.dipole = dipole
         if len(ph_list) == 0:
             raise ValueError("No phonon mode in phonon list")
-        self.dmrg_phs = [ph for ph in ph_list if not ph.hartree]
-        self.hartree_phs = [ph for ph in ph_list if ph.hartree]
-
-        def calc_lambda(phs):
-            return sum([ph.reorganization_energy.as_au() for ph in phs])
-
-        if heatbath:
-            #fraction = 10
-            #heatbath_energy = (calc_lambda(self.dmrg_phs) + calc_lambda(self.hartree_phs)) * fraction
-            heatbath_energy = Quantity(50, "cm-1").as_au()
-            self.hartree_phs += create_heatbath(heatbath_energy)
-
-        self.dmrg_e0 = calc_lambda(self.dmrg_phs)
-        self.hartree_e0 = calc_lambda(self.hartree_phs)
-        self.n_dmrg_phs = len(self.dmrg_phs)
-        self.n_hartree_phs = len(self.hartree_phs)
+        self.ph_list = ph_list
+        self.e0 = sum([ph.reorganization_energy.as_au() for ph in ph_list])
 
     @property
     def reorganization_energy(self):
-        return self.dmrg_e0 + self.hartree_e0
-
-    @property
-    def pure_dmrg(self):
-        return not bool(self.hartree_phs)
-
-    @property
-    def pure_hartree(self):
-        return not bool(self.dmrg_phs)
-
-    @property
-    def no_qboson(self):
-        return True
-
-    @property
-    def phs(self):
-        return self.dmrg_phs + self.hartree_phs
+        return self.e0
 
     @property
     def gs_zpe(self):
         e = 0.
-        for ph in self.dmrg_phs:
+        for ph in self.ph_list:
             e += ph.omega[0]
         return e/2
     
     @property
     def ex_zpe(self):
         e = 0.
-        for ph in self.dmrg_phs:
+        for ph in self.ph_list:
             e += ph.omega[1]
         return e/2
 
@@ -110,12 +50,7 @@ class Mol:
         info_dict["elocalex"] = self.elocalex
         info_dict["dipole"] = self.dipole
         info_dict["reorganization energy in a.u."] = self.reorganization_energy
-        info_dict["dmrg phonon modes"] = self.n_dmrg_phs
-        if self.n_hartree_phs:
-            info_dict["dmrg phonon modes"] = self.n_dmrg_phs
-        info_dict["DMRG phonon list"] = [ph.to_dict() for ph in self.dmrg_phs]
-        if self.hartree_phs:
-            info_dict["Hartree phonon list"] = [ph.to_dict() for ph in self.hartree_phs]
+        info_dict["phonon list"] = [ph.to_dict() for ph in self.ph_list]
         return info_dict
 
     def __eq__(self, other):

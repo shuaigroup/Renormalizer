@@ -89,14 +89,12 @@ class ThermalProp(TdMpsJob):
             self.properties.calc_properties(mps)
 
     def evolve_exact(self, old_mpdm, evolve_dt):
-        MPOprop, HAM, Etot = old_mpdm.hybrid_exact_propagator(
-            self.h_mpo, evolve_dt.imag, space=self.space
+        MPOprop = Mpo.exact_propagator(
+            old_mpdm.mol_list, evolve_dt.imag, space=self.space, shift=-self.h_mpo.offset
         )
-        new_mpdm = MPOprop.apply(old_mpdm)
-        unitary_propagation(new_mpdm.tdh_wfns, HAM, Etot, evolve_dt)
+        new_mpdm = MPOprop.apply(old_mpdm, canonicalise=True)
         # partition function can't be obtained. It's not practical anyway.
         # The function is too large to be fit into float64 even float128
-        new_mpdm.canonicalise(normalize=True)
         new_mpdm.normalize(1.0)
         return new_mpdm
 

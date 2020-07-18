@@ -62,8 +62,8 @@ def test_SCF_exact():
     procedure = [[40, 0.4], [40, 0.2], [40, 0.1], [40, 0], [40, 0]]
     mps, mpo = construct_mps_mpo_2(dmrg_mol_list, 40, nexciton)
     mps.optimize_config.procedure = procedure
-    energy = optimize_mps(mps, mpo)
-    dmrg_e = mps.expectation(mpo)
+    energies, _ = optimize_mps(mps, mpo)
+    dmrg_e = energies[-1]
 
     # print occupation
     dmrg_occ = []
@@ -137,7 +137,7 @@ def test_1mol_ZTabs():
 
     mol_list = HolsteinModel([Mol(elocalex, hartree_ph_list, dipole_abs) for _ in range(nmols)], np.zeros([1, 1]), )
 
-    E_offset = -mol_list[0].elocalex - mol_list[0].hartree_e0
+    E_offset = -mol_list[0].elocalex - mol_list[0].e0
 
     ls = tdh.LinearSpectra("abs", mol_list, E_offset=E_offset, prop_method="unitary")
 

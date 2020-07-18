@@ -81,16 +81,17 @@ class MolList2:
         else:
             self.multi_dof_basis = False
 
-
         self.model = model
         # array(n_e, n_e)
         self.dipole = dipole
         # reusable mpos for the system
         self.mpos = dict()
+        # physical bond dimension. Read only.
+        self._pbond_list = [bas.nbas for bas in self.basis]
 
     @property
     def pbond_list(self):
-        return [bas.nbas for bas in self.basis]
+        return self._pbond_list
 
     @property
     def dofs(self):
@@ -188,7 +189,7 @@ class HolsteinModel(MolList2):
                 order[f"e_{imol}"] = idx
                 basis.append(ba.BasisSimpleElectron())
                 idx += 1
-                for iph, ph in enumerate(mol.dmrg_phs):
+                for iph, ph in enumerate(mol.ph_list):
                     order[f"v_{nv}"] = idx
                     mapping[(imol, iph)] = f"v_{nv}"
                     basis.append(ba.BasisSHO(ph.omega[0], ph.n_phys_dim))
@@ -203,7 +204,7 @@ class HolsteinModel(MolList2):
             n_left_ph = 0
             nv = 0
             for imol, mol in enumerate(mol_list):
-                for iph, ph in enumerate(mol.dmrg_phs):
+                for iph, ph in enumerate(mol.ph_list):
                     if imol < n_left_mol:
                         order[f"v_{nv}"] = idx
                         n_left_ph += 1
@@ -230,13 +231,13 @@ class HolsteinModel(MolList2):
             for jmol in range(mol_num):
                 if imol == jmol:
                     model[(f"e_{imol}",)] = \
-                        [(Op(r"a^\dagger a", 0), mol_list[imol].elocalex + mol_list[imol].dmrg_e0)]
+                        [(Op(r"a^\dagger a", 0), mol_list[imol].elocalex + mol_list[imol].e0)]
                 else:
                     model[(f"e_{imol}", f"e_{jmol}")] = \
                         [(Op(r"a^\dagger", 1), Op("a", -1), j_matrix[imol, jmol])]
         # vibration part
         for imol, mol in enumerate(mol_list):
-            for iph, ph in enumerate(mol.dmrg_phs):
+            for iph, ph in enumerate(mol.ph_list):
                 assert np.allclose(np.array(ph.force3rd), [0.0, 0.0])
 
                 model[(mapping[(imol, iph)],)] = [
@@ -246,7 +247,7 @@ class HolsteinModel(MolList2):
 
         # vibration potential part
         for imol, mol in enumerate(mol_list):
-            for iph, ph in enumerate(mol.dmrg_phs):
+            for iph, ph in enumerate(mol.ph_list):
                 if np.allclose(ph.omega[0], ph.omega[1]):
                     model[(f"e_{imol}", f"{mapping[(imol,iph)]}")] = [
                         (Op(r"a^\dagger a", 0), Op("x", 0), -ph.omega[1] ** 2 * ph.dis[1]),
@@ -273,13 +274,6 @@ class HolsteinModel(MolList2):
     @property
     def gs_zpe(self):
         return sum([mol.gs_zpe for mol in self.mol_list])
-
-    @property
-    def pure_hartree(self):
-        for mol in self:
-            if not mol.pure_hartree:
-                return False
-        return True
 
     @property
     def j_constant(self):

@@ -34,7 +34,7 @@ def get_qutip_holstein_kubo(mol_list, temperature, time_series):
 
     nsites = len(mol_list)
     J = mol_list.j_constant
-    ph = mol_list[0].dmrg_phs[0]
+    ph = mol_list[0].ph_list[0]
     ph_levels = ph.n_phys_dim
     omega = ph.omega[0]
     g = - ph.coupling_constant

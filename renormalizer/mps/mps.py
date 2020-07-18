@@ -74,9 +74,9 @@ def adaptive_tdvp(fun):
                     f"guess_dt: {config.guess_dt}, try time step size: {dt}"
             )
 
-            mps_half1 = fun(cur_mps, mpo, dt / 2)._dmrg_normalize()
-            mps_half2 = fun(mps_half1, mpo, dt / 2)._dmrg_normalize()
-            mps = fun(cur_mps, mpo, dt)._dmrg_normalize()
+            mps_half1 = fun(cur_mps, mpo, dt / 2).normalize()
+            mps_half2 = fun(mps_half1, mpo, dt / 2).normalize()
+            mps = fun(cur_mps, mpo, dt).normalize()
             dis = mps.distance(mps_half2)
 
             # prevent bug. save "some" memory.
@@ -308,43 +308,39 @@ class Mps(MatrixProduct):
         mp.qn = npload["qn"]
         mp.qnidx = int(npload["qnidx"])
         mp.qntot = int(npload["qntot"])
-        if npload["version"] == "0.1":
+        version = npload["version"]
+        if version == "0.1":
             mp.to_right = bool(npload["left"])
+            # in this protocol, TDH and coeff is not dumped
             logger.warning("Using old dump/load protocol. TD Hartree part will be lost")
-        else:
+            mp.coeff = 1
+        elif version == "0.2":
             mp.to_right = bool(npload["to_right"])
-            mp.tdh_wfns = npload["tdh_wfns"]
+            # in this protocol, TDH is dumped, but it's not useful anymore
+            logger.warning("Using old dump/load protocol. TD Hartree part will be lost")
+            mp.coeff = npload["tdh_wfns"][-1]
+        elif version == "0.3":
+            mp.to_right = bool(npload["to_right"])
+            mp.coeff = npload["coeff"]
+        else:
+            raise ValueError(f"Unknown dump version: {version}")
         return mp
 
     def __init__(self):
         super().__init__()
-        # todo: tdh part with GPU backend
-        # tdh part will merge into tdvp evolution scheme in the future
-        self.tdh_wfns = [1]
+        self.coeff: Union[float, complex] = 1
 
         self.optimize_config: OptimizeConfig = OptimizeConfig()
         self.evolve_config: EvolveConfig = EvolveConfig()
 
     def conj(self) -> "Mps":
         new_mps = super().conj()
-        for idx, wfn in enumerate(new_mps.tdh_wfns):
-            new_mps.tdh_wfns[idx] = np.conj(wfn)
+        new_mps.coeff = new_mps.coeff.conjugate()
         return new_mps
-
-    def dot(self, other: "Mps", with_hartree=True):
-        e = super(Mps, self).dot(other)
-        if with_hartree:
-            assert len(self.tdh_wfns) == len(other.tdh_wfns)
-            for wfn1, wfn2 in zip(self.tdh_wfns[:-1], other.tdh_wfns[:-1]):
-                # using vdot is buggy here, because vdot will take conjugation automatically
-                e *= np.dot(wfn1, wfn2)
-        return e
 
     def to_complex(self, inplace=False) -> "Mps":
         new_mp = super(Mps, self).to_complex(inplace=inplace)
-        new_mp.tdh_wfns = [
-            wfn.astype(np.complex128) for wfn in new_mp.tdh_wfns[:-1]
-        ] + [new_mp.tdh_wfns[-1]]
+        new_mp.coeff = complex(new_mp.coeff)
         return new_mp
 
     def _get_sigmaqn(self, idx):
@@ -363,21 +359,13 @@ class Mps(MatrixProduct):
         return False
 
     @property
-    def coeff(self):
-        return self.tdh_wfns[-1]
-
-    @property
-    def hybrid_tdh(self):
-        return not self.mol_list.pure_dmrg
-
-    @property
     def nexciton(self):
         return self.qntot
 
     @property
     def norm(self):
         # return self.dmrg_norm * self.hartree_norm
-        return self.tdh_wfns[-1]
+        return np.linalg.norm(self.coeff)
 
     @property
     def dmrg_norm(self) -> float:
@@ -391,7 +379,7 @@ class Mps(MatrixProduct):
             assert self.check_right_canonical()
             return np.linalg.norm(np.ravel(self[0]))
         """
-        res = np.sqrt(self.conj().dot(self, with_hartree=False).real)
+        res = np.sqrt(self.conj().dot(self).real)
         return float(res.real)
 
     def _expectation_path(self):
@@ -428,7 +416,7 @@ class Mps(MatrixProduct):
         else:
             return complex(val)
         # This is time and memory consuming
-        # return self_conj.dot(mpo.apply(self), with_hartree=False).real
+        # return self_conj.dot(mpo.apply(self)).real
 
     def expectations(self, mpos, opt=True) -> np.ndarray:
 
@@ -507,28 +495,23 @@ class Mps(MatrixProduct):
         return self.expectations(mpos)
 
     def metacopy(self) -> "Mps":
-        new = super().metacopy()
-        new.tdh_wfns = [wfn.copy() for wfn in self.tdh_wfns[:-1]] + [self.tdh_wfns[-1]]
+        new: Mps = super().metacopy()
+        new.coeff = self.coeff
         new.optimize_config = self.optimize_config
         # evolve_config has its own data
         new.evolve_config = self.evolve_config.copy()
         return new
 
-    def _dmrg_normalize(self):
-        return self.scale(1.0 / self.dmrg_norm, inplace=True)
-
     def normalize(self, norm=None):
-        # real time propagation: dmrg should be normalized, tdh should be normalized, coefficient is not changed,
+        # real time propagation: dmrg should be normalized, coefficient is not changed,
         #  use norm=None
-        # imag time propagation: dmrg should be normalized, tdh should be normalized, coefficient is normalized to 1.0
+        # imag time propagation: dmrg should be normalized, coefficient is normalized to 1.0
         # applied by a operator then normalize: dmrg should be normalized,
-        #   tdh should be normalized, coefficient is set to the length
+        #   coefficient is set to the length
         # these two cases should set `norm` equals to corresponding value
-        self._dmrg_normalize()
-        if norm is None:
-            mflib.normalize(self.tdh_wfns, self.tdh_wfns[-1])
-        else:
-            mflib.normalize(self.tdh_wfns, norm)
+        self.scale(1.0 / self.dmrg_norm, inplace=True)
+        if norm is not None:
+            self.coeff *= norm / (np.linalg.norm(self.coeff))
         return self
 
     def canonical_normalize(self):
@@ -593,38 +576,28 @@ class Mps(MatrixProduct):
                     lastone = lastone.canonicalise().compress(
                         m_target // hint_mpo.bond_dims_mean + 1
                     )
-                lastone = (hint_mpo @ lastone)._dmrg_normalize()
+                lastone = (hint_mpo @ lastone).normalize()
         logger.debug(f"expander bond dimension: {expander.bond_dims}")
         self.compress_config.bond_dim_max_value += self.bond_dims_mean
         return (self + expander.scale(coef, inplace=True)).canonicalise().canonicalise().canonical_normalize()
 
-    def evolve(self, mpo, evolve_dt):
-        if self.hybrid_tdh:
-            hybrid_mpo, HAM, Etot = self.construct_hybrid_Ham(mpo)
-            mps = self.evolve_dmrg(hybrid_mpo, evolve_dt)
-            unitary_propagation(mps.tdh_wfns, HAM, Etot, evolve_dt)
-        else:
-            # save the cost of calculating energy
-            mps = self.evolve_dmrg(mpo, evolve_dt)
-        if np.iscomplex(evolve_dt):
-            mps.normalize(1.0)
-        else:
-            mps.normalize(None)
-        return mps
-
-    def evolve_dmrg(self, mpo, evolve_dt) -> "Mps":
+    def evolve(self, mpo, evolve_dt) -> "Mps":
 
         method = {
-            EvolveMethod.prop_and_compress: self._evolve_dmrg_prop_and_compress,
-            EvolveMethod.tdvp_mu_vmf: self._evolve_dmrg_tdvp_mu_vmf,
-            EvolveMethod.tdvp_vmf: self._evolve_dmrg_tdvp_mu_vmf,
-            EvolveMethod.tdvp_mu_cmf: self._evolve_dmrg_tdvp_mu_cmf,
-            EvolveMethod.tdvp_ps: self._evolve_dmrg_tdvp_ps,
+            EvolveMethod.prop_and_compress: self._evolve_prop_and_compress,
+            EvolveMethod.tdvp_mu_vmf: self._evolve_tdvp_mu_vmf,
+            EvolveMethod.tdvp_vmf: self._evolve_tdvp_mu_vmf,
+            EvolveMethod.tdvp_mu_cmf: self._evolve_tdvp_mu_cmf,
+            EvolveMethod.tdvp_ps: self._evolve_tdvp_ps,
         }[self.evolve_config.method]
         new_mps = method(mpo, evolve_dt)
+        if np.iscomplex(evolve_dt):
+            new_mps.normalize(1.0)
+        else:
+            new_mps.normalize(None)
         return new_mps
 
-    def _evolve_dmrg_prop_and_compress(self, mpo, evolve_dt) -> "Mps":
+    def _evolve_prop_and_compress(self, mpo, evolve_dt) -> "Mps":
         """
         The global propagation & compression evolution scheme
         """
@@ -663,10 +636,10 @@ class Mps(MatrixProduct):
                     scale = (-1.0j * dt) ** idx * propagation_c[idx]
                     scaled_termlist.append(term.scale(scale))
                     del term
-                new_mps1 = compressed_sum(scaled_termlist[:-1])._dmrg_normalize()
+                new_mps1 = compressed_sum(scaled_termlist[:-1]).normalize()
                 new_mps2 = compressed_sum(
                     [new_mps1, scaled_termlist[-1]]
-                )._dmrg_normalize()
+                ).normalize()
                 dis = new_mps1.distance(new_mps2)
                 # 0.2 is 1/5 for RK45
                 p = (config.adaptive_rtol / (dis + 1e-30)) ** 0.2
@@ -706,7 +679,7 @@ class Mps(MatrixProduct):
                             f"evolution converged, new guess_dt: {config.guess_dt}"
                         )
                         logger.debug(f"sub-step {dt} further, remaining: {new_dt}")
-                        return new_mps2._evolve_dmrg_prop_and_compress(mpo, new_dt)
+                        return new_mps2._evolve_prop_and_compress(mpo, new_dt)
         else:
             for idx, term in enumerate(termlist):
                 term.scale(
@@ -714,7 +687,7 @@ class Mps(MatrixProduct):
                 )
             return compressed_sum(termlist)
 
-    def _evolve_dmrg_tdvp_mu_vmf(self, mpo, evolve_dt) -> "Mps":
+    def _evolve_tdvp_mu_vmf(self, mpo, evolve_dt) -> "Mps":
         """
         variable mean field
         see the difference between VMF and CMF, refer to Z. Phys. D 42, 113–129 (1997)
@@ -916,7 +889,7 @@ class Mps(MatrixProduct):
         return mps.canonicalise()
 
     @adaptive_tdvp
-    def _evolve_dmrg_tdvp_mu_cmf(self, mpo, evolve_dt) -> "Mps":
+    def _evolve_tdvp_mu_cmf(self, mpo, evolve_dt) -> "Mps":
         """
         evolution scheme: TDVP + constant mean field + matrix-unfolding
         regularization
@@ -957,7 +930,7 @@ class Mps(MatrixProduct):
             self.evolve_config.tdvp_cmf_midpoint = False
             self.evolve_config.tdvp_cmf_c_trapz = False
             self.evolve_config.adaptive = False
-            environ_mps = self.evolve_dmrg(mpo, evolve_dt / 2)
+            environ_mps = self.evolve(mpo, evolve_dt / 2)
             self.evolve_config = orig_config
         else:
             # mps at t=0 as environment
@@ -1075,7 +1048,7 @@ class Mps(MatrixProduct):
         return mps
 
     @adaptive_tdvp
-    def _evolve_dmrg_tdvp_ps(self, mpo, evolve_dt) -> "Mps":
+    def _evolve_tdvp_ps(self, mpo, evolve_dt) -> "Mps":
         # PhysRevB.94.165116
         # TDVP projector splitting
         imag_time = np.iscomplex(evolve_dt)
@@ -1246,11 +1219,9 @@ class Mps(MatrixProduct):
         return mps
 
     def evolve_exact(self, h_mpo, evolve_dt, space):
-        MPOprop, HAM, Etot = self.hybrid_exact_propagator(
-            h_mpo, -1.0j * evolve_dt, space
-        )
+        MPOprop = Mpo.exact_propagator(self.mol_list, -1j * evolve_dt, space, -h_mpo.offset)
         new_mps = MPOprop.apply(self, canonicalise=True)
-        unitary_propagation(new_mps.tdh_wfns, HAM, Etot, evolve_dt)
+        self.coeff *= np.exp(-1j * h_mpo.offset * evolve_dt)
         return new_mps
 
     @property
@@ -1262,118 +1233,6 @@ class Mps(MatrixProduct):
             prod = np.tensordot(prod, ms, axes=1)
             prod = prod.reshape((prod.shape[0], -1, prod.shape[-1]))
         return {"var": prod.var(), "mean": prod.mean(), "ptp": prod.ptp()}
-
-    # put the below 2 constructors here because they really depend on the implement details of MPS (at least the
-    # Hartree part).
-    def construct_hybrid_Ham(self, mpo_indep, debug=False):
-        """
-        construct hybrid DMRG and Hartree(-Fock) Hamiltonian
-        """
-        mol_list = mpo_indep.mol_list
-        WFN = self.tdh_wfns
-        nmols = len(mol_list)
-
-        # many-body electronic part
-        A_el = self.e_occupations
-
-        logger.debug("dmrg_occ: %s" % A_el)
-
-        # many-body vibration part
-        B_vib = []
-        iwfn = 0
-        for imol in range(nmols):
-            B_vib.append([])
-            for ph in mol_list[imol].hartree_phs:
-                B_vib[imol].append(mflib.exp_value(WFN[iwfn], ph.h_dep, WFN[iwfn]))
-                iwfn += 1
-        B_vib_mol = [np.sum(np.array(i)) for i in B_vib]
-
-        Etot = 0.0
-        # construct new HMPO
-        e_mean = self.expectation(mpo_indep)
-        elocal_offset = np.array(
-            [mol_list[imol].hartree_e0 + B_vib_mol[imol] for imol in range(nmols)]
-        ).real
-        e_mean += A_el.dot(elocal_offset)
-        total_offset = mpo_indep.offset + Quantity(e_mean.real)
-        MPO = Mpo(mol_list, offset=total_offset)
-
-        Etot += e_mean
-
-        iwfn = 0
-        HAM = []
-        for imol, mol in enumerate(mol_list):
-            for iph, ph in enumerate(mol.hartree_phs):
-                e_mean = mflib.exp_value(WFN[iwfn], ph.h_indep, WFN[iwfn])
-                Etot += e_mean.real
-                e_mean += A_el[imol] * B_vib[imol][iph]
-                HAM.append(
-                    ph.h_indep
-                    + ph.h_dep * A_el[imol]
-                    - np.diag([e_mean] * WFN[iwfn].shape[0])
-                )
-                iwfn += 1
-        logger.debug("Etot= %g" % Etot)
-        if debug:
-            return MPO, HAM, Etot, A_el
-        else:
-            return MPO, HAM, Etot
-
-    # provide e_mean and mpo_indep separately because e_mean can be precomputed and stored to avoid multiple computation
-    def hybrid_exact_propagator(self, mpo_indep, x, space="GS"):
-        """
-        construct the exact propagator in the GS space or single molecule
-        """
-        assert space in ["GS", "EX"]
-
-        e_mean = self.expectation(mpo_indep)
-        logger.debug("e_mean in exact propagator: %g" % e_mean)
-
-        total_offset = (mpo_indep.offset + Quantity(e_mean.real)).as_au()
-        MPOprop = Mpo.exact_propagator(
-            self.mol_list, x, space=space, shift=-total_offset
-        )
-
-        Etot = total_offset
-
-        # TDH propagator
-        iwfn = 0
-        HAM = []
-        for mol in self.mol_list:
-            for ph in mol.hartree_phs:
-                h_vib_indep = ph.h_indep
-                h_vib_dep = ph.h_dep
-                e_mean = mflib.exp_value(
-                    self.tdh_wfns[iwfn], h_vib_indep, self.tdh_wfns[iwfn]
-                )
-                if space == "EX":
-                    e_mean += mflib.exp_value(
-                        self.tdh_wfns[iwfn], h_vib_dep, self.tdh_wfns[iwfn]
-                    )
-                Etot += e_mean
-
-                if space == "GS":
-                    ham = h_vib_indep - np.diag([e_mean] * ph.n_phys_dim)
-                elif space == "EX":
-                    ham = h_vib_indep + h_vib_dep - np.diag([e_mean] * ph.n_phys_dim)
-                else:
-                    assert False
-
-                HAM.append(ham)
-                iwfn += 1
-
-        return MPOprop, HAM, Etot
-
-    def hartree_wfn_diff(self, other: "Mps"):
-        assert len(self.tdh_wfns) == len(other.tdh_wfns)
-        res = []
-        for wfn1, wfn2 in zip(self.tdh_wfns, other.tdh_wfns):
-            res.append(
-                np.linalg.norm(
-                    np.tensordot(wfn1, wfn1, axes=0) - np.tensordot(wfn2, wfn2, axes=0)
-                )
-            )
-        return np.array(res)
 
     def full_wfn(self) -> np.array:
         dim = np.prod(self.pbond_list)
@@ -1431,16 +1290,16 @@ class Mps(MatrixProduct):
     def dump(self, fname):
         data_dict = dict()
         # version of the protocol
-        data_dict["version"] = "0.2"
+        data_dict["version"] = "0.3"
         data_dict["nsites"] = len(self)
         for idx, mt in enumerate(self):
             data_dict[f"mt_{idx}"] = mt.array
-        for attr in ["qn", "qnidx", "qntot", "to_right", "tdh_wfns"]:
+        for attr in ["qn", "qnidx", "qntot", "to_right", "coeff"]:
             data_dict[attr] = getattr(self, attr)
         try:
             np.savez(fname, **data_dict)
-        except Exception as e:
-            logger.error(f"Dump mps failed, exception info: f{e}")
+        except Exception:
+            logger.exception(f"Dump MPS failed.")
 
 
     def __setitem__(self, key, value):
