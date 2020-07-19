@@ -1,14 +1,18 @@
 # -*- coding: utf-8 -*-
 
+import os
+
+import pytest
+
+from renormalizer.mps.backend import np
+from renormalizer.mps import Mpo
 from renormalizer.cv import batch_run
 from renormalizer.cv.zerot import SpectraZtCV
 from renormalizer.cv.finitet import SpectraFtCV
-import numpy as np
 from renormalizer.tests.parameter import mol_list
-import os
 from renormalizer.cv.tests import cur_dir
 from renormalizer.utils import Quantity
-import pytest
+
 
 
 @pytest.mark.parametrize("method", ("1site", "2site"))
@@ -35,7 +39,10 @@ def test_ft_abs():
     standard_value = standard_value[indx]
     test_freq = [freq_reg[idx] for idx in indx]
     T = Quantity(298, unit='K')
+    # subtract zero point energy for better CG convergence
+    h_mpo = Mpo(mol_list,offset=Quantity(mol_list.gs_zpe))
     spectra = SpectraFtCV(mol_list, "abs",
-                          10, 5.e-3, T, rtol=1e-3)
+                          10, 5.e-3, T, h_mpo, rtol=1e-3)
     result = batch_run(test_freq, 1, spectra)
+    print(result, standard_value)
     assert np.allclose(result, standard_value, rtol=1.e-2)

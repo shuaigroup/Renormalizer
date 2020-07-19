@@ -24,6 +24,7 @@ if __name__ == "__main__":
     log.register_file_output(
         os.path.join(param["output dir"], param["fname"] + ".log"), "w"
     )
+    log.set_stream_level(logging.INFO)
     mol_list, temperature = load_from_dict(param, 3, False)
     compress_config = CompressConfig(threshold=1e-4)
     ievolve_config = EvolveConfig(adaptive=True, guess_dt=temperature.to_beta() / 1000j)

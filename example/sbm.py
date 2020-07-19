@@ -1,8 +1,11 @@
 # -*- coding: utf-8 -*-
 
-from renormalizer.sbm import SpinBosonDynamics, param2mollist
-from renormalizer.utils import Quantity, CompressConfig, EvolveConfig
+import logging
 
+from renormalizer.sbm import SpinBosonDynamics, param2mollist
+from renormalizer.utils import Quantity, CompressConfig, EvolveConfig, log
+
+log.init_log(logging.INFO)
 
 if __name__ == "__main__":
     alpha = 0.05
