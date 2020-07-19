@@ -1,15 +1,11 @@
 from renormalizer.mps import Mps, Mpo, gs
 from renormalizer.model import MolList2, h_qc
 from renormalizer.utils import basis as ba
-from renormalizer.utils import Op
 from renormalizer.utils import log
 
 import numpy as np
-import itertools
-from collections import defaultdict
 import logging
 import time
-import itertools
 
 '''
 water sto-3g (10e,7o)
@@ -21,6 +17,7 @@ H    -0.7499151    0.0000000    0.5114913,
 start = time.time()
 dump_dir = "./"
 job_name = "qc"  #########
+log.set_stream_level(logging.INFO)
 log.register_file_output(dump_dir+job_name+".log", mode="w")
 logger = logging.getLogger(__name__)
 
