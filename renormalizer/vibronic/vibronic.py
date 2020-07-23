@@ -1,7 +1,7 @@
 from renormalizer.utils import TdMpsJob, CompressConfig, EvolveConfig
 from renormalizer.mps import Mps, Mpo
 from renormalizer.property import Property
-from renormalizer.model import MolList2
+from renormalizer.model import Model
 
 import logging
 import numpy as np
@@ -13,13 +13,13 @@ class VibronicModelDynamics(TdMpsJob):
     r"""
     Vibronic Hamiltonian Dynamics
     Args:
-        mol_list (:class:`~renormalizer.model.MolList2`)
+        model (:class:`~renormalizer.model.Model`)
 
     """
     
     def __init__(
             self, 
-            mol_list: MolList2, 
+            model: Model,
             compress_config: CompressConfig = None,
             evolve_config: EvolveConfig = None,
             h_mpo = None,
@@ -32,7 +32,7 @@ class VibronicModelDynamics(TdMpsJob):
             expand: bool = False
         ):
 
-        self.mol_list = mol_list
+        self.model = model
         
         if compress_config is None:
             self.compress_config = CompressConfig()
@@ -40,7 +40,7 @@ class VibronicModelDynamics(TdMpsJob):
             self.compress_config = compress_config
         
         if h_mpo is None:
-            self.h_mpo = Mpo(mol_list)
+            self.h_mpo = Mpo(model)
         else:
             self.h_mpo = h_mpo
 
@@ -61,13 +61,13 @@ class VibronicModelDynamics(TdMpsJob):
     def init_mps(self):
         if self.mps0 is None:
             assert self.init_condition is not None
-            init_mp = Mps.hartree_product_state(self.mol_list, self.init_condition)
+            init_mp = Mps.hartree_product_state(self.model, self.init_condition)
             self.mps0 = init_mp.copy()
         else:
             init_mp = self.mps0.copy()
         init_mp.compress_config = self.compress_config
         init_mp.evolve_config = self.evolve_config
-        init_mp.mol_list = self.mol_list
+        init_mp.model = self.model
         if self.evolve_config.is_tdvp and self.expand:
             init_mp = init_mp.expand_bond_dimension(self.h_mpo)
         return init_mp

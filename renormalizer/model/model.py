@@ -11,7 +11,7 @@ from renormalizer.utils import Quantity, Op
 from renormalizer.utils import basis as ba
 
 
-class MolList2:
+class Model:
     r"""
     User-defined model
 
@@ -153,7 +153,7 @@ class MolList2:
         return info_dict
 
 
-class HolsteinModel(MolList2):
+class HolsteinModel(Model):
 
     def __init__(self,  mol_list: List[Mol], j_matrix: Union[Quantity, np.ndarray, None], scheme: int = 2, periodic: bool = False):
         # construct the electronic coupling matrix
@@ -222,7 +222,7 @@ class HolsteinModel(MolList2):
             basis.insert(n_left_ph, ba.BasisMultiElectronVac(mol_num))
 
         else:
-            raise ValueError(f"invalid mol_list.scheme: {scheme}")
+            raise ValueError(f"invalid model.scheme: {scheme}")
 
         # model
 
@@ -305,7 +305,7 @@ class HolsteinModel(MolList2):
         return len(self.mol_list)
 
 
-class VibronicModel(MolList2):
+class VibronicModel(Model):
     """The same with :class:`MolList2`. But the defination of ``model`` is different.
         each key is a tuple of electronic DoFs represents
         a^\dagger_i a_j or the key is "I" represents the pure vibrational
@@ -363,7 +363,7 @@ class VibronicModel(MolList2):
         super().__init__(order, basis, new_model, dipole)
 
 
-class SpinBosonModel(MolList2):
+class SpinBosonModel(Model):
     r"""
     Spin-Boson model
 
@@ -425,5 +425,5 @@ def load_from_dict(param, scheme, lam: bool):
         for omega, displacement in param["ph modes"]
     ]
     j_constant = Quantity(*param["j constant"])
-    mol_list = HolsteinModel([Mol(Quantity(0), ph_list)] * param["mol num"], j_constant, scheme)
-    return mol_list, temperature
+    model = HolsteinModel([Mol(Quantity(0), ph_list)] * param["mol num"], j_constant, scheme)
+    return model, temperature

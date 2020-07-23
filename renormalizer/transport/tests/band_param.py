@@ -12,7 +12,7 @@ ph_list = [
     for omega, displacement in [[1e-10, 1e-10]]
 ]
 j_constant = Quantity(0.8, "eV")
-band_limit_mol_list = HolsteinModel([Mol(Quantity(0), ph_list)] * mol_num, j_constant, 3)
+band_limit_model = HolsteinModel([Mol(Quantity(0), ph_list)] * mol_num, j_constant, 3)
 
 # the temperature should be compatible with the low vibration frequency in TestBandLimitFiniteT
 # otherwise underflow happens in exact propagator

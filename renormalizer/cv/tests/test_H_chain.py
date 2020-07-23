@@ -1,4 +1,4 @@
-from renormalizer.model import h_qc, MolList2
+from renormalizer.model import h_qc, Model
 from renormalizer.utils import basis as ba
 from renormalizer.utils import Op
 from renormalizer.cv import batch_run
@@ -19,7 +19,7 @@ def test_H_chain_LDOS():
     h1e, h2e, nuc = h_qc.read_fcidump(os.path.join(cur_dir,
         "fcidump_lowdin_h4.txt"), spatial_norbs) 
     
-    model = h_qc.qc_model(h1e, h2e)
+    model_dict = h_qc.qc_model(h1e, h2e)
 
     order = {}
     basis = []
@@ -27,13 +27,13 @@ def test_H_chain_LDOS():
         order[f"e_{iorb}"] = iorb
         basis.append(ba.BasisHalfSpin(sigmaqn=[0,1]))
     
-    mol_list2 = MolList2(order, basis, model)
-    mpo = Mpo(mol_list2)
+    model = Model(order, basis, model_dict)
+    mpo = Mpo(model)
     
     nelec = spatial_norbs
     M = 50
     procedure = [[M, 0.4], [M, 0.2]] + [[M, 0],]*6
-    mps = Mps.random(mol_list2, nelec, M, percent=1.0)
+    mps = Mps.random(model, nelec, M, percent=1.0)
     
     mps.optimize_config.procedure = procedure
     mps.optimize_config.method = "2site"
@@ -59,7 +59,7 @@ def test_H_chain_LDOS():
         return model
 
     dipole_model = photoelectron_operator(nelec-1)
-    dipole_op = Mpo.general_mpo(mol_list2, model=dipole_model)
+    dipole_op = Mpo.general_mpo(model, model=dipole_model)
     b_mps = dipole_op.apply(mps)
 
     #std 
@@ -68,7 +68,7 @@ def test_H_chain_LDOS():
     eta = 0.05
     M = 10
     procedure_cv = [0.4, 0.2] + [0]*6
-    spectra = SpectraZtCV(mol_list2, None, M, eta, h_mpo=mpo, method="2site",
+    spectra = SpectraZtCV(model, None, M, eta, h_mpo=mpo, method="2site",
             procedure_cv=procedure_cv, b_mps=b_mps.scale(-eta), e0=mps_e)
     
     result = batch_run(test_freq, 1, spectra)

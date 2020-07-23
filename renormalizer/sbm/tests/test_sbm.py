@@ -33,11 +33,11 @@ def test_sbm_zt(alpha):
     raw_omega_c = Quantity(20)
     n_phonons = 3
 
-    mol_list = param2mollist(alpha, raw_delta, raw_omega_c, 5, n_phonons)
+    model = param2mollist(alpha, raw_delta, raw_omega_c, 5, n_phonons)
 
     evolve_config = EvolveConfig(method=EvolveMethod.tdvp_ps, adaptive=True, guess_dt=0.1)
-    sbm = SpinBosonDynamics(mol_list, Quantity(0), evolve_config=evolve_config)
+    sbm = SpinBosonDynamics(model, Quantity(0), evolve_config=evolve_config)
     sbm.evolve(nsteps=20, evolve_time=20)
     spin1 = sbm.sigma_z
-    spin2 = get_qutip_zt(mol_list, sbm.evolve_times)
+    spin2 = get_qutip_zt(model, sbm.evolve_times)
     assert np.allclose(spin1, spin2, atol=1e-3)

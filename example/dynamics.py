@@ -25,11 +25,11 @@ if __name__ == "__main__":
         os.path.join(param["output dir"], param["fname"] + ".log"), "w"
     )
     log.set_stream_level(logging.INFO)
-    mol_list, temperature = load_from_dict(param, 3, False)
+    model, temperature = load_from_dict(param, 3, False)
     compress_config = CompressConfig(max_bonddim=16)
     evolve_config = EvolveConfig(EvolveMethod.tdvp_ps, adaptive=True, guess_dt=2)
     cdd = ChargeDiffusionDynamics(
-        mol_list,
+        model,
         temperature=temperature,
         compress_config=compress_config,
         evolve_config=evolve_config,

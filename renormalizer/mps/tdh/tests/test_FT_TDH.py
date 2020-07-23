@@ -6,7 +6,7 @@ import numpy as np
 import pytest
 
 from renormalizer.mps.tdh import tdh
-from renormalizer.tests.parameter import hartree_mol_list, custom_mol_list
+from renormalizer.tests.parameter import hartree_holstein_model, custom_model
 from renormalizer.mps.tdh.tests import cur_dir
 from renormalizer.utils import Quantity, constant
 
@@ -16,7 +16,7 @@ def test_FT_DM():
     nexciton = 1
     T = Quantity(298, "K")
     insteps = 100
-    tdHartree = tdh.Dynamics(hartree_mol_list, temperature=T, insteps=insteps)
+    tdHartree = tdh.Dynamics(hartree_holstein_model, temperature=T, insteps=insteps)
     DM = tdHartree._FT_DM(nexciton)
     HAM, Etot, A_el = tdHartree.construct_H_Ham(nexciton, DM, debug=True)
     assert Etot == pytest.approx(0.0856330141528)
@@ -46,14 +46,14 @@ def test_FT_spectra(D_value, spectratype, std_path):
     else:
         assert False
 
-    mol_list = custom_mol_list(
+    model = custom_model(
         None, dis=[Quantity(d) for d in D_value], hartrees=[True, True]
     )
 
     T = Quantity(298, "K")
     insteps = 50
     spectra = tdh.LinearSpectra(
-        spectratype, mol_list, E_offset=E_offset, temperature=T, insteps=insteps
+        spectratype, model, E_offset=E_offset, temperature=T, insteps=insteps
     )
     nsteps = 300 - 1
     dt = 30.0

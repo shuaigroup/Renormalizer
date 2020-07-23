@@ -25,7 +25,7 @@ class BraKetPairAbsFiniteT(BraKetPair):
 class SpectraFiniteT(SpectraTdMpsJobBase):
     def __init__(
         self,
-        mol_list,
+        model,
         spectratype,
         temperature,
         insteps,
@@ -49,7 +49,7 @@ class SpectraFiniteT(SpectraTdMpsJobBase):
         self.dump_dir = dump_dir
         self.job_name = job_name
         super(SpectraFiniteT, self).__init__(
-            mol_list,
+            model,
             spectratype,
             temperature,
             evolve_config=evolve_config,
@@ -65,8 +65,8 @@ class SpectraFiniteT(SpectraTdMpsJobBase):
             return self.init_mps_abs()
 
     def init_mps_emi(self):
-        dipole_mpo = Mpo.onsite(self.mol_list, "a", dipole=True)
-        i_mpo = MpDm.max_entangled_ex(self.mol_list)
+        dipole_mpo = Mpo.onsite(self.model, "a", dipole=True)
+        i_mpo = MpDm.max_entangled_ex(self.model)
         i_mpo.compress_config = self.icompress_config
         if self.job_name is None:
             job_name = None
@@ -82,7 +82,7 @@ class SpectraFiniteT(SpectraTdMpsJobBase):
                 logger.info(
                     f"load density matrix from {self._thermal_dump_path}"
                 )
-                ket_mpo = MpDm.load(self.mol_list, self._thermal_dump_path)
+                ket_mpo = MpDm.load(self.model, self._thermal_dump_path)
                 logger.info(f"density matrix loaded:{ket_mpo}")
             except FileNotFoundError:
                 logger.debug(f"no file found in {self._thermal_dump_path}")
@@ -122,8 +122,8 @@ class SpectraFiniteT(SpectraTdMpsJobBase):
         return np.abs(last_corr.mean()) < 1e-5 * np.abs(first_corr) and last_corr.std() < 1e-5 * np.abs(first_corr)
 
     def init_mps_abs(self):
-        dipole_mpo = Mpo.onsite(self.mol_list, r"a^\dagger", dipole=True)
-        i_mpo = MpDm.max_entangled_gs(self.mol_list)
+        dipole_mpo = Mpo.onsite(self.model, r"a^\dagger", dipole=True)
+        i_mpo = MpDm.max_entangled_gs(self.model)
         i_mpo.compress_config = self.icompress_config
         beta = self.temperature.to_beta()
         tp = ThermalProp(i_mpo, self.h_mpo, exact=True, space="GS")

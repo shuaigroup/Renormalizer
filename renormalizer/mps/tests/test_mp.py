@@ -8,20 +8,20 @@ import pytest
 from renormalizer.mps import Mps, Mpo, MpDm
 from renormalizer.mps.matrix import tensordot
 from renormalizer.mps.lib import Environ
-from renormalizer.tests.parameter import custom_mol_list, mol_list
+from renormalizer.tests.parameter import custom_model, holstein_model
 from renormalizer.utils import CompressCriteria
 
 def test_save_load():
-    mol_list = custom_mol_list(hartrees=[True, False])
-    mps = Mpo.onsite(mol_list, "a^\dagger", mol_idx_set={0}) @ Mps.ground_state(mol_list, False)
-    mpo = Mpo(mol_list)
+    model = custom_model(hartrees=[True, False])
+    mps = Mpo.onsite(model, "a^\dagger", mol_idx_set={0}) @ Mps.ground_state(model, False)
+    mpo = Mpo(model)
     mps1 = mps.copy()
     for i in range(2):
         mps1 = mps1.evolve(mpo, 10)
     mps2 = mps.evolve(mpo, 10)
     fname = "test.npz"
     mps2.dump(fname)
-    mps2 = Mps.load(mol_list, fname)
+    mps2 = Mps.load(model, fname)
     mps2 = mps2.evolve(mpo, 10)
     assert np.allclose(mps1.e_occupations, mps2.e_occupations)
     os.remove(fname)
@@ -37,11 +37,11 @@ def check_distance(a: Mps, b: Mps):
 
 
 def test_distance():
-    mol_list = custom_mol_list(n_phys_dim=(2, 2))
-    a = Mps.random(mol_list, 1, 10)
-    b = Mps.random(mol_list, 1, 10)
+    model = custom_model(n_phys_dim=(2, 2))
+    a = Mps.random(model, 1, 10)
+    b = Mps.random(model, 1, 10)
     check_distance(a, b)
-    h = Mpo(mol_list)
+    h = Mpo(model)
     for i in range(100):
         a = a.evolve(h, 10)
         b = b.evolve(h, 10)
@@ -49,8 +49,8 @@ def test_distance():
 
 
 def test_environ():
-    mps = Mps.random(mol_list, 1, 10)
-    mpo = Mpo(mol_list)
+    mps = Mps.random(holstein_model, 1, 10)
+    mpo = Mpo(holstein_model)
     mps = mps.evolve(mpo, 10)
     environ = Environ(mps, mpo)
     for i in range(len(mps)-1):
@@ -69,10 +69,10 @@ def test_environ():
 def test_svd_compress(comp, mp):
     
     if mp == "mpo":
-        mps = Mpo(mol_list)
+        mps = Mpo(holstein_model)
         M = 22
     else:
-        mps = Mps.random(mol_list, 1, 10)
+        mps = Mps.random(holstein_model, 1, 10)
         if mp == "mpdm":
             mps = MpDm.from_mps(mps)
         mps.canonicalise().normalize()
@@ -81,7 +81,7 @@ def test_svd_compress(comp, mp):
         mps = mps.to_complex(inplace=True)
     print(f"{mps}")
     
-    mpo = Mpo(mol_list)
+    mpo = Mpo(holstein_model)
     if comp:
         mpo = mpo.scale(-1.0j)
     print(f"{mpo.bond_dims}")
@@ -102,10 +102,10 @@ def test_svd_compress(comp, mp):
 def test_variational_compress(comp, mp):
     
     if mp == "mpo":
-        mps = Mpo(mol_list)
+        mps = Mpo(holstein_model)
         M = 20
     else:
-        mps = Mps.random(mol_list, 1, 10)
+        mps = Mps.random(holstein_model, 1, 10)
         if mp == "mpdm":
             mps = MpDm.from_mps(mps)
         mps.canonicalise().normalize()
@@ -114,7 +114,7 @@ def test_variational_compress(comp, mp):
         mps = mps.to_complex(inplace=True)
     print(f"{mps}")
     
-    mpo = Mpo(mol_list)
+    mpo = Mpo(holstein_model)
     if comp:
         mpo = mpo.scale(-1.0j)
     print(f"{mpo.bond_dims}")

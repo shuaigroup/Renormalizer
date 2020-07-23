@@ -16,11 +16,11 @@ def test_ZT_dynamics_TDH():
 
     log.init_log(logging.INFO)
     sites = 4
-    mol_list = parameter_PBI.construct_mol(sites, dmrg_nphs=0, hartree_nphs=10)
+    model = parameter_PBI.construct_model(sites, dmrg_nphs=0, hartree_nphs=10)
 
     nsteps = 100 - 1
     dt = 10.0
-    dynamics = tdh.Dynamics(mol_list, init_idx=0)
+    dynamics = tdh.Dynamics(model, init_idx=0)
     dynamics.info_interval = 50
     dynamics.evolve(dt, nsteps)
     with open(os.path.join(cur_dir, "ZT_occ10.npy"), "rb") as f:
@@ -38,11 +38,11 @@ def test_FT_dynamics_TDH():
 
     log.init_log(logging.WARNING)
 
-    mol_list = parameter_PBI.construct_mol(4, dmrg_nphs=0, hartree_nphs=10)
+    model = parameter_PBI.construct_model(4, dmrg_nphs=0, hartree_nphs=10)
 
     T = Quantity(2000, "K")
     insteps = 1
-    dynamics = tdh.Dynamics(mol_list, temperature=T, insteps=insteps)
+    dynamics = tdh.Dynamics(model, temperature=T, insteps=insteps)
     nsteps = 300 - 1
     dt = 10.0
     dynamics.evolve(dt, nsteps)

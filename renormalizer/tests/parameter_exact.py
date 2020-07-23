@@ -14,7 +14,7 @@ J = 1
 
 ph = Phonon.simple_phonon(Quantity(OMEGA), Quantity(DISPLACEMENT), N_LEVELS)
 mol = Mol(Quantity(0), [ph])
-mol_list = HolsteinModel([mol] * N_SITES, Quantity(J), 3)
+model = HolsteinModel([mol] * N_SITES, Quantity(J), 3)
 
 qutip_clist = get_clist(N_SITES, N_LEVELS)
 qutip_blist = get_blist(N_SITES, N_LEVELS)

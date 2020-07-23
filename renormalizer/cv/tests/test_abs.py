@@ -9,7 +9,7 @@ from renormalizer.mps import Mpo
 from renormalizer.cv import batch_run
 from renormalizer.cv.zerot import SpectraZtCV
 from renormalizer.cv.finitet import SpectraFtCV
-from renormalizer.tests.parameter import mol_list
+from renormalizer.tests.parameter import holstein_model
 from renormalizer.cv.tests import cur_dir
 from renormalizer.utils import Quantity
 
@@ -24,7 +24,7 @@ def test_zt_abs(method):
     indx = [300, 680, 800, 900]
     test_freq = [freq_reg[idx] for idx in indx]
     standard_value = [ivalue[0][0] for ivalue in standard_value[indx]]
-    spectra = SpectraZtCV(mol_list, "abs", 10,
+    spectra = SpectraZtCV(holstein_model, "abs", 10,
                           5.e-5, method=method, rtol=1e-3)
     result = batch_run(test_freq, 2, spectra)
     assert np.allclose(result, standard_value, rtol=1.e-2)
@@ -40,8 +40,8 @@ def test_ft_abs():
     test_freq = [freq_reg[idx] for idx in indx]
     T = Quantity(298, unit='K')
     # subtract zero point energy for better CG convergence
-    h_mpo = Mpo(mol_list,offset=Quantity(mol_list.gs_zpe))
-    spectra = SpectraFtCV(mol_list, "abs",
+    h_mpo = Mpo(holstein_model, offset=Quantity(holstein_model.gs_zpe))
+    spectra = SpectraFtCV(holstein_model, "abs",
                           10, 5.e-3, T, h_mpo, rtol=1e-3)
     result = batch_run(test_freq, 1, spectra)
     print(result, standard_value)

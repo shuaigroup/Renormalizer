@@ -167,16 +167,16 @@ def construct_vibronic_model(multi_e, dvr):
 def test_pyr_4mode(multi_e, dvr):
 
     order, basis, vibronic_model = construct_vibronic_model(multi_e, dvr)
-    mol_list2 = VibronicModel(order, basis, vibronic_model)
-    mpo = Mpo(mol_list2)
+    model = VibronicModel(order, basis, vibronic_model)
+    mpo = Mpo(model)
     logger.info(f"mpo_bond_dims:{mpo.bond_dims}")
     # same form whether multi_e is True or False
     init_condition = {"e_1": 1}
     if dvr:
-        for dof in mol_list2.v_dofs:
+        for dof in model.v_dofs:
             idx = order[dof]
             init_condition[dof] = basis[idx].dvr_v[0]
-    mps = Mps.hartree_product_state(mol_list2, condition=init_condition)
+    mps = Mps.hartree_product_state(model, condition=init_condition)
 
     # for multi-e case the `expand bond dimension` routine is currently not working
     # because creation operator is not defined yet
@@ -186,7 +186,7 @@ def test_pyr_4mode(multi_e, dvr):
     compress_config = CompressConfig(CompressCriteria.fixed, max_bonddim=10)
 
     evolve_config = EvolveConfig(EvolveMethod.tdvp_ps)
-    job = VibronicModelDynamics(mol_list2, mps0=mps,
+    job = VibronicModelDynamics(model, mps0=mps,
                     h_mpo = mpo,
                     compress_config=compress_config,
                     evolve_config=evolve_config,

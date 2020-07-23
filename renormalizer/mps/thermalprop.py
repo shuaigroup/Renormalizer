@@ -88,9 +88,9 @@ class ThermalProp(TdMpsJob):
         if self.properties is not None:
             self.properties.calc_properties(mps)
 
-    def evolve_exact(self, old_mpdm, evolve_dt):
+    def evolve_exact(self, old_mpdm: MpDm, evolve_dt):
         MPOprop = Mpo.exact_propagator(
-            old_mpdm.mol_list, evolve_dt.imag, space=self.space, shift=-self.h_mpo.offset
+            old_mpdm.model, evolve_dt.imag, space=self.space, shift=-self.h_mpo.offset
         )
         new_mpdm = MPOprop.apply(old_mpdm, canonicalise=True)
         # partition function can't be obtained. It's not practical anyway.
@@ -99,7 +99,7 @@ class ThermalProp(TdMpsJob):
         return new_mpdm
 
     def evolve_prop(self, old_mpdm, evolve_dt):
-        h_mpo = Mpo(self.h_mpo.mol_list, offset=Quantity(self.energies[-1]))
+        h_mpo = Mpo(self.h_mpo.model, offset=Quantity(self.energies[-1]))
         return old_mpdm.evolve(h_mpo, evolve_dt)
 
     def evolve_single_step(self, evolve_dt):
@@ -144,18 +144,18 @@ class ThermalProp(TdMpsJob):
         return dump_dict
 
 
-def load_thermal_state(mol_list, path: str):
+def load_thermal_state(model, path: str):
     """
     Load thermal propagated state from disk. Return None if the file is not found.
 
     Args:
-        mol_list (:class:`MolList`): system information
+        model (:class:`MolList`): system information
         path (str): the path to load thermal state from. Should be an numpy ``.npz`` file.
     Returns: Loaded MpDm
     """
     try:
         logger.info(f"Try load from {path}")
-        mpdm = MpDm.load(mol_list, path)
+        mpdm = MpDm.load(model, path)
         logger.info(f"Init mpdm loaded: {mpdm}")
     except FileNotFoundError:
         logger.info(f"No file found in {path}")

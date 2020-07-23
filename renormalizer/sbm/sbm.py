@@ -3,7 +3,7 @@
 import logging
 from functools import partial
 
-from renormalizer.model import MolList2
+from renormalizer.model import Model
 from renormalizer.mps import Mpo, Mps
 from renormalizer.utils import TdMpsJob, Quantity, CompressConfig
 
@@ -13,9 +13,9 @@ logger = logging.getLogger(__name__)
 
 class SpinBosonDynamics(TdMpsJob):
 
-    def __init__(self, mol_list: MolList2, temperature: Quantity, compress_config=None, evolve_config=None, dump_dir=None, job_name=None):
-        self.mol_list = mol_list
-        self.h_mpo = Mpo(mol_list)
+    def __init__(self, model: Model, temperature: Quantity, compress_config=None, evolve_config=None, dump_dir=None, job_name=None):
+        self.model = model
+        self.h_mpo = Mpo(model)
         self.temperature = temperature
 
         if compress_config is None:
@@ -31,21 +31,21 @@ class SpinBosonDynamics(TdMpsJob):
     def init_mps(self):
         logger.debug(f"mpo bond and physical dimension: {self.h_mpo.bond_dims}, {self.h_mpo.pbond_list}")
         if self.temperature == 0:
-            init_mps = Mps.ground_state(self.mol_list, False)
+            init_mps = Mps.ground_state(self.model, False)
         else:
             raise NotImplementedError
         init_mps.compress_config = self.compress_config
         init_mps.evolve_config = self.evolve_config
         init_mps.use_dummy_qn = True
-        self.h_mpo = Mpo(self.mol_list, offset=Quantity(init_mps.expectation(self.h_mpo)))
+        self.h_mpo = Mpo(self.model, offset=Quantity(init_mps.expectation(self.h_mpo)))
         init_mps = init_mps.expand_bond_dimension(self.h_mpo)
         return init_mps
 
     def process_mps(self, mps):
-        sigma_z_mpo = self.mol_list.get_mpos("sigma_z", partial(Mpo.onsite, opera="sigma_z"))
+        sigma_z_mpo = self.model.get_mpos("sigma_z", partial(Mpo.onsite, opera="sigma_z"))
         sigma_z = mps.expectation(sigma_z_mpo)
         self.sigma_z.append(sigma_z)
-        sigma_x_mpo = self.mol_list.get_mpos("sigma_x", partial(Mpo.onsite, opera="sigma_x"))
+        sigma_x_mpo = self.model.get_mpos("sigma_x", partial(Mpo.onsite, opera="sigma_x"))
         sigma_x = mps.expectation(sigma_x_mpo)
         self.sigma_x.append(sigma_x)
         logger.info(f"sigma_z: {self.sigma_z[-1]}. sigma_x: {self.sigma_x[-1]}")
@@ -55,7 +55,7 @@ class SpinBosonDynamics(TdMpsJob):
 
     def get_dump_dict(self):
         dump_dict = dict()
-        dump_dict["mol list"] = self.mol_list.to_dict()
+        dump_dict["mol list"] = self.model.to_dict()
         dump_dict["tempearture"] = self.temperature.as_au()
         dump_dict["time series"] = self.evolve_times
         dump_dict["sigma_x"] = self.sigma_x

@@ -8,9 +8,9 @@ from renormalizer.mps.lib import compressed_sum
 
 class SuperLiouville(Mpo):
 
-    def __init__(self, h_mpo, dissipation=0):
+    def __init__(self, h_mpo: Mpo, dissipation=0):
         super().__init__()
-        self.mol_list = h_mpo.mol_list
+        self.model = h_mpo.model
         self.h_mpo = h_mpo
         self.dissipation = dissipation
 
@@ -21,7 +21,7 @@ class SuperLiouville(Mpo):
         if self.dissipation == 0:
             return no_dissipation
         # create and destroy operators
-        pm_operators: List[Tuple[Mpo, Mpo]] = mp.mol_list.get_mpos("lindblad_pm", calc_lindblad_pm)
+        pm_operators: List[Tuple[Mpo, Mpo]] = mp.model.get_mpos("lindblad_pm", calc_lindblad_pm)
         applied_terms = []
         for b, b_dag in pm_operators:
             res = b.apply(mp).apply(b_dag)
@@ -36,7 +36,7 @@ class SuperLiouville(Mpo):
             assert mp.ph_occupations.sum() == 0
             return no_dissipation
         summed_term = compressed_sum(applied_terms)
-        bdb_operator: Mpo = mp.mol_list.get_mpos("lindblad_bdb", calc_lindblad_bdb)
+        bdb_operator: Mpo = mp.model.get_mpos("lindblad_bdb", calc_lindblad_bdb)
         # any room for optimization? are there any simple relations between the two terms?
         lindblad = summed_term - 0.5 * (bdb_operator.contract(mp) + mp.contract(bdb_operator))
         ret = no_dissipation + 1j * self.dissipation * lindblad
@@ -47,22 +47,22 @@ class SuperLiouville(Mpo):
         return self.h_mpo[item]
 
 
-def calc_lindblad_pm(mol_list):
+def calc_lindblad_pm(holstein_model):
     # b and b^\dagger
     ph_operators = []
-    for imol, m in enumerate(mol_list):
+    for imol, m in enumerate(holstein_model):
         for jph in range(len(m.ph_list)):
-            b = Mpo.ph_onsite(mol_list, r"b", imol, jph)
-            b_dag = Mpo.ph_onsite(mol_list, r"b^\dagger", imol, jph)
+            b = Mpo.ph_onsite(holstein_model, r"b", imol, jph)
+            b_dag = Mpo.ph_onsite(holstein_model, r"b^\dagger", imol, jph)
             ph_operators.append((b, b_dag))
     return ph_operators
 
 
-def calc_lindblad_bdb(mol_list):
+def calc_lindblad_bdb(holstein_model):
     ph_operators = []
-    for imol, m in enumerate(mol_list):
+    for imol, m in enumerate(holstein_model):
         for jph in range(len(m.ph_list)):
-            bdb = Mpo.ph_onsite(mol_list, r"b^\dagger b", imol, jph)
+            bdb = Mpo.ph_onsite(holstein_model, r"b^\dagger b", imol, jph)
             bdb.set_threshold(1e-5)
             ph_operators.append(bdb)
     #from functools import reduce

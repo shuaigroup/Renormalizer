@@ -28,23 +28,23 @@ logger = logging.getLogger(__name__)
 
 def find_lowest_energy(h_mpo: Mpo, nexciton, Mmax):
     logger.debug("begin finding lowest energy")
-    mol_list = h_mpo.mol_list
-    mps = Mps.random(mol_list, nexciton, Mmax)
+    molel = h_mpo.model
+    mps = Mps.random(molel, nexciton, Mmax)
     energies, _ = optimize_mps(mps, h_mpo)
     return energies[-1]
 
 
 def find_highest_energy(h_mpo: Mpo, nexciton, Mmax):
     logger.debug("begin finding highest energy")
-    mol_list = h_mpo.mol_list
-    mps = Mps.random(mol_list, nexciton, Mmax)
+    model = h_mpo.model
+    mps = Mps.random(model, nexciton, Mmax)
     mps.optimize_config.inverse = -1.0
     energies, _ = optimize_mps(mps, h_mpo)
     return -energies[-1]
 
 
 def construct_mps_mpo_2(
-    mol_list, Mmax, nexciton, offset=Quantity(0)
+    model, Mmax, nexciton, offset=Quantity(0)
 ):
     """
     MPO/MPS structure 2
@@ -54,12 +54,12 @@ def construct_mps_mpo_2(
     """
     initialize MPO
     """
-    mpo = Mpo(mol_list, offset=offset)
+    mpo = Mpo(model, offset=offset)
 
     """
     initialize MPS according to quantum number
     """
-    mps = Mps.random(mol_list, nexciton, Mmax, percent=1)
+    mps = Mps.random(model, nexciton, Mmax, percent=1)
     # print("initialize left-canonical:", mps.check_left_canonical())
 
     return mps, mpo

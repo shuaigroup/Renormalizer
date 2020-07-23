@@ -9,7 +9,7 @@ from renormalizer.mps import MpDm, Mpo, MpDmFull, SuperLiouville, Mps, ThermalPr
 from renormalizer.utils import Quantity, CompressConfig
 from renormalizer.model import Phonon, Mol, HolsteinModel
 from renormalizer.transport.dynamics import calc_r_square
-from renormalizer.transport.tests.band_param import band_limit_mol_list, low_t, get_analytical_r_square
+from renormalizer.transport.tests.band_param import band_limit_model, low_t, get_analytical_r_square
 
 
 logger = logging.getLogger(__name__)
@@ -23,17 +23,17 @@ logger = logging.getLogger(__name__)
     ),
 )
 def test_dynamics(dissipation, dt, nsteps):
-    tentative_mpo = Mpo(band_limit_mol_list)
-    gs_mp = MpDm.max_entangled_gs(band_limit_mol_list)
+    tentative_mpo = Mpo(band_limit_model)
+    gs_mp = MpDm.max_entangled_gs(band_limit_model)
     # subtract the energy otherwise might cause numeric error because of large offset * dbeta
     energy = Quantity(gs_mp.expectation(tentative_mpo))
-    mpo = Mpo(band_limit_mol_list, offset=energy)
+    mpo = Mpo(band_limit_model, offset=energy)
     tp = ThermalProp(gs_mp, mpo, exact=True, space="GS")
     tp.evolve(None, 50, low_t.to_beta() / 2j)
     gs_mp = tp.latest_mps
-    center_mol_idx = band_limit_mol_list.mol_num // 2
+    center_mol_idx = band_limit_model.mol_num // 2
     creation_operator = Mpo.onsite(
-        band_limit_mol_list, r"a^\dagger", mol_idx_set={center_mol_idx}
+        band_limit_model, r"a^\dagger", mol_idx_set={center_mol_idx}
     )
     mpdm = creation_operator.apply(gs_mp)
     mpdm_full = MpDmFull.from_mpdm(mpdm)
@@ -63,12 +63,12 @@ def test_dynamics(dissipation, dt, nsteps):
 def test_2site():
     ph = Phonon.simple_phonon(Quantity(1), Quantity(1), 2)
     m = Mol(Quantity(0), [ph])
-    mol_list = HolsteinModel([m] * 2, Quantity(1))
-    gs_mp = Mpo.onsite(mol_list, opera=r"a^\dagger", mol_idx_set={0}).apply(Mps.ground_state(mol_list, max_entangled=False))
+    model = HolsteinModel([m] * 2, Quantity(1))
+    gs_mp = Mpo.onsite(model, opera=r"a^\dagger", mol_idx_set={0}).apply(Mps.ground_state(model, max_entangled=False))
     mpdm = MpDm.from_mps(gs_mp)
     mpdm_full = MpDmFull.from_mpdm(mpdm)
     mpdm_full.compress_config = CompressConfig(threshold=1e-4)
-    liouville = SuperLiouville(Mpo(mol_list), dissipation=1)
+    liouville = SuperLiouville(Mpo(model), dissipation=1)
     ph_occupations_array = []
     energies = []
     for i in range(51):
@@ -79,7 +79,7 @@ def test_2site():
         energies.append(mpdm_full.expectation(liouville))
         mpdm_full = mpdm_full.evolve(liouville, 0.4)
     ph_occupations_array = np.array(ph_occupations_array)
-    assert energies[-1] == pytest.approx(-0.340162 + mol_list.gs_zpe, rel=1e-2)
+    assert energies[-1] == pytest.approx(-0.340162 + model.gs_zpe, rel=1e-2)
     assert np.allclose(ph_occupations_array[-1], [0.0930588, 0.099115], rtol=1e-2)
 
 

@@ -25,7 +25,7 @@ class SpectraZtCV(SpectraCv):
     Use DDMRG to calculate the zero temperature spectrum from frequency domain
 
     Args:
-        mol_list (:class:`~renormalizer.model.MolList2`): system information.
+        model (:class:`~renormalizer.model.Model`): system information.
         spectratype (str): "abs" or "emi".
         m_max (int): maximal bond dimension of correction vector.
         eta (float): Lorentzian broadening width (a.u.).
@@ -52,7 +52,7 @@ class SpectraZtCV(SpectraCv):
     """
     def __init__(
         self,
-        mol_list,
+        model,
         spectratype,
         m_max,
         eta,
@@ -68,7 +68,7 @@ class SpectraZtCV(SpectraCv):
         self.procedure_gs = procedure_gs
 
         super().__init__(
-            mol_list, spectratype, m_max, eta, h_mpo=h_mpo,
+            model, spectratype, m_max, eta, h_mpo=h_mpo,
             method=method, procedure_cv=procedure_cv,
             rtol=rtol, b_mps=b_mps, e0=e0, cv_mps=cv_mps,
         )
@@ -94,7 +94,7 @@ class SpectraZtCV(SpectraCv):
 
         # ground state calculation
         mps = Mps.random(
-            self.mol_list, nexciton, self.procedure_gs[0][0], percent=1.0)
+            self.model, nexciton, self.procedure_gs[0][0], percent=1.0)
         mps.optimize_config = OptimizeConfig(procedure=self.procedure_gs)
         mps.optimize_config.method = "2site"
 
@@ -103,7 +103,7 @@ class SpectraZtCV(SpectraCv):
 
         dipole_mpo = \
             Mpo.onsite(
-                self.mol_list, dipoletype, dipole=True
+                self.model, dipoletype, dipole=True
             )
         b_mps = dipole_mpo.apply(mps.scale(-self.eta))
 
@@ -114,14 +114,14 @@ class SpectraZtCV(SpectraCv):
         assert self.b_mps is not None
         # initialize guess of cv_mps
         cv_mps = Mps.random(
-            self.mol_list, self.b_mps.qntot, self.m_max, percent=1.0)
+            self.model, self.b_mps.qntot, self.m_max, percent=1.0)
         logger.info(f"cv_mps random guess qntot: {cv_mps.qntot}")
 
         return cv_mps
 
     def oper_prepare(self, omega):
         # set up a_oper = (H_0 - e0 - omega)
-        identity = Mpo.identity(self.mol_list).scale(-self.e0-omega)
+        identity = Mpo.identity(self.model).scale(-self.e0 - omega)
         self.a_oper = self.h_mpo.add(identity)
     
     def optimize_cv(self, lr_group, isite, percent=0.0):

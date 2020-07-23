@@ -51,7 +51,7 @@ def batch_run(freq_reg, cores, obj, filename=None):
 class SpectraCv(object):
     def __init__(
         self,
-        mol_list,
+        model,
         spectratype,
         m_max,
         eta,
@@ -64,7 +64,7 @@ class SpectraCv(object):
         cv_mps = None,
     ):
         
-        self.mol_list = mol_list
+        self.model = model
         
         assert spectratype in ["abs", "emi", None]
         self.spectratype = spectratype
@@ -74,7 +74,7 @@ class SpectraCv(object):
         
         # Hamiltonian
         if h_mpo is None:
-            self.h_mpo = Mpo(mol_list)
+            self.h_mpo = Mpo(model)
         else:
             self.h_mpo = h_mpo
 
@@ -111,7 +111,7 @@ class SpectraCv(object):
         logger.info("DDMRG job created.")
 
     #def check_qn(self, X):
-    #    check_op = Mpo.onsite(self.mol_list, r"a^\dagger a", dipole=False)
+    #    check_op = Mpo.onsite(self.model, r"a^\dagger a", dipole=False)
     #    check_1 = X.conj().dot(check_op.apply(X)) / X.conj().dot(X)
     #    print('Quantum number of X', check_1)
     

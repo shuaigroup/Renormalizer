@@ -1,11 +1,11 @@
 from renormalizer.mps import Mpo
 from renormalizer.utils import Quantity, Op
-from renormalizer.model import HolsteinModel, MolList2
+from renormalizer.model import HolsteinModel, Model
 import numpy as np
 
 
-def e_ph_static_correlation(mol_list: HolsteinModel, imol:int =0, jph:int =0,
-        periodic:bool =False, name:str="S"):
+def e_ph_static_correlation(model: HolsteinModel, imol:int =0, jph:int =0,
+                            periodic:bool =False, name:str="S"):
     '''
     construct the electron-phonon static correlation operator in polaron problem
     The details of the definition, see 
@@ -22,7 +22,7 @@ def e_ph_static_correlation(mol_list: HolsteinModel, imol:int =0, jph:int =0,
         operator name: "_".join([name, str(n), str(m), str(jph)]) 
     
     Parameters:
-        mol_list : HolsteinModel
+        model : HolsteinModel
             the molecular information
         imol : int
             electron site index (default:0)
@@ -37,20 +37,20 @@ def e_ph_static_correlation(mol_list: HolsteinModel, imol:int =0, jph:int =0,
     Note: Only one mode Holstein Model has been tested
     '''
     
-    if mol_list.scheme == 4:
+    if model.scheme == 4:
         raise NotImplementedError
     
     prop_mpos = {}
     
-    nmols = mol_list.mol_num
+    nmols = model.mol_num
     
     if not periodic:
         # each jmol site is calculated separately
         for jmol in range(nmols):
             op_name = "_".join([name, str(imol), str(jmol), str(jph)])
-            ph = mol_list[jmol].ph_list[jph]
-            prop_mpos[op_name] = Mpo.intersite(mol_list, {imol:r"a^\dagger a"}, {(jmol,jph):r"b^\dagger + b"},
-                scale=Quantity(np.sqrt(1./2.0/ph.omega[0])/ph.dis[1]))
+            ph = model[jmol].ph_list[jph]
+            prop_mpos[op_name] = Mpo.intersite(model, {imol: r"a^\dagger a"}, {(jmol, jph): r"b^\dagger + b"},
+                                               scale=Quantity(np.sqrt(1./2.0/ph.omega[0])/ph.dis[1]))
         # normalized by the displacement D
     else:
         # each distance is calculated seperately
@@ -58,9 +58,9 @@ def e_ph_static_correlation(mol_list: HolsteinModel, imol:int =0, jph:int =0,
             dis_list = []
             for jmol in range(nmols):
                 kmol = (jmol+dis) % nmols
-                ph = mol_list[kmol].ph_list[jph]
-                dis_list.append(Mpo.intersite(mol_list, {jmol:r"a^\dagger a"},{(kmol, jph):r"b^\dagger + b"},
-                    scale=Quantity(np.sqrt(1./2.0/ph.omega[0])/ph.dis[1])))
+                ph = model[kmol].ph_list[jph]
+                dis_list.append(Mpo.intersite(model, {jmol: r"a^\dagger a"}, {(kmol, jph): r"b^\dagger + b"},
+                                              scale=Quantity(np.sqrt(1./2.0/ph.omega[0])/ph.dis[1])))
             for item in dis_list[1:]:
                 dis_list[0] = dis_list[0].add(item)
             op_name = "_".join([name, str(dis), str(jph)])
@@ -68,29 +68,29 @@ def e_ph_static_correlation(mol_list: HolsteinModel, imol:int =0, jph:int =0,
 
     return prop_mpos
 
-def x_average(mol_list: MolList2):
+def x_average(model: Model):
     """
     <x> of vibrational DoF
     """
 
     mpos = []
-    for v_dof in mol_list.v_dofs:
-        model = {(v_dof,):[(Op("x",0),1.0)]}
-        mpo = Mpo.general_mpo(mol_list, model=model)
+    for v_dof in model.v_dofs:
+        model_dict = {(v_dof,):[(Op("x",0),1.0)]}
+        mpo = Mpo.general_mpo(model, model=model_dict)
         mpos.append(mpo)
 
     return {"x": mpos}
 
-def x_square_average(mol_list: MolList2):
+def x_square_average(model: Model):
     """
     <x^2> of vibrational DoF
     """
-    assert isinstance(mol_list, MolList2)
+    assert isinstance(model, Model)
 
     mpos = []
-    for v_dof in mol_list.v_dofs:
-        model = {(v_dof,):[(Op("x^2",0),1.0)]}
-        mpo = Mpo.general_mpo(mol_list, model=model)
+    for v_dof in model.v_dofs:
+        model_dict = {(v_dof,):[(Op("x^2",0),1.0)]}
+        mpo = Mpo.general_mpo(model, model=model_dict)
         mpos.append(mpo)
 
     return {r"x^2": mpos}
