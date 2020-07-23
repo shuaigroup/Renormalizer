@@ -19,7 +19,7 @@ from renormalizer.utils import (
     EvolveConfig,
 )
 from renormalizer.transport.tests.band_param import (
-    band_limit_mol_list,
+    band_limit_model,
     assert_band_limit,
     low_t,
 )
@@ -29,23 +29,23 @@ import numpy as np
 
 def test_zt_init_state():
     ph = Phonon.simple_phonon(Quantity(1), Quantity(1), 10)
-    mol_list = HolsteinModel([Mol(Quantity(0), [ph])], Quantity(0), )
-    mpo = Mpo(mol_list)
-    mps = Mps.random(mol_list, 1, 10)
+    model = HolsteinModel([Mol(Quantity(0), [ph])], Quantity(0), )
+    mpo = Mpo(model)
+    mps = Mps.random(model, 1, 10)
     optimize_mps(mps, mpo)
-    ct = ChargeDiffusionDynamics(mol_list)
+    ct = ChargeDiffusionDynamics(model)
     assert mps.angle(ct.latest_mps) == pytest.approx(1)
 
 
 def test_ft_init_state():
     ph = Phonon.simple_phonon(Quantity(1), Quantity(1), 10)
-    mol_list = HolsteinModel([Mol(Quantity(0), [ph])], Quantity(0), )
+    model = HolsteinModel([Mol(Quantity(0), [ph])], Quantity(0), )
     temperature = Quantity(0.1)
-    mpo = Mpo(mol_list)
-    init_mpdm = MpDm.max_entangled_ex(mol_list)
+    mpo = Mpo(model)
+    init_mpdm = MpDm.max_entangled_ex(model)
     tp = ThermalProp(init_mpdm, mpo, space="EX", exact=True)
     tp.evolve(nsteps=20, evolve_time=temperature.to_beta() / 2j)
-    ct = ChargeDiffusionDynamics(mol_list, temperature=temperature)
+    ct = ChargeDiffusionDynamics(model, temperature=temperature)
     tp_mpdm = MpDmFull.from_mpdm(tp.latest_mps)
     ct_mpdm = MpDmFull.from_mpdm(ct.latest_mps)
     assert tp_mpdm.angle(ct_mpdm) == pytest.approx(1)
@@ -62,7 +62,7 @@ def test_ft_init_state():
 def test_bandlimit_zero_t(method, evolve_dt, nsteps, rtol, scheme):
     evolve_config = EvolveConfig(method)
     ct = ChargeDiffusionDynamics(
-        band_limit_mol_list.switch_scheme(scheme),
+        band_limit_model.switch_scheme(scheme),
         evolve_config=evolve_config,
     )
     ct.stop_at_edge = True
@@ -77,7 +77,7 @@ def test_adaptive_zero_t(method):
     np.random.seed(0)
     evolve_config = EvolveConfig(method=method, guess_dt=0.1, adaptive=True)
     ct = ChargeDiffusionDynamics(
-        band_limit_mol_list, evolve_config=evolve_config, stop_at_edge=True
+        band_limit_model, evolve_config=evolve_config, stop_at_edge=True
     )
     ct.evolve(evolve_dt=5.)
     assert_band_limit(ct, 1e-2)
@@ -91,7 +91,7 @@ def test_gaussian_bond_dim():
     )
     evolve_config = EvolveConfig(guess_dt=0.1, adaptive=True)
     ct = ChargeDiffusionDynamics(
-        band_limit_mol_list,
+        band_limit_model,
         compress_config=compress_config,
         evolve_config=evolve_config,
     )
@@ -128,11 +128,11 @@ def test_similar(
         )
         for omega, displacement in ph_info
     ]
-    mol_list = HolsteinModel([Mol(Quantity(elocalex_value, "a.u."), ph_list)] * mol_num,
+    model = HolsteinModel([Mol(Quantity(elocalex_value, "a.u."), ph_list)] * mol_num,
                              Quantity(j_constant_value, "eV"), )
-    ct1 = ChargeDiffusionDynamics(mol_list)
+    ct1 = ChargeDiffusionDynamics(model)
     ct1.evolve(evolve_dt, nsteps)
-    ct2 = ChargeDiffusionDynamics(mol_list)
+    ct2 = ChargeDiffusionDynamics(model)
     ct2.evolve(evolve_dt + 1e-5, nsteps)
     assert ct1.is_similar(ct2)
 
@@ -150,13 +150,13 @@ def test_evolve(
         )
         for omega, displacement in ph_info
     ]
-    mol_list = HolsteinModel([Mol(Quantity(elocalex_value, "a.u."), ph_list)] * mol_num,
+    model = HolsteinModel([Mol(Quantity(elocalex_value, "a.u."), ph_list)] * mol_num,
                              Quantity(j_constant_value, "eV"), )
-    ct1 = ChargeDiffusionDynamics(mol_list, stop_at_edge=False)
+    ct1 = ChargeDiffusionDynamics(model, stop_at_edge=False)
     half_nsteps = nsteps // 2
     ct1.evolve(evolve_dt, half_nsteps)
     ct1.evolve(evolve_dt, nsteps - half_nsteps)
-    ct2 = ChargeDiffusionDynamics(mol_list, stop_at_edge=False)
+    ct2 = ChargeDiffusionDynamics(model, stop_at_edge=False)
     ct2.evolve(evolve_dt, nsteps)
     assert ct1.is_similar(ct2)
     assert_iterable_equal(ct1.get_dump_dict(), ct2.get_dump_dict())
@@ -189,10 +189,10 @@ def test_band_limit_finite_t(
         )
         for omega, displacement in ph_info
     ]
-    mol_list = HolsteinModel([Mol(Quantity(elocalex_value, "a.u."), ph_list)] * mol_num,
+    model = HolsteinModel([Mol(Quantity(elocalex_value, "a.u."), ph_list)] * mol_num,
                              Quantity(j_constant_value, "eV"), )
-    ct1 = ChargeDiffusionDynamics(mol_list, stop_at_edge=False)
+    ct1 = ChargeDiffusionDynamics(model, stop_at_edge=False)
     ct1.evolve(evolve_dt, nsteps)
-    ct2 = ChargeDiffusionDynamics(mol_list, temperature=low_t, stop_at_edge=False)
+    ct2 = ChargeDiffusionDynamics(model, temperature=low_t, stop_at_edge=False)
     ct2.evolve(evolve_dt, nsteps)
     assert ct1.is_similar(ct2)

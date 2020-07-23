@@ -11,7 +11,7 @@ from renormalizer.utils import TdMpsJob, Quantity
 class SpectraTdMpsJobBase(TdMpsJob):
     def __init__(
         self,
-        mol_list,
+        model,
         spectratype,
         temperature,
         evolve_config=None,
@@ -19,7 +19,7 @@ class SpectraTdMpsJobBase(TdMpsJob):
         dump_dir=None,
         job_name=None
     ):
-        self.mol_list = mol_list
+        self.model = model
         assert spectratype in ["emi", "abs"]
         self.spectratype = spectratype
         if spectratype == "emi":
@@ -27,7 +27,7 @@ class SpectraTdMpsJobBase(TdMpsJob):
         else:
             self.nexciton = 0
         self.temperature = temperature
-        self.h_mpo = Mpo(mol_list, offset=offset)
+        self.h_mpo: Mpo = Mpo(model, offset=offset)
         self._autocorr = []
         super(SpectraTdMpsJobBase, self).__init__(evolve_config=evolve_config, dump_dir=dump_dir, job_name=job_name)
 

@@ -7,16 +7,16 @@ import os
 import pytest
 import numpy as np
 
-from renormalizer.model import MolList2, Mol, Phonon, HolsteinModel
+from renormalizer.model import Model, Mol, Phonon, HolsteinModel
 from renormalizer.mps import Mpo, Mps
-from renormalizer.tests.parameter import mol_list
+from renormalizer.tests.parameter import holstein_model
 from renormalizer.mps.tests import cur_dir
 from renormalizer.utils import Quantity, Op
 from renormalizer.utils import basis as ba
 
 @pytest.mark.parametrize("dt, space, shift", ([30, "GS", 0.0], [30, "EX", 0.0]))
 def test_exact_propagator(dt, space, shift):
-    prop_mpo = Mpo.exact_propagator(mol_list, -1.0j * dt, space, shift)
+    prop_mpo = Mpo.exact_propagator(holstein_model, -1.0j * dt, space, shift)
     with open(os.path.join(cur_dir, "test_exact_propagator.pickle"), "rb") as fin:
         std_dict = pickle.load(fin)
     std_mpo = std_dict[space]
@@ -39,8 +39,8 @@ def test_offset(scheme):
 
 
 def test_identity():
-    identity = Mpo.identity(mol_list)
-    mps = Mps.random(mol_list, nexciton=1, m_max=5)
+    identity = Mpo.identity(holstein_model)
+    mps = Mps.random(holstein_model, nexciton=1, m_max=5)
     assert mps.expectation(identity) == pytest.approx(mps.dmrg_norm) == pytest.approx(1)
 
 
@@ -58,7 +58,7 @@ def test_scheme4():
     assert mpo3.is_hermitian()
     # makeup two states
     mps4 = Mps()
-    mps4.mol_list = mlist1
+    mps4.model = mlist1
     mps4.use_dummy_qn = True
     mps4.append(np.array([1, 0]).reshape((1,2,1)))
     mps4.append(np.array([0, 0, 1]).reshape((1,-1,1)))
@@ -67,7 +67,7 @@ def test_scheme4():
     mps4.build_empty_qn()
     e4 = mps4.expectation(mpo4)
     mps3 = Mps()
-    mps3.mol_list = mlist2
+    mps3.model = mlist2
     mps3.append(np.array([1, 0]).reshape((1,2,1)))
     mps3.append(np.array([1, 0]).reshape((1,2,1)))
     mps3.append(np.array([0, 1]).reshape((1,2,1)))
@@ -80,7 +80,7 @@ def test_scheme4():
 @pytest.mark.parametrize("scheme", (1, 4))
 def test_intersite(scheme):
 
-    local_mlist = mol_list.switch_scheme(scheme)
+    local_mlist = holstein_model.switch_scheme(scheme)
 
     mpo1 = Mpo.intersite(local_mlist, {0:r"a^\dagger"}, {}, Quantity(1.0))
     mpo2 = Mpo.onsite(local_mlist, r"a^\dagger", mol_idx_set=[0])
@@ -110,15 +110,15 @@ def test_intersite(scheme):
 
 
 def test_phonon_onsite():
-    gs = Mps.ground_state(mol_list, max_entangled=False)
+    gs = Mps.ground_state(holstein_model, max_entangled=False)
     assert not gs.ph_occupations.any()
-    b2 = Mpo.ph_onsite(mol_list, r"b^\dagger", 0, 0)
+    b2 = Mpo.ph_onsite(holstein_model, r"b^\dagger", 0, 0)
     p1 = b2.apply(gs).normalize()
     assert np.allclose(p1.ph_occupations, [1, 0, 0, 0, 0, 0])
     p2 = b2.apply(p1).normalize()
     assert np.allclose(p2.ph_occupations, [2, 0, 0, 0, 0, 0])
     b = b2.conj_trans()
-    assert b.distance(Mpo.ph_onsite(mol_list, r"b", 0, 0)) == 0
+    assert b.distance(Mpo.ph_onsite(holstein_model, r"b", 0, 0)) == 0
     assert b.apply(p2).normalize().distance(p1) == pytest.approx(0, abs=1e-5)
 
 
@@ -137,7 +137,7 @@ def test_different_general_mpo_format():
     model4 = {("e_1",):[(Op("a^\dagger_0 a_1",0), 0.1)]}
     order = {"e_0":0, "e_1":0}
     basis = [ba.BasisMultiElectron(2,[0,0])]
-    mollist = MolList2(order, basis, model1)
+    mollist = Model(order, basis, model1)
     mpo1 = Mpo.general_mpo(mollist, model=model1)
     mpo2 = Mpo.general_mpo(mollist, model=model2)
     mpo3 = Mpo.general_mpo(mollist, model=model3)

@@ -8,7 +8,7 @@ from renormalizer.mps import MpDm, Mpo, BraKetPair, ThermalProp, load_thermal_st
 from renormalizer.mps.backend import np
 from renormalizer.utils.constant import mobility2au
 from renormalizer.utils import TdMpsJob, Quantity, EvolveConfig, CompressConfig
-from renormalizer.model import MolList2
+from renormalizer.model import Model
 from renormalizer.property import Property
 
 logger = logging.getLogger(__name__)
@@ -62,7 +62,7 @@ class TransportKubo(TdMpsJob):
         state directly in this class.
 
     Args:
-        mol_list (:class:`~renormalizer.model.mlist.MolList2`): system information.
+        model (:class:`~renormalizer.model.mlist.Model`): system information.
         temperature (:class:`~renormalizer.utils.quantity.Quantity`): simulation temperature.
             Zero temperature is not supported.
         distance_matrix (np.ndarray): two-dimensional array :math:`D_{ij} = P_i - P_j` representing
@@ -89,12 +89,12 @@ class TransportKubo(TdMpsJob):
         properties (:class:`~renormalizer.property.property.Property`): other properties to calculate during real time evolution.
             Currently only supports Holstein model.
     """
-    def __init__(self, mol_list: MolList2, temperature: Quantity, distance_matrix: np.ndarray = None,
-            insteps: int=1, ievolve_config=None, compress_config=None,
-            evolve_config=None, dump_dir: str=None, job_name: str=None, properties: Property = None):
-        self.mol_list = mol_list
+    def __init__(self, model: Model, temperature: Quantity, distance_matrix: np.ndarray = None,
+                 insteps: int=1, ievolve_config=None, compress_config=None,
+                 evolve_config=None, dump_dir: str=None, job_name: str=None, properties: Property = None):
+        self.model = model
         self.distance_matrix = distance_matrix
-        self.h_mpo = Mpo(mol_list)
+        self.h_mpo = Mpo(model)
         logger.info(f"Bond dim of h_mpo: {self.h_mpo.bond_dims}")
         self._construct_current_operator()
         if temperature == 0:
@@ -130,8 +130,8 @@ class TransportKubo(TdMpsJob):
         logger.info("constructing current operator ")
 
 
-        mol_num = self.mol_list.n_edofs
-        model = self.mol_list.model
+        mol_num = self.model.n_edofs
+        model = self.model.model
 
         if self.distance_matrix is None:
             logger.info("Constructing distance matrix based on a periodic one-dimension chain.")
@@ -200,10 +200,10 @@ class TransportKubo(TdMpsJob):
                 current_model[dof_names].append(tuple(current_term))
 
         assert len(holstein_current_model) != 0
-        self.j_oper = Mpo.general_mpo(self.mol_list, model=holstein_current_model)
+        self.j_oper = Mpo.general_mpo(self.model, model_dict=holstein_current_model)
         logger.info(f"current operator bond dim: {self.j_oper.bond_dims}")
         if len(peierls_current_model) != 0:
-            self.j_oper2  = Mpo.general_mpo(self.mol_list, model=peierls_current_model)
+            self.j_oper2  = Mpo.general_mpo(self.model, model_dict=peierls_current_model)
             logger.info(f"Peierls coupling induced current operator bond dim: {self.j_oper2.bond_dims}")
         else:
             self.j_oper2 = None
@@ -211,12 +211,12 @@ class TransportKubo(TdMpsJob):
     def init_mps(self):
         # first try to load
         if self._defined_output_path:
-            mpdm = load_thermal_state(self.mol_list, self._thermal_dump_path)
+            mpdm = load_thermal_state(self.model, self._thermal_dump_path)
         else:
             mpdm = None
         # then try to calculate
         if mpdm is None:
-            i_mpdm = MpDm.max_entangled_ex(self.mol_list)
+            i_mpdm = MpDm.max_entangled_ex(self.model)
             i_mpdm.compress_config = self.compress_config
             if self.job_name is None:
                 job_name = None
@@ -230,7 +230,7 @@ class TransportKubo(TdMpsJob):
                 mpdm.dump(self._thermal_dump_path)
         mpdm.compress_config = self.compress_config
         e = mpdm.expectation(self.h_mpo)
-        self.h_mpo = Mpo(self.mol_list, offset=Quantity(e))
+        self.h_mpo = Mpo(self.model, offset=Quantity(e))
         mpdm.evolve_config = self.evolve_config
         logger.debug("Applying current operator")
         ket_mpdm = self.j_oper.contract(mpdm).canonical_normalize()
@@ -339,7 +339,7 @@ class TransportKubo(TdMpsJob):
 
     def get_dump_dict(self):
         dump_dict = dict()
-        dump_dict["mol list"] = self.mol_list.to_dict()
+        dump_dict["mol list"] = self.model.to_dict()
         dump_dict["temperature"] = self.temperature.as_au()
         dump_dict["time series"] = self.evolve_times
         dump_dict["auto correlation"] = self.auto_corr

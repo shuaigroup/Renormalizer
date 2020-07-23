@@ -14,15 +14,15 @@ from renormalizer.utils import Quantity, EvolveConfig, EvolveMethod
 def test_mpdm_full(nmols, phonon_freq):
     ph = Phonon.simple_phonon(Quantity(phonon_freq), Quantity(1), 2)
     m = Mol(Quantity(0), [ph])
-    mol_list = HolsteinModel([m] * nmols, Quantity(1), )
+    model = HolsteinModel([m] * nmols, Quantity(1), )
 
-    gs_dm = MpDm.max_entangled_gs(mol_list)
+    gs_dm = MpDm.max_entangled_gs(model)
     beta = Quantity(1000, "K").to_beta()
-    tp = ThermalProp(gs_dm, Mpo(mol_list), exact=True, space="GS")
+    tp = ThermalProp(gs_dm, Mpo(model), exact=True, space="GS")
     tp.evolve(None, 50, beta / 1j)
     gs_dm = tp.latest_mps
     assert np.allclose(gs_dm.e_occupations, [0] * nmols)
-    e_gs_dm = Mpo.onsite(mol_list, r"a^\dagger", mol_idx_set={0}).apply(gs_dm, canonicalise=True)
+    e_gs_dm = Mpo.onsite(model, r"a^\dagger", mol_idx_set={0}).apply(gs_dm, canonicalise=True)
     assert np.allclose(e_gs_dm.e_occupations, [1] + [0] * (nmols - 1))
 
     mpdm_full = MpDmFull.from_mpdm(e_gs_dm)
@@ -31,7 +31,7 @@ def test_mpdm_full(nmols, phonon_freq):
 
 
 def test_from_mps():
-    gs = Mps.random(parameter.mol_list, 1, 20)
+    gs = Mps.random(parameter.holstein_model, 1, 20)
     gs_mpdm = MpDm.from_mps(gs)
     assert np.allclose(gs.e_occupations, gs_mpdm.e_occupations)
     gs = gs.canonicalise()
@@ -48,9 +48,9 @@ def test_from_mps():
     ),
 )
 def test_thermal_prop(adaptive, evolve_method):
-    mol_list = parameter.mol_list
-    init_mps = MpDm.max_entangled_ex(mol_list)
-    mpo = Mpo(mol_list)
+    model = parameter.holstein_model
+    init_mps = MpDm.max_entangled_ex(model)
+    mpo = Mpo(model)
     beta = Quantity(298, "K").to_beta()
     evolve_time = beta / 2j
 
@@ -75,7 +75,7 @@ def test_thermal_prop(adaptive, evolve_method):
     # MPO, HAM, Etot, A_el = mps.construct_hybrid_Ham(mpo, debug=True)
     # exact A_el: 0.20896541050347484, 0.35240029674394463, 0.4386342927525734
     # exact internal energy: 0.0853388060014744
-    etot_std = 0.0853388 + parameter.mol_list.gs_zpe
+    etot_std = 0.0853388 + parameter.holstein_model.gs_zpe
     occ_std = [0.20896541050347484, 0.35240029674394463, 0.4386342927525734]
     rtol = 5e-3
     assert np.allclose(tp.e_occupations_array[-1], occ_std, rtol=rtol)

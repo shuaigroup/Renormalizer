@@ -4,7 +4,7 @@
 import logging
 from typing import List, Union
 
-from renormalizer.model import MolList2
+from renormalizer.model import Model
 from renormalizer.mps.backend import np, xp, USE_GPU
 from renormalizer.mps import svd_qn
 from renormalizer.mps.matrix import (
@@ -38,7 +38,7 @@ class MatrixProduct:
         self._mp: List[Union[Matrix, None]] = []
         self.dtype = backend.real_dtype
 
-        self.mol_list: MolList2 = None
+        self.model: Model = None
 
         # mpo also need to be compressed sometimes
         self.compress_config: CompressConfig = CompressConfig()
@@ -61,7 +61,7 @@ class MatrixProduct:
 
     @property
     def mol_num(self):
-        return self.mol_list.mol_num
+        return self.model.mol_num
 
     @property
     def threshold(self):
@@ -103,7 +103,7 @@ class MatrixProduct:
 
     @property
     def pbond_list(self):
-        return self.mol_list.pbond_list
+        return self.model.pbond_list
 
     @property
     def qntot(self):
@@ -874,7 +874,7 @@ class MatrixProduct:
         new = self.__class__.__new__(self.__class__)
         new._mp = [None] * len(self)
         new.dtype = self.dtype
-        new.mol_list = self.mol_list
+        new.model = self.model
         # need to deep copy compress_config because threshold might change dynamically
         new.compress_config = self.compress_config.copy()
         new.use_dummy_qn = self.use_dummy_qn

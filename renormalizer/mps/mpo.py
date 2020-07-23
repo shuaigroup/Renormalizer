@@ -7,7 +7,7 @@ import numpy as np
 import scipy
 import scipy.sparse
 
-from renormalizer.model import MolList2, HolsteinModel
+from renormalizer.model import Model, HolsteinModel
 from renormalizer.mps.backend import xp
 from renormalizer.mps.matrix import moveaxis, tensordot, asnumpy
 from renormalizer.mps.mp import MatrixProduct
@@ -299,17 +299,17 @@ def add_idx(symbol, idx):
     return " ".join(symbols)
 
 
-def _model_translator_general_model(mol_list, model, const=Quantity(0.)):
+def _model_translator_general_model(model, model_dict, const=Quantity(0.)):
     r"""
     constructing a general operator table
-    according to mol_list.model and mol_list.order
+    according to model.model and model.order
     """
     
     factor = []
     table = []
-    nsite = mol_list.nsite
-    order = mol_list.order
-    basis = mol_list.basis
+    nsite = model.nsite
+    order = model.order
+    basis = model.basis
     
     # clean up 
     # for example 
@@ -327,13 +327,13 @@ def _model_translator_general_model(mol_list, model, const=Quantity(0.)):
     # is ("e_0",):[(Op("a^\dagger_0"), factor)] 
     
     model_new = defaultdict(list)
-    for model_key, model_value in model.items():
+    for model_key, model_value in model_dict.items():
 
         # site index of the dofs for each term in the model
         dof_site_idx = [order[k] for k in model_key]
 
         dof_site_idx_unique = len(dof_site_idx) == len(set(dof_site_idx))
-        if not dof_site_idx_unique or mol_list.multi_dof_basis:
+        if not dof_site_idx_unique or model.multi_dof_basis:
             # keys: site index; values: index of the dofs (in terms of the model key) on the site index
             dofdict = defaultdict(list)
             for idof, dof in enumerate(model_key):
@@ -370,9 +370,9 @@ def _model_translator_general_model(mol_list, model, const=Quantity(0.)):
         else:
             model_new[tuple(dof_site_idx)] += model_value
 
-    model = model_new
+    model_dict = model_new
 
-    for dof, model_value in model.items():
+    for dof, model_value in model_dict.items():
         op_factor = np.array([term[-1] for term in model_value])
         nonzero_idx = np.nonzero(op_factor != 0)[0]
         mapping = {j:i for i,j in enumerate(dof)}
@@ -403,7 +403,7 @@ class Mpo(MatrixProduct):
     """
 
     @classmethod
-    def exact_propagator(cls, mol_list: HolsteinModel, x, space="GS", shift=0.0):
+    def exact_propagator(cls, model: HolsteinModel, x, space="GS", shift=0.0):
         """
         construct the GS space propagator e^{xH} exact MPO
         H=\\sum_{in} \\omega_{in} b^\\dagger_{in} b_{in}
@@ -416,15 +416,15 @@ class Mpo(MatrixProduct):
         mpo = cls()
         if np.iscomplex(x):
             mpo.to_complex(inplace=True)
-        mpo.mol_list = mol_list
+        mpo.model = model
 
-        for imol, mol in enumerate(mol_list):
-            if mol_list.scheme < 4:
+        for imol, mol in enumerate(model):
+            if model.scheme < 4:
                 mo = np.eye(2).reshape(1, 2, 2, 1)
                 mpo.append(mo)
-            elif mol_list.scheme == 4:
-                if len(mpo) == mol_list.order["e_0"]:
-                    n = mol_list.mol_num
+            elif model.scheme == 4:
+                if len(mpo) == model.order["e_0"]:
+                    n = model.mol_num
                     mpo.append(np.eye(n+1).reshape(1, n+1, n+1, 1))
             else:
                 assert False
@@ -503,41 +503,41 @@ class Mpo(MatrixProduct):
         return mpo
 
     @classmethod
-    def onsite(cls, mol_list: MolList2, opera, dipole=False, mol_idx_set=None):
+    def onsite(cls, model: Model, opera, dipole=False, mol_idx_set=None):
 
         qn_dict= {"a":-1, r"a^\dagger":1, r"a^\dagger a":0, "sigma_x":0, "sigma_z": 0}
         if mol_idx_set is None:
-            mol_idx_set = range(len(mol_list.e_dofs))
-        model = {}
+            mol_idx_set = range(len(model.e_dofs))
+        model_dict = {}
         for idx in mol_idx_set:
             if dipole:
-                factor = mol_list.dipole[(f"e_{idx}",)]
+                factor = model.dipole[(f"e_{idx}",)]
             else:
                 factor = 1.
-            model[(f"e_{idx}",)] = [(Op(opera, qn_dict[opera]),factor)]
+            model_dict[(f"e_{idx}",)] = [(Op(opera, qn_dict[opera]),factor)]
 
-        mpo = cls.general_mpo(mol_list, model=model)
+        mpo = cls.general_mpo(model, model_dict=model_dict)
 
         return mpo
 
     @classmethod
-    def ph_onsite(cls, mol_list: HolsteinModel, opera: str, mol_idx:int, ph_idx=0):
+    def ph_onsite(cls, model: HolsteinModel, opera: str, mol_idx:int, ph_idx=0):
         assert opera in ["b", r"b^\dagger", r"b^\dagger b"]
-        assert mol_list.map is not None
+        assert model.map is not None
 
-        model = {(mol_list.map[(mol_idx, ph_idx)],): [(Op(opera,0), 1.0)]}
-        mpo = cls.general_mpo(mol_list, model=model)
+        model_dict = {(model.map[(mol_idx, ph_idx)],): [(Op(opera, 0), 1.0)]}
+        mpo = cls.general_mpo(model, model_dict=model_dict)
 
         return mpo
 
     @classmethod
-    def intersite(cls, mol_list: HolsteinModel, e_opera: dict, ph_opera: dict, scale:
+    def intersite(cls, model: HolsteinModel, e_opera: dict, ph_opera: dict, scale:
             Quantity=Quantity(1.)):
         """ construct the inter site MPO
         
         Parameters
         ----------
-        mol_list : HolsteinModel
+        model : HolsteinModel
             the molecular information
         e_opera:
             the electronic operators. {imol: operator}, such as {1:"a", 3:r"a^\dagger"}
@@ -552,7 +552,7 @@ class Mpo(MatrixProduct):
         
         """
             
-        assert mol_list.map is not None
+        assert model.map is not None
         qn_dict= {"a":-1, r"a^\dagger":1, r"a^\dagger a":0, "sigma_x":0}
 
         key = []
@@ -561,23 +561,23 @@ class Mpo(MatrixProduct):
             key.append(f"e_{e_key}")
             ops.append(Op(e_op, qn_dict[e_op]))
         for v_key, v_op in ph_opera.items():
-            key.append(mol_list.map[v_key])
+            key.append(model.map[v_key])
             ops.append(Op(v_op, 0))
         ops.append(scale.as_au())
 
-        model = {tuple(key):[tuple(ops)]}
-        mpo = cls(mol_list, model=model)
+        model_dict = {tuple(key):[tuple(ops)]}
+        mpo = cls(model, model_dict=model_dict)
 
         return mpo
 
 
     @classmethod
-    def finiteT_cv(cls, mol_list, nexciton, m_max, spectratype,
+    def finiteT_cv(cls, model, nexciton, m_max, spectratype,
                    percent=1.0):
         np.random.seed(0)
 
         X = cls()
-        X.mol_list = mol_list
+        X.model = model
         if spectratype == "abs":
             # quantum number index, |1><0|
             tag_1, tag_2 = 0, 1
@@ -585,20 +585,20 @@ class Mpo(MatrixProduct):
             # quantum number index, |0><1|
             tag_1, tag_2 = 1, 0
         X.qn = [[[0, 0]]]
-        for ix in range(mol_list.nsite - 1):
+        for ix in range(model.nsite - 1):
             X.qn.append(None)
         X.qn.append([[0, 0]])
         dim_list = [1]
 
-        for ix in range(mol_list.nsite - 1):
-            if mol_list.is_electron(ix):
+        for ix in range(model.nsite - 1):
+            if model.is_electron(ix):
                 qnbig = list(itertools.chain.from_iterable(
                     [np.add(y, [0, 0]), np.add(y, [0, 1]),
                      np.add(y, [1, 0]), np.add(y, [1, 1])]
                     for y in X.qn[ix]))
             else:
                 qnbig = list(itertools.chain.from_iterable(
-                    [x] * (mol_list.pbond_list[ix] ** 2) for x in X.qn[ix]))
+                    [x] * (model.pbond_list[ix] ** 2) for x in X.qn[ix]))
             # print('qnbig', qnbig)
             u_set = []
             s_set = []
@@ -649,11 +649,11 @@ class Mpo(MatrixProduct):
             x, xdim, xqn, compx = update_cv(u_set, s_set, qnset, None, nexciton, m_max, spectratype, percent=percent)
             dim_list.append(xdim)
             X.qn[ix + 1] = xqn
-            x = x.reshape(dim_list[-2], mol_list.pbond_list[ix], mol_list.pbond_list[ix], dim_list[ix + 1])
+            x = x.reshape(dim_list[-2], model.pbond_list[ix], model.pbond_list[ix], dim_list[ix + 1])
             X.append(x)
         dim_list.append(1)
-        X.append(np.random.random([dim_list[-2], mol_list.pbond_list[-1],
-                                  mol_list.pbond_list[-1], dim_list[-1]]))
+        X.append(np.random.random([dim_list[-2], model.pbond_list[-1],
+                                   model.pbond_list[-1], dim_list[-1]]))
         X.qnidx = len(X) - 1
         X.to_right = False
         X.qntot = nexciton
@@ -662,45 +662,45 @@ class Mpo(MatrixProduct):
 
 
     @classmethod
-    def identity(cls, mol_list: MolList2):
+    def identity(cls, model: Model):
         mpo = cls()
-        mpo.mol_list = mol_list
-        for p in mol_list.pbond_list:
+        mpo.model = model
+        for p in model.pbond_list:
             mpo.append(np.eye(p).reshape(1, p, p, 1))
         mpo.build_empty_qn()
         return mpo
     
     @classmethod
-    def general_mpo(cls, mol_list, offset=Quantity(0.), model=None):
+    def general_mpo(cls, model, offset=Quantity(0.), model_dict=None):
         """
         MolList2 or MolList with MolList2 parameters
         """
-        return cls(mol_list, offset, model)
+        return cls(model, offset, model_dict)
     
-    def _general_mpo(self, mol_list, const=Quantity(0.), model=None):
+    def _general_mpo(self, model, const=Quantity(0.), model_dict=None):
         # construct a real mpo matrix elements into mpo shell
 
         assert len(self) == 0
 
-        if model is None:
-            model = mol_list.model
+        if model_dict is None:
+            model_dict = model.model
 
-        table, factor = _model_translator_general_model(mol_list, model, const)
+        table, factor = _model_translator_general_model(model, model_dict, const)
 
         self.dtype = factor.dtype
 
         mpo_symbol, mpo_qn, qntot, qnidx = symbolic_mpo(table, factor)
         # todo: elegant way to express the symbolic mpo
         #logger.debug(f"symbolic mpo: \n {np.array(mpo_symbol)}")
-        self.mol_list = mol_list
+        self.model = model
         self.qnidx = qnidx
         self.qntot = qntot
         self.qn = mpo_qn
         self.to_right = False
 
         # evaluate the symbolic mpo
-        assert mol_list.basis is not None
-        basis = mol_list.basis
+        assert model.basis is not None
+        basis = model.basis
 
         for impo, mo in enumerate(mpo_symbol):
             pdim = basis[impo].nbas
@@ -714,24 +714,24 @@ class Mpo(MatrixProduct):
             self.append(mo_mat)
 
 
-    def __init__(self, mol_list: MolList2 = None, offset: Quantity = Quantity(0), model: Dict = None):
+    def __init__(self, model: Model = None, offset: Quantity = Quantity(0), model_dict: Dict = None):
 
         """
         todo: document
         """
         # leave the possibility to construct MPO by hand
         super(Mpo, self).__init__()
-        if mol_list is None:
+        if model is None:
             return
         if not isinstance(offset, Quantity):
             raise ValueError("offset must be Quantity object")
 
         self.offset = offset.as_au()
-        self._general_mpo(mol_list, const=-offset, model=model)
+        self._general_mpo(model, const=-offset, model_dict=model_dict)
 
 
     def _get_sigmaqn(self, idx):
-        array_up = self.mol_list.basis[idx].sigmaqn
+        array_up = self.model.basis[idx].sigmaqn
         return np.subtract.outer(array_up, array_up)
 
     @property
@@ -771,7 +771,7 @@ class Mpo(MatrixProduct):
     def apply(self, mp: MatrixProduct, canonicalise: bool=False) -> MatrixProduct:
         # todo: use meta copy to save time, could be subtle when complex type is involved
         # todo: inplace version (saved memory and can be used in `hybrid_exact_propagator`)
-        # the mol_list is the same as the mps.mol_list
+        # the model is the same as the mps.model
         new_mps = self.promote_mt_type(mp.copy())
         if mp.is_mps:
             # mpo x mps
@@ -890,10 +890,10 @@ class Mpo(MatrixProduct):
         return self.apply(other)
 
     @classmethod
-    def from_mp(cls, mol_list, mp):
+    def from_mp(cls, model, mp):
         # mpo from matrix product
         mpo = cls()
-        mpo.mol_list = mol_list
+        mpo.model = model
         for mt in mp:
             mpo.append(mt)
         mpo.build_empty_qn()

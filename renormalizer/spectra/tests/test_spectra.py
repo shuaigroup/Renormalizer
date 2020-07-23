@@ -20,9 +20,9 @@ from renormalizer.utils import constant, Quantity, OptimizeConfig
 
 def test_zero_exact_emi():
     # print "data", value
-    mol_list = parameter.mol_list
+    model = parameter.holstein_model
 
-    exact_emi = SpectraExact(mol_list, "emi")
+    exact_emi = SpectraExact(model, "emi")
     # setup a large interval because evaluating expectations are expensive when evolution is fast
     exact_emi.info_interval = 100
     nsteps = 3000
@@ -43,14 +43,14 @@ def test_zero_t_abs(algorithm):
     procedure = [[1, 0], [1, 0], [1, 0]]
     optimize_config = OptimizeConfig()
     optimize_config.procedure = procedure
-    mol_list = parameter.mol_list
+    model = parameter.holstein_model
     if algorithm == 1:
         SpectraZeroT = SpectraOneWayPropZeroT
     else:
         SpectraZeroT = SpectraTwoWayPropZeroT
 
     zero_t_corr = SpectraZeroT(
-        mol_list.switch_scheme(2), "abs", optimize_config, offset=parameter.offset
+        model.switch_scheme(2), "abs", optimize_config, offset=parameter.offset
     )
     zero_t_corr.info_interval = 30
     nsteps = 100
@@ -69,14 +69,14 @@ def test_zero_t_abs(algorithm):
 @pytest.mark.parametrize("algorithm", (1,2))
 def test_zero_t_emi(algorithm):
     np.random.seed(0)
-    mol_list = parameter.mol_list
+    model = parameter.holstein_model
     if algorithm == 1:
         SpectraZeroT = SpectraOneWayPropZeroT
     else:
         SpectraZeroT = SpectraTwoWayPropZeroT
 
     # in std data the offset is 2.28614053 eV so here only zpe is required.
-    zero_t_corr = SpectraZeroT(mol_list, "emi", offset=Quantity(mol_list.gs_zpe))
+    zero_t_corr = SpectraZeroT(model, "emi", offset=Quantity(model.gs_zpe))
     zero_t_corr.info_interval = 50
     nsteps = 100
     dt = 30.0
@@ -89,10 +89,10 @@ def test_zero_t_emi(algorithm):
 def test_finite_t_spectra_emi():
     np.random.seed(0)
     # print "data", value
-    mol_list = parameter.mol_list
+    model = parameter.holstein_model
     insteps = 50
     finite_t_emi = SpectraFiniteT(
-        mol_list, "emi", Quantity(298, "K"), insteps, parameter.offset
+        model, "emi", Quantity(298, "K"), insteps, parameter.offset
     )
     nsteps = 30
     dt = 30.0
@@ -103,10 +103,10 @@ def test_finite_t_spectra_emi():
 
 
 def test_finite_t_spectra_abs():
-    mol_list = parameter.mol_list
+    model = parameter.holstein_model
     insteps = 50
     finite_t_abs = SpectraFiniteT(
-        mol_list, "abs", Quantity(298, "K"), insteps, parameter.offset
+        model, "abs", Quantity(298, "K"), insteps, parameter.offset
     )
     nsteps = 50
     dt = 30.0

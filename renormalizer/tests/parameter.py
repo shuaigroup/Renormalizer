@@ -3,7 +3,7 @@ import numpy as np
 from renormalizer.model import Phonon, Mol, HolsteinModel
 from renormalizer.utils import constant, Quantity
 
-# todo: make `custom_mol_list` or even the whole file a (class) method of `MolList`
+# todo: make `custom_model or even the whole file a (class) method of `MolList`
 elocalex = Quantity(2.67, "eV")
 dipole_abs = 15.45
 nmols = 3
@@ -30,13 +30,13 @@ hartree_ph_list = [
     Phonon(*args, hartree=True) for args in zip(omega, displacement, ph_phys_dim)
 ]
 
-mol_list = HolsteinModel([Mol(elocalex, ph_list, dipole_abs)] * nmols, _j_matrix, )
+holstein_model = HolsteinModel([Mol(elocalex, ph_list, dipole_abs)] * nmols, _j_matrix, )
 # useful in TDH module
-hartree_mol_list = HolsteinModel([Mol(elocalex, hartree_ph_list, dipole_abs)] * nmols, _j_matrix, )
+hartree_holstein_model = HolsteinModel([Mol(elocalex, hartree_ph_list, dipole_abs)] * nmols, _j_matrix, )
 
-offset = Quantity(2.28614053, "ev") + Quantity(mol_list.gs_zpe)
+offset = Quantity(2.28614053, "ev") + Quantity(holstein_model.gs_zpe)
 
-def custom_mol_list(
+def custom_model(
     custom_j_matrix=None,
     n_phys_dim=None,
     force3rd=None,

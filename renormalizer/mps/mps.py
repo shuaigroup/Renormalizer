@@ -8,7 +8,7 @@ from collections import Counter, deque
 import scipy
 from scipy import stats
 
-from renormalizer.model import MolList2
+from renormalizer.model import Model
 from renormalizer.lib import solve_ivp, expm_krylov
 from renormalizer.mps import svd_qn
 from renormalizer.mps.matrix import (
@@ -118,15 +118,15 @@ def adaptive_tdvp(fun):
 
 class Mps(MatrixProduct):
     @classmethod
-    def random(cls, mol_list: MolList2, nexciton, m_max, percent=1.0) -> "Mps":
+    def random(cls, model: Model, nexciton, m_max, percent=1.0) -> "Mps":
         # a high percent makes the result more random
         # sometimes critical for getting correct optimization result
         mps = cls()
-        mps.mol_list = mol_list
+        mps.model = model
         mps.qn = [[0]]
         dim_list = [1]
 
-        for imps in range(mol_list.nsite - 1):
+        for imps in range(model.nsite - 1):
 
             # quantum number
             qnbig = np.add.outer(mps.qn[imps], mps._get_sigmaqn(imps)).flatten()
@@ -174,12 +174,12 @@ class Mps(MatrixProduct):
         return mps
 
     @classmethod
-    def hartree_product_state(cls, mol_list, condition):
+    def hartree_product_state(cls, model, condition):
         r"""
         Construct a Hartree product state
         
         Args:
-            mol_list (:class:`~renormalizer.model.MolList2`): Model information.
+            model (:class:`~renormalizer.model.Model`): Model information.
             condition (Dict): Dict with format ``{dof:local_state}``.
                 The default local state for dofs not specified is the "0" state.
                 An example is ``{"e_1":1, "v_0":2, "v_3":[0, 0.707, 0.707]}``.
@@ -198,23 +198,23 @@ class Mps(MatrixProduct):
         """
         
         mps = cls()
-        mps.mol_list = mol_list
-        mps.build_empty_mp(mol_list.nsite)
+        mps.model = model
+        mps.build_empty_mp(model.nsite)
         
-        qn_single = [[],] * mol_list.nsite
+        qn_single = [[],] * model.nsite
         
-        for v_dof in mol_list.e_dofs + mol_list.v_dofs:
-            isite = mol_list.order[v_dof]
-            pdim = mol_list.basis[isite].nbas
+        for v_dof in model.e_dofs + model.v_dofs:
+            isite = model.order[v_dof]
+            pdim = model.basis[isite].nbas
             ms = np.zeros((1, pdim, 1))
             local_state = condition.get(v_dof,0)
             if isinstance(local_state, int):
                 ms[0, local_state, 0] = 1.
-                qn = mol_list.basis[isite].sigmaqn[local_state]
+                qn = model.basis[isite].sigmaqn[local_state]
             else:
                 ms[0, :, 0] = local_state
                 # quantum numbers for all states occupied
-                all_qn = np.array(mol_list.basis[isite].sigmaqn)[np.nonzero(local_state)]
+                all_qn = np.array(model.basis[isite].sigmaqn)[np.nonzero(local_state)]
                 if all_qn.std() != 0:
                     raise ValueError("Quantum numbers are mixed in the condition.")
                 qn = all_qn[0]
@@ -224,9 +224,9 @@ class Mps(MatrixProduct):
 
         qn_single = np.array(qn_single)
         mps.qn = [[0]]
-        for isite in range(mol_list.nsite):
+        for isite in range(model.nsite):
             mps.qn.append([np.sum(qn_single[:isite+1])])
-        mps.qnidx = mol_list.nsite - 1
+        mps.qnidx = model.nsite - 1
         mps.qntot = mps.qn[-1][0]
         mps.qn[-1] = [0]
         mps.to_right = False
@@ -234,29 +234,29 @@ class Mps(MatrixProduct):
         return mps
 
     @classmethod
-    def ground_state(cls, mol_list: MolList2, max_entangled: bool):
+    def ground_state(cls, model: Model, max_entangled: bool):
         r"""
         Obtain ground state at :math:`T = 0` or :math:`T = \infty` (maximum entangled).
         Electronic DOFs are always at ground state. and vibrational DOFs depend on ``max_entangled``.
         For Spin-Boson model the electronic DOF also depends on ``max_entangled``.
 
         Args:
-            mol_list (:class:`~renormalizer.model.MolList2`): system information.
+            model (:class:`~renormalizer.model.Model`): system information.
             max_entanggled (bool): temperature of the vibrational DOFs. If set to ``True``,
                 :math:`T = \infty` and if set to ``False``, :math:`T = 0`.
         """
         mps = cls()
-        mps.mol_list = mol_list
-        mps.qn = [[0]] * (mol_list.nsite + 1)
-        mps.qnidx = mol_list.nsite - 1
+        mps.model = model
+        mps.qn = [[0]] * (model.nsite + 1)
+        mps.qnidx = model.nsite - 1
         mps.to_right = False
         mps.qntot = 0
             
-        mps.build_empty_mp(mol_list.nsite)
+        mps.build_empty_mp(model.nsite)
 
-        for dof in mol_list.dofs:
-            isite = mol_list.order[dof]
-            basis = mol_list.basis[isite]
+        for dof in model.dofs:
+            isite = model.order[dof]
+            basis = model.basis[isite]
             pdim = basis.nbas
             ms = np.zeros((1, pdim, 1))
             if dof.split("_")[0] == "v":
@@ -294,10 +294,10 @@ class Mps(MatrixProduct):
         return mps
 
     @classmethod
-    def load(cls, mol_list: MolList2, fname: str):
+    def load(cls, model: Model, fname: str):
         npload = np.load(fname, allow_pickle=True)
         mp = cls()
-        mp.mol_list = mol_list
+        mp.model = model
         for i in range(int(npload["nsites"])):
             mt = npload[f"mt_{i}"]
             if np.iscomplexobj(mt):
@@ -344,7 +344,7 @@ class Mps(MatrixProduct):
         return new_mp
 
     def _get_sigmaqn(self, idx):
-        return self.mol_list.basis[idx].sigmaqn
+        return self.model.basis[idx].sigmaqn
 
     @property
     def is_mps(self):
@@ -464,34 +464,34 @@ class Mps(MatrixProduct):
     def ph_occupations(self):
         key = "ph_occupations"
         # ph_occupations is actually the occupation of the basis
-        if key not in self.mol_list.mpos:
+        if key not in self.model.mpos:
             mpos = []
-            for dof in self.mol_list.v_dofs:
+            for dof in self.model.v_dofs:
                 mpos.append(
-                    Mpo.general_mpo(self.mol_list,
-                        model={(dof,):[(Op("n",0), 1.)]})
+                    Mpo.general_mpo(self.model,
+                                    model_dict={(dof,):[(Op("n",0), 1.)]})
                     )
             # the order is v_dofs order, "v_0", "v_1",...
-            self.mol_list.mpos[key] = mpos
+            self.model.mpos[key] = mpos
         else:
-            mpos = self.mol_list.mpos[key]
+            mpos = self.model.mpos[key]
 
         return self.expectations(mpos)
 
     @property
     def e_occupations(self):
         key = "e_occupations"
-        if key not in self.mol_list.mpos:
+        if key not in self.model.mpos:
             mpos = []
-            for dof in self.mol_list.e_dofs:
+            for dof in self.model.e_dofs:
                     mpos.append(
-                        Mpo.general_mpo(self.mol_list,
-                            model={(dof,):[(Op(r"a^\dagger a", 0),1.0)]})
+                        Mpo.general_mpo(self.model,
+                                        model_dict={(dof,):[(Op(r"a^\dagger a", 0),1.0)]})
                         )
             # the order is e_dofs order
-            self.mol_list.mpos[key] = mpos
+            self.model.mpos[key] = mpos
         else:
-            mpos = self.mol_list.mpos[key]
+            mpos = self.model.mpos[key]
         return self.expectations(mpos)
 
     def metacopy(self) -> "Mps":
@@ -535,7 +535,7 @@ class Mps(MatrixProduct):
             self.compress_config.criteria = CompressCriteria.fixed
         logger.debug(f"target for expander: {m_target}")
         if hint_mpo is None:
-            expander = self.__class__.random(self.mol_list, 1, m_target)
+            expander = self.__class__.random(self.model, 1, m_target)
         else:
             # fill states related to `hint_mpo`
             logger.debug(
@@ -544,10 +544,10 @@ class Mps(MatrixProduct):
             # in case of localized `self`
             if not self.use_dummy_qn:
                 if self.is_mps:
-                    ex_state: MatrixProduct = self.ground_state(self.mol_list, False)
-                    ex_state = Mpo.onsite(self.mol_list, r"a^\dagger") @ ex_state
+                    ex_state: MatrixProduct = self.ground_state(self.model, False)
+                    ex_state = Mpo.onsite(self.model, r"a^\dagger") @ ex_state
                 elif self.is_mpdm:
-                    ex_state: MatrixProduct = self.max_entangled_ex(self.mol_list)
+                    ex_state: MatrixProduct = self.max_entangled_ex(self.model)
                 else:
                     assert False
                 ex_state.compress_config = self.compress_config
@@ -1219,7 +1219,7 @@ class Mps(MatrixProduct):
         return mps
 
     def evolve_exact(self, h_mpo, evolve_dt, space):
-        MPOprop = Mpo.exact_propagator(self.mol_list, -1j * evolve_dt, space, -h_mpo.offset)
+        MPOprop = Mpo.exact_propagator(self.model, -1j * evolve_dt, space, -h_mpo.offset)
         new_mps = MPOprop.apply(self, canonicalise=True)
         self.coeff *= np.exp(-1j * h_mpo.offset * evolve_dt)
         return new_mps
@@ -1248,18 +1248,18 @@ class Mps(MatrixProduct):
     def calc_reduced_density_matrix(self) -> np.ndarray:
 
         key = "reduced_density_matrix"
-        n_e = self.mol_list.n_edofs
-        if key not in self.mol_list.mpos:
+        n_e = self.model.n_edofs
+        if key not in self.model.mpos:
             mpos = []
             for idx in range(n_e):
                 for jdx in range(idx, n_e):
-                    model = {(f"e_{idx}", f"e_{jdx}"): [(Op(r"a^\dagger", 1),
+                    model_dict = {(f"e_{idx}", f"e_{jdx}"): [(Op(r"a^\dagger", 1),
                                                          Op("a", -1), 1.0)]}
-                    mpo = Mpo.general_mpo(self.mol_list, model=model)
+                    mpo = Mpo.general_mpo(self.model, model_dict=model_dict)
                     mpos.append(mpo)
-            self.mol_list.mpos[key] = mpos
+            self.model.mpos[key] = mpos
         else:
-            mpos = self.mol_list.mpos[key]
+            mpos = self.model.mpos[key]
         expectations = deque(self.expectations(mpos))
         reduced_density_matrix = np.zeros((n_e, n_e), dtype=backend.complex_dtype)
         for idx in range(n_e):

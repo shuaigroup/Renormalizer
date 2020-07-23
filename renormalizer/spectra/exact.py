@@ -29,7 +29,7 @@ class SpectraExact(SpectraTdMpsJobBase):
 
     def __init__(
         self,
-        mol_list,
+        model,
         spectratype,
         temperature=Quantity(0, "K"),
         optimize_config=None,
@@ -46,9 +46,9 @@ class SpectraExact(SpectraTdMpsJobBase):
             self.shift1 = ex_shift
             self.shift2 = gs_shift
             if temperature != 0:
-                assert len(mol_list) == 1
+                assert len(model) == 1
         else:
-            assert len(mol_list) == 1
+            assert len(model) == 1
             self.space1 = "GS"
             self.space2 = "EX"
             self.shift1 = gs_shift
@@ -57,25 +57,25 @@ class SpectraExact(SpectraTdMpsJobBase):
             optimize_config = OptimizeConfig()
         self.optimize_config = optimize_config
         super(SpectraExact, self).__init__(
-            mol_list, spectratype, temperature, offset=offset
+            model, spectratype, temperature, offset=offset
         )
         self.i_mps = self.latest_mps.ket_mps
         self.e_mean = self.i_mps.expectation(self.h_mpo)
 
     def init_mps(self):
         mmax = self.optimize_config.procedure[0][0]
-        i_mps = Mps.random(self.h_mpo.mol_list, self.nexciton, mmax, 1)
+        i_mps = Mps.random(self.h_mpo.model, self.nexciton, mmax, 1)
         i_mps.optimize_config = self.optimize_config
         gs.optimize_mps(i_mps, self.h_mpo)
         if self.spectratype == "emi":
             operator = "a"
         else:
             operator = r"a^\dagger"
-        dipole_mpo = Mpo.onsite(self.mol_list, operator, dipole=True)
+        dipole_mpo = Mpo.onsite(self.model, operator, dipole=True)
         if self.temperature != 0:
             beta = self.temperature.to_beta()
             # print "beta=", beta
-            # thermal_mpo = Mpo.exact_propagator(self.mol_list, -beta / 2.0, space=self.space1, shift=self.shift1)
+            # thermal_mpo = Mpo.exact_propagator(self.model, -beta / 2.0, space=self.space1, shift=self.shift1)
             # ket_mps = thermal_mpo.apply(i_mps)
             # ket_mps.normalize()
             # no test, don't know work or not

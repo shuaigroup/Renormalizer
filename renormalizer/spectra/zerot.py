@@ -16,7 +16,7 @@ class SpectraZeroT(SpectraTdMpsJobBase):
     '''Calculate the zero temprature absorption & emission spectrum using TD-DMRG
 
     Parameters:
-        mol_list : MolList
+        model : MolList
             the molecular information
         spectratype : string
             "abs" or "emi"
@@ -27,7 +27,7 @@ class SpectraZeroT(SpectraTdMpsJobBase):
     '''
     def __init__(
         self,
-        mol_list,
+        model,
         spectratype,
         optimize_config=None,
         evolve_config=None,
@@ -39,7 +39,7 @@ class SpectraZeroT(SpectraTdMpsJobBase):
             self.optimize_config = optimize_config
 
         super(SpectraZeroT, self).__init__(
-            mol_list, spectratype, Quantity(0), evolve_config, offset
+            model, spectratype, Quantity(0), evolve_config, offset
         )
 
     def init_mps(self):
@@ -47,7 +47,7 @@ class SpectraZeroT(SpectraTdMpsJobBase):
             operator = "a"
         else:
             operator = r"a^\dagger"
-        dipole_mpo = Mpo.onsite(self.mol_list, operator, dipole=True)
+        dipole_mpo = Mpo.onsite(self.model, operator, dipole=True)
         a_ket_mps = dipole_mpo.apply(self.get_imps(), canonicalise=True)
         a_ket_mps.canonical_normalize()
         a_ket_mps.evolve_config = self.evolve_config
@@ -56,7 +56,7 @@ class SpectraZeroT(SpectraTdMpsJobBase):
 
     def get_imps(self):
         mmax = self.optimize_config.procedure[0][0]
-        i_mps = Mps.random(self.h_mpo.mol_list, self.nexciton, mmax, 1)
+        i_mps = Mps.random(self.h_mpo.model, self.nexciton, mmax, 1)
         i_mps.optimize_config = self.optimize_config
         gs.optimize_mps(i_mps, self.h_mpo)
         return i_mps

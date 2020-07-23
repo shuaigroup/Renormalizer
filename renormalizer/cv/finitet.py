@@ -30,7 +30,7 @@ class SpectraFtCV(SpectraCv):
     Use DDMRG to calculate the finite temperature spectrum from frequency domain
 
     Args:
-        mol_list (:class:`~renormalizer.model.MolList2`): system information.
+        model (:class:`~renormalizer.model.Model`): system information.
         spectratype (string): "abs" or "emi".
         m_max (int): maximal bond dimension of correction vector.
         eta (float): Lorentzian broadening width (a.u.).
@@ -55,7 +55,7 @@ class SpectraFtCV(SpectraCv):
     """
     def __init__(
         self,
-        mol_list,
+        model,
         spectratype,
         m_max,
         eta,
@@ -83,13 +83,13 @@ class SpectraFtCV(SpectraCv):
             self.compress_config = \
                 CompressConfig(CompressCriteria.fixed,
                                max_bonddim=m_max)
-            self.compress_config.set_bonddim(len(mol_list.pbond_list))
+            self.compress_config.set_bonddim(len(model.pbond_list))
         self.insteps = insteps
         self.job_name = job_name
         self.dump_dir = dump_dir
 
         super().__init__(
-            mol_list, spectratype, m_max, eta, h_mpo=h_mpo,
+            model, spectratype, m_max, eta, h_mpo=h_mpo,
             method=method, procedure_cv=procedure_cv,
             rtol=rtol, b_mps=b_mps, cv_mps=cv_mps,
         )
@@ -100,7 +100,7 @@ class SpectraFtCV(SpectraCv):
         self.a_oper = None
 
     def init_cv_mpo(self):
-        cv_mpo = Mpo.finiteT_cv(self.mol_list, 1, self.m_max,
+        cv_mpo = Mpo.finiteT_cv(self.model, 1, self.m_max,
                                 self.spectratype, percent=1.0)
         return cv_mpo
 
@@ -113,18 +113,18 @@ class SpectraFtCV(SpectraCv):
         # only support Holstien model 0/1 exciton manifold
         beta = self.temperature.to_beta()
         if self.spectratype == "abs":
-            dipole_mpo = Mpo.onsite(self.mol_list, r"a^\dagger", dipole=True)
-            i_mpo = MpDm.max_entangled_gs(self.mol_list)
+            dipole_mpo = Mpo.onsite(self.model, r"a^\dagger", dipole=True)
+            i_mpo = MpDm.max_entangled_gs(self.model)
             tp = ThermalProp(i_mpo, self.h_mpo, exact=True, space='GS')
             tp.evolve(None, 1, beta / 2j)
             ket_mpo = tp.latest_mps
         elif self.spectratype == "emi":
-            dipole_mpo = Mpo.onsite(self.mol_list, "a", dipole=True)
+            dipole_mpo = Mpo.onsite(self.model, "a", dipole=True)
             if self._defined_output_path:
                 ket_mpo = \
-                    load_thermal_state(self.mol_list, self._thermal_dump_path)
+                    load_thermal_state(self.model, self._thermal_dump_path)
             else:
-                impo = MpDm.max_entangled_ex(self.mol_list)
+                impo = MpDm.max_entangled_ex(self.model)
                 impo.compress_config = self.compress_config
                 if self.job_name is None:
                     job_name = None
@@ -155,7 +155,7 @@ class SpectraFtCV(SpectraCv):
         return self.dump_dir is not None and self.job_name is not None
 
     def oper_prepare(self, omega):
-        identity = Mpo.identity(self.mol_list).scale(omega)
+        identity = Mpo.identity(self.model).scale(omega)
         self.a_oper = identity.add(self.h_mpo.scale(-1, inplace=False))
 
     def optimize_cv(self, lr_group, isite, percent=0):
@@ -357,13 +357,13 @@ class SpectraFtCV(SpectraCv):
 
     def construct_X_qnmat(self, addlist):
 
-        pbond = self.mol_list.pbond_list
+        pbond = self.model.pbond_list
         xqnl = np.array(self.cv_mpo.qn[addlist[0]])
         xqnr = np.array(self.cv_mpo.qn[addlist[-1] + 1])
         xqnmat = xqnl.copy()
         xqnsigmalist = []
         for idx in addlist:
-            if self.mol_list.is_electron(idx):
+            if self.model.is_electron(idx):
                 xqnsigma = np.array([[[0, 0], [0, 1]], [[1, 0], [1, 1]]])
             else:
                 xqnsigma = []

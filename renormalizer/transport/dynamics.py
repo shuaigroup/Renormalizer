@@ -34,7 +34,7 @@ class ChargeDiffusionDynamics(TdMpsJob):
     but care must be taken to ensure that mean square displacement grows linearly with time.
 
     Args:
-        mol_list (:class:`~renormalizer.model.mlist.HolsteinModel`): system information.
+        model (:class:`~renormalizer.model.mlist.HolsteinModel`): system information.
             Currently only support :class:`~renormalizer.model.mlist.HolsteinModel`.
         temperature (:class:`~renormalizer.utils.quantity.Quantity`): simulation temperature. Default is zero temperature.
         compress_config (:class:`~renormalizer.utils.configs.CompressConfig`): config when compressing MPS.
@@ -84,7 +84,7 @@ class ChargeDiffusionDynamics(TdMpsJob):
 
     def __init__(
         self,
-        mol_list: HolsteinModel,
+        model: HolsteinModel,
         temperature: Quantity = Quantity(0, "K"),
         compress_config: CompressConfig = None,
         evolve_config: EvolveConfig = None,
@@ -95,7 +95,7 @@ class ChargeDiffusionDynamics(TdMpsJob):
         dump_dir: str = None,
         job_name: str = None,
     ):
-        self.mol_list: HolsteinModel = mol_list
+        self.model: HolsteinModel = model
         self.temperature = temperature
         self.mpo = None
         self.init_electron = init_electron
@@ -126,12 +126,12 @@ class ChargeDiffusionDynamics(TdMpsJob):
 
     @property
     def mol_num(self):
-        return self.mol_list.mol_num
+        return self.model.mol_num
 
     def create_electron_fc(self, gs_mp):
         center_mol_idx = self.mol_num // 2
         creation_operator = Mpo.onsite(
-            self.mol_list, r"a^\dagger", mol_idx_set={center_mol_idx}
+            self.model, r"a^\dagger", mol_idx_set={center_mol_idx}
         )
         mps = creation_operator.apply(gs_mp)
         return mps
@@ -139,11 +139,11 @@ class ChargeDiffusionDynamics(TdMpsJob):
     def create_electron_relaxed(self, gs_mp):
         assert np.allclose(gs_mp.bond_dims, np.ones_like(gs_mp.bond_dims))
         center_mol_idx = self.mol_num // 2
-        center_mol = self.mol_list[center_mol_idx]
+        center_mol = self.model[center_mol_idx]
         # start from phonon
         for i, ph in enumerate(center_mol.ph_list):
-            v_dof = self.mol_list.map[(center_mol_idx, i)]
-            idx = self.mol_list.order[v_dof]
+            v_dof = self.model.map[(center_mol_idx, i)]
+            idx = self.model.order[v_dof]
             mt = gs_mp[idx][0, ..., 0].array
             evecs = ph.get_displacement_evecs()
             mt = evecs.dot(mt)
@@ -151,7 +151,7 @@ class ChargeDiffusionDynamics(TdMpsJob):
             gs_mp[idx] = mt.reshape([1] + list(mt.shape) + [1])
 
         creation_operator = Mpo.onsite(
-            self.mol_list, r"a^\dagger", mol_idx_set={center_mol_idx}
+            self.model, r"a^\dagger", mol_idx_set={center_mol_idx}
         )
         mps = creation_operator.apply(gs_mp)
         return mps
@@ -165,21 +165,21 @@ class ChargeDiffusionDynamics(TdMpsJob):
         return method_mapping[self.init_electron](gs_mp)
 
     def init_mps(self):
-        tentative_mpo = Mpo(self.mol_list)
+        tentative_mpo = Mpo(self.model)
         if self.temperature == 0:
-            gs_mp = Mps.ground_state(self.mol_list, max_entangled=False)
+            gs_mp = Mps.ground_state(self.model, max_entangled=False)
             if self.dissipation != 0:
                 gs_mp = MpDm.from_mps(gs_mp)
         else:
             if self._defined_output_path:
-                gs_mp = load_thermal_state(self.mol_list, self._thermal_dump_path)
+                gs_mp = load_thermal_state(self.model, self._thermal_dump_path)
             else:
                 gs_mp = None
             if gs_mp is None:
-                gs_mp = MpDm.max_entangled_gs(self.mol_list)
+                gs_mp = MpDm.max_entangled_gs(self.model)
                 # subtract the energy otherwise might cause numeric error because of large offset * dbeta
                 energy = Quantity(gs_mp.expectation(tentative_mpo))
-                mpo = Mpo(self.mol_list, offset=energy)
+                mpo = Mpo(self.model, offset=energy)
                 tp = ThermalProp(gs_mp, mpo, exact=True, space="GS")
                 tp.evolve(None, max(20, len(gs_mp)), self.temperature.to_beta() / 2j)
                 gs_mp = tp.latest_mps
@@ -189,7 +189,7 @@ class ChargeDiffusionDynamics(TdMpsJob):
         if self.dissipation != 0:
             init_mp = MpDmFull.from_mpdm(init_mp)
         energy = Quantity(init_mp.expectation(tentative_mpo))
-        self.mpo = Mpo(self.mol_list, offset=energy)
+        self.mpo = Mpo(self.model, offset=energy)
         logger.info(f"mpo bond dims: {self.mpo.bond_dims}")
         logger.info(f"mpo physical dims: {self.mpo.pbond_list}")
         init_mp.evolve_config = self.evolve_config
@@ -213,7 +213,7 @@ class ChargeDiffusionDynamics(TdMpsJob):
             self.reduced_density_matrices.append(rdm)
 
             # k_space transform matrix
-            n = len(self.mol_list)
+            n = len(self.model)
             assert rdm.shape == (n, n)
             transform = np.exp(-1j * (np.arange(-n, n, 2)/n * np.pi).reshape(-1, 1) * np.arange(0, n).reshape(1, -1)) / np.sqrt(n)
             k = np.diag(transform @ rdm @ transform.conj().T).real
@@ -243,12 +243,7 @@ class ChargeDiffusionDynamics(TdMpsJob):
 
     def evolve_single_step(self, evolve_dt):
         old_mps = self.latest_mps
-        # mol_list = self.mol_list.get_fluctuation_mollist(self.latest_evolve_time)
-        # self.elocalex_arrays.append(mol_list.elocalex_array)
-        # self.j_arrays.append(mol_list.adjacent_transfer_integral)
-        # mpo = Mpo(mol_list, 3, offset=self.mpo.offset)
-        mpo = self.mpo
-        new_mps = old_mps.evolve(mpo, evolve_dt)
+        new_mps = old_mps.evolve(self.mpo, evolve_dt)
         return new_mps
 
     def stop_evolve_criteria(self):
@@ -257,7 +252,7 @@ class ChargeDiffusionDynamics(TdMpsJob):
 
     def get_dump_dict(self):
         dump_dict = OrderedDict()
-        dump_dict["mol list"] = self.mol_list.to_dict()
+        dump_dict["mol list"] = self.model.to_dict()
         dump_dict["tempearture"] = self.temperature.as_au()
         dump_dict["total time"] = self.evolve_times[-1]
         dump_dict["other info"] = self.custom_dump_info

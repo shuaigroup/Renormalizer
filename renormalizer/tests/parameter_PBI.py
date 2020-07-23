@@ -4,7 +4,7 @@ from renormalizer.utils import Quantity, constant
 from renormalizer.model import HolsteinModel, Mol, Phonon
 
 
-def construct_mol(nmols, dmrg_nphs, hartree_nphs) -> HolsteinModel:
+def construct_model(nmols, dmrg_nphs, hartree_nphs) -> HolsteinModel:
     assert dmrg_nphs + hartree_nphs == 10
     elocalex = Quantity(2.13 / constant.au2ev)
     dipole_abs = 1.0
@@ -39,7 +39,6 @@ def construct_mol(nmols, dmrg_nphs, hartree_nphs) -> HolsteinModel:
         for args in zip(omega, displacement, ph_phys_dim, is_hartree)
     ]
 
-    mol_list = HolsteinModel([Mol(elocalex, ph_list, dipole_abs)] * nmols, Quantity(500, "cm-1"), )
-    #mol_list = MolList([Mol(elocalex, ph_list, dipole_abs, heatbath=True)] * nmols, Quantity(0.0124, "eV"))
+    model = HolsteinModel([Mol(elocalex, ph_list, dipole_abs)] * nmols, Quantity(500, "cm-1"), )
 
-    return mol_list
+    return model

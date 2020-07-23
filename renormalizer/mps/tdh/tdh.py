@@ -21,7 +21,7 @@ from renormalizer.utils.tdmps import TdMpsJob
 logger = logging.getLogger(__name__)
 
 
-def SCF(mol_list, nexciton, niterations=20, thresh=1e-5, particle="hardcore boson"):
+def SCF(model, nexciton, niterations=20, thresh=1e-5, particle="hardcore boson"):
     """
     1. SCF includes both the electronic and vibrational parts
     2. if electronic part is Fermion, the electronic part is the same as HF orbital
@@ -36,7 +36,7 @@ def SCF(mol_list, nexciton, niterations=20, thresh=1e-5, particle="hardcore boso
     fv = 0
 
     # electronic part
-    H_el_indep, H_el_dep = Ham_elec(mol_list, nexciton, particle=particle)
+    H_el_indep, H_el_dep = Ham_elec(model, nexciton, particle=particle)
     ew, ev = scipy.linalg.eigh(a=H_el_indep)
     if particle == "hardcore boson":
         WFN.append(ev[:, 0])
@@ -55,7 +55,7 @@ def SCF(mol_list, nexciton, niterations=20, thresh=1e-5, particle="hardcore boso
         assert False
 
     # vibrational part
-    for mol in mol_list:
+    for mol in model:
         for ph in mol.ph_list:
             vw, vv = scipy.linalg.eigh(a=ph.h_indep)
             WFN.append(vv[:, 0])
@@ -69,7 +69,7 @@ def SCF(mol_list, nexciton, niterations=20, thresh=1e-5, particle="hardcore boso
         logger.info("Loop: %s" % itera)
 
         # mean field Hamiltonian and energy
-        HAM, Etot = construct_H_Ham(mol_list, nexciton, WFN, fe, fv, particle=particle)
+        HAM, Etot = construct_H_Ham(model, nexciton, WFN, fe, fv, particle=particle)
         logger.info("Etot= %g" % Etot)
 
         WFN_old = WFN
@@ -98,14 +98,14 @@ def SCF(mol_list, nexciton, niterations=20, thresh=1e-5, particle="hardcore boso
     return WFN, Etot
 
 
-def Ham_elec(mol_list, nexciton, indirect=None, particle="hardcore boson"):
+def Ham_elec(model, nexciton, indirect=None, particle="hardcore boson"):
     """
     construct electronic part Hamiltonian
     """
 
     assert particle in ["hardcore boson", "fermion"]
 
-    nmols = len(mol_list)
+    nmols = len(model)
     if nexciton == 0:  # 0 exciton space
         # independent part
         H_el_indep = np.zeros([1, 1])
@@ -114,12 +114,12 @@ def Ham_elec(mol_list, nexciton, indirect=None, particle="hardcore boson"):
 
     elif nexciton == 1 or particle == "fermion":
         H_el_indep = np.zeros((nmols, nmols))
-        for imol, mol in enumerate(mol_list):
+        for imol, mol in enumerate(model):
             for jmol in range(nmols):
                 if imol == jmol:
                     H_el_indep[imol, imol] = mol.elocalex + mol.e0
                 else:
-                    H_el_indep[imol, jmol] = mol_list.j_matrix[imol, jmol]
+                    H_el_indep[imol, jmol] = model.j_matrix[imol, jmol]
 
         H_el_dep = []
         # a^dagger_imol a_imol
@@ -157,7 +157,7 @@ def Ham_elec(mol_list, nexciton, indirect=None, particle="hardcore boson"):
 
 
 def construct_H_Ham(
-    mol_list, nexciton, WFN, fe, fv, particle="hardcore boson", debug=False
+    model, nexciton, WFN, fe, fv, particle="hardcore boson", debug=False
 ):
     """
     construct the mean field Hartree Hamiltonian
@@ -166,10 +166,10 @@ def construct_H_Ham(
     assert particle in ["hardcore boson", "fermion"]
     assert fe + fv == len(WFN) - 1
 
-    nmols = len(mol_list)
+    nmols = len(model)
 
     A_el = np.zeros((nmols, fe))
-    H_el_indep, H_el_dep = Ham_elec(mol_list, nexciton, particle=particle)
+    H_el_indep, H_el_dep = Ham_elec(model, nexciton, particle=particle)
 
     for ife in range(fe):
         A_el[:, ife] = np.array(
@@ -180,7 +180,7 @@ def construct_H_Ham(
 
     B_vib = []
     iwfn = fe
-    for mol in mol_list:
+    for mol in model:
         B_vib.append([])
         for ph in mol.ph_list:
             B_vib[-1].append(mflib.exp_value(WFN[iwfn], ph.h_dep, WFN[iwfn]))
@@ -200,7 +200,7 @@ def construct_H_Ham(
         Etot += e_mean
 
     iwfn = fe
-    for imol, mol in enumerate(mol_list):
+    for imol, mol in enumerate(model):
         for iph in range(len(mol.ph_list)):
             h_indep = mol.ph_list[iph].h_indep
             h_dep = mol.ph_list[iph].h_dep
@@ -223,14 +223,14 @@ def construct_H_Ham(
 class TdHartree(TdMpsJob):
     def __init__(
         self,
-        mol_list,
+        model,
         nexciton,
         particle,
         prop_method,
         temperature=Quantity(0, "K"),
         insteps=None,
     ):
-        self.mol_list = mol_list
+        self.model = model
         self.nexciton = nexciton
         assert particle in ["hardcore boson", "fermion"]
         self.particle = particle
@@ -242,7 +242,7 @@ class TdHartree(TdMpsJob):
             self.fe += 1
         elif particle == "fermion":
             raise NotImplementedError
-        for mol in self.mol_list:
+        for mol in self.model:
             self.fv += len(mol.ph_list)
 
         super(TdHartree, self).__init__()
@@ -253,7 +253,7 @@ class TdHartree(TdMpsJob):
 
     def construct_H_Ham(self, nexciton, WFN, debug=False):
         return construct_H_Ham(
-            self.mol_list,
+            self.model,
             nexciton,
             WFN,
             self.fe,
@@ -318,11 +318,11 @@ class TdHartree(TdMpsJob):
         DM = []
 
         # initial state infinite T density matrix
-        H_el_indep, H_el_dep = Ham_elec(self.mol_list, nexciton, particle=self.particle)
+        H_el_indep, H_el_dep = Ham_elec(self.model, nexciton, particle=self.particle)
         dim = H_el_indep.shape[0]
         DM.append(np.diag([1.0] * dim))
 
-        for mol in self.mol_list:
+        for mol in self.model:
             for ph in mol.ph_list:
                 dim = ph.h_indep.shape[0]
                 DM.append(np.diag([1.0] * dim))
@@ -355,7 +355,7 @@ class LinearSpectra(TdHartree):
     def __init__(
         self,
         spectratype,
-        mol_list,
+        model,
         particle="hardcore boson",
         prop_method="unitary",
         E_offset=0.0,
@@ -366,16 +366,16 @@ class LinearSpectra(TdHartree):
         self.spectratype = spectratype
         self.E_offset = E_offset
         if self.spectratype == "abs":
-            self.dipolemat = construct_onsiteO(mol_list, r"a^\dagger", dipole=True)
+            self.dipolemat = construct_onsiteO(model, r"a^\dagger", dipole=True)
             nexciton = 1
         elif self.spectratype == "emi":
-            self.dipolemat = construct_onsiteO(mol_list, "a", dipole=True)
+            self.dipolemat = construct_onsiteO(model, "a", dipole=True)
             nexciton = 0
         else:
             assert False
         self.autocorr = []
         super(LinearSpectra, self).__init__(
-            mol_list, nexciton, particle, prop_method, temperature, insteps
+            model, nexciton, particle, prop_method, temperature, insteps
         )
 
     # check whether the energy is conserved
@@ -414,9 +414,9 @@ class LinearSpectra(TdHartree):
     def init_zt(self):
 
         if self.spectratype == "abs":
-            WFN, Etot = SCF(self.mol_list, 0)
+            WFN, Etot = SCF(self.model, 0)
         elif self.spectratype == "emi":
-            WFN, Etot = SCF(self.mol_list, 1)
+            WFN, Etot = SCF(self.model, 1)
         else:
             assert False
 
@@ -467,19 +467,19 @@ class LinearSpectra(TdHartree):
 
 class Dynamics(TdHartree):
     def __init__(
-        self, mol_list, temperature=Quantity(0, "K"), insteps=None, init_idx=0
+        self, model, temperature=Quantity(0, "K"), insteps=None, init_idx=0
     ):
         self._e_occupations_array = []
         self._ph_occupations_array = []
         self.init_idx = init_idx
         super(Dynamics, self).__init__(
-            mol_list, 1, "hardcore boson", "unitary", temperature, insteps
+            model, 1, "hardcore boson", "unitary", temperature, insteps
         )
 
     def init_zt(self):
-        WFN, Etot = SCF(self.mol_list, 0)
+        WFN, Etot = SCF(self.model, 0)
         dipoleO = construct_onsiteO(
-            self.mol_list, r"a^\dagger", dipole=True, mol_idx_set={self.init_idx}
+            self.model, r"a^\dagger", dipole=True, mol_idx_set={self.init_idx}
         )
         WFN[0] = dipoleO.dot(WFN[0])
         mflib.canonical_normalize(WFN)
@@ -492,7 +492,7 @@ class Dynamics(TdHartree):
         DM = self._FT_DM(0)
 
         dipoleO = construct_onsiteO(
-            self.mol_list, r"a^\dagger", dipole=False, mol_idx_set={self.init_idx}
+            self.model, r"a^\dagger", dipole=False, mol_idx_set={self.init_idx}
         )
         DM[0] = dipoleO.dot(DM[0])
         mflib.canonical_normalize(DM)
@@ -543,12 +543,12 @@ def construct_intersiteO(mol, idxmol, j_matrixdxmol):
     raise NotImplementedError
 
 
-def construct_onsiteO(mol_list, opera, dipole=False, mol_idx_set=None):
+def construct_onsiteO(model, opera, dipole=False, mol_idx_set=None):
     """
     construct the electronic onsite operator \\sum_i opera_i MPO
     """
     assert opera in ["a", r"a^\dagger", r"a^\dagger a"]
-    nmols = len(mol_list)
+    nmols = len(model)
     if mol_idx_set is None:
         mol_idx_set = set(np.arange(nmols))
 
@@ -557,7 +557,7 @@ def construct_onsiteO(mol_list, opera, dipole=False, mol_idx_set=None):
         if dipole == False:
             element[site] = 1.0
         else:
-            element[site] = mol_list[site].dipole
+            element[site] = model[site].dipole
 
     if opera == "a":
         O = np.zeros([1, nmols])

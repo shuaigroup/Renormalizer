@@ -6,7 +6,7 @@ from typing import List
 import numpy as np
 import scipy.linalg
 
-from renormalizer.model import MolList2
+from renormalizer.model import Model
 from renormalizer.mps.backend import xp
 from renormalizer.mps.matrix import tensordot, asnumpy
 from renormalizer.mps import Mpo, Mps
@@ -23,7 +23,7 @@ class MpDmBase(Mps, Mpo):
         raise ValueError("MpDm don't have to produce random state")
 
     @classmethod
-    def ground_state(cls, mol_list, max_entangled):
+    def ground_state(cls, model, max_entangled):
         raise ValueError(
             "Use max_entangled_ex or max_entangled_gs for matrix product density matrix"
         )
@@ -108,7 +108,7 @@ class MpDm(MpDmBase):
     @classmethod
     def from_mps(cls, mps: Mps):
         mpo = cls()
-        mpo.mol_list = mps.mol_list
+        mpo.model = mps.model
         for ms in mps:
             mo = np.zeros(tuple([ms.shape[0]] + [ms.shape[1]] * 2 + [ms.shape[2]]))
             for iaxis in range(ms.shape[1]):
@@ -129,13 +129,13 @@ class MpDm(MpDmBase):
         return mpo
 
     @classmethod
-    def max_entangled_ex(cls, mol_list, normalize=True):
+    def max_entangled_ex(cls, model, normalize=True):
         """
         T = \\infty locally maximal entangled EX state
         """
-        mps = Mps.ground_state(mol_list, max_entangled=True)
+        mps = Mps.ground_state(model, max_entangled=True)
         # the creation operator \\sum_i a^\\dagger_i
-        ex_mpo = Mpo.onsite(mol_list, r"a^\dagger")
+        ex_mpo = Mpo.onsite(model, r"a^\dagger")
 
         ex_mps = ex_mpo @ mps
         if normalize:
@@ -143,17 +143,17 @@ class MpDm(MpDmBase):
         return cls.from_mps(ex_mps)
 
     @classmethod
-    def max_entangled_gs(cls, mol_list):
-        return cls.from_mps(Mps.ground_state(mol_list, max_entangled=True))
+    def max_entangled_gs(cls, model) -> "MpDm":
+        return cls.from_mps(Mps.ground_state(model, max_entangled=True))
 
     def _get_sigmaqn(self, idx):
-        array_up = self.mol_list.basis[idx].sigmaqn
+        array_up = self.model.basis[idx].sigmaqn
         array_down = np.zeros_like(array_up)
         return np.add.outer(array_up, array_down)
 
     def evolve_exact(self, h_mpo, evolve_dt, space):
         MPOprop = Mpo.exact_propagator(
-            self.mol_list, -1.0j * evolve_dt, space=space, shift=-h_mpo.offset
+            self.model, -1.0j * evolve_dt, space=space, shift=-h_mpo.offset
         )
         # Mpdm is applied on the propagator, different from base method
         new_mpdm = self.apply(MPOprop, canonicalise=True)
@@ -169,7 +169,7 @@ class MpDmFull(MpDmBase):
 
     @classmethod
     def from_mpdm(cls, mpdm: MpDm):
-        mpdm_full = cls(mpdm.mol_list)
+        mpdm_full = cls(mpdm.model)
 
         product = mpdm.apply(mpdm.conj_trans())
         product.build_empty_qn()
@@ -188,9 +188,9 @@ class MpDmFull(MpDmBase):
         mpdm_full.build_empty_qn()
         return mpdm_full
 
-    def __init__(self, mol_list):
+    def __init__(self, model):
         super().__init__()
-        self.mol_list = mol_list
+        self.model = model
 
     def _get_sigmaqn(self, idx):
         # dummy qn
@@ -198,13 +198,13 @@ class MpDmFull(MpDmBase):
 
     # `_expectation_conj` and `mpdm_norm` could be cached if they are proved to be bottlenecks
     def _expectation_conj(self):
-        i = Mpo.identity(self.mol_list)
+        i = Mpo.identity(self.model)
         i.scale(1 / self.mpdm_norm(), inplace=True)
         return i
 
     def mpdm_norm(self):
         # the trace
-        i = Mpo.identity(self.mol_list)
+        i = Mpo.identity(self.model)
         return self.expectation(i, i)
 
     def full_operator(self, normalize=False):

@@ -7,16 +7,16 @@ import numpy as np
 
 from renormalizer.mps import Mps, Mpo, MpDm
 from renormalizer.utils import EvolveMethod, EvolveConfig, CompressConfig, CompressCriteria, Quantity
-from renormalizer.tests.parameter_exact import qutip_clist, qutip_h, mol_list
+from renormalizer.tests.parameter_exact import qutip_clist, qutip_h, model
 
 
 # the init state
-def f(mol_list, run_qutip=True): 
-    tentative_mpo = Mpo(mol_list)
-    init_mps = (Mpo.onsite(mol_list, r"a^\dagger", mol_idx_set={0}) @ Mps.ground_state(mol_list, False)).expand_bond_dimension(hint_mpo=tentative_mpo)
+def f(model, run_qutip=True):
+    tentative_mpo = Mpo(model)
+    init_mps = (Mpo.onsite(model, r"a^\dagger", mol_idx_set={0}) @ Mps.ground_state(model, False)).expand_bond_dimension(hint_mpo=tentative_mpo)
     init_mpdm = MpDm.from_mps(init_mps).expand_bond_dimension(hint_mpo=tentative_mpo)
     e = init_mps.expectation(tentative_mpo)
-    mpo = Mpo(mol_list, offset=Quantity(e))
+    mpo = Mpo(model, offset=Quantity(e))
     
     if run_qutip:
         # calculate result in ZT. FT result is exactly the same
@@ -33,7 +33,7 @@ def f(mol_list, run_qutip=True):
     else:
         return init_mps, init_mpdm, mpo
 
-qutip_expectations, QUTIP_STEP, init_mps, init_mpdm, mpo = f(mol_list, True)
+qutip_expectations, QUTIP_STEP, init_mps, init_mpdm, mpo = f(model, True)
 
 
 def check_result(mps, mpo, time_step, final_time, atol=1e-4):

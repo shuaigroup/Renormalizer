@@ -4,7 +4,7 @@ import numpy as np
 import qutip
 import pytest
 
-from renormalizer.model import Phonon, Mol, HolsteinModel, MolList2
+from renormalizer.model import Phonon, Mol, HolsteinModel, Model
 from renormalizer.transport.kubo import TransportKubo
 from renormalizer.utils import Quantity, CompressConfig, EvolveConfig, EvolveMethod, CompressCriteria, Op
 from renormalizer.utils.basis import BasisSimpleElectron, BasisSHO
@@ -18,23 +18,23 @@ from renormalizer.utils.qutip_utils import get_clist, get_blist, get_holstein_ha
 def test_holstein_kubo(scheme):
     ph = Phonon.simple_phonon(Quantity(1), Quantity(1), 2)
     mol = Mol(Quantity(0), [ph])
-    mol_list = HolsteinModel([mol] * 5, Quantity(1), scheme)
+    model = HolsteinModel([mol] * 5, Quantity(1), scheme)
     temperature = Quantity(50000, 'K')
     compress_config = CompressConfig(CompressCriteria.fixed, max_bonddim=24)
     evolve_config = EvolveConfig(EvolveMethod.tdvp_ps, adaptive=True, guess_dt=0.5, adaptive_rtol=1e-3)
     ievolve_config = EvolveConfig(EvolveMethod.tdvp_ps, adaptive=True, guess_dt=-0.1j)
-    kubo = TransportKubo(mol_list, temperature, compress_config=compress_config, ievolve_config=ievolve_config, evolve_config=evolve_config)
+    kubo = TransportKubo(model, temperature, compress_config=compress_config, ievolve_config=ievolve_config, evolve_config=evolve_config)
     kubo.evolve(nsteps=5, evolve_time=5)
-    qutip_res = get_qutip_holstein_kubo(mol_list, temperature, kubo.evolve_times_array)
+    qutip_res = get_qutip_holstein_kubo(model, temperature, kubo.evolve_times_array)
     rtol = 5e-2
     assert np.allclose(kubo.auto_corr, qutip_res, rtol=rtol)
 
 
-def get_qutip_holstein_kubo(mol_list, temperature, time_series):
+def get_qutip_holstein_kubo(model, temperature, time_series):
 
-    nsites = len(mol_list)
-    J = mol_list.j_constant
-    ph = mol_list[0].ph_list[0]
+    nsites = len(model)
+    J = model.j_constant
+    ph = model[0].ph_list[0]
     ph_levels = ph.n_phys_dim
     omega = ph.omega[0]
     g = - ph.coupling_constant
@@ -99,11 +99,11 @@ def test_peierls_kubo():
         order.append(f"v_{ni}")
         basis.append(BasisSHO(omega, nlevels))
 
-    mol_list = MolList2(order, basis, model)
+    model = Model(order, basis, model)
     compress_config = CompressConfig(CompressCriteria.fixed, max_bonddim=24)
     ievolve_config = EvolveConfig(EvolveMethod.tdvp_vmf, ivp_atol=1e-3, ivp_rtol=1e-5)
     evolve_config = EvolveConfig(EvolveMethod.tdvp_vmf, ivp_atol=1e-3, ivp_rtol=1e-5)
-    kubo = TransportKubo(mol_list, temperature, compress_config=compress_config, ievolve_config=ievolve_config, evolve_config=evolve_config)
+    kubo = TransportKubo(model, temperature, compress_config=compress_config, ievolve_config=ievolve_config, evolve_config=evolve_config)
     kubo.evolve(nsteps=5, evolve_time=1000)
 
     qutip_corr, qutip_corr_decomp = get_qutip_peierls_kubo(V, n, nlevels, omega, g, temperature, kubo.evolve_times_array)

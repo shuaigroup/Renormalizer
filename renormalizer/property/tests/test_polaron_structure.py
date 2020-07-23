@@ -58,11 +58,11 @@ D = [Quantity(0.),Quantity(D_value)]
 
 ph = Phonon(omega, D, ph_phys_dim)
 
-mol_list = HolsteinModel([Mol(Quantity(elocalex), [ph], dipole_abs)] * nmols, j_matrix, )
+model = HolsteinModel([Mol(Quantity(elocalex), [ph], dipole_abs)] * nmols, j_matrix, )
 
 # periodic nearest-neighbour interaction
-mpo = Mpo(mol_list)
-periodic = Mpo.intersite(mol_list, {0: r"a^\dagger", nmols - 1: "a"}, {},
+mpo = Mpo(model)
+periodic = Mpo.intersite(model, {0: r"a^\dagger", nmols - 1: "a"}, {},
                          Quantity(j_value))
 mpo = mpo.add(periodic).add(periodic.conj_trans())
 
@@ -73,7 +73,7 @@ def test_thermal_equilibrium(periodic):
     if periodic:
         # define properties
         # periodic case
-        prop_mpos = ops.e_ph_static_correlation(mol_list, periodic=True)
+        prop_mpos = ops.e_ph_static_correlation(model, periodic=True)
         prop_strs = list(prop_mpos.keys())
         prop_strs.append("e_rdm")
         prop = Property(prop_strs, prop_mpos)
@@ -81,7 +81,7 @@ def test_thermal_equilibrium(periodic):
         # non-periodic case (though actually periodic)
         prop_mpos = {}
         for imol in range(nmols):
-            prop_mpo = ops.e_ph_static_correlation(mol_list, imol=imol)
+            prop_mpo = ops.e_ph_static_correlation(model, imol=imol)
             prop_mpos.update(prop_mpo)
         prop_strs = list(prop_mpos.keys())
         prop_strs.append("e_rdm")
@@ -96,7 +96,7 @@ def test_thermal_equilibrium(periodic):
     evolve_config = EvolveConfig(method=EvolveMethod.prop_and_compress, adaptive=True,
             adaptive_rtol=1e-4, guess_dt=0.1/1j)
     
-    init_mpdm = MpDm.max_entangled_ex(mol_list)
+    init_mpdm = MpDm.max_entangled_ex(model)
     #init_mpdm.compress_config.bond_dim_max_value=10
     init_mpdm.compress_config.threshold = 1e-4
     

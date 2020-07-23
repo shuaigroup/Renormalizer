@@ -4,30 +4,30 @@ import numpy as np
 import pytest
 
 from renormalizer.mps import Mps, Mpo
-from renormalizer.model import MolList2
+from renormalizer.model import Model
 from renormalizer.utils.basis import BasisSHO, BasisMultiElectronVac, BasisMultiElectron, BasisSimpleElectron, Op
 from renormalizer.tests import parameter
 
 
 @pytest.mark.parametrize("mpos", (
         [
-            Mpo.onsite(parameter.mol_list, r"a^\dagger a", mol_idx_set={i})
-            for i in range(parameter.mol_list.mol_num)
+            Mpo.onsite(parameter.holstein_model, r"a^\dagger a", mol_idx_set={i})
+            for i in range(parameter.holstein_model.mol_num)
         ],
         [
-            Mpo.intersite(parameter.mol_list, {i: "a", i + 1: r"a^\dagger"}, {})
-            for i in range(parameter.mol_list.mol_num - 1)
+            Mpo.intersite(parameter.holstein_model, {i: "a", i + 1: r"a^\dagger"}, {})
+            for i in range(parameter.holstein_model.mol_num - 1)
         ],
         [
-            Mpo.intersite(parameter.mol_list, {i: "a", i + 1: r"a^\dagger"}, {})
-            for i in range(parameter.mol_list.mol_num - 1)
+            Mpo.intersite(parameter.holstein_model, {i: "a", i + 1: r"a^\dagger"}, {})
+            for i in range(parameter.holstein_model.mol_num - 1)
         ] + [
-            Mpo.intersite(parameter.mol_list, {i: "a"}, {})
-            for i in range(parameter.mol_list.mol_num - 1)
+            Mpo.intersite(parameter.holstein_model, {i: "a"}, {})
+            for i in range(parameter.holstein_model.mol_num - 1)
         ]
 ))
 def test_expectations(mpos):
-    random = Mps.random(parameter.mol_list, 1, 20)
+    random = Mps.random(parameter.holstein_model, 1, 20)
 
     e1 = random.expectations(mpos)
     e2 = random.expectations(mpos, opt=False)
@@ -36,12 +36,12 @@ def test_expectations(mpos):
 
 
 def check_reduced_density_matrix(order, basis):
-    mol_list = MolList2(order, basis, {})
-    mps = Mps.random(mol_list, 1, 20)
+    model = Model(order, basis, {})
+    mps = Mps.random(model, 1, 20)
     rdm = mps.calc_reduced_density_matrix().real
     assert np.allclose(np.diag(rdm), mps.e_occupations)
     # only test a sample. Should be enough.
-    mpo = Mpo.general_mpo(mol_list, model={(f"e_0", f"e_3"): [(Op(r"a^\dagger", 1), Op("a", -1), 1.0)]})
+    mpo = Mpo.general_mpo(model, model_dict={(f"e_0", f"e_3"): [(Op(r"a^\dagger", 1), Op("a", -1), 1.0)]})
     assert rdm[-1][0] == pytest.approx(mps.expectation(mpo))
 
 
