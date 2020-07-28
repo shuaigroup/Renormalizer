@@ -2,7 +2,7 @@
 
 import pytest
 
-from renormalizer.model import Phonon, Mol
+from renormalizer.model import Phonon
 from renormalizer.sbm import SpinBosonDynamics, param2mollist, SpectralDensityFunction
 from renormalizer.utils import Quantity, EvolveConfig, EvolveMethod
 from renormalizer.mps.tests.test_sbm import get_qutip_zt

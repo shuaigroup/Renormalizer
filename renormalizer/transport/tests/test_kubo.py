@@ -1,14 +1,16 @@
 # -*- coding: utf-8 -*-
 
 import numpy as np
-import qutip
 import pytest
+import qutip
 
 from renormalizer.model import Phonon, Mol, HolsteinModel, Model
+from renormalizer.model.basis import BasisSimpleElectron, BasisSHO
+from renormalizer.model.op import Op
 from renormalizer.transport.kubo import TransportKubo
-from renormalizer.utils import Quantity, CompressConfig, EvolveConfig, EvolveMethod, CompressCriteria, Op
-from renormalizer.utils.basis import BasisSimpleElectron, BasisSHO
-from renormalizer.utils.qutip_utils import get_clist, get_blist, get_holstein_hamiltonian, get_qnidx, get_peierls_hamiltonian
+from renormalizer.utils import Quantity, CompressConfig, EvolveConfig, EvolveMethod, CompressCriteria
+from renormalizer.utils.qutip_utils import get_clist, get_blist, get_holstein_hamiltonian, get_qnidx, \
+    get_peierls_hamiltonian
 
 
 @pytest.mark.parametrize("scheme", (
@@ -70,36 +72,26 @@ def test_peierls_kubo():
     temperature = Quantity(300, "K")
 
     # the Peierls model
-    model = {}
-    # H_e
-    e_dofs = [f"e_{i}" for i in range(n)]
-    e_pairs = []
+    ham_terms = []
     for i in range(n):
         i1, i2 = i, (i+1) % n
-        e_pairs.append([e_dofs[i1], e_dofs[i2]])
+        # H_e
+        hop1 = Op(r"a^\dagger a", [i1, i2], V)
+        hop2 = Op(r"a a^\dagger", [i1, i2], V)
+        ham_terms.extend([hop1, hop2])
+        # H_ph
+        ham_terms.append(Op(r"b^\dagger b", (i, 0), omega))
+        # H_(e-ph)
+        coup1 = Op(r"b^\dagger + b", (i, 0)) * Op(r"a^\dagger a", [i1, i2]) * g * omega
+        coup2 = Op(r"b^\dagger + b", (i, 0)) * Op(r"a a^\dagger", [i1, i2]) * g * omega
+        ham_terms.extend([coup1, coup2])
 
-    for e_pair in e_pairs:
-        hop1 = (Op(r"a^\dagger", 1), Op(r"a", -1), V)
-        hop2 = (Op(r"a", -1), Op(r"a^\dagger", 1), V)
-        model[tuple(e_pair)] = [hop1, hop2]
-
-    # H_ph and H_(e-ph)
-    for ni in range(n):
-        v_str = f"v_{ni}"
-        model[(v_str,)] = [(Op(r"b^\dagger b", 0), omega)]
-        coup1 = (Op(r"b^\dagger + b", 0), Op(r"a^\dagger", 1), Op(r"a", -1), g * omega)
-        coup2 = (Op(r"b^\dagger + b", 0), Op(r"a", -1), Op(r"a^\dagger", 1), g * omega)
-        model[tuple([v_str] + e_pairs[ni])] = [coup1, coup2]
-
-    order = []
     basis = []
     for ni in range(n):
-        order.append(f"e_{ni}")
-        basis.append(BasisSimpleElectron())
-        order.append(f"v_{ni}")
-        basis.append(BasisSHO(omega, nlevels))
+        basis.append(BasisSimpleElectron(ni))
+        basis.append(BasisSHO((ni, 0), omega, nlevels))
 
-    model = Model(order, basis, model)
+    model = Model(basis, ham_terms)
     compress_config = CompressConfig(CompressCriteria.fixed, max_bonddim=24)
     ievolve_config = EvolveConfig(EvolveMethod.tdvp_vmf, ivp_atol=1e-3, ivp_rtol=1e-5)
     evolve_config = EvolveConfig(EvolveMethod.tdvp_vmf, ivp_atol=1e-3, ivp_rtol=1e-5)

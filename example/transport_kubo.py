@@ -10,7 +10,7 @@ import yaml
 
 from renormalizer.model import load_from_dict
 from renormalizer.transport import TransportKubo
-from renormalizer.utils import log, Quantity, EvolveConfig, EvolveMethod, RungeKutta, CompressConfig, BondDimDistri
+from renormalizer.utils import log, EvolveConfig, CompressConfig
 
 logger = logging.getLogger(__name__)
 
@@ -32,6 +32,4 @@ if __name__ == "__main__":
     ct = TransportKubo(model, temperature=temperature, ievolve_config=ievolve_config,
                        compress_config=compress_config, evolve_config=evolve_config, dump_dir=param["output dir"],
                        job_name=param["fname"] + "_autocorr")
-    # ct.latest_mps.compress_add = True
     ct.evolve(param.get("evolve dt"), param.get("nsteps"), param.get("evolve time"))
-    # ct.evolve(evolve_dt, 100, param.get("evolve time"))

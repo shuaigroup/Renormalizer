@@ -11,7 +11,7 @@ from renormalizer.mps.backend import xp
 from renormalizer.mps.matrix import tensordot, asnumpy
 from renormalizer.mps import Mpo, Mps
 from renormalizer.mps.tdh import unitary_propagation
-from renormalizer.utils import Op
+from renormalizer.model.op import Op
 
 logger = logging.getLogger(__name__)
 

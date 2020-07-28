@@ -1,6 +1,6 @@
 import numpy as np
-from renormalizer.utils import Op
-from typing import Dict, List
+from renormalizer.model.op import Op
+from typing import Union, List
 import scipy.linalg
 import scipy.special
 import itertools
@@ -15,29 +15,69 @@ class BasisSet:
     the parent class for local basis set
 
     Args:
+        dof_name: The name(s) of the DoF(s) contained in the basis set.
+            For basis containing only one DoF, the type could be anything that can be hashed.
+            For basis containing multiple DoFs, the type should be a ``list`` or ``tuple``
+            of anything that can be hashed.
         nbas (int): number of dimension of the basis set
         sigmaqn (List(int)): the qn of each basis
-        multi_dof (bool) : if multiple dof is contained in this basis
+
     """
 
+    #: If the basis set represent electronic DoF.
     is_electron = False
+    #: If the basis set represent vibrational DoF.
     is_phonon = False
+    #: If the basis set represent spin DoF.
     is_spin = False
+    #: If the basis set contains multiple DoFs.
+    multi_dof = False
 
-    def __init__(self, nbas: int, sigmaqn: List[int], multi_dof=False):
+    def __init__(self, dof, nbas: int, sigmaqn: List[int]):
+        self.dof = dof
+
         assert type(nbas) is int
         self.nbas = nbas
 
         for qn in sigmaqn:
             assert type(qn) is int
         self.sigmaqn = sigmaqn
-        self.multi_dof = multi_dof
-    
+
     def __repr__(self):
         return f"(nbas: {self.nbas}, qn: {self.sigmaqn})"
     
-    def op_mat(self, op):
+    def op_mat(self, op: Op):
+        """
+        Matrix representation under the basis set of the input operator.
+        The factor is included.
+
+        Parameters
+        ----------
+        op : Op
+            The operator. For basis set with only one DoF, :class:`str`` is also acceptable.
+
+        Returns
+        -------
+        mat : :class:`np.ndarray`
+            Matrix representation of ``op``.
+        """
         raise NotImplementedError
+
+    @property
+    def dofs(self):
+        """
+        Names of the DoFs contained in the basis.
+        Returns a tuple even if the basis contains only one DoF.
+
+        Returns
+        -------
+        dof names : tuple
+            A tuple of DoF names.
+        """
+        if self.multi_dof:
+            return tuple(self.dof)
+        else:
+            return (self.dof,)
 
 
 class BasisSHO(BasisSet):
@@ -45,6 +85,7 @@ class BasisSHO(BasisSet):
     simple harmonic oscillator basis set
 
     Args:
+        dof: The name of the DoF contained in the basis set. The type could be anything that can be hashed.
         omega (float): the frequency of the oscillator.
         nbas (int): number of dimension of the basis set (highest occupation number of the harmonic oscillator)
         x0 (float): the origin of the harmonic oscillator. Default = 0.
@@ -57,12 +98,15 @@ class BasisSHO(BasisSet):
 
     is_phonon = True
 
-    def __init__(self, omega, nbas, x0=0., dvr=False, general_xp_power=False):
+    def __init__(self, dof, omega, nbas, x0=0., dvr=False, general_xp_power=False):
         self.omega = omega
         self.x0 = x0  # origin = x0
-        super().__init__(nbas, [0] * nbas)
+        super().__init__(dof, nbas, [0] * nbas)
 
         self.general_xp_power = general_xp_power
+
+        # whether under recurssion
+        self._recurssion_flag = 0
 
         self.dvr = False
         self.dvr_x = None  # the expectation value of x on SHO_dvr
@@ -71,19 +115,19 @@ class BasisSHO(BasisSet):
             self.dvr_x, self.dvr_v = scipy.linalg.eigh(self.op_mat("x"))
             self.dvr = True
 
-
     def __repr__(self):
         return f"(x0: {self.x0}, omega: {self.omega}, nbas: {self.nbas})"
     
-    def op_mat(self, op):
-        if isinstance(op, Op):
-            op_symbol, op_factor = op.symbol, op.factor
-        else:
-            op_symbol, op_factor = op, 1.0
+    def op_mat(self, op: Union[Op, str]):
+        if not isinstance(op, Op):
+            op = Op(op, None)
+        op_symbol, op_factor = op.symbol, op.factor
 
         if op_symbol in ["b", "b b", r"b^\dagger", r"b^\dagger b^\dagger", r"b^\dagger b", r"b b^\dagger", r"b^\dagger + b"]:
-            if not np.allclose(self.x0, 0):
+            if self._recurssion_flag == 0 and not np.allclose(self.x0, 0):
                 logger.warning("the second quantization doesn't support nonzero x0")
+
+        self._recurssion_flag += 1
 
         # so many if-else might be a potential performance problem in the future
         # changing to lazy-evaluation dict should be better
@@ -219,35 +263,36 @@ class BasisSHO(BasisSet):
             mat = np.diag(np.arange(self.nbas))
         else:
             raise ValueError(f"op_symbol:{op_symbol} is not supported. ")
-        
+
+        self._recurssion_flag -= 1
         return mat * op_factor
 
 
 class BasisMultiElectron(BasisSet):
     r"""
     The basis set for multi electronic state on one single site,
-    the basis order is ["e_0", "e_1", "e_2",...]
+    The basis order is [dof_names[0], dof_names[1], dof_names[2], ...].
 
-    Args:
-        nstate (int): the # of electronic states
-        sigmaqn (List(int)): the sigmaqn of each basis
+    Parameters
+    ----------
+    dof : a :class:`list` or :class:`tuple` of hashable objects.
+        The names of the DoFs contained in the basis set.
+    sigmaqn : :class:`list` of :class:`int`
+        The sigmaqn of each basis
     """
 
     is_electron = True
+    multi_dof = True
     
-    def __init__(self, nstate, sigmaqn: List[int]):
+    def __init__(self, dof, sigmaqn: List[int]):
         
-        assert len(sigmaqn) == nstate
-        super().__init__(nstate, sigmaqn, True)
+        assert len(sigmaqn) == len(sigmaqn)
+        self.dof_name_map = {name: i for i, name in enumerate(dof)}
+        super().__init__(dof, len(dof), sigmaqn)
 
-    def op_mat(self, op):
-        
-        if isinstance(op, Op):
-            op_symbol, op_factor = op.symbol, op.factor
-        else:
-            op_symbol, op_factor = op, 1.0
-        
-        op_symbol = op_symbol.split(" ")
+    def op_mat(self, op: Op):
+
+        op_symbol, op_factor = op.split_symbol, op.factor
         
         if len(op_symbol) == 1:
             if op_symbol[0] == "I":
@@ -259,14 +304,14 @@ class BasisMultiElectron(BasisSet):
             
         elif len(op_symbol) == 2:
             op_symbol1, op_symbol2 = op_symbol
-            op_symbol1_term, op_symbol1_idx = op_symbol1.split("_")
-            op_symbol2_term, op_symbol2_idx = op_symbol2.split("_")
+            op_symbol1_idx = self.dof_name_map[op.dofs[0]]
+            op_symbol2_idx = self.dof_name_map[op.dofs[1]]
 
             mat = np.zeros((self.nbas, self.nbas))
             
-            if op_symbol1_term == r"a^\dagger" and op_symbol2_term == "a":
+            if op_symbol1 == r"a^\dagger" and op_symbol2 == "a":
                 mat[int(op_symbol1_idx), int(op_symbol2_idx)] = 1.
-            elif op_symbol1_term == r"a" and op_symbol2_term == r"a^\dagger":
+            elif op_symbol1 == r"a" and op_symbol2 == r"a^\dagger":
                 mat[int(op_symbol2_idx), int(op_symbol1_idx)] = 1.
             else:
                 raise ValueError(f"op_symbol:{op_symbol} is not supported")
@@ -280,41 +325,29 @@ class BasisMultiElectronVac(BasisSet):
     r"""
     Another basis set for multi electronic state on one single site.
     Vacuum state is included.
-    The basis order is [vacuum, "e_0", "e_1", "e_2",...].
+    The basis order is [vacuum, dof_names[0], dof_names[1],...].
     sigma qn is [0, 1, 1, 1, ...]
 
-    Args:
-        nstate (int): the number of electronic states without counting the vacuum state.
-        dof_idx (list): the indices of the electronic dofs used to define the whole model
-            that are represented by this basis. The default value is ``list(range(nstate))``.
-            The arg is necessary when more than one basis of this class present in the model.
+    Parameters
+    ----------
+    dof : a :class:`list` or :class:`tuple` of hashable objects.
+        The names of the DoFs contained in the basis set.
     """
 
     is_electron = True
+    multi_dof = True
 
-    def __init__(self, nstate, dof_idx=None):
+    def __init__(self, dof):
 
-        sigmaqn = [0] + [1] * nstate
-        if dof_idx is None:
-            dof_idx = list(range(nstate))
+        sigmaqn = [0] + [1] * len(dof)
         # map external dof index into internal dof index
         # the index 0 is reserved for vacuum
-        self.dof_idx_map = {k: v+1 for v, k in enumerate(dof_idx)}
-        super().__init__(nstate+1, sigmaqn, True)
+        self.dof_name_map = {k: v + 1 for v, k in enumerate(dof)}
+        super().__init__(dof, len(dof) + 1, sigmaqn)
 
-    def _split_sym_idx(self, op_symbol):
-        op_symbol_term, op_symbol_idx = op_symbol.split("_")
-        op_symbol_idx = self.dof_idx_map[int(op_symbol_idx)]
-        return op_symbol_term, op_symbol_idx
+    def op_mat(self, op: Op):
 
-    def op_mat(self, op):
-
-        if isinstance(op, Op):
-            op_symbol, op_factor = op.symbol, op.factor
-        else:
-            op_symbol, op_factor = op, 1.0
-
-        op_symbol = op_symbol.split(" ")
+        op_symbol, op_factor = op.split_symbol, op.factor
 
         if len(op_symbol) == 1:
             op_symbol = op_symbol[0]
@@ -322,24 +355,24 @@ class BasisMultiElectronVac(BasisSet):
                 mat = np.eye(self.nbas)
             else:
                 mat = np.zeros((self.nbas, self.nbas))
-                op_symbol_term, op_symbol_idx = self._split_sym_idx(op_symbol)
-                if op_symbol_term == r"a^\dagger":
+                op_symbol_idx = self.dof_name_map[op.dofs[0]]
+                if op_symbol == r"a^\dagger":
                     mat[op_symbol_idx, 0] = 1.
-                elif op_symbol_term == r"a":
+                elif op_symbol == r"a":
                     mat[0, op_symbol_idx] = 1.
                 else:
                     raise ValueError(f"op_symbol:{op_symbol} is not supported")
 
         elif len(op_symbol) == 2:
             op_symbol1, op_symbol2 = op_symbol
-            op_symbol1_term, op_symbol1_idx = self._split_sym_idx(op_symbol1)
-            op_symbol2_term, op_symbol2_idx = self._split_sym_idx(op_symbol2)
+            op_symbol1_idx = self.dof_name_map[op.dofs[0]]
+            op_symbol2_idx = self.dof_name_map[op.dofs[1]]
 
             mat = np.zeros((self.nbas, self.nbas))
 
-            if op_symbol1_term == r"a^\dagger" and op_symbol2_term == "a":
+            if op_symbol1 == r"a^\dagger" and op_symbol2 == "a":
                 mat[op_symbol1_idx, op_symbol2_idx] = 1.
-            elif op_symbol1_term == r"a" and op_symbol2_term == r"a^\dagger":
+            elif op_symbol1 == r"a" and op_symbol2 == r"a^\dagger":
                 mat[op_symbol2_idx, op_symbol1_idx] = 1.
             else:
                 raise ValueError(f"op_symbol:{op_symbol} is not supported")
@@ -350,21 +383,25 @@ class BasisMultiElectronVac(BasisSet):
 
 
 class BasisSimpleElectron(BasisSet):
+
     r"""
     The basis set for simple electron DoF, two state with 0: unoccupied, 1: occupied
+
+    Parameters
+    ----------
+    dof : any hashable object
+        The name of the DoF contained in the basis set.
 
     """
     is_electron = True
 
-    def __init__(self):
-        super().__init__(2, [0, 1])
+    def __init__(self, dof):
+        super().__init__(dof, 2, [0, 1])
 
     def op_mat(self, op):
-        
-        if isinstance(op, Op):
-            op_symbol, op_factor = op.symbol, op.factor
-        else:
-            op_symbol, op_factor = op, 1.0
+        if not isinstance(op, Op):
+            op = Op(op, None)
+        op_symbol, op_factor = op.symbol, op.factor
         
         mat = np.zeros((2, 2))
         
@@ -385,23 +422,24 @@ class BasisSimpleElectron(BasisSet):
 class BasisHalfSpin(BasisSet):
     r"""
     The basis the for 1/2 spin DoF
+
+    Parameters
+    ----------
+    dof : any hashable object
+        The name of the DoF contained in the basis set.
     """
 
     is_spin = True
 
-    def __init__(self, sigmaqn:List[int]=None):
+    def __init__(self, dof, sigmaqn:List[int]=None):
         if sigmaqn is None:
             sigmaqn = [0, 0]
-        super().__init__(2, sigmaqn)
+        super().__init__(dof, 2, sigmaqn)
 
-    def op_mat(self, op):
-        
-        if isinstance(op, Op):
-            op_symbol, op_factor = op.symbol, op.factor
-        else:
-            op_symbol, op_factor = op, 1.0
-        
-        op_symbol = op_symbol.split(" ")
+    def op_mat(self, op: Union[Op, str]):
+        if not isinstance(op, Op):
+            op = Op(op, None)
+        op_symbol, op_factor = op.split_symbol, op.factor
         
         if len(op_symbol) == 1:       
             op_symbol = op_symbol[0]

@@ -33,7 +33,7 @@ def test_dynamics(dissipation, dt, nsteps):
     gs_mp = tp.latest_mps
     center_mol_idx = band_limit_model.mol_num // 2
     creation_operator = Mpo.onsite(
-        band_limit_model, r"a^\dagger", mol_idx_set={center_mol_idx}
+        band_limit_model, r"a^\dagger", dof_set={center_mol_idx}
     )
     mpdm = creation_operator.apply(gs_mp)
     mpdm_full = MpDmFull.from_mpdm(mpdm)
@@ -64,7 +64,7 @@ def test_2site():
     ph = Phonon.simple_phonon(Quantity(1), Quantity(1), 2)
     m = Mol(Quantity(0), [ph])
     model = HolsteinModel([m] * 2, Quantity(1))
-    gs_mp = Mpo.onsite(model, opera=r"a^\dagger", mol_idx_set={0}).apply(Mps.ground_state(model, max_entangled=False))
+    gs_mp = Mpo.onsite(model, opera=r"a^\dagger", dof_set={0}).apply(Mps.ground_state(model, max_entangled=False))
     mpdm = MpDm.from_mps(gs_mp)
     mpdm_full = MpDmFull.from_mpdm(mpdm)
     mpdm_full.compress_config = CompressConfig(threshold=1e-4)

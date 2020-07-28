@@ -27,7 +27,6 @@ Contents
    develop.md
    tutorial.md
    model.rst
-   basis.rst
    mps.rst
    gs.rst
    spectrum.rst

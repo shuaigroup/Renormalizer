@@ -13,7 +13,7 @@ from renormalizer.utils import CompressCriteria
 
 def test_save_load():
     model = custom_model(hartrees=[True, False])
-    mps = Mpo.onsite(model, "a^\dagger", mol_idx_set={0}) @ Mps.ground_state(model, False)
+    mps = Mpo.onsite(model, r"a^\dagger", dof_set={0}) @ Mps.ground_state(model, False)
     mpo = Mpo(model)
     mps1 = mps.copy()
     for i in range(2):

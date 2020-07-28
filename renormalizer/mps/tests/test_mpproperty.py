@@ -11,7 +11,7 @@ from renormalizer.utils import Quantity
 
 
 creation_operator = Mpo.onsite(
-    holstein_model, r"a^\dagger", mol_idx_set={holstein_model.mol_num // 2}
+    holstein_model, r"a^\dagger", dof_set={holstein_model.mol_num // 2}
 )
 
 

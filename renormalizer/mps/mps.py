@@ -1,16 +1,24 @@
 # -*- encoding: utf-8 -*-
 
 import logging
+from collections import Counter, deque
 from functools import wraps
 from typing import Union, List, Dict
-from collections import Counter, deque
 
 import scipy
 from scipy import stats
 
-from renormalizer.model import Model
 from renormalizer.lib import solve_ivp, expm_krylov
+from renormalizer.model import Model, Op, basis as ba
 from renormalizer.mps import svd_qn
+from renormalizer.mps.backend import backend, np, xp
+from renormalizer.mps.lib import (
+    Environ,
+    select_basis,
+    compressed_sum,
+    contract_one_site,
+    cvec2cmat
+)
 from renormalizer.mps.matrix import (
     multi_tensor_contract,
     ones,
@@ -18,28 +26,14 @@ from renormalizer.mps.matrix import (
     Matrix,
     asnumpy,
     asxp)
-from renormalizer.mps.backend import backend, np, xp
-from renormalizer.mps.lib import (
-    Environ, 
-    select_basis, 
-    compressed_sum, 
-    contract_one_site,
-    cvec2cmat
-    )
 from renormalizer.mps.mp import MatrixProduct
 from renormalizer.mps.mpo import Mpo
-from renormalizer.mps.tdh import mflib
-from renormalizer.mps.tdh import unitary_propagation
 from renormalizer.utils import (
-    Quantity,
     OptimizeConfig,
     CompressCriteria,
-    CompressConfig,
     EvolveConfig,
-    EvolveMethod,
-    Op
+    EvolveMethod
 )
-from renormalizer.utils import basis as ba
 
 logger = logging.getLogger(__name__)
 
@@ -174,7 +168,7 @@ class Mps(MatrixProduct):
         return mps
 
     @classmethod
-    def hartree_product_state(cls, model, condition):
+    def hartree_product_state(cls, model, condition: Dict):
         r"""
         Construct a Hartree product state
         
@@ -190,7 +184,7 @@ class Mps(MatrixProduct):
                     if a basis contains ``"e_1"``, ``"e_2"`` and ``"e_3"``,
                     ``{"e_1": 2}`` (``{"e_1": [0, 0, 1]}``) means ``"e_3"`` is occupied and
                     ``{"e_1": 1}`` (``{"e_1": [0, 1, 0]}``) means ``"e_2"`` is occupied.
-                    Beaware that in :class:`renormalizer.utils.basis.BasisMultiElectronVac` the vacuum state
+                    Be aware that in :class:`renormalizer.utils.basis.BasisMultiElectronVac` the vacuum state
                     is added to the ``0`` index.
 
         Returns:
@@ -203,11 +197,11 @@ class Mps(MatrixProduct):
         
         qn_single = [[],] * model.nsite
         
-        for v_dof in model.e_dofs + model.v_dofs:
-            isite = model.order[v_dof]
+        for dof_name in model.dofs:
+            isite = model.order[dof_name]
             pdim = model.basis[isite].nbas
             ms = np.zeros((1, pdim, 1))
-            local_state = condition.get(v_dof,0)
+            local_state = condition.pop(dof_name,0)
             if isinstance(local_state, int):
                 ms[0, local_state, 0] = 1.
                 qn = model.basis[isite].sigmaqn[local_state]
@@ -222,6 +216,8 @@ class Mps(MatrixProduct):
             mps[isite] = ms
             qn_single[isite] = qn
 
+        if len(condition) != 0:
+            raise ValueError(f"Condition not complete used: {condition}")
         qn_single = np.array(qn_single)
         mps.qn = [[0]]
         for isite in range(model.nsite):
@@ -259,14 +255,14 @@ class Mps(MatrixProduct):
             basis = model.basis[isite]
             pdim = basis.nbas
             ms = np.zeros((1, pdim, 1))
-            if dof.split("_")[0] == "v":
+            if basis.is_phonon:
                 if max_entangled:
                     ms[0, :, 0] = 1.0 / np.sqrt(pdim)
                 else:
                     ms[0, 0, 0] = 1.0
                 mps[isite] = ms
 
-            elif dof.split("_")[0] == "e":
+            elif basis.is_electron or basis.is_spin:
 
                 if isinstance(basis, ba.BasisSimpleElectron):
                     # simple electron site
@@ -291,6 +287,8 @@ class Mps(MatrixProduct):
                 else:
                     raise NotImplementedError
                 mps[isite] = ms
+        for ms in mps:
+            assert ms is not None
         return mps
 
     @classmethod
@@ -462,15 +460,16 @@ class Mps(MatrixProduct):
 
     @property
     def ph_occupations(self):
+        r"""
+        phonon occupations :math:`b^\dagger_i b_i` for each electronic DoF.
+        The order is defined by :attr:`~renormalizer.model.model.v_dofs`.
+        """
         key = "ph_occupations"
         # ph_occupations is actually the occupation of the basis
         if key not in self.model.mpos:
             mpos = []
             for dof in self.model.v_dofs:
-                mpos.append(
-                    Mpo.general_mpo(self.model,
-                                    model_dict={(dof,):[(Op("n",0), 1.)]})
-                    )
+                mpos.append(Mpo(self.model, Op("n", dof)))
             # the order is v_dofs order, "v_0", "v_1",...
             self.model.mpos[key] = mpos
         else:
@@ -480,14 +479,15 @@ class Mps(MatrixProduct):
 
     @property
     def e_occupations(self):
+        r"""
+        Electronic occupations :math:`a^\dagger_i a_i` for each electronic DoF.
+        The order is defined by :attr:`~renormalizer.model.model.e_dofs`.
+        """
         key = "e_occupations"
         if key not in self.model.mpos:
             mpos = []
             for dof in self.model.e_dofs:
-                    mpos.append(
-                        Mpo.general_mpo(self.model,
-                                        model_dict={(dof,):[(Op(r"a^\dagger a", 0),1.0)]})
-                        )
+                    mpos.append(Mpo(self.model, Op(r"a^\dagger a", dof)))
             # the order is e_dofs order
             self.model.mpos[key] = mpos
         else:
@@ -1249,13 +1249,13 @@ class Mps(MatrixProduct):
 
         key = "reduced_density_matrix"
         n_e = self.model.n_edofs
+        e_dofs = self.model.e_dofs
         if key not in self.model.mpos:
             mpos = []
-            for idx in range(n_e):
-                for jdx in range(idx, n_e):
-                    model_dict = {(f"e_{idx}", f"e_{jdx}"): [(Op(r"a^\dagger", 1),
-                                                         Op("a", -1), 1.0)]}
-                    mpo = Mpo.general_mpo(self.model, model_dict=model_dict)
+            for idx, dof1 in enumerate(e_dofs):
+                for dof2 in e_dofs[idx:]:
+                    op = Op(r"a^\dagger a", [dof1, dof2])
+                    mpo = Mpo(self.model, terms=op)
                     mpos.append(mpo)
             self.model.mpos[key] = mpos
         else:

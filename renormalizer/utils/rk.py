@@ -54,7 +54,7 @@ class RungeKutta:
         return self._coeff
 
     def get_tableau(self):
-        """
+        r"""
         Butcher tableau of the explicit Runge-Kutta methods.
 
         different types of propagation methods: e^-iHdt \Psi

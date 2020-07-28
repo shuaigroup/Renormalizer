@@ -1,11 +1,11 @@
-from renormalizer.mps import Mps, Mpo, gs
-from renormalizer.model import Model, h_qc
-from renormalizer.utils import basis as ba
-from renormalizer.utils import log
-
-import numpy as np
 import logging
 import time
+
+import numpy as np
+
+from renormalizer.model import Model, h_qc, basis as ba
+from renormalizer.mps import Mps, Mpo, gs
+from renormalizer.utils import log
 
 '''
 water sto-3g (10e,7o)
@@ -17,7 +17,7 @@ H    -0.7499151    0.0000000    0.5114913,
 start = time.time()
 dump_dir = "./"
 job_name = "qc"  #########
-log.set_stream_level(logging.INFO)
+log.set_stream_level(logging.DEBUG)
 log.register_file_output(dump_dir+job_name+".log", mode="w")
 logger = logging.getLogger(__name__)
 
@@ -31,15 +31,11 @@ h1e, h2e, nuc = h_qc.read_fcidump("h2o_fcidump.txt", spatial_norbs)
 #h1e = 0.5*(h1e+h1e.T)
 #h2e = 0.5*(h2e+h2e.transpose((2,3,0,1)))
 
-model_dict = h_qc.qc_model(h1e, h2e)
+ham_terms = h_qc.qc_model(h1e, h2e)
 
-order = {}
-basis = []
-for iorb in range(spin_norbs):
-    order[f"e_{iorb}"] = iorb
-    basis.append(ba.BasisHalfSpin(sigmaqn=[0,1]))
+basis = [ba.BasisHalfSpin(iorb, sigmaqn=[0,1]) for iorb in range(spin_norbs)]
 
-model = Model(order, basis, model_dict)
+model = Model(basis, ham_terms)
 mpo = Mpo(model)
 logger.info(f"mpo_bond_dims:{mpo.bond_dims}")
 

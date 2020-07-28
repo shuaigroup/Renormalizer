@@ -42,10 +42,10 @@ class SpinBosonDynamics(TdMpsJob):
         return init_mps
 
     def process_mps(self, mps):
-        sigma_z_mpo = self.model.get_mpos("sigma_z", partial(Mpo.onsite, opera="sigma_z"))
+        sigma_z_mpo = self.model.get_mpos("sigma_z", partial(Mpo.onsite, opera="sigma_z", dof_set={"spin"}))
         sigma_z = mps.expectation(sigma_z_mpo)
         self.sigma_z.append(sigma_z)
-        sigma_x_mpo = self.model.get_mpos("sigma_x", partial(Mpo.onsite, opera="sigma_x"))
+        sigma_x_mpo = self.model.get_mpos("sigma_x", partial(Mpo.onsite, opera="sigma_x", dof_set={"spin"}))
         sigma_x = mps.expectation(sigma_x_mpo)
         self.sigma_x.append(sigma_x)
         logger.info(f"sigma_z: {self.sigma_z[-1]}. sigma_x: {self.sigma_x[-1]}")

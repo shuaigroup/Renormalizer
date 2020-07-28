@@ -1,5 +1,6 @@
 from renormalizer.mps import Mpo
-from renormalizer.utils import Quantity, Op
+from renormalizer.utils import Quantity
+from renormalizer.model.op import Op
 from renormalizer.model import HolsteinModel, Model
 import numpy as np
 
@@ -73,13 +74,7 @@ def x_average(model: Model):
     <x> of vibrational DoF
     """
 
-    mpos = []
-    for v_dof in model.v_dofs:
-        model_dict = {(v_dof,):[(Op("x",0),1.0)]}
-        mpo = Mpo.general_mpo(model, model=model_dict)
-        mpos.append(mpo)
-
-    return {"x": mpos}
+    return {"x": [Mpo(model, Op("x", v_dof)) for v_dof in model.v_dofs]}
 
 def x_square_average(model: Model):
     """
@@ -87,10 +82,4 @@ def x_square_average(model: Model):
     """
     assert isinstance(model, Model)
 
-    mpos = []
-    for v_dof in model.v_dofs:
-        model_dict = {(v_dof,):[(Op("x^2",0),1.0)]}
-        mpo = Mpo.general_mpo(model, model=model_dict)
-        mpos.append(mpo)
-
-    return {r"x^2": mpos}
+    return {r"x^2": {"x": [Mpo(model, Op("x^2", v_dof)) for v_dof in model.v_dofs]}}

@@ -65,7 +65,7 @@ def _alternate(u, bigraph, visitU, visitV, matchV):
             _alternate(matchV[v], bigraph, visitU, visitV, matchV)
 
 def bipartite_vertex_cover(bigraph, algo="Hopcroft-Karp"):
-    """Bipartite minimum vertex cover by Koenig's theorem
+    r"""Bipartite minimum vertex cover by Koenig's theorem
 
     :param bigraph: adjacency list, index = vertex in U,
                                     value = neighbor list in V

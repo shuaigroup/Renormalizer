@@ -892,10 +892,10 @@ class MatrixProduct:
             mt = Matrix(array, dtype=self.dtype)
         if mt.pdim[0] != self.pbond_list[idx]:
             raise ValueError("Matrix physical bond dimension does not match system information")
+        mt.sigmaqn = self._get_sigmaqn(idx)
         if self.use_dummy_qn:
-            mt.sigmaqn = np.zeros(mt.pdim_prod, dtype=np.int)
-        else:
-            mt.sigmaqn = self._get_sigmaqn(idx)
+            mt.sigmaqn = np.zeros_like(mt.sigmaqn)
+
         return mt
     
     def build_empty_mp(self, num):
