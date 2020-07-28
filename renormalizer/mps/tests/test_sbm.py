@@ -2,11 +2,11 @@
 
 import numpy as np
 import qutip
-import pytest
 
-from renormalizer.model import Phonon, Mol, SpinBosonModel
+from renormalizer.model import Phonon, SpinBosonModel
 from renormalizer.mps import Mps, Mpo, MpDm, ThermalProp
 from renormalizer.utils import Quantity, CompressConfig, EvolveConfig
+from renormalizer.model.op import Op
 
 
 def get_model():
@@ -29,16 +29,16 @@ def test_zt():
     mpo = Mpo(model)
     time_series = [0]
     spin = [1]
+    sigma_z_oper = Mpo(model, Op("sigma_z", "spin"))
     for i in range(30):
         dt = mps.evolve_config.guess_dt
         mps = mps.evolve(mpo, evolve_dt=dt)
         time_series.append(time_series[-1] + dt)
-        spin.append(mps.expectation(Mpo.onsite(model, "sigma_z")))
+        spin.append(mps.expectation(sigma_z_oper))
     qutip_res = get_qutip_zt(model, time_series)
     assert np.allclose(qutip_res, spin, atol=1e-3)
 
 
-@pytest.mark.xfail(reason="thermal prop calculate electron occupations (not valid for spin)")
 def test_ft():
     model = get_model()
     mpo = Mpo(model)
@@ -50,15 +50,16 @@ def test_ft():
     tp = ThermalProp(impdm, mpo, evolve_config=evolve_config)
     tp.evolve(nsteps=1, evolve_time=temperature.to_beta() / 2j)
     mpdm = tp.latest_mps
-    mpdm = Mpo.onsite(model, r"sigma_x").contract(mpdm)
+    mpdm = Mpo(model, Op("sigma_x", "spin")).contract(mpdm)
     mpdm.evolve_config = EvolveConfig(adaptive=True, guess_dt=0.1)
     time_series = [0]
-    spin = [1 - 2 * mpdm.e_occupations[0]]
-    for i in range(30):
+    sigma_z_oper = Mpo(model, Op("sigma_z", "spin"))
+    spin = [mpdm.expectation(sigma_z_oper)]
+    for i in range(29):
         dt = mpdm.evolve_config.guess_dt
         mpdm = mpdm.evolve(mpo, evolve_dt=dt)
         time_series.append(time_series[-1] + dt)
-        spin.append(mpdm.expectation(Mpo.onsite(model, "sigma_z")))
+        spin.append(mpdm.expectation(sigma_z_oper))
     qutip_res = get_qutip_ft(model, temperature, time_series)
     assert np.allclose(qutip_res, spin, atol=1e-3)
 

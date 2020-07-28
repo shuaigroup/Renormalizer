@@ -1,12 +1,11 @@
 # -*- coding: utf-8 -*-
 
-from renormalizer.utils import basis as ba
-from renormalizer.utils import Op
+import itertools
+import logging
 
 import numpy as np
-import itertools
-from collections import defaultdict
-import logging
+
+from renormalizer.model.op import Op
 
 logger = logging.getLogger(__name__)
 
@@ -75,8 +74,10 @@ def qc_model(h1e, h2e):
     #
     # |0> => |alpha> and |1> => |beta >: 
     #
-    #    a_j^+ => Prod_{l=1}^{j-1}(sigma_z[l]) * sigma_-[j]
-    #    a_j   => Prod_{l=1}^{j-1}(sigma_z[l]) * sigma_+[j] 
+    #    a_j   => Prod_{l=0}^{j-1}(sigma_z[l]) * sigma_+[j]
+    #    a_j^+ => Prod_{l=0}^{j-1}(sigma_z[l]) * sigma_-[j]
+    # j starts from 0 as in computer science convention to be consistent
+    # with the following code.
     #------------------------------------------------------------------------
     
     norbs = h1e.shape[0]
@@ -84,124 +85,58 @@ def qc_model(h1e, h2e):
     assert np.all(np.array(h1e.shape) == norbs)
     assert np.all(np.array(h2e.shape) == norbs)
 
-    model = defaultdict(list)
-    
-    # sigma_-, sigma_+, sigma_z
-    # one electron
-    for idxs in itertools.product(range(norbs),repeat = 2):
-        sort = np.argsort(idxs)
-        
-        key = tuple()
-        op = tuple()
-        line1 = []
-        line2 = []
-        for idx in range(idxs[sort[0]],idxs[sort[1]]+1):
-            key += (f"e_{idx}",)
-            if idx == idxs[0]:
-                line1.append(("sigma_-",1))
-            elif idx < idxs[0]:
-                line1.append(("sigma_z",0))
-            else:
-                line1.append(("",0))
-    
-            if idx == idxs[1]:
-                line2.append(("sigma_+",-1))
-            elif idx < idxs[1]:
-                line2.append(("sigma_z",0))
-            else:
-                line2.append(("",0))
-        
-        npermute = 0
-        for term1, term2 in zip(line1, line2):
-            ops = list(filter(lambda a: a != "", [term1[0],term2[0]]))
-            
-            sz_idx = [i for i,j in enumerate(ops) if j == "sigma_z"]
-            for index, i in enumerate(sz_idx):
-                npermute += i - len(sz_idx[:index])
-            ops = list(filter(lambda a: a != "sigma_z", ops))
-            
-            ops = " ".join(ops)
-            if len(sz_idx) % 2 == 1:
-                ops = ("sigma_z " + ops).strip()
-    
-            if ops == "":
-                ops = "I"
-            
-            op += (Op(ops, term1[1]+term2[1]),)
-    
-        #print(idxs)
-        #print(key)
-        #print(op)
-        op += (h1e[idxs[0], idxs[1]]*(-1)**(npermute%2),)
-        model[key].append(op)
-    
-    #2e term
+    # construct electronic creation/annihilation operators by Jordan-Wigner transformation
+    a_ops = []
+    a_dag_ops = []
+    for j in range(norbs):
+        # qn for each op will be processed in `process_op`
+        sigma_z_list = [Op("sigma_z", l) for l in range(j)]
+        a_ops.append( Op.product(sigma_z_list + [Op("sigma_+", j)]) )
+        a_dag_ops.append( Op.product(sigma_z_list + [Op("sigma_-", j)]) )
+
+    ham_terms = []
+
+    # helper function to process operators.
+    # Remove "sigma_z sigma_z". Use {sigma_z, sigma_+} = 0
+    # and {sigma_z, sigma_-} = 0 to simplify operators,
+    # and set quantum number
+    dof_to_siteidx = dict(zip(range(norbs), range(norbs)))
+    qn_dict = {"sigma_+": -1, "sigma_-": 1, "sigma_z": 0}
+    def process_op(old_op: Op):
+        old_ops, _ = old_op.split_elementary(dof_to_siteidx)
+        new_ops = []
+        for elem_op in old_ops:
+            # move all sigma_z to the start of the operator
+            # and cancel as many as possible
+            n_sigma_z = elem_op.split_symbol.count("sigma_z")
+            n_non_sigma_z = 0
+            n_permute = 0
+            for simple_elem_op in elem_op.split_symbol:
+                if simple_elem_op != "sigma_z":
+                    n_non_sigma_z += 1
+                else:
+                    n_permute += n_non_sigma_z
+            # remove as many "sigma_z" as possible
+            new_symbol = [s for s in elem_op.split_symbol if s != "sigma_z"]
+            if n_sigma_z % 2 == 1:
+                new_symbol.insert(0, "sigma_z")
+            # this op is identity, discard it
+            if not new_symbol:
+                continue
+            new_qn = [qn_dict[s] for s in new_symbol]
+            new_dof_name = elem_op.dofs[0]
+            new_ops.append(Op(" ".join(new_symbol), new_dof_name, (-1) ** n_permute, new_qn))
+        return Op.product(new_ops)
+
+    # 1-e terms
+    for p, q in itertools.product(range(norbs), repeat=2):
+        op = process_op(a_dag_ops[p] * a_ops[q])
+        ham_terms.append(op * h1e[p, q])
+
+    # 2-e terms.
     for q,s in itertools.product(range(norbs),repeat = 2):
-        # a^\dagger_p a^\dagger_q a_r a_s
         for p,r in itertools.product(range(q),range(s)):
-            idxs = [p,q,r,s]
-            sort = np.argsort(idxs)
-            
-            key = tuple()
-            op = tuple()
-            line1 = []
-            line2 = []
-            line3 = []
-            line4 = []
-    
-            for idx in range(idxs[sort[0]],idxs[sort[3]]+1):
-                key += (f"e_{idx}",)
-                if idx == p:
-                    line1.append(("sigma_-",1))
-                elif idx < p:
-                    line1.append(("sigma_z",0))
-                else:
-                    line1.append(("",0))
-    
-                if idx == q:
-                    line2.append(("sigma_-",1))
-                elif idx < q:
-                    line2.append(("sigma_z",0))
-                else:
-                    line2.append(("",0))
-                
-                if idx == r:
-                    line3.append(("sigma_+",-1))
-                elif idx < r:
-                    line3.append(("sigma_z",0))
-                else:
-                    line3.append(("",0))
-                
-                if idx == s:
-                    line4.append(("sigma_+",-1))
-                elif idx < s:
-                    line4.append(("sigma_z",0))
-                else:
-                    line4.append(("",0))
-    
-            
-            npermute = 0
-            for term1, term2, term3, term4 in zip(line1, line2, line3, line4):
-                ops = [op for op in [term1[0],term2[0],term3[0],term4[0]] if op != ""]
-                sz_idx = [i for i,j in enumerate(ops) if j == "sigma_z"]
-                #for index, i in enumerate(sz_idx):
-                #    npermute += i - len(sz_idx[:index])
-                nn = len(sz_idx)
-                npermute += sum(sz_idx) - int((nn-1)*nn/2)
-                ops = [op for op in ops if op != "sigma_z"]
-                
-                ops = " ".join(ops)
-                if nn % 2 == 1:
-                    ops = ("sigma_z " + ops).strip()
-    
-                if ops == "":
-                    ops = "I"
-                op += (Op(ops, term1[1]+term2[1]+term3[1]+term4[1]),)
-    
-            #print(p,q,r,s)
-            #print(key)
-            #print(op,(-1)**(npermute%2), npermute)
-            op += (h2e[p,q,r,s]*(-1)**(npermute%2),)
-            model[key].append(op)
-    
-    return model
+            op = process_op(Op.product([a_dag_ops[p], a_dag_ops[q], a_ops[r], a_ops[s]]))
+            ham_terms.append(op * h2e[p, q, r, s])
+
+    return ham_terms

@@ -22,7 +22,7 @@ def test_mpdm_full(nmols, phonon_freq):
     tp.evolve(None, 50, beta / 1j)
     gs_dm = tp.latest_mps
     assert np.allclose(gs_dm.e_occupations, [0] * nmols)
-    e_gs_dm = Mpo.onsite(model, r"a^\dagger", mol_idx_set={0}).apply(gs_dm, canonicalise=True)
+    e_gs_dm = Mpo.onsite(model, r"a^\dagger", dof_set={0}).apply(gs_dm, canonicalise=True)
     assert np.allclose(e_gs_dm.e_occupations, [1] + [0] * (nmols - 1))
 
     mpdm_full = MpDmFull.from_mpdm(e_gs_dm)
@@ -80,46 +80,4 @@ def test_thermal_prop(adaptive, evolve_method):
     rtol = 5e-3
     assert np.allclose(tp.e_occupations_array[-1], occ_std, rtol=rtol)
     assert np.allclose(tp.energies[-1], etot_std, rtol=rtol)
-
-# todo: move to transport module
-@pytest.mark.xfail(reason="negative frequency not suited for MolList2")
-def test_bogoliubov():
-    # REF: JCP, 2016, 145, 224101
-    evolve_config = EvolveConfig(EvolveMethod.tdvp_ps)
-    # evolve_config = EvolveConfig()
-    omega = 1
-    D = 1
-    nlevel=10
-    T = Quantity(1)
-    ph1 = Phonon.simple_phonon(Quantity(omega), Quantity(D), nlevel)
-    mol1 = Mol(Quantity(0), [ph1])
-    mlist = HolsteinModel([mol1] * 2, Quantity(1), )
-    mpdm1 = MpDm.max_entangled_gs(mlist)
-    mpdm1.evolve_config = evolve_config
-    mpo1 = Mpo(mlist)
-    tp = ThermalProp(mpdm1, mpo1, exact=True)
-    tp.evolve(nsteps=20, evolve_time=T.to_beta()/2j)
-    mpdm2 = tp.latest_mps
-    e1 = mpdm2.expectation(mpo1)
-    mpdm3 = (Mpo.onsite(mlist, r"a^\dagger", False, {0}) @ mpdm2).expand_bond_dimension(mpo1)
-    es1 = [mpdm3.e_occupations]
-    for i in range(40):
-        mpdm3 = mpdm3.evolve(mpo1, 0.1)
-        es1.append(mpdm3.e_occupations)
-
-    theta = np.arctanh(np.exp(-T.to_beta() * omega / 2))
-    ph2 = Phonon.simple_phonon(Quantity(omega), Quantity(D * np.cosh(theta)), nlevel)
-    ph3 = Phonon.simple_phonon(Quantity(-omega), Quantity(-D * np.sinh(theta)), nlevel)
-    mol2 = Mol(Quantity(0), [ph2, ph3])
-    mlist2 = HolsteinModel([mol2] * 2, Quantity(1), )
-    mps1 = Mps.ground_state(mlist2, False)
-    mps1.evolve_config = evolve_config
-    mpo2 = Mpo(mlist2)
-    e2 = mps1.expectation(mpo2)
-    mps2 = (Mpo.onsite(mlist2, r"a^\dagger", False, {0}) @ mps1).expand_bond_dimension(mpo2)
-    es2 = [mps2.e_occupations]
-    for i in range(20):
-        mps2 = mps2.evolve(mpo2, 0.2)
-        es2.append(mps2.e_occupations)
-    assert np.allclose(es1[::2], es2, atol=5e-3)
 

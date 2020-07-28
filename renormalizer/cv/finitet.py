@@ -2,6 +2,12 @@
 # Author: Tong Jiang <tongjiang1000@gmail.com>
 # finite temperature absorption/emission spectrum based on Correction vector
 
+import copy
+import os
+import logging
+import scipy
+from itertools import product
+
 from renormalizer.mps.matrix import (
     multi_tensor_contract,
     tensordot,
@@ -17,10 +23,6 @@ from renormalizer.utils import (
     CompressConfig, EvolveConfig,
     CompressCriteria
 )
-import copy
-import os
-import logging
-import scipy
 
 logger = logging.getLogger(__name__)
 
@@ -363,14 +365,9 @@ class SpectraFtCV(SpectraCv):
         xqnmat = xqnl.copy()
         xqnsigmalist = []
         for idx in addlist:
-            if self.model.is_electron(idx):
-                xqnsigma = np.array([[[0, 0], [0, 1]], [[1, 0], [1, 1]]])
-            else:
-                xqnsigma = []
-                for i in range((pbond[idx]) ** 2):
-                    xqnsigma.append([0, 0])
-                xqnsigma = np.array(xqnsigma)
-                xqnsigma = xqnsigma.reshape(pbond[idx], pbond[idx], 2)
+            sigmaqn = self.model.basis[idx].sigmaqn
+            xqnsigma = np.array(list(product(sigmaqn, repeat=2)))
+            xqnsigma = xqnsigma.reshape(pbond[idx], pbond[idx], 2)
 
             xqnmat = self.qnmat_add(xqnmat, xqnsigma)
             xqnsigmalist.append(xqnsigma)

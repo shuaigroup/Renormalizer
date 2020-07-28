@@ -1,12 +1,13 @@
-from renormalizer.model import h_qc, Model
-from renormalizer.utils import basis as ba
-from renormalizer.utils import Op
-from renormalizer.cv import batch_run
-from renormalizer.cv.zerot import SpectraZtCV
-from renormalizer.mps import Mpo, Mps, gs
-from renormalizer.cv.tests import cur_dir
-import numpy as np
 import os
+
+import numpy as np
+
+from renormalizer.cv import batch_run
+from renormalizer.cv.tests import cur_dir
+from renormalizer.cv.zerot import SpectraZtCV
+from renormalizer.model import h_qc, Model, basis as ba
+from renormalizer.model.op import Op
+from renormalizer.mps import Mpo, Mps, gs
 
 
 def test_H_chain_LDOS():
@@ -19,15 +20,11 @@ def test_H_chain_LDOS():
     h1e, h2e, nuc = h_qc.read_fcidump(os.path.join(cur_dir,
         "fcidump_lowdin_h4.txt"), spatial_norbs) 
     
-    model_dict = h_qc.qc_model(h1e, h2e)
+    ham_terms = h_qc.qc_model(h1e, h2e)
 
-    order = {}
-    basis = []
-    for iorb in range(spin_norbs):
-        order[f"e_{iorb}"] = iorb
-        basis.append(ba.BasisHalfSpin(sigmaqn=[0,1]))
+    basis = [ba.BasisHalfSpin(iorb, sigmaqn=[0, 1]) for iorb in range(spin_norbs)]
     
-    model = Model(order, basis, model_dict)
+    model = Model(basis, ham_terms)
     mpo = Mpo(model)
     
     nelec = spatial_norbs
@@ -45,21 +42,12 @@ def test_H_chain_LDOS():
     
     def photoelectron_operator(idx):
         # norbs is the spin orbitals
-        # green function 
-        model = {}
-        key = tuple()
-        op = tuple()
-        for iorb in range(idx):
-            key += (f"e_{iorb}",)   
-            op += (Op("sigma_z",0),)
-        key += (f"e_{idx}",)
-        op += (Op("sigma_+",-1), 1.0)
-        model[key] = [op,]
-    
-        return model
+        # green function
+        op_list = [Op("sigma_z", iorb, qn=0) for iorb in range(idx)]
+        return Op.product(op_list + [Op("sigma_+", idx, qn=-1)])
 
     dipole_model = photoelectron_operator(nelec-1)
-    dipole_op = Mpo.general_mpo(model, model=dipole_model)
+    dipole_op = Mpo(model, dipole_model)
     b_mps = dipole_op.apply(mps)
 
     #std 

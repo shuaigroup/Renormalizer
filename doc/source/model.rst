@@ -1,26 +1,60 @@
 Model
 *************************************
 
-Define the system
+Use the class :class:`~renormalizer.model.Model`, :class:`~renormalizer.model.HolsteinModel`,
+or :class:`~renormalizer.model.SpinBosonModel` to define the calculated system.
+These classes require :class:`~renormalizer.model.basis.BasisSet` and :class:`~renormalizer.model.Op`
+as input.
+
+The Model classes
 =================
-Use the class :class:`~renormalizer.model.MolList2`, :class:`~renormalizer.model.HolsteinModel`,
-    :class:`~renormalizer.model.VibronicModel` or :class:`~renormalizer.model.SpinBosonModel`
-    to define the calculated system.
 
-.. autoclass:: renormalizer.model.mlist.MolList2
+.. autoclass:: renormalizer.model.Model
     :members:
     :inherited-members:
 
 
-.. autoclass:: renormalizer.model.mlist.HolsteinModel
+.. autoclass:: renormalizer.model.HolsteinModel
     :members:
     :inherited-members:
 
 
-.. autoclass:: renormalizer.model.mlist.VibronicModel
+.. autoclass:: renormalizer.model.SpinBosonModel
     :members:
     :inherited-members:
 
-.. autoclass:: renormalizer.model.mlist.SpinBosonModel
+Basis Functions
+===============
+
+.. autoclass:: renormalizer.model.basis.BasisSet
+    :members:
+    :inherited-members:
+
+
+.. autoclass:: renormalizer.model.basis.BasisSHO
+    :members:
+    :inherited-members:
+
+.. autoclass:: renormalizer.model.basis.BasisSimpleElectron
+    :members:
+    :inherited-members:
+
+.. autoclass:: renormalizer.model.basis.BasisMultiElectron
+    :members:
+    :inherited-members:
+
+.. autoclass:: renormalizer.model.basis.BasisMultiElectronVac
+    :members:
+    :inherited-members:
+
+.. autoclass:: renormalizer.model.basis.BasisHalfSpin
+    :members:
+    :inherited-members:
+
+
+The Operator Class
+==================
+
+.. autoclass:: renormalizer.model.Op
     :members:
     :inherited-members:

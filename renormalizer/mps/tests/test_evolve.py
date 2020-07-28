@@ -13,7 +13,7 @@ from renormalizer.tests.parameter_exact import qutip_clist, qutip_h, model
 # the init state
 def f(model, run_qutip=True):
     tentative_mpo = Mpo(model)
-    init_mps = (Mpo.onsite(model, r"a^\dagger", mol_idx_set={0}) @ Mps.ground_state(model, False)).expand_bond_dimension(hint_mpo=tentative_mpo)
+    init_mps = (Mpo.onsite(model, r"a^\dagger", dof_set={0}) @ Mps.ground_state(model, False)).expand_bond_dimension(hint_mpo=tentative_mpo)
     init_mpdm = MpDm.from_mps(init_mps).expand_bond_dimension(hint_mpo=tentative_mpo)
     e = init_mps.expectation(tentative_mpo)
     mpo = Mpo(model, offset=Quantity(e))

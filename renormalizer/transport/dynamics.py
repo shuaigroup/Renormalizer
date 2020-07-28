@@ -131,7 +131,7 @@ class ChargeDiffusionDynamics(TdMpsJob):
     def create_electron_fc(self, gs_mp):
         center_mol_idx = self.mol_num // 2
         creation_operator = Mpo.onsite(
-            self.model, r"a^\dagger", mol_idx_set={center_mol_idx}
+            self.model, r"a^\dagger", dof_set={center_mol_idx}
         )
         mps = creation_operator.apply(gs_mp)
         return mps
@@ -142,8 +142,7 @@ class ChargeDiffusionDynamics(TdMpsJob):
         center_mol = self.model[center_mol_idx]
         # start from phonon
         for i, ph in enumerate(center_mol.ph_list):
-            v_dof = self.model.map[(center_mol_idx, i)]
-            idx = self.model.order[v_dof]
+            idx = self.model.order[(center_mol_idx, i)]
             mt = gs_mp[idx][0, ..., 0].array
             evecs = ph.get_displacement_evecs()
             mt = evecs.dot(mt)
@@ -151,7 +150,7 @@ class ChargeDiffusionDynamics(TdMpsJob):
             gs_mp[idx] = mt.reshape([1] + list(mt.shape) + [1])
 
         creation_operator = Mpo.onsite(
-            self.model, r"a^\dagger", mol_idx_set={center_mol_idx}
+            self.model, r"a^\dagger", dof_set={center_mol_idx}
         )
         mps = creation_operator.apply(gs_mp)
         return mps

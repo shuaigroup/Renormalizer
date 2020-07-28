@@ -6,7 +6,7 @@ import scipy.linalg
 
 
 def exp_value(bra, O, ket):
-    """
+    r"""
     calculate the expectation value
     <np.conj(wfnbra) | O | wfnket>  at ZT
     trace (dmbra^\dagger | O | dmket) at FT

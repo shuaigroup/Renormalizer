@@ -1,144 +1,161 @@
 # -*- coding: utf-8 -*-
 # Author: Jiajun Ren <jiajunren0522@gmail.com>
 
-from collections import OrderedDict, defaultdict
-from typing import List, Union, Dict
+from typing import List, Union, Dict, Callable
 
 import numpy as np
 
+from renormalizer.model.basis import BasisSet, BasisSimpleElectron, BasisMultiElectronVac, BasisHalfSpin, BasisSHO
 from renormalizer.model.mol import Mol, Phonon
-from renormalizer.utils import Quantity, Op
-from renormalizer.utils import basis as ba
+from renormalizer.model.op import Op
+from renormalizer.utils import Quantity, cached_property
 
 
 class Model:
     r"""
-    User-defined model
+    The most general model that supports any Hamiltonian in sum-of-product form.
+    Base class for :class:`HolsteinModel` and :class:`SpinBosonModel`.
 
-    Args:
-        order (dict or list): order of degrees of freedom.
-        basis (dict or list): local basis (:class:`~renormalizer.utils.basis`) of each DoF
-        model (dict): model of the system or any operator of the system,
-            two formats are supported: 'vibronic type' or 'general type'. All terms
-            must be included, without assuming hermitian or something else.
-        dipole (dict): contains the transition dipole matrix element
-
-    Note:
-        the key of order starts from "v" or "e" for vibrational DoF or electronic DoF respectively.
-        after the linker '_' combined with an index. The rule is that
-        the index of both 'e' and 'v' starts from 0,1,2... and the
-        properties such as :meth:`~renormalizer.mps.Mps.e_occupations` are reported with such order.
-        the value of order is the position of the specific DoF, starting from 0,2,...,nsite-1
-        For cases that all electronic DoFs gathered in a single site,
-        the value of each DoF should be the same.
-        for example: MolList scheme1/2/3 order = {"e_0":0, "v_0":1, "v_1":2, "e_1":3, "v_2":4, "v_3":5}
-        MolList scheme4 order ={"e_0":0, "v_0":1, "v_1":2, "e_1":0, "v_2":3, "v_3":4}
-
-        The order of basis corresponds to the site, each element is a Basis
-        class, refer to :class:`~renormalizer.utils.basis.BasisSet`
-        for example: basis = [b0,b1,b2,b3]
-
-        in ``model``, each key is a tuple of DoFs,
-        each value is list. Inside the list, each element is a tuple, the
-        last one is the factor of each operator term, the others are local
-        operator of the operator term.
-        The model_translator is ModelTranslator.general_model
-        for example:
-        {("e_i","e_j") : [(Op1, Op2, factor)], ("e_i", "v_0",):[(Op1, Op2,
-        factor), (Op1, Op2, factor)], ("v_1","v_2"):[(Op1, Op2, factor), (Op1, Op2, factor)]...}
-
-        dipole contains transtion dipole matrix elements between the
-        electronic DoFs. For simple electron case, dipole = {("e_0",):tdm1,
-        ("e_1",):tdm2}, the key has 1 e_dof. For multi electron case, dipole =
-        {("e_0","e_1"):tdm1, ("e_1","e_0"):tdm1}, the key has 2 e_dofs
-        represents the transition.
+    Parameters
+    ==========
+    basis : :class:`list` of :class:`~renormalizer.model.basis.BasisSet`
+        Local basis for each site of the MPS. The order determines the
+        DoF order in the MPS.
+    ham_terms : :class:`list` of :class:`~renormalizer.model.Op`
+        Terms of the system Hamiltonian in sum-of-product form.
+        Identities can be omitted in the operators.
+        All terms must be included, without assuming Hermitian or something else.
+    dipole : dict
+        Contains the transition dipole matrix element. The key is the dof name.
     """
-    def __init__(self, order: Union[Dict, List], basis: Union[Dict, List], model: Dict, dipole: Dict = None):
+    def __init__(self, basis: List[BasisSet], ham_terms: List[Op], dipole: Dict = None):
 
-        if isinstance(order, dict):
-            self.order = order
-        else:
-            assert isinstance(order, list)
-            self.order = dict()
-            for i, o in enumerate(order):
-                self.order[o] = i
+        self.basis: List[BasisSet] = basis
+        # alias
+        self.dof_to_siteidx = self.order = {}
+        for siteidx, ba in enumerate(basis):
+            for dof_name in ba.dofs:
+                self.dof_to_siteidx[dof_name] = siteidx
 
-        if isinstance(basis, list):
-            self.basis: List[ba.BasisSet] = basis
-        else:
-            assert isinstance(basis, dict)
-            order_value_set = set(self.order.values())
-            if min(order_value_set) != 0 or max(order_value_set) != len(order_value_set) - 1:
-                raise ValueError("order is not continuous integers from 0")
-            self.basis: List[ba.BasisSet] = [None] * (max(self.order.values()) + 1)
-            for dof_name, dof_idx in self.order.items():
-                self.basis[dof_idx] = basis[dof_name]
-
-        for b in self.basis:
-            if b.multi_dof:
-                self.multi_dof_basis = True
-                break
-        else:
-            self.multi_dof_basis = False
-
-        self.model = model
+        self.ham_terms: List[Op] = self.check_operator_terms(ham_terms)
         # array(n_e, n_e)
         self.dipole = dipole
         # reusable mpos for the system
         self.mpos = dict()
-        # physical bond dimension. Read only.
-        self._pbond_list = [bas.nbas for bas in self.basis]
+        # physical bond dimension.
+        self.pbond_list = [bas.nbas for bas in self.basis]
 
-    @property
-    def pbond_list(self):
-        return self._pbond_list
+    def check_operator_terms(self, terms: List[Op]):
+        """
+        Check and clean operator terms in the input ``terms``.
+        Errors will be raised if the type of operator is not :class:`Op`
+        or the operator contains DoF not defined in ``self.basis``.
+        Operators with factor = 0 are discarded.
 
-    @property
-    def dofs(self):
-        # If items(), keys(), values(),  iteritems(), iterkeys(), and
-        # itervalues() are called with no intervening modifications to the
-        # dictionary, the lists will directly correspond.
-        
-        return list(self.order.keys())
+        Parameters
+        ----------
+        terms : :class:`list` of :class:`~renormalizer.model.Op`
+            The terms to check.
+
+        Returns
+        -------
+        new_terms: :class:`list` of :class:`Op`
+            Operator list with 0-factor terms discarded.
+        """
+        # terms to return
+        new_terms = []
+        dofs = set(self.dofs)
+        for term_op in terms:
+            if not isinstance(term_op, Op):
+                raise ValueError("Expected Op in terms.")
+            for name in term_op.dofs:
+                if name not in dofs:
+                    raise ValueError(f"{term_op} contains DoF not in the basis.")
+            # discard terms with 0 factor
+            if term_op.factor == 0:
+                continue
+            new_terms.append(term_op)
+        return new_terms
+
+    def _enumerate_dof(self, criteria=lambda x: True):
+        # enumerate DoFs and filter according to criteria.
+        dofs = []
+        for basis in self.basis:
+            if criteria(basis):
+                dofs.extend(basis.dofs)
+        return dofs
+
+    @cached_property
+    def dofs(self) -> List:
+        """
+        :class:`list` of DoF names.
+        """
+        return self._enumerate_dof()
     
-    @property
-    def nsite(self):
+    @cached_property
+    def nsite(self) -> int:
+        """
+        Number of sites in the MPS/MPO to be constructed.
+        Length of ``self.basis``.
+        """
         return len(self.basis)
 
-    @property
-    def e_dofs(self):
-        dofs = []
-        for key in self.order.keys():
-            if key.split("_")[0] == "e":
-                dofs.append(int(key.split("_")[1]))
-        assert sorted(dofs) == list(range(len(dofs)))
-        return [f"e_{i}" for i in range(len(dofs))]
+    @cached_property
+    def e_dofs(self) -> List:
+        """
+        :class:`list` of electronic DoF names.
+        """
+        return self._enumerate_dof(lambda basis: basis.is_electron)
     
-    @property
-    def v_dofs(self):
-        dofs = []
-        for key in self.order.keys():
-            if key.split("_")[0] == "v":
-                dofs.append(int(key.split("_")[1]))
-        assert sorted(dofs) == list(range(len(dofs)))
-        return [f"v_{i}" for i in range(len(dofs))]
+    @cached_property
+    def v_dofs(self) -> List:
+        """
+        :class:`list` of vibrational DoF names.
+        """
+        return self._enumerate_dof(lambda basis: basis.is_phonon)
 
-    @property
-    def n_edofs(self):
+    @cached_property
+    def n_dofs(self) -> int:
+        """
+        Number of total DoFs.
+        """
+        return len(self.dofs)
+
+    @cached_property
+    def n_edofs(self) -> int:
+        """
+        Number of total electronic DoFs.
+        """
         return len(self.e_dofs)
     
-    @property
-    def n_vdofs(self):
+    @cached_property
+    def n_vdofs(self) -> int:
+        """
+        Number of total vibrational DoFs.
+        """
         return len(self.v_dofs)
 
-    def is_electron(self, idx):
-        return self.basis[idx].is_electron
+    def get_mpos(self, key: str, fun: Callable):
+        r"""
+        Get MPOs related to the model, such as MPOs to calculate
+        electronic occupations :math:`{a^\dagger_i a_i}`.
+        The purpose of the function is to avoid repeated MPO construction.
 
-    @property
-    def pure_dmrg(self):
-        return True
+        Parameters
+        ----------
+        key : str
+            Name of the MPOs. In principle other hashable types are also OK.
+        fun : callable
+            The function to generate MPOs if the MPOs have not been
+            constructed before. The function should accept only one argument
+            which is the model and return a :class:`list` of
+            :class:`~renormalizer.mps.Mpo`.
 
-    def get_mpos(self, key, fun):
+        Returns
+        -------
+        mpos : list of :class:`~renormalizer.mps.Mpo`
+            The required MPOs.
+        """
         if key not in self.mpos:
             mpos = fun(self)
             self.mpos[key] = mpos
@@ -146,10 +163,21 @@ class Model:
             mpos = self.mpos[key]
         return mpos
 
-    def to_dict(self):
-        info_dict = OrderedDict()
-        info_dict["order"] = self.order
-        info_dict["model"] = self.model
+    def to_dict(self) -> Dict:
+        """
+        Convert the object into a dict that contains only objects of
+        Python primitive types or NumPy types.
+        This is primarily for dump purposes.
+
+        Returns
+        -------
+        info_dict : dict
+            The information of the model in a dict.
+        """
+        info_dict = {}
+        # todo: dump basis
+        info_dict["Hamiltonian"] = [op.to_tuple() for op in self.ham_terms]
+        info_dict["dipole"] = self.dipole
         return info_dict
 
 
@@ -177,49 +205,27 @@ class HolsteinModel(Model):
         self.scheme = scheme
         self.periodic = periodic
 
-        order = {}
         basis = []
-        model = {}
-        mapping = {}
+        ham = []
 
         if scheme < 4:
-            idx = 0
-            nv = 0
             for imol, mol in enumerate(mol_list):
-                order[f"e_{imol}"] = idx
-                basis.append(ba.BasisSimpleElectron())
-                idx += 1
+                basis.append(BasisSimpleElectron(imol))
                 for iph, ph in enumerate(mol.ph_list):
-                    order[f"v_{nv}"] = idx
-                    mapping[(imol, iph)] = f"v_{nv}"
-                    basis.append(ba.BasisSHO(ph.omega[0], ph.n_phys_dim))
-                    idx += 1
-                    nv += 1
+                    basis.append(BasisSHO((imol, iph), ph.omega[0], ph.n_phys_dim))
 
         elif scheme == 4:
 
             n_left_mol = mol_num // 2
 
-            idx = 0
             n_left_ph = 0
-            nv = 0
             for imol, mol in enumerate(mol_list):
                 for iph, ph in enumerate(mol.ph_list):
                     if imol < n_left_mol:
-                        order[f"v_{nv}"] = idx
                         n_left_ph += 1
-                    else:
-                        order[f"v_{nv}"] = idx + 1
+                    basis.append(BasisSHO((imol, iph), ph.omega[0], ph.n_phys_dim))
 
-                    basis.append(ba.BasisSHO(ph.omega[0], ph.n_phys_dim))
-                    mapping[(imol, iph)] = f"v_{nv}"
-
-                    nv += 1
-                    idx += 1
-
-            for imol in range(mol_num):
-                order[f"e_{imol}"] = n_left_ph
-            basis.insert(n_left_ph, ba.BasisMultiElectronVac(mol_num))
+            basis.insert(n_left_ph, BasisMultiElectronVac(list(range(len(mol_list)))))
 
         else:
             raise ValueError(f"invalid model.scheme: {scheme}")
@@ -230,55 +236,69 @@ class HolsteinModel(Model):
         for imol in range(mol_num):
             for jmol in range(mol_num):
                 if imol == jmol:
-                    model[(f"e_{imol}",)] = \
-                        [(Op(r"a^\dagger a", 0), mol_list[imol].elocalex + mol_list[imol].e0)]
+                    factor =  mol_list[imol].elocalex + mol_list[imol].e0
                 else:
-                    model[(f"e_{imol}", f"e_{jmol}")] = \
-                        [(Op(r"a^\dagger", 1), Op("a", -1), j_matrix[imol, jmol])]
+                    factor = j_matrix[imol, jmol]
+                ham_term = Op(r"a^\dagger a", [imol, jmol], factor)
+                ham.append(ham_term)
         # vibration part
         for imol, mol in enumerate(mol_list):
             for iph, ph in enumerate(mol.ph_list):
                 assert np.allclose(np.array(ph.force3rd), [0.0, 0.0])
 
-                model[(mapping[(imol, iph)],)] = [
-                    (Op("p^2", 0), 0.5),
-                    (Op("x^2", 0), 0.5 * ph.omega[0] ** 2)
-                ]
+                ham.extend([
+                    Op("p^2", (imol, iph), 0.5),
+                    Op("x^2", (imol, iph), 0.5 * ph.omega[0] ** 2)
+                ])
 
         # vibration potential part
         for imol, mol in enumerate(mol_list):
             for iph, ph in enumerate(mol.ph_list):
                 if np.allclose(ph.omega[0], ph.omega[1]):
-                    model[(f"e_{imol}", f"{mapping[(imol,iph)]}")] = [
-                        (Op(r"a^\dagger a", 0), Op("x", 0), -ph.omega[1] ** 2 * ph.dis[1]),
-                    ]
+                    ham.append(
+                        Op(r"a^\dagger a", imol) * Op("x", (imol,iph)) * (-ph.omega[1] ** 2 * ph.dis[1])
+                    )
                 else:
-                    model[(f"e_{imol}", f"{mapping[(imol,iph)]}")] = [
-                        (Op(r"a^\dagger a", 0), Op("x^2", 0), 0.5 * (ph.omega[1] ** 2 - ph.omega[0] ** 2)),
-                        (Op(r"a^\dagger a", 0), Op("x", 0), -ph.omega[1] ** 2 * ph.dis[1]),
-                    ]
+                    ham.extend([
+                        Op(r"a^\dagger a", imol) * Op("x^2", (imol, iph)) * (0.5 * (ph.omega[1] ** 2 - ph.omega[0] ** 2)),
+                        Op(r"a^\dagger a", imol) * Op("x", (imol, iph)) * (-ph.omega[1] ** 2 * ph.dis[1]),
+                    ])
 
 
         dipole = {}
         for imol, mol in enumerate(mol_list):
-            dipole[(f"e_{imol}",)] = mol.dipole
+            dipole[imol] = mol.dipole
 
-        super().__init__(order, basis, model, dipole=dipole)
-        # map: to be compatible with MolList {(imol, iph):"v_n"}
-        self.map = mapping
+        super().__init__(basis, ham, dipole=dipole)
         self.mol_num = self.n_edofs
 
-    def switch_scheme(self, scheme):
+    def switch_scheme(self, scheme: int) -> "HolsteinModel":
+        """
+        Switch the scheme of the current model.
+
+        Parameters
+        ----------
+        scheme : int
+            The target scheme.
+
+        Returns
+        -------
+        new_model : HolsteinModel
+            The new model with the specified scheme.
+        """
         return HolsteinModel(self.mol_list, self.j_matrix, scheme)
 
     @property
-    def gs_zpe(self):
+    def gs_zpe(self) -> float:
+        r"""
+        Ground state zero-point energy :math:`\sum_{i, j} \frac{1}{2}\omega_{i, j}`.
+        """
         return sum([mol.gs_zpe for mol in self.mol_list])
 
     @property
     def j_constant(self):
         """Extract electronic coupling constant from ``self.j_matrix``.
-        Useful in transport model.
+        Useful in transport model when :math:`J` is a constant..
         If J is actually not a constant, a value error will be raised.
 
         Returns
@@ -305,64 +325,6 @@ class HolsteinModel(Model):
         return len(self.mol_list)
 
 
-class VibronicModel(Model):
-    """The same with :class:`MolList2`. But the defination of ``model`` is different.
-        each key is a tuple of electronic DoFs represents
-        a^\dagger_i a_j or the key is "I" represents the pure vibrational
-        terms, the value is a dict.
-        The sub-key of the dict has two types, one is 'J' with value (float or complex) for pure electronic coupling,
-        one is tuple of vibrational DoF with a list as value. Inside the
-        list is sevaral tuples, each tuple is a operator term. the last one
-        of the tuple is factor of the term, the others represents a local
-        operator (refer to :class:`~renormalizer.utils.elementop.Op`) on each Dof in the
-        sub-key (one-to-one map between the sub-key and tuple).
-        The model_translator is ModelTranslator.vibronic_model
-        for example:
-
-        ::
-
-            {
-              "I"           : {("v_1"):[(Op,factor),]},
-              ("e_i","e_j") : {
-                "J":factor,
-                ("v_0",):[(Op, factor), (Op, factor)],
-                ("v_1","v_2"):[(Op1, Op2, factor), (Op1, Op2, factor)]
-                ...
-                }
-              ...
-            }
-    """
-    def __init__(self, order: Union[Dict, List], basis: Union[Dict, List], model: Dict, dipole: Dict = None):
-        new_model = defaultdict(list)
-        for e_k, e_v in model.items():
-            for kk, vv in e_v.items():
-                # it's difficult to rename `kk` because sometimes it's related to
-                # phonons sometimes it's `"J"`
-                if e_k == "I":
-                    # operators without electronic dof, simple phonon
-                    new_model[kk] = vv
-                else:
-                    # operators with electronic dof
-                    assert isinstance(e_k, tuple) and len(e_k) == 2
-                    if e_k[0] == e_k[1]:
-                        # diagonal
-                        new_e_k = (e_k[0],)
-                        e_op = (Op(r"a^\dagger a", 0),)
-                    else:
-                        # off-diagonal
-                        new_e_k = e_k
-                        e_op = (Op(r"a^\dagger", 1), Op("a", -1))
-                    if kk == "J":
-                        new_model[new_e_k] = [e_op + (vv,)]
-                    else:
-                        for term in vv:
-                            new_key = new_e_k + kk
-                            new_value = e_op + term
-                            new_model[new_key].append(new_value)
-
-        super().__init__(order, basis, new_model, dipole)
-
-
 class SpinBosonModel(Model):
     r"""
     Spin-Boson model
@@ -379,31 +341,20 @@ class SpinBosonModel(Model):
         self.delta = delta.as_au()
         self.ph_list = ph_list
 
-        order = {}
-        basis = []
-        model = {}
-
-        order[f"e_0"] = 0
-        basis.append(ba.BasisHalfSpin())
+        basis = [BasisHalfSpin("spin")]
         for iph, ph in enumerate(ph_list):
-            order[f"v_{iph}"] = iph+1
-            basis.append(ba.BasisSHO(ph.omega[0], ph.n_phys_dim))
+            basis.append(BasisSHO(iph, ph.omega[0], ph.n_phys_dim))
 
         # spin
-        model[(f"e_0",)] = [(Op(r"sigma_z", 0), self.epsilon),(Op("sigma_x", 0), self.delta)]
+        ham = [Op(r"sigma_z", "spin", self.epsilon), Op("sigma_x", "spin", self.delta)]
         # vibration energy and potential
         for iph, ph in enumerate(ph_list):
             assert ph.is_simple
-            model[(f"v_{iph}",)] = [
-                (Op("p^2", 0), 0.5),
-                (Op("x^2", 0), 0.5 * ph.omega[0] ** 2)
-            ]
-            model[(f"e_0", f"v_{iph}")] = [
-                (Op("sigma_z", 0), Op("x", 0), -ph.omega[1] ** 2 * ph.dis[1]),
-            ]
+            ham.extend([Op("p^2", iph, 0.5), Op("x^2", iph, 0.5 * ph.omega[0] ** 2)])
+            ham.append(Op("sigma_z", "spin") * Op("x", iph) *(-ph.omega[1] ** 2 * ph.dis[1]))
         if dipole is None:
             dipole = 0
-        super().__init__(order, basis, model, dipole={"e_0": dipole})
+        super().__init__(basis, ham, dipole={"spin": dipole})
 
 
 def construct_j_matrix(mol_num, j_constant, periodic):

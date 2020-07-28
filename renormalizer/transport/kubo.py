@@ -62,10 +62,10 @@ class TransportKubo(TdMpsJob):
         state directly in this class.
 
     Args:
-        model (:class:`~renormalizer.model.mlist.Model`): system information.
+        model (:class:`~renormalizer.model.Model`): system information.
         temperature (:class:`~renormalizer.utils.quantity.Quantity`): simulation temperature.
             Zero temperature is not supported.
-        distance_matrix (np.ndarray): two-dimensional array :math:`D_{ij} = P_i - P_j` representing
+        distance_matrix (:class:`np.ndarray`): two-dimensional array :math:`D_{ij} = P_i - P_j` representing
             distance between the :math:`i` th electronic degree of freedom and the :math:`j` th degree of freedom.
             The parameter takes the role of :math:`\hat P` and can better handle periodic boundary condition.
             The default value is ``None`` in which case the distance matrix is constructed assuming the system
@@ -129,9 +129,8 @@ class TransportKubo(TdMpsJob):
         # Construct current operator. The operator is taken to be real as an optimization.
         logger.info("constructing current operator ")
 
-
         mol_num = self.model.n_edofs
-        model = self.model.model
+        ham_terms = self.model.ham_terms
 
         if self.distance_matrix is None:
             logger.info("Constructing distance matrix based on a periodic one-dimension chain.")
@@ -140,70 +139,66 @@ class TransportKubo(TdMpsJob):
             self.distance_matrix[-1][0] = -1
 
         # current caused by pure eletronic coupling
-        holstein_current_model = {}
+        holstein_current_terms = []
         # current related to phonons
-        peierls_current_model = {}
-        # checkout that things like r"a^\dagger_0 a_1" are not present
-        for terms in model.values():
-            for term in terms:
-                for op in term[:-1]:
-                    if "_" in op.symbol:
-                        raise ValueError(f"{op} not supported.")
+        peierls_current_terms = []
         # loop through the Hamiltonian to construct current operator
-        for dof_names, terms in model.items():
+        for ham_op in ham_terms:
             # find out terms that contains two electron operators
             # idx of the dof for the model
-            dof_idx1 = dof_idx2 = None
-            # idx of the dof in `terms`
-            term_idx1 = term_idx2 = None
-            for term_idx, dof_name in enumerate(dof_names):
-                e_or_ph, dof_idx = dof_name.split("_")
-                dof_idx = int(dof_idx)
-                if e_or_ph == "e":
-                    if dof_idx1 is None:
-                        dof_idx1 = dof_idx
-                        term_idx1 = term_idx
-                    elif dof_idx2 is None:
-                        dof_idx2 = dof_idx
-                        term_idx2 = term_idx
+            dof_op_idx1 = dof_op_idx2 = None
+            for dof_idx, dof_name in enumerate(ham_op.dofs):
+                site_idx = self.model.dof_to_siteidx[dof_name]
+                if self.model.basis[site_idx].is_electron:
+                    e_idx = self.model.e_dofs.index(dof_name)
+                    if dof_op_idx1 is None:
+                        dof_op_idx1 = dof_idx
+                        e_idx1 = e_idx
+                    elif dof_op_idx2 is None:
+                        dof_op_idx2 = dof_idx
+                        e_idx2 = e_idx
                     else:
-                        raise ValueError(f"The model contains three-electron (or more complex) operator for {dof_names}")
-                del term_idx, dof_name
+                        raise ValueError(f"The model contains three-electron (or more complex) operator {ham_op}")
+                del dof_idx, dof_name
             # two electron operators not found. Not relevant to the current operator
-            if dof_idx1 is None or dof_idx2 is None:
+            if dof_op_idx1 is None or dof_op_idx2 is None:
+                continue
+            # electron operator on the same site. Not relevant to the current operator.
+            if e_idx1 == e_idx2:
                 continue
             # two electron operators found. Relevant to the current operator
+            # perform a bunch of sanity check
             # at most 3 dofs are involved. More complex cases are probably supported but not tested
-            if len(dof_names) not in (2, 3):
+            if len(ham_op.dofs) not in (2, 3):
                 raise NotImplementedError("Complex vibration potential not implemented")
+
+            # check linear coupling. More complex cases are probably supported but not tested.
+            if len(ham_op.dofs) == 3:
+                # total term idx should be 0 + 1 + 2 = 3
+                phonon_dof_idx = 3 - dof_op_idx1 - dof_op_idx2
+                assert ham_op.split_symbol[phonon_dof_idx] in (r"b^\dagger + b", "x")
+            symbol1, symbol2 = ham_op.split_symbol[dof_op_idx1], ham_op.split_symbol[dof_op_idx2]
+            if not {symbol1, symbol2} == {r"a^\dagger", "a"}:
+                raise ValueError(f"Unknown symbol: {symbol1}, {symbol2}")
+
+            # translate the term in the Hamiltonian into the term in the current operator
+            if symbol1 == r"a^\dagger":
+                factor = self.distance_matrix[e_idx1][e_idx2]
+            else:
+                factor = self.distance_matrix[e_idx2][e_idx1]
+
+            current_op = ham_op * factor
             # Holstein terms
-            if len(dof_names) == 2:
-                current_model = holstein_current_model
+            if len(ham_op.dofs) == 2:
+                holstein_current_terms.append(current_op)
             # Peierls terms
             else:
-                current_model = peierls_current_model
-            current_model[dof_names] = []
-            # translate every term in the Hamiltonian into terms in the current operator
-            for term in terms:
-                if len(dof_names) == 3:
-                    # total term idx should be 0 + 1 + 2 = 3
-                    phonon_term_idx = 3 - term_idx1 - term_idx2
-                    assert term[phonon_term_idx].symbol in (r"b^\dagger + b", "x")
-                symbol1, symbol2 = term[term_idx1].symbol, term[term_idx2].symbol
-                if not {symbol1, symbol2} == {r"a^\dagger", "a"}:
-                    raise ValueError(f"Unknown symbol: {symbol1}, {symbol2}")
-                if symbol1 == r"a^\dagger":
-                    factor = self.distance_matrix[dof_idx1][dof_idx2]
-                else:
-                    factor = self.distance_matrix[dof_idx2][dof_idx1]
-                current_term = list(term[:-1]) + [factor * term[-1]]
-                current_model[dof_names].append(tuple(current_term))
+                peierls_current_terms.append(current_op)
 
-        assert len(holstein_current_model) != 0
-        self.j_oper = Mpo.general_mpo(self.model, model_dict=holstein_current_model)
+        self.j_oper = Mpo(self.model, holstein_current_terms)
         logger.info(f"current operator bond dim: {self.j_oper.bond_dims}")
-        if len(peierls_current_model) != 0:
-            self.j_oper2  = Mpo.general_mpo(self.model, model_dict=peierls_current_model)
+        if len(peierls_current_terms) != 0:
+            self.j_oper2  = Mpo(self.model, peierls_current_terms)
             logger.info(f"Peierls coupling induced current operator bond dim: {self.j_oper2.bond_dims}")
         else:
             self.j_oper2 = None

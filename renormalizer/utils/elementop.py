@@ -9,40 +9,6 @@ written in Latex format. <bra|op|ket>
 import numpy as np
 
 
-class Op:
-    r"""
-    The primary operator class
-    
-    Args:
-        symbol (str): the string of the operator
-        qn (int): the quantum number of the operator
-        factor (float, complex): the prefactor of the operator
-    """
-
-    @classmethod
-    def identity(cls):
-        return cls("I", 0)
-
-    def __init__(self, symbol: str, qn: int, factor: float = 1.0):
-        self.symbol = symbol
-        assert type(qn) is int
-        self.qn = qn
-        self.factor = factor
-
-    def __eq__(self, other):
-        return other.__class__ == self.__class__ \
-               and (self.symbol == other.symbol) \
-               and (self.qn == other.qn) \
-               and (np.allclose(self.factor, other.factor))
-
-    # since the object value is mutable, it's better not to implement hash 
-    #def __hash__(self):
-    #    return hash((self.symbol, self.qn, self.factor))
-
-    def __repr__(self):
-        return f"({self.symbol}, {self.qn}, {self.factor})"
-
-
 def get_op_matrix(op, size, op_type):
     assert op_type in ["e", "ph"]
     if op_type == "e":

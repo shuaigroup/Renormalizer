@@ -1,7 +1,8 @@
 import logging
 import itertools
-from typing import Dict
-from collections import defaultdict
+from functools import reduce
+from collections import namedtuple
+from typing import List, Union, Set
 
 import numpy as np
 import scipy
@@ -9,16 +10,15 @@ import scipy.sparse
 
 from renormalizer.model import Model, HolsteinModel
 from renormalizer.mps.backend import xp
-from renormalizer.mps.matrix import moveaxis, tensordot, asnumpy
+from renormalizer.mps.matrix import moveaxis, tensordot
 from renormalizer.mps.mp import MatrixProduct
 from renormalizer.mps import svd_qn
 from renormalizer.mps.lib import update_cv
 from renormalizer.lib import bipartite_vertex_cover
-from renormalizer.utils import Quantity, Op
+from renormalizer.utils import Quantity
+from renormalizer.model.op import Op
 from renormalizer.utils.elementop import (
     construct_ph_op_dict,
-    construct_e_op_dict,
-    ph_op_matrix,
 )
 
 
@@ -116,25 +116,39 @@ def symbolic_mpo(table, factor, algo="Hopcroft-Karp"):
     logger.debug(f"Input operator terms: {len(table)}")
     # translate the symbolic operator table to an easy to manipulate numpy array
     # extract the op symbol, qn, factor to a numpy array
-    symbol_table = np.array([[x.symbol for x in ta] for ta in table])
+
+    # np.array can't handle tuple as array element. So use dict instead
+    def op_to_dict(op: Op):
+        return {0: op.symbol, 1: tuple(op.dofs)}
+    symbol_table = np.array([[op_to_dict(x) for x in ta] for ta in table])
     qn_table = np.array([[x.qn for x in ta] for ta in table])
     factor_table = np.array([[x.factor for x in ta] for ta in table])
-    
+
     new_table = np.zeros((len(table), nsite),dtype=np.uint16)
-    
-    primary_ops = {}
-    # check that op with the same symbol has the same factor and qn
-    unique_symbol = np.unique(symbol_table)
+
+    # Construct mapping from easy-to-manipulate integer to actual Op
+    # There has to be an Identity for the algorithm to work
+    # even if Identity is not in the table
+    primary_ops = {0: Op.identity()}
+    # unique operators with DoF names taken into consideration
+    # The inclusion of DoF names is necessary fo multi-dof basis.
+    unique_op: Set[Op] = set(np.array(table).ravel())
+    if primary_ops[0] in unique_op:
+        unique_op.remove(primary_ops[0])
+
     # check the index of different operators could be represented with np.uint16
-    assert len(unique_symbol) < max_uint16
-    for idx, s in enumerate(unique_symbol):
-        coord = np.nonzero(symbol_table == s)
+    assert len(unique_op) < max_uint16
+
+    for idx, op in enumerate(unique_op):
+        coord = np.nonzero(symbol_table == op_to_dict(op))
+        # check that op with the same symbol has the same factor and qn
         assert np.unique(qn_table[coord]).size == 1
         assert np.all(factor_table[coord] == factor_table[coord][0])
-        new_table[coord] = idx
-        primary_ops[idx] = table[coord[0][0]][coord[1][0]]   
-    
-    del symbol_table, factor_table, qn_table
+        # plus one to avoid duplicate with identity
+        new_table[coord] = idx + 1
+        primary_ops[idx+1] = table[coord[0][0]][coord[1][0]]
+
+    del symbol_table, factor_table, qn_table, unique_op
     
     # combine the same terms but with different factors(add them together)
     unique_term, unique_inverse = np.unique(new_table, axis=0, return_inverse=True)
@@ -156,7 +170,11 @@ def symbolic_mpo(table, factor, algo="Hopcroft-Karp"):
     mpo = []
     mpoqn = [[0]]
 
-    in_ops = [[Op.identity()]]
+    # The `Op` class is transformed to a light-weight named tuple
+    # for better performance
+    OpTuple = namedtuple("OpTuple", ["symbol", "qn", "factor"])
+    # 0 represents the identity symbol
+    in_ops = [[OpTuple([0], qn=0, factor=1)]]
 
     for isite in range(nsite):
         # split table into the row and col part
@@ -206,7 +224,7 @@ def symbolic_mpo(table, factor, algo="Hopcroft-Karp"):
             # Produce one out operator and multiple new_table entries
             symbol = term_row[row_idx]
             qn = in_ops[term_row[row_idx][0]][0].qn + primary_ops[term_row[row_idx][1]].qn
-            out_op = Op(symbol, qn, factor=1.0)
+            out_op = OpTuple(symbol, qn, factor=1.0)
             out_ops.append([out_op])
             
             col_link = non_red.indices[non_red.indptr[row_idx]:non_red.indptr[row_idx+1]]
@@ -224,11 +242,11 @@ def symbolic_mpo(table, factor, algo="Hopcroft-Karp"):
             # complementary operator
             # dealing with column (right side of the table). One col correspond to multiple rows.
             # Produce multiple out operators and one new_table entry
-            non_red_one_col = non_red[:, col_idx].toarray()
+            non_red_one_col = non_red[:, col_idx].toarray().flatten()
             for i in nonzero_row_idx[np.nonzero(nonzero_col_idx == col_idx)[0]]:
                 symbol = term_row[i]
                 qn = in_ops[term_row[i][0]][0].qn + primary_ops[term_row[i][1]].qn
-                out_op = Op(symbol, qn, factor=factor[non_red_one_col[i]-1])
+                out_op = OpTuple(symbol, qn, factor=factor[non_red_one_col[i]-1])
                 out_ops[-1].append(out_op)
             
             new_table.append(np.array([len(out_ops)-1] + list(term_col[col_idx]), dtype=np.uint16).reshape(1,-1))
@@ -245,14 +263,12 @@ def symbolic_mpo(table, factor, algo="Hopcroft-Karp"):
         for iop, out_op in enumerate(out_ops):
             for composed_op in out_op:
                 in_idx = composed_op.symbol[0]
-                symbol = primary_ops[composed_op.symbol[1]].symbol
-                qn = primary_ops[composed_op.symbol[1]].qn
+                op = primary_ops[composed_op.symbol[1]]
                 if isite != nsite-1:
                     factor = composed_op.factor
                 else:
                     factor = composed_op.factor*new_factor[0]
-                new_op = Op(symbol, qn, factor)
-                mo[in_idx][iop].append(new_op)
+                mo[in_idx][iop].append(factor * op)
             moqn.append(out_op[0].qn)
 
         mpo.append(mo)
@@ -283,102 +299,36 @@ def add_idx(symbol, idx):
     return " ".join(symbols)
 
 
-def _model_translator_general_model(model, model_dict, const=Quantity(0.)):
+def _terms_to_table(model: Model, terms: List[Op], const: float):
     r"""
     constructing a general operator table
     according to model.model and model.order
     """
     
-    factor = []
     table = []
-    nsite = model.nsite
-    order = model.order
-    basis = model.basis
-    
-    # clean up 
-    # for example 
-    # in simple_e case
-    # ("e_0", "e_0"):[(Op("a^\dagger"), Op("a"), factor)] is not a standard
-    # format for general model since "e_0" is a single site, the standard is
-    # ("e_0"):[(Op("a^\dagger a"), factor)]
-    # in multi_e case
-    # ("e_0", "e_1"):[(Op("a^\dagger"), Op("a"), factor)] is not a standard
-    # format for general model since "e_0" "e_1" is a single site, the standard
-    # is ("e_0",):[(Op("a^\dagger_0 a_1"), factor)] 
-    # or 
-    # ("e_0",):[(Op("a^\dagger"), factor)] is not a standard
-    # format for general model since "e_0" is a multi_e site, the standard
-    # is ("e_0",):[(Op("a^\dagger_0"), factor)] 
-    
-    model_new = defaultdict(list)
-    for model_key, model_value in model_dict.items():
+    factor_list = []
 
-        # site index of the dofs for each term in the model
-        dof_site_idx = [order[k] for k in model_key]
-
-        dof_site_idx_unique = len(dof_site_idx) == len(set(dof_site_idx))
-        if not dof_site_idx_unique or model.multi_dof_basis:
-            # keys: site index; values: index of the dofs (in terms of the model key) on the site index
-            dofdict = defaultdict(list)
-            for idof, dof in enumerate(model_key):
-                dofdict[order[dof]].append(idof)
-
-            new_key = tuple(dofdict.keys())
-            new_value = []
-            for op_term in model_value:
-                # op_term is of format (Op, Op,..., float)
-                new_term = []
-                for iops in dofdict.values():
-                    symbols = []
-                    qn = 0
-                    for iop in iops:
-                        dof_name, dof_op = model_key[iop], op_term[iop]
-                        dof_basis = basis[order[dof_name]]
-                        if dof_basis.multi_dof and "_" not in dof_op.symbol:
-                            # add the index to the operator in multi electron case
-                            # for example, "a^\dagger a" on a single e_dof
-                            # "a^\dagger" "a" on two different e_dofs
-                            symbols.append(add_idx(dof_op.symbol, dof_name.split("_")[1]))
-                        else:
-                            symbols.append(dof_op.symbol)
-                        qn += dof_op.qn
-                    op = Op(" ".join(symbols), qn)
-                    new_term.append(op)
-
-                if isinstance(op_term[-1], Quantity):
-                    raise TypeError("term factor should be float instead of Quantity")
-                new_term.append(op_term[-1])
-                new_value.append(tuple(new_term))
-
-            model_new[new_key] += new_value
-        else:
-            model_new[tuple(dof_site_idx)] += model_value
-
-    model_dict = model_new
-
-    for dof, model_value in model_dict.items():
-        op_factor = np.array([term[-1] for term in model_value])
-        nonzero_idx = np.nonzero(op_factor != 0)[0]
-        mapping = {j:i for i,j in enumerate(dof)}
-        for idx in nonzero_idx:
-            op_term = model_value[idx]
-            # note that all the list element point to the same identity
-            # it will not destroy the following operation since identity is not changed
-            identity = Op.identity()
-            ta = [op_term[mapping[isite]] if isite in mapping.keys() else identity for isite in range(nsite)]
-            table.append(ta)
-            factor.append(op_term[-1])
+    dummy_table_entry = [Op.identity()] * model.nsite
+    for op in terms:
+        elem_ops, factor = op.split_elementary(model.dof_to_siteidx)
+        table_entry = dummy_table_entry.copy()
+        for elem_op in elem_ops:
+            # it is ensured in `elem_op` every symbol is on the same site
+            site_idx = model.dof_to_siteidx[elem_op.dofs[0]]
+            table_entry[site_idx] = elem_op
+        table.append(table_entry)
+        factor_list.append(factor)
         
     # const
     if const != 0:
-        ta = [Op.identity() for i in range(nsite)]
-        factor.append(const.as_au())
-        table.append(ta)
-    
-    factor = np.array(factor)
+        table_entry = dummy_table_entry.copy()
+        factor_list.append(const)
+        table.append(table_entry)
+
+    factor_list = np.array(factor_list)
     logger.debug(f"# of operator terms: {len(table)}")
 
-    return table, factor
+    return table, factor_list
 
 
 class Mpo(MatrixProduct):
@@ -407,7 +357,7 @@ class Mpo(MatrixProduct):
                 mo = np.eye(2).reshape(1, 2, 2, 1)
                 mpo.append(mo)
             elif model.scheme == 4:
-                if len(mpo) == model.order["e_0"]:
+                if len(mpo) == model.order[0]:
                     n = model.mol_num
                     mpo.append(np.eye(n+1).reshape(1, n+1, n+1, 1))
             else:
@@ -487,37 +437,32 @@ class Mpo(MatrixProduct):
         return mpo
 
     @classmethod
-    def onsite(cls, model: Model, opera, dipole=False, mol_idx_set=None):
-
-        qn_dict= {"a":-1, r"a^\dagger":1, r"a^\dagger a":0, "sigma_x":0, "sigma_z": 0}
-        if mol_idx_set is None:
-            mol_idx_set = range(len(model.e_dofs))
-        model_dict = {}
-        for idx in mol_idx_set:
+    def onsite(cls, model: Model, opera, dipole=False, dof_set=None):
+        if dof_set is None:
+            if model.n_edofs == 0:
+                raise ValueError("No electronic DoF present in the model.")
+            dof_set = model.e_dofs
+        ops = []
+        for idx in dof_set:
             if dipole:
-                factor = model.dipole[(f"e_{idx}",)]
+                factor = model.dipole[idx]
             else:
                 factor = 1.
-            model_dict[(f"e_{idx}",)] = [(Op(opera, qn_dict[opera]),factor)]
+            ops.append(Op(opera, idx, factor))
 
-        mpo = cls.general_mpo(model, model_dict=model_dict)
-
-        return mpo
+        return cls(model, ops)
 
     @classmethod
     def ph_onsite(cls, model: HolsteinModel, opera: str, mol_idx:int, ph_idx=0):
         assert opera in ["b", r"b^\dagger", r"b^\dagger b"]
-        assert model.map is not None
-
-        model_dict = {(model.map[(mol_idx, ph_idx)],): [(Op(opera, 0), 1.0)]}
-        mpo = cls.general_mpo(model, model_dict=model_dict)
-
-        return mpo
+        if not isinstance(model, HolsteinModel):
+            raise TypeError("ph_onsite only supports HolsteinModel")
+        return cls(model, Op(opera, (mol_idx, ph_idx)))
 
     @classmethod
     def intersite(cls, model: HolsteinModel, e_opera: dict, ph_opera: dict, scale:
             Quantity=Quantity(1.)):
-        """ construct the inter site MPO
+        r""" construct the inter site MPO
         
         Parameters
         ----------
@@ -535,29 +480,17 @@ class Mpo(MatrixProduct):
         the operator index starts from 0,1,2...
         
         """
-            
-        assert model.map is not None
-        qn_dict= {"a":-1, r"a^\dagger":1, r"a^\dagger a":0, "sigma_x":0}
 
-        key = []
         ops = []
         for e_key, e_op in e_opera.items():
-            key.append(f"e_{e_key}")
-            ops.append(Op(e_op, qn_dict[e_op]))
+            ops.append(Op(e_op, e_key))
         for v_key, v_op in ph_opera.items():
-            key.append(model.map[v_key])
-            ops.append(Op(v_op, 0))
-        ops.append(scale.as_au())
-
-        model_dict = {tuple(key):[tuple(ops)]}
-        mpo = cls(model, model_dict=model_dict)
-
-        return mpo
-
+            ops.append(Op(v_op, v_key))
+        op = scale.as_au() * Op.product(ops)
+        return cls(model, op)
 
     @classmethod
-    def finiteT_cv(cls, model, nexciton, m_max, spectratype,
-                   percent=1.0):
+    def finiteT_cv(cls, model, nexciton, m_max, spectratype, percent=1.0):
         np.random.seed(0)
 
         X = cls()
@@ -575,14 +508,11 @@ class Mpo(MatrixProduct):
         dim_list = [1]
 
         for ix in range(model.nsite - 1):
-            if model.is_electron(ix):
-                qnbig = list(itertools.chain.from_iterable(
-                    [np.add(y, [0, 0]), np.add(y, [0, 1]),
-                     np.add(y, [1, 0]), np.add(y, [1, 1])]
-                    for y in X.qn[ix]))
-            else:
-                qnbig = list(itertools.chain.from_iterable(
-                    [x] * (model.pbond_list[ix] ** 2) for x in X.qn[ix]))
+            sigmaqn = model.basis[ix].sigmaqn
+            sigmaqn = np.array(list(itertools.product(sigmaqn, repeat=2)))
+            qn1 = np.add.outer(np.array(X.qn[ix])[:, 0], sigmaqn[:, 0]).ravel()
+            qn2 = np.add.outer(np.array(X.qn[ix])[:, 1], sigmaqn[:, 1]).ravel()
+            qnbig = np.stack([qn1, qn2], axis=1)
             # print('qnbig', qnbig)
             u_set = []
             s_set = []
@@ -644,7 +574,6 @@ class Mpo(MatrixProduct):
         # print('dim', [X[i].shape for i in range(len(X))])
         return X
 
-
     @classmethod
     def identity(cls, model: Model):
         mpo = cls()
@@ -653,23 +582,32 @@ class Mpo(MatrixProduct):
             mpo.append(np.eye(p).reshape(1, p, p, 1))
         mpo.build_empty_qn()
         return mpo
-    
-    @classmethod
-    def general_mpo(cls, model, offset=Quantity(0.), model_dict=None):
+
+    def __init__(self, model: Model = None, terms: Union[Op, List[Op]] = None, offset: Quantity = Quantity(0), ):
+
         """
-        MolList2 or MolList with MolList2 parameters
+        todo: document
         """
-        return cls(model, offset, model_dict)
-    
-    def _general_mpo(self, model, const=Quantity(0.), model_dict=None):
-        # construct a real mpo matrix elements into mpo shell
+        super(Mpo, self).__init__()
+        # leave the possibility to construct MPO by hand
+        if model is None:
+            return
+        if not isinstance(offset, Quantity):
+            raise ValueError(f"offset must be Quantity object. Got {offset} of {type(offset)}.")
 
-        assert len(self) == 0
+        self.offset = offset.as_au()
+        if terms is None:
+            terms = model.ham_terms
+        elif isinstance(terms, Op):
+            terms = [terms]
 
-        if model_dict is None:
-            model_dict = model.model
+        if len(terms) == 0:
+            raise ValueError("Terms contain nothing.")
+        terms = model.check_operator_terms(terms)
+        if len(terms) == 0:
+            raise ValueError("Terms all have factor 0.")
 
-        table, factor = _model_translator_general_model(model, model_dict, const)
+        table, factor = _terms_to_table(model, terms, -self.offset)
 
         self.dtype = factor.dtype
 
@@ -696,22 +634,6 @@ class Mpo(MatrixProduct):
                     mo_mat[irow,:,:,icol] += basis[impo].op_mat(term)
 
             self.append(mo_mat)
-
-
-    def __init__(self, model: Model = None, offset: Quantity = Quantity(0), model_dict: Dict = None):
-
-        """
-        todo: document
-        """
-        # leave the possibility to construct MPO by hand
-        super(Mpo, self).__init__()
-        if model is None:
-            return
-        if not isinstance(offset, Quantity):
-            raise ValueError("offset must be Quantity object")
-
-        self.offset = offset.as_au()
-        self._general_mpo(model, const=-offset, model_dict=model_dict)
 
 
     def _get_sigmaqn(self, idx):

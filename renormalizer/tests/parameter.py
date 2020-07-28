@@ -31,6 +31,7 @@ hartree_ph_list = [
 ]
 
 holstein_model = HolsteinModel([Mol(elocalex, ph_list, dipole_abs)] * nmols, _j_matrix, )
+holstein_model4 = holstein_model.switch_scheme(4)
 # useful in TDH module
 hartree_holstein_model = HolsteinModel([Mol(elocalex, hartree_ph_list, dipole_abs)] * nmols, _j_matrix, )
 

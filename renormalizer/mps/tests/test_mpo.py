@@ -1,18 +1,18 @@
 # -*- coding: utf-8 -*-
 # Author: Jiajun Ren <jiajunren0522@gmail.com>
 
-import pickle
 import os
+import pickle
 
-import pytest
 import numpy as np
+import pytest
 
-from renormalizer.model import Model, Mol, Phonon, HolsteinModel
+from renormalizer.model import Mol, Phonon, HolsteinModel
 from renormalizer.mps import Mpo, Mps
-from renormalizer.tests.parameter import holstein_model
 from renormalizer.mps.tests import cur_dir
-from renormalizer.utils import Quantity, Op
-from renormalizer.utils import basis as ba
+from renormalizer.tests.parameter import holstein_model
+from renormalizer.utils import Quantity
+
 
 @pytest.mark.parametrize("dt, space, shift", ([30, "GS", 0.0], [30, "EX", 0.0]))
 def test_exact_propagator(dt, space, shift):
@@ -48,17 +48,17 @@ def test_scheme4():
     ph = Phonon.simple_phonon(Quantity(3.33), Quantity(1), 2)
     m1 = Mol(Quantity(0), [ph])
     m2 = Mol(Quantity(0), [ph]*2)
-    mlist1 = HolsteinModel([m1, m2], Quantity(17), 4)
-    mlist2 = HolsteinModel([m1, m2], Quantity(17), 3)
-    mpo4 = Mpo(mlist1)
+    model4 = HolsteinModel([m1, m2], Quantity(17), 4)
+    model3 = HolsteinModel([m1, m2], Quantity(17), 3)
+    mpo4 = Mpo(model4)
     assert mpo4.is_hermitian()
     # for debugging
     f = mpo4.full_operator()
-    mpo3 = Mpo(mlist2)
+    mpo3 = Mpo(model3)
     assert mpo3.is_hermitian()
     # makeup two states
     mps4 = Mps()
-    mps4.model = mlist1
+    mps4.model = model4
     mps4.use_dummy_qn = True
     mps4.append(np.array([1, 0]).reshape((1,2,1)))
     mps4.append(np.array([0, 0, 1]).reshape((1,-1,1)))
@@ -67,7 +67,7 @@ def test_scheme4():
     mps4.build_empty_qn()
     e4 = mps4.expectation(mpo4)
     mps3 = Mps()
-    mps3.model = mlist2
+    mps3.model = model3
     mps3.append(np.array([1, 0]).reshape((1,2,1)))
     mps3.append(np.array([1, 0]).reshape((1,2,1)))
     mps3.append(np.array([0, 1]).reshape((1,2,1)))
@@ -83,18 +83,18 @@ def test_intersite(scheme):
     local_mlist = holstein_model.switch_scheme(scheme)
 
     mpo1 = Mpo.intersite(local_mlist, {0:r"a^\dagger"}, {}, Quantity(1.0))
-    mpo2 = Mpo.onsite(local_mlist, r"a^\dagger", mol_idx_set=[0])
+    mpo2 = Mpo.onsite(local_mlist, r"a^\dagger", dof_set=[0])
     assert mpo1.distance(mpo2) == pytest.approx(0, abs=1e-5)
 
     mpo3 = Mpo.intersite(local_mlist, {2:r"a^\dagger a"}, {}, Quantity(1.0))
-    mpo4 = Mpo.onsite(local_mlist, r"a^\dagger a", mol_idx_set=[2])
+    mpo4 = Mpo.onsite(local_mlist, r"a^\dagger a", dof_set=[2])
     assert mpo3.distance(mpo4) == pytest.approx(0, abs=1e-5)
 
     mpo5 = Mpo.intersite(local_mlist, {2:r"a^\dagger a"}, {}, Quantity(0.5))
     assert mpo5.add(mpo5).distance(mpo4) == pytest.approx(0, abs=1e-5)
 
     mpo6 = Mpo.intersite(local_mlist, {0:r"a^\dagger",2:"a"}, {}, Quantity(1.0))
-    mpo7 = Mpo.onsite(local_mlist, "a", mol_idx_set=[2])
+    mpo7 = Mpo.onsite(local_mlist, "a", dof_set=[2])
     assert mpo2.apply(mpo7).distance(mpo6) == pytest.approx(0, abs=1e-5)
 
     mpo8 = Mpo.intersite(local_mlist, {0: r"a^\dagger", 2: "a"}, {},
@@ -120,28 +120,3 @@ def test_phonon_onsite():
     b = b2.conj_trans()
     assert b.distance(Mpo.ph_onsite(holstein_model, r"b", 0, 0)) == 0
     assert b.apply(p2).normalize().distance(p1) == pytest.approx(0, abs=1e-5)
-
-
-def check_result(mpo, mpo_std):
-    print("std mpo bond dims:", mpo_std.bond_dims)
-    print("new mpo bond dims:", mpo.bond_dims)
-    print("std mpo qn:", mpo_std.qn, mpo_std.qntot)
-    print("new mpo qn:", mpo.qn, mpo_std.qntot)
-    assert mpo_std.distance(mpo)/np.sqrt(mpo_std.dot(mpo_std)) == pytest.approx(0, abs=1e-5)
-
-
-def test_different_general_mpo_format():
-    model1 = {("e_0","e_1"):[(Op("a^\dagger_0",1), Op("a_1",-1), 0.1)]}
-    model2 = {("e_0","e_1"):[(Op("a^\dagger",1), Op("a",-1), 0.1)]}
-    model3 = {("e_0",):[(Op("a^\dagger_0 a_1",0), 0.1)]}
-    model4 = {("e_1",):[(Op("a^\dagger_0 a_1",0), 0.1)]}
-    order = {"e_0":0, "e_1":0}
-    basis = [ba.BasisMultiElectron(2,[0,0])]
-    mollist = Model(order, basis, model1)
-    mpo1 = Mpo.general_mpo(mollist, model=model1)
-    mpo2 = Mpo.general_mpo(mollist, model=model2)
-    mpo3 = Mpo.general_mpo(mollist, model=model3)
-    mpo4 = Mpo.general_mpo(mollist, model=model4)
-    check_result(mpo1, mpo2)
-    check_result(mpo1, mpo3)
-    check_result(mpo1, mpo4)
