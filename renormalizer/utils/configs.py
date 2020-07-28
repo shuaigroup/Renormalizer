@@ -58,6 +58,18 @@ class CompressConfig:
 
         - ``1site``:  optimize one site at a time during sweep.
         - ``2site``:  optimize two site at a time during sweep.
+
+        Note
+        ----
+        It is recommended to use the 2site algorithm in variational optimization,
+        though 1site algorithm is much cheaper. The reason is that 1site algorithm
+        is easy to stuck into local mimima while 2site algorithm is more robust. For
+        complicated Hamiltonian, the problem is severer.  The renormalized basis
+        selection rule used here to partly solve the local minimal problem is
+        according to Chan. J.  Chem. Phys. 2004, 120, 3172. For efficiency, you
+        could use 2site algorithm for several sweeps and then switch to 1site
+        algorithm to converge the final mps.
+
     vprocedure : list, optional
         The procedure to do variational compression.
         The Default is
@@ -74,22 +86,26 @@ class CompressConfig:
     
     vrtol : float, optional
         The threshold of convergence in variational compression. Default is
-        :math:`10^-5`.
+        :math:`10^{-5}`.
     vguess_m : tuple(int), optional
         The bond dimension of ``compressed_mpo`` and ``compressed_mps`` to construct the initial guess 
         ``compressed_mpo @ compressed_mps`` in `MatrixProduct.variational_compress`.
         The default is (5,5).
-    
-    Note
-    ----
-    It is recommended to use the 2site algorithm in variational optimization,
-    though 1site algorithm is much cheaper. The reason is that 1site algorithm
-    is easy to stuck into local mimima while 2site algorithm is more robust. For
-    complicated Hamiltonian, the problem is severer.  The renormalized basis
-    selection rule used here to partly solve the local minimal problem is
-    according to Chan. J.  Chem. Phys. 2004, 120, 3172. For efficiency, you
-    could use 2site algorithm for several sweeps and then switch to 1site
-    algorithm to converge the final mps.
+    dump_matrix_size : int or float, optional
+        The total bytes threshold for dumping matrix into disks. Every local site matrix in the MPS
+        with a size larger than the specified size will be moved from memory to the disk at ``dump_matrix_dir``.
+        The matrix will be moved back to memory upon access.
+        The dumped matrices on the disks will be removed once the MPS is garbage-collected.
+
+        Note
+        ----
+        If ``dump_matrix_size`` is set and the program exits abnormally, it is possible that the dumped matrices
+        are not deleted automatically. A common case when this can happen is that the program is killed by a signal.
+        In such cases it is recommended to check and clean ``dump_matrix_dir`` manually after the exit of the program
+        since the dumped matrices may take a lot of disk space.
+
+    dump_matrix_dir : str, optional
+        The directory to dump matrix when matrix is larger than ``dump_matrix_size``.
 
     See Also
     --------
@@ -108,6 +124,8 @@ class CompressConfig:
         vprocedure = None,
         vrtol = 1e-5,
         vguess_m = (5,5),
+        dump_matrix_size = np.inf,
+        dump_matrix_dir = "./",
     ):
         # two sets of criteria here: threshold and max_bonddimension
         # `criteria` is to determine which to use
@@ -135,6 +153,9 @@ class CompressConfig:
         self.vprocedure = vprocedure
         self.vrtol = vrtol
         self.vguess_m = vguess_m
+
+        self.dump_matrix_size = dump_matrix_size
+        self.dump_matrix_dir = dump_matrix_dir
 
     @property
     def threshold(self):

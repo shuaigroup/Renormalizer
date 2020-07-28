@@ -2,7 +2,12 @@
 # Author: Jiajun Ren <jiajunren0522@gmail.com>
 
 import logging
+import os
+import shutil
+import pickle
 from typing import List, Union
+
+import opt_einsum as oe
 
 from renormalizer.model import Model
 from renormalizer.mps.backend import np, xp, USE_GPU
@@ -25,8 +30,6 @@ from renormalizer.mps.lib import (
     select_basis,
     )
 
-import opt_einsum as oe
-
 logger = logging.getLogger(__name__)
 
 
@@ -34,8 +37,9 @@ class MatrixProduct:
 
     def __init__(self):
         # XXX: when modify theses codes, keep in mind to update `metacopy` method
-        # set to a list of None upon metacopy
-        self._mp: List[Union[Matrix, None]] = []
+        # set to a list of None upon metacopy. String is used when the matrix is
+        # stored in disks
+        self._mp: List[Union[Matrix, None, str]] = []
         self.dtype = backend.real_dtype
 
         self.model: Model = None
@@ -137,8 +141,8 @@ class MatrixProduct:
         """
         check L-canonical
         """
-        for mt in self[:-1]:
-            if not mt.check_lortho(rtol, atol):
+        for i in range(len(self)-1):
+            if not self[i].check_lortho(rtol, atol):
                 return False
         return True
 
@@ -146,8 +150,8 @@ class MatrixProduct:
         """
         check R-canonical
         """
-        for mt in self[1:]:
-            if not mt.check_rortho(rtol, atol):
+        for i in range(1, len(self)):
+            if not self[i].check_rortho(rtol, atol):
                 return False
         return True
 
@@ -876,7 +880,9 @@ class MatrixProduct:
 
     def copy(self):
         new = self.metacopy()
-        new._mp = [m.copy() for m in self._mp]
+        # use getitem/setitem to handle strings
+        for i in range(self.site_num):
+            new[i] = self[i].copy()
         return new
 
     # only (shallow) copy metadata because usually after been copied the real data is overwritten
@@ -894,14 +900,38 @@ class MatrixProduct:
         new.compress_add = self.compress_add
         return new
 
-    def _array2mt(self, array, idx):
+    def _array2mt(self, array, idx, allow_dump=True):
+        # convert dtype
         if isinstance(array, Matrix):
             mt = array.astype(self.dtype)
         else:
             mt = Matrix(array, dtype=self.dtype)
         if mt.pdim[0] != self.pbond_list[idx]:
             raise ValueError("Matrix physical bond dimension does not match system information")
+        # setup the matrix
         mt.sigmaqn = self._get_sigmaqn(idx)
+
+        # array too large. Should be stored in disk
+        # use ``while`` to handle the multiple-exit logic
+        while allow_dump and self.compress_config.dump_matrix_size < mt.array.nbytes:
+            dir_with_id = os.path.join(self.compress_config.dump_matrix_dir, str(id(self)))
+            if not os.path.exists(dir_with_id):
+                try:
+                    os.mkdir(dir_with_id)
+                except:
+                    logger.exception("Creating dump dir failed. Working with the matrix in memory.")
+                    break
+            dump_name = os.path.join(dir_with_id, f"{idx}.npy")
+            try:
+                array = mt.array
+                if not array.flags.c_contiguous and not array.flags.f_contiguous:
+                    # for faster dump (3x). Costs more memory.
+                    array = np.ascontiguousarray(array)
+                np.save(dump_name, array)
+            except:
+                logger.exception("Save matrix to disk failed. Working with the matrix in memory.")
+                break
+            return dump_name
 
         return mt
     
@@ -931,7 +961,8 @@ class MatrixProduct:
         return "%s with %d sites" % (self.__class__, len(self))
 
     def __iter__(self):
-        return iter(self._mp)
+        for i in range(self.site_num):
+            yield self[i]
 
     def __len__(self):
         # The same semantic with `list`
@@ -946,9 +977,34 @@ class MatrixProduct:
         return self.scale(other)
 
     def __getitem__(self, item):
-        return self._mp[item]
+        mt_or_str_or_list = self._mp[item]
+        if isinstance(mt_or_str_or_list, list):
+            assert isinstance(item, slice)
+            for elem in mt_or_str_or_list:
+                if isinstance(elem, str):
+                    # load all matrices to memory will make
+                    # the dump mechanism pointless
+                    raise IndexError("Can't slice on dump matrices.")
+        if isinstance(mt_or_str_or_list, str):
+            try:
+                mt = Matrix(np.load(mt_or_str_or_list), dtype=self.dtype)
+                mt.sigmaqn = self._get_sigmaqn(item)
+            except:
+                logger.exception(f"Can't load matrix from {mt_or_str_or_list}")
+                raise RuntimeError("MPS internal structure corrupted.")
+        else:
+            if not isinstance(mt_or_str_or_list, (Matrix, type(None))):
+                raise RuntimeError(f"Unknown matrix type: {type(mt_or_str_or_list)}")
+            mt = mt_or_str_or_list
+        return mt
 
     def __setitem__(self, key, array):
+        old_mt = self._mp[key]
+        if isinstance(old_mt, str):
+            try:
+                os.remove(old_mt)
+            except:
+                logger.exception(f"Remove {old_mt} failed")
         new_mt = self._array2mt(array, key)
         self._mp[key] = new_mt
 
@@ -965,3 +1021,11 @@ class MatrixProduct:
     def __str__(self):
         template_str = "current size: {}, Matrix product bond dim:{}"
         return template_str.format(sizeof_fmt(self.total_bytes), self.bond_dims,)
+
+    def __del__(self):
+        dir_with_id = os.path.join(self.compress_config.dump_matrix_dir, str(id(self)))
+        if os.path.exists(dir_with_id):
+            try:
+                shutil.rmtree(dir_with_id)
+            except:
+                logger.exception(f"Removing temperary dump dir {dir_with_id} failed")

@@ -50,6 +50,8 @@ def check_result(mps, mpo, time_step, final_time, atol=1e-4):
     # used for debugging
     mcd = np.abs(expectations - qutip_expectations[:qutip_end:qutip_interval]).mean()
     assert mcd < atol
+    # return mps for possible further analysis
+    return mps
 
 # useful debugging code
 # from matplotlib import pyplot as plt
@@ -113,3 +115,14 @@ def compare():
     print(mps.bond_dims)
     print(all_values)
 
+
+@pytest.mark.parametrize("method, dt", ([EvolveMethod.prop_and_compress, 0.2], [EvolveMethod.tdvp_ps, 0.4]))
+def test_dump(method, dt):
+    mps = init_mps.copy()
+    mps.evolve_config = EvolveConfig(method)
+    # dump all matrices
+    mps.compress_config = CompressConfig(CompressCriteria.fixed, dump_matrix_size=1)
+    evolved_mps = check_result(mps, mpo, dt, 5)
+    # check all matrices are actually dumped
+    for mt in evolved_mps._mp:
+        assert isinstance(mt, str)

@@ -185,8 +185,10 @@ def symbolic_mpo(table, factor, algo="Hopcroft-Karp"):
     # The `Op` class is transformed to a light-weight named tuple
     # for better performance
     OpTuple = namedtuple("OpTuple", ["symbol", "qn", "factor"])
+
     # 0 represents the identity symbol. Identity might not present
     # in `primary_ops` but the algorithm still works.
+
     in_ops = [[OpTuple([0], qn=0, factor=1)]]
 
     for isite in range(nsite):
@@ -345,6 +347,7 @@ def _terms_to_table(model: Model, terms: List[Op], const: float):
 
 
 def _format_symbolic_mpo(symbolic_mpo):
+    # debug tool. Used in the comment of Mpo.__init__
 
     # helper function
     def format_op(op: Op):
