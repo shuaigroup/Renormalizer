@@ -1,10 +1,9 @@
 import logging
 import time
 
-import numpy as np
-
 from renormalizer.model import Model, h_qc, basis as ba
 from renormalizer.mps import Mps, Mpo, gs
+from renormalizer.mps.backend import np
 from renormalizer.utils import log
 
 '''
