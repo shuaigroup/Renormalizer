@@ -60,10 +60,6 @@ class MatrixProduct:
         return len(self._mp)
 
     @property
-    def mol_num(self):
-        return self.model.mol_num
-
-    @property
     def threshold(self):
         return self.compress_config.threshold
 

@@ -214,10 +214,10 @@ class MpDmFull(MpDmBase):
             return super().full_operator()
 
     # tdvp can't be used in this representation
-    def _evolve_dmrg_tdvp_fixed_gauge(self, mpo, evolve_dt):
+    def _evolve_tdvp_mu_cmf(self, mpo, evolve_dt):
         raise NotImplementedError
 
-    def _evolve_dmrg_tdvp_mu_switch_gauge(self, mpo, evolve_dt):
+    def _evolve_tdvp_mu_vmf(self, mpo, evolve_dt):
         raise NotImplementedError
 
     def _evolve_tdvp_ps(self, mpo, evolve_dt):

@@ -20,9 +20,7 @@ def test_H_chain_LDOS():
     h1e, h2e, nuc = h_qc.read_fcidump(os.path.join(cur_dir,
         "fcidump_lowdin_h4.txt"), spatial_norbs) 
     
-    ham_terms = h_qc.qc_model(h1e, h2e)
-
-    basis = [ba.BasisHalfSpin(iorb, sigmaqn=[0, 1]) for iorb in range(spin_norbs)]
+    basis, ham_terms = h_qc.qc_model(h1e, h2e)
     
     model = Model(basis, ham_terms)
     mpo = Mpo(model)

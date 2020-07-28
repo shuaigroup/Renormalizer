@@ -2,16 +2,42 @@
 # Author: Jiajun Ren <jiajunren0522@gmail.com>
 
 import os
+import random
 import pickle
 
 import numpy as np
 import pytest
 
-from renormalizer.model import Mol, Phonon, HolsteinModel
+from renormalizer.model import Mol, Phonon, HolsteinModel, Model, Op
+from renormalizer.model.basis import BasisHalfSpin
 from renormalizer.mps import Mpo, Mps
 from renormalizer.mps.tests import cur_dir
 from renormalizer.tests.parameter import holstein_model
 from renormalizer.utils import Quantity
+from renormalizer.utils.qutip_utils import get_spin_hamiltonian
+
+
+@pytest.mark.parametrize("nsites", [5, 10])
+# More states make MPO representation not efficient
+# Not good for testing
+@pytest.mark.parametrize("nterms", [100, 1000])
+def test_symbolic_mpo(nsites, nterms):
+
+    possible_operators = [
+        "sigma_+",
+        "sigma_-",
+        "sigma_z"
+    ]
+    ham_terms = []
+    for i in range(nterms):
+        op_list = [Op(random.choice(possible_operators), j) for j in range(nsites)]
+        ham_terms.append(Op.product(op_list) * random.random())
+    basis = [BasisHalfSpin(i) for i in range(nsites)]
+    model = Model(basis, ham_terms)
+    mpo = Mpo(model)
+    dense_mpo = mpo.full_operator()
+    qutip_ham = get_spin_hamiltonian(ham_terms, nsites)
+    assert np.allclose(dense_mpo, qutip_ham.data.todense())
 
 
 @pytest.mark.parametrize("dt, space, shift", ([30, "GS", 0.0], [30, "EX", 0.0]))
@@ -21,6 +47,7 @@ def test_exact_propagator(dt, space, shift):
         std_dict = pickle.load(fin)
     std_mpo = std_dict[space]
     assert prop_mpo == std_mpo
+
 
 @pytest.mark.parametrize("scheme", (1, 4))
 def test_offset(scheme):

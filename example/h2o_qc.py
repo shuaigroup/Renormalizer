@@ -24,15 +24,16 @@ spatial_norbs = 7
 spin_norbs = spatial_norbs * 2
 h1e, h2e, nuc = h_qc.read_fcidump("h2o_fcidump.txt", spatial_norbs) 
 
-# a randon integral
-#h1e = np.random.uniform(-1,1,size=(spin_norbs,spin_norbs))
-#h2e = np.random.uniform(-1,1,size=(spin_norbs,spin_norbs,spin_norbs,spin_norbs))
-#h1e = 0.5*(h1e+h1e.T)
-#h2e = 0.5*(h2e+h2e.transpose((2,3,0,1)))
+# Potential for H2O has high symmetry and constructed MPO is smaller
+# than MPO in normal case. Use random potential to compare with normal MPO.
+RANDOM_INTEGRAL = False
+if RANDOM_INTEGRAL:
+    h1e = np.random.uniform(-1,1,size=(spin_norbs,spin_norbs))
+    h2e = np.random.uniform(-1,1,size=(spin_norbs,spin_norbs,spin_norbs,spin_norbs))
+    h1e = 0.5*(h1e+h1e.T)
+    h2e = 0.5*(h2e+h2e.transpose((2,3,0,1)))
 
-ham_terms = h_qc.qc_model(h1e, h2e)
-
-basis = [ba.BasisHalfSpin(iorb, sigmaqn=[0,1]) for iorb in range(spin_norbs)]
+basis, ham_terms = h_qc.qc_model(h1e, h2e)
 
 model = Model(basis, ham_terms)
 mpo = Mpo(model)

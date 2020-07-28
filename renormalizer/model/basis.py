@@ -1,5 +1,5 @@
 import numpy as np
-from renormalizer.model.op import Op
+from renormalizer.model import Op
 from typing import Union, List
 import scipy.linalg
 import scipy.special

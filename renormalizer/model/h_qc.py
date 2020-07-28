@@ -6,6 +6,7 @@ import logging
 import numpy as np
 
 from renormalizer.model.op import Op
+from renormalizer.model.basis import BasisHalfSpin
 
 logger = logging.getLogger(__name__)
 
@@ -139,4 +140,6 @@ def qc_model(h1e, h2e):
             op = process_op(Op.product([a_dag_ops[p], a_dag_ops[q], a_ops[r], a_ops[s]]))
             ham_terms.append(op * h2e[p, q, r, s])
 
-    return ham_terms
+    basis = [BasisHalfSpin(iorb, sigmaqn=[0, 1]) for iorb in range(norbs)]
+
+    return basis, ham_terms

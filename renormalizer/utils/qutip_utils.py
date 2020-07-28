@@ -1,9 +1,13 @@
 # -*- coding: utf-8 -*-
 
 from itertools import product
+from typing import List
 
 import numpy as np
 import qutip
+
+from renormalizer.model import Op
+
 
 def get_clist(nsites, ph_levels):
     clist = []
@@ -77,3 +81,42 @@ def get_gs(nsites, ph_levels):
 def get_qnidx(ph_levels, nsites):
     particles = np.array(list(product(*[[0, 1], [0] * ph_levels] * nsites))).sum(axis=1)
     return np.where(particles == 1)[0]
+
+
+def get_sigma_list(sigma, nsites):
+    sigma_list = []
+    for i in range(nsites):
+        basis = []
+        for j in range(nsites):
+            if j == i:
+                if sigma == "sigma_+":
+                    state = qutip.sigmap()
+                elif sigma == "sigma_-":
+                    state = qutip.sigmam()
+                elif sigma == "sigma_z":
+                    state = qutip.sigmaz()
+                else:
+                    assert False
+            else:
+                state = qutip.identity(2)
+            basis.append(state)
+        sigma_list.append(qutip.tensor(basis))
+    return sigma_list
+
+
+def get_spin_hamiltonian(op_terms: List[Op], nsites):
+    sigma_dict = {
+        "sigma_+": qutip.sigmap(),
+        "sigma_-": qutip.sigmam(),
+        "sigma_z": qutip.sigmaz()
+    }
+
+    terms = []
+    for op in op_terms:
+        qutip_list = []
+        for symbol in op.split_symbol:
+            qutip_list.append(sigma_dict[symbol])
+        qutip_term = qutip.tensor(qutip_list)
+        qutip_term *= op.factor
+        terms.append(qutip_term)
+    return sum(terms)
