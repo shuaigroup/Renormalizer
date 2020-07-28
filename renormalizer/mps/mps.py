@@ -470,7 +470,6 @@ class Mps(MatrixProduct):
             mpos = []
             for dof in self.model.v_dofs:
                 mpos.append(Mpo(self.model, Op("n", dof)))
-            # the order is v_dofs order, "v_0", "v_1",...
             self.model.mpos[key] = mpos
         else:
             mpos = self.model.mpos[key]
@@ -487,8 +486,7 @@ class Mps(MatrixProduct):
         if key not in self.model.mpos:
             mpos = []
             for dof in self.model.e_dofs:
-                    mpos.append(Mpo(self.model, Op(r"a^\dagger a", dof)))
-            # the order is e_dofs order
+                mpos.append(Mpo(self.model, Op(r"a^\dagger a", dof)))
             self.model.mpos[key] = mpos
         else:
             mpos = self.model.mpos[key]

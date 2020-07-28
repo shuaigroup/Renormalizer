@@ -45,5 +45,4 @@ def test_ft_abs(model):
     spectra = SpectraFtCV(model, "abs",
                           10, 5.e-3, T, h_mpo, rtol=1e-3)
     result = batch_run(test_freq, 1, spectra)
-    print(result, standard_value)
     assert np.allclose(result, standard_value, rtol=1.e-2)
