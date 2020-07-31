@@ -309,6 +309,9 @@ class MatrixProduct:
         else:
             qnbigl = np.add.outer(qnl, sigmaqn[0])
             qnbigr = np.add.outer(sigmaqn[1], qnr)
+        if self.use_dummy_qn:
+            qnbigl = np.zeros_like(qnbigl)
+            qnbigr = np.zeros_like(qnbigr)
         qnmat = np.add.outer(qnbigl, qnbigr)
         return qnbigl, qnbigr, qnmat
 
@@ -903,9 +906,6 @@ class MatrixProduct:
 
     def _get_sigmaqn(self, idx):
         raise NotImplementedError
-
-    def get_sigmaqn(self, idx):
-        return self[idx].sigmaqn
 
     def set_threshold(self, val):
         self.compress_config.threshold = val
