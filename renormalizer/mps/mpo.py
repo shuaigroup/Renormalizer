@@ -347,6 +347,45 @@ def _terms_to_table(model: Model, terms: List[Op], const: float):
     return table, factor_list
 
 
+def _format_symbolic_mpo(symbolic_mpo):
+
+    # helper function
+    def format_op(op: Op):
+        op_str = op.symbol
+        op_str = op_str.replace(r"^\dagger", "†")
+        if op.factor != 1:
+            op_str = f"{op.factor:.1e} * " + op_str
+        return op_str
+    result_str_list = []
+    # print the MPO sites one by one
+    for mo in symbolic_mpo:
+        # firstly convert the site into an array of strings
+        mo_str_array = np.full((len(mo), len(mo[0])), None)
+        for irol, row in enumerate(mo):
+            for icol, terms in enumerate(row):
+                if len(terms) == 0:
+                    terms_str = "0"
+                else:
+                    terms_str = " + ".join(format_op(op) for op in terms)
+                mo_str_array[irol][icol] = terms_str
+        # array of element length
+        mo_str_length = np.vectorize(lambda x: len(x))(mo_str_array)
+        max_length_per_col = mo_str_length.max(axis=0)
+        # format each line
+        lines = []
+        for row in mo_str_array:
+            terms_with_space = [term + " " * (max_length_per_col[icol] - len(term)) for icol, term in enumerate(row)]
+            row_str = "   ".join(terms_with_space)
+            lines.append("│ " + row_str + " │")
+        # make it prettier
+        if len(lines) != 1:
+            lines[0]  = "┏" + lines[0][1:-1]  + "┓"
+            lines[-1] = "┗" + lines[-1][1:-1] + "┛"
+        # str of a single mo
+        result_str_list.append("\n".join(lines))
+    return "\n".join(result_str_list)
+
+
 class Mpo(MatrixProduct):
     """
     Matrix product operator (MPO)
@@ -628,8 +667,7 @@ class Mpo(MatrixProduct):
         self.dtype = factor.dtype
 
         mpo_symbol, mpo_qn, qntot, qnidx = symbolic_mpo(table, factor)
-        # todo: elegant way to express the symbolic mpo
-        #logger.debug(f"symbolic mpo: \n {np.array(mpo_symbol)}")
+        # print(_format_symbolic_mpo(mpo_symbol))
         self.model = model
         self.qnidx = qnidx
         self.qntot = qntot
