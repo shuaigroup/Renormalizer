@@ -28,7 +28,7 @@ class Phonon(object):
     """
 
     @classmethod
-    def simplest_phonon(cls, omega, displacement, temperature: Quantity = Quantity(0), hartree: bool=False, lam: bool=False, max_pdim=128):
+    def simplest_phonon(cls, omega, displacement, temperature: Quantity = Quantity(0), lam: bool=False, max_pdim=128):
         # detect pdim automatically
         if lam:
             # the second argument is lambda
@@ -57,47 +57,28 @@ class Phonon(object):
         t = temperature.as_au()
         thermal_dim = int(t * 10 / omega.as_au())
         pdim = min(pdim + thermal_dim, max_pdim)
-        return cls.simple_phonon(omega, displacement, pdim ,hartree)
+        return cls.simple_phonon(omega, displacement, pdim)
 
 
     @classmethod
-    def simple_phonon(cls, omega, displacement, n_phys_dim, hartree=False):
+    def simple_phonon(cls, omega, displacement, n_phys_dim):
         complete_omega = [omega, omega]
         complete_displacement = [Quantity(0), displacement]
-        return cls(complete_omega, complete_displacement, n_phys_dim, hartree=hartree)
+        return cls(complete_omega, complete_displacement, n_phys_dim)
 
     def __init__(
         self,
         omega,
         displacement,
         n_phys_dim: int =None,
-        force3rd=None,
-        hartree=False,
     ):
         # omega is a list for different PES omega[0], omega[1]...
         self.omega = [o.as_au() for o in omega]
         # dis is a list for different PES dis[0]=0.0, dis[1]...
         self.dis = [d.as_au() for d in displacement]
 
-        if force3rd is None:
-            self.force3rd = (0.0, 0.0)
-        else:
-            self.force3rd = force3rd
         self.n_phys_dim: int = n_phys_dim
 
-        if hartree:
-            phop = construct_ph_op_dict(self.n_phys_dim)
-            self.h_indep = (
-                phop[r"b^\dagger b"] * self.omega[0]
-                + phop[r"(b^\dagger + b)^3"] * self.term30
-            )
-            self.h_dep = (
-                phop[r"b^\dagger + b"] * (self.term10 + self.term11)
-                + phop[r"(b^\dagger + b)^2"] * (self.term20 + self.term21)
-                + phop[r"(b^\dagger + b)^3"] * (self.term31 + self.term30)
-            )
-        else:
-            self.h_indep = self.h_dep = None
 
     def get_displacement_evecs(self) -> np.ndarray:
         h = np.zeros((self.n_phys_dim, self.n_phys_dim))
@@ -144,7 +125,7 @@ class Phonon(object):
     def reorganization_energy(self):
         dis_diff = self.dis[1] - self.dis[0]
         return Quantity(
-            0.5 * dis_diff ** 2 * self.omega[1] ** 2 - dis_diff ** 3 * self.force3rd[1]
+            0.5 * dis_diff ** 2 * self.omega[1] ** 2
         )
 
     @property
@@ -154,45 +135,15 @@ class Phonon(object):
 
     @property
     def is_simple(self):
-        return self.force3rd == (0.0, 0.0)  and self.omega[0] == self.omega[1]
+        return self.omega[0] == self.omega[1]
 
     @property
     def coupling_constant(self):  # the $g$
         return float(np.sqrt(self.reorganization_energy.as_au() / self.omega[0]))
 
-    """
-    These "term"s don't have any particular physical meanings. They just happen to appear
-    lot of times in the final expression
-    """
-
     @property
     def term10(self):
-        if self.is_simple and self.omega[0] < 0:
-            # capable of handle negative frequency, which is used in tfd with bogoliubov transformation
-            return np.sqrt(1/2 * np.abs(self.omega[0])) * (-self.dis[1]) * self.omega[0]
         return self.omega[1] ** 2 / np.sqrt(2.0 * self.omega[0]) * (-self.dis[1])
-
-    @property
-    def term11(self):
-        if self.is_simple and self.omega[0] < 0:
-            return 0
-        return 3.0 * self.dis[1] ** 2 * self.force3rd[1] / np.sqrt(2.0 * self.omega[0])
-
-    @property
-    def term20(self):
-        return 0.25 * (self.omega[1] ** 2 - self.omega[0] ** 2) / self.omega[0]
-
-    @property
-    def term21(self):
-        return -1.5 * self.dis[1] * self.force3rd[1] / self.omega[0]
-
-    @property
-    def term30(self):
-        return self.force3rd[0] * (0.5 / self.omega[0]) ** 1.5
-
-    @property
-    def term31(self):
-        return self.force3rd[1] * (0.5 / self.omega[0]) ** 1.5
 
     def printinfo(self):
         print("omega   = ", self.omega)
@@ -200,10 +151,4 @@ class Phonon(object):
         print("nlevels = ", self.n_phys_dim)
 
     def __eq__(self, other):
-        a = self.__dict__.copy()
-        b = other.__dict__.copy()
-        for d in [a, b]:
-            # numpy arrays tricky to handle
-            d.pop("h_dep")
-            d.pop("h_indep")
-        return a == b
+        return self.__dict__ == other.__dict__

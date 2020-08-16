@@ -111,8 +111,8 @@ def construct_vibronic_model(multi_e, dvr):
                 logger.debug(f"no term: {v_isymbol}_{v_jsymbol}_{e_isymbol}_{e_jsymbol}")
 
     # electronic coupling
-    ham_terms.append(Op(r"a^\dagger a", "s1", -delta))
-    ham_terms.append(Op(r"a^\dagger a", "s2", delta))
+    ham_terms.append(Op(r"a^\dagger a", "s1", -delta, [0, 0]))
+    ham_terms.append(Op(r"a^\dagger a", "s2", delta, [0, 0]))
 
     # vibrational kinetic and potential
     for v_isymbol in v_list:
@@ -151,11 +151,6 @@ def test_pyr_4mode(multi_e, dvr):
             idx = model.order[dof]
             init_condition[dof] = basis[idx].dvr_v[0]
     mps = Mps.hartree_product_state(model, condition=init_condition)
-
-    # for multi-e case the `expand bond dimension` routine is currently not working
-    # because creation operator is not defined yet
-    mps.use_dummy_qn = True
-    mps.build_empty_qn()
 
     compress_config = CompressConfig(CompressCriteria.fixed, max_bonddim=10)
 

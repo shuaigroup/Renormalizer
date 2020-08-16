@@ -3,31 +3,9 @@
 import numpy as np
 import pytest
 
-from renormalizer.mps import Mps, Mpo, MpDm, MpDmFull, ThermalProp
-from renormalizer.model import HolsteinModel, Mol, Phonon
+from renormalizer.mps import Mps, Mpo, MpDm, ThermalProp
 from renormalizer.tests import parameter
 from renormalizer.utils import Quantity, EvolveConfig, EvolveMethod
-
-
-@pytest.mark.parametrize("nmols", (2, 3, 4))
-@pytest.mark.parametrize("phonon_freq", (0.01, 0.001, 0.0001))
-def test_mpdm_full(nmols, phonon_freq):
-    ph = Phonon.simple_phonon(Quantity(phonon_freq), Quantity(1), 2)
-    m = Mol(Quantity(0), [ph])
-    model = HolsteinModel([m] * nmols, Quantity(1), )
-
-    gs_dm = MpDm.max_entangled_gs(model)
-    beta = Quantity(1000, "K").to_beta()
-    tp = ThermalProp(gs_dm, Mpo(model), exact=True, space="GS")
-    tp.evolve(None, 50, beta / 1j)
-    gs_dm = tp.latest_mps
-    assert np.allclose(gs_dm.e_occupations, [0] * nmols)
-    e_gs_dm = Mpo.onsite(model, r"a^\dagger", dof_set={0}).apply(gs_dm, canonicalise=True)
-    assert np.allclose(e_gs_dm.e_occupations, [1] + [0] * (nmols - 1))
-
-    mpdm_full = MpDmFull.from_mpdm(e_gs_dm)
-    assert np.allclose(mpdm_full.e_occupations, e_gs_dm.e_occupations)
-    assert np.allclose(mpdm_full.ph_occupations, e_gs_dm.ph_occupations, rtol=1e-3)
 
 
 def test_from_mps():

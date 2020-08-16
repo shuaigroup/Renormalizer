@@ -18,7 +18,7 @@ from renormalizer.utils.qutip_utils import get_spin_hamiltonian
 
 
 @pytest.mark.parametrize("nsites", [5, 10])
-# More states make MPO representation not efficient
+# More sites make MPO representation not efficient
 # Not good for testing
 @pytest.mark.parametrize("nterms", [100, 1000])
 def test_symbolic_mpo(nsites, nterms):
@@ -36,7 +36,7 @@ def test_symbolic_mpo(nsites, nterms):
     model = Model(basis, ham_terms)
     mpo = Mpo(model)
     dense_mpo = mpo.full_operator()
-    qutip_ham = get_spin_hamiltonian(ham_terms, nsites)
+    qutip_ham = get_spin_hamiltonian(ham_terms)
     assert np.allclose(dense_mpo, qutip_ham.data.todense())
 
 
@@ -86,7 +86,6 @@ def test_scheme4():
     # makeup two states
     mps4 = Mps()
     mps4.model = model4
-    mps4.use_dummy_qn = True
     mps4.append(np.array([1, 0]).reshape((1,2,1)))
     mps4.append(np.array([0, 0, 1]).reshape((1,-1,1)))
     mps4.append(np.array([0.707, 0.707]).reshape((1,2,1)))
