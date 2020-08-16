@@ -143,14 +143,10 @@ def symbolic_mpo(table, factor, algo="Hopcroft-Karp"):
     new_table = np.zeros((len(table), nsite),dtype=np.uint16)
 
     # Construct mapping from easy-to-manipulate integer to actual Op
-    # There has to be an Identity for the algorithm to work
-    # even if Identity is not in the table
-    primary_ops = {0: Op.identity()}
+    primary_ops = {}
     # unique operators with DoF names taken into consideration
     # The inclusion of DoF names is necessary fo multi-dof basis.
     unique_op: Set[Op] = set(np.array(table).ravel())
-    if primary_ops[0] in unique_op:
-        unique_op.remove(primary_ops[0])
 
     # check the index of different operators could be represented with np.uint16
     assert len(unique_op) < max_uint16
@@ -160,9 +156,8 @@ def symbolic_mpo(table, factor, algo="Hopcroft-Karp"):
         # check that op with the same symbol has the same factor and qn
         assert np.unique(qn_table[coord]).size == 1
         assert np.all(factor_table[coord] == factor_table[coord][0])
-        # plus one to avoid duplicate with identity
-        new_table[coord] = idx + 1
-        primary_ops[idx+1] = table[coord[0][0]][coord[1][0]]
+        new_table[coord] = idx
+        primary_ops[idx] = table[coord[0][0]][coord[1][0]]
 
     del symbol_table, factor_table, qn_table, unique_op
     
@@ -189,7 +184,8 @@ def symbolic_mpo(table, factor, algo="Hopcroft-Karp"):
     # The `Op` class is transformed to a light-weight named tuple
     # for better performance
     OpTuple = namedtuple("OpTuple", ["symbol", "qn", "factor"])
-    # 0 represents the identity symbol
+    # 0 represents the identity symbol. Identity might not present
+    # in `primary_ops` but the algorithm still works.
     in_ops = [[OpTuple([0], qn=0, factor=1)]]
 
     for isite in range(nsite):
@@ -421,18 +417,13 @@ class Mpo(MatrixProduct):
             for ph in mol.ph_list:
 
                 if space == "EX":
-                    # for the EX space, with quasiboson algorithm, the b^\dagger + b
-                    # operator is not local anymore.
                     ph_pbond = ph.pbond
                     # construct the matrix exponential by diagonalize the matrix first
                     phop = construct_ph_op_dict(ph_pbond)
 
                     h_mo = (
                         phop[r"b^\dagger b"] * ph.omega[0]
-                        + phop[r"(b^\dagger + b)^3"] * ph.term30
-                        + phop[r"b^\dagger + b"] * (ph.term10 + ph.term11)
-                        + phop[r"(b^\dagger + b)^2"] * (ph.term20 + ph.term21)
-                        + phop[r"(b^\dagger + b)^3"] * (ph.term31 - ph.term30)
+                        + phop[r"b^\dagger + b"] * ph.term10
                     )
 
                     w, v = scipy.linalg.eigh(h_mo)
@@ -448,36 +439,13 @@ class Mpo(MatrixProduct):
                     # for the ground state space, yet doesn't support 3rd force
                     # potential quasiboson algorithm
                     ph_pbond = ph.pbond
-                    for i in range(len(ph.force3rd)):
-                        anharmo = not np.allclose(
-                            ph.force3rd[i] * ph.dis[i] / ph.omega[i], 0.0
+                    d = np.exp(
+                            x
+                            * ph.omega[0]
+                            * np.arange(ph_pbond)
                         )
-                        if anharmo:
-                            break
-                    if not anharmo:
-                        d = np.exp(
-                                x
-                                * ph.omega[0]
-                                * np.arange(ph_pbond)
-                            )
-                        mo = np.diag(d).reshape(1, ph_pbond, ph_pbond, 1)
-                        mpo.append(mo)
-                    else:
-                        # construct the matrix exponential by diagonalize the matrix first
-                        phop = construct_ph_op_dict(ph_pbond)
-                        h_mo = (
-                            phop[r"b^\dagger b"] * ph.omega[0]
-                            + phop[r"(b^\dagger + b)^3"] * ph.term30
-                        )
-                        w, v = scipy.linalg.eigh(h_mo)
-                        h_mo = np.diag(np.exp(x * w))
-                        h_mo = v.dot(h_mo)
-                        h_mo = h_mo.dot(v.T)
-
-                        mo = np.zeros([1, ph_pbond, ph_pbond, 1])
-                        mo[0, :, :, 0] = h_mo
-
-                        mpo.append(mo)
+                    mo = np.diag(d).reshape(1, ph_pbond, ph_pbond, 1)
+                    mpo.append(mo)
                 else:
                     assert False
         # shift the H by plus a constant
@@ -772,10 +740,9 @@ class Mpo(MatrixProduct):
             assert False
         orig_idx = new_mps.qnidx
         new_mps.move_qnidx(self.qnidx)
-        qn = self.qn if not mp.use_dummy_qn else self.dummy_qn
         new_mps.qn = [
             np.add.outer(np.array(qn_o), np.array(qn_m)).ravel().tolist()
-            for qn_o, qn_m in zip(qn, new_mps.qn)
+            for qn_o, qn_m in zip(self.qn, new_mps.qn)
         ]
         new_mps.qntot += self.qntot
         new_mps.move_qnidx(orig_idx)

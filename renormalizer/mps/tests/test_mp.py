@@ -12,7 +12,7 @@ from renormalizer.tests.parameter import custom_model, holstein_model
 from renormalizer.utils import CompressCriteria
 
 def test_save_load():
-    model = custom_model(hartrees=[True, False])
+    model = holstein_model
     mps = Mpo.onsite(model, r"a^\dagger", dof_set={0}) @ Mps.ground_state(model, False)
     mpo = Mpo(model)
     mps1 = mps.copy()

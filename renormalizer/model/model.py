@@ -244,7 +244,6 @@ class HolsteinModel(Model):
         # vibration part
         for imol, mol in enumerate(mol_list):
             for iph, ph in enumerate(mol.ph_list):
-                assert np.allclose(np.array(ph.force3rd), [0.0, 0.0])
 
                 ham.extend([
                     Op("p^2", (imol, iph), 0.5),

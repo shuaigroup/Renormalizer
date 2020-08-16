@@ -69,7 +69,7 @@ class VibronicModelDynamics(TdMpsJob):
         init_mp.evolve_config = self.evolve_config
         init_mp.model = self.model
         if self.evolve_config.is_tdvp and self.expand:
-            init_mp = init_mp.expand_bond_dimension(self.h_mpo)
+            init_mp = init_mp.expand_bond_dimension(self.h_mpo, include_ex=False)
         return init_mp
 
     def evolve_single_step(self, evolve_dt):

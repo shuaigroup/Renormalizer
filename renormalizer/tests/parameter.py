@@ -25,41 +25,29 @@ displacement = [
 ]
 ph_phys_dim = [4, 4]
 ph_list = [Phonon(*args) for args in zip(omega, displacement, ph_phys_dim)]
-# useful in TDH module
-hartree_ph_list = [
-    Phonon(*args, hartree=True) for args in zip(omega, displacement, ph_phys_dim)
-]
 
 holstein_model = HolsteinModel([Mol(elocalex, ph_list, dipole_abs)] * nmols, _j_matrix, )
 holstein_model4 = holstein_model.switch_scheme(4)
-# useful in TDH module
-hartree_holstein_model = HolsteinModel([Mol(elocalex, hartree_ph_list, dipole_abs)] * nmols, _j_matrix, )
 
 offset = Quantity(2.28614053, "ev") + Quantity(holstein_model.gs_zpe)
 
 def custom_model(
     custom_j_matrix=None,
     n_phys_dim=None,
-    force3rd=None,
     dis=None,
-    hartrees=None,
     nmols=3,
 ) -> HolsteinModel:
     if custom_j_matrix is None:
         custom_j_matrix = _j_matrix
     if n_phys_dim is None:
         n_phys_dim = ph_phys_dim
-    if force3rd is None:
-        force3rd = [None, None]
     if dis is None:
         dis = displacement_quantities
-    if hartrees is None:
-        hartrees = [False, False]
     displacement = [[Quantity(0), dis[0]], [Quantity(0), dis[1]]]
     ph_list = [
         Phonon(*args)
         for args in zip(
-            omega, displacement, n_phys_dim, force3rd, hartrees
+            omega, displacement, n_phys_dim
         )
     ]
     return HolsteinModel([Mol(elocalex, ph_list, dipole_abs)] * nmols, custom_j_matrix, )

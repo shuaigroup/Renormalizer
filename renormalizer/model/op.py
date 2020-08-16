@@ -34,8 +34,9 @@ class Op:
         The prefactor of the operator.
     qn : :class:`int` or :class:`list` of :class:`int`.
         The quantum number of the symbol. For simple symbol the ``qn`` should be an :class:`int`.
-        For complex symbol quantum number of each sinple symbol contained in the complex symbol
-        should be provided.
+        For complex symbol quantum number of each simple symbol contained in the complex symbol
+        should be provided. If ``qn`` is set to `None`, then the quantum number for every symbol is set to 0
+        except for``"a^\dagger"`` and ``"a"``, whose quantum number are set to 1 and -1 respectively.
 
     Notes
     =====

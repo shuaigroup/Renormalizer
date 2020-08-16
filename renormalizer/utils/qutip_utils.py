@@ -104,7 +104,7 @@ def get_sigma_list(sigma, nsites):
     return sigma_list
 
 
-def get_spin_hamiltonian(op_terms: List[Op], nsites):
+def get_spin_hamiltonian(op_terms: List[Op]):
     sigma_dict = {
         "sigma_+": qutip.sigmap(),
         "sigma_-": qutip.sigmam(),

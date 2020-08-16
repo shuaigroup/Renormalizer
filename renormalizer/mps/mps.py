@@ -518,12 +518,10 @@ class Mps(MatrixProduct):
         # suppose length is only determined by dmrg part
         return self.normalize(self.dmrg_norm)
 
-    def expand_bond_dimension(self, hint_mpo=None, coef=1e-10):
+    def expand_bond_dimension(self, hint_mpo=None, coef=1e-10, include_ex=True):
         """
         expand bond dimension as required in compress_config
         """
-        if not self.use_dummy_qn and self.nexciton == 0:
-            raise ValueError("Expanding bond dimensional without exciton is meaningless")
         # expander m target
         m_target = self.compress_config.bond_dim_max_value - self.bond_dims_mean
         # will be restored at exit
@@ -540,7 +538,7 @@ class Mps(MatrixProduct):
                 f"average bond dimension of hint mpo: {hint_mpo.bond_dims_mean}"
             )
             # in case of localized `self`
-            if not self.use_dummy_qn:
+            if include_ex:
                 if self.is_mps:
                     ex_state: MatrixProduct = self.ground_state(self.model, False)
                     ex_state = Mpo.onsite(self.model, r"a^\dagger") @ ex_state

@@ -3,7 +3,6 @@ import logging
 import numpy as np
 
 from renormalizer.mps import MpDm, Mpo
-from renormalizer.mps.tdh import unitary_propagation
 from renormalizer.utils import TdMpsJob, Quantity, EvolveConfig
 from renormalizer.property import Property
 

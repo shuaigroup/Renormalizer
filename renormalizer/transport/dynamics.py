@@ -9,7 +9,7 @@ from functools import partial
 
 from scipy.linalg import logm
 
-from renormalizer.mps import Mpo, Mps, MpDm, MpDmFull, SuperLiouville, ThermalProp, load_thermal_state
+from renormalizer.mps import Mpo, Mps, MpDm, ThermalProp, load_thermal_state
 from renormalizer.model import HolsteinModel
 from renormalizer.utils import TdMpsJob, Quantity, CompressConfig, EvolveConfig
 
@@ -45,8 +45,6 @@ class ChargeDiffusionDynamics(TdMpsJob):
         rdm (bool): whether calculate reduced density matrix and k-space representation for the electron.
             Default is ``False`` because usually the calculation is time consuming.
             Using scheme 4 might partly solve the problem.
-        dissipation (float): the dissipation strength. This is a experimental feature. Default is 0.
-            When set to finite value, Lindblad equation is applied to perform time evolution.
         dump_dir (str): the directory for logging and numerical result output.
             Also the directory from which to load previous thermal propagated initial state (if exists).
         job_name (str): the name of the calculation job which determines the file name of the logging and numerical result output.
@@ -91,7 +89,6 @@ class ChargeDiffusionDynamics(TdMpsJob):
         stop_at_edge: bool = True,
         init_electron=InitElectron.relaxed,
         rdm: bool = False,
-        dissipation: float = 0,
         dump_dir: str = None,
         job_name: str = None,
     ):
@@ -99,7 +96,6 @@ class ChargeDiffusionDynamics(TdMpsJob):
         self.temperature = temperature
         self.mpo = None
         self.init_electron = init_electron
-        self.dissipation = dissipation
         if compress_config is None:
             self.compress_config: CompressConfig = CompressConfig()
         else:
@@ -167,8 +163,6 @@ class ChargeDiffusionDynamics(TdMpsJob):
         tentative_mpo = Mpo(self.model)
         if self.temperature == 0:
             gs_mp = Mps.ground_state(self.model, max_entangled=False)
-            if self.dissipation != 0:
-                gs_mp = MpDm.from_mps(gs_mp)
         else:
             if self._defined_output_path:
                 gs_mp = load_thermal_state(self.model, self._thermal_dump_path)
@@ -185,8 +179,6 @@ class ChargeDiffusionDynamics(TdMpsJob):
                 if self._defined_output_path:
                     gs_mp.dump(self._thermal_dump_path)
         init_mp = self.create_electron(gs_mp)
-        if self.dissipation != 0:
-            init_mp = MpDmFull.from_mpdm(init_mp)
         energy = Quantity(init_mp.expectation(tentative_mpo))
         self.mpo = Mpo(self.model, offset=energy)
         logger.info(f"mpo bond dims: {self.mpo.bond_dims}")
@@ -195,8 +187,6 @@ class ChargeDiffusionDynamics(TdMpsJob):
         init_mp.compress_config = self.compress_config
         if self.evolve_config.is_tdvp:
             init_mp = init_mp.expand_bond_dimension(self.mpo)
-        if self.dissipation != 0:
-            self.mpo = SuperLiouville(self.mpo, self.dissipation)
         init_mp.canonicalise()
         return init_mp
 

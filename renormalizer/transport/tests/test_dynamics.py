@@ -7,7 +7,7 @@ import os
 import pytest
 
 from renormalizer.model import Phonon, Mol, HolsteinModel
-from renormalizer.mps import Mps, Mpo, ThermalProp, MpDm, MpDmFull
+from renormalizer.mps import Mps, Mpo, ThermalProp, MpDm
 from renormalizer.mps.gs import optimize_mps
 from renormalizer.transport import ChargeDiffusionDynamics
 from renormalizer.utils import Quantity
@@ -25,30 +25,6 @@ from renormalizer.transport.tests.band_param import (
 )
 
 import numpy as np
-
-
-def test_zt_init_state():
-    ph = Phonon.simple_phonon(Quantity(1), Quantity(1), 10)
-    model = HolsteinModel([Mol(Quantity(0), [ph])], Quantity(0), )
-    mpo = Mpo(model)
-    mps = Mps.random(model, 1, 10)
-    optimize_mps(mps, mpo)
-    ct = ChargeDiffusionDynamics(model)
-    assert mps.angle(ct.latest_mps) == pytest.approx(1)
-
-
-def test_ft_init_state():
-    ph = Phonon.simple_phonon(Quantity(1), Quantity(1), 10)
-    model = HolsteinModel([Mol(Quantity(0), [ph])], Quantity(0), )
-    temperature = Quantity(0.1)
-    mpo = Mpo(model)
-    init_mpdm = MpDm.max_entangled_ex(model)
-    tp = ThermalProp(init_mpdm, mpo, space="EX", exact=True)
-    tp.evolve(nsteps=20, evolve_time=temperature.to_beta() / 2j)
-    ct = ChargeDiffusionDynamics(model, temperature=temperature)
-    tp_mpdm = MpDmFull.from_mpdm(tp.latest_mps)
-    ct_mpdm = MpDmFull.from_mpdm(ct.latest_mps)
-    assert tp_mpdm.angle(ct_mpdm) == pytest.approx(1)
 
 
 @pytest.mark.parametrize(

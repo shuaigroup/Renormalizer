@@ -44,11 +44,9 @@ class MatrixProduct:
         self.compress_config: CompressConfig = CompressConfig()
 
         # QN related
-        self.use_dummy_qn: bool = False
-        # self.use_dummy_qn = True
         self.qn: List[List[int]] = []
         self.qnidx: int = None
-        self._qntot: int = None
+        self.qntot: int = None
         # if sweeping to right: True else False
         self.to_right: bool = None
 
@@ -100,18 +98,6 @@ class MatrixProduct:
     @property
     def pbond_list(self):
         return self.model.pbond_list
-
-    @property
-    def qntot(self):
-        if self.use_dummy_qn:
-            return 0
-        else:
-            return self._qntot
-
-    @qntot.setter
-    def qntot(self, qntot: int):
-        if not self.use_dummy_qn:
-            self._qntot = qntot
 
     def build_empty_qn(self):
         self.qntot = 0
@@ -309,9 +295,6 @@ class MatrixProduct:
         else:
             qnbigl = np.add.outer(qnl, sigmaqn[0])
             qnbigr = np.add.outer(sigmaqn[1], qnr)
-        if self.use_dummy_qn:
-            qnbigl = np.zeros_like(qnbigl)
-            qnbigr = np.zeros_like(qnbigr)
         qnmat = np.add.outer(qnbigl, qnbigr)
         return qnbigl, qnbigr, qnmat
 
@@ -876,10 +859,9 @@ class MatrixProduct:
         new.model = self.model
         # need to deep copy compress_config because threshold might change dynamically
         new.compress_config = self.compress_config.copy()
-        new.use_dummy_qn = self.use_dummy_qn
         new.qn = [qn.copy() for qn in self.qn]
         new.qnidx = self.qnidx
-        new._qntot = self.qntot
+        new.qntot = self.qntot
         new.to_right = self.to_right
         new.compress_add = self.compress_add
         return new
@@ -892,8 +874,6 @@ class MatrixProduct:
         if mt.pdim[0] != self.pbond_list[idx]:
             raise ValueError("Matrix physical bond dimension does not match system information")
         mt.sigmaqn = self._get_sigmaqn(idx)
-        if self.use_dummy_qn:
-            mt.sigmaqn = np.zeros_like(mt.sigmaqn)
 
         return mt
     
