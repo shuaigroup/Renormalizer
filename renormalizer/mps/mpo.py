@@ -50,7 +50,7 @@ def symbolic_mpo(table, factor, algo="Hopcroft-Karp"):
     the index of the primary ops {0:"I", 1:"a", 2:r"a^\dagger"}
     
     for example: H = 2.0 * a_1 a_2^dagger   + 3.0 * a_2^\dagger a_3 + 4.0*a_0^\dagger a_3
-    The column names are the site indeces with 0 and 4 imaginary (see the note below)
+    The column names are the site indices with 0 and 4 imaginary (see the note below)
     and the content of the table is the index of primary operators.
                         s0   s1   s2   s3  s4  factor
     a_1 a_2^dagger      0    1    2    0   0   2.0
@@ -75,7 +75,7 @@ def symbolic_mpo(table, factor, algo="Hopcroft-Karp"):
      left side of the above table
      In this case all operators are independent so the content of the matrix is diagonal
     
-    and select the terms and rearange the table 
+    and select the terms and rearrange the table
     The selection rule is to find the minimal number of rows+cols that can eliminate the
     matrix
                       s1   s2 |  s3 s4 factor
@@ -114,6 +114,22 @@ def symbolic_mpo(table, factor, algo="Hopcroft-Karp"):
     
     nsite = len(table[0])
     logger.debug(f"Input operator terms: {len(table)}")
+    # Simplest case. Cut to the chase
+    if len(table) == 1:
+        # The first layer: number of sites. The 2nd and 3rd layer: in and out virtual bond
+        # the 4th layer: operator sums
+        mpo: List[List[List[List[[Op]]]]] = []
+        mpoqn = [[0]]
+        for op in table[0]:
+            mpo.append([[[op]]])
+            qn = mpoqn[-1][0] + op.qn
+            mpoqn.append([qn])
+        old_op = mpo[-1][0][0][0]
+        mpo[-1][0][0][0] = Op(old_op.symbol, old_op.qn, old_op.factor * factor[0])
+        qntot = qn
+        mpoqn[-1] = [0]
+        qnidx = len(mpo) - 1
+        return mpo, mpoqn, qntot, qnidx
     # translate the symbolic operator table to an easy to manipulate numpy array
     # extract the op symbol, qn, factor to a numpy array
 
