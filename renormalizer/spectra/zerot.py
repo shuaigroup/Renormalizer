@@ -58,7 +58,7 @@ class SpectraZeroT(SpectraTdMpsJobBase):
         mmax = self.optimize_config.procedure[0][0]
         i_mps = Mps.random(self.h_mpo.model, self.nexciton, mmax, 1)
         i_mps.optimize_config = self.optimize_config
-        gs.optimize_mps(i_mps, self.h_mpo)
+        energy, i_mps = gs.optimize_mps(i_mps, self.h_mpo)
         return i_mps
 
 

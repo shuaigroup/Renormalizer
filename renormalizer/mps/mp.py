@@ -166,16 +166,22 @@ class MatrixProduct:
         return self.qnidx == 0
 
     def ensure_left_canon(self, rtol=1e-5, atol=1e-8):
-        if not self.check_left_canonical(rtol, atol):
+        if (not self.check_left_canonical(rtol, atol)) or self.to_right or\
+                self.qnidx != self.site_num-1:
             self.move_qnidx(0)
             self.to_right = True
-            self.canonicalise()
-
+            return self.canonicalise()
+        else:
+            return self
+        
     def ensure_right_canon(self, rtol=1e-5, atol=1e-8):
-        if not self.check_right_canonical(rtol, atol):
+        if (not self.check_right_canonical(rtol, atol)) or (not self.to_right)\
+                or self.qnidx != 0:
             self.move_qnidx(self.site_num - 1)
             self.to_right = False
-            self.canonicalise()
+            return self.canonicalise()
+        else:
+            return self
 
     def iter_idx_list(self, full: bool, stop_idx: int=None):
         # if not `full`, the last site is omitted.
@@ -398,10 +404,6 @@ class MatrixProduct:
         s_list = []
         for idx in self.iter_idx_list(full=False):
             mt: Matrix = self[idx]
-            if self.to_right:
-                mt = mt.l_combine()
-            else:
-                mt = mt.r_combine()
             qnbigl, qnbigr, _ = self._get_big_qn([idx])
             u, sigma, qnlset, v, sigma, qnrset = svd_qn.Csvd(
                 mt.array,
@@ -684,39 +686,61 @@ class MatrixProduct:
             ms, msdim, msqn, compms = select_basis(
                 Uset, Sset, qnnew, None, Mmax, percent=percent
             )
-
+            rotated_c = []
+            averaged_ms = []
             if self.to_right:
                 ms = ms.reshape(list(qnbigl.shape) + [msdim])
-                compms = tensordot(
-                        ms.reshape(list(qnbigl.shape) + [msdim]),
-                        cstruct[0],
-                        axes=(range(qnbigl.ndim), range(qnbigl.ndim)),
-                        )
+                for c in cstruct:
+                    compms = tensordot(
+                            ms,
+                            c,
+                            axes=(range(qnbigl.ndim), range(qnbigl.ndim)),
+                            )
+                    rotated_c.append(compms)
+                compms = rotated_c[0]
             else:
-                ms = xp.moveaxis(ms.reshape(list(qnbigr.shape) + [msdim]), -1, 0)
-                compms = tensordot(
-                        cstruct[0],
-                        ms.reshape(list(qnbigr.shape) + [msdim]),
-                        axes=(range(qnbigl.ndim, cstruct[0].ndim), range(qnbigr.ndim)),
-                        )
+                ms = ms.reshape(list(qnbigr.shape) + [msdim])
+                for c in cstruct:
+                    compms = tensordot(
+                            c,
+                            ms,
+                            axes=(range(qnbigl.ndim, cstruct[0].ndim), range(qnbigr.ndim)),
+                            )
+                    rotated_c.append(compms)
+                compms = rotated_c[0]
+                ms = xp.moveaxis(ms, -1, 0)
+
         # step 2, put updated U, S, V back to self
         if len(cidx) == 1:
             # 1site method
             self[cidx[0]] = ms
             if self.to_right:
                 if cidx[0] != self.site_num - 1:
+                    if type(cstruct) is list:
+                        for c in rotated_c:
+                            averaged_ms.append(tensordot(c, self[cidx[0] + 1],
+                                axes=1))
                     self[cidx[0] + 1] = tensordot(compms, self[cidx[0] + 1], axes=1)
                     self.qn[cidx[0] + 1] = msqn
                     self.qnidx = cidx[0] + 1
                 else:
+                    if type(cstruct) is list:
+                        for c in rotated_c:
+                            averaged_ms.append(tensordot(self[cidx[0]], c, axes=1))
                     self[cidx[0]] = tensordot(self[cidx[0]], compms, axes=1)
                     self.qnidx = self.site_num - 1
             else:
                 if cidx[0] != 0:
+                    if type(cstruct) is list:
+                        for c in rotated_c:
+                            averaged_ms.append(tensordot(self[cidx[0] - 1], c, axes=1)) 
                     self[cidx[0] - 1] = tensordot(self[cidx[0] - 1], compms, axes=1)
                     self.qn[cidx[0]] = msqn
                     self.qnidx = cidx[0] - 1
                 else:
+                    if type(cstruct) is list:
+                        for c in rotated_c:
+                            averaged_ms.append(tensordot(c, self[cidx[0]], axes=1)) 
                     self[cidx[0]] = tensordot(compms, self[cidx[0]], axes=1)
                     self.qnidx = 0
         else:
@@ -728,9 +752,13 @@ class MatrixProduct:
                 self[cidx[1]] = ms
                 self[cidx[0]] = compms
                 self.qnidx = cidx[0]
-
+            if type(cstruct) is list:
+                averaged_ms = rotated_c
             self.qn[cidx[1]] = msqn
-
+        if type(cstruct) is list:
+            return averaged_ms
+        else:
+            return None
 
     def canonicalise(self, stop_idx: int=None, normalize=False):
         # stop_idx: mix canonical site at `stop_idx`
@@ -742,10 +770,6 @@ class MatrixProduct:
         for idx in self.iter_idx_list(full=False, stop_idx=stop_idx):
             mt: Matrix = self[idx]
             assert mt.any()
-            if self.to_right:
-                mt = mt.l_combine()
-            else:
-                mt = mt.r_combine()
             qnbigl, qnbigr, _ = self._get_big_qn([idx])
             system = "L" if self.to_right else "R"
             u, qnlset, v, qnrset = svd_qn.Csvd(

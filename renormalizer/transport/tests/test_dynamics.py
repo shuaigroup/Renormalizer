@@ -26,7 +26,6 @@ from renormalizer.transport.tests.band_param import (
 
 import numpy as np
 
-
 @pytest.mark.parametrize(
     "method, evolve_dt, nsteps, rtol",
     (
