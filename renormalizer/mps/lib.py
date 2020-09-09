@@ -8,9 +8,8 @@ from functools import reduce
 from collections import deque
 
 from renormalizer.mps.backend import np, backend, xp
-from renormalizer.mps.matrix import Matrix, multi_tensor_contract, asxp, asnumpy
-
-sentinel = xp.ones((1, 1, 1), dtype=backend.real_dtype)
+from renormalizer.mps.matrix import (Matrix, multi_tensor_contract, asxp,
+    asnumpy, tensordot)
 
 
 class Environ:
@@ -19,6 +18,11 @@ class Environ:
         # idx indicates the exact position of L or R, like
         # L(idx-1) - mpo(idx) - R(idx+1)
         self._virtual_disk = {}
+        if type(mpo) is list:
+            ndim = len(mpo) + 2
+        else:
+            ndim = 3
+        self.sentinel = xp.ones([1,]*ndim, dtype=backend.real_dtype)
         self._construct(mps, mpo, domain, mps_conj)
 
     def _construct(self, mps, mpo, domain=None, mps_conj=None):
@@ -39,19 +43,24 @@ class Environ:
         self.write_l_sentinel(mps)
         self.write_r_sentinel(mps)
 
-        tensor = sentinel
+        tensor = self.sentinel
         for idx in range(start, end, inc):
-            tensor = contract_one_site(tensor, mps[idx], mpo[idx], domain, ms_conj=mps_conj[idx])
+            if type(mpo) is list:
+                # a list of mpos
+                tensor = contract_one_site_multi_mpo(tensor, mps[idx], [mp[idx] for mp in mpo], domain, ms_conj=mps_conj[idx])
+            else:
+                # one single mpo
+                tensor = contract_one_site(tensor, mps[idx], mpo[idx], domain, ms_conj=mps_conj[idx])
             self.write(domain, idx, tensor)
 
     def write_l_sentinel(self, mps):
-        self.write("L", -1, sentinel)
+        self.write("L", -1, self.sentinel)
 
     def write_r_sentinel(self, mps):
-        self.write("R", len(mps), sentinel)
+        self.write("R", len(mps), self.sentinel)
 
     def GetLR(
-        self, domain, siteidx, mps, mpo, itensor=sentinel, method="Scratch", mps_conj=None):
+        self, domain, siteidx, mps, mpo, itensor=None, method="Scratch", mps_conj=None):
         """
         get the L/R Hamiltonian matrix at a random site(siteidx): 3d tensor
         S-     -S     mpsconj
@@ -67,25 +76,35 @@ class Environ:
             mps_conj = mps.conj()
 
         if siteidx not in range(len(mps)):
-            return sentinel
+            return self.sentinel
 
         if method == "Scratch":
-            itensor = sentinel
+            itensor = self.sentinel
             if domain == "L":
                 sitelist = range(siteidx + 1)
             else:
                 sitelist = range(len(mps) - 1, siteidx - 1, -1)
             for imps in sitelist:
-                itensor = contract_one_site(itensor, mps[imps], mpo[imps],
-                        domain, mps_conj[imps])
+                if type(mpo) is list:
+                    itensor = contract_one_site_multi_mpo(itensor, mps[imps],
+                            [mp[imps] for mp in mpo], domain,
+                            ms_conj=mps_conj[imps])
+                else:
+                    itensor = contract_one_site(itensor, mps[imps], mpo[imps],
+                        domain, ms_conj=mps_conj[imps])
         elif method == "Enviro":
             itensor = self.read(domain, siteidx)
         elif method == "System":
             if itensor is None:
                 offset = -1 if domain == "L" else 1
                 itensor = self.read(domain, siteidx + offset)
-            itensor = contract_one_site(itensor, mps[siteidx], mpo[siteidx],
-                    domain, mps_conj[siteidx])
+            if type(mpo) is list:
+                itensor = contract_one_site_multi_mpo(itensor, mps[siteidx],
+                        [mp[siteidx] for mp in mpo],
+                        domain, mps_conj[siteidx])
+            else:
+                itensor = contract_one_site(itensor, mps[siteidx], mpo[siteidx],
+                        domain, mps_conj[siteidx])
             self.write(domain, siteidx, itensor)
 
         return itensor
@@ -95,6 +114,54 @@ class Environ:
 
     def read(self, domain: str, siteidx: int):
         return asxp(self._virtual_disk[(domain, siteidx)])
+
+
+def contract_one_site_multi_mpo(environ, ms, mos, domain, ms_conj=None):
+    """
+    contract one mpos/mps(mpdm) site, mos is a list containing several local mo
+             _   _
+            | | | |
+    S-S-    | S-|-S-
+    O-O- or | O-|-O- (the ancillary bond is traced)
+    O-O-    | O-|-O-
+    S-S-    | S-|-S-
+            |_| |_|
+    """
+    assert domain in ["L", "R"]
+    if ms_conj is None:
+        ms_conj = ms.conj()
+    if domain == "L":
+        if ms.ndim == 3:
+            outtensor = tensordot(environ, ms_conj, ([0], [0]))
+            for mo in mos:
+                outtensor = tensordot(outtensor, mo, ([0,-2], [0,1]))
+            outtensor = tensordot(outtensor, ms, ([0,-2], [0,1]))
+        elif ms.ndim == 4:
+            outtensor = tensordot(environ, ms_conj.transpose(0,2,1,3), ([0], [0]))
+            for mo in mos:
+                outtensor = tensordot(outtensor, mo, ([0,-2], [0,1]))
+            outtensor = tensordot(outtensor, ms, ([0,1,-2], [0,2,1]))
+        else:
+            raise ValueError(
+                f"MPS ndim is not 3 or 4, got {ms.ndim}"
+            )
+    else:
+        if ms.ndim == 3:
+            outtensor = tensordot(environ, ms_conj, ([0], [-1]))
+            for mo in mos:
+                outtensor = tensordot(outtensor, mo, ([0,-1], [-1,1]))
+            outtensor = tensordot(outtensor, ms, ([0,-1], [-1,1]))
+        elif ms.ndim == 4:
+            outtensor = tensordot(environ, ms_conj.transpose(0,2,1,3), ([0], [-1]))
+            for mo in mos:
+                outtensor = tensordot(outtensor, mo, ([0,-1], [-1,1]))
+            outtensor = tensordot(outtensor, ms, ([0,2,-1], [-1,2,1]))
+        else:
+            raise ValueError(
+                f"MPS ndim is not 3 or 4, got {ms.ndim}"
+            )
+
+    return outtensor
 
 
 def contract_one_site(environ, ms, mo, domain, ms_conj=None):
@@ -142,7 +209,7 @@ def contract_one_site(environ, ms, mo, domain, ms_conj=None):
             ]
         else:
             raise ValueError(
-                f"MPS ndim is not 3 or 4, got {mo.ndim}"
+                f"MPS ndim is not 3 or 4, got {ms.ndim}"
             )
         outtensor = multi_tensor_contract(path, environ, ms_conj, mo, ms)
 
@@ -174,7 +241,7 @@ def contract_one_site(environ, ms, mo, domain, ms_conj=None):
             ]
         else:
             raise ValueError(
-                f"MPS ndim is not 3 or 4, got {mo.ndim}"
+                f"MPS ndim is not 3 or 4, got {ms.ndim}"
             )
         outtensor = multi_tensor_contract(path, ms_conj, environ, mo, ms)
 
@@ -344,23 +411,23 @@ def select_Xbasis(qnset, Sset, qnlist, Mmax, spectratype, percent=0.0):
     return sidx
 
 
-def compressed_sum(mps_list, batchsize=5):
+def compressed_sum(mps_list, batchsize=5, temp_m_trunc=None):
     assert len(mps_list) != 0
     mps_queue = deque(mps_list)
     while len(mps_queue) != 1:
         term_to_sum = []
         for i in range(min(batchsize, len(mps_queue))):
             term_to_sum.append(mps_queue.popleft())
-        s = _sum(term_to_sum)
+        s = _sum(term_to_sum, temp_m_trunc=temp_m_trunc)
         mps_queue.append(s)
     return mps_queue[0]
 
 
-def _sum(mps_list, compress=True):
+def _sum(mps_list, compress=True, temp_m_trunc=None):
     new_mps = reduce(lambda mps1, mps2: mps1.add(mps2), mps_list)
     if compress and not mps_list[0].compress_add:
         new_mps.canonicalise()
-        new_mps.compress()
+        new_mps.compress(temp_m_trunc=temp_m_trunc)
     return new_mps
 
 
@@ -371,6 +438,9 @@ def cvec2cmat(cshape, c, qnmat, nexciton, nroots=1):
         np.place(cstruct, qnmat == nexciton, c)
     else:
         cstruct = []
+        if type(c) is not list:
+            assert c.ndim == 2
+            c = [c[:,iroot] for iroot in range(c.shape[1])]
         for ic in c:
             icstruct = np.zeros(cshape, dtype=ic.dtype)
             np.place(icstruct, qnmat == nexciton, ic)

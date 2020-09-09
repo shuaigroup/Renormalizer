@@ -4,7 +4,7 @@ import logging
 from collections import Counter, deque
 from functools import wraps
 from typing import Union, List, Dict
-
+import itertools
 import scipy
 from scipy import stats
 
@@ -1240,6 +1240,149 @@ class Mps(MatrixProduct):
             dim2 = mt.shape[-1]
             res = np.tensordot(res, mt.array, axes=1).reshape(1, dim1, dim2)
         return res[0, :, 0]
+    
+    def calc_1ordm(self):
+        r""" Calcuate 1-orbital reduced density matrix
+        :math: `\rho_i = \textrm{Tr}_{j \neq i} | \Psi \rangle \langle \Psi |`
+        
+        Returns
+        -------
+        rdm: Dict
+            {0:\rho_0, 1:\rho_1, ...}. The key is the index of the site.
+        """
+
+        identity = Mpo.identity(self.mol_list)
+        environ = Environ(self, identity, "R")
+        
+        rdm = {}
+        for ims, ms in enumerate(self):
+            ltensor = environ.GetLR(
+                "L", ims-1, self, identity, itensor=None, method="System"
+            )
+            rtensor = environ.GetLR(
+                "R", ims+1, self, identity, itensor=None, method="Enviro"
+            )
+            ltensor = ltensor.reshape(ltensor.shape[0], ltensor.shape[-1])
+            rtensor = rtensor.reshape(rtensor.shape[0], rtensor.shape[-1])
+            
+            tensor = tensordot(ltensor, ms.conj(), ([0],[0]))
+            tensor = tensordot(tensor, rtensor, ([-1],[0]))
+            if ms.ndim == 3:
+                tensor = tensordot(tensor, ms, ([0,-1],[0,-1]))
+            else:
+                tensor = tensordot(tensor, ms, ([0,-1,-2],[0,-1,-2]))
+            assert xp.allclose(tensor, tensor.T.conj())
+            rdm[ims] = asnumpy(tensor)
+
+        return rdm
+    
+    def calc_2ordm(self):
+        r""" Calcuate 2-orbital reduced density matrix
+        :math: `\rho_{ij} = \textrm{Tr}_{k \neq i, k \neq j} | \Psi \rangle \langle \Psi |`
+        
+        Returns
+        -------
+        rdm: Dict
+            {(0,1):\rho_{01}, (0,2):\rho_{02}, ...}. The key is a tuple of index of the site.
+        """
+        
+        identity = Mpo.identity(self.mol_list)
+        environ_R = Environ(self, identity, "R")
+        environ_L = Environ(self, identity, "L")
+        L_component = []
+        R_component = []
+        rdm = {}
+        # first construct 1-orbital environment
+        for ims, ms in enumerate(self):
+            ltensor = environ_L.GetLR("L", ims-1, self, identity,
+                    itensor=None, method="Enviro")
+            ltensor = ltensor.reshape(ltensor.shape[0], ltensor.shape[-1])
+            tensor = tensordot(ltensor, ms.conj(), ([0],[0]))
+            if ms.ndim == 3:
+                tensor = tensordot(tensor, ms, ([0],[0]))
+            elif ms.ndim == 4:
+                tensor = tensordot(tensor, ms, ([0,2],[0,2]))
+            L_component.append(tensor.transpose((0,2,1,3)))
+            
+            rtensor = environ_R.GetLR("R", ims+1, self, identity,
+                    itensor=None, method="Enviro")
+            rtensor = rtensor.reshape(rtensor.shape[0], rtensor.shape[-1])
+            tensor = tensordot(ms.conj(), rtensor, ([-1],[0]))
+            if ms.ndim == 3:
+                tensor = tensordot(tensor, ms, ([-1],[-1]))
+            elif ms.ndim == 4:
+                tensor = tensordot(tensor, ms, ([2,-1],[2,-1]))
+            R_component.append(tensor.transpose((0,2,1,3)))
+        
+        # merge two 1-orbital environment together
+        for ims in range(self.site_num):
+            tensor = L_component[ims]
+            for jms in range(ims+1, self.site_num):
+                if jms != ims+1:
+                    kms = jms - 1
+                    tensor = tensordot(tensor, self[kms].conj(), ([2],[0]))
+                    if self[kms].ndim == 3:
+                        tensor = tensordot(tensor, self[kms], ([2,3],[0,1]))
+                    elif self[kms].ndim == 4:
+                        tensor = tensordot(tensor, self[kms], ([2,3,4],[0,1,2]))
+                
+                rtensor = R_component[jms]
+                res = tensordot(tensor, rtensor,
+                        ([2,3],[0,1])).transpose(0,2,1,3)
+                rdm[(ims, jms)] = asnumpy(res.reshape(res.shape[0]*res.shape[1],-1))
+        return rdm
+    
+    def calc_orbital_entropy(self, entropy_type):
+        r""" Calculate 1-orbital, 2-orbital Von Neumann entropy
+            :math:`\textrm{entropy} = -Tr(\rho ln \rho)`
+            where ``ln`` stands for natural logarithm.
+
+        Paramters
+        ---------
+        entropy_type: str
+            "1o" for 1-orbital entropy, "2o" for 2-orbital entropy
+        
+        Returns
+        -------
+        entropy: dict
+            the key is the index or the tuple of index of mps sites.
+        """
+
+        if entropy_type == "1o":
+            rdm = self.calc_1ordm()
+        elif entropy_type == "2o":
+            rdm = self.calc_2ordm()
+        else:
+            assert False
+
+        entropy = {}
+        for key, dm in rdm.items():
+            w, v = scipy.linalg.eigh(dm)
+            w[w<=0] = 1e-100
+            entro = np.sum(-w*np.log(w))
+            entropy[key] = entro
+        return entropy
+    
+    def calc_orbital_mutual_entropy(self):
+        r""" Calculate mutual entropy between two orbitals.
+            :math: `m_{ij} = (e_i + e_j - e_{ij})/2`
+            See Chemical Physics 323 (2006) 519–531
+        
+        Returns
+        -------
+        mut_entropy: 2d np.ndarry
+            mutual energy with shape (nsite, nsite)
+        """
+        entropy_1o = self.calc_orbital_entropy("1o")
+        entropy_2o = self.calc_orbital_entropy("2o")
+        nsites = self.site_num
+        mut_entropy = np.zeros((nsites, nsites))
+        for iorb, jorb in itertools.combinations(range(nsites),2):
+            key = (iorb, jorb) if (iorb, jorb) in entropy_2o.keys() else (jorb, iorb)
+            mut_entropy[iorb, jorb] = (entropy_1o[iorb] + entropy_1o[jorb] -
+                    entropy_2o[key]) / 2
+        mut_entropy += mut_entropy.T
+        return mut_entropy
 
     def calc_reduced_density_matrix(self) -> np.ndarray:
 

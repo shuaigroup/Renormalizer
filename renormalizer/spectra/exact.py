@@ -66,7 +66,7 @@ class SpectraExact(SpectraTdMpsJobBase):
         mmax = self.optimize_config.procedure[0][0]
         i_mps = Mps.random(self.h_mpo.model, self.nexciton, mmax, 1)
         i_mps.optimize_config = self.optimize_config
-        gs.optimize_mps(i_mps, self.h_mpo)
+        energy, i_mps = gs.optimize_mps(i_mps, self.h_mpo)
         if self.spectratype == "emi":
             operator = "a"
         else:
@@ -92,14 +92,13 @@ class SpectraExact(SpectraTdMpsJobBase):
             a_bra_mps = ket_mps.copy()
         else:
             a_bra_mps = a_ket_mps.copy()
-
         return BraKetPair(a_bra_mps, a_ket_mps)
 
     def evolve_single_step(self, evolve_dt):
         latest_bra_mps, latest_ket_mps = self.latest_mps
         latest_ket_mps = latest_ket_mps.evolve_exact(self.h_mpo, evolve_dt, self.space2)
         if self.temperature != 0:
-            latest_ket_mps = latest_bra_mps.evolve_exact(
+            latest_bra_mps = latest_bra_mps.evolve_exact(
                 self.h_mpo, evolve_dt, self.space1
             )
         return BraKetPair(latest_bra_mps, latest_ket_mps)

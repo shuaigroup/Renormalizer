@@ -16,28 +16,61 @@ procedure = [[10, 0.4], [20, 0.2], [30, 0.1], [40, 0], [40, 0]]
         1,
         4,
 ))
-def test_optimization(scheme):
+@pytest.mark.parametrize("method", (
+        "1site",
+        "2site",
+))
+def test_optimization(scheme, method):
     mps, mpo = construct_mps_mpo_2(holstein_model.switch_scheme(scheme), procedure[0][0], nexciton)
     mps.optimize_config.procedure = procedure
-    mps.optimize_config.method = "2site"
-    energies, _ = optimize_mps(mps.copy(), mpo)
+    mps.optimize_config.method = method
+    energies, mps_opt = optimize_mps(mps.copy(), mpo)
     assert energies[-1] == pytest.approx(0.08401412 + holstein_model.gs_zpe, rel=1e-5)
-
-    mps.optimize_config.method = "1site"
-    energies, _ = optimize_mps(mps.copy(), mpo)
-    assert energies[-1] == pytest.approx(0.08401412 + holstein_model.gs_zpe, rel=1e-5)
+    assert mps_opt.expectation(mpo) == pytest.approx(0.08401412 + holstein_model.gs_zpe, rel=1e-5)
 
 @pytest.mark.parametrize("method", (
         "1site",
         "2site",
 ))
-def test_multistate(method):
+@pytest.mark.parametrize("algo", (
+        "davidson",
+        "primme",
+))
+def test_multistate(method, algo):
     mps, mpo = construct_mps_mpo_2(holstein_model, procedure[0][0], nexciton)
     mps.optimize_config.procedure = procedure
     mps.optimize_config.nroots = 4
     mps.optimize_config.method = method
+    mps.optimize_config.algo = algo
     mps.optimize_config.e_atol = 1e-6
     mps.optimize_config.e_rtol = 1e-6
-    energies, _ = optimize_mps(mps.copy(), mpo)
+    energy, mps = optimize_mps(mps, mpo)
+    expectation = [mp.expectation(mpo) for mp in mps]
     energy_std = np.array([0.08401412, 0.08449771, 0.08449801, 0.08449945]) + holstein_model.gs_zpe
-    assert np.allclose(energies[-1], energy_std)
+    assert np.allclose(energy[-1], energy_std)
+    assert np.allclose(expectation, energy_std)
+
+@pytest.mark.parametrize("method", (
+        "1site",
+        "2site",
+))
+@pytest.mark.parametrize("nroots", (
+        1,
+        4,
+))
+def test_ex(method, nroots):
+    mps, mpo = construct_mps_mpo_2(holstein_model, procedure[0][0], nexciton)
+    mps.optimize_config.procedure = procedure
+    mps.optimize_config.nroots = nroots
+    mps.optimize_config.method = method
+    mps.optimize_config.e_atol = 1e-6
+    mps.optimize_config.e_rtol = 1e-6
+    omega = 0.084
+    energy, mps = optimize_mps(mps, mpo, omega=omega)
+    energy_std = np.array([0.08401412, 0.08449771, 0.08449801, 0.08449945]) + holstein_model.gs_zpe
+    if nroots == 1:
+        #print("eigenenergy", mps.expectation(mpo))
+        assert np.allclose(mps.expectation(mpo), energy_std[0])
+    else:
+        #print("eigenenergy", [ms.expectation(mpo) for ms in mps])
+        assert np.allclose([ms.expectation(mpo) for ms in mps], energy_std)

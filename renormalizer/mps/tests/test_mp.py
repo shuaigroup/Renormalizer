@@ -6,7 +6,7 @@ import numpy as np
 import pytest
 
 from renormalizer.mps import Mps, Mpo, MpDm
-from renormalizer.mps.matrix import tensordot
+from renormalizer.mps.matrix import tensordot, asnumpy
 from renormalizer.mps.lib import Environ
 from renormalizer.tests.parameter import custom_model, holstein_model
 from renormalizer.utils import CompressCriteria
@@ -59,6 +59,23 @@ def test_environ():
         e = complex(tensordot(l, r, axes=((0, 1, 2), (0, 1, 2)))).real
         assert pytest.approx(e) == mps.expectation(mpo)
 
+# multi_mpo routine for single mpo calculation
+@pytest.mark.parametrize("mpdm", (True, False))
+def test_environ_multi_mpo(mpdm):
+    mps = Mps.random(holstein_model, 1, 10)
+    if mpdm:
+        mps = MpDm.from_mps(mps)
+    mpo = Mpo(holstein_model)
+    mps = mps.evolve(mpo, 10)
+    environ = Environ(mps, mpo)
+    environ_multi_mpo = Environ(mps, [mpo])
+    for i in range(len(mps)-1):
+        l = environ.read("L", i)
+        r = environ.read("R", i+1)
+        l2 = environ_multi_mpo.read("L", i)
+        r2 = environ_multi_mpo.read("R", i+1) 
+        assert np.allclose(asnumpy(l), asnumpy(l2))
+        assert np.allclose(asnumpy(r), asnumpy(r2))
 
 @pytest.mark.parametrize("comp", (True, False))
 @pytest.mark.parametrize("mp", (

@@ -192,6 +192,8 @@ class BasisSHO(BasisSet):
                                          )
             else:
                 mat = np.diag(self.dvr_x**2)
+        elif op_symbol == "x x":
+            mat = self.op_mat("x^2")
         
         elif op_symbol.split("^")[0] == "x":
             # moments of x
@@ -227,7 +229,9 @@ class BasisSHO(BasisSet):
                                      )
             if self.dvr:
                 mat = self.dvr_v.T @ mat @ self.dvr_v
-        
+        elif op_symbol == "p p":
+            mat = self.op_mat("p^2") 
+
         elif op_symbol.split("^")[0] == "p":
             # moments of p
             if len(op_symbol.split("^")) == 1:
@@ -253,7 +257,35 @@ class BasisSHO(BasisSet):
                 
             if self.dvr:
                 mat = self.dvr_v.T @ mat @ self.dvr_v
+        
+        elif op_symbol == "x p":
+            mat = -1.0j/2 *(self.op_mat(r"b b")
+                    - self.op_mat(r"b^\dagger b^\dagger")
+                    + self.op_mat(r"b b^\dagger")
+                    - self.op_mat(r"b^\dagger b"))
+        
+        elif op_symbol == "x partialx":
+            # x partialx is real, while x p is imaginary
+            mat = (self.op_mat("x p") / -1.0j).real
+        
+        elif op_symbol == "p x":
+            mat = -1.0j/2 *(self.op_mat(r"b b")
+                    - self.op_mat(r"b^\dagger b^\dagger")
+                    - self.op_mat(r"b b^\dagger")
+                    + self.op_mat(r"b^\dagger b"))
+        
+        elif op_symbol == "partialx x":
+            mat = (self.op_mat("p x") / -1.0j).real
 
+        elif op_symbol == "partialx":
+            mat = (self.op_mat("p") / -1.0j).real
+        
+        elif op_symbol == "partialx^2":
+            mat = self.op_mat("p^2") * -1
+
+        elif op_symbol == "partialx partialx":
+            mat = self.op_mat("partialx^2")
+        
         elif op_symbol == "I":
             mat = np.eye(self.nbas)
         
