@@ -16,7 +16,7 @@ logger = logging.getLogger(__name__)
 def test_tda():
     from renormalizer.tests.c2h4_para import ff, omega_std, B, zeta
     # See  J. Chem. Phys. 153, 084118 (2020) for the details of the Hamiltonian
-    # the order is according to the harmonic frequency from small to large
+    # the order is according to the harmonic frequency from small to large.
     ham_terms = []
     
     nmode = 12
