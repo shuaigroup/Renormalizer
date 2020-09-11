@@ -1243,7 +1243,9 @@ class Mps(MatrixProduct):
     
     def calc_1ordm(self):
         r""" Calcuate 1-orbital reduced density matrix
-        :math: `\rho_i = \textrm{Tr}_{j \neq i} | \Psi \rangle \langle \Psi |`
+        
+            .. math::
+                \rho_i = \textrm{Tr}_{j \neq i} | \Psi \rangle \langle \Psi |
         
         Returns
         -------
@@ -1334,18 +1336,21 @@ class Mps(MatrixProduct):
     
     def calc_orbital_entropy(self, entropy_type):
         r""" Calculate 1-orbital, 2-orbital Von Neumann entropy
+
             :math:`\textrm{entropy} = -Tr(\rho ln \rho)`
+            
             where ``ln`` stands for natural logarithm.
 
         Paramters
         ---------
-        entropy_type: str
+        entropy_type : str
             "1o" for 1-orbital entropy, "2o" for 2-orbital entropy
         
         Returns
         -------
-        entropy: dict
+        entropy : dict
             the key is the index or the tuple of index of mps sites.
+        
         """
 
         if entropy_type == "1o":
@@ -1365,13 +1370,15 @@ class Mps(MatrixProduct):
     
     def calc_orbital_mutual_entropy(self):
         r""" Calculate mutual entropy between two orbitals.
-            :math: `m_{ij} = (e_i + e_j - e_{ij})/2`
+            :math:`m_{ij} = (e_i + e_j - e_{ij})/2`
+            
             See Chemical Physics 323 (2006) 519–531
         
         Returns
         -------
-        mut_entropy: 2d np.ndarry
+        mut_entropy : 2d np.ndarry
             mutual energy with shape (nsite, nsite)
+
         """
         entropy_1o = self.calc_orbital_entropy("1o")
         entropy_2o = self.calc_orbital_entropy("2o")
@@ -1413,8 +1420,10 @@ class Mps(MatrixProduct):
         Calculate von Neumann entropy at each bond according to :math:`S = -\textrm{Tr}(\rho \ln \rho)`
         where :math:`\rho` is the density matrix.
 
-        Returns:
+        Returns
+        -------
             a NumPy array containing the entropy values.
+        
         """
         _, s_list = self.compress(temp_m_trunc=np.inf, ret_s=True)
         entropy_list = []

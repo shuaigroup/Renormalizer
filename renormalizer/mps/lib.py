@@ -15,6 +15,9 @@ from renormalizer.mps.matrix import (Matrix, multi_tensor_contract, asxp,
 class Environ:
     def __init__(self, mps, mpo, domain=None, mps_conj=None):
         # todo: real disk and other backend
+        # todo: contract_one_site_multi_mpo could generalize contract_one_site,
+        # we could unify them in the future.
+
         # idx indicates the exact position of L or R, like
         # L(idx-1) - mpo(idx) - R(idx+1)
         self._virtual_disk = {}

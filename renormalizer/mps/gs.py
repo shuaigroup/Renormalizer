@@ -117,9 +117,11 @@ def optimize_mps(mps: Mps, mpo: Mpo, omega :float =None) -> Tuple[List, Mps]:
         mps.ensure_left_canon()
         env = "L"
     
-    # in state-averged calculation, contains C of each state
+    # in state-averged calculation, contains C of each state for better initial
+    # guess
     averaged_ms = None   
     
+    # the index of active site of the returned mps
     res_mps_idx = None
     
     # target eigenstate close to omega with (H-omega)^2
@@ -444,7 +446,7 @@ def optimize_mps(mps: Mps, mpo: Mpo, omega :float =None) -> Tuple[List, Mps]:
                 else:
                     e = w[:nroots]
                     c = [v[:,iroot] for iroot in range(min(nroots,v.shape[1]))]
-            # if multi roots, both davidson and arpack return np.ndarray
+            # if multi roots, both davidson and primme return np.ndarray
             if nroots > 1:
                 e = e.tolist()
             logger.debug(f"energy: {e}")

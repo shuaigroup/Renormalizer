@@ -2,7 +2,9 @@ from renormalizer.mps import Mps, Mpo, gs, TDA
 from renormalizer.model import Op, Model
 from renormalizer.model import basis as ba
 from renormalizer.utils.constant import *
+from renormalizer.mps.tests import cur_dir
 
+import os
 import numpy as np
 import itertools
 from collections import Counter, defaultdict
@@ -106,7 +108,7 @@ def test_tda():
     config, compressed_mps = tda.analysis_dominant_config(alias=alias)
     # std is calculated with M=200, include_psi0=True; the initial gs is
     # calculated with 9 state SA-DMRG; physical_bond=6 
-    std = np.load("c2h4_std.npz")["200"]
+    std = np.load(os.path.join(cur_dir, "c2h4_std.npz"))["200"]
     assert np.allclose(energies[-1]*au2cm, std[0], atol=2)
     assert np.allclose(e*au2cm, std[1:4], atol=3)
 

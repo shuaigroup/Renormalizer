@@ -28,7 +28,7 @@ Contents
    tutorial.md
    model.rst
    mps.rst
-   gs.rst
+   static.rst
    spectrum.rst
    ct.rst
    cv.rst

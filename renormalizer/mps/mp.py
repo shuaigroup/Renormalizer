@@ -613,7 +613,7 @@ class MatrixProduct:
         
         Parameters
         ---------
-        cstruct : ndarray
+        cstruct : ndarray, List[ndarray]
             The active site coefficient.
         cidx : list
             The List of active site index.
@@ -632,9 +632,13 @@ class MatrixProduct:
 
         Returns
         -------
-        None : 
-            ``self`` is overwritten inplace.
-
+        averaged_ms : 
+            if ``cstruct`` is a list, ``averaged_ms`` is a list of rotated ms of
+                each element in ``cstruct`` as a single site calculation. It is
+                used for better initial guess in SA-DMRG algorithm. Otherwise,
+                ``None`` is returned.
+                ``self`` is overwritten inplace. 
+        
         """
         
         system = "L" if self.to_right else "R"

@@ -30,7 +30,8 @@ class TDA(object):
     nroots: int, optional
         number of roots to be calculated. Default is `1`.
     algo: str, optional
-        iterative diagonalization algorithm. Default is ``davidson``.
+        iterative diagonalization solver. Default is ``primme``.
+        Valid option are ``davidson`` and ``primme``.
 
     Note
     ----

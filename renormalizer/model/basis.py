@@ -280,11 +280,8 @@ class BasisSHO(BasisSet):
         elif op_symbol == "partialx":
             mat = (self.op_mat("p") / -1.0j).real
         
-        elif op_symbol == "partialx^2":
+        elif op_symbol in ["partialx^2", "partialx partialx"]:
             mat = self.op_mat("p^2") * -1
-
-        elif op_symbol == "partialx partialx":
-            mat = self.op_mat("partialx^2")
         
         elif op_symbol == "I":
             mat = np.eye(self.nbas)
