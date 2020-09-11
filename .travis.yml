@@ -3,6 +3,9 @@ language: python
 python:
     - "3.6"
 
+before_install:
+    - sudo apt-get -y install libblas-dev liblapack-dev
+
 install:
     - pip install -r requirements.txt
     - pip install qutip==4.4.1
