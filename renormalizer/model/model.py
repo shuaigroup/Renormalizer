@@ -182,17 +182,49 @@ class Model:
 
 
 class HolsteinModel(Model):
+    r"""
+    Interface for convenient Holstein model construction.
+    The Hamiltonian of the Holstein model:
 
-    def __init__(self,  mol_list: List[Mol], j_matrix: Union[Quantity, np.ndarray, None], scheme: int = 2, periodic: bool = False):
+    .. math::
+        \hat H = \sum_{ij} J_{ij} a^\dagger_i a_j + \sum_{i\lambda} \omega_{i\lambda} b^\dagger_{i\lambda} b_{i\lambda}
+        + \sum_{i\lambda} g_{i\lambda} \omega_{i\lambda} a^\dagger_i a_i (b^\dagger_{i\lambda} + b_{i\lambda})
+
+    Parameters
+    ==========
+    mol_list : :class:`list` of :class:`~renormalizer.model.Mol`
+        Information for the molecules contains in the system.
+        See the :class:`~renormalizer.model.Mol` class for more details.
+    j_matrix : :class:`np.ndarray` or :class:`~renormalizer.utils.Quantity`.
+        :math:`J_{ij}` in the Holstein Hamiltonian. When :class:`Quantity` is used as input, the system is taken to
+        have homogeneous nearest-neighbour interaction
+        :math:`J_{ij}=J \delta_{i, j+1} + J \delta_{i, j-1}`.
+        For the boundary condition, see the ``periodic`` option.
+    scheme : int
+        The scheme of the basis for the model. Historically four numbers are permitted: 1, 2, 3, 4.
+        Now 1, 2 and 3 are equivalent, and the bases are arranged as:
+
+        .. math::
+            [\rm{e}_{0}, \rm{ph}_{0,0}, \rm{ph}_{0,1}, \cdots, \rm{e}_{1}, \rm{ph}_{1,0}, \rm{ph}_{1,1}, \cdots ]
+
+        And when ``scheme`` is set to 4, all electronic DoF is contained in one
+        :class:`~renormalizer.model.basis.BasisSet`
+        using :class:`~renormalizer.model.basis.BasisMultiElectronVac` and the bases are arranged as:
+
+        .. math::
+            [\rm{ph}_{0,0},  \rm{ph}_{0,1}, \cdots, \rm{ph}_{n/2, 0}, \rm{ph}_{n/2, 1}, \cdots, \rm{e}_{0, 1, \cdots, n}
+            \rm{ph}_{n/2+1, 0}, \rm{ph}_{n/2+1, 1}, \cdots]
+
+    periodic : bool
+        Whether use periodical boundary condition when constructing `j_matrix`
+        from :class:`~renormalizer.utils.Quantity`. Default is ``False``.
+    """
+
+    def __init__(self,  mol_list: List[Mol], j_matrix: Union[Quantity, np.ndarray], scheme: int = 2, periodic: bool = False):
         # construct the electronic coupling matrix
 
         mol_num = len(mol_list)
         self.mol_list = mol_list
-
-        if j_matrix is None:
-            # spin-boson model
-            assert len(mol_list) == 1
-            j_matrix = Quantity(0)
 
         if isinstance(j_matrix, Quantity):
             j_matrix = construct_j_matrix(mol_num, j_matrix, periodic)
@@ -203,7 +235,6 @@ class HolsteinModel(Model):
 
         self.j_matrix = j_matrix
         self.scheme = scheme
-        self.periodic = periodic
 
         basis = []
         ham = []
