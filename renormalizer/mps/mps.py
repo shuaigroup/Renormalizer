@@ -230,7 +230,7 @@ class Mps(MatrixProduct):
         return mps
 
     @classmethod
-    def ground_state(cls, model: Model, max_entangled: bool):
+    def ground_state(cls, model: Model, max_entangled: bool, normalize: bool=True):
         r"""
         Obtain ground state at :math:`T = 0` or :math:`T = \infty` (maximum entangled).
         Electronic DOFs are always at ground state. and vibrational DOFs depend on ``max_entangled``.
@@ -257,7 +257,10 @@ class Mps(MatrixProduct):
             ms = np.zeros((1, pdim, 1))
             if basis.is_phonon:
                 if max_entangled:
-                    ms[0, :, 0] = 1.0 / np.sqrt(pdim)
+                    if normalize:
+                        ms[0, :, 0] = 1.0 / np.sqrt(pdim)
+                    else:
+                        ms[0, :, 0] = 1.0
                 else:
                     ms[0, 0, 0] = 1.0
                 mps[isite] = ms
@@ -274,14 +277,20 @@ class Mps(MatrixProduct):
                         nzeros = basis.sigmaqn.count(0)
                         qn = basis.sigmaqn[dof.split("_")[1]]
                         if qn == 0:
-                            ms[0, dof.split("_")[1], 0] = 1. / np.sqrt(nzeros)
+                            if normalize:
+                                ms[0, dof.split("_")[1], 0] = 1. / np.sqrt(nzeros)
+                            else:
+                                ms[0, dof.split("_")[1], 0] = 1.
                     else:
                         raise NotImplementedError # not well defined
                 elif isinstance(basis, ba.BasisMultiElectronVac):
                         ms[0,0,0] = 1.
                 elif isinstance(basis, ba.BasisHalfSpin):
                     if max_entangled:
-                        ms[0,:,0] = np.sqrt(0.5)
+                        if normalize:
+                            ms[0,:,0] = np.sqrt(0.5)
+                        else:
+                            ms[0,:,0] = 1.
                     else:
                         ms[0,0,0] = 1.
                 else:

@@ -51,7 +51,7 @@ class MpDm(Mps, Mpo):
         """
         T = \\infty locally maximal entangled EX state
         """
-        mps = Mps.ground_state(model, max_entangled=True)
+        mps = Mps.ground_state(model, max_entangled=True, normalize=normalize)
         # the creation operator \\sum_i a^\\dagger_i
         ex_mpo = Mpo.onsite(model, r"a^\dagger")
 
@@ -61,8 +61,8 @@ class MpDm(Mps, Mpo):
         return cls.from_mps(ex_mps)
 
     @classmethod
-    def max_entangled_gs(cls, model) -> "MpDm":
-        return cls.from_mps(Mps.ground_state(model, max_entangled=True))
+    def max_entangled_gs(cls, model, normalize: bool=True) -> "MpDm":
+        return cls.from_mps(Mps.ground_state(model, max_entangled=True, normalize=normalize))
 
     def _get_sigmaqn(self, idx):
         array_up = self.model.basis[idx].sigmaqn
@@ -116,7 +116,7 @@ class MpDm(Mps, Mpo):
         return path
 
     def conj_trans(self):
-        raise NotImplementedError
+        # raise NotImplementedError
         logger.warning("using conj_trans on mpdm leads to dummy qn")
         new_mpdm: "MpDmBase" = super().conj_trans()
         new_mpdm.use_dummy_qn = True
