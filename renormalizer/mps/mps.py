@@ -230,17 +230,30 @@ class Mps(MatrixProduct):
         return mps
 
     @classmethod
-    def ground_state(cls, model: Model, max_entangled: bool):
+    def ground_state(cls, model: Model, max_entangled: bool, normalize:bool=True):
         r"""
         Obtain ground state at :math:`T = 0` or :math:`T = \infty` (maximum entangled).
         Electronic DOFs are always at ground state. and vibrational DOFs depend on ``max_entangled``.
         For Spin-Boson model the electronic DOF also depends on ``max_entangled``.
+        
 
-        Args:
-            model (:class:`~renormalizer.model.Model`): system information.
-            max_entanggled (bool): temperature of the vibrational DOFs. If set to ``True``,
+        Parameters
+        ----------
+            model : :class:`~renormalizer.model.Model`
+                system information.
+            max_entangled : bool
+                temperature of the vibrational DOFs. If set to ``True``,
                 :math:`T = \infty` and if set to ``False``, :math:`T = 0`.
+            normalize: bool, optional
+                if the returned Mps are normalized when ``max_entangled=True``.
+                Default is True. If ``normalize=False``, the vibrational part is identity.
+
+        Returns
+        -------
+            mps : renormalizer.mps.Mps
+        
         """
+        
         mps = cls()
         mps.model = model
         mps.qn = [[0]] * (model.nsite + 1)
@@ -257,7 +270,10 @@ class Mps(MatrixProduct):
             ms = np.zeros((1, pdim, 1))
             if basis.is_phonon:
                 if max_entangled:
-                    ms[0, :, 0] = 1.0 / np.sqrt(pdim)
+                    if normalize:
+                        ms[0, :, 0] = 1.0 / np.sqrt(pdim)
+                    else:
+                        ms[0, :, 0] = 1.0
                 else:
                     ms[0, 0, 0] = 1.0
                 mps[isite] = ms
@@ -274,14 +290,22 @@ class Mps(MatrixProduct):
                         nzeros = basis.sigmaqn.count(0)
                         qn = basis.sigmaqn[dof.split("_")[1]]
                         if qn == 0:
-                            ms[0, dof.split("_")[1], 0] = 1. / np.sqrt(nzeros)
+                            if normalize:
+                                # Todo: here the dof_name only supports XXX_0, XXX_1
+                                # should be modified in the future
+                                ms[0, dof.split("_")[1], 0] = 1. / np.sqrt(nzeros)
+                            else:
+                                ms[0, dof.split("_")[1], 0] = 1.
                     else:
                         raise NotImplementedError # not well defined
                 elif isinstance(basis, ba.BasisMultiElectronVac):
                         ms[0,0,0] = 1.
                 elif isinstance(basis, ba.BasisHalfSpin):
                     if max_entangled:
-                        ms[0,:,0] = np.sqrt(0.5)
+                        if normalize:
+                            ms[0,:,0] = 1. / np.sqrt(2.)
+                        else:
+                            ms[0,:,0] = 1.
                     else:
                         ms[0,0,0] = 1.
                 else:
@@ -1241,19 +1265,18 @@ class Mps(MatrixProduct):
             res = np.tensordot(res, mt.array, axes=1).reshape(1, dim1, dim2)
         return res[0, :, 0]
     
-    def calc_1ordm(self):
-        r""" Calcuate 1-orbital reduced density matrix
+    def calc_1site_rdm(self):
+        r""" Calculate 1-site reduced density matrix
         
-            .. math::
-                \rho_i = \textrm{Tr}_{j \neq i} | \Psi \rangle \langle \Psi |
+            :math:`\rho_i = \textrm{Tr}_{j \neq i} | \Psi \rangle \langle \Psi|`
         
         Returns
         -------
         rdm: Dict
-            {0:\rho_0, 1:\rho_1, ...}. The key is the index of the site.
+            :math:`\{0:\rho_0, 1:\rho_1, \cdots\}`. The key is the index of the site.
         """
 
-        identity = Mpo.identity(self.mol_list)
+        identity = Mpo.identity(self.model)
         environ = Environ(self, identity, "R")
         
         rdm = {}
@@ -1278,23 +1301,24 @@ class Mps(MatrixProduct):
 
         return rdm
     
-    def calc_2ordm(self):
-        r""" Calcuate 2-orbital reduced density matrix
-        :math: `\rho_{ij} = \textrm{Tr}_{k \neq i, k \neq j} | \Psi \rangle \langle \Psi |`
+    def calc_2site_rdm(self):
+        r""" Calculate 2-site reduced density matrix
+        
+        :math:`\rho_{ij} = \textrm{Tr}_{k \neq i, k \neq j} | \Psi \rangle \langle \Psi |`.
         
         Returns
         -------
         rdm: Dict
-            {(0,1):\rho_{01}, (0,2):\rho_{02}, ...}. The key is a tuple of index of the site.
+            :math:`\{(0,1):\rho_{01}, (0,2):\rho_{02}, \cdots\}`. The key is a tuple of index of the site.
         """
         
-        identity = Mpo.identity(self.mol_list)
+        identity = Mpo.identity(self.model)
         environ_R = Environ(self, identity, "R")
         environ_L = Environ(self, identity, "L")
         L_component = []
         R_component = []
         rdm = {}
-        # first construct 1-orbital environment
+        # first construct 1-site environment
         for ims, ms in enumerate(self):
             ltensor = environ_L.GetLR("L", ims-1, self, identity,
                     itensor=None, method="Enviro")
@@ -1316,7 +1340,7 @@ class Mps(MatrixProduct):
                 tensor = tensordot(tensor, ms, ([2,-1],[2,-1]))
             R_component.append(tensor.transpose((0,2,1,3)))
         
-        # merge two 1-orbital environment together
+        # merge two 1-site environment together
         for ims in range(self.site_num):
             tensor = L_component[ims]
             for jms in range(ims+1, self.site_num):
@@ -1334,66 +1358,14 @@ class Mps(MatrixProduct):
                 rdm[(ims, jms)] = asnumpy(res.reshape(res.shape[0]*res.shape[1],-1))
         return rdm
     
-    def calc_orbital_entropy(self, entropy_type):
-        r""" Calculate 1-orbital, 2-orbital Von Neumann entropy
-
-            :math:`\textrm{entropy} = -Tr(\rho ln \rho)`
-            
-            where ``ln`` stands for natural logarithm.
-
-        Paramters
-        ---------
-        entropy_type : str
-            "1o" for 1-orbital entropy, "2o" for 2-orbital entropy
+    def calc_edof_rdm(self) -> np.ndarray:
+        r"""Calculate the reduced density matrix of electronic DoF
         
-        Returns
-        -------
-        entropy : dict
-            the key is the index or the tuple of index of mps sites.
+        :math:`\rho_{ij} = \langle \Psi | a_i^\dagger a_j | \Psi \rangle`
         
         """
-
-        if entropy_type == "1o":
-            rdm = self.calc_1ordm()
-        elif entropy_type == "2o":
-            rdm = self.calc_2ordm()
-        else:
-            assert False
-
-        entropy = {}
-        for key, dm in rdm.items():
-            w, v = scipy.linalg.eigh(dm)
-            w[w<=0] = 1e-100
-            entro = np.sum(-w*np.log(w))
-            entropy[key] = entro
-        return entropy
-    
-    def calc_orbital_mutual_entropy(self):
-        r""" Calculate mutual entropy between two orbitals.
-            :math:`m_{ij} = (e_i + e_j - e_{ij})/2`
-            
-            See Chemical Physics 323 (2006) 519–531
         
-        Returns
-        -------
-        mut_entropy : 2d np.ndarry
-            mutual energy with shape (nsite, nsite)
-
-        """
-        entropy_1o = self.calc_orbital_entropy("1o")
-        entropy_2o = self.calc_orbital_entropy("2o")
-        nsites = self.site_num
-        mut_entropy = np.zeros((nsites, nsites))
-        for iorb, jorb in itertools.combinations(range(nsites),2):
-            key = (iorb, jorb) if (iorb, jorb) in entropy_2o.keys() else (jorb, iorb)
-            mut_entropy[iorb, jorb] = (entropy_1o[iorb] + entropy_1o[jorb] -
-                    entropy_2o[key]) / 2
-        mut_entropy += mut_entropy.T
-        return mut_entropy
-
-    def calc_reduced_density_matrix(self) -> np.ndarray:
-
-        key = "reduced_density_matrix"
+        key = "edof_reduced_density_matrix"
         n_e = self.model.n_edofs
         e_dofs = self.model.e_dofs
         if key not in self.model.mpos:
@@ -1414,14 +1386,88 @@ class Mps(MatrixProduct):
                 reduced_density_matrix[jdx, idx] = np.conj(reduced_density_matrix[idx, jdx])
 
         return reduced_density_matrix
+    
+    def calc_entropy(self, entropy_type):
+        r""" Calculate 1site, 2site, mutual and bond Von Neumann entropy
 
-    def calc_vn_entropy(self) -> np.ndarray:
+            :math:`\textrm{entropy} = -\textrm{Tr}(\rho \ln \rho)`
+            where :math:`\ln` stands for natural logarithm.
+            
+            1site entropy is the entropy between any site and the other
+            ``(N-1)`` sites.
+            2site entropy is the entropy between any two sites and the other 
+            ``(N-2)`` sites.
+            mutual entropy characterize the entropy between any two sites.
+            bond entropy is the entropy between L-block and R-block.
+
+        Parameters
+        ----------
+        entropy_type : str
+            "1site", "2site", "mutual", "bond"
+        
+        Returns
+        -------
+        entropy : dict, ndarray
+            if entropy_type = "1site" or "2site", a dictionary is returned and the
+            key is the index or the tuple of index of mps sites, else
+            an ndarray is returned.
+        
+        """
+
+        if entropy_type in ["1site", "2site"]:
+            if entropy_type == "1site":
+                rdm = self.calc_1site_rdm()
+            else:
+                rdm = self.calc_2site_rdm()
+            
+            entropy = {}
+            for key, dm in rdm.items():
+                w, v = scipy.linalg.eigh(dm)
+                w[w<=0] = 1e-100
+                entro = np.sum(-w*np.log(w))
+                entropy[key] = entro
+
+        elif entropy_type == "mutual":
+            entropy = self.calc_2site_mutual_entropy()
+        elif entropy_type == "bond":
+            entropy = self.calc_bond_entropy()
+        else:
+            raise ValueError(f"unsupported entropy type {entropy_type}")
+        return entropy
+    
+    def calc_2site_mutual_entropy(self):
+        r""" 
+        Calculate mutual entropy between two sites.
+        
+        :math:`m_{ij} = (s_i + s_j - s_{ij})/2`
+            
+        See Chemical Physics 323 (2006) 519–531
+        
+        Returns
+        -------
+        mutual_entropy : 2d np.ndarry
+            mutual entropy with shape (nsite, nsite)
+
+        """
+        entropy_1site = self.calc_entropy("1site")
+        entropy_2site = self.calc_entropy("2site")
+        nsites = self.site_num
+        mut_entropy = np.zeros((nsites, nsites))
+        for isite, jsite in itertools.combinations(range(nsites),2):
+            key = (isite, jsite) if (isite, jsite) in entropy_2site.keys() else (jsite, isite)
+            mut_entropy[isite, jsite] = (entropy_1site[isite] + entropy_1site[jsite] -
+                    entropy_2site[key]) / 2
+        mut_entropy += mut_entropy.T
+        return mut_entropy
+
+    def calc_bond_entropy(self) -> np.ndarray:
         r"""
         Calculate von Neumann entropy at each bond according to :math:`S = -\textrm{Tr}(\rho \ln \rho)`
-        where :math:`\rho` is the density matrix.
+        where :math:`\rho` is the reduced density matrix of either block.
 
         Returns
         -------
+        S : 1D array
             a NumPy array containing the entropy values.
         
         """

@@ -197,7 +197,7 @@ class ChargeDiffusionDynamics(TdMpsJob):
 
         if self.reduced_density_matrices is not None:
             logger.debug("Calculating reduced density matrix")
-            rdm = mps.calc_reduced_density_matrix()
+            rdm = mps.calc_edof_rdm()
             logger.debug("Calculate reduced density matrix finished")
             self.reduced_density_matrices.append(rdm)
 
@@ -226,7 +226,7 @@ class ChargeDiffusionDynamics(TdMpsJob):
         self.ph_occupations_array.append(mps.ph_occupations)
         logger.info(f"e occupations: {self.e_occupations_array[-1]}")
 
-        bond_vn_entropy = mps.calc_vn_entropy()
+        bond_vn_entropy = mps.calc_bond_entropy()
         logger.info(f"bond entropy: {bond_vn_entropy}")
         self.bond_vn_entropy_array.append(bond_vn_entropy)
 

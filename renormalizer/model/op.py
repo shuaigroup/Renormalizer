@@ -188,7 +188,7 @@ class Op:
     @property
     def qn(self) -> int:
         r"""
-        Total quantum number of the operator. Sum of `self.qn_list`.
+        Total quantum number of the operator. Sum of ``self.qn_list``.
         Quantum number of ``"a^\dagger"`` and ``"a"`` is taken to be 1 and -1
         if not specified.
         """

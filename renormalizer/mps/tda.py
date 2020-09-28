@@ -28,7 +28,7 @@ class TDA(object):
     mps: renormalizer.mps.Mps
         ground state mps (will be overwritten)
     nroots: int, optional
-        number of roots to be calculated. Default is `1`.
+        number of roots to be calculated. Default is ``1``.
     algo: str, optional
         iterative diagonalization solver. Default is ``primme``.
         Valid option are ``davidson`` and ``primme``.
@@ -373,9 +373,9 @@ class TDA(object):
     def analysis_dominant_config(self, thresh=0.8, alias=None, tda_m_trunc=20,
             return_compressed_mps=False):
         r""" analyze the dominant configuration of each tda root.
-            The algorithm is to compress the tda wavefunction to a rank-1 Hatree
-            state and get the ci coefficient of the largest configuaration.
-            Then, the configuration is substracted from the tda wavefunction and
+            The algorithm is to compress the tda wavefunction to a rank-1 Hartree
+            state and get the ci coefficient of the largest configuration.
+            Then, the configuration is subtracted from the tda wavefunction and
             redo the first step to get the second largest configuration. The
             two steps continue until the thresh is achieved.
         

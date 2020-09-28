@@ -192,8 +192,9 @@ class BasisSHO(BasisSet):
                                          )
             else:
                 mat = np.diag(self.dvr_x**2)
-        elif op_symbol == "x x":
-            mat = self.op_mat("x^2")
+        elif set(op_symbol.split(" ")) == set("x"):
+            moment = len(op_symbol.split(" "))
+            mat = self.op_mat(f"x^{moment}")
         
         elif op_symbol.split("^")[0] == "x":
             # moments of x
@@ -229,8 +230,10 @@ class BasisSHO(BasisSet):
                                      )
             if self.dvr:
                 mat = self.dvr_v.T @ mat @ self.dvr_v
-        elif op_symbol == "p p":
-            mat = self.op_mat("p^2") 
+
+        elif set(op_symbol.split(" ")) == set("p"):
+            moment = len(op_symbol.split(" "))
+            mat = self.op_mat(f"p^{moment}")
 
         elif op_symbol.split("^")[0] == "p":
             # moments of p

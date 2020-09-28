@@ -60,7 +60,7 @@ class Property():
             # functions. It is better to unify these two cases
             # 2. different mps/mps_conj for different mpo
             if prop_str == "e_rdm":
-                self.prop_res[prop_str].append(mps.calc_reduced_density_matrix())
+                self.prop_res[prop_str].append(mps.calc_edof_rdm())
             elif prop_str in self.prop_mpos.keys():
                 mpo = self.prop_mpos[prop_str]
                 if isinstance(mpo, Mpo):
