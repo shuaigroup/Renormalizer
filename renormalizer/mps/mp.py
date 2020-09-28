@@ -166,8 +166,8 @@ class MatrixProduct:
         return self.qnidx == 0
 
     def ensure_left_canon(self, rtol=1e-5, atol=1e-8):
-        if (not self.check_left_canonical(rtol, atol)) or self.to_right or\
-                self.qnidx != self.site_num-1:
+        if self.to_right or self.qnidx != self.site_num-1 or \
+                (not self.check_left_canonical(rtol, atol)):
             self.move_qnidx(0)
             self.to_right = True
             return self.canonicalise()
@@ -175,8 +175,8 @@ class MatrixProduct:
             return self
         
     def ensure_right_canon(self, rtol=1e-5, atol=1e-8):
-        if (not self.check_right_canonical(rtol, atol)) or (not self.to_right)\
-                or self.qnidx != 0:
+        if (not self.to_right) or self.qnidx != 0 or \
+                (not self.check_right_canonical(rtol, atol)):
             self.move_qnidx(self.site_num - 1)
             self.to_right = False
             return self.canonicalise()

@@ -76,7 +76,7 @@ class ThermalProp(TdMpsJob):
             logger.info(f"{attr_str}: {attr}")
             self_array = getattr(self, f"_{attr_str}_array")
             self_array.append(attr)
-        vn_entropy = mps.calc_vn_entropy()
+        vn_entropy = mps.calc_bond_entropy()
         self._vn_entropy_array.append(vn_entropy)
         logger.info(f"vn entropy: {vn_entropy}")
         logger.info(

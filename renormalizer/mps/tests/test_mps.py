@@ -39,7 +39,7 @@ def test_expectations(mpos):
 def check_reduced_density_matrix(basis):
     model = Model(basis, [])
     mps = Mps.random(model, 1, 20)
-    rdm = mps.calc_reduced_density_matrix().real
+    rdm = mps.calc_edof_rdm().real
     assert np.allclose(np.diag(rdm), mps.e_occupations)
     # only test a sample. Should be enough.
     mpo = Mpo(model, Op(r"a^\dagger a", [0, 3]))
@@ -63,7 +63,16 @@ def test_reduced_density_matrix():
              BasisMultiElectronVac([2, 3]), BasisSHO("v2", 1, 2), BasisSHO("v3", 1, 2)]
     check_reduced_density_matrix(basis)
 
-
-
-
-
+def test_site_entropy():
+    mps = Mps.random(parameter.holstein_model, 1, 20)
+    mps.canonicalise().normalize()
+    entropy_1site = mps.calc_entropy("1site")
+    entropy_2site = mps.calc_entropy("2site")
+    entropy_bond = mps.calc_entropy("bond")
+    entropy_mutual = mps.calc_entropy("mutual")
+    assert np.allclose(entropy_bond[0], entropy_1site[0])
+    assert np.allclose(entropy_bond[-1], entropy_1site[mps.site_num-1])
+    assert np.allclose(entropy_bond[1], entropy_2site[(0,1)])
+    assert np.allclose(entropy_bond[-2], entropy_2site[(mps.site_num-2, mps.site_num-1)])
+    assert np.allclose(entropy_mutual[0,1],
+            (entropy_1site[0]+entropy_1site[1]-entropy_2site[(0,1)])/2)

@@ -55,7 +55,7 @@ def expm_krylov(Afunc, dt, vstart: xp.ndarray, block_size=50):
         alpha[j] = xp.vdot(w, V[j]).real
 
         if j == len(vstart)-1:
-            logger.debug("the krylov subspace is equal to the full space")
+            #logger.debug("the krylov subspace is equal to the full space")
             return _expm_krylov(alpha[:j+1], beta[:j], V[:j+1, :].T, nrmv, dt), j+1
         
         if len(V) == j+1:

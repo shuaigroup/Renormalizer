@@ -1,8 +1,7 @@
-import numpy as np
-import pytest
-
 from renormalizer.model import basis as Ba
 
+import numpy as np
+import pytest
 
 @pytest.mark.parametrize("op", ("x","x^2","p","p^2"))
 @pytest.mark.parametrize("x0", (0,10))
@@ -28,3 +27,11 @@ def test_BasisSHO(op, x0):
     else:
         assert np.allclose(a, a_dvr) 
         assert np.allclose(a, b_dvr)
+
+def test_high_moment():
+    sho = Ba.BasisSHO(None, 0.1, 10, dvr=False)
+    assert np.allclose(sho.op_mat("x^2"), sho.op_mat("x x"))
+    assert np.allclose(sho.op_mat("x^3"), sho.op_mat("x x x"))
+    assert np.allclose(sho.op_mat("p^2"), sho.op_mat("p p"))
+    assert np.allclose(sho.op_mat("p^3"), sho.op_mat("p p p"))
+

@@ -37,6 +37,8 @@ au2K = c["hartree-kelvin relationship"][0]
 # atomic mass unit
 amu2au = c["atomic mass constant"][0] / c["atomic unit of mass"][0]
 angstrom2au = 1e-10 / c["atomic unit of length"][0] 
+au2amu = 1 / amu2au
+au2angstrom = 1 / angstrom2au
 
 ################# wavelength energy #############
 # nm to au
@@ -50,6 +52,10 @@ def au2nm(e):
 # 1 cm^2/V s = mobility2au a.u.
 # mobility2au = 23.505175500558234
 mobility2au = au2ev * c["atomic unit of time"][0] / (c["atomic unit of length"][0] * 100) ** 2
+
+################# dipole moment #################
+debye2au = 0.393456
+au2debye = 1 / debye2au
 
 ################ length ####################
 au2m = c["atomic unit of length"][0]
