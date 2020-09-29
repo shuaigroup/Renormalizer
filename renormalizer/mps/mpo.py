@@ -125,7 +125,8 @@ def symbolic_mpo(table, factor, algo="Hopcroft-Karp"):
             qn = mpoqn[-1][0] + op.qn
             mpoqn.append([qn])
         old_op = mpo[-1][0][0][0]
-        mpo[-1][0][0][0] = Op(old_op.symbol, old_op.qn, old_op.factor * factor[0])
+        mpo[-1][0][0][0] = Op(old_op.symbol, old_op.dofs, old_op.factor *
+                factor[0], old_op.qn_list)
         qntot = qn
         mpoqn[-1] = [0]
         qnidx = len(mpo) - 1
