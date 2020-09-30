@@ -160,7 +160,7 @@ class CheMpsZeroT(CheMps):
                 krylov_h = np.diag(alpha) + np.diag(beta[:-1], k=-1) + \
                     np.diag(beta[:-1], k=1)
                 eigen_w, eigen_v = np.linalg.eigh(krylov_h)
-                throw_away = np.where(eigen_w >= thresh)
+                throw_away = np.where(np.abs(eigen_w) >= thresh)
                 update_t_n = np.array(t_n[i_site-1])
                 for idx in throw_away[0]:
                     proj_op = eigen_v[0, idx] * ortho_vectors[0]
