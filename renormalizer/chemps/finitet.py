@@ -96,7 +96,7 @@ class CheMpsFiniteT(CheMps):
                 self.model, dipole_type, dipole=True
             )
         a_ket_mpo = dipole_mpo.apply(ket_mpo, canonicalise=True)
-        a_ket_mpo.canonical_normalize()
+        # a_ket_mpo.canonical_normalize()
 
         def find_many_body_band():
             gs_mps_low = Mps.random(

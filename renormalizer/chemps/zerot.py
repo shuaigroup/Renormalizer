@@ -50,7 +50,7 @@ class CheMpsZeroT(CheMps):
                 self.model, dipole_type, dipole=True
             )
         a_ket_mps = dipole_mpo.apply(mps, canonicalise=True)
-        a_ket_mps.canonical_normalize()
+        # a_ket_mps.canonical_normalize()
 
         def find_many_body_band():
             mps_low = Mps.random(
@@ -70,6 +70,9 @@ class CheMpsZeroT(CheMps):
             lowest_e, highest_e = find_many_body_band()
             lowest_e = lowest_e - energies[-1]
             highest_e = highest_e - energies[-1]
+            logger.info(f"the full many body band is{lowest_e, highest_e}")
+            width = highest_e - lowest_e
+            lowest_e = lowest_e - width / 10
             self.freq = np.linspace(lowest_e, highest_e, num=self.sampling_num)
 
         return energies[-1], a_ket_mps
@@ -182,9 +185,9 @@ class CheMpsZeroT(CheMps):
         return t_n
 
 
-                                   
-                        
-                    
+
+
+
 
 
 

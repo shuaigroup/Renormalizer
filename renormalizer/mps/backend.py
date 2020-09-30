@@ -19,7 +19,7 @@ USE_GPU = False
 
 if importlib.util.find_spec("cupy"):
     import cupy as xp
-    gpu_id = os.environ.get(GPU_KEY, 0)
+    gpu_id = os.environ.get(GPU_KEY, 1)
     logger.info(f"Using GPU: {gpu_id}")
     xp.cuda.Device(gpu_id).use()
     USE_GPU = True
