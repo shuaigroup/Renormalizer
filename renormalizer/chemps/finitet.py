@@ -194,6 +194,7 @@ class CheMpsFiniteT(CheMps):
             oe_backend = "cupy"
         else:
             oe_backend = "numpy"
+        #oe_backend = 'numpy'
 
         lr1 = [np.ones((1, 1, 1))]
         lr2 = [np.ones((1, 1, 1))]
@@ -256,8 +257,6 @@ class CheMpsFiniteT(CheMps):
                     np.diag(beta[:-1], k=1)
                 eigen_w, eigen_v = np.linalg.eigh(krylov_h)
                 throw_away = np.where(eigen_w >= thresh)
-                if len(throw_away[0])>0:
-                    logger.info(f"vector with energy beyond 1:{throw_away}")
                 update_t_n = np.array(t_n[i_site-1])
                 for idx in throw_away[0]:
                     proj_op = eigen_v[0, idx] * ortho_vectors[0]
@@ -265,8 +264,10 @@ class CheMpsFiniteT(CheMps):
                         proj_op = proj_op + eigen_v[jbasis, idx] * ortho_vectors[jbasis]
                     update_t_n = update_t_n - oe.contract("abcd, abcd", proj_op, t_n[i_site-1]) * proj_op
                 overlap = oe.contract("abcd, abcd", t_n[i_site-1], update_t_n)
-                # logger.info(
-                #     f"truncation-induced change:{norm_local_mpo(update_t_n)**2+norm_local_mpo(t_n[i_site-1])**2-2*overlap}")
+                if len(throw_away[0])>0:
+                    logger.info(f"vector with energy beyond 1:{throw_away}")
+                    logger.info(
+                        f"truncation-induced change:{norm_local_mpo(update_t_n)**2+norm_local_mpo(t_n[i_site-1])**2-2*overlap}")
                 t_n[i_site-1] = update_t_n
                 i_site_dagger = moveaxis(t_n[i_site-1], (1, 2), (2, 1))
                 if i_sweep % 2 == 0:
