@@ -194,21 +194,27 @@ class Mps(MatrixProduct):
         mps = cls()
         mps.model = model
         mps.build_empty_mp(model.nsite)
-        
         qn_single = [[],] * model.nsite
         
-        for dof_name in model.dofs:
-            isite = model.order[dof_name]
-            pdim = model.basis[isite].nbas
+        # check that the condition is not duplicated
+        # each site has at most 1 single key to assign the occupation  
+        index = [model.dof_to_siteidx[key] for key in condition.keys()]
+        assert len(index) == len(set(index))
+        # replace the dof_name key to site_index key
+        condition = {model.dof_to_siteidx[key]:value for key, value in
+                condition.items()}
+
+        for isite, bas in enumerate(model.basis):
+            pdim = bas.nbas
             ms = np.zeros((1, pdim, 1))
-            local_state = condition.pop(dof_name,0)
+            local_state = condition.pop(isite,0)
             if isinstance(local_state, int):
                 ms[0, local_state, 0] = 1.
-                qn = model.basis[isite].sigmaqn[local_state]
+                qn = bas.sigmaqn[local_state]
             else:
                 ms[0, :, 0] = local_state
                 # quantum numbers for all states occupied
-                all_qn = np.array(model.basis[isite].sigmaqn)[np.nonzero(local_state)]
+                all_qn = np.array(bas.sigmaqn)[np.nonzero(local_state)]
                 if all_qn.std() != 0:
                     raise ValueError("Quantum numbers are mixed in the condition.")
                 qn = all_qn[0]
@@ -230,7 +236,8 @@ class Mps(MatrixProduct):
         return mps
 
     @classmethod
-    def ground_state(cls, model: Model, max_entangled: bool, normalize:bool=True):
+    def ground_state(cls, model: Model, max_entangled: bool,
+            normalize:bool=True, condition:Dict=None):
         r"""
         Obtain ground state at :math:`T = 0` or :math:`T = \infty` (maximum entangled).
         Electronic DOFs are always at ground state. and vibrational DOFs depend on ``max_entangled``.
@@ -247,7 +254,9 @@ class Mps(MatrixProduct):
             normalize: bool, optional
                 if the returned Mps are normalized when ``max_entangled=True``.
                 Default is True. If ``normalize=False``, the vibrational part is identity.
-
+            condition: dict, optional
+                the same as `hartree_product_state`. only used in ba.BasisMultiElectron
+                cases to define the occupation. Default is ``None``.
         Returns
         -------
             mps : renormalizer.mps.Mps
@@ -262,13 +271,20 @@ class Mps(MatrixProduct):
         mps.qntot = 0
             
         mps.build_empty_mp(model.nsite)
+        
+        if condition is not None:
+            # check that the condition is not duplicated
+            # each site has at most 1 single key to assign the occupation  
+            index = [model.dof_to_siteidx[key] for key in condition.keys()]
+            assert len(index) == len(set(index))
+            # replace the dof_name key to site_index key
+            condition = {model.dof_to_siteidx[key]:value for key, value in
+                    condition.items()}
 
-        for dof in model.dofs:
-            isite = model.order[dof]
-            basis = model.basis[isite]
-            pdim = basis.nbas
+        for isite, bas in enumerate(model.basis):
+            pdim = bas.nbas
             ms = np.zeros((1, pdim, 1))
-            if basis.is_phonon:
+            if bas.is_phonon:
                 if max_entangled:
                     if normalize:
                         ms[0, :, 0] = 1.0 / np.sqrt(pdim)
@@ -278,29 +294,27 @@ class Mps(MatrixProduct):
                     ms[0, 0, 0] = 1.0
                 mps[isite] = ms
 
-            elif basis.is_electron or basis.is_spin:
+            elif bas.is_electron or bas.is_spin:
 
-                if isinstance(basis, ba.BasisSimpleElectron):
+                if isinstance(bas, ba.BasisSimpleElectron):
                     # simple electron site
                     ms[0,0,0] = 1.
-                elif isinstance(basis, ba.BasisMultiElectron):
-                    if max_entangled:
-                        # Note the multi_electron gs is defined differently
-                        # all the local state with qn == 0 will be occupied
-                        nzeros = basis.sigmaqn.count(0)
-                        qn = basis.sigmaqn[dof.split("_")[1]]
-                        if qn == 0:
-                            if normalize:
-                                # Todo: here the dof_name only supports XXX_0, XXX_1
-                                # should be modified in the future
-                                ms[0, dof.split("_")[1], 0] = 1. / np.sqrt(nzeros)
-                            else:
-                                ms[0, dof.split("_")[1], 0] = 1.
+                elif isinstance(bas, ba.BasisMultiElectron):
+                    assert condition is not None
+                    local_state = condition.pop(isite)
+                    if isinstance(local_state, int):
+                        ms[0, local_state, 0] = 1.
+                        qn = bas.sigmaqn[local_state]
                     else:
-                        raise NotImplementedError # not well defined
-                elif isinstance(basis, ba.BasisMultiElectronVac):
+                        ms[0, :, 0] = local_state
+                        qn = bas.sigmaqn[np.nonzero(local_state)]
+                    assert np.allclose(qn, 0)
+                    if max_entangled and normalize:
+                        ms /= np.linalg.norm(ms)
+
+                elif isinstance(bas, ba.BasisMultiElectronVac):
                         ms[0,0,0] = 1.
-                elif isinstance(basis, ba.BasisHalfSpin):
+                elif isinstance(bas, ba.BasisHalfSpin):
                     if max_entangled:
                         if normalize:
                             ms[0,:,0] = 1. / np.sqrt(2.)

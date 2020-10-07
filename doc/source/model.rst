@@ -35,6 +35,10 @@ Basis Functions
     :members:
     :inherited-members:
 
+.. autoclass:: renormalizer.model.basis.BasisSineDVR
+    :members:
+    :inherited-members:
+
 .. autoclass:: renormalizer.model.basis.BasisSimpleElectron
     :members:
     :inherited-members:
