@@ -299,6 +299,101 @@ class BasisSHO(BasisSet):
         self._recurssion_flag -= 1
         return mat * op_factor
 
+class BasisSineDVR(BasisSet):
+    r"""
+    Sine DVR basis (particle-in-a-box) for vibrational, angular, and
+    dissociative modes.
+    See Phys. Rep. 324, 1–105 (2000).
+
+        .. math::
+            \psi_j(x) = \sqrt{\frac{2}{L}} \sin(j\pi(x-x_0)/L) \, \textrm{for} \, x_0 \le x \le
+            x_{N+1}, L = x_{N+1} - x_0
+
+    the grid points are at
+
+        .. math::
+            x_\alpha = x_0 + \alpha \frac{L}{N+1}
+    
+    Parameters
+    ----------
+    dof: str, int 
+        The name of the DoF contained in the basis set. The type could be anything that can be hashed.
+    nbas: int
+        Number of grid points.
+    xi: float
+        The leftmost grid point of the coordinate.
+    xf: float
+        The rightmost grid point of the coordinate.
+    endpoint: bool, optional
+        If ``endpoint=False``, :math:`x_0=x_i, x_{N+1}=x_f`; otherwise
+        :math:`x_1=x_i, x_{N}=x_f`.
+            
+    """
+    is_phonon = True
+
+    def __init__(self, dof, nbas, xi, xf, endpoint=False):
+        if endpoint:
+            interval = (xf-xi) / (nbas-1)
+            xi -= interval
+            xf += interval
+
+        self.xi = xi
+        self.xf = xf
+
+        self.L = xf-xi
+        super().__init__(dof, nbas, [0] * nbas)
+        
+        tmp = np.arange(1,nbas+1)
+        self.dvr_x = xi + tmp * self.L / (nbas+1)
+        self.dvr_v = np.sqrt(2/(nbas+1)) * \
+            np.sin(np.tensordot(tmp, tmp, axes=0)*np.pi/(nbas+1))
+
+    def __repr__(self):
+        return f"(xi: {self.xi}, xf: {self.xf}, nbas: {self.nbas})"
+    
+    def op_mat(self, op: Union[Op, str]):
+        if not isinstance(op, Op):
+            op = Op(op, None)
+        op_symbol, op_factor = op.symbol, op.factor
+        
+        if op_symbol == "I":
+            mat = np.eye(self.nbas)
+        
+        elif op_symbol.split("^")[0] == "x":
+            if len(op_symbol.split("^")) == 1:
+                moment = 1
+            else:
+                moment = float(op_symbol.split("^")[1])
+            mat = np.diag(self.dvr_x ** moment)
+        
+        elif set(op_symbol.split(" ")) == set("x"):
+            moment = len(op_symbol.split(" "))
+            mat = self.op_mat(f"x^{moment}")
+        
+        elif op_symbol == "partialx":
+            mat = np.zeros((self.nbas, self.nbas))
+            for j in range(self.nbas):
+                for k in range(j):
+                    if (j-k) % 2 != 0:
+                        mat[j,k] = 4 / self.L * (j+1) * (k+1) / ((j+1)**2 - (k+1)**2)
+            mat -= mat.T 
+            mat = self.dvr_v.T @ mat @ self.dvr_v
+
+        elif op_symbol in ["partialx^2", "partialx partialx"]:
+            mat = -np.diag(np.arange(1, self.nbas+1)*np.pi/self.L)**2
+            mat = self.dvr_v.T @ mat @ self.dvr_v
+
+        elif op_symbol == "p":
+            mat = self.op_mat("partialx") * -1.0j
+
+        elif op_symbol == "p^2":
+            mat = self.op_mat("partialx^2") * -1
+        
+        else:
+            raise ValueError(f"op_symbol:{op_symbol} is not supported. ")
+        
+        return mat * op_factor
+
 
 class BasisMultiElectron(BasisSet):
     r"""

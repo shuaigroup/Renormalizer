@@ -1,6 +1,8 @@
-from renormalizer.model import basis as Ba
+from renormalizer.model import Model, Op, basis as Ba
+from renormalizer.mps import Mpo, Mps, gs
 
 import numpy as np
+import scipy
 import pytest
 
 @pytest.mark.parametrize("op", ("x","x^2","p","p^2"))
@@ -34,4 +36,48 @@ def test_high_moment():
     assert np.allclose(sho.op_mat("x^3"), sho.op_mat("x x x"))
     assert np.allclose(sho.op_mat("p^2"), sho.op_mat("p p"))
     assert np.allclose(sho.op_mat("p^3"), sho.op_mat("p p p"))
+
+
+@pytest.mark.parametrize("basistype", ("SHO", "SHODVR", "SineDVR"))
+def test_VibBasis(basistype):
+    nv = 2
+    pdim = 6
+    hessian = np.array([[2,1],[1,3]])
+    e, c = scipy.linalg.eigh(hessian)
+    ham_terms = []
+    basis = []
+    for iv in range(nv):
+        op = Op("p^2", f"v_{iv}", factor=0.5, qn=0)
+        ham_terms.append(op)
+        if basistype == "SineDVR":
+            # sqrt(<x^2>) of the highest vibrational basis
+            x_mean = np.sqrt((pdim+0.5)/np.sqrt(hessian[iv,iv]))
+            bas = Ba.BasisSineDVR(f"v_{iv}", 2*pdim, -x_mean*1.5, x_mean*1.5,
+                    endpoint=True)
+            print("x_mean", x_mean, bas.dvr_x)
+        else:
+            if basistype == "SHO":
+                dvr = False
+            else:
+                dvr = True
+            bas = Ba.BasisSHO(f"v_{iv}", np.sqrt(hessian[iv,iv]), pdim, dvr=dvr)
+
+        basis.append(bas)
+    for iv in range(nv):
+        for jv in range(nv):
+            op = Op("x x", [f"v_{iv}", f"v_{jv}"], factor=0.5*hessian[iv, jv], qn=[0,0])
+            ham_terms.append(op)
+    model = Model(basis, ham_terms)
+    mpo = Mpo(model)
+    mps = Mps.random(model, 0, 10)
+    mps.optimize_config.nroots = 2
+    energy, mps = gs.optimize_mps(mps, mpo)
+    w1, w2 = np.sqrt(e)
+    std = [(w1+w2)*0.5, w1*1.5+w2*0.5]
+    print(basistype, "calc:", energy[-1], "exact:", std)   
+    assert np.allclose(energy[-1], std)
+
+
+
+    
 
