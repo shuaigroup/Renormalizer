@@ -43,7 +43,7 @@ class Model:
         # reusable mpos for the system
         self.mpos = dict()
         # physical bond dimension.
-        self.pbond_list = [bas.nbas for bas in self.basis]
+        self.pbond_list = [local_basis.nbas for local_basis in self.basis]
 
     def check_operator_terms(self, terms: List[Op]):
         """
@@ -67,7 +67,7 @@ class Model:
         dofs = set(self.dofs)
         for term_op in terms:
             if not isinstance(term_op, Op):
-                raise ValueError("Expected Op in terms.")
+                raise ValueError(f"Expected Op in terms. Got {term_op}")
             for name in term_op.dofs:
                 if name not in dofs:
                     raise ValueError(f"{term_op} contains DoF not in the basis.")
@@ -80,9 +80,9 @@ class Model:
     def _enumerate_dof(self, criteria=lambda x: True):
         # enumerate DoFs and filter according to criteria.
         dofs = []
-        for basis in self.basis:
-            if criteria(basis):
-                dofs.extend(basis.dofs)
+        for local_basis in self.basis:
+            if criteria(local_basis):
+                dofs.extend(local_basis.dofs)
         return dofs
 
     @cached_property

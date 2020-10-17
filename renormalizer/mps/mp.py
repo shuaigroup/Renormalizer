@@ -4,7 +4,6 @@
 import logging
 import os
 import shutil
-import pickle
 from typing import List, Union
 
 import opt_einsum as oe

@@ -35,7 +35,7 @@ class CompressCriteria(Enum):
 
 
 class CompressConfig:
-    """MPS Compress Configuration.
+    """MPS/MPO Compress Configuration.
 
     Parameters
     ----------
@@ -63,7 +63,7 @@ class CompressConfig:
         ----
         It is recommended to use the 2site algorithm in variational optimization,
         though 1site algorithm is much cheaper. The reason is that 1site algorithm
-        is easy to stuck into local mimima while 2site algorithm is more robust. For
+        is easy to stuck into local minima while 2site algorithm is more robust. For
         complicated Hamiltonian, the problem is severer.  The renormalized basis
         selection rule used here to partly solve the local minimal problem is
         according to Chan. J.  Chem. Phys. 2004, 120, 3172. For efficiency, you
@@ -92,16 +92,16 @@ class CompressConfig:
         ``compressed_mpo @ compressed_mps`` in `MatrixProduct.variational_compress`.
         The default is (5,5).
     dump_matrix_size : int or float, optional
-        The total bytes threshold for dumping matrix into disks. Every local site matrix in the MPS
+        The total bytes threshold for dumping matrix into disks. Every local site matrix in the MPS/MPO
         with a size larger than the specified size will be moved from memory to the disk at ``dump_matrix_dir``.
         The matrix will be moved back to memory upon access.
-        The dumped matrices on the disks will be removed once the MPS is garbage-collected.
+        The dumped matrices on the disks will be removed once the MPS/MPO is garbage-collected.
 
         Note
         ----
         If ``dump_matrix_size`` is set and the program exits abnormally, it is possible that the dumped matrices
         are not deleted automatically. A common case when this can happen is that the program is killed by a signal.
-        In such cases it is recommended to check and clean ``dump_matrix_dir`` manually after the exit of the program
+        In such cases it is recommended to check and clean ``dump_matrix_dir`` after the exit of the program
         since the dumped matrices may take a lot of disk space.
 
     dump_matrix_dir : str, optional
