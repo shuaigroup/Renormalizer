@@ -195,7 +195,7 @@ class Mps(MatrixProduct):
         mps.model = model
         mps.build_empty_mp(model.nsite)
         qn_single = [[],] * model.nsite
-        
+
         # check that the condition is not duplicated
         # each site has at most 1 single key to assign the occupation  
         index = [model.dof_to_siteidx[key] for key in condition.keys()]
@@ -204,17 +204,17 @@ class Mps(MatrixProduct):
         condition = {model.dof_to_siteidx[key]:value for key, value in
                 condition.items()}
 
-        for isite, bas in enumerate(model.basis):
-            pdim = bas.nbas
+        for isite, local_basis in enumerate(model.basis):
+            pdim = local_basis.nbas
             ms = np.zeros((1, pdim, 1))
             local_state = condition.pop(isite,0)
             if isinstance(local_state, int):
                 ms[0, local_state, 0] = 1.
-                qn = bas.sigmaqn[local_state]
+                qn = local_basis.sigmaqn[local_state]
             else:
                 ms[0, :, 0] = local_state
                 # quantum numbers for all states occupied
-                all_qn = np.array(bas.sigmaqn)[np.nonzero(local_state)]
+                all_qn = np.array(local_basis.sigmaqn)[np.nonzero(local_state)]
                 if all_qn.std() != 0:
                     raise ValueError("Quantum numbers are mixed in the condition.")
                 qn = all_qn[0]
@@ -281,10 +281,10 @@ class Mps(MatrixProduct):
             condition = {model.dof_to_siteidx[key]:value for key, value in
                     condition.items()}
 
-        for isite, bas in enumerate(model.basis):
-            pdim = bas.nbas
+        for isite, local_basis in enumerate(model.basis):
+            pdim = local_basis.nbas
             ms = np.zeros((1, pdim, 1))
-            if bas.is_phonon:
+            if local_basis.is_phonon:
                 if max_entangled:
                     if normalize:
                         ms[0, :, 0] = 1.0 / np.sqrt(pdim)
@@ -294,27 +294,27 @@ class Mps(MatrixProduct):
                     ms[0, 0, 0] = 1.0
                 mps[isite] = ms
 
-            elif bas.is_electron or bas.is_spin:
+            elif local_basis.is_electron or local_basis.is_spin:
 
-                if isinstance(bas, ba.BasisSimpleElectron):
+                if isinstance(local_basis, ba.BasisSimpleElectron):
                     # simple electron site
                     ms[0,0,0] = 1.
-                elif isinstance(bas, ba.BasisMultiElectron):
+                elif isinstance(local_basis, ba.BasisMultiElectron):
                     assert condition is not None
                     local_state = condition.pop(isite)
                     if isinstance(local_state, int):
                         ms[0, local_state, 0] = 1.
-                        qn = bas.sigmaqn[local_state]
+                        qn = local_basis.sigmaqn[local_state]
                     else:
                         ms[0, :, 0] = local_state
-                        qn = bas.sigmaqn[np.nonzero(local_state)]
+                        qn = local_basis.sigmaqn[np.nonzero(local_state)]
                     assert np.allclose(qn, 0)
                     if max_entangled and normalize:
                         ms /= np.linalg.norm(ms)
 
-                elif isinstance(bas, ba.BasisMultiElectronVac):
+                elif isinstance(local_basis, ba.BasisMultiElectronVac):
                         ms[0,0,0] = 1.
-                elif isinstance(bas, ba.BasisHalfSpin):
+                elif isinstance(local_basis, ba.BasisHalfSpin):
                     if max_entangled:
                         if normalize:
                             ms[0,:,0] = 1. / np.sqrt(2.)
@@ -791,9 +791,12 @@ class Mps(MatrixProduct):
                     np.ones([1, 1], dtype=mps.dtype),
                 ]
                 for imps in range(mps.site_num):
+                    mps_conj = mps.conj()
                     S_L_list.append(
-                        transferMat(mps, mps.conj(), "L", imps, S_L_list[imps])
+                        transferMat(mps, mps_conj, "L", imps, S_L_list[imps])
                     )
+                    del mps_conj
+
 
                 S_L_inv_list = []
                 for imps in range(mps.site_num + 1):
@@ -988,9 +991,11 @@ class Mps(MatrixProduct):
                 # construct the S_L list (type: Matrix) and S_L_inv list (type: xp.array)
                 # len: mps.site_num+1
                 S_L_list = [np.ones([1, 1], dtype=mps.dtype),]
+                environ_mps_conj = environ_mps.conj()
                 for imps in range(mps.site_num):
-                    S_L_list.append(transferMat(environ_mps, environ_mps.conj(), "L", imps,
+                    S_L_list.append(transferMat(environ_mps, environ_mps_conj, "L", imps,
                         S_L_list[imps]))
+                del environ_mps_conj
 
                 S_L_inv_list = []
                 for imps in range(mps.site_num+1):
@@ -1174,7 +1179,7 @@ class Mps(MatrixProduct):
                     mps.qnidx = imps-1
 
                     r_array = environ.GetLR(
-                        "R", imps, mps, mpo, itensor=r_array, method="System"
+                        "R", imps, mps, mpo, itensor=r_array, method="System", mps_conj=mps_conj
                     )
 
                     # reverse update u site
@@ -1211,7 +1216,7 @@ class Mps(MatrixProduct):
                     mps.qnidx = imps+1
 
                     l_array = environ.GetLR(
-                        "L", imps, mps, mpo, itensor=l_array, method="System"
+                        "L", imps, mps, mpo, itensor=l_array, method="System", mps_conj=mps_conj
                     )
 
                     # reverse update svt site

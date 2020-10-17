@@ -76,7 +76,9 @@ class Environ:
         assert domain in ["L", "R"]
         assert method in ["Enviro", "System", "Scratch"]
         if mps_conj is None:
-            mps_conj = mps.conj()
+            # provide a dummy value. Creating conjugation of a whole MPS should be avoided when possible
+            # since the operation is actually rather expensive.
+            mps_conj = [None] * len(mps)
 
         if siteidx not in range(len(mps)):
             return self.sentinel

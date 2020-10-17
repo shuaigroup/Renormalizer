@@ -391,7 +391,7 @@ class BasisSineDVR(BasisSet):
         
         else:
             raise ValueError(f"op_symbol:{op_symbol} is not supported. ")
-        
+
         return mat * op_factor
 
 
