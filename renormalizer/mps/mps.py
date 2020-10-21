@@ -357,7 +357,7 @@ class Mps(MatrixProduct):
             mp.coeff = npload["tdh_wfns"][-1]
         elif version == "0.3":
             mp.to_right = bool(npload["to_right"])
-            mp.coeff = npload["coeff"].tolist()
+            mp.coeff = npload["coeff"].item(0)
         else:
             raise ValueError(f"Unknown dump version: {version}")
         return mp
