@@ -454,11 +454,11 @@ class Mps(MatrixProduct):
         # This is time and memory consuming
         # return self_conj.dot(mpo.apply(self)).real
 
-    def expectations(self, mpos, opt=True) -> np.ndarray:
+    def expectations(self, mpos, self_conj=None, opt=True) -> np.ndarray:
 
         if not opt:
             # the naive way, slow and time consuming. Yet predictable and reliable
-            return np.array([self.expectation(mpo) for mpo in mpos])
+            return np.array([self.expectation(mpo, self_conj) for mpo in mpos])
 
         # optimized way, cache for intermediates
         # hash is used as indeces of the matrices.
@@ -479,7 +479,8 @@ class Mps(MatrixProduct):
                 mpo_hash.append(m_hash)
             mpos_hash.append(mpo_hash)
 
-        self_conj = self._expectation_conj()
+        if self_conj is None:
+            self_conj = self._expectation_conj()
         l_environ_dict = _construct_freq_environ(mpos_hash, hash_to_obj, self, "L", self_conj)
         r_environ_dict = _construct_freq_environ(mpos_hash, hash_to_obj, self, "R", self_conj)
         results = []

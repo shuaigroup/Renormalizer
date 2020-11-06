@@ -35,6 +35,13 @@ def test_expectations(mpos):
 
     assert np.allclose(e1, e2)
 
+    random2 = Mps.random(parameter.holstein_model, 1, 20)
+
+    e1 = random.expectations(mpos, random2)
+    e2 = random.expectations(mpos, random2, opt=False)
+
+    assert np.allclose(e1, e2)
+
 
 def check_reduced_density_matrix(basis):
     model = Model(basis, [])

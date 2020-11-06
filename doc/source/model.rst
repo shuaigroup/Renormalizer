@@ -23,6 +23,12 @@ The Model classes
     :members:
     :inherited-members:
 
+
+.. autoclass:: renormalizer.model.TI1DModel
+    :members:
+    :inherited-members:
+
+
 Basis Functions
 ===============
 

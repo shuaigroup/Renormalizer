@@ -39,16 +39,18 @@ def get_blist(nsites, ph_levels):
     return blist
 
 
-def get_holstein_hamiltonian(nsites, J, omega, g, clist, blist):
+def get_holstein_hamiltonian(nsites, J, omega, g, clist, blist, periodic=False):
     lam = g ** 2 * omega
     terms = []
     for i in range(nsites):
         terms.append(lam * clist[i].dag() * clist[i])
         terms.append(omega * blist[i].dag() * blist[i])
         terms.append(-omega * g * clist[i].dag() * clist[i] * (blist[i].dag() + blist[i]))
-    for i in range(nsites - 1):
-        terms.append(J * clist[i].dag() * clist[i + 1])
-        terms.append(J * clist[i] * clist[i + 1].dag())
+    hop_limit = nsites if periodic else nsites -1
+    for i in range(hop_limit):
+        next_i = (i+1) % nsites
+        terms.append(J * clist[i].dag() * clist[next_i])
+        terms.append(J * clist[i] * clist[next_i].dag())
 
     return sum(terms)
 

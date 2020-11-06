@@ -29,13 +29,19 @@ class Model:
         Contains the transition dipole matrix element. The key is the dof name.
     """
     def __init__(self, basis: List[BasisSet], ham_terms: List[Op], dipole: Dict = None):
-
+        all_dof_list = []
+        for local_basis in basis:
+                all_dof_list.extend(local_basis.dofs)
+        if len(all_dof_list) != len(set(all_dof_list)):
+            raise ValueError("Duplicate DoF definition found in the basis list.")
         self.basis: List[BasisSet] = basis
         # alias
         self.dof_to_siteidx = self.order = {}
+        self.dof_to_basis = {}
         for siteidx, ba in enumerate(basis):
             for dof_name in ba.dofs:
                 self.dof_to_siteidx[dof_name] = siteidx
+                self.dof_to_basis[dof_name] = ba
 
         self.ham_terms: List[Op] = self.check_operator_terms(ham_terms)
         # array(n_e, n_e)
@@ -216,7 +222,7 @@ class HolsteinModel(Model):
             \rm{ph}_{n/2+1, 0}, \rm{ph}_{n/2+1, 1}, \cdots]
 
     periodic : bool
-        Whether use periodical boundary condition when constructing `j_matrix`
+        Whether use periodical boundary condition when constructing ``j_matrix``
         from :class:`~renormalizer.utils.Quantity`. Default is ``False``.
     """
 
@@ -385,6 +391,75 @@ class SpinBosonModel(Model):
         if dipole is None:
             dipole = 0
         super().__init__(basis, ham, dipole={"spin": dipole})
+
+
+class TI1DModel(Model):
+    r"""
+    Translational invariant one dimensional model with periodic boundary condition.
+    The Hamiltonian should take the form:
+
+    .. math::
+        \hat H = \sum_i(\hat h_i + \sum_j \hat h_{i, i+j})
+
+    where :math:`\hat h_i` is the local Hamiltonian acting on one single unit cell
+    and :math:`\hat h_{i, i+j}` represents the interaction between the :math:`i` th cell
+    and the :math:`i+j` th cell.
+
+    Yet doesn't support setting transition dipoles.
+
+    Parameters
+    ==========
+    basis : :class:`list` of :class:`~renormalizer.model.basis.BasisSet`
+        Local basis of each site for a single unit cell of the system.
+        The full basis set is constructed by repeating the basis ``ncell`` times.
+        To distinguish between different DoFs at different unit cells,
+        the DoF names in the unit cell are transformed to
+        a two-element-tuple of the form ``("cell0", dof)``, where ``dof`` is the original DoF name
+        and the ``"cell0"`` indicates the cell ID.
+    local_ham_terms : :class:`list` of :class:`~renormalizer.model.Op`
+        Terms of the system local Hamiltonian :math:`\hat h_i` in sum-of-product form.
+        DoF names should be consistent with the ``basis`` argument.
+    nonlocal_ham_terms : :class:`list` of :class:`~renormalizer.model.Op`
+        Terms of system nonlocal Hamiltonian :math:`\hat h_{i, i+j}`.
+        To indicate the IDs of the unit cells that are involved in the nonlocal interaction,
+        the DoF name in ``basis`` should be transformed to a two-element-tuple, in which
+        the first element is an integer :math:`j`, and the second element is the original DoF name.
+        For example, if one unit cell contains one electron DoF with name ``e``,
+        a nearest neighbour hopping interaction
+        should take the form ``Op(r"a^\dagger a", [(0, "e"), (1, "e")])``
+        (with its Hermite conjugation being another term).
+    ncell : int
+        Number of unit cells in the system.
+    """
+    def __init__(self, basis: List[BasisSet], local_ham_terms: List[Op], nonlocal_ham_terms: List[Op], ncell: int):
+        # construct basis for the full model
+        full_basis = []
+        for i in range(ncell):
+            for local_basis in basis:
+                new_dofs = [(f"cell{i}", dof) for dof in local_basis.dofs]
+                if local_basis.multi_dof:
+                    new_basis = local_basis.copy(new_dofs)
+                else:
+                    new_basis = local_basis.copy(new_dofs[0])
+                full_basis.append(new_basis)
+        # construct Hamiltonian for the full model
+        full_ham_terms = []
+        for i in range(ncell):
+            for old_op in local_ham_terms:
+                new_dofs = [(f"cell{i}", dof) for dof in old_op.dofs]
+                new_op = Op(old_op.symbol, new_dofs, old_op.factor, old_op.qn_list)
+                full_ham_terms.append(new_op)
+            for old_op in nonlocal_ham_terms:
+                new_dofs = []
+                for old_dof in old_op.dofs:
+                    assert isinstance(old_dof, tuple) and len(old_dof) == 2 and isinstance(old_dof[0], int)
+                    # take care of periodic boundary condition
+                    new_cell_id = (i + old_dof[0]) % ncell
+                    new_dofs.append((f"cell{new_cell_id}", old_dof[1]))
+                new_op = Op(old_op.symbol, new_dofs, old_op.factor, old_op.qn_list)
+                full_ham_terms.append(new_op)
+        super().__init__(full_basis, full_ham_terms)
+
 
 
 def construct_j_matrix(mol_num, j_constant, periodic):

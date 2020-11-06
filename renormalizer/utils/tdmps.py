@@ -46,6 +46,15 @@ class TdMpsJob(object):
         raise NotImplementedError
 
     def process_mps(self, mps):
+        """
+        Process the newly evolved the mps. Primarily for the calculation of properties.
+        Note that currently ``self.latest_mps`` has not been updated.
+
+        Parameters
+        ==========
+        mps :
+             The evolved new mps of the time step.
+        """
         raise NotImplementedError
 
     def evolve(self, evolve_dt=None, nsteps=None, evolve_time=None):
