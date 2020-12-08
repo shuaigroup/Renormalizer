@@ -126,6 +126,8 @@ class SpectraFtCV(SpectraCv):
                 ket_mpo = \
                     load_thermal_state(self.model, self._thermal_dump_path)
             else:
+                ket_mpo = None
+            if ket_mpo is None:
                 impo = MpDm.max_entangled_ex(self.model)
                 impo.compress_config = self.compress_config
                 if self.job_name is None:
