@@ -399,11 +399,11 @@ class TI1DModel(Model):
     The Hamiltonian should take the form:
 
     .. math::
-        \hat H = \sum_i(\hat h_i + \sum_j \hat h_{i, i+j})
+        \hat H = \sum_i(\hat h_i + \sum_j \hat h_{i,j})
 
     where :math:`\hat h_i` is the local Hamiltonian acting on one single unit cell
-    and :math:`\hat h_{i, i+j}` represents the interaction between the :math:`i` th cell
-    and the :math:`i+j` th cell.
+    and :math:`\hat h_{i,j}` represents the :math:`j` th interaction between the :math:`i` th cell
+    and other unit cells.
 
     Yet doesn't support setting transition dipoles.
 
@@ -420,14 +420,17 @@ class TI1DModel(Model):
         Terms of the system local Hamiltonian :math:`\hat h_i` in sum-of-product form.
         DoF names should be consistent with the ``basis`` argument.
     nonlocal_ham_terms : :class:`list` of :class:`~renormalizer.model.Op`
-        Terms of system nonlocal Hamiltonian :math:`\hat h_{i, i+j}`.
+        Terms of system nonlocal Hamiltonian :math:`\hat h_{i,j}`.
         To indicate the IDs of the unit cells that are involved in the nonlocal interaction,
         the DoF name in ``basis`` should be transformed to a two-element-tuple, in which
-        the first element is an integer :math:`j`, and the second element is the original DoF name.
+        the first element is an integer indicating its distance from :math:`i`,
+        and the second element is the original DoF name.
         For example, if one unit cell contains one electron DoF with name ``e``,
         a nearest neighbour hopping interaction
         should take the form ``Op(r"a^\dagger a", [(0, "e"), (1, "e")])``
         (with its Hermite conjugation being another term).
+        The definition is not unique in that ``Op(r"a^\dagger a", [(1, "e"), (2, "e")])``
+        produces equivalent output.
     ncell : int
         Number of unit cells in the system.
     """
@@ -459,7 +462,6 @@ class TI1DModel(Model):
                 new_op = Op(old_op.symbol, new_dofs, old_op.factor, old_op.qn_list)
                 full_ham_terms.append(new_op)
         super().__init__(full_basis, full_ham_terms)
-
 
 
 def construct_j_matrix(mol_num, j_constant, periodic):

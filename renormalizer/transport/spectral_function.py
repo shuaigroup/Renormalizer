@@ -27,14 +27,14 @@ class SpectralFunctionZT(TdMpsJob):
     .. math::
         iG_k(t) = \langle 0 |c_k(t) c^\dagger_k | 0 \rangle
 
-    and this array is saved with key ``"Gk array"`` in the dumped output file.
+    and :math:`G_k(t)` is saved with key ``"Gk array"`` in the dumped output file.
     Fourier transformation of :math:`G_k(t)` results in the spectral function:
 
     .. math::
-        A(k, \omega) = -\frac{1}{\pi} \int_0^\infty dt e^{i \omega t} G_k(t)
+        A(k, \omega) = -\frac{1}{\pi} \rm{Im} \int_0^\infty dt e^{i \omega t} G_k(t)
 
     However, this value is not calculated directly in this class, since usually an broadening to :math:`G_k(t)`
-    is required and an optimal range of :math:`\omega` usually can not be determined without additional knowledge.
+    is required and an optimal range of :math:`\omega` can not be determined without additional knowledge.
 
     For finite temperature spectral function, it is recommended to use
     thermal field dynamics and transform the Hamiltonian.
@@ -48,6 +48,8 @@ class SpectralFunctionZT(TdMpsJob):
         system information. In principle should use :class:`~renormalizer.model.TI1DModel`.
         Using custom :class:`~renormalizer.model.Model` is possible however
         in this case the user should be responsible to ensure the translational invariance.
+        It is recommended to set the number of the electronic DoFs to be an even number
+        so that the :math:`k=\pi` point is well defined.
     compress_config : :class:`~renormalizer.utils.configs.CompressConfig`
         config when compressing MPS.
     evolve_config : :class:`~renormalizer.utils.configs.EvolveConfig`
@@ -64,7 +66,7 @@ class SpectralFunctionZT(TdMpsJob):
             compress_config: CompressConfig = None,
             evolve_config: EvolveConfig = None,
             dump_dir: str = None,
-            job_name: str=None,
+            job_name: str = None,
     ):
         self.model: TI1DModel = model
         self.compress_config = compress_config
@@ -125,7 +127,9 @@ class SpectralFunctionZT(TdMpsJob):
         dump_dict['time series'] = self.evolve_times
         dump_dict["G array"] = self.G_array
         ne = self.model.n_edofs
-        ka = np.linspace(0, np.pi, ne // 2 + 1).reshape(1, 1, -1)
+        kpoints_distance = (2 * np.pi) / ne
+        n_kpoints = ne // 2 + 1
+        ka = (np.arange(n_kpoints) * kpoints_distance).reshape(1, 1, -1)
         ijdiff = np.arange(ne).reshape(1, -1, 1)
         # Green's function in k space
         dump_dict["Gk array"] = np.sum(self.G_array.reshape(-1, ne, 1) * np.exp(1j * ka * ijdiff), axis=1)

@@ -13,7 +13,6 @@ from renormalizer.utils.configs import CompressConfig, EvolveMethod, EvolveConfi
 from renormalizer.utils.qutip_utils import get_clist, get_blist, get_holstein_hamiltonian
 
 
-
 def test_spectral_function_bogoliubov():
     # nlevels must be large enough compared with T/omega for the algorithm (Bogoliubov transformation) to work
     # For fast qutip calculation maximum nlevels is 4
