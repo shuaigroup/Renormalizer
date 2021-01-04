@@ -1,8 +1,11 @@
 Model
 *************************************
 
-Use the class :class:`~renormalizer.model.Model`, :class:`~renormalizer.model.HolsteinModel`,
-or :class:`~renormalizer.model.SpinBosonModel` to define the calculated system.
+Use the :class:`~renormalizer.model.Model` classes to define the system to be calculated.
+We provide the Holstein model :class:`renormalizer.model.HolsteinModel`
+and the spin-boson model :class:`~renormalizer.model.SpinBosonModel` out of box, yet any arbitrary model
+with sum-of-product Hamiltonian
+can be constructed by using the most general :class:`~renormalizer.model.Model` class.
 These classes require :class:`~renormalizer.model.basis.BasisSet` and :class:`~renormalizer.model.Op`
 as input.
 
@@ -22,6 +25,12 @@ The Model classes
 .. autoclass:: renormalizer.model.SpinBosonModel
     :members:
     :inherited-members:
+
+
+.. autoclass:: renormalizer.model.TI1DModel
+    :members:
+    :inherited-members:
+
 
 Basis Functions
 ===============

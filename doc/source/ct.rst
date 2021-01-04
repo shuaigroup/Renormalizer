@@ -12,4 +12,8 @@ Charge diffusion dynamics simulation
    :members:
 
 
+One-Particle Spectral Function
+==============================
+.. automodule:: renormalizer.transport.spectral_function
+   :members:
 

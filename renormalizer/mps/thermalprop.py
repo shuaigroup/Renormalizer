@@ -45,6 +45,7 @@ class ThermalProp(TdMpsJob):
         auto_expand: bool = True,
     ):
         self.init_mpdm: MpDm = init_mpdm.canonicalise()
+        # todo: remove h_mpo. construct from init_mpdm.model
         self.h_mpo = h_mpo
         self.exact = exact
         assert space in ["GS", "EX"]

@@ -80,6 +80,23 @@ class BasisSet:
             return (self.dof,)
 
 
+    def copy(self, new_dof):
+        """
+        Return a copy of the basis set with new DoF name specified in the argument.
+
+        Parameters
+        ----------
+        new_dof:
+            New DoF name.
+
+        Returns
+        -------
+        new_basis : Basis
+            A copy of the basis with new DoF name.
+        """
+        raise NotImplementedError
+
+
 class BasisSHO(BasisSet):
     """
     simple harmonic oscillator basis set
@@ -299,6 +316,12 @@ class BasisSHO(BasisSet):
         self._recurssion_flag -= 1
         return mat * op_factor
 
+    def copy(self, new_dof):
+        return self.__class__(new_dof, omega=self.omega,
+                              nbas=self.nbas, x0=self.x0,
+                              dvr=self.dvr, general_xp_power=self.general_xp_power)
+
+
 class BasisSineDVR(BasisSet):
     r"""
     Sine DVR basis (particle-in-a-box) for vibrational, angular, and
@@ -394,6 +417,9 @@ class BasisSineDVR(BasisSet):
 
         return mat * op_factor
 
+    def copy(self, new_dof):
+        return self.__class__(new_dof, self.nbas, xi=self.xi, xf=self.xf)
+
 
 class BasisMultiElectron(BasisSet):
     r"""
@@ -446,6 +472,9 @@ class BasisMultiElectron(BasisSet):
             raise ValueError(f"op_symbol:{op_symbol} is not supported")
 
         return mat * op_factor
+
+    def copy(self, new_dof):
+        return self.__class__(new_dof, self.sigmaqn)
 
 
 class BasisMultiElectronVac(BasisSet):
@@ -508,6 +537,8 @@ class BasisMultiElectronVac(BasisSet):
 
         return mat * op_factor
 
+    def copy(self, new_dof):
+        return self.__class__(new_dof)
 
 class BasisSimpleElectron(BasisSet):
 
@@ -544,6 +575,9 @@ class BasisSimpleElectron(BasisSet):
             raise ValueError(f"op_symbol:{op_symbol} is not supported")
         
         return mat * op_factor
+
+    def copy(self, new_dof):
+        return self.__class__(new_dof)
 
 
 class BasisHalfSpin(BasisSet):
@@ -595,6 +629,9 @@ class BasisHalfSpin(BasisSet):
                 mat = mat @ self.op_mat(o)
 
         return mat * op_factor
+
+    def copy(self, new_dof):
+        return self.__class__(new_dof, self.sigmaqn)
 
 
 def x_power_k(k, m, n):
