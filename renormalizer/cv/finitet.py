@@ -117,7 +117,7 @@ class SpectraFtCV(SpectraCv):
         if self.spectratype == "abs":
             dipole_mpo = Mpo.onsite(self.model, r"a^\dagger", dipole=True)
             i_mpo = MpDm.max_entangled_gs(self.model)
-            tp = ThermalProp(i_mpo, self.h_mpo, exact=True, space='GS')
+            tp = ThermalProp(i_mpo, exact=True, space='GS')
             tp.evolve(None, 1, beta / 2j)
             ket_mpo = tp.latest_mps
         elif self.spectratype == "emi":
@@ -135,7 +135,7 @@ class SpectraFtCV(SpectraCv):
                 else:
                     job_name = self.job_name + "_thermal_prop"
                 tp = ThermalProp(
-                    impo, self.h_mpo, evolve_config=self.evolve_config,
+                    impo, evolve_config=self.evolve_config,
                     dump_dir=self.dump_dir, job_name=job_name)
                 tp.evolve(None, self.insteps, beta / 2j)
                 ket_mpo = tp.latest_mps

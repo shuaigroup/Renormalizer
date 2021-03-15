@@ -74,7 +74,7 @@ class SpectraFiniteT(SpectraTdMpsJobBase):
             job_name = self.job_name + "_thermal_prop"
         # only propagate half beta
         tp = ThermalProp(
-            i_mpo, self.h_mpo, evolve_config=self.ievolve_config,
+            i_mpo, evolve_config=self.ievolve_config,
             dump_dir=self.dump_dir, job_name=job_name
         )
         if tp._defined_output_path:
@@ -126,7 +126,7 @@ class SpectraFiniteT(SpectraTdMpsJobBase):
         i_mpo = MpDm.max_entangled_gs(self.model)
         i_mpo.compress_config = self.icompress_config
         beta = self.temperature.to_beta()
-        tp = ThermalProp(i_mpo, self.h_mpo, exact=True, space="GS")
+        tp = ThermalProp(i_mpo, exact=True, space="GS")
         tp.evolve(None, 1, beta / 2j)
         ket_mpo = tp.latest_mps
         ket_mpo.evolve_config = self.evolve_config

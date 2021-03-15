@@ -3,7 +3,7 @@
 import numpy as np
 import pytest
 
-from renormalizer.mps import Mps, Mpo, MpDm, ThermalProp
+from renormalizer.mps import Mps, MpDm, ThermalProp
 from renormalizer.tests import parameter
 from renormalizer.utils import Quantity, EvolveConfig, EvolveMethod
 
@@ -28,7 +28,6 @@ def test_from_mps():
 def test_thermal_prop(adaptive, evolve_method):
     model = parameter.holstein_model
     init_mps = MpDm.max_entangled_ex(model)
-    mpo = Mpo(model)
     beta = Quantity(298, "K").to_beta()
     evolve_time = beta / 2j
 
@@ -48,7 +47,7 @@ def test_thermal_prop(adaptive, evolve_method):
 
     dbeta = evolve_time/nsteps
 
-    tp = ThermalProp(init_mps, mpo, evolve_config=evolve_config)
+    tp = ThermalProp(init_mps, evolve_config=evolve_config)
     tp.evolve(evolve_dt=dbeta, nsteps=nsteps)
     # MPO, HAM, Etot, A_el = mps.construct_hybrid_Ham(mpo, debug=True)
     # exact A_el: 0.20896541050347484, 0.35240029674394463, 0.4386342927525734

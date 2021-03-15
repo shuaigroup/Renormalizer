@@ -67,6 +67,7 @@ class TransportKubo(TdMpsJob):
             Zero temperature is not supported.
         distance_matrix (:class:`np.ndarray`): two-dimensional array :math:`D_{ij} = P_i - P_j` representing
             distance between the :math:`i` th electronic degree of freedom and the :math:`j` th degree of freedom.
+            The index is the same with ``model.e_dofs``.
             The parameter takes the role of :math:`\hat P` and can better handle periodic boundary condition.
             The default value is ``None`` in which case the distance matrix is constructed assuming the system
             is a one-dimensional chain.
@@ -217,7 +218,7 @@ class TransportKubo(TdMpsJob):
                 job_name = None
             else:
                 job_name = self.job_name + "_thermal_prop"
-            tp = ThermalProp(i_mpdm, self.h_mpo, evolve_config=self.ievolve_config, dump_dir=self.dump_dir, job_name=job_name)
+            tp = ThermalProp(i_mpdm, evolve_config=self.ievolve_config, dump_dir=self.dump_dir, job_name=job_name)
             # only propagate half beta
             tp.evolve(None, self.insteps, self.temperature.to_beta() / 2j)
             mpdm = tp.latest_mps

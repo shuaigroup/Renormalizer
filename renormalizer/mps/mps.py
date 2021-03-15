@@ -461,7 +461,7 @@ class Mps(MatrixProduct):
             return np.array([self.expectation(mpo, self_conj) for mpo in mpos])
 
         # optimized way, cache for intermediates
-        # hash is used as indeces of the matrices.
+        # hash is used as indices of the matrices.
         # The chance for collision (the same hash for two different matrices) is
         # about 1-0.99999999999997 in 1000 matrices.
         # In which case a RuntimeError is raised and rerun the job should solve the problem

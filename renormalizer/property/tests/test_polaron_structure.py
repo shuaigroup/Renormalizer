@@ -100,7 +100,7 @@ def test_thermal_equilibrium(periodic):
     #init_mpdm.compress_config.bond_dim_max_value=10
     init_mpdm.compress_config.threshold = 1e-4
     
-    td = ThermalProp(init_mpdm, mpo, evolve_config=evolve_config,
+    td = ThermalProp(init_mpdm, evolve_config=evolve_config,
             dump_dir=dump_dir, job_name=job_name, properties=prop)
     td.evolve(dbeta, nsteps=nsteps)
     

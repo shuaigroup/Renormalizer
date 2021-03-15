@@ -173,7 +173,7 @@ class ChargeDiffusionDynamics(TdMpsJob):
                 # subtract the energy otherwise might cause numeric error because of large offset * dbeta
                 energy = Quantity(gs_mp.expectation(tentative_mpo))
                 mpo = Mpo(self.model, offset=energy)
-                tp = ThermalProp(gs_mp, mpo, exact=True, space="GS")
+                tp = ThermalProp(gs_mp, exact=True, space="GS")
                 tp.evolve(None, max(20, len(gs_mp)), self.temperature.to_beta() / 2j)
                 gs_mp = tp.latest_mps
                 if self._defined_output_path:
@@ -254,7 +254,7 @@ class ChargeDiffusionDynamics(TdMpsJob):
         dump_dict["bond entropy"] = self.bond_vn_entropy_array
         dump_dict["coherent length array"] = self.coherent_length_array
         if self.reduced_density_matrices:
-            dump_dict["reduced density matrices"] = self.reduced_density_matrices[-1]
+            dump_dict["reduced density matrices"] = self.reduced_density_matrices
         dump_dict["time series"] = list(self.evolve_times)
         return dump_dict
 
