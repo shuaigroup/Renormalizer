@@ -33,6 +33,7 @@ class TdMpsJob(object):
         self.dump_dir = dump_dir
         self.job_name = job_name
         mps = self.init_mps()
+        logger.info(f"Initial MPS: {str(mps)}")
         if mps is None:
             raise ValueError("init_mps should return an mps. Got None")
         self.latest_mps = mps
@@ -206,12 +207,3 @@ class TdMpsJob(object):
     @property
     def _defined_output_path(self):
         return self.dump_dir is not None and self.job_name is not None
-
-    @property
-    def _thermal_dump_path(self):
-        """
-        The path where thermal propagated states should be dumped or loaded
-        Returns: string of the path
-        """
-        assert self._defined_output_path
-        return os.path.join(self.dump_dir, self.job_name + '_impdm.npz')

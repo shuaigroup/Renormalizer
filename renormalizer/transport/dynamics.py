@@ -30,13 +30,18 @@ class InitElectron(Enum):
 
 class ChargeDiffusionDynamics(TdMpsJob):
     r"""
-    Simulate charge diffusion dynamics by TD-DMRG. It is possible to obtain mobility from the simulation,
+    Simulate charge diffusion dynamics by TD-DMRG at zero temperature.
+    It is possible to obtain mobility from the simulation,
     but care must be taken to ensure that mean square displacement grows linearly with time.
 
+    For finite temperature charge dynamics, it is recommended to use
+    thermal field dynamics and transform the Hamiltonian.
+    See the documentation of :class:`~renormalizer.transport.spectral_function.SpectralFunctionZT`
+    for more details.
+
     Args:
-        model (:class:`~renormalizer.model.mlist.HolsteinModel`): system information.
-            Currently only support :class:`~renormalizer.model.mlist.HolsteinModel`.
-        temperature (:class:`~renormalizer.utils.quantity.Quantity`): simulation temperature. Default is zero temperature.
+        model (:class:`~renormalizer.model.model.HolsteinModel`): system information.
+            Currently only support :class:`~renormalizer.model.model.HolsteinModel`.
         compress_config (:class:`~renormalizer.utils.configs.CompressConfig`): config when compressing MPS.
         evolve_config (:class:`~renormalizer.utils.configs.EvolveConfig`): config when evolving MPS.
         stop_at_edge (bool): whether stop when charge has diffused to the boundary of the system. Default is ``True``.
@@ -83,7 +88,6 @@ class ChargeDiffusionDynamics(TdMpsJob):
     def __init__(
         self,
         model: HolsteinModel,
-        temperature: Quantity = Quantity(0, "K"),
         compress_config: CompressConfig = None,
         evolve_config: EvolveConfig = None,
         stop_at_edge: bool = True,
@@ -93,7 +97,6 @@ class ChargeDiffusionDynamics(TdMpsJob):
         job_name: str = None,
     ):
         self.model: HolsteinModel = model
-        self.temperature = temperature
         self.mpo = None
         self.init_electron = init_electron
         if compress_config is None:
@@ -161,23 +164,7 @@ class ChargeDiffusionDynamics(TdMpsJob):
 
     def init_mps(self):
         tentative_mpo = Mpo(self.model)
-        if self.temperature == 0:
-            gs_mp = Mps.ground_state(self.model, max_entangled=False)
-        else:
-            if self._defined_output_path:
-                gs_mp = load_thermal_state(self.model, self._thermal_dump_path)
-            else:
-                gs_mp = None
-            if gs_mp is None:
-                gs_mp = MpDm.max_entangled_gs(self.model)
-                # subtract the energy otherwise might cause numeric error because of large offset * dbeta
-                energy = Quantity(gs_mp.expectation(tentative_mpo))
-                mpo = Mpo(self.model, offset=energy)
-                tp = ThermalProp(gs_mp, exact=True, space="GS")
-                tp.evolve(None, max(20, len(gs_mp)), self.temperature.to_beta() / 2j)
-                gs_mp = tp.latest_mps
-                if self._defined_output_path:
-                    gs_mp.dump(self._thermal_dump_path)
+        gs_mp = Mps.ground_state(self.model, max_entangled=False)
         init_mp = self.create_electron(gs_mp)
         energy = Quantity(init_mp.expectation(tentative_mpo))
         self.mpo = Mpo(self.model, offset=energy)
@@ -242,7 +229,6 @@ class ChargeDiffusionDynamics(TdMpsJob):
     def get_dump_dict(self):
         dump_dict = OrderedDict()
         dump_dict["mol list"] = self.model.to_dict()
-        dump_dict["tempearture"] = self.temperature.as_au()
         dump_dict["total time"] = self.evolve_times[-1]
         dump_dict["other info"] = self.custom_dump_info
         # make np array json serializable

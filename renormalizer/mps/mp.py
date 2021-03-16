@@ -463,8 +463,7 @@ class MatrixProduct:
         """
 
         if mpo is None:
-            logger.info("Recommend to use svd to compress a single mps/mpo/mpdm.")
-            raise NotImplementedError
+            raise NotImplementedError("Recommend to use svd to compress a single mps/mpo/mpdm.")
         
         if guess is None:
             # a minimal representation of self and mpo
