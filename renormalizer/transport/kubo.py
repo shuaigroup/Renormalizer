@@ -127,7 +127,7 @@ class TransportKubo(TdMpsJob):
         if thermal_dump_path is not None:
             self.thermal_dump_path = thermal_dump_path
         elif dump_dir is not None and job_name is not None:
-            self.thermal_dump_path = os.path.join(self.dump_dir, self.job_name + '_impdm.npz')
+            self.thermal_dump_path = os.path.join(dump_dir, job_name + '_impdm.npz')
         else:
             self.thermal_dump_path = None
 
