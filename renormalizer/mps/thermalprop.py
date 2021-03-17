@@ -71,11 +71,11 @@ class ThermalProp(TdMpsJob):
         return self.init_mpdm
 
     def process_mps(self, mps):
+        new_energy = mps.expectation(self.h_mpo)
+        self.energies.append(new_energy)
         if self.exact:
             # skip the fuss for efficiency
             return
-        new_energy = mps.expectation(self.h_mpo)
-        self.energies.append(new_energy)
         for attr_str in ["e_occupations", "ph_occupations"]:
             attr = getattr(mps, attr_str)
             logger.info(f"{attr_str}: {attr}")
@@ -94,7 +94,7 @@ class ThermalProp(TdMpsJob):
 
     def evolve_exact(self, old_mpdm: MpDm, evolve_dt):
         MPOprop = Mpo.exact_propagator(
-            old_mpdm.model, evolve_dt.imag, space=self.space, shift=-self.h_mpo.offset
+            old_mpdm.model, evolve_dt.imag, space=self.space, shift=-self.energies[-1]
         )
         new_mpdm = MPOprop.apply(old_mpdm, canonicalise=True)
         # partition function can't be obtained. It's not practical anyway.

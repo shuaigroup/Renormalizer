@@ -141,3 +141,33 @@ def test_evolve(
     ct2.job_name = "test"
     ct2.dump_dict()
     os.remove("test.npz")
+
+
+@pytest.mark.parametrize(
+    "mol_num, j_constant_value, elocalex_value, ph_info, ph_phys_dim, evolve_dt, nsteps",
+    ([3, 1, 3.87e-3, [[1e-5, 1e-5]], 2, 2, 50],),
+)
+@pytest.mark.parametrize("scheme", (3, 4))
+def test_band_limit_finite_t(
+    mol_num,
+    j_constant_value,
+    elocalex_value,
+    ph_info,
+    ph_phys_dim,
+    evolve_dt,
+    nsteps,
+    scheme,
+):
+    ph_list = [
+        Phonon.simple_phonon(
+            Quantity(omega, "cm^{-1}"), Quantity(displacement, "a.u."), ph_phys_dim
+        )
+        for omega, displacement in ph_info
+    ]
+    model = HolsteinModel([Mol(Quantity(elocalex_value, "a.u."), ph_list)] * mol_num,
+                             Quantity(j_constant_value, "eV"), )
+    ct1 = ChargeDiffusionDynamics(model, stop_at_edge=False)
+    ct1.evolve(evolve_dt, nsteps)
+    ct2 = ChargeDiffusionDynamics(model, temperature=low_t, stop_at_edge=False)
+    ct2.evolve(evolve_dt, nsteps)
+    assert ct1.is_similar(ct2)
