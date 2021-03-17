@@ -481,8 +481,7 @@ class MatrixProduct:
         method = mps.compress_config.vmethod
 
         environ = Environ(self, mpo, "L", mps_conj=mps.conj())
-        
-        converged = False
+
         for isweep, (mmax, percent) in enumerate(procedure):
             logger.debug(f"isweep: {isweep}")
             logger.debug(f"mmax, percent: {mmax}, {percent}")
@@ -590,16 +589,15 @@ class MatrixProduct:
             
             mps._switch_direction()
             
-            # check if convergence
-            if isweep > 0 and percent == 0 and \
-                    mps.distance(mps_old) / np.sqrt(mps.dot(mps.conj()).real) < mps.compress_config.vrtol:
-                converged = True
-                break
+            # check convergence
+            if isweep > 0 and percent == 0:
+                error = mps.distance(mps_old) / np.sqrt(mps.dot(mps.conj()).real)
+                logger.info(f"Variation compress relative error: {error}")
+                if error < mps.compress_config.vrtol:
+                    logger.info("Variational compress is converged!")
+                    break
             
             mps_old = mps.copy()
-
-        if converged:
-            logger.info("Variational compress is converged!")
         else:
             logger.warning("Variational compress is not converged! Please increase the procedure!")
         

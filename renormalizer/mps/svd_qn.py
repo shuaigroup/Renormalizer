@@ -1,9 +1,66 @@
 # -*- coding: utf-8 -*-
 # Author: Jiajun Ren <jiajunren0522@gmail.com>
+import logging
 
 import scipy.linalg
 
 from renormalizer.mps.backend import np
+
+logger = logging.getLogger(__name__)
+
+
+def optimized_svd(a, full_matrices):
+    # optimize performance when ``full_matrices=True`` and the shape of ``a`` is extremely unbalanced
+    # The idea is to construct only a limited number of orthogonal basis rather than all of them
+    # (which are not necessary in most cases)
+    m, n = a.shape
+
+    # whether do the optimization
+    # here 1/3 and 3 are only empirical
+    opt = not (1 / 3 < m / n < 3)
+
+    # if opt, always set ``full_matrices=False``
+    try:
+        U, S, Vt = scipy.linalg.svd(
+            a,
+            full_matrices=full_matrices and not opt,
+            lapack_driver="gesdd",
+        )
+    except scipy.linalg.LinAlgError:
+        logger.warning("Csvd failed to converge")
+        U, S, Vt = scipy.linalg.svd(
+            a,
+            full_matrices=full_matrices and not opt,
+            lapack_driver="gesvd",
+        )
+    if not opt:
+        return U, S, Vt
+
+    # if opt, add n  additional basis assuming  2 * n < m
+    if m < n:
+        Vt = add_orthonormal_basis(Vt.T).T
+    elif n < m:
+        U = add_orthonormal_basis(U)
+    else:
+        assert False
+    return U, S, Vt
+
+
+def add_orthonormal_basis(u):
+    # add `n` basis. `n` is empirical
+    m, n = u.shape
+    assert 2 * n < m
+    assert np.allclose(u.T.conj() @ u, np.eye(n))
+    res = np.zeros((m, 2 * n), dtype=u.dtype)
+    res[:, :n] = u
+    for i in range(n):
+        a = np.random.rand(m)
+        a = a - res @ (res.T.conj() @ a)
+        a /= np.linalg.norm(a)
+        res[:, n + i] = a
+
+    assert np.allclose(res.T.conj() @ res, np.eye(2 * n))
+    return res
 
 
 def blockappend(
@@ -23,21 +80,31 @@ def blockappend(
     qnset += [n] * dim
     if full_matrices:
         vset0.append(blockrecover(indice, v[:, dim:], shape))
-        qnset0 += [n] * (v.shape[0] - dim)
-        svset0.append(np.zeros(v.shape[0] - dim))
+        qnset0 += [n] * (v.shape[1] - dim)
+        svset0.append(np.zeros(v.shape[1] - dim))
 
     return vset, vset0, qnset, qnset0, svset0
 
 
+def blockrecover(indices, U, dim):
+    """
+    recover the block element to its original position
+    """
+    resortU = np.zeros([dim, U.shape[1]], dtype=U.dtype)
+    resortU[indices, :] = U
+
+    return resortU
+
+
 def Csvd(
-    cstruct: np.ndarray,
-    qnbigl,
-    qnbigr,
-    nexciton,
-    QR=False,
-    system=None,
-    full_matrices=True,
-    ddm=False,
+        cstruct: np.ndarray,
+        qnbigl,
+        qnbigr,
+        nexciton,
+        QR=False,
+        system=None,
+        full_matrices=True,
+        ddm=False,
 ):
     """
     block svd the coefficient matrix (l, sigmal, sigmar, r) or (l,sigma,r)
@@ -73,12 +140,12 @@ def Csvd(
         # different combination
         combine = [[x, nexciton - x] for x in set(localqnl)]
     else:
-        # ddm is for diagonlize the reduced density matrix for multistate
+        # ddm is for diagonalize the reduced density matrix for multistate
         if system == "L":
-            combine = [[x, x] for x in set(localqnl) if (nexciton-x) in set(localqnr)]
+            combine = [[x, x] for x in set(localqnl) if (nexciton - x) in set(localqnr)]
         else:
-            combine = [[x, x] for x in set(localqnr) if (nexciton-x) in set(localqnl)]
-    
+            combine = [[x, x] for x in set(localqnr) if (nexciton - x) in set(localqnl)]
+
     for nl, nr in combine:
         if not ddm:
             lset = np.where(localqnl == nl)[0]
@@ -95,23 +162,13 @@ def Csvd(
         Gamma_block = Gamma.ravel().take(
             (lset * Gamma.shape[1]).reshape(-1, 1) + rset
         )
-
+        dim = min(Gamma_block.shape)
         if not ddm:
             if not QR:
-                try:
-                    U, S, Vt = scipy.linalg.svd(
-                        Gamma_block,
-                        full_matrices=full_matrices,
-                        lapack_driver="gesdd",
-                    )
-                except:
-                    # print "Csvd converge failed"
-                    U, S, Vt = scipy.linalg.svd(
-                        Gamma_block,
-                        full_matrices=full_matrices,
-                        lapack_driver="gesvd",
-                    )
-                dim = S.shape[0]
+                U, S, Vt = optimized_svd(
+                    Gamma_block,
+                    full_matrices=full_matrices,
+                )
                 Sset.append(S)
             else:
                 if full_matrices:
@@ -124,55 +181,24 @@ def Csvd(
                     U, Vt = scipy.linalg.qr(Gamma_block, mode=mode)
                 else:
                     assert False
-                dim = min(Gamma_block.shape)
 
-            Uset, Uset0, qnlset, qnlset0, SUset0 = blockappend(
-                Uset,
-                Uset0,
-                qnlset,
-                qnlset0,
-                SUset0,
-                U,
-                nl,
-                dim,
-                lset,
-                Gamma.shape[0],
-                full_matrices=full_matrices,
+            blockappend(
+                Uset, Uset0, qnlset, qnlset0, SUset0,
+                U, nl, dim, lset, Gamma.shape[0], full_matrices=full_matrices,
             )
-            Vset, Vset0, qnrset, qnrset0, SVset0 = blockappend(
-                Vset,
-                Vset0,
-                qnrset,
-                qnrset0,
-                SVset0,
-                Vt.T,
-                nr,
-                dim,
-                rset,
-                Gamma.shape[1],
-                full_matrices=full_matrices,
+            blockappend(
+                Vset, Vset0, qnrset, qnrset0, SVset0,
+                Vt.T, nr, dim, rset, Gamma.shape[1], full_matrices=full_matrices,
             )
         else:
             S, U = scipy.linalg.eigh(Gamma_block)
             # numerical error for eigenvalue < 0
-            for ss in range(len(S)):
-                if S[ss] < 0:
-                    S[ss] = 0.0
+            S[S<0] = 0
             S = np.sqrt(S)
-            dim = S.shape[0]
             Sset.append(S)
-            Uset, Uset0, qnlset, qnlset0, SUset0 = blockappend(
-                Uset,
-                Uset0,
-                qnlset,
-                qnlset0,
-                SUset0,
-                U,
-                nl,
-                dim,
-                lset,
-                Gamma.shape[0],
-                full_matrices=False,
+            blockappend(
+                Uset, Uset0, qnlset, qnlset0, SUset0,
+                U, nl, dim, lset, Gamma.shape[0], full_matrices=False,
             )
 
     if not ddm:
@@ -214,15 +240,3 @@ def Csvd(
         Uset = np.concatenate(Uset, axis=1)
         Sset = np.concatenate(Sset)
         return Uset, Sset, qnlset
-
-
-def blockrecover(indices, U, dim):
-    """
-    recover the block element to its original position
-    """
-    resortU = np.zeros([dim, U.shape[1]], dtype=U.dtype)
-    resortU[indices, :] = U
-
-    return resortU
-
-
