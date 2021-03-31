@@ -833,7 +833,7 @@ class Mps(MatrixProduct):
                 if self.evolve_config.method == EvolveMethod.tdvp_mu_vmf:
                     # perform qr on the environment mps
                     qnbigl, qnbigr, _ = environ_mps._get_big_qn([imps + 1])
-                    u, s, qnlset, v, s, qnrset = svd_qn.Csvd(
+                    u, s, qnlset, v, s, qnrset = svd_qn.svd_qn(
                             environ_mps[imps + 1].array, qnbigl, qnbigr,
                             environ_mps.qntot, system="R", full_matrices=False)
                     vt = v.T
@@ -1035,7 +1035,7 @@ class Mps(MatrixProduct):
 
                 # perform qr on the environment mps
                 qnbigl, qnbigr, _ = environ_mps._get_big_qn([imps + 1])
-                u, s, qnlset, v, s, qnrset = svd_qn.Csvd(
+                u, s, qnlset, v, s, qnrset = svd_qn.svd_qn(
                     environ_mps[imps + 1].array,
                     qnbigl,
                     qnbigr,
@@ -1162,7 +1162,7 @@ class Mps(MatrixProduct):
                 mps_t = mps_t.reshape(shape)
 
                 qnbigl, qnbigr, _ = mps._get_big_qn([imps])
-                u, qnlset, v, qnrset = svd_qn.Csvd(
+                u, qnlset, v, qnrset = svd_qn.svd_qn(
                     asnumpy(mps_t),
                     qnbigl,
                     qnbigr,
