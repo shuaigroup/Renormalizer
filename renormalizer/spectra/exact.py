@@ -80,7 +80,7 @@ class SpectraExact(SpectraTdMpsJobBase):
             # ket_mps.normalize()
             # no test, don't know work or not
             i_mpdm = MpDm.from_mps(i_mps)
-            tp = ThermalProp(i_mpdm, self.h_mpo, exact=True, space=self.space1)
+            tp = ThermalProp(i_mpdm, exact=True, space=self.space1)
             tp.evolve(None, 1, beta / 2j)
             ket_mps = tp.latest_mps
         else:

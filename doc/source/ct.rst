@@ -1,12 +1,12 @@
 Charge Transport
 *************************************
 
-Obtain mobility by Green-Kubo formula
+Obtain Mobility by Green-Kubo Formula
 =====================================
 .. automodule:: renormalizer.transport.kubo
    :members:
 
-Charge diffusion dynamics simulation 
+Charge Diffusion Dynamics Simulation
 ====================================
 .. automodule:: renormalizer.transport.dynamics
    :members:

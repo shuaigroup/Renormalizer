@@ -408,7 +408,7 @@ class MatrixProduct:
         for idx in self.iter_idx_list(full=False):
             mt: Matrix = self[idx]
             qnbigl, qnbigr, _ = self._get_big_qn([idx])
-            u, sigma, qnlset, v, sigma, qnrset = svd_qn.Csvd(
+            u, sigma, qnlset, v, sigma, qnrset = svd_qn.svd_qn(
                 mt.array,
                 qnbigl,
                 qnbigr,
@@ -463,8 +463,7 @@ class MatrixProduct:
         """
 
         if mpo is None:
-            logger.info("Recommend to use svd to compress a single mps/mpo/mpdm.")
-            raise NotImplementedError
+            raise NotImplementedError("Recommend to use svd to compress a single mps/mpo/mpdm.")
         
         if guess is None:
             # a minimal representation of self and mpo
@@ -482,8 +481,7 @@ class MatrixProduct:
         method = mps.compress_config.vmethod
 
         environ = Environ(self, mpo, "L", mps_conj=mps.conj())
-        
-        converged = False
+
         for isweep, (mmax, percent) in enumerate(procedure):
             logger.debug(f"isweep: {isweep}")
             logger.debug(f"mmax, percent: {mmax}, {percent}")
@@ -591,16 +589,15 @@ class MatrixProduct:
             
             mps._switch_direction()
             
-            # check if convergence
-            if isweep > 0 and percent == 0 and \
-                    mps.distance(mps_old) / np.sqrt(mps.dot(mps.conj()).real) < mps.compress_config.vrtol:
-                converged = True
-                break
+            # check convergence
+            if isweep > 0 and percent == 0:
+                error = mps.distance(mps_old) / np.sqrt(mps.dot(mps.conj()).real)
+                logger.info(f"Variation compress relative error: {error}")
+                if error < mps.compress_config.vrtol:
+                    logger.info("Variational compress is converged!")
+                    break
             
             mps_old = mps.copy()
-
-        if converged:
-            logger.info("Variational compress is converged!")
         else:
             logger.warning("Variational compress is not converged! Please increase the procedure!")
         
@@ -650,7 +647,7 @@ class MatrixProduct:
         if type(cstruct) is not list:
             # SVD method
             # full_matrices = True here to enable increase the bond dimension
-            Uset, SUset, qnlnew, Vset, SVset, qnrnew = svd_qn.Csvd(
+            Uset, SUset, qnlnew, Vset, SVset, qnrnew = svd_qn.svd_qn(
                 asnumpy(cstruct), qnbigl, qnbigr, self.qntot, system=system
             )
 
@@ -688,8 +685,9 @@ class MatrixProduct:
                         axes=(range(qnbigl.ndim), range(qnbigl.ndim)),
                     )
             ddm /= len(cstruct)
-            Uset, Sset, qnnew = svd_qn.Csvd(asnumpy(ddm), qnbigl, qnbigr, self.qntot,
-                    system=system, ddm=True)
+            Uset, Sset, qnnew = svd_qn.eigh_qn(
+                asnumpy(ddm), qnbigl, qnbigr, self.qntot, system=system
+            )
             ms, msdim, msqn, compms = select_basis(
                 Uset, Sset, qnnew, None, Mmax, percent=percent
             )
@@ -779,7 +777,7 @@ class MatrixProduct:
             assert mt.any()
             qnbigl, qnbigr, _ = self._get_big_qn([idx])
             system = "L" if self.to_right else "R"
-            u, qnlset, v, qnrset = svd_qn.Csvd(
+            u, qnlset, v, qnrset = svd_qn.svd_qn(
                 mt.array,
                 qnbigl,
                 qnbigr,

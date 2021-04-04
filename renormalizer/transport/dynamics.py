@@ -3,6 +3,7 @@
 #         Weitang Li <liwt31@163.com>
 
 import logging
+import os
 from enum import Enum
 from collections import OrderedDict
 from functools import partial
@@ -34,9 +35,13 @@ class ChargeDiffusionDynamics(TdMpsJob):
     but care must be taken to ensure that mean square displacement grows linearly with time.
 
     Args:
-        model (:class:`~renormalizer.model.mlist.HolsteinModel`): system information.
-            Currently only support :class:`~renormalizer.model.mlist.HolsteinModel`.
-        temperature (:class:`~renormalizer.utils.quantity.Quantity`): simulation temperature. Default is zero temperature.
+        model (:class:`~renormalizer.model.model.HolsteinModel`): system information.
+            Currently only support :class:`~renormalizer.model.model.HolsteinModel`.
+        temperature (:class:`~renormalizer.utils.quantity.Quantity`): simulation temperature.
+            Default is zero temperature. For finite temperature charge dynamics, it is recommended to use
+            thermal field dynamics and transform the Hamiltonian.
+            See the documentation of :class:`~renormalizer.transport.spectral_function.SpectralFunctionZT`
+            for more details.
         compress_config (:class:`~renormalizer.utils.configs.CompressConfig`): config when compressing MPS.
         evolve_config (:class:`~renormalizer.utils.configs.EvolveConfig`): config when evolving MPS.
         stop_at_edge (bool): whether stop when charge has diffused to the boundary of the system. Default is ``True``.
@@ -111,6 +116,12 @@ class ChargeDiffusionDynamics(TdMpsJob):
         # entropy at each bond
         self.bond_vn_entropy_array = []
         self.coherent_length_array = []
+
+        if dump_dir is not None and job_name is not None:
+            self.thermal_dump_path = os.path.join(dump_dir, job_name + '_impdm.npz')
+        else:
+            self.thermal_dump_path = None
+
         super(ChargeDiffusionDynamics, self).__init__(evolve_config=evolve_config,
                                                       dump_dir=dump_dir, job_name=job_name)
         assert self.mpo is not None
@@ -164,20 +175,17 @@ class ChargeDiffusionDynamics(TdMpsJob):
         if self.temperature == 0:
             gs_mp = Mps.ground_state(self.model, max_entangled=False)
         else:
-            if self._defined_output_path:
-                gs_mp = load_thermal_state(self.model, self._thermal_dump_path)
+            if self.thermal_dump_path is not None:
+                gs_mp = load_thermal_state(self.model, self.thermal_dump_path)
             else:
                 gs_mp = None
             if gs_mp is None:
                 gs_mp = MpDm.max_entangled_gs(self.model)
-                # subtract the energy otherwise might cause numeric error because of large offset * dbeta
-                energy = Quantity(gs_mp.expectation(tentative_mpo))
-                mpo = Mpo(self.model, offset=energy)
-                tp = ThermalProp(gs_mp, mpo, exact=True, space="GS")
+                tp = ThermalProp(gs_mp, exact=True, space="GS")
                 tp.evolve(None, max(20, len(gs_mp)), self.temperature.to_beta() / 2j)
                 gs_mp = tp.latest_mps
-                if self._defined_output_path:
-                    gs_mp.dump(self._thermal_dump_path)
+                if self.thermal_dump_path is not None:
+                    gs_mp.dump(self.thermal_dump_path)
         init_mp = self.create_electron(gs_mp)
         energy = Quantity(init_mp.expectation(tentative_mpo))
         self.mpo = Mpo(self.model, offset=energy)
@@ -254,7 +262,7 @@ class ChargeDiffusionDynamics(TdMpsJob):
         dump_dict["bond entropy"] = self.bond_vn_entropy_array
         dump_dict["coherent length array"] = self.coherent_length_array
         if self.reduced_density_matrices:
-            dump_dict["reduced density matrices"] = self.reduced_density_matrices[-1]
+            dump_dict["reduced density matrices"] = self.reduced_density_matrices
         dump_dict["time series"] = list(self.evolve_times)
         return dump_dict
 

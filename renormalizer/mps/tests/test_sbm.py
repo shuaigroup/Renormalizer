@@ -46,7 +46,7 @@ def test_ft():
     impdm.compress_config = CompressConfig(threshold=1e-6)
     temperature = Quantity(3)
     evolve_config = EvolveConfig(adaptive=True, guess_dt=-0.001j)
-    tp = ThermalProp(impdm, mpo, evolve_config=evolve_config)
+    tp = ThermalProp(impdm, evolve_config=evolve_config)
     tp.evolve(nsteps=1, evolve_time=temperature.to_beta() / 2j)
     mpdm = tp.latest_mps
     mpdm = Mpo(model, Op("sigma_x", "spin")).contract(mpdm)

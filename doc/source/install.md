@@ -90,6 +90,8 @@ Now, to install the required packages:
     ```
     pip install qutip==4.3.1
     ```
+> Sometimes an error will occur during the installation of `primme`, especially on Windows platform. Please refer to the [primme installation guide](https://github.com/primme/primme) for more details.
+
 #### Run tests
 To run tests, simply use the `pytest` command installed in the previous step in your Renormalizer source code directory:
 ```

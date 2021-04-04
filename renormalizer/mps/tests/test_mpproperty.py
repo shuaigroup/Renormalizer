@@ -32,7 +32,7 @@ def test_mps():
 def test_mpo():
     gs_dm = MpDm.max_entangled_gs(holstein_model)
     beta = Quantity(10, "K").to_beta()
-    tp = ThermalProp(gs_dm, Mpo(gs_dm.model), exact=True, space="GS")
+    tp = ThermalProp(gs_dm, exact=True, space="GS")
     tp.evolve(None, 500, beta / 1j)
     gs_dm = tp.latest_mps
     mp = creation_operator @ gs_dm

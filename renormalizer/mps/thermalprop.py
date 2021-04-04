@@ -2,6 +2,7 @@ import logging
 
 import numpy as np
 
+from renormalizer.model import Model
 from renormalizer.mps import MpDm, Mpo
 from renormalizer.utils import TdMpsJob, Quantity, EvolveConfig
 from renormalizer.property import Property
@@ -15,7 +16,8 @@ class ThermalProp(TdMpsJob):
 
     Args:
         init_mpdm (:class:`~renormalizer.mps.MpDm`): the initial density matrix to be propagated. Usually identity.
-        h_mpo (:class:`~renormalizer.mps.Mpo`): the system Hamiltonian.
+        h_mpo_model (:class:`~renormalizer.model.model.Model`): Model for the system Hamiltonian.
+            Default is the same with ``init_mpdm.model``.
         exact (bool): whether propagate assuming Hamiltonian is local
             :math:`\hat H = \sum_i \hat H_i = \sum_{in} \omega_{in} b^\dagger_{in} b_{in}` and
             exact propagation is possible through :math:`e^{xH} = e^{xh_1}e^{xh_2} \cdots e^{xh_n}`.
@@ -34,7 +36,7 @@ class ThermalProp(TdMpsJob):
     def __init__(
         self,
         init_mpdm: MpDm,
-        h_mpo: Mpo,
+        h_mpo_model: Model = None,
         exact: bool = False,
         space: str = "GS",
         evolve_config: EvolveConfig = None,
@@ -45,8 +47,10 @@ class ThermalProp(TdMpsJob):
         auto_expand: bool = True,
     ):
         self.init_mpdm: MpDm = init_mpdm.canonicalise()
-        # todo: remove h_mpo. construct from init_mpdm.model
-        self.h_mpo = h_mpo
+        if h_mpo_model is None:
+            h_mpo_model = self.init_mpdm.model
+        self.h_mpo = Mpo(h_mpo_model)
+        logger.info(f"Bond dim of h_mpo: {self.h_mpo.bond_dims}")
         self.exact = exact
         assert space in ["GS", "EX"]
         self.space = space
@@ -67,11 +71,11 @@ class ThermalProp(TdMpsJob):
         return self.init_mpdm
 
     def process_mps(self, mps):
+        new_energy = mps.expectation(self.h_mpo)
+        self.energies.append(new_energy)
         if self.exact:
             # skip the fuss for efficiency
             return
-        new_energy = mps.expectation(self.h_mpo)
-        self.energies.append(new_energy)
         for attr_str in ["e_occupations", "ph_occupations"]:
             attr = getattr(mps, attr_str)
             logger.info(f"{attr_str}: {attr}")
@@ -90,7 +94,7 @@ class ThermalProp(TdMpsJob):
 
     def evolve_exact(self, old_mpdm: MpDm, evolve_dt):
         MPOprop = Mpo.exact_propagator(
-            old_mpdm.model, evolve_dt.imag, space=self.space, shift=-self.h_mpo.offset
+            old_mpdm.model, evolve_dt.imag, space=self.space, shift=-self.energies[-1]
         )
         new_mpdm = MPOprop.apply(old_mpdm, canonicalise=True)
         # partition function can't be obtained. It's not practical anyway.

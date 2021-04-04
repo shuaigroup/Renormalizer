@@ -107,13 +107,7 @@ def symbolic_mpo(table, factor, algo="Hopcroft-Karp"):
     
     The local mpo is the transformation matrix between 0'',1'' to 0'''
     """
-    logger.debug(f"symbolic mpo algorithm: {algo}")
-    # use np.uint32, np.uint16 to save memory
-    max_uint32 = np.iinfo(np.uint32).max
-    max_uint16 = np.iinfo(np.uint16).max
-    
-    nsite = len(table[0])
-    logger.debug(f"Input operator terms: {len(table)}")
+
     # Simplest case. Cut to the chase
     if len(table) == 1:
         # The first layer: number of sites. The 2nd and 3rd layer: in and out virtual bond
@@ -131,6 +125,14 @@ def symbolic_mpo(table, factor, algo="Hopcroft-Karp"):
         mpoqn[-1] = [0]
         qnidx = len(mpo) - 1
         return mpo, mpoqn, qntot, qnidx
+
+    # use np.uint32, np.uint16 to save memory
+    max_uint32 = np.iinfo(np.uint32).max
+    max_uint16 = np.iinfo(np.uint16).max
+
+    nsite = len(table[0])
+    logger.debug(f"symbolic mpo algorithm: {algo}")
+    logger.debug(f"Input operator terms: {len(table)}")
     # translate the symbolic operator table to an easy to manipulate numpy array
     # extract the op symbol, qn, factor to a numpy array
 

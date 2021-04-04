@@ -1,6 +1,7 @@
 # -*- coding: utf-8 -*-
 
 import logging
+import os
 
 import scipy.integrate
 
@@ -30,7 +31,7 @@ class TransportKubo(TdMpsJob):
     and :math:`\hat P = e_0 \sum_m R_m a^\dagger_m a_m` is the polarization operator.
 
     .. note::
-        Although in principle :math:`\hat H` can take any form, only Holstein-Peierls model are well tested.
+        In principle :math:`\hat H` can take any form, however only Holstein-Peierls Hamiltonian is well tested.
 
     More explicitly, :math:`C(t)` has the form:
 
@@ -67,6 +68,7 @@ class TransportKubo(TdMpsJob):
             Zero temperature is not supported.
         distance_matrix (:class:`np.ndarray`): two-dimensional array :math:`D_{ij} = P_i - P_j` representing
             distance between the :math:`i` th electronic degree of freedom and the :math:`j` th degree of freedom.
+            The index is the same with ``model.e_dofs``.
             The parameter takes the role of :math:`\hat P` and can better handle periodic boundary condition.
             The default value is ``None`` in which case the distance matrix is constructed assuming the system
             is a one-dimensional chain.
@@ -79,19 +81,22 @@ class TransportKubo(TdMpsJob):
         insteps (int): steps for imaginary time propagation.
         ievolve_config (:class:`~renormalizer.utils.configs.EvolveConfig`): config when carrying out imaginary time propagation.
         compress_config (:class:`~renormalizer.utils.configs.CompressConfig`): config when compressing MPS.
-            Note that even if TDVP based methods are chosen for time evolution, compression is still necessary
-            when :math:`\hat j` is applied on :math:`\rho^{\frac{1}{2}}`.
+            Note that if TDVP based methods are chosen for time evolution, compression is necessary
+            when :math:`\hat j` is applied on :math:`e^{-\beta \hat H / 2}` but no compression is carried out
+            for :math:`e^{-\beta \hat H / 2} e^{i \hat H t}`.
         evolve_config (:class:`~renormalizer.utils.configs.EvolveConfig`): config when carrying out real time propagation.
         dump_dir (str): the directory for logging and numerical result output.
-            Also the directory from which to load previous thermal propagated initial state (if exists).
         job_name (str): the name of the calculation job which determines the file name of the logging and numerical result output.
-            For thermal propagated initial state input/output the file name is appended with ``"_impdm.npz"``.
+        thermal_dump_path (str): the path to load previously thermal propagated initial state if it exists or the path
+            to dump the thermal state if it does not exist. The default value is determined by appending ``"_impdm.npz"``
+            to the path joined by ``dump_dir`` and ``job_name``.
         properties (:class:`~renormalizer.property.property.Property`): other properties to calculate during real time evolution.
             Currently only supports Holstein model.
     """
     def __init__(self, model: Model, temperature: Quantity, distance_matrix: np.ndarray = None,
                  insteps: int=1, ievolve_config=None, compress_config=None,
-                 evolve_config=None, dump_dir: str=None, job_name: str=None, properties: Property = None):
+                 evolve_config=None, dump_dir: str=None, job_name: str=None,
+                 thermal_dump_path: str=None, properties: Property = None):
         self.model = model
         self.distance_matrix = distance_matrix
         self.h_mpo = Mpo(model)
@@ -118,6 +123,13 @@ class TransportKubo(TdMpsJob):
             self.compress_config = CompressConfig()
         else:
             self.compress_config = compress_config
+
+        if thermal_dump_path is not None:
+            self.thermal_dump_path = thermal_dump_path
+        elif dump_dir is not None and job_name is not None:
+            self.thermal_dump_path = os.path.join(dump_dir, job_name + '_impdm.npz')
+        else:
+            self.thermal_dump_path = None
 
         self.properties = properties
         self._auto_corr = []
@@ -205,8 +217,8 @@ class TransportKubo(TdMpsJob):
 
     def init_mps(self):
         # first try to load
-        if self._defined_output_path:
-            mpdm = load_thermal_state(self.model, self._thermal_dump_path)
+        if self.thermal_dump_path is not None:
+            mpdm = load_thermal_state(self.model, self.thermal_dump_path)
         else:
             mpdm = None
         # then try to calculate
@@ -217,12 +229,12 @@ class TransportKubo(TdMpsJob):
                 job_name = None
             else:
                 job_name = self.job_name + "_thermal_prop"
-            tp = ThermalProp(i_mpdm, self.h_mpo, evolve_config=self.ievolve_config, dump_dir=self.dump_dir, job_name=job_name)
+            tp = ThermalProp(i_mpdm, evolve_config=self.ievolve_config, dump_dir=self.dump_dir, job_name=job_name)
             # only propagate half beta
             tp.evolve(None, self.insteps, self.temperature.to_beta() / 2j)
             mpdm = tp.latest_mps
-            if self._defined_output_path:
-                mpdm.dump(self._thermal_dump_path)
+            if self.thermal_dump_path is not None:
+                mpdm.dump(self.thermal_dump_path)
         mpdm.compress_config = self.compress_config
         e = mpdm.expectation(self.h_mpo)
         self.h_mpo = Mpo(self.model, offset=Quantity(e))
@@ -256,8 +268,6 @@ class TransportKubo(TdMpsJob):
             ft4 = -BraKetPair(bra_mpdm, ket_mpdm2, self.j_oper2).ft
             self._auto_corr.append(ft1 + ft2 + ft3 + ft4)
             self._auto_corr_deomposition.append([ft1, ft2, ft3, ft4])
-
-
 
     def evolve_single_step(self, evolve_dt):
         if self.j_oper2 is None:
