@@ -35,8 +35,10 @@ else:
 
 if not USE_GPU:
     logger.info("use numpy as backend")
+    OE_BACKEND = "numpy"
 else:
     logger.info("use cupy as backend")
+    OE_BACKEND = "cupy"
 
 
 xp.random.seed(2019)

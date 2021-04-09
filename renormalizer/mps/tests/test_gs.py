@@ -4,7 +4,7 @@
 import numpy as np
 import pytest
 
-from renormalizer.mps.gs import construct_mps_mpo_2, optimize_mps
+from renormalizer.mps.gs import construct_mps_mpo, optimize_mps
 from renormalizer.tests.parameter import holstein_model, custom_model
 from renormalizer.utils import constant
 
@@ -21,7 +21,7 @@ procedure = [[10, 0.4], [20, 0.2], [30, 0.1], [40, 0], [40, 0]]
         "2site",
 ))
 def test_optimization(scheme, method):
-    mps, mpo = construct_mps_mpo_2(holstein_model.switch_scheme(scheme), procedure[0][0], nexciton)
+    mps, mpo = construct_mps_mpo(holstein_model.switch_scheme(scheme), procedure[0][0], nexciton)
     mps.optimize_config.procedure = procedure
     mps.optimize_config.method = method
     energies, mps_opt = optimize_mps(mps.copy(), mpo)
@@ -37,7 +37,7 @@ def test_optimization(scheme, method):
         "primme",
 ))
 def test_multistate(method, algo):
-    mps, mpo = construct_mps_mpo_2(holstein_model, procedure[0][0], nexciton)
+    mps, mpo = construct_mps_mpo(holstein_model, procedure[0][0], nexciton)
     mps.optimize_config.procedure = procedure
     mps.optimize_config.nroots = 4
     mps.optimize_config.method = method
@@ -59,7 +59,7 @@ def test_multistate(method, algo):
         4,
 ))
 def test_ex(method, nroots):
-    mps, mpo = construct_mps_mpo_2(holstein_model, procedure[0][0], nexciton)
+    mps, mpo = construct_mps_mpo(holstein_model, procedure[0][0], nexciton)
     mps.optimize_config.procedure = procedure
     mps.optimize_config.nroots = nroots
     mps.optimize_config.method = method
