@@ -96,18 +96,21 @@ def optimize_mps(mps: Mps, mpo: Mpo, omega: float = None) -> Tuple[List, Mps]:
         environ = Environ(mps, mpo, env)
 
     macro_iteration_result = []
-    # the index of active site of the returned mps
-    res_mps_idx: int = None
+    # Idx of the active site with lowest energy for each sweep
+    # determines the index of active site of the returned mps
+    opt_e_idx: int = None
     res_mps: Union[Mps, List[Mps]] = None
     for isweep, (mmax, percent) in enumerate(mps.optimize_config.procedure):
         logger.debug(f"isweep: {isweep}")
         logger.debug(f"mmax, percent: {mmax}, {percent}")
         logger.debug(f"{mps}")
 
-        micro_iteration_result, res_mps = single_sweep(mps, mpo, environ, omega, mmax, percent, res_mps_idx)
+        micro_iteration_result, res_mps = single_sweep(mps, mpo, environ, omega, mmax, percent, opt_e_idx)
 
-        res_mps_idx = micro_iteration_result.index(min(micro_iteration_result))
-        macro_iteration_result.append(micro_iteration_result[res_mps_idx])
+        opt_e = min(micro_iteration_result)
+        macro_iteration_result.append(opt_e)
+        opt_e_idx = micro_iteration_result.index(opt_e)
+
         logger.debug(
             f"{isweep+1} sweeps are finished, lowest energy = {min(macro_iteration_result)}"
         )
@@ -123,6 +126,7 @@ def optimize_mps(mps: Mps, mpo: Mpo, omega: float = None) -> Tuple[List, Mps]:
         logger.warning("DMRG did not converge! Please increase the procedure!")
         logger.info(f"The lowest two energies: {sorted(macro_iteration_result)[:2]}.")
 
+    assert res_mps is not None
     # remove the redundant basis near the edge
     if mps.optimize_config.nroots == 1:
         res_mps = res_mps.normalize().ensure_left_canon().canonicalise()
@@ -140,7 +144,7 @@ def single_sweep(
     omega: float,
     mmax: int,
     percent: float,
-    res_mps_idx: int
+    last_opt_e_idx: int
 ):
 
     method = mps.optimize_config.method
@@ -237,8 +241,21 @@ def single_sweep(
         micro_iteration_result.append(e)
 
         cstruct = cvec2cmat(cshape, c, qnmat, mps.qntot, nroots=nroots)
+
         # store the "optimal" mps (usually in the middle of each sweep)
-        if res_mps_idx is not None and res_mps_idx == imps:
+        should_store_res_mps: bool = False
+        if last_opt_e_idx is not None:
+            if method == "1site":
+                res_mps_idx = last_opt_e_idx
+            else:
+                if mps.to_right:
+                    # the last sweep is to left
+                    res_mps_idx = max(last_opt_e_idx - 2, 0)
+                else:
+                    # the last sweep is to right
+                    res_mps_idx = min(last_opt_e_idx + 2, len(mps)-1)
+            should_store_res_mps = imps == res_mps_idx
+        if should_store_res_mps:
             if nroots == 1:
                 res_mps = mps.copy()
                 res_mps._update_mps(cstruct, cidx, qnbigl, qnbigr, mmax, percent)
