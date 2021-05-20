@@ -108,8 +108,8 @@ def optimize_mps(mps: Mps, mpo: Mpo, omega: float = None) -> Tuple[List, Mps]:
         micro_iteration_result, res_mps = single_sweep(mps, mpo, environ, omega, mmax, percent, opt_e_idx)
 
         opt_e = min(micro_iteration_result)
-        macro_iteration_result.append(opt_e)
-        opt_e_idx = micro_iteration_result.index(opt_e)
+        macro_iteration_result.append(opt_e[0])
+        opt_e_idx = opt_e[1]
 
         logger.debug(
             f"{isweep+1} sweeps are finished, lowest energy = {min(macro_iteration_result)}"
@@ -238,24 +238,12 @@ def single_sweep(
         if nroots > 1:
             e = e.tolist()
         logger.debug(f"energy: {e}")
-        micro_iteration_result.append(e)
+        micro_iteration_result.append((e, cidx))
 
         cstruct = cvec2cmat(cshape, c, qnmat, mps.qntot, nroots=nroots)
 
         # store the "optimal" mps (usually in the middle of each sweep)
-        should_store_res_mps: bool = False
-        if last_opt_e_idx is not None:
-            if method == "1site":
-                res_mps_idx = last_opt_e_idx
-            else:
-                if mps.to_right:
-                    # the last sweep is to left
-                    res_mps_idx = max(last_opt_e_idx - 2, 0)
-                else:
-                    # the last sweep is to right
-                    res_mps_idx = min(last_opt_e_idx + 2, len(mps)-1)
-            should_store_res_mps = imps == res_mps_idx
-        if should_store_res_mps:
+        if cidx == last_opt_e_idx:
             if nroots == 1:
                 res_mps = mps.copy()
                 res_mps._update_mps(cstruct, cidx, qnbigl, qnbigr, mmax, percent)
