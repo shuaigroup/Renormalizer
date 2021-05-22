@@ -22,7 +22,7 @@ def f(model, run_qutip=True):
         # calculate result in ZT. FT result is exactly the same
         TIME_LIMIT = 10
         QUTIP_STEP = 0.01
-        N_POINTS = TIME_LIMIT / QUTIP_STEP + 1
+        N_POINTS = int(TIME_LIMIT / QUTIP_STEP + 1)
         qutip_time_series = np.linspace(0, TIME_LIMIT, N_POINTS)
         init = qutip.Qobj(init_mps.full_wfn(), [qutip_h.dims[0], [1] * len(qutip_h.dims[0])])
         # the result is not exact and the error scale is approximately 1e-5

@@ -1573,7 +1573,7 @@ def integrand_func_factory(
     # Ovlp0 is (#.conj, #), Ovlp_inv0 = (#, #.conj), Ovlp_inv1 = (#, #.conj)
     # S_inv is (#.conj, #)
     def func(t, y):
-        y0 = y.reshape(shape)
+        y0 = asxp(y.reshape(shape))
         HC = hop(y0)
         if not islast:
             proj = projector(y0, left, ovlp_inv1, ovlp0)
