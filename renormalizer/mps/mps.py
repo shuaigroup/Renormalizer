@@ -626,6 +626,7 @@ class Mps(MatrixProduct):
             EvolveMethod.tdvp_vmf: self._evolve_tdvp_mu_vmf,
             EvolveMethod.tdvp_mu_cmf: self._evolve_tdvp_mu_cmf,
             EvolveMethod.tdvp_ps: self._evolve_tdvp_ps,
+            EvolveMethod.tdvp_ps2: self._evolve_tdvp_ps2
         }[self.evolve_config.method]
         new_mps = method(mpo, evolve_dt)
         if np.iscomplex(evolve_dt):
@@ -1177,6 +1178,85 @@ class Mps(MatrixProduct):
 
                 else:
                     mps[imps] = mps_t
+            mps._switch_direction()
+
+        steps_stat = stats.describe(local_steps)
+        logger.debug(f"TDVP-PS Krylov space: {steps_stat}")
+        mps.evolve_config.stat = steps_stat
+
+        return mps
+
+    @adaptive_tdvp
+    def _evolve_tdvp_ps2(self, mpo, evolve_dt) -> "Mps":
+        # PhysRevB.94.165116
+        # TDVP projector splitting
+        # two-site
+        if np.iscomplex(evolve_dt):
+            mps = self.copy()
+        else:
+            mps = self.to_complex()
+
+        M = self.compress_config.bond_dim_max_value
+
+        # construct the environment matrix
+        # almost half is not used. Not a big deal.
+        environ = Environ(mps, mpo)
+
+        # statistics for debug output
+        local_steps = []
+        # sweep for 2 rounds
+        for i in range(2):
+            for imps in mps.iter_idx_list(full=False):
+                if mps.to_right:
+                    lidx, cidx0, cidx1, ridx = range(imps - 1, imps + 3)
+                    # the idx of the next site
+                    cidx2 = cidx1
+                    # the idx of the last site
+                    last_idx = len(mps) - 2
+                else:
+                    lidx, cidx0, cidx1, ridx = range(imps - 2, imps + 2)
+                    cidx2 = cidx0
+                    last_idx = 1
+
+                l_array = environ.read("L", lidx)
+                r_array = environ.read("R", ridx)
+
+                # the two-site matrix state
+                ms2 = tensordot(mps[cidx0], mps[cidx1], axes=1)
+                hop = hop_expr(l_array, r_array, [mpo[cidx0], mpo[cidx1]], ms2.shape)
+                mps_t, j = expm_krylov(
+                    lambda y: hop(y.reshape(ms2.shape)).ravel(),
+                    -1j * evolve_dt / 2,
+                    ms2.ravel()
+                )
+                local_steps.append(j)
+
+                qnbigl, qnbigr, _ = mps._get_big_qn([cidx0, cidx1])
+                mps._update_mps(mps_t, [cidx0, cidx1], qnbigl, qnbigr, M)
+                if imps == last_idx:
+                    continue
+
+                if mps.to_right:
+                    l_array = environ.GetLR(
+                        "L", lidx + 1, mps, mpo, itensor=l_array, method="System"
+                    )
+                else:
+                    r_array = environ.GetLR(
+                        "R", ridx - 1, mps, mpo, itensor=r_array, method="System"
+                    )
+
+                # reverse update the next site
+                ms1 = mps[cidx2]
+                hop = hop_expr(l_array, r_array, [mpo[cidx2]], ms1.shape)
+                mps_t, j = expm_krylov(
+                    lambda y: hop(y.reshape(ms1.shape)).ravel(),
+                    1j * evolve_dt / 2, ms1.ravel()
+                )
+                local_steps.append(j)
+                mps_t = mps_t.reshape(ms1.shape)
+                mps[cidx2] = mps_t
+                mps._push_cano(cidx2)
+
             mps._switch_direction()
 
         steps_stat = stats.describe(local_steps)

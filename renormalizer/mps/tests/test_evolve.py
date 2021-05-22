@@ -96,6 +96,20 @@ def test_tdvp_ps(init_state, mpo):
     mps.evolve_config  = EvolveConfig(EvolveMethod.tdvp_ps)
     check_result(mps, mpo, 0.4, 5)
 
+
+@pytest.mark.parametrize("init_state, mpo", (
+        [init_mps, mpo],
+        [init_mpdm, mpo],
+))
+def test_tdvp_ps2(init_state, mpo):
+    mps = init_state.copy()
+    mps.evolve_config  = EvolveConfig(EvolveMethod.tdvp_ps2)
+    mps.compress_config = CompressConfig(max_bonddim=5)
+    # lower accuracy because of the truncation,
+    # which is included to test the ability of adjusting bond dimension
+    mps = check_result(mps, mpo, 0.4, 5, atol=5e-4)
+    assert max(mps.bond_dims) == 5
+
 # used for debugging
 def compare():
     dt_list = [0.01, 0.02, 0.05, 0.1, 0.2, 0.4]

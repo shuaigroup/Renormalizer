@@ -35,7 +35,7 @@ def expm_krylov(Afunc, dt, vstart: xp.ndarray, block_size=50):
         SIAM J. Numer. Anal. 34, 1911 (1997)
     """
     if not np.iscomplex(dt):
-        dt = float(dt)
+        dt = dt.real
 
     # normalize starting vector
     vstart = xp.asarray(vstart)
