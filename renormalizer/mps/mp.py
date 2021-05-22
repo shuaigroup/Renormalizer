@@ -1024,5 +1024,5 @@ class MatrixProduct:
         if os.path.exists(dir_with_id):
             try:
                 shutil.rmtree(dir_with_id)
-            except:
+            except OSError:
                 logger.exception(f"Removing temperary dump dir {dir_with_id} failed")

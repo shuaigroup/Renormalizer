@@ -5,6 +5,7 @@ from collections import Counter, deque
 from functools import wraps
 from typing import Union, List, Dict
 import itertools
+
 import scipy
 from scipy import stats
 
@@ -27,6 +28,7 @@ from renormalizer.mps.matrix import (
     asnumpy,
     asxp)
 from renormalizer.mps.mp import MatrixProduct
+from renormalizer.mps.hop_expr import hop_expr
 from renormalizer.mps.mpo import Mpo
 from renormalizer.utils import (
     OptimizeConfig,
@@ -818,7 +820,7 @@ class Mps(MatrixProduct):
                 if imps == self.site_num - 1:
                     # the coefficient site
                     rtensor = xp.ones((1, 1, 1), dtype=mps.dtype)
-                    hop = hop_factory(ltensor, rtensor, asxp(mpo[imps]), len(shape))
+                    hop =hop_expr(ltensor, rtensor, [asxp(mpo[imps])], shape)
 
                     S_inv = xp.diag(xp.ones(1,dtype=mps.dtype))
                     func = integrand_func_factory(shape, hop, True, S_inv, True,
@@ -879,7 +881,7 @@ class Mps(MatrixProduct):
                     # S_inv is (#.conj, #)
                     S_inv = u.dot(xp.diag(1.0 / w)).dot(u.T.conj()).T
 
-                hop = hop_factory(ltensor, rtensor, asxp(mpo[imps]), len(shape))
+                hop = hop_expr(ltensor, rtensor, [asxp(mpo[imps])], shape)
 
                 func = integrand_func_factory(shape, hop, False, S_inv, True,
                         coef, ovlp_inv1=S_L_inv_list[imps+1],
@@ -1015,7 +1017,7 @@ class Mps(MatrixProduct):
                     if loop == 1:
                         # the coefficient site
                         rtensor = ones((1, 1, 1))
-                        hop = hop_factory(ltensor, rtensor, mpo[imps], len(shape))
+                        hop = hop_expr(ltensor, rtensor, [mpo[imps]], shape)
 
                         S_inv = xp.diag(xp.ones(1,dtype=mps.dtype))
                         def func1(y):
@@ -1063,7 +1065,7 @@ class Mps(MatrixProduct):
 
                 S_inv = u.conj().dot(np.diag(1.0 / regular_s)).T
 
-                hop = hop_factory(ltensor, rtensor, mpo[imps], len(shape))
+                hop = hop_expr(ltensor, rtensor, [mpo[imps]], shape)
                 func = integrand_func_factory(shape, hop, False, S_inv, True,
                         coef, ovlp_inv1=S_L_inv_list[imps+1],
                         ovlp_inv0=S_L_inv_list[imps], ovlp0=S_L_list[imps])
@@ -1091,28 +1093,16 @@ class Mps(MatrixProduct):
     def _evolve_tdvp_ps(self, mpo, evolve_dt) -> "Mps":
         # PhysRevB.94.165116
         # TDVP projector splitting
-        imag_time = np.iscomplex(evolve_dt)
-        if imag_time:
+        # one-site
+        if np.iscomplex(evolve_dt):
             mps = self.copy()
-            mps_conj = mps
         else:
             mps = self.to_complex()
-            mps_conj = mps.conj()  # another copy, so 3x memory is used.
 
         # construct the environment matrix
         # almost half is not used. Not a big deal.
-        environ = Environ(mps, mpo, mps_conj=mps_conj)
+        environ = Environ(mps, mpo)
 
-        # a workaround for https://github.com/scipy/scipy/issues/10164
-        if imag_time:
-            evolve_dt = -evolve_dt.imag
-            # used in calculating derivatives
-            coef = -1
-        else:
-            coef = 1j
-
-        # todo: remove USE_RK if proved to be useless
-        USE_RK = False
         # statistics for debug output
         local_steps = []
         # sweep for 2 rounds
@@ -1123,42 +1113,12 @@ class Mps(MatrixProduct):
                 r_array = environ.read("R", imps + 1)
 
                 shape = list(mps[imps].shape)
-
-                hop = hop_factory(l_array, r_array, asxp(mpo[imps].array), len(shape))
-
-                def hop_svt(ms):
-                    # S-a   l-S
-                    #
-                    # O-b - b-O
-                    #
-                    # S-c   k-S
-
-                    path = [([0, 1], "abc, ck -> abk"), ([1, 0], "abk, lbk -> al")]
-                    HC = multi_tensor_contract(path, l_array, ms, r_array)
-                    return HC
-
-                if USE_RK:
-
-                    def func(t, y):
-                        return hop(y.reshape(shape)).ravel() / coef
-
-                    sol = solve_ivp(
-                        func,
-                        (0, evolve_dt / 2.0),
-                        mps[imps].ravel().array,
-                        method="RK45",
-                    )
-                    local_steps.append(len(sol.t))
-                    mps_t = sol.y[:, -1]
-                else:
-                    # Can't use the same func because here H should be Hermitian
-                    def func(y):
-                        return hop(y.reshape(shape)).ravel()
-
-                    mps_t, j = expm_krylov(
-                        func, (evolve_dt / 2) / coef, mps[imps].ravel().array
-                    )
-                    local_steps.append(j)
+                hop = hop_expr(l_array, r_array, [asxp(mpo[imps].array)], shape)
+                mps_t, j = expm_krylov(
+                    lambda y: hop(y.reshape(shape)).ravel(),
+                    -1j * evolve_dt / 2, mps[imps].ravel().array
+                )
+                local_steps.append(j)
                 mps_t = mps_t.reshape(shape)
 
                 qnbigl, qnbigr, _ = mps._get_big_qn([imps])
@@ -1175,85 +1135,52 @@ class Mps(MatrixProduct):
 
                 if not mps.to_right and imps != 0:
                     mps[imps] = vt.reshape([-1] + shape[1:])
-                    mps_conj[imps] = mps[imps].conj()
                     mps.qn[imps] = qnrset
                     mps.qnidx = imps-1
 
                     r_array = environ.GetLR(
-                        "R", imps, mps, mpo, itensor=r_array, method="System", mps_conj=mps_conj
+                        "R", imps, mps, mpo, itensor=r_array, method="System"
                     )
 
                     # reverse update u site
                     shape_u = u.shape
-
-                    if USE_RK:
-
-                        def func_u(t, y):
-                            return hop_svt(y.reshape(shape_u)).ravel() / coef
-
-                        sol_u = solve_ivp(
-                            func_u, (0, -evolve_dt / 2), u.ravel(), method="RK45"
-                        )
-                        local_steps.append(len(sol_u.t))
-                        mps_t = sol_u.y[:, -1]
-                    else:
-
-                        def func_u(y):
-                            return hop_svt(y.reshape(shape_u)).ravel()
-
-                        mps_t, j = expm_krylov(
-                            func_u, (-evolve_dt / 2) / coef, u.ravel()
-                        )
-                        local_steps.append(j)
+                    hop_u = hop_expr(l_array, r_array, [], shape_u)
+                    mps_t, j = expm_krylov(
+                        lambda y: hop_u(y.reshape(shape_u)).ravel(),
+                        1j * evolve_dt / 2, u.ravel()
+                    )
+                    local_steps.append(j)
                     mps_t = mps_t.reshape(shape_u)
 
                     mps[imps - 1] = tensordot(mps[imps - 1].array, mps_t, axes=(-1, 0),)
-                    mps_conj[imps - 1] = mps[imps - 1].conj()
 
                 elif mps.to_right and imps != len(mps) - 1:
                     mps[imps] = u.reshape(shape[:-1] + [-1])
-                    mps_conj[imps] = mps[imps].conj()
                     mps.qn[imps + 1] = qnlset
                     mps.qnidx = imps+1
 
                     l_array = environ.GetLR(
-                        "L", imps, mps, mpo, itensor=l_array, method="System", mps_conj=mps_conj
+                        "L", imps, mps, mpo, itensor=l_array, method="System"
                     )
 
                     # reverse update svt site
                     shape_svt = vt.shape
-
-                    if USE_RK:
-
-                        def func_svt(t, y):
-                            return hop_svt(y.reshape(shape_svt)).ravel() / coef
-
-                        sol_svt = solve_ivp(
-                            func_svt, (0, -evolve_dt / 2), vt.ravel(), method="RK45"
-                        )
-                        local_steps.append(len(sol_svt.t))
-                        mps_t = sol_svt.y[:, -1]
-                    else:
-
-                        def func_svt(y):
-                            return hop_svt(y.reshape(shape_svt)).ravel()
-
-                        mps_t, j = expm_krylov(
-                            func_svt, (-evolve_dt / 2) / coef, vt.ravel()
-                        )
-                        local_steps.append(j)
+                    hop_svt = hop_expr(l_array, r_array, [], shape_svt)
+                    mps_t, j = expm_krylov(
+                        lambda y: hop_svt(y.reshape(shape_svt)).ravel(),
+                        1j * evolve_dt / 2, vt.ravel()
+                    )
+                    local_steps.append(j)
                     mps_t = mps_t.reshape(shape_svt)
 
                     mps[imps + 1] = tensordot(mps_t, mps[imps + 1].array, axes=(1, 0),)
-                    mps_conj[imps + 1] = mps[imps + 1].conj()
 
                 else:
                     mps[imps] = mps_t
-                    mps_conj[imps] = mps[imps].conj()
             mps._switch_direction()
 
         steps_stat = stats.describe(local_steps)
-        logger.debug(f"TDVP-PS CMF steps: {steps_stat}")
+        logger.debug(f"TDVP-PS Krylov space: {steps_stat}")
         mps.evolve_config.stat = steps_stat
 
         return mps
@@ -1548,82 +1475,6 @@ def projector(
     Iden = xp.array(xp.diag(xp.ones(sz)), dtype=backend.real_dtype).reshape(proj.shape)
     proj = Iden - proj
     return proj
-
-
-# Note: don't do "optimization" like this. The contraction will take more time
-"""
-def hop_factory(ltensor, rtensor, mo, dim):
-    h = opt_einsum.contract("abc, bdeg, fgh -> adfceh", ltensor, mo, rtensor)
-    if dim == 3:
-        # S-a   f-S
-        #     d
-        # O-b-O-g-O
-        #     e
-        # S-c   h-S
-        def hop(ms):
-            return np.tensordot(h, ms, 3)
-    elif dim == 4:
-        # S-a   f-S
-        #     d
-        # O-b-O-g-O
-        #     e
-        # S-c   h-S
-        #     i
-        def hop(ms):
-            return np.tensordot(h, ms, [[3, 4, 5], [0, 1, 3]]).transpose([0, 1, 3, 2])
-    else:
-        assert False
-    return hop
-"""
-
-
-def hop_factory(
-    ltensor: Union[Matrix, xp.ndarray],
-    rtensor: Union[Matrix, xp.ndarray],
-    mo: Union[Matrix, xp.ndarray],
-    ndim,
-):
-    if isinstance(ltensor, Matrix):
-        ltensor = ltensor.array
-    if isinstance(rtensor, Matrix):
-        rtensor = rtensor.array
-    if isinstance(mo, Matrix):
-        mo = mo.array
-    # S-a   l-S
-    #     d
-    # O-b-O-f-O
-    #     e
-    # S-c   k-S
-    if ndim == 3:
-        path = [
-            ([0, 1], "abc, cek -> abek"),
-            ([2, 0], "abek, bdef -> akdf"),
-            ([1, 0], "akdf, lfk -> adl"),
-        ]
-
-        def hop(ms: xp.ndarray):
-            return multi_tensor_contract(path, ltensor, ms, mo, rtensor)
-
-        # S-a   l-S
-        #     d
-        # O-b-O-f-O
-        #     e
-        # S-c   k-S
-        #     g
-    elif ndim == 4:
-        path = [
-            ([0, 1], "abc, bdef -> acdef"),
-            ([2, 0], "acdef, cegk -> adfgk"),
-            ([1, 0], "adfgk, lfk -> adgl"),
-        ]
-
-        def hop(ms: xp.ndarray):
-            return multi_tensor_contract(path, ltensor, mo, ms, rtensor)
-
-    else:
-        assert False
-
-    return hop
 
 
 def integrand_func_factory(

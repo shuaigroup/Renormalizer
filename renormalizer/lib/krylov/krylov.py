@@ -34,6 +34,8 @@ def expm_krylov(Afunc, dt, vstart: xp.ndarray, block_size=50):
         On Krylov subspace approximations to the matrix exponential operator
         SIAM J. Numer. Anal. 34, 1911 (1997)
     """
+    if not np.iscomplex(dt):
+        dt = float(dt)
 
     # normalize starting vector
     vstart = xp.asarray(vstart)
