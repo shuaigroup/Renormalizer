@@ -937,6 +937,38 @@ class MatrixProduct:
     
     def build_empty_mp(self, num):
         self._mp = [[None]] * num
+    
+    def dump(self, fname, other_attrs=[]):
+        data_dict = dict()
+        # version of the protocol
+        data_dict["version"] = "0.3"
+        data_dict["nsites"] = self.site_num
+        for idx, mt in enumerate(self):
+            data_dict[f"mt_{idx}"] = mt.array
+        for attr in ["qn", "qnidx", "qntot", "to_right"] + other_attrs:
+            data_dict[attr] = getattr(self, attr)
+        try:
+            np.savez(fname, **data_dict)
+        except Exception:
+            logger.exception(f"Dump MP failed.")
+    
+    @classmethod
+    def load(cls, model: Model, fname: str):
+        npload = np.load(fname, allow_pickle=True)
+        mp = cls()
+        mp.model = model
+        for i in range(int(npload["nsites"])):
+            mt = npload[f"mt_{i}"]
+            if np.iscomplexobj(mt):
+                mp.dtype = backend.complex_dtype
+            else:
+                mp.dtype = backend.real_dtype
+            mp.append(mt)
+        mp.qn = npload["qn"]
+        mp.qnidx = int(npload["qnidx"])
+        mp.qntot = int(npload["qntot"])
+        mp.to_right = bool(npload["to_right"])
+        return mp
 
     @property
     def total_bytes(self):

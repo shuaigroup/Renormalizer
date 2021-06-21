@@ -1,6 +1,7 @@
 # -*- coding: utf-8 -*-
 # Author: Jiajun Ren <jiajunren0522@gmail.com>
 
+import logging
 from typing import List, Union, Dict, Callable
 
 import numpy as np
@@ -10,6 +11,8 @@ from renormalizer.model.mol import Mol, Phonon
 from renormalizer.model.op import Op
 from renormalizer.utils import Quantity, cached_property
 
+
+logger = logging.getLogger(__name__)
 
 class Model:
     r"""
