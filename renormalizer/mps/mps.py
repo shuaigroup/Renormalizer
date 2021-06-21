@@ -1509,19 +1509,7 @@ class Mps(MatrixProduct):
         return np.array(entropy_list)
 
     def dump(self, fname):
-        data_dict = dict()
-        # version of the protocol
-        data_dict["version"] = "0.3"
-        data_dict["nsites"] = len(self)
-        for idx, mt in enumerate(self):
-            data_dict[f"mt_{idx}"] = mt.array
-        for attr in ["qn", "qnidx", "qntot", "to_right", "coeff"]:
-            data_dict[attr] = getattr(self, attr)
-        try:
-            np.savez(fname, **data_dict)
-        except Exception:
-            logger.exception(f"Dump MPS failed.")
-
+        super().dump(fname, other_attrs=["coeff"])
 
     def __setitem__(self, key, value):
         return super().__setitem__(key, value)

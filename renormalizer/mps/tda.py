@@ -87,10 +87,10 @@ class TDA(object):
             
             tangent_u = []
     
-            for ims, ms in enumerate(mps):
+            for ims in range(len(mps)):
                 
-                shape = list(ms.shape)
-                u, s, vt = scipy.linalg.svd(ms.l_combine(), full_matrices=True)
+                shape = list(mps[ims].shape)
+                u, s, vt = scipy.linalg.svd(mps[ims].l_combine(), full_matrices=True)
                 rank = len(s)
                 if include_psi0 and ims == site_num-1: 
                     tangent_u.append(u.reshape(shape[:-1]+[-1]))
@@ -292,7 +292,6 @@ class TDA(object):
         
         self.e = np.array(e)
         self.wfn = [mps_l_cano, mps_r_cano, tangent_u, tda_coeff_list]
-        
         return self.e
 
     def dump_wfn(self):

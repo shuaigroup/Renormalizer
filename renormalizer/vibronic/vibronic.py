@@ -53,7 +53,7 @@ class VibronicModelDynamics(TdMpsJob):
         self.autocorr_array = []
         self.energies = []
         self.autocorr_time = []
-
+        self.edof_rdm = []
         super().__init__(evolve_config=evolve_config, dump_mps=dump_mps, dump_dir=dump_dir,
                 job_name=job_name)
     
@@ -88,6 +88,9 @@ class VibronicModelDynamics(TdMpsJob):
         e_occupations = mps.e_occupations
         self.e_occupations_array.append(e_occupations)
         logger.debug(f"e occupations: {self.e_occupations_array[-1]}")
+        # electron DoF reduced density matrix
+        rdm = mps.calc_edof_rdm()
+        self.edof_rdm.append(rdm)
         # autocorrelation function
         if self.mps0.is_complex:
             autocorr = self.mps0.conj().dot(mps)
@@ -115,5 +118,6 @@ class VibronicModelDynamics(TdMpsJob):
         dump_dict["autocorrelation function"] = self.autocorr_array
         dump_dict["autocorrelation time"] = self.autocorr_time
         dump_dict["energy"] = self.energies
+        dump_dict["edof_rdm"] = self.edof_rdm
 
         return dump_dict

@@ -302,7 +302,6 @@ class BasisSHO(BasisSet):
         
         elif op_symbol in ["partialx^2", "partialx partialx"]:
             mat = self.op_mat("p^2") * -1
-        
         elif op_symbol == "I":
             mat = np.eye(self.nbas)
         
@@ -355,6 +354,8 @@ class BasisSineDVR(BasisSet):
     is_phonon = True
 
     def __init__(self, dof, nbas, xi, xf, endpoint=False):
+        
+        assert xi < xf
         if endpoint:
             interval = (xf-xi) / (nbas-1)
             xi -= interval
@@ -382,44 +383,252 @@ class BasisSineDVR(BasisSet):
         if op_symbol == "I":
             mat = np.eye(self.nbas)
         
-        elif op_symbol.split("^")[0] == "x":
+        elif op_symbol.split("^")[0] == "x" and " " not in op_symbol:
             if len(op_symbol.split("^")) == 1:
-                moment = 1
+                # legacy for check
+                mat1 = np.zeros((self.nbas, self.nbas))
+                for j in range(1,self.nbas+1,1):
+                    for k in range(1,self.nbas+1,1):
+                        a1 = (j+k)*np.pi/self.L
+                        a2 = (j-k)*np.pi/self.L
+                        if (j+k)%2 == 1:
+                            res = -1/self.L*(-2/a1**2+2/a2**2)
+                        elif j-k == 0:
+                            res = self.xi + 0.5*self.L
+                        else:
+                            res = 0
+                        mat1[j-1,k-1] = res
+
+                mat = self._I()*self.xi+self._u()
+                assert np.allclose(mat, mat1)
+                
+                mat = self.dvr_v.T @ mat @ self.dvr_v
             else:
                 moment = float(op_symbol.split("^")[1])
-            mat = np.diag(self.dvr_x ** moment)
+                if moment == 1:
+                    mat = self.op_mat("x")
+                if moment == 2:
+                    mat = self._I()*self.xi**2+self._u()*self.xi*2+self._uu()
+                    mat = self.dvr_v.T @ mat @ self.dvr_v
+                else:    
+                    mat = np.diag(self.dvr_x ** moment)
         
         elif set(op_symbol.split(" ")) == set("x"):
             moment = len(op_symbol.split(" "))
             mat = self.op_mat(f"x^{moment}")
         
         elif op_symbol == "partialx":
-            mat = np.zeros((self.nbas, self.nbas))
+            # legacy for check
+            mat1 = np.zeros((self.nbas, self.nbas))
             for j in range(self.nbas):
                 for k in range(j):
                     if (j-k) % 2 != 0:
-                        mat[j,k] = 4 / self.L * (j+1) * (k+1) / ((j+1)**2 - (k+1)**2)
-            mat -= mat.T 
-            mat = self.dvr_v.T @ mat @ self.dvr_v
+                        mat1[j,k] = 4 / self.L * (j+1) * (k+1) / ((j+1)**2 - (k+1)**2)
+            mat1 -= mat1.T 
+            
+            mat = self._du()
+            assert np.allclose(mat, mat1)
 
-        elif op_symbol in ["partialx^2", "partialx partialx"]:
-            mat = -np.diag(np.arange(1, self.nbas+1)*np.pi/self.L)**2
             mat = self.dvr_v.T @ mat @ self.dvr_v
+            
+        elif op_symbol in ["partialx^2", "partialx partialx"]:
+            mat = self.op_mat("p^2") * -1
 
         elif op_symbol == "p":
             mat = self.op_mat("partialx") * -1.0j
 
         elif op_symbol == "p^2":
-            mat = self.op_mat("partialx^2") * -1
+            # legacy for check
+            mat1 = np.diag(np.arange(1, self.nbas+1)*np.pi/self.L)**2
+            mat = np.einsum("jk,k->jk",self._I(),self._eigene()*2)
+            assert np.allclose(mat, mat1)
+            mat = self.dvr_v.T @ mat @ self.dvr_v
         
+        elif op_symbol[:3] == "cos":
+            # cos(alpha * x), the format cos(x,float)
+            term_split = op_symbol[4:-1].split(",")
+            if "j" in term_split[1]:
+                scalar = complex(term_split[1])
+            else:
+                scalar = float(term_split[1])
+            mat = np.diag(np.cos(np.diag(self.op_mat(term_split[0]))*scalar))
+        
+        elif op_symbol == "x partialx":
+            # legacy for check
+            mat1 = np.zeros((self.nbas, self.nbas))
+            for j in range(1,self.nbas+1,1):
+                for k in range(1,self.nbas+1,1):
+                    a1 = (j+k)*np.pi/self.L
+                    a2 = (j-k)*np.pi/self.L
+                    if (j+k)%2 == 1:
+                        res = k*np.pi/self.L**2*(self.xi*(1/a1+1/a2)*2 +
+                                self.L*(1/a1+1/a2))
+                    elif j-k == 0:
+                        res = -k*np.pi/self.L*(1/a1)
+                    else:
+                        res = -k*np.pi/self.L*(1/a1+1/a2)
+                    mat1[j-1,k-1] = res
+            mat = self._du()*self.xi + self._udu()
+            assert np.allclose(mat, mat1)
+            mat = self.dvr_v.T @ mat @ self.dvr_v
+
+        elif op_symbol == "x^2 p^2":
+            
+            # legacy for check
+            mat1 = np.zeros((self.nbas, self.nbas))
+            # analytical integral
+            for j in range(1,self.nbas+1):
+                for k in range(1,self.nbas+1):
+
+                    a1 = (j-k)*np.pi/self.L
+                    a2 = (j+k)*np.pi/self.L
+
+                    if (j+k)%2 == 1:
+                        res = 2*self.xi/self.L*2*(1/a2**2-1/a1**2) + 2*(1/a2**2-1/a1**2)
+                    elif j-k == 0:
+                        res = self.xi**2 + self.xi*self.L + 1/3*self.L**2 - 2/a2**2
+                    else:
+                        res = 2*(1/a1**2-1/a2**2)
+                    mat1[j-1,k-1] = res * k**2*np.pi**2/self.L**2
+            
+            tmp = self._I()*self.xi**2 + self._u()*2*self.xi + self._uu()
+            mat = np.einsum("jk,k->jk", tmp, self._eigene()*2)
+            assert np.allclose(mat, mat1)
+            mat = self.dvr_v.T @ mat @ self.dvr_v
+        
+        elif op_symbol == "x^2 partialx^2":
+            mat = self.op_mat("x^2 p^2") * -1
+        
+        elif op_symbol == "x^2 partialx":
+            
+            mat = self._uudu() + 2*self.xi*self._udu() + self.xi**2*self._du()
+            mat = self.dvr_v.T @ mat @ self.dvr_v
+
+        elif op_symbol == "x p^2":
+            ## p^2 is 2H
+            # legacy for check
+            mat1 = self.dvr_v @ self.op_mat("x") @ self.dvr_v.T
+            mat1 = np.einsum("jk,k->jk",mat1,
+                    np.arange(1,self.nbas+1)**2*np.pi**2/self.L**2)
+            
+            mat = np.einsum("jk, k-> jk", self._I()*self.xi + self._u(), self._eigene()*2)
+            assert np.allclose(mat, mat1)
+            mat = self.dvr_v.T @ mat @ self.dvr_v
+        
+        elif op_symbol == "x partialx^2":
+            mat = self.op_mat("x p^2") * -1
+        
+        elif op_symbol == "x^3 p^2":
+            tmp = self._I()*self.xi**3 + 3*self._uu()*self.xi + 3*self._u()*self.xi**2 + self._uuu()
+            mat = np.einsum("jk,k->jk", tmp, self._eigene()*2)
+            mat = self.dvr_v.T @ mat @ self.dvr_v
+        
+        elif op_symbol == "x^3 partialx^2":
+            mat = self.op_mat("x^3 p^2") * -1
         else:
             raise ValueError(f"op_symbol:{op_symbol} is not supported. ")
 
         return mat * op_factor
+    
+    def _du(self):
+        # int_0^L <j(u)|1*du|k(u)>  u=x-xi du=\frac{\partial}{\partial u}
+        mat = np.zeros((self.nbas, self.nbas))
+        for j in range(1, self.nbas+1):
+            for k in range(1, self.nbas+1):
+                if (j+k)%2 == 1:
+                    mat[j-1,k-1] = 4*k*j/self.L/(j**2-k**2)
+        return mat
+    
+    def _udu(self):
+        # int_0^L <j(u)|u*du|k(u)>
+        mat = np.zeros((self.nbas, self.nbas))
+        for j in range(1, self.nbas+1):
+            for k in range(1, self.nbas+1):
+                a1 = (j+k)*np.pi/self.L
+                a2 = (j-k)*np.pi/self.L
+                if (j+k)%2 == 1:
+                    res = self.L/a1 + self.L/a2
+                elif j == k:
+                    res = -self.L/a1
+                else:
+                    res = -self.L/a1 - self.L/a2
+                mat[j-1,k-1] = k*np.pi/self.L**2*res
+        return mat
+
+    def _uudu(self):
+        # int_0^L <j(u)|u^2*du|k(u)>
+        mat = np.zeros((self.nbas, self.nbas))
+        for j in range(1, self.nbas+1):
+            for k in range(1, self.nbas+1):
+                a1 = (j+k)*np.pi/self.L
+                a2 = (j-k)*np.pi/self.L
+                if (j+k)%2 == 1:
+                    res = -4/a1**3 + self.L**2/a1 - 4/a2**3 + self.L**2/a2
+                elif j == k:
+                    res = -self.L**2/a1
+                else:
+                    res = -self.L**2/a1 - self.L**2/a2
+                mat[j-1,k-1] = k*np.pi/self.L**2*res
+        return mat
+
+    def _I(self):
+        # int_0^L <j(u)|1|k(u)>
+        mat = np.eye(self.nbas) 
+        return mat
+    
+    def _u(self):
+        # int_0^L <j(u)|u|k(u)>
+        mat = np.zeros((self.nbas, self.nbas))
+        for j in range(1,self.nbas+1,1):
+            for k in range(1,self.nbas+1,1):
+                a1 = (j+k)*np.pi/self.L
+                a2 = (j-k)*np.pi/self.L
+                if (j+k)%2 == 1:
+                    res = -2/a1**2+2/a2**2
+                elif j-k == 0:
+                    res = -0.5*self.L**2
+                else:
+                    res = 0
+                mat[j-1,k-1] = -1/self.L*res
+        return mat
+    
+    def _uu(self):
+        # int_0^L <j(u)|uu|k(u)>
+        mat = np.zeros((self.nbas, self.nbas))
+        for j in range(1,self.nbas+1,1):
+            for k in range(1,self.nbas+1,1):
+                a1 = (j+k)*np.pi/self.L
+                a2 = (j-k)*np.pi/self.L
+                if (j+k)%2 == 1:
+                    res = 2*self.L*(-1/a1**2+1/a2**2)
+                elif j-k == 0:
+                    res = 2*self.L/a1**2 - 1/3*self.L**3
+                else:
+                    res = 2*self.L*(1/a1**2 - 1/a2**2)
+                mat[j-1,k-1] = -1/self.L*res
+        return mat
+    
+    def _uuu(self):
+        # int_0^L <j(u)|uuu|k(u)>
+        mat = np.zeros((self.nbas, self.nbas))
+        for j in range(1,self.nbas+1,1):
+            for k in range(1,self.nbas+1,1):
+                a1 = (j+k)*np.pi/self.L
+                a2 = (j-k)*np.pi/self.L
+                if (j+k)%2 == 1:
+                    res = -3*self.L**2/a1**2 + 12/a1**4 + 3*self.L**2/a2**2 - 12/a2**4
+                elif j-k == 0:
+                    res = 3*self.L**2/a1**2 - self.L**4/4
+                else:
+                    res = 3*self.L**2/a1**2 - 3*self.L**2/a2**2
+                mat[j-1,k-1] = -1/self.L*res
+        return mat
+    
+    def _eigene(self):
+        return np.pi**2*np.arange(1,self.nbas+1)**2/self.L**2/2
 
     def copy(self, new_dof):
         return self.__class__(new_dof, self.nbas, xi=self.xi, xf=self.xf)
-
 
 class BasisMultiElectron(BasisSet):
     r"""
