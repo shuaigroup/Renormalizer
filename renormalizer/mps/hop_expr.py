@@ -18,6 +18,10 @@ def hop_expr(ltensor, rtensor, cmo, cshape, twolayer:bool=False):
     for i in range(len(cmo)):
         cmo[i] = asxp(cmo[i])
 
+    if nsite == 0:
+        # ancilla not defined
+        del ancilla
+
     if twolayer:
         assert nsite in [1, 2]
         # Only used in ground state algorithm
