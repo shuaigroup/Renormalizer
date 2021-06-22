@@ -2,6 +2,7 @@ language: python
 
 python:
     - "3.6"
+    - "3.7"
 
 before_install:
     - sudo apt-get -y install libblas-dev liblapack-dev
