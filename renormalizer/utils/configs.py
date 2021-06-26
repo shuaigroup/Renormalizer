@@ -296,15 +296,17 @@ class EvolveMethod(Enum):
     """
     Time evolution methods.
     """
-    #: propagation and compression with RK45 propagator
+    # propagation and compression with RK45 propagator
     prop_and_compress = "P&C"
-    #: TDVP with projector splitting
-    tdvp_ps = "TDVP_PS"
-    #: TDVP with variable mean field (VMF)
+    # TDVP with projector splitting - one site
+    tdvp_ps = "TDVP PS one-site"
+    # TDVP with projector splitting - two site
+    tdvp_ps2 = "TDVP PS two-site"
+    # TDVP with variable mean field (VMF)
     tdvp_vmf = "TDVP Variable Mean Field"
-    #: TDVP with constant mean field (CMF) and matrix unfolding (MU) regularization
+    # TDVP with constant mean field (CMF) and matrix unfolding (MU) regularization
     tdvp_mu_cmf = "TDVP Matrix Unfolding Constant Mean Field"
-    #: TDVP with variable mean field (VMF) and matrix unfolding (MU) regularization
+    # TDVP with variable mean field (VMF) and matrix unfolding (MU) regularization
     tdvp_mu_vmf = "TDVP Matrix Unfolding Variable Mean Field"
 
 

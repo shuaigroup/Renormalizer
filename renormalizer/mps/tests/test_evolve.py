@@ -22,7 +22,7 @@ def f(model, run_qutip=True):
         # calculate result in ZT. FT result is exactly the same
         TIME_LIMIT = 10
         QUTIP_STEP = 0.01
-        N_POINTS = TIME_LIMIT / QUTIP_STEP + 1
+        N_POINTS = int(TIME_LIMIT / QUTIP_STEP + 1)
         qutip_time_series = np.linspace(0, TIME_LIMIT, N_POINTS)
         init = qutip.Qobj(init_mps.full_wfn(), [qutip_h.dims[0], [1] * len(qutip_h.dims[0])])
         # the result is not exact and the error scale is approximately 1e-5
@@ -95,6 +95,20 @@ def test_tdvp_ps(init_state, mpo):
     mps = init_state.copy()
     mps.evolve_config  = EvolveConfig(EvolveMethod.tdvp_ps)
     check_result(mps, mpo, 0.4, 5)
+
+
+@pytest.mark.parametrize("init_state, mpo", (
+        [init_mps, mpo],
+        [init_mpdm, mpo],
+))
+def test_tdvp_ps2(init_state, mpo):
+    mps = init_state.copy()
+    mps.evolve_config  = EvolveConfig(EvolveMethod.tdvp_ps2)
+    mps.compress_config = CompressConfig(max_bonddim=5)
+    # lower accuracy because of the truncation,
+    # which is included to test the ability of adjusting bond dimension
+    mps = check_result(mps, mpo, 0.4, 5, atol=5e-4)
+    assert max(mps.bond_dims) == 5
 
 # used for debugging
 def compare():

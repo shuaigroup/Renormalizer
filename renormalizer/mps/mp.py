@@ -765,7 +765,28 @@ class MatrixProduct:
         else:
             return None
 
-    def canonicalise(self, stop_idx: int=None, normalize=False):
+
+    def _push_cano(self, idx):
+        # move the canonical center to the next site
+        # idx is the current canonical center
+        mt: Matrix = self[idx]
+        assert mt.any()
+        qnbigl, qnbigr, _ = self._get_big_qn([idx])
+        system = "L" if self.to_right else "R"
+        u, qnlset, v, qnrset = svd_qn.svd_qn(
+            mt.array,
+            qnbigl,
+            qnbigr,
+            self.qntot,
+            QR=True,
+            system=system,
+            full_matrices=False,
+        )
+        self._update_ms(
+            idx, u, v.T, sigma=None, qnlset=qnlset, qnrset=qnrset
+        )
+
+    def canonicalise(self, stop_idx: int=None):
         # stop_idx: mix canonical site at `stop_idx`
         if self.to_right:
             assert self.qnidx == 0
@@ -773,25 +794,7 @@ class MatrixProduct:
             assert self.qnidx == self.site_num-1
 
         for idx in self.iter_idx_list(full=False, stop_idx=stop_idx):
-            mt: Matrix = self[idx]
-            assert mt.any()
-            qnbigl, qnbigr, _ = self._get_big_qn([idx])
-            system = "L" if self.to_right else "R"
-            u, qnlset, v, qnrset = svd_qn.svd_qn(
-                mt.array,
-                qnbigl,
-                qnbigr,
-                self.qntot,
-                QR=True,
-                system=system,
-                full_matrices=False,
-            )
-            if normalize:
-                # roughly normalize. Used when the each site of the mps is scaled such as in exact thermal prop
-                v /= np.linalg.norm(v[:, 0])
-            self._update_ms(
-                idx, u, v.T, sigma=None, qnlset=qnlset, qnrset=qnrset
-            )
+           self._push_cano(idx)
         # can't iter to idx == 0 or idx == self.site_num - 1
         if (not self.to_right and idx == 1) or (self.to_right and idx == self.site_num - 2):
             self._switch_direction()
@@ -1024,5 +1027,5 @@ class MatrixProduct:
         if os.path.exists(dir_with_id):
             try:
                 shutil.rmtree(dir_with_id)
-            except:
+            except OSError:
                 logger.exception(f"Removing temperary dump dir {dir_with_id} failed")

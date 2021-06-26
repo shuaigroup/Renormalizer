@@ -17,6 +17,7 @@ import primme
 from renormalizer.lib import davidson
 from renormalizer.mps.backend import xp, OE_BACKEND
 from renormalizer.mps.matrix import multi_tensor_contract, tensordot, asnumpy, asxp
+from renormalizer.mps.hop_expr import  hop_expr
 from renormalizer.mps import Mpo, Mps
 from renormalizer.mps.lib import Environ, cvec2cmat
 from renormalizer.utils import Quantity
@@ -402,52 +403,7 @@ def eigh_iterative(
 
     # contraction expression
     cshape = qnmat.shape
-    if omega is None:
-        if method == "1site":
-            # S-a   l-S
-            #     d
-            # O-b-O-f-O
-            #     e
-            # S-c   k-S
-            expr = oe.contract_expression(
-                "abc, bdef, lfk, adl -> cek",
-                ltensor, cmo[0], rtensor, cshape,
-                constants=[0, 1, 2],
-            )
-        else:
-            # S-a       l-S
-            #     d   g
-            # O-b-O-f-O-j-O
-            #     e   h
-            # S-c       k-S
-            expr = oe.contract_expression(
-                "abc, bdef, fghj, ljk, adgl -> cehk",
-                ltensor, cmo[0], cmo[1], rtensor, cshape,
-                constants=[0, 1, 2, 3],
-            )
-    else:
-        if method == "1site":
-            #   S-a e j-S
-            #   O-b-O-g-O
-            #   |   f   |
-            #   O-c-O-i-O
-            #   S-d h k-S
-            expr = oe.contract_expression(
-                "abcd, befg, cfhi, jgik, aej -> dhk",
-                ltensor, cmo[0], cmo[0], rtensor, cshape,
-                constants=[0, 1, 2, 3],
-            )
-        else:
-            #   S-a e   j o-S
-            #   O-b-O-g-O-l-O
-            #   |   f   k   |
-            #   O-c-O-i-O-n-O
-            #   S-d h   m p-S
-            expr = oe.contract_expression(
-                "abcd, befg, cfhi, gjkl, ikmn, olnp, aejo -> dhmp",
-                ltensor, cmo[0], cmo[0], cmo[1], cmo[1], rtensor, cshape,
-                constants=[0, 1, 2, 3, 4, 5],
-            )
+    expr = hop_expr(ltensor, rtensor, cmo, cshape, omega is not None)
 
     count = 0
 
