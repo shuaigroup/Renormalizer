@@ -336,6 +336,11 @@ class BasisSineDVR(BasisSet):
         .. math::
             x_\alpha = x_0 + \alpha \frac{L}{N+1}
     
+    Operators supported:
+        .. math::
+            I, x, x^1, x^2, x^\textrm{moment}, partialx, partialx^2, p, p^2, 
+            x partialx, x^2 p^2, x^2 partialx, x p^2, x^3 p^2 
+    
     Parameters
     ----------
     dof: str, int 
