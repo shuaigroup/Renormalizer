@@ -938,7 +938,14 @@ class MatrixProduct:
     def build_empty_mp(self, num):
         self._mp = [[None]] * num
     
-    def dump(self, fname, other_attrs=[]):
+    def dump(self, fname, other_attrs=None):
+        
+        if other_attrs is None:
+            other_attrs = []
+        elif isinstance(other_attrs, str):
+            other_attrs = [other_attrs]
+        assert isinstance(other_attrs, list)
+
         data_dict = dict()
         # version of the protocol
         data_dict["version"] = "0.3"
