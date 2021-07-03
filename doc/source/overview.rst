@@ -39,7 +39,7 @@ Bibtex entry::
       publisher={AIP Publishing LLC}
     }
 
-If you also use the finite temperature dynamical DMRG code, please cite
+If you also use the finite temperature dynamical DMRG (DDMRG) code, please cite
 
 Bibtex entry::
 
@@ -59,14 +59,14 @@ Features
 ===========
 
 * Pure matrix product states (MPS) and matrix product operators (MPO) structure.
-
-* Ground state calculation.
-  
-* Excited state with state-averaged DMRG algorithm.
-
-* Wavefuntion and density matrix propagation.
-
+* Support any Hamiltonian (operator) with an sum-of-products form.
+* Static state calculation:
+    
+    - Ground state.
+    - State-averaged DMRG.
+    - Excited state with Tamm-Dancoff approximation (first order MPS tangent space).
+* Wavefuntion and density matrix time-dependent propagation.
 * Real-time and imaginary-time propagation.
-
+* Dynamical properties in the time domain and frequency domain.
 * Support GPU acceleration.
 
