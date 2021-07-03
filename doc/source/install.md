@@ -10,7 +10,7 @@ As operations on MacOSX are similar to those on Linux, from now on we'll only ta
 ## CPU-only version installation
 
 ### Python environment
-There are various ways to prepare a Python environment for Renormalizer. Here we recommend using Anaconda (both 2 or 3 are ok) as a package and environment manager.
+There are various ways to prepare a Python environment for Renormalizer. Here we recommend using Anaconda (both 2 or 3 are ok, we recommend Anaconda 3) as a package and environment manager.
 #### Why you need Anaconda when you already have Python
 Anaconda manages *environments*. If you use Python frequently enough, one day you'll face problems similar to this: project A runs on Python 3.5 but not Python 3.6, project B runs only on Python 3.6, how could I develop project A and project B on the same machine? Anaconda can help you solve these problems with ease.
 
@@ -23,13 +23,13 @@ If you find the installation of Anaconda annoying and you already have Python 3.
 #### Install Anaconda
 You can skip this step if you already have access to Anaconda (which means you can use `conda` command in your command line). For Linux users, don't worry if you don't have the root privilege -- installing Anaconda doesn't require root.
 
-> A reminder to dirac2 users: both Anaconda2 and Anaconda3 have been installed on the cluster. Try `module load anaconda/3`.
+> A reminder to *dirac* (The cluster in Shuai group) users: both Anaconda2 and Anaconda3 have been installed on the cluster. Try `module load anaconda/3`.
 
 For students in Tsinghua, Anaconda can be downloaded from *[tuna](https://tuna.tsinghua.edu.cn/)* free of network charge. You can simply think of *tuna* as a cloud disk inside Tsinghua.
 
 There are lots of links in the [download page](https://mirrors.tuna.tsinghua.edu.cn/anaconda/archive/). You need to choose a correct version for your operating system and preferably a relatively newer version (at the bottom of the page).
 
-For students outside Tsinghua, please download Anaconda [here](https://www.anaconda.com/)
+For students outside Tsinghua, please download Anaconda [here](https://www.anaconda.com/).
 
 For Linux users, use `bash` to run the installation script.
 
@@ -47,23 +47,23 @@ conda config --set show_channel_urls yes
 to let Anaconda know it can download resources it needs from *tuna*.
 
 In this step, we're going to create a Python environment for Renormalizer using Anaconda. Two things must be taken into consideration while creating a Python environment:
-* Python version. **Python version higher than Python 3.5 is required for Renormalizer**. We recommend using Python 3.6 as it is more stable than Python 3.7.
+* Python version. **Python version higher than Python 3.5 is required for Renormalizer**. We recommend using Python 3.6 or higher. 
     > Renormalizer uses *type annotation* like `a: int = 3` or `b: float = 3.0` which helps to make code clearer but requires Python 3.6 or higher. For more info about *type annotation*, see the [typing module](https://docs.python.org/3/library/typing.html) or [PEP484](https://www.python.org/dev/peps/pep-0484/).
-* Name of the environment. Choose anything you like. **In this guide we are going to use `Renormalizer` as it is the name of the project**.
+* Name of the environment. Choose anything you like. **In this guide we are going to use `Reno` as it is the nickname of the project**.
 
-With Python version and name of the environment determined, create the environment using the following command (Note the environment name `Renormalizer`)
+With Python version and name of the environment determined, create the environment using the following command (Note the environment name `Reno`)
 ```
-conda create -n Renormalizer python=3.6 -y
+conda create -n Reno python=3.6 -y
 ```
-This might take 1 to 20 minutes depending on network conditions. After the process finished, you'll have a Python environment named `Renormalizer` managed by Anaconda.
+This might take 1 to 20 minutes depending on network conditions. After the process finished, you'll have a Python environment named `Reno` managed by Anaconda.
 
 To use this environment:
-* For Linux users, use `source activate Renormalizer`
-* For Windows users, use `activate Renormalizer`
+* For Linux users, use `source activate Reno`
+* For Windows users, use `activate Reno`
 
 You may notice that the name of your environment is added to your command line interface. 
 
-To verify the environment is activated, use `Python --version` to ensure that you're using Python 3.6. You can also use `which python` (for Linux) or `where python` (for Windows) to see where your Python program locates. It should locate under a directory like `~/anaconda/envs/Renormalizer/bin/` (Note the environment name `Renormalizer` in the path).
+To verify the environment is activated, use `python --version` to ensure that you're using Python 3.6. You can also use `which python` (for Linux) or `where python` (for Windows) to see where your Python program locates. It should locate under a directory like `~/anaconda/envs/Reno/bin/` (Note the environment name `Reno` in the path).
 
 ### Download Renormalizer and run tests
 #### Download Renormalizer
@@ -86,10 +86,6 @@ Now, to install the required packages:
     ```
     pip install -r requirements.txt
     ```
-4. install `qutip` (which depends on the dependencies) with:
-    ```
-    pip install qutip==4.3.1
-    ```
 > Sometimes an error will occur during the installation of `primme`, especially on Windows platform. Please refer to the [primme installation guide](https://github.com/primme/primme) for more details.
 
 #### Run tests
@@ -99,11 +95,23 @@ pytest
 ```
 This tool will collect tests in Renormalizer and run them. The tests should run for 20-30 minutes depending on the computational power of your platform.
 
-> Although the tests can help you understand how the code works, it is not recommended to start your scientific project by modifying the tests because they are designed for testing and not scientific research. You can firstly read the (test) code and grasp some basic idea on what happens, then write programs using modules in `Renormalizer.mps` rather than `Renormalizer.spectra` or `Renormalizer.transport`. Only use the tests directly when you completely understand each line of the test code.
+> Although the tests can help you understand how the code works, it is not recommended to start your scientific project by modifying the tests because they are designed for testing and not scientific research. You can firstly read the (test) code and grasp some basic idea on what happens, then write programs using modules in `renormalizer.mps` rather than `renormalizer.spectra` or `renormalizer.transport`. Only use the tests directly when you completely understand each line of the test code.
+
+Finally, to make Python find Renormalizer, add Renormalizer directory to `PYTHONPATH`. For example, if
+Renormalizer is installed in `/opt`, you can add the following path to
+your `~/.bashrc` and then `source ~/.bashrc`.
+```
+export PYTHONPATH=/opt/Renormalizer:$PYTHONPATH
+```
+
+To ensure the setting is successful, start a Python shell, and try:
+```
+>>> import renormalizer
+```
 
 ## GPU-support
 ### Overview
-If you already have a CPU-only version working, add GPU-support to Renormalizer is not complex. You don't have to reinstall anything, you simply need to install a new package called [`cupy`](https://github.com/cupy/cupy), which is similar to a `NumPy` for GPU, and then Renormalizer can run with GPU backend.
+If you already have a CPU-only version working, add GPU-support to Renormalizer is not complicated. You don't have to reinstall anything, you simply need to install a new package called [`cupy`](https://github.com/cupy/cupy), which is similar to a `NumPy` for GPU, and then Renormalizer can run with GPU backend.
 
 If you currently don't have a CPU-only version, please follow [the steps](#cpu-only-version-installation) first. Of course, if you are familiar with Python and Renormalizer, you can mix the two separate guides into one.
 
@@ -113,10 +121,13 @@ A few things to notice before we start:
 ### Install CUDA
 Install CUDA following the [official document](https://docs.nvidia.com/cuda/cuda-quick-start-guide/index.html). All CUDA version later than 8.0 (included) should be OK. Use Google well if you met any trouble while following the steps in the document. **Be sure to verify your installation**.
 
-> The computer cluster of our group has one node called `c91` equipped with 2 [V100](https://www.techpowerup.com/gpu-specs/tesla-v100-pcie-32-gb.c3184) GPU. CUDA has already been installed on the node and you can use the environment by `module` command.
+> The computer cluster *dirac* of Shuai group has two nodes called `c91` and `c92` each equipped with 4 [V100](https://www.techpowerup.com/gpu-specs/tesla-v100-pcie-32-gb.c3184) GPU. CUDA has already been installed on the node and you can use the environment by `module` command.
 
 #### (Optional) Install nvtop
 [`nvtop`](https://github.com/Syllo/nvtop) is a handy tool to monitor GPU usage. The installation procedure can be quite formidable if you are not familiar with how to use Git and install software from source files. Feel free to skip this step.
+
+> `nvtop` has been installed on `c91` and `c92` on *dirac*.
+
 ### Install cupy
 After CUDA is installed and verified, you can install `cupy` using the following commands. Remember when you install something you have to make sure you're in the correct Python environment!
 ```
@@ -148,7 +159,7 @@ print(b.sum())
 ```
 Of course, you can run anything else to test the functions. If any error happens, usually it's because the CUDA environment is not correct. Please verify your CUDA installation again and make sure you haven't installed multiple versions of cupy. As a last resort, you can delete the whole Python environment and start over:
 ```
-conda env remove Renormalizer
+conda env remove --name Reno
 ``` 
 It won't take lots of time if you're using *tuna*.
 ### Run tests
@@ -164,7 +175,5 @@ If the test is using GPU and passed, congrats! You can now enjoy 10x performance
 
 ## Further readings
 Currently, we don't have detailed documentation on how to use the code and the best way to learn how the code works is by reading the source code.
-
-Some notes on [how to run the code](https://github.com/jjren/Renormalizer/wiki/How-to-use).
 
 Note: **Renormalizer is still under heavy development. API changes come without any prior deprecation.**
