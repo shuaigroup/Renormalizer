@@ -24,7 +24,6 @@ from renormalizer.utils.elementop import (
 
 logger = logging.getLogger(__name__)
 
-
 def symbolic_mpo(table, factor, algo="Hopcroft-Karp"):
     r"""
     A General Compact (Symbolic) MPO Construction Routine
@@ -125,7 +124,7 @@ def symbolic_mpo(table, factor, algo="Hopcroft-Karp"):
         mpoqn[-1] = [0]
         qnidx = len(mpo) - 1
         return mpo, mpoqn, qntot, qnidx
-
+    
     # use np.uint32, np.uint16 to save memory
     max_uint32 = np.iinfo(np.uint32).max
     max_uint16 = np.iinfo(np.uint16).max
@@ -133,37 +132,24 @@ def symbolic_mpo(table, factor, algo="Hopcroft-Karp"):
     nsite = len(table[0])
     logger.debug(f"symbolic mpo algorithm: {algo}")
     logger.debug(f"Input operator terms: {len(table)}")
+    
     # translate the symbolic operator table to an easy to manipulate numpy array
-    # extract the op symbol, qn, factor to a numpy array
-
-    # np.array can't handle tuple as array element. So use dict instead
-    def op_to_dict(op: Op):
-        return {0: op.symbol, 1: tuple(op.dofs)}
-    symbol_table = np.array([[op_to_dict(x) for x in ta] for ta in table])
-    qn_table = np.array([[x.qn for x in ta] for ta in table])
-    factor_table = np.array([[x.factor for x in ta] for ta in table])
-
-    new_table = np.zeros((len(table), nsite),dtype=np.uint16)
-
-    # Construct mapping from easy-to-manipulate integer to actual Op
-    primary_ops = {}
+    table = np.array(table)
     # unique operators with DoF names taken into consideration
-    # The inclusion of DoF names is necessary fo multi-dof basis.
-    unique_op: Set[Op] = set(np.array(table).ravel())
-
+    # The inclusion of DoF names is necessary for multi-dof basis.
+    unique_op: Set[Op] = set(table.ravel())
+    
     # check the index of different operators could be represented with np.uint16
     assert len(unique_op) < max_uint16
-
-    for idx, op in enumerate(unique_op):
-        coord = np.nonzero(symbol_table == op_to_dict(op))
-        # check that op with the same symbol has the same factor and qn
-        assert np.unique(qn_table[coord]).size == 1
-        assert np.all(factor_table[coord] == factor_table[coord][0])
-        new_table[coord] = idx
-        primary_ops[idx] = table[coord[0][0]][coord[1][0]]
-
-    del symbol_table, factor_table, qn_table, unique_op
     
+    # Construct mapping from easy-to-manipulate integer to actual Op
+    primary_ops = dict(zip(range(len(unique_op)), unique_op))
+    
+    mapping = dict(zip(unique_op, range(len(unique_op))))
+    new_table = np.vectorize(mapping.get)(table).astype(np.uint16)
+    
+    del unique_op
+
     # combine the same terms but with different factors(add them together)
     unique_term, unique_inverse = np.unique(new_table, axis=0, return_inverse=True)
     # it is efficient to vectorize the operation that moves the rows and cols
