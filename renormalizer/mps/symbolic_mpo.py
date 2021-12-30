@@ -138,7 +138,7 @@ def construct_symbolic_mpo(table, factor, algo="Hopcroft-Karp"):
     assert len(unique_op) < max_uint16
 
     # Construct mapping from easy-to-manipulate integer to actual Op
-    primary_ops = dict(zip(range(len(unique_op)), unique_op))
+    primary_ops = list(unique_op)
 
     op2idx = dict(zip(unique_op, range(len(unique_op))))
     new_table = np.vectorize(op2idx.get)(table).astype(np.uint16)
@@ -195,7 +195,7 @@ def construct_symbolic_mpo(table, factor, algo="Hopcroft-Karp"):
     mpoqn[-1] = [0]
     qnidx = len(mpo) - 1
 
-    return mpo, mpoqn, qntot, qnidx
+    return mpo, mpoqn, qntot, qnidx, out_ops_list, primary_ops
 
 
 def _construct_symbolic_mpo(table, in_ops, factor, primary_ops, algo="Hopcroft-Karp"):
@@ -423,3 +423,242 @@ def _format_symbolic_mpo(symbolic_mpo):
         # str of a single mo
         result_str_list.append("\n".join(lines))
     return "\n".join(result_str_list)
+
+
+##############################################################################################
+# symbolic MPO swapping algorithm
+
+
+ExpandedOp = namedtuple("ExpandedOp", ["factor", "out_ops1_idx", "site1_op_idx", "site2_op_idx"])
+
+
+def multiply_out_op_sum_list_by_out_op(l1: List, out_op: OpTuple):
+    res = []
+    for op_in_sum_list in l1:
+        term = ExpandedOp(
+            op_in_sum_list.factor * out_op.factor,
+            op_in_sum_list.symbol[0], op_in_sum_list.symbol[1], out_op.symbol[1]
+        )
+        res.append(term)
+    return res
+
+
+def expand_out_op_sum_list(out_ops1: List, l2: List):
+    res = []
+    for out_op in l2:
+        out_op_sum_list1 = out_ops1[out_op.symbol[0]]
+        res.extend(multiply_out_op_sum_list_by_out_op(out_op_sum_list1, out_op))
+    return res
+
+
+def check_swap_consistency(new_out_ops2, new_out_ops3, out_ops3_expanded):
+    # check consistency
+    new_out_ops3_expanded: List[List[ExpandedOp]] = []
+    for out_op_sum_list in new_out_ops3:
+        new_out_ops3_expanded.append(expand_out_op_sum_list(new_out_ops2, out_op_sum_list))
+    # item ordering: out_ops1, site1, site2, factor. (site indices are before swapping)
+    # put the float-point factor to the last position for robust sorting
+    swapped_new_out_ops3_expanded: List[List[Tuple]] = []
+    for out_op_sum_list in new_out_ops3_expanded:
+        swapped_new_out_ops3_expanded.append([])
+        for op in out_op_sum_list:
+            swapped_new_out_ops3_expanded[-1].append((op.out_ops1_idx, op.site2_op_idx, op.site1_op_idx, op.factor))
+        swapped_new_out_ops3_expanded[-1].sort()
+
+    swapped_out_ops3_expanded: List[List[Tuple]] = []
+    for out_op_sum_list in out_ops3_expanded:
+        swapped_out_ops3_expanded.append([])
+        for op in out_op_sum_list:
+            swapped_out_ops3_expanded[-1].append((op.out_ops1_idx, op.site1_op_idx, op.site2_op_idx, op.factor))
+        swapped_out_ops3_expanded[-1].sort()
+
+    # the following check ensures that the swapping logic is correct
+    # so avoid using `assert` which will be disabled when the
+    error_msg = "Swapping failed. Please open a GitHub issue and report the bug."
+    for row1, row2 in zip(swapped_out_ops3_expanded, swapped_new_out_ops3_expanded):
+        if not len(row1) == len(row2):
+            raise RuntimeError(error_msg)
+        assert sorted(row1) == row1
+        assert sorted(row2) == row2
+        for op1, op2 in zip(sorted(row1), sorted(row2)):
+            if  op1[:-1] != op2[:-1]:
+                raise RuntimeError(error_msg)
+            if not np.allclose(op1[-1], op2[-1], rtol=1e-8, atol=1e-11):
+                raise RuntimeError(error_msg)
+
+
+def table_row_swapped_jw(row, primary_ops: List, op2idx: Dict):
+    assert len(row) == 5
+    assert row[-1] == 0
+    # mapping rule
+    # a1 -> a1 z2, a1^d -> a1^d z2
+    # a2 -> z1 a2, a2^d -> z1 a2^d
+    op1: Op = primary_ops[row[1]]
+    op2: Op = primary_ops[row[2]]
+    """
+    def count_sz_and_new_sz(op: Op):
+        # sz currently in the operator
+        n_sz = []
+        # new sz produced by swapping JW transformation
+        n_new_sz = []
+        for op_str in op.split_symbol:
+            if op_str== "sigma_z":
+                n_sz += 1
+            elif op_str == "sigma_+" or op_str == "sigma_-":
+                n_new_sz += 1
+        return n_sz, n_new_sz
+    def count_new_sz(op: Op):
+        # new sz produced by swapping JW transformation
+        n_new_sz = []
+        for op_str in op.split_symbol:
+            if op_str == "sigma_+" or op_str == "sigma_-":
+                n_new_sz += 1
+        return n_new_sz
+    op1_new_sigma_z = count_new_sz(op1)
+    op2_new_sigma_z = count_new_sz(op2)
+    new_op1_strs = []
+    if op2_new_sigma_z % 2 == 0:
+        coeff = 1
+    else:
+        coeff = -1
+    """
+    # remember all possible operators: I Z + -
+    # new sigma_z produced for dof1 by op2
+    op1_new_sigma_z = (op1.split_symbol.count("sigma_+") + op1.split_symbol.count("sigma_-")) % 2
+    op2_new_sigma_z = (op2.split_symbol.count("sigma_+") + op2.split_symbol.count("sigma_-")) % 2
+    # determine the coefficient
+    op1_n_sigma_plus = op1.split_symbol.count("sigma_+")
+    op1_n_sigma_minus = op1.split_symbol.count("sigma_-")
+    assert op1_n_sigma_plus in [0, 1]
+    assert op1_n_sigma_minus in [0, 1]
+    n_permutes = op2_new_sigma_z * (op1_n_sigma_plus + op1_n_sigma_minus)
+    coeff = (-1) ** n_permutes
+    # cancel sigma_z as much as possible
+    def prepend_sigma_z(op: Op):
+        symbol_list = op.split_symbol
+        if symbol_list[0] == "I":
+            assert len(symbol_list) == 1
+            new_op = Op("sigma_z", op.dofs[0], qn=0)
+        elif symbol_list[0] == "sigma_z":
+            if len(symbol_list) == 1:
+                new_op = Op.identity(op.dofs[0])
+            else:
+                new_op = Op(" ".join(symbol_list[1:]), op.dofs[1:], qn=op.qn_list[1:])
+        elif symbol_list[0] == "sigma_+" or symbol_list[0] == "sigma_-":
+            new_op = Op("sigma_z " + op.symbol, [op.dofs[0]] + op.dofs, qn=[0] + op.qn_list)
+        else:
+            assert False
+        return new_op
+    if op1_new_sigma_z:
+        new_op2 = prepend_sigma_z(op2)
+    else:
+        new_op2 = op2
+    if op2_new_sigma_z:
+        new_op1 = prepend_sigma_z(op1)
+    else:
+        new_op1 = op1
+
+    if new_op1 not in op2idx:
+        op2idx[new_op1] = len(primary_ops)
+        primary_ops.append(new_op1)
+    if new_op2 not in op2idx:
+        op2idx[new_op2] = len(primary_ops)
+        primary_ops.append(new_op2)
+
+    return [row[0], op2idx[new_op1], op2idx[new_op2], row[3], row[4]], coeff
+
+
+def table_and_factor_swapped_jw(table, factor, primary_ops: List):
+    # modifies primary_ops in place !!
+    new_table = []
+    new_factor = []
+    op2idx = {op: i for i, op in enumerate(primary_ops)}
+    for row, factor_row in zip(table, factor):
+        new_row, coeff = table_row_swapped_jw(row, primary_ops, op2idx)
+        new_table.append(new_row)
+        new_factor.append(coeff * factor_row)
+    return np.array(new_table), np.array(new_factor)
+
+
+def swap_site(out_ops_list, primary_ops: List):
+    # the MPO at hand is - # - # -
+    # the operators at each of the bond
+    # the bond indices are 1, 2, 3 and the site indices are 1 and 2
+    out_ops1, out_ops2, out_ops3 = out_ops_list
+
+    # the expanded sum-of-product form of the operator represented by the two site MPO
+    # i.e. the expanded form of out_ops3
+    # the number of items is equal to the index of bond 3
+    # each item [factor, out_ops[1]idx, primary_ops @ site 1, primary_ops @ site 2]
+    out_ops3_expanded: List[List[ExpandedOp]] = []
+    for out_op_sum_list in out_ops3:
+        out_ops3_expanded.append(expand_out_op_sum_list(out_ops2, out_op_sum_list))
+        del out_op_sum_list
+    table = []
+    factor = []
+    # to be extended after primary_ops, used to label each bond for out_ops3
+    auxiliary_dummy_primary_ops = []
+    DummyOp = namedtuple("DummyOp", ["qn"])
+    for out_ops3_sum_list in out_ops3:
+        auxiliary_dummy_primary_ops.append(DummyOp(-out_ops3_sum_list[0].qn))
+    n_primary_ops = len(primary_ops)
+    import os
+    if os.environ.get("SWAP_JW") != "1":
+        primary_ops = primary_ops.copy()
+        primary_ops.extend(auxiliary_dummy_primary_ops)
+
+    for i, out_ops3_sum_list in enumerate(out_ops3_expanded):
+        for op in out_ops3_sum_list:
+            # swap the sites and add two more columns at the end
+            row = [op.out_ops1_idx, op.site2_op_idx, op.site1_op_idx, n_primary_ops + i, 0]
+            table.append(row)
+            factor.append(op.factor)
+            del op, row
+    table = np.array(table)
+    factor = np.array(factor)
+
+    if os.environ.get("SWAP_JW") == "1":
+        # modifies primary_ops in place !!
+        table, factor = table_and_factor_swapped_jw(table, factor, primary_ops)
+        table[:, 3] = table[:, 3] + (len(primary_ops) - n_primary_ops)
+        n_primary_ops = len(primary_ops)
+        primary_ops = primary_ops.copy()
+        primary_ops.extend(auxiliary_dummy_primary_ops)
+
+    new_out_ops = _construct_symbolic_mpo(table, out_ops1, factor, primary_ops)
+    assert len(new_out_ops) == 4
+    new_out_ops1, new_out_ops2, new_out_ops3_unsorted = new_out_ops[:3]
+
+    # sort the out operators
+    new_out_ops3 = [None] * len(new_out_ops3_unsorted)
+    assert len(new_out_ops3) == len(primary_ops) - n_primary_ops == len(auxiliary_dummy_primary_ops)
+    assert len(new_out_ops[-1]) == 1
+    for dummy_op in new_out_ops[-1][0]:
+        idx1, idx2 = dummy_op.symbol
+        idx2 -= n_primary_ops
+        new_out_ops3[idx2] = new_out_ops3_unsorted[idx1]
+        if dummy_op.factor != 1:
+            for i, op in enumerate(new_out_ops3[idx2]):
+                new_out_ops3[idx2][i] = OpTuple(symbol=op.symbol, qn=op.qn, factor=op.factor * dummy_op.factor)
+        del dummy_op, idx1, idx2
+    assert None not in new_out_ops3
+
+    if os.environ.get("SWAP_JW") != "1":
+        # it's bound to fail
+        check_swap_consistency(new_out_ops2, new_out_ops3, out_ops3_expanded)
+
+    # translate the numbers into symbolic Matrix Operator
+    def compose_symbolic_matrix_operator(in_ops, out_ops):
+        mo = [[[] for o in range(len(out_ops))] for i in range(len(in_ops))]
+        for iop, out_op in enumerate(out_ops):
+            for composed_op in out_op:
+                in_idx = composed_op.symbol[0]
+                op = primary_ops[composed_op.symbol[1]]
+                mo[in_idx][iop].append(composed_op.factor * op)
+        return mo
+
+    mo1 = compose_symbolic_matrix_operator(out_ops1, new_out_ops2)
+    mo2 = compose_symbolic_matrix_operator(new_out_ops2, new_out_ops3)
+    # print(_format_symbolic_mpo([mo1, mo2]))
+    qn = [opsum[0].qn for opsum in new_out_ops2]
+    return new_out_ops2, new_out_ops3, mo1, mo2, qn

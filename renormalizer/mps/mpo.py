@@ -12,7 +12,7 @@ from renormalizer.mps.matrix import moveaxis, tensordot
 from renormalizer.mps.mp import MatrixProduct
 from renormalizer.mps import svd_qn
 from renormalizer.mps.lib import update_cv
-from renormalizer.mps.symbolic_mpo import construct_symbolic_mpo, _terms_to_table, symbolic_mo_to_numeric_mo
+from renormalizer.mps.symbolic_mpo import construct_symbolic_mpo, _terms_to_table, symbolic_mo_to_numeric_mo, swap_site
 from renormalizer.utils import Quantity
 from renormalizer.model.op import Op
 from renormalizer.utils.elementop import (
@@ -273,12 +273,9 @@ class Mpo(MatrixProduct):
 
         self.dtype = factor.dtype
 
-        mpo_symbol, mpo_qn, qntot, qnidx = construct_symbolic_mpo(table, factor)
+        mpo_symbol, self.qn, self.qntot, self.qnidx, self.symbolic_out_ops_list, self.primary_ops = construct_symbolic_mpo(table, factor)
         # print(_format_symbolic_mpo(mpo_symbol))
         self.model = model
-        self.qnidx = qnidx
-        self.qntot = qntot
-        self.qn = mpo_qn
         self.to_right = False
 
         # evaluate the symbolic mpo
@@ -420,6 +417,31 @@ class Mpo(MatrixProduct):
             assert False
 
         return new_mps
+
+    def swap_site(self, new_model: Model):
+        # in place swapping
+        diffs = []
+        for i, (b1, b2) in enumerate(zip(self.model.basis, new_model.basis)):
+            if b1 != b2:
+                diffs.append(i)
+        if len(diffs) == 0:
+            logger.debug("No need to swap")
+            return
+        assert len(diffs) == 2
+        i, j = min(diffs), max(diffs)
+        assert j - i == 1
+        logger.debug(f"swaping {i} and {j}")
+
+        out_ops2, out_ops3, mo1, mo2, qn = swap_site(self.symbolic_out_ops_list[i:i+3], self.primary_ops)
+
+        self.symbolic_out_ops_list[i+1] = out_ops2
+        self.symbolic_out_ops_list[i+2] = out_ops3
+        self.model = new_model
+        self.qn[i+1] = qn
+
+        for impo, mo in zip([i, j], [mo1, mo2]):
+            self[impo] = symbolic_mo_to_numeric_mo(new_model.basis[impo], mo, self.dtype)
+        logger.debug(self)
 
     def conj_trans(self):
         new_mpo = self.metacopy()
