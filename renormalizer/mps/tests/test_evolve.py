@@ -7,8 +7,9 @@ import qutip
 import pytest
 import numpy as np
 
+from renormalizer.model import Model
 from renormalizer.mps import Mps, Mpo, MpDm
-from renormalizer.utils import EvolveMethod, EvolveConfig, CompressConfig, CompressCriteria, Quantity
+from renormalizer.utils import EvolveMethod, EvolveConfig, CompressConfig, CompressCriteria, Quantity, OFS
 from renormalizer.tests.parameter_exact import qutip_clist, qutip_h, model
 
 
@@ -48,8 +49,7 @@ def check_result(mps, mpo, time_step, final_time, atol=1e-4):
     time_series = [0]
     for i in range(round(final_time / time_step)):
         mps = mps.evolve(mpo, time_step)
-        # todo: generalize this practice to other cases
-        expectations.append(mps.e_occupations[np.argsort(mps.model.e_dofs)])
+        expectations.append(mps.e_occupations)
         time_series.append(time_series[-1] + time_step)
     qutip_end = round(final_time / QUTIP_STEP) + 1
     qutip_interval = round(time_step / QUTIP_STEP)
@@ -124,10 +124,11 @@ def test_tdvp_ps2(init_state, mpo):
 ))
 def test_ofs(init_state, mpo):
     mps = init_state.copy()
+    # transform from HolsteinModel to the general Model
+    mps.model = Model(mps.model.basis, mps.model.ham_terms)
     # avoid the side-effect of OFS
     mpo = mpo.copy()
     mps.evolve_config  = EvolveConfig(EvolveMethod.tdvp_ps2)
-    from renormalizer.utils import OFS
     mps.compress_config = CompressConfig(max_bonddim=5, ofs=OFS.ofs_s)
     # same truncation, yet more accurate than simple tdvp-ps2
     mps = check_result(mps, mpo, 0.4, 5, atol=1e-4)

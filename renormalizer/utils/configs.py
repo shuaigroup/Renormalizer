@@ -124,6 +124,10 @@ class CompressConfig:
     ofs : `OFS`, optional
         Whether optimize the DOF ordering by OFS. The default value is ``None`` which means does not perform OFS.
 
+    ofs_swap_jw : bool, optional
+        Whether swap the ordering Jordan-Wigner transformation when OFS is enabled. Set to ``True``
+        for and only for ab initio Hamiltonian. Default is ``False``.
+
     See Also
     --------
     CompressCriteria : Compression criteria
@@ -143,7 +147,8 @@ class CompressConfig:
         vguess_m = (5,5),
         dump_matrix_size = np.inf,
         dump_matrix_dir = "./",
-        ofs: OFS = None
+        ofs: OFS = None,
+        ofs_swap_jw: bool = False
     ):
         # two sets of criteria here: threshold and max_bonddimension
         # `criteria` is to determine which to use
@@ -176,6 +181,7 @@ class CompressConfig:
         self.dump_matrix_dir = dump_matrix_dir
 
         self.ofs: OFS = ofs
+        self.ofs_swap_jw: bool = ofs_swap_jw
 
     @property
     def threshold(self):

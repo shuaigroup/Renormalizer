@@ -256,8 +256,8 @@ def single_sweep(
                     )
 
         averaged_ms = mps._update_mps(cstruct, cidx, qnbigl, qnbigr, mmax, percent)
-        if mps.compress_config.ofs:
-            mpo.try_swap_site(mps.model)
+        if mps.compress_config.ofs is not None:
+            mpo.try_swap_site(mps.model, mps.compress_config.ofs_swap_jw)
 
     mps._switch_direction()
     return micro_iteration_result, res_mps, mpo

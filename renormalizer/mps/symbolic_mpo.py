@@ -1,9 +1,8 @@
 # -*- coding: utf-8 -*-
 import logging
 import itertools
-from functools import reduce
 from collections import namedtuple
-from typing import List, Union, Set, Tuple, Dict
+from typing import List, Set, Tuple, Dict
 
 import numpy as np
 import scipy
@@ -109,18 +108,23 @@ def construct_symbolic_mpo(table, factor, algo="Hopcroft-Karp"):
         # the 4th layer: operator sums
         mpo: List[List[List[List[[Op]]]]] = []
         mpoqn = [[0]]
+        primary_ops = list(set(table[0]))
+        op2idx = dict(zip(primary_ops, range(len(primary_ops))))
+        out_ops_list: List[List[OpTuple]] = [[OpTuple([0], qn=0, factor=1)]]
         for op in table[0]:
             mpo.append([[[op]]])
             qn = mpoqn[-1][0] + op.qn
             mpoqn.append([qn])
-        old_op = mpo[-1][0][0][0]
-        mpo[-1][0][0][0] = Op(old_op.symbol, old_op.dofs, old_op.factor *
-                              factor[0], old_op.qn_list)
+            out_ops_list.append([OpTuple([0, op2idx[op]], qn=qn, factor=1)])
+
+        mpo[-1][0][0][0] = factor[0] * mpo[-1][0][0][0]
+        last_optuple = out_ops_list[-1][0]
+        out_ops_list[-1][0] = OpTuple(last_optuple.symbol, qn=last_optuple.qn, factor=factor[0]*last_optuple.factor)
         qntot = qn
         mpoqn[-1] = [0]
         qnidx = len(mpo) - 1
-        # todo: make this right
-        return mpo, mpoqn, qntot, qnidx, None, None
+        # the last two terms are not set for fast construction of the operators
+        return mpo, mpoqn, qntot, qnidx, out_ops_list, primary_ops
 
     # use np.uint32, np.uint16 to save memory
     max_uint32 = np.iinfo(np.uint32).max
@@ -339,7 +343,7 @@ def _terms_to_table(model: Model, terms: List[Op], const: float):
     table = []
     factor_list = []
 
-    dummy_table_entry = [Op.identity()] * model.nsite
+    dummy_table_entry = [Op.identity(b.dof) for b in model.basis]
     for op in terms:
         elem_ops, factor = op.split_elementary(model.dof_to_siteidx)
         table_entry = dummy_table_entry.copy()
@@ -474,7 +478,7 @@ def check_swap_consistency(new_out_ops2, new_out_ops3, out_ops3_expanded):
         swapped_out_ops3_expanded[-1].sort()
 
     # the following check ensures that the swapping logic is correct
-    # so avoid using `assert` which will be disabled when the
+    # so avoid using `assert` which will be disabled when the python optimization flag is set
     error_msg = "Swapping failed. Please open a GitHub issue and report the bug."
     for row1, row2 in zip(swapped_out_ops3_expanded, swapped_new_out_ops3_expanded):
         if not len(row1) == len(row2):
@@ -496,36 +500,11 @@ def table_row_swapped_jw(row, primary_ops: List, op2idx: Dict):
     # a2 -> z1 a2, a2^d -> z1 a2^d
     op1: Op = primary_ops[row[1]]
     op2: Op = primary_ops[row[2]]
-    """
-    def count_sz_and_new_sz(op: Op):
-        # sz currently in the operator
-        n_sz = []
-        # new sz produced by swapping JW transformation
-        n_new_sz = []
-        for op_str in op.split_symbol:
-            if op_str== "sigma_z":
-                n_sz += 1
-            elif op_str == "sigma_+" or op_str == "sigma_-":
-                n_new_sz += 1
-        return n_sz, n_new_sz
-    def count_new_sz(op: Op):
-        # new sz produced by swapping JW transformation
-        n_new_sz = []
-        for op_str in op.split_symbol:
-            if op_str == "sigma_+" or op_str == "sigma_-":
-                n_new_sz += 1
-        return n_new_sz
-    op1_new_sigma_z = count_new_sz(op1)
-    op2_new_sigma_z = count_new_sz(op2)
-    new_op1_strs = []
-    if op2_new_sigma_z % 2 == 0:
-        coeff = 1
-    else:
-        coeff = -1
-    """
-    # remember all possible operators: I Z + -
+
+    # remember: all possible operators: I Z + -
     # new sigma_z produced for dof1 by op2
     op1_new_sigma_z = (op1.split_symbol.count("sigma_+") + op1.split_symbol.count("sigma_-")) % 2
+    # similar except by op2
     op2_new_sigma_z = (op2.split_symbol.count("sigma_+") + op2.split_symbol.count("sigma_-")) % 2
     # determine the coefficient
     op1_n_sigma_plus = op1.split_symbol.count("sigma_+")
@@ -581,10 +560,10 @@ def table_and_factor_swapped_jw(table, factor, primary_ops: List):
     return np.array(new_table), np.array(new_factor)
 
 
-def swap_site(out_ops_list, primary_ops: List):
+def swap_site(out_ops_list, primary_ops: List, swap_jw: bool):
     # the MPO at hand is - # - # -
-    # the operators at each of the bond
     # the bond indices are 1, 2, 3 and the site indices are 1 and 2
+    # the operators at each of the bond
     out_ops1, out_ops2, out_ops3 = out_ops_list
 
     # the expanded sum-of-product form of the operator represented by the two site MPO
@@ -603,8 +582,9 @@ def swap_site(out_ops_list, primary_ops: List):
     for out_ops3_sum_list in out_ops3:
         auxiliary_dummy_primary_ops.append(DummyOp(-out_ops3_sum_list[0].qn))
     n_primary_ops = len(primary_ops)
-    import os
-    if os.environ.get("SWAP_JW") != "1":
+
+    if not swap_jw:
+        # modify primary_ops in place can be avoided
         primary_ops = primary_ops.copy()
         primary_ops.extend(auxiliary_dummy_primary_ops)
 
@@ -618,7 +598,7 @@ def swap_site(out_ops_list, primary_ops: List):
     table = np.array(table)
     factor = np.array(factor)
 
-    if os.environ.get("SWAP_JW") == "1":
+    if swap_jw:
         # modifies primary_ops in place !!
         table, factor = table_and_factor_swapped_jw(table, factor, primary_ops)
         table[:, 3] = table[:, 3] + (len(primary_ops) - n_primary_ops)
@@ -644,8 +624,8 @@ def swap_site(out_ops_list, primary_ops: List):
         del dummy_op, idx1, idx2
     assert None not in new_out_ops3
 
-    if os.environ.get("SWAP_JW") != "1":
-        # it's bound to fail
+    if not swap_jw:
+        # if swap_jw == True, it's bound to fail
         check_swap_consistency(new_out_ops2, new_out_ops3, out_ops3_expanded)
 
     # translate the numbers into symbolic Matrix Operator

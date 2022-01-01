@@ -419,23 +419,24 @@ class Mpo(MatrixProduct):
 
         return new_mps
 
-    def try_swap_site(self, new_model: Model):
-        # in place swapping
+    def try_swap_site(self, new_model: Model, swap_jw: bool):
+        # in place swapping.
+        # if swap_jw is set to True, then self.primary_ops is modified in place
         diffs = []
         for i, (b1, b2) in enumerate(zip(self.model.basis, new_model.basis)):
-            if b1 != b2:
+            if b1.dofs != b2.dofs:
                 diffs.append(i)
         if len(diffs) == 0:
-            logger.debug("No need to swap")
+            logger.debug("MPO: No need to swap")
             return
         assert len(diffs) == 2
         i, j = min(diffs), max(diffs)
         assert j - i == 1
-        logger.debug(f"swaping {i} and {j}")
+        logger.debug(f"MPO: swaping {i} and {j}")
         # although usually the `model` of MPO does not store `mpos`
         new_model.mpos.clear()
 
-        out_ops2, out_ops3, mo1, mo2, qn = swap_site(self.symbolic_out_ops_list[i:i+3], self.primary_ops)
+        out_ops2, out_ops3, mo1, mo2, qn = swap_site(self.symbolic_out_ops_list[i:i+3], self.primary_ops, swap_jw)
 
         self.symbolic_out_ops_list[i+1] = out_ops2
         self.symbolic_out_ops_list[i+2] = out_ops3

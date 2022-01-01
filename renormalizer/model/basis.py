@@ -671,6 +671,8 @@ class BasisMultiElectron(BasisSet):
             
         elif len(op_symbol) == 2:
             op_symbol1, op_symbol2 = op_symbol
+            if op_symbol1 == "I" and op_symbol2 == "I":
+                return np.eye(self.nbas)
             op_symbol1_idx = self.dof_name_map[op.dofs[0]]
             op_symbol2_idx = self.dof_name_map[op.dofs[1]]
 
@@ -735,6 +737,8 @@ class BasisMultiElectronVac(BasisSet):
 
         elif len(op_symbol) == 2:
             op_symbol1, op_symbol2 = op_symbol
+            if op_symbol1 == "I" and op_symbol2 == "I":
+                return np.eye(self.nbas)
             op_symbol1_idx = self.dof_name_map[op.dofs[0]]
             op_symbol2_idx = self.dof_name_map[op.dofs[1]]
 
@@ -747,7 +751,10 @@ class BasisMultiElectronVac(BasisSet):
             else:
                 raise ValueError(f"op_symbol:{op_symbol} is not supported")
         else:
-            raise ValueError(f"op_symbol:{op_symbol} is not supported")
+            if op_symbol.count("I") == len(op_symbol):
+                return np.eye(self.nbas)
+            else:
+                raise ValueError(f"op_symbol:{op_symbol} is not supported")
 
         return mat * op_factor
 

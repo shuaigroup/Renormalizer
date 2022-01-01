@@ -1236,7 +1236,7 @@ class Mps(MatrixProduct):
                 qnbigl, qnbigr, _ = mps._get_big_qn([cidx0, cidx1])
                 mps._update_mps(mps_t, [cidx0, cidx1], qnbigl, qnbigr, M)
                 if mps.compress_config.ofs is not None:
-                    mpo.try_swap_site(mps.model)
+                    mpo.try_swap_site(mps.model, mps.compress_config.ofs_swap_jw)
                 if imps == last_idx:
                     continue
 
@@ -1501,13 +1501,7 @@ class Mps(MatrixProduct):
         
         """
         _, s_list = self.compress(temp_m_trunc=np.inf, ret_s=True)
-        entropy_list = []
-        for sigma in s_list:
-            rho = sigma ** 2
-            normed_rho = rho / rho.sum()
-            entropy = calc_vn_entropy(normed_rho)
-            entropy_list.append(entropy)
-        return np.array(entropy_list)
+        return np.array([calc_vn_entropy(sigma ** 2) for sigma in s_list])
 
     def dump(self, fname):
         super().dump(fname, other_attrs=["coeff"])

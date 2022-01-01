@@ -6,10 +6,8 @@ import os
 import shutil
 from typing import List, Union
 
-import opt_einsum as oe
-
-from renormalizer.model import Model
-from renormalizer.mps.backend import np, xp, USE_GPU
+from renormalizer.model import Model, HolsteinModel
+from renormalizer.mps.backend import np, xp
 from renormalizer.mps import svd_qn
 from renormalizer.mps.matrix import (
     asnumpy,
@@ -21,7 +19,6 @@ from renormalizer.mps.matrix import (
     concatenate,
     zeros,
     tensordot,
-    multi_tensor_contract,
     Matrix)
 from renormalizer.mps.lib import (
     Environ,
@@ -519,6 +516,7 @@ class MatrixProduct:
                     assert False
                 logger.debug(f"optimize site: {cidx}")
 
+                # todo: avoid the conjugations
                 ltensor = environ.GetLR(
                     "L", lidx, self, mpo, itensor=None, method=lmethod,
                     mps_conj=mps.conj()
@@ -530,7 +528,6 @@ class MatrixProduct:
 
                 # get the quantum number pattern
                 qnbigl, qnbigr, qnmat = mps._get_big_qn(cidx)
-                cshape = qnmat.shape
                 
                 # center mo
                 cmo = [asxp(mpo[idx]) for idx in cidx]
@@ -544,6 +541,9 @@ class MatrixProduct:
                 # clean up the elements which do not meet the qn requirements
                 cout[qnmat!=mps.qntot] = 0
                 mps._update_mps(cout, cidx, qnbigl, qnbigr, mmax, percent)
+                if mps.compress_config.ofs is not None:
+                    # need to swap the original MPS. Tedious to implement and probably not useful.
+                    raise NotImplementedError("OFS for variational compress not implemented")
             
             mps._switch_direction()
             
@@ -610,24 +610,28 @@ class MatrixProduct:
                     asnumpy(cstruct), qnbigl, qnbigr, self.qntot, system=system
                 )
             else:
+                if isinstance(self.model, HolsteinModel):
+                    # the HolsteinModel class methods are incompatible with OFS
+                    raise NotImplementedError("Can't perform OFS on Holstein model")
+
                 qnbigl1, qnbigr1 = qnbigl, qnbigr
                 Uset1, SUset1, qnlnew1, Vset1, SVset1, qnrnew1 = svd_qn.svd_qn(
                     asnumpy(cstruct), qnbigl1, qnbigr1, self.qntot, system=system
                 )
-                entropy1 = calc_vn_entropy(SUset1**2)
                 qnbigl2, qnbigr2, _ = self._get_big_qn(cidx, swap=True)
                 if cstruct.ndim == 4:
                     cstruct2 = asnumpy(cstruct).transpose(0, 2, 1, 3)
                 else:
                     assert cstruct.ndim == 6
                     cstruct2 = asnumpy(cstruct).transpose(0, 3, 4, 1, 2, 5)
-                if os.environ.get("SWAP_JW") == "1":
-                    print("jw warning")
+                if self.compress_config.ofs_swap_jw:
+                    assert cstruct2.ndim == 4
                     cstruct2 = cstruct2.copy()
                     cstruct2[:, 1, 1, :] = -cstruct2[:, 1, 1, :]
                 Uset2, SUset2, qnlnew2, Vset2, SVset2, qnrnew2 = svd_qn.svd_qn(
                     cstruct2, qnbigl2, qnbigr2, self.qntot, system=system
                 )
+                entropy1 = calc_vn_entropy(SUset1**2)
                 entropy2 = calc_vn_entropy(SUset2**2)
                 loss1 = (np.sort(SUset1)[::-1][Mmax:] ** 2).sum()
                 loss2 = (np.sort(SUset2)[::-1][Mmax:] ** 2).sum()
@@ -645,7 +649,8 @@ class MatrixProduct:
                 else:
                     assert ofs is  OFS.ofs_debug
                     should_retain = True
-                logger.debug(f"OFS: {cidx}, {not should_retain}, {entropy1}, {entropy2}, loss: {loss1}, {loss2}")
+                logger.debug(f"OFS: site index {cidx}, should swap: {not should_retain}, "
+                             f"S: {entropy1}, {entropy2}, loss: {loss1}, {loss2}")
                 if should_retain:
                     Uset, SUset, qnlnew, Vset, SVset, qnrnew = \
                         Uset1, SUset1, qnlnew1, Vset1, SVset1, qnrnew1
@@ -655,9 +660,11 @@ class MatrixProduct:
                     qnbigl, qnbigr, cstruct = qnbigl2, qnbigr2, cstruct2
                     new_basis = self.model.basis.copy()
                     new_basis[cidx[0]:cidx[1] + 1] = reversed(self.model.basis[cidx[0]:cidx[1] + 1])
-                    # previously cached MPOs are destroyed
-                    self.model: Model = Model(new_basis, self.model.ham_terms, self.model.dipole)
-                logger.info(f"{[b.dof for b in self.model.basis]}")
+                    # previously cached MPOs are destroyed.
+                    # Not sure what is the best way: swap all cached MPOs or simply reconstruct them
+                    # Need some additional testing at production level calculation
+                    self.model: Model = Model(new_basis, self.model.ham_terms, self.model.dipole, self.model.output_ordering)
+                logger.debug(f"DOF ordering: {[b.dof for b in self.model.basis]}")
 
             if self.to_right:
                 ms, msdim, msqn, compms = select_basis(
@@ -899,9 +906,7 @@ class MatrixProduct:
         new._mp = [None] * len(self)
         new.dtype = self.dtype
         # With OFS, `model` is a mutable object
-        new.model = Model(self.model.basis, self.model.ham_terms, self.model.dipole)
-        # this is a shallow copy, in order to avoid infinite recursion
-        new.model.mpos = self.model.mpos.copy()
+        new.model = self.model.copy()
         # need to deep copy compress_config because threshold might change dynamically
         new.compress_config = self.compress_config.copy()
         new.qn = [qn.copy() for qn in self.qn]
