@@ -34,6 +34,20 @@ class CompressCriteria(Enum):
     both = "both"
 
 
+class OFS(Enum):
+    """
+    On the fly swapping criteria
+    """
+    # based on entanglement entropy
+    ofs_s = "OFS-S"
+    # a hybrid scheme
+    ofs_ds = "OFS-D/S"
+    # based on discarded weight
+    ofs_d = "OFS-D"
+    # debug mode. Dry run the code without performing the swapping
+    ofs_debug = "OFS-Debug"
+
+
 class CompressConfig:
     """MPS/MPO Compress Configuration.
 
@@ -107,6 +121,9 @@ class CompressConfig:
     dump_matrix_dir : str, optional
         The directory to dump matrix when matrix is larger than ``dump_matrix_size``.
 
+    ofs : `OFS`, optional
+        Whether optimize the DOF ordering by OFS. The default value is ``None`` which means does not perform OFS.
+
     See Also
     --------
     CompressCriteria : Compression criteria
@@ -126,6 +143,7 @@ class CompressConfig:
         vguess_m = (5,5),
         dump_matrix_size = np.inf,
         dump_matrix_dir = "./",
+        ofs: OFS = None
     ):
         # two sets of criteria here: threshold and max_bonddimension
         # `criteria` is to determine which to use
@@ -156,6 +174,8 @@ class CompressConfig:
 
         self.dump_matrix_size = dump_matrix_size
         self.dump_matrix_dir = dump_matrix_dir
+
+        self.ofs: OFS = ofs
 
     @property
     def threshold(self):

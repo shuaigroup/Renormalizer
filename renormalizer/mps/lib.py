@@ -1,9 +1,6 @@
 # -*- coding: utf-8 -*-
 # Author: Jiajun Ren <jiajunren0522@gmail.com>
 
-"""
-construct the operator matrix in the MPS sweep procedure
-"""
 from functools import reduce
 from collections import deque
 

@@ -44,7 +44,7 @@ class BasisSet:
         self.sigmaqn = sigmaqn
 
     def __repr__(self):
-        return f"(nbas: {self.nbas}, qn: {self.sigmaqn})"
+        return f"(dof: {self.dof}, nbas: {self.nbas}, qn: {self.sigmaqn})"
     
     def op_mat(self, op: Op):
         """

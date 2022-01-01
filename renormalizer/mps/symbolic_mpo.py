@@ -119,7 +119,8 @@ def construct_symbolic_mpo(table, factor, algo="Hopcroft-Karp"):
         qntot = qn
         mpoqn[-1] = [0]
         qnidx = len(mpo) - 1
-        return mpo, mpoqn, qntot, qnidx
+        # todo: make this right
+        return mpo, mpoqn, qntot, qnidx, None, None
 
     # use np.uint32, np.uint16 to save memory
     max_uint32 = np.iinfo(np.uint32).max

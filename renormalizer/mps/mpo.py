@@ -1,5 +1,6 @@
 import logging
 import itertools
+from copy import deepcopy
 from typing import List, Union
 
 import numpy as np
@@ -305,10 +306,10 @@ class Mpo(MatrixProduct):
     def metacopy(self):
         new = super().metacopy()
         # some mpo may not have these things
-        attrs = ["scheme", "offset"]
+        attrs = ["scheme", "offset", "symbolic_out_ops_list", "primary_ops"]
         for attr in attrs:
             if hasattr(self, attr):
-                setattr(new, attr, getattr(self, attr))
+                setattr(new, attr, deepcopy(getattr(self, attr)))
         return new
 
     @property
@@ -418,7 +419,7 @@ class Mpo(MatrixProduct):
 
         return new_mps
 
-    def swap_site(self, new_model: Model):
+    def try_swap_site(self, new_model: Model):
         # in place swapping
         diffs = []
         for i, (b1, b2) in enumerate(zip(self.model.basis, new_model.basis)):
@@ -431,6 +432,8 @@ class Mpo(MatrixProduct):
         i, j = min(diffs), max(diffs)
         assert j - i == 1
         logger.debug(f"swaping {i} and {j}")
+        # although usually the `model` of MPO does not store `mpos`
+        new_model.mpos.clear()
 
         out_ops2, out_ops3, mo1, mo2, qn = swap_site(self.symbolic_out_ops_list[i:i+3], self.primary_ops)
 

@@ -1,16 +1,20 @@
 # -*- coding: utf-8 -*-
 # Author: Jiajun Ren <jiajunren0522@gmail.com>
 
+import logging
+
 import numpy as np
 import pytest
 
 from renormalizer.mps.gs import construct_mps_mpo, optimize_mps
-from renormalizer.tests.parameter import holstein_model, custom_model
-from renormalizer.utils import constant
+from renormalizer.tests.parameter import holstein_model
+from renormalizer.utils.configs import OFS
+
 
 nexciton = 1
 procedure = [[10, 0.4], [20, 0.2], [30, 0.1], [40, 0], [40, 0]]
 
+GS_E = 0.08401412 + holstein_model.gs_zpe
 
 @pytest.mark.parametrize("scheme", (
         1,
@@ -25,8 +29,9 @@ def test_optimization(scheme, method):
     mps.optimize_config.procedure = procedure
     mps.optimize_config.method = method
     energies, mps_opt = optimize_mps(mps.copy(), mpo)
-    assert energies[-1] == pytest.approx(0.08401412 + holstein_model.gs_zpe, rel=1e-5)
-    assert mps_opt.expectation(mpo) == pytest.approx(0.08401412 + holstein_model.gs_zpe, rel=1e-5)
+    assert energies[-1] == pytest.approx(GS_E, rel=1e-5)
+    assert mps_opt.expectation(mpo) == pytest.approx(GS_E, rel=1e-5)
+
 
 @pytest.mark.parametrize("method", (
         "1site",
@@ -49,6 +54,7 @@ def test_multistate(method, algo):
     energy_std = np.array([0.08401412, 0.08449771, 0.08449801, 0.08449945]) + holstein_model.gs_zpe
     assert np.allclose(energy[-1], energy_std)
     assert np.allclose(expectation, energy_std)
+
 
 @pytest.mark.parametrize("method", (
         "1site",
@@ -74,3 +80,18 @@ def test_ex(method, nroots):
     else:
         #print("eigenenergy", [ms.expectation(mpo) for ms in mps])
         assert np.allclose([ms.expectation(mpo) for ms in mps], energy_std)
+
+
+@pytest.mark.parametrize("scheme", (
+        1,
+        4,
+))
+def test_ofs(scheme):
+    # `switch_scheme` makes copy, so `holstein_model` is not changed during OFS
+    mps, mpo = construct_mps_mpo(holstein_model.switch_scheme(scheme), procedure[0][0], nexciton)
+    mps.optimize_config.procedure = procedure
+    mps.optimize_config.method = "2site"
+    mps.compress_config.ofs = OFS.ofs_s
+    energies, mps_opt = optimize_mps(mps.copy(), mpo)
+    assert energies[-1] == pytest.approx(GS_E, rel=1e-5)
+    assert mps_opt.expectation(mpo) == pytest.approx(GS_E, rel=1e-5)

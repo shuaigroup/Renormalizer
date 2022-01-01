@@ -32,6 +32,10 @@ class Model:
         Contains the transition dipole matrix element. The key is the dof name.
     """
     def __init__(self, basis: List[BasisSet], ham_terms: List[Op], dipole: Dict = None):
+        if not isinstance(basis, list) or len(basis) == 0:
+            raise TypeError("Basis should be a non-empty list")
+        if not isinstance(basis[0], BasisSet):
+            raise TypeError("Elements of the basis list should be of type BasisSet")
         all_dof_list = []
         for local_basis in basis:
                 all_dof_list.extend(local_basis.dofs)

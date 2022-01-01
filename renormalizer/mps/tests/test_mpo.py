@@ -63,7 +63,7 @@ def test_swap_symbolic_mpo(nsites, nterms):
         basis = basis.copy()
         basis[isite1], basis[isite2] = basis[isite2], basis[isite1]
         new_model = Model(basis, ham_terms)
-        mpo.swap_site(new_model)
+        mpo.try_swap_site(new_model)
         ref_mpo = Mpo(new_model)
         mpo_dense = mpo.full_operator()
         ref_dense = ref_mpo.full_operator()

@@ -23,7 +23,7 @@ from renormalizer.mps.matrix import (
     tensordot,
     multi_tensor_contract,
     Matrix)
-from renormalizer.utils import sizeof_fmt, CompressConfig
+from renormalizer.utils import sizeof_fmt, CompressConfig, OFS, calc_vn_entropy
 from renormalizer.mps.lib import (
     Environ,
     select_basis,
@@ -264,7 +264,7 @@ class MatrixProduct:
             self.to_right = True
             # assert self.check_right_canonical()
 
-    def _get_big_qn(self, cidx: List[int]):
+    def _get_big_qn(self, cidx: List[int], swap=False):
         r""" get the quantum number of L-block and R-block renormalized basis 
         
         Parameters
@@ -291,7 +291,10 @@ class MatrixProduct:
             assert False
         assert self.qnidx in cidx
         
-        sigmaqn = [np.array(self[idx].sigmaqn) for idx in cidx]
+        sigmaqn = [np.array(self._get_sigmaqn(idx)) for idx in cidx]
+        if swap:
+            assert len(sigmaqn) == 2
+            sigmaqn = sigmaqn[::-1]
         qnl = np.array(self.qn[cidx[0]])
         qnr = np.array(self.qn[cidx[-1]+1])
         if len(cidx) == 1:
@@ -645,11 +648,61 @@ class MatrixProduct:
 
         # step 1: get the selected U, S, V
         if type(cstruct) is not list:
-            # SVD method
-            # full_matrices = True here to enable increase the bond dimension
-            Uset, SUset, qnlnew, Vset, SVset, qnrnew = svd_qn.svd_qn(
-                asnumpy(cstruct), qnbigl, qnbigr, self.qntot, system=system
-            )
+            if self.compress_config.ofs is None:
+                # SVD method
+                # full_matrices = True here to enable increase the bond dimension
+                Uset, SUset, qnlnew, Vset, SVset, qnrnew = svd_qn.svd_qn(
+                    asnumpy(cstruct), qnbigl, qnbigr, self.qntot, system=system
+                )
+            else:
+                qnbigl1, qnbigr1 = qnbigl, qnbigr
+                Uset1, SUset1, qnlnew1, Vset1, SVset1, qnrnew1 = svd_qn.svd_qn(
+                    asnumpy(cstruct), qnbigl1, qnbigr1, self.qntot, system=system
+                )
+                entropy1 = calc_vn_entropy(SUset1**2)
+                qnbigl2, qnbigr2, _ = self._get_big_qn(cidx, swap=True)
+                if cstruct.ndim == 4:
+                    cstruct2 = asnumpy(cstruct).transpose(0, 2, 1, 3)
+                else:
+                    assert cstruct.ndim == 6
+                    cstruct2 = asnumpy(cstruct).transpose(0, 3, 4, 1, 2, 5)
+                if os.environ.get("SWAP_JW") == "1":
+                    print("jw warning")
+                    cstruct2 = cstruct2.copy()
+                    cstruct2[:, 1, 1, :] = -cstruct2[:, 1, 1, :]
+                Uset2, SUset2, qnlnew2, Vset2, SVset2, qnrnew2 = svd_qn.svd_qn(
+                    cstruct2, qnbigl2, qnbigr2, self.qntot, system=system
+                )
+                entropy2 = calc_vn_entropy(SUset2**2)
+                loss1 = (np.sort(SUset1)[::-1][Mmax:] ** 2).sum()
+                loss2 = (np.sort(SUset2)[::-1][Mmax:] ** 2).sum()
+                ofs = self.compress_config.ofs
+                if ofs is OFS.ofs_d:
+                    should_retain = loss1 <= loss2
+                elif ofs is OFS.ofs_ds:
+                    if loss1 < 1e-10 and loss2 < 1e-10:
+                        # at the end of the chain
+                        should_retain = entropy1 < entropy2
+                    else:
+                        should_retain = loss1 <= loss2
+                elif ofs is OFS.ofs_s:
+                    should_retain = entropy1 < entropy2
+                else:
+                    assert ofs is  OFS.ofs_debug
+                    should_retain = True
+                logger.debug(f"OFS: {cidx}, {not should_retain}, {entropy1}, {entropy2}, loss: {loss1}, {loss2}")
+                if should_retain:
+                    Uset, SUset, qnlnew, Vset, SVset, qnrnew = \
+                        Uset1, SUset1, qnlnew1, Vset1, SVset1, qnrnew1
+                else:
+                    Uset, SUset, qnlnew, Vset, SVset, qnrnew = \
+                        Uset2, SUset2, qnlnew2, Vset2, SVset2, qnrnew2
+                    qnbigl, qnbigr, cstruct = qnbigl2, qnbigr2, cstruct2
+                    new_basis = self.model.basis.copy()
+                    new_basis[cidx[0]:cidx[1] + 1] = reversed(self.model.basis[cidx[0]:cidx[1] + 1])
+                    # previously cached MPOs are destroyed
+                    self.model: Model = Model(new_basis, self.model.ham_terms, self.model.dipole)
+                logger.info(f"{[b.dof for b in self.model.basis]}")
 
             if self.to_right:
                 ms, msdim, msqn, compms = select_basis(
@@ -890,7 +943,10 @@ class MatrixProduct:
         new = self.__class__.__new__(self.__class__)
         new._mp = [None] * len(self)
         new.dtype = self.dtype
-        new.model = self.model
+        # With OFS, `model` is a mutable object
+        new.model = Model(self.model.basis, self.model.ham_terms, self.model.dipole)
+        # this is a shallow copy, in order to avoid infinite recursion
+        new.model.mpos = self.model.mpos.copy()
         # need to deep copy compress_config because threshold might change dynamically
         new.compress_config = self.compress_config.copy()
         new.qn = [qn.copy() for qn in self.qn]

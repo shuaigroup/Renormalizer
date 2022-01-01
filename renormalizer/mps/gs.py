@@ -106,7 +106,7 @@ def optimize_mps(mps: Mps, mpo: Mpo, omega: float = None) -> Tuple[List, Mps]:
         logger.debug(f"mmax, percent: {mmax}, {percent}")
         logger.debug(f"{mps}")
 
-        micro_iteration_result, res_mps = single_sweep(mps, mpo, environ, omega, mmax, percent, opt_e_idx)
+        micro_iteration_result, res_mps, mpo = single_sweep(mps, mpo, environ, omega, mmax, percent, opt_e_idx)
 
         opt_e = min(micro_iteration_result)
         macro_iteration_result.append(opt_e[0])
@@ -256,9 +256,11 @@ def single_sweep(
                     )
 
         averaged_ms = mps._update_mps(cstruct, cidx, qnbigl, qnbigr, mmax, percent)
+        if mps.compress_config.ofs:
+            mpo.try_swap_site(mps.model)
 
     mps._switch_direction()
-    return micro_iteration_result, res_mps
+    return micro_iteration_result, res_mps, mpo
 
 
 def eigh_direct(
