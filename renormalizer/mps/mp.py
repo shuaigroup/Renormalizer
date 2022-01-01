@@ -23,11 +23,12 @@ from renormalizer.mps.matrix import (
     tensordot,
     multi_tensor_contract,
     Matrix)
-from renormalizer.utils import sizeof_fmt, CompressConfig, OFS, calc_vn_entropy
 from renormalizer.mps.lib import (
     Environ,
     select_basis,
     )
+from renormalizer.mps.hop_expr import hop_expr
+from renormalizer.utils import sizeof_fmt, CompressConfig, OFS, calc_vn_entropy
 
 logger = logging.getLogger(__name__)
 
@@ -519,73 +520,27 @@ class MatrixProduct:
                 logger.debug(f"optimize site: {cidx}")
 
                 ltensor = environ.GetLR(
-                    "L", lidx, self, mpo, itensor=None, method=lmethod, 
-                    mps_conj = mps.conj()
+                    "L", lidx, self, mpo, itensor=None, method=lmethod,
+                    mps_conj=mps.conj()
                 )
                 rtensor = environ.GetLR(
                     "R", ridx, self, mpo, itensor=None, method=rmethod,
-                    mps_conj = mps.conj()
+                    mps_conj=mps.conj()
                 )
 
                 # get the quantum number pattern
                 qnbigl, qnbigr, qnmat = mps._get_big_qn(cidx)
+                cshape = qnmat.shape
                 
                 # center mo
-                cmo = [asxp(mpo[idx]) for idx in cidx] 
-                cms = [asxp(self[idx]) for idx in cidx]
+                cmo = [asxp(mpo[idx]) for idx in cidx]
                 if method == "1site":
-                    if cms[0].ndim == 3:
-                        # S-a   l-S
-                        #     d
-                        # O-b-O-f-O
-                        #     e
-                        # S-c   k-S
-
-                        path = [
-                            ([0, 1], "abc, cek -> abek"),
-                            ([2, 0], "abek, bdef -> akdf"),
-                            ([1, 0], "akdf, lfk -> adl"),
-                        ]
-                    elif cms[0].ndim == 4:
-                        # S-a   l-S
-                        #     d
-                        # O-b-O-f-O
-                        #     e
-                        # S-c   k-S
-                        #     g
-                        path = [
-                            ([0, 2], "abc, bdef -> acdef"),
-                            ([2, 0], "acdef, cegk -> adfgk"),
-                            ([1, 0], "adfgk, lfk -> adgl"),
-                        ]
-                    cout = multi_tensor_contract(
-                        path, ltensor, cms[0], cmo[0], rtensor
-                    )
+                    cms = asxp(self[cidx[0]])
                 else:
-                    if USE_GPU:
-                        oe_backend = "cupy"
-                    else:
-                        oe_backend = "numpy"
-                    if cms[0].ndim == 3:
-                        # S-a       l-S
-                        #     d   g
-                        # O-b-O-f-O-j-O
-                        #     e   h
-                        # S-c   m   k-S
-                    
-                        cout = oe.contract("abc, bdef, fghj, ljk, cem, mhk -> adgl",
-                                ltensor, cmo[0], cmo[1], rtensor, cms[0], cms[1],
-                                backend=oe_backend)
-                    elif cms[0].ndim == 4:
-                        # S-a       l-S
-                        #     d   g
-                        # O-b-O-f-O-j-O
-                        #     e   h
-                        # S-c   m   k-S
-                        #     n   p
-                        cout = oe.contract("abc, bdef, fghj, ljk, cenm, mhpk -> adngpl",
-                                ltensor, cmo[0], cmo[1], rtensor, cms[0], cms[1],
-                                backend=oe_backend)
+                    assert method == "2site"
+                    cms = tensordot(self[cidx[0]], self[cidx[1]], axes=1)
+                hop = hop_expr(ltensor, rtensor, cmo, cms.shape)
+                cout = hop(cms)
                 # clean up the elements which do not meet the qn requirements
                 cout[qnmat!=mps.qntot] = 0
                 mps._update_mps(cout, cidx, qnbigl, qnbigr, mmax, percent)
