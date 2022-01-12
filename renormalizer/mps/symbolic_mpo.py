@@ -573,6 +573,9 @@ def swap_site(out_ops_list, primary_ops: List, swap_jw: bool):
     out_ops3_expanded: List[List[ExpandedOp]] = []
     for out_op_sum_list in out_ops3:
         out_ops3_expanded.append(expand_out_op_sum_list(out_ops2, out_op_sum_list))
+        # lots of del in the following code. The purposes are
+        # 1. to indicate the variables are local
+        # 2. to help avoid mis-using these variables in the following code (by typo etc.)
         del out_op_sum_list
     table = []
     factor = []
@@ -628,18 +631,8 @@ def swap_site(out_ops_list, primary_ops: List, swap_jw: bool):
         # if swap_jw == True, it's bound to fail
         check_swap_consistency(new_out_ops2, new_out_ops3, out_ops3_expanded)
 
-    # translate the numbers into symbolic Matrix Operator
-    def compose_symbolic_matrix_operator(in_ops, out_ops):
-        mo = [[[] for o in range(len(out_ops))] for i in range(len(in_ops))]
-        for iop, out_op in enumerate(out_ops):
-            for composed_op in out_op:
-                in_idx = composed_op.symbol[0]
-                op = primary_ops[composed_op.symbol[1]]
-                mo[in_idx][iop].append(composed_op.factor * op)
-        return mo
-
-    mo1 = compose_symbolic_matrix_operator(out_ops1, new_out_ops2)
-    mo2 = compose_symbolic_matrix_operator(new_out_ops2, new_out_ops3)
+    mo1 = compose_symbolic_mo(out_ops1, new_out_ops2, primary_ops)
+    mo2 = compose_symbolic_mo(new_out_ops2, new_out_ops3, primary_ops)
     # print(_format_symbolic_mpo([mo1, mo2]))
     qn = [opsum[0].qn for opsum in new_out_ops2]
     return new_out_ops2, new_out_ops3, mo1, mo2, qn

@@ -56,7 +56,7 @@ class CompressConfig:
     criteria : `CompressCriteria`, optional
         The criteria for compression. Default is
         `CompressCriteria.threshold`.
-    threshold : float, optional 
+    threshold : float, optional
         The threshold to keep states if ``criteria`` is set to
         `CompressCriteria.threshold` or `CompressCriteria.both`.
         Default is :math:`10^{-3}`.
@@ -87,7 +87,7 @@ class CompressConfig:
     vprocedure : list, optional
         The procedure to do variational compression.
         The Default is
-        
+
         .. code-block::
 
             if vmethod == "1site":
@@ -97,12 +97,12 @@ class CompressConfig:
             else:
                 vprocedure = [[max_bonddim,0.5],[max_bonddim,0.3],
                               [max_bonddim,0.1]] + [[max_bonddim,0],]*10
-    
+
     vrtol : float, optional
         The threshold of convergence in variational compression. Default is
         :math:`10^{-5}`.
     vguess_m : tuple(int), optional
-        The bond dimension of ``compressed_mpo`` and ``compressed_mps`` to construct the initial guess 
+        The bond dimension of ``compressed_mpo`` and ``compressed_mps`` to construct the initial guess
         ``compressed_mpo @ compressed_mps`` in `MatrixProduct.variational_compress`.
         The default is (5,5).
     dump_matrix_size : int or float, optional
@@ -125,15 +125,16 @@ class CompressConfig:
         Whether optimize the DOF ordering by OFS. The default value is ``None`` which means does not perform OFS.
 
     ofs_swap_jw : bool, optional
-        Whether swap the ordering Jordan-Wigner transformation when OFS is enabled. Set to ``True``
-        for and only for ab initio Hamiltonian. Default is ``False``.
+        Whether swap the Jordan-Wigner transformation ordering when OFS is enabled. Set to ``True``
+        for and only for ab initio Hamiltonian constructed by the experimental
+        ``renormalizer.model.h_qc.qc_model``. Default is ``False``.
 
     See Also
     --------
     CompressCriteria : Compression criteria
     renormalizer.mps.mp.MatrixProduct.variational_compress : Variational compression
     renormalizer.mps.Mpo.contract : compress ``mpo @ mps/mpdm/mpo``
-    
+
     """
     def __init__(
         self,
@@ -162,7 +163,7 @@ class CompressConfig:
         # the length should be len(mps) + 1, the terminals are also counted. This is for accordance with mps.bond_dims
         self.max_dims: np.ndarray = None
         self.min_dims: np.ndarray = None
-        
+
         # variational compression parameters
         self.vmethod = vmethod
         if vprocedure is None:
@@ -308,7 +309,7 @@ class OptimizeConfig:
         self.method = "2site"
         # algo: arpack(Implicitly Restarted Lanczos Method)
         #       davidson(pyscf/davidson)
-        self.algo = "davidson"  
+        self.algo = "davidson"
         self.nroots = 1
         # the ground state energy convergence tolerance
         self.e_rtol = 1e-6

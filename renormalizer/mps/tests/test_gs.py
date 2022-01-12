@@ -100,6 +100,13 @@ def test_ofs():
 
 @pytest.mark.parametrize("with_ofs", (True, False))
 def test_qc(with_ofs):
+    """
+    m = M(atom=[["H", np.cos(theta), np.sin(theta), 0] for theta in 2*np.pi/6 * np.arange(6)], basis="STO-3G")
+    hf = m.HF()
+    hf.kernel()
+    fcidump.from_mo(m, "H6.txt", hf.mo_coeff)
+    hf.CASCI(ncas=6, nelecas=6).kernel()
+    """
     spatial_norbs = 6
     h1e, h2e, nuc = h_qc.read_fcidump(os.path.join(cur_dir, "H6.txt"), spatial_norbs)
 
