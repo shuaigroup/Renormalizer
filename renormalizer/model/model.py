@@ -30,14 +30,25 @@ class Model:
         All terms must be included, without assuming Hermitian or something else.
     dipole : dict
         Contains the transition dipole matrix element. The key is the dof name.
+    output_ordering : :class:`list` of :class:`~renormalizer.model.basis.BasisSet`
+        The ordering of the local basis for output. Default is the same with ``basis``.
     """
-    def __init__(self, basis: List[BasisSet], ham_terms: List[Op], dipole: Dict = None):
+    def __init__(self, basis: List[BasisSet], ham_terms: List[Op], dipole: Dict = None, output_ordering: List[BasisSet]=None):
+        if not isinstance(basis, list) or len(basis) == 0:
+            raise TypeError("Basis should be a non-empty list")
+        if not isinstance(basis[0], BasisSet):
+            raise TypeError("Elements of the basis list should be of type BasisSet")
         all_dof_list = []
         for local_basis in basis:
                 all_dof_list.extend(local_basis.dofs)
         if len(all_dof_list) != len(set(all_dof_list)):
             raise ValueError("Duplicate DoF definition found in the basis list.")
         self.basis: List[BasisSet] = basis
+        if output_ordering is None:
+            self.output_ordering = self.basis
+        else:
+            self.output_ordering = output_ordering
+
         # alias
         self.dof_to_siteidx = self.order = {}
         self.dof_to_basis = {}
@@ -89,7 +100,7 @@ class Model:
     def _enumerate_dof(self, criteria=lambda x: True):
         # enumerate DoFs and filter according to criteria.
         dofs = []
-        for local_basis in self.basis:
+        for local_basis in self.output_ordering:
             if criteria(local_basis):
                 dofs.extend(local_basis.dofs)
         return dofs
@@ -171,6 +182,13 @@ class Model:
         else:
             mpos = self.mpos[key]
         return mpos
+
+    def copy(self):
+        # copy basis because it is mutable with OFS
+        model =  Model(self.basis.copy(), self.ham_terms, self.dipole, self.output_ordering)
+        # this is a shallow copy, in order to avoid infinite recursion
+        model.mpos = self.mpos.copy()
+        return model
 
     def to_dict(self) -> Dict:
         """
@@ -353,6 +371,11 @@ class HolsteinModel(Model):
             return j_set.pop()
         else:
             raise ValueError("J is not constant")
+
+    def copy(self):
+        model = HolsteinModel(self.mol_list, self.j_matrix, self.scheme)
+        model.mpos = self.mpos.copy()
+        return model
 
     def __getitem__(self, item):
         return self.mol_list[item]

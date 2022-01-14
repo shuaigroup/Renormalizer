@@ -36,6 +36,7 @@ from renormalizer.utils import (
     EvolveConfig,
     EvolveMethod
 )
+from renormalizer.utils.utils import calc_vn_entropy
 
 logger = logging.getLogger(__name__)
 
@@ -1231,8 +1232,11 @@ class Mps(MatrixProduct):
                 )
                 local_steps.append(j)
 
+                mps_t = mps_t.reshape(ms2.shape)
                 qnbigl, qnbigr, _ = mps._get_big_qn([cidx0, cidx1])
                 mps._update_mps(mps_t, [cidx0, cidx1], qnbigl, qnbigr, M)
+                if mps.compress_config.ofs is not None:
+                    mpo.try_swap_site(mps.model, mps.compress_config.ofs_swap_jw)
                 if imps == last_idx:
                     continue
 
@@ -1450,9 +1454,7 @@ class Mps(MatrixProduct):
             entropy = {}
             for key, dm in rdm.items():
                 w, v = scipy.linalg.eigh(dm)
-                w[w<=0] = 1e-100
-                entro = np.sum(-w*np.log(w))
-                entropy[key] = entro
+                entropy[key] = calc_vn_entropy(w)
 
         elif entropy_type == "mutual":
             entropy = self.calc_2site_mutual_entropy()
@@ -1499,14 +1501,7 @@ class Mps(MatrixProduct):
         
         """
         _, s_list = self.compress(temp_m_trunc=np.inf, ret_s=True)
-        entropy_list = []
-        for sigma in s_list:
-            rho = sigma ** 2
-            normed_rho = rho / rho.sum()
-            truncate_rho = normed_rho[0 < normed_rho]
-            entropy = - (truncate_rho * np.log(truncate_rho)).sum()
-            entropy_list.append(entropy)
-        return np.array(entropy_list)
+        return np.array([calc_vn_entropy(sigma ** 2) for sigma in s_list])
 
     def dump(self, fname):
         super().dump(fname, other_attrs=["coeff"])

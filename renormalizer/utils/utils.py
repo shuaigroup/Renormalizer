@@ -5,6 +5,9 @@
 useful utilities
 """
 
+import numpy as np
+
+
 # from https://stackoverflow.com/questions/1094841/reusable-library-to-get-human-readable-version-of-file-size
 def sizeof_fmt(num, suffix="B"):
     for unit in ["", "Ki", "Mi", "Gi", "Ti", "Pi", "Ei", "Zi"]:
@@ -30,3 +33,13 @@ class cached_property():
 
         value = obj.__dict__[self.func.__name__] = self.func(obj)
         return value
+
+
+def calc_vn_entropy(p):
+    # calculate Von Neumann entropy from density matrix eigenvalues (not singular values!)
+    p = np.array(p)
+    assert np.allclose(p[p<0], 0)
+    p = p / p.sum()
+    assert np.allclose(p.sum(), 1)
+    p = p[0 < p]
+    return - (p* np.log(p)).sum()

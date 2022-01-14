@@ -1,6 +1,6 @@
 ![logo](./doc/source/logo.png)
 
-[![Build Status](https://travis-ci.com/shuaigroup/Renormalizer.svg?branch=master)](https://travis-ci.com/shuaigroup/Renormalizer)
+[![Build Status](https://travis-ci.com/shuaigroup/Renormalizer.svg?branch=master)](https://app.travis-ci.com/github/shuaigroup/Renormalizer)
 
 Renormalizer is a python package based on tensor network states for electron-phonon quantum dynamics.
 

@@ -6,10 +6,8 @@ import os
 import shutil
 from typing import List, Union
 
-import opt_einsum as oe
-
-from renormalizer.model import Model
-from renormalizer.mps.backend import np, xp, USE_GPU
+from renormalizer.model import Model, HolsteinModel
+from renormalizer.mps.backend import np, xp
 from renormalizer.mps import svd_qn
 from renormalizer.mps.matrix import (
     asnumpy,
@@ -21,13 +19,13 @@ from renormalizer.mps.matrix import (
     concatenate,
     zeros,
     tensordot,
-    multi_tensor_contract,
     Matrix)
-from renormalizer.utils import sizeof_fmt, CompressConfig
 from renormalizer.mps.lib import (
     Environ,
     select_basis,
     )
+from renormalizer.mps.hop_expr import hop_expr
+from renormalizer.utils import sizeof_fmt, CompressConfig, OFS, calc_vn_entropy
 
 logger = logging.getLogger(__name__)
 
@@ -264,7 +262,7 @@ class MatrixProduct:
             self.to_right = True
             # assert self.check_right_canonical()
 
-    def _get_big_qn(self, cidx: List[int]):
+    def _get_big_qn(self, cidx: List[int], swap=False):
         r""" get the quantum number of L-block and R-block renormalized basis 
         
         Parameters
@@ -291,7 +289,10 @@ class MatrixProduct:
             assert False
         assert self.qnidx in cidx
         
-        sigmaqn = [np.array(self[idx].sigmaqn) for idx in cidx]
+        sigmaqn = [np.array(self._get_sigmaqn(idx)) for idx in cidx]
+        if swap:
+            assert len(sigmaqn) == 2
+            sigmaqn = sigmaqn[::-1]
         qnl = np.array(self.qn[cidx[0]])
         qnr = np.array(self.qn[cidx[-1]+1])
         if len(cidx) == 1:
@@ -515,77 +516,34 @@ class MatrixProduct:
                     assert False
                 logger.debug(f"optimize site: {cidx}")
 
+                # todo: avoid the conjugations
                 ltensor = environ.GetLR(
-                    "L", lidx, self, mpo, itensor=None, method=lmethod, 
-                    mps_conj = mps.conj()
+                    "L", lidx, self, mpo, itensor=None, method=lmethod,
+                    mps_conj=mps.conj()
                 )
                 rtensor = environ.GetLR(
                     "R", ridx, self, mpo, itensor=None, method=rmethod,
-                    mps_conj = mps.conj()
+                    mps_conj=mps.conj()
                 )
 
                 # get the quantum number pattern
                 qnbigl, qnbigr, qnmat = mps._get_big_qn(cidx)
                 
                 # center mo
-                cmo = [asxp(mpo[idx]) for idx in cidx] 
-                cms = [asxp(self[idx]) for idx in cidx]
+                cmo = [asxp(mpo[idx]) for idx in cidx]
                 if method == "1site":
-                    if cms[0].ndim == 3:
-                        # S-a   l-S
-                        #     d
-                        # O-b-O-f-O
-                        #     e
-                        # S-c   k-S
-
-                        path = [
-                            ([0, 1], "abc, cek -> abek"),
-                            ([2, 0], "abek, bdef -> akdf"),
-                            ([1, 0], "akdf, lfk -> adl"),
-                        ]
-                    elif cms[0].ndim == 4:
-                        # S-a   l-S
-                        #     d
-                        # O-b-O-f-O
-                        #     e
-                        # S-c   k-S
-                        #     g
-                        path = [
-                            ([0, 2], "abc, bdef -> acdef"),
-                            ([2, 0], "acdef, cegk -> adfgk"),
-                            ([1, 0], "adfgk, lfk -> adgl"),
-                        ]
-                    cout = multi_tensor_contract(
-                        path, ltensor, cms[0], cmo[0], rtensor
-                    )
+                    cms = asxp(self[cidx[0]])
                 else:
-                    if USE_GPU:
-                        oe_backend = "cupy"
-                    else:
-                        oe_backend = "numpy"
-                    if cms[0].ndim == 3:
-                        # S-a       l-S
-                        #     d   g
-                        # O-b-O-f-O-j-O
-                        #     e   h
-                        # S-c   m   k-S
-                    
-                        cout = oe.contract("abc, bdef, fghj, ljk, cem, mhk -> adgl",
-                                ltensor, cmo[0], cmo[1], rtensor, cms[0], cms[1],
-                                backend=oe_backend)
-                    elif cms[0].ndim == 4:
-                        # S-a       l-S
-                        #     d   g
-                        # O-b-O-f-O-j-O
-                        #     e   h
-                        # S-c   m   k-S
-                        #     n   p
-                        cout = oe.contract("abc, bdef, fghj, ljk, cenm, mhpk -> adngpl",
-                                ltensor, cmo[0], cmo[1], rtensor, cms[0], cms[1],
-                                backend=oe_backend)
+                    assert method == "2site"
+                    cms = tensordot(self[cidx[0]], self[cidx[1]], axes=1)
+                hop = hop_expr(ltensor, rtensor, cmo, cms.shape)
+                cout = hop(cms)
                 # clean up the elements which do not meet the qn requirements
                 cout[qnmat!=mps.qntot] = 0
                 mps._update_mps(cout, cidx, qnbigl, qnbigr, mmax, percent)
+                if mps.compress_config.ofs is not None:
+                    # need to swap the original MPS. Tedious to implement and probably not useful.
+                    raise NotImplementedError("OFS for variational compress not implemented")
             
             mps._switch_direction()
             
@@ -645,11 +603,68 @@ class MatrixProduct:
 
         # step 1: get the selected U, S, V
         if type(cstruct) is not list:
-            # SVD method
-            # full_matrices = True here to enable increase the bond dimension
-            Uset, SUset, qnlnew, Vset, SVset, qnrnew = svd_qn.svd_qn(
-                asnumpy(cstruct), qnbigl, qnbigr, self.qntot, system=system
-            )
+            if self.compress_config.ofs is None:
+                # SVD method
+                # full_matrices = True here to enable increase the bond dimension
+                Uset, SUset, qnlnew, Vset, SVset, qnrnew = svd_qn.svd_qn(
+                    asnumpy(cstruct), qnbigl, qnbigr, self.qntot, system=system
+                )
+            else:
+                if isinstance(self.model, HolsteinModel):
+                    # the HolsteinModel class methods are incompatible with OFS
+                    raise NotImplementedError("Can't perform OFS on Holstein model")
+
+                qnbigl1, qnbigr1 = qnbigl, qnbigr
+                Uset1, SUset1, qnlnew1, Vset1, SVset1, qnrnew1 = svd_qn.svd_qn(
+                    asnumpy(cstruct), qnbigl1, qnbigr1, self.qntot, system=system
+                )
+                qnbigl2, qnbigr2, _ = self._get_big_qn(cidx, swap=True)
+                if cstruct.ndim == 4:
+                    cstruct2 = asnumpy(cstruct).transpose(0, 2, 1, 3)
+                else:
+                    assert cstruct.ndim == 6
+                    cstruct2 = asnumpy(cstruct).transpose(0, 3, 4, 1, 2, 5)
+                if self.compress_config.ofs_swap_jw:
+                    assert cstruct2.ndim == 4
+                    cstruct2 = cstruct2.copy()
+                    cstruct2[:, 1, 1, :] = -cstruct2[:, 1, 1, :]
+                Uset2, SUset2, qnlnew2, Vset2, SVset2, qnrnew2 = svd_qn.svd_qn(
+                    cstruct2, qnbigl2, qnbigr2, self.qntot, system=system
+                )
+                entropy1 = calc_vn_entropy(SUset1**2)
+                entropy2 = calc_vn_entropy(SUset2**2)
+                loss1 = (np.sort(SUset1)[::-1][Mmax:] ** 2).sum()
+                loss2 = (np.sort(SUset2)[::-1][Mmax:] ** 2).sum()
+                ofs = self.compress_config.ofs
+                if ofs is OFS.ofs_d:
+                    should_retain = loss1 <= loss2
+                elif ofs is OFS.ofs_ds:
+                    if loss1 < 1e-10 and loss2 < 1e-10:
+                        # at the end of the chain
+                        should_retain = entropy1 < entropy2
+                    else:
+                        should_retain = loss1 <= loss2
+                elif ofs is OFS.ofs_s:
+                    should_retain = entropy1 < entropy2
+                else:
+                    assert ofs is  OFS.ofs_debug
+                    should_retain = True
+                logger.debug(f"OFS: site index {cidx}, should swap: {not should_retain}, "
+                             f"S: {entropy1}, {entropy2}, loss: {loss1}, {loss2}")
+                if should_retain:
+                    Uset, SUset, qnlnew, Vset, SVset, qnrnew = \
+                        Uset1, SUset1, qnlnew1, Vset1, SVset1, qnrnew1
+                else:
+                    Uset, SUset, qnlnew, Vset, SVset, qnrnew = \
+                        Uset2, SUset2, qnlnew2, Vset2, SVset2, qnrnew2
+                    qnbigl, qnbigr, cstruct = qnbigl2, qnbigr2, cstruct2
+                    new_basis = self.model.basis.copy()
+                    new_basis[cidx[0]:cidx[1] + 1] = reversed(self.model.basis[cidx[0]:cidx[1] + 1])
+                    # previously cached MPOs are destroyed.
+                    # Not sure what is the best way: swap all cached MPOs or simply reconstruct them
+                    # Need some additional testing at production level calculation
+                    self.model: Model = Model(new_basis, self.model.ham_terms, self.model.dipole, self.model.output_ordering)
+                logger.debug(f"DOF ordering: {[b.dof for b in self.model.basis]}")
 
             if self.to_right:
                 ms, msdim, msqn, compms = select_basis(
@@ -890,7 +905,8 @@ class MatrixProduct:
         new = self.__class__.__new__(self.__class__)
         new._mp = [None] * len(self)
         new.dtype = self.dtype
-        new.model = self.model
+        # With OFS, `model` is a mutable object
+        new.model = self.model.copy()
         # need to deep copy compress_config because threshold might change dynamically
         new.compress_config = self.compress_config.copy()
         new.qn = [qn.copy() for qn in self.qn]

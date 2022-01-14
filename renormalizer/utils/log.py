@@ -19,6 +19,8 @@ def init_log(level=logging.DEBUG):
 
     default_stream_handler.setFormatter(default_formatter)
 
+    default_stream_handler.addFilter(logging.Filter("renormalizer"))
+
     root_logger.addHandler(default_stream_handler)
 
 
@@ -35,6 +37,7 @@ def register_file_output(file_path, mode="w", level=DEBUG):
     file_handler = logging.FileHandler(file_path, mode=mode)
     file_handler.setLevel(level)
     file_handler.setFormatter(default_formatter)
+    file_handler.addFilter(logging.Filter("renormalizer"))
     root_logger.addHandler(file_handler)
 
 

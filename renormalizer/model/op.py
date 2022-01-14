@@ -73,11 +73,14 @@ class Op:
         return Op(symbol, dof_name, factor, qn)
 
     @classmethod
-    def identity(cls):
+    def identity(cls, dof):
         """
-        Construct identity operator. The DoF name is set to ``None``.
+        Construct identity operator.
         """
-        return cls("I", None)
+        if isinstance(dof, list):
+            return cls(" ".join(["I"] * len(dof)), dof)
+        else:
+            return cls("I", dof)
 
     def __init__(self, symbol: str, dof, factor: Union[float, Quantity] = 1.0, qn: Union[List, int] = None):
         # This is one of the most external user interface, so detailed argument checking is necessary

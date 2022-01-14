@@ -1,8 +1,7 @@
 import logging
 import itertools
-from functools import reduce
-from collections import namedtuple
-from typing import List, Union, Set
+from copy import deepcopy
+from typing import List, Union
 
 import numpy as np
 import scipy
@@ -14,7 +13,7 @@ from renormalizer.mps.matrix import moveaxis, tensordot
 from renormalizer.mps.mp import MatrixProduct
 from renormalizer.mps import svd_qn
 from renormalizer.mps.lib import update_cv
-from renormalizer.lib import bipartite_vertex_cover
+from renormalizer.mps.symbolic_mpo import construct_symbolic_mpo, _terms_to_table, symbolic_mo_to_numeric_mo, swap_site
 from renormalizer.utils import Quantity
 from renormalizer.model.op import Op
 from renormalizer.utils.elementop import (
@@ -23,355 +22,6 @@ from renormalizer.utils.elementop import (
 
 
 logger = logging.getLogger(__name__)
-
-def symbolic_mpo(table, factor, algo="Hopcroft-Karp"):
-    r"""
-    A General Compact (Symbolic) MPO Construction Routine
-    
-    Args:
-    
-    table: an operator table with shape (operator nterm, nsite). Each entry contains elementary operators on each site.
-    factor (np.ndarray): one prefactor vector (dim: operator nterm) 
-    algo: the algorithm used to select local ops, "Hopcroft-Karp"(default), "Hungarian".
-          They are both global optimal and have only minor performance difference.
-
-    Note:
-    op with the same op.symbol must have the same op.qn and op.factor
-
-    Return:
-    mpo: symbolic mpo
-    mpoqn: quantum number 
-    qntot: total quantum number of the operator 
-    qnidx: the index of the qn
-
-    The idea: 
-
-    the index of the primary ops {0:"I", 1:"a", 2:r"a^\dagger"}
-    
-    for example: H = 2.0 * a_1 a_2^dagger   + 3.0 * a_2^\dagger a_3 + 4.0*a_0^\dagger a_3
-    The column names are the site indices with 0 and 4 imaginary (see the note below)
-    and the content of the table is the index of primary operators.
-                        s0   s1   s2   s3  s4  factor
-    a_1 a_2^dagger      0    1    2    0   0   2.0
-    a_2^\dagger a_3     0    0    2    1   0   3.0
-    a_1^\dagger a_3     0    2    0    1   0   4.0
-    for convenience the first and last column mean that the operator of the left and right hand of the system is I
-    
-    cut the string to construct the row(left) and column(right) operator and find the duplicated/independent terms 
-                        s0   s1 |  s2   s3  s4 factor
-    a_1 a_2^dagger      0    1  |  2    0   0  2.0
-    a_2^\dagger a_3     0    0  |  2    1   0  3.0
-    a_1^\dagger a_3     0    2  |  0    1   0  4.0
-
-     The content of the table below means matrix elements with basis explained in the notes.
-     In the matrix elements, 1 means combination and 0 means no combination.
-          (2,0,0) (2,1,0) (0,1,0)  -> right side of the above table
-     (0,1)   1       0       0
-     (0,0)   0       1       0
-     (0,2)   0       0       1
-       |
-       v
-     left side of the above table
-     In this case all operators are independent so the content of the matrix is diagonal
-    
-    and select the terms and rearrange the table
-    The selection rule is to find the minimal number of rows+cols that can eliminate the
-    matrix
-                      s1   s2 |  s3 s4 factor
-    a_1 a_2^dagger    0'   2  |  0  0  2.0
-    a_2^\dagger a_3   1'   2  |  1  0  3.0
-    a_1^\dagger a_3   2'   0  |  1  0  4.0
-    0'/1'/2' are three new operators(could be non-elementary)
-    The local mpo is the transformation matrix between 0,0,0 to 0',1',2'.
-    In this case, the local mpo is simply (1, 0, 2)
-    
-    cut the string and find the duplicated/independent terms 
-            (0,0), (1,0)
-     (0',2)   1      0
-     (1',2)   0      1
-     (2',0)   0      1
-    
-    and select the terms and rearrange the table
-    apparently choose the (1,0) column and construct the complementary operator (1',2)+(2',0) is better
-    0'' =  3.0 * (1', 2) + 4.0 * (2', 0)
-                                                 s2     s3 | s4 factor
-    (4.0 * a_1^dagger + 3.0 * a_2^dagger) a_3    0''    1  | 0  1.0
-    a_1 a_2^dagger                               1''    0  | 0  2.0
-    0''/1'' are another two new operators(non-elementary)
-    The local mpo is the transformation matrix between 0',1',2' to 0'',1''
-    
-             (0)
-     (0'',1)  1
-     (1'',0)  1
-    
-    The local mpo is the transformation matrix between 0'',1'' to 0'''
-    """
-
-    # Simplest case. Cut to the chase
-    if len(table) == 1:
-        # The first layer: number of sites. The 2nd and 3rd layer: in and out virtual bond
-        # the 4th layer: operator sums
-        mpo: List[List[List[List[[Op]]]]] = []
-        mpoqn = [[0]]
-        for op in table[0]:
-            mpo.append([[[op]]])
-            qn = mpoqn[-1][0] + op.qn
-            mpoqn.append([qn])
-        old_op = mpo[-1][0][0][0]
-        mpo[-1][0][0][0] = Op(old_op.symbol, old_op.dofs, old_op.factor *
-                factor[0], old_op.qn_list)
-        qntot = qn
-        mpoqn[-1] = [0]
-        qnidx = len(mpo) - 1
-        return mpo, mpoqn, qntot, qnidx
-    
-    # use np.uint32, np.uint16 to save memory
-    max_uint32 = np.iinfo(np.uint32).max
-    max_uint16 = np.iinfo(np.uint16).max
-
-    nsite = len(table[0])
-    logger.debug(f"symbolic mpo algorithm: {algo}")
-    logger.debug(f"Input operator terms: {len(table)}")
-    
-    # translate the symbolic operator table to an easy to manipulate numpy array
-    table = np.array(table)
-    # unique operators with DoF names taken into consideration
-    # The inclusion of DoF names is necessary for multi-dof basis.
-    unique_op: Set[Op] = set(table.ravel())
-    
-    # check the index of different operators could be represented with np.uint16
-    assert len(unique_op) < max_uint16
-    
-    # Construct mapping from easy-to-manipulate integer to actual Op
-    primary_ops = dict(zip(range(len(unique_op)), unique_op))
-    
-    mapping = dict(zip(unique_op, range(len(unique_op))))
-    new_table = np.vectorize(mapping.get)(table).astype(np.uint16)
-    
-    del unique_op
-
-    # combine the same terms but with different factors(add them together)
-    unique_term, unique_inverse = np.unique(new_table, axis=0, return_inverse=True)
-    # it is efficient to vectorize the operation that moves the rows and cols
-    # and sum them together
-    coord = np.array([[newidx, oldidx] for oldidx, newidx in enumerate(unique_inverse)])
-    mask = scipy.sparse.csr_matrix((np.ones(len(coord)), (coord[:,0], coord[:,1])))
-    factor = mask.dot(factor)
-    
-    # add the first and last column for convenience
-    ta = np.zeros((unique_term.shape[0],1),dtype=np.uint16)
-    table = np.concatenate((ta, unique_term, ta), axis=1)
-    logger.debug(f"After combination of the same terms: {table.shape[0]}")
-    # check the index of interaction could be represented with np.uint32
-    assert table.shape[0] < max_uint32
-    
-    del unique_term, unique_inverse
-
-    mpo = []
-    mpoqn = [[0]]
-
-    # The `Op` class is transformed to a light-weight named tuple
-    # for better performance
-    OpTuple = namedtuple("OpTuple", ["symbol", "qn", "factor"])
-
-    # 0 represents the identity symbol. Identity might not present
-    # in `primary_ops` but the algorithm still works.
-
-    in_ops = [[OpTuple([0], qn=0, factor=1)]]
-
-    for isite in range(nsite):
-        # split table into the row and col part
-        term_row, row_unique_inverse = np.unique(table[:,:2], axis=0, return_inverse=True)
-        term_col, col_unique_inverse = np.unique(table[:,2:], axis=0, return_inverse=True)
-        
-        # get the non_redudant ops
-        # the +1 trick is to use the csr sparse matrix format
-        non_red = scipy.sparse.diags(np.arange(1,table.shape[0]+1), format="csr", dtype=np.uint32)
-        coord = np.array([[newidx, oldidx] for oldidx, newidx in enumerate(row_unique_inverse)])
-        mask = scipy.sparse.csr_matrix((np.ones(len(coord), dtype=np.uint32), (coord[:,0], coord[:,1])))
-        non_red = mask.dot(non_red)
-        coord = np.array([[oldidx, newidx] for oldidx, newidx in enumerate(col_unique_inverse)])
-        mask = scipy.sparse.csr_matrix((np.ones(len(coord), dtype=np.uint32), (coord[:,0], coord[:,1])))
-        non_red = non_red.dot(mask)
-        # use sparse matrix to represent non_red will be inefficient a little
-        # bit compared to dense matrix, but saves a lot of memory when the
-        # number of terms is huge
-        # logger.info(f"isite: {isite}, bipartite graph size: {non_red.shape}")
-
-        # select the reserved ops
-        out_ops = []
-        new_table = []
-        new_factor = []
-        
-        bigraph = []
-        if non_red.shape[0] < non_red.shape[1]:
-            for i in range(non_red.shape[0]):
-                bigraph.append(non_red.indices[non_red.indptr[i]:non_red.indptr[i+1]])
-            rowbool, colbool = bipartite_vertex_cover(bigraph, algo=algo)
-        else:
-            non_red_csc = non_red.tocsc()
-            for i in range(non_red.shape[1]):
-                bigraph.append(non_red_csc.indices[non_red_csc.indptr[i]:non_red_csc.indptr[i+1]])
-            colbool, rowbool = bipartite_vertex_cover(bigraph, algo=algo)
-
-        row_select = np.nonzero(rowbool)[0]
-        col_select = np.nonzero(colbool)[0]
-        if len(row_select) > 0:
-            assert np.amax(row_select) < non_red.shape[0]
-        if len(col_select) > 0:
-            assert np.amax(col_select) < non_red.shape[1]
-        
-        for row_idx in row_select:
-            # construct out_op
-            # dealing with row (left side of the table). One row corresponds to multiple cols.
-            # Produce one out operator and multiple new_table entries
-            symbol = term_row[row_idx]
-            qn = in_ops[term_row[row_idx][0]][0].qn + primary_ops[term_row[row_idx][1]].qn
-            out_op = OpTuple(symbol, qn, factor=1.0)
-            out_ops.append([out_op])
-            
-            col_link = non_red.indices[non_red.indptr[row_idx]:non_red.indptr[row_idx+1]]
-            stack = np.array([len(out_ops)-1]*len(col_link), dtype=np.uint16).reshape(-1,1)
-            new_table.append(np.hstack((stack,term_col[col_link])))
-            new_factor.append(factor[non_red[row_idx, col_link].toarray()-1])
-        
-            non_red.data[non_red.indptr[row_idx]:non_red.indptr[row_idx+1]] = 0
-        non_red.eliminate_zeros()
-        
-        nonzero_row_idx, nonzero_col_idx = non_red.nonzero()
-        for col_idx in col_select:
-            
-            out_ops.append([])
-            # complementary operator
-            # dealing with column (right side of the table). One col correspond to multiple rows.
-            # Produce multiple out operators and one new_table entry
-            non_red_one_col = non_red[:, col_idx].toarray().flatten()
-            for i in nonzero_row_idx[np.nonzero(nonzero_col_idx == col_idx)[0]]:
-                symbol = term_row[i]
-                qn = in_ops[term_row[i][0]][0].qn + primary_ops[term_row[i][1]].qn
-                out_op = OpTuple(symbol, qn, factor=factor[non_red_one_col[i]-1])
-                out_ops[-1].append(out_op)
-            
-            new_table.append(np.array([len(out_ops)-1] + list(term_col[col_idx]), dtype=np.uint16).reshape(1,-1))
-            new_factor.append(1.0)
-            
-            # it is not necessary to remove the column nonzero elements
-            #non_red[:, col_idx] = 0
-            #non_red.eliminate_zeros()
-            
-        # translate the numpy array back to symbolic mpo
-        mo = [[[] for o in range(len(out_ops))] for i in range(len(in_ops))]
-        moqn = []
-
-        for iop, out_op in enumerate(out_ops):
-            for composed_op in out_op:
-                in_idx = composed_op.symbol[0]
-                op = primary_ops[composed_op.symbol[1]]
-                if isite != nsite-1:
-                    factor = composed_op.factor
-                else:
-                    factor = composed_op.factor*new_factor[0]
-                mo[in_idx][iop].append(factor * op)
-            moqn.append(out_op[0].qn)
-
-        mpo.append(mo)
-        mpoqn.append(moqn)
-        # reconstruct the table in new operator 
-        table = np.concatenate(new_table)
-        # check the number of incoming operators could be represent as np.uint16
-        assert len(out_ops) <= max_uint16
-        factor = np.concatenate(new_factor, axis=None)
-        #debug
-        #logger.debug(f"in_ops: {in_ops}")
-        #logger.debug(f"out_ops: {out_ops}")
-        #logger.debug(f"new_factor: {new_factor}")
-        
-        in_ops = out_ops
-   
-    qntot = mpoqn[-1][0] 
-    mpoqn[-1] = [0]
-    qnidx = len(mpo)-1
-    
-    return mpo, mpoqn, qntot, qnidx
-
-
-def add_idx(symbol, idx):
-    symbols = symbol.split(" ")
-    for i in range(len(symbols)):
-        symbols[i] = symbols[i]+f"_{idx}"
-    return " ".join(symbols)
-
-
-def _terms_to_table(model: Model, terms: List[Op], const: float):
-    r"""
-    constructing a general operator table
-    according to model.model and model.order
-    """
-    
-    table = []
-    factor_list = []
-
-    dummy_table_entry = [Op.identity()] * model.nsite
-    for op in terms:
-        elem_ops, factor = op.split_elementary(model.dof_to_siteidx)
-        table_entry = dummy_table_entry.copy()
-        for elem_op in elem_ops:
-            # it is ensured in `elem_op` every symbol is on the same site
-            site_idx = model.dof_to_siteidx[elem_op.dofs[0]]
-            table_entry[site_idx] = elem_op
-        table.append(table_entry)
-        factor_list.append(factor)
-        
-    # const
-    if const != 0:
-        table_entry = dummy_table_entry.copy()
-        factor_list.append(const)
-        table.append(table_entry)
-
-    factor_list = np.array(factor_list)
-    logger.debug(f"# of operator terms: {len(table)}")
-
-    return table, factor_list
-
-
-def _format_symbolic_mpo(symbolic_mpo):
-    # debug tool. Used in the comment of Mpo.__init__
-
-    # helper function
-    def format_op(op: Op):
-        op_str = op.symbol
-        op_str = op_str.replace(r"^\dagger", "†")
-        if op.factor != 1:
-            op_str = f"{op.factor:.1e} * " + op_str
-        return op_str
-    result_str_list = []
-    # print the MPO sites one by one
-    for mo in symbolic_mpo:
-        # firstly convert the site into an array of strings
-        mo_str_array = np.full((len(mo), len(mo[0])), None)
-        for irol, row in enumerate(mo):
-            for icol, terms in enumerate(row):
-                if len(terms) == 0:
-                    terms_str = "0"
-                else:
-                    terms_str = " + ".join(format_op(op) for op in terms)
-                mo_str_array[irol][icol] = terms_str
-        # array of element length
-        mo_str_length = np.vectorize(lambda x: len(x))(mo_str_array)
-        max_length_per_col = mo_str_length.max(axis=0)
-        # format each line
-        lines = []
-        for row in mo_str_array:
-            terms_with_space = [term + " " * (max_length_per_col[icol] - len(term)) for icol, term in enumerate(row)]
-            row_str = "   ".join(terms_with_space)
-            lines.append("│ " + row_str + " │")
-        # make it prettier
-        if len(lines) != 1:
-            lines[0]  = "┏" + lines[0][1:-1]  + "┓"
-            lines[-1] = "┗" + lines[-1][1:-1] + "┛"
-        # str of a single mo
-        result_str_list.append("\n".join(lines))
-    return "\n".join(result_str_list)
 
 
 class Mpo(MatrixProduct):
@@ -427,9 +77,7 @@ class Mpo(MatrixProduct):
                     mpo.append(mo)
 
                 elif space == "GS":
-                    anharmo = False
-                    # for the ground state space, yet doesn't support 3rd force
-                    # potential quasiboson algorithm
+                    # for the ground state space
                     ph_pbond = ph.pbond
                     d = np.exp(
                             x
@@ -626,27 +274,16 @@ class Mpo(MatrixProduct):
 
         self.dtype = factor.dtype
 
-        mpo_symbol, mpo_qn, qntot, qnidx = symbolic_mpo(table, factor)
+        mpo_symbol, self.qn, self.qntot, self.qnidx, self.symbolic_out_ops_list, self.primary_ops = construct_symbolic_mpo(table, factor)
         # print(_format_symbolic_mpo(mpo_symbol))
         self.model = model
-        self.qnidx = qnidx
-        self.qntot = qntot
-        self.qn = mpo_qn
         self.to_right = False
 
         # evaluate the symbolic mpo
         assert model.basis is not None
-        basis = model.basis
 
         for impo, mo in enumerate(mpo_symbol):
-            pdim = basis[impo].nbas
-            nrow, ncol = len(mo), len(mo[0])
-            mo_mat = np.zeros((nrow, pdim, pdim, ncol), dtype=self.dtype)
-
-            for irow, icol in itertools.product(range(nrow), range(ncol)):
-                for term in mo[irow][icol]:
-                    mo_mat[irow,:,:,icol] += basis[impo].op_mat(term)
-
+            mo_mat = symbolic_mo_to_numeric_mo(model.basis[impo], mo, self.dtype)
             self.append(mo_mat)
 
 
@@ -669,10 +306,10 @@ class Mpo(MatrixProduct):
     def metacopy(self):
         new = super().metacopy()
         # some mpo may not have these things
-        attrs = ["scheme", "offset"]
+        attrs = ["scheme", "offset", "symbolic_out_ops_list", "primary_ops"]
         for attr in attrs:
             if hasattr(self, attr):
-                setattr(new, attr, getattr(self, attr))
+                setattr(new, attr, deepcopy(getattr(self, attr)))
         return new
 
     @property
@@ -781,6 +418,34 @@ class Mpo(MatrixProduct):
             assert False
 
         return new_mps
+
+    def try_swap_site(self, new_model: Model, swap_jw: bool):
+        # in place swapping.
+        # if swap_jw is set to True, then self.primary_ops is modified in place
+        diffs = []
+        for i, (b1, b2) in enumerate(zip(self.model.basis, new_model.basis)):
+            if b1.dofs != b2.dofs:
+                diffs.append(i)
+        if len(diffs) == 0:
+            logger.debug("MPO: No need to swap")
+            return
+        assert len(diffs) == 2
+        i, j = min(diffs), max(diffs)
+        assert j - i == 1
+        logger.debug(f"MPO: swaping {i} and {j}")
+        # although usually the `model` of MPO does not store `mpos`
+        new_model.mpos.clear()
+
+        out_ops2, out_ops3, mo1, mo2, qn = swap_site(self.symbolic_out_ops_list[i:i+3], self.primary_ops, swap_jw)
+
+        self.symbolic_out_ops_list[i+1] = out_ops2
+        self.symbolic_out_ops_list[i+2] = out_ops3
+        self.model = new_model
+        self.qn[i+1] = qn
+
+        for impo, mo in zip([i, j], [mo1, mo2]):
+            self[impo] = symbolic_mo_to_numeric_mo(new_model.basis[impo], mo, self.dtype)
+        logger.debug(self)
 
     def conj_trans(self):
         new_mpo = self.metacopy()

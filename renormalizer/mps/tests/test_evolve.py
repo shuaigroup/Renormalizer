@@ -1,13 +1,19 @@
 # -*- coding: utf-8 -*-
 # Author: Jiajun Ren <jiajunren0522@gmail.com>
 
+import logging
+
 import qutip
 import pytest
 import numpy as np
 
+from renormalizer.model import Model
 from renormalizer.mps import Mps, Mpo, MpDm
-from renormalizer.utils import EvolveMethod, EvolveConfig, CompressConfig, CompressCriteria, Quantity
+from renormalizer.utils import EvolveMethod, EvolveConfig, CompressConfig, CompressCriteria, Quantity, OFS
 from renormalizer.tests.parameter_exact import qutip_clist, qutip_h, model
+
+
+logger = logging.getLogger(__file__)
 
 
 # the init state
@@ -49,6 +55,7 @@ def check_result(mps, mpo, time_step, final_time, atol=1e-4):
     qutip_interval = round(time_step / QUTIP_STEP)
     # used for debugging
     mcd = np.abs(expectations - qutip_expectations[:qutip_end:qutip_interval]).mean()
+    logger.info(f"mean cumulated deviation: {mcd}")
     assert mcd < atol
     # return mps for possible further analysis
     return mps
@@ -108,6 +115,23 @@ def test_tdvp_ps2(init_state, mpo):
     # lower accuracy because of the truncation,
     # which is included to test the ability of adjusting bond dimension
     mps = check_result(mps, mpo, 0.4, 5, atol=5e-4)
+    assert max(mps.bond_dims) == 5
+
+
+@pytest.mark.parametrize("init_state, mpo", (
+        [init_mps, mpo],
+        [init_mpdm, mpo],
+))
+def test_ofs(init_state, mpo):
+    mps = init_state.copy()
+    # transform from HolsteinModel to the general Model
+    mps.model = Model(mps.model.basis, mps.model.ham_terms)
+    # avoid the side-effect of OFS
+    mpo = mpo.copy()
+    mps.evolve_config  = EvolveConfig(EvolveMethod.tdvp_ps2)
+    mps.compress_config = CompressConfig(max_bonddim=5, ofs=OFS.ofs_s)
+    # same truncation, yet more accurate than simple tdvp-ps2
+    mps = check_result(mps, mpo, 0.4, 5, atol=1e-4)
     assert max(mps.bond_dims) == 5
 
 # used for debugging
