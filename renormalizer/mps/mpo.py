@@ -454,7 +454,7 @@ class Mpo(MatrixProduct):
         new_mpo.qn = [[-i for i in mt_qn] for mt_qn in new_mpo.qn]
         return new_mpo
 
-    def full_operator(self):
+    def todense(self):
         dim = np.prod(self.pbond_list)
         if 20000 < dim:
             raise ValueError("operator too large")
@@ -467,7 +467,7 @@ class Mpo(MatrixProduct):
         return res[0, :, :, 0]
 
     def is_hermitian(self):
-        full = self.full_operator()
+        full = self.todense()
         return np.allclose(full.conj().T, full, atol=1e-7)
 
     def __matmul__(self, other):

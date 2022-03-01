@@ -30,7 +30,7 @@ def f(model, run_qutip=True):
         QUTIP_STEP = 0.01
         N_POINTS = int(TIME_LIMIT / QUTIP_STEP + 1)
         qutip_time_series = np.linspace(0, TIME_LIMIT, N_POINTS)
-        init = qutip.Qobj(init_mps.full_wfn(), [qutip_h.dims[0], [1] * len(qutip_h.dims[0])])
+        init = qutip.Qobj(init_mps.todense(), [qutip_h.dims[0], [1] * len(qutip_h.dims[0])])
         # the result is not exact and the error scale is approximately 1e-5
         res = qutip.sesolve(qutip_h-e, init, qutip_time_series, e_ops=[c.dag() * c for c in qutip_clist])
         qutip_expectations = np.array(res.expect).T

@@ -365,6 +365,26 @@ class Mps(MatrixProduct):
             raise ValueError(f"Unknown dump version: {version}")
         return mp
 
+    @classmethod
+    def from_dense(cls, model, wfn: np.ndarray):
+        # for debugging
+        mp = cls()
+        mp.model = model
+        if np.iscomplexobj(wfn):
+            mp.dtype = backend.complex_dtype
+        else:
+            mp.dtype = backend.real_dtype
+        residual_wfn = wfn.reshape([1] + [b.nbas for b in model.basis] + [1])
+        for i in range(len(model.basis) - 1):
+            wfn_2d = residual_wfn.reshape(residual_wfn.shape[0] * residual_wfn.shape[1], -1)
+            q, r = np.linalg.qr(wfn_2d)
+            mp.append(q.reshape(residual_wfn.shape[0], residual_wfn.shape[1], q.shape[1]))
+            residual_wfn = r.reshape([r.shape[0]] + list(residual_wfn.shape[2:]))
+        assert residual_wfn.ndim == 3
+        mp.append(residual_wfn)
+        mp.build_empty_qn()
+        return mp
+
     def __init__(self):
         super().__init__()
         self.coeff: Union[float, complex] = 1
@@ -1277,6 +1297,7 @@ class Mps(MatrixProduct):
 
     @property
     def digest(self):
+        # used for debugging. Mostly for quickly comparing how two MPSs differ.
         if 10 < self.site_num or self.is_mpdm:
             return None
         prod = np.eye(1).reshape(1, 1, 1)
@@ -1285,7 +1306,7 @@ class Mps(MatrixProduct):
             prod = prod.reshape((prod.shape[0], -1, prod.shape[-1]))
         return {"var": prod.var(), "mean": prod.mean(), "ptp": prod.ptp()}
 
-    def full_wfn(self) -> np.array:
+    def todense(self) -> np.array:
         dim = np.prod(self.pbond_list)
         if 20000 < dim:
             raise ValueError("wavefunction too large")

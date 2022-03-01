@@ -30,8 +30,8 @@ def test_save_load():
 def check_distance(a: Mps, b: Mps):
     d1 = (a - b).dmrg_norm
     d2 = a.distance(b)
-    a_array = a.full_wfn()
-    b_array = b.full_wfn()
+    a_array = a.todense()
+    b_array = b.todense()
     d3 = np.linalg.norm(a_array - b_array)
     assert d1 == pytest.approx(d2) == pytest.approx(d3)
 
