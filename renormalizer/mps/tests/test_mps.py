@@ -70,6 +70,7 @@ def test_reduced_density_matrix():
              BasisMultiElectronVac([2, 3]), BasisSHO("v2", 1, 2), BasisSHO("v3", 1, 2)]
     check_reduced_density_matrix(basis)
 
+
 def test_site_entropy():
     mps = Mps.random(parameter.holstein_model, 1, 20)
     mps.canonicalise().normalize()
@@ -83,3 +84,11 @@ def test_site_entropy():
     assert np.allclose(entropy_bond[-2], entropy_2site[(mps.site_num-2, mps.site_num-1)])
     assert np.allclose(entropy_mutual[0,1],
             (entropy_1site[0]+entropy_1site[1]-entropy_2site[(0,1)])/2)
+
+
+def test_load_from_dense_wfn():
+    model = Model(basis=[BasisSimpleElectron(i) for i in range(5)], ham_terms=[])
+    ref_mps = Mps.random(model, 1, 20)
+    dense_wfn = ref_mps.todense()
+    loaded_mps = Mps.from_dense(model, dense_wfn)
+    assert np.allclose(dense_wfn, loaded_mps.todense())

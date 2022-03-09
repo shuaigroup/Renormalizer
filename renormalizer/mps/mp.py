@@ -32,6 +32,24 @@ logger = logging.getLogger(__name__)
 
 class MatrixProduct:
 
+    @classmethod
+    def load(cls, model: Model, fname: str):
+        npload = np.load(fname, allow_pickle=True)
+        mp = cls()
+        mp.model = model
+        for i in range(int(npload["nsites"])):
+            mt = npload[f"mt_{i}"]
+            if np.iscomplexobj(mt):
+                mp.dtype = backend.complex_dtype
+            else:
+                mp.dtype = backend.real_dtype
+            mp.append(mt)
+        mp.qn = npload["qn"]
+        mp.qnidx = int(npload["qnidx"])
+        mp.qntot = int(npload["qntot"])
+        mp.to_right = bool(npload["to_right"])
+        return mp
+
     def __init__(self):
         # XXX: when modify theses codes, keep in mind to update `metacopy` method
         # set to a list of None upon metacopy. String is used when the matrix is
@@ -974,24 +992,6 @@ class MatrixProduct:
             np.savez(fname, **data_dict)
         except Exception:
             logger.exception(f"Dump MP failed.")
-    
-    @classmethod
-    def load(cls, model: Model, fname: str):
-        npload = np.load(fname, allow_pickle=True)
-        mp = cls()
-        mp.model = model
-        for i in range(int(npload["nsites"])):
-            mt = npload[f"mt_{i}"]
-            if np.iscomplexobj(mt):
-                mp.dtype = backend.complex_dtype
-            else:
-                mp.dtype = backend.real_dtype
-            mp.append(mt)
-        mp.qn = npload["qn"]
-        mp.qnidx = int(npload["qnidx"])
-        mp.qntot = int(npload["qntot"])
-        mp.to_right = bool(npload["to_right"])
-        return mp
 
     @property
     def total_bytes(self):

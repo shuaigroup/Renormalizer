@@ -47,6 +47,10 @@ class MpDm(Mps, Mpo):
         return mpo
 
     @classmethod
+    def from_dense(cls, model, wfn: np.ndarray):
+        raise NotImplementedError
+
+    @classmethod
     def max_entangled_ex(cls, model, normalize=True):
         """
         T = \\infty locally maximal entangled EX state
@@ -78,8 +82,9 @@ class MpDm(Mps, Mpo):
         new_mpdm.coeff *= np.exp(-1.0j * h_mpo.offset * evolve_dt)
         return new_mpdm
 
-    def full_wfn(self):
-        raise NotImplementedError("Use full_operator on Matrix Product Density Matrix")
+    def todense(self):
+        # explicitly call to MPO because MPS is firstly inherited
+        return Mpo.todense(self)
 
     @property
     def is_mps(self):

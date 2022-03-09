@@ -35,7 +35,7 @@ def test_symbolic_mpo(nsites, nterms):
     basis = [BasisHalfSpin(i) for i in range(nsites)]
     model = Model(basis, ham_terms)
     mpo = Mpo(model)
-    dense_mpo = mpo.full_operator()
+    dense_mpo = mpo.todense()
     qutip_ham = get_spin_hamiltonian(ham_terms)
     assert np.allclose(dense_mpo, qutip_ham.data.todense())
 
@@ -65,8 +65,8 @@ def test_swap_symbolic_mpo(nsites, nterms):
         new_model = Model(basis, ham_terms)
         mpo.try_swap_site(new_model, False)
         ref_mpo = Mpo(new_model)
-        mpo_dense = mpo.full_operator()
-        ref_dense = ref_mpo.full_operator()
+        mpo_dense = mpo.todense()
+        ref_dense = ref_mpo.todense()
         assert np.allclose(mpo_dense, ref_dense)
 
 
@@ -86,11 +86,11 @@ def test_offset(scheme):
     mlist = HolsteinModel([m] * 2, Quantity(17), )
     mpo1 = Mpo(mlist)
     assert mpo1.is_hermitian()
-    f1 = mpo1.full_operator()
+    f1 = mpo1.todense()
     evals1, _ = np.linalg.eigh(f1)
     offset = Quantity(0.123)
     mpo2 = Mpo(mlist, offset=offset)
-    f2 = mpo2.full_operator()
+    f2 = mpo2.todense()
     evals2, _ = np.linalg.eigh(f2)
     assert np.allclose(evals1 - offset.as_au(), evals2)
 
@@ -110,7 +110,7 @@ def test_scheme4():
     mpo4 = Mpo(model4)
     assert mpo4.is_hermitian()
     # for debugging
-    f = mpo4.full_operator()
+    f = mpo4.todense()
     mpo3 = Mpo(model3)
     assert mpo3.is_hermitian()
     # makeup two states
