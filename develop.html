@@ -1,0 +1,309 @@
+
+
+<!DOCTYPE html>
+<html class="writer-html5" lang="en" >
+<head>
+  <meta charset="utf-8" />
+  
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  
+  <title>3. How to develop Renormalizer &mdash; Renormalizer 0.1.0 documentation</title>
+  
+
+  
+  <link rel="stylesheet" href="_static/css/theme.css" type="text/css" />
+  <link rel="stylesheet" href="_static/pygments.css" type="text/css" />
+  <link rel="stylesheet" href="_static/pygments.css" type="text/css" />
+  <link rel="stylesheet" href="_static/css/theme.css" type="text/css" />
+
+  
+  
+
+  
+  
+
+  
+
+  
+  <!--[if lt IE 9]>
+    <script src="_static/js/html5shiv.min.js"></script>
+  <![endif]-->
+  
+    
+      <script type="text/javascript" id="documentation_options" data-url_root="./" src="_static/documentation_options.js"></script>
+        <script data-url_root="./" id="documentation_options" src="_static/documentation_options.js"></script>
+        <script src="_static/jquery.js"></script>
+        <script src="_static/underscore.js"></script>
+        <script src="_static/doctools.js"></script>
+    
+    <script type="text/javascript" src="_static/js/theme.js"></script>
+
+    
+    <link rel="index" title="Index" href="genindex.html" />
+    <link rel="search" title="Search" href="search.html" />
+    <link rel="next" title="4. Tutorial" href="tutorial.html" />
+    <link rel="prev" title="2. Installation guide" href="install.html" /> 
+</head>
+
+<body class="wy-body-for-nav">
+
+   
+  <div class="wy-grid-for-nav">
+    
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search" >
+          
+
+          
+            <a href="index.html" class="icon icon-home"> Renormalizer
+          
+
+          
+          </a>
+
+          
+            
+            
+              <div class="version">
+                0.1
+              </div>
+            
+          
+
+          
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+
+          
+        </div>
+
+        
+        <div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="main navigation">
+          
+            
+            
+              
+            
+            
+              <ul class="current">
+<li class="toctree-l1"><a class="reference internal" href="overview.html">1. An overview of Renormalizer</a></li>
+<li class="toctree-l1"><a class="reference internal" href="install.html">2. Installation guide</a></li>
+<li class="toctree-l1 current"><a class="current reference internal" href="#">3. How to develop Renormalizer</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="#development-process">3.1. Development Process</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#stylistic-guidelines">3.2. Stylistic Guidelines</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#common-mistakes-during-development">3.3. Common Mistakes during Development</a></li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="tutorial.html">4. Tutorial</a></li>
+<li class="toctree-l1"><a class="reference internal" href="model.html">5. Model</a></li>
+<li class="toctree-l1"><a class="reference internal" href="mps.html">6. Low Level Data Structure and Algorithms</a></li>
+<li class="toctree-l1"><a class="reference internal" href="static.html">7. Static Eigenstate Method</a></li>
+<li class="toctree-l1"><a class="reference internal" href="spectrum.html">8. spectra: absorption/emission spectrum at zero/finite temperature</a></li>
+<li class="toctree-l1"><a class="reference internal" href="ct.html">9. Charge Transport</a></li>
+<li class="toctree-l1"><a class="reference internal" href="cv.html">10. Frequency domain DMRG</a></li>
+<li class="toctree-l1"><a class="reference internal" href="configs.html">11. Calculation Configurations</a></li>
+<li class="toctree-l1"><a class="reference internal" href="lib.html">12. lib</a></li>
+<li class="toctree-l1"><a class="reference internal" href="sbm.html">13. sbm</a></li>
+</ul>
+
+            
+          
+        </div>
+        
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap">
+
+      
+      <nav class="wy-nav-top" aria-label="top navigation">
+        
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="index.html">Renormalizer</a>
+        
+      </nav>
+
+
+      <div class="wy-nav-content">
+        
+        <div class="rst-content">
+        
+          
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+<div role="navigation" aria-label="breadcrumbs navigation">
+
+  <ul class="wy-breadcrumbs">
+    
+      <li><a href="index.html" class="icon icon-home"></a> &raquo;</li>
+        
+      <li><span class="section-number">3. </span>How to develop Renormalizer</li>
+    
+    
+      <li class="wy-breadcrumbs-aside">
+        
+          
+            <a href="_sources/develop.md.txt" rel="nofollow"> View page source</a>
+          
+        
+      </li>
+    
+  </ul>
+
+  
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+            
+  <div class="section" id="how-to-develop-renormalizer">
+<h1><span class="section-number">3. </span>How to develop Renormalizer<a class="headerlink" href="#how-to-develop-renormalizer" title="Permalink to this headline">¶</a></h1>
+<p>The development protocol is very similar in all <code class="docutils literal notranslate"><span class="pre">Git</span></code> projects.
+For reference, you can check out the <a class="reference external" href="https://docs.scipy.org/doc/numpy/dev/">development guide of NumPy</a>.</p>
+<div class="section" id="development-process">
+<h2><span class="section-number">3.1. </span>Development Process<a class="headerlink" href="#development-process" title="Permalink to this headline">¶</a></h2>
+<p>You can hardly use <code class="docutils literal notranslate"><span class="pre">Git</span></code> effectively if you have no idea how it works. There are several ways to learn:</p>
+<ul class="simple">
+<li><p>Read the first 3 chapters of the <a class="reference external" href="https://git-scm.com/book/en/v2"><em>Pro Git</em> book</a>.</p></li>
+<li><p>Read all of <a class="reference external" href="https://www.liaoxuefeng.com/wiki/896043488029600">Git tutorial by Xuefeng Liao</a> which is in Chinese.</p></li>
+</ul>
+<hr class="docutils" />
+<p>Let’s start with the first and most important rule:</p>
+<p><strong>DO NOT PUSH TO THE MASTER BRANCH</strong>.</p>
+<p>Why? Keep on reading and you’ll know. Actually, we’ve protected the master branch so that you can’t push to it.
+For a large project, this rule must be followed even for the owner of the project.</p>
+<p>If nobody is allowed to push to the master branch, how is it possible to develop the branch?
+The code in the master branch is updated by <em>merging</em> commits from other branches.</p>
+<p>Suppose now you have just cloned the whole package and are in the master branch,
+the first thing you need to do is to create a new branch for yourself and switch to that branch.
+This can be done in a single command assuming you wish to name the new branch <code class="docutils literal notranslate"><span class="pre">develop</span></code>:</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="n">git</span> <span class="n">checkout</span> <span class="o">-</span><span class="n">b</span> <span class="n">develop</span>
+</pre></div>
+</div>
+<p>Now you can make any modifications you like and commit them to your branch.
+<strong>After</strong> you have <strong>committed</strong> all you want, you can merge all changes to the master following the procedures below:</p>
+<ol>
+<li><p>Check if your branch is working by running <code class="docutils literal notranslate"><span class="pre">pytest</span></code> under the root directory.</p></li>
+<li><p>Push your local branch to the <code class="docutils literal notranslate"><span class="pre">GitHub</span></code> server:</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="n">git</span> <span class="n">push</span> <span class="n">origin</span> <span class="n">develop</span>
+</pre></div>
+</div>
+</li>
+<li><p>Create a <em>Pull Request (PR)</em> for your branch. This is done in the <code class="docutils literal notranslate"><span class="pre">GitHub</span></code> web pages. Near the button to choose the currently shown branches you can find another button called <code class="docutils literal notranslate"><span class="pre">New</span> <span class="pre">pull</span> <span class="pre">request</span></code>. Write helpful information when creating
+the PR.</p></li>
+<li><p>Check the status of the tests. These tests must all pass.</p></li>
+<li><p>If anything went wrong with the tests or you want to further modify your codes, don’t worry - it’s perfectly common.
+You can continue your local development as usual and push them to your remote branch, after that, your PR will be automatically updated and all tests will be run again.</p></li>
+<li><p>Wait for a reviewer to review and approve your code. Then the reviewer will merge your code for you if he’s OK with your implementation.</p></li>
+</ol>
+<p>Now you can do anything you want with your branch. Delete them, rename them, commit new codes, anything you like.
+It’s not related to the master branch anymore.
+You can continue your development on your branch and submit another PR after a while,
+or you can start a new branch.</p>
+<p>You can compare this approach with the directly-push-to-master way. Which one is more safe and easier to manage if there are lots of contributors? IMO, the benefits of all the fuss are:</p>
+<ul class="simple">
+<li><p>The master branch is always stable. It is guaranteed that anyone at any time is able to get a working version of Renormalizer by cloning the master branch.</p></li>
+<li><p>The conflicts between different commits are mitigated. Suppose someone modified a lib function and commit to master before you, your commit might not work on the latest master branch although it might work on your local machine. This can be avoided with PR where the merged branch is also tested.</p></li>
+<li><p>You’re allowed to modify the history of your commits. The history of the master branch shall not be modified but you can do anything you like in your own branch.</p></li>
+<li><p>Changes in the code are dressed with contexts. In PRs there will be more explanations, discussions and cross-reference with other issues and PRs. This will help other people and your future self understand the code.</p></li>
+</ul>
+<p>There is a <a class="reference external" href="https://liwt31.github.io/2019/09/01/nopush/">blog post</a> on why you shouldn’t push to master.</p>
+</div>
+<div class="section" id="stylistic-guidelines">
+<h2><span class="section-number">3.2. </span>Stylistic Guidelines<a class="headerlink" href="#stylistic-guidelines" title="Permalink to this headline">¶</a></h2>
+<p>The style of the code (naming conventions, etc) follows <a class="reference external" href="https://www.python.org/dev/peps/pep-0008/">PEP 8</a>
+and you can find an explanation with better readability <a class="reference external" href="https://pep8.org/">here</a>. Some most important things:</p>
+<ul>
+<li><p>Use 4 spaces, not tab, for indentation.</p></li>
+<li><p>Function names and variables should be lowercase, with words separated by underscores as necessary.</p></li>
+<li><p>Class names should normally use the CapWords convention.</p></li>
+<li><p>Imports should be grouped in the following order:</p>
+<ol class="simple">
+<li><p>Standard library imports.</p></li>
+<li><p>Related third party imports.</p></li>
+<li><p>Local application/library specific imports.</p></li>
+</ol>
+<p>You should put a blank line between each group of imports.</p>
+</li>
+</ul>
+<p>Automatic style checking is enabled in common IDEs such as PyCharm and there are <a class="reference external" href="https://github.com/nvie/vim-flake8">plugins for vim</a>. You can also format your code with <a class="reference external" href="https://github.com/psf/black"><code class="docutils literal notranslate"><span class="pre">Black</span></code></a>.</p>
+</div>
+<div class="section" id="common-mistakes-during-development">
+<h2><span class="section-number">3.3. </span>Common Mistakes during Development<a class="headerlink" href="#common-mistakes-during-development" title="Permalink to this headline">¶</a></h2>
+<p>A list of mistakes that the developers have made multiple times previously</p>
+<ul class="simple">
+<li><p>Forget to convert from float datatype to complex datatype. Usually NumPy will issue a warning.</p></li>
+</ul>
+</div>
+</div>
+
+
+           </div>
+           
+          </div>
+          <footer>
+    <div class="rst-footer-buttons" role="navigation" aria-label="footer navigation">
+        <a href="tutorial.html" class="btn btn-neutral float-right" title="4. Tutorial" accesskey="n" rel="next">Next <span class="fa fa-arrow-circle-right" aria-hidden="true"></span></a>
+        <a href="install.html" class="btn btn-neutral float-left" title="2. Installation guide" accesskey="p" rel="prev"><span class="fa fa-arrow-circle-left" aria-hidden="true"></span> Previous</a>
+    </div>
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>
+        &#169; Copyright 2019, Shuaigroup.
+
+    </p>
+  </div>
+    
+    
+    
+    Built with <a href="https://www.sphinx-doc.org/">Sphinx</a> using a
+    
+    <a href="https://github.com/readthedocs/sphinx_rtd_theme">theme</a>
+    
+    provided by <a href="https://readthedocs.org">Read the Docs</a>. 
+
+</footer>
+        </div>
+      </div>
+
+    </section>
+
+  </div>
+  
+
+  <script type="text/javascript">
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script>
+
+  
+  
+    
+   
+
+</body>
+</html>

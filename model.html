@@ -1,0 +1,1616 @@
+
+
+<!DOCTYPE html>
+<html class="writer-html5" lang="en" >
+<head>
+  <meta charset="utf-8" />
+  
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  
+  <title>5. Model &mdash; Renormalizer 0.1.0 documentation</title>
+  
+
+  
+  <link rel="stylesheet" href="_static/css/theme.css" type="text/css" />
+  <link rel="stylesheet" href="_static/pygments.css" type="text/css" />
+  <link rel="stylesheet" href="_static/pygments.css" type="text/css" />
+  <link rel="stylesheet" href="_static/css/theme.css" type="text/css" />
+
+  
+  
+
+  
+  
+
+  
+
+  
+  <!--[if lt IE 9]>
+    <script src="_static/js/html5shiv.min.js"></script>
+  <![endif]-->
+  
+    
+      <script type="text/javascript" id="documentation_options" data-url_root="./" src="_static/documentation_options.js"></script>
+        <script data-url_root="./" id="documentation_options" src="_static/documentation_options.js"></script>
+        <script src="_static/jquery.js"></script>
+        <script src="_static/underscore.js"></script>
+        <script src="_static/doctools.js"></script>
+        <script async="async" src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-mml-chtml.js"></script>
+    
+    <script type="text/javascript" src="_static/js/theme.js"></script>
+
+    
+    <link rel="index" title="Index" href="genindex.html" />
+    <link rel="search" title="Search" href="search.html" />
+    <link rel="next" title="6. Low Level Data Structure and Algorithms" href="mps.html" />
+    <link rel="prev" title="4. Tutorial" href="tutorial.html" /> 
+</head>
+
+<body class="wy-body-for-nav">
+
+   
+  <div class="wy-grid-for-nav">
+    
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search" >
+          
+
+          
+            <a href="index.html" class="icon icon-home"> Renormalizer
+          
+
+          
+          </a>
+
+          
+            
+            
+              <div class="version">
+                0.1
+              </div>
+            
+          
+
+          
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+
+          
+        </div>
+
+        
+        <div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="main navigation">
+          
+            
+            
+              
+            
+            
+              <ul class="current">
+<li class="toctree-l1"><a class="reference internal" href="overview.html">1. An overview of Renormalizer</a></li>
+<li class="toctree-l1"><a class="reference internal" href="install.html">2. Installation guide</a></li>
+<li class="toctree-l1"><a class="reference internal" href="develop.html">3. How to develop Renormalizer</a></li>
+<li class="toctree-l1"><a class="reference internal" href="tutorial.html">4. Tutorial</a></li>
+<li class="toctree-l1 current"><a class="current reference internal" href="#">5. Model</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="#the-model-classes">5.1. The Model classes</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#basis-functions">5.2. Basis Functions</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#the-operator-class">5.3. The Operator Class</a></li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="mps.html">6. Low Level Data Structure and Algorithms</a></li>
+<li class="toctree-l1"><a class="reference internal" href="static.html">7. Static Eigenstate Method</a></li>
+<li class="toctree-l1"><a class="reference internal" href="spectrum.html">8. spectra: absorption/emission spectrum at zero/finite temperature</a></li>
+<li class="toctree-l1"><a class="reference internal" href="ct.html">9. Charge Transport</a></li>
+<li class="toctree-l1"><a class="reference internal" href="cv.html">10. Frequency domain DMRG</a></li>
+<li class="toctree-l1"><a class="reference internal" href="configs.html">11. Calculation Configurations</a></li>
+<li class="toctree-l1"><a class="reference internal" href="lib.html">12. lib</a></li>
+<li class="toctree-l1"><a class="reference internal" href="sbm.html">13. sbm</a></li>
+</ul>
+
+            
+          
+        </div>
+        
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap">
+
+      
+      <nav class="wy-nav-top" aria-label="top navigation">
+        
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="index.html">Renormalizer</a>
+        
+      </nav>
+
+
+      <div class="wy-nav-content">
+        
+        <div class="rst-content">
+        
+          
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+<div role="navigation" aria-label="breadcrumbs navigation">
+
+  <ul class="wy-breadcrumbs">
+    
+      <li><a href="index.html" class="icon icon-home"></a> &raquo;</li>
+        
+      <li><span class="section-number">5. </span>Model</li>
+    
+    
+      <li class="wy-breadcrumbs-aside">
+        
+          
+            <a href="_sources/model.rst.txt" rel="nofollow"> View page source</a>
+          
+        
+      </li>
+    
+  </ul>
+
+  
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+            
+  <div class="section" id="model">
+<h1><span class="section-number">5. </span>Model<a class="headerlink" href="#model" title="Permalink to this headline">¶</a></h1>
+<p>Use the <a class="reference internal" href="#renormalizer.model.Model" title="renormalizer.model.Model"><code class="xref py py-class docutils literal notranslate"><span class="pre">Model</span></code></a> classes to define the system to be calculated.
+We provide the Holstein model <a class="reference internal" href="#renormalizer.model.HolsteinModel" title="renormalizer.model.HolsteinModel"><code class="xref py py-class docutils literal notranslate"><span class="pre">renormalizer.model.HolsteinModel</span></code></a>
+and the spin-boson model <a class="reference internal" href="#renormalizer.model.SpinBosonModel" title="renormalizer.model.SpinBosonModel"><code class="xref py py-class docutils literal notranslate"><span class="pre">SpinBosonModel</span></code></a> out of box, yet any arbitrary model
+with sum-of-product Hamiltonian
+can be constructed by using the most general <a class="reference internal" href="#renormalizer.model.Model" title="renormalizer.model.Model"><code class="xref py py-class docutils literal notranslate"><span class="pre">Model</span></code></a> class.
+These classes require <a class="reference internal" href="#renormalizer.model.basis.BasisSet" title="renormalizer.model.basis.BasisSet"><code class="xref py py-class docutils literal notranslate"><span class="pre">BasisSet</span></code></a> and <a class="reference internal" href="#renormalizer.model.Op" title="renormalizer.model.Op"><code class="xref py py-class docutils literal notranslate"><span class="pre">Op</span></code></a>
+as input.</p>
+<div class="section" id="the-model-classes">
+<h2><span class="section-number">5.1. </span>The Model classes<a class="headerlink" href="#the-model-classes" title="Permalink to this headline">¶</a></h2>
+<dl class="py class">
+<dt class="sig sig-object py" id="renormalizer.model.Model">
+<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">renormalizer.model.</span></span><span class="sig-name descname"><span class="pre">Model</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">basis</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference external" href="https://docs.python.org/3/library/typing.html#typing.List" title="(in Python v3.10)"><span class="pre">List</span></a><span class="p"><span class="pre">[</span></span><a class="reference internal" href="#renormalizer.model.basis.BasisSet" title="renormalizer.model.basis.BasisSet"><span class="pre">renormalizer.model.basis.BasisSet</span></a><span class="p"><span class="pre">]</span></span></span></em>, <em class="sig-param"><span class="n"><span class="pre">ham_terms</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference external" href="https://docs.python.org/3/library/typing.html#typing.List" title="(in Python v3.10)"><span class="pre">List</span></a><span class="p"><span class="pre">[</span></span><a class="reference internal" href="#renormalizer.model.Op" title="renormalizer.model.op.Op"><span class="pre">renormalizer.model.op.Op</span></a><span class="p"><span class="pre">]</span></span></span></em>, <em class="sig-param"><span class="n"><span class="pre">dipole</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference external" href="https://docs.python.org/3/library/typing.html#typing.Optional" title="(in Python v3.10)"><span class="pre">Optional</span></a><span class="p"><span class="pre">[</span></span><a class="reference external" href="https://docs.python.org/3/library/typing.html#typing.Dict" title="(in Python v3.10)"><span class="pre">Dict</span></a><span class="p"><span class="pre">]</span></span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">output_ordering</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference external" href="https://docs.python.org/3/library/typing.html#typing.Optional" title="(in Python v3.10)"><span class="pre">Optional</span></a><span class="p"><span class="pre">[</span></span><a class="reference external" href="https://docs.python.org/3/library/typing.html#typing.List" title="(in Python v3.10)"><span class="pre">List</span></a><span class="p"><span class="pre">[</span></span><a class="reference internal" href="#renormalizer.model.basis.BasisSet" title="renormalizer.model.basis.BasisSet"><span class="pre">renormalizer.model.basis.BasisSet</span></a><span class="p"><span class="pre">]</span></span><span class="p"><span class="pre">]</span></span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/renormalizer/model/model.html#Model"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#renormalizer.model.Model" title="Permalink to this definition">¶</a></dt>
+<dd><p>The most general model that supports any Hamiltonian in sum-of-product form.
+Base class for <a class="reference internal" href="#renormalizer.model.HolsteinModel" title="renormalizer.model.HolsteinModel"><code class="xref py py-class docutils literal notranslate"><span class="pre">HolsteinModel</span></code></a> and <a class="reference internal" href="#renormalizer.model.SpinBosonModel" title="renormalizer.model.SpinBosonModel"><code class="xref py py-class docutils literal notranslate"><span class="pre">SpinBosonModel</span></code></a>.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>basis</strong> (<a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#list" title="(in Python v3.10)"><code class="xref py py-class docutils literal notranslate"><span class="pre">list</span></code></a> of <a class="reference internal" href="#renormalizer.model.basis.BasisSet" title="renormalizer.model.basis.BasisSet"><code class="xref py py-class docutils literal notranslate"><span class="pre">BasisSet</span></code></a>) – Local basis for each site of the MPS. The order determines the
+DoF order in the MPS.</p></li>
+<li><p><strong>ham_terms</strong> (<a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#list" title="(in Python v3.10)"><code class="xref py py-class docutils literal notranslate"><span class="pre">list</span></code></a> of <a class="reference internal" href="#renormalizer.model.Op" title="renormalizer.model.Op"><code class="xref py py-class docutils literal notranslate"><span class="pre">Op</span></code></a>) – Terms of the system Hamiltonian in sum-of-product form.
+Identities can be omitted in the operators.
+All terms must be included, without assuming Hermitian or something else.</p></li>
+<li><p><strong>dipole</strong> (<a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#dict" title="(in Python v3.10)"><em>dict</em></a>) – Contains the transition dipole matrix element. The key is the dof name.</p></li>
+<li><p><strong>output_ordering</strong> (<a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#list" title="(in Python v3.10)"><code class="xref py py-class docutils literal notranslate"><span class="pre">list</span></code></a> of <a class="reference internal" href="#renormalizer.model.basis.BasisSet" title="renormalizer.model.basis.BasisSet"><code class="xref py py-class docutils literal notranslate"><span class="pre">BasisSet</span></code></a>) – The ordering of the local basis for output. Default is the same with <code class="docutils literal notranslate"><span class="pre">basis</span></code>.</p></li>
+</ul>
+</dd>
+</dl>
+<dl class="py method">
+<dt class="sig sig-object py" id="renormalizer.model.Model.check_operator_terms">
+<span class="sig-name descname"><span class="pre">check_operator_terms</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">terms</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference external" href="https://docs.python.org/3/library/typing.html#typing.List" title="(in Python v3.10)"><span class="pre">List</span></a><span class="p"><span class="pre">[</span></span><a class="reference internal" href="#renormalizer.model.Op" title="renormalizer.model.op.Op"><span class="pre">renormalizer.model.op.Op</span></a><span class="p"><span class="pre">]</span></span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/renormalizer/model/model.html#Model.check_operator_terms"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#renormalizer.model.Model.check_operator_terms" title="Permalink to this definition">¶</a></dt>
+<dd><p>Check and clean operator terms in the input <code class="docutils literal notranslate"><span class="pre">terms</span></code>.
+Errors will be raised if the type of operator is not <a class="reference internal" href="#renormalizer.model.Op" title="renormalizer.model.Op"><code class="xref py py-class docutils literal notranslate"><span class="pre">Op</span></code></a>
+or the operator contains DoF not defined in <code class="docutils literal notranslate"><span class="pre">self.basis</span></code>.
+Operators with factor = 0 are discarded.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><p><strong>terms</strong> (<a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#list" title="(in Python v3.10)"><code class="xref py py-class docutils literal notranslate"><span class="pre">list</span></code></a> of <a class="reference internal" href="#renormalizer.model.Op" title="renormalizer.model.Op"><code class="xref py py-class docutils literal notranslate"><span class="pre">Op</span></code></a>) – The terms to check.</p>
+</dd>
+<dt class="field-even">Returns</dt>
+<dd class="field-even"><p><strong>new_terms</strong> – Operator list with 0-factor terms discarded.</p>
+</dd>
+<dt class="field-odd">Return type</dt>
+<dd class="field-odd"><p><a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#list" title="(in Python v3.10)"><code class="xref py py-class docutils literal notranslate"><span class="pre">list</span></code></a> of <a class="reference internal" href="#renormalizer.model.Op" title="renormalizer.model.Op"><code class="xref py py-class docutils literal notranslate"><span class="pre">Op</span></code></a></p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="renormalizer.model.Model.copy">
+<span class="sig-name descname"><span class="pre">copy</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="_modules/renormalizer/model/model.html#Model.copy"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#renormalizer.model.Model.copy" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="renormalizer.model.Model.dofs">
+<span class="sig-name descname"><span class="pre">dofs</span></span><a class="headerlink" href="#renormalizer.model.Model.dofs" title="Permalink to this definition">¶</a></dt>
+<dd><p><a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#list" title="(in Python v3.10)"><code class="xref py py-class docutils literal notranslate"><span class="pre">list</span></code></a> of DoF names.</p>
+</dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="renormalizer.model.Model.e_dofs">
+<span class="sig-name descname"><span class="pre">e_dofs</span></span><a class="headerlink" href="#renormalizer.model.Model.e_dofs" title="Permalink to this definition">¶</a></dt>
+<dd><p><a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#list" title="(in Python v3.10)"><code class="xref py py-class docutils literal notranslate"><span class="pre">list</span></code></a> of electronic DoF names.</p>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="renormalizer.model.Model.get_mpos">
+<span class="sig-name descname"><span class="pre">get_mpos</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">key</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.10)"><span class="pre">str</span></a></span></em>, <em class="sig-param"><span class="n"><span class="pre">fun</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference external" href="https://docs.python.org/3/library/typing.html#typing.Callable" title="(in Python v3.10)"><span class="pre">Callable</span></a></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/renormalizer/model/model.html#Model.get_mpos"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#renormalizer.model.Model.get_mpos" title="Permalink to this definition">¶</a></dt>
+<dd><p>Get MPOs related to the model, such as MPOs to calculate
+electronic occupations <span class="math notranslate nohighlight">\({a^\dagger_i a_i}\)</span>.
+The purpose of the function is to avoid repeated MPO construction.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>key</strong> (<a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.10)"><em>str</em></a>) – Name of the MPOs. In principle other hashable types are also OK.</p></li>
+<li><p><strong>fun</strong> (<em>callable</em>) – The function to generate MPOs if the MPOs have not been
+constructed before. The function should accept only one argument
+which is the model and return a <a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#list" title="(in Python v3.10)"><code class="xref py py-class docutils literal notranslate"><span class="pre">list</span></code></a> of
+<a class="reference internal" href="mps.html#renormalizer.mps.Mpo" title="renormalizer.mps.Mpo"><code class="xref py py-class docutils literal notranslate"><span class="pre">Mpo</span></code></a>.</p></li>
+</ul>
+</dd>
+<dt class="field-even">Returns</dt>
+<dd class="field-even"><p><strong>mpos</strong> – The required MPOs.</p>
+</dd>
+<dt class="field-odd">Return type</dt>
+<dd class="field-odd"><p>list of <a class="reference internal" href="mps.html#renormalizer.mps.Mpo" title="renormalizer.mps.Mpo"><code class="xref py py-class docutils literal notranslate"><span class="pre">Mpo</span></code></a></p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="renormalizer.model.Model.n_dofs">
+<span class="sig-name descname"><span class="pre">n_dofs</span></span><a class="headerlink" href="#renormalizer.model.Model.n_dofs" title="Permalink to this definition">¶</a></dt>
+<dd><p>Number of total DoFs.</p>
+</dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="renormalizer.model.Model.n_edofs">
+<span class="sig-name descname"><span class="pre">n_edofs</span></span><a class="headerlink" href="#renormalizer.model.Model.n_edofs" title="Permalink to this definition">¶</a></dt>
+<dd><p>Number of total electronic DoFs.</p>
+</dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="renormalizer.model.Model.n_vdofs">
+<span class="sig-name descname"><span class="pre">n_vdofs</span></span><a class="headerlink" href="#renormalizer.model.Model.n_vdofs" title="Permalink to this definition">¶</a></dt>
+<dd><p>Number of total vibrational DoFs.</p>
+</dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="renormalizer.model.Model.nsite">
+<span class="sig-name descname"><span class="pre">nsite</span></span><a class="headerlink" href="#renormalizer.model.Model.nsite" title="Permalink to this definition">¶</a></dt>
+<dd><p>Number of sites in the MPS/MPO to be constructed.
+Length of <code class="docutils literal notranslate"><span class="pre">self.basis</span></code>.</p>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="renormalizer.model.Model.to_dict">
+<span class="sig-name descname"><span class="pre">to_dict</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><a class="reference external" href="https://docs.python.org/3/library/typing.html#typing.Dict" title="(in Python v3.10)"><span class="pre">Dict</span></a></span></span><a class="reference internal" href="_modules/renormalizer/model/model.html#Model.to_dict"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#renormalizer.model.Model.to_dict" title="Permalink to this definition">¶</a></dt>
+<dd><p>Convert the object into a dict that contains only objects of
+Python primitive types or NumPy types.
+This is primarily for dump purposes.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Returns</dt>
+<dd class="field-odd"><p><strong>info_dict</strong> – The information of the model in a dict.</p>
+</dd>
+<dt class="field-even">Return type</dt>
+<dd class="field-even"><p><a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#dict" title="(in Python v3.10)">dict</a></p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="renormalizer.model.Model.v_dofs">
+<span class="sig-name descname"><span class="pre">v_dofs</span></span><a class="headerlink" href="#renormalizer.model.Model.v_dofs" title="Permalink to this definition">¶</a></dt>
+<dd><p><a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#list" title="(in Python v3.10)"><code class="xref py py-class docutils literal notranslate"><span class="pre">list</span></code></a> of vibrational DoF names.</p>
+</dd></dl>
+
+</dd></dl>
+
+<dl class="py class">
+<dt class="sig sig-object py" id="renormalizer.model.HolsteinModel">
+<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">renormalizer.model.</span></span><span class="sig-name descname"><span class="pre">HolsteinModel</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">mol_list</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference external" href="https://docs.python.org/3/library/typing.html#typing.List" title="(in Python v3.10)"><span class="pre">List</span></a><span class="p"><span class="pre">[</span></span><span class="pre">renormalizer.model.mol.Mol</span><span class="p"><span class="pre">]</span></span></span></em>, <em class="sig-param"><span class="n"><span class="pre">j_matrix</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference external" href="https://docs.python.org/3/library/typing.html#typing.Union" title="(in Python v3.10)"><span class="pre">Union</span></a><span class="p"><span class="pre">[</span></span><span class="pre">renormalizer.utils.quantity.Quantity</span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="pre">numpy.ndarray</span><span class="p"><span class="pre">]</span></span></span></em>, <em class="sig-param"><span class="n"><span class="pre">scheme</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference external" href="https://docs.python.org/3/library/functions.html#int" title="(in Python v3.10)"><span class="pre">int</span></a></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">2</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">periodic</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference external" href="https://docs.python.org/3/library/functions.html#bool" title="(in Python v3.10)"><span class="pre">bool</span></a></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">False</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/renormalizer/model/model.html#HolsteinModel"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#renormalizer.model.HolsteinModel" title="Permalink to this definition">¶</a></dt>
+<dd><p>Interface for convenient Holstein model construction.
+The Hamiltonian of the Holstein model:</p>
+<div class="math notranslate nohighlight">
+\[\hat H = \sum_{ij} J_{ij} a^\dagger_i a_j + \sum_{i\lambda} \omega_{i\lambda} b^\dagger_{i\lambda} b_{i\lambda}
++ \sum_{i\lambda} g_{i\lambda} \omega_{i\lambda} a^\dagger_i a_i (b^\dagger_{i\lambda} + b_{i\lambda})\]</div>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>mol_list</strong> (<a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#list" title="(in Python v3.10)"><code class="xref py py-class docutils literal notranslate"><span class="pre">list</span></code></a> of <code class="xref py py-class docutils literal notranslate"><span class="pre">Mol</span></code>) – Information for the molecules contains in the system.
+See the <code class="xref py py-class docutils literal notranslate"><span class="pre">Mol</span></code> class for more details.</p></li>
+<li><p><strong>j_matrix</strong> (<code class="xref py py-class docutils literal notranslate"><span class="pre">np.ndarray</span></code> or <code class="xref py py-class docutils literal notranslate"><span class="pre">Quantity</span></code>.) – <span class="math notranslate nohighlight">\(J_{ij}\)</span> in the Holstein Hamiltonian. When <code class="xref py py-class docutils literal notranslate"><span class="pre">Quantity</span></code> is used as input, the system is taken to
+have homogeneous nearest-neighbour interaction
+<span class="math notranslate nohighlight">\(J_{ij}=J \delta_{i, j+1} + J \delta_{i, j-1}\)</span>.
+For the boundary condition, see the <code class="docutils literal notranslate"><span class="pre">periodic</span></code> option.</p></li>
+<li><p><strong>scheme</strong> (<a class="reference external" href="https://docs.python.org/3/library/functions.html#int" title="(in Python v3.10)"><em>int</em></a>) – <p>The scheme of the basis for the model. Historically four numbers are permitted: 1, 2, 3, 4.
+Now 1, 2 and 3 are equivalent, and the bases are arranged as:</p>
+<div class="math notranslate nohighlight">
+\[[\rm{e}_{0}, \rm{ph}_{0,0}, \rm{ph}_{0,1}, \cdots, \rm{e}_{1}, \rm{ph}_{1,0}, \rm{ph}_{1,1}, \cdots ]\]</div>
+<p>And when <code class="docutils literal notranslate"><span class="pre">scheme</span></code> is set to 4, all electronic DoF is contained in one
+<a class="reference internal" href="#renormalizer.model.basis.BasisSet" title="renormalizer.model.basis.BasisSet"><code class="xref py py-class docutils literal notranslate"><span class="pre">BasisSet</span></code></a>
+using <a class="reference internal" href="#renormalizer.model.basis.BasisMultiElectronVac" title="renormalizer.model.basis.BasisMultiElectronVac"><code class="xref py py-class docutils literal notranslate"><span class="pre">BasisMultiElectronVac</span></code></a> and the bases are arranged as:</p>
+<div class="math notranslate nohighlight">
+\[[\rm{ph}_{0,0},  \rm{ph}_{0,1}, \cdots, \rm{ph}_{n/2, 0}, \rm{ph}_{n/2, 1}, \cdots, \rm{e}_{0, 1, \cdots, n}
+\rm{ph}_{n/2+1, 0}, \rm{ph}_{n/2+1, 1}, \cdots]\]</div>
+</p></li>
+<li><p><strong>periodic</strong> (<a class="reference external" href="https://docs.python.org/3/library/functions.html#bool" title="(in Python v3.10)"><em>bool</em></a>) – Whether use periodical boundary condition when constructing <code class="docutils literal notranslate"><span class="pre">j_matrix</span></code>
+from <code class="xref py py-class docutils literal notranslate"><span class="pre">Quantity</span></code>. Default is <code class="docutils literal notranslate"><span class="pre">False</span></code>.</p></li>
+</ul>
+</dd>
+</dl>
+<dl class="py attribute">
+<dt class="sig sig-object py" id="renormalizer.model.HolsteinModel.basis">
+<span class="sig-name descname"><span class="pre">basis</span></span><em class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="pre">List</span><span class="p"><span class="pre">[</span></span><a class="reference internal" href="#renormalizer.model.basis.BasisSet" title="renormalizer.model.basis.BasisSet"><span class="pre">renormalizer.model.basis.BasisSet</span></a><span class="p"><span class="pre">]</span></span></em><a class="headerlink" href="#renormalizer.model.HolsteinModel.basis" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="renormalizer.model.HolsteinModel.check_operator_terms">
+<span class="sig-name descname"><span class="pre">check_operator_terms</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">terms</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference external" href="https://docs.python.org/3/library/typing.html#typing.List" title="(in Python v3.10)"><span class="pre">List</span></a><span class="p"><span class="pre">[</span></span><a class="reference internal" href="#renormalizer.model.Op" title="renormalizer.model.op.Op"><span class="pre">renormalizer.model.op.Op</span></a><span class="p"><span class="pre">]</span></span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#renormalizer.model.HolsteinModel.check_operator_terms" title="Permalink to this definition">¶</a></dt>
+<dd><p>Check and clean operator terms in the input <code class="docutils literal notranslate"><span class="pre">terms</span></code>.
+Errors will be raised if the type of operator is not <a class="reference internal" href="#renormalizer.model.Op" title="renormalizer.model.Op"><code class="xref py py-class docutils literal notranslate"><span class="pre">Op</span></code></a>
+or the operator contains DoF not defined in <code class="docutils literal notranslate"><span class="pre">self.basis</span></code>.
+Operators with factor = 0 are discarded.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><p><strong>terms</strong> (<a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#list" title="(in Python v3.10)"><code class="xref py py-class docutils literal notranslate"><span class="pre">list</span></code></a> of <a class="reference internal" href="#renormalizer.model.Op" title="renormalizer.model.Op"><code class="xref py py-class docutils literal notranslate"><span class="pre">Op</span></code></a>) – The terms to check.</p>
+</dd>
+<dt class="field-even">Returns</dt>
+<dd class="field-even"><p><strong>new_terms</strong> – Operator list with 0-factor terms discarded.</p>
+</dd>
+<dt class="field-odd">Return type</dt>
+<dd class="field-odd"><p><a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#list" title="(in Python v3.10)"><code class="xref py py-class docutils literal notranslate"><span class="pre">list</span></code></a> of <a class="reference internal" href="#renormalizer.model.Op" title="renormalizer.model.Op"><code class="xref py py-class docutils literal notranslate"><span class="pre">Op</span></code></a></p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="renormalizer.model.HolsteinModel.copy">
+<span class="sig-name descname"><span class="pre">copy</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="_modules/renormalizer/model/model.html#HolsteinModel.copy"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#renormalizer.model.HolsteinModel.copy" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="renormalizer.model.HolsteinModel.dofs">
+<span class="sig-name descname"><span class="pre">dofs</span></span><a class="headerlink" href="#renormalizer.model.HolsteinModel.dofs" title="Permalink to this definition">¶</a></dt>
+<dd><p><a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#list" title="(in Python v3.10)"><code class="xref py py-class docutils literal notranslate"><span class="pre">list</span></code></a> of DoF names.</p>
+</dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="renormalizer.model.HolsteinModel.e_dofs">
+<span class="sig-name descname"><span class="pre">e_dofs</span></span><a class="headerlink" href="#renormalizer.model.HolsteinModel.e_dofs" title="Permalink to this definition">¶</a></dt>
+<dd><p><a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#list" title="(in Python v3.10)"><code class="xref py py-class docutils literal notranslate"><span class="pre">list</span></code></a> of electronic DoF names.</p>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="renormalizer.model.HolsteinModel.get_mpos">
+<span class="sig-name descname"><span class="pre">get_mpos</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">key</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.10)"><span class="pre">str</span></a></span></em>, <em class="sig-param"><span class="n"><span class="pre">fun</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference external" href="https://docs.python.org/3/library/typing.html#typing.Callable" title="(in Python v3.10)"><span class="pre">Callable</span></a></span></em><span class="sig-paren">)</span><a class="headerlink" href="#renormalizer.model.HolsteinModel.get_mpos" title="Permalink to this definition">¶</a></dt>
+<dd><p>Get MPOs related to the model, such as MPOs to calculate
+electronic occupations <span class="math notranslate nohighlight">\({a^\dagger_i a_i}\)</span>.
+The purpose of the function is to avoid repeated MPO construction.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>key</strong> (<a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.10)"><em>str</em></a>) – Name of the MPOs. In principle other hashable types are also OK.</p></li>
+<li><p><strong>fun</strong> (<em>callable</em>) – The function to generate MPOs if the MPOs have not been
+constructed before. The function should accept only one argument
+which is the model and return a <a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#list" title="(in Python v3.10)"><code class="xref py py-class docutils literal notranslate"><span class="pre">list</span></code></a> of
+<a class="reference internal" href="mps.html#renormalizer.mps.Mpo" title="renormalizer.mps.Mpo"><code class="xref py py-class docutils literal notranslate"><span class="pre">Mpo</span></code></a>.</p></li>
+</ul>
+</dd>
+<dt class="field-even">Returns</dt>
+<dd class="field-even"><p><strong>mpos</strong> – The required MPOs.</p>
+</dd>
+<dt class="field-odd">Return type</dt>
+<dd class="field-odd"><p>list of <a class="reference internal" href="mps.html#renormalizer.mps.Mpo" title="renormalizer.mps.Mpo"><code class="xref py py-class docutils literal notranslate"><span class="pre">Mpo</span></code></a></p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py property">
+<dt class="sig sig-object py" id="renormalizer.model.HolsteinModel.gs_zpe">
+<em class="property"><span class="pre">property</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">gs_zpe</span></span><em class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><a class="reference external" href="https://docs.python.org/3/library/functions.html#float" title="(in Python v3.10)"><span class="pre">float</span></a></em><a class="headerlink" href="#renormalizer.model.HolsteinModel.gs_zpe" title="Permalink to this definition">¶</a></dt>
+<dd><p>Ground state zero-point energy <span class="math notranslate nohighlight">\(\sum_{i, j} \frac{1}{2}\omega_{i, j}\)</span>.</p>
+</dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="renormalizer.model.HolsteinModel.ham_terms">
+<span class="sig-name descname"><span class="pre">ham_terms</span></span><em class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="pre">List</span><span class="p"><span class="pre">[</span></span><a class="reference internal" href="#renormalizer.model.Op" title="renormalizer.model.op.Op"><span class="pre">renormalizer.model.op.Op</span></a><span class="p"><span class="pre">]</span></span></em><a class="headerlink" href="#renormalizer.model.HolsteinModel.ham_terms" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="py property">
+<dt class="sig sig-object py" id="renormalizer.model.HolsteinModel.j_constant">
+<em class="property"><span class="pre">property</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">j_constant</span></span><a class="headerlink" href="#renormalizer.model.HolsteinModel.j_constant" title="Permalink to this definition">¶</a></dt>
+<dd><p>Extract electronic coupling constant from <code class="docutils literal notranslate"><span class="pre">self.j_matrix</span></code>.
+Useful in transport model when <span class="math notranslate nohighlight">\(J\)</span> is a constant..
+If J is actually not a constant, a value error will be raised.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Returns</dt>
+<dd class="field-odd"><p><strong>j constant</strong> – J constant extracted from <code class="docutils literal notranslate"><span class="pre">self.j_matrix</span></code>.</p>
+</dd>
+<dt class="field-even">Return type</dt>
+<dd class="field-even"><p><a class="reference external" href="https://docs.python.org/3/library/functions.html#float" title="(in Python v3.10)">float</a></p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="renormalizer.model.HolsteinModel.n_dofs">
+<span class="sig-name descname"><span class="pre">n_dofs</span></span><a class="headerlink" href="#renormalizer.model.HolsteinModel.n_dofs" title="Permalink to this definition">¶</a></dt>
+<dd><p>Number of total DoFs.</p>
+</dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="renormalizer.model.HolsteinModel.n_edofs">
+<span class="sig-name descname"><span class="pre">n_edofs</span></span><a class="headerlink" href="#renormalizer.model.HolsteinModel.n_edofs" title="Permalink to this definition">¶</a></dt>
+<dd><p>Number of total electronic DoFs.</p>
+</dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="renormalizer.model.HolsteinModel.n_vdofs">
+<span class="sig-name descname"><span class="pre">n_vdofs</span></span><a class="headerlink" href="#renormalizer.model.HolsteinModel.n_vdofs" title="Permalink to this definition">¶</a></dt>
+<dd><p>Number of total vibrational DoFs.</p>
+</dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="renormalizer.model.HolsteinModel.nsite">
+<span class="sig-name descname"><span class="pre">nsite</span></span><a class="headerlink" href="#renormalizer.model.HolsteinModel.nsite" title="Permalink to this definition">¶</a></dt>
+<dd><p>Number of sites in the MPS/MPO to be constructed.
+Length of <code class="docutils literal notranslate"><span class="pre">self.basis</span></code>.</p>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="renormalizer.model.HolsteinModel.switch_scheme">
+<span class="sig-name descname"><span class="pre">switch_scheme</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">scheme</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference external" href="https://docs.python.org/3/library/functions.html#int" title="(in Python v3.10)"><span class="pre">int</span></a></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><a class="reference internal" href="#renormalizer.model.HolsteinModel" title="renormalizer.model.model.HolsteinModel"><span class="pre">renormalizer.model.model.HolsteinModel</span></a></span></span><a class="reference internal" href="_modules/renormalizer/model/model.html#HolsteinModel.switch_scheme"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#renormalizer.model.HolsteinModel.switch_scheme" title="Permalink to this definition">¶</a></dt>
+<dd><p>Switch the scheme of the current model.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><p><strong>scheme</strong> (<a class="reference external" href="https://docs.python.org/3/library/functions.html#int" title="(in Python v3.10)"><em>int</em></a>) – The target scheme.</p>
+</dd>
+<dt class="field-even">Returns</dt>
+<dd class="field-even"><p><strong>new_model</strong> – The new model with the specified scheme.</p>
+</dd>
+<dt class="field-odd">Return type</dt>
+<dd class="field-odd"><p><a class="reference internal" href="#renormalizer.model.HolsteinModel" title="renormalizer.model.HolsteinModel">HolsteinModel</a></p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="renormalizer.model.HolsteinModel.to_dict">
+<span class="sig-name descname"><span class="pre">to_dict</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><a class="reference external" href="https://docs.python.org/3/library/typing.html#typing.Dict" title="(in Python v3.10)"><span class="pre">Dict</span></a></span></span><a class="headerlink" href="#renormalizer.model.HolsteinModel.to_dict" title="Permalink to this definition">¶</a></dt>
+<dd><p>Convert the object into a dict that contains only objects of
+Python primitive types or NumPy types.
+This is primarily for dump purposes.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Returns</dt>
+<dd class="field-odd"><p><strong>info_dict</strong> – The information of the model in a dict.</p>
+</dd>
+<dt class="field-even">Return type</dt>
+<dd class="field-even"><p><a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#dict" title="(in Python v3.10)">dict</a></p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="renormalizer.model.HolsteinModel.v_dofs">
+<span class="sig-name descname"><span class="pre">v_dofs</span></span><a class="headerlink" href="#renormalizer.model.HolsteinModel.v_dofs" title="Permalink to this definition">¶</a></dt>
+<dd><p><a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#list" title="(in Python v3.10)"><code class="xref py py-class docutils literal notranslate"><span class="pre">list</span></code></a> of vibrational DoF names.</p>
+</dd></dl>
+
+</dd></dl>
+
+<dl class="py class">
+<dt class="sig sig-object py" id="renormalizer.model.SpinBosonModel">
+<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">renormalizer.model.</span></span><span class="sig-name descname"><span class="pre">SpinBosonModel</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">epsilon</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">renormalizer.utils.quantity.Quantity</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">delta</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">renormalizer.utils.quantity.Quantity</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">ph_list</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference external" href="https://docs.python.org/3/library/typing.html#typing.List" title="(in Python v3.10)"><span class="pre">List</span></a><span class="p"><span class="pre">[</span></span><span class="pre">renormalizer.model.phonon.Phonon</span><span class="p"><span class="pre">]</span></span></span></em>, <em class="sig-param"><span class="n"><span class="pre">dipole</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference external" href="https://docs.python.org/3/library/typing.html#typing.Optional" title="(in Python v3.10)"><span class="pre">Optional</span></a><span class="p"><span class="pre">[</span></span><a class="reference external" href="https://docs.python.org/3/library/functions.html#float" title="(in Python v3.10)"><span class="pre">float</span></a><span class="p"><span class="pre">]</span></span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/renormalizer/model/model.html#SpinBosonModel"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#renormalizer.model.SpinBosonModel" title="Permalink to this definition">¶</a></dt>
+<dd><p>Spin-Boson model</p>
+<blockquote>
+<div><div class="math notranslate nohighlight">
+\[\hat{H} = \epsilon \sigma_z + \Delta \sigma_x
+    + \frac{1}{2} \sum_i(p_i^2+\omega^2_i q_i^2)
+    + \sigma_z \sum_i c_i q_i\]</div>
+</div></blockquote>
+<dl class="py attribute">
+<dt class="sig sig-object py" id="renormalizer.model.SpinBosonModel.basis">
+<span class="sig-name descname"><span class="pre">basis</span></span><em class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="pre">List</span><span class="p"><span class="pre">[</span></span><a class="reference internal" href="#renormalizer.model.basis.BasisSet" title="renormalizer.model.basis.BasisSet"><span class="pre">renormalizer.model.basis.BasisSet</span></a><span class="p"><span class="pre">]</span></span></em><a class="headerlink" href="#renormalizer.model.SpinBosonModel.basis" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="renormalizer.model.SpinBosonModel.check_operator_terms">
+<span class="sig-name descname"><span class="pre">check_operator_terms</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">terms</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference external" href="https://docs.python.org/3/library/typing.html#typing.List" title="(in Python v3.10)"><span class="pre">List</span></a><span class="p"><span class="pre">[</span></span><a class="reference internal" href="#renormalizer.model.Op" title="renormalizer.model.op.Op"><span class="pre">renormalizer.model.op.Op</span></a><span class="p"><span class="pre">]</span></span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#renormalizer.model.SpinBosonModel.check_operator_terms" title="Permalink to this definition">¶</a></dt>
+<dd><p>Check and clean operator terms in the input <code class="docutils literal notranslate"><span class="pre">terms</span></code>.
+Errors will be raised if the type of operator is not <a class="reference internal" href="#renormalizer.model.Op" title="renormalizer.model.Op"><code class="xref py py-class docutils literal notranslate"><span class="pre">Op</span></code></a>
+or the operator contains DoF not defined in <code class="docutils literal notranslate"><span class="pre">self.basis</span></code>.
+Operators with factor = 0 are discarded.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><p><strong>terms</strong> (<a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#list" title="(in Python v3.10)"><code class="xref py py-class docutils literal notranslate"><span class="pre">list</span></code></a> of <a class="reference internal" href="#renormalizer.model.Op" title="renormalizer.model.Op"><code class="xref py py-class docutils literal notranslate"><span class="pre">Op</span></code></a>) – The terms to check.</p>
+</dd>
+<dt class="field-even">Returns</dt>
+<dd class="field-even"><p><strong>new_terms</strong> – Operator list with 0-factor terms discarded.</p>
+</dd>
+<dt class="field-odd">Return type</dt>
+<dd class="field-odd"><p><a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#list" title="(in Python v3.10)"><code class="xref py py-class docutils literal notranslate"><span class="pre">list</span></code></a> of <a class="reference internal" href="#renormalizer.model.Op" title="renormalizer.model.Op"><code class="xref py py-class docutils literal notranslate"><span class="pre">Op</span></code></a></p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="renormalizer.model.SpinBosonModel.copy">
+<span class="sig-name descname"><span class="pre">copy</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#renormalizer.model.SpinBosonModel.copy" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="renormalizer.model.SpinBosonModel.dofs">
+<span class="sig-name descname"><span class="pre">dofs</span></span><a class="headerlink" href="#renormalizer.model.SpinBosonModel.dofs" title="Permalink to this definition">¶</a></dt>
+<dd><p><a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#list" title="(in Python v3.10)"><code class="xref py py-class docutils literal notranslate"><span class="pre">list</span></code></a> of DoF names.</p>
+</dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="renormalizer.model.SpinBosonModel.e_dofs">
+<span class="sig-name descname"><span class="pre">e_dofs</span></span><a class="headerlink" href="#renormalizer.model.SpinBosonModel.e_dofs" title="Permalink to this definition">¶</a></dt>
+<dd><p><a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#list" title="(in Python v3.10)"><code class="xref py py-class docutils literal notranslate"><span class="pre">list</span></code></a> of electronic DoF names.</p>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="renormalizer.model.SpinBosonModel.get_mpos">
+<span class="sig-name descname"><span class="pre">get_mpos</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">key</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.10)"><span class="pre">str</span></a></span></em>, <em class="sig-param"><span class="n"><span class="pre">fun</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference external" href="https://docs.python.org/3/library/typing.html#typing.Callable" title="(in Python v3.10)"><span class="pre">Callable</span></a></span></em><span class="sig-paren">)</span><a class="headerlink" href="#renormalizer.model.SpinBosonModel.get_mpos" title="Permalink to this definition">¶</a></dt>
+<dd><p>Get MPOs related to the model, such as MPOs to calculate
+electronic occupations <span class="math notranslate nohighlight">\({a^\dagger_i a_i}\)</span>.
+The purpose of the function is to avoid repeated MPO construction.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>key</strong> (<a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.10)"><em>str</em></a>) – Name of the MPOs. In principle other hashable types are also OK.</p></li>
+<li><p><strong>fun</strong> (<em>callable</em>) – The function to generate MPOs if the MPOs have not been
+constructed before. The function should accept only one argument
+which is the model and return a <a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#list" title="(in Python v3.10)"><code class="xref py py-class docutils literal notranslate"><span class="pre">list</span></code></a> of
+<a class="reference internal" href="mps.html#renormalizer.mps.Mpo" title="renormalizer.mps.Mpo"><code class="xref py py-class docutils literal notranslate"><span class="pre">Mpo</span></code></a>.</p></li>
+</ul>
+</dd>
+<dt class="field-even">Returns</dt>
+<dd class="field-even"><p><strong>mpos</strong> – The required MPOs.</p>
+</dd>
+<dt class="field-odd">Return type</dt>
+<dd class="field-odd"><p>list of <a class="reference internal" href="mps.html#renormalizer.mps.Mpo" title="renormalizer.mps.Mpo"><code class="xref py py-class docutils literal notranslate"><span class="pre">Mpo</span></code></a></p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="renormalizer.model.SpinBosonModel.ham_terms">
+<span class="sig-name descname"><span class="pre">ham_terms</span></span><em class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="pre">List</span><span class="p"><span class="pre">[</span></span><a class="reference internal" href="#renormalizer.model.Op" title="renormalizer.model.op.Op"><span class="pre">renormalizer.model.op.Op</span></a><span class="p"><span class="pre">]</span></span></em><a class="headerlink" href="#renormalizer.model.SpinBosonModel.ham_terms" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="renormalizer.model.SpinBosonModel.n_dofs">
+<span class="sig-name descname"><span class="pre">n_dofs</span></span><a class="headerlink" href="#renormalizer.model.SpinBosonModel.n_dofs" title="Permalink to this definition">¶</a></dt>
+<dd><p>Number of total DoFs.</p>
+</dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="renormalizer.model.SpinBosonModel.n_edofs">
+<span class="sig-name descname"><span class="pre">n_edofs</span></span><a class="headerlink" href="#renormalizer.model.SpinBosonModel.n_edofs" title="Permalink to this definition">¶</a></dt>
+<dd><p>Number of total electronic DoFs.</p>
+</dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="renormalizer.model.SpinBosonModel.n_vdofs">
+<span class="sig-name descname"><span class="pre">n_vdofs</span></span><a class="headerlink" href="#renormalizer.model.SpinBosonModel.n_vdofs" title="Permalink to this definition">¶</a></dt>
+<dd><p>Number of total vibrational DoFs.</p>
+</dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="renormalizer.model.SpinBosonModel.nsite">
+<span class="sig-name descname"><span class="pre">nsite</span></span><a class="headerlink" href="#renormalizer.model.SpinBosonModel.nsite" title="Permalink to this definition">¶</a></dt>
+<dd><p>Number of sites in the MPS/MPO to be constructed.
+Length of <code class="docutils literal notranslate"><span class="pre">self.basis</span></code>.</p>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="renormalizer.model.SpinBosonModel.to_dict">
+<span class="sig-name descname"><span class="pre">to_dict</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><a class="reference external" href="https://docs.python.org/3/library/typing.html#typing.Dict" title="(in Python v3.10)"><span class="pre">Dict</span></a></span></span><a class="headerlink" href="#renormalizer.model.SpinBosonModel.to_dict" title="Permalink to this definition">¶</a></dt>
+<dd><p>Convert the object into a dict that contains only objects of
+Python primitive types or NumPy types.
+This is primarily for dump purposes.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Returns</dt>
+<dd class="field-odd"><p><strong>info_dict</strong> – The information of the model in a dict.</p>
+</dd>
+<dt class="field-even">Return type</dt>
+<dd class="field-even"><p><a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#dict" title="(in Python v3.10)">dict</a></p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="renormalizer.model.SpinBosonModel.v_dofs">
+<span class="sig-name descname"><span class="pre">v_dofs</span></span><a class="headerlink" href="#renormalizer.model.SpinBosonModel.v_dofs" title="Permalink to this definition">¶</a></dt>
+<dd><p><a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#list" title="(in Python v3.10)"><code class="xref py py-class docutils literal notranslate"><span class="pre">list</span></code></a> of vibrational DoF names.</p>
+</dd></dl>
+
+</dd></dl>
+
+<dl class="py class">
+<dt class="sig sig-object py" id="renormalizer.model.TI1DModel">
+<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">renormalizer.model.</span></span><span class="sig-name descname"><span class="pre">TI1DModel</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">basis</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference external" href="https://docs.python.org/3/library/typing.html#typing.List" title="(in Python v3.10)"><span class="pre">List</span></a><span class="p"><span class="pre">[</span></span><a class="reference internal" href="#renormalizer.model.basis.BasisSet" title="renormalizer.model.basis.BasisSet"><span class="pre">renormalizer.model.basis.BasisSet</span></a><span class="p"><span class="pre">]</span></span></span></em>, <em class="sig-param"><span class="n"><span class="pre">local_ham_terms</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference external" href="https://docs.python.org/3/library/typing.html#typing.List" title="(in Python v3.10)"><span class="pre">List</span></a><span class="p"><span class="pre">[</span></span><a class="reference internal" href="#renormalizer.model.Op" title="renormalizer.model.op.Op"><span class="pre">renormalizer.model.op.Op</span></a><span class="p"><span class="pre">]</span></span></span></em>, <em class="sig-param"><span class="n"><span class="pre">nonlocal_ham_terms</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference external" href="https://docs.python.org/3/library/typing.html#typing.List" title="(in Python v3.10)"><span class="pre">List</span></a><span class="p"><span class="pre">[</span></span><a class="reference internal" href="#renormalizer.model.Op" title="renormalizer.model.op.Op"><span class="pre">renormalizer.model.op.Op</span></a><span class="p"><span class="pre">]</span></span></span></em>, <em class="sig-param"><span class="n"><span class="pre">ncell</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference external" href="https://docs.python.org/3/library/functions.html#int" title="(in Python v3.10)"><span class="pre">int</span></a></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/renormalizer/model/model.html#TI1DModel"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#renormalizer.model.TI1DModel" title="Permalink to this definition">¶</a></dt>
+<dd><p>Translational invariant one dimensional model with periodic boundary condition.
+The Hamiltonian should take the form:</p>
+<div class="math notranslate nohighlight">
+\[\hat H = \sum_i(\hat h_i + \sum_j \hat h_{i,j})\]</div>
+<p>where <span class="math notranslate nohighlight">\(\hat h_i\)</span> is the local Hamiltonian acting on one single unit cell
+and <span class="math notranslate nohighlight">\(\hat h_{i,j}\)</span> represents the <span class="math notranslate nohighlight">\(j\)</span> th interaction between the <span class="math notranslate nohighlight">\(i\)</span> th cell
+and other unit cells.</p>
+<p>Yet doesn’t support setting transition dipoles.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>basis</strong> (<a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#list" title="(in Python v3.10)"><code class="xref py py-class docutils literal notranslate"><span class="pre">list</span></code></a> of <a class="reference internal" href="#renormalizer.model.basis.BasisSet" title="renormalizer.model.basis.BasisSet"><code class="xref py py-class docutils literal notranslate"><span class="pre">BasisSet</span></code></a>) – Local basis of each site for a single unit cell of the system.
+The full basis set is constructed by repeating the basis <code class="docutils literal notranslate"><span class="pre">ncell</span></code> times.
+To distinguish between different DoFs at different unit cells,
+the DoF names in the unit cell are transformed to
+a two-element-tuple of the form <code class="docutils literal notranslate"><span class="pre">(&quot;cell0&quot;,</span> <span class="pre">dof)</span></code>, where <code class="docutils literal notranslate"><span class="pre">dof</span></code> is the original DoF name
+and the <code class="docutils literal notranslate"><span class="pre">&quot;cell0&quot;</span></code> indicates the cell ID.</p></li>
+<li><p><strong>local_ham_terms</strong> (<a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#list" title="(in Python v3.10)"><code class="xref py py-class docutils literal notranslate"><span class="pre">list</span></code></a> of <a class="reference internal" href="#renormalizer.model.Op" title="renormalizer.model.Op"><code class="xref py py-class docutils literal notranslate"><span class="pre">Op</span></code></a>) – Terms of the system local Hamiltonian <span class="math notranslate nohighlight">\(\hat h_i\)</span> in sum-of-product form.
+DoF names should be consistent with the <code class="docutils literal notranslate"><span class="pre">basis</span></code> argument.</p></li>
+<li><p><strong>nonlocal_ham_terms</strong> (<a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#list" title="(in Python v3.10)"><code class="xref py py-class docutils literal notranslate"><span class="pre">list</span></code></a> of <a class="reference internal" href="#renormalizer.model.Op" title="renormalizer.model.Op"><code class="xref py py-class docutils literal notranslate"><span class="pre">Op</span></code></a>) – Terms of system nonlocal Hamiltonian <span class="math notranslate nohighlight">\(\hat h_{i,j}\)</span>.
+To indicate the IDs of the unit cells that are involved in the nonlocal interaction,
+the DoF name in <code class="docutils literal notranslate"><span class="pre">basis</span></code> should be transformed to a two-element-tuple, in which
+the first element is an integer indicating its distance from <span class="math notranslate nohighlight">\(i\)</span>,
+and the second element is the original DoF name.
+For example, if one unit cell contains one electron DoF with name <code class="docutils literal notranslate"><span class="pre">e</span></code>,
+a nearest neighbour hopping interaction
+should take the form <code class="docutils literal notranslate"><span class="pre">Op(r&quot;a^\dagger</span> <span class="pre">a&quot;,</span> <span class="pre">[(0,</span> <span class="pre">&quot;e&quot;),</span> <span class="pre">(1,</span> <span class="pre">&quot;e&quot;)])</span></code>
+(with its Hermite conjugation being another term).
+The definition is not unique in that <code class="docutils literal notranslate"><span class="pre">Op(r&quot;a^\dagger</span> <span class="pre">a&quot;,</span> <span class="pre">[(1,</span> <span class="pre">&quot;e&quot;),</span> <span class="pre">(2,</span> <span class="pre">&quot;e&quot;)])</span></code>
+produces equivalent output.</p></li>
+<li><p><strong>ncell</strong> (<a class="reference external" href="https://docs.python.org/3/library/functions.html#int" title="(in Python v3.10)"><em>int</em></a>) – Number of unit cells in the system.</p></li>
+</ul>
+</dd>
+</dl>
+<dl class="py attribute">
+<dt class="sig sig-object py" id="renormalizer.model.TI1DModel.basis">
+<span class="sig-name descname"><span class="pre">basis</span></span><em class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="pre">List</span><span class="p"><span class="pre">[</span></span><a class="reference internal" href="#renormalizer.model.basis.BasisSet" title="renormalizer.model.basis.BasisSet"><span class="pre">renormalizer.model.basis.BasisSet</span></a><span class="p"><span class="pre">]</span></span></em><a class="headerlink" href="#renormalizer.model.TI1DModel.basis" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="renormalizer.model.TI1DModel.check_operator_terms">
+<span class="sig-name descname"><span class="pre">check_operator_terms</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">terms</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference external" href="https://docs.python.org/3/library/typing.html#typing.List" title="(in Python v3.10)"><span class="pre">List</span></a><span class="p"><span class="pre">[</span></span><a class="reference internal" href="#renormalizer.model.Op" title="renormalizer.model.op.Op"><span class="pre">renormalizer.model.op.Op</span></a><span class="p"><span class="pre">]</span></span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#renormalizer.model.TI1DModel.check_operator_terms" title="Permalink to this definition">¶</a></dt>
+<dd><p>Check and clean operator terms in the input <code class="docutils literal notranslate"><span class="pre">terms</span></code>.
+Errors will be raised if the type of operator is not <a class="reference internal" href="#renormalizer.model.Op" title="renormalizer.model.Op"><code class="xref py py-class docutils literal notranslate"><span class="pre">Op</span></code></a>
+or the operator contains DoF not defined in <code class="docutils literal notranslate"><span class="pre">self.basis</span></code>.
+Operators with factor = 0 are discarded.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><p><strong>terms</strong> (<a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#list" title="(in Python v3.10)"><code class="xref py py-class docutils literal notranslate"><span class="pre">list</span></code></a> of <a class="reference internal" href="#renormalizer.model.Op" title="renormalizer.model.Op"><code class="xref py py-class docutils literal notranslate"><span class="pre">Op</span></code></a>) – The terms to check.</p>
+</dd>
+<dt class="field-even">Returns</dt>
+<dd class="field-even"><p><strong>new_terms</strong> – Operator list with 0-factor terms discarded.</p>
+</dd>
+<dt class="field-odd">Return type</dt>
+<dd class="field-odd"><p><a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#list" title="(in Python v3.10)"><code class="xref py py-class docutils literal notranslate"><span class="pre">list</span></code></a> of <a class="reference internal" href="#renormalizer.model.Op" title="renormalizer.model.Op"><code class="xref py py-class docutils literal notranslate"><span class="pre">Op</span></code></a></p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="renormalizer.model.TI1DModel.copy">
+<span class="sig-name descname"><span class="pre">copy</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#renormalizer.model.TI1DModel.copy" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="renormalizer.model.TI1DModel.dofs">
+<span class="sig-name descname"><span class="pre">dofs</span></span><a class="headerlink" href="#renormalizer.model.TI1DModel.dofs" title="Permalink to this definition">¶</a></dt>
+<dd><p><a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#list" title="(in Python v3.10)"><code class="xref py py-class docutils literal notranslate"><span class="pre">list</span></code></a> of DoF names.</p>
+</dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="renormalizer.model.TI1DModel.e_dofs">
+<span class="sig-name descname"><span class="pre">e_dofs</span></span><a class="headerlink" href="#renormalizer.model.TI1DModel.e_dofs" title="Permalink to this definition">¶</a></dt>
+<dd><p><a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#list" title="(in Python v3.10)"><code class="xref py py-class docutils literal notranslate"><span class="pre">list</span></code></a> of electronic DoF names.</p>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="renormalizer.model.TI1DModel.get_mpos">
+<span class="sig-name descname"><span class="pre">get_mpos</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">key</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.10)"><span class="pre">str</span></a></span></em>, <em class="sig-param"><span class="n"><span class="pre">fun</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference external" href="https://docs.python.org/3/library/typing.html#typing.Callable" title="(in Python v3.10)"><span class="pre">Callable</span></a></span></em><span class="sig-paren">)</span><a class="headerlink" href="#renormalizer.model.TI1DModel.get_mpos" title="Permalink to this definition">¶</a></dt>
+<dd><p>Get MPOs related to the model, such as MPOs to calculate
+electronic occupations <span class="math notranslate nohighlight">\({a^\dagger_i a_i}\)</span>.
+The purpose of the function is to avoid repeated MPO construction.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>key</strong> (<a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.10)"><em>str</em></a>) – Name of the MPOs. In principle other hashable types are also OK.</p></li>
+<li><p><strong>fun</strong> (<em>callable</em>) – The function to generate MPOs if the MPOs have not been
+constructed before. The function should accept only one argument
+which is the model and return a <a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#list" title="(in Python v3.10)"><code class="xref py py-class docutils literal notranslate"><span class="pre">list</span></code></a> of
+<a class="reference internal" href="mps.html#renormalizer.mps.Mpo" title="renormalizer.mps.Mpo"><code class="xref py py-class docutils literal notranslate"><span class="pre">Mpo</span></code></a>.</p></li>
+</ul>
+</dd>
+<dt class="field-even">Returns</dt>
+<dd class="field-even"><p><strong>mpos</strong> – The required MPOs.</p>
+</dd>
+<dt class="field-odd">Return type</dt>
+<dd class="field-odd"><p>list of <a class="reference internal" href="mps.html#renormalizer.mps.Mpo" title="renormalizer.mps.Mpo"><code class="xref py py-class docutils literal notranslate"><span class="pre">Mpo</span></code></a></p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="renormalizer.model.TI1DModel.ham_terms">
+<span class="sig-name descname"><span class="pre">ham_terms</span></span><em class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="pre">List</span><span class="p"><span class="pre">[</span></span><a class="reference internal" href="#renormalizer.model.Op" title="renormalizer.model.op.Op"><span class="pre">renormalizer.model.op.Op</span></a><span class="p"><span class="pre">]</span></span></em><a class="headerlink" href="#renormalizer.model.TI1DModel.ham_terms" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="renormalizer.model.TI1DModel.n_dofs">
+<span class="sig-name descname"><span class="pre">n_dofs</span></span><a class="headerlink" href="#renormalizer.model.TI1DModel.n_dofs" title="Permalink to this definition">¶</a></dt>
+<dd><p>Number of total DoFs.</p>
+</dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="renormalizer.model.TI1DModel.n_edofs">
+<span class="sig-name descname"><span class="pre">n_edofs</span></span><a class="headerlink" href="#renormalizer.model.TI1DModel.n_edofs" title="Permalink to this definition">¶</a></dt>
+<dd><p>Number of total electronic DoFs.</p>
+</dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="renormalizer.model.TI1DModel.n_vdofs">
+<span class="sig-name descname"><span class="pre">n_vdofs</span></span><a class="headerlink" href="#renormalizer.model.TI1DModel.n_vdofs" title="Permalink to this definition">¶</a></dt>
+<dd><p>Number of total vibrational DoFs.</p>
+</dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="renormalizer.model.TI1DModel.nsite">
+<span class="sig-name descname"><span class="pre">nsite</span></span><a class="headerlink" href="#renormalizer.model.TI1DModel.nsite" title="Permalink to this definition">¶</a></dt>
+<dd><p>Number of sites in the MPS/MPO to be constructed.
+Length of <code class="docutils literal notranslate"><span class="pre">self.basis</span></code>.</p>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="renormalizer.model.TI1DModel.to_dict">
+<span class="sig-name descname"><span class="pre">to_dict</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><a class="reference external" href="https://docs.python.org/3/library/typing.html#typing.Dict" title="(in Python v3.10)"><span class="pre">Dict</span></a></span></span><a class="headerlink" href="#renormalizer.model.TI1DModel.to_dict" title="Permalink to this definition">¶</a></dt>
+<dd><p>Convert the object into a dict that contains only objects of
+Python primitive types or NumPy types.
+This is primarily for dump purposes.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Returns</dt>
+<dd class="field-odd"><p><strong>info_dict</strong> – The information of the model in a dict.</p>
+</dd>
+<dt class="field-even">Return type</dt>
+<dd class="field-even"><p><a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#dict" title="(in Python v3.10)">dict</a></p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="renormalizer.model.TI1DModel.v_dofs">
+<span class="sig-name descname"><span class="pre">v_dofs</span></span><a class="headerlink" href="#renormalizer.model.TI1DModel.v_dofs" title="Permalink to this definition">¶</a></dt>
+<dd><p><a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#list" title="(in Python v3.10)"><code class="xref py py-class docutils literal notranslate"><span class="pre">list</span></code></a> of vibrational DoF names.</p>
+</dd></dl>
+
+</dd></dl>
+
+</div>
+<div class="section" id="basis-functions">
+<h2><span class="section-number">5.2. </span>Basis Functions<a class="headerlink" href="#basis-functions" title="Permalink to this headline">¶</a></h2>
+<dl class="py class">
+<dt class="sig sig-object py" id="renormalizer.model.basis.BasisSet">
+<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">renormalizer.model.basis.</span></span><span class="sig-name descname"><span class="pre">BasisSet</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">dof</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">nbas</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference external" href="https://docs.python.org/3/library/functions.html#int" title="(in Python v3.10)"><span class="pre">int</span></a></span></em>, <em class="sig-param"><span class="n"><span class="pre">sigmaqn</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference external" href="https://docs.python.org/3/library/typing.html#typing.List" title="(in Python v3.10)"><span class="pre">List</span></a><span class="p"><span class="pre">[</span></span><a class="reference external" href="https://docs.python.org/3/library/functions.html#int" title="(in Python v3.10)"><span class="pre">int</span></a><span class="p"><span class="pre">]</span></span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/renormalizer/model/basis.html#BasisSet"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#renormalizer.model.basis.BasisSet" title="Permalink to this definition">¶</a></dt>
+<dd><p>the parent class for local basis set</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>dof_name</strong> – The name(s) of the DoF(s) contained in the basis set.
+For basis containing only one DoF, the type could be anything that can be hashed.
+For basis containing multiple DoFs, the type should be a <code class="docutils literal notranslate"><span class="pre">list</span></code> or <code class="docutils literal notranslate"><span class="pre">tuple</span></code>
+of anything that can be hashed.</p></li>
+<li><p><strong>nbas</strong> (<a class="reference external" href="https://docs.python.org/3/library/functions.html#int" title="(in Python v3.10)"><em>int</em></a>) – number of dimension of the basis set</p></li>
+<li><p><strong>sigmaqn</strong> (<em>List</em><em>(</em><a class="reference external" href="https://docs.python.org/3/library/functions.html#int" title="(in Python v3.10)"><em>int</em></a><em>)</em>) – the qn of each basis</p></li>
+</ul>
+</dd>
+</dl>
+<dl class="py method">
+<dt class="sig sig-object py" id="renormalizer.model.basis.BasisSet.copy">
+<span class="sig-name descname"><span class="pre">copy</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">new_dof</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/renormalizer/model/basis.html#BasisSet.copy"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#renormalizer.model.basis.BasisSet.copy" title="Permalink to this definition">¶</a></dt>
+<dd><p>Return a copy of the basis set with new DoF name specified in the argument.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><p><strong>new_dof</strong> – New DoF name.</p>
+</dd>
+<dt class="field-even">Returns</dt>
+<dd class="field-even"><p><strong>new_basis</strong> – A copy of the basis with new DoF name.</p>
+</dd>
+<dt class="field-odd">Return type</dt>
+<dd class="field-odd"><p>Basis</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py property">
+<dt class="sig sig-object py" id="renormalizer.model.basis.BasisSet.dofs">
+<em class="property"><span class="pre">property</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">dofs</span></span><a class="headerlink" href="#renormalizer.model.basis.BasisSet.dofs" title="Permalink to this definition">¶</a></dt>
+<dd><p>Names of the DoFs contained in the basis.
+Returns a tuple even if the basis contains only one DoF.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Returns</dt>
+<dd class="field-odd"><p><strong>dof names</strong> – A tuple of DoF names.</p>
+</dd>
+<dt class="field-even">Return type</dt>
+<dd class="field-even"><p><a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#tuple" title="(in Python v3.10)">tuple</a></p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="renormalizer.model.basis.BasisSet.is_electron">
+<span class="sig-name descname"><span class="pre">is_electron</span></span><em class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">False</span></em><a class="headerlink" href="#renormalizer.model.basis.BasisSet.is_electron" title="Permalink to this definition">¶</a></dt>
+<dd><p>If the basis set represent electronic DoF.</p>
+</dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="renormalizer.model.basis.BasisSet.is_phonon">
+<span class="sig-name descname"><span class="pre">is_phonon</span></span><em class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">False</span></em><a class="headerlink" href="#renormalizer.model.basis.BasisSet.is_phonon" title="Permalink to this definition">¶</a></dt>
+<dd><p>If the basis set represent vibrational DoF.</p>
+</dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="renormalizer.model.basis.BasisSet.is_spin">
+<span class="sig-name descname"><span class="pre">is_spin</span></span><em class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">False</span></em><a class="headerlink" href="#renormalizer.model.basis.BasisSet.is_spin" title="Permalink to this definition">¶</a></dt>
+<dd><p>If the basis set represent spin DoF.</p>
+</dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="renormalizer.model.basis.BasisSet.multi_dof">
+<span class="sig-name descname"><span class="pre">multi_dof</span></span><em class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">False</span></em><a class="headerlink" href="#renormalizer.model.basis.BasisSet.multi_dof" title="Permalink to this definition">¶</a></dt>
+<dd><p>If the basis set contains multiple DoFs.</p>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="renormalizer.model.basis.BasisSet.op_mat">
+<span class="sig-name descname"><span class="pre">op_mat</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">op</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference internal" href="#renormalizer.model.Op" title="renormalizer.model.op.Op"><span class="pre">renormalizer.model.op.Op</span></a></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/renormalizer/model/basis.html#BasisSet.op_mat"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#renormalizer.model.basis.BasisSet.op_mat" title="Permalink to this definition">¶</a></dt>
+<dd><p>Matrix representation under the basis set of the input operator.
+The factor is included.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><p><strong>op</strong> (<a class="reference internal" href="#renormalizer.model.Op" title="renormalizer.model.Op"><em>Op</em></a>) – The operator. For basis set with only one DoF, <code class="xref py py-class docutils literal notranslate"><span class="pre">str`</span></code> is also acceptable.</p>
+</dd>
+<dt class="field-even">Returns</dt>
+<dd class="field-even"><p><strong>mat</strong> – Matrix representation of <code class="docutils literal notranslate"><span class="pre">op</span></code>.</p>
+</dd>
+<dt class="field-odd">Return type</dt>
+<dd class="field-odd"><p><code class="xref py py-class docutils literal notranslate"><span class="pre">np.ndarray</span></code></p>
+</dd>
+</dl>
+</dd></dl>
+
+</dd></dl>
+
+<dl class="py class">
+<dt class="sig sig-object py" id="renormalizer.model.basis.BasisSHO">
+<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">renormalizer.model.basis.</span></span><span class="sig-name descname"><span class="pre">BasisSHO</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">dof</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">omega</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">nbas</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">x0</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">0.0</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">dvr</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">False</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">general_xp_power</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">False</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/renormalizer/model/basis.html#BasisSHO"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#renormalizer.model.basis.BasisSHO" title="Permalink to this definition">¶</a></dt>
+<dd><p>simple harmonic oscillator basis set</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>dof</strong> – The name of the DoF contained in the basis set. The type could be anything that can be hashed.</p></li>
+<li><p><strong>omega</strong> (<a class="reference external" href="https://docs.python.org/3/library/functions.html#float" title="(in Python v3.10)"><em>float</em></a>) – the frequency of the oscillator.</p></li>
+<li><p><strong>nbas</strong> (<a class="reference external" href="https://docs.python.org/3/library/functions.html#int" title="(in Python v3.10)"><em>int</em></a>) – number of dimension of the basis set (highest occupation number of the harmonic oscillator)</p></li>
+<li><p><strong>x0</strong> (<a class="reference external" href="https://docs.python.org/3/library/functions.html#float" title="(in Python v3.10)"><em>float</em></a>) – the origin of the harmonic oscillator. Default = 0.</p></li>
+<li><p><strong>dvr</strong> (<a class="reference external" href="https://docs.python.org/3/library/functions.html#bool" title="(in Python v3.10)"><em>bool</em></a>) – whether to use discrete variable representation. Default = False.</p></li>
+<li><p><strong>general_xp_power</strong> (<a class="reference external" href="https://docs.python.org/3/library/functions.html#bool" title="(in Python v3.10)"><em>bool</em></a>) – whether calculate <span class="math notranslate nohighlight">\(x\)</span> and <span class="math notranslate nohighlight">\(x^2\)</span> (or <span class="math notranslate nohighlight">\(p\)</span> and <span class="math notranslate nohighlight">\(p^2\)</span>)
+through general expression for <span class="math notranslate nohighlight">\(x\)</span> power. This is not efficient because
+<span class="math notranslate nohighlight">\(x\)</span> and <span class="math notranslate nohighlight">\(x^2\)</span> (or <span class="math notranslate nohighlight">\(p\)</span> and <span class="math notranslate nohighlight">\(p^2\)</span>) have been hard-coded already.
+The option is only used for testing.</p></li>
+</ul>
+</dd>
+</dl>
+<dl class="py method">
+<dt class="sig sig-object py" id="renormalizer.model.basis.BasisSHO.copy">
+<span class="sig-name descname"><span class="pre">copy</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">new_dof</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/renormalizer/model/basis.html#BasisSHO.copy"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#renormalizer.model.basis.BasisSHO.copy" title="Permalink to this definition">¶</a></dt>
+<dd><p>Return a copy of the basis set with new DoF name specified in the argument.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><p><strong>new_dof</strong> – New DoF name.</p>
+</dd>
+<dt class="field-even">Returns</dt>
+<dd class="field-even"><p><strong>new_basis</strong> – A copy of the basis with new DoF name.</p>
+</dd>
+<dt class="field-odd">Return type</dt>
+<dd class="field-odd"><p>Basis</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py property">
+<dt class="sig sig-object py" id="renormalizer.model.basis.BasisSHO.dofs">
+<em class="property"><span class="pre">property</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">dofs</span></span><a class="headerlink" href="#renormalizer.model.basis.BasisSHO.dofs" title="Permalink to this definition">¶</a></dt>
+<dd><p>Names of the DoFs contained in the basis.
+Returns a tuple even if the basis contains only one DoF.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Returns</dt>
+<dd class="field-odd"><p><strong>dof names</strong> – A tuple of DoF names.</p>
+</dd>
+<dt class="field-even">Return type</dt>
+<dd class="field-even"><p><a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#tuple" title="(in Python v3.10)">tuple</a></p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="renormalizer.model.basis.BasisSHO.is_electron">
+<span class="sig-name descname"><span class="pre">is_electron</span></span><em class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">False</span></em><a class="headerlink" href="#renormalizer.model.basis.BasisSHO.is_electron" title="Permalink to this definition">¶</a></dt>
+<dd><p>If the basis set represent electronic DoF.</p>
+</dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="renormalizer.model.basis.BasisSHO.is_phonon">
+<span class="sig-name descname"><span class="pre">is_phonon</span></span><em class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">True</span></em><a class="headerlink" href="#renormalizer.model.basis.BasisSHO.is_phonon" title="Permalink to this definition">¶</a></dt>
+<dd><p>If the basis set represent vibrational DoF.</p>
+</dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="renormalizer.model.basis.BasisSHO.is_spin">
+<span class="sig-name descname"><span class="pre">is_spin</span></span><em class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">False</span></em><a class="headerlink" href="#renormalizer.model.basis.BasisSHO.is_spin" title="Permalink to this definition">¶</a></dt>
+<dd><p>If the basis set represent spin DoF.</p>
+</dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="renormalizer.model.basis.BasisSHO.multi_dof">
+<span class="sig-name descname"><span class="pre">multi_dof</span></span><em class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">False</span></em><a class="headerlink" href="#renormalizer.model.basis.BasisSHO.multi_dof" title="Permalink to this definition">¶</a></dt>
+<dd><p>If the basis set contains multiple DoFs.</p>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="renormalizer.model.basis.BasisSHO.op_mat">
+<span class="sig-name descname"><span class="pre">op_mat</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">op</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference external" href="https://docs.python.org/3/library/typing.html#typing.Union" title="(in Python v3.10)"><span class="pre">Union</span></a><span class="p"><span class="pre">[</span></span><a class="reference internal" href="#renormalizer.model.Op" title="renormalizer.model.op.Op"><span class="pre">renormalizer.model.op.Op</span></a><span class="p"><span class="pre">,</span></span><span class="w"> </span><a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.10)"><span class="pre">str</span></a><span class="p"><span class="pre">]</span></span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/renormalizer/model/basis.html#BasisSHO.op_mat"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#renormalizer.model.basis.BasisSHO.op_mat" title="Permalink to this definition">¶</a></dt>
+<dd><p>Matrix representation under the basis set of the input operator.
+The factor is included.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><p><strong>op</strong> (<a class="reference internal" href="#renormalizer.model.Op" title="renormalizer.model.Op"><em>Op</em></a>) – The operator. For basis set with only one DoF, <code class="xref py py-class docutils literal notranslate"><span class="pre">str`</span></code> is also acceptable.</p>
+</dd>
+<dt class="field-even">Returns</dt>
+<dd class="field-even"><p><strong>mat</strong> – Matrix representation of <code class="docutils literal notranslate"><span class="pre">op</span></code>.</p>
+</dd>
+<dt class="field-odd">Return type</dt>
+<dd class="field-odd"><p><code class="xref py py-class docutils literal notranslate"><span class="pre">np.ndarray</span></code></p>
+</dd>
+</dl>
+</dd></dl>
+
+</dd></dl>
+
+<dl class="py class">
+<dt class="sig sig-object py" id="renormalizer.model.basis.BasisSineDVR">
+<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">renormalizer.model.basis.</span></span><span class="sig-name descname"><span class="pre">BasisSineDVR</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">dof</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">nbas</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">xi</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">xf</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">endpoint</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">False</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/renormalizer/model/basis.html#BasisSineDVR"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#renormalizer.model.basis.BasisSineDVR" title="Permalink to this definition">¶</a></dt>
+<dd><p>Sine DVR basis (particle-in-a-box) for vibrational, angular, and
+dissociative modes.
+See Phys. Rep. 324, 1–105 (2000).</p>
+<blockquote>
+<div><div class="math notranslate nohighlight">
+\[\psi_j(x) = \sqrt{\frac{2}{L}} \sin(j\pi(x-x_0)/L) \, \textrm{for} \, x_0 \le x \le
+x_{N+1}, L = x_{N+1} - x_0\]</div>
+</div></blockquote>
+<p>the grid points are at</p>
+<blockquote>
+<div><div class="math notranslate nohighlight">
+\[x_\alpha = x_0 + \alpha \frac{L}{N+1}\]</div>
+</div></blockquote>
+<dl>
+<dt>Operators supported:</dt><dd><div class="math notranslate nohighlight">
+\[I, x, x^1, x^2, x^\textrm{moment}, partialx, partialx^2, p, p^2,
+x partialx, x^2 p^2, x^2 partialx, x p^2, x^3 p^2\]</div>
+</dd>
+</dl>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>dof</strong> (<a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.10)"><em>str</em></a><em>, </em><a class="reference external" href="https://docs.python.org/3/library/functions.html#int" title="(in Python v3.10)"><em>int</em></a>) – The name of the DoF contained in the basis set. The type could be anything that can be hashed.</p></li>
+<li><p><strong>nbas</strong> (<a class="reference external" href="https://docs.python.org/3/library/functions.html#int" title="(in Python v3.10)"><em>int</em></a>) – Number of grid points.</p></li>
+<li><p><strong>xi</strong> (<a class="reference external" href="https://docs.python.org/3/library/functions.html#float" title="(in Python v3.10)"><em>float</em></a>) – The leftmost grid point of the coordinate.</p></li>
+<li><p><strong>xf</strong> (<a class="reference external" href="https://docs.python.org/3/library/functions.html#float" title="(in Python v3.10)"><em>float</em></a>) – The rightmost grid point of the coordinate.</p></li>
+<li><p><strong>endpoint</strong> (<a class="reference external" href="https://docs.python.org/3/library/functions.html#bool" title="(in Python v3.10)"><em>bool</em></a><em>, </em><em>optional</em>) – If <code class="docutils literal notranslate"><span class="pre">endpoint=False</span></code>, <span class="math notranslate nohighlight">\(x_0=x_i, x_{N+1}=x_f\)</span>; otherwise
+<span class="math notranslate nohighlight">\(x_1=x_i, x_{N}=x_f\)</span>.</p></li>
+</ul>
+</dd>
+</dl>
+<dl class="py method">
+<dt class="sig sig-object py" id="renormalizer.model.basis.BasisSineDVR.copy">
+<span class="sig-name descname"><span class="pre">copy</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">new_dof</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/renormalizer/model/basis.html#BasisSineDVR.copy"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#renormalizer.model.basis.BasisSineDVR.copy" title="Permalink to this definition">¶</a></dt>
+<dd><p>Return a copy of the basis set with new DoF name specified in the argument.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><p><strong>new_dof</strong> – New DoF name.</p>
+</dd>
+<dt class="field-even">Returns</dt>
+<dd class="field-even"><p><strong>new_basis</strong> – A copy of the basis with new DoF name.</p>
+</dd>
+<dt class="field-odd">Return type</dt>
+<dd class="field-odd"><p>Basis</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py property">
+<dt class="sig sig-object py" id="renormalizer.model.basis.BasisSineDVR.dofs">
+<em class="property"><span class="pre">property</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">dofs</span></span><a class="headerlink" href="#renormalizer.model.basis.BasisSineDVR.dofs" title="Permalink to this definition">¶</a></dt>
+<dd><p>Names of the DoFs contained in the basis.
+Returns a tuple even if the basis contains only one DoF.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Returns</dt>
+<dd class="field-odd"><p><strong>dof names</strong> – A tuple of DoF names.</p>
+</dd>
+<dt class="field-even">Return type</dt>
+<dd class="field-even"><p><a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#tuple" title="(in Python v3.10)">tuple</a></p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="renormalizer.model.basis.BasisSineDVR.is_electron">
+<span class="sig-name descname"><span class="pre">is_electron</span></span><em class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">False</span></em><a class="headerlink" href="#renormalizer.model.basis.BasisSineDVR.is_electron" title="Permalink to this definition">¶</a></dt>
+<dd><p>If the basis set represent electronic DoF.</p>
+</dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="renormalizer.model.basis.BasisSineDVR.is_phonon">
+<span class="sig-name descname"><span class="pre">is_phonon</span></span><em class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">True</span></em><a class="headerlink" href="#renormalizer.model.basis.BasisSineDVR.is_phonon" title="Permalink to this definition">¶</a></dt>
+<dd><p>If the basis set represent vibrational DoF.</p>
+</dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="renormalizer.model.basis.BasisSineDVR.is_spin">
+<span class="sig-name descname"><span class="pre">is_spin</span></span><em class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">False</span></em><a class="headerlink" href="#renormalizer.model.basis.BasisSineDVR.is_spin" title="Permalink to this definition">¶</a></dt>
+<dd><p>If the basis set represent spin DoF.</p>
+</dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="renormalizer.model.basis.BasisSineDVR.multi_dof">
+<span class="sig-name descname"><span class="pre">multi_dof</span></span><em class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">False</span></em><a class="headerlink" href="#renormalizer.model.basis.BasisSineDVR.multi_dof" title="Permalink to this definition">¶</a></dt>
+<dd><p>If the basis set contains multiple DoFs.</p>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="renormalizer.model.basis.BasisSineDVR.op_mat">
+<span class="sig-name descname"><span class="pre">op_mat</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">op</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference external" href="https://docs.python.org/3/library/typing.html#typing.Union" title="(in Python v3.10)"><span class="pre">Union</span></a><span class="p"><span class="pre">[</span></span><a class="reference internal" href="#renormalizer.model.Op" title="renormalizer.model.op.Op"><span class="pre">renormalizer.model.op.Op</span></a><span class="p"><span class="pre">,</span></span><span class="w"> </span><a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.10)"><span class="pre">str</span></a><span class="p"><span class="pre">]</span></span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/renormalizer/model/basis.html#BasisSineDVR.op_mat"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#renormalizer.model.basis.BasisSineDVR.op_mat" title="Permalink to this definition">¶</a></dt>
+<dd><p>Matrix representation under the basis set of the input operator.
+The factor is included.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><p><strong>op</strong> (<a class="reference internal" href="#renormalizer.model.Op" title="renormalizer.model.Op"><em>Op</em></a>) – The operator. For basis set with only one DoF, <code class="xref py py-class docutils literal notranslate"><span class="pre">str`</span></code> is also acceptable.</p>
+</dd>
+<dt class="field-even">Returns</dt>
+<dd class="field-even"><p><strong>mat</strong> – Matrix representation of <code class="docutils literal notranslate"><span class="pre">op</span></code>.</p>
+</dd>
+<dt class="field-odd">Return type</dt>
+<dd class="field-odd"><p><code class="xref py py-class docutils literal notranslate"><span class="pre">np.ndarray</span></code></p>
+</dd>
+</dl>
+</dd></dl>
+
+</dd></dl>
+
+<dl class="py class">
+<dt class="sig sig-object py" id="renormalizer.model.basis.BasisSimpleElectron">
+<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">renormalizer.model.basis.</span></span><span class="sig-name descname"><span class="pre">BasisSimpleElectron</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">dof</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/renormalizer/model/basis.html#BasisSimpleElectron"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#renormalizer.model.basis.BasisSimpleElectron" title="Permalink to this definition">¶</a></dt>
+<dd><p>The basis set for simple electron DoF, two state with 0: unoccupied, 1: occupied</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><p><strong>dof</strong> (<em>any hashable object</em>) – The name of the DoF contained in the basis set.</p>
+</dd>
+</dl>
+<dl class="py method">
+<dt class="sig sig-object py" id="renormalizer.model.basis.BasisSimpleElectron.copy">
+<span class="sig-name descname"><span class="pre">copy</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">new_dof</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/renormalizer/model/basis.html#BasisSimpleElectron.copy"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#renormalizer.model.basis.BasisSimpleElectron.copy" title="Permalink to this definition">¶</a></dt>
+<dd><p>Return a copy of the basis set with new DoF name specified in the argument.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><p><strong>new_dof</strong> – New DoF name.</p>
+</dd>
+<dt class="field-even">Returns</dt>
+<dd class="field-even"><p><strong>new_basis</strong> – A copy of the basis with new DoF name.</p>
+</dd>
+<dt class="field-odd">Return type</dt>
+<dd class="field-odd"><p>Basis</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py property">
+<dt class="sig sig-object py" id="renormalizer.model.basis.BasisSimpleElectron.dofs">
+<em class="property"><span class="pre">property</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">dofs</span></span><a class="headerlink" href="#renormalizer.model.basis.BasisSimpleElectron.dofs" title="Permalink to this definition">¶</a></dt>
+<dd><p>Names of the DoFs contained in the basis.
+Returns a tuple even if the basis contains only one DoF.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Returns</dt>
+<dd class="field-odd"><p><strong>dof names</strong> – A tuple of DoF names.</p>
+</dd>
+<dt class="field-even">Return type</dt>
+<dd class="field-even"><p><a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#tuple" title="(in Python v3.10)">tuple</a></p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="renormalizer.model.basis.BasisSimpleElectron.is_electron">
+<span class="sig-name descname"><span class="pre">is_electron</span></span><em class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">True</span></em><a class="headerlink" href="#renormalizer.model.basis.BasisSimpleElectron.is_electron" title="Permalink to this definition">¶</a></dt>
+<dd><p>If the basis set represent electronic DoF.</p>
+</dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="renormalizer.model.basis.BasisSimpleElectron.is_phonon">
+<span class="sig-name descname"><span class="pre">is_phonon</span></span><em class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">False</span></em><a class="headerlink" href="#renormalizer.model.basis.BasisSimpleElectron.is_phonon" title="Permalink to this definition">¶</a></dt>
+<dd><p>If the basis set represent vibrational DoF.</p>
+</dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="renormalizer.model.basis.BasisSimpleElectron.is_spin">
+<span class="sig-name descname"><span class="pre">is_spin</span></span><em class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">False</span></em><a class="headerlink" href="#renormalizer.model.basis.BasisSimpleElectron.is_spin" title="Permalink to this definition">¶</a></dt>
+<dd><p>If the basis set represent spin DoF.</p>
+</dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="renormalizer.model.basis.BasisSimpleElectron.multi_dof">
+<span class="sig-name descname"><span class="pre">multi_dof</span></span><em class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">False</span></em><a class="headerlink" href="#renormalizer.model.basis.BasisSimpleElectron.multi_dof" title="Permalink to this definition">¶</a></dt>
+<dd><p>If the basis set contains multiple DoFs.</p>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="renormalizer.model.basis.BasisSimpleElectron.op_mat">
+<span class="sig-name descname"><span class="pre">op_mat</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">op</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/renormalizer/model/basis.html#BasisSimpleElectron.op_mat"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#renormalizer.model.basis.BasisSimpleElectron.op_mat" title="Permalink to this definition">¶</a></dt>
+<dd><p>Matrix representation under the basis set of the input operator.
+The factor is included.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><p><strong>op</strong> (<a class="reference internal" href="#renormalizer.model.Op" title="renormalizer.model.Op"><em>Op</em></a>) – The operator. For basis set with only one DoF, <code class="xref py py-class docutils literal notranslate"><span class="pre">str`</span></code> is also acceptable.</p>
+</dd>
+<dt class="field-even">Returns</dt>
+<dd class="field-even"><p><strong>mat</strong> – Matrix representation of <code class="docutils literal notranslate"><span class="pre">op</span></code>.</p>
+</dd>
+<dt class="field-odd">Return type</dt>
+<dd class="field-odd"><p><code class="xref py py-class docutils literal notranslate"><span class="pre">np.ndarray</span></code></p>
+</dd>
+</dl>
+</dd></dl>
+
+</dd></dl>
+
+<dl class="py class">
+<dt class="sig sig-object py" id="renormalizer.model.basis.BasisMultiElectron">
+<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">renormalizer.model.basis.</span></span><span class="sig-name descname"><span class="pre">BasisMultiElectron</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">dof</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">sigmaqn</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference external" href="https://docs.python.org/3/library/typing.html#typing.List" title="(in Python v3.10)"><span class="pre">List</span></a><span class="p"><span class="pre">[</span></span><a class="reference external" href="https://docs.python.org/3/library/functions.html#int" title="(in Python v3.10)"><span class="pre">int</span></a><span class="p"><span class="pre">]</span></span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/renormalizer/model/basis.html#BasisMultiElectron"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#renormalizer.model.basis.BasisMultiElectron" title="Permalink to this definition">¶</a></dt>
+<dd><p>The basis set for multi electronic state on one single site,
+The basis order is [dof_names[0], dof_names[1], dof_names[2], …].</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>dof</strong> (a <a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#list" title="(in Python v3.10)"><code class="xref py py-class docutils literal notranslate"><span class="pre">list</span></code></a> or <a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#tuple" title="(in Python v3.10)"><code class="xref py py-class docutils literal notranslate"><span class="pre">tuple</span></code></a> of hashable objects.) – The names of the DoFs contained in the basis set.</p></li>
+<li><p><strong>sigmaqn</strong> (<a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#list" title="(in Python v3.10)"><code class="xref py py-class docutils literal notranslate"><span class="pre">list</span></code></a> of <a class="reference external" href="https://docs.python.org/3/library/functions.html#int" title="(in Python v3.10)"><code class="xref py py-class docutils literal notranslate"><span class="pre">int</span></code></a>) – The sigmaqn of each basis</p></li>
+</ul>
+</dd>
+</dl>
+<dl class="py method">
+<dt class="sig sig-object py" id="renormalizer.model.basis.BasisMultiElectron.copy">
+<span class="sig-name descname"><span class="pre">copy</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">new_dof</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/renormalizer/model/basis.html#BasisMultiElectron.copy"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#renormalizer.model.basis.BasisMultiElectron.copy" title="Permalink to this definition">¶</a></dt>
+<dd><p>Return a copy of the basis set with new DoF name specified in the argument.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><p><strong>new_dof</strong> – New DoF name.</p>
+</dd>
+<dt class="field-even">Returns</dt>
+<dd class="field-even"><p><strong>new_basis</strong> – A copy of the basis with new DoF name.</p>
+</dd>
+<dt class="field-odd">Return type</dt>
+<dd class="field-odd"><p>Basis</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py property">
+<dt class="sig sig-object py" id="renormalizer.model.basis.BasisMultiElectron.dofs">
+<em class="property"><span class="pre">property</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">dofs</span></span><a class="headerlink" href="#renormalizer.model.basis.BasisMultiElectron.dofs" title="Permalink to this definition">¶</a></dt>
+<dd><p>Names of the DoFs contained in the basis.
+Returns a tuple even if the basis contains only one DoF.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Returns</dt>
+<dd class="field-odd"><p><strong>dof names</strong> – A tuple of DoF names.</p>
+</dd>
+<dt class="field-even">Return type</dt>
+<dd class="field-even"><p><a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#tuple" title="(in Python v3.10)">tuple</a></p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="renormalizer.model.basis.BasisMultiElectron.is_electron">
+<span class="sig-name descname"><span class="pre">is_electron</span></span><em class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">True</span></em><a class="headerlink" href="#renormalizer.model.basis.BasisMultiElectron.is_electron" title="Permalink to this definition">¶</a></dt>
+<dd><p>If the basis set represent electronic DoF.</p>
+</dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="renormalizer.model.basis.BasisMultiElectron.is_phonon">
+<span class="sig-name descname"><span class="pre">is_phonon</span></span><em class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">False</span></em><a class="headerlink" href="#renormalizer.model.basis.BasisMultiElectron.is_phonon" title="Permalink to this definition">¶</a></dt>
+<dd><p>If the basis set represent vibrational DoF.</p>
+</dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="renormalizer.model.basis.BasisMultiElectron.is_spin">
+<span class="sig-name descname"><span class="pre">is_spin</span></span><em class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">False</span></em><a class="headerlink" href="#renormalizer.model.basis.BasisMultiElectron.is_spin" title="Permalink to this definition">¶</a></dt>
+<dd><p>If the basis set represent spin DoF.</p>
+</dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="renormalizer.model.basis.BasisMultiElectron.multi_dof">
+<span class="sig-name descname"><span class="pre">multi_dof</span></span><em class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">True</span></em><a class="headerlink" href="#renormalizer.model.basis.BasisMultiElectron.multi_dof" title="Permalink to this definition">¶</a></dt>
+<dd><p>If the basis set contains multiple DoFs.</p>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="renormalizer.model.basis.BasisMultiElectron.op_mat">
+<span class="sig-name descname"><span class="pre">op_mat</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">op</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference internal" href="#renormalizer.model.Op" title="renormalizer.model.op.Op"><span class="pre">renormalizer.model.op.Op</span></a></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/renormalizer/model/basis.html#BasisMultiElectron.op_mat"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#renormalizer.model.basis.BasisMultiElectron.op_mat" title="Permalink to this definition">¶</a></dt>
+<dd><p>Matrix representation under the basis set of the input operator.
+The factor is included.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><p><strong>op</strong> (<a class="reference internal" href="#renormalizer.model.Op" title="renormalizer.model.Op"><em>Op</em></a>) – The operator. For basis set with only one DoF, <code class="xref py py-class docutils literal notranslate"><span class="pre">str`</span></code> is also acceptable.</p>
+</dd>
+<dt class="field-even">Returns</dt>
+<dd class="field-even"><p><strong>mat</strong> – Matrix representation of <code class="docutils literal notranslate"><span class="pre">op</span></code>.</p>
+</dd>
+<dt class="field-odd">Return type</dt>
+<dd class="field-odd"><p><code class="xref py py-class docutils literal notranslate"><span class="pre">np.ndarray</span></code></p>
+</dd>
+</dl>
+</dd></dl>
+
+</dd></dl>
+
+<dl class="py class">
+<dt class="sig sig-object py" id="renormalizer.model.basis.BasisMultiElectronVac">
+<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">renormalizer.model.basis.</span></span><span class="sig-name descname"><span class="pre">BasisMultiElectronVac</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">dof</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/renormalizer/model/basis.html#BasisMultiElectronVac"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#renormalizer.model.basis.BasisMultiElectronVac" title="Permalink to this definition">¶</a></dt>
+<dd><p>Another basis set for multi electronic state on one single site.
+Vacuum state is included.
+The basis order is [vacuum, dof_names[0], dof_names[1],…].
+sigma qn is [0, 1, 1, 1, …]</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><p><strong>dof</strong> (a <a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#list" title="(in Python v3.10)"><code class="xref py py-class docutils literal notranslate"><span class="pre">list</span></code></a> or <a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#tuple" title="(in Python v3.10)"><code class="xref py py-class docutils literal notranslate"><span class="pre">tuple</span></code></a> of hashable objects.) – The names of the DoFs contained in the basis set.</p>
+</dd>
+</dl>
+<dl class="py method">
+<dt class="sig sig-object py" id="renormalizer.model.basis.BasisMultiElectronVac.copy">
+<span class="sig-name descname"><span class="pre">copy</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">new_dof</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/renormalizer/model/basis.html#BasisMultiElectronVac.copy"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#renormalizer.model.basis.BasisMultiElectronVac.copy" title="Permalink to this definition">¶</a></dt>
+<dd><p>Return a copy of the basis set with new DoF name specified in the argument.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><p><strong>new_dof</strong> – New DoF name.</p>
+</dd>
+<dt class="field-even">Returns</dt>
+<dd class="field-even"><p><strong>new_basis</strong> – A copy of the basis with new DoF name.</p>
+</dd>
+<dt class="field-odd">Return type</dt>
+<dd class="field-odd"><p>Basis</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py property">
+<dt class="sig sig-object py" id="renormalizer.model.basis.BasisMultiElectronVac.dofs">
+<em class="property"><span class="pre">property</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">dofs</span></span><a class="headerlink" href="#renormalizer.model.basis.BasisMultiElectronVac.dofs" title="Permalink to this definition">¶</a></dt>
+<dd><p>Names of the DoFs contained in the basis.
+Returns a tuple even if the basis contains only one DoF.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Returns</dt>
+<dd class="field-odd"><p><strong>dof names</strong> – A tuple of DoF names.</p>
+</dd>
+<dt class="field-even">Return type</dt>
+<dd class="field-even"><p><a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#tuple" title="(in Python v3.10)">tuple</a></p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="renormalizer.model.basis.BasisMultiElectronVac.is_electron">
+<span class="sig-name descname"><span class="pre">is_electron</span></span><em class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">True</span></em><a class="headerlink" href="#renormalizer.model.basis.BasisMultiElectronVac.is_electron" title="Permalink to this definition">¶</a></dt>
+<dd><p>If the basis set represent electronic DoF.</p>
+</dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="renormalizer.model.basis.BasisMultiElectronVac.is_phonon">
+<span class="sig-name descname"><span class="pre">is_phonon</span></span><em class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">False</span></em><a class="headerlink" href="#renormalizer.model.basis.BasisMultiElectronVac.is_phonon" title="Permalink to this definition">¶</a></dt>
+<dd><p>If the basis set represent vibrational DoF.</p>
+</dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="renormalizer.model.basis.BasisMultiElectronVac.is_spin">
+<span class="sig-name descname"><span class="pre">is_spin</span></span><em class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">False</span></em><a class="headerlink" href="#renormalizer.model.basis.BasisMultiElectronVac.is_spin" title="Permalink to this definition">¶</a></dt>
+<dd><p>If the basis set represent spin DoF.</p>
+</dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="renormalizer.model.basis.BasisMultiElectronVac.multi_dof">
+<span class="sig-name descname"><span class="pre">multi_dof</span></span><em class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">True</span></em><a class="headerlink" href="#renormalizer.model.basis.BasisMultiElectronVac.multi_dof" title="Permalink to this definition">¶</a></dt>
+<dd><p>If the basis set contains multiple DoFs.</p>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="renormalizer.model.basis.BasisMultiElectronVac.op_mat">
+<span class="sig-name descname"><span class="pre">op_mat</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">op</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference internal" href="#renormalizer.model.Op" title="renormalizer.model.op.Op"><span class="pre">renormalizer.model.op.Op</span></a></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/renormalizer/model/basis.html#BasisMultiElectronVac.op_mat"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#renormalizer.model.basis.BasisMultiElectronVac.op_mat" title="Permalink to this definition">¶</a></dt>
+<dd><p>Matrix representation under the basis set of the input operator.
+The factor is included.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><p><strong>op</strong> (<a class="reference internal" href="#renormalizer.model.Op" title="renormalizer.model.Op"><em>Op</em></a>) – The operator. For basis set with only one DoF, <code class="xref py py-class docutils literal notranslate"><span class="pre">str`</span></code> is also acceptable.</p>
+</dd>
+<dt class="field-even">Returns</dt>
+<dd class="field-even"><p><strong>mat</strong> – Matrix representation of <code class="docutils literal notranslate"><span class="pre">op</span></code>.</p>
+</dd>
+<dt class="field-odd">Return type</dt>
+<dd class="field-odd"><p><code class="xref py py-class docutils literal notranslate"><span class="pre">np.ndarray</span></code></p>
+</dd>
+</dl>
+</dd></dl>
+
+</dd></dl>
+
+<dl class="py class">
+<dt class="sig sig-object py" id="renormalizer.model.basis.BasisHalfSpin">
+<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">renormalizer.model.basis.</span></span><span class="sig-name descname"><span class="pre">BasisHalfSpin</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">dof</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">sigmaqn</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference external" href="https://docs.python.org/3/library/typing.html#typing.Optional" title="(in Python v3.10)"><span class="pre">Optional</span></a><span class="p"><span class="pre">[</span></span><a class="reference external" href="https://docs.python.org/3/library/typing.html#typing.List" title="(in Python v3.10)"><span class="pre">List</span></a><span class="p"><span class="pre">[</span></span><a class="reference external" href="https://docs.python.org/3/library/functions.html#int" title="(in Python v3.10)"><span class="pre">int</span></a><span class="p"><span class="pre">]</span></span><span class="p"><span class="pre">]</span></span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/renormalizer/model/basis.html#BasisHalfSpin"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#renormalizer.model.basis.BasisHalfSpin" title="Permalink to this definition">¶</a></dt>
+<dd><p>The basis the for 1/2 spin DoF</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><p><strong>dof</strong> (<em>any hashable object</em>) – The name of the DoF contained in the basis set.</p>
+</dd>
+</dl>
+<dl class="py method">
+<dt class="sig sig-object py" id="renormalizer.model.basis.BasisHalfSpin.copy">
+<span class="sig-name descname"><span class="pre">copy</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">new_dof</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/renormalizer/model/basis.html#BasisHalfSpin.copy"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#renormalizer.model.basis.BasisHalfSpin.copy" title="Permalink to this definition">¶</a></dt>
+<dd><p>Return a copy of the basis set with new DoF name specified in the argument.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><p><strong>new_dof</strong> – New DoF name.</p>
+</dd>
+<dt class="field-even">Returns</dt>
+<dd class="field-even"><p><strong>new_basis</strong> – A copy of the basis with new DoF name.</p>
+</dd>
+<dt class="field-odd">Return type</dt>
+<dd class="field-odd"><p>Basis</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py property">
+<dt class="sig sig-object py" id="renormalizer.model.basis.BasisHalfSpin.dofs">
+<em class="property"><span class="pre">property</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">dofs</span></span><a class="headerlink" href="#renormalizer.model.basis.BasisHalfSpin.dofs" title="Permalink to this definition">¶</a></dt>
+<dd><p>Names of the DoFs contained in the basis.
+Returns a tuple even if the basis contains only one DoF.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Returns</dt>
+<dd class="field-odd"><p><strong>dof names</strong> – A tuple of DoF names.</p>
+</dd>
+<dt class="field-even">Return type</dt>
+<dd class="field-even"><p><a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#tuple" title="(in Python v3.10)">tuple</a></p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="renormalizer.model.basis.BasisHalfSpin.is_electron">
+<span class="sig-name descname"><span class="pre">is_electron</span></span><em class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">False</span></em><a class="headerlink" href="#renormalizer.model.basis.BasisHalfSpin.is_electron" title="Permalink to this definition">¶</a></dt>
+<dd><p>If the basis set represent electronic DoF.</p>
+</dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="renormalizer.model.basis.BasisHalfSpin.is_phonon">
+<span class="sig-name descname"><span class="pre">is_phonon</span></span><em class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">False</span></em><a class="headerlink" href="#renormalizer.model.basis.BasisHalfSpin.is_phonon" title="Permalink to this definition">¶</a></dt>
+<dd><p>If the basis set represent vibrational DoF.</p>
+</dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="renormalizer.model.basis.BasisHalfSpin.is_spin">
+<span class="sig-name descname"><span class="pre">is_spin</span></span><em class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">True</span></em><a class="headerlink" href="#renormalizer.model.basis.BasisHalfSpin.is_spin" title="Permalink to this definition">¶</a></dt>
+<dd><p>If the basis set represent spin DoF.</p>
+</dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="renormalizer.model.basis.BasisHalfSpin.multi_dof">
+<span class="sig-name descname"><span class="pre">multi_dof</span></span><em class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">False</span></em><a class="headerlink" href="#renormalizer.model.basis.BasisHalfSpin.multi_dof" title="Permalink to this definition">¶</a></dt>
+<dd><p>If the basis set contains multiple DoFs.</p>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="renormalizer.model.basis.BasisHalfSpin.op_mat">
+<span class="sig-name descname"><span class="pre">op_mat</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">op</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference external" href="https://docs.python.org/3/library/typing.html#typing.Union" title="(in Python v3.10)"><span class="pre">Union</span></a><span class="p"><span class="pre">[</span></span><a class="reference internal" href="#renormalizer.model.Op" title="renormalizer.model.op.Op"><span class="pre">renormalizer.model.op.Op</span></a><span class="p"><span class="pre">,</span></span><span class="w"> </span><a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.10)"><span class="pre">str</span></a><span class="p"><span class="pre">]</span></span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/renormalizer/model/basis.html#BasisHalfSpin.op_mat"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#renormalizer.model.basis.BasisHalfSpin.op_mat" title="Permalink to this definition">¶</a></dt>
+<dd><p>Matrix representation under the basis set of the input operator.
+The factor is included.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><p><strong>op</strong> (<a class="reference internal" href="#renormalizer.model.Op" title="renormalizer.model.Op"><em>Op</em></a>) – The operator. For basis set with only one DoF, <code class="xref py py-class docutils literal notranslate"><span class="pre">str`</span></code> is also acceptable.</p>
+</dd>
+<dt class="field-even">Returns</dt>
+<dd class="field-even"><p><strong>mat</strong> – Matrix representation of <code class="docutils literal notranslate"><span class="pre">op</span></code>.</p>
+</dd>
+<dt class="field-odd">Return type</dt>
+<dd class="field-odd"><p><code class="xref py py-class docutils literal notranslate"><span class="pre">np.ndarray</span></code></p>
+</dd>
+</dl>
+</dd></dl>
+
+</dd></dl>
+
+</div>
+<div class="section" id="the-operator-class">
+<h2><span class="section-number">5.3. </span>The Operator Class<a class="headerlink" href="#the-operator-class" title="Permalink to this headline">¶</a></h2>
+<dl class="py class">
+<dt class="sig sig-object py" id="renormalizer.model.Op">
+<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">renormalizer.model.</span></span><span class="sig-name descname"><span class="pre">Op</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">symbol</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.10)"><span class="pre">str</span></a></span></em>, <em class="sig-param"><span class="n"><span class="pre">dof</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">factor</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference external" href="https://docs.python.org/3/library/typing.html#typing.Union" title="(in Python v3.10)"><span class="pre">Union</span></a><span class="p"><span class="pre">[</span></span><a class="reference external" href="https://docs.python.org/3/library/functions.html#float" title="(in Python v3.10)"><span class="pre">float</span></a><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="pre">renormalizer.utils.quantity.Quantity</span><span class="p"><span class="pre">]</span></span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">1.0</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">qn</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference external" href="https://docs.python.org/3/library/typing.html#typing.Optional" title="(in Python v3.10)"><span class="pre">Optional</span></a><span class="p"><span class="pre">[</span></span><a class="reference external" href="https://docs.python.org/3/library/typing.html#typing.Union" title="(in Python v3.10)"><span class="pre">Union</span></a><span class="p"><span class="pre">[</span></span><a class="reference external" href="https://docs.python.org/3/library/typing.html#typing.List" title="(in Python v3.10)"><span class="pre">List</span></a><span class="p"><span class="pre">,</span></span><span class="w"> </span><a class="reference external" href="https://docs.python.org/3/library/functions.html#int" title="(in Python v3.10)"><span class="pre">int</span></a><span class="p"><span class="pre">]</span></span><span class="p"><span class="pre">]</span></span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/renormalizer/model/op.html#Op"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#renormalizer.model.Op" title="Permalink to this definition">¶</a></dt>
+<dd><p>The operator class. The class can be considered as a symbolic way to express
+quantum operator such as <span class="math notranslate nohighlight">\(a^\dagger_i a_j\)</span>, <span class="math notranslate nohighlight">\(b^\dagger_i + b_i\)</span>
+or <span class="math notranslate nohighlight">\(g \omega a^\dagger_i a_i (b^\dagger_{ij} + b_{ij})\)</span>.
+Multiplications between operators are supported.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>symbol</strong> (<a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.10)"><em>str</em></a>) – The string of the operator, such as <code class="docutils literal notranslate"><span class="pre">&quot;a&quot;</span></code>, <code class="docutils literal notranslate"><span class="pre">&quot;a^\dagger</span> <span class="pre">a&quot;</span></code> and <code class="docutils literal notranslate"><span class="pre">r&quot;b^\dagger</span> <span class="pre">+</span> <span class="pre">b&quot;</span></code>.
+The supported operators are defined in <a class="reference internal" href="#renormalizer.model.basis.BasisSet" title="renormalizer.model.basis.BasisSet"><code class="xref py py-class docutils literal notranslate"><span class="pre">BasisSet</span></code></a>.
+For complex symbols consisting of multiplication of simple symbols,
+separate the simple symbols with a single space.</p></li>
+<li><p><strong>dof</strong> (hashable object or <a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#list" title="(in Python v3.10)"><code class="xref py py-class docutils literal notranslate"><span class="pre">list</span></code></a> of hashable objects.) – The name of the DoF related to the operator.
+For simple symbol such as <code class="docutils literal notranslate"><span class="pre">&quot;a&quot;</span></code>, the type could be any hashable object.
+<a class="reference external" href="https://docs.python.org/3/library/functions.html#int" title="(in Python v3.10)"><code class="xref py py-class docutils literal notranslate"><span class="pre">int</span></code></a>, <a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.10)"><code class="xref py py-class docutils literal notranslate"><span class="pre">str</span></code></a> and <a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#tuple" title="(in Python v3.10)"><code class="xref py py-class docutils literal notranslate"><span class="pre">tuple</span></code></a> of them are recommended types for <code class="docutils literal notranslate"><span class="pre">dof</span></code>.
+For complex symbol such as <code class="docutils literal notranslate"><span class="pre">&quot;a^\dagger</span> <span class="pre">a&quot;</span></code>, the type should be a list of hashable objects,
+with each element representing one of the simple symbol contained in the complex symbol.
+Using a single hashable object is also supported for complex symbol,
+in which case every symbol is assumed to share the same DoF name.</p></li>
+<li><p><strong>factor</strong> (<a class="reference external" href="https://docs.python.org/3/library/functions.html#float" title="(in Python v3.10)"><code class="xref py py-class docutils literal notranslate"><span class="pre">float</span></code></a> or <a class="reference external" href="https://docs.python.org/3/library/functions.html#complex" title="(in Python v3.10)"><code class="xref py py-class docutils literal notranslate"><span class="pre">complex</span></code></a> or <code class="xref py py-class docutils literal notranslate"><span class="pre">Quantity</span></code>) – The prefactor of the operator.</p></li>
+<li><p><strong>qn</strong> (<a class="reference external" href="https://docs.python.org/3/library/functions.html#int" title="(in Python v3.10)"><code class="xref py py-class docutils literal notranslate"><span class="pre">int</span></code></a> or <a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#list" title="(in Python v3.10)"><code class="xref py py-class docutils literal notranslate"><span class="pre">list</span></code></a> of <a class="reference external" href="https://docs.python.org/3/library/functions.html#int" title="(in Python v3.10)"><code class="xref py py-class docutils literal notranslate"><span class="pre">int</span></code></a>.) – The quantum number of the symbol. For simple symbol the <code class="docutils literal notranslate"><span class="pre">qn</span></code> should be an <a class="reference external" href="https://docs.python.org/3/library/functions.html#int" title="(in Python v3.10)"><code class="xref py py-class docutils literal notranslate"><span class="pre">int</span></code></a>.
+For complex symbol quantum number of each simple symbol contained in the complex symbol
+should be provided. If <code class="docutils literal notranslate"><span class="pre">qn</span></code> is set to <a class="reference external" href="https://docs.python.org/3/library/constants.html#None" title="(in Python v3.10)"><code class="xref any docutils literal notranslate"><span class="pre">None</span></code></a>, then the quantum number for every symbol is set to 0
+except for``”a^dagger”`` and <code class="docutils literal notranslate"><span class="pre">&quot;a&quot;</span></code>, whose quantum number are set to 1 and -1 respectively.</p></li>
+</ul>
+</dd>
+</dl>
+<p class="rubric">Notes</p>
+<p>Symbols connected by plus <code class="docutils literal notranslate"><span class="pre">&quot;+&quot;</span></code> such as <code class="docutils literal notranslate"><span class="pre">r&quot;b^\dagger</span> <span class="pre">+</span> <span class="pre">b&quot;</span></code> is considered as a simple symbol,
+because this class is designed to deal with operator multiplication rather than addition.</p>
+<div class="admonition warning">
+<p class="admonition-title">Warning</p>
+<p>If you wish to specify the DoF of each symbol in a complex symbol,
+you should use a <a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#list" title="(in Python v3.10)"><code class="xref py py-class docutils literal notranslate"><span class="pre">list</span></code></a> instead of <a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#tuple" title="(in Python v3.10)"><code class="xref py py-class docutils literal notranslate"><span class="pre">tuple</span></code></a>.
+Because in the latter case the <a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#tuple" title="(in Python v3.10)"><code class="xref py py-class docutils literal notranslate"><span class="pre">tuple</span></code></a> is recognized as a single DoF
+and the DoFs of all simple symbols are set to the <a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#tuple" title="(in Python v3.10)"><code class="xref py py-class docutils literal notranslate"><span class="pre">tuple</span></code></a>.</p>
+</div>
+<dl class="py property">
+<dt class="sig sig-object py" id="renormalizer.model.Op.factor">
+<em class="property"><span class="pre">property</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">factor</span></span><a class="headerlink" href="#renormalizer.model.Op.factor" title="Permalink to this definition">¶</a></dt>
+<dd><p>The factor of the operator.</p>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="renormalizer.model.Op.identity">
+<em class="property"><span class="pre">classmethod</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">identity</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">dof</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/renormalizer/model/op.html#Op.identity"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#renormalizer.model.Op.identity" title="Permalink to this definition">¶</a></dt>
+<dd><p>Construct identity operator.</p>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="renormalizer.model.Op.product">
+<em class="property"><span class="pre">classmethod</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">product</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">op_list</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference external" href="https://docs.python.org/3/library/typing.html#typing.List" title="(in Python v3.10)"><span class="pre">List</span></a><span class="p"><span class="pre">[</span></span><a class="reference internal" href="#renormalizer.model.Op" title="renormalizer.model.op.Op"><span class="pre">renormalizer.model.op.Op</span></a><span class="p"><span class="pre">]</span></span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/renormalizer/model/op.html#Op.product"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#renormalizer.model.Op.product" title="Permalink to this definition">¶</a></dt>
+<dd><p>Construct a new operator as a multiplication product of operators.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><p><strong>op_list</strong> (<a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#list" title="(in Python v3.10)"><code class="xref py py-class docutils literal notranslate"><span class="pre">list</span></code></a> of <a class="reference internal" href="#renormalizer.model.Op" title="renormalizer.model.Op"><code class="xref py py-class docutils literal notranslate"><span class="pre">Op</span></code></a>) – The operators to be multiplied.</p>
+</dd>
+<dt class="field-even">Returns</dt>
+<dd class="field-even"><p><strong>op</strong> – The product operator.</p>
+</dd>
+<dt class="field-odd">Return type</dt>
+<dd class="field-odd"><p><a class="reference internal" href="#renormalizer.model.Op" title="renormalizer.model.Op"><code class="xref py py-class docutils literal notranslate"><span class="pre">Op</span></code></a></p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py property">
+<dt class="sig sig-object py" id="renormalizer.model.Op.qn">
+<em class="property"><span class="pre">property</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">qn</span></span><em class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><a class="reference external" href="https://docs.python.org/3/library/functions.html#int" title="(in Python v3.10)"><span class="pre">int</span></a></em><a class="headerlink" href="#renormalizer.model.Op.qn" title="Permalink to this definition">¶</a></dt>
+<dd><p>Total quantum number of the operator. Sum of <code class="docutils literal notranslate"><span class="pre">self.qn_list</span></code>.
+Quantum number of <code class="docutils literal notranslate"><span class="pre">&quot;a^\dagger&quot;</span></code> and <code class="docutils literal notranslate"><span class="pre">&quot;a&quot;</span></code> is taken to be 1 and -1
+if not specified.</p>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="renormalizer.model.Op.split_elementary">
+<span class="sig-name descname"><span class="pre">split_elementary</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">dof_to_siteidx</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><a class="reference external" href="https://docs.python.org/3/library/typing.html#typing.Tuple" title="(in Python v3.10)"><span class="pre">Tuple</span></a><span class="p"><span class="pre">[</span></span><a class="reference external" href="https://docs.python.org/3/library/typing.html#typing.List" title="(in Python v3.10)"><span class="pre">List</span></a><span class="p"><span class="pre">[</span></span><a class="reference internal" href="#renormalizer.model.Op" title="renormalizer.model.op.Op"><span class="pre">renormalizer.model.op.Op</span></a><span class="p"><span class="pre">]</span></span><span class="p"><span class="pre">,</span></span><span class="w"> </span><a class="reference external" href="https://docs.python.org/3/library/typing.html#typing.Union" title="(in Python v3.10)"><span class="pre">Union</span></a><span class="p"><span class="pre">[</span></span><a class="reference external" href="https://docs.python.org/3/library/functions.html#float" title="(in Python v3.10)"><span class="pre">float</span></a><span class="p"><span class="pre">,</span></span><span class="w"> </span><a class="reference external" href="https://docs.python.org/3/library/functions.html#complex" title="(in Python v3.10)"><span class="pre">complex</span></a><span class="p"><span class="pre">]</span></span><span class="p"><span class="pre">]</span></span></span></span><a class="reference internal" href="_modules/renormalizer/model/op.html#Op.split_elementary"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#renormalizer.model.Op.split_elementary" title="Permalink to this definition">¶</a></dt>
+<dd><p>Construct elementary operators according to site index.
+“elementary operator” means that in the operator every DoF is on the same MPS site.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><p><strong>dof_to_siteidx</strong> (<a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#dict" title="(in Python v3.10)"><em>dict</em></a>) – Mapping from DoF name to MPS site index.</p>
+</dd>
+<dt class="field-even">Returns</dt>
+<dd class="field-even"><p><ul class="simple">
+<li><p><strong>elementary_operators</strong> (<a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#list" title="(in Python v3.10)"><code class="xref py py-class docutils literal notranslate"><span class="pre">list</span></code></a> of <a class="reference internal" href="#renormalizer.model.Op" title="renormalizer.model.Op"><code class="xref py py-class docutils literal notranslate"><span class="pre">Op</span></code></a>) – A list of elementary operators. Factors are set to 1.</p></li>
+<li><p><strong>factor</strong> (<a class="reference external" href="https://docs.python.org/3/library/functions.html#float" title="(in Python v3.10)"><code class="xref py py-class docutils literal notranslate"><span class="pre">float</span></code></a> or class:<a class="reference external" href="https://docs.python.org/3/library/functions.html#complex" title="(in Python v3.10)"><code class="xref any docutils literal notranslate"><span class="pre">complex</span></code></a>) – Factor of the operator.</p></li>
+</ul>
+</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="renormalizer.model.Op.to_tuple">
+<span class="sig-name descname"><span class="pre">to_tuple</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="_modules/renormalizer/model/op.html#Op.to_tuple"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#renormalizer.model.Op.to_tuple" title="Permalink to this definition">¶</a></dt>
+<dd><p>Convert the operator into a tuple. The fields are the symbol, the DoFs
+the factor and the quantum number list. The converted tuple can be hashed.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Returns</dt>
+<dd class="field-odd"><p><strong>op_tuple</strong> – The converted tuple.</p>
+</dd>
+<dt class="field-even">Return type</dt>
+<dd class="field-even"><p><a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#tuple" title="(in Python v3.10)">tuple</a></p>
+</dd>
+</dl>
+</dd></dl>
+
+</dd></dl>
+
+</div>
+</div>
+
+
+           </div>
+           
+          </div>
+          <footer>
+    <div class="rst-footer-buttons" role="navigation" aria-label="footer navigation">
+        <a href="mps.html" class="btn btn-neutral float-right" title="6. Low Level Data Structure and Algorithms" accesskey="n" rel="next">Next <span class="fa fa-arrow-circle-right" aria-hidden="true"></span></a>
+        <a href="tutorial.html" class="btn btn-neutral float-left" title="4. Tutorial" accesskey="p" rel="prev"><span class="fa fa-arrow-circle-left" aria-hidden="true"></span> Previous</a>
+    </div>
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>
+        &#169; Copyright 2019, Shuaigroup.
+
+    </p>
+  </div>
+    
+    
+    
+    Built with <a href="https://www.sphinx-doc.org/">Sphinx</a> using a
+    
+    <a href="https://github.com/readthedocs/sphinx_rtd_theme">theme</a>
+    
+    provided by <a href="https://readthedocs.org">Read the Docs</a>. 
+
+</footer>
+        </div>
+      </div>
+
+    </section>
+
+  </div>
+  
+
+  <script type="text/javascript">
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script>
+
+  
+  
+    
+   
+
+</body>
+</html>

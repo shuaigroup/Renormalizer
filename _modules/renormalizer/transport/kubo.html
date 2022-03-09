@@ -1,0 +1,582 @@
+
+
+<!DOCTYPE html>
+<html class="writer-html5" lang="en" >
+<head>
+  <meta charset="utf-8" />
+  
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  
+  <title>renormalizer.transport.kubo &mdash; Renormalizer 0.1.0 documentation</title>
+  
+
+  
+  <link rel="stylesheet" href="../../../_static/css/theme.css" type="text/css" />
+  <link rel="stylesheet" href="../../../_static/pygments.css" type="text/css" />
+  <link rel="stylesheet" href="../../../_static/pygments.css" type="text/css" />
+  <link rel="stylesheet" href="../../../_static/css/theme.css" type="text/css" />
+
+  
+  
+
+  
+  
+
+  
+
+  
+  <!--[if lt IE 9]>
+    <script src="../../../_static/js/html5shiv.min.js"></script>
+  <![endif]-->
+  
+    
+      <script type="text/javascript" id="documentation_options" data-url_root="../../../" src="../../../_static/documentation_options.js"></script>
+        <script data-url_root="../../../" id="documentation_options" src="../../../_static/documentation_options.js"></script>
+        <script src="../../../_static/jquery.js"></script>
+        <script src="../../../_static/underscore.js"></script>
+        <script src="../../../_static/doctools.js"></script>
+    
+    <script type="text/javascript" src="../../../_static/js/theme.js"></script>
+
+    
+    <link rel="index" title="Index" href="../../../genindex.html" />
+    <link rel="search" title="Search" href="../../../search.html" /> 
+</head>
+
+<body class="wy-body-for-nav">
+
+   
+  <div class="wy-grid-for-nav">
+    
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search" >
+          
+
+          
+            <a href="../../../index.html" class="icon icon-home"> Renormalizer
+          
+
+          
+          </a>
+
+          
+            
+            
+              <div class="version">
+                0.1
+              </div>
+            
+          
+
+          
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="../../../search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+
+          
+        </div>
+
+        
+        <div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="main navigation">
+          
+            
+            
+              
+            
+            
+              <ul>
+<li class="toctree-l1"><a class="reference internal" href="../../../overview.html">1. An overview of Renormalizer</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../install.html">2. Installation guide</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../develop.html">3. How to develop Renormalizer</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../tutorial.html">4. Tutorial</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../model.html">5. Model</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../mps.html">6. Low Level Data Structure and Algorithms</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../static.html">7. Static Eigenstate Method</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../spectrum.html">8. spectra: absorption/emission spectrum at zero/finite temperature</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../ct.html">9. Charge Transport</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../cv.html">10. Frequency domain DMRG</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../configs.html">11. Calculation Configurations</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../lib.html">12. lib</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../sbm.html">13. sbm</a></li>
+</ul>
+
+            
+          
+        </div>
+        
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap">
+
+      
+      <nav class="wy-nav-top" aria-label="top navigation">
+        
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="../../../index.html">Renormalizer</a>
+        
+      </nav>
+
+
+      <div class="wy-nav-content">
+        
+        <div class="rst-content">
+        
+          
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+<div role="navigation" aria-label="breadcrumbs navigation">
+
+  <ul class="wy-breadcrumbs">
+    
+      <li><a href="../../../index.html" class="icon icon-home"></a> &raquo;</li>
+        
+          <li><a href="../../index.html">Module code</a> &raquo;</li>
+        
+      <li>renormalizer.transport.kubo</li>
+    
+    
+      <li class="wy-breadcrumbs-aside">
+        
+      </li>
+    
+  </ul>
+
+  
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+            
+  <h1>Source code for renormalizer.transport.kubo</h1><div class="highlight"><pre>
+<span></span><span class="c1"># -*- coding: utf-8 -*-</span>
+
+<span class="kn">import</span> <span class="nn">logging</span>
+<span class="kn">import</span> <span class="nn">os</span>
+
+<span class="kn">import</span> <span class="nn">scipy.integrate</span>
+
+<span class="kn">from</span> <span class="nn">renormalizer.mps</span> <span class="kn">import</span> <span class="n">MpDm</span><span class="p">,</span> <span class="n">Mpo</span><span class="p">,</span> <span class="n">BraKetPair</span><span class="p">,</span> <span class="n">ThermalProp</span><span class="p">,</span> <span class="n">load_thermal_state</span>
+<span class="kn">from</span> <span class="nn">renormalizer.mps.backend</span> <span class="kn">import</span> <span class="n">np</span>
+<span class="kn">from</span> <span class="nn">renormalizer.utils.constant</span> <span class="kn">import</span> <span class="n">mobility2au</span>
+<span class="kn">from</span> <span class="nn">renormalizer.utils</span> <span class="kn">import</span> <span class="n">TdMpsJob</span><span class="p">,</span> <span class="n">Quantity</span><span class="p">,</span> <span class="n">EvolveConfig</span><span class="p">,</span> <span class="n">CompressConfig</span>
+<span class="kn">from</span> <span class="nn">renormalizer.model</span> <span class="kn">import</span> <span class="n">Model</span>
+<span class="kn">from</span> <span class="nn">renormalizer.property</span> <span class="kn">import</span> <span class="n">Property</span>
+
+<span class="n">logger</span> <span class="o">=</span> <span class="n">logging</span><span class="o">.</span><span class="n">getLogger</span><span class="p">(</span><span class="vm">__name__</span><span class="p">)</span>
+
+
+<div class="viewcode-block" id="TransportKubo"><a class="viewcode-back" href="../../../ct.html#renormalizer.transport.kubo.TransportKubo">[docs]</a><span class="k">class</span> <span class="nc">TransportKubo</span><span class="p">(</span><span class="n">TdMpsJob</span><span class="p">):</span>
+    <span class="sa">r</span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Calculate mobility via Green-Kubo formula:</span>
+
+<span class="sd">        .. math::</span>
+<span class="sd">            \mu = \frac{1}{k_B T} \int_0^\infty dt \langle \hat j (t) \hat j(0) \rangle</span>
+<span class="sd">            = \frac{1}{k_B T} \int_0^\infty dt C(t)</span>
+<span class="sd">    </span>
+<span class="sd">    where</span>
+
+<span class="sd">        .. math::</span>
+<span class="sd">           \hat j = -\frac{i}{\hbar}[\hat P, \hat H]</span>
+<span class="sd">    </span>
+<span class="sd">    and :math:`\hat P = e_0 \sum_m R_m a^\dagger_m a_m` is the polarization operator.</span>
+
+<span class="sd">    .. note::</span>
+<span class="sd">        In principle :math:`\hat H` can take any form, however only Holstein-Peierls Hamiltonian is well tested.</span>
+
+<span class="sd">    More explicitly, :math:`C(t)` has the form:</span>
+
+<span class="sd">        .. math::</span>
+<span class="sd">            C(t) = \textrm{Tr}\{\rho(T) e^{i \hat H t} \hat j(0) e^{- i \hat H t} \hat j (0)\}</span>
+<span class="sd">    </span>
+<span class="sd">    where we have assumed :math:`\rho(T)` is normalized</span>
+<span class="sd">    (i.e. it is divided by the partition function :math:`\textrm{Tr}\{\rho(T)\}`).</span>
+
+<span class="sd">    In terms of practical implementation, it is ideal if :math:`\rho(T)` is split into two parts</span>
+<span class="sd">    to (hopefully) speed up calculation and minimize time evolution error:</span>
+
+<span class="sd">        .. math::</span>
+<span class="sd">            \begin{align}</span>
+<span class="sd">             C(t) &amp; = \textrm{Tr}\{\rho(T) e^{i \hat H t} \hat j(0) e^{- i \hat H t} \hat j(0)\} \\</span>
+<span class="sd">                  &amp; = \textrm{Tr}\{e^{-\beta \hat H} e^{i \hat H t} \hat j(0) e^{- i \hat H t} \hat j(0)\} \\</span>
+<span class="sd">                  &amp; = \textrm{Tr}\{e^{-\beta \hat H / 2} e^{i \hat H t} \hat j(0) e^{- i \hat H t} \hat j(0) e^{-\beta \hat H / 2}\}</span>
+<span class="sd">            \end{align}</span>
+
+<span class="sd">    In this class, imaginary time propagation from infinite temperature to :math:`\beta/2` is firstly carried out</span>
+<span class="sd">    to obtain :math:`e^{-\beta \hat H / 2}`, and then real time propagation is carried out for :math:`e^{-\beta \hat H / 2}`</span>
+<span class="sd">    and :math:`\hat J(0) e^{-\beta \hat H / 2}` respectively to obtain :math:`e^{-\beta \hat H / 2} e^{i \hat H t}`</span>
+<span class="sd">    and :math:`e^{- i \hat H t} \hat j(0) e^{-\beta \hat H / 2}`. The correlation function at time :math:`t` can thus</span>
+<span class="sd">    be calculated via expectation calculation.</span>
+
+<span class="sd">    .. note::</span>
+<span class="sd">        Although the class is able to carry out imaginary time propagation, in practice for large scale calculation</span>
+<span class="sd">        it is usually preferable to carry out imaginary time propagation in another job and load the dumped initial</span>
+<span class="sd">        state directly in this class.</span>
+
+<span class="sd">    Args:</span>
+<span class="sd">        model (:class:`~renormalizer.model.Model`): system information.</span>
+<span class="sd">        temperature (:class:`~renormalizer.utils.quantity.Quantity`): simulation temperature.</span>
+<span class="sd">            Zero temperature is not supported.</span>
+<span class="sd">        distance_matrix (:class:`np.ndarray`): two-dimensional array :math:`D_{ij} = P_i - P_j` representing</span>
+<span class="sd">            distance between the :math:`i` th electronic degree of freedom and the :math:`j` th degree of freedom.</span>
+<span class="sd">            The index is the same with ``model.e_dofs``.</span>
+<span class="sd">            The parameter takes the role of :math:`\hat P` and can better handle periodic boundary condition.</span>
+<span class="sd">            The default value is ``None`` in which case the distance matrix is constructed assuming the system</span>
+<span class="sd">            is a one-dimensional chain.</span>
+
+<span class="sd">            .. note::</span>
+<span class="sd">                The construction of the matrix should be taken with great care if periodic boundary condition</span>
+<span class="sd">                is applied. Take a one-dimensional chain as an example, the distance between the leftmost site</span>
+<span class="sd">                and the rightmost site is :math:`\pm R` where :math:`R` is the intersite distance,</span>
+<span class="sd">                rather than :math:`\pm (N-1)R` where :math:`N` is the total number of electronic degrees of freedom.</span>
+<span class="sd">        insteps (int): steps for imaginary time propagation.</span>
+<span class="sd">        ievolve_config (:class:`~renormalizer.utils.configs.EvolveConfig`): config when carrying out imaginary time propagation.</span>
+<span class="sd">        compress_config (:class:`~renormalizer.utils.configs.CompressConfig`): config when compressing MPS.</span>
+<span class="sd">            Note that if TDVP based methods are chosen for time evolution, compression is necessary</span>
+<span class="sd">            when :math:`\hat j` is applied on :math:`e^{-\beta \hat H / 2}` but no compression is carried out</span>
+<span class="sd">            for :math:`e^{-\beta \hat H / 2} e^{i \hat H t}`.</span>
+<span class="sd">        evolve_config (:class:`~renormalizer.utils.configs.EvolveConfig`): config when carrying out real time propagation.</span>
+<span class="sd">        dump_dir (str): the directory for logging and numerical result output.</span>
+<span class="sd">        job_name (str): the name of the calculation job which determines the file name of the logging and numerical result output.</span>
+<span class="sd">        thermal_dump_path (str): the path to load previously thermal propagated initial state if it exists or the path</span>
+<span class="sd">            to dump the thermal state if it does not exist. The default value is determined by appending ``&quot;_impdm.npz&quot;``</span>
+<span class="sd">            to the path joined by ``dump_dir`` and ``job_name``.</span>
+<span class="sd">        properties (:class:`~renormalizer.property.property.Property`): other properties to calculate during real time evolution.</span>
+<span class="sd">            Currently only supports Holstein model.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">model</span><span class="p">:</span> <span class="n">Model</span><span class="p">,</span> <span class="n">temperature</span><span class="p">:</span> <span class="n">Quantity</span><span class="p">,</span> <span class="n">distance_matrix</span><span class="p">:</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
+                 <span class="n">insteps</span><span class="p">:</span> <span class="nb">int</span><span class="o">=</span><span class="mi">1</span><span class="p">,</span> <span class="n">ievolve_config</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">compress_config</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
+                 <span class="n">evolve_config</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">dump_dir</span><span class="p">:</span> <span class="nb">str</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">job_name</span><span class="p">:</span> <span class="nb">str</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
+                 <span class="n">thermal_dump_path</span><span class="p">:</span> <span class="nb">str</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">properties</span><span class="p">:</span> <span class="n">Property</span> <span class="o">=</span> <span class="kc">None</span><span class="p">):</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">model</span> <span class="o">=</span> <span class="n">model</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">distance_matrix</span> <span class="o">=</span> <span class="n">distance_matrix</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">h_mpo</span> <span class="o">=</span> <span class="n">Mpo</span><span class="p">(</span><span class="n">model</span><span class="p">)</span>
+        <span class="n">logger</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Bond dim of h_mpo: </span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">h_mpo</span><span class="o">.</span><span class="n">bond_dims</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_construct_current_operator</span><span class="p">()</span>
+        <span class="k">if</span> <span class="n">temperature</span> <span class="o">==</span> <span class="mi">0</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s2">&quot;Can&#39;t set temperature to 0.&quot;</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">temperature</span> <span class="o">=</span> <span class="n">temperature</span>
+
+        <span class="c1"># imaginary time evolution config</span>
+        <span class="k">if</span> <span class="n">ievolve_config</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">ievolve_config</span> <span class="o">=</span> <span class="n">EvolveConfig</span><span class="p">()</span>
+            <span class="k">if</span> <span class="n">insteps</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">ievolve_config</span><span class="o">.</span><span class="n">adaptive</span> <span class="o">=</span> <span class="kc">True</span>
+                <span class="c1"># start from a small step</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">ievolve_config</span><span class="o">.</span><span class="n">guess_dt</span> <span class="o">=</span> <span class="n">temperature</span><span class="o">.</span><span class="n">to_beta</span><span class="p">()</span> <span class="o">/</span> <span class="mf">1e5j</span>
+                <span class="n">insteps</span> <span class="o">=</span> <span class="mi">1</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">ievolve_config</span> <span class="o">=</span> <span class="n">ievolve_config</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">insteps</span> <span class="o">=</span> <span class="n">insteps</span>
+
+        <span class="k">if</span> <span class="n">compress_config</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="n">logger</span><span class="o">.</span><span class="n">debug</span><span class="p">(</span><span class="s2">&quot;using default compress config&quot;</span><span class="p">)</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">compress_config</span> <span class="o">=</span> <span class="n">CompressConfig</span><span class="p">()</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">compress_config</span> <span class="o">=</span> <span class="n">compress_config</span>
+
+        <span class="k">if</span> <span class="n">thermal_dump_path</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">thermal_dump_path</span> <span class="o">=</span> <span class="n">thermal_dump_path</span>
+        <span class="k">elif</span> <span class="n">dump_dir</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span> <span class="ow">and</span> <span class="n">job_name</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">thermal_dump_path</span> <span class="o">=</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">dump_dir</span><span class="p">,</span> <span class="n">job_name</span> <span class="o">+</span> <span class="s1">&#39;_impdm.npz&#39;</span><span class="p">)</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">thermal_dump_path</span> <span class="o">=</span> <span class="kc">None</span>
+
+        <span class="bp">self</span><span class="o">.</span><span class="n">properties</span> <span class="o">=</span> <span class="n">properties</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_auto_corr</span> <span class="o">=</span> <span class="p">[]</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_auto_corr_deomposition</span> <span class="o">=</span> <span class="p">[]</span>
+        <span class="nb">super</span><span class="p">()</span><span class="o">.</span><span class="fm">__init__</span><span class="p">(</span><span class="n">evolve_config</span><span class="o">=</span><span class="n">evolve_config</span><span class="p">,</span> <span class="n">dump_dir</span><span class="o">=</span><span class="n">dump_dir</span><span class="p">,</span>
+                <span class="n">job_name</span><span class="o">=</span><span class="n">job_name</span><span class="p">)</span>
+
+    <span class="k">def</span> <span class="nf">_construct_current_operator</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="c1"># Construct current operator. The operator is taken to be real as an optimization.</span>
+        <span class="n">logger</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="s2">&quot;constructing current operator &quot;</span><span class="p">)</span>
+
+        <span class="n">mol_num</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">model</span><span class="o">.</span><span class="n">n_edofs</span>
+        <span class="n">ham_terms</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">model</span><span class="o">.</span><span class="n">ham_terms</span>
+
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">distance_matrix</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="n">logger</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="s2">&quot;Constructing distance matrix based on a periodic one-dimension chain.&quot;</span><span class="p">)</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">distance_matrix</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">arange</span><span class="p">(</span><span class="n">mol_num</span><span class="p">)</span><span class="o">.</span><span class="n">reshape</span><span class="p">(</span><span class="o">-</span><span class="mi">1</span><span class="p">,</span> <span class="mi">1</span><span class="p">)</span> <span class="o">-</span> <span class="n">np</span><span class="o">.</span><span class="n">arange</span><span class="p">(</span><span class="n">mol_num</span><span class="p">)</span><span class="o">.</span><span class="n">reshape</span><span class="p">(</span><span class="mi">1</span><span class="p">,</span> <span class="o">-</span><span class="mi">1</span><span class="p">)</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">distance_matrix</span><span class="p">[</span><span class="mi">0</span><span class="p">][</span><span class="o">-</span><span class="mi">1</span><span class="p">]</span> <span class="o">=</span> <span class="mi">1</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">distance_matrix</span><span class="p">[</span><span class="o">-</span><span class="mi">1</span><span class="p">][</span><span class="mi">0</span><span class="p">]</span> <span class="o">=</span> <span class="o">-</span><span class="mi">1</span>
+
+        <span class="c1"># current caused by pure eletronic coupling</span>
+        <span class="n">holstein_current_terms</span> <span class="o">=</span> <span class="p">[]</span>
+        <span class="c1"># current related to phonons</span>
+        <span class="n">peierls_current_terms</span> <span class="o">=</span> <span class="p">[]</span>
+        <span class="c1"># loop through the Hamiltonian to construct current operator</span>
+        <span class="k">for</span> <span class="n">ham_op</span> <span class="ow">in</span> <span class="n">ham_terms</span><span class="p">:</span>
+            <span class="c1"># find out terms that contains two electron operators</span>
+            <span class="c1"># idx of the dof for the model</span>
+            <span class="n">dof_op_idx1</span> <span class="o">=</span> <span class="n">dof_op_idx2</span> <span class="o">=</span> <span class="kc">None</span>
+            <span class="k">for</span> <span class="n">dof_idx</span><span class="p">,</span> <span class="n">dof_name</span> <span class="ow">in</span> <span class="nb">enumerate</span><span class="p">(</span><span class="n">ham_op</span><span class="o">.</span><span class="n">dofs</span><span class="p">):</span>
+                <span class="n">site_idx</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">model</span><span class="o">.</span><span class="n">dof_to_siteidx</span><span class="p">[</span><span class="n">dof_name</span><span class="p">]</span>
+                <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">model</span><span class="o">.</span><span class="n">basis</span><span class="p">[</span><span class="n">site_idx</span><span class="p">]</span><span class="o">.</span><span class="n">is_electron</span><span class="p">:</span>
+                    <span class="n">e_idx</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">model</span><span class="o">.</span><span class="n">e_dofs</span><span class="o">.</span><span class="n">index</span><span class="p">(</span><span class="n">dof_name</span><span class="p">)</span>
+                    <span class="k">if</span> <span class="n">dof_op_idx1</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+                        <span class="n">dof_op_idx1</span> <span class="o">=</span> <span class="n">dof_idx</span>
+                        <span class="n">e_idx1</span> <span class="o">=</span> <span class="n">e_idx</span>
+                    <span class="k">elif</span> <span class="n">dof_op_idx2</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+                        <span class="n">dof_op_idx2</span> <span class="o">=</span> <span class="n">dof_idx</span>
+                        <span class="n">e_idx2</span> <span class="o">=</span> <span class="n">e_idx</span>
+                    <span class="k">else</span><span class="p">:</span>
+                        <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;The model contains three-electron (or more complex) operator </span><span class="si">{</span><span class="n">ham_op</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+                <span class="k">del</span> <span class="n">dof_idx</span><span class="p">,</span> <span class="n">dof_name</span>
+            <span class="c1"># two electron operators not found. Not relevant to the current operator</span>
+            <span class="k">if</span> <span class="n">dof_op_idx1</span> <span class="ow">is</span> <span class="kc">None</span> <span class="ow">or</span> <span class="n">dof_op_idx2</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+                <span class="k">continue</span>
+            <span class="c1"># electron operator on the same site. Not relevant to the current operator.</span>
+            <span class="k">if</span> <span class="n">e_idx1</span> <span class="o">==</span> <span class="n">e_idx2</span><span class="p">:</span>
+                <span class="k">continue</span>
+            <span class="c1"># two electron operators found. Relevant to the current operator</span>
+            <span class="c1"># perform a bunch of sanity check</span>
+            <span class="c1"># at most 3 dofs are involved. More complex cases are probably supported but not tested</span>
+            <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">ham_op</span><span class="o">.</span><span class="n">dofs</span><span class="p">)</span> <span class="ow">not</span> <span class="ow">in</span> <span class="p">(</span><span class="mi">2</span><span class="p">,</span> <span class="mi">3</span><span class="p">):</span>
+                <span class="k">raise</span> <span class="ne">NotImplementedError</span><span class="p">(</span><span class="s2">&quot;Complex vibration potential not implemented&quot;</span><span class="p">)</span>
+
+            <span class="c1"># check linear coupling. More complex cases are probably supported but not tested.</span>
+            <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">ham_op</span><span class="o">.</span><span class="n">dofs</span><span class="p">)</span> <span class="o">==</span> <span class="mi">3</span><span class="p">:</span>
+                <span class="c1"># total term idx should be 0 + 1 + 2 = 3</span>
+                <span class="n">phonon_dof_idx</span> <span class="o">=</span> <span class="mi">3</span> <span class="o">-</span> <span class="n">dof_op_idx1</span> <span class="o">-</span> <span class="n">dof_op_idx2</span>
+                <span class="k">assert</span> <span class="n">ham_op</span><span class="o">.</span><span class="n">split_symbol</span><span class="p">[</span><span class="n">phonon_dof_idx</span><span class="p">]</span> <span class="ow">in</span> <span class="p">(</span><span class="sa">r</span><span class="s2">&quot;b^\dagger + b&quot;</span><span class="p">,</span> <span class="s2">&quot;x&quot;</span><span class="p">)</span>
+            <span class="n">symbol1</span><span class="p">,</span> <span class="n">symbol2</span> <span class="o">=</span> <span class="n">ham_op</span><span class="o">.</span><span class="n">split_symbol</span><span class="p">[</span><span class="n">dof_op_idx1</span><span class="p">],</span> <span class="n">ham_op</span><span class="o">.</span><span class="n">split_symbol</span><span class="p">[</span><span class="n">dof_op_idx2</span><span class="p">]</span>
+            <span class="k">if</span> <span class="ow">not</span> <span class="p">{</span><span class="n">symbol1</span><span class="p">,</span> <span class="n">symbol2</span><span class="p">}</span> <span class="o">==</span> <span class="p">{</span><span class="sa">r</span><span class="s2">&quot;a^\dagger&quot;</span><span class="p">,</span> <span class="s2">&quot;a&quot;</span><span class="p">}:</span>
+                <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Unknown symbol: </span><span class="si">{</span><span class="n">symbol1</span><span class="si">}</span><span class="s2">, </span><span class="si">{</span><span class="n">symbol2</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+
+            <span class="c1"># translate the term in the Hamiltonian into the term in the current operator</span>
+            <span class="k">if</span> <span class="n">symbol1</span> <span class="o">==</span> <span class="sa">r</span><span class="s2">&quot;a^\dagger&quot;</span><span class="p">:</span>
+                <span class="n">factor</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">distance_matrix</span><span class="p">[</span><span class="n">e_idx1</span><span class="p">][</span><span class="n">e_idx2</span><span class="p">]</span>
+            <span class="k">else</span><span class="p">:</span>
+                <span class="n">factor</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">distance_matrix</span><span class="p">[</span><span class="n">e_idx2</span><span class="p">][</span><span class="n">e_idx1</span><span class="p">]</span>
+
+            <span class="n">current_op</span> <span class="o">=</span> <span class="n">ham_op</span> <span class="o">*</span> <span class="n">factor</span>
+            <span class="c1"># Holstein terms</span>
+            <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">ham_op</span><span class="o">.</span><span class="n">dofs</span><span class="p">)</span> <span class="o">==</span> <span class="mi">2</span><span class="p">:</span>
+                <span class="n">holstein_current_terms</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">current_op</span><span class="p">)</span>
+            <span class="c1"># Peierls terms</span>
+            <span class="k">else</span><span class="p">:</span>
+                <span class="n">peierls_current_terms</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">current_op</span><span class="p">)</span>
+
+        <span class="bp">self</span><span class="o">.</span><span class="n">j_oper</span> <span class="o">=</span> <span class="n">Mpo</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">model</span><span class="p">,</span> <span class="n">holstein_current_terms</span><span class="p">)</span>
+        <span class="n">logger</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;current operator bond dim: </span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">j_oper</span><span class="o">.</span><span class="n">bond_dims</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+        <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">peierls_current_terms</span><span class="p">)</span> <span class="o">!=</span> <span class="mi">0</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">j_oper2</span>  <span class="o">=</span> <span class="n">Mpo</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">model</span><span class="p">,</span> <span class="n">peierls_current_terms</span><span class="p">)</span>
+            <span class="n">logger</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Peierls coupling induced current operator bond dim: </span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">j_oper2</span><span class="o">.</span><span class="n">bond_dims</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">j_oper2</span> <span class="o">=</span> <span class="kc">None</span>
+
+<div class="viewcode-block" id="TransportKubo.init_mps"><a class="viewcode-back" href="../../../ct.html#renormalizer.transport.kubo.TransportKubo.init_mps">[docs]</a>    <span class="k">def</span> <span class="nf">init_mps</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="c1"># first try to load</span>
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">thermal_dump_path</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="n">mpdm</span> <span class="o">=</span> <span class="n">load_thermal_state</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">model</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">thermal_dump_path</span><span class="p">)</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="n">mpdm</span> <span class="o">=</span> <span class="kc">None</span>
+        <span class="c1"># then try to calculate</span>
+        <span class="k">if</span> <span class="n">mpdm</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="n">i_mpdm</span> <span class="o">=</span> <span class="n">MpDm</span><span class="o">.</span><span class="n">max_entangled_ex</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">model</span><span class="p">)</span>
+            <span class="n">i_mpdm</span><span class="o">.</span><span class="n">compress_config</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">compress_config</span>
+            <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">job_name</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+                <span class="n">job_name</span> <span class="o">=</span> <span class="kc">None</span>
+            <span class="k">else</span><span class="p">:</span>
+                <span class="n">job_name</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">job_name</span> <span class="o">+</span> <span class="s2">&quot;_thermal_prop&quot;</span>
+            <span class="n">tp</span> <span class="o">=</span> <span class="n">ThermalProp</span><span class="p">(</span><span class="n">i_mpdm</span><span class="p">,</span> <span class="n">evolve_config</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">ievolve_config</span><span class="p">,</span> <span class="n">dump_dir</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">dump_dir</span><span class="p">,</span> <span class="n">job_name</span><span class="o">=</span><span class="n">job_name</span><span class="p">)</span>
+            <span class="c1"># only propagate half beta</span>
+            <span class="n">tp</span><span class="o">.</span><span class="n">evolve</span><span class="p">(</span><span class="kc">None</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">insteps</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">temperature</span><span class="o">.</span><span class="n">to_beta</span><span class="p">()</span> <span class="o">/</span> <span class="mi">2</span><span class="n">j</span><span class="p">)</span>
+            <span class="n">mpdm</span> <span class="o">=</span> <span class="n">tp</span><span class="o">.</span><span class="n">latest_mps</span>
+            <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">thermal_dump_path</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+                <span class="n">mpdm</span><span class="o">.</span><span class="n">dump</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">thermal_dump_path</span><span class="p">)</span>
+        <span class="n">mpdm</span><span class="o">.</span><span class="n">compress_config</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">compress_config</span>
+        <span class="n">e</span> <span class="o">=</span> <span class="n">mpdm</span><span class="o">.</span><span class="n">expectation</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">h_mpo</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">h_mpo</span> <span class="o">=</span> <span class="n">Mpo</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">model</span><span class="p">,</span> <span class="n">offset</span><span class="o">=</span><span class="n">Quantity</span><span class="p">(</span><span class="n">e</span><span class="p">))</span>
+        <span class="n">mpdm</span><span class="o">.</span><span class="n">evolve_config</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">evolve_config</span>
+        <span class="n">logger</span><span class="o">.</span><span class="n">debug</span><span class="p">(</span><span class="s2">&quot;Applying current operator&quot;</span><span class="p">)</span>
+        <span class="n">ket_mpdm</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">j_oper</span><span class="o">.</span><span class="n">contract</span><span class="p">(</span><span class="n">mpdm</span><span class="p">)</span><span class="o">.</span><span class="n">canonical_normalize</span><span class="p">()</span>
+        <span class="n">bra_mpdm</span> <span class="o">=</span> <span class="n">mpdm</span><span class="o">.</span><span class="n">copy</span><span class="p">()</span>
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">j_oper2</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="k">return</span> <span class="n">BraKetPair</span><span class="p">(</span><span class="n">bra_mpdm</span><span class="p">,</span> <span class="n">ket_mpdm</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">j_oper</span><span class="p">)</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="n">logger</span><span class="o">.</span><span class="n">debug</span><span class="p">(</span><span class="s2">&quot;Applying the second current operator&quot;</span><span class="p">)</span>
+            <span class="n">ket_mpdm2</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">j_oper2</span><span class="o">.</span><span class="n">contract</span><span class="p">(</span><span class="n">mpdm</span><span class="p">)</span><span class="o">.</span><span class="n">canonical_normalize</span><span class="p">()</span>
+            <span class="k">return</span> <span class="n">BraKetPair</span><span class="p">(</span><span class="n">bra_mpdm</span><span class="p">,</span> <span class="n">ket_mpdm</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">j_oper</span><span class="p">),</span> <span class="n">BraKetPair</span><span class="p">(</span><span class="n">bra_mpdm</span><span class="p">,</span> <span class="n">ket_mpdm2</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">j_oper2</span><span class="p">)</span></div>
+
+<div class="viewcode-block" id="TransportKubo.process_mps"><a class="viewcode-back" href="../../../ct.html#renormalizer.transport.kubo.TransportKubo.process_mps">[docs]</a>    <span class="k">def</span> <span class="nf">process_mps</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">mps</span><span class="p">):</span>
+        <span class="c1"># add the negative sign because `self.j_oper` is taken to be real</span>
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">j_oper2</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">_auto_corr</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="o">-</span><span class="n">mps</span><span class="o">.</span><span class="n">ft</span><span class="p">)</span>
+            <span class="c1"># calculate other properties defined in Property</span>
+            <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">properties</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">properties</span><span class="o">.</span><span class="n">calc_properties_braketpair</span><span class="p">(</span><span class="n">mps</span><span class="p">)</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="p">(</span><span class="n">bra_mpdm</span><span class="p">,</span> <span class="n">ket_mpdm</span><span class="p">),</span> <span class="p">(</span><span class="n">bra_mpdm</span><span class="p">,</span> <span class="n">ket_mpdm2</span><span class="p">)</span> <span class="o">=</span> <span class="n">mps</span>
+            <span class="c1"># &lt;J_1(t) J_1(0)&gt;</span>
+            <span class="n">ft1</span> <span class="o">=</span> <span class="o">-</span><span class="n">BraKetPair</span><span class="p">(</span><span class="n">bra_mpdm</span><span class="p">,</span> <span class="n">ket_mpdm</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">j_oper</span><span class="p">)</span><span class="o">.</span><span class="n">ft</span>
+            <span class="c1"># &lt;J_1(t) J_2(0)&gt;</span>
+            <span class="n">ft2</span> <span class="o">=</span> <span class="o">-</span><span class="n">BraKetPair</span><span class="p">(</span><span class="n">bra_mpdm</span><span class="p">,</span> <span class="n">ket_mpdm2</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">j_oper</span><span class="p">)</span><span class="o">.</span><span class="n">ft</span>
+            <span class="c1"># &lt;J_2(t) J_1(0)&gt;</span>
+            <span class="n">ft3</span> <span class="o">=</span> <span class="o">-</span><span class="n">BraKetPair</span><span class="p">(</span><span class="n">bra_mpdm</span><span class="p">,</span> <span class="n">ket_mpdm</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">j_oper2</span><span class="p">)</span><span class="o">.</span><span class="n">ft</span>
+            <span class="c1"># &lt;J_2(t) J_2(0)&gt;</span>
+            <span class="n">ft4</span> <span class="o">=</span> <span class="o">-</span><span class="n">BraKetPair</span><span class="p">(</span><span class="n">bra_mpdm</span><span class="p">,</span> <span class="n">ket_mpdm2</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">j_oper2</span><span class="p">)</span><span class="o">.</span><span class="n">ft</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">_auto_corr</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">ft1</span> <span class="o">+</span> <span class="n">ft2</span> <span class="o">+</span> <span class="n">ft3</span> <span class="o">+</span> <span class="n">ft4</span><span class="p">)</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">_auto_corr_deomposition</span><span class="o">.</span><span class="n">append</span><span class="p">([</span><span class="n">ft1</span><span class="p">,</span> <span class="n">ft2</span><span class="p">,</span> <span class="n">ft3</span><span class="p">,</span> <span class="n">ft4</span><span class="p">])</span></div>
+
+<div class="viewcode-block" id="TransportKubo.evolve_single_step"><a class="viewcode-back" href="../../../ct.html#renormalizer.transport.kubo.TransportKubo.evolve_single_step">[docs]</a>    <span class="k">def</span> <span class="nf">evolve_single_step</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">evolve_dt</span><span class="p">):</span>
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">j_oper2</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="n">prev_bra_mpdm</span><span class="p">,</span> <span class="n">prev_ket_mpdm</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">latest_mps</span>
+            <span class="n">prev_ket_mpdm2</span> <span class="o">=</span> <span class="kc">None</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="p">(</span><span class="n">prev_bra_mpdm</span><span class="p">,</span> <span class="n">prev_ket_mpdm</span><span class="p">),</span> <span class="p">(</span><span class="n">prev_bra_mpdm</span><span class="p">,</span> <span class="n">prev_ket_mpdm2</span><span class="p">)</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">latest_mps</span>
+
+        <span class="n">latest_ket_mpdm</span> <span class="o">=</span> <span class="n">prev_ket_mpdm</span><span class="o">.</span><span class="n">evolve</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">h_mpo</span><span class="p">,</span> <span class="n">evolve_dt</span><span class="p">)</span>
+        <span class="n">latest_bra_mpdm</span> <span class="o">=</span> <span class="n">prev_bra_mpdm</span><span class="o">.</span><span class="n">evolve</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">h_mpo</span><span class="p">,</span> <span class="n">evolve_dt</span><span class="p">)</span>
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">j_oper2</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="k">return</span> <span class="n">BraKetPair</span><span class="p">(</span><span class="n">latest_bra_mpdm</span><span class="p">,</span> <span class="n">latest_ket_mpdm</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">j_oper</span><span class="p">)</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="n">latest_ket_mpdm2</span> <span class="o">=</span> <span class="n">prev_ket_mpdm2</span><span class="o">.</span><span class="n">evolve</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">h_mpo</span><span class="p">,</span> <span class="n">evolve_dt</span><span class="p">)</span>
+            <span class="k">return</span> <span class="n">BraKetPair</span><span class="p">(</span><span class="n">latest_bra_mpdm</span><span class="p">,</span> <span class="n">latest_ket_mpdm</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">j_oper</span><span class="p">),</span> \
+                   <span class="n">BraKetPair</span><span class="p">(</span><span class="n">latest_bra_mpdm</span><span class="p">,</span> <span class="n">latest_ket_mpdm2</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">j_oper2</span><span class="p">)</span></div>
+
+<div class="viewcode-block" id="TransportKubo.stop_evolve_criteria"><a class="viewcode-back" href="../../../ct.html#renormalizer.transport.kubo.TransportKubo.stop_evolve_criteria">[docs]</a>    <span class="k">def</span> <span class="nf">stop_evolve_criteria</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="n">corr</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">auto_corr</span>
+        <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">corr</span><span class="p">)</span> <span class="o">&lt;</span> <span class="mi">10</span><span class="p">:</span>
+            <span class="k">return</span> <span class="kc">False</span>
+        <span class="n">last_corr</span> <span class="o">=</span> <span class="n">corr</span><span class="p">[</span><span class="o">-</span><span class="mi">10</span><span class="p">:]</span>
+        <span class="n">first_corr</span> <span class="o">=</span> <span class="n">corr</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span>
+        <span class="k">return</span> <span class="n">np</span><span class="o">.</span><span class="n">abs</span><span class="p">(</span><span class="n">last_corr</span><span class="o">.</span><span class="n">mean</span><span class="p">())</span> <span class="o">&lt;</span> <span class="mf">1e-5</span> <span class="o">*</span> <span class="n">np</span><span class="o">.</span><span class="n">abs</span><span class="p">(</span><span class="n">first_corr</span><span class="p">)</span> <span class="ow">and</span> <span class="n">last_corr</span><span class="o">.</span><span class="n">std</span><span class="p">()</span> <span class="o">&lt;</span> <span class="mf">1e-5</span> <span class="o">*</span> <span class="n">np</span><span class="o">.</span><span class="n">abs</span><span class="p">(</span><span class="n">first_corr</span><span class="p">)</span></div>
+
+    <span class="nd">@property</span>
+    <span class="k">def</span> <span class="nf">auto_corr</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">:</span>
+        <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Correlation function :math:`C(t)`.</span>
+
+<span class="sd">        :returns: 1-d numpy array containing the correlation function evaluated at each time step.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">return</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_auto_corr</span><span class="p">)</span>
+
+    <span class="nd">@property</span>
+    <span class="k">def</span> <span class="nf">auto_corr_decomposition</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">:</span>
+        <span class="sa">r</span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Correlation function :math:`C(t)` decomposed into contributions from different parts</span>
+<span class="sd">        of the current operator. Generally, the current operator can be split into two parts:</span>
+<span class="sd">        current without phonon assistance and current with phonon assistance.</span>
+<span class="sd">        For example, if the Holstein-Peierls model is considered:</span>
+
+<span class="sd">        .. math::</span>
+<span class="sd">            \hat H = \sum_{mn}  [\epsilon_{mn} + \sum_\lambda \hbar g_{mn\lambda} \omega_\lambda</span>
+<span class="sd">            (b^\dagger_\lambda + b_\lambda) ] a^\dagger_m a_n</span>
+<span class="sd">            + \sum_\lambda \hbar \omega_\lambda b^\dagger_\lambda  b_\lambda</span>
+<span class="sd">        </span>
+<span class="sd">        Then current operator without phonon assistance is defined as:</span>
+
+<span class="sd">        .. math::</span>
+<span class="sd">            \hat j_1 = \frac{e_0}{i\hbar} \sum_{mn} (R_m - R_n) \epsilon_{mn} a^\dagger_m a_n</span>
+<span class="sd">        </span>
+<span class="sd">        and the current operator with phonon assistance is defined as:</span>
+
+<span class="sd">        .. math::</span>
+<span class="sd">            \hat j_2 = \frac{e_0}{i\hbar} \sum_{mn} (R_m - R_n) \hbar g_{mn\lambda} \omega_\lambda</span>
+<span class="sd">            (b^\dagger_\lambda + b_\lambda) a^\dagger_m a_n</span>
+<span class="sd">        </span>
+<span class="sd">        With :math:`\hat j = \hat j_1 + \hat j_2`, the correlation function can be</span>
+<span class="sd">        decomposed into four parts:</span>
+
+<span class="sd">        .. math::</span>
+<span class="sd">            \begin{align}</span>
+<span class="sd">            C(t) &amp; = \langle \hat j(t) \hat j(0) \rangle \\</span>
+<span class="sd">                 &amp; = \langle ( \hat j_1(t) + \hat j_2(t) ) (\hat j_1(0) + \hat j_2(0) ) \rangle \\</span>
+<span class="sd">                 &amp; = \langle \hat j_1(t) \hat j_1(0) \rangle + \langle \hat j_1(t) \hat j_2(0) \rangle</span>
+<span class="sd">                 + \langle \hat j_2(t) \hat j_1(0) \rangle + \langle \hat j_2(t) \hat j_2(0) \rangle</span>
+<span class="sd">            \end{align}</span>
+
+<span class="sd">        :return: :math:`n \times 4` array for the decomposed correlation function defined as above</span>
+<span class="sd">            where :math:`n` is the number of time steps.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">return</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_auto_corr_deomposition</span><span class="p">)</span>
+
+<div class="viewcode-block" id="TransportKubo.get_dump_dict"><a class="viewcode-back" href="../../../ct.html#renormalizer.transport.kubo.TransportKubo.get_dump_dict">[docs]</a>    <span class="k">def</span> <span class="nf">get_dump_dict</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="n">dump_dict</span> <span class="o">=</span> <span class="nb">dict</span><span class="p">()</span>
+        <span class="n">dump_dict</span><span class="p">[</span><span class="s2">&quot;mol list&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">model</span><span class="o">.</span><span class="n">to_dict</span><span class="p">()</span>
+        <span class="n">dump_dict</span><span class="p">[</span><span class="s2">&quot;temperature&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">temperature</span><span class="o">.</span><span class="n">as_au</span><span class="p">()</span>
+        <span class="n">dump_dict</span><span class="p">[</span><span class="s2">&quot;time series&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">evolve_times</span>
+        <span class="n">dump_dict</span><span class="p">[</span><span class="s2">&quot;auto correlation&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">auto_corr</span>
+        <span class="n">dump_dict</span><span class="p">[</span><span class="s2">&quot;auto correlation decomposition&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">auto_corr_decomposition</span>
+        <span class="n">dump_dict</span><span class="p">[</span><span class="s2">&quot;mobility&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">calc_mobility</span><span class="p">()[</span><span class="mi">1</span><span class="p">]</span>
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">properties</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="k">for</span> <span class="n">prop_str</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">properties</span><span class="o">.</span><span class="n">prop_res</span><span class="o">.</span><span class="n">keys</span><span class="p">():</span>
+                <span class="n">dump_dict</span><span class="p">[</span><span class="n">prop_str</span><span class="p">]</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">properties</span><span class="o">.</span><span class="n">prop_res</span><span class="p">[</span><span class="n">prop_str</span><span class="p">]</span>
+        
+        <span class="k">return</span> <span class="n">dump_dict</span></div>
+
+<div class="viewcode-block" id="TransportKubo.calc_mobility"><a class="viewcode-back" href="../../../ct.html#renormalizer.transport.kubo.TransportKubo.calc_mobility">[docs]</a>    <span class="k">def</span> <span class="nf">calc_mobility</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="n">time_series</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">evolve_times</span>
+        <span class="n">corr_real</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">auto_corr</span><span class="o">.</span><span class="n">real</span>
+        <span class="n">inte</span> <span class="o">=</span> <span class="n">scipy</span><span class="o">.</span><span class="n">integrate</span><span class="o">.</span><span class="n">trapz</span><span class="p">(</span><span class="n">corr_real</span><span class="p">,</span> <span class="n">time_series</span><span class="p">)</span>
+        <span class="n">mobility_in_au</span> <span class="o">=</span> <span class="n">inte</span> <span class="o">/</span> <span class="bp">self</span><span class="o">.</span><span class="n">temperature</span><span class="o">.</span><span class="n">as_au</span><span class="p">()</span>
+        <span class="n">mobility</span> <span class="o">=</span> <span class="n">mobility_in_au</span> <span class="o">/</span> <span class="n">mobility2au</span>
+        <span class="k">return</span> <span class="n">mobility_in_au</span><span class="p">,</span> <span class="n">mobility</span></div></div>
+</pre></div>
+
+           </div>
+           
+          </div>
+          <footer>
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>
+        &#169; Copyright 2019, Shuaigroup.
+
+    </p>
+  </div>
+    
+    
+    
+    Built with <a href="https://www.sphinx-doc.org/">Sphinx</a> using a
+    
+    <a href="https://github.com/readthedocs/sphinx_rtd_theme">theme</a>
+    
+    provided by <a href="https://readthedocs.org">Read the Docs</a>. 
+
+</footer>
+        </div>
+      </div>
+
+    </section>
+
+  </div>
+  
+
+  <script type="text/javascript">
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script>
+
+  
+  
+    
+   
+
+</body>
+</html>

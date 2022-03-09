@@ -1,0 +1,295 @@
+
+
+<!DOCTYPE html>
+<html class="writer-html5" lang="en" >
+<head>
+  <meta charset="utf-8" />
+  
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  
+  <title>Welcome to Renormalizer’s documentation! &mdash; Renormalizer 0.1.0 documentation</title>
+  
+
+  
+  <link rel="stylesheet" href="_static/css/theme.css" type="text/css" />
+  <link rel="stylesheet" href="_static/pygments.css" type="text/css" />
+  <link rel="stylesheet" href="_static/pygments.css" type="text/css" />
+  <link rel="stylesheet" href="_static/css/theme.css" type="text/css" />
+
+  
+  
+
+  
+  
+
+  
+
+  
+  <!--[if lt IE 9]>
+    <script src="_static/js/html5shiv.min.js"></script>
+  <![endif]-->
+  
+    
+      <script type="text/javascript" id="documentation_options" data-url_root="./" src="_static/documentation_options.js"></script>
+        <script data-url_root="./" id="documentation_options" src="_static/documentation_options.js"></script>
+        <script src="_static/jquery.js"></script>
+        <script src="_static/underscore.js"></script>
+        <script src="_static/doctools.js"></script>
+    
+    <script type="text/javascript" src="_static/js/theme.js"></script>
+
+    
+    <link rel="index" title="Index" href="genindex.html" />
+    <link rel="search" title="Search" href="search.html" />
+    <link rel="next" title="1. An overview of Renormalizer" href="overview.html" /> 
+</head>
+
+<body class="wy-body-for-nav">
+
+   
+  <div class="wy-grid-for-nav">
+    
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search" >
+          
+
+          
+            <a href="#" class="icon icon-home"> Renormalizer
+          
+
+          
+          </a>
+
+          
+            
+            
+              <div class="version">
+                0.1
+              </div>
+            
+          
+
+          
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+
+          
+        </div>
+
+        
+        <div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="main navigation">
+          
+            
+            
+              
+            
+            
+              <ul>
+<li class="toctree-l1"><a class="reference internal" href="overview.html">1. An overview of Renormalizer</a></li>
+<li class="toctree-l1"><a class="reference internal" href="install.html">2. Installation guide</a></li>
+<li class="toctree-l1"><a class="reference internal" href="develop.html">3. How to develop Renormalizer</a></li>
+<li class="toctree-l1"><a class="reference internal" href="tutorial.html">4. Tutorial</a></li>
+<li class="toctree-l1"><a class="reference internal" href="model.html">5. Model</a></li>
+<li class="toctree-l1"><a class="reference internal" href="mps.html">6. Low Level Data Structure and Algorithms</a></li>
+<li class="toctree-l1"><a class="reference internal" href="static.html">7. Static Eigenstate Method</a></li>
+<li class="toctree-l1"><a class="reference internal" href="spectrum.html">8. spectra: absorption/emission spectrum at zero/finite temperature</a></li>
+<li class="toctree-l1"><a class="reference internal" href="ct.html">9. Charge Transport</a></li>
+<li class="toctree-l1"><a class="reference internal" href="cv.html">10. Frequency domain DMRG</a></li>
+<li class="toctree-l1"><a class="reference internal" href="configs.html">11. Calculation Configurations</a></li>
+<li class="toctree-l1"><a class="reference internal" href="lib.html">12. lib</a></li>
+<li class="toctree-l1"><a class="reference internal" href="sbm.html">13. sbm</a></li>
+</ul>
+
+            
+          
+        </div>
+        
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap">
+
+      
+      <nav class="wy-nav-top" aria-label="top navigation">
+        
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="#">Renormalizer</a>
+        
+      </nav>
+
+
+      <div class="wy-nav-content">
+        
+        <div class="rst-content">
+        
+          
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+<div role="navigation" aria-label="breadcrumbs navigation">
+
+  <ul class="wy-breadcrumbs">
+    
+      <li><a href="#" class="icon icon-home"></a> &raquo;</li>
+        
+      <li>Welcome to Renormalizer’s documentation!</li>
+    
+    
+      <li class="wy-breadcrumbs-aside">
+        
+          
+            <a href="_sources/index.rst.txt" rel="nofollow"> View page source</a>
+          
+        
+      </li>
+    
+  </ul>
+
+  
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+            
+  <img alt="_images/logo.png" src="_images/logo.png" />
+<div class="section" id="welcome-to-renormalizer-s-documentation">
+<h1>Welcome to Renormalizer’s documentation!<a class="headerlink" href="#welcome-to-renormalizer-s-documentation" title="Permalink to this headline">¶</a></h1>
+<p>Renormalizer is a quantum dynamics package based on density matrix
+renormalization group (DMRG) and its time dependent formulation written in
+Python. All (TD-)DMRG algorithms are implemented within the framework of matrix
+product states (MPS) and matrix product operators (MPO). The package aims to
+provide a powerful and efficient platform for quantum dynamics simulation
+and method development with (TD-)DMRG.
+The package is still under heavy development. Please refer to our recent papers
+for the new developments.</p>
+<div class="section" id="contents">
+<h2>Contents<a class="headerlink" href="#contents" title="Permalink to this headline">¶</a></h2>
+<div class="toctree-wrapper compound">
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="overview.html">1. An overview of Renormalizer</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="overview.html#how-to-cite">1.1. How to cite</a></li>
+<li class="toctree-l2"><a class="reference internal" href="overview.html#features">1.2. Features</a></li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="install.html">2. Installation guide</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="install.html#cpu-only-version-installation">2.1. CPU-only version installation</a></li>
+<li class="toctree-l2"><a class="reference internal" href="install.html#gpu-support">2.2. GPU-support</a></li>
+<li class="toctree-l2"><a class="reference internal" href="install.html#further-readings">2.3. Further readings</a></li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="develop.html">3. How to develop Renormalizer</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="develop.html#development-process">3.1. Development Process</a></li>
+<li class="toctree-l2"><a class="reference internal" href="develop.html#stylistic-guidelines">3.2. Stylistic Guidelines</a></li>
+<li class="toctree-l2"><a class="reference internal" href="develop.html#common-mistakes-during-development">3.3. Common Mistakes during Development</a></li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="tutorial.html">4. Tutorial</a></li>
+<li class="toctree-l1"><a class="reference internal" href="model.html">5. Model</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="model.html#the-model-classes">5.1. The Model classes</a></li>
+<li class="toctree-l2"><a class="reference internal" href="model.html#basis-functions">5.2. Basis Functions</a></li>
+<li class="toctree-l2"><a class="reference internal" href="model.html#the-operator-class">5.3. The Operator Class</a></li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="mps.html">6. Low Level Data Structure and Algorithms</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="mps.html#matrix-product-mp">6.1. Matrix Product (MP)</a></li>
+<li class="toctree-l2"><a class="reference internal" href="mps.html#matrix-product-state-mps">6.2. Matrix Product State (MPS)</a></li>
+<li class="toctree-l2"><a class="reference internal" href="mps.html#matrix-product-operator-mpo">6.3. Matrix Product Operator (MPO)</a></li>
+<li class="toctree-l2"><a class="reference internal" href="mps.html#matrix-product-density-matrix-mpdm">6.4. Matrix Product Density Matrix (MPDM)</a></li>
+<li class="toctree-l2"><a class="reference internal" href="mps.html#module-renormalizer.mps.thermalprop">6.5. Thermal Propagation</a></li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="static.html">7. Static Eigenstate Method</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="static.html#module-renormalizer.mps.gs">7.1. Ground state and state-averaged method</a></li>
+<li class="toctree-l2"><a class="reference internal" href="static.html#tamm-dancoff-approximation-for-excited-state">7.2. Tamm-Dancoff approximation for excited state</a></li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="spectrum.html">8. spectra: absorption/emission spectrum at zero/finite temperature</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="spectrum.html#module-renormalizer.spectra.zerot">8.1. Zero temperature — TD-DMRG</a></li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="ct.html">9. Charge Transport</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="ct.html#module-renormalizer.transport.kubo">9.1. Obtain Mobility by Green-Kubo Formula</a></li>
+<li class="toctree-l2"><a class="reference internal" href="ct.html#module-renormalizer.transport.dynamics">9.2. Charge Diffusion Dynamics Simulation</a></li>
+<li class="toctree-l2"><a class="reference internal" href="ct.html#module-renormalizer.transport.spectral_function">9.3. One-Particle Spectral Function</a></li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="cv.html">10. Frequency domain DMRG</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="cv.html#cv-correction-vector">10.1. cv — correction vector</a></li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="configs.html">11. Calculation Configurations</a></li>
+<li class="toctree-l1"><a class="reference internal" href="lib.html">12. lib</a></li>
+<li class="toctree-l1"><a class="reference internal" href="sbm.html">13. sbm</a></li>
+</ul>
+</div>
+</div>
+</div>
+
+
+           </div>
+           
+          </div>
+          <footer>
+    <div class="rst-footer-buttons" role="navigation" aria-label="footer navigation">
+        <a href="overview.html" class="btn btn-neutral float-right" title="1. An overview of Renormalizer" accesskey="n" rel="next">Next <span class="fa fa-arrow-circle-right" aria-hidden="true"></span></a>
+    </div>
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>
+        &#169; Copyright 2019, Shuaigroup.
+
+    </p>
+  </div>
+    
+    
+    
+    Built with <a href="https://www.sphinx-doc.org/">Sphinx</a> using a
+    
+    <a href="https://github.com/readthedocs/sphinx_rtd_theme">theme</a>
+    
+    provided by <a href="https://readthedocs.org">Read the Docs</a>. 
+
+</footer>
+        </div>
+      </div>
+
+    </section>
+
+  </div>
+  
+
+  <script type="text/javascript">
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script>
+
+  
+  
+    
+   
+
+</body>
+</html>

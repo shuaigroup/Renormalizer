@@ -1,0 +1,379 @@
+
+
+<!DOCTYPE html>
+<html class="writer-html5" lang="en" >
+<head>
+  <meta charset="utf-8" />
+  
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  
+  <title>renormalizer.mps.mpdm &mdash; Renormalizer 0.1.0 documentation</title>
+  
+
+  
+  <link rel="stylesheet" href="../../../_static/css/theme.css" type="text/css" />
+  <link rel="stylesheet" href="../../../_static/pygments.css" type="text/css" />
+  <link rel="stylesheet" href="../../../_static/pygments.css" type="text/css" />
+  <link rel="stylesheet" href="../../../_static/css/theme.css" type="text/css" />
+
+  
+  
+
+  
+  
+
+  
+
+  
+  <!--[if lt IE 9]>
+    <script src="../../../_static/js/html5shiv.min.js"></script>
+  <![endif]-->
+  
+    
+      <script type="text/javascript" id="documentation_options" data-url_root="../../../" src="../../../_static/documentation_options.js"></script>
+        <script data-url_root="../../../" id="documentation_options" src="../../../_static/documentation_options.js"></script>
+        <script src="../../../_static/jquery.js"></script>
+        <script src="../../../_static/underscore.js"></script>
+        <script src="../../../_static/doctools.js"></script>
+    
+    <script type="text/javascript" src="../../../_static/js/theme.js"></script>
+
+    
+    <link rel="index" title="Index" href="../../../genindex.html" />
+    <link rel="search" title="Search" href="../../../search.html" /> 
+</head>
+
+<body class="wy-body-for-nav">
+
+   
+  <div class="wy-grid-for-nav">
+    
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search" >
+          
+
+          
+            <a href="../../../index.html" class="icon icon-home"> Renormalizer
+          
+
+          
+          </a>
+
+          
+            
+            
+              <div class="version">
+                0.1
+              </div>
+            
+          
+
+          
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="../../../search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+
+          
+        </div>
+
+        
+        <div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="main navigation">
+          
+            
+            
+              
+            
+            
+              <ul>
+<li class="toctree-l1"><a class="reference internal" href="../../../overview.html">1. An overview of Renormalizer</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../install.html">2. Installation guide</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../develop.html">3. How to develop Renormalizer</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../tutorial.html">4. Tutorial</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../model.html">5. Model</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../mps.html">6. Low Level Data Structure and Algorithms</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../static.html">7. Static Eigenstate Method</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../spectrum.html">8. spectra: absorption/emission spectrum at zero/finite temperature</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../ct.html">9. Charge Transport</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../cv.html">10. Frequency domain DMRG</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../configs.html">11. Calculation Configurations</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../lib.html">12. lib</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../sbm.html">13. sbm</a></li>
+</ul>
+
+            
+          
+        </div>
+        
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap">
+
+      
+      <nav class="wy-nav-top" aria-label="top navigation">
+        
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="../../../index.html">Renormalizer</a>
+        
+      </nav>
+
+
+      <div class="wy-nav-content">
+        
+        <div class="rst-content">
+        
+          
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+<div role="navigation" aria-label="breadcrumbs navigation">
+
+  <ul class="wy-breadcrumbs">
+    
+      <li><a href="../../../index.html" class="icon icon-home"></a> &raquo;</li>
+        
+          <li><a href="../../index.html">Module code</a> &raquo;</li>
+        
+      <li>renormalizer.mps.mpdm</li>
+    
+    
+      <li class="wy-breadcrumbs-aside">
+        
+      </li>
+    
+  </ul>
+
+  
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+            
+  <h1>Source code for renormalizer.mps.mpdm</h1><div class="highlight"><pre>
+<span></span><span class="c1"># -*- coding: utf-8 -*-</span>
+
+<span class="kn">import</span> <span class="nn">logging</span>
+
+<span class="kn">import</span> <span class="nn">numpy</span> <span class="k">as</span> <span class="nn">np</span>
+
+<span class="kn">from</span> <span class="nn">renormalizer.mps.backend</span> <span class="kn">import</span> <span class="n">xp</span>
+<span class="kn">from</span> <span class="nn">renormalizer.mps.matrix</span> <span class="kn">import</span> <span class="n">tensordot</span>
+<span class="kn">from</span> <span class="nn">renormalizer.mps</span> <span class="kn">import</span> <span class="n">Mpo</span><span class="p">,</span> <span class="n">Mps</span>
+
+<span class="n">logger</span> <span class="o">=</span> <span class="n">logging</span><span class="o">.</span><span class="n">getLogger</span><span class="p">(</span><span class="vm">__name__</span><span class="p">)</span>
+
+<span class="c1"># MPS first. `digest`, `metacopy`</span>
+<div class="viewcode-block" id="MpDm"><a class="viewcode-back" href="../../../mps.html#renormalizer.mps.MpDm">[docs]</a><span class="k">class</span> <span class="nc">MpDm</span><span class="p">(</span><span class="n">Mps</span><span class="p">,</span> <span class="n">Mpo</span><span class="p">):</span>
+<div class="viewcode-block" id="MpDm.random"><a class="viewcode-back" href="../../../mps.html#renormalizer.mps.MpDm.random">[docs]</a>    <span class="nd">@classmethod</span>
+    <span class="k">def</span> <span class="nf">random</span><span class="p">(</span><span class="bp">cls</span><span class="p">,</span> <span class="n">mpo</span><span class="p">,</span> <span class="n">nexciton</span><span class="p">,</span> <span class="n">m_max</span><span class="p">,</span> <span class="n">percent</span><span class="o">=</span><span class="mi">0</span><span class="p">):</span>
+        <span class="c1"># avoid misuse to produce mps</span>
+        <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s2">&quot;MpDm don&#39;t have to produce random state&quot;</span><span class="p">)</span></div>
+
+<div class="viewcode-block" id="MpDm.ground_state"><a class="viewcode-back" href="../../../mps.html#renormalizer.mps.MpDm.ground_state">[docs]</a>    <span class="nd">@classmethod</span>
+    <span class="k">def</span> <span class="nf">ground_state</span><span class="p">(</span><span class="bp">cls</span><span class="p">,</span> <span class="n">model</span><span class="p">,</span> <span class="n">max_entangled</span><span class="p">):</span>
+        <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span>
+            <span class="s2">&quot;Use max_entangled_ex or max_entangled_gs for matrix product density matrix&quot;</span>
+        <span class="p">)</span></div>
+
+<div class="viewcode-block" id="MpDm.from_mps"><a class="viewcode-back" href="../../../mps.html#renormalizer.mps.MpDm.from_mps">[docs]</a>    <span class="nd">@classmethod</span>
+    <span class="k">def</span> <span class="nf">from_mps</span><span class="p">(</span><span class="bp">cls</span><span class="p">,</span> <span class="n">mps</span><span class="p">:</span> <span class="n">Mps</span><span class="p">):</span>
+        <span class="n">mpo</span> <span class="o">=</span> <span class="bp">cls</span><span class="p">()</span>
+        <span class="n">mpo</span><span class="o">.</span><span class="n">model</span> <span class="o">=</span> <span class="n">mps</span><span class="o">.</span><span class="n">model</span>
+        <span class="k">for</span> <span class="n">ms</span> <span class="ow">in</span> <span class="n">mps</span><span class="p">:</span>
+            <span class="n">mo</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">zeros</span><span class="p">(</span><span class="nb">tuple</span><span class="p">([</span><span class="n">ms</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="mi">0</span><span class="p">]]</span> <span class="o">+</span> <span class="p">[</span><span class="n">ms</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="mi">1</span><span class="p">]]</span> <span class="o">*</span> <span class="mi">2</span> <span class="o">+</span> <span class="p">[</span><span class="n">ms</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="mi">2</span><span class="p">]]))</span>
+            <span class="k">for</span> <span class="n">iaxis</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="n">ms</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="mi">1</span><span class="p">]):</span>
+                <span class="n">mo</span><span class="p">[:,</span> <span class="n">iaxis</span><span class="p">,</span> <span class="n">iaxis</span><span class="p">,</span> <span class="p">:]</span> <span class="o">=</span> <span class="n">ms</span><span class="p">[:,</span> <span class="n">iaxis</span><span class="p">,</span> <span class="p">:]</span><span class="o">.</span><span class="n">array</span>
+            <span class="n">mpo</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">mo</span><span class="p">)</span>
+
+        <span class="n">mpo</span><span class="o">.</span><span class="n">coeff</span> <span class="o">=</span> <span class="n">mps</span><span class="o">.</span><span class="n">coeff</span>
+
+        <span class="n">mpo</span><span class="o">.</span><span class="n">optimize_config</span> <span class="o">=</span> <span class="n">mps</span><span class="o">.</span><span class="n">optimize_config</span>
+        <span class="n">mpo</span><span class="o">.</span><span class="n">evolve_config</span> <span class="o">=</span> <span class="n">mps</span><span class="o">.</span><span class="n">evolve_config</span>
+        <span class="n">mpo</span><span class="o">.</span><span class="n">compress_add</span> <span class="o">=</span> <span class="n">mps</span><span class="o">.</span><span class="n">compress_add</span>
+
+        <span class="n">mpo</span><span class="o">.</span><span class="n">qn</span> <span class="o">=</span> <span class="p">[</span><span class="n">qn</span><span class="o">.</span><span class="n">copy</span><span class="p">()</span> <span class="k">for</span> <span class="n">qn</span> <span class="ow">in</span> <span class="n">mps</span><span class="o">.</span><span class="n">qn</span><span class="p">]</span>
+        <span class="n">mpo</span><span class="o">.</span><span class="n">qntot</span> <span class="o">=</span> <span class="n">mps</span><span class="o">.</span><span class="n">qntot</span>
+        <span class="n">mpo</span><span class="o">.</span><span class="n">qnidx</span> <span class="o">=</span> <span class="n">mps</span><span class="o">.</span><span class="n">qnidx</span>
+        <span class="n">mpo</span><span class="o">.</span><span class="n">to_right</span> <span class="o">=</span> <span class="n">mps</span><span class="o">.</span><span class="n">to_right</span>
+        <span class="n">mpo</span><span class="o">.</span><span class="n">compress_config</span> <span class="o">=</span> <span class="n">mps</span><span class="o">.</span><span class="n">compress_config</span><span class="o">.</span><span class="n">copy</span><span class="p">()</span>
+        <span class="k">return</span> <span class="n">mpo</span></div>
+
+<div class="viewcode-block" id="MpDm.from_dense"><a class="viewcode-back" href="../../../mps.html#renormalizer.mps.MpDm.from_dense">[docs]</a>    <span class="nd">@classmethod</span>
+    <span class="k">def</span> <span class="nf">from_dense</span><span class="p">(</span><span class="bp">cls</span><span class="p">,</span> <span class="n">model</span><span class="p">,</span> <span class="n">wfn</span><span class="p">:</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">):</span>
+        <span class="k">raise</span> <span class="ne">NotImplementedError</span></div>
+
+<div class="viewcode-block" id="MpDm.max_entangled_ex"><a class="viewcode-back" href="../../../mps.html#renormalizer.mps.MpDm.max_entangled_ex">[docs]</a>    <span class="nd">@classmethod</span>
+    <span class="k">def</span> <span class="nf">max_entangled_ex</span><span class="p">(</span><span class="bp">cls</span><span class="p">,</span> <span class="n">model</span><span class="p">,</span> <span class="n">normalize</span><span class="o">=</span><span class="kc">True</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        T = \\infty locally maximal entangled EX state</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="n">mps</span> <span class="o">=</span> <span class="n">Mps</span><span class="o">.</span><span class="n">ground_state</span><span class="p">(</span><span class="n">model</span><span class="p">,</span> <span class="n">max_entangled</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+        <span class="c1"># the creation operator \\sum_i a^\\dagger_i</span>
+        <span class="n">ex_mpo</span> <span class="o">=</span> <span class="n">Mpo</span><span class="o">.</span><span class="n">onsite</span><span class="p">(</span><span class="n">model</span><span class="p">,</span> <span class="sa">r</span><span class="s2">&quot;a^\dagger&quot;</span><span class="p">)</span>
+
+        <span class="n">ex_mps</span> <span class="o">=</span> <span class="n">ex_mpo</span> <span class="o">@</span> <span class="n">mps</span>
+        <span class="k">if</span> <span class="n">normalize</span><span class="p">:</span>
+            <span class="n">ex_mps</span><span class="o">.</span><span class="n">normalize</span><span class="p">(</span><span class="mf">1.0</span><span class="p">)</span>
+        <span class="k">return</span> <span class="bp">cls</span><span class="o">.</span><span class="n">from_mps</span><span class="p">(</span><span class="n">ex_mps</span><span class="p">)</span></div>
+
+<div class="viewcode-block" id="MpDm.max_entangled_gs"><a class="viewcode-back" href="../../../mps.html#renormalizer.mps.MpDm.max_entangled_gs">[docs]</a>    <span class="nd">@classmethod</span>
+    <span class="k">def</span> <span class="nf">max_entangled_gs</span><span class="p">(</span><span class="bp">cls</span><span class="p">,</span> <span class="n">model</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="s2">&quot;MpDm&quot;</span><span class="p">:</span>
+        <span class="k">return</span> <span class="bp">cls</span><span class="o">.</span><span class="n">from_mps</span><span class="p">(</span><span class="n">Mps</span><span class="o">.</span><span class="n">ground_state</span><span class="p">(</span><span class="n">model</span><span class="p">,</span> <span class="n">max_entangled</span><span class="o">=</span><span class="kc">True</span><span class="p">))</span></div>
+
+    <span class="k">def</span> <span class="nf">_get_sigmaqn</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">idx</span><span class="p">):</span>
+        <span class="n">array_up</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">model</span><span class="o">.</span><span class="n">basis</span><span class="p">[</span><span class="n">idx</span><span class="p">]</span><span class="o">.</span><span class="n">sigmaqn</span>
+        <span class="n">array_down</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">zeros_like</span><span class="p">(</span><span class="n">array_up</span><span class="p">)</span>
+        <span class="k">return</span> <span class="n">np</span><span class="o">.</span><span class="n">add</span><span class="o">.</span><span class="n">outer</span><span class="p">(</span><span class="n">array_up</span><span class="p">,</span> <span class="n">array_down</span><span class="p">)</span>
+
+<div class="viewcode-block" id="MpDm.evolve_exact"><a class="viewcode-back" href="../../../mps.html#renormalizer.mps.MpDm.evolve_exact">[docs]</a>    <span class="k">def</span> <span class="nf">evolve_exact</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">h_mpo</span><span class="p">,</span> <span class="n">evolve_dt</span><span class="p">,</span> <span class="n">space</span><span class="p">):</span>
+        <span class="n">MPOprop</span> <span class="o">=</span> <span class="n">Mpo</span><span class="o">.</span><span class="n">exact_propagator</span><span class="p">(</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">model</span><span class="p">,</span> <span class="o">-</span><span class="mf">1.0</span><span class="n">j</span> <span class="o">*</span> <span class="n">evolve_dt</span><span class="p">,</span> <span class="n">space</span><span class="o">=</span><span class="n">space</span><span class="p">,</span> <span class="n">shift</span><span class="o">=-</span><span class="n">h_mpo</span><span class="o">.</span><span class="n">offset</span>
+        <span class="p">)</span>
+        <span class="c1"># Mpdm is applied on the propagator, different from base method</span>
+        <span class="n">new_mpdm</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">apply</span><span class="p">(</span><span class="n">MPOprop</span><span class="p">,</span> <span class="n">canonicalise</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+        <span class="n">new_mpdm</span><span class="o">.</span><span class="n">coeff</span> <span class="o">*=</span> <span class="n">np</span><span class="o">.</span><span class="n">exp</span><span class="p">(</span><span class="o">-</span><span class="mf">1.0</span><span class="n">j</span> <span class="o">*</span> <span class="n">h_mpo</span><span class="o">.</span><span class="n">offset</span> <span class="o">*</span> <span class="n">evolve_dt</span><span class="p">)</span>
+        <span class="k">return</span> <span class="n">new_mpdm</span></div>
+
+<div class="viewcode-block" id="MpDm.todense"><a class="viewcode-back" href="../../../mps.html#renormalizer.mps.MpDm.todense">[docs]</a>    <span class="k">def</span> <span class="nf">todense</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="c1"># explicitly call to MPO because MPS is firstly inherited</span>
+        <span class="k">return</span> <span class="n">Mpo</span><span class="o">.</span><span class="n">todense</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span></div>
+
+    <span class="nd">@property</span>
+    <span class="k">def</span> <span class="nf">is_mps</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="k">return</span> <span class="kc">False</span>
+
+    <span class="nd">@property</span>
+    <span class="k">def</span> <span class="nf">is_mpo</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="k">return</span> <span class="kc">False</span>
+
+    <span class="nd">@property</span>
+    <span class="k">def</span> <span class="nf">is_mpdm</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="k">return</span> <span class="kc">True</span>
+
+    <span class="k">def</span> <span class="nf">_expectation_path</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="c1">#       e</span>
+        <span class="c1">#       |</span>
+        <span class="c1"># S--a--S--f--S</span>
+        <span class="c1"># |     |     |</span>
+        <span class="c1"># |     d     |</span>
+        <span class="c1"># |     |     |</span>
+        <span class="c1"># O--b--O--h--O</span>
+        <span class="c1"># |     |     |</span>
+        <span class="c1"># |     g     |</span>
+        <span class="c1"># |     |     |</span>
+        <span class="c1"># S--c--S--j--S</span>
+        <span class="c1">#       |</span>
+        <span class="c1">#       e</span>
+        <span class="n">path</span> <span class="o">=</span> <span class="p">[</span>
+            <span class="p">([</span><span class="mi">0</span><span class="p">,</span> <span class="mi">1</span><span class="p">],</span> <span class="s2">&quot;abc, cgej -&gt; abgej&quot;</span><span class="p">),</span>
+            <span class="p">([</span><span class="mi">3</span><span class="p">,</span> <span class="mi">0</span><span class="p">],</span> <span class="s2">&quot;abgej, bdgh -&gt; aejdh&quot;</span><span class="p">),</span>
+            <span class="p">([</span><span class="mi">2</span><span class="p">,</span> <span class="mi">0</span><span class="p">],</span> <span class="s2">&quot;aejdh, adef -&gt; jhf&quot;</span><span class="p">),</span>
+            <span class="p">([</span><span class="mi">1</span><span class="p">,</span> <span class="mi">0</span><span class="p">],</span> <span class="s2">&quot;jhf, fhj -&gt; &quot;</span><span class="p">),</span>
+        <span class="p">]</span>
+        <span class="k">return</span> <span class="n">path</span>
+
+<div class="viewcode-block" id="MpDm.conj_trans"><a class="viewcode-back" href="../../../mps.html#renormalizer.mps.MpDm.conj_trans">[docs]</a>    <span class="k">def</span> <span class="nf">conj_trans</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="k">raise</span> <span class="ne">NotImplementedError</span>
+        <span class="n">logger</span><span class="o">.</span><span class="n">warning</span><span class="p">(</span><span class="s2">&quot;using conj_trans on mpdm leads to dummy qn&quot;</span><span class="p">)</span>
+        <span class="n">new_mpdm</span><span class="p">:</span> <span class="s2">&quot;MpDmBase&quot;</span> <span class="o">=</span> <span class="nb">super</span><span class="p">()</span><span class="o">.</span><span class="n">conj_trans</span><span class="p">()</span>
+        <span class="n">new_mpdm</span><span class="o">.</span><span class="n">use_dummy_qn</span> <span class="o">=</span> <span class="kc">True</span>
+        <span class="n">new_mpdm</span><span class="o">.</span><span class="n">coeff</span> <span class="o">=</span> <span class="n">new_mpdm</span><span class="o">.</span><span class="n">coeff</span><span class="o">.</span><span class="n">conjugate</span><span class="p">()</span>
+        <span class="k">return</span> <span class="n">new_mpdm</span></div>
+
+<div class="viewcode-block" id="MpDm.apply"><a class="viewcode-back" href="../../../mps.html#renormalizer.mps.MpDm.apply">[docs]</a>    <span class="k">def</span> <span class="nf">apply</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">mp</span><span class="p">,</span> <span class="n">canonicalise</span><span class="o">=</span><span class="kc">False</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="s2">&quot;MpDmBase&quot;</span><span class="p">:</span>
+        <span class="c1"># Note usually mp is an mpo</span>
+        <span class="k">assert</span> <span class="ow">not</span> <span class="n">mp</span><span class="o">.</span><span class="n">is_mps</span>
+        <span class="n">new_mpdm</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">metacopy</span><span class="p">()</span>
+        <span class="k">if</span> <span class="n">mp</span><span class="o">.</span><span class="n">is_complex</span><span class="p">:</span>
+            <span class="n">new_mpdm</span><span class="o">.</span><span class="n">to_complex</span><span class="p">(</span><span class="n">inplace</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+        <span class="c1"># todo: also duplicate with MPO apply. What to do???</span>
+        <span class="k">for</span> <span class="n">i</span><span class="p">,</span> <span class="p">(</span><span class="n">mt_self</span><span class="p">,</span> <span class="n">mt_other</span><span class="p">)</span> <span class="ow">in</span> <span class="nb">enumerate</span><span class="p">(</span><span class="nb">zip</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">mp</span><span class="p">)):</span>
+            <span class="k">assert</span> <span class="n">mt_self</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="mi">2</span><span class="p">]</span> <span class="o">==</span> <span class="n">mt_other</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span>
+            <span class="c1"># mt=np.einsum(&quot;apqb,cqrd-&gt;acprbd&quot;,mt_s,mt_o)</span>
+            <span class="n">mt</span> <span class="o">=</span> <span class="n">xp</span><span class="o">.</span><span class="n">moveaxis</span><span class="p">(</span>
+                <span class="n">tensordot</span><span class="p">(</span><span class="n">mt_self</span><span class="o">.</span><span class="n">array</span><span class="p">,</span> <span class="n">mt_other</span><span class="o">.</span><span class="n">array</span><span class="p">,</span> <span class="n">axes</span><span class="o">=</span><span class="p">([</span><span class="mi">2</span><span class="p">],</span> <span class="p">[</span><span class="mi">1</span><span class="p">])),</span>
+                <span class="p">[</span><span class="o">-</span><span class="mi">3</span><span class="p">,</span> <span class="o">-</span><span class="mi">2</span><span class="p">],</span>
+                <span class="p">[</span><span class="mi">1</span><span class="p">,</span> <span class="mi">3</span><span class="p">],</span>
+            <span class="p">)</span>
+            <span class="n">mt</span> <span class="o">=</span> <span class="n">mt</span><span class="o">.</span><span class="n">reshape</span><span class="p">(</span>
+                <span class="p">(</span>
+                    <span class="n">mt_self</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span> <span class="o">*</span> <span class="n">mt_other</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="mi">0</span><span class="p">],</span>
+                    <span class="n">mt_self</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="mi">1</span><span class="p">],</span>
+                    <span class="n">mt_other</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="mi">2</span><span class="p">],</span>
+                    <span class="n">mt_self</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="o">-</span><span class="mi">1</span><span class="p">]</span> <span class="o">*</span> <span class="n">mt_other</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="o">-</span><span class="mi">1</span><span class="p">],</span>
+                <span class="p">)</span>
+            <span class="p">)</span>
+            <span class="n">new_mpdm</span><span class="p">[</span><span class="n">i</span><span class="p">]</span> <span class="o">=</span> <span class="n">mt</span>
+        <span class="n">qn</span> <span class="o">=</span> <span class="n">mp</span><span class="o">.</span><span class="n">dummy_qn</span>
+        <span class="n">new_mpdm</span><span class="o">.</span><span class="n">qn</span> <span class="o">=</span> <span class="p">[</span>
+            <span class="n">np</span><span class="o">.</span><span class="n">add</span><span class="o">.</span><span class="n">outer</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">(</span><span class="n">qn_o</span><span class="p">),</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">(</span><span class="n">qn_m</span><span class="p">))</span><span class="o">.</span><span class="n">ravel</span><span class="p">()</span><span class="o">.</span><span class="n">tolist</span><span class="p">()</span>
+            <span class="k">for</span> <span class="n">qn_o</span><span class="p">,</span> <span class="n">qn_m</span> <span class="ow">in</span> <span class="nb">zip</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">qn</span><span class="p">,</span> <span class="n">qn</span><span class="p">)</span>
+        <span class="p">]</span>
+        <span class="k">if</span> <span class="n">canonicalise</span><span class="p">:</span>
+            <span class="n">new_mpdm</span><span class="o">.</span><span class="n">canonicalise</span><span class="p">()</span>
+        <span class="k">return</span> <span class="n">new_mpdm</span></div></div>
+</pre></div>
+
+           </div>
+           
+          </div>
+          <footer>
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>
+        &#169; Copyright 2019, Shuaigroup.
+
+    </p>
+  </div>
+    
+    
+    
+    Built with <a href="https://www.sphinx-doc.org/">Sphinx</a> using a
+    
+    <a href="https://github.com/readthedocs/sphinx_rtd_theme">theme</a>
+    
+    provided by <a href="https://readthedocs.org">Read the Docs</a>. 
+
+</footer>
+        </div>
+      </div>
+
+    </section>
+
+  </div>
+  
+
+  <script type="text/javascript">
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script>
+
+  
+  
+    
+   
+
+</body>
+</html>

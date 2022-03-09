@@ -1,0 +1,721 @@
+
+
+<!DOCTYPE html>
+<html class="writer-html5" lang="en" >
+<head>
+  <meta charset="utf-8" />
+  
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  
+  <title>renormalizer.mps.tda &mdash; Renormalizer 0.1.0 documentation</title>
+  
+
+  
+  <link rel="stylesheet" href="../../../_static/css/theme.css" type="text/css" />
+  <link rel="stylesheet" href="../../../_static/pygments.css" type="text/css" />
+  <link rel="stylesheet" href="../../../_static/pygments.css" type="text/css" />
+  <link rel="stylesheet" href="../../../_static/css/theme.css" type="text/css" />
+
+  
+  
+
+  
+  
+
+  
+
+  
+  <!--[if lt IE 9]>
+    <script src="../../../_static/js/html5shiv.min.js"></script>
+  <![endif]-->
+  
+    
+      <script type="text/javascript" id="documentation_options" data-url_root="../../../" src="../../../_static/documentation_options.js"></script>
+        <script data-url_root="../../../" id="documentation_options" src="../../../_static/documentation_options.js"></script>
+        <script src="../../../_static/jquery.js"></script>
+        <script src="../../../_static/underscore.js"></script>
+        <script src="../../../_static/doctools.js"></script>
+    
+    <script type="text/javascript" src="../../../_static/js/theme.js"></script>
+
+    
+    <link rel="index" title="Index" href="../../../genindex.html" />
+    <link rel="search" title="Search" href="../../../search.html" /> 
+</head>
+
+<body class="wy-body-for-nav">
+
+   
+  <div class="wy-grid-for-nav">
+    
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search" >
+          
+
+          
+            <a href="../../../index.html" class="icon icon-home"> Renormalizer
+          
+
+          
+          </a>
+
+          
+            
+            
+              <div class="version">
+                0.1
+              </div>
+            
+          
+
+          
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="../../../search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+
+          
+        </div>
+
+        
+        <div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="main navigation">
+          
+            
+            
+              
+            
+            
+              <ul>
+<li class="toctree-l1"><a class="reference internal" href="../../../overview.html">1. An overview of Renormalizer</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../install.html">2. Installation guide</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../develop.html">3. How to develop Renormalizer</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../tutorial.html">4. Tutorial</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../model.html">5. Model</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../mps.html">6. Low Level Data Structure and Algorithms</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../static.html">7. Static Eigenstate Method</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../spectrum.html">8. spectra: absorption/emission spectrum at zero/finite temperature</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../ct.html">9. Charge Transport</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../cv.html">10. Frequency domain DMRG</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../configs.html">11. Calculation Configurations</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../lib.html">12. lib</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../sbm.html">13. sbm</a></li>
+</ul>
+
+            
+          
+        </div>
+        
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap">
+
+      
+      <nav class="wy-nav-top" aria-label="top navigation">
+        
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="../../../index.html">Renormalizer</a>
+        
+      </nav>
+
+
+      <div class="wy-nav-content">
+        
+        <div class="rst-content">
+        
+          
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+<div role="navigation" aria-label="breadcrumbs navigation">
+
+  <ul class="wy-breadcrumbs">
+    
+      <li><a href="../../../index.html" class="icon icon-home"></a> &raquo;</li>
+        
+          <li><a href="../../index.html">Module code</a> &raquo;</li>
+        
+      <li>renormalizer.mps.tda</li>
+    
+    
+      <li class="wy-breadcrumbs-aside">
+        
+      </li>
+    
+  </ul>
+
+  
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+            
+  <h1>Source code for renormalizer.mps.tda</h1><div class="highlight"><pre>
+<span></span><span class="c1"># -*- coding: utf-8 -*-</span>
+<span class="kn">from</span> <span class="nn">renormalizer.mps.matrix</span> <span class="kn">import</span> <span class="n">tensordot</span><span class="p">,</span> <span class="n">multi_tensor_contract</span><span class="p">,</span> <span class="n">asnumpy</span><span class="p">,</span> <span class="n">asxp</span>
+<span class="kn">from</span> <span class="nn">renormalizer.mps.backend</span> <span class="kn">import</span> <span class="n">xp</span><span class="p">,</span> <span class="n">USE_GPU</span>
+<span class="kn">from</span> <span class="nn">renormalizer.mps</span> <span class="kn">import</span> <span class="n">Mps</span><span class="p">,</span> <span class="n">Mpo</span><span class="p">,</span> <span class="n">MpDm</span>
+<span class="kn">from</span> <span class="nn">renormalizer.mps.lib</span> <span class="kn">import</span> <span class="n">Environ</span><span class="p">,</span> <span class="n">compressed_sum</span> 
+<span class="kn">from</span> <span class="nn">renormalizer.lib</span> <span class="kn">import</span> <span class="n">davidson</span>
+
+<span class="kn">import</span> <span class="nn">numpy</span> <span class="k">as</span> <span class="nn">np</span>
+<span class="kn">import</span> <span class="nn">scipy</span>
+<span class="kn">import</span> <span class="nn">logging</span>
+<span class="kn">import</span> <span class="nn">opt_einsum</span> <span class="k">as</span> <span class="nn">oe</span>
+<span class="kn">import</span> <span class="nn">primme</span>
+<span class="kn">from</span> <span class="nn">collections</span> <span class="kn">import</span> <span class="n">defaultdict</span>
+
+<span class="n">logger</span> <span class="o">=</span> <span class="n">logging</span><span class="o">.</span><span class="n">getLogger</span><span class="p">(</span><span class="vm">__name__</span><span class="p">)</span>
+
+<div class="viewcode-block" id="TDA"><a class="viewcode-back" href="../../../static.html#renormalizer.mps.tda.TDA">[docs]</a><span class="k">class</span> <span class="nc">TDA</span><span class="p">(</span><span class="nb">object</span><span class="p">):</span>
+    <span class="sa">r</span><span class="sd">&quot;&quot;&quot; Tamm–Dancoff approximation (or called CIS) to calculate the excited</span>
+<span class="sd">    states based on MPS. TDA use the first order tangent space to do excitation.</span>
+<span class="sd">    The implementation is similar to J. Chem. Phys. 140, 024108 (2014).</span>
+<span class="sd">    </span>
+<span class="sd">    Parameters</span>
+<span class="sd">    ----------</span>
+<span class="sd">    model: renormalizer.model.model</span>
+<span class="sd">        Model of the system</span>
+<span class="sd">    hmpo: renormalizer.mps.Mpo</span>
+<span class="sd">        mpo of Hamiltonian</span>
+<span class="sd">    mps: renormalizer.mps.Mps</span>
+<span class="sd">        ground state mps (will be overwritten)</span>
+<span class="sd">    nroots: int, optional</span>
+<span class="sd">        number of roots to be calculated. Default is ``1``.</span>
+<span class="sd">    algo: str, optional</span>
+<span class="sd">        iterative diagonalization solver. Default is ``primme``.</span>
+<span class="sd">        Valid option are ``davidson`` and ``primme``.</span>
+
+<span class="sd">    Note</span>
+<span class="sd">    ----</span>
+<span class="sd">    Quantum number is not used, thus the conservation is not guaranteed.</span>
+
+<span class="sd">    &quot;&quot;&quot;</span>
+
+    <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">model</span><span class="p">,</span> <span class="n">hmpo</span><span class="p">,</span> <span class="n">mps</span><span class="p">,</span> <span class="n">nroots</span><span class="o">=</span><span class="mi">1</span><span class="p">,</span> <span class="n">algo</span><span class="o">=</span><span class="s2">&quot;primme&quot;</span><span class="p">):</span>
+               
+        <span class="bp">self</span><span class="o">.</span><span class="n">model</span> <span class="o">=</span> <span class="n">model</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">hmpo</span> <span class="o">=</span> <span class="n">hmpo</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">mps</span> <span class="o">=</span> <span class="n">mps</span>  <span class="c1"># mps will be overwritten inplace</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">nroots</span> <span class="o">=</span> <span class="n">nroots</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">algo</span> <span class="o">=</span> <span class="n">algo</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">e</span> <span class="o">=</span> <span class="kc">None</span>
+        <span class="c1"># wavefunction: [mps_l_cano, mps_r_cano, tangent_u, tda_coeff_list]</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">wfn</span> <span class="o">=</span> <span class="kc">None</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">configs</span> <span class="o">=</span> <span class="n">defaultdict</span><span class="p">(</span><span class="nb">list</span><span class="p">)</span>
+
+<div class="viewcode-block" id="TDA.kernel"><a class="viewcode-back" href="../../../static.html#renormalizer.mps.tda.TDA.kernel">[docs]</a>    <span class="k">def</span> <span class="nf">kernel</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">restart</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span> <span class="n">include_psi0</span><span class="o">=</span><span class="kc">False</span><span class="p">):</span>
+        <span class="sa">r</span><span class="sd">&quot;&quot;&quot;calculate the roots</span>
+
+<span class="sd">        Parameters</span>
+<span class="sd">        ----------</span>
+<span class="sd">        restart: bool, optional</span>
+<span class="sd">            if restart from the former converged root. Default is ``False``.</span>
+<span class="sd">            If ``restart = True``, ``include_psi0`` must be the same as the</span>
+<span class="sd">            former calculation.</span>
+<span class="sd">        include_psi0: bool, optional</span>
+<span class="sd">            if the basis of Hamiltonian includes the ground state</span>
+<span class="sd">                :math:`\Psi_0`. Default is ``False``.</span>
+
+<span class="sd">        Returns</span>
+<span class="sd">        -------</span>
+<span class="sd">        e: np.ndarray</span>
+<span class="sd">            the energy of the states, if ``include_psi0 = True``, the first</span>
+<span class="sd">            element is the ground state energy, otherwise, it is the energy of</span>
+<span class="sd">            the first excited state.</span>
+
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="c1"># right canonical mps</span>
+        <span class="n">mpo</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">hmpo</span>
+        <span class="n">nroots</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">nroots</span>
+        <span class="n">algo</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">algo</span>
+        <span class="n">site_num</span> <span class="o">=</span> <span class="n">mpo</span><span class="o">.</span><span class="n">site_num</span>
+
+        <span class="k">if</span> <span class="ow">not</span> <span class="n">restart</span><span class="p">:</span>
+            <span class="c1"># make sure that M is not redundant near the edge</span>
+            <span class="n">mps</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">mps</span><span class="o">.</span><span class="n">ensure_right_canon</span><span class="p">()</span><span class="o">.</span><span class="n">canonicalise</span><span class="p">()</span><span class="o">.</span><span class="n">normalize</span><span class="p">()</span><span class="o">.</span><span class="n">canonicalise</span><span class="p">()</span>
+            <span class="n">logger</span><span class="o">.</span><span class="n">debug</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;reference mps shape, </span><span class="si">{</span><span class="n">mps</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+            <span class="n">mps_r_cano</span> <span class="o">=</span> <span class="n">mps</span><span class="o">.</span><span class="n">copy</span><span class="p">()</span>
+            <span class="k">assert</span> <span class="n">mps</span><span class="o">.</span><span class="n">to_right</span> 
+            
+            <span class="n">tangent_u</span> <span class="o">=</span> <span class="p">[]</span>
+    
+            <span class="k">for</span> <span class="n">ims</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="n">mps</span><span class="p">)):</span>
+                
+                <span class="n">shape</span> <span class="o">=</span> <span class="nb">list</span><span class="p">(</span><span class="n">mps</span><span class="p">[</span><span class="n">ims</span><span class="p">]</span><span class="o">.</span><span class="n">shape</span><span class="p">)</span>
+                <span class="n">u</span><span class="p">,</span> <span class="n">s</span><span class="p">,</span> <span class="n">vt</span> <span class="o">=</span> <span class="n">scipy</span><span class="o">.</span><span class="n">linalg</span><span class="o">.</span><span class="n">svd</span><span class="p">(</span><span class="n">mps</span><span class="p">[</span><span class="n">ims</span><span class="p">]</span><span class="o">.</span><span class="n">l_combine</span><span class="p">(),</span> <span class="n">full_matrices</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+                <span class="n">rank</span> <span class="o">=</span> <span class="nb">len</span><span class="p">(</span><span class="n">s</span><span class="p">)</span>
+                <span class="k">if</span> <span class="n">include_psi0</span> <span class="ow">and</span> <span class="n">ims</span> <span class="o">==</span> <span class="n">site_num</span><span class="o">-</span><span class="mi">1</span><span class="p">:</span> 
+                    <span class="n">tangent_u</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">u</span><span class="o">.</span><span class="n">reshape</span><span class="p">(</span><span class="n">shape</span><span class="p">[:</span><span class="o">-</span><span class="mi">1</span><span class="p">]</span><span class="o">+</span><span class="p">[</span><span class="o">-</span><span class="mi">1</span><span class="p">]))</span>
+                <span class="k">else</span><span class="p">:</span>
+                    <span class="k">if</span> <span class="n">rank</span> <span class="o">&lt;</span> <span class="n">u</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="mi">1</span><span class="p">]:</span>
+                        <span class="n">tangent_u</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">u</span><span class="p">[:,</span><span class="n">rank</span><span class="p">:]</span><span class="o">.</span><span class="n">reshape</span><span class="p">(</span><span class="n">shape</span><span class="p">[:</span><span class="o">-</span><span class="mi">1</span><span class="p">]</span><span class="o">+</span><span class="p">[</span><span class="o">-</span><span class="mi">1</span><span class="p">]))</span>
+                    <span class="k">else</span><span class="p">:</span>
+                        <span class="n">tangent_u</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="kc">None</span><span class="p">)</span>  <span class="c1"># the tangent space is None</span>
+
+                <span class="n">mps</span><span class="p">[</span><span class="n">ims</span><span class="p">]</span> <span class="o">=</span> <span class="n">u</span><span class="p">[:,:</span><span class="n">rank</span><span class="p">]</span><span class="o">.</span><span class="n">reshape</span><span class="p">(</span><span class="n">shape</span><span class="p">[:</span><span class="o">-</span><span class="mi">1</span><span class="p">]</span><span class="o">+</span><span class="p">[</span><span class="o">-</span><span class="mi">1</span><span class="p">])</span>
+                
+                <span class="n">vt</span> <span class="o">=</span> <span class="n">xp</span><span class="o">.</span><span class="n">einsum</span><span class="p">(</span><span class="s2">&quot;i, ij -&gt; ij&quot;</span><span class="p">,</span> <span class="n">asxp</span><span class="p">(</span><span class="n">s</span><span class="p">),</span> <span class="n">asxp</span><span class="p">(</span><span class="n">vt</span><span class="p">))</span>
+                <span class="k">if</span> <span class="n">ims</span> <span class="o">==</span> <span class="n">site_num</span><span class="o">-</span><span class="mi">1</span><span class="p">:</span>
+                    <span class="k">assert</span> <span class="n">vt</span><span class="o">.</span><span class="n">size</span> <span class="o">==</span> <span class="mi">1</span> <span class="ow">and</span> <span class="n">xp</span><span class="o">.</span><span class="n">allclose</span><span class="p">(</span><span class="n">vt</span><span class="p">,</span> <span class="mi">1</span><span class="p">)</span>
+                <span class="k">else</span><span class="p">:</span>
+                    <span class="n">mps</span><span class="p">[</span><span class="n">ims</span><span class="o">+</span><span class="mi">1</span><span class="p">]</span> <span class="o">=</span> <span class="n">asnumpy</span><span class="p">(</span><span class="n">tensordot</span><span class="p">(</span><span class="n">vt</span><span class="p">,</span> <span class="n">mps</span><span class="p">[</span><span class="n">ims</span><span class="o">+</span><span class="mi">1</span><span class="p">],</span> <span class="p">([</span><span class="o">-</span><span class="mi">1</span><span class="p">],[</span><span class="mi">0</span><span class="p">])))</span>
+                
+            <span class="n">mps_l_cano</span> <span class="o">=</span> <span class="n">mps</span><span class="o">.</span><span class="n">copy</span><span class="p">()</span> 
+            <span class="n">mps_l_cano</span><span class="o">.</span><span class="n">to_right</span> <span class="o">=</span> <span class="kc">False</span>
+            <span class="n">mps_l_cano</span><span class="o">.</span><span class="n">qnidx</span> <span class="o">=</span> <span class="n">site_num</span><span class="o">-</span><span class="mi">1</span>
+
+        <span class="k">else</span><span class="p">:</span>
+            <span class="n">mps_l_cano</span><span class="p">,</span> <span class="n">mps_r_cano</span><span class="p">,</span> <span class="n">tangent_u</span><span class="p">,</span> <span class="n">tda_coeff_list</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">wfn</span>
+            <span class="n">cguess</span> <span class="o">=</span> <span class="p">[]</span>
+            <span class="k">for</span> <span class="n">iroot</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="n">tda_coeff_list</span><span class="p">)):</span>
+                <span class="n">tda_coeff</span> <span class="o">=</span> <span class="n">tda_coeff_list</span><span class="p">[</span><span class="n">iroot</span><span class="p">]</span>
+                <span class="n">x</span> <span class="o">=</span> <span class="p">[</span><span class="n">c</span><span class="o">.</span><span class="n">flatten</span><span class="p">()</span> <span class="k">for</span> <span class="n">c</span> <span class="ow">in</span> <span class="n">tda_coeff</span> <span class="k">if</span> <span class="n">c</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">]</span>
+                <span class="n">x</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">concatenate</span><span class="p">(</span><span class="n">x</span><span class="p">,</span><span class="n">axis</span><span class="o">=</span><span class="kc">None</span><span class="p">)</span>
+                <span class="n">cguess</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">x</span><span class="p">)</span>
+            <span class="n">cguess</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">stack</span><span class="p">(</span><span class="n">cguess</span><span class="p">,</span> <span class="n">axis</span><span class="o">=</span><span class="mi">1</span><span class="p">)</span>
+
+        <span class="n">xshape</span> <span class="o">=</span> <span class="p">[]</span> 
+        <span class="n">xsize</span> <span class="o">=</span> <span class="mi">0</span>
+        <span class="k">for</span> <span class="n">ims</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="n">site_num</span><span class="p">):</span>
+            <span class="k">if</span> <span class="n">tangent_u</span><span class="p">[</span><span class="n">ims</span><span class="p">]</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+                <span class="n">xshape</span><span class="o">.</span><span class="n">append</span><span class="p">((</span><span class="mi">0</span><span class="p">,</span><span class="mi">0</span><span class="p">))</span>
+            <span class="k">else</span><span class="p">:</span>
+                <span class="k">if</span> <span class="n">ims</span> <span class="o">==</span> <span class="n">site_num</span><span class="o">-</span><span class="mi">1</span><span class="p">:</span>
+                    <span class="n">xshape</span><span class="o">.</span><span class="n">append</span><span class="p">((</span><span class="n">tangent_u</span><span class="p">[</span><span class="n">ims</span><span class="p">]</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="o">-</span><span class="mi">1</span><span class="p">],</span> <span class="mi">1</span><span class="p">))</span>
+                <span class="k">else</span><span class="p">:</span>    
+                    <span class="n">xshape</span><span class="o">.</span><span class="n">append</span><span class="p">((</span><span class="n">tangent_u</span><span class="p">[</span><span class="n">ims</span><span class="p">]</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="o">-</span><span class="mi">1</span><span class="p">],</span> <span class="n">mps_r_cano</span><span class="p">[</span><span class="n">ims</span><span class="o">+</span><span class="mi">1</span><span class="p">]</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="mi">0</span><span class="p">]))</span>
+                <span class="n">xsize</span> <span class="o">+=</span> <span class="n">np</span><span class="o">.</span><span class="n">prod</span><span class="p">(</span><span class="n">xshape</span><span class="p">[</span><span class="o">-</span><span class="mi">1</span><span class="p">])</span>
+        
+        <span class="n">logger</span><span class="o">.</span><span class="n">debug</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;DMRG-TDA H dimension: </span><span class="si">{</span><span class="n">xsize</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+        
+        <span class="k">if</span> <span class="n">USE_GPU</span><span class="p">:</span>
+            <span class="n">oe_backend</span> <span class="o">=</span> <span class="s2">&quot;cupy&quot;</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="n">oe_backend</span> <span class="o">=</span> <span class="s2">&quot;numpy&quot;</span>
+        
+        <span class="n">mps_tangent</span> <span class="o">=</span> <span class="n">mps_r_cano</span><span class="o">.</span><span class="n">copy</span><span class="p">()</span>
+        <span class="n">environ</span> <span class="o">=</span> <span class="n">Environ</span><span class="p">(</span><span class="n">mps_tangent</span><span class="p">,</span> <span class="n">mpo</span><span class="p">,</span> <span class="s2">&quot;R&quot;</span><span class="p">)</span>
+        <span class="n">hdiag</span> <span class="o">=</span> <span class="p">[]</span>
+        <span class="k">for</span> <span class="n">ims</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="n">site_num</span><span class="p">):</span>
+            <span class="n">ltensor</span> <span class="o">=</span> <span class="n">environ</span><span class="o">.</span><span class="n">GetLR</span><span class="p">(</span>
+                <span class="s2">&quot;L&quot;</span><span class="p">,</span> <span class="n">ims</span><span class="o">-</span><span class="mi">1</span><span class="p">,</span> <span class="n">mps_tangent</span><span class="p">,</span> <span class="n">mpo</span><span class="p">,</span> <span class="n">itensor</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
+                <span class="n">method</span><span class="o">=</span><span class="s2">&quot;System&quot;</span>
+            <span class="p">)</span>
+            <span class="n">rtensor</span> <span class="o">=</span> <span class="n">environ</span><span class="o">.</span><span class="n">GetLR</span><span class="p">(</span>
+                <span class="s2">&quot;R&quot;</span><span class="p">,</span> <span class="n">ims</span><span class="o">+</span><span class="mi">1</span><span class="p">,</span> <span class="n">mps_tangent</span><span class="p">,</span> <span class="n">mpo</span><span class="p">,</span> <span class="n">itensor</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
+                <span class="n">method</span><span class="o">=</span><span class="s2">&quot;Enviro&quot;</span>
+            <span class="p">)</span>
+            <span class="k">if</span> <span class="n">tangent_u</span><span class="p">[</span><span class="n">ims</span><span class="p">]</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+                <span class="n">u</span> <span class="o">=</span> <span class="n">asxp</span><span class="p">(</span><span class="n">tangent_u</span><span class="p">[</span><span class="n">ims</span><span class="p">])</span>
+                <span class="n">tmp</span> <span class="o">=</span> <span class="n">oe</span><span class="o">.</span><span class="n">contract</span><span class="p">(</span><span class="s2">&quot;abc, ded, bghe, agl, chl -&gt; ld&quot;</span><span class="p">,</span> <span class="n">ltensor</span><span class="p">,</span> <span class="n">rtensor</span><span class="p">,</span>
+                        <span class="n">asxp</span><span class="p">(</span><span class="n">mpo</span><span class="p">[</span><span class="n">ims</span><span class="p">]),</span> <span class="n">u</span><span class="p">,</span> <span class="n">u</span><span class="p">,</span> <span class="n">backend</span><span class="o">=</span><span class="n">oe_backend</span><span class="p">)</span>   
+                <span class="n">hdiag</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">asnumpy</span><span class="p">(</span><span class="n">tmp</span><span class="p">))</span>
+            <span class="n">mps_tangent</span><span class="p">[</span><span class="n">ims</span><span class="p">]</span> <span class="o">=</span> <span class="n">mps_l_cano</span><span class="p">[</span><span class="n">ims</span><span class="p">]</span>
+        <span class="n">hdiag</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">concatenate</span><span class="p">(</span><span class="n">hdiag</span><span class="p">,</span> <span class="n">axis</span><span class="o">=</span><span class="kc">None</span><span class="p">)</span>
+    
+        <span class="n">count</span> <span class="o">=</span> <span class="mi">0</span>
+        
+        <span class="c1"># recover the vector-like x back to the ndarray tda_coeff</span>
+        <span class="k">def</span> <span class="nf">reshape_x</span><span class="p">(</span><span class="n">x</span><span class="p">):</span>
+            <span class="n">tda_coeff</span> <span class="o">=</span> <span class="p">[]</span>
+            <span class="n">offset</span> <span class="o">=</span> <span class="mi">0</span>
+            <span class="k">for</span> <span class="n">shape</span> <span class="ow">in</span> <span class="n">xshape</span><span class="p">:</span>
+                <span class="k">if</span> <span class="n">shape</span> <span class="o">==</span> <span class="p">(</span><span class="mi">0</span><span class="p">,</span><span class="mi">0</span><span class="p">):</span>
+                    <span class="n">tda_coeff</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="kc">None</span><span class="p">)</span>
+                <span class="k">else</span><span class="p">:</span>
+                    <span class="n">size</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">prod</span><span class="p">(</span><span class="n">shape</span><span class="p">)</span>
+                    <span class="n">tda_coeff</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">x</span><span class="p">[</span><span class="n">offset</span><span class="p">:</span><span class="n">size</span><span class="o">+</span><span class="n">offset</span><span class="p">]</span><span class="o">.</span><span class="n">reshape</span><span class="p">(</span><span class="n">shape</span><span class="p">))</span>
+                    <span class="n">offset</span> <span class="o">+=</span> <span class="n">size</span>
+            
+            <span class="k">assert</span> <span class="n">offset</span> <span class="o">==</span> <span class="n">xsize</span>
+            <span class="k">return</span> <span class="n">tda_coeff</span>
+            
+        <span class="k">def</span> <span class="nf">hop</span><span class="p">(</span><span class="n">x</span><span class="p">):</span>
+            <span class="c1"># H*X</span>
+            <span class="k">nonlocal</span> <span class="n">count</span>
+            <span class="n">count</span> <span class="o">+=</span> <span class="mi">1</span>
+            
+            <span class="k">assert</span> <span class="nb">len</span><span class="p">(</span><span class="n">x</span><span class="p">)</span> <span class="o">==</span> <span class="n">xsize</span>
+            <span class="n">tda_coeff</span> <span class="o">=</span> <span class="n">reshape_x</span><span class="p">(</span><span class="n">x</span><span class="p">)</span>
+    
+            <span class="n">res</span> <span class="o">=</span> <span class="p">[</span><span class="n">np</span><span class="o">.</span><span class="n">zeros_like</span><span class="p">(</span><span class="n">coeff</span><span class="p">)</span> <span class="k">if</span> <span class="n">coeff</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span> <span class="k">else</span> <span class="kc">None</span> <span class="k">for</span> <span class="n">coeff</span> <span class="ow">in</span> <span class="n">tda_coeff</span><span class="p">]</span>
+            
+            <span class="c1"># fix ket and sweep bra and accumulate into res</span>
+            <span class="k">for</span> <span class="n">ims</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="n">site_num</span><span class="p">):</span>
+                <span class="k">if</span> <span class="n">tda_coeff</span><span class="p">[</span><span class="n">ims</span><span class="p">]</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+                    <span class="k">assert</span> <span class="n">tangent_u</span><span class="p">[</span><span class="n">ims</span><span class="p">]</span> <span class="ow">is</span> <span class="kc">None</span>
+                    <span class="k">continue</span>
+                
+                <span class="c1"># mix-canonical mps</span>
+                <span class="n">mps_tangent</span> <span class="o">=</span> <span class="n">merge</span><span class="p">(</span><span class="n">mps_l_cano</span><span class="p">,</span> <span class="n">mps_r_cano</span><span class="p">,</span> <span class="n">ims</span><span class="o">+</span><span class="mi">1</span><span class="p">)</span>
+                <span class="n">mps_tangent</span><span class="p">[</span><span class="n">ims</span><span class="p">]</span> <span class="o">=</span> <span class="n">tensordot</span><span class="p">(</span><span class="n">tangent_u</span><span class="p">[</span><span class="n">ims</span><span class="p">],</span> <span class="n">tda_coeff</span><span class="p">[</span><span class="n">ims</span><span class="p">],</span> <span class="p">(</span><span class="o">-</span><span class="mi">1</span><span class="p">,</span> <span class="mi">0</span><span class="p">))</span>
+                
+                <span class="n">mps_tangent_conj</span> <span class="o">=</span> <span class="n">mps_r_cano</span><span class="o">.</span><span class="n">copy</span><span class="p">()</span>
+                <span class="n">environ</span> <span class="o">=</span> <span class="n">Environ</span><span class="p">(</span><span class="n">mps_tangent</span><span class="p">,</span> <span class="n">mpo</span><span class="p">,</span> <span class="s2">&quot;R&quot;</span><span class="p">,</span> <span class="n">mps_conj</span><span class="o">=</span><span class="n">mps_tangent_conj</span><span class="p">)</span>
+                
+                <span class="k">for</span> <span class="n">ims_conj</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="n">site_num</span><span class="p">):</span>
+                    <span class="n">ltensor</span> <span class="o">=</span> <span class="n">environ</span><span class="o">.</span><span class="n">GetLR</span><span class="p">(</span>
+                        <span class="s2">&quot;L&quot;</span><span class="p">,</span> <span class="n">ims_conj</span><span class="o">-</span><span class="mi">1</span><span class="p">,</span> <span class="n">mps_tangent</span><span class="p">,</span> <span class="n">mpo</span><span class="p">,</span> <span class="n">itensor</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
+                        <span class="n">mps_conj</span><span class="o">=</span><span class="n">mps_tangent_conj</span><span class="p">,</span>
+                        <span class="n">method</span><span class="o">=</span><span class="s2">&quot;System&quot;</span>
+                    <span class="p">)</span>
+                    <span class="n">rtensor</span> <span class="o">=</span> <span class="n">environ</span><span class="o">.</span><span class="n">GetLR</span><span class="p">(</span>
+                        <span class="s2">&quot;R&quot;</span><span class="p">,</span> <span class="n">ims_conj</span><span class="o">+</span><span class="mi">1</span><span class="p">,</span> <span class="n">mps_tangent</span><span class="p">,</span> <span class="n">mpo</span><span class="p">,</span> <span class="n">itensor</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
+                        <span class="n">mps_conj</span><span class="o">=</span><span class="n">mps_tangent_conj</span><span class="p">,</span>
+                        <span class="n">method</span><span class="o">=</span><span class="s2">&quot;Enviro&quot;</span>
+                    <span class="p">)</span>
+                    <span class="k">if</span> <span class="n">tda_coeff</span><span class="p">[</span><span class="n">ims_conj</span><span class="p">]</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+                        <span class="c1"># S-a   l-S</span>
+                        <span class="c1">#     d</span>
+                        <span class="c1"># O-b-O-f-O</span>
+                        <span class="c1">#     e</span>
+                        <span class="c1"># S-c   k-S</span>
+    
+                        <span class="n">path</span> <span class="o">=</span> <span class="p">[</span>
+                            <span class="p">([</span><span class="mi">0</span><span class="p">,</span> <span class="mi">1</span><span class="p">],</span> <span class="s2">&quot;abc, cek -&gt; abek&quot;</span><span class="p">),</span>
+                            <span class="p">([</span><span class="mi">2</span><span class="p">,</span> <span class="mi">0</span><span class="p">],</span> <span class="s2">&quot;abek, bdef -&gt; akdf&quot;</span><span class="p">),</span>
+                            <span class="p">([</span><span class="mi">1</span><span class="p">,</span> <span class="mi">0</span><span class="p">],</span> <span class="s2">&quot;akdf, lfk -&gt; adl&quot;</span><span class="p">),</span>
+                        <span class="p">]</span>
+                        <span class="n">out</span> <span class="o">=</span> <span class="n">multi_tensor_contract</span><span class="p">(</span>
+                            <span class="n">path</span><span class="p">,</span> <span class="n">ltensor</span><span class="p">,</span> <span class="n">asxp</span><span class="p">(</span><span class="n">mps_tangent</span><span class="p">[</span><span class="n">ims_conj</span><span class="p">]),</span>
+                            <span class="n">asxp</span><span class="p">(</span><span class="n">mpo</span><span class="p">[</span><span class="n">ims_conj</span><span class="p">]),</span> <span class="n">rtensor</span>
+                        <span class="p">)</span>
+                        <span class="n">res</span><span class="p">[</span><span class="n">ims_conj</span><span class="p">]</span> <span class="o">+=</span> <span class="n">asnumpy</span><span class="p">(</span><span class="n">tensordot</span><span class="p">(</span><span class="n">tangent_u</span><span class="p">[</span><span class="n">ims_conj</span><span class="p">],</span> <span class="n">out</span><span class="p">,</span>
+                            <span class="p">([</span><span class="mi">0</span><span class="p">,</span><span class="mi">1</span><span class="p">],</span> <span class="p">[</span><span class="mi">0</span><span class="p">,</span><span class="mi">1</span><span class="p">])))</span>
+                    
+                    <span class="c1"># mps_conj combine </span>
+                    <span class="n">mps_tangent_conj</span><span class="p">[</span><span class="n">ims_conj</span><span class="p">]</span> <span class="o">=</span> <span class="n">mps_l_cano</span><span class="p">[</span><span class="n">ims_conj</span><span class="p">]</span>    
+            
+            <span class="n">res</span> <span class="o">=</span> <span class="p">[</span><span class="n">mat</span> <span class="k">for</span> <span class="n">mat</span> <span class="ow">in</span> <span class="n">res</span> <span class="k">if</span> <span class="n">mat</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">]</span>
+    
+            <span class="k">return</span> <span class="n">np</span><span class="o">.</span><span class="n">concatenate</span><span class="p">(</span><span class="n">res</span><span class="p">,</span> <span class="n">axis</span><span class="o">=</span><span class="kc">None</span><span class="p">)</span>
+        
+        <span class="k">if</span> <span class="n">algo</span> <span class="o">==</span> <span class="s2">&quot;davidson&quot;</span><span class="p">:</span>
+            <span class="k">if</span> <span class="n">restart</span><span class="p">:</span>
+                <span class="n">cguess</span> <span class="o">=</span> <span class="p">[</span><span class="n">cguess</span><span class="p">[:,</span><span class="n">i</span><span class="p">]</span> <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="n">cguess</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="mi">1</span><span class="p">])]</span>
+            <span class="k">else</span><span class="p">:</span>
+                <span class="n">cguess</span> <span class="o">=</span> <span class="p">[</span><span class="n">np</span><span class="o">.</span><span class="n">random</span><span class="o">.</span><span class="n">random</span><span class="p">(</span><span class="n">xsize</span><span class="p">)</span> <span class="o">-</span> <span class="mf">0.5</span><span class="p">]</span>
+            <span class="n">precond</span> <span class="o">=</span> <span class="k">lambda</span> <span class="n">x</span><span class="p">,</span> <span class="n">e</span><span class="p">,</span> <span class="o">*</span><span class="n">args</span><span class="p">:</span> <span class="n">x</span> <span class="o">/</span> <span class="p">(</span><span class="n">hdiag</span> <span class="o">-</span> <span class="n">e</span> <span class="o">+</span> <span class="mf">1e-4</span><span class="p">)</span>
+            
+            <span class="n">e</span><span class="p">,</span> <span class="n">c</span> <span class="o">=</span> <span class="n">davidson</span><span class="p">(</span>
+                <span class="n">hop</span><span class="p">,</span> <span class="n">cguess</span><span class="p">,</span> <span class="n">precond</span><span class="p">,</span> <span class="n">max_cycle</span><span class="o">=</span><span class="mi">100</span><span class="p">,</span>
+                <span class="n">nroots</span><span class="o">=</span><span class="n">nroots</span><span class="p">,</span> <span class="n">max_memory</span><span class="o">=</span><span class="mi">64000</span>
+            <span class="p">)</span>
+            <span class="k">if</span> <span class="n">nroots</span> <span class="o">==</span> <span class="mi">1</span><span class="p">:</span>
+                <span class="n">c</span> <span class="o">=</span> <span class="p">[</span><span class="n">c</span><span class="p">]</span>
+            <span class="n">c</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">stack</span><span class="p">(</span><span class="n">c</span><span class="p">,</span> <span class="n">axis</span><span class="o">=</span><span class="mi">1</span><span class="p">)</span>
+
+        <span class="k">elif</span> <span class="n">algo</span> <span class="o">==</span> <span class="s2">&quot;primme&quot;</span><span class="p">:</span>
+            <span class="k">if</span> <span class="ow">not</span> <span class="n">restart</span><span class="p">:</span>
+                <span class="n">cguess</span> <span class="o">=</span> <span class="kc">None</span>
+
+            <span class="k">def</span> <span class="nf">multi_hop</span><span class="p">(</span><span class="n">x</span><span class="p">):</span>
+                <span class="k">if</span> <span class="n">x</span><span class="o">.</span><span class="n">ndim</span> <span class="o">==</span> <span class="mi">1</span><span class="p">:</span>
+                    <span class="k">return</span> <span class="n">hop</span><span class="p">(</span><span class="n">x</span><span class="p">)</span>
+                <span class="k">elif</span> <span class="n">x</span><span class="o">.</span><span class="n">ndim</span> <span class="o">==</span> <span class="mi">2</span><span class="p">:</span>
+                    <span class="k">return</span> <span class="n">np</span><span class="o">.</span><span class="n">stack</span><span class="p">([</span><span class="n">hop</span><span class="p">(</span><span class="n">x</span><span class="p">[:,</span><span class="n">i</span><span class="p">])</span> <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="n">x</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="mi">1</span><span class="p">])],</span><span class="n">axis</span><span class="o">=</span><span class="mi">1</span><span class="p">)</span>
+                <span class="k">else</span><span class="p">:</span>
+                    <span class="k">assert</span> <span class="kc">False</span>
+    
+            <span class="k">def</span> <span class="nf">precond</span><span class="p">(</span><span class="n">x</span><span class="p">):</span> 
+                <span class="k">if</span> <span class="n">x</span><span class="o">.</span><span class="n">ndim</span> <span class="o">==</span> <span class="mi">1</span><span class="p">:</span>
+                    <span class="k">return</span> <span class="n">np</span><span class="o">.</span><span class="n">einsum</span><span class="p">(</span><span class="s2">&quot;i, i -&gt; i&quot;</span><span class="p">,</span> <span class="mi">1</span><span class="o">/</span><span class="p">(</span><span class="n">hdiag</span><span class="o">+</span><span class="mf">1e-4</span><span class="p">),</span> <span class="n">x</span><span class="p">)</span>
+                <span class="k">elif</span> <span class="n">x</span><span class="o">.</span><span class="n">ndim</span> <span class="o">==</span><span class="mi">2</span><span class="p">:</span>
+                    <span class="k">return</span> <span class="n">np</span><span class="o">.</span><span class="n">einsum</span><span class="p">(</span><span class="s2">&quot;i, ij -&gt; ij&quot;</span><span class="p">,</span> <span class="mi">1</span><span class="o">/</span><span class="p">(</span><span class="n">hdiag</span><span class="o">+</span><span class="mf">1e-4</span><span class="p">),</span> <span class="n">x</span><span class="p">)</span>
+                <span class="k">else</span><span class="p">:</span>
+                    <span class="k">assert</span> <span class="kc">False</span>
+            <span class="n">A</span> <span class="o">=</span> <span class="n">scipy</span><span class="o">.</span><span class="n">sparse</span><span class="o">.</span><span class="n">linalg</span><span class="o">.</span><span class="n">LinearOperator</span><span class="p">((</span><span class="n">xsize</span><span class="p">,</span><span class="n">xsize</span><span class="p">),</span>
+                    <span class="n">matvec</span><span class="o">=</span><span class="n">multi_hop</span><span class="p">,</span> <span class="n">matmat</span><span class="o">=</span><span class="n">multi_hop</span><span class="p">)</span>
+            <span class="n">M</span> <span class="o">=</span> <span class="n">scipy</span><span class="o">.</span><span class="n">sparse</span><span class="o">.</span><span class="n">linalg</span><span class="o">.</span><span class="n">LinearOperator</span><span class="p">((</span><span class="n">xsize</span><span class="p">,</span><span class="n">xsize</span><span class="p">),</span>
+                    <span class="n">matvec</span><span class="o">=</span><span class="n">precond</span><span class="p">,</span> <span class="n">matmat</span><span class="o">=</span><span class="n">precond</span><span class="p">)</span>
+            <span class="n">e</span><span class="p">,</span> <span class="n">c</span> <span class="o">=</span> <span class="n">primme</span><span class="o">.</span><span class="n">eigsh</span><span class="p">(</span><span class="n">A</span><span class="p">,</span> <span class="n">k</span><span class="o">=</span><span class="nb">min</span><span class="p">(</span><span class="n">nroots</span><span class="p">,</span><span class="n">xsize</span><span class="p">),</span> <span class="n">which</span><span class="o">=</span><span class="s2">&quot;SA&quot;</span><span class="p">,</span> 
+                    <span class="n">v0</span><span class="o">=</span><span class="n">cguess</span><span class="p">,</span>
+                    <span class="n">OPinv</span><span class="o">=</span><span class="n">M</span><span class="p">,</span>
+                    <span class="n">method</span><span class="o">=</span><span class="s2">&quot;PRIMME_DYNAMIC&quot;</span><span class="p">,</span> 
+                    <span class="n">tol</span><span class="o">=</span><span class="mf">1e-6</span><span class="p">)</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="k">assert</span> <span class="kc">False</span>
+
+        <span class="n">logger</span><span class="o">.</span><span class="n">debug</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;H*C times: </span><span class="si">{</span><span class="n">count</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+        
+        <span class="n">tda_coeff_list</span> <span class="o">=</span> <span class="p">[]</span>
+        <span class="k">for</span> <span class="n">iroot</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="n">nroots</span><span class="p">):</span>
+            <span class="n">tda_coeff_list</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">reshape_x</span><span class="p">(</span><span class="n">c</span><span class="p">[:,</span><span class="n">iroot</span><span class="p">]))</span> 
+        
+        <span class="bp">self</span><span class="o">.</span><span class="n">e</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">(</span><span class="n">e</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">wfn</span> <span class="o">=</span> <span class="p">[</span><span class="n">mps_l_cano</span><span class="p">,</span> <span class="n">mps_r_cano</span><span class="p">,</span> <span class="n">tangent_u</span><span class="p">,</span> <span class="n">tda_coeff_list</span><span class="p">]</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">e</span></div>
+
+<div class="viewcode-block" id="TDA.dump_wfn"><a class="viewcode-back" href="../../../static.html#renormalizer.mps.tda.TDA.dump_wfn">[docs]</a>    <span class="k">def</span> <span class="nf">dump_wfn</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="sa">r</span><span class="sd">&quot;&quot;&quot; Dump wavefunction for restart and analysis</span>
+<span class="sd">        </span>
+<span class="sd">        Note</span>
+<span class="sd">        ----</span>
+<span class="sd">        mps_l_cano.npz: left-canonical form of initial mps</span>
+<span class="sd">        mps_r_cano.npz: right-canonical form of the initial mps</span>
+<span class="sd">        tangent_u: the tangent space u of the mixed-canonical mps</span>
+<span class="sd">        tda_coeff_{iroot}.npz: the tda_coeff of the ith root.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        
+        <span class="n">mps_l_cano</span><span class="p">,</span> <span class="n">mps_r_cano</span><span class="p">,</span> <span class="n">tangent_u</span><span class="p">,</span> <span class="n">tda_coeff_list</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">wfn</span>
+        
+        <span class="c1"># store mps_l_cano mps_r_cano</span>
+        <span class="n">mps_l_cano</span><span class="o">.</span><span class="n">dump</span><span class="p">(</span><span class="s2">&quot;mps_l_cano.npz&quot;</span><span class="p">)</span>
+        <span class="n">mps_r_cano</span><span class="o">.</span><span class="n">dump</span><span class="p">(</span><span class="s2">&quot;mps_r_cano.npz&quot;</span><span class="p">)</span>
+        
+        <span class="c1"># store tangent_u</span>
+        <span class="n">tangent_u_dict</span> <span class="o">=</span> <span class="p">{</span><span class="sa">f</span><span class="s2">&quot;</span><span class="si">{</span><span class="n">i</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">:</span><span class="n">mat</span> <span class="k">for</span> <span class="n">i</span><span class="p">,</span> <span class="n">mat</span> <span class="ow">in</span> <span class="nb">enumerate</span><span class="p">(</span><span class="n">tangent_u</span><span class="p">)</span> <span class="k">if</span> <span class="n">mat</span> <span class="ow">is</span>
+                <span class="ow">not</span> <span class="kc">None</span><span class="p">}</span>
+        <span class="n">np</span><span class="o">.</span><span class="n">savez</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;tangent_u.npz&quot;</span><span class="p">,</span> <span class="o">**</span><span class="n">tangent_u_dict</span><span class="p">)</span>
+
+        <span class="c1"># store tda coeff</span>
+        <span class="k">for</span> <span class="n">iroot</span><span class="p">,</span> <span class="n">tda_coeff</span> <span class="ow">in</span> <span class="nb">enumerate</span><span class="p">(</span><span class="n">tda_coeff_list</span><span class="p">):</span>
+            <span class="n">tda_coeff_dict</span> <span class="o">=</span> <span class="p">{</span><span class="sa">f</span><span class="s2">&quot;</span><span class="si">{</span><span class="n">i</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">:</span><span class="n">mat</span> <span class="k">for</span> <span class="n">i</span><span class="p">,</span> <span class="n">mat</span> <span class="ow">in</span>
+                    <span class="nb">enumerate</span><span class="p">(</span><span class="n">tda_coeff</span><span class="p">)</span> <span class="k">if</span> <span class="n">mat</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">}</span>
+            <span class="n">np</span><span class="o">.</span><span class="n">savez</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;tda_coeff_</span><span class="si">{</span><span class="n">iroot</span><span class="si">}</span><span class="s2">.npz&quot;</span><span class="p">,</span> <span class="o">**</span><span class="n">tda_coeff_dict</span><span class="p">)</span></div>
+ 
+
+<div class="viewcode-block" id="TDA.load_wfn"><a class="viewcode-back" href="../../../static.html#renormalizer.mps.tda.TDA.load_wfn">[docs]</a>    <span class="k">def</span> <span class="nf">load_wfn</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">model</span><span class="p">):</span>
+        <span class="sa">r</span><span class="sd">&quot;&quot;&quot;Load tda wavefunction</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="n">mps_l_cano</span> <span class="o">=</span> <span class="n">Mps</span><span class="o">.</span><span class="n">load</span><span class="p">(</span><span class="n">model</span><span class="p">,</span> <span class="s2">&quot;mps_l_cano.npz&quot;</span><span class="p">)</span>
+        <span class="n">mps_r_cano</span> <span class="o">=</span> <span class="n">Mps</span><span class="o">.</span><span class="n">load</span><span class="p">(</span><span class="n">model</span><span class="p">,</span> <span class="s2">&quot;mps_r_cano.npz&quot;</span><span class="p">)</span>
+        <span class="n">tangent_u_dict</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">load</span><span class="p">(</span><span class="s2">&quot;tangent_u.npz&quot;</span><span class="p">)</span>
+        <span class="n">tangent_u</span> <span class="o">=</span> <span class="p">[</span><span class="n">tangent_u_dict</span><span class="p">[</span><span class="nb">str</span><span class="p">(</span><span class="n">i</span><span class="p">)]</span> <span class="k">if</span> <span class="nb">str</span><span class="p">(</span><span class="n">i</span><span class="p">)</span> <span class="ow">in</span> <span class="n">tangent_u_dict</span><span class="o">.</span><span class="n">keys</span><span class="p">()</span>
+                <span class="k">else</span> <span class="kc">None</span> <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="n">mps_l_cano</span><span class="o">.</span><span class="n">site_num</span><span class="p">)]</span>
+        <span class="n">tda_coeff_list</span> <span class="o">=</span> <span class="p">[]</span>
+        <span class="k">for</span> <span class="n">iroot</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">nroots</span><span class="p">):</span>
+            <span class="n">tda_coeff_dict</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">load</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;tda_coeff_</span><span class="si">{</span><span class="n">iroot</span><span class="si">}</span><span class="s2">.npz&quot;</span><span class="p">)</span>
+            <span class="n">tda_coeff</span> <span class="o">=</span> <span class="p">[</span><span class="n">tda_coeff_dict</span><span class="p">[</span><span class="nb">str</span><span class="p">(</span><span class="n">i</span><span class="p">)]</span> <span class="k">if</span> <span class="nb">str</span><span class="p">(</span><span class="n">i</span><span class="p">)</span> <span class="ow">in</span> <span class="n">tda_coeff_dict</span><span class="o">.</span><span class="n">keys</span><span class="p">()</span>
+                <span class="k">else</span> <span class="kc">None</span> <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="n">mps_l_cano</span><span class="o">.</span><span class="n">site_num</span><span class="p">)]</span>
+            <span class="n">tda_coeff_list</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">tda_coeff</span><span class="p">)</span>
+
+        <span class="bp">self</span><span class="o">.</span><span class="n">wfn</span> <span class="o">=</span> <span class="p">[</span><span class="n">mps_l_cano</span><span class="p">,</span> <span class="n">mps_r_cano</span><span class="p">,</span> <span class="n">tangent_u</span><span class="p">,</span> <span class="n">tda_coeff_list</span><span class="p">]</span></div>
+ 
+
+<div class="viewcode-block" id="TDA.analysis_1ordm"><a class="viewcode-back" href="../../../static.html#renormalizer.mps.tda.TDA.analysis_1ordm">[docs]</a>    <span class="k">def</span> <span class="nf">analysis_1ordm</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="sa">r</span><span class="sd">&quot;&quot;&quot; calculate one-orbital reduced density matrix of each tda root</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        
+        <span class="n">mps_l_cano</span><span class="p">,</span> <span class="n">mps_r_cano</span><span class="p">,</span> <span class="n">tangent_u</span><span class="p">,</span> <span class="n">tda_coeff_list</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">wfn</span>
+        <span class="k">for</span> <span class="n">iroot</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">nroots</span><span class="p">):</span>
+            <span class="n">tda_coeff</span> <span class="o">=</span> <span class="n">tda_coeff_list</span><span class="p">[</span><span class="n">iroot</span><span class="p">]</span>
+            <span class="n">rdm</span> <span class="o">=</span> <span class="kc">None</span>
+            <span class="k">for</span> <span class="n">ims</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="n">mps_l_cano</span><span class="o">.</span><span class="n">site_num</span><span class="p">):</span>
+                <span class="k">if</span> <span class="n">tangent_u</span><span class="p">[</span><span class="n">ims</span><span class="p">]</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+                    <span class="k">assert</span> <span class="n">tda_coeff</span><span class="p">[</span><span class="n">ims</span><span class="p">]</span> <span class="ow">is</span> <span class="kc">None</span>
+                    <span class="k">continue</span>
+                <span class="n">mps_tangent</span> <span class="o">=</span> <span class="n">merge</span><span class="p">(</span><span class="n">mps_l_cano</span><span class="p">,</span> <span class="n">mps_r_cano</span><span class="p">,</span> <span class="n">ims</span><span class="o">+</span><span class="mi">1</span><span class="p">)</span> 
+                <span class="n">mps_tangent</span><span class="p">[</span><span class="n">ims</span><span class="p">]</span> <span class="o">=</span> <span class="n">tensordot</span><span class="p">(</span><span class="n">tangent_u</span><span class="p">[</span><span class="n">ims</span><span class="p">],</span> <span class="n">tda_coeff</span><span class="p">[</span><span class="n">ims</span><span class="p">],[</span><span class="o">-</span><span class="mi">1</span><span class="p">,</span><span class="mi">0</span><span class="p">])</span> 
+                <span class="n">rdm_increment</span> <span class="o">=</span> <span class="n">mps_tangent</span><span class="o">.</span><span class="n">calc_1ordm</span><span class="p">()</span>
+
+                <span class="k">if</span> <span class="n">rdm</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+                    <span class="n">rdm</span> <span class="o">=</span> <span class="n">rdm_increment</span>
+                <span class="k">else</span><span class="p">:</span>
+                    <span class="n">rdm</span> <span class="o">=</span> <span class="p">[</span><span class="n">mat1</span><span class="o">+</span><span class="n">mat2</span> <span class="k">for</span> <span class="n">mat1</span><span class="p">,</span> <span class="n">mat2</span> <span class="ow">in</span> <span class="nb">zip</span><span class="p">(</span><span class="n">rdm</span><span class="p">,</span> <span class="n">rdm_increment</span><span class="p">)]</span>
+            
+            <span class="n">dominant_config</span> <span class="o">=</span> <span class="p">{}</span>
+            <span class="k">for</span> <span class="n">isite</span><span class="p">,</span> <span class="n">mat</span> <span class="ow">in</span> <span class="nb">enumerate</span><span class="p">(</span><span class="n">rdm</span><span class="p">):</span>
+                <span class="n">quanta</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">argmax</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">diag</span><span class="p">(</span><span class="n">mat</span><span class="p">))</span>
+                <span class="n">dominant_config</span><span class="p">[</span><span class="n">isite</span><span class="p">]</span> <span class="o">=</span> <span class="p">(</span><span class="n">quanta</span><span class="p">,</span> <span class="n">np</span><span class="o">.</span><span class="n">diag</span><span class="p">(</span><span class="n">mat</span><span class="p">)[</span><span class="n">quanta</span><span class="p">])</span>
+            <span class="n">logger</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;root: </span><span class="si">{</span><span class="n">iroot</span><span class="si">}</span><span class="s2">, config: </span><span class="si">{</span><span class="n">dominant_config</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span></div>
+            
+    
+<div class="viewcode-block" id="TDA.analysis_dominant_config"><a class="viewcode-back" href="../../../static.html#renormalizer.mps.tda.TDA.analysis_dominant_config">[docs]</a>    <span class="k">def</span> <span class="nf">analysis_dominant_config</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">thresh</span><span class="o">=</span><span class="mf">0.8</span><span class="p">,</span> <span class="n">alias</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">tda_m_trunc</span><span class="o">=</span><span class="mi">20</span><span class="p">,</span>
+            <span class="n">return_compressed_mps</span><span class="o">=</span><span class="kc">False</span><span class="p">):</span>
+        <span class="sa">r</span><span class="sd">&quot;&quot;&quot; analyze the dominant configuration of each tda root.</span>
+<span class="sd">            The algorithm is to compress the tda wavefunction to a rank-1 Hartree</span>
+<span class="sd">            state and get the ci coefficient of the largest configuration.</span>
+<span class="sd">            Then, the configuration is subtracted from the tda wavefunction and</span>
+<span class="sd">            redo the first step to get the second largest configuration. The</span>
+<span class="sd">            two steps continue until the thresh is achieved.</span>
+<span class="sd">        </span>
+<span class="sd">        Parameters</span>
+<span class="sd">        ----------</span>
+<span class="sd">        thresh: float, optional</span>
+<span class="sd">            the threshold to stop the analysis procedure of each root. </span>
+<span class="sd">            :math:`\sum_i |c_i|^2 &gt; thresh`. Default is 0.8.</span>
+<span class="sd">        alias: dict, optional</span>
+<span class="sd">            The alias of each site. For example, ``alias={0:&quot;v_0&quot;, 1:&quot;v_2&quot;,</span>
+<span class="sd">            2:&quot;v_1&quot;}``. Default is `None`. </span>
+<span class="sd">        tda_m_trunc: int, optional</span>
+<span class="sd">            the ``m`` to compress a tda wavefunction. Default is 20.</span>
+<span class="sd">        return_compressed_mps: bool, optional</span>
+<span class="sd">            If ``True``, return the tda excited state as a single compressed</span>
+<span class="sd">            mps. Default is `False`.</span>
+<span class="sd">        </span>
+<span class="sd">        Returns</span>
+<span class="sd">        -------</span>
+<span class="sd">        configs: dict</span>
+<span class="sd">            The dominant configration of each root.</span>
+<span class="sd">            ``configs = {0:[(config0, config_name0, ci_coeff0),(config1,</span>
+<span class="sd">            config_name1, ci_coeff1),...], 1:...}``</span>
+<span class="sd">        compressed_mps: List[renormalizer.mps.Mps]</span>
+<span class="sd">            see the description in ``return_compressed_mps``.</span>
+<span class="sd">        </span>
+<span class="sd">        Note</span>
+<span class="sd">        ----</span>
+<span class="sd">        The compressed_mps is an approximation of the tda wavefunction with</span>
+<span class="sd">        ``m=tda_m_trunc``.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+
+        <span class="n">mps_l_cano</span><span class="p">,</span> <span class="n">mps_r_cano</span><span class="p">,</span> <span class="n">tangent_u</span><span class="p">,</span> <span class="n">tda_coeff_list</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">wfn</span>
+            
+        <span class="k">if</span> <span class="n">alias</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="k">assert</span> <span class="nb">len</span><span class="p">(</span><span class="n">alias</span><span class="p">)</span> <span class="o">==</span> <span class="n">mps_l_cano</span><span class="o">.</span><span class="n">site_num</span>
+        
+        <span class="n">compressed_mps</span> <span class="o">=</span> <span class="p">[]</span>
+        <span class="k">for</span> <span class="n">iroot</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">nroots</span><span class="p">):</span>
+            <span class="n">logger</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;iroot: </span><span class="si">{</span><span class="n">iroot</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+            <span class="n">tda_coeff</span> <span class="o">=</span> <span class="n">tda_coeff_list</span><span class="p">[</span><span class="n">iroot</span><span class="p">]</span>
+            <span class="n">mps_tangent_list</span> <span class="o">=</span> <span class="p">[]</span>
+            <span class="n">weight</span> <span class="o">=</span> <span class="p">[]</span>
+            <span class="k">for</span> <span class="n">ims</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="n">mps_l_cano</span><span class="o">.</span><span class="n">site_num</span><span class="p">):</span>
+                <span class="k">if</span> <span class="n">tangent_u</span><span class="p">[</span><span class="n">ims</span><span class="p">]</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+                    <span class="k">assert</span> <span class="n">tda_coeff</span><span class="p">[</span><span class="n">ims</span><span class="p">]</span> <span class="ow">is</span> <span class="kc">None</span>
+                    <span class="k">continue</span>
+                <span class="n">weight</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">sum</span><span class="p">(</span><span class="n">tda_coeff</span><span class="p">[</span><span class="n">ims</span><span class="p">]</span><span class="o">**</span><span class="mi">2</span><span class="p">))</span>
+                <span class="n">mps_tangent</span> <span class="o">=</span> <span class="n">merge</span><span class="p">(</span><span class="n">mps_l_cano</span><span class="p">,</span> <span class="n">mps_r_cano</span><span class="p">,</span> <span class="n">ims</span><span class="o">+</span><span class="mi">1</span><span class="p">)</span> 
+                <span class="n">mps_tangent</span><span class="p">[</span><span class="n">ims</span><span class="p">]</span> <span class="o">=</span> <span class="n">asnumpy</span><span class="p">(</span><span class="n">tensordot</span><span class="p">(</span><span class="n">tangent_u</span><span class="p">[</span><span class="n">ims</span><span class="p">],</span>
+                    <span class="n">tda_coeff</span><span class="p">[</span><span class="n">ims</span><span class="p">],[</span><span class="o">-</span><span class="mi">1</span><span class="p">,</span><span class="mi">0</span><span class="p">]))</span>
+                <span class="n">mps_tangent_list</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">mps_tangent</span><span class="p">)</span>
+            
+            <span class="k">assert</span> <span class="n">np</span><span class="o">.</span><span class="n">allclose</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">sum</span><span class="p">(</span><span class="n">weight</span><span class="p">),</span> <span class="mi">1</span><span class="p">)</span>
+            <span class="c1"># sort the mps_tangent from large weight to small weight</span>
+            <span class="n">mps_tangent_list</span> <span class="o">=</span> <span class="p">[</span><span class="n">mps_tangent_list</span><span class="p">[</span><span class="n">i</span><span class="p">]</span> <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="n">np</span><span class="o">.</span><span class="n">argsort</span><span class="p">(</span><span class="n">weight</span><span class="p">,</span><span class="n">axis</span><span class="o">=</span><span class="kc">None</span><span class="p">)[::</span><span class="o">-</span><span class="mi">1</span><span class="p">]]</span>
+
+            <span class="n">coeff_square_sum</span> <span class="o">=</span> <span class="mi">0</span>
+            <span class="n">mps_delete</span> <span class="o">=</span> <span class="kc">None</span>
+            
+            <span class="n">config_visited</span> <span class="o">=</span> <span class="p">[]</span>
+            <span class="k">while</span> <span class="n">coeff_square_sum</span> <span class="o">&lt;</span> <span class="n">thresh</span><span class="p">:</span>
+                <span class="k">if</span> <span class="n">mps_delete</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+                    <span class="c1"># first compress it to M=tda_m_trunc</span>
+                    <span class="n">mps_rank1</span> <span class="o">=</span> <span class="n">compressed_sum</span><span class="p">(</span><span class="n">mps_tangent_list</span><span class="p">,</span> <span class="n">batchsize</span><span class="o">=</span><span class="mi">5</span><span class="p">,</span>
+                            <span class="n">temp_m_trunc</span><span class="o">=</span><span class="n">tda_m_trunc</span><span class="p">)</span>
+                <span class="k">else</span><span class="p">:</span>
+                    <span class="n">mps_rank1</span> <span class="o">=</span> <span class="n">compressed_sum</span><span class="p">([</span><span class="n">mps_delete</span><span class="p">]</span> <span class="o">+</span> <span class="n">mps_tangent_list</span><span class="p">,</span>
+                            <span class="n">batchsize</span><span class="o">=</span><span class="mi">5</span><span class="p">,</span> <span class="n">temp_m_trunc</span><span class="o">=</span><span class="n">tda_m_trunc</span><span class="p">)</span>
+                <span class="k">if</span> <span class="n">coeff_square_sum</span> <span class="o">==</span> <span class="mi">0</span> <span class="ow">and</span> <span class="n">return_compressed_mps</span><span class="p">:</span>
+                    <span class="n">compressed_mps</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">mps_rank1</span><span class="o">.</span><span class="n">copy</span><span class="p">())</span>       
+                <span class="n">mps_rank1</span> <span class="o">=</span> <span class="n">mps_rank1</span><span class="o">.</span><span class="n">canonicalise</span><span class="p">()</span><span class="o">.</span><span class="n">compress</span><span class="p">(</span><span class="n">temp_m_trunc</span><span class="o">=</span><span class="mi">1</span><span class="p">)</span>
+                
+                <span class="c1"># get config with the largest coeff</span>
+                <span class="n">config</span> <span class="o">=</span> <span class="p">[]</span>
+                <span class="k">for</span> <span class="n">ims</span><span class="p">,</span> <span class="n">ms</span> <span class="ow">in</span> <span class="nb">enumerate</span><span class="p">(</span><span class="n">mps_rank1</span><span class="p">):</span>
+                    <span class="n">ms</span> <span class="o">=</span> <span class="n">ms</span><span class="o">.</span><span class="n">array</span><span class="o">.</span><span class="n">flatten</span><span class="p">()</span><span class="o">**</span><span class="mi">2</span>
+                    <span class="n">quanta</span> <span class="o">=</span> <span class="nb">int</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">argmax</span><span class="p">(</span><span class="n">ms</span><span class="p">))</span>
+                    <span class="n">config</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">quanta</span><span class="p">)</span>
+               
+                <span class="c1"># check if the config has been visited</span>
+                <span class="k">if</span> <span class="n">config</span> <span class="ow">in</span> <span class="n">config_visited</span><span class="p">:</span>
+                    <span class="k">break</span>
+                
+                <span class="n">config_visited</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">config</span><span class="p">)</span>
+
+                <span class="n">ci_coeff_list</span> <span class="o">=</span> <span class="p">[]</span>
+                <span class="k">for</span> <span class="n">mps_tangent</span> <span class="ow">in</span> <span class="n">mps_tangent_list</span><span class="p">:</span>
+                    <span class="n">sentinel</span> <span class="o">=</span> <span class="n">xp</span><span class="o">.</span><span class="n">ones</span><span class="p">((</span><span class="mi">1</span><span class="p">,</span><span class="mi">1</span><span class="p">))</span>
+                    <span class="k">for</span> <span class="n">ims</span><span class="p">,</span> <span class="n">ms</span> <span class="ow">in</span> <span class="nb">enumerate</span><span class="p">(</span><span class="n">mps_tangent</span><span class="p">):</span>
+                        <span class="n">sentinel</span> <span class="o">=</span> <span class="n">sentinel</span><span class="o">.</span><span class="n">dot</span><span class="p">(</span><span class="n">asxp</span><span class="p">(</span><span class="n">ms</span><span class="p">[:,</span><span class="n">config</span><span class="p">[</span><span class="n">ims</span><span class="p">],:]))</span>
+                    <span class="n">ci_coeff_list</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="nb">float</span><span class="p">(</span><span class="n">sentinel</span><span class="p">[</span><span class="mi">0</span><span class="p">,</span><span class="mi">0</span><span class="p">]))</span>
+                <span class="n">ci_coeff</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">sum</span><span class="p">(</span><span class="n">ci_coeff_list</span><span class="p">)</span>
+                <span class="n">coeff_square_sum</span> <span class="o">+=</span> <span class="n">ci_coeff</span><span class="o">**</span><span class="mi">2</span>
+                
+                <span class="k">if</span> <span class="n">alias</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+                    <span class="n">config_name</span> <span class="o">=</span> <span class="p">[</span><span class="sa">f</span><span class="s2">&quot;</span><span class="si">{</span><span class="n">quanta</span><span class="si">}</span><span class="s2">&quot;</span><span class="o">+</span><span class="sa">f</span><span class="s2">&quot;</span><span class="si">{</span><span class="n">alias</span><span class="p">[</span><span class="n">isite</span><span class="p">]</span><span class="si">}</span><span class="s2">&quot;</span> <span class="k">for</span> <span class="n">isite</span><span class="p">,</span> <span class="n">quanta</span>
+                            <span class="ow">in</span> <span class="nb">enumerate</span><span class="p">(</span><span class="n">config</span><span class="p">)</span> <span class="k">if</span> <span class="n">quanta</span> <span class="o">!=</span> <span class="mi">0</span><span class="p">]</span>
+                    <span class="n">config_name</span> <span class="o">=</span> <span class="s2">&quot; &quot;</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">config_name</span><span class="p">)</span>
+                    <span class="bp">self</span><span class="o">.</span><span class="n">configs</span><span class="p">[</span><span class="n">iroot</span><span class="p">]</span><span class="o">.</span><span class="n">append</span><span class="p">((</span><span class="n">config</span><span class="p">,</span> <span class="n">config_name</span><span class="p">,</span> <span class="n">ci_coeff</span><span class="p">))</span>
+                    <span class="n">logger</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;config: </span><span class="si">{</span><span class="n">config</span><span class="si">}</span><span class="s2">, </span><span class="si">{</span><span class="n">config_name</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+                <span class="k">else</span><span class="p">:</span>
+                    <span class="bp">self</span><span class="o">.</span><span class="n">configs</span><span class="p">[</span><span class="n">iroot</span><span class="p">]</span><span class="o">.</span><span class="n">append</span><span class="p">((</span><span class="n">config</span><span class="p">,</span> <span class="n">ci_coeff</span><span class="p">))</span>
+                    <span class="n">logger</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;config: </span><span class="si">{</span><span class="n">config</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+
+                <span class="n">logger</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;ci_coeff: </span><span class="si">{</span><span class="n">ci_coeff</span><span class="si">}</span><span class="s2">, weight:</span><span class="si">{</span><span class="n">ci_coeff</span><span class="o">**</span><span class="mi">2</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+
+                <span class="n">condition</span> <span class="o">=</span> <span class="p">{</span><span class="n">dof</span><span class="p">:</span><span class="n">config</span><span class="p">[</span><span class="n">idof</span><span class="p">]</span> <span class="k">for</span> <span class="n">idof</span><span class="p">,</span> <span class="n">dof</span> <span class="ow">in</span>
+                        <span class="nb">enumerate</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">model</span><span class="o">.</span><span class="n">dofs</span><span class="p">)}</span>
+                <span class="n">mps_delete_increment</span> <span class="o">=</span> <span class="n">Mps</span><span class="o">.</span><span class="n">hartree_product_state</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">model</span><span class="p">,</span> <span class="n">condition</span><span class="p">)</span><span class="o">.</span><span class="n">scale</span><span class="p">(</span><span class="o">-</span><span class="n">ci_coeff</span><span class="p">)</span>
+                <span class="k">if</span> <span class="n">mps_delete</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+                    <span class="n">mps_delete</span> <span class="o">=</span> <span class="n">mps_delete_increment</span>
+                <span class="k">else</span><span class="p">:</span>
+                    <span class="n">mps_delete</span> <span class="o">=</span> <span class="n">mps_delete</span> <span class="o">+</span> <span class="n">mps_delete_increment</span>
+
+            <span class="n">logger</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;coeff_square_sum: </span><span class="si">{</span><span class="n">coeff_square_sum</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+        
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">configs</span><span class="p">,</span> <span class="n">compressed_mps</span></div></div>
+        
+<div class="viewcode-block" id="merge"><a class="viewcode-back" href="../../../static.html#renormalizer.mps.tda.merge">[docs]</a><span class="k">def</span> <span class="nf">merge</span><span class="p">(</span><span class="n">mpsl</span><span class="p">,</span> <span class="n">mpsr</span><span class="p">,</span> <span class="n">idx</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot; merge two mps (mpsl, mpsr) at dix</span>
+<span class="sd">        idx belongs mpsr, the other attributes are the same aas mpsl</span>
+<span class="sd">    &quot;&quot;&quot;</span> 
+    <span class="n">mps</span> <span class="o">=</span> <span class="n">mpsl</span><span class="o">.</span><span class="n">copy</span><span class="p">()</span>
+    <span class="k">for</span> <span class="n">imps</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="n">idx</span><span class="p">,</span> <span class="n">mpsr</span><span class="o">.</span><span class="n">site_num</span><span class="p">):</span>
+        <span class="n">mps</span><span class="p">[</span><span class="n">imps</span><span class="p">]</span> <span class="o">=</span> <span class="n">mpsr</span><span class="p">[</span><span class="n">imps</span><span class="p">]</span>
+    <span class="k">return</span> <span class="n">mps</span></div>
+</pre></div>
+
+           </div>
+           
+          </div>
+          <footer>
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>
+        &#169; Copyright 2019, Shuaigroup.
+
+    </p>
+  </div>
+    
+    
+    
+    Built with <a href="https://www.sphinx-doc.org/">Sphinx</a> using a
+    
+    <a href="https://github.com/readthedocs/sphinx_rtd_theme">theme</a>
+    
+    provided by <a href="https://readthedocs.org">Read the Docs</a>. 
+
+</footer>
+        </div>
+      </div>
+
+    </section>
+
+  </div>
+  
+
+  <script type="text/javascript">
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script>
+
+  
+  
+    
+   
+
+</body>
+</html>

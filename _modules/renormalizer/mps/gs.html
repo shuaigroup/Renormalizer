@@ -1,0 +1,694 @@
+
+
+<!DOCTYPE html>
+<html class="writer-html5" lang="en" >
+<head>
+  <meta charset="utf-8" />
+  
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  
+  <title>renormalizer.mps.gs &mdash; Renormalizer 0.1.0 documentation</title>
+  
+
+  
+  <link rel="stylesheet" href="../../../_static/css/theme.css" type="text/css" />
+  <link rel="stylesheet" href="../../../_static/pygments.css" type="text/css" />
+  <link rel="stylesheet" href="../../../_static/pygments.css" type="text/css" />
+  <link rel="stylesheet" href="../../../_static/css/theme.css" type="text/css" />
+
+  
+  
+
+  
+  
+
+  
+
+  
+  <!--[if lt IE 9]>
+    <script src="../../../_static/js/html5shiv.min.js"></script>
+  <![endif]-->
+  
+    
+      <script type="text/javascript" id="documentation_options" data-url_root="../../../" src="../../../_static/documentation_options.js"></script>
+        <script data-url_root="../../../" id="documentation_options" src="../../../_static/documentation_options.js"></script>
+        <script src="../../../_static/jquery.js"></script>
+        <script src="../../../_static/underscore.js"></script>
+        <script src="../../../_static/doctools.js"></script>
+    
+    <script type="text/javascript" src="../../../_static/js/theme.js"></script>
+
+    
+    <link rel="index" title="Index" href="../../../genindex.html" />
+    <link rel="search" title="Search" href="../../../search.html" /> 
+</head>
+
+<body class="wy-body-for-nav">
+
+   
+  <div class="wy-grid-for-nav">
+    
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search" >
+          
+
+          
+            <a href="../../../index.html" class="icon icon-home"> Renormalizer
+          
+
+          
+          </a>
+
+          
+            
+            
+              <div class="version">
+                0.1
+              </div>
+            
+          
+
+          
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="../../../search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+
+          
+        </div>
+
+        
+        <div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="main navigation">
+          
+            
+            
+              
+            
+            
+              <ul>
+<li class="toctree-l1"><a class="reference internal" href="../../../overview.html">1. An overview of Renormalizer</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../install.html">2. Installation guide</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../develop.html">3. How to develop Renormalizer</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../tutorial.html">4. Tutorial</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../model.html">5. Model</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../mps.html">6. Low Level Data Structure and Algorithms</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../static.html">7. Static Eigenstate Method</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../spectrum.html">8. spectra: absorption/emission spectrum at zero/finite temperature</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../ct.html">9. Charge Transport</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../cv.html">10. Frequency domain DMRG</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../configs.html">11. Calculation Configurations</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../lib.html">12. lib</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../sbm.html">13. sbm</a></li>
+</ul>
+
+            
+          
+        </div>
+        
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap">
+
+      
+      <nav class="wy-nav-top" aria-label="top navigation">
+        
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="../../../index.html">Renormalizer</a>
+        
+      </nav>
+
+
+      <div class="wy-nav-content">
+        
+        <div class="rst-content">
+        
+          
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+<div role="navigation" aria-label="breadcrumbs navigation">
+
+  <ul class="wy-breadcrumbs">
+    
+      <li><a href="../../../index.html" class="icon icon-home"></a> &raquo;</li>
+        
+          <li><a href="../../index.html">Module code</a> &raquo;</li>
+        
+      <li>renormalizer.mps.gs</li>
+    
+    
+      <li class="wy-breadcrumbs-aside">
+        
+      </li>
+    
+  </ul>
+
+  
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+            
+  <h1>Source code for renormalizer.mps.gs</h1><div class="highlight"><pre>
+<span></span><span class="c1"># -*- coding: utf-8 -*-</span>
+<span class="sd">&quot;&quot;&quot;</span>
+
+<span class="sd">This module contains functions to optimize mps for a single ground state or</span>
+<span class="sd">several lowest excited states with state-averaged algorithm.</span>
+
+<span class="sd">&quot;&quot;&quot;</span>
+
+<span class="kn">from</span> <span class="nn">typing</span> <span class="kn">import</span> <span class="n">Tuple</span><span class="p">,</span> <span class="n">List</span><span class="p">,</span> <span class="n">Union</span>
+<span class="kn">import</span> <span class="nn">logging</span>
+
+<span class="kn">import</span> <span class="nn">numpy</span> <span class="k">as</span> <span class="nn">np</span>
+<span class="kn">import</span> <span class="nn">scipy</span>
+<span class="kn">import</span> <span class="nn">opt_einsum</span> <span class="k">as</span> <span class="nn">oe</span>
+<span class="kn">import</span> <span class="nn">primme</span>
+
+<span class="kn">from</span> <span class="nn">renormalizer.lib</span> <span class="kn">import</span> <span class="n">davidson</span>
+<span class="kn">from</span> <span class="nn">renormalizer.mps.backend</span> <span class="kn">import</span> <span class="n">xp</span><span class="p">,</span> <span class="n">OE_BACKEND</span>
+<span class="kn">from</span> <span class="nn">renormalizer.mps.matrix</span> <span class="kn">import</span> <span class="n">multi_tensor_contract</span><span class="p">,</span> <span class="n">tensordot</span><span class="p">,</span> <span class="n">asnumpy</span><span class="p">,</span> <span class="n">asxp</span>
+<span class="kn">from</span> <span class="nn">renormalizer.mps.hop_expr</span> <span class="kn">import</span>  <span class="n">hop_expr</span>
+<span class="kn">from</span> <span class="nn">renormalizer.mps</span> <span class="kn">import</span> <span class="n">Mpo</span><span class="p">,</span> <span class="n">Mps</span>
+<span class="kn">from</span> <span class="nn">renormalizer.mps.lib</span> <span class="kn">import</span> <span class="n">Environ</span><span class="p">,</span> <span class="n">cvec2cmat</span>
+<span class="kn">from</span> <span class="nn">renormalizer.utils</span> <span class="kn">import</span> <span class="n">Quantity</span>
+
+<span class="n">logger</span> <span class="o">=</span> <span class="n">logging</span><span class="o">.</span><span class="n">getLogger</span><span class="p">(</span><span class="vm">__name__</span><span class="p">)</span>
+
+
+<div class="viewcode-block" id="construct_mps_mpo"><a class="viewcode-back" href="../../../static.html#renormalizer.mps.gs.construct_mps_mpo">[docs]</a><span class="k">def</span> <span class="nf">construct_mps_mpo</span><span class="p">(</span><span class="n">model</span><span class="p">,</span> <span class="n">mmax</span><span class="p">,</span> <span class="n">nexciton</span><span class="p">,</span> <span class="n">offset</span><span class="o">=</span><span class="n">Quantity</span><span class="p">(</span><span class="mi">0</span><span class="p">)):</span>
+    <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    MPO/MPS structure 2</span>
+<span class="sd">    e1,ph11,ph12,..e2,ph21,ph22,...en,phn1,phn2...</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+
+    <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    initialize MPO</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="n">mpo</span> <span class="o">=</span> <span class="n">Mpo</span><span class="p">(</span><span class="n">model</span><span class="p">,</span> <span class="n">offset</span><span class="o">=</span><span class="n">offset</span><span class="p">)</span>
+
+    <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    initialize MPS according to quantum number</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="n">mps</span> <span class="o">=</span> <span class="n">Mps</span><span class="o">.</span><span class="n">random</span><span class="p">(</span><span class="n">model</span><span class="p">,</span> <span class="n">nexciton</span><span class="p">,</span> <span class="n">mmax</span><span class="p">,</span> <span class="n">percent</span><span class="o">=</span><span class="mi">1</span><span class="p">)</span>
+    <span class="c1"># print(&quot;initialize left-canonical:&quot;, mps.check_left_canonical())</span>
+
+    <span class="k">return</span> <span class="n">mps</span><span class="p">,</span> <span class="n">mpo</span></div>
+
+
+<div class="viewcode-block" id="optimize_mps"><a class="viewcode-back" href="../../../static.html#renormalizer.mps.gs.optimize_mps">[docs]</a><span class="k">def</span> <span class="nf">optimize_mps</span><span class="p">(</span><span class="n">mps</span><span class="p">:</span> <span class="n">Mps</span><span class="p">,</span> <span class="n">mpo</span><span class="p">:</span> <span class="n">Mpo</span><span class="p">,</span> <span class="n">omega</span><span class="p">:</span> <span class="nb">float</span> <span class="o">=</span> <span class="kc">None</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Tuple</span><span class="p">[</span><span class="n">List</span><span class="p">,</span> <span class="n">Mps</span><span class="p">]:</span>
+    <span class="sa">r</span><span class="sd">&quot;&quot;&quot;DMRG ground state algorithm and state-averaged excited states algorithm</span>
+
+<span class="sd">    Parameters</span>
+<span class="sd">    ----------</span>
+<span class="sd">    mps : renormalizer.mps.Mps</span>
+<span class="sd">        initial guess of mps. The MPS is overwritten during the optimization.</span>
+<span class="sd">    mpo : renormalizer.mps.Mpo</span>
+<span class="sd">        mpo of Hamiltonian</span>
+<span class="sd">    omega: float, optional</span>
+<span class="sd">        target the eigenpair near omega with special variational function</span>
+<span class="sd">        :math:(\hat{H}-\omega)^2. Default is `None`.</span>
+
+<span class="sd">    Returns</span>
+<span class="sd">    -------</span>
+<span class="sd">    energy : list</span>
+<span class="sd">        list of energy of each marco sweep.</span>
+<span class="sd">        :math:`[e_0, e_0, \cdots, e_0]` if ``nroots=1``.</span>
+<span class="sd">        :math:`[[e_0, \cdots, e_n], \dots, [e_0, \cdots, e_n]]` if ``nroots=n``.</span>
+<span class="sd">    mps : renormalizer.mps.Mps</span>
+<span class="sd">        optimized ground state MPS.</span>
+<span class="sd">            Note it&#39;s not the same with the overwritten input MPS.</span>
+
+<span class="sd">    See Also</span>
+<span class="sd">    --------</span>
+<span class="sd">    renormalizer.utils.configs.OptimizeConfig : The optimization configuration.</span>
+
+<span class="sd">    &quot;&quot;&quot;</span>
+
+    <span class="k">assert</span> <span class="n">mps</span><span class="o">.</span><span class="n">optimize_config</span><span class="o">.</span><span class="n">method</span> <span class="ow">in</span> <span class="p">[</span><span class="s2">&quot;2site&quot;</span><span class="p">,</span> <span class="s2">&quot;1site&quot;</span><span class="p">]</span>
+    <span class="n">logger</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;optimization method: </span><span class="si">{</span><span class="n">mps</span><span class="o">.</span><span class="n">optimize_config</span><span class="o">.</span><span class="n">method</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+    <span class="n">logger</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;e_rtol: </span><span class="si">{</span><span class="n">mps</span><span class="o">.</span><span class="n">optimize_config</span><span class="o">.</span><span class="n">e_rtol</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+    <span class="n">logger</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;e_atol: </span><span class="si">{</span><span class="n">mps</span><span class="o">.</span><span class="n">optimize_config</span><span class="o">.</span><span class="n">e_atol</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+
+    <span class="c1"># ensure that mps is left or right-canonical</span>
+    <span class="c1"># TODO: start from a mix-canonical MPS</span>
+    <span class="k">if</span> <span class="n">mps</span><span class="o">.</span><span class="n">is_left_canon</span><span class="p">:</span>
+        <span class="n">mps</span><span class="o">.</span><span class="n">ensure_right_canon</span><span class="p">()</span>
+        <span class="n">env</span> <span class="o">=</span> <span class="s2">&quot;R&quot;</span>
+    <span class="k">else</span><span class="p">:</span>
+        <span class="n">mps</span><span class="o">.</span><span class="n">ensure_left_canon</span><span class="p">()</span>
+        <span class="n">env</span> <span class="o">=</span> <span class="s2">&quot;L&quot;</span>
+
+    <span class="c1"># construct the environment matrix</span>
+    <span class="k">if</span> <span class="n">omega</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+        <span class="n">identity</span> <span class="o">=</span> <span class="n">Mpo</span><span class="o">.</span><span class="n">identity</span><span class="p">(</span><span class="n">mpo</span><span class="o">.</span><span class="n">model</span><span class="p">)</span>
+        <span class="n">mpo</span> <span class="o">=</span> <span class="n">mpo</span><span class="o">.</span><span class="n">add</span><span class="p">(</span><span class="n">identity</span><span class="o">.</span><span class="n">scale</span><span class="p">(</span><span class="o">-</span><span class="n">omega</span><span class="p">))</span>
+        <span class="n">environ</span> <span class="o">=</span> <span class="n">Environ</span><span class="p">(</span><span class="n">mps</span><span class="p">,</span> <span class="p">[</span><span class="n">mpo</span><span class="p">,</span> <span class="n">mpo</span><span class="p">],</span> <span class="n">env</span><span class="p">)</span>
+    <span class="k">else</span><span class="p">:</span>
+        <span class="n">environ</span> <span class="o">=</span> <span class="n">Environ</span><span class="p">(</span><span class="n">mps</span><span class="p">,</span> <span class="n">mpo</span><span class="p">,</span> <span class="n">env</span><span class="p">)</span>
+
+    <span class="n">macro_iteration_result</span> <span class="o">=</span> <span class="p">[]</span>
+    <span class="c1"># Idx of the active site with lowest energy for each sweep</span>
+    <span class="c1"># determines the index of active site of the returned mps</span>
+    <span class="n">opt_e_idx</span><span class="p">:</span> <span class="nb">int</span> <span class="o">=</span> <span class="kc">None</span>
+    <span class="n">res_mps</span><span class="p">:</span> <span class="n">Union</span><span class="p">[</span><span class="n">Mps</span><span class="p">,</span> <span class="n">List</span><span class="p">[</span><span class="n">Mps</span><span class="p">]]</span> <span class="o">=</span> <span class="kc">None</span>
+    <span class="k">for</span> <span class="n">isweep</span><span class="p">,</span> <span class="p">(</span><span class="n">mmax</span><span class="p">,</span> <span class="n">percent</span><span class="p">)</span> <span class="ow">in</span> <span class="nb">enumerate</span><span class="p">(</span><span class="n">mps</span><span class="o">.</span><span class="n">optimize_config</span><span class="o">.</span><span class="n">procedure</span><span class="p">):</span>
+        <span class="n">logger</span><span class="o">.</span><span class="n">debug</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;isweep: </span><span class="si">{</span><span class="n">isweep</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+        <span class="n">logger</span><span class="o">.</span><span class="n">debug</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;mmax, percent: </span><span class="si">{</span><span class="n">mmax</span><span class="si">}</span><span class="s2">, </span><span class="si">{</span><span class="n">percent</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+        <span class="n">logger</span><span class="o">.</span><span class="n">debug</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;</span><span class="si">{</span><span class="n">mps</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+
+        <span class="n">micro_iteration_result</span><span class="p">,</span> <span class="n">res_mps</span><span class="p">,</span> <span class="n">mpo</span> <span class="o">=</span> <span class="n">single_sweep</span><span class="p">(</span><span class="n">mps</span><span class="p">,</span> <span class="n">mpo</span><span class="p">,</span> <span class="n">environ</span><span class="p">,</span> <span class="n">omega</span><span class="p">,</span> <span class="n">mmax</span><span class="p">,</span> <span class="n">percent</span><span class="p">,</span> <span class="n">opt_e_idx</span><span class="p">)</span>
+
+        <span class="n">opt_e</span> <span class="o">=</span> <span class="nb">min</span><span class="p">(</span><span class="n">micro_iteration_result</span><span class="p">)</span>
+        <span class="n">macro_iteration_result</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">opt_e</span><span class="p">[</span><span class="mi">0</span><span class="p">])</span>
+        <span class="n">opt_e_idx</span> <span class="o">=</span> <span class="n">opt_e</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span>
+
+        <span class="n">logger</span><span class="o">.</span><span class="n">debug</span><span class="p">(</span>
+            <span class="sa">f</span><span class="s2">&quot;</span><span class="si">{</span><span class="n">isweep</span><span class="o">+</span><span class="mi">1</span><span class="si">}</span><span class="s2"> sweeps are finished, lowest energy = </span><span class="si">{</span><span class="nb">min</span><span class="p">(</span><span class="n">macro_iteration_result</span><span class="p">)</span><span class="si">}</span><span class="s2">&quot;</span>
+        <span class="p">)</span>
+        <span class="c1"># check if convergence</span>
+        <span class="k">if</span> <span class="n">isweep</span> <span class="o">&gt;</span> <span class="mi">0</span> <span class="ow">and</span> <span class="n">percent</span> <span class="o">==</span> <span class="mi">0</span><span class="p">:</span>
+            <span class="n">v1</span><span class="p">,</span> <span class="n">v2</span> <span class="o">=</span> <span class="nb">sorted</span><span class="p">(</span><span class="n">macro_iteration_result</span><span class="p">)[:</span><span class="mi">2</span><span class="p">]</span>
+            <span class="k">if</span> <span class="n">np</span><span class="o">.</span><span class="n">allclose</span><span class="p">(</span>
+                <span class="n">v1</span><span class="p">,</span> <span class="n">v2</span><span class="p">,</span> <span class="n">rtol</span><span class="o">=</span><span class="n">mps</span><span class="o">.</span><span class="n">optimize_config</span><span class="o">.</span><span class="n">e_rtol</span><span class="p">,</span> <span class="n">atol</span><span class="o">=</span><span class="n">mps</span><span class="o">.</span><span class="n">optimize_config</span><span class="o">.</span><span class="n">e_atol</span>
+            <span class="p">):</span>
+                <span class="n">logger</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="s2">&quot;DMRG has converged!&quot;</span><span class="p">)</span>
+                <span class="k">break</span>
+    <span class="k">else</span><span class="p">:</span>
+        <span class="n">logger</span><span class="o">.</span><span class="n">warning</span><span class="p">(</span><span class="s2">&quot;DMRG did not converge! Please increase the procedure!&quot;</span><span class="p">)</span>
+        <span class="n">logger</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;The lowest two energies: </span><span class="si">{</span><span class="nb">sorted</span><span class="p">(</span><span class="n">macro_iteration_result</span><span class="p">)[:</span><span class="mi">2</span><span class="p">]</span><span class="si">}</span><span class="s2">.&quot;</span><span class="p">)</span>
+
+    <span class="k">assert</span> <span class="n">res_mps</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span>
+    <span class="c1"># remove the redundant basis near the edge</span>
+    <span class="k">if</span> <span class="n">mps</span><span class="o">.</span><span class="n">optimize_config</span><span class="o">.</span><span class="n">nroots</span> <span class="o">==</span> <span class="mi">1</span><span class="p">:</span>
+        <span class="n">res_mps</span> <span class="o">=</span> <span class="n">res_mps</span><span class="o">.</span><span class="n">normalize</span><span class="p">()</span><span class="o">.</span><span class="n">ensure_left_canon</span><span class="p">()</span><span class="o">.</span><span class="n">canonicalise</span><span class="p">()</span>
+        <span class="n">logger</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;</span><span class="si">{</span><span class="n">res_mps</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+    <span class="k">else</span><span class="p">:</span>
+        <span class="n">res_mps</span> <span class="o">=</span> <span class="p">[</span><span class="n">mp</span><span class="o">.</span><span class="n">normalize</span><span class="p">()</span><span class="o">.</span><span class="n">ensure_left_canon</span><span class="p">()</span><span class="o">.</span><span class="n">canonicalise</span><span class="p">()</span> <span class="k">for</span> <span class="n">mp</span> <span class="ow">in</span> <span class="n">res_mps</span><span class="p">]</span>
+        <span class="n">logger</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;</span><span class="si">{</span><span class="n">res_mps</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+    <span class="k">return</span> <span class="n">macro_iteration_result</span><span class="p">,</span> <span class="n">res_mps</span></div>
+
+
+<div class="viewcode-block" id="single_sweep"><a class="viewcode-back" href="../../../static.html#renormalizer.mps.gs.single_sweep">[docs]</a><span class="k">def</span> <span class="nf">single_sweep</span><span class="p">(</span>
+    <span class="n">mps</span><span class="p">:</span> <span class="n">Mps</span><span class="p">,</span>
+    <span class="n">mpo</span><span class="p">:</span> <span class="n">Mpo</span><span class="p">,</span>
+    <span class="n">environ</span><span class="p">:</span> <span class="n">Environ</span><span class="p">,</span>
+    <span class="n">omega</span><span class="p">:</span> <span class="nb">float</span><span class="p">,</span>
+    <span class="n">mmax</span><span class="p">:</span> <span class="nb">int</span><span class="p">,</span>
+    <span class="n">percent</span><span class="p">:</span> <span class="nb">float</span><span class="p">,</span>
+    <span class="n">last_opt_e_idx</span><span class="p">:</span> <span class="nb">int</span>
+<span class="p">):</span>
+
+    <span class="n">method</span> <span class="o">=</span> <span class="n">mps</span><span class="o">.</span><span class="n">optimize_config</span><span class="o">.</span><span class="n">method</span>
+    <span class="n">nroots</span> <span class="o">=</span> <span class="n">mps</span><span class="o">.</span><span class="n">optimize_config</span><span class="o">.</span><span class="n">nroots</span>
+
+    <span class="c1"># in state-averaged calculation, contains C of each state for better initial guess</span>
+    <span class="n">averaged_ms</span> <span class="o">=</span> <span class="p">[]</span>
+    <span class="c1"># optmized mps</span>
+    <span class="n">res_mps</span><span class="p">:</span> <span class="n">Union</span><span class="p">[</span><span class="n">Mps</span><span class="p">,</span> <span class="n">List</span><span class="p">[</span><span class="n">Mps</span><span class="p">]]</span> <span class="o">=</span> <span class="kc">None</span>
+    <span class="c1"># energies after optimizing each site</span>
+    <span class="n">micro_iteration_result</span> <span class="o">=</span> <span class="p">[]</span>
+    <span class="k">for</span> <span class="n">imps</span> <span class="ow">in</span> <span class="n">mps</span><span class="o">.</span><span class="n">iter_idx_list</span><span class="p">(</span><span class="n">full</span><span class="o">=</span><span class="kc">True</span><span class="p">):</span>
+        <span class="k">if</span> <span class="n">method</span> <span class="o">==</span> <span class="s2">&quot;2site&quot;</span> <span class="ow">and</span> <span class="p">(</span>
+            <span class="p">(</span><span class="n">mps</span><span class="o">.</span><span class="n">to_right</span> <span class="ow">and</span> <span class="n">imps</span> <span class="o">==</span> <span class="n">mps</span><span class="o">.</span><span class="n">site_num</span> <span class="o">-</span> <span class="mi">1</span><span class="p">)</span>
+            <span class="ow">or</span> <span class="p">((</span><span class="ow">not</span> <span class="n">mps</span><span class="o">.</span><span class="n">to_right</span><span class="p">)</span> <span class="ow">and</span> <span class="n">imps</span> <span class="o">==</span> <span class="mi">0</span><span class="p">)</span>
+        <span class="p">):</span>
+            <span class="k">break</span>
+
+        <span class="k">if</span> <span class="n">mps</span><span class="o">.</span><span class="n">to_right</span><span class="p">:</span>
+            <span class="n">lmethod</span><span class="p">,</span> <span class="n">rmethod</span> <span class="o">=</span> <span class="s2">&quot;System&quot;</span><span class="p">,</span> <span class="s2">&quot;Enviro&quot;</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="n">lmethod</span><span class="p">,</span> <span class="n">rmethod</span> <span class="o">=</span> <span class="s2">&quot;Enviro&quot;</span><span class="p">,</span> <span class="s2">&quot;System&quot;</span>
+
+        <span class="k">if</span> <span class="n">method</span> <span class="o">==</span> <span class="s2">&quot;1site&quot;</span><span class="p">:</span>
+            <span class="n">lidx</span> <span class="o">=</span> <span class="n">imps</span> <span class="o">-</span> <span class="mi">1</span>
+            <span class="n">cidx</span> <span class="o">=</span> <span class="p">[</span><span class="n">imps</span><span class="p">]</span>
+            <span class="n">ridx</span> <span class="o">=</span> <span class="n">imps</span> <span class="o">+</span> <span class="mi">1</span>
+        <span class="k">elif</span> <span class="n">method</span> <span class="o">==</span> <span class="s2">&quot;2site&quot;</span><span class="p">:</span>
+            <span class="k">if</span> <span class="n">mps</span><span class="o">.</span><span class="n">to_right</span><span class="p">:</span>
+                <span class="n">lidx</span> <span class="o">=</span> <span class="n">imps</span> <span class="o">-</span> <span class="mi">1</span>
+                <span class="n">cidx</span> <span class="o">=</span> <span class="p">[</span><span class="n">imps</span><span class="p">,</span> <span class="n">imps</span> <span class="o">+</span> <span class="mi">1</span><span class="p">]</span>
+                <span class="n">ridx</span> <span class="o">=</span> <span class="n">imps</span> <span class="o">+</span> <span class="mi">2</span>
+            <span class="k">else</span><span class="p">:</span>
+                <span class="n">lidx</span> <span class="o">=</span> <span class="n">imps</span> <span class="o">-</span> <span class="mi">2</span>
+                <span class="n">cidx</span> <span class="o">=</span> <span class="p">[</span><span class="n">imps</span> <span class="o">-</span> <span class="mi">1</span><span class="p">,</span> <span class="n">imps</span><span class="p">]</span>  <span class="c1"># center site</span>
+                <span class="n">ridx</span> <span class="o">=</span> <span class="n">imps</span> <span class="o">+</span> <span class="mi">1</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="k">assert</span> <span class="kc">False</span>
+        <span class="n">logger</span><span class="o">.</span><span class="n">debug</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;optimize site: </span><span class="si">{</span><span class="n">cidx</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+
+        <span class="k">if</span> <span class="n">omega</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="n">operator</span> <span class="o">=</span> <span class="n">mpo</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="n">operator</span> <span class="o">=</span> <span class="p">[</span><span class="n">mpo</span><span class="p">,</span> <span class="n">mpo</span><span class="p">]</span>
+
+        <span class="n">ltensor</span> <span class="o">=</span> <span class="n">environ</span><span class="o">.</span><span class="n">GetLR</span><span class="p">(</span><span class="s2">&quot;L&quot;</span><span class="p">,</span> <span class="n">lidx</span><span class="p">,</span> <span class="n">mps</span><span class="p">,</span> <span class="n">operator</span><span class="p">,</span> <span class="n">itensor</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">method</span><span class="o">=</span><span class="n">lmethod</span><span class="p">)</span>
+        <span class="n">rtensor</span> <span class="o">=</span> <span class="n">environ</span><span class="o">.</span><span class="n">GetLR</span><span class="p">(</span><span class="s2">&quot;R&quot;</span><span class="p">,</span> <span class="n">ridx</span><span class="p">,</span> <span class="n">mps</span><span class="p">,</span> <span class="n">operator</span><span class="p">,</span> <span class="n">itensor</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">method</span><span class="o">=</span><span class="n">rmethod</span><span class="p">)</span>
+
+        <span class="c1"># get the quantum number pattern</span>
+        <span class="n">qnbigl</span><span class="p">,</span> <span class="n">qnbigr</span><span class="p">,</span> <span class="n">qnmat</span> <span class="o">=</span> <span class="n">mps</span><span class="o">.</span><span class="n">_get_big_qn</span><span class="p">(</span><span class="n">cidx</span><span class="p">)</span>
+        <span class="n">cshape</span> <span class="o">=</span> <span class="n">qnmat</span><span class="o">.</span><span class="n">shape</span>
+
+        <span class="c1"># center mo</span>
+        <span class="n">cmo</span> <span class="o">=</span> <span class="p">[</span><span class="n">asxp</span><span class="p">(</span><span class="n">mpo</span><span class="p">[</span><span class="n">idx</span><span class="p">])</span> <span class="k">for</span> <span class="n">idx</span> <span class="ow">in</span> <span class="n">cidx</span><span class="p">]</span>
+
+        <span class="n">use_direct_eigh</span> <span class="o">=</span> <span class="n">qnmat</span><span class="o">.</span><span class="n">size</span> <span class="o">&lt;</span> <span class="mi">1000</span> <span class="ow">or</span> <span class="n">mps</span><span class="o">.</span><span class="n">optimize_config</span><span class="o">.</span><span class="n">algo</span> <span class="o">==</span> <span class="s2">&quot;direct&quot;</span>
+        <span class="k">if</span> <span class="n">use_direct_eigh</span><span class="p">:</span>
+            <span class="n">e</span><span class="p">,</span> <span class="n">c</span> <span class="o">=</span> <span class="n">eigh_direct</span><span class="p">(</span><span class="n">mps</span><span class="p">,</span> <span class="n">qnmat</span><span class="p">,</span> <span class="n">ltensor</span><span class="p">,</span> <span class="n">rtensor</span><span class="p">,</span> <span class="n">cmo</span><span class="p">,</span> <span class="n">omega</span><span class="p">)</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="c1"># the iterative approach</span>
+            <span class="c1"># generate initial guess</span>
+            <span class="k">if</span> <span class="n">nroots</span> <span class="o">==</span> <span class="mi">1</span><span class="p">:</span>
+                <span class="k">if</span> <span class="n">method</span> <span class="o">==</span> <span class="s2">&quot;1site&quot;</span><span class="p">:</span>
+                    <span class="c1"># initial guess   b-S-c</span>
+                    <span class="c1">#                   a</span>
+                    <span class="n">raw_cguess</span> <span class="o">=</span> <span class="n">mps</span><span class="p">[</span><span class="n">cidx</span><span class="p">[</span><span class="mi">0</span><span class="p">]]</span>
+                <span class="k">else</span><span class="p">:</span>
+                    <span class="c1"># initial guess b-S-c-S-e</span>
+                    <span class="c1">#                 a   d</span>
+                    <span class="n">raw_cguess</span> <span class="o">=</span> <span class="n">tensordot</span><span class="p">(</span><span class="n">mps</span><span class="p">[</span><span class="n">cidx</span><span class="p">[</span><span class="mi">0</span><span class="p">]],</span> <span class="n">mps</span><span class="p">[</span><span class="n">cidx</span><span class="p">[</span><span class="mi">1</span><span class="p">]],</span> <span class="n">axes</span><span class="o">=</span><span class="mi">1</span><span class="p">)</span>
+                <span class="n">cguess</span> <span class="o">=</span> <span class="p">[</span><span class="n">asnumpy</span><span class="p">(</span><span class="n">raw_cguess</span><span class="p">)[</span><span class="n">qnmat</span> <span class="o">==</span> <span class="n">mps</span><span class="o">.</span><span class="n">qntot</span><span class="p">]]</span>
+            <span class="k">else</span><span class="p">:</span>
+                <span class="n">cguess</span> <span class="o">=</span> <span class="p">[]</span>
+                <span class="k">for</span> <span class="n">ms</span> <span class="ow">in</span> <span class="n">averaged_ms</span><span class="p">:</span>
+                    <span class="k">if</span> <span class="n">method</span> <span class="o">==</span> <span class="s2">&quot;1site&quot;</span><span class="p">:</span>
+                        <span class="n">raw_cguess</span> <span class="o">=</span> <span class="n">asnumpy</span><span class="p">(</span><span class="n">ms</span><span class="p">)</span>
+                    <span class="k">else</span><span class="p">:</span>
+                        <span class="k">if</span> <span class="n">mps</span><span class="o">.</span><span class="n">to_right</span><span class="p">:</span>
+                            <span class="n">raw_cguess</span> <span class="o">=</span> <span class="n">tensordot</span><span class="p">(</span><span class="n">ms</span><span class="p">,</span> <span class="n">mps</span><span class="p">[</span><span class="n">cidx</span><span class="p">[</span><span class="mi">1</span><span class="p">]],</span> <span class="n">axes</span><span class="o">=</span><span class="mi">1</span><span class="p">)</span>
+                        <span class="k">else</span><span class="p">:</span>
+                            <span class="n">raw_cguess</span> <span class="o">=</span> <span class="n">tensordot</span><span class="p">(</span><span class="n">mps</span><span class="p">[</span><span class="n">cidx</span><span class="p">[</span><span class="mi">0</span><span class="p">]],</span> <span class="n">ms</span><span class="p">,</span> <span class="n">axes</span><span class="o">=</span><span class="mi">1</span><span class="p">)</span>
+                    <span class="n">cguess</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">asnumpy</span><span class="p">(</span><span class="n">raw_cguess</span><span class="p">)[</span><span class="n">qnmat</span> <span class="o">==</span> <span class="n">mps</span><span class="o">.</span><span class="n">qntot</span><span class="p">])</span>
+
+            <span class="n">guess_dim</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">sum</span><span class="p">(</span><span class="n">qnmat</span> <span class="o">==</span> <span class="n">mps</span><span class="o">.</span><span class="n">qntot</span><span class="p">)</span>
+            <span class="n">cguess</span><span class="o">.</span><span class="n">extend</span><span class="p">(</span>
+                <span class="p">[</span><span class="n">np</span><span class="o">.</span><span class="n">random</span><span class="o">.</span><span class="n">rand</span><span class="p">(</span><span class="n">guess_dim</span><span class="p">)</span> <span class="o">-</span> <span class="mf">0.5</span> <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="n">cguess</span><span class="p">),</span> <span class="n">nroots</span><span class="p">)]</span>
+            <span class="p">)</span>
+            <span class="n">e</span><span class="p">,</span> <span class="n">c</span> <span class="o">=</span> <span class="n">eigh_iterative</span><span class="p">(</span><span class="n">mps</span><span class="p">,</span> <span class="n">qnmat</span><span class="p">,</span> <span class="n">ltensor</span><span class="p">,</span> <span class="n">rtensor</span><span class="p">,</span> <span class="n">cmo</span><span class="p">,</span> <span class="n">omega</span><span class="p">,</span> <span class="n">cguess</span><span class="p">)</span>
+
+        <span class="c1"># if multi roots, both davidson and primme return np.ndarray</span>
+        <span class="k">if</span> <span class="n">nroots</span> <span class="o">&gt;</span> <span class="mi">1</span><span class="p">:</span>
+            <span class="n">e</span> <span class="o">=</span> <span class="n">e</span><span class="o">.</span><span class="n">tolist</span><span class="p">()</span>
+        <span class="n">logger</span><span class="o">.</span><span class="n">debug</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;energy: </span><span class="si">{</span><span class="n">e</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+        <span class="n">micro_iteration_result</span><span class="o">.</span><span class="n">append</span><span class="p">((</span><span class="n">e</span><span class="p">,</span> <span class="n">cidx</span><span class="p">))</span>
+
+        <span class="n">cstruct</span> <span class="o">=</span> <span class="n">cvec2cmat</span><span class="p">(</span><span class="n">cshape</span><span class="p">,</span> <span class="n">c</span><span class="p">,</span> <span class="n">qnmat</span><span class="p">,</span> <span class="n">mps</span><span class="o">.</span><span class="n">qntot</span><span class="p">,</span> <span class="n">nroots</span><span class="o">=</span><span class="n">nroots</span><span class="p">)</span>
+
+        <span class="c1"># store the &quot;optimal&quot; mps (usually in the middle of each sweep)</span>
+        <span class="k">if</span> <span class="n">cidx</span> <span class="o">==</span> <span class="n">last_opt_e_idx</span><span class="p">:</span>
+            <span class="k">if</span> <span class="n">nroots</span> <span class="o">==</span> <span class="mi">1</span><span class="p">:</span>
+                <span class="n">res_mps</span> <span class="o">=</span> <span class="n">mps</span><span class="o">.</span><span class="n">copy</span><span class="p">()</span>
+                <span class="n">res_mps</span><span class="o">.</span><span class="n">_update_mps</span><span class="p">(</span><span class="n">cstruct</span><span class="p">,</span> <span class="n">cidx</span><span class="p">,</span> <span class="n">qnbigl</span><span class="p">,</span> <span class="n">qnbigr</span><span class="p">,</span> <span class="n">mmax</span><span class="p">,</span> <span class="n">percent</span><span class="p">)</span>
+            <span class="k">else</span><span class="p">:</span>
+                <span class="n">res_mps</span> <span class="o">=</span> <span class="p">[</span><span class="n">mps</span><span class="o">.</span><span class="n">copy</span><span class="p">()</span> <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="n">cstruct</span><span class="p">))]</span>
+                <span class="k">for</span> <span class="n">iroot</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="n">cstruct</span><span class="p">)):</span>
+                    <span class="n">res_mps</span><span class="p">[</span><span class="n">iroot</span><span class="p">]</span><span class="o">.</span><span class="n">_update_mps</span><span class="p">(</span>
+                        <span class="n">cstruct</span><span class="p">[</span><span class="n">iroot</span><span class="p">],</span> <span class="n">cidx</span><span class="p">,</span> <span class="n">qnbigl</span><span class="p">,</span> <span class="n">qnbigr</span><span class="p">,</span> <span class="n">mmax</span><span class="p">,</span> <span class="n">percent</span>
+                    <span class="p">)</span>
+
+        <span class="n">averaged_ms</span> <span class="o">=</span> <span class="n">mps</span><span class="o">.</span><span class="n">_update_mps</span><span class="p">(</span><span class="n">cstruct</span><span class="p">,</span> <span class="n">cidx</span><span class="p">,</span> <span class="n">qnbigl</span><span class="p">,</span> <span class="n">qnbigr</span><span class="p">,</span> <span class="n">mmax</span><span class="p">,</span> <span class="n">percent</span><span class="p">)</span>
+        <span class="k">if</span> <span class="n">mps</span><span class="o">.</span><span class="n">compress_config</span><span class="o">.</span><span class="n">ofs</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="n">mpo</span><span class="o">.</span><span class="n">try_swap_site</span><span class="p">(</span><span class="n">mps</span><span class="o">.</span><span class="n">model</span><span class="p">,</span> <span class="n">mps</span><span class="o">.</span><span class="n">compress_config</span><span class="o">.</span><span class="n">ofs_swap_jw</span><span class="p">)</span>
+
+    <span class="n">mps</span><span class="o">.</span><span class="n">_switch_direction</span><span class="p">()</span>
+    <span class="k">return</span> <span class="n">micro_iteration_result</span><span class="p">,</span> <span class="n">res_mps</span><span class="p">,</span> <span class="n">mpo</span></div>
+
+
+<div class="viewcode-block" id="eigh_direct"><a class="viewcode-back" href="../../../static.html#renormalizer.mps.gs.eigh_direct">[docs]</a><span class="k">def</span> <span class="nf">eigh_direct</span><span class="p">(</span>
+    <span class="n">mps</span><span class="p">:</span> <span class="n">Mps</span><span class="p">,</span>
+    <span class="n">qnmat</span><span class="p">:</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">,</span>
+    <span class="n">ltensor</span><span class="p">:</span> <span class="n">xp</span><span class="o">.</span><span class="n">ndarray</span><span class="p">,</span>
+    <span class="n">rtensor</span><span class="p">:</span> <span class="n">xp</span><span class="o">.</span><span class="n">ndarray</span><span class="p">,</span>
+    <span class="n">cmo</span><span class="p">:</span> <span class="n">List</span><span class="p">[</span><span class="n">xp</span><span class="o">.</span><span class="n">ndarray</span><span class="p">],</span>
+    <span class="n">omega</span><span class="p">:</span> <span class="nb">float</span><span class="p">,</span>
+<span class="p">):</span>
+    <span class="n">logger</span><span class="o">.</span><span class="n">debug</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;use direct eigensolver&quot;</span><span class="p">)</span>
+
+    <span class="c1"># direct algorithm</span>
+    <span class="k">if</span> <span class="n">omega</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+        <span class="k">if</span> <span class="n">mps</span><span class="o">.</span><span class="n">optimize_config</span><span class="o">.</span><span class="n">method</span> <span class="o">==</span> <span class="s2">&quot;1site&quot;</span><span class="p">:</span>
+            <span class="c1"># S-a   l-S</span>
+            <span class="c1">#     d</span>
+            <span class="c1"># O-b-O-f-O</span>
+            <span class="c1">#     e</span>
+            <span class="c1"># S-c   k-S</span>
+            <span class="n">ham</span> <span class="o">=</span> <span class="n">oe</span><span class="o">.</span><span class="n">contract</span><span class="p">(</span>
+                <span class="s2">&quot;abc,bdef,lfk-&gt;adlcek&quot;</span><span class="p">,</span>
+                <span class="n">ltensor</span><span class="p">,</span> <span class="n">cmo</span><span class="p">[</span><span class="mi">0</span><span class="p">],</span> <span class="n">rtensor</span><span class="p">,</span>
+                <span class="n">backend</span><span class="o">=</span><span class="n">OE_BACKEND</span>
+            <span class="p">)</span>
+            <span class="n">ham</span> <span class="o">=</span> <span class="n">ham</span><span class="p">[:,</span> <span class="p">:,</span> <span class="p">:,</span> <span class="n">qnmat</span> <span class="o">==</span> <span class="n">mps</span><span class="o">.</span><span class="n">qntot</span><span class="p">][</span><span class="n">qnmat</span> <span class="o">==</span> <span class="n">mps</span><span class="o">.</span><span class="n">qntot</span><span class="p">,</span> <span class="p">:]</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="c1"># S-a       l-S</span>
+            <span class="c1">#     d   g</span>
+            <span class="c1"># O-b-O-f-O-j-O</span>
+            <span class="c1">#     e   h</span>
+            <span class="c1"># S-c       k-S</span>
+            <span class="n">ham</span> <span class="o">=</span> <span class="n">oe</span><span class="o">.</span><span class="n">contract</span><span class="p">(</span>
+                <span class="s2">&quot;abc,bdef,fghj,ljk-&gt;adglcehk&quot;</span><span class="p">,</span>
+                <span class="n">ltensor</span><span class="p">,</span> <span class="n">cmo</span><span class="p">[</span><span class="mi">0</span><span class="p">],</span> <span class="n">cmo</span><span class="p">[</span><span class="mi">1</span><span class="p">],</span> <span class="n">rtensor</span><span class="p">,</span>
+                <span class="n">backend</span><span class="o">=</span><span class="n">OE_BACKEND</span><span class="p">,</span>
+            <span class="p">)</span>
+            <span class="n">ham</span> <span class="o">=</span> <span class="n">ham</span><span class="p">[:,</span> <span class="p">:,</span> <span class="p">:,</span> <span class="p">:,</span> <span class="n">qnmat</span> <span class="o">==</span> <span class="n">mps</span><span class="o">.</span><span class="n">qntot</span><span class="p">][</span><span class="n">qnmat</span> <span class="o">==</span> <span class="n">mps</span><span class="o">.</span><span class="n">qntot</span><span class="p">,</span> <span class="p">:]</span>
+    <span class="k">else</span><span class="p">:</span>
+        <span class="k">if</span> <span class="n">mps</span><span class="o">.</span><span class="n">optimize_config</span><span class="o">.</span><span class="n">method</span> <span class="o">==</span> <span class="s2">&quot;1site&quot;</span><span class="p">:</span>
+            <span class="c1">#   S-a e j-S</span>
+            <span class="c1">#   O-b-O-g-O</span>
+            <span class="c1">#   |   f   |</span>
+            <span class="c1">#   O-c-O-i-O</span>
+            <span class="c1">#   S-d h k-S</span>
+            <span class="n">ham</span> <span class="o">=</span> <span class="n">oe</span><span class="o">.</span><span class="n">contract</span><span class="p">(</span>
+                <span class="s2">&quot;abcd, befg, cfhi, jgik -&gt; aejdhk&quot;</span><span class="p">,</span>
+                <span class="n">ltensor</span><span class="p">,</span> <span class="n">cmo</span><span class="p">[</span><span class="mi">0</span><span class="p">],</span> <span class="n">cmo</span><span class="p">[</span><span class="mi">0</span><span class="p">],</span> <span class="n">rtensor</span><span class="p">,</span>
+                <span class="n">backend</span><span class="o">=</span><span class="n">OE_BACKEND</span><span class="p">,</span>
+            <span class="p">)</span>
+            <span class="n">ham</span> <span class="o">=</span> <span class="n">ham</span><span class="p">[:,</span> <span class="p">:,</span> <span class="p">:,</span> <span class="n">qnmat</span> <span class="o">==</span> <span class="n">mps</span><span class="o">.</span><span class="n">qntot</span><span class="p">][</span><span class="n">qnmat</span> <span class="o">==</span> <span class="n">mps</span><span class="o">.</span><span class="n">qntot</span><span class="p">,</span> <span class="p">:]</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="c1">#   S-a e   j o-S</span>
+            <span class="c1">#   O-b-O-g-O-l-O</span>
+            <span class="c1">#   |   f   k   |</span>
+            <span class="c1">#   O-c-O-i-O-n-O</span>
+            <span class="c1">#   S-d h   m p-S</span>
+            <span class="n">ham</span> <span class="o">=</span> <span class="n">oe</span><span class="o">.</span><span class="n">contract</span><span class="p">(</span>
+                <span class="s2">&quot;abcd, befg, cfhi, gjkl, ikmn, olnp -&gt; aejodhmp&quot;</span><span class="p">,</span>
+                <span class="n">ltensor</span><span class="p">,</span> <span class="n">cmo</span><span class="p">[</span><span class="mi">0</span><span class="p">],</span> <span class="n">cmo</span><span class="p">[</span><span class="mi">0</span><span class="p">],</span> <span class="n">cmo</span><span class="p">[</span><span class="mi">1</span><span class="p">],</span> <span class="n">cmo</span><span class="p">[</span><span class="mi">1</span><span class="p">],</span> <span class="n">rtensor</span><span class="p">,</span>
+                <span class="n">backend</span><span class="o">=</span><span class="n">OE_BACKEND</span><span class="p">,</span>
+            <span class="p">)</span>
+            <span class="n">ham</span> <span class="o">=</span> <span class="n">ham</span><span class="p">[:,</span> <span class="p">:,</span> <span class="p">:,</span> <span class="p">:,</span> <span class="n">qnmat</span> <span class="o">==</span> <span class="n">mps</span><span class="o">.</span><span class="n">qntot</span><span class="p">][</span><span class="n">qnmat</span> <span class="o">==</span> <span class="n">mps</span><span class="o">.</span><span class="n">qntot</span><span class="p">,</span> <span class="p">:]</span>
+
+    <span class="n">inverse</span> <span class="o">=</span> <span class="n">mps</span><span class="o">.</span><span class="n">optimize_config</span><span class="o">.</span><span class="n">inverse</span>
+    <span class="n">w</span><span class="p">,</span> <span class="n">v</span> <span class="o">=</span> <span class="n">scipy</span><span class="o">.</span><span class="n">linalg</span><span class="o">.</span><span class="n">eigh</span><span class="p">(</span><span class="n">asnumpy</span><span class="p">(</span><span class="n">ham</span><span class="p">)</span> <span class="o">*</span> <span class="n">inverse</span><span class="p">)</span>
+
+    <span class="n">nroots</span> <span class="o">=</span> <span class="n">mps</span><span class="o">.</span><span class="n">optimize_config</span><span class="o">.</span><span class="n">nroots</span>
+    <span class="k">if</span> <span class="n">nroots</span> <span class="o">==</span> <span class="mi">1</span><span class="p">:</span>
+        <span class="n">e</span> <span class="o">=</span> <span class="n">w</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span>
+        <span class="n">c</span> <span class="o">=</span> <span class="n">v</span><span class="p">[:,</span> <span class="mi">0</span><span class="p">]</span>
+    <span class="k">else</span><span class="p">:</span>
+        <span class="n">e</span> <span class="o">=</span> <span class="n">w</span><span class="p">[:</span><span class="n">nroots</span><span class="p">]</span>
+        <span class="n">c</span> <span class="o">=</span> <span class="p">[</span><span class="n">v</span><span class="p">[:,</span> <span class="n">iroot</span><span class="p">]</span> <span class="k">for</span> <span class="n">iroot</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="nb">min</span><span class="p">(</span><span class="n">nroots</span><span class="p">,</span> <span class="n">v</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="mi">1</span><span class="p">]))]</span>
+    <span class="k">return</span> <span class="n">e</span><span class="p">,</span> <span class="n">c</span></div>
+
+
+<div class="viewcode-block" id="eigh_iterative"><a class="viewcode-back" href="../../../static.html#renormalizer.mps.gs.eigh_iterative">[docs]</a><span class="k">def</span> <span class="nf">eigh_iterative</span><span class="p">(</span>
+    <span class="n">mps</span><span class="p">:</span> <span class="n">Mps</span><span class="p">,</span>
+    <span class="n">qnmat</span><span class="p">:</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">,</span>
+    <span class="n">ltensor</span><span class="p">:</span> <span class="n">xp</span><span class="o">.</span><span class="n">ndarray</span><span class="p">,</span>
+    <span class="n">rtensor</span><span class="p">:</span> <span class="n">xp</span><span class="o">.</span><span class="n">ndarray</span><span class="p">,</span>
+    <span class="n">cmo</span><span class="p">:</span> <span class="n">List</span><span class="p">[</span><span class="n">xp</span><span class="o">.</span><span class="n">ndarray</span><span class="p">],</span>
+    <span class="n">omega</span><span class="p">:</span> <span class="nb">float</span><span class="p">,</span>
+    <span class="n">cguess</span><span class="p">:</span> <span class="n">List</span><span class="p">[</span><span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">],</span>
+<span class="p">):</span>
+    <span class="c1"># iterative algorithm</span>
+    <span class="n">method</span> <span class="o">=</span> <span class="n">mps</span><span class="o">.</span><span class="n">optimize_config</span><span class="o">.</span><span class="n">method</span>
+    <span class="n">inverse</span> <span class="o">=</span> <span class="n">mps</span><span class="o">.</span><span class="n">optimize_config</span><span class="o">.</span><span class="n">inverse</span>
+
+    <span class="c1"># diagonal elements of H for preconditioning</span>
+    <span class="k">if</span> <span class="n">omega</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+        <span class="n">tmp_ltensor</span> <span class="o">=</span> <span class="n">xp</span><span class="o">.</span><span class="n">einsum</span><span class="p">(</span><span class="s2">&quot;aba -&gt; ba&quot;</span><span class="p">,</span> <span class="n">ltensor</span><span class="p">)</span>
+        <span class="n">tmp_cmo0</span> <span class="o">=</span> <span class="n">xp</span><span class="o">.</span><span class="n">einsum</span><span class="p">(</span><span class="s2">&quot;abbc -&gt; abc&quot;</span><span class="p">,</span> <span class="n">cmo</span><span class="p">[</span><span class="mi">0</span><span class="p">])</span>
+        <span class="n">tmp_rtensor</span> <span class="o">=</span> <span class="n">xp</span><span class="o">.</span><span class="n">einsum</span><span class="p">(</span><span class="s2">&quot;aba -&gt; ba&quot;</span><span class="p">,</span> <span class="n">rtensor</span><span class="p">)</span>
+        <span class="k">if</span> <span class="n">method</span> <span class="o">==</span> <span class="s2">&quot;1site&quot;</span><span class="p">:</span>
+            <span class="c1">#   S-a c f-S</span>
+            <span class="c1">#   O-b-O-g-O</span>
+            <span class="c1">#   S-a c f-S</span>
+            <span class="n">path</span> <span class="o">=</span> <span class="p">[([</span><span class="mi">0</span><span class="p">,</span> <span class="mi">1</span><span class="p">],</span> <span class="s2">&quot;ba, bcg -&gt; acg&quot;</span><span class="p">),</span> <span class="p">([</span><span class="mi">1</span><span class="p">,</span> <span class="mi">0</span><span class="p">],</span> <span class="s2">&quot;acg, gf -&gt; acf&quot;</span><span class="p">)]</span>
+            <span class="n">hdiag</span> <span class="o">=</span> <span class="n">multi_tensor_contract</span><span class="p">(</span><span class="n">path</span><span class="p">,</span> <span class="n">tmp_ltensor</span><span class="p">,</span> <span class="n">tmp_cmo0</span><span class="p">,</span> <span class="n">tmp_rtensor</span><span class="p">)</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="c1">#   S-a c   d f-S</span>
+            <span class="c1">#   O-b-O-e-O-g-O</span>
+            <span class="c1">#   S-a c   d f-S</span>
+            <span class="n">tmp_cmo1</span> <span class="o">=</span> <span class="n">xp</span><span class="o">.</span><span class="n">einsum</span><span class="p">(</span><span class="s2">&quot;abbc -&gt; abc&quot;</span><span class="p">,</span> <span class="n">cmo</span><span class="p">[</span><span class="mi">1</span><span class="p">])</span>
+            <span class="n">path</span> <span class="o">=</span> <span class="p">[</span>
+                <span class="p">([</span><span class="mi">0</span><span class="p">,</span> <span class="mi">1</span><span class="p">],</span> <span class="s2">&quot;ba, bce -&gt; ace&quot;</span><span class="p">),</span>
+                <span class="p">([</span><span class="mi">0</span><span class="p">,</span> <span class="mi">1</span><span class="p">],</span> <span class="s2">&quot;edg, gf -&gt; edf&quot;</span><span class="p">),</span>
+                <span class="p">([</span><span class="mi">0</span><span class="p">,</span> <span class="mi">1</span><span class="p">],</span> <span class="s2">&quot;ace, edf -&gt; acdf&quot;</span><span class="p">),</span>
+            <span class="p">]</span>
+            <span class="n">hdiag</span> <span class="o">=</span> <span class="n">multi_tensor_contract</span><span class="p">(</span>
+                <span class="n">path</span><span class="p">,</span> <span class="n">tmp_ltensor</span><span class="p">,</span> <span class="n">tmp_cmo0</span><span class="p">,</span> <span class="n">tmp_cmo1</span><span class="p">,</span> <span class="n">tmp_rtensor</span>
+            <span class="p">)</span>
+    <span class="k">else</span><span class="p">:</span>
+        <span class="k">if</span> <span class="n">method</span> <span class="o">==</span> <span class="s2">&quot;1site&quot;</span><span class="p">:</span>
+            <span class="c1">#   S-a d h-S</span>
+            <span class="c1">#   O-b-O-f-O</span>
+            <span class="c1">#   |   e   |</span>
+            <span class="c1">#   O-c-O-g-O</span>
+            <span class="c1">#   S-a d h-S</span>
+            <span class="n">hdiag</span> <span class="o">=</span> <span class="n">oe</span><span class="o">.</span><span class="n">contract</span><span class="p">(</span>
+                <span class="s2">&quot;abca, bdef, cedg, hfgh -&gt; adh&quot;</span><span class="p">,</span>
+                <span class="n">ltensor</span><span class="p">,</span> <span class="n">cmo</span><span class="p">[</span><span class="mi">0</span><span class="p">],</span> <span class="n">cmo</span><span class="p">[</span><span class="mi">0</span><span class="p">],</span> <span class="n">rtensor</span><span class="p">,</span>
+                <span class="n">backend</span><span class="o">=</span><span class="n">OE_BACKEND</span><span class="p">,</span>
+            <span class="p">)</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="c1">#   S-a d   h l-S</span>
+            <span class="c1">#   O-b-O-f-O-j-O</span>
+            <span class="c1">#   |   e   i   |</span>
+            <span class="c1">#   O-c-O-g-O-k-O</span>
+            <span class="c1">#   S-a d   h l-S</span>
+            <span class="n">hdiag</span> <span class="o">=</span> <span class="n">oe</span><span class="o">.</span><span class="n">contract</span><span class="p">(</span>
+                <span class="s2">&quot;abca, bdef, cedg, fhij, gihk, ljkl -&gt; adhl&quot;</span><span class="p">,</span>
+                <span class="n">ltensor</span><span class="p">,</span> <span class="n">cmo</span><span class="p">[</span><span class="mi">0</span><span class="p">],</span> <span class="n">cmo</span><span class="p">[</span><span class="mi">0</span><span class="p">],</span> <span class="n">cmo</span><span class="p">[</span><span class="mi">1</span><span class="p">],</span> <span class="n">cmo</span><span class="p">[</span><span class="mi">1</span><span class="p">],</span> <span class="n">rtensor</span><span class="p">,</span>
+                <span class="n">backend</span><span class="o">=</span><span class="n">OE_BACKEND</span><span class="p">,</span>
+            <span class="p">)</span>
+
+    <span class="n">hdiag</span> <span class="o">=</span> <span class="n">asnumpy</span><span class="p">(</span><span class="n">hdiag</span><span class="p">[(</span><span class="n">qnmat</span> <span class="o">==</span> <span class="n">mps</span><span class="o">.</span><span class="n">qntot</span><span class="p">)]</span> <span class="o">*</span> <span class="n">inverse</span><span class="p">)</span>
+
+    <span class="c1"># Define the H operator</span>
+
+    <span class="c1"># contraction expression</span>
+    <span class="n">cshape</span> <span class="o">=</span> <span class="n">qnmat</span><span class="o">.</span><span class="n">shape</span>
+    <span class="n">expr</span> <span class="o">=</span> <span class="n">hop_expr</span><span class="p">(</span><span class="n">ltensor</span><span class="p">,</span> <span class="n">rtensor</span><span class="p">,</span> <span class="n">cmo</span><span class="p">,</span> <span class="n">cshape</span><span class="p">,</span> <span class="n">omega</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">)</span>
+
+    <span class="n">count</span> <span class="o">=</span> <span class="mi">0</span>
+
+    <span class="k">def</span> <span class="nf">hop</span><span class="p">(</span><span class="n">x</span><span class="p">):</span>
+        <span class="k">nonlocal</span> <span class="n">count</span>
+        <span class="n">count</span> <span class="o">+=</span> <span class="mi">1</span>
+        <span class="n">clist</span> <span class="o">=</span> <span class="p">[]</span>
+        <span class="k">if</span> <span class="n">x</span><span class="o">.</span><span class="n">ndim</span> <span class="o">==</span> <span class="mi">1</span><span class="p">:</span>
+            <span class="n">clist</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">x</span><span class="p">)</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="k">for</span> <span class="n">icol</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="n">x</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="mi">1</span><span class="p">]):</span>
+                <span class="n">clist</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">x</span><span class="p">[:,</span> <span class="n">icol</span><span class="p">])</span>
+        <span class="n">res</span> <span class="o">=</span> <span class="p">[]</span>
+        <span class="k">for</span> <span class="n">c</span> <span class="ow">in</span> <span class="n">clist</span><span class="p">:</span>
+            <span class="c1"># convert c to initial structure according to qn pattern</span>
+            <span class="n">cstruct</span> <span class="o">=</span> <span class="n">asxp</span><span class="p">(</span><span class="n">cvec2cmat</span><span class="p">(</span><span class="n">cshape</span><span class="p">,</span> <span class="n">c</span><span class="p">,</span> <span class="n">qnmat</span><span class="p">,</span> <span class="n">mps</span><span class="o">.</span><span class="n">qntot</span><span class="p">))</span>
+            <span class="n">cout</span> <span class="o">=</span> <span class="n">expr</span><span class="p">(</span><span class="n">cstruct</span><span class="p">)</span> <span class="o">*</span> <span class="n">inverse</span>
+            <span class="c1"># convert structure c to 1d according to qn</span>
+            <span class="n">res</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">asnumpy</span><span class="p">(</span><span class="n">cout</span><span class="p">)[</span><span class="n">qnmat</span> <span class="o">==</span> <span class="n">mps</span><span class="o">.</span><span class="n">qntot</span><span class="p">])</span>
+
+        <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">res</span><span class="p">)</span> <span class="o">==</span> <span class="mi">1</span><span class="p">:</span>
+            <span class="k">return</span> <span class="n">res</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="k">return</span> <span class="n">np</span><span class="o">.</span><span class="n">stack</span><span class="p">(</span><span class="n">res</span><span class="p">,</span> <span class="n">axis</span><span class="o">=</span><span class="mi">1</span><span class="p">)</span>
+
+    <span class="c1"># Find the eigenvectors</span>
+    <span class="n">algo</span> <span class="o">=</span> <span class="n">mps</span><span class="o">.</span><span class="n">optimize_config</span><span class="o">.</span><span class="n">algo</span>
+    <span class="n">nroots</span> <span class="o">=</span> <span class="n">mps</span><span class="o">.</span><span class="n">optimize_config</span><span class="o">.</span><span class="n">nroots</span>
+    <span class="k">if</span> <span class="n">algo</span> <span class="o">==</span> <span class="s2">&quot;davidson&quot;</span><span class="p">:</span>
+        <span class="n">precond</span> <span class="o">=</span> <span class="k">lambda</span> <span class="n">x</span><span class="p">,</span> <span class="n">e</span><span class="p">,</span> <span class="o">*</span><span class="n">args</span><span class="p">:</span> <span class="n">x</span> <span class="o">/</span> <span class="p">(</span><span class="n">hdiag</span> <span class="o">-</span> <span class="n">e</span> <span class="o">+</span> <span class="mf">1e-4</span><span class="p">)</span>
+
+        <span class="n">e</span><span class="p">,</span> <span class="n">c</span> <span class="o">=</span> <span class="n">davidson</span><span class="p">(</span>
+            <span class="n">hop</span><span class="p">,</span> <span class="n">cguess</span><span class="p">,</span> <span class="n">precond</span><span class="p">,</span> <span class="n">max_cycle</span><span class="o">=</span><span class="mi">100</span><span class="p">,</span> <span class="n">nroots</span><span class="o">=</span><span class="n">nroots</span><span class="p">,</span> <span class="n">max_memory</span><span class="o">=</span><span class="mi">64000</span>
+        <span class="p">)</span>
+        <span class="c1"># if one root, davidson return e as np.float</span>
+
+    <span class="c1"># elif algo == &quot;arpack&quot;:</span>
+    <span class="c1">#    # scipy arpack solver : much slower than pyscf/davidson</span>
+    <span class="c1">#    A = scipy.sparse.linalg.LinearOperator((nonzeros,nonzeros), matvec=hop)</span>
+    <span class="c1">#    e, c = scipy.sparse.linalg.eigsh(A, k=nroots, which=&quot;SA&quot;, v0=cguess)</span>
+    <span class="c1">#    # scipy return numpy.array</span>
+    <span class="c1">#    if nroots == 1:</span>
+    <span class="c1">#        e = e[0]</span>
+    <span class="c1"># elif algo == &quot;lobpcg&quot;:</span>
+    <span class="c1">#    precond = lambda x: scipy.sparse.diags(1/(hdiag+1e-4)) @ x</span>
+    <span class="c1">#    A = scipy.sparse.linalg.LinearOperator((nonzeros,nonzeros),</span>
+    <span class="c1">#            matvec=hop, matmat=hop)</span>
+    <span class="c1">#    M = scipy.sparse.linalg.LinearOperator((nonzeros,nonzeros),</span>
+    <span class="c1">#            matvec=precond, matmat=hop)</span>
+    <span class="c1">#    e, c = scipy.sparse.linalg.lobpcg(A, np.array(cguess).T,</span>
+    <span class="c1">#            M=M, largest=False)</span>
+    <span class="k">elif</span> <span class="n">algo</span> <span class="o">==</span> <span class="s2">&quot;primme&quot;</span><span class="p">:</span>
+        <span class="n">h_dim</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">sum</span><span class="p">(</span><span class="n">qnmat</span> <span class="o">==</span> <span class="n">mps</span><span class="o">.</span><span class="n">qntot</span><span class="p">)</span>
+        <span class="n">precond</span> <span class="o">=</span> <span class="k">lambda</span> <span class="n">x</span><span class="p">:</span> <span class="n">scipy</span><span class="o">.</span><span class="n">sparse</span><span class="o">.</span><span class="n">diags</span><span class="p">(</span><span class="mi">1</span> <span class="o">/</span> <span class="p">(</span><span class="n">hdiag</span> <span class="o">+</span> <span class="mf">1e-4</span><span class="p">))</span> <span class="o">@</span> <span class="n">x</span>
+        <span class="n">A</span> <span class="o">=</span> <span class="n">scipy</span><span class="o">.</span><span class="n">sparse</span><span class="o">.</span><span class="n">linalg</span><span class="o">.</span><span class="n">LinearOperator</span><span class="p">((</span><span class="n">h_dim</span><span class="p">,</span> <span class="n">h_dim</span><span class="p">),</span> <span class="n">matvec</span><span class="o">=</span><span class="n">hop</span><span class="p">,</span> <span class="n">matmat</span><span class="o">=</span><span class="n">hop</span><span class="p">)</span>
+        <span class="n">M</span> <span class="o">=</span> <span class="n">scipy</span><span class="o">.</span><span class="n">sparse</span><span class="o">.</span><span class="n">linalg</span><span class="o">.</span><span class="n">LinearOperator</span><span class="p">((</span><span class="n">h_dim</span><span class="p">,</span> <span class="n">h_dim</span><span class="p">),</span> <span class="n">matvec</span><span class="o">=</span><span class="n">precond</span><span class="p">,</span> <span class="n">matmat</span><span class="o">=</span><span class="n">hop</span><span class="p">)</span>
+        <span class="n">e</span><span class="p">,</span> <span class="n">c</span> <span class="o">=</span> <span class="n">primme</span><span class="o">.</span><span class="n">eigsh</span><span class="p">(</span>
+            <span class="n">A</span><span class="p">,</span>
+            <span class="n">k</span><span class="o">=</span><span class="nb">min</span><span class="p">(</span><span class="n">nroots</span><span class="p">,</span> <span class="n">h_dim</span><span class="p">),</span>
+            <span class="n">which</span><span class="o">=</span><span class="s2">&quot;SA&quot;</span><span class="p">,</span>
+            <span class="n">v0</span><span class="o">=</span><span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">(</span><span class="n">cguess</span><span class="p">)</span><span class="o">.</span><span class="n">T</span><span class="p">,</span>
+            <span class="n">OPinv</span><span class="o">=</span><span class="n">M</span><span class="p">,</span>
+            <span class="n">method</span><span class="o">=</span><span class="s2">&quot;PRIMME_DYNAMIC&quot;</span><span class="p">,</span>
+            <span class="n">tol</span><span class="o">=</span><span class="mf">1e-6</span><span class="p">,</span>
+        <span class="p">)</span>
+    <span class="k">else</span><span class="p">:</span>
+        <span class="k">assert</span> <span class="kc">False</span>
+    <span class="n">logger</span><span class="o">.</span><span class="n">debug</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;use </span><span class="si">{</span><span class="n">algo</span><span class="si">}</span><span class="s2">, HC hops: </span><span class="si">{</span><span class="n">count</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+    <span class="k">return</span> <span class="n">e</span><span class="p">,</span> <span class="n">c</span></div>
+</pre></div>
+
+           </div>
+           
+          </div>
+          <footer>
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>
+        &#169; Copyright 2019, Shuaigroup.
+
+    </p>
+  </div>
+    
+    
+    
+    Built with <a href="https://www.sphinx-doc.org/">Sphinx</a> using a
+    
+    <a href="https://github.com/readthedocs/sphinx_rtd_theme">theme</a>
+    
+    provided by <a href="https://readthedocs.org">Read the Docs</a>. 
+
+</footer>
+        </div>
+      </div>
+
+    </section>
+
+  </div>
+  
+
+  <script type="text/javascript">
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script>
+
+  
+  
+    
+   
+
+</body>
+</html>

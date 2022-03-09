@@ -1,0 +1,630 @@
+
+
+<!DOCTYPE html>
+<html class="writer-html5" lang="en" >
+<head>
+  <meta charset="utf-8" />
+  
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  
+  <title>renormalizer.cv.zerot &mdash; Renormalizer 0.1.0 documentation</title>
+  
+
+  
+  <link rel="stylesheet" href="../../../_static/css/theme.css" type="text/css" />
+  <link rel="stylesheet" href="../../../_static/pygments.css" type="text/css" />
+  <link rel="stylesheet" href="../../../_static/pygments.css" type="text/css" />
+  <link rel="stylesheet" href="../../../_static/css/theme.css" type="text/css" />
+
+  
+  
+
+  
+  
+
+  
+
+  
+  <!--[if lt IE 9]>
+    <script src="../../../_static/js/html5shiv.min.js"></script>
+  <![endif]-->
+  
+    
+      <script type="text/javascript" id="documentation_options" data-url_root="../../../" src="../../../_static/documentation_options.js"></script>
+        <script data-url_root="../../../" id="documentation_options" src="../../../_static/documentation_options.js"></script>
+        <script src="../../../_static/jquery.js"></script>
+        <script src="../../../_static/underscore.js"></script>
+        <script src="../../../_static/doctools.js"></script>
+    
+    <script type="text/javascript" src="../../../_static/js/theme.js"></script>
+
+    
+    <link rel="index" title="Index" href="../../../genindex.html" />
+    <link rel="search" title="Search" href="../../../search.html" /> 
+</head>
+
+<body class="wy-body-for-nav">
+
+   
+  <div class="wy-grid-for-nav">
+    
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search" >
+          
+
+          
+            <a href="../../../index.html" class="icon icon-home"> Renormalizer
+          
+
+          
+          </a>
+
+          
+            
+            
+              <div class="version">
+                0.1
+              </div>
+            
+          
+
+          
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="../../../search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+
+          
+        </div>
+
+        
+        <div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="main navigation">
+          
+            
+            
+              
+            
+            
+              <ul>
+<li class="toctree-l1"><a class="reference internal" href="../../../overview.html">1. An overview of Renormalizer</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../install.html">2. Installation guide</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../develop.html">3. How to develop Renormalizer</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../tutorial.html">4. Tutorial</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../model.html">5. Model</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../mps.html">6. Low Level Data Structure and Algorithms</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../static.html">7. Static Eigenstate Method</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../spectrum.html">8. spectra: absorption/emission spectrum at zero/finite temperature</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../ct.html">9. Charge Transport</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../cv.html">10. Frequency domain DMRG</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../configs.html">11. Calculation Configurations</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../lib.html">12. lib</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../sbm.html">13. sbm</a></li>
+</ul>
+
+            
+          
+        </div>
+        
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap">
+
+      
+      <nav class="wy-nav-top" aria-label="top navigation">
+        
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="../../../index.html">Renormalizer</a>
+        
+      </nav>
+
+
+      <div class="wy-nav-content">
+        
+        <div class="rst-content">
+        
+          
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+<div role="navigation" aria-label="breadcrumbs navigation">
+
+  <ul class="wy-breadcrumbs">
+    
+      <li><a href="../../../index.html" class="icon icon-home"></a> &raquo;</li>
+        
+          <li><a href="../../index.html">Module code</a> &raquo;</li>
+        
+      <li>renormalizer.cv.zerot</li>
+    
+    
+      <li class="wy-breadcrumbs-aside">
+        
+      </li>
+    
+  </ul>
+
+  
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+            
+  <h1>Source code for renormalizer.cv.zerot</h1><div class="highlight"><pre>
+<span></span><span class="c1"># -*- coding: utf-8 -*-</span>
+<span class="c1"># Author: Tong Jiang &lt;tongjiang1000@gmail.com&gt;</span>
+<span class="c1"># zero temperature absorption/emission spectrum based on DDMRG</span>
+<span class="kn">from</span> <span class="nn">renormalizer.cv.spectra_cv</span> <span class="kn">import</span> <span class="n">SpectraCv</span>
+<span class="kn">from</span> <span class="nn">renormalizer.mps.backend</span> <span class="kn">import</span> <span class="n">np</span><span class="p">,</span> <span class="n">xp</span><span class="p">,</span> <span class="n">USE_GPU</span>
+<span class="kn">from</span> <span class="nn">renormalizer.mps.lib</span> <span class="kn">import</span> <span class="n">cvec2cmat</span>
+<span class="kn">from</span> <span class="nn">renormalizer.mps</span> <span class="kn">import</span> <span class="n">Mpo</span><span class="p">,</span> <span class="n">Mps</span><span class="p">,</span> <span class="n">gs</span><span class="p">,</span> <span class="n">svd_qn</span>
+<span class="kn">from</span> <span class="nn">renormalizer.mps.matrix</span> <span class="kn">import</span> <span class="p">(</span>
+    <span class="n">asnumpy</span><span class="p">,</span>
+    <span class="n">asxp</span><span class="p">,</span>
+    <span class="n">tensordot</span><span class="p">,</span>
+    <span class="n">multi_tensor_contract</span><span class="p">,</span>
+<span class="p">)</span>
+<span class="kn">from</span> <span class="nn">renormalizer.utils</span> <span class="kn">import</span> <span class="n">OptimizeConfig</span>
+<span class="kn">import</span> <span class="nn">logging</span>
+<span class="kn">import</span> <span class="nn">scipy</span>
+
+<span class="kn">import</span> <span class="nn">opt_einsum</span> <span class="k">as</span> <span class="nn">oe</span>
+
+<span class="n">logger</span> <span class="o">=</span> <span class="n">logging</span><span class="o">.</span><span class="n">getLogger</span><span class="p">(</span><span class="vm">__name__</span><span class="p">)</span>
+
+
+<div class="viewcode-block" id="SpectraZtCV"><a class="viewcode-back" href="../../../cv.html#renormalizer.cv.zerot.SpectraZtCV">[docs]</a><span class="k">class</span> <span class="nc">SpectraZtCV</span><span class="p">(</span><span class="n">SpectraCv</span><span class="p">):</span>
+    <span class="sa">r</span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Use DDMRG to calculate the zero temperature spectrum from frequency domain</span>
+
+<span class="sd">    Args:</span>
+<span class="sd">        model (:class:`~renormalizer.model.Model`): system information.</span>
+<span class="sd">        spectratype (str): &quot;abs&quot; or &quot;emi&quot;.</span>
+<span class="sd">        m_max (int): maximal bond dimension of correction vector.</span>
+<span class="sd">        eta (float): Lorentzian broadening width (a.u.).</span>
+<span class="sd">        h_mpo (:class:`~renormalizer.mps.Mpo`): system Hamiltonian.</span>
+<span class="sd">        method (str): &quot;1site&quot; or &quot;2site&quot;.</span>
+<span class="sd">        procedure_cv (list): percent used for each sweep.</span>
+<span class="sd">        rtol (float): the relative tolerance of the spectrum strength,</span>
+<span class="sd">            default:1e-5.</span>
+<span class="sd">        b_mps (:class:`~renormalizer.mps.Mps`):</span>
+<span class="sd">            the b vector -eta * dipole * \psi_0, default: None.</span>
+<span class="sd">            (Holstein model could construct b_mps implicitly).</span>
+<span class="sd">        e0 (float): gs energy, default: None</span>
+<span class="sd">            (Holstein model could calculate e0 implicitly).</span>
+<span class="sd">        cv_mps (:class:`~renormalizer.mps.Mps`): initial guess of cv_mps,</span>
+<span class="sd">            default: None.</span>
+<span class="sd">        procedure_gs (list): list, optional,</span>
+<span class="sd">            the procedure for ground state calculation, if not provided,</span>
+<span class="sd">            use [[10, 0.4], [20, 0.2], [30, 0.1], [40, 0], [40, 0]],</span>
+<span class="sd">            warning: the default one won&#39;t be enough for large systems!</span>
+
+<span class="sd">    Example::</span>
+<span class="sd">        see test/test_abs.py for example</span>
+
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span>
+        <span class="bp">self</span><span class="p">,</span>
+        <span class="n">model</span><span class="p">,</span>
+        <span class="n">spectratype</span><span class="p">,</span>
+        <span class="n">m_max</span><span class="p">,</span>
+        <span class="n">eta</span><span class="p">,</span>
+        <span class="n">h_mpo</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
+        <span class="n">method</span><span class="o">=</span><span class="s2">&quot;1site&quot;</span><span class="p">,</span>
+        <span class="n">procedure_cv</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
+        <span class="n">rtol</span><span class="o">=</span><span class="mf">1e-5</span><span class="p">,</span>
+        <span class="n">b_mps</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
+        <span class="n">e0</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
+        <span class="n">cv_mps</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
+        <span class="n">procedure_gs</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
+    <span class="p">):</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">procedure_gs</span> <span class="o">=</span> <span class="n">procedure_gs</span>
+
+        <span class="nb">super</span><span class="p">()</span><span class="o">.</span><span class="fm">__init__</span><span class="p">(</span>
+            <span class="n">model</span><span class="p">,</span> <span class="n">spectratype</span><span class="p">,</span> <span class="n">m_max</span><span class="p">,</span> <span class="n">eta</span><span class="p">,</span> <span class="n">h_mpo</span><span class="o">=</span><span class="n">h_mpo</span><span class="p">,</span>
+            <span class="n">method</span><span class="o">=</span><span class="n">method</span><span class="p">,</span> <span class="n">procedure_cv</span><span class="o">=</span><span class="n">procedure_cv</span><span class="p">,</span>
+            <span class="n">rtol</span><span class="o">=</span><span class="n">rtol</span><span class="p">,</span> <span class="n">b_mps</span><span class="o">=</span><span class="n">b_mps</span><span class="p">,</span> <span class="n">e0</span><span class="o">=</span><span class="n">e0</span><span class="p">,</span> <span class="n">cv_mps</span><span class="o">=</span><span class="n">cv_mps</span><span class="p">,</span>
+        <span class="p">)</span>
+
+        <span class="bp">self</span><span class="o">.</span><span class="n">a_oper</span> <span class="o">=</span> <span class="kc">None</span>
+
+<div class="viewcode-block" id="SpectraZtCV.init_b_mps"><a class="viewcode-back" href="../../../cv.html#renormalizer.cv.zerot.SpectraZtCV.init_b_mps">[docs]</a>    <span class="k">def</span> <span class="nf">init_b_mps</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="c1"># get the right hand site vector b, Ax=b</span>
+        <span class="c1"># b = -eta * dipole * \psi_0</span>
+
+        <span class="c1"># only support Holstine model 0/1 exciton manifold</span>
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">spectratype</span> <span class="o">==</span> <span class="s2">&quot;abs&quot;</span><span class="p">:</span>
+            <span class="n">nexciton</span> <span class="o">=</span> <span class="mi">0</span>
+            <span class="n">dipoletype</span> <span class="o">=</span> <span class="sa">r</span><span class="s2">&quot;a^\dagger&quot;</span>
+        <span class="k">elif</span> <span class="bp">self</span><span class="o">.</span><span class="n">spectratype</span> <span class="o">==</span> <span class="s2">&quot;emi&quot;</span><span class="p">:</span>
+            <span class="n">nexciton</span> <span class="o">=</span> <span class="mi">1</span>
+            <span class="n">dipoletype</span> <span class="o">=</span> <span class="s2">&quot;a&quot;</span>
+
+        <span class="c1"># procedure for ground state calculation</span>
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">procedure_gs</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">procedure_gs</span> <span class="o">=</span> \
+                <span class="p">[[</span><span class="mi">10</span><span class="p">,</span> <span class="mf">0.4</span><span class="p">],</span> <span class="p">[</span><span class="mi">20</span><span class="p">,</span> <span class="mf">0.2</span><span class="p">],</span> <span class="p">[</span><span class="mi">30</span><span class="p">,</span> <span class="mf">0.1</span><span class="p">],</span> <span class="p">[</span><span class="mi">40</span><span class="p">,</span> <span class="mi">0</span><span class="p">],</span> <span class="p">[</span><span class="mi">40</span><span class="p">,</span> <span class="mi">0</span><span class="p">]]</span>
+
+        <span class="c1"># ground state calculation</span>
+        <span class="n">mps</span> <span class="o">=</span> <span class="n">Mps</span><span class="o">.</span><span class="n">random</span><span class="p">(</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">model</span><span class="p">,</span> <span class="n">nexciton</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">procedure_gs</span><span class="p">[</span><span class="mi">0</span><span class="p">][</span><span class="mi">0</span><span class="p">],</span> <span class="n">percent</span><span class="o">=</span><span class="mf">1.0</span><span class="p">)</span>
+        <span class="n">mps</span><span class="o">.</span><span class="n">optimize_config</span> <span class="o">=</span> <span class="n">OptimizeConfig</span><span class="p">(</span><span class="n">procedure</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">procedure_gs</span><span class="p">)</span>
+        <span class="n">mps</span><span class="o">.</span><span class="n">optimize_config</span><span class="o">.</span><span class="n">method</span> <span class="o">=</span> <span class="s2">&quot;2site&quot;</span>
+
+        <span class="n">energies</span><span class="p">,</span> <span class="n">mps</span> <span class="o">=</span> <span class="n">gs</span><span class="o">.</span><span class="n">optimize_mps</span><span class="p">(</span><span class="n">mps</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">h_mpo</span><span class="p">)</span>
+        <span class="n">e0</span> <span class="o">=</span> <span class="nb">min</span><span class="p">(</span><span class="n">energies</span><span class="p">)</span>
+
+        <span class="n">dipole_mpo</span> <span class="o">=</span> \
+            <span class="n">Mpo</span><span class="o">.</span><span class="n">onsite</span><span class="p">(</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">model</span><span class="p">,</span> <span class="n">dipoletype</span><span class="p">,</span> <span class="n">dipole</span><span class="o">=</span><span class="kc">True</span>
+            <span class="p">)</span>
+        <span class="n">b_mps</span> <span class="o">=</span> <span class="n">dipole_mpo</span><span class="o">.</span><span class="n">apply</span><span class="p">(</span><span class="n">mps</span><span class="o">.</span><span class="n">scale</span><span class="p">(</span><span class="o">-</span><span class="bp">self</span><span class="o">.</span><span class="n">eta</span><span class="p">))</span>
+
+        <span class="k">return</span> <span class="n">b_mps</span><span class="p">,</span> <span class="n">e0</span></div>
+
+<div class="viewcode-block" id="SpectraZtCV.init_cv_mps"><a class="viewcode-back" href="../../../cv.html#renormalizer.cv.zerot.SpectraZtCV.init_cv_mps">[docs]</a>    <span class="k">def</span> <span class="nf">init_cv_mps</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="c1"># random guess of cv_mps with same qn as b_mps</span>
+        <span class="k">assert</span> <span class="bp">self</span><span class="o">.</span><span class="n">b_mps</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span>
+        <span class="c1"># initialize guess of cv_mps</span>
+        <span class="n">cv_mps</span> <span class="o">=</span> <span class="n">Mps</span><span class="o">.</span><span class="n">random</span><span class="p">(</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">model</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">b_mps</span><span class="o">.</span><span class="n">qntot</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">m_max</span><span class="p">,</span> <span class="n">percent</span><span class="o">=</span><span class="mf">1.0</span><span class="p">)</span>
+        <span class="n">logger</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;cv_mps random guess qntot: </span><span class="si">{</span><span class="n">cv_mps</span><span class="o">.</span><span class="n">qntot</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+
+        <span class="k">return</span> <span class="n">cv_mps</span></div>
+
+<div class="viewcode-block" id="SpectraZtCV.oper_prepare"><a class="viewcode-back" href="../../../cv.html#renormalizer.cv.zerot.SpectraZtCV.oper_prepare">[docs]</a>    <span class="k">def</span> <span class="nf">oper_prepare</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">omega</span><span class="p">):</span>
+        <span class="c1"># set up a_oper = (H_0 - e0 - omega)</span>
+        <span class="n">identity</span> <span class="o">=</span> <span class="n">Mpo</span><span class="o">.</span><span class="n">identity</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">model</span><span class="p">)</span><span class="o">.</span><span class="n">scale</span><span class="p">(</span><span class="o">-</span><span class="bp">self</span><span class="o">.</span><span class="n">e0</span> <span class="o">-</span> <span class="n">omega</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">a_oper</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">h_mpo</span><span class="o">.</span><span class="n">add</span><span class="p">(</span><span class="n">identity</span><span class="p">)</span></div>
+    
+<div class="viewcode-block" id="SpectraZtCV.optimize_cv"><a class="viewcode-back" href="../../../cv.html#renormalizer.cv.zerot.SpectraZtCV.optimize_cv">[docs]</a>    <span class="k">def</span> <span class="nf">optimize_cv</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">lr_group</span><span class="p">,</span> <span class="n">isite</span><span class="p">,</span> <span class="n">percent</span><span class="o">=</span><span class="mf">0.0</span><span class="p">):</span>
+        <span class="c1"># depending on the spectratype, to restrict the exction</span>
+        <span class="n">first_LR</span> <span class="o">=</span> <span class="n">lr_group</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span>
+        <span class="n">second_LR</span> <span class="o">=</span> <span class="n">lr_group</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span>
+        <span class="n">constrain_qn</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">cv_mps</span><span class="o">.</span><span class="n">qntot</span>
+        <span class="c1"># this function aims at solving the work equation of ZT CV-DMRG</span>
+        <span class="c1"># L = &lt;CV|op_a|CV&gt;+2\eta&lt;op_b|CV&gt;, take a derivative to local CV</span>
+        <span class="c1"># S-a-S-e-S                          S-a-S-d-S</span>
+        <span class="c1"># |   d   |                          |   |   |</span>
+        <span class="c1"># O-b-O-g-O  * CV[isite-1]  = -\eta  |   c   |</span>
+        <span class="c1"># |   f   |                          |   |   |</span>
+        <span class="c1"># S-c- -h-S                          S-b- -e-S</span>
+
+        <span class="c1"># note to be a_mat * x = vec_b</span>
+        <span class="c1"># the environment matrix</span>
+
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">method</span> <span class="o">==</span> <span class="s2">&quot;1site&quot;</span><span class="p">:</span>
+            <span class="n">cidx</span> <span class="o">=</span> <span class="p">[</span><span class="n">isite</span> <span class="o">-</span> <span class="mi">1</span><span class="p">]</span>
+            <span class="n">first_L</span> <span class="o">=</span> <span class="n">asxp</span><span class="p">(</span><span class="n">first_LR</span><span class="p">[</span><span class="n">isite</span> <span class="o">-</span> <span class="mi">1</span><span class="p">])</span>
+            <span class="n">first_R</span> <span class="o">=</span> <span class="n">asxp</span><span class="p">(</span><span class="n">first_LR</span><span class="p">[</span><span class="n">isite</span><span class="p">])</span>
+            <span class="n">second_L</span> <span class="o">=</span> <span class="n">asxp</span><span class="p">(</span><span class="n">second_LR</span><span class="p">[</span><span class="n">isite</span> <span class="o">-</span> <span class="mi">1</span><span class="p">])</span>
+            <span class="n">second_R</span> <span class="o">=</span> <span class="n">asxp</span><span class="p">(</span><span class="n">second_LR</span><span class="p">[</span><span class="n">isite</span><span class="p">])</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="n">cidx</span> <span class="o">=</span> <span class="p">[</span><span class="n">isite</span> <span class="o">-</span> <span class="mi">2</span><span class="p">,</span> <span class="n">isite</span> <span class="o">-</span> <span class="mi">1</span><span class="p">]</span>
+            <span class="n">first_L</span> <span class="o">=</span> <span class="n">asxp</span><span class="p">(</span><span class="n">first_LR</span><span class="p">[</span><span class="n">isite</span> <span class="o">-</span> <span class="mi">2</span><span class="p">])</span>
+            <span class="n">first_R</span> <span class="o">=</span> <span class="n">asxp</span><span class="p">(</span><span class="n">first_LR</span><span class="p">[</span><span class="n">isite</span><span class="p">])</span>
+            <span class="n">second_L</span> <span class="o">=</span> <span class="n">asxp</span><span class="p">(</span><span class="n">second_LR</span><span class="p">[</span><span class="n">isite</span> <span class="o">-</span> <span class="mi">2</span><span class="p">])</span>
+            <span class="n">second_R</span> <span class="o">=</span> <span class="n">asxp</span><span class="p">(</span><span class="n">second_LR</span><span class="p">[</span><span class="n">isite</span><span class="p">])</span>
+
+        <span class="c1"># this part just be similar with ground state calculation</span>
+        <span class="n">qnbigl</span><span class="p">,</span> <span class="n">qnbigr</span><span class="p">,</span> <span class="n">qnmat</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">cv_mps</span><span class="o">.</span><span class="n">_get_big_qn</span><span class="p">(</span><span class="n">cidx</span><span class="p">)</span>
+        <span class="n">xshape</span> <span class="o">=</span> <span class="n">qnmat</span><span class="o">.</span><span class="n">shape</span>
+        <span class="n">nonzeros</span> <span class="o">=</span> <span class="nb">int</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">sum</span><span class="p">(</span><span class="n">qnmat</span> <span class="o">==</span> <span class="n">constrain_qn</span><span class="p">))</span>
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">method</span> <span class="o">==</span> <span class="s1">&#39;1site&#39;</span><span class="p">:</span>
+            <span class="n">guess</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">cv_mps</span><span class="p">[</span><span class="n">isite</span> <span class="o">-</span> <span class="mi">1</span><span class="p">][</span><span class="n">qnmat</span> <span class="o">==</span> <span class="n">constrain_qn</span><span class="p">]</span>
+            <span class="n">path_b</span> <span class="o">=</span> <span class="p">[([</span><span class="mi">0</span><span class="p">,</span> <span class="mi">1</span><span class="p">],</span> <span class="s2">&quot;ab, acd-&gt;bcd&quot;</span><span class="p">),</span>
+                      <span class="p">([</span><span class="mi">1</span><span class="p">,</span> <span class="mi">0</span><span class="p">],</span> <span class="s2">&quot;bcd, de-&gt;bce&quot;</span><span class="p">)]</span>
+            <span class="n">vec_b</span> <span class="o">=</span> <span class="n">multi_tensor_contract</span><span class="p">(</span>
+                <span class="n">path_b</span><span class="p">,</span> <span class="n">second_L</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">b_mps</span><span class="p">[</span><span class="n">isite</span> <span class="o">-</span> <span class="mi">1</span><span class="p">],</span> <span class="n">second_R</span>
+            <span class="p">)[</span><span class="n">qnmat</span> <span class="o">==</span> <span class="n">constrain_qn</span><span class="p">]</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="n">guess</span> <span class="o">=</span> <span class="n">tensordot</span><span class="p">(</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">cv_mps</span><span class="p">[</span><span class="n">isite</span> <span class="o">-</span> <span class="mi">2</span><span class="p">],</span> <span class="bp">self</span><span class="o">.</span><span class="n">cv_mps</span><span class="p">[</span><span class="n">isite</span> <span class="o">-</span> <span class="mi">1</span><span class="p">],</span> <span class="n">axes</span><span class="o">=</span><span class="p">(</span><span class="o">-</span><span class="mi">1</span><span class="p">,</span> <span class="mi">0</span><span class="p">)</span>
+            <span class="p">)[</span><span class="n">qnmat</span> <span class="o">==</span> <span class="n">constrain_qn</span><span class="p">]</span>
+            <span class="n">path_b</span> <span class="o">=</span> <span class="p">[([</span><span class="mi">0</span><span class="p">,</span> <span class="mi">1</span><span class="p">],</span> <span class="s2">&quot;ab, acd-&gt;bcd&quot;</span><span class="p">),</span>
+                      <span class="p">([</span><span class="mi">2</span><span class="p">,</span> <span class="mi">0</span><span class="p">],</span> <span class="s2">&quot;bcd, def-&gt;bcef&quot;</span><span class="p">),</span>
+                      <span class="p">([</span><span class="mi">1</span><span class="p">,</span> <span class="mi">0</span><span class="p">],</span> <span class="s2">&quot;bcef, fg-&gt;bceg&quot;</span><span class="p">)]</span>
+            <span class="n">vec_b</span> <span class="o">=</span> <span class="n">multi_tensor_contract</span><span class="p">(</span>
+                <span class="n">path_b</span><span class="p">,</span> <span class="n">second_L</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">b_mps</span><span class="p">[</span><span class="n">isite</span> <span class="o">-</span> <span class="mi">2</span><span class="p">],</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">b_mps</span><span class="p">[</span><span class="n">isite</span> <span class="o">-</span> <span class="mi">1</span><span class="p">],</span> <span class="n">second_R</span>
+            <span class="p">)[</span><span class="n">qnmat</span> <span class="o">==</span> <span class="n">constrain_qn</span><span class="p">]</span>
+
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">method</span> <span class="o">==</span> <span class="s2">&quot;2site&quot;</span><span class="p">:</span>
+            <span class="n">a_oper_isite2</span> <span class="o">=</span> <span class="n">asxp</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">a_oper</span><span class="p">[</span><span class="n">isite</span> <span class="o">-</span> <span class="mi">2</span><span class="p">])</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="n">a_oper_isite2</span> <span class="o">=</span> <span class="kc">None</span>
+        <span class="n">a_oper_isite1</span> <span class="o">=</span> <span class="n">asxp</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">a_oper</span><span class="p">[</span><span class="n">isite</span> <span class="o">-</span> <span class="mi">1</span><span class="p">])</span>
+
+        <span class="c1"># use the diagonal part of mat_a to construct the preconditinoner</span>
+        <span class="c1"># for linear solver</span>
+        <span class="n">part_l</span> <span class="o">=</span> <span class="n">xp</span><span class="o">.</span><span class="n">einsum</span><span class="p">(</span><span class="s1">&#39;abca-&gt;abc&#39;</span><span class="p">,</span> <span class="n">first_L</span><span class="p">)</span>
+        <span class="n">part_r</span> <span class="o">=</span> <span class="n">xp</span><span class="o">.</span><span class="n">einsum</span><span class="p">(</span><span class="s1">&#39;hfgh-&gt;hfg&#39;</span><span class="p">,</span> <span class="n">first_R</span><span class="p">)</span>
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">method</span> <span class="o">==</span> <span class="s2">&quot;1site&quot;</span><span class="p">:</span>
+            <span class="c1">#  S-a   d    h-S</span>
+            <span class="c1">#  O-b  -O-   f-O</span>
+            <span class="c1">#  |     e      |</span>
+            <span class="c1">#  O-c  -O-   g-O</span>
+            <span class="c1">#  S-a   i    h-S</span>
+            <span class="n">path_pre</span> <span class="o">=</span> <span class="p">[([</span><span class="mi">0</span><span class="p">,</span> <span class="mi">1</span><span class="p">],</span> <span class="s2">&quot;abc, bdef -&gt; acdef&quot;</span><span class="p">),</span>
+                        <span class="p">([</span><span class="mi">1</span><span class="p">,</span> <span class="mi">0</span><span class="p">],</span> <span class="s2">&quot;acdef, ceig -&gt; adfig&quot;</span><span class="p">)]</span>
+            <span class="n">a_diag</span> <span class="o">=</span> <span class="n">multi_tensor_contract</span><span class="p">(</span><span class="n">path_pre</span><span class="p">,</span> <span class="n">part_l</span><span class="p">,</span> <span class="n">a_oper_isite1</span><span class="p">,</span>
+                                           <span class="n">a_oper_isite1</span><span class="p">)</span>
+            <span class="n">a_diag</span> <span class="o">=</span> <span class="n">xp</span><span class="o">.</span><span class="n">einsum</span><span class="p">(</span><span class="s2">&quot;adfdg -&gt; adfg&quot;</span><span class="p">,</span> <span class="n">a_diag</span><span class="p">)</span>
+            <span class="n">a_diag</span> <span class="o">=</span> <span class="n">xp</span><span class="o">.</span><span class="n">tensordot</span><span class="p">(</span><span class="n">a_diag</span><span class="p">,</span> <span class="n">part_r</span><span class="p">,</span>
+                                  <span class="n">axes</span><span class="o">=</span><span class="p">([</span><span class="mi">2</span><span class="p">,</span> <span class="mi">3</span><span class="p">],</span> <span class="p">[</span><span class="mi">1</span><span class="p">,</span> <span class="mi">2</span><span class="p">]))[</span><span class="n">qnmat</span> <span class="o">==</span> <span class="n">constrain_qn</span><span class="p">]</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="c1">#  S-a   d     k   h-S</span>
+            <span class="c1">#  O-b  -O- j -O-  f-O</span>
+            <span class="c1">#  |     e     l   |</span>
+            <span class="c1">#  O-c  -O- m -O-  g-O</span>
+            <span class="c1">#  S-a   i     n   h-S</span>
+            <span class="c1"># first left half, second right half, last contraction</span>
+
+            <span class="n">path_pre</span> <span class="o">=</span> <span class="p">[([</span><span class="mi">0</span><span class="p">,</span> <span class="mi">1</span><span class="p">],</span> <span class="s2">&quot;abc, bdej -&gt; acdej&quot;</span><span class="p">),</span>
+                        <span class="p">([</span><span class="mi">1</span><span class="p">,</span> <span class="mi">0</span><span class="p">],</span> <span class="s2">&quot;acdej, ceim -&gt; adjim&quot;</span><span class="p">)]</span>
+            <span class="n">a_diagl</span> <span class="o">=</span> <span class="n">multi_tensor_contract</span><span class="p">(</span><span class="n">path_pre</span><span class="p">,</span> <span class="n">part_l</span><span class="p">,</span> <span class="n">a_oper_isite2</span><span class="p">,</span>
+                                            <span class="n">a_oper_isite2</span><span class="p">)</span>
+            <span class="n">a_diagl</span> <span class="o">=</span> <span class="n">xp</span><span class="o">.</span><span class="n">einsum</span><span class="p">(</span><span class="s2">&quot;adjdm -&gt; adjm&quot;</span><span class="p">,</span> <span class="n">a_diagl</span><span class="p">)</span>
+
+            <span class="n">path_pre</span> <span class="o">=</span> <span class="p">[([</span><span class="mi">0</span><span class="p">,</span> <span class="mi">1</span><span class="p">],</span> <span class="s2">&quot;hfg, jklf -&gt; hgjkl&quot;</span><span class="p">),</span>
+                        <span class="p">([</span><span class="mi">1</span><span class="p">,</span> <span class="mi">0</span><span class="p">],</span> <span class="s2">&quot;hgjkl, mlng -&gt; hjkmn&quot;</span><span class="p">)]</span>
+            <span class="n">a_diagr</span> <span class="o">=</span> <span class="n">multi_tensor_contract</span><span class="p">(</span><span class="n">path_pre</span><span class="p">,</span> <span class="n">part_r</span><span class="p">,</span> <span class="n">a_oper_isite1</span><span class="p">,</span>
+                                            <span class="n">a_oper_isite1</span><span class="p">)</span>
+            <span class="n">a_diagr</span> <span class="o">=</span> <span class="n">xp</span><span class="o">.</span><span class="n">einsum</span><span class="p">(</span><span class="s2">&quot;hjkmk -&gt; khjm&quot;</span><span class="p">,</span> <span class="n">a_diagr</span><span class="p">)</span>
+
+            <span class="n">a_diag</span> <span class="o">=</span> <span class="n">xp</span><span class="o">.</span><span class="n">tensordot</span><span class="p">(</span>
+                <span class="n">a_diagl</span><span class="p">,</span> <span class="n">a_diagr</span><span class="p">,</span> <span class="n">axes</span><span class="o">=</span><span class="p">([</span><span class="mi">2</span><span class="p">,</span> <span class="mi">3</span><span class="p">],</span> <span class="p">[</span><span class="mi">2</span><span class="p">,</span> <span class="mi">3</span><span class="p">]))[</span><span class="n">qnmat</span> <span class="o">==</span> <span class="n">constrain_qn</span><span class="p">]</span>
+
+        <span class="n">a_diag</span> <span class="o">=</span> <span class="n">asnumpy</span><span class="p">(</span><span class="n">a_diag</span> <span class="o">+</span> <span class="n">xp</span><span class="o">.</span><span class="n">ones</span><span class="p">(</span><span class="n">nonzeros</span><span class="p">)</span> <span class="o">*</span> <span class="bp">self</span><span class="o">.</span><span class="n">eta</span><span class="o">**</span><span class="mi">2</span><span class="p">)</span>
+        <span class="n">M_x</span> <span class="o">=</span> <span class="k">lambda</span> <span class="n">x</span><span class="p">:</span> <span class="n">x</span> <span class="o">/</span> <span class="n">a_diag</span>
+        <span class="n">pre_M</span> <span class="o">=</span> <span class="n">scipy</span><span class="o">.</span><span class="n">sparse</span><span class="o">.</span><span class="n">linalg</span><span class="o">.</span><span class="n">LinearOperator</span><span class="p">((</span><span class="n">nonzeros</span><span class="p">,</span> <span class="n">nonzeros</span><span class="p">),</span> <span class="n">M_x</span><span class="p">)</span>
+
+        <span class="n">count</span> <span class="o">=</span> <span class="mi">0</span>
+
+        <span class="c1"># cache oe path</span>
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">method</span> <span class="o">==</span> <span class="s2">&quot;2site&quot;</span><span class="p">:</span>
+            <span class="n">expr</span> <span class="o">=</span> <span class="n">oe</span><span class="o">.</span><span class="n">contract_expression</span><span class="p">(</span>
+                <span class="s2">&quot;abcd, befh, cfgi, hjkn, iklo, mnop, dglp -&gt; aejm&quot;</span><span class="p">,</span>
+                <span class="n">first_L</span><span class="p">,</span> <span class="n">a_oper_isite2</span><span class="p">,</span> <span class="n">a_oper_isite2</span><span class="p">,</span> <span class="n">a_oper_isite1</span><span class="p">,</span>
+                <span class="n">a_oper_isite1</span><span class="p">,</span> <span class="n">first_R</span><span class="p">,</span> <span class="n">xshape</span><span class="p">,</span>
+                <span class="n">constants</span><span class="o">=</span><span class="p">[</span><span class="mi">0</span><span class="p">,</span> <span class="mi">1</span><span class="p">,</span> <span class="mi">2</span><span class="p">,</span> <span class="mi">3</span><span class="p">,</span> <span class="mi">4</span><span class="p">,</span> <span class="mi">5</span><span class="p">])</span>
+
+        <span class="k">def</span> <span class="nf">hop</span><span class="p">(</span><span class="n">c</span><span class="p">):</span>
+            <span class="k">nonlocal</span> <span class="n">count</span>
+            <span class="n">count</span> <span class="o">+=</span> <span class="mi">1</span>
+            <span class="n">xstruct</span> <span class="o">=</span> <span class="n">asxp</span><span class="p">(</span><span class="n">cvec2cmat</span><span class="p">(</span><span class="n">xshape</span><span class="p">,</span> <span class="n">c</span><span class="p">,</span> <span class="n">qnmat</span><span class="p">,</span> <span class="n">constrain_qn</span><span class="p">))</span>
+            <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">method</span> <span class="o">==</span> <span class="s2">&quot;1site&quot;</span><span class="p">:</span>
+                <span class="n">path_a</span> <span class="o">=</span> <span class="p">[([</span><span class="mi">0</span><span class="p">,</span> <span class="mi">1</span><span class="p">],</span> <span class="s2">&quot;abcd, aef-&gt;bcdef&quot;</span><span class="p">),</span>
+                          <span class="p">([</span><span class="mi">3</span><span class="p">,</span> <span class="mi">0</span><span class="p">],</span> <span class="s2">&quot;bcdef, begh-&gt;cdfgh&quot;</span><span class="p">),</span>
+                          <span class="p">([</span><span class="mi">2</span><span class="p">,</span> <span class="mi">0</span><span class="p">],</span> <span class="s2">&quot;cdfgh, cgij-&gt;dfhij&quot;</span><span class="p">),</span>
+                          <span class="p">([</span><span class="mi">1</span><span class="p">,</span> <span class="mi">0</span><span class="p">],</span> <span class="s2">&quot;dfhij, fhjk-&gt;dik&quot;</span><span class="p">)]</span>
+                <span class="n">ax1</span> <span class="o">=</span> <span class="n">multi_tensor_contract</span><span class="p">(</span><span class="n">path_a</span><span class="p">,</span> <span class="n">first_L</span><span class="p">,</span> <span class="n">xstruct</span><span class="p">,</span>
+                                            <span class="n">a_oper_isite1</span><span class="p">,</span> <span class="n">a_oper_isite1</span><span class="p">,</span> <span class="n">first_R</span><span class="p">)</span>
+            <span class="k">else</span><span class="p">:</span>
+                <span class="c1"># opt_einsum v3.2.1 is not bad, ~10% faster than the hand-design</span>
+                <span class="c1"># contraction path for this complicated cases and consumes a little bit less memory</span>
+                <span class="c1"># this is the only place in renormalizer we use opt_einsum now.</span>
+                <span class="c1"># we keep it here just for a demo.</span>
+                <span class="c1"># ax1 = oe.contract(&quot;abcd, befh, cfgi, hjkn, iklo, mnop, dglp -&gt; aejm&quot;,</span>
+                <span class="c1">#        first_L, a_oper_isite2, a_oper_isite2, a_oper_isite1,</span>
+                <span class="c1">#        a_oper_isite1, first_R, xstruct)</span>
+                <span class="k">if</span> <span class="n">USE_GPU</span><span class="p">:</span>
+                    <span class="n">oe_backend</span> <span class="o">=</span> <span class="s2">&quot;cupy&quot;</span>
+                <span class="k">else</span><span class="p">:</span>
+                    <span class="n">oe_backend</span> <span class="o">=</span> <span class="s2">&quot;numpy&quot;</span>
+                <span class="n">ax1</span> <span class="o">=</span> <span class="n">expr</span><span class="p">(</span><span class="n">xstruct</span><span class="p">,</span> <span class="n">backend</span><span class="o">=</span><span class="n">oe_backend</span><span class="p">)</span>   
+                <span class="c1">#print(oe.contract_path(&quot;abcd, befh, cfgi, hjkn, iklo, mnop, dglp -&gt; aejm&quot;,</span>
+                <span class="c1">#        first_L, a_oper_isite2, a_oper_isite2, a_oper_isite1,</span>
+                <span class="c1">#        a_oper_isite1, first_R, xstruct))</span>
+
+                <span class="c1">#path_a = [([0, 1], &quot;abcd, aefg-&gt;bcdefg&quot;),</span>
+                <span class="c1">#          ([5, 0], &quot;bcdefg, behi-&gt;cdfghi&quot;),</span>
+                <span class="c1">#          ([4, 0], &quot;cdfghi, ifjk-&gt;cdghjk&quot;),</span>
+                <span class="c1">#          ([3, 0], &quot;cdghjk, chlm-&gt;dgjklm&quot;),</span>
+                <span class="c1">#          ([2, 0], &quot;dgjklm, mjno-&gt;dgklno&quot;),</span>
+                <span class="c1">#          ([1, 0], &quot;dgklno, gkop-&gt;dlnp&quot;)]</span>
+                <span class="c1">#ax1 = multi_tensor_contract(path_a, first_L, xstruct,</span>
+                <span class="c1">#                           a_oper_isite2, a_oper_isite1,</span>
+                <span class="c1">#                           a_oper_isite2, a_oper_isite1,</span>
+                <span class="c1">#                           first_R)</span>
+            <span class="n">ax</span> <span class="o">=</span> <span class="n">ax1</span> <span class="o">+</span> <span class="n">xstruct</span> <span class="o">*</span> <span class="bp">self</span><span class="o">.</span><span class="n">eta</span><span class="o">**</span><span class="mi">2</span>
+            <span class="n">cout</span> <span class="o">=</span> <span class="n">ax</span><span class="p">[</span><span class="n">qnmat</span> <span class="o">==</span> <span class="n">constrain_qn</span><span class="p">]</span>
+            <span class="k">return</span> <span class="n">asnumpy</span><span class="p">(</span><span class="n">cout</span><span class="p">)</span>
+
+        <span class="n">mat_a</span> <span class="o">=</span> <span class="n">scipy</span><span class="o">.</span><span class="n">sparse</span><span class="o">.</span><span class="n">linalg</span><span class="o">.</span><span class="n">LinearOperator</span><span class="p">((</span><span class="n">nonzeros</span><span class="p">,</span> <span class="n">nonzeros</span><span class="p">),</span>
+                                                   <span class="n">matvec</span><span class="o">=</span><span class="n">hop</span><span class="p">)</span>
+
+        <span class="n">x</span><span class="p">,</span> <span class="n">info</span> <span class="o">=</span> <span class="n">scipy</span><span class="o">.</span><span class="n">sparse</span><span class="o">.</span><span class="n">linalg</span><span class="o">.</span><span class="n">cg</span><span class="p">(</span><span class="n">mat_a</span><span class="p">,</span> <span class="n">asnumpy</span><span class="p">(</span><span class="n">vec_b</span><span class="p">),</span> <span class="n">tol</span><span class="o">=</span><span class="mf">1.e-5</span><span class="p">,</span>
+                                         <span class="n">x0</span><span class="o">=</span><span class="n">asnumpy</span><span class="p">(</span><span class="n">guess</span><span class="p">),</span>
+                                         <span class="n">M</span><span class="o">=</span><span class="n">pre_M</span><span class="p">,</span> <span class="n">atol</span><span class="o">=</span><span class="mi">0</span><span class="p">)</span>
+
+        <span class="bp">self</span><span class="o">.</span><span class="n">hop_time</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">count</span><span class="p">)</span>
+        <span class="k">if</span> <span class="n">info</span> <span class="o">!=</span> <span class="mi">0</span><span class="p">:</span>
+            <span class="n">logger</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;iteration solver not converged&quot;</span><span class="p">)</span>
+        <span class="c1"># the value of the functional L</span>
+        <span class="n">l_value</span> <span class="o">=</span> <span class="n">xp</span><span class="o">.</span><span class="n">dot</span><span class="p">(</span><span class="n">asxp</span><span class="p">(</span><span class="n">hop</span><span class="p">(</span><span class="n">x</span><span class="p">)),</span> <span class="n">asxp</span><span class="p">(</span><span class="n">x</span><span class="p">))</span> <span class="o">-</span> <span class="mi">2</span> <span class="o">*</span> <span class="n">xp</span><span class="o">.</span><span class="n">dot</span><span class="p">(</span><span class="n">vec_b</span><span class="p">,</span> <span class="n">asxp</span><span class="p">(</span><span class="n">x</span><span class="p">))</span>
+        <span class="n">xstruct</span> <span class="o">=</span> <span class="n">cvec2cmat</span><span class="p">(</span><span class="n">xshape</span><span class="p">,</span> <span class="n">x</span><span class="p">,</span> <span class="n">qnmat</span><span class="p">,</span> <span class="n">constrain_qn</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">cv_mps</span><span class="o">.</span><span class="n">_update_mps</span><span class="p">(</span><span class="n">xstruct</span><span class="p">,</span> <span class="n">cidx</span><span class="p">,</span> <span class="n">qnbigl</span><span class="p">,</span> <span class="n">qnbigr</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">m_max</span><span class="p">,</span> <span class="n">percent</span><span class="p">)</span>
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">cv_mps</span><span class="o">.</span><span class="n">compress_config</span><span class="o">.</span><span class="n">ofs</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="ne">NotImplementedError</span><span class="p">(</span><span class="s2">&quot;OFS for correction vector not implemented&quot;</span><span class="p">)</span>
+        
+        <span class="k">return</span> <span class="nb">float</span><span class="p">(</span><span class="n">l_value</span><span class="p">)</span></div>
+
+    <span class="c1"># It is suggested the initial_LR and update_LR can make use of Environ</span>
+    <span class="c1"># just as in mps.lib</span>
+    <span class="c1"># I may go back to have a try once I add the finite temeprature code</span>
+<div class="viewcode-block" id="SpectraZtCV.initialize_LR"><a class="viewcode-back" href="../../../cv.html#renormalizer.cv.zerot.SpectraZtCV.initialize_LR">[docs]</a>    <span class="k">def</span> <span class="nf">initialize_LR</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="c1"># initialize the Lpart and Rpart</span>
+        <span class="n">first_LR</span> <span class="o">=</span> <span class="p">[]</span>
+        <span class="n">first_LR</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">ones</span><span class="p">((</span><span class="mi">1</span><span class="p">,</span> <span class="mi">1</span><span class="p">,</span> <span class="mi">1</span><span class="p">,</span> <span class="mi">1</span><span class="p">)))</span>
+        <span class="n">second_LR</span> <span class="o">=</span> <span class="p">[]</span>
+        <span class="n">second_LR</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">ones</span><span class="p">((</span><span class="mi">1</span><span class="p">,</span> <span class="mi">1</span><span class="p">)))</span>
+        <span class="k">for</span> <span class="n">isite</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="mi">1</span><span class="p">,</span> <span class="nb">len</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">cv_mps</span><span class="p">)):</span>
+            <span class="n">first_LR</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="kc">None</span><span class="p">)</span>
+            <span class="n">second_LR</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="kc">None</span><span class="p">)</span>
+        <span class="n">first_LR</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">ones</span><span class="p">((</span><span class="mi">1</span><span class="p">,</span> <span class="mi">1</span><span class="p">,</span> <span class="mi">1</span><span class="p">,</span> <span class="mi">1</span><span class="p">)))</span>
+        <span class="n">second_LR</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">ones</span><span class="p">((</span><span class="mi">1</span><span class="p">,</span> <span class="mi">1</span><span class="p">)))</span>
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">cv_mps</span><span class="o">.</span><span class="n">to_right</span><span class="p">:</span>
+            <span class="n">path1</span> <span class="o">=</span> <span class="p">[([</span><span class="mi">0</span><span class="p">,</span> <span class="mi">1</span><span class="p">],</span> <span class="s2">&quot;abcd, efa-&gt;bcdef&quot;</span><span class="p">),</span>
+                     <span class="p">([</span><span class="mi">3</span><span class="p">,</span> <span class="mi">0</span><span class="p">],</span> <span class="s2">&quot;bcdef, gfhb-&gt;cdegh&quot;</span><span class="p">),</span>
+                     <span class="p">([</span><span class="mi">2</span><span class="p">,</span> <span class="mi">0</span><span class="p">],</span> <span class="s2">&quot;cdegh, ihjc-&gt;degij&quot;</span><span class="p">),</span>
+                     <span class="p">([</span><span class="mi">1</span><span class="p">,</span> <span class="mi">0</span><span class="p">],</span> <span class="s2">&quot;degij, kjd-&gt;egik&quot;</span><span class="p">)]</span>
+            <span class="n">path2</span> <span class="o">=</span> <span class="p">[([</span><span class="mi">0</span><span class="p">,</span> <span class="mi">1</span><span class="p">],</span> <span class="s2">&quot;ab, cda-&gt;bcd&quot;</span><span class="p">),</span>
+                     <span class="p">([</span><span class="mi">1</span><span class="p">,</span> <span class="mi">0</span><span class="p">],</span> <span class="s2">&quot;bcd, edb-&gt;ce&quot;</span><span class="p">)]</span>
+            <span class="k">for</span> <span class="n">isite</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">cv_mps</span><span class="p">),</span> <span class="mi">1</span><span class="p">,</span> <span class="o">-</span><span class="mi">1</span><span class="p">):</span>
+                <span class="n">first_LR</span><span class="p">[</span><span class="n">isite</span> <span class="o">-</span> <span class="mi">1</span><span class="p">]</span> <span class="o">=</span> <span class="n">asnumpy</span><span class="p">(</span><span class="n">multi_tensor_contract</span><span class="p">(</span>
+                    <span class="n">path1</span><span class="p">,</span> <span class="n">first_LR</span><span class="p">[</span><span class="n">isite</span><span class="p">],</span> <span class="bp">self</span><span class="o">.</span><span class="n">cv_mps</span><span class="p">[</span><span class="n">isite</span> <span class="o">-</span> <span class="mi">1</span><span class="p">],</span>
+                    <span class="bp">self</span><span class="o">.</span><span class="n">a_oper</span><span class="p">[</span><span class="n">isite</span> <span class="o">-</span> <span class="mi">1</span><span class="p">],</span> <span class="bp">self</span><span class="o">.</span><span class="n">a_oper</span><span class="p">[</span><span class="n">isite</span> <span class="o">-</span> <span class="mi">1</span><span class="p">],</span>
+                    <span class="bp">self</span><span class="o">.</span><span class="n">cv_mps</span><span class="p">[</span><span class="n">isite</span> <span class="o">-</span> <span class="mi">1</span><span class="p">]))</span>
+                <span class="n">second_LR</span><span class="p">[</span><span class="n">isite</span> <span class="o">-</span> <span class="mi">1</span><span class="p">]</span> <span class="o">=</span> <span class="n">asnumpy</span><span class="p">(</span><span class="n">multi_tensor_contract</span><span class="p">(</span>
+                    <span class="n">path2</span><span class="p">,</span> <span class="n">second_LR</span><span class="p">[</span><span class="n">isite</span><span class="p">],</span> <span class="bp">self</span><span class="o">.</span><span class="n">b_mps</span><span class="p">[</span><span class="n">isite</span> <span class="o">-</span> <span class="mi">1</span><span class="p">],</span>
+                    <span class="bp">self</span><span class="o">.</span><span class="n">cv_mps</span><span class="p">[</span><span class="n">isite</span> <span class="o">-</span> <span class="mi">1</span><span class="p">]))</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="n">path1</span> <span class="o">=</span> <span class="p">[([</span><span class="mi">0</span><span class="p">,</span> <span class="mi">1</span><span class="p">],</span> <span class="s2">&quot;abcd, aef-&gt;bcdef&quot;</span><span class="p">),</span>
+                     <span class="p">([</span><span class="mi">3</span><span class="p">,</span> <span class="mi">0</span><span class="p">],</span> <span class="s2">&quot;bcdef, begh-&gt;cdfgh&quot;</span><span class="p">),</span>
+                     <span class="p">([</span><span class="mi">2</span><span class="p">,</span> <span class="mi">0</span><span class="p">],</span> <span class="s2">&quot;cdfgh, cgij-&gt;dfhij&quot;</span><span class="p">),</span>
+                     <span class="p">([</span><span class="mi">1</span><span class="p">,</span> <span class="mi">0</span><span class="p">],</span> <span class="s2">&quot;dfhij, dik-&gt;fhjk&quot;</span><span class="p">)]</span>
+            <span class="n">path2</span> <span class="o">=</span> <span class="p">[([</span><span class="mi">0</span><span class="p">,</span> <span class="mi">1</span><span class="p">],</span> <span class="s2">&quot;ab, acd-&gt;bcd&quot;</span><span class="p">),</span>
+                     <span class="p">([</span><span class="mi">1</span><span class="p">,</span> <span class="mi">0</span><span class="p">],</span> <span class="s2">&quot;bcd, bce-&gt;de&quot;</span><span class="p">)]</span>
+            <span class="k">for</span> <span class="n">isite</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="mi">1</span><span class="p">,</span> <span class="nb">len</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">cv_mps</span><span class="p">)):</span>
+                <span class="n">mps_isite</span> <span class="o">=</span> <span class="n">asxp</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">cv_mps</span><span class="p">[</span><span class="n">isite</span> <span class="o">-</span> <span class="mi">1</span><span class="p">])</span>
+                <span class="n">first_LR</span><span class="p">[</span><span class="n">isite</span><span class="p">]</span> <span class="o">=</span> <span class="n">asnumpy</span><span class="p">(</span><span class="n">multi_tensor_contract</span><span class="p">(</span>
+                    <span class="n">path1</span><span class="p">,</span> <span class="n">first_LR</span><span class="p">[</span><span class="n">isite</span> <span class="o">-</span> <span class="mi">1</span><span class="p">],</span> <span class="n">mps_isite</span><span class="p">,</span>
+                    <span class="bp">self</span><span class="o">.</span><span class="n">a_oper</span><span class="p">[</span><span class="n">isite</span> <span class="o">-</span> <span class="mi">1</span><span class="p">],</span> <span class="bp">self</span><span class="o">.</span><span class="n">a_oper</span><span class="p">[</span><span class="n">isite</span> <span class="o">-</span> <span class="mi">1</span><span class="p">],</span>
+                    <span class="bp">self</span><span class="o">.</span><span class="n">cv_mps</span><span class="p">[</span><span class="n">isite</span> <span class="o">-</span> <span class="mi">1</span><span class="p">]))</span>
+                <span class="n">second_LR</span><span class="p">[</span><span class="n">isite</span><span class="p">]</span> <span class="o">=</span> <span class="n">asnumpy</span><span class="p">(</span><span class="n">multi_tensor_contract</span><span class="p">(</span>
+                    <span class="n">path2</span><span class="p">,</span> <span class="n">second_LR</span><span class="p">[</span><span class="n">isite</span> <span class="o">-</span> <span class="mi">1</span><span class="p">],</span> <span class="bp">self</span><span class="o">.</span><span class="n">b_mps</span><span class="p">[</span><span class="n">isite</span> <span class="o">-</span> <span class="mi">1</span><span class="p">],</span>
+                    <span class="n">mps_isite</span><span class="p">))</span>
+        <span class="k">return</span> <span class="p">[</span><span class="n">first_LR</span><span class="p">,</span> <span class="n">second_LR</span><span class="p">]</span></div>
+
+<div class="viewcode-block" id="SpectraZtCV.update_LR"><a class="viewcode-back" href="../../../cv.html#renormalizer.cv.zerot.SpectraZtCV.update_LR">[docs]</a>    <span class="k">def</span> <span class="nf">update_LR</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">lr_group</span><span class="p">,</span> <span class="n">isite</span><span class="p">):</span>
+        <span class="n">first_LR</span> <span class="o">=</span> <span class="n">lr_group</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span>
+        <span class="n">second_LR</span> <span class="o">=</span> <span class="n">lr_group</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span>
+        <span class="c1"># use the updated local site of cv_mps to update LR</span>
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">method</span> <span class="o">==</span> <span class="s2">&quot;1site&quot;</span><span class="p">:</span>
+            <span class="k">if</span> <span class="ow">not</span> <span class="bp">self</span><span class="o">.</span><span class="n">cv_mps</span><span class="o">.</span><span class="n">to_right</span><span class="p">:</span>
+                <span class="n">path1</span> <span class="o">=</span> <span class="p">[([</span><span class="mi">0</span><span class="p">,</span> <span class="mi">1</span><span class="p">],</span> <span class="s2">&quot;abcd, efa-&gt;bcdef&quot;</span><span class="p">),</span>
+                         <span class="p">([</span><span class="mi">3</span><span class="p">,</span> <span class="mi">0</span><span class="p">],</span> <span class="s2">&quot;bcdef, gfhb-&gt;cdegh&quot;</span><span class="p">),</span>
+                         <span class="p">([</span><span class="mi">2</span><span class="p">,</span> <span class="mi">0</span><span class="p">],</span> <span class="s2">&quot;cdegh, ihjc-&gt;degij&quot;</span><span class="p">),</span>
+                         <span class="p">([</span><span class="mi">1</span><span class="p">,</span> <span class="mi">0</span><span class="p">],</span> <span class="s2">&quot;degij, kjd-&gt;egik&quot;</span><span class="p">)]</span>
+                <span class="n">path2</span> <span class="o">=</span> <span class="p">[([</span><span class="mi">0</span><span class="p">,</span> <span class="mi">1</span><span class="p">],</span> <span class="s2">&quot;ab, cda-&gt;bcd&quot;</span><span class="p">),</span>
+                         <span class="p">([</span><span class="mi">1</span><span class="p">,</span> <span class="mi">0</span><span class="p">],</span> <span class="s2">&quot;bcd, edb-&gt;ce&quot;</span><span class="p">)]</span>
+                <span class="n">first_LR</span><span class="p">[</span><span class="n">isite</span> <span class="o">-</span> <span class="mi">1</span><span class="p">]</span> <span class="o">=</span> <span class="n">asnumpy</span><span class="p">(</span><span class="n">multi_tensor_contract</span><span class="p">(</span>
+                    <span class="n">path1</span><span class="p">,</span> <span class="n">first_LR</span><span class="p">[</span><span class="n">isite</span><span class="p">],</span> <span class="bp">self</span><span class="o">.</span><span class="n">cv_mps</span><span class="p">[</span><span class="n">isite</span> <span class="o">-</span> <span class="mi">1</span><span class="p">],</span>
+                    <span class="bp">self</span><span class="o">.</span><span class="n">a_oper</span><span class="p">[</span><span class="n">isite</span> <span class="o">-</span> <span class="mi">1</span><span class="p">],</span> <span class="bp">self</span><span class="o">.</span><span class="n">a_oper</span><span class="p">[</span><span class="n">isite</span> <span class="o">-</span> <span class="mi">1</span><span class="p">],</span>
+                    <span class="bp">self</span><span class="o">.</span><span class="n">cv_mps</span><span class="p">[</span><span class="n">isite</span> <span class="o">-</span> <span class="mi">1</span><span class="p">]))</span>
+                <span class="n">second_LR</span><span class="p">[</span><span class="n">isite</span> <span class="o">-</span> <span class="mi">1</span><span class="p">]</span> <span class="o">=</span> <span class="n">asnumpy</span><span class="p">(</span><span class="n">multi_tensor_contract</span><span class="p">(</span>
+                    <span class="n">path2</span><span class="p">,</span> <span class="n">second_LR</span><span class="p">[</span><span class="n">isite</span><span class="p">],</span> <span class="bp">self</span><span class="o">.</span><span class="n">b_mps</span><span class="p">[</span><span class="n">isite</span> <span class="o">-</span> <span class="mi">1</span><span class="p">],</span>
+                    <span class="bp">self</span><span class="o">.</span><span class="n">cv_mps</span><span class="p">[</span><span class="n">isite</span> <span class="o">-</span> <span class="mi">1</span><span class="p">]))</span>
+
+            <span class="k">else</span><span class="p">:</span>
+                <span class="n">path1</span> <span class="o">=</span> <span class="p">[([</span><span class="mi">0</span><span class="p">,</span> <span class="mi">1</span><span class="p">],</span> <span class="s2">&quot;abcd, aef-&gt;bcdef&quot;</span><span class="p">),</span>
+                         <span class="p">([</span><span class="mi">3</span><span class="p">,</span> <span class="mi">0</span><span class="p">],</span> <span class="s2">&quot;bcdef, begh-&gt;cdfgh&quot;</span><span class="p">),</span>
+                         <span class="p">([</span><span class="mi">2</span><span class="p">,</span> <span class="mi">0</span><span class="p">],</span> <span class="s2">&quot;cdfgh, cgij-&gt;dfhij&quot;</span><span class="p">),</span>
+                         <span class="p">([</span><span class="mi">1</span><span class="p">,</span> <span class="mi">0</span><span class="p">],</span> <span class="s2">&quot;dfhij, dik-&gt;fhjk&quot;</span><span class="p">)]</span>
+                <span class="n">path2</span> <span class="o">=</span> <span class="p">[([</span><span class="mi">0</span><span class="p">,</span> <span class="mi">1</span><span class="p">],</span> <span class="s2">&quot;ab, acd-&gt;bcd&quot;</span><span class="p">),</span>
+                         <span class="p">([</span><span class="mi">1</span><span class="p">,</span> <span class="mi">0</span><span class="p">],</span> <span class="s2">&quot;bcd, bce-&gt;de&quot;</span><span class="p">)]</span>
+                <span class="n">first_LR</span><span class="p">[</span><span class="n">isite</span><span class="p">]</span> <span class="o">=</span> <span class="n">asnumpy</span><span class="p">(</span><span class="n">multi_tensor_contract</span><span class="p">(</span>
+                    <span class="n">path1</span><span class="p">,</span> <span class="n">first_LR</span><span class="p">[</span><span class="n">isite</span> <span class="o">-</span> <span class="mi">1</span><span class="p">],</span> <span class="bp">self</span><span class="o">.</span><span class="n">cv_mps</span><span class="p">[</span><span class="n">isite</span> <span class="o">-</span> <span class="mi">1</span><span class="p">],</span>
+                    <span class="bp">self</span><span class="o">.</span><span class="n">a_oper</span><span class="p">[</span><span class="n">isite</span> <span class="o">-</span> <span class="mi">1</span><span class="p">],</span> <span class="bp">self</span><span class="o">.</span><span class="n">a_oper</span><span class="p">[</span><span class="n">isite</span> <span class="o">-</span> <span class="mi">1</span><span class="p">],</span>
+                    <span class="bp">self</span><span class="o">.</span><span class="n">cv_mps</span><span class="p">[</span><span class="n">isite</span> <span class="o">-</span> <span class="mi">1</span><span class="p">]))</span>
+                <span class="n">second_LR</span><span class="p">[</span><span class="n">isite</span><span class="p">]</span> <span class="o">=</span> <span class="n">asnumpy</span><span class="p">(</span><span class="n">multi_tensor_contract</span><span class="p">(</span>
+                    <span class="n">path2</span><span class="p">,</span> <span class="n">second_LR</span><span class="p">[</span><span class="n">isite</span> <span class="o">-</span> <span class="mi">1</span><span class="p">],</span> <span class="bp">self</span><span class="o">.</span><span class="n">b_mps</span><span class="p">[</span><span class="n">isite</span> <span class="o">-</span> <span class="mi">1</span><span class="p">],</span>
+                    <span class="bp">self</span><span class="o">.</span><span class="n">cv_mps</span><span class="p">[</span><span class="n">isite</span> <span class="o">-</span> <span class="mi">1</span><span class="p">]))</span>
+
+        <span class="k">else</span><span class="p">:</span>
+            <span class="k">if</span> <span class="ow">not</span> <span class="bp">self</span><span class="o">.</span><span class="n">cv_mps</span><span class="o">.</span><span class="n">to_right</span><span class="p">:</span>
+                <span class="n">path1</span> <span class="o">=</span> <span class="p">[([</span><span class="mi">0</span><span class="p">,</span> <span class="mi">1</span><span class="p">],</span> <span class="s2">&quot;abc, efa-&gt;bcdef&quot;</span><span class="p">),</span>
+                         <span class="p">([</span><span class="mi">3</span><span class="p">,</span> <span class="mi">0</span><span class="p">],</span> <span class="s2">&quot;bcdef, gfhb-&gt;cdegh&quot;</span><span class="p">),</span>
+                         <span class="p">([</span><span class="mi">2</span><span class="p">,</span> <span class="mi">0</span><span class="p">],</span> <span class="s2">&quot;cdegh, ihgc-&gt;degij&quot;</span><span class="p">),</span>
+                         <span class="p">([</span><span class="mi">1</span><span class="p">,</span> <span class="mi">0</span><span class="p">],</span> <span class="s2">&quot;degij, kjd-&gt;egik&quot;</span><span class="p">)]</span>
+                <span class="n">path2</span> <span class="o">=</span> <span class="p">[([</span><span class="mi">0</span><span class="p">,</span> <span class="mi">1</span><span class="p">],</span> <span class="s2">&quot;ab, cda-&gt;bcd&quot;</span><span class="p">),</span>
+                         <span class="p">([</span><span class="mi">1</span><span class="p">,</span> <span class="mi">0</span><span class="p">],</span> <span class="s2">&quot;bcd, edb-&gt;ce&quot;</span><span class="p">)]</span>
+                <span class="n">first_LR</span><span class="p">[</span><span class="n">isite</span> <span class="o">-</span> <span class="mi">1</span><span class="p">]</span> <span class="o">=</span> <span class="n">asnumpy</span><span class="p">(</span><span class="n">multi_tensor_contract</span><span class="p">(</span>
+                    <span class="n">path1</span><span class="p">,</span> <span class="n">first_LR</span><span class="p">[</span><span class="n">isite</span><span class="p">],</span> <span class="bp">self</span><span class="o">.</span><span class="n">cv_mps</span><span class="p">[</span><span class="n">isite</span> <span class="o">-</span> <span class="mi">1</span><span class="p">],</span>
+                    <span class="bp">self</span><span class="o">.</span><span class="n">a_oper</span><span class="p">[</span><span class="n">isite</span> <span class="o">-</span> <span class="mi">1</span><span class="p">],</span> <span class="bp">self</span><span class="o">.</span><span class="n">a_oper</span><span class="p">[</span><span class="n">isite</span> <span class="o">-</span> <span class="mi">1</span><span class="p">],</span>
+                    <span class="bp">self</span><span class="o">.</span><span class="n">cv_mps</span><span class="p">[</span><span class="n">isite</span> <span class="o">-</span> <span class="mi">1</span><span class="p">]))</span>
+                <span class="n">second_LR</span><span class="p">[</span><span class="n">isite</span> <span class="o">-</span> <span class="mi">1</span><span class="p">]</span> <span class="o">=</span> <span class="n">asnumpy</span><span class="p">(</span><span class="n">multi_tensor_contract</span><span class="p">(</span>
+                    <span class="n">path2</span><span class="p">,</span> <span class="n">second_LR</span><span class="p">[</span><span class="n">isite</span><span class="p">],</span> <span class="bp">self</span><span class="o">.</span><span class="n">b_mps</span><span class="p">[</span><span class="n">isite</span> <span class="o">-</span> <span class="mi">1</span><span class="p">],</span>
+                    <span class="bp">self</span><span class="o">.</span><span class="n">cv_mps</span><span class="p">[</span><span class="n">isite</span> <span class="o">-</span> <span class="mi">1</span><span class="p">]))</span>
+
+            <span class="k">else</span><span class="p">:</span>
+                <span class="n">path1</span> <span class="o">=</span> <span class="p">[([</span><span class="mi">0</span><span class="p">,</span> <span class="mi">1</span><span class="p">],</span> <span class="s2">&quot;abc, aef-&gt;bcdef&quot;</span><span class="p">),</span>
+                         <span class="p">([</span><span class="mi">3</span><span class="p">,</span> <span class="mi">0</span><span class="p">],</span> <span class="s2">&quot;bcdef, begh-&gt;cdfgh&quot;</span><span class="p">),</span>
+                         <span class="p">([</span><span class="mi">2</span><span class="p">,</span> <span class="mi">0</span><span class="p">],</span> <span class="s2">&quot;cdfgh, cgij-&gt;dfhij&quot;</span><span class="p">),</span>
+                         <span class="p">([</span><span class="mi">1</span><span class="p">,</span> <span class="mi">0</span><span class="p">],</span> <span class="s2">&quot;dfhij, dik-&gt;fhjk&quot;</span><span class="p">)]</span>
+                <span class="n">path2</span> <span class="o">=</span> <span class="p">[([</span><span class="mi">0</span><span class="p">,</span> <span class="mi">1</span><span class="p">],</span> <span class="s2">&quot;ab, acd-&gt;bcd&quot;</span><span class="p">),</span>
+                         <span class="p">([</span><span class="mi">1</span><span class="p">,</span> <span class="mi">0</span><span class="p">],</span> <span class="s2">&quot;bcd, bce-&gt;de&quot;</span><span class="p">)]</span>
+                <span class="n">first_LR</span><span class="p">[</span><span class="n">isite</span> <span class="o">-</span> <span class="mi">1</span><span class="p">]</span> <span class="o">=</span> <span class="n">asnumpy</span><span class="p">(</span><span class="n">multi_tensor_contract</span><span class="p">(</span>
+                    <span class="n">path1</span><span class="p">,</span> <span class="n">first_LR</span><span class="p">[</span><span class="n">isite</span> <span class="o">-</span> <span class="mi">2</span><span class="p">],</span> <span class="bp">self</span><span class="o">.</span><span class="n">cv_mps</span><span class="p">[</span><span class="n">isite</span> <span class="o">-</span> <span class="mi">2</span><span class="p">],</span>
+                    <span class="bp">self</span><span class="o">.</span><span class="n">a_oper</span><span class="p">[</span><span class="n">isite</span> <span class="o">-</span> <span class="mi">2</span><span class="p">],</span> <span class="bp">self</span><span class="o">.</span><span class="n">a_oper</span><span class="p">[</span><span class="n">isite</span> <span class="o">-</span> <span class="mi">2</span><span class="p">],</span>
+                    <span class="bp">self</span><span class="o">.</span><span class="n">cv_mps</span><span class="p">[</span><span class="n">isite</span> <span class="o">-</span> <span class="mi">2</span><span class="p">]))</span>
+                <span class="n">second_LR</span><span class="p">[</span><span class="n">isite</span> <span class="o">-</span> <span class="mi">1</span><span class="p">]</span> <span class="o">=</span> <span class="n">asnumpy</span><span class="p">(</span><span class="n">multi_tensor_contract</span><span class="p">(</span>
+                    <span class="n">path2</span><span class="p">,</span> <span class="n">second_LR</span><span class="p">[</span><span class="n">isite</span> <span class="o">-</span> <span class="mi">2</span><span class="p">],</span> <span class="bp">self</span><span class="o">.</span><span class="n">b_mps</span><span class="p">[</span><span class="n">isite</span> <span class="o">-</span> <span class="mi">2</span><span class="p">],</span>
+                    <span class="bp">self</span><span class="o">.</span><span class="n">cv_mps</span><span class="p">[</span><span class="n">isite</span> <span class="o">-</span> <span class="mi">2</span><span class="p">]))</span>
+
+        <span class="k">return</span> <span class="p">[</span><span class="n">first_LR</span><span class="p">,</span> <span class="n">second_LR</span><span class="p">]</span></div></div>
+</pre></div>
+
+           </div>
+           
+          </div>
+          <footer>
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>
+        &#169; Copyright 2019, Shuaigroup.
+
+    </p>
+  </div>
+    
+    
+    
+    Built with <a href="https://www.sphinx-doc.org/">Sphinx</a> using a
+    
+    <a href="https://github.com/readthedocs/sphinx_rtd_theme">theme</a>
+    
+    provided by <a href="https://readthedocs.org">Read the Docs</a>. 
+
+</footer>
+        </div>
+      </div>
+
+    </section>
+
+  </div>
+  
+
+  <script type="text/javascript">
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script>
+
+  
+  
+    
+   
+
+</body>
+</html>

@@ -1,0 +1,707 @@
+
+
+<!DOCTYPE html>
+<html class="writer-html5" lang="en" >
+<head>
+  <meta charset="utf-8" />
+  
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  
+  <title>renormalizer.mps.mpo &mdash; Renormalizer 0.1.0 documentation</title>
+  
+
+  
+  <link rel="stylesheet" href="../../../_static/css/theme.css" type="text/css" />
+  <link rel="stylesheet" href="../../../_static/pygments.css" type="text/css" />
+  <link rel="stylesheet" href="../../../_static/pygments.css" type="text/css" />
+  <link rel="stylesheet" href="../../../_static/css/theme.css" type="text/css" />
+
+  
+  
+
+  
+  
+
+  
+
+  
+  <!--[if lt IE 9]>
+    <script src="../../../_static/js/html5shiv.min.js"></script>
+  <![endif]-->
+  
+    
+      <script type="text/javascript" id="documentation_options" data-url_root="../../../" src="../../../_static/documentation_options.js"></script>
+        <script data-url_root="../../../" id="documentation_options" src="../../../_static/documentation_options.js"></script>
+        <script src="../../../_static/jquery.js"></script>
+        <script src="../../../_static/underscore.js"></script>
+        <script src="../../../_static/doctools.js"></script>
+    
+    <script type="text/javascript" src="../../../_static/js/theme.js"></script>
+
+    
+    <link rel="index" title="Index" href="../../../genindex.html" />
+    <link rel="search" title="Search" href="../../../search.html" /> 
+</head>
+
+<body class="wy-body-for-nav">
+
+   
+  <div class="wy-grid-for-nav">
+    
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search" >
+          
+
+          
+            <a href="../../../index.html" class="icon icon-home"> Renormalizer
+          
+
+          
+          </a>
+
+          
+            
+            
+              <div class="version">
+                0.1
+              </div>
+            
+          
+
+          
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="../../../search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+
+          
+        </div>
+
+        
+        <div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="main navigation">
+          
+            
+            
+              
+            
+            
+              <ul>
+<li class="toctree-l1"><a class="reference internal" href="../../../overview.html">1. An overview of Renormalizer</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../install.html">2. Installation guide</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../develop.html">3. How to develop Renormalizer</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../tutorial.html">4. Tutorial</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../model.html">5. Model</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../mps.html">6. Low Level Data Structure and Algorithms</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../static.html">7. Static Eigenstate Method</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../spectrum.html">8. spectra: absorption/emission spectrum at zero/finite temperature</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../ct.html">9. Charge Transport</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../cv.html">10. Frequency domain DMRG</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../configs.html">11. Calculation Configurations</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../lib.html">12. lib</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../sbm.html">13. sbm</a></li>
+</ul>
+
+            
+          
+        </div>
+        
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap">
+
+      
+      <nav class="wy-nav-top" aria-label="top navigation">
+        
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="../../../index.html">Renormalizer</a>
+        
+      </nav>
+
+
+      <div class="wy-nav-content">
+        
+        <div class="rst-content">
+        
+          
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+<div role="navigation" aria-label="breadcrumbs navigation">
+
+  <ul class="wy-breadcrumbs">
+    
+      <li><a href="../../../index.html" class="icon icon-home"></a> &raquo;</li>
+        
+          <li><a href="../../index.html">Module code</a> &raquo;</li>
+        
+      <li>renormalizer.mps.mpo</li>
+    
+    
+      <li class="wy-breadcrumbs-aside">
+        
+      </li>
+    
+  </ul>
+
+  
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+            
+  <h1>Source code for renormalizer.mps.mpo</h1><div class="highlight"><pre>
+<span></span><span class="kn">import</span> <span class="nn">logging</span>
+<span class="kn">import</span> <span class="nn">itertools</span>
+<span class="kn">from</span> <span class="nn">copy</span> <span class="kn">import</span> <span class="n">deepcopy</span>
+<span class="kn">from</span> <span class="nn">typing</span> <span class="kn">import</span> <span class="n">List</span><span class="p">,</span> <span class="n">Union</span>
+
+<span class="kn">import</span> <span class="nn">numpy</span> <span class="k">as</span> <span class="nn">np</span>
+<span class="kn">import</span> <span class="nn">scipy</span>
+<span class="kn">import</span> <span class="nn">scipy.sparse</span>
+
+<span class="kn">from</span> <span class="nn">renormalizer.model</span> <span class="kn">import</span> <span class="n">Model</span><span class="p">,</span> <span class="n">HolsteinModel</span>
+<span class="kn">from</span> <span class="nn">renormalizer.mps.backend</span> <span class="kn">import</span> <span class="n">xp</span>
+<span class="kn">from</span> <span class="nn">renormalizer.mps.matrix</span> <span class="kn">import</span> <span class="n">moveaxis</span><span class="p">,</span> <span class="n">tensordot</span>
+<span class="kn">from</span> <span class="nn">renormalizer.mps.mp</span> <span class="kn">import</span> <span class="n">MatrixProduct</span>
+<span class="kn">from</span> <span class="nn">renormalizer.mps</span> <span class="kn">import</span> <span class="n">svd_qn</span>
+<span class="kn">from</span> <span class="nn">renormalizer.mps.lib</span> <span class="kn">import</span> <span class="n">update_cv</span>
+<span class="kn">from</span> <span class="nn">renormalizer.mps.symbolic_mpo</span> <span class="kn">import</span> <span class="n">construct_symbolic_mpo</span><span class="p">,</span> <span class="n">_terms_to_table</span><span class="p">,</span> <span class="n">symbolic_mo_to_numeric_mo</span><span class="p">,</span> <span class="n">swap_site</span>
+<span class="kn">from</span> <span class="nn">renormalizer.utils</span> <span class="kn">import</span> <span class="n">Quantity</span>
+<span class="kn">from</span> <span class="nn">renormalizer.model.op</span> <span class="kn">import</span> <span class="n">Op</span>
+<span class="kn">from</span> <span class="nn">renormalizer.utils.elementop</span> <span class="kn">import</span> <span class="p">(</span>
+    <span class="n">construct_ph_op_dict</span><span class="p">,</span>
+<span class="p">)</span>
+
+
+<span class="n">logger</span> <span class="o">=</span> <span class="n">logging</span><span class="o">.</span><span class="n">getLogger</span><span class="p">(</span><span class="vm">__name__</span><span class="p">)</span>
+
+
+<div class="viewcode-block" id="Mpo"><a class="viewcode-back" href="../../../mps.html#renormalizer.mps.Mpo">[docs]</a><span class="k">class</span> <span class="nc">Mpo</span><span class="p">(</span><span class="n">MatrixProduct</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Matrix product operator (MPO)</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+
+<div class="viewcode-block" id="Mpo.exact_propagator"><a class="viewcode-back" href="../../../mps.html#renormalizer.mps.Mpo.exact_propagator">[docs]</a>    <span class="nd">@classmethod</span>
+    <span class="k">def</span> <span class="nf">exact_propagator</span><span class="p">(</span><span class="bp">cls</span><span class="p">,</span> <span class="n">model</span><span class="p">:</span> <span class="n">HolsteinModel</span><span class="p">,</span> <span class="n">x</span><span class="p">,</span> <span class="n">space</span><span class="o">=</span><span class="s2">&quot;GS&quot;</span><span class="p">,</span> <span class="n">shift</span><span class="o">=</span><span class="mf">0.0</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        construct the GS space propagator e^{xH} exact MPO</span>
+<span class="sd">        H=\\sum_{in} \\omega_{in} b^\\dagger_{in} b_{in}</span>
+<span class="sd">        fortunately, the H is local. so e^{xH} = e^{xh1}e^{xh2}...e^{xhn}</span>
+<span class="sd">        the bond dimension is 1</span>
+<span class="sd">        shift is the a constant for H+shift</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">assert</span> <span class="n">space</span> <span class="ow">in</span> <span class="p">[</span><span class="s2">&quot;GS&quot;</span><span class="p">,</span> <span class="s2">&quot;EX&quot;</span><span class="p">]</span>
+
+        <span class="n">mpo</span> <span class="o">=</span> <span class="bp">cls</span><span class="p">()</span>
+        <span class="k">if</span> <span class="n">np</span><span class="o">.</span><span class="n">iscomplex</span><span class="p">(</span><span class="n">x</span><span class="p">):</span>
+            <span class="n">mpo</span><span class="o">.</span><span class="n">to_complex</span><span class="p">(</span><span class="n">inplace</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+        <span class="n">mpo</span><span class="o">.</span><span class="n">model</span> <span class="o">=</span> <span class="n">model</span>
+
+        <span class="k">for</span> <span class="n">imol</span><span class="p">,</span> <span class="n">mol</span> <span class="ow">in</span> <span class="nb">enumerate</span><span class="p">(</span><span class="n">model</span><span class="p">):</span>
+            <span class="k">if</span> <span class="n">model</span><span class="o">.</span><span class="n">scheme</span> <span class="o">&lt;</span> <span class="mi">4</span><span class="p">:</span>
+                <span class="n">mo</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">eye</span><span class="p">(</span><span class="mi">2</span><span class="p">)</span><span class="o">.</span><span class="n">reshape</span><span class="p">(</span><span class="mi">1</span><span class="p">,</span> <span class="mi">2</span><span class="p">,</span> <span class="mi">2</span><span class="p">,</span> <span class="mi">1</span><span class="p">)</span>
+                <span class="n">mpo</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">mo</span><span class="p">)</span>
+            <span class="k">elif</span> <span class="n">model</span><span class="o">.</span><span class="n">scheme</span> <span class="o">==</span> <span class="mi">4</span><span class="p">:</span>
+                <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">mpo</span><span class="p">)</span> <span class="o">==</span> <span class="n">model</span><span class="o">.</span><span class="n">order</span><span class="p">[</span><span class="mi">0</span><span class="p">]:</span>
+                    <span class="n">n</span> <span class="o">=</span> <span class="n">model</span><span class="o">.</span><span class="n">mol_num</span>
+                    <span class="n">mpo</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">eye</span><span class="p">(</span><span class="n">n</span><span class="o">+</span><span class="mi">1</span><span class="p">)</span><span class="o">.</span><span class="n">reshape</span><span class="p">(</span><span class="mi">1</span><span class="p">,</span> <span class="n">n</span><span class="o">+</span><span class="mi">1</span><span class="p">,</span> <span class="n">n</span><span class="o">+</span><span class="mi">1</span><span class="p">,</span> <span class="mi">1</span><span class="p">))</span>
+            <span class="k">else</span><span class="p">:</span>
+                <span class="k">assert</span> <span class="kc">False</span>
+
+            <span class="k">for</span> <span class="n">ph</span> <span class="ow">in</span> <span class="n">mol</span><span class="o">.</span><span class="n">ph_list</span><span class="p">:</span>
+
+                <span class="k">if</span> <span class="n">space</span> <span class="o">==</span> <span class="s2">&quot;EX&quot;</span><span class="p">:</span>
+                    <span class="n">ph_pbond</span> <span class="o">=</span> <span class="n">ph</span><span class="o">.</span><span class="n">pbond</span>
+                    <span class="c1"># construct the matrix exponential by diagonalize the matrix first</span>
+                    <span class="n">phop</span> <span class="o">=</span> <span class="n">construct_ph_op_dict</span><span class="p">(</span><span class="n">ph_pbond</span><span class="p">)</span>
+
+                    <span class="n">h_mo</span> <span class="o">=</span> <span class="p">(</span>
+                        <span class="n">phop</span><span class="p">[</span><span class="sa">r</span><span class="s2">&quot;b^\dagger b&quot;</span><span class="p">]</span> <span class="o">*</span> <span class="n">ph</span><span class="o">.</span><span class="n">omega</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span>
+                        <span class="o">+</span> <span class="n">phop</span><span class="p">[</span><span class="sa">r</span><span class="s2">&quot;b^\dagger + b&quot;</span><span class="p">]</span> <span class="o">*</span> <span class="n">ph</span><span class="o">.</span><span class="n">term10</span>
+                    <span class="p">)</span>
+
+                    <span class="n">w</span><span class="p">,</span> <span class="n">v</span> <span class="o">=</span> <span class="n">scipy</span><span class="o">.</span><span class="n">linalg</span><span class="o">.</span><span class="n">eigh</span><span class="p">(</span><span class="n">h_mo</span><span class="p">)</span>
+                    <span class="n">h_mo</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">diag</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">exp</span><span class="p">(</span><span class="n">x</span> <span class="o">*</span> <span class="n">w</span><span class="p">))</span>
+                    <span class="n">h_mo</span> <span class="o">=</span> <span class="n">v</span><span class="o">.</span><span class="n">dot</span><span class="p">(</span><span class="n">h_mo</span><span class="p">)</span>
+                    <span class="n">h_mo</span> <span class="o">=</span> <span class="n">h_mo</span><span class="o">.</span><span class="n">dot</span><span class="p">(</span><span class="n">v</span><span class="o">.</span><span class="n">T</span><span class="p">)</span>
+                    <span class="n">mo</span> <span class="o">=</span> <span class="n">h_mo</span><span class="o">.</span><span class="n">reshape</span><span class="p">(</span><span class="mi">1</span><span class="p">,</span> <span class="n">ph_pbond</span><span class="p">,</span> <span class="n">ph_pbond</span><span class="p">,</span> <span class="mi">1</span><span class="p">)</span>
+
+                    <span class="n">mpo</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">mo</span><span class="p">)</span>
+
+                <span class="k">elif</span> <span class="n">space</span> <span class="o">==</span> <span class="s2">&quot;GS&quot;</span><span class="p">:</span>
+                    <span class="c1"># for the ground state space</span>
+                    <span class="n">ph_pbond</span> <span class="o">=</span> <span class="n">ph</span><span class="o">.</span><span class="n">pbond</span>
+                    <span class="n">d</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">exp</span><span class="p">(</span>
+                            <span class="n">x</span>
+                            <span class="o">*</span> <span class="n">ph</span><span class="o">.</span><span class="n">omega</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span>
+                            <span class="o">*</span> <span class="n">np</span><span class="o">.</span><span class="n">arange</span><span class="p">(</span><span class="n">ph_pbond</span><span class="p">)</span>
+                        <span class="p">)</span>
+                    <span class="n">mo</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">diag</span><span class="p">(</span><span class="n">d</span><span class="p">)</span><span class="o">.</span><span class="n">reshape</span><span class="p">(</span><span class="mi">1</span><span class="p">,</span> <span class="n">ph_pbond</span><span class="p">,</span> <span class="n">ph_pbond</span><span class="p">,</span> <span class="mi">1</span><span class="p">)</span>
+                    <span class="n">mpo</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">mo</span><span class="p">)</span>
+                <span class="k">else</span><span class="p">:</span>
+                    <span class="k">assert</span> <span class="kc">False</span>
+        <span class="c1"># shift the H by plus a constant</span>
+
+        <span class="n">mpo</span><span class="o">.</span><span class="n">qn</span> <span class="o">=</span> <span class="p">[[</span><span class="mi">0</span><span class="p">]]</span> <span class="o">*</span> <span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="n">mpo</span><span class="p">)</span> <span class="o">+</span> <span class="mi">1</span><span class="p">)</span>
+        <span class="n">mpo</span><span class="o">.</span><span class="n">qnidx</span> <span class="o">=</span> <span class="nb">len</span><span class="p">(</span><span class="n">mpo</span><span class="p">)</span> <span class="o">-</span> <span class="mi">1</span>
+        <span class="n">mpo</span><span class="o">.</span><span class="n">qntot</span> <span class="o">=</span> <span class="mi">0</span>
+
+        <span class="c1"># np.exp(shift * x) is usually very large</span>
+        <span class="n">mpo</span> <span class="o">=</span> <span class="n">mpo</span><span class="o">.</span><span class="n">scale</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">exp</span><span class="p">(</span><span class="n">shift</span> <span class="o">*</span> <span class="n">x</span><span class="p">),</span> <span class="n">inplace</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+
+        <span class="k">return</span> <span class="n">mpo</span></div>
+
+<div class="viewcode-block" id="Mpo.onsite"><a class="viewcode-back" href="../../../mps.html#renormalizer.mps.Mpo.onsite">[docs]</a>    <span class="nd">@classmethod</span>
+    <span class="k">def</span> <span class="nf">onsite</span><span class="p">(</span><span class="bp">cls</span><span class="p">,</span> <span class="n">model</span><span class="p">:</span> <span class="n">Model</span><span class="p">,</span> <span class="n">opera</span><span class="p">,</span> <span class="n">dipole</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span> <span class="n">dof_set</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
+        <span class="k">if</span> <span class="n">dof_set</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="k">if</span> <span class="n">model</span><span class="o">.</span><span class="n">n_edofs</span> <span class="o">==</span> <span class="mi">0</span><span class="p">:</span>
+                <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s2">&quot;No electronic DoF present in the model.&quot;</span><span class="p">)</span>
+            <span class="n">dof_set</span> <span class="o">=</span> <span class="n">model</span><span class="o">.</span><span class="n">e_dofs</span>
+        <span class="n">ops</span> <span class="o">=</span> <span class="p">[]</span>
+        <span class="k">for</span> <span class="n">idx</span> <span class="ow">in</span> <span class="n">dof_set</span><span class="p">:</span>
+            <span class="k">if</span> <span class="n">dipole</span><span class="p">:</span>
+                <span class="n">factor</span> <span class="o">=</span> <span class="n">model</span><span class="o">.</span><span class="n">dipole</span><span class="p">[</span><span class="n">idx</span><span class="p">]</span>
+            <span class="k">else</span><span class="p">:</span>
+                <span class="n">factor</span> <span class="o">=</span> <span class="mf">1.</span>
+            <span class="n">ops</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">Op</span><span class="p">(</span><span class="n">opera</span><span class="p">,</span> <span class="n">idx</span><span class="p">,</span> <span class="n">factor</span><span class="p">))</span>
+
+        <span class="k">return</span> <span class="bp">cls</span><span class="p">(</span><span class="n">model</span><span class="p">,</span> <span class="n">ops</span><span class="p">)</span></div>
+
+<div class="viewcode-block" id="Mpo.ph_onsite"><a class="viewcode-back" href="../../../mps.html#renormalizer.mps.Mpo.ph_onsite">[docs]</a>    <span class="nd">@classmethod</span>
+    <span class="k">def</span> <span class="nf">ph_onsite</span><span class="p">(</span><span class="bp">cls</span><span class="p">,</span> <span class="n">model</span><span class="p">:</span> <span class="n">HolsteinModel</span><span class="p">,</span> <span class="n">opera</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span> <span class="n">mol_idx</span><span class="p">:</span><span class="nb">int</span><span class="p">,</span> <span class="n">ph_idx</span><span class="o">=</span><span class="mi">0</span><span class="p">):</span>
+        <span class="k">assert</span> <span class="n">opera</span> <span class="ow">in</span> <span class="p">[</span><span class="s2">&quot;b&quot;</span><span class="p">,</span> <span class="sa">r</span><span class="s2">&quot;b^\dagger&quot;</span><span class="p">,</span> <span class="sa">r</span><span class="s2">&quot;b^\dagger b&quot;</span><span class="p">]</span>
+        <span class="k">if</span> <span class="ow">not</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">model</span><span class="p">,</span> <span class="n">HolsteinModel</span><span class="p">):</span>
+            <span class="k">raise</span> <span class="ne">TypeError</span><span class="p">(</span><span class="s2">&quot;ph_onsite only supports HolsteinModel&quot;</span><span class="p">)</span>
+        <span class="k">return</span> <span class="bp">cls</span><span class="p">(</span><span class="n">model</span><span class="p">,</span> <span class="n">Op</span><span class="p">(</span><span class="n">opera</span><span class="p">,</span> <span class="p">(</span><span class="n">mol_idx</span><span class="p">,</span> <span class="n">ph_idx</span><span class="p">)))</span></div>
+
+<div class="viewcode-block" id="Mpo.intersite"><a class="viewcode-back" href="../../../mps.html#renormalizer.mps.Mpo.intersite">[docs]</a>    <span class="nd">@classmethod</span>
+    <span class="k">def</span> <span class="nf">intersite</span><span class="p">(</span><span class="bp">cls</span><span class="p">,</span> <span class="n">model</span><span class="p">:</span> <span class="n">HolsteinModel</span><span class="p">,</span> <span class="n">e_opera</span><span class="p">:</span> <span class="nb">dict</span><span class="p">,</span> <span class="n">ph_opera</span><span class="p">:</span> <span class="nb">dict</span><span class="p">,</span> <span class="n">scale</span><span class="p">:</span>
+            <span class="n">Quantity</span><span class="o">=</span><span class="n">Quantity</span><span class="p">(</span><span class="mf">1.</span><span class="p">)):</span>
+        <span class="sa">r</span><span class="sd">&quot;&quot;&quot; construct the inter site MPO</span>
+<span class="sd">        </span>
+<span class="sd">        Parameters</span>
+<span class="sd">        ----------</span>
+<span class="sd">        model : HolsteinModel</span>
+<span class="sd">            the molecular information</span>
+<span class="sd">        e_opera:</span>
+<span class="sd">            the electronic operators. {imol: operator}, such as {1:&quot;a&quot;, 3:r&quot;a^\dagger&quot;}</span>
+<span class="sd">        ph_opera:</span>
+<span class="sd">            the vibrational operators. {(imol, iph): operator}, such as {(0,5):&quot;b&quot;}</span>
+<span class="sd">        scale: Quantity</span>
+<span class="sd">            scalar to scale the mpo</span>
+
+<span class="sd">        Note</span>
+<span class="sd">        -----</span>
+<span class="sd">        the operator index starts from 0,1,2...</span>
+<span class="sd">        </span>
+<span class="sd">        &quot;&quot;&quot;</span>
+
+        <span class="n">ops</span> <span class="o">=</span> <span class="p">[]</span>
+        <span class="k">for</span> <span class="n">e_key</span><span class="p">,</span> <span class="n">e_op</span> <span class="ow">in</span> <span class="n">e_opera</span><span class="o">.</span><span class="n">items</span><span class="p">():</span>
+            <span class="n">ops</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">Op</span><span class="p">(</span><span class="n">e_op</span><span class="p">,</span> <span class="n">e_key</span><span class="p">))</span>
+        <span class="k">for</span> <span class="n">v_key</span><span class="p">,</span> <span class="n">v_op</span> <span class="ow">in</span> <span class="n">ph_opera</span><span class="o">.</span><span class="n">items</span><span class="p">():</span>
+            <span class="n">ops</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">Op</span><span class="p">(</span><span class="n">v_op</span><span class="p">,</span> <span class="n">v_key</span><span class="p">))</span>
+        <span class="n">op</span> <span class="o">=</span> <span class="n">scale</span><span class="o">.</span><span class="n">as_au</span><span class="p">()</span> <span class="o">*</span> <span class="n">Op</span><span class="o">.</span><span class="n">product</span><span class="p">(</span><span class="n">ops</span><span class="p">)</span>
+        <span class="k">return</span> <span class="bp">cls</span><span class="p">(</span><span class="n">model</span><span class="p">,</span> <span class="n">op</span><span class="p">)</span></div>
+
+<div class="viewcode-block" id="Mpo.finiteT_cv"><a class="viewcode-back" href="../../../mps.html#renormalizer.mps.Mpo.finiteT_cv">[docs]</a>    <span class="nd">@classmethod</span>
+    <span class="k">def</span> <span class="nf">finiteT_cv</span><span class="p">(</span><span class="bp">cls</span><span class="p">,</span> <span class="n">model</span><span class="p">,</span> <span class="n">nexciton</span><span class="p">,</span> <span class="n">m_max</span><span class="p">,</span> <span class="n">spectratype</span><span class="p">,</span> <span class="n">percent</span><span class="o">=</span><span class="mf">1.0</span><span class="p">):</span>
+        <span class="n">np</span><span class="o">.</span><span class="n">random</span><span class="o">.</span><span class="n">seed</span><span class="p">(</span><span class="mi">0</span><span class="p">)</span>
+
+        <span class="n">X</span> <span class="o">=</span> <span class="bp">cls</span><span class="p">()</span>
+        <span class="n">X</span><span class="o">.</span><span class="n">model</span> <span class="o">=</span> <span class="n">model</span>
+        <span class="k">if</span> <span class="n">spectratype</span> <span class="o">==</span> <span class="s2">&quot;abs&quot;</span><span class="p">:</span>
+            <span class="c1"># quantum number index, |1&gt;&lt;0|</span>
+            <span class="n">tag_1</span><span class="p">,</span> <span class="n">tag_2</span> <span class="o">=</span> <span class="mi">0</span><span class="p">,</span> <span class="mi">1</span>
+        <span class="k">elif</span> <span class="n">spectratype</span> <span class="o">==</span> <span class="s2">&quot;emi&quot;</span><span class="p">:</span>
+            <span class="c1"># quantum number index, |0&gt;&lt;1|</span>
+            <span class="n">tag_1</span><span class="p">,</span> <span class="n">tag_2</span> <span class="o">=</span> <span class="mi">1</span><span class="p">,</span> <span class="mi">0</span>
+        <span class="n">X</span><span class="o">.</span><span class="n">qn</span> <span class="o">=</span> <span class="p">[[[</span><span class="mi">0</span><span class="p">,</span> <span class="mi">0</span><span class="p">]]]</span>
+        <span class="k">for</span> <span class="n">ix</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="n">model</span><span class="o">.</span><span class="n">nsite</span> <span class="o">-</span> <span class="mi">1</span><span class="p">):</span>
+            <span class="n">X</span><span class="o">.</span><span class="n">qn</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="kc">None</span><span class="p">)</span>
+        <span class="n">X</span><span class="o">.</span><span class="n">qn</span><span class="o">.</span><span class="n">append</span><span class="p">([[</span><span class="mi">0</span><span class="p">,</span> <span class="mi">0</span><span class="p">]])</span>
+        <span class="n">dim_list</span> <span class="o">=</span> <span class="p">[</span><span class="mi">1</span><span class="p">]</span>
+
+        <span class="k">for</span> <span class="n">ix</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="n">model</span><span class="o">.</span><span class="n">nsite</span> <span class="o">-</span> <span class="mi">1</span><span class="p">):</span>
+            <span class="n">sigmaqn</span> <span class="o">=</span> <span class="n">model</span><span class="o">.</span><span class="n">basis</span><span class="p">[</span><span class="n">ix</span><span class="p">]</span><span class="o">.</span><span class="n">sigmaqn</span>
+            <span class="n">sigmaqn</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">(</span><span class="nb">list</span><span class="p">(</span><span class="n">itertools</span><span class="o">.</span><span class="n">product</span><span class="p">(</span><span class="n">sigmaqn</span><span class="p">,</span> <span class="n">repeat</span><span class="o">=</span><span class="mi">2</span><span class="p">)))</span>
+            <span class="n">qn1</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">add</span><span class="o">.</span><span class="n">outer</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">(</span><span class="n">X</span><span class="o">.</span><span class="n">qn</span><span class="p">[</span><span class="n">ix</span><span class="p">])[:,</span> <span class="mi">0</span><span class="p">],</span> <span class="n">sigmaqn</span><span class="p">[:,</span> <span class="mi">0</span><span class="p">])</span><span class="o">.</span><span class="n">ravel</span><span class="p">()</span>
+            <span class="n">qn2</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">add</span><span class="o">.</span><span class="n">outer</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">(</span><span class="n">X</span><span class="o">.</span><span class="n">qn</span><span class="p">[</span><span class="n">ix</span><span class="p">])[:,</span> <span class="mi">1</span><span class="p">],</span> <span class="n">sigmaqn</span><span class="p">[:,</span> <span class="mi">1</span><span class="p">])</span><span class="o">.</span><span class="n">ravel</span><span class="p">()</span>
+            <span class="n">qnbig</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">stack</span><span class="p">([</span><span class="n">qn1</span><span class="p">,</span> <span class="n">qn2</span><span class="p">],</span> <span class="n">axis</span><span class="o">=</span><span class="mi">1</span><span class="p">)</span>
+            <span class="c1"># print(&#39;qnbig&#39;, qnbig)</span>
+            <span class="n">u_set</span> <span class="o">=</span> <span class="p">[]</span>
+            <span class="n">s_set</span> <span class="o">=</span> <span class="p">[]</span>
+            <span class="n">qnset</span> <span class="o">=</span> <span class="p">[]</span>
+            <span class="k">if</span> <span class="n">spectratype</span> <span class="o">!=</span> <span class="s2">&quot;conductivity&quot;</span><span class="p">:</span>
+                <span class="n">fq</span> <span class="o">=</span> <span class="nb">list</span><span class="p">(</span><span class="n">itertools</span><span class="o">.</span><span class="n">chain</span><span class="o">.</span><span class="n">from_iterable</span><span class="p">([</span><span class="n">y</span><span class="p">[</span><span class="n">tag_1</span><span class="p">]]</span> <span class="k">for</span> <span class="n">y</span> <span class="ow">in</span> <span class="n">qnbig</span><span class="p">))</span>
+                <span class="k">for</span> <span class="n">iblock</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="nb">min</span><span class="p">(</span><span class="n">fq</span><span class="p">),</span> <span class="n">nexciton</span><span class="o">+</span><span class="mi">1</span><span class="p">):</span>
+                    <span class="n">indices</span> <span class="o">=</span> <span class="p">[</span><span class="n">i</span> <span class="k">for</span> <span class="n">i</span><span class="p">,</span> <span class="n">y</span> <span class="ow">in</span> <span class="nb">enumerate</span><span class="p">(</span><span class="n">qnbig</span><span class="p">)</span> <span class="k">if</span>
+                               <span class="p">((</span><span class="n">y</span><span class="p">[</span><span class="n">tag_1</span><span class="p">]</span> <span class="o">==</span> <span class="n">iblock</span><span class="p">)</span> <span class="ow">and</span> <span class="p">(</span><span class="n">y</span><span class="p">[</span><span class="n">tag_2</span><span class="p">]</span> <span class="o">==</span> <span class="mi">0</span><span class="p">))]</span>
+                    <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">indices</span><span class="p">)</span> <span class="o">!=</span> <span class="mi">0</span><span class="p">:</span>
+                        <span class="n">np</span><span class="o">.</span><span class="n">random</span><span class="o">.</span><span class="n">seed</span><span class="p">(</span><span class="mi">0</span><span class="p">)</span>
+                        <span class="n">a</span><span class="p">:</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">random</span><span class="o">.</span><span class="n">random</span><span class="p">([</span><span class="nb">len</span><span class="p">(</span><span class="n">indices</span><span class="p">),</span> <span class="nb">len</span><span class="p">(</span><span class="n">indices</span><span class="p">)])</span> <span class="o">-</span> <span class="mf">0.5</span>
+                        <span class="n">a</span> <span class="o">=</span> <span class="n">a</span> <span class="o">+</span> <span class="n">a</span><span class="o">.</span><span class="n">T</span>
+                        <span class="n">s</span><span class="p">,</span> <span class="n">u</span> <span class="o">=</span> <span class="n">scipy</span><span class="o">.</span><span class="n">linalg</span><span class="o">.</span><span class="n">eigh</span><span class="p">(</span><span class="n">a</span><span class="o">=</span><span class="n">a</span><span class="p">)</span>
+                        <span class="n">u_set</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">svd_qn</span><span class="o">.</span><span class="n">blockrecover</span><span class="p">(</span><span class="n">indices</span><span class="p">,</span> <span class="n">u</span><span class="p">,</span> <span class="nb">len</span><span class="p">(</span><span class="n">qnbig</span><span class="p">)))</span>
+                        <span class="n">s_set</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">s</span><span class="p">)</span>
+                        <span class="k">if</span> <span class="n">spectratype</span> <span class="o">==</span> <span class="s2">&quot;abs&quot;</span><span class="p">:</span>
+                            <span class="n">qnset</span> <span class="o">+=</span> <span class="p">[</span><span class="n">iblock</span><span class="p">,</span> <span class="mi">0</span><span class="p">]</span> <span class="o">*</span> <span class="nb">len</span><span class="p">(</span><span class="n">indices</span><span class="p">)</span>
+                        <span class="k">elif</span> <span class="n">spectratype</span> <span class="o">==</span> <span class="s2">&quot;emi&quot;</span><span class="p">:</span>
+                            <span class="n">qnset</span> <span class="o">+=</span> <span class="p">[</span><span class="mi">0</span><span class="p">,</span> <span class="n">iblock</span><span class="p">]</span> <span class="o">*</span> <span class="nb">len</span><span class="p">(</span><span class="n">indices</span><span class="p">)</span>
+            <span class="k">else</span><span class="p">:</span>
+                <span class="n">fq1</span> <span class="o">=</span> <span class="nb">list</span><span class="p">(</span><span class="n">itertools</span><span class="o">.</span><span class="n">chain</span><span class="o">.</span><span class="n">from_iterable</span><span class="p">([</span><span class="n">y</span><span class="p">[</span><span class="mi">0</span><span class="p">]]</span> <span class="k">for</span> <span class="n">y</span> <span class="ow">in</span> <span class="n">qnbig</span><span class="p">))</span>
+                <span class="n">fq2</span> <span class="o">=</span> <span class="nb">list</span><span class="p">(</span><span class="n">itertools</span><span class="o">.</span><span class="n">chain</span><span class="o">.</span><span class="n">from_iterable</span><span class="p">([</span><span class="n">y</span><span class="p">[</span><span class="mi">1</span><span class="p">]]</span> <span class="k">for</span> <span class="n">y</span> <span class="ow">in</span> <span class="n">qnbig</span><span class="p">))</span>
+                <span class="c1"># print(&#39;fq1, fq2&#39;, fq1, fq2)</span>
+                <span class="k">for</span> <span class="n">iblock</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="nb">min</span><span class="p">(</span><span class="n">fq1</span><span class="p">),</span> <span class="n">nexciton</span><span class="o">+</span><span class="mi">1</span><span class="p">):</span>
+                    <span class="k">for</span> <span class="n">jblock</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="nb">min</span><span class="p">(</span><span class="n">fq2</span><span class="p">),</span> <span class="n">nexciton</span><span class="o">+</span><span class="mi">1</span><span class="p">):</span>
+                        <span class="c1"># print(&#39;iblock&#39;, iblock, jblock)</span>
+                        <span class="n">indices</span> <span class="o">=</span> <span class="p">[</span><span class="n">i</span> <span class="k">for</span> <span class="n">i</span><span class="p">,</span> <span class="n">y</span> <span class="ow">in</span> <span class="nb">enumerate</span><span class="p">(</span><span class="n">qnbig</span><span class="p">)</span> <span class="k">if</span>
+                                   <span class="p">((</span><span class="n">y</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span> <span class="o">==</span> <span class="n">iblock</span><span class="p">)</span> <span class="ow">and</span> <span class="p">(</span><span class="n">y</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span> <span class="o">==</span> <span class="n">jblock</span><span class="p">))]</span>
+                        <span class="c1"># print(&#39;indices&#39;, indices)</span>
+                        <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">indices</span><span class="p">)</span> <span class="o">!=</span> <span class="mi">0</span><span class="p">:</span>
+                            <span class="n">a</span><span class="p">:</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">random</span><span class="o">.</span><span class="n">random</span><span class="p">([</span><span class="nb">len</span><span class="p">(</span><span class="n">indices</span><span class="p">),</span> <span class="nb">len</span><span class="p">(</span><span class="n">indices</span><span class="p">)])</span> <span class="o">-</span> <span class="mf">0.5</span>
+                            <span class="n">a</span> <span class="o">=</span> <span class="n">a</span> <span class="o">+</span> <span class="n">a</span><span class="o">.</span><span class="n">T</span>
+                            <span class="n">s</span><span class="p">,</span> <span class="n">u</span> <span class="o">=</span> <span class="n">scipy</span><span class="o">.</span><span class="n">linalg</span><span class="o">.</span><span class="n">eigh</span><span class="p">(</span><span class="n">a</span><span class="o">=</span><span class="n">a</span><span class="p">)</span>
+                            <span class="n">u_set</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">svd_qn</span><span class="o">.</span><span class="n">blockrecover</span><span class="p">(</span><span class="n">indices</span><span class="p">,</span> <span class="n">u</span><span class="p">,</span> <span class="nb">len</span><span class="p">(</span><span class="n">qnbig</span><span class="p">)))</span>
+                            <span class="n">s_set</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">s</span><span class="p">)</span>
+                            <span class="n">qnset</span> <span class="o">+=</span> <span class="p">[</span><span class="n">iblock</span><span class="p">,</span> <span class="n">jblock</span><span class="p">]</span> <span class="o">*</span> <span class="nb">len</span><span class="p">(</span><span class="n">indices</span><span class="p">)</span>
+                            <span class="c1"># print(&#39;iblock&#39;, iblock)</span>
+            <span class="n">list_qnset</span> <span class="o">=</span> <span class="p">[]</span>
+            <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="nb">len</span><span class="p">(</span><span class="n">qnset</span><span class="p">),</span> <span class="mi">2</span><span class="p">):</span>
+                <span class="n">list_qnset</span><span class="o">.</span><span class="n">append</span><span class="p">([</span><span class="n">qnset</span><span class="p">[</span><span class="n">i</span><span class="p">],</span> <span class="n">qnset</span><span class="p">[</span><span class="n">i</span> <span class="o">+</span> <span class="mi">1</span><span class="p">]])</span>
+            <span class="n">qnset</span> <span class="o">=</span> <span class="n">list_qnset</span>
+            <span class="c1"># print(&#39;qnset&#39;, qnset)</span>
+            <span class="n">u_set</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">concatenate</span><span class="p">(</span><span class="n">u_set</span><span class="p">,</span> <span class="n">axis</span><span class="o">=</span><span class="mi">1</span><span class="p">)</span>
+            <span class="n">s_set</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">concatenate</span><span class="p">(</span><span class="n">s_set</span><span class="p">)</span>
+            <span class="c1"># print(&#39;uset&#39;, u_set.shape)</span>
+            <span class="c1"># print(&#39;s_set&#39;, s_set.shape)</span>
+            <span class="n">x</span><span class="p">,</span> <span class="n">xdim</span><span class="p">,</span> <span class="n">xqn</span><span class="p">,</span> <span class="n">compx</span> <span class="o">=</span> <span class="n">update_cv</span><span class="p">(</span><span class="n">u_set</span><span class="p">,</span> <span class="n">s_set</span><span class="p">,</span> <span class="n">qnset</span><span class="p">,</span> <span class="kc">None</span><span class="p">,</span> <span class="n">nexciton</span><span class="p">,</span> <span class="n">m_max</span><span class="p">,</span> <span class="n">spectratype</span><span class="p">,</span> <span class="n">percent</span><span class="o">=</span><span class="n">percent</span><span class="p">)</span>
+            <span class="n">dim_list</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">xdim</span><span class="p">)</span>
+            <span class="n">X</span><span class="o">.</span><span class="n">qn</span><span class="p">[</span><span class="n">ix</span> <span class="o">+</span> <span class="mi">1</span><span class="p">]</span> <span class="o">=</span> <span class="n">xqn</span>
+            <span class="n">x</span> <span class="o">=</span> <span class="n">x</span><span class="o">.</span><span class="n">reshape</span><span class="p">(</span><span class="n">dim_list</span><span class="p">[</span><span class="o">-</span><span class="mi">2</span><span class="p">],</span> <span class="n">model</span><span class="o">.</span><span class="n">pbond_list</span><span class="p">[</span><span class="n">ix</span><span class="p">],</span> <span class="n">model</span><span class="o">.</span><span class="n">pbond_list</span><span class="p">[</span><span class="n">ix</span><span class="p">],</span> <span class="n">dim_list</span><span class="p">[</span><span class="n">ix</span> <span class="o">+</span> <span class="mi">1</span><span class="p">])</span>
+            <span class="n">X</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">x</span><span class="p">)</span>
+        <span class="n">dim_list</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="mi">1</span><span class="p">)</span>
+        <span class="n">X</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">random</span><span class="o">.</span><span class="n">random</span><span class="p">([</span><span class="n">dim_list</span><span class="p">[</span><span class="o">-</span><span class="mi">2</span><span class="p">],</span> <span class="n">model</span><span class="o">.</span><span class="n">pbond_list</span><span class="p">[</span><span class="o">-</span><span class="mi">1</span><span class="p">],</span>
+                                   <span class="n">model</span><span class="o">.</span><span class="n">pbond_list</span><span class="p">[</span><span class="o">-</span><span class="mi">1</span><span class="p">],</span> <span class="n">dim_list</span><span class="p">[</span><span class="o">-</span><span class="mi">1</span><span class="p">]]))</span>
+        <span class="n">X</span><span class="o">.</span><span class="n">qnidx</span> <span class="o">=</span> <span class="nb">len</span><span class="p">(</span><span class="n">X</span><span class="p">)</span> <span class="o">-</span> <span class="mi">1</span>
+        <span class="n">X</span><span class="o">.</span><span class="n">to_right</span> <span class="o">=</span> <span class="kc">False</span>
+        <span class="n">X</span><span class="o">.</span><span class="n">qntot</span> <span class="o">=</span> <span class="n">nexciton</span>
+        <span class="c1"># print(&#39;dim&#39;, [X[i].shape for i in range(len(X))])</span>
+        <span class="k">return</span> <span class="n">X</span></div>
+
+<div class="viewcode-block" id="Mpo.identity"><a class="viewcode-back" href="../../../mps.html#renormalizer.mps.Mpo.identity">[docs]</a>    <span class="nd">@classmethod</span>
+    <span class="k">def</span> <span class="nf">identity</span><span class="p">(</span><span class="bp">cls</span><span class="p">,</span> <span class="n">model</span><span class="p">:</span> <span class="n">Model</span><span class="p">):</span>
+        <span class="n">mpo</span> <span class="o">=</span> <span class="bp">cls</span><span class="p">()</span>
+        <span class="n">mpo</span><span class="o">.</span><span class="n">model</span> <span class="o">=</span> <span class="n">model</span>
+        <span class="k">for</span> <span class="n">p</span> <span class="ow">in</span> <span class="n">model</span><span class="o">.</span><span class="n">pbond_list</span><span class="p">:</span>
+            <span class="n">mpo</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">eye</span><span class="p">(</span><span class="n">p</span><span class="p">)</span><span class="o">.</span><span class="n">reshape</span><span class="p">(</span><span class="mi">1</span><span class="p">,</span> <span class="n">p</span><span class="p">,</span> <span class="n">p</span><span class="p">,</span> <span class="mi">1</span><span class="p">))</span>
+        <span class="n">mpo</span><span class="o">.</span><span class="n">build_empty_qn</span><span class="p">()</span>
+        <span class="k">return</span> <span class="n">mpo</span></div>
+
+    <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">model</span><span class="p">:</span> <span class="n">Model</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span> <span class="n">terms</span><span class="p">:</span> <span class="n">Union</span><span class="p">[</span><span class="n">Op</span><span class="p">,</span> <span class="n">List</span><span class="p">[</span><span class="n">Op</span><span class="p">]]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span> <span class="n">offset</span><span class="p">:</span> <span class="n">Quantity</span> <span class="o">=</span> <span class="n">Quantity</span><span class="p">(</span><span class="mi">0</span><span class="p">),</span> <span class="p">):</span>
+
+        <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        todo: document</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="nb">super</span><span class="p">(</span><span class="n">Mpo</span><span class="p">,</span> <span class="bp">self</span><span class="p">)</span><span class="o">.</span><span class="fm">__init__</span><span class="p">()</span>
+        <span class="c1"># leave the possibility to construct MPO by hand</span>
+        <span class="k">if</span> <span class="n">model</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="k">return</span>
+        <span class="k">if</span> <span class="ow">not</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">offset</span><span class="p">,</span> <span class="n">Quantity</span><span class="p">):</span>
+            <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;offset must be Quantity object. Got </span><span class="si">{</span><span class="n">offset</span><span class="si">}</span><span class="s2"> of </span><span class="si">{</span><span class="nb">type</span><span class="p">(</span><span class="n">offset</span><span class="p">)</span><span class="si">}</span><span class="s2">.&quot;</span><span class="p">)</span>
+
+        <span class="bp">self</span><span class="o">.</span><span class="n">offset</span> <span class="o">=</span> <span class="n">offset</span><span class="o">.</span><span class="n">as_au</span><span class="p">()</span>
+        <span class="k">if</span> <span class="n">terms</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="n">terms</span> <span class="o">=</span> <span class="n">model</span><span class="o">.</span><span class="n">ham_terms</span>
+        <span class="k">elif</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">terms</span><span class="p">,</span> <span class="n">Op</span><span class="p">):</span>
+            <span class="n">terms</span> <span class="o">=</span> <span class="p">[</span><span class="n">terms</span><span class="p">]</span>
+
+        <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">terms</span><span class="p">)</span> <span class="o">==</span> <span class="mi">0</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s2">&quot;Terms contain nothing.&quot;</span><span class="p">)</span>
+        <span class="n">terms</span> <span class="o">=</span> <span class="n">model</span><span class="o">.</span><span class="n">check_operator_terms</span><span class="p">(</span><span class="n">terms</span><span class="p">)</span>
+        <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">terms</span><span class="p">)</span> <span class="o">==</span> <span class="mi">0</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s2">&quot;Terms all have factor 0.&quot;</span><span class="p">)</span>
+
+        <span class="n">table</span><span class="p">,</span> <span class="n">factor</span> <span class="o">=</span> <span class="n">_terms_to_table</span><span class="p">(</span><span class="n">model</span><span class="p">,</span> <span class="n">terms</span><span class="p">,</span> <span class="o">-</span><span class="bp">self</span><span class="o">.</span><span class="n">offset</span><span class="p">)</span>
+
+        <span class="bp">self</span><span class="o">.</span><span class="n">dtype</span> <span class="o">=</span> <span class="n">factor</span><span class="o">.</span><span class="n">dtype</span>
+
+        <span class="n">mpo_symbol</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">qn</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">qntot</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">qnidx</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">symbolic_out_ops_list</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">primary_ops</span> <span class="o">=</span> <span class="n">construct_symbolic_mpo</span><span class="p">(</span><span class="n">table</span><span class="p">,</span> <span class="n">factor</span><span class="p">)</span>
+        <span class="c1"># print(_format_symbolic_mpo(mpo_symbol))</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">model</span> <span class="o">=</span> <span class="n">model</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">to_right</span> <span class="o">=</span> <span class="kc">False</span>
+
+        <span class="c1"># evaluate the symbolic mpo</span>
+        <span class="k">assert</span> <span class="n">model</span><span class="o">.</span><span class="n">basis</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span>
+
+        <span class="k">for</span> <span class="n">impo</span><span class="p">,</span> <span class="n">mo</span> <span class="ow">in</span> <span class="nb">enumerate</span><span class="p">(</span><span class="n">mpo_symbol</span><span class="p">):</span>
+            <span class="n">mo_mat</span> <span class="o">=</span> <span class="n">symbolic_mo_to_numeric_mo</span><span class="p">(</span><span class="n">model</span><span class="o">.</span><span class="n">basis</span><span class="p">[</span><span class="n">impo</span><span class="p">],</span> <span class="n">mo</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">dtype</span><span class="p">)</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">mo_mat</span><span class="p">)</span>
+
+
+    <span class="k">def</span> <span class="nf">_get_sigmaqn</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">idx</span><span class="p">):</span>
+        <span class="n">array_up</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">model</span><span class="o">.</span><span class="n">basis</span><span class="p">[</span><span class="n">idx</span><span class="p">]</span><span class="o">.</span><span class="n">sigmaqn</span>
+        <span class="k">return</span> <span class="n">np</span><span class="o">.</span><span class="n">subtract</span><span class="o">.</span><span class="n">outer</span><span class="p">(</span><span class="n">array_up</span><span class="p">,</span> <span class="n">array_up</span><span class="p">)</span>
+
+    <span class="nd">@property</span>
+    <span class="k">def</span> <span class="nf">is_mps</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="k">return</span> <span class="kc">False</span>
+
+    <span class="nd">@property</span>
+    <span class="k">def</span> <span class="nf">is_mpo</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="k">return</span> <span class="kc">True</span>
+
+    <span class="nd">@property</span>
+    <span class="k">def</span> <span class="nf">is_mpdm</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="k">return</span> <span class="kc">False</span>
+
+<div class="viewcode-block" id="Mpo.metacopy"><a class="viewcode-back" href="../../../mps.html#renormalizer.mps.Mpo.metacopy">[docs]</a>    <span class="k">def</span> <span class="nf">metacopy</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="n">new</span> <span class="o">=</span> <span class="nb">super</span><span class="p">()</span><span class="o">.</span><span class="n">metacopy</span><span class="p">()</span>
+        <span class="c1"># some mpo may not have these things</span>
+        <span class="n">attrs</span> <span class="o">=</span> <span class="p">[</span><span class="s2">&quot;scheme&quot;</span><span class="p">,</span> <span class="s2">&quot;offset&quot;</span><span class="p">,</span> <span class="s2">&quot;symbolic_out_ops_list&quot;</span><span class="p">,</span> <span class="s2">&quot;primary_ops&quot;</span><span class="p">]</span>
+        <span class="k">for</span> <span class="n">attr</span> <span class="ow">in</span> <span class="n">attrs</span><span class="p">:</span>
+            <span class="k">if</span> <span class="nb">hasattr</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">attr</span><span class="p">):</span>
+                <span class="nb">setattr</span><span class="p">(</span><span class="n">new</span><span class="p">,</span> <span class="n">attr</span><span class="p">,</span> <span class="n">deepcopy</span><span class="p">(</span><span class="nb">getattr</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">attr</span><span class="p">)))</span>
+        <span class="k">return</span> <span class="n">new</span></div>
+
+    <span class="nd">@property</span>
+    <span class="k">def</span> <span class="nf">dummy_qn</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="k">return</span> <span class="p">[[</span><span class="mi">0</span><span class="p">]</span> <span class="o">*</span> <span class="n">dim</span> <span class="k">for</span> <span class="n">dim</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">bond_dims</span><span class="p">]</span>
+
+    <span class="nd">@property</span>
+    <span class="k">def</span> <span class="nf">digest</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="k">return</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">([</span><span class="n">mt</span><span class="o">.</span><span class="n">var</span><span class="p">()</span> <span class="k">for</span> <span class="n">mt</span> <span class="ow">in</span> <span class="bp">self</span><span class="p">])</span><span class="o">.</span><span class="n">var</span><span class="p">()</span>
+
+<div class="viewcode-block" id="Mpo.promote_mt_type"><a class="viewcode-back" href="../../../mps.html#renormalizer.mps.Mpo.promote_mt_type">[docs]</a>    <span class="k">def</span> <span class="nf">promote_mt_type</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">mp</span><span class="p">):</span>
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">is_complex</span> <span class="ow">and</span> <span class="ow">not</span> <span class="n">mp</span><span class="o">.</span><span class="n">is_complex</span><span class="p">:</span>
+            <span class="n">mp</span><span class="o">.</span><span class="n">to_complex</span><span class="p">(</span><span class="n">inplace</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+        <span class="k">return</span> <span class="n">mp</span></div>
+
+<div class="viewcode-block" id="Mpo.apply"><a class="viewcode-back" href="../../../mps.html#renormalizer.mps.Mpo.apply">[docs]</a>    <span class="k">def</span> <span class="nf">apply</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">mp</span><span class="p">:</span> <span class="n">MatrixProduct</span><span class="p">,</span> <span class="n">canonicalise</span><span class="p">:</span> <span class="nb">bool</span><span class="o">=</span><span class="kc">False</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">MatrixProduct</span><span class="p">:</span>
+        <span class="c1"># todo: use meta copy to save time, could be subtle when complex type is involved</span>
+        <span class="c1"># todo: inplace version (saved memory and can be used in `hybrid_exact_propagator`)</span>
+        <span class="c1"># the model is the same as the mps.model</span>
+        <span class="n">new_mps</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">promote_mt_type</span><span class="p">(</span><span class="n">mp</span><span class="o">.</span><span class="n">copy</span><span class="p">())</span>
+        <span class="k">if</span> <span class="n">mp</span><span class="o">.</span><span class="n">is_mps</span><span class="p">:</span>
+            <span class="c1"># mpo x mps</span>
+            <span class="k">for</span> <span class="n">i</span><span class="p">,</span> <span class="p">(</span><span class="n">mt_self</span><span class="p">,</span> <span class="n">mt_other</span><span class="p">)</span> <span class="ow">in</span> <span class="nb">enumerate</span><span class="p">(</span><span class="nb">zip</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">mp</span><span class="p">)):</span>
+                <span class="k">assert</span> <span class="n">mt_self</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="mi">2</span><span class="p">]</span> <span class="o">==</span> <span class="n">mt_other</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span>
+                <span class="c1"># mt=np.einsum(&quot;apqb,cqd-&gt;acpbd&quot;,mpo[i],mps[i])</span>
+                <span class="n">mt</span> <span class="o">=</span> <span class="n">xp</span><span class="o">.</span><span class="n">moveaxis</span><span class="p">(</span>
+                    <span class="n">tensordot</span><span class="p">(</span><span class="n">mt_self</span><span class="o">.</span><span class="n">array</span><span class="p">,</span> <span class="n">mt_other</span><span class="o">.</span><span class="n">array</span><span class="p">,</span> <span class="n">axes</span><span class="o">=</span><span class="p">([</span><span class="mi">2</span><span class="p">],</span> <span class="p">[</span><span class="mi">1</span><span class="p">])),</span> <span class="mi">3</span><span class="p">,</span> <span class="mi">1</span>
+                <span class="p">)</span>
+                <span class="n">mt</span> <span class="o">=</span> <span class="n">mt</span><span class="o">.</span><span class="n">reshape</span><span class="p">(</span>
+                    <span class="p">(</span>
+                        <span class="n">mt_self</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span> <span class="o">*</span> <span class="n">mt_other</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="mi">0</span><span class="p">],</span>
+                        <span class="n">mt_self</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="mi">1</span><span class="p">],</span>
+                        <span class="n">mt_self</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="o">-</span><span class="mi">1</span><span class="p">]</span> <span class="o">*</span> <span class="n">mt_other</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="o">-</span><span class="mi">1</span><span class="p">],</span>
+                    <span class="p">)</span>
+                <span class="p">)</span>
+                <span class="n">new_mps</span><span class="p">[</span><span class="n">i</span><span class="p">]</span> <span class="o">=</span> <span class="n">mt</span>
+        <span class="k">elif</span> <span class="n">mp</span><span class="o">.</span><span class="n">is_mpo</span> <span class="ow">or</span> <span class="n">mp</span><span class="o">.</span><span class="n">is_mpdm</span><span class="p">:</span>
+            <span class="c1"># mpo x mpo</span>
+            <span class="k">for</span> <span class="n">i</span><span class="p">,</span> <span class="p">(</span><span class="n">mt_self</span><span class="p">,</span> <span class="n">mt_other</span><span class="p">)</span> <span class="ow">in</span> <span class="nb">enumerate</span><span class="p">(</span><span class="nb">zip</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">mp</span><span class="p">)):</span>
+                <span class="k">assert</span> <span class="n">mt_self</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="mi">2</span><span class="p">]</span> <span class="o">==</span> <span class="n">mt_other</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span>
+                <span class="c1"># mt=np.einsum(&quot;apqb,cqrd-&gt;acprbd&quot;,mt_s,mt_o)</span>
+                <span class="n">mt</span> <span class="o">=</span> <span class="n">xp</span><span class="o">.</span><span class="n">moveaxis</span><span class="p">(</span>
+                    <span class="n">tensordot</span><span class="p">(</span><span class="n">mt_self</span><span class="o">.</span><span class="n">array</span><span class="p">,</span> <span class="n">mt_other</span><span class="o">.</span><span class="n">array</span><span class="p">,</span> <span class="n">axes</span><span class="o">=</span><span class="p">([</span><span class="mi">2</span><span class="p">],</span> <span class="p">[</span><span class="mi">1</span><span class="p">])),</span>
+                    <span class="p">[</span><span class="o">-</span><span class="mi">3</span><span class="p">,</span> <span class="o">-</span><span class="mi">2</span><span class="p">],</span>
+                    <span class="p">[</span><span class="mi">1</span><span class="p">,</span> <span class="mi">3</span><span class="p">],</span>
+                <span class="p">)</span>
+                <span class="n">mt</span> <span class="o">=</span> <span class="n">mt</span><span class="o">.</span><span class="n">reshape</span><span class="p">(</span>
+                    <span class="p">(</span>
+                        <span class="n">mt_self</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span> <span class="o">*</span> <span class="n">mt_other</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="mi">0</span><span class="p">],</span>
+                        <span class="n">mt_self</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="mi">1</span><span class="p">],</span>
+                        <span class="n">mt_other</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="mi">2</span><span class="p">],</span>
+                        <span class="n">mt_self</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="o">-</span><span class="mi">1</span><span class="p">]</span> <span class="o">*</span> <span class="n">mt_other</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="o">-</span><span class="mi">1</span><span class="p">],</span>
+                    <span class="p">)</span>
+                <span class="p">)</span>
+                <span class="n">new_mps</span><span class="p">[</span><span class="n">i</span><span class="p">]</span> <span class="o">=</span> <span class="n">mt</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="k">assert</span> <span class="kc">False</span>
+        <span class="n">orig_idx</span> <span class="o">=</span> <span class="n">new_mps</span><span class="o">.</span><span class="n">qnidx</span>
+        <span class="n">new_mps</span><span class="o">.</span><span class="n">move_qnidx</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">qnidx</span><span class="p">)</span>
+        <span class="n">new_mps</span><span class="o">.</span><span class="n">qn</span> <span class="o">=</span> <span class="p">[</span>
+            <span class="n">np</span><span class="o">.</span><span class="n">add</span><span class="o">.</span><span class="n">outer</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">(</span><span class="n">qn_o</span><span class="p">),</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">(</span><span class="n">qn_m</span><span class="p">))</span><span class="o">.</span><span class="n">ravel</span><span class="p">()</span><span class="o">.</span><span class="n">tolist</span><span class="p">()</span>
+            <span class="k">for</span> <span class="n">qn_o</span><span class="p">,</span> <span class="n">qn_m</span> <span class="ow">in</span> <span class="nb">zip</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">qn</span><span class="p">,</span> <span class="n">new_mps</span><span class="o">.</span><span class="n">qn</span><span class="p">)</span>
+        <span class="p">]</span>
+        <span class="n">new_mps</span><span class="o">.</span><span class="n">qntot</span> <span class="o">+=</span> <span class="bp">self</span><span class="o">.</span><span class="n">qntot</span>
+        <span class="n">new_mps</span><span class="o">.</span><span class="n">move_qnidx</span><span class="p">(</span><span class="n">orig_idx</span><span class="p">)</span>
+        <span class="c1"># concerns about whether to canonicalise:</span>
+        <span class="c1"># * canonicalise helps to keep mps in a truly canonicalised state</span>
+        <span class="c1"># * canonicalise comes with a cost. Unnecessary canonicalise (for example in P&amp;C evolution and</span>
+        <span class="c1">#   expectation calculation) hampers performance.</span>
+        <span class="k">if</span> <span class="n">canonicalise</span><span class="p">:</span>
+            <span class="n">new_mps</span><span class="o">.</span><span class="n">canonicalise</span><span class="p">()</span>
+        <span class="k">return</span> <span class="n">new_mps</span></div>
+
+<div class="viewcode-block" id="Mpo.contract"><a class="viewcode-back" href="../../../mps.html#renormalizer.mps.Mpo.contract">[docs]</a>    <span class="k">def</span> <span class="nf">contract</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">mps</span><span class="p">,</span> <span class="n">algo</span><span class="o">=</span><span class="s2">&quot;svd&quot;</span><span class="p">):</span>
+        <span class="sa">r</span><span class="sd">&quot;&quot;&quot; an approximation of mpo @ mps/mpdm/mpo</span>
+<span class="sd">        </span>
+<span class="sd">        Parameters</span>
+<span class="sd">        ----------</span>
+<span class="sd">        mps : `Mps`, `Mpo`, `MpDm`</span>
+<span class="sd">        algo: str, optional</span>
+<span class="sd">            The algorithm to compress mpo @ mps/mpdm/mpo.  It could be ``svd``</span>
+<span class="sd">            (default) and ``variational``. </span>
+<span class="sd">        </span>
+<span class="sd">        Returns</span>
+<span class="sd">        -------</span>
+<span class="sd">        new_mps : `Mps`</span>
+<span class="sd">            an approximation of mpo @ mps/mpdm/mpo. The input ``mps`` is not</span>
+<span class="sd">            overwritten.</span>
+
+<span class="sd">        See Also</span>
+<span class="sd">        --------</span>
+<span class="sd">        renormalizer.mps.mp.MatrixProduct.compress : svd compression.</span>
+<span class="sd">        renormalizer.mps.mp.MatrixProduct.variational_compress : variational</span>
+<span class="sd">            compression.</span>
+
+
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">if</span> <span class="n">algo</span> <span class="o">==</span> <span class="s2">&quot;svd&quot;</span><span class="p">:</span>
+            <span class="c1"># mapply-&gt;canonicalise-&gt;compress</span>
+            <span class="n">new_mps</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">apply</span><span class="p">(</span><span class="n">mps</span><span class="p">)</span>
+            <span class="n">new_mps</span><span class="o">.</span><span class="n">canonicalise</span><span class="p">()</span>
+            <span class="n">new_mps</span><span class="o">.</span><span class="n">compress</span><span class="p">()</span>
+        <span class="k">elif</span> <span class="n">algo</span> <span class="o">==</span> <span class="s2">&quot;variational&quot;</span><span class="p">:</span>
+            <span class="n">new_mps</span> <span class="o">=</span> <span class="n">mps</span><span class="o">.</span><span class="n">variational_compress</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="k">assert</span> <span class="kc">False</span>
+
+        <span class="k">return</span> <span class="n">new_mps</span></div>
+
+<div class="viewcode-block" id="Mpo.try_swap_site"><a class="viewcode-back" href="../../../mps.html#renormalizer.mps.Mpo.try_swap_site">[docs]</a>    <span class="k">def</span> <span class="nf">try_swap_site</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">new_model</span><span class="p">:</span> <span class="n">Model</span><span class="p">,</span> <span class="n">swap_jw</span><span class="p">:</span> <span class="nb">bool</span><span class="p">):</span>
+        <span class="c1"># in place swapping.</span>
+        <span class="c1"># if swap_jw is set to True, then self.primary_ops is modified in place</span>
+        <span class="n">diffs</span> <span class="o">=</span> <span class="p">[]</span>
+        <span class="k">for</span> <span class="n">i</span><span class="p">,</span> <span class="p">(</span><span class="n">b1</span><span class="p">,</span> <span class="n">b2</span><span class="p">)</span> <span class="ow">in</span> <span class="nb">enumerate</span><span class="p">(</span><span class="nb">zip</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">model</span><span class="o">.</span><span class="n">basis</span><span class="p">,</span> <span class="n">new_model</span><span class="o">.</span><span class="n">basis</span><span class="p">)):</span>
+            <span class="k">if</span> <span class="n">b1</span><span class="o">.</span><span class="n">dofs</span> <span class="o">!=</span> <span class="n">b2</span><span class="o">.</span><span class="n">dofs</span><span class="p">:</span>
+                <span class="n">diffs</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">i</span><span class="p">)</span>
+        <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">diffs</span><span class="p">)</span> <span class="o">==</span> <span class="mi">0</span><span class="p">:</span>
+            <span class="n">logger</span><span class="o">.</span><span class="n">debug</span><span class="p">(</span><span class="s2">&quot;MPO: No need to swap&quot;</span><span class="p">)</span>
+            <span class="k">return</span>
+        <span class="k">assert</span> <span class="nb">len</span><span class="p">(</span><span class="n">diffs</span><span class="p">)</span> <span class="o">==</span> <span class="mi">2</span>
+        <span class="n">i</span><span class="p">,</span> <span class="n">j</span> <span class="o">=</span> <span class="nb">min</span><span class="p">(</span><span class="n">diffs</span><span class="p">),</span> <span class="nb">max</span><span class="p">(</span><span class="n">diffs</span><span class="p">)</span>
+        <span class="k">assert</span> <span class="n">j</span> <span class="o">-</span> <span class="n">i</span> <span class="o">==</span> <span class="mi">1</span>
+        <span class="n">logger</span><span class="o">.</span><span class="n">debug</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;MPO: swaping </span><span class="si">{</span><span class="n">i</span><span class="si">}</span><span class="s2"> and </span><span class="si">{</span><span class="n">j</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+        <span class="c1"># although usually the `model` of MPO does not store `mpos`</span>
+        <span class="n">new_model</span><span class="o">.</span><span class="n">mpos</span><span class="o">.</span><span class="n">clear</span><span class="p">()</span>
+
+        <span class="n">out_ops2</span><span class="p">,</span> <span class="n">out_ops3</span><span class="p">,</span> <span class="n">mo1</span><span class="p">,</span> <span class="n">mo2</span><span class="p">,</span> <span class="n">qn</span> <span class="o">=</span> <span class="n">swap_site</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">symbolic_out_ops_list</span><span class="p">[</span><span class="n">i</span><span class="p">:</span><span class="n">i</span><span class="o">+</span><span class="mi">3</span><span class="p">],</span> <span class="bp">self</span><span class="o">.</span><span class="n">primary_ops</span><span class="p">,</span> <span class="n">swap_jw</span><span class="p">)</span>
+
+        <span class="bp">self</span><span class="o">.</span><span class="n">symbolic_out_ops_list</span><span class="p">[</span><span class="n">i</span><span class="o">+</span><span class="mi">1</span><span class="p">]</span> <span class="o">=</span> <span class="n">out_ops2</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">symbolic_out_ops_list</span><span class="p">[</span><span class="n">i</span><span class="o">+</span><span class="mi">2</span><span class="p">]</span> <span class="o">=</span> <span class="n">out_ops3</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">model</span> <span class="o">=</span> <span class="n">new_model</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">qn</span><span class="p">[</span><span class="n">i</span><span class="o">+</span><span class="mi">1</span><span class="p">]</span> <span class="o">=</span> <span class="n">qn</span>
+
+        <span class="k">for</span> <span class="n">impo</span><span class="p">,</span> <span class="n">mo</span> <span class="ow">in</span> <span class="nb">zip</span><span class="p">([</span><span class="n">i</span><span class="p">,</span> <span class="n">j</span><span class="p">],</span> <span class="p">[</span><span class="n">mo1</span><span class="p">,</span> <span class="n">mo2</span><span class="p">]):</span>
+            <span class="bp">self</span><span class="p">[</span><span class="n">impo</span><span class="p">]</span> <span class="o">=</span> <span class="n">symbolic_mo_to_numeric_mo</span><span class="p">(</span><span class="n">new_model</span><span class="o">.</span><span class="n">basis</span><span class="p">[</span><span class="n">impo</span><span class="p">],</span> <span class="n">mo</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">dtype</span><span class="p">)</span>
+        <span class="n">logger</span><span class="o">.</span><span class="n">debug</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span></div>
+
+<div class="viewcode-block" id="Mpo.conj_trans"><a class="viewcode-back" href="../../../mps.html#renormalizer.mps.Mpo.conj_trans">[docs]</a>    <span class="k">def</span> <span class="nf">conj_trans</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="n">new_mpo</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">metacopy</span><span class="p">()</span>
+        <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="n">new_mpo</span><span class="o">.</span><span class="n">site_num</span><span class="p">):</span>
+            <span class="n">new_mpo</span><span class="p">[</span><span class="n">i</span><span class="p">]</span> <span class="o">=</span> <span class="n">moveaxis</span><span class="p">(</span><span class="bp">self</span><span class="p">[</span><span class="n">i</span><span class="p">],</span> <span class="p">(</span><span class="mi">1</span><span class="p">,</span> <span class="mi">2</span><span class="p">),</span> <span class="p">(</span><span class="mi">2</span><span class="p">,</span> <span class="mi">1</span><span class="p">))</span><span class="o">.</span><span class="n">conj</span><span class="p">()</span>
+        <span class="n">new_mpo</span><span class="o">.</span><span class="n">qn</span> <span class="o">=</span> <span class="p">[[</span><span class="o">-</span><span class="n">i</span> <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="n">mt_qn</span><span class="p">]</span> <span class="k">for</span> <span class="n">mt_qn</span> <span class="ow">in</span> <span class="n">new_mpo</span><span class="o">.</span><span class="n">qn</span><span class="p">]</span>
+        <span class="k">return</span> <span class="n">new_mpo</span></div>
+
+<div class="viewcode-block" id="Mpo.todense"><a class="viewcode-back" href="../../../mps.html#renormalizer.mps.Mpo.todense">[docs]</a>    <span class="k">def</span> <span class="nf">todense</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="n">dim</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">prod</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">pbond_list</span><span class="p">)</span>
+        <span class="k">if</span> <span class="mi">20000</span> <span class="o">&lt;</span> <span class="n">dim</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s2">&quot;operator too large&quot;</span><span class="p">)</span>
+        <span class="n">res</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">ones</span><span class="p">((</span><span class="mi">1</span><span class="p">,</span> <span class="mi">1</span><span class="p">,</span> <span class="mi">1</span><span class="p">,</span> <span class="mi">1</span><span class="p">))</span>
+        <span class="k">for</span> <span class="n">mt</span> <span class="ow">in</span> <span class="bp">self</span><span class="p">:</span>
+            <span class="n">dim1</span> <span class="o">=</span> <span class="n">res</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span> <span class="o">*</span> <span class="n">mt</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span>
+            <span class="n">dim2</span> <span class="o">=</span> <span class="n">res</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="mi">2</span><span class="p">]</span> <span class="o">*</span> <span class="n">mt</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="mi">2</span><span class="p">]</span>
+            <span class="n">dim3</span> <span class="o">=</span> <span class="n">mt</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="o">-</span><span class="mi">1</span><span class="p">]</span>
+            <span class="n">res</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">tensordot</span><span class="p">(</span><span class="n">res</span><span class="p">,</span> <span class="n">mt</span><span class="o">.</span><span class="n">array</span><span class="p">,</span> <span class="n">axes</span><span class="o">=</span><span class="mi">1</span><span class="p">)</span><span class="o">.</span><span class="n">transpose</span><span class="p">((</span><span class="mi">0</span><span class="p">,</span> <span class="mi">1</span><span class="p">,</span> <span class="mi">3</span><span class="p">,</span> <span class="mi">2</span><span class="p">,</span> <span class="mi">4</span><span class="p">,</span> <span class="mi">5</span><span class="p">))</span><span class="o">.</span><span class="n">reshape</span><span class="p">(</span><span class="mi">1</span><span class="p">,</span> <span class="n">dim1</span><span class="p">,</span> <span class="n">dim2</span><span class="p">,</span> <span class="n">dim3</span><span class="p">)</span>
+        <span class="k">return</span> <span class="n">res</span><span class="p">[</span><span class="mi">0</span><span class="p">,</span> <span class="p">:,</span> <span class="p">:,</span> <span class="mi">0</span><span class="p">]</span></div>
+
+<div class="viewcode-block" id="Mpo.is_hermitian"><a class="viewcode-back" href="../../../mps.html#renormalizer.mps.Mpo.is_hermitian">[docs]</a>    <span class="k">def</span> <span class="nf">is_hermitian</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="n">full</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">todense</span><span class="p">()</span>
+        <span class="k">return</span> <span class="n">np</span><span class="o">.</span><span class="n">allclose</span><span class="p">(</span><span class="n">full</span><span class="o">.</span><span class="n">conj</span><span class="p">()</span><span class="o">.</span><span class="n">T</span><span class="p">,</span> <span class="n">full</span><span class="p">,</span> <span class="n">atol</span><span class="o">=</span><span class="mf">1e-7</span><span class="p">)</span></div>
+
+    <span class="k">def</span> <span class="fm">__matmul__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">other</span><span class="p">):</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">apply</span><span class="p">(</span><span class="n">other</span><span class="p">)</span>
+
+<div class="viewcode-block" id="Mpo.from_mp"><a class="viewcode-back" href="../../../mps.html#renormalizer.mps.Mpo.from_mp">[docs]</a>    <span class="nd">@classmethod</span>
+    <span class="k">def</span> <span class="nf">from_mp</span><span class="p">(</span><span class="bp">cls</span><span class="p">,</span> <span class="n">model</span><span class="p">,</span> <span class="n">mp</span><span class="p">):</span>
+        <span class="c1"># mpo from matrix product</span>
+        <span class="n">mpo</span> <span class="o">=</span> <span class="bp">cls</span><span class="p">()</span>
+        <span class="n">mpo</span><span class="o">.</span><span class="n">model</span> <span class="o">=</span> <span class="n">model</span>
+        <span class="k">for</span> <span class="n">mt</span> <span class="ow">in</span> <span class="n">mp</span><span class="p">:</span>
+            <span class="n">mpo</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">mt</span><span class="p">)</span>
+        <span class="n">mpo</span><span class="o">.</span><span class="n">build_empty_qn</span><span class="p">()</span>
+        <span class="k">return</span> <span class="n">mpo</span></div>
+    
+    <span class="nd">@property</span>
+    <span class="k">def</span> <span class="nf">dmrg_norm</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">float</span><span class="p">:</span>
+        <span class="n">res</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">sqrt</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">conj</span><span class="p">()</span><span class="o">.</span><span class="n">dot</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span><span class="o">.</span><span class="n">real</span><span class="p">)</span>
+        <span class="k">return</span> <span class="nb">float</span><span class="p">(</span><span class="n">res</span><span class="o">.</span><span class="n">real</span><span class="p">)</span></div>
+    
+</pre></div>
+
+           </div>
+           
+          </div>
+          <footer>
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>
+        &#169; Copyright 2019, Shuaigroup.
+
+    </p>
+  </div>
+    
+    
+    
+    Built with <a href="https://www.sphinx-doc.org/">Sphinx</a> using a
+    
+    <a href="https://github.com/readthedocs/sphinx_rtd_theme">theme</a>
+    
+    provided by <a href="https://readthedocs.org">Read the Docs</a>. 
+
+</footer>
+        </div>
+      </div>
+
+    </section>
+
+  </div>
+  
+
+  <script type="text/javascript">
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script>
+
+  
+  
+    
+   
+
+</body>
+</html>

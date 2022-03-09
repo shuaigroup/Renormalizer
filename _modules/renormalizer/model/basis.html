@@ -1,0 +1,1103 @@
+
+
+<!DOCTYPE html>
+<html class="writer-html5" lang="en" >
+<head>
+  <meta charset="utf-8" />
+  
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  
+  <title>renormalizer.model.basis &mdash; Renormalizer 0.1.0 documentation</title>
+  
+
+  
+  <link rel="stylesheet" href="../../../_static/css/theme.css" type="text/css" />
+  <link rel="stylesheet" href="../../../_static/pygments.css" type="text/css" />
+  <link rel="stylesheet" href="../../../_static/pygments.css" type="text/css" />
+  <link rel="stylesheet" href="../../../_static/css/theme.css" type="text/css" />
+
+  
+  
+
+  
+  
+
+  
+
+  
+  <!--[if lt IE 9]>
+    <script src="../../../_static/js/html5shiv.min.js"></script>
+  <![endif]-->
+  
+    
+      <script type="text/javascript" id="documentation_options" data-url_root="../../../" src="../../../_static/documentation_options.js"></script>
+        <script data-url_root="../../../" id="documentation_options" src="../../../_static/documentation_options.js"></script>
+        <script src="../../../_static/jquery.js"></script>
+        <script src="../../../_static/underscore.js"></script>
+        <script src="../../../_static/doctools.js"></script>
+    
+    <script type="text/javascript" src="../../../_static/js/theme.js"></script>
+
+    
+    <link rel="index" title="Index" href="../../../genindex.html" />
+    <link rel="search" title="Search" href="../../../search.html" /> 
+</head>
+
+<body class="wy-body-for-nav">
+
+   
+  <div class="wy-grid-for-nav">
+    
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search" >
+          
+
+          
+            <a href="../../../index.html" class="icon icon-home"> Renormalizer
+          
+
+          
+          </a>
+
+          
+            
+            
+              <div class="version">
+                0.1
+              </div>
+            
+          
+
+          
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="../../../search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+
+          
+        </div>
+
+        
+        <div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="main navigation">
+          
+            
+            
+              
+            
+            
+              <ul>
+<li class="toctree-l1"><a class="reference internal" href="../../../overview.html">1. An overview of Renormalizer</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../install.html">2. Installation guide</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../develop.html">3. How to develop Renormalizer</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../tutorial.html">4. Tutorial</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../model.html">5. Model</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../mps.html">6. Low Level Data Structure and Algorithms</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../static.html">7. Static Eigenstate Method</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../spectrum.html">8. spectra: absorption/emission spectrum at zero/finite temperature</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../ct.html">9. Charge Transport</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../cv.html">10. Frequency domain DMRG</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../configs.html">11. Calculation Configurations</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../lib.html">12. lib</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../sbm.html">13. sbm</a></li>
+</ul>
+
+            
+          
+        </div>
+        
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap">
+
+      
+      <nav class="wy-nav-top" aria-label="top navigation">
+        
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="../../../index.html">Renormalizer</a>
+        
+      </nav>
+
+
+      <div class="wy-nav-content">
+        
+        <div class="rst-content">
+        
+          
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+<div role="navigation" aria-label="breadcrumbs navigation">
+
+  <ul class="wy-breadcrumbs">
+    
+      <li><a href="../../../index.html" class="icon icon-home"></a> &raquo;</li>
+        
+          <li><a href="../../index.html">Module code</a> &raquo;</li>
+        
+      <li>renormalizer.model.basis</li>
+    
+    
+      <li class="wy-breadcrumbs-aside">
+        
+      </li>
+    
+  </ul>
+
+  
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+            
+  <h1>Source code for renormalizer.model.basis</h1><div class="highlight"><pre>
+<span></span><span class="kn">import</span> <span class="nn">numpy</span> <span class="k">as</span> <span class="nn">np</span>
+<span class="kn">from</span> <span class="nn">renormalizer.model</span> <span class="kn">import</span> <span class="n">Op</span>
+<span class="kn">from</span> <span class="nn">typing</span> <span class="kn">import</span> <span class="n">Union</span><span class="p">,</span> <span class="n">List</span>
+<span class="kn">import</span> <span class="nn">scipy.linalg</span>
+<span class="kn">import</span> <span class="nn">scipy.special</span>
+<span class="kn">import</span> <span class="nn">itertools</span>
+<span class="kn">import</span> <span class="nn">logging</span>
+
+
+<span class="n">logger</span> <span class="o">=</span> <span class="n">logging</span><span class="o">.</span><span class="n">getLogger</span><span class="p">(</span><span class="vm">__name__</span><span class="p">)</span>
+
+
+<div class="viewcode-block" id="BasisSet"><a class="viewcode-back" href="../../../model.html#renormalizer.model.basis.BasisSet">[docs]</a><span class="k">class</span> <span class="nc">BasisSet</span><span class="p">:</span>
+    <span class="sa">r</span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    the parent class for local basis set</span>
+
+<span class="sd">    Args:</span>
+<span class="sd">        dof_name: The name(s) of the DoF(s) contained in the basis set.</span>
+<span class="sd">            For basis containing only one DoF, the type could be anything that can be hashed.</span>
+<span class="sd">            For basis containing multiple DoFs, the type should be a ``list`` or ``tuple``</span>
+<span class="sd">            of anything that can be hashed.</span>
+<span class="sd">        nbas (int): number of dimension of the basis set</span>
+<span class="sd">        sigmaqn (List(int)): the qn of each basis</span>
+
+<span class="sd">    &quot;&quot;&quot;</span>
+
+    <span class="c1">#: If the basis set represent electronic DoF.</span>
+    <span class="n">is_electron</span> <span class="o">=</span> <span class="kc">False</span>
+    <span class="c1">#: If the basis set represent vibrational DoF.</span>
+    <span class="n">is_phonon</span> <span class="o">=</span> <span class="kc">False</span>
+    <span class="c1">#: If the basis set represent spin DoF.</span>
+    <span class="n">is_spin</span> <span class="o">=</span> <span class="kc">False</span>
+    <span class="c1">#: If the basis set contains multiple DoFs.</span>
+    <span class="n">multi_dof</span> <span class="o">=</span> <span class="kc">False</span>
+
+    <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">dof</span><span class="p">,</span> <span class="n">nbas</span><span class="p">:</span> <span class="nb">int</span><span class="p">,</span> <span class="n">sigmaqn</span><span class="p">:</span> <span class="n">List</span><span class="p">[</span><span class="nb">int</span><span class="p">]):</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">dof</span> <span class="o">=</span> <span class="n">dof</span>
+
+        <span class="k">assert</span> <span class="nb">type</span><span class="p">(</span><span class="n">nbas</span><span class="p">)</span> <span class="ow">is</span> <span class="nb">int</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">nbas</span> <span class="o">=</span> <span class="n">nbas</span>
+
+        <span class="k">for</span> <span class="n">qn</span> <span class="ow">in</span> <span class="n">sigmaqn</span><span class="p">:</span>
+            <span class="k">assert</span> <span class="nb">type</span><span class="p">(</span><span class="n">qn</span><span class="p">)</span> <span class="ow">is</span> <span class="nb">int</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">sigmaqn</span> <span class="o">=</span> <span class="n">sigmaqn</span>
+
+    <span class="k">def</span> <span class="fm">__repr__</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="k">return</span> <span class="sa">f</span><span class="s2">&quot;(dof: </span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">dof</span><span class="si">}</span><span class="s2">, nbas: </span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">nbas</span><span class="si">}</span><span class="s2">, qn: </span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">sigmaqn</span><span class="si">}</span><span class="s2">)&quot;</span>
+    
+<div class="viewcode-block" id="BasisSet.op_mat"><a class="viewcode-back" href="../../../model.html#renormalizer.model.basis.BasisSet.op_mat">[docs]</a>    <span class="k">def</span> <span class="nf">op_mat</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">op</span><span class="p">:</span> <span class="n">Op</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Matrix representation under the basis set of the input operator.</span>
+<span class="sd">        The factor is included.</span>
+
+<span class="sd">        Parameters</span>
+<span class="sd">        ----------</span>
+<span class="sd">        op : Op</span>
+<span class="sd">            The operator. For basis set with only one DoF, :class:`str`` is also acceptable.</span>
+
+<span class="sd">        Returns</span>
+<span class="sd">        -------</span>
+<span class="sd">        mat : :class:`np.ndarray`</span>
+<span class="sd">            Matrix representation of ``op``.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">raise</span> <span class="ne">NotImplementedError</span></div>
+
+    <span class="nd">@property</span>
+    <span class="k">def</span> <span class="nf">dofs</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Names of the DoFs contained in the basis.</span>
+<span class="sd">        Returns a tuple even if the basis contains only one DoF.</span>
+
+<span class="sd">        Returns</span>
+<span class="sd">        -------</span>
+<span class="sd">        dof names : tuple</span>
+<span class="sd">            A tuple of DoF names.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">multi_dof</span><span class="p">:</span>
+            <span class="k">return</span> <span class="nb">tuple</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">dof</span><span class="p">)</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="k">return</span> <span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">dof</span><span class="p">,)</span>
+
+
+<div class="viewcode-block" id="BasisSet.copy"><a class="viewcode-back" href="../../../model.html#renormalizer.model.basis.BasisSet.copy">[docs]</a>    <span class="k">def</span> <span class="nf">copy</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">new_dof</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Return a copy of the basis set with new DoF name specified in the argument.</span>
+
+<span class="sd">        Parameters</span>
+<span class="sd">        ----------</span>
+<span class="sd">        new_dof:</span>
+<span class="sd">            New DoF name.</span>
+
+<span class="sd">        Returns</span>
+<span class="sd">        -------</span>
+<span class="sd">        new_basis : Basis</span>
+<span class="sd">            A copy of the basis with new DoF name.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">raise</span> <span class="ne">NotImplementedError</span></div></div>
+
+
+<div class="viewcode-block" id="BasisSHO"><a class="viewcode-back" href="../../../model.html#renormalizer.model.basis.BasisSHO">[docs]</a><span class="k">class</span> <span class="nc">BasisSHO</span><span class="p">(</span><span class="n">BasisSet</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    simple harmonic oscillator basis set</span>
+
+<span class="sd">    Args:</span>
+<span class="sd">        dof: The name of the DoF contained in the basis set. The type could be anything that can be hashed.</span>
+<span class="sd">        omega (float): the frequency of the oscillator.</span>
+<span class="sd">        nbas (int): number of dimension of the basis set (highest occupation number of the harmonic oscillator)</span>
+<span class="sd">        x0 (float): the origin of the harmonic oscillator. Default = 0.</span>
+<span class="sd">        dvr (bool): whether to use discrete variable representation. Default = False.</span>
+<span class="sd">        general_xp_power (bool): whether calculate :math:`x` and :math:`x^2` (or :math:`p` and :math:`p^2`)</span>
+<span class="sd">            through general expression for :math:`x`power or :math:`p` power. This is not efficient because</span>
+<span class="sd">            :math:`x` and :math:`x^2` (or :math:`p` and :math:`p^2`) have been hard-coded already.</span>
+<span class="sd">            The option is only used for testing.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+
+    <span class="n">is_phonon</span> <span class="o">=</span> <span class="kc">True</span>
+
+    <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">dof</span><span class="p">,</span> <span class="n">omega</span><span class="p">,</span> <span class="n">nbas</span><span class="p">,</span> <span class="n">x0</span><span class="o">=</span><span class="mf">0.</span><span class="p">,</span> <span class="n">dvr</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span> <span class="n">general_xp_power</span><span class="o">=</span><span class="kc">False</span><span class="p">):</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">omega</span> <span class="o">=</span> <span class="n">omega</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">x0</span> <span class="o">=</span> <span class="n">x0</span>  <span class="c1"># origin = x0</span>
+        <span class="nb">super</span><span class="p">()</span><span class="o">.</span><span class="fm">__init__</span><span class="p">(</span><span class="n">dof</span><span class="p">,</span> <span class="n">nbas</span><span class="p">,</span> <span class="p">[</span><span class="mi">0</span><span class="p">]</span> <span class="o">*</span> <span class="n">nbas</span><span class="p">)</span>
+
+        <span class="bp">self</span><span class="o">.</span><span class="n">general_xp_power</span> <span class="o">=</span> <span class="n">general_xp_power</span>
+
+        <span class="c1"># whether under recurssion</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_recurssion_flag</span> <span class="o">=</span> <span class="mi">0</span>
+
+        <span class="bp">self</span><span class="o">.</span><span class="n">dvr</span> <span class="o">=</span> <span class="kc">False</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">dvr_x</span> <span class="o">=</span> <span class="kc">None</span>  <span class="c1"># the expectation value of x on SHO_dvr</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">dvr_v</span> <span class="o">=</span> <span class="kc">None</span>  <span class="c1"># the rotation matrix between SHO to SHO_dvr</span>
+        <span class="k">if</span> <span class="n">dvr</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">dvr_x</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">dvr_v</span> <span class="o">=</span> <span class="n">scipy</span><span class="o">.</span><span class="n">linalg</span><span class="o">.</span><span class="n">eigh</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">op_mat</span><span class="p">(</span><span class="s2">&quot;x&quot;</span><span class="p">))</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">dvr</span> <span class="o">=</span> <span class="kc">True</span>
+
+    <span class="k">def</span> <span class="fm">__repr__</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="k">return</span> <span class="sa">f</span><span class="s2">&quot;(x0: </span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">x0</span><span class="si">}</span><span class="s2">, omega: </span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">omega</span><span class="si">}</span><span class="s2">, nbas: </span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">nbas</span><span class="si">}</span><span class="s2">)&quot;</span>
+    
+<div class="viewcode-block" id="BasisSHO.op_mat"><a class="viewcode-back" href="../../../model.html#renormalizer.model.basis.BasisSHO.op_mat">[docs]</a>    <span class="k">def</span> <span class="nf">op_mat</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">op</span><span class="p">:</span> <span class="n">Union</span><span class="p">[</span><span class="n">Op</span><span class="p">,</span> <span class="nb">str</span><span class="p">]):</span>
+        <span class="k">if</span> <span class="ow">not</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">op</span><span class="p">,</span> <span class="n">Op</span><span class="p">):</span>
+            <span class="n">op</span> <span class="o">=</span> <span class="n">Op</span><span class="p">(</span><span class="n">op</span><span class="p">,</span> <span class="kc">None</span><span class="p">)</span>
+        <span class="n">op_symbol</span><span class="p">,</span> <span class="n">op_factor</span> <span class="o">=</span> <span class="n">op</span><span class="o">.</span><span class="n">symbol</span><span class="p">,</span> <span class="n">op</span><span class="o">.</span><span class="n">factor</span>
+
+        <span class="k">if</span> <span class="n">op_symbol</span> <span class="ow">in</span> <span class="p">[</span><span class="s2">&quot;b&quot;</span><span class="p">,</span> <span class="s2">&quot;b b&quot;</span><span class="p">,</span> <span class="sa">r</span><span class="s2">&quot;b^\dagger&quot;</span><span class="p">,</span> <span class="sa">r</span><span class="s2">&quot;b^\dagger b^\dagger&quot;</span><span class="p">,</span> <span class="sa">r</span><span class="s2">&quot;b^\dagger b&quot;</span><span class="p">,</span> <span class="sa">r</span><span class="s2">&quot;b b^\dagger&quot;</span><span class="p">,</span> <span class="sa">r</span><span class="s2">&quot;b^\dagger + b&quot;</span><span class="p">]:</span>
+            <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">_recurssion_flag</span> <span class="o">==</span> <span class="mi">0</span> <span class="ow">and</span> <span class="ow">not</span> <span class="n">np</span><span class="o">.</span><span class="n">allclose</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">x0</span><span class="p">,</span> <span class="mi">0</span><span class="p">):</span>
+                <span class="n">logger</span><span class="o">.</span><span class="n">warning</span><span class="p">(</span><span class="s2">&quot;the second quantization doesn&#39;t support nonzero x0&quot;</span><span class="p">)</span>
+
+        <span class="bp">self</span><span class="o">.</span><span class="n">_recurssion_flag</span> <span class="o">+=</span> <span class="mi">1</span>
+
+        <span class="c1"># so many if-else might be a potential performance problem in the future</span>
+        <span class="c1"># changing to lazy-evaluation dict should be better</span>
+        
+        <span class="c1"># second quantization formula</span>
+        <span class="k">if</span> <span class="n">op_symbol</span> <span class="o">==</span> <span class="s2">&quot;b&quot;</span><span class="p">:</span>
+            <span class="n">mat</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">diag</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">sqrt</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">arange</span><span class="p">(</span><span class="mi">1</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">nbas</span><span class="p">)),</span> <span class="n">k</span><span class="o">=</span><span class="mi">1</span><span class="p">)</span>
+
+        <span class="k">elif</span> <span class="n">op_symbol</span> <span class="o">==</span> <span class="s2">&quot;b b&quot;</span><span class="p">:</span>
+            <span class="c1"># b b = sqrt(n*(n-1)) delta(m,n-2)</span>
+            <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">nbas</span> <span class="o">==</span> <span class="mi">1</span><span class="p">:</span>
+                <span class="n">mat</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">zeros</span><span class="p">((</span><span class="mi">1</span><span class="p">,</span><span class="mi">1</span><span class="p">))</span>
+            <span class="k">else</span><span class="p">:</span>
+                <span class="n">mat</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">diag</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">sqrt</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">arange</span><span class="p">(</span><span class="mi">1</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">nbas</span> <span class="o">-</span> <span class="mi">1</span><span class="p">)</span> <span class="o">*</span> <span class="n">np</span><span class="o">.</span><span class="n">arange</span><span class="p">(</span><span class="mi">2</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">nbas</span><span class="p">)),</span> <span class="n">k</span><span class="o">=</span><span class="mi">2</span><span class="p">)</span>
+
+        <span class="k">elif</span> <span class="n">op_symbol</span> <span class="o">==</span> <span class="sa">r</span><span class="s2">&quot;b^\dagger&quot;</span><span class="p">:</span>
+            <span class="n">mat</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">diag</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">sqrt</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">arange</span><span class="p">(</span><span class="mi">1</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">nbas</span><span class="p">)),</span> <span class="n">k</span><span class="o">=-</span><span class="mi">1</span><span class="p">)</span>
+
+        <span class="k">elif</span> <span class="n">op_symbol</span> <span class="o">==</span> <span class="sa">r</span><span class="s2">&quot;b^\dagger b^\dagger&quot;</span><span class="p">:</span>
+            <span class="c1"># b^\dagger b^\dagger = sqrt((n+2)*(n+1)) delta(m,n+2)</span>
+            <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">nbas</span> <span class="o">==</span> <span class="mi">1</span><span class="p">:</span>
+                <span class="n">mat</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">zeros</span><span class="p">((</span><span class="mi">1</span><span class="p">,</span><span class="mi">1</span><span class="p">))</span>
+            <span class="k">else</span><span class="p">:</span>
+                <span class="n">mat</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">diag</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">sqrt</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">arange</span><span class="p">(</span><span class="mi">1</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">nbas</span> <span class="o">-</span> <span class="mi">1</span><span class="p">)</span> <span class="o">*</span> <span class="n">np</span><span class="o">.</span><span class="n">arange</span><span class="p">(</span><span class="mi">2</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">nbas</span><span class="p">)),</span> <span class="n">k</span><span class="o">=-</span><span class="mi">2</span><span class="p">)</span>
+
+        <span class="k">elif</span> <span class="n">op_symbol</span> <span class="o">==</span> <span class="sa">r</span><span class="s2">&quot;b^\dagger + b&quot;</span><span class="p">:</span>
+            <span class="n">mat</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">op_mat</span><span class="p">(</span><span class="sa">r</span><span class="s2">&quot;b^\dagger&quot;</span><span class="p">)</span> <span class="o">+</span> <span class="bp">self</span><span class="o">.</span><span class="n">op_mat</span><span class="p">(</span><span class="s2">&quot;b&quot;</span><span class="p">)</span>
+
+        <span class="k">elif</span> <span class="n">op_symbol</span> <span class="o">==</span> <span class="sa">r</span><span class="s2">&quot;b^\dagger b&quot;</span><span class="p">:</span>
+            <span class="c1"># b^dagger b = n delta(n,n)</span>
+            <span class="n">mat</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">diag</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">arange</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">nbas</span><span class="p">))</span>
+
+        <span class="k">elif</span> <span class="n">op_symbol</span> <span class="o">==</span> <span class="sa">r</span><span class="s2">&quot;b b^\dagger&quot;</span><span class="p">:</span>
+            <span class="n">mat</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">diag</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">arange</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">nbas</span><span class="p">)</span> <span class="o">+</span> <span class="mi">1</span><span class="p">)</span>
+
+        <span class="k">elif</span> <span class="n">op_symbol</span> <span class="o">==</span> <span class="s2">&quot;x&quot;</span> <span class="ow">and</span> <span class="p">(</span><span class="ow">not</span> <span class="bp">self</span><span class="o">.</span><span class="n">general_xp_power</span><span class="p">):</span>
+            <span class="k">if</span> <span class="ow">not</span> <span class="bp">self</span><span class="o">.</span><span class="n">dvr</span><span class="p">:</span>
+                <span class="c1"># define x-x0 = y or x = y+x0, return x</span>
+                <span class="c1"># &lt;m|y|n&gt; = sqrt(1/2w) &lt;m| b^\dagger + b |n&gt;</span>
+                <span class="n">mat</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">sqrt</span><span class="p">(</span><span class="mf">0.5</span><span class="o">/</span><span class="bp">self</span><span class="o">.</span><span class="n">omega</span><span class="p">)</span> <span class="o">*</span> <span class="bp">self</span><span class="o">.</span><span class="n">op_mat</span><span class="p">(</span><span class="sa">r</span><span class="s2">&quot;b^\dagger + b&quot;</span><span class="p">)</span> <span class="o">+</span> <span class="n">np</span><span class="o">.</span><span class="n">eye</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">nbas</span><span class="p">)</span> <span class="o">*</span> <span class="bp">self</span><span class="o">.</span><span class="n">x0</span>
+            <span class="k">else</span><span class="p">:</span>
+                <span class="n">mat</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">diag</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">dvr_x</span><span class="p">)</span>
+
+        <span class="k">elif</span> <span class="n">op_symbol</span> <span class="o">==</span> <span class="s2">&quot;x^2&quot;</span> <span class="ow">and</span> <span class="p">(</span><span class="ow">not</span> <span class="bp">self</span><span class="o">.</span><span class="n">general_xp_power</span><span class="p">):</span>
+            
+            <span class="k">if</span> <span class="ow">not</span> <span class="bp">self</span><span class="o">.</span><span class="n">dvr</span><span class="p">:</span>
+                <span class="c1"># can&#39;t do things like the commented code below due to numeric error around highest quantum number</span>
+                <span class="c1"># x_mat = self.op_mat(&quot;x&quot;)</span>
+                <span class="c1"># mat = x_mat @ x_mat</span>
+                <span class="c1"># x^2 = x0^2 + 2 x0 * y + y^2</span>
+                <span class="c1"># x0^2</span>
+                <span class="n">mat</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">eye</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">nbas</span><span class="p">)</span> <span class="o">*</span> <span class="bp">self</span><span class="o">.</span><span class="n">x0</span><span class="o">**</span><span class="mi">2</span>
+
+                <span class="c1"># 2 x0 * y</span>
+                <span class="n">mat</span> <span class="o">+=</span> <span class="mi">2</span> <span class="o">*</span> <span class="bp">self</span><span class="o">.</span><span class="n">x0</span> <span class="o">*</span> <span class="n">np</span><span class="o">.</span><span class="n">sqrt</span><span class="p">(</span><span class="mf">0.5</span><span class="o">/</span><span class="bp">self</span><span class="o">.</span><span class="n">omega</span><span class="p">)</span> <span class="o">*</span> <span class="bp">self</span><span class="o">.</span><span class="n">op_mat</span><span class="p">(</span><span class="sa">r</span><span class="s2">&quot;b^\dagger + b&quot;</span><span class="p">)</span>
+
+                <span class="c1">#  y^2: 1/2w * (b^\dagger b^\dagger + b^dagger b + b b^\dagger + bb)</span>
+                <span class="n">mat</span> <span class="o">+=</span> <span class="mf">0.5</span><span class="o">/</span><span class="bp">self</span><span class="o">.</span><span class="n">omega</span> <span class="o">*</span> <span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">op_mat</span><span class="p">(</span><span class="sa">r</span><span class="s2">&quot;b^\dagger b^\dagger&quot;</span><span class="p">)</span>
+                                         <span class="o">+</span> <span class="bp">self</span><span class="o">.</span><span class="n">op_mat</span><span class="p">(</span><span class="sa">r</span><span class="s2">&quot;b^\dagger b&quot;</span><span class="p">)</span>
+                                         <span class="o">+</span> <span class="bp">self</span><span class="o">.</span><span class="n">op_mat</span><span class="p">(</span><span class="sa">r</span><span class="s2">&quot;b b^\dagger&quot;</span><span class="p">)</span>
+                                         <span class="o">+</span> <span class="bp">self</span><span class="o">.</span><span class="n">op_mat</span><span class="p">(</span><span class="sa">r</span><span class="s2">&quot;b b&quot;</span><span class="p">)</span>
+                                         <span class="p">)</span>
+            <span class="k">else</span><span class="p">:</span>
+                <span class="n">mat</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">diag</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">dvr_x</span><span class="o">**</span><span class="mi">2</span><span class="p">)</span>
+        <span class="k">elif</span> <span class="nb">set</span><span class="p">(</span><span class="n">op_symbol</span><span class="o">.</span><span class="n">split</span><span class="p">(</span><span class="s2">&quot; &quot;</span><span class="p">))</span> <span class="o">==</span> <span class="nb">set</span><span class="p">(</span><span class="s2">&quot;x&quot;</span><span class="p">):</span>
+            <span class="n">moment</span> <span class="o">=</span> <span class="nb">len</span><span class="p">(</span><span class="n">op_symbol</span><span class="o">.</span><span class="n">split</span><span class="p">(</span><span class="s2">&quot; &quot;</span><span class="p">))</span>
+            <span class="n">mat</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">op_mat</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;x^</span><span class="si">{</span><span class="n">moment</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+        
+        <span class="k">elif</span> <span class="n">op_symbol</span><span class="o">.</span><span class="n">split</span><span class="p">(</span><span class="s2">&quot;^&quot;</span><span class="p">)[</span><span class="mi">0</span><span class="p">]</span> <span class="o">==</span> <span class="s2">&quot;x&quot;</span><span class="p">:</span>
+            <span class="c1"># moments of x</span>
+            <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">op_symbol</span><span class="o">.</span><span class="n">split</span><span class="p">(</span><span class="s2">&quot;^&quot;</span><span class="p">))</span> <span class="o">==</span> <span class="mi">1</span><span class="p">:</span>
+                <span class="n">moment</span> <span class="o">=</span> <span class="mi">1</span>
+            <span class="k">else</span><span class="p">:</span>
+                <span class="n">moment</span> <span class="o">=</span> <span class="nb">float</span><span class="p">(</span><span class="n">op_symbol</span><span class="o">.</span><span class="n">split</span><span class="p">(</span><span class="s2">&quot;^&quot;</span><span class="p">)[</span><span class="mi">1</span><span class="p">])</span>
+            
+            <span class="k">if</span> <span class="ow">not</span> <span class="bp">self</span><span class="o">.</span><span class="n">dvr</span><span class="p">:</span>
+                <span class="c1"># Analytical expression for integer moment</span>
+                <span class="k">assert</span> <span class="n">np</span><span class="o">.</span><span class="n">allclose</span><span class="p">(</span><span class="n">moment</span><span class="p">,</span> <span class="nb">round</span><span class="p">(</span><span class="n">moment</span><span class="p">))</span> 
+                <span class="n">moment</span> <span class="o">=</span> <span class="nb">round</span><span class="p">(</span><span class="n">moment</span><span class="p">)</span>
+                <span class="n">mat</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">zeros</span><span class="p">((</span><span class="bp">self</span><span class="o">.</span><span class="n">nbas</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">nbas</span><span class="p">))</span>
+                <span class="k">for</span> <span class="n">imoment</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="n">moment</span><span class="o">+</span><span class="mi">1</span><span class="p">):</span>
+                    <span class="n">factor</span> <span class="o">=</span> <span class="n">scipy</span><span class="o">.</span><span class="n">special</span><span class="o">.</span><span class="n">comb</span><span class="p">(</span><span class="n">moment</span><span class="p">,</span> <span class="n">imoment</span><span class="p">)</span> <span class="o">*</span> <span class="n">np</span><span class="o">.</span><span class="n">sqrt</span><span class="p">(</span><span class="mi">1</span><span class="o">/</span><span class="bp">self</span><span class="o">.</span><span class="n">omega</span><span class="p">)</span> <span class="o">**</span> <span class="n">imoment</span>
+                    <span class="k">for</span> <span class="n">i</span><span class="p">,</span><span class="n">j</span> <span class="ow">in</span> <span class="n">itertools</span><span class="o">.</span><span class="n">product</span><span class="p">(</span><span class="nb">range</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">nbas</span><span class="p">),</span> <span class="n">repeat</span><span class="o">=</span><span class="mi">2</span><span class="p">):</span>
+                        <span class="n">mat</span><span class="p">[</span><span class="n">i</span><span class="p">,</span><span class="n">j</span><span class="p">]</span> <span class="o">+=</span> <span class="n">factor</span> <span class="o">*</span> <span class="n">x_power_k</span><span class="p">(</span><span class="n">imoment</span><span class="p">,</span> <span class="n">i</span><span class="p">,</span> <span class="n">j</span><span class="p">)</span> <span class="o">*</span> <span class="bp">self</span><span class="o">.</span><span class="n">x0</span><span class="o">**</span><span class="p">(</span><span class="n">moment</span><span class="o">-</span><span class="n">imoment</span><span class="p">)</span>
+                
+            <span class="k">else</span><span class="p">:</span>
+                <span class="n">mat</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">diag</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">dvr_x</span> <span class="o">**</span> <span class="n">moment</span><span class="p">)</span>
+
+        <span class="k">elif</span> <span class="n">op_symbol</span> <span class="o">==</span> <span class="s2">&quot;p&quot;</span> <span class="ow">and</span> <span class="p">(</span><span class="ow">not</span> <span class="bp">self</span><span class="o">.</span><span class="n">general_xp_power</span><span class="p">):</span>
+            <span class="c1"># &lt;m|p|n&gt; = -i sqrt(w/2) &lt;m| b - b^\dagger |n&gt;</span>
+            <span class="n">mat</span> <span class="o">=</span> <span class="mi">1</span><span class="n">j</span> <span class="o">*</span> <span class="n">np</span><span class="o">.</span><span class="n">sqrt</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">omega</span> <span class="o">/</span> <span class="mi">2</span><span class="p">)</span> <span class="o">*</span> <span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">op_mat</span><span class="p">(</span><span class="sa">r</span><span class="s2">&quot;b^\dagger&quot;</span><span class="p">)</span> <span class="o">-</span> <span class="bp">self</span><span class="o">.</span><span class="n">op_mat</span><span class="p">(</span><span class="s2">&quot;b&quot;</span><span class="p">))</span>
+            <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">dvr</span><span class="p">:</span>
+                <span class="n">mat</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">dvr_v</span><span class="o">.</span><span class="n">T</span> <span class="o">@</span> <span class="n">mat</span> <span class="o">@</span> <span class="bp">self</span><span class="o">.</span><span class="n">dvr_v</span>
+
+        <span class="k">elif</span> <span class="n">op_symbol</span> <span class="o">==</span> <span class="s2">&quot;p^2&quot;</span> <span class="ow">and</span> <span class="p">(</span><span class="ow">not</span> <span class="bp">self</span><span class="o">.</span><span class="n">general_xp_power</span><span class="p">):</span>
+            <span class="n">mat</span> <span class="o">=</span> <span class="o">-</span><span class="bp">self</span><span class="o">.</span><span class="n">omega</span> <span class="o">/</span> <span class="mi">2</span> <span class="o">*</span> <span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">op_mat</span><span class="p">(</span><span class="sa">r</span><span class="s2">&quot;b^\dagger b^\dagger&quot;</span><span class="p">)</span>
+                                     <span class="o">-</span> <span class="bp">self</span><span class="o">.</span><span class="n">op_mat</span><span class="p">(</span><span class="sa">r</span><span class="s2">&quot;b^\dagger b&quot;</span><span class="p">)</span>
+                                     <span class="o">-</span> <span class="bp">self</span><span class="o">.</span><span class="n">op_mat</span><span class="p">(</span><span class="sa">r</span><span class="s2">&quot;b b^\dagger&quot;</span><span class="p">)</span>
+                                     <span class="o">+</span> <span class="bp">self</span><span class="o">.</span><span class="n">op_mat</span><span class="p">(</span><span class="sa">r</span><span class="s2">&quot;b b&quot;</span><span class="p">)</span>
+                                     <span class="p">)</span>
+            <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">dvr</span><span class="p">:</span>
+                <span class="n">mat</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">dvr_v</span><span class="o">.</span><span class="n">T</span> <span class="o">@</span> <span class="n">mat</span> <span class="o">@</span> <span class="bp">self</span><span class="o">.</span><span class="n">dvr_v</span>
+
+        <span class="k">elif</span> <span class="nb">set</span><span class="p">(</span><span class="n">op_symbol</span><span class="o">.</span><span class="n">split</span><span class="p">(</span><span class="s2">&quot; &quot;</span><span class="p">))</span> <span class="o">==</span> <span class="nb">set</span><span class="p">(</span><span class="s2">&quot;p&quot;</span><span class="p">):</span>
+            <span class="n">moment</span> <span class="o">=</span> <span class="nb">len</span><span class="p">(</span><span class="n">op_symbol</span><span class="o">.</span><span class="n">split</span><span class="p">(</span><span class="s2">&quot; &quot;</span><span class="p">))</span>
+            <span class="n">mat</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">op_mat</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;p^</span><span class="si">{</span><span class="n">moment</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+
+        <span class="k">elif</span> <span class="n">op_symbol</span><span class="o">.</span><span class="n">split</span><span class="p">(</span><span class="s2">&quot;^&quot;</span><span class="p">)[</span><span class="mi">0</span><span class="p">]</span> <span class="o">==</span> <span class="s2">&quot;p&quot;</span><span class="p">:</span>
+            <span class="c1"># moments of p</span>
+            <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">op_symbol</span><span class="o">.</span><span class="n">split</span><span class="p">(</span><span class="s2">&quot;^&quot;</span><span class="p">))</span> <span class="o">==</span> <span class="mi">1</span><span class="p">:</span>
+                <span class="n">moment</span> <span class="o">=</span> <span class="mi">1</span>
+            <span class="k">else</span><span class="p">:</span>
+                <span class="n">moment</span> <span class="o">=</span> <span class="nb">float</span><span class="p">(</span><span class="n">op_symbol</span><span class="o">.</span><span class="n">split</span><span class="p">(</span><span class="s2">&quot;^&quot;</span><span class="p">)[</span><span class="mi">1</span><span class="p">])</span>
+            
+            <span class="c1"># the moment for p should be integer</span>
+            <span class="k">assert</span> <span class="n">np</span><span class="o">.</span><span class="n">allclose</span><span class="p">(</span><span class="n">moment</span><span class="p">,</span> <span class="nb">round</span><span class="p">(</span><span class="n">moment</span><span class="p">))</span> 
+            <span class="n">moment</span> <span class="o">=</span> <span class="nb">round</span><span class="p">(</span><span class="n">moment</span><span class="p">)</span>
+            <span class="k">if</span> <span class="n">moment</span> <span class="o">%</span> <span class="mi">2</span> <span class="o">==</span> <span class="mi">0</span><span class="p">:</span>
+                <span class="n">dtype</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">float64</span>
+            <span class="k">else</span><span class="p">:</span>
+                <span class="n">dtype</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">complex128</span>
+            <span class="n">mat</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">zeros</span><span class="p">((</span><span class="bp">self</span><span class="o">.</span><span class="n">nbas</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">nbas</span><span class="p">),</span> <span class="n">dtype</span><span class="o">=</span><span class="n">dtype</span><span class="p">)</span>
+
+            <span class="k">for</span> <span class="n">i</span><span class="p">,</span><span class="n">j</span> <span class="ow">in</span> <span class="n">itertools</span><span class="o">.</span><span class="n">product</span><span class="p">(</span><span class="nb">range</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">nbas</span><span class="p">),</span> <span class="n">repeat</span><span class="o">=</span><span class="mi">2</span><span class="p">):</span>
+                <span class="n">res</span> <span class="o">=</span> <span class="n">p_power_k</span><span class="p">(</span><span class="n">moment</span><span class="p">,</span> <span class="n">i</span><span class="p">,</span> <span class="n">j</span><span class="p">)</span> <span class="o">*</span> <span class="n">np</span><span class="o">.</span><span class="n">sqrt</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">omega</span><span class="p">)</span> <span class="o">**</span> <span class="n">moment</span>
+                <span class="k">if</span> <span class="n">moment</span> <span class="o">%</span> <span class="mi">2</span> <span class="o">==</span> <span class="mi">0</span><span class="p">:</span>
+                    <span class="n">mat</span><span class="p">[</span><span class="n">i</span><span class="p">,</span><span class="n">j</span><span class="p">]</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">real</span><span class="p">(</span><span class="n">res</span><span class="p">)</span>
+                <span class="k">else</span><span class="p">:</span>
+                    <span class="n">mat</span><span class="p">[</span><span class="n">i</span><span class="p">,</span><span class="n">j</span><span class="p">]</span> <span class="o">=</span> <span class="n">res</span>
+                
+            <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">dvr</span><span class="p">:</span>
+                <span class="n">mat</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">dvr_v</span><span class="o">.</span><span class="n">T</span> <span class="o">@</span> <span class="n">mat</span> <span class="o">@</span> <span class="bp">self</span><span class="o">.</span><span class="n">dvr_v</span>
+        
+        <span class="k">elif</span> <span class="n">op_symbol</span> <span class="o">==</span> <span class="s2">&quot;x p&quot;</span><span class="p">:</span>
+            <span class="n">mat</span> <span class="o">=</span> <span class="o">-</span><span class="mf">1.0</span><span class="n">j</span><span class="o">/</span><span class="mi">2</span> <span class="o">*</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">op_mat</span><span class="p">(</span><span class="sa">r</span><span class="s2">&quot;b b&quot;</span><span class="p">)</span>
+                    <span class="o">-</span> <span class="bp">self</span><span class="o">.</span><span class="n">op_mat</span><span class="p">(</span><span class="sa">r</span><span class="s2">&quot;b^\dagger b^\dagger&quot;</span><span class="p">)</span>
+                    <span class="o">+</span> <span class="bp">self</span><span class="o">.</span><span class="n">op_mat</span><span class="p">(</span><span class="sa">r</span><span class="s2">&quot;b b^\dagger&quot;</span><span class="p">)</span>
+                    <span class="o">-</span> <span class="bp">self</span><span class="o">.</span><span class="n">op_mat</span><span class="p">(</span><span class="sa">r</span><span class="s2">&quot;b^\dagger b&quot;</span><span class="p">))</span>
+        
+        <span class="k">elif</span> <span class="n">op_symbol</span> <span class="o">==</span> <span class="s2">&quot;x partialx&quot;</span><span class="p">:</span>
+            <span class="c1"># x partialx is real, while x p is imaginary</span>
+            <span class="n">mat</span> <span class="o">=</span> <span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">op_mat</span><span class="p">(</span><span class="s2">&quot;x p&quot;</span><span class="p">)</span> <span class="o">/</span> <span class="o">-</span><span class="mf">1.0</span><span class="n">j</span><span class="p">)</span><span class="o">.</span><span class="n">real</span>
+        
+        <span class="k">elif</span> <span class="n">op_symbol</span> <span class="o">==</span> <span class="s2">&quot;p x&quot;</span><span class="p">:</span>
+            <span class="n">mat</span> <span class="o">=</span> <span class="o">-</span><span class="mf">1.0</span><span class="n">j</span><span class="o">/</span><span class="mi">2</span> <span class="o">*</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">op_mat</span><span class="p">(</span><span class="sa">r</span><span class="s2">&quot;b b&quot;</span><span class="p">)</span>
+                    <span class="o">-</span> <span class="bp">self</span><span class="o">.</span><span class="n">op_mat</span><span class="p">(</span><span class="sa">r</span><span class="s2">&quot;b^\dagger b^\dagger&quot;</span><span class="p">)</span>
+                    <span class="o">-</span> <span class="bp">self</span><span class="o">.</span><span class="n">op_mat</span><span class="p">(</span><span class="sa">r</span><span class="s2">&quot;b b^\dagger&quot;</span><span class="p">)</span>
+                    <span class="o">+</span> <span class="bp">self</span><span class="o">.</span><span class="n">op_mat</span><span class="p">(</span><span class="sa">r</span><span class="s2">&quot;b^\dagger b&quot;</span><span class="p">))</span>
+        
+        <span class="k">elif</span> <span class="n">op_symbol</span> <span class="o">==</span> <span class="s2">&quot;partialx x&quot;</span><span class="p">:</span>
+            <span class="n">mat</span> <span class="o">=</span> <span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">op_mat</span><span class="p">(</span><span class="s2">&quot;p x&quot;</span><span class="p">)</span> <span class="o">/</span> <span class="o">-</span><span class="mf">1.0</span><span class="n">j</span><span class="p">)</span><span class="o">.</span><span class="n">real</span>
+
+        <span class="k">elif</span> <span class="n">op_symbol</span> <span class="o">==</span> <span class="s2">&quot;partialx&quot;</span><span class="p">:</span>
+            <span class="n">mat</span> <span class="o">=</span> <span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">op_mat</span><span class="p">(</span><span class="s2">&quot;p&quot;</span><span class="p">)</span> <span class="o">/</span> <span class="o">-</span><span class="mf">1.0</span><span class="n">j</span><span class="p">)</span><span class="o">.</span><span class="n">real</span>
+        
+        <span class="k">elif</span> <span class="n">op_symbol</span> <span class="ow">in</span> <span class="p">[</span><span class="s2">&quot;partialx^2&quot;</span><span class="p">,</span> <span class="s2">&quot;partialx partialx&quot;</span><span class="p">]:</span>
+            <span class="n">mat</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">op_mat</span><span class="p">(</span><span class="s2">&quot;p^2&quot;</span><span class="p">)</span> <span class="o">*</span> <span class="o">-</span><span class="mi">1</span>
+        <span class="k">elif</span> <span class="n">op_symbol</span> <span class="o">==</span> <span class="s2">&quot;I&quot;</span><span class="p">:</span>
+            <span class="n">mat</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">eye</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">nbas</span><span class="p">)</span>
+        
+        <span class="k">elif</span> <span class="n">op_symbol</span> <span class="o">==</span> <span class="s2">&quot;n&quot;</span><span class="p">:</span>
+            <span class="c1"># since b^\dagger b is not allowed to shift the origin, </span>
+            <span class="c1"># n is designed for occupation number of the SHO basis</span>
+            <span class="n">mat</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">diag</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">arange</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">nbas</span><span class="p">))</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;op_symbol:</span><span class="si">{</span><span class="n">op_symbol</span><span class="si">}</span><span class="s2"> is not supported. &quot;</span><span class="p">)</span>
+
+        <span class="bp">self</span><span class="o">.</span><span class="n">_recurssion_flag</span> <span class="o">-=</span> <span class="mi">1</span>
+        <span class="k">return</span> <span class="n">mat</span> <span class="o">*</span> <span class="n">op_factor</span></div>
+
+<div class="viewcode-block" id="BasisSHO.copy"><a class="viewcode-back" href="../../../model.html#renormalizer.model.basis.BasisSHO.copy">[docs]</a>    <span class="k">def</span> <span class="nf">copy</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">new_dof</span><span class="p">):</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="vm">__class__</span><span class="p">(</span><span class="n">new_dof</span><span class="p">,</span> <span class="n">omega</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">omega</span><span class="p">,</span>
+                              <span class="n">nbas</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">nbas</span><span class="p">,</span> <span class="n">x0</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">x0</span><span class="p">,</span>
+                              <span class="n">dvr</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">dvr</span><span class="p">,</span> <span class="n">general_xp_power</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">general_xp_power</span><span class="p">)</span></div></div>
+
+
+<div class="viewcode-block" id="BasisSineDVR"><a class="viewcode-back" href="../../../model.html#renormalizer.model.basis.BasisSineDVR">[docs]</a><span class="k">class</span> <span class="nc">BasisSineDVR</span><span class="p">(</span><span class="n">BasisSet</span><span class="p">):</span>
+    <span class="sa">r</span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Sine DVR basis (particle-in-a-box) for vibrational, angular, and</span>
+<span class="sd">    dissociative modes.</span>
+<span class="sd">    See Phys. Rep. 324, 1–105 (2000).</span>
+
+<span class="sd">        .. math::</span>
+<span class="sd">            \psi_j(x) = \sqrt{\frac{2}{L}} \sin(j\pi(x-x_0)/L) \, \textrm{for} \, x_0 \le x \le</span>
+<span class="sd">            x_{N+1}, L = x_{N+1} - x_0</span>
+
+<span class="sd">    the grid points are at</span>
+
+<span class="sd">        .. math::</span>
+<span class="sd">            x_\alpha = x_0 + \alpha \frac{L}{N+1}</span>
+<span class="sd">    </span>
+<span class="sd">    Operators supported:</span>
+<span class="sd">        .. math::</span>
+<span class="sd">            I, x, x^1, x^2, x^\textrm{moment}, partialx, partialx^2, p, p^2, </span>
+<span class="sd">            x partialx, x^2 p^2, x^2 partialx, x p^2, x^3 p^2 </span>
+<span class="sd">    </span>
+<span class="sd">    Parameters</span>
+<span class="sd">    ----------</span>
+<span class="sd">    dof: str, int </span>
+<span class="sd">        The name of the DoF contained in the basis set. The type could be anything that can be hashed.</span>
+<span class="sd">    nbas: int</span>
+<span class="sd">        Number of grid points.</span>
+<span class="sd">    xi: float</span>
+<span class="sd">        The leftmost grid point of the coordinate.</span>
+<span class="sd">    xf: float</span>
+<span class="sd">        The rightmost grid point of the coordinate.</span>
+<span class="sd">    endpoint: bool, optional</span>
+<span class="sd">        If ``endpoint=False``, :math:`x_0=x_i, x_{N+1}=x_f`; otherwise</span>
+<span class="sd">        :math:`x_1=x_i, x_{N}=x_f`.</span>
+<span class="sd">            </span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="n">is_phonon</span> <span class="o">=</span> <span class="kc">True</span>
+
+    <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">dof</span><span class="p">,</span> <span class="n">nbas</span><span class="p">,</span> <span class="n">xi</span><span class="p">,</span> <span class="n">xf</span><span class="p">,</span> <span class="n">endpoint</span><span class="o">=</span><span class="kc">False</span><span class="p">):</span>
+        
+        <span class="k">assert</span> <span class="n">xi</span> <span class="o">&lt;</span> <span class="n">xf</span>
+        <span class="k">if</span> <span class="n">endpoint</span><span class="p">:</span>
+            <span class="n">interval</span> <span class="o">=</span> <span class="p">(</span><span class="n">xf</span><span class="o">-</span><span class="n">xi</span><span class="p">)</span> <span class="o">/</span> <span class="p">(</span><span class="n">nbas</span><span class="o">-</span><span class="mi">1</span><span class="p">)</span>
+            <span class="n">xi</span> <span class="o">-=</span> <span class="n">interval</span>
+            <span class="n">xf</span> <span class="o">+=</span> <span class="n">interval</span>
+
+        <span class="bp">self</span><span class="o">.</span><span class="n">xi</span> <span class="o">=</span> <span class="n">xi</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">xf</span> <span class="o">=</span> <span class="n">xf</span>
+
+        <span class="bp">self</span><span class="o">.</span><span class="n">L</span> <span class="o">=</span> <span class="n">xf</span><span class="o">-</span><span class="n">xi</span>
+        <span class="nb">super</span><span class="p">()</span><span class="o">.</span><span class="fm">__init__</span><span class="p">(</span><span class="n">dof</span><span class="p">,</span> <span class="n">nbas</span><span class="p">,</span> <span class="p">[</span><span class="mi">0</span><span class="p">]</span> <span class="o">*</span> <span class="n">nbas</span><span class="p">)</span>
+        
+        <span class="n">tmp</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">arange</span><span class="p">(</span><span class="mi">1</span><span class="p">,</span><span class="n">nbas</span><span class="o">+</span><span class="mi">1</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">dvr_x</span> <span class="o">=</span> <span class="n">xi</span> <span class="o">+</span> <span class="n">tmp</span> <span class="o">*</span> <span class="bp">self</span><span class="o">.</span><span class="n">L</span> <span class="o">/</span> <span class="p">(</span><span class="n">nbas</span><span class="o">+</span><span class="mi">1</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">dvr_v</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">sqrt</span><span class="p">(</span><span class="mi">2</span><span class="o">/</span><span class="p">(</span><span class="n">nbas</span><span class="o">+</span><span class="mi">1</span><span class="p">))</span> <span class="o">*</span> \
+            <span class="n">np</span><span class="o">.</span><span class="n">sin</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">tensordot</span><span class="p">(</span><span class="n">tmp</span><span class="p">,</span> <span class="n">tmp</span><span class="p">,</span> <span class="n">axes</span><span class="o">=</span><span class="mi">0</span><span class="p">)</span><span class="o">*</span><span class="n">np</span><span class="o">.</span><span class="n">pi</span><span class="o">/</span><span class="p">(</span><span class="n">nbas</span><span class="o">+</span><span class="mi">1</span><span class="p">))</span>
+
+    <span class="k">def</span> <span class="fm">__repr__</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="k">return</span> <span class="sa">f</span><span class="s2">&quot;(xi: </span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">xi</span><span class="si">}</span><span class="s2">, xf: </span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">xf</span><span class="si">}</span><span class="s2">, nbas: </span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">nbas</span><span class="si">}</span><span class="s2">)&quot;</span>
+    
+<div class="viewcode-block" id="BasisSineDVR.op_mat"><a class="viewcode-back" href="../../../model.html#renormalizer.model.basis.BasisSineDVR.op_mat">[docs]</a>    <span class="k">def</span> <span class="nf">op_mat</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">op</span><span class="p">:</span> <span class="n">Union</span><span class="p">[</span><span class="n">Op</span><span class="p">,</span> <span class="nb">str</span><span class="p">]):</span>
+        <span class="k">if</span> <span class="ow">not</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">op</span><span class="p">,</span> <span class="n">Op</span><span class="p">):</span>
+            <span class="n">op</span> <span class="o">=</span> <span class="n">Op</span><span class="p">(</span><span class="n">op</span><span class="p">,</span> <span class="kc">None</span><span class="p">)</span>
+        <span class="n">op_symbol</span><span class="p">,</span> <span class="n">op_factor</span> <span class="o">=</span> <span class="n">op</span><span class="o">.</span><span class="n">symbol</span><span class="p">,</span> <span class="n">op</span><span class="o">.</span><span class="n">factor</span>
+        
+        <span class="k">if</span> <span class="n">op_symbol</span> <span class="o">==</span> <span class="s2">&quot;I&quot;</span><span class="p">:</span>
+            <span class="n">mat</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">eye</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">nbas</span><span class="p">)</span>
+        
+        <span class="k">elif</span> <span class="n">op_symbol</span><span class="o">.</span><span class="n">split</span><span class="p">(</span><span class="s2">&quot;^&quot;</span><span class="p">)[</span><span class="mi">0</span><span class="p">]</span> <span class="o">==</span> <span class="s2">&quot;x&quot;</span> <span class="ow">and</span> <span class="s2">&quot; &quot;</span> <span class="ow">not</span> <span class="ow">in</span> <span class="n">op_symbol</span><span class="p">:</span>
+            <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">op_symbol</span><span class="o">.</span><span class="n">split</span><span class="p">(</span><span class="s2">&quot;^&quot;</span><span class="p">))</span> <span class="o">==</span> <span class="mi">1</span><span class="p">:</span>
+                <span class="c1"># legacy for check</span>
+                <span class="n">mat1</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">zeros</span><span class="p">((</span><span class="bp">self</span><span class="o">.</span><span class="n">nbas</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">nbas</span><span class="p">))</span>
+                <span class="k">for</span> <span class="n">j</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="mi">1</span><span class="p">,</span><span class="bp">self</span><span class="o">.</span><span class="n">nbas</span><span class="o">+</span><span class="mi">1</span><span class="p">,</span><span class="mi">1</span><span class="p">):</span>
+                    <span class="k">for</span> <span class="n">k</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="mi">1</span><span class="p">,</span><span class="bp">self</span><span class="o">.</span><span class="n">nbas</span><span class="o">+</span><span class="mi">1</span><span class="p">,</span><span class="mi">1</span><span class="p">):</span>
+                        <span class="n">a1</span> <span class="o">=</span> <span class="p">(</span><span class="n">j</span><span class="o">+</span><span class="n">k</span><span class="p">)</span><span class="o">*</span><span class="n">np</span><span class="o">.</span><span class="n">pi</span><span class="o">/</span><span class="bp">self</span><span class="o">.</span><span class="n">L</span>
+                        <span class="n">a2</span> <span class="o">=</span> <span class="p">(</span><span class="n">j</span><span class="o">-</span><span class="n">k</span><span class="p">)</span><span class="o">*</span><span class="n">np</span><span class="o">.</span><span class="n">pi</span><span class="o">/</span><span class="bp">self</span><span class="o">.</span><span class="n">L</span>
+                        <span class="k">if</span> <span class="p">(</span><span class="n">j</span><span class="o">+</span><span class="n">k</span><span class="p">)</span><span class="o">%</span><span class="mi">2</span> <span class="o">==</span> <span class="mi">1</span><span class="p">:</span>
+                            <span class="n">res</span> <span class="o">=</span> <span class="o">-</span><span class="mi">1</span><span class="o">/</span><span class="bp">self</span><span class="o">.</span><span class="n">L</span><span class="o">*</span><span class="p">(</span><span class="o">-</span><span class="mi">2</span><span class="o">/</span><span class="n">a1</span><span class="o">**</span><span class="mi">2</span><span class="o">+</span><span class="mi">2</span><span class="o">/</span><span class="n">a2</span><span class="o">**</span><span class="mi">2</span><span class="p">)</span>
+                        <span class="k">elif</span> <span class="n">j</span><span class="o">-</span><span class="n">k</span> <span class="o">==</span> <span class="mi">0</span><span class="p">:</span>
+                            <span class="n">res</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">xi</span> <span class="o">+</span> <span class="mf">0.5</span><span class="o">*</span><span class="bp">self</span><span class="o">.</span><span class="n">L</span>
+                        <span class="k">else</span><span class="p">:</span>
+                            <span class="n">res</span> <span class="o">=</span> <span class="mi">0</span>
+                        <span class="n">mat1</span><span class="p">[</span><span class="n">j</span><span class="o">-</span><span class="mi">1</span><span class="p">,</span><span class="n">k</span><span class="o">-</span><span class="mi">1</span><span class="p">]</span> <span class="o">=</span> <span class="n">res</span>
+
+                <span class="n">mat</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_I</span><span class="p">()</span><span class="o">*</span><span class="bp">self</span><span class="o">.</span><span class="n">xi</span><span class="o">+</span><span class="bp">self</span><span class="o">.</span><span class="n">_u</span><span class="p">()</span>
+                <span class="k">assert</span> <span class="n">np</span><span class="o">.</span><span class="n">allclose</span><span class="p">(</span><span class="n">mat</span><span class="p">,</span> <span class="n">mat1</span><span class="p">)</span>
+                
+                <span class="n">mat</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">dvr_v</span><span class="o">.</span><span class="n">T</span> <span class="o">@</span> <span class="n">mat</span> <span class="o">@</span> <span class="bp">self</span><span class="o">.</span><span class="n">dvr_v</span>
+            <span class="k">else</span><span class="p">:</span>
+                <span class="n">moment</span> <span class="o">=</span> <span class="nb">float</span><span class="p">(</span><span class="n">op_symbol</span><span class="o">.</span><span class="n">split</span><span class="p">(</span><span class="s2">&quot;^&quot;</span><span class="p">)[</span><span class="mi">1</span><span class="p">])</span>
+                <span class="k">if</span> <span class="n">moment</span> <span class="o">==</span> <span class="mi">1</span><span class="p">:</span>
+                    <span class="n">mat</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">op_mat</span><span class="p">(</span><span class="s2">&quot;x&quot;</span><span class="p">)</span>
+                <span class="k">if</span> <span class="n">moment</span> <span class="o">==</span> <span class="mi">2</span><span class="p">:</span>
+                    <span class="n">mat</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_I</span><span class="p">()</span><span class="o">*</span><span class="bp">self</span><span class="o">.</span><span class="n">xi</span><span class="o">**</span><span class="mi">2</span><span class="o">+</span><span class="bp">self</span><span class="o">.</span><span class="n">_u</span><span class="p">()</span><span class="o">*</span><span class="bp">self</span><span class="o">.</span><span class="n">xi</span><span class="o">*</span><span class="mi">2</span><span class="o">+</span><span class="bp">self</span><span class="o">.</span><span class="n">_uu</span><span class="p">()</span>
+                    <span class="n">mat</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">dvr_v</span><span class="o">.</span><span class="n">T</span> <span class="o">@</span> <span class="n">mat</span> <span class="o">@</span> <span class="bp">self</span><span class="o">.</span><span class="n">dvr_v</span>
+                <span class="k">else</span><span class="p">:</span>    
+                    <span class="n">mat</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">diag</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">dvr_x</span> <span class="o">**</span> <span class="n">moment</span><span class="p">)</span>
+        
+        <span class="k">elif</span> <span class="nb">set</span><span class="p">(</span><span class="n">op_symbol</span><span class="o">.</span><span class="n">split</span><span class="p">(</span><span class="s2">&quot; &quot;</span><span class="p">))</span> <span class="o">==</span> <span class="nb">set</span><span class="p">(</span><span class="s2">&quot;x&quot;</span><span class="p">):</span>
+            <span class="n">moment</span> <span class="o">=</span> <span class="nb">len</span><span class="p">(</span><span class="n">op_symbol</span><span class="o">.</span><span class="n">split</span><span class="p">(</span><span class="s2">&quot; &quot;</span><span class="p">))</span>
+            <span class="n">mat</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">op_mat</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;x^</span><span class="si">{</span><span class="n">moment</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+        
+        <span class="k">elif</span> <span class="n">op_symbol</span> <span class="o">==</span> <span class="s2">&quot;partialx&quot;</span><span class="p">:</span>
+            <span class="c1"># legacy for check</span>
+            <span class="n">mat1</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">zeros</span><span class="p">((</span><span class="bp">self</span><span class="o">.</span><span class="n">nbas</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">nbas</span><span class="p">))</span>
+            <span class="k">for</span> <span class="n">j</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">nbas</span><span class="p">):</span>
+                <span class="k">for</span> <span class="n">k</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="n">j</span><span class="p">):</span>
+                    <span class="k">if</span> <span class="p">(</span><span class="n">j</span><span class="o">-</span><span class="n">k</span><span class="p">)</span> <span class="o">%</span> <span class="mi">2</span> <span class="o">!=</span> <span class="mi">0</span><span class="p">:</span>
+                        <span class="n">mat1</span><span class="p">[</span><span class="n">j</span><span class="p">,</span><span class="n">k</span><span class="p">]</span> <span class="o">=</span> <span class="mi">4</span> <span class="o">/</span> <span class="bp">self</span><span class="o">.</span><span class="n">L</span> <span class="o">*</span> <span class="p">(</span><span class="n">j</span><span class="o">+</span><span class="mi">1</span><span class="p">)</span> <span class="o">*</span> <span class="p">(</span><span class="n">k</span><span class="o">+</span><span class="mi">1</span><span class="p">)</span> <span class="o">/</span> <span class="p">((</span><span class="n">j</span><span class="o">+</span><span class="mi">1</span><span class="p">)</span><span class="o">**</span><span class="mi">2</span> <span class="o">-</span> <span class="p">(</span><span class="n">k</span><span class="o">+</span><span class="mi">1</span><span class="p">)</span><span class="o">**</span><span class="mi">2</span><span class="p">)</span>
+            <span class="n">mat1</span> <span class="o">-=</span> <span class="n">mat1</span><span class="o">.</span><span class="n">T</span> 
+            
+            <span class="n">mat</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_du</span><span class="p">()</span>
+            <span class="k">assert</span> <span class="n">np</span><span class="o">.</span><span class="n">allclose</span><span class="p">(</span><span class="n">mat</span><span class="p">,</span> <span class="n">mat1</span><span class="p">)</span>
+
+            <span class="n">mat</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">dvr_v</span><span class="o">.</span><span class="n">T</span> <span class="o">@</span> <span class="n">mat</span> <span class="o">@</span> <span class="bp">self</span><span class="o">.</span><span class="n">dvr_v</span>
+            
+        <span class="k">elif</span> <span class="n">op_symbol</span> <span class="ow">in</span> <span class="p">[</span><span class="s2">&quot;partialx^2&quot;</span><span class="p">,</span> <span class="s2">&quot;partialx partialx&quot;</span><span class="p">]:</span>
+            <span class="n">mat</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">op_mat</span><span class="p">(</span><span class="s2">&quot;p^2&quot;</span><span class="p">)</span> <span class="o">*</span> <span class="o">-</span><span class="mi">1</span>
+
+        <span class="k">elif</span> <span class="n">op_symbol</span> <span class="o">==</span> <span class="s2">&quot;p&quot;</span><span class="p">:</span>
+            <span class="n">mat</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">op_mat</span><span class="p">(</span><span class="s2">&quot;partialx&quot;</span><span class="p">)</span> <span class="o">*</span> <span class="o">-</span><span class="mf">1.0</span><span class="n">j</span>
+
+        <span class="k">elif</span> <span class="n">op_symbol</span> <span class="o">==</span> <span class="s2">&quot;p^2&quot;</span><span class="p">:</span>
+            <span class="c1"># legacy for check</span>
+            <span class="n">mat1</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">diag</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">arange</span><span class="p">(</span><span class="mi">1</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">nbas</span><span class="o">+</span><span class="mi">1</span><span class="p">)</span><span class="o">*</span><span class="n">np</span><span class="o">.</span><span class="n">pi</span><span class="o">/</span><span class="bp">self</span><span class="o">.</span><span class="n">L</span><span class="p">)</span><span class="o">**</span><span class="mi">2</span>
+            <span class="n">mat</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">einsum</span><span class="p">(</span><span class="s2">&quot;jk,k-&gt;jk&quot;</span><span class="p">,</span><span class="bp">self</span><span class="o">.</span><span class="n">_I</span><span class="p">(),</span><span class="bp">self</span><span class="o">.</span><span class="n">_eigene</span><span class="p">()</span><span class="o">*</span><span class="mi">2</span><span class="p">)</span>
+            <span class="k">assert</span> <span class="n">np</span><span class="o">.</span><span class="n">allclose</span><span class="p">(</span><span class="n">mat</span><span class="p">,</span> <span class="n">mat1</span><span class="p">)</span>
+            <span class="n">mat</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">dvr_v</span><span class="o">.</span><span class="n">T</span> <span class="o">@</span> <span class="n">mat</span> <span class="o">@</span> <span class="bp">self</span><span class="o">.</span><span class="n">dvr_v</span>
+        
+        <span class="k">elif</span> <span class="n">op_symbol</span><span class="p">[:</span><span class="mi">3</span><span class="p">]</span> <span class="o">==</span> <span class="s2">&quot;cos&quot;</span><span class="p">:</span>
+            <span class="c1"># cos(alpha * x), the format cos(x,float)</span>
+            <span class="n">term_split</span> <span class="o">=</span> <span class="n">op_symbol</span><span class="p">[</span><span class="mi">4</span><span class="p">:</span><span class="o">-</span><span class="mi">1</span><span class="p">]</span><span class="o">.</span><span class="n">split</span><span class="p">(</span><span class="s2">&quot;,&quot;</span><span class="p">)</span>
+            <span class="k">if</span> <span class="s2">&quot;j&quot;</span> <span class="ow">in</span> <span class="n">term_split</span><span class="p">[</span><span class="mi">1</span><span class="p">]:</span>
+                <span class="n">scalar</span> <span class="o">=</span> <span class="nb">complex</span><span class="p">(</span><span class="n">term_split</span><span class="p">[</span><span class="mi">1</span><span class="p">])</span>
+            <span class="k">else</span><span class="p">:</span>
+                <span class="n">scalar</span> <span class="o">=</span> <span class="nb">float</span><span class="p">(</span><span class="n">term_split</span><span class="p">[</span><span class="mi">1</span><span class="p">])</span>
+            <span class="n">mat</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">diag</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">cos</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">diag</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">op_mat</span><span class="p">(</span><span class="n">term_split</span><span class="p">[</span><span class="mi">0</span><span class="p">]))</span><span class="o">*</span><span class="n">scalar</span><span class="p">))</span>
+        
+        <span class="k">elif</span> <span class="n">op_symbol</span> <span class="o">==</span> <span class="s2">&quot;x partialx&quot;</span><span class="p">:</span>
+            <span class="c1"># legacy for check</span>
+            <span class="n">mat1</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">zeros</span><span class="p">((</span><span class="bp">self</span><span class="o">.</span><span class="n">nbas</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">nbas</span><span class="p">))</span>
+            <span class="k">for</span> <span class="n">j</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="mi">1</span><span class="p">,</span><span class="bp">self</span><span class="o">.</span><span class="n">nbas</span><span class="o">+</span><span class="mi">1</span><span class="p">,</span><span class="mi">1</span><span class="p">):</span>
+                <span class="k">for</span> <span class="n">k</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="mi">1</span><span class="p">,</span><span class="bp">self</span><span class="o">.</span><span class="n">nbas</span><span class="o">+</span><span class="mi">1</span><span class="p">,</span><span class="mi">1</span><span class="p">):</span>
+                    <span class="n">a1</span> <span class="o">=</span> <span class="p">(</span><span class="n">j</span><span class="o">+</span><span class="n">k</span><span class="p">)</span><span class="o">*</span><span class="n">np</span><span class="o">.</span><span class="n">pi</span><span class="o">/</span><span class="bp">self</span><span class="o">.</span><span class="n">L</span>
+                    <span class="n">a2</span> <span class="o">=</span> <span class="p">(</span><span class="n">j</span><span class="o">-</span><span class="n">k</span><span class="p">)</span><span class="o">*</span><span class="n">np</span><span class="o">.</span><span class="n">pi</span><span class="o">/</span><span class="bp">self</span><span class="o">.</span><span class="n">L</span>
+                    <span class="k">if</span> <span class="p">(</span><span class="n">j</span><span class="o">+</span><span class="n">k</span><span class="p">)</span><span class="o">%</span><span class="mi">2</span> <span class="o">==</span> <span class="mi">1</span><span class="p">:</span>
+                        <span class="n">res</span> <span class="o">=</span> <span class="n">k</span><span class="o">*</span><span class="n">np</span><span class="o">.</span><span class="n">pi</span><span class="o">/</span><span class="bp">self</span><span class="o">.</span><span class="n">L</span><span class="o">**</span><span class="mi">2</span><span class="o">*</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">xi</span><span class="o">*</span><span class="p">(</span><span class="mi">1</span><span class="o">/</span><span class="n">a1</span><span class="o">+</span><span class="mi">1</span><span class="o">/</span><span class="n">a2</span><span class="p">)</span><span class="o">*</span><span class="mi">2</span> <span class="o">+</span>
+                                <span class="bp">self</span><span class="o">.</span><span class="n">L</span><span class="o">*</span><span class="p">(</span><span class="mi">1</span><span class="o">/</span><span class="n">a1</span><span class="o">+</span><span class="mi">1</span><span class="o">/</span><span class="n">a2</span><span class="p">))</span>
+                    <span class="k">elif</span> <span class="n">j</span><span class="o">-</span><span class="n">k</span> <span class="o">==</span> <span class="mi">0</span><span class="p">:</span>
+                        <span class="n">res</span> <span class="o">=</span> <span class="o">-</span><span class="n">k</span><span class="o">*</span><span class="n">np</span><span class="o">.</span><span class="n">pi</span><span class="o">/</span><span class="bp">self</span><span class="o">.</span><span class="n">L</span><span class="o">*</span><span class="p">(</span><span class="mi">1</span><span class="o">/</span><span class="n">a1</span><span class="p">)</span>
+                    <span class="k">else</span><span class="p">:</span>
+                        <span class="n">res</span> <span class="o">=</span> <span class="o">-</span><span class="n">k</span><span class="o">*</span><span class="n">np</span><span class="o">.</span><span class="n">pi</span><span class="o">/</span><span class="bp">self</span><span class="o">.</span><span class="n">L</span><span class="o">*</span><span class="p">(</span><span class="mi">1</span><span class="o">/</span><span class="n">a1</span><span class="o">+</span><span class="mi">1</span><span class="o">/</span><span class="n">a2</span><span class="p">)</span>
+                    <span class="n">mat1</span><span class="p">[</span><span class="n">j</span><span class="o">-</span><span class="mi">1</span><span class="p">,</span><span class="n">k</span><span class="o">-</span><span class="mi">1</span><span class="p">]</span> <span class="o">=</span> <span class="n">res</span>
+            <span class="n">mat</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_du</span><span class="p">()</span><span class="o">*</span><span class="bp">self</span><span class="o">.</span><span class="n">xi</span> <span class="o">+</span> <span class="bp">self</span><span class="o">.</span><span class="n">_udu</span><span class="p">()</span>
+            <span class="k">assert</span> <span class="n">np</span><span class="o">.</span><span class="n">allclose</span><span class="p">(</span><span class="n">mat</span><span class="p">,</span> <span class="n">mat1</span><span class="p">)</span>
+            <span class="n">mat</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">dvr_v</span><span class="o">.</span><span class="n">T</span> <span class="o">@</span> <span class="n">mat</span> <span class="o">@</span> <span class="bp">self</span><span class="o">.</span><span class="n">dvr_v</span>
+
+        <span class="k">elif</span> <span class="n">op_symbol</span> <span class="o">==</span> <span class="s2">&quot;x^2 p^2&quot;</span><span class="p">:</span>
+            
+            <span class="c1"># legacy for check</span>
+            <span class="n">mat1</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">zeros</span><span class="p">((</span><span class="bp">self</span><span class="o">.</span><span class="n">nbas</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">nbas</span><span class="p">))</span>
+            <span class="c1"># analytical integral</span>
+            <span class="k">for</span> <span class="n">j</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="mi">1</span><span class="p">,</span><span class="bp">self</span><span class="o">.</span><span class="n">nbas</span><span class="o">+</span><span class="mi">1</span><span class="p">):</span>
+                <span class="k">for</span> <span class="n">k</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="mi">1</span><span class="p">,</span><span class="bp">self</span><span class="o">.</span><span class="n">nbas</span><span class="o">+</span><span class="mi">1</span><span class="p">):</span>
+
+                    <span class="n">a1</span> <span class="o">=</span> <span class="p">(</span><span class="n">j</span><span class="o">-</span><span class="n">k</span><span class="p">)</span><span class="o">*</span><span class="n">np</span><span class="o">.</span><span class="n">pi</span><span class="o">/</span><span class="bp">self</span><span class="o">.</span><span class="n">L</span>
+                    <span class="n">a2</span> <span class="o">=</span> <span class="p">(</span><span class="n">j</span><span class="o">+</span><span class="n">k</span><span class="p">)</span><span class="o">*</span><span class="n">np</span><span class="o">.</span><span class="n">pi</span><span class="o">/</span><span class="bp">self</span><span class="o">.</span><span class="n">L</span>
+
+                    <span class="k">if</span> <span class="p">(</span><span class="n">j</span><span class="o">+</span><span class="n">k</span><span class="p">)</span><span class="o">%</span><span class="mi">2</span> <span class="o">==</span> <span class="mi">1</span><span class="p">:</span>
+                        <span class="n">res</span> <span class="o">=</span> <span class="mi">2</span><span class="o">*</span><span class="bp">self</span><span class="o">.</span><span class="n">xi</span><span class="o">/</span><span class="bp">self</span><span class="o">.</span><span class="n">L</span><span class="o">*</span><span class="mi">2</span><span class="o">*</span><span class="p">(</span><span class="mi">1</span><span class="o">/</span><span class="n">a2</span><span class="o">**</span><span class="mi">2</span><span class="o">-</span><span class="mi">1</span><span class="o">/</span><span class="n">a1</span><span class="o">**</span><span class="mi">2</span><span class="p">)</span> <span class="o">+</span> <span class="mi">2</span><span class="o">*</span><span class="p">(</span><span class="mi">1</span><span class="o">/</span><span class="n">a2</span><span class="o">**</span><span class="mi">2</span><span class="o">-</span><span class="mi">1</span><span class="o">/</span><span class="n">a1</span><span class="o">**</span><span class="mi">2</span><span class="p">)</span>
+                    <span class="k">elif</span> <span class="n">j</span><span class="o">-</span><span class="n">k</span> <span class="o">==</span> <span class="mi">0</span><span class="p">:</span>
+                        <span class="n">res</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">xi</span><span class="o">**</span><span class="mi">2</span> <span class="o">+</span> <span class="bp">self</span><span class="o">.</span><span class="n">xi</span><span class="o">*</span><span class="bp">self</span><span class="o">.</span><span class="n">L</span> <span class="o">+</span> <span class="mi">1</span><span class="o">/</span><span class="mi">3</span><span class="o">*</span><span class="bp">self</span><span class="o">.</span><span class="n">L</span><span class="o">**</span><span class="mi">2</span> <span class="o">-</span> <span class="mi">2</span><span class="o">/</span><span class="n">a2</span><span class="o">**</span><span class="mi">2</span>
+                    <span class="k">else</span><span class="p">:</span>
+                        <span class="n">res</span> <span class="o">=</span> <span class="mi">2</span><span class="o">*</span><span class="p">(</span><span class="mi">1</span><span class="o">/</span><span class="n">a1</span><span class="o">**</span><span class="mi">2</span><span class="o">-</span><span class="mi">1</span><span class="o">/</span><span class="n">a2</span><span class="o">**</span><span class="mi">2</span><span class="p">)</span>
+                    <span class="n">mat1</span><span class="p">[</span><span class="n">j</span><span class="o">-</span><span class="mi">1</span><span class="p">,</span><span class="n">k</span><span class="o">-</span><span class="mi">1</span><span class="p">]</span> <span class="o">=</span> <span class="n">res</span> <span class="o">*</span> <span class="n">k</span><span class="o">**</span><span class="mi">2</span><span class="o">*</span><span class="n">np</span><span class="o">.</span><span class="n">pi</span><span class="o">**</span><span class="mi">2</span><span class="o">/</span><span class="bp">self</span><span class="o">.</span><span class="n">L</span><span class="o">**</span><span class="mi">2</span>
+            
+            <span class="n">tmp</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_I</span><span class="p">()</span><span class="o">*</span><span class="bp">self</span><span class="o">.</span><span class="n">xi</span><span class="o">**</span><span class="mi">2</span> <span class="o">+</span> <span class="bp">self</span><span class="o">.</span><span class="n">_u</span><span class="p">()</span><span class="o">*</span><span class="mi">2</span><span class="o">*</span><span class="bp">self</span><span class="o">.</span><span class="n">xi</span> <span class="o">+</span> <span class="bp">self</span><span class="o">.</span><span class="n">_uu</span><span class="p">()</span>
+            <span class="n">mat</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">einsum</span><span class="p">(</span><span class="s2">&quot;jk,k-&gt;jk&quot;</span><span class="p">,</span> <span class="n">tmp</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">_eigene</span><span class="p">()</span><span class="o">*</span><span class="mi">2</span><span class="p">)</span>
+            <span class="k">assert</span> <span class="n">np</span><span class="o">.</span><span class="n">allclose</span><span class="p">(</span><span class="n">mat</span><span class="p">,</span> <span class="n">mat1</span><span class="p">)</span>
+            <span class="n">mat</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">dvr_v</span><span class="o">.</span><span class="n">T</span> <span class="o">@</span> <span class="n">mat</span> <span class="o">@</span> <span class="bp">self</span><span class="o">.</span><span class="n">dvr_v</span>
+        
+        <span class="k">elif</span> <span class="n">op_symbol</span> <span class="o">==</span> <span class="s2">&quot;x^2 partialx^2&quot;</span><span class="p">:</span>
+            <span class="n">mat</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">op_mat</span><span class="p">(</span><span class="s2">&quot;x^2 p^2&quot;</span><span class="p">)</span> <span class="o">*</span> <span class="o">-</span><span class="mi">1</span>
+        
+        <span class="k">elif</span> <span class="n">op_symbol</span> <span class="o">==</span> <span class="s2">&quot;x^2 partialx&quot;</span><span class="p">:</span>
+            
+            <span class="n">mat</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_uudu</span><span class="p">()</span> <span class="o">+</span> <span class="mi">2</span><span class="o">*</span><span class="bp">self</span><span class="o">.</span><span class="n">xi</span><span class="o">*</span><span class="bp">self</span><span class="o">.</span><span class="n">_udu</span><span class="p">()</span> <span class="o">+</span> <span class="bp">self</span><span class="o">.</span><span class="n">xi</span><span class="o">**</span><span class="mi">2</span><span class="o">*</span><span class="bp">self</span><span class="o">.</span><span class="n">_du</span><span class="p">()</span>
+            <span class="n">mat</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">dvr_v</span><span class="o">.</span><span class="n">T</span> <span class="o">@</span> <span class="n">mat</span> <span class="o">@</span> <span class="bp">self</span><span class="o">.</span><span class="n">dvr_v</span>
+
+        <span class="k">elif</span> <span class="n">op_symbol</span> <span class="o">==</span> <span class="s2">&quot;x p^2&quot;</span><span class="p">:</span>
+            <span class="c1">## p^2 is 2H</span>
+            <span class="c1"># legacy for check</span>
+            <span class="n">mat1</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">dvr_v</span> <span class="o">@</span> <span class="bp">self</span><span class="o">.</span><span class="n">op_mat</span><span class="p">(</span><span class="s2">&quot;x&quot;</span><span class="p">)</span> <span class="o">@</span> <span class="bp">self</span><span class="o">.</span><span class="n">dvr_v</span><span class="o">.</span><span class="n">T</span>
+            <span class="n">mat1</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">einsum</span><span class="p">(</span><span class="s2">&quot;jk,k-&gt;jk&quot;</span><span class="p">,</span><span class="n">mat1</span><span class="p">,</span>
+                    <span class="n">np</span><span class="o">.</span><span class="n">arange</span><span class="p">(</span><span class="mi">1</span><span class="p">,</span><span class="bp">self</span><span class="o">.</span><span class="n">nbas</span><span class="o">+</span><span class="mi">1</span><span class="p">)</span><span class="o">**</span><span class="mi">2</span><span class="o">*</span><span class="n">np</span><span class="o">.</span><span class="n">pi</span><span class="o">**</span><span class="mi">2</span><span class="o">/</span><span class="bp">self</span><span class="o">.</span><span class="n">L</span><span class="o">**</span><span class="mi">2</span><span class="p">)</span>
+            
+            <span class="n">mat</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">einsum</span><span class="p">(</span><span class="s2">&quot;jk, k-&gt; jk&quot;</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">_I</span><span class="p">()</span><span class="o">*</span><span class="bp">self</span><span class="o">.</span><span class="n">xi</span> <span class="o">+</span> <span class="bp">self</span><span class="o">.</span><span class="n">_u</span><span class="p">(),</span> <span class="bp">self</span><span class="o">.</span><span class="n">_eigene</span><span class="p">()</span><span class="o">*</span><span class="mi">2</span><span class="p">)</span>
+            <span class="k">assert</span> <span class="n">np</span><span class="o">.</span><span class="n">allclose</span><span class="p">(</span><span class="n">mat</span><span class="p">,</span> <span class="n">mat1</span><span class="p">)</span>
+            <span class="n">mat</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">dvr_v</span><span class="o">.</span><span class="n">T</span> <span class="o">@</span> <span class="n">mat</span> <span class="o">@</span> <span class="bp">self</span><span class="o">.</span><span class="n">dvr_v</span>
+        
+        <span class="k">elif</span> <span class="n">op_symbol</span> <span class="o">==</span> <span class="s2">&quot;x partialx^2&quot;</span><span class="p">:</span>
+            <span class="n">mat</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">op_mat</span><span class="p">(</span><span class="s2">&quot;x p^2&quot;</span><span class="p">)</span> <span class="o">*</span> <span class="o">-</span><span class="mi">1</span>
+        
+        <span class="k">elif</span> <span class="n">op_symbol</span> <span class="o">==</span> <span class="s2">&quot;x^3 p^2&quot;</span><span class="p">:</span>
+            <span class="n">tmp</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_I</span><span class="p">()</span><span class="o">*</span><span class="bp">self</span><span class="o">.</span><span class="n">xi</span><span class="o">**</span><span class="mi">3</span> <span class="o">+</span> <span class="mi">3</span><span class="o">*</span><span class="bp">self</span><span class="o">.</span><span class="n">_uu</span><span class="p">()</span><span class="o">*</span><span class="bp">self</span><span class="o">.</span><span class="n">xi</span> <span class="o">+</span> <span class="mi">3</span><span class="o">*</span><span class="bp">self</span><span class="o">.</span><span class="n">_u</span><span class="p">()</span><span class="o">*</span><span class="bp">self</span><span class="o">.</span><span class="n">xi</span><span class="o">**</span><span class="mi">2</span> <span class="o">+</span> <span class="bp">self</span><span class="o">.</span><span class="n">_uuu</span><span class="p">()</span>
+            <span class="n">mat</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">einsum</span><span class="p">(</span><span class="s2">&quot;jk,k-&gt;jk&quot;</span><span class="p">,</span> <span class="n">tmp</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">_eigene</span><span class="p">()</span><span class="o">*</span><span class="mi">2</span><span class="p">)</span>
+            <span class="n">mat</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">dvr_v</span><span class="o">.</span><span class="n">T</span> <span class="o">@</span> <span class="n">mat</span> <span class="o">@</span> <span class="bp">self</span><span class="o">.</span><span class="n">dvr_v</span>
+        
+        <span class="k">elif</span> <span class="n">op_symbol</span> <span class="o">==</span> <span class="s2">&quot;x^3 partialx^2&quot;</span><span class="p">:</span>
+            <span class="n">mat</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">op_mat</span><span class="p">(</span><span class="s2">&quot;x^3 p^2&quot;</span><span class="p">)</span> <span class="o">*</span> <span class="o">-</span><span class="mi">1</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;op_symbol:</span><span class="si">{</span><span class="n">op_symbol</span><span class="si">}</span><span class="s2"> is not supported. &quot;</span><span class="p">)</span>
+
+        <span class="k">return</span> <span class="n">mat</span> <span class="o">*</span> <span class="n">op_factor</span></div>
+    
+    <span class="k">def</span> <span class="nf">_du</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="c1"># int_0^L &lt;j(u)|1*du|k(u)&gt;  u=x-xi du=\frac{\partial}{\partial u}</span>
+        <span class="n">mat</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">zeros</span><span class="p">((</span><span class="bp">self</span><span class="o">.</span><span class="n">nbas</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">nbas</span><span class="p">))</span>
+        <span class="k">for</span> <span class="n">j</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="mi">1</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">nbas</span><span class="o">+</span><span class="mi">1</span><span class="p">):</span>
+            <span class="k">for</span> <span class="n">k</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="mi">1</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">nbas</span><span class="o">+</span><span class="mi">1</span><span class="p">):</span>
+                <span class="k">if</span> <span class="p">(</span><span class="n">j</span><span class="o">+</span><span class="n">k</span><span class="p">)</span><span class="o">%</span><span class="mi">2</span> <span class="o">==</span> <span class="mi">1</span><span class="p">:</span>
+                    <span class="n">mat</span><span class="p">[</span><span class="n">j</span><span class="o">-</span><span class="mi">1</span><span class="p">,</span><span class="n">k</span><span class="o">-</span><span class="mi">1</span><span class="p">]</span> <span class="o">=</span> <span class="mi">4</span><span class="o">*</span><span class="n">k</span><span class="o">*</span><span class="n">j</span><span class="o">/</span><span class="bp">self</span><span class="o">.</span><span class="n">L</span><span class="o">/</span><span class="p">(</span><span class="n">j</span><span class="o">**</span><span class="mi">2</span><span class="o">-</span><span class="n">k</span><span class="o">**</span><span class="mi">2</span><span class="p">)</span>
+        <span class="k">return</span> <span class="n">mat</span>
+    
+    <span class="k">def</span> <span class="nf">_udu</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="c1"># int_0^L &lt;j(u)|u*du|k(u)&gt;</span>
+        <span class="n">mat</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">zeros</span><span class="p">((</span><span class="bp">self</span><span class="o">.</span><span class="n">nbas</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">nbas</span><span class="p">))</span>
+        <span class="k">for</span> <span class="n">j</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="mi">1</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">nbas</span><span class="o">+</span><span class="mi">1</span><span class="p">):</span>
+            <span class="k">for</span> <span class="n">k</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="mi">1</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">nbas</span><span class="o">+</span><span class="mi">1</span><span class="p">):</span>
+                <span class="n">a1</span> <span class="o">=</span> <span class="p">(</span><span class="n">j</span><span class="o">+</span><span class="n">k</span><span class="p">)</span><span class="o">*</span><span class="n">np</span><span class="o">.</span><span class="n">pi</span><span class="o">/</span><span class="bp">self</span><span class="o">.</span><span class="n">L</span>
+                <span class="n">a2</span> <span class="o">=</span> <span class="p">(</span><span class="n">j</span><span class="o">-</span><span class="n">k</span><span class="p">)</span><span class="o">*</span><span class="n">np</span><span class="o">.</span><span class="n">pi</span><span class="o">/</span><span class="bp">self</span><span class="o">.</span><span class="n">L</span>
+                <span class="k">if</span> <span class="p">(</span><span class="n">j</span><span class="o">+</span><span class="n">k</span><span class="p">)</span><span class="o">%</span><span class="mi">2</span> <span class="o">==</span> <span class="mi">1</span><span class="p">:</span>
+                    <span class="n">res</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">L</span><span class="o">/</span><span class="n">a1</span> <span class="o">+</span> <span class="bp">self</span><span class="o">.</span><span class="n">L</span><span class="o">/</span><span class="n">a2</span>
+                <span class="k">elif</span> <span class="n">j</span> <span class="o">==</span> <span class="n">k</span><span class="p">:</span>
+                    <span class="n">res</span> <span class="o">=</span> <span class="o">-</span><span class="bp">self</span><span class="o">.</span><span class="n">L</span><span class="o">/</span><span class="n">a1</span>
+                <span class="k">else</span><span class="p">:</span>
+                    <span class="n">res</span> <span class="o">=</span> <span class="o">-</span><span class="bp">self</span><span class="o">.</span><span class="n">L</span><span class="o">/</span><span class="n">a1</span> <span class="o">-</span> <span class="bp">self</span><span class="o">.</span><span class="n">L</span><span class="o">/</span><span class="n">a2</span>
+                <span class="n">mat</span><span class="p">[</span><span class="n">j</span><span class="o">-</span><span class="mi">1</span><span class="p">,</span><span class="n">k</span><span class="o">-</span><span class="mi">1</span><span class="p">]</span> <span class="o">=</span> <span class="n">k</span><span class="o">*</span><span class="n">np</span><span class="o">.</span><span class="n">pi</span><span class="o">/</span><span class="bp">self</span><span class="o">.</span><span class="n">L</span><span class="o">**</span><span class="mi">2</span><span class="o">*</span><span class="n">res</span>
+        <span class="k">return</span> <span class="n">mat</span>
+
+    <span class="k">def</span> <span class="nf">_uudu</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="c1"># int_0^L &lt;j(u)|u^2*du|k(u)&gt;</span>
+        <span class="n">mat</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">zeros</span><span class="p">((</span><span class="bp">self</span><span class="o">.</span><span class="n">nbas</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">nbas</span><span class="p">))</span>
+        <span class="k">for</span> <span class="n">j</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="mi">1</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">nbas</span><span class="o">+</span><span class="mi">1</span><span class="p">):</span>
+            <span class="k">for</span> <span class="n">k</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="mi">1</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">nbas</span><span class="o">+</span><span class="mi">1</span><span class="p">):</span>
+                <span class="n">a1</span> <span class="o">=</span> <span class="p">(</span><span class="n">j</span><span class="o">+</span><span class="n">k</span><span class="p">)</span><span class="o">*</span><span class="n">np</span><span class="o">.</span><span class="n">pi</span><span class="o">/</span><span class="bp">self</span><span class="o">.</span><span class="n">L</span>
+                <span class="n">a2</span> <span class="o">=</span> <span class="p">(</span><span class="n">j</span><span class="o">-</span><span class="n">k</span><span class="p">)</span><span class="o">*</span><span class="n">np</span><span class="o">.</span><span class="n">pi</span><span class="o">/</span><span class="bp">self</span><span class="o">.</span><span class="n">L</span>
+                <span class="k">if</span> <span class="p">(</span><span class="n">j</span><span class="o">+</span><span class="n">k</span><span class="p">)</span><span class="o">%</span><span class="mi">2</span> <span class="o">==</span> <span class="mi">1</span><span class="p">:</span>
+                    <span class="n">res</span> <span class="o">=</span> <span class="o">-</span><span class="mi">4</span><span class="o">/</span><span class="n">a1</span><span class="o">**</span><span class="mi">3</span> <span class="o">+</span> <span class="bp">self</span><span class="o">.</span><span class="n">L</span><span class="o">**</span><span class="mi">2</span><span class="o">/</span><span class="n">a1</span> <span class="o">-</span> <span class="mi">4</span><span class="o">/</span><span class="n">a2</span><span class="o">**</span><span class="mi">3</span> <span class="o">+</span> <span class="bp">self</span><span class="o">.</span><span class="n">L</span><span class="o">**</span><span class="mi">2</span><span class="o">/</span><span class="n">a2</span>
+                <span class="k">elif</span> <span class="n">j</span> <span class="o">==</span> <span class="n">k</span><span class="p">:</span>
+                    <span class="n">res</span> <span class="o">=</span> <span class="o">-</span><span class="bp">self</span><span class="o">.</span><span class="n">L</span><span class="o">**</span><span class="mi">2</span><span class="o">/</span><span class="n">a1</span>
+                <span class="k">else</span><span class="p">:</span>
+                    <span class="n">res</span> <span class="o">=</span> <span class="o">-</span><span class="bp">self</span><span class="o">.</span><span class="n">L</span><span class="o">**</span><span class="mi">2</span><span class="o">/</span><span class="n">a1</span> <span class="o">-</span> <span class="bp">self</span><span class="o">.</span><span class="n">L</span><span class="o">**</span><span class="mi">2</span><span class="o">/</span><span class="n">a2</span>
+                <span class="n">mat</span><span class="p">[</span><span class="n">j</span><span class="o">-</span><span class="mi">1</span><span class="p">,</span><span class="n">k</span><span class="o">-</span><span class="mi">1</span><span class="p">]</span> <span class="o">=</span> <span class="n">k</span><span class="o">*</span><span class="n">np</span><span class="o">.</span><span class="n">pi</span><span class="o">/</span><span class="bp">self</span><span class="o">.</span><span class="n">L</span><span class="o">**</span><span class="mi">2</span><span class="o">*</span><span class="n">res</span>
+        <span class="k">return</span> <span class="n">mat</span>
+
+    <span class="k">def</span> <span class="nf">_I</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="c1"># int_0^L &lt;j(u)|1|k(u)&gt;</span>
+        <span class="n">mat</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">eye</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">nbas</span><span class="p">)</span> 
+        <span class="k">return</span> <span class="n">mat</span>
+    
+    <span class="k">def</span> <span class="nf">_u</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="c1"># int_0^L &lt;j(u)|u|k(u)&gt;</span>
+        <span class="n">mat</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">zeros</span><span class="p">((</span><span class="bp">self</span><span class="o">.</span><span class="n">nbas</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">nbas</span><span class="p">))</span>
+        <span class="k">for</span> <span class="n">j</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="mi">1</span><span class="p">,</span><span class="bp">self</span><span class="o">.</span><span class="n">nbas</span><span class="o">+</span><span class="mi">1</span><span class="p">,</span><span class="mi">1</span><span class="p">):</span>
+            <span class="k">for</span> <span class="n">k</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="mi">1</span><span class="p">,</span><span class="bp">self</span><span class="o">.</span><span class="n">nbas</span><span class="o">+</span><span class="mi">1</span><span class="p">,</span><span class="mi">1</span><span class="p">):</span>
+                <span class="n">a1</span> <span class="o">=</span> <span class="p">(</span><span class="n">j</span><span class="o">+</span><span class="n">k</span><span class="p">)</span><span class="o">*</span><span class="n">np</span><span class="o">.</span><span class="n">pi</span><span class="o">/</span><span class="bp">self</span><span class="o">.</span><span class="n">L</span>
+                <span class="n">a2</span> <span class="o">=</span> <span class="p">(</span><span class="n">j</span><span class="o">-</span><span class="n">k</span><span class="p">)</span><span class="o">*</span><span class="n">np</span><span class="o">.</span><span class="n">pi</span><span class="o">/</span><span class="bp">self</span><span class="o">.</span><span class="n">L</span>
+                <span class="k">if</span> <span class="p">(</span><span class="n">j</span><span class="o">+</span><span class="n">k</span><span class="p">)</span><span class="o">%</span><span class="mi">2</span> <span class="o">==</span> <span class="mi">1</span><span class="p">:</span>
+                    <span class="n">res</span> <span class="o">=</span> <span class="o">-</span><span class="mi">2</span><span class="o">/</span><span class="n">a1</span><span class="o">**</span><span class="mi">2</span><span class="o">+</span><span class="mi">2</span><span class="o">/</span><span class="n">a2</span><span class="o">**</span><span class="mi">2</span>
+                <span class="k">elif</span> <span class="n">j</span><span class="o">-</span><span class="n">k</span> <span class="o">==</span> <span class="mi">0</span><span class="p">:</span>
+                    <span class="n">res</span> <span class="o">=</span> <span class="o">-</span><span class="mf">0.5</span><span class="o">*</span><span class="bp">self</span><span class="o">.</span><span class="n">L</span><span class="o">**</span><span class="mi">2</span>
+                <span class="k">else</span><span class="p">:</span>
+                    <span class="n">res</span> <span class="o">=</span> <span class="mi">0</span>
+                <span class="n">mat</span><span class="p">[</span><span class="n">j</span><span class="o">-</span><span class="mi">1</span><span class="p">,</span><span class="n">k</span><span class="o">-</span><span class="mi">1</span><span class="p">]</span> <span class="o">=</span> <span class="o">-</span><span class="mi">1</span><span class="o">/</span><span class="bp">self</span><span class="o">.</span><span class="n">L</span><span class="o">*</span><span class="n">res</span>
+        <span class="k">return</span> <span class="n">mat</span>
+    
+    <span class="k">def</span> <span class="nf">_uu</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="c1"># int_0^L &lt;j(u)|uu|k(u)&gt;</span>
+        <span class="n">mat</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">zeros</span><span class="p">((</span><span class="bp">self</span><span class="o">.</span><span class="n">nbas</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">nbas</span><span class="p">))</span>
+        <span class="k">for</span> <span class="n">j</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="mi">1</span><span class="p">,</span><span class="bp">self</span><span class="o">.</span><span class="n">nbas</span><span class="o">+</span><span class="mi">1</span><span class="p">,</span><span class="mi">1</span><span class="p">):</span>
+            <span class="k">for</span> <span class="n">k</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="mi">1</span><span class="p">,</span><span class="bp">self</span><span class="o">.</span><span class="n">nbas</span><span class="o">+</span><span class="mi">1</span><span class="p">,</span><span class="mi">1</span><span class="p">):</span>
+                <span class="n">a1</span> <span class="o">=</span> <span class="p">(</span><span class="n">j</span><span class="o">+</span><span class="n">k</span><span class="p">)</span><span class="o">*</span><span class="n">np</span><span class="o">.</span><span class="n">pi</span><span class="o">/</span><span class="bp">self</span><span class="o">.</span><span class="n">L</span>
+                <span class="n">a2</span> <span class="o">=</span> <span class="p">(</span><span class="n">j</span><span class="o">-</span><span class="n">k</span><span class="p">)</span><span class="o">*</span><span class="n">np</span><span class="o">.</span><span class="n">pi</span><span class="o">/</span><span class="bp">self</span><span class="o">.</span><span class="n">L</span>
+                <span class="k">if</span> <span class="p">(</span><span class="n">j</span><span class="o">+</span><span class="n">k</span><span class="p">)</span><span class="o">%</span><span class="mi">2</span> <span class="o">==</span> <span class="mi">1</span><span class="p">:</span>
+                    <span class="n">res</span> <span class="o">=</span> <span class="mi">2</span><span class="o">*</span><span class="bp">self</span><span class="o">.</span><span class="n">L</span><span class="o">*</span><span class="p">(</span><span class="o">-</span><span class="mi">1</span><span class="o">/</span><span class="n">a1</span><span class="o">**</span><span class="mi">2</span><span class="o">+</span><span class="mi">1</span><span class="o">/</span><span class="n">a2</span><span class="o">**</span><span class="mi">2</span><span class="p">)</span>
+                <span class="k">elif</span> <span class="n">j</span><span class="o">-</span><span class="n">k</span> <span class="o">==</span> <span class="mi">0</span><span class="p">:</span>
+                    <span class="n">res</span> <span class="o">=</span> <span class="mi">2</span><span class="o">*</span><span class="bp">self</span><span class="o">.</span><span class="n">L</span><span class="o">/</span><span class="n">a1</span><span class="o">**</span><span class="mi">2</span> <span class="o">-</span> <span class="mi">1</span><span class="o">/</span><span class="mi">3</span><span class="o">*</span><span class="bp">self</span><span class="o">.</span><span class="n">L</span><span class="o">**</span><span class="mi">3</span>
+                <span class="k">else</span><span class="p">:</span>
+                    <span class="n">res</span> <span class="o">=</span> <span class="mi">2</span><span class="o">*</span><span class="bp">self</span><span class="o">.</span><span class="n">L</span><span class="o">*</span><span class="p">(</span><span class="mi">1</span><span class="o">/</span><span class="n">a1</span><span class="o">**</span><span class="mi">2</span> <span class="o">-</span> <span class="mi">1</span><span class="o">/</span><span class="n">a2</span><span class="o">**</span><span class="mi">2</span><span class="p">)</span>
+                <span class="n">mat</span><span class="p">[</span><span class="n">j</span><span class="o">-</span><span class="mi">1</span><span class="p">,</span><span class="n">k</span><span class="o">-</span><span class="mi">1</span><span class="p">]</span> <span class="o">=</span> <span class="o">-</span><span class="mi">1</span><span class="o">/</span><span class="bp">self</span><span class="o">.</span><span class="n">L</span><span class="o">*</span><span class="n">res</span>
+        <span class="k">return</span> <span class="n">mat</span>
+    
+    <span class="k">def</span> <span class="nf">_uuu</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="c1"># int_0^L &lt;j(u)|uuu|k(u)&gt;</span>
+        <span class="n">mat</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">zeros</span><span class="p">((</span><span class="bp">self</span><span class="o">.</span><span class="n">nbas</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">nbas</span><span class="p">))</span>
+        <span class="k">for</span> <span class="n">j</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="mi">1</span><span class="p">,</span><span class="bp">self</span><span class="o">.</span><span class="n">nbas</span><span class="o">+</span><span class="mi">1</span><span class="p">,</span><span class="mi">1</span><span class="p">):</span>
+            <span class="k">for</span> <span class="n">k</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="mi">1</span><span class="p">,</span><span class="bp">self</span><span class="o">.</span><span class="n">nbas</span><span class="o">+</span><span class="mi">1</span><span class="p">,</span><span class="mi">1</span><span class="p">):</span>
+                <span class="n">a1</span> <span class="o">=</span> <span class="p">(</span><span class="n">j</span><span class="o">+</span><span class="n">k</span><span class="p">)</span><span class="o">*</span><span class="n">np</span><span class="o">.</span><span class="n">pi</span><span class="o">/</span><span class="bp">self</span><span class="o">.</span><span class="n">L</span>
+                <span class="n">a2</span> <span class="o">=</span> <span class="p">(</span><span class="n">j</span><span class="o">-</span><span class="n">k</span><span class="p">)</span><span class="o">*</span><span class="n">np</span><span class="o">.</span><span class="n">pi</span><span class="o">/</span><span class="bp">self</span><span class="o">.</span><span class="n">L</span>
+                <span class="k">if</span> <span class="p">(</span><span class="n">j</span><span class="o">+</span><span class="n">k</span><span class="p">)</span><span class="o">%</span><span class="mi">2</span> <span class="o">==</span> <span class="mi">1</span><span class="p">:</span>
+                    <span class="n">res</span> <span class="o">=</span> <span class="o">-</span><span class="mi">3</span><span class="o">*</span><span class="bp">self</span><span class="o">.</span><span class="n">L</span><span class="o">**</span><span class="mi">2</span><span class="o">/</span><span class="n">a1</span><span class="o">**</span><span class="mi">2</span> <span class="o">+</span> <span class="mi">12</span><span class="o">/</span><span class="n">a1</span><span class="o">**</span><span class="mi">4</span> <span class="o">+</span> <span class="mi">3</span><span class="o">*</span><span class="bp">self</span><span class="o">.</span><span class="n">L</span><span class="o">**</span><span class="mi">2</span><span class="o">/</span><span class="n">a2</span><span class="o">**</span><span class="mi">2</span> <span class="o">-</span> <span class="mi">12</span><span class="o">/</span><span class="n">a2</span><span class="o">**</span><span class="mi">4</span>
+                <span class="k">elif</span> <span class="n">j</span><span class="o">-</span><span class="n">k</span> <span class="o">==</span> <span class="mi">0</span><span class="p">:</span>
+                    <span class="n">res</span> <span class="o">=</span> <span class="mi">3</span><span class="o">*</span><span class="bp">self</span><span class="o">.</span><span class="n">L</span><span class="o">**</span><span class="mi">2</span><span class="o">/</span><span class="n">a1</span><span class="o">**</span><span class="mi">2</span> <span class="o">-</span> <span class="bp">self</span><span class="o">.</span><span class="n">L</span><span class="o">**</span><span class="mi">4</span><span class="o">/</span><span class="mi">4</span>
+                <span class="k">else</span><span class="p">:</span>
+                    <span class="n">res</span> <span class="o">=</span> <span class="mi">3</span><span class="o">*</span><span class="bp">self</span><span class="o">.</span><span class="n">L</span><span class="o">**</span><span class="mi">2</span><span class="o">/</span><span class="n">a1</span><span class="o">**</span><span class="mi">2</span> <span class="o">-</span> <span class="mi">3</span><span class="o">*</span><span class="bp">self</span><span class="o">.</span><span class="n">L</span><span class="o">**</span><span class="mi">2</span><span class="o">/</span><span class="n">a2</span><span class="o">**</span><span class="mi">2</span>
+                <span class="n">mat</span><span class="p">[</span><span class="n">j</span><span class="o">-</span><span class="mi">1</span><span class="p">,</span><span class="n">k</span><span class="o">-</span><span class="mi">1</span><span class="p">]</span> <span class="o">=</span> <span class="o">-</span><span class="mi">1</span><span class="o">/</span><span class="bp">self</span><span class="o">.</span><span class="n">L</span><span class="o">*</span><span class="n">res</span>
+        <span class="k">return</span> <span class="n">mat</span>
+    
+    <span class="k">def</span> <span class="nf">_eigene</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="k">return</span> <span class="n">np</span><span class="o">.</span><span class="n">pi</span><span class="o">**</span><span class="mi">2</span><span class="o">*</span><span class="n">np</span><span class="o">.</span><span class="n">arange</span><span class="p">(</span><span class="mi">1</span><span class="p">,</span><span class="bp">self</span><span class="o">.</span><span class="n">nbas</span><span class="o">+</span><span class="mi">1</span><span class="p">)</span><span class="o">**</span><span class="mi">2</span><span class="o">/</span><span class="bp">self</span><span class="o">.</span><span class="n">L</span><span class="o">**</span><span class="mi">2</span><span class="o">/</span><span class="mi">2</span>
+
+<div class="viewcode-block" id="BasisSineDVR.copy"><a class="viewcode-back" href="../../../model.html#renormalizer.model.basis.BasisSineDVR.copy">[docs]</a>    <span class="k">def</span> <span class="nf">copy</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">new_dof</span><span class="p">):</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="vm">__class__</span><span class="p">(</span><span class="n">new_dof</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">nbas</span><span class="p">,</span> <span class="n">xi</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">xi</span><span class="p">,</span> <span class="n">xf</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">xf</span><span class="p">)</span></div></div>
+
+<div class="viewcode-block" id="BasisMultiElectron"><a class="viewcode-back" href="../../../model.html#renormalizer.model.basis.BasisMultiElectron">[docs]</a><span class="k">class</span> <span class="nc">BasisMultiElectron</span><span class="p">(</span><span class="n">BasisSet</span><span class="p">):</span>
+    <span class="sa">r</span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    The basis set for multi electronic state on one single site,</span>
+<span class="sd">    The basis order is [dof_names[0], dof_names[1], dof_names[2], ...].</span>
+
+<span class="sd">    Parameters</span>
+<span class="sd">    ----------</span>
+<span class="sd">    dof : a :class:`list` or :class:`tuple` of hashable objects.</span>
+<span class="sd">        The names of the DoFs contained in the basis set.</span>
+<span class="sd">    sigmaqn : :class:`list` of :class:`int`</span>
+<span class="sd">        The sigmaqn of each basis</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+
+    <span class="n">is_electron</span> <span class="o">=</span> <span class="kc">True</span>
+    <span class="n">multi_dof</span> <span class="o">=</span> <span class="kc">True</span>
+    
+    <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">dof</span><span class="p">,</span> <span class="n">sigmaqn</span><span class="p">:</span> <span class="n">List</span><span class="p">[</span><span class="nb">int</span><span class="p">]):</span>
+        
+        <span class="k">assert</span> <span class="nb">len</span><span class="p">(</span><span class="n">sigmaqn</span><span class="p">)</span> <span class="o">==</span> <span class="nb">len</span><span class="p">(</span><span class="n">sigmaqn</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">dof_name_map</span> <span class="o">=</span> <span class="p">{</span><span class="n">name</span><span class="p">:</span> <span class="n">i</span> <span class="k">for</span> <span class="n">i</span><span class="p">,</span> <span class="n">name</span> <span class="ow">in</span> <span class="nb">enumerate</span><span class="p">(</span><span class="n">dof</span><span class="p">)}</span>
+        <span class="nb">super</span><span class="p">()</span><span class="o">.</span><span class="fm">__init__</span><span class="p">(</span><span class="n">dof</span><span class="p">,</span> <span class="nb">len</span><span class="p">(</span><span class="n">dof</span><span class="p">),</span> <span class="n">sigmaqn</span><span class="p">)</span>
+
+<div class="viewcode-block" id="BasisMultiElectron.op_mat"><a class="viewcode-back" href="../../../model.html#renormalizer.model.basis.BasisMultiElectron.op_mat">[docs]</a>    <span class="k">def</span> <span class="nf">op_mat</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">op</span><span class="p">:</span> <span class="n">Op</span><span class="p">):</span>
+
+        <span class="n">op_symbol</span><span class="p">,</span> <span class="n">op_factor</span> <span class="o">=</span> <span class="n">op</span><span class="o">.</span><span class="n">split_symbol</span><span class="p">,</span> <span class="n">op</span><span class="o">.</span><span class="n">factor</span>
+        
+        <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">op_symbol</span><span class="p">)</span> <span class="o">==</span> <span class="mi">1</span><span class="p">:</span>
+            <span class="k">if</span> <span class="n">op_symbol</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span> <span class="o">==</span> <span class="s2">&quot;I&quot;</span><span class="p">:</span>
+                <span class="n">mat</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">eye</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">nbas</span><span class="p">)</span>
+            <span class="k">elif</span> <span class="n">op_symbol</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span> <span class="o">==</span> <span class="s2">&quot;a&quot;</span> <span class="ow">or</span> <span class="n">op_symbol</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span> <span class="o">==</span> <span class="sa">r</span><span class="s2">&quot;a^\dagger&quot;</span><span class="p">:</span>
+                <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;op_symbol:</span><span class="si">{</span><span class="n">op_symbol</span><span class="si">}</span><span class="s2"> is not supported. Try use BasisMultiElectronVac.&quot;</span><span class="p">)</span>
+            <span class="k">else</span><span class="p">:</span>
+                <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;op_symbol:</span><span class="si">{</span><span class="n">op_symbol</span><span class="si">}</span><span class="s2"> is not supported&quot;</span><span class="p">)</span>
+            
+        <span class="k">elif</span> <span class="nb">len</span><span class="p">(</span><span class="n">op_symbol</span><span class="p">)</span> <span class="o">==</span> <span class="mi">2</span><span class="p">:</span>
+            <span class="n">op_symbol1</span><span class="p">,</span> <span class="n">op_symbol2</span> <span class="o">=</span> <span class="n">op_symbol</span>
+            <span class="k">if</span> <span class="n">op_symbol1</span> <span class="o">==</span> <span class="s2">&quot;I&quot;</span> <span class="ow">and</span> <span class="n">op_symbol2</span> <span class="o">==</span> <span class="s2">&quot;I&quot;</span><span class="p">:</span>
+                <span class="k">return</span> <span class="n">np</span><span class="o">.</span><span class="n">eye</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">nbas</span><span class="p">)</span>
+            <span class="n">op_symbol1_idx</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">dof_name_map</span><span class="p">[</span><span class="n">op</span><span class="o">.</span><span class="n">dofs</span><span class="p">[</span><span class="mi">0</span><span class="p">]]</span>
+            <span class="n">op_symbol2_idx</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">dof_name_map</span><span class="p">[</span><span class="n">op</span><span class="o">.</span><span class="n">dofs</span><span class="p">[</span><span class="mi">1</span><span class="p">]]</span>
+
+            <span class="n">mat</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">zeros</span><span class="p">((</span><span class="bp">self</span><span class="o">.</span><span class="n">nbas</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">nbas</span><span class="p">))</span>
+            
+            <span class="k">if</span> <span class="n">op_symbol1</span> <span class="o">==</span> <span class="sa">r</span><span class="s2">&quot;a^\dagger&quot;</span> <span class="ow">and</span> <span class="n">op_symbol2</span> <span class="o">==</span> <span class="s2">&quot;a&quot;</span><span class="p">:</span>
+                <span class="n">mat</span><span class="p">[</span><span class="nb">int</span><span class="p">(</span><span class="n">op_symbol1_idx</span><span class="p">),</span> <span class="nb">int</span><span class="p">(</span><span class="n">op_symbol2_idx</span><span class="p">)]</span> <span class="o">=</span> <span class="mf">1.</span>
+            <span class="k">elif</span> <span class="n">op_symbol1</span> <span class="o">==</span> <span class="sa">r</span><span class="s2">&quot;a&quot;</span> <span class="ow">and</span> <span class="n">op_symbol2</span> <span class="o">==</span> <span class="sa">r</span><span class="s2">&quot;a^\dagger&quot;</span><span class="p">:</span>
+                <span class="n">mat</span><span class="p">[</span><span class="nb">int</span><span class="p">(</span><span class="n">op_symbol2_idx</span><span class="p">),</span> <span class="nb">int</span><span class="p">(</span><span class="n">op_symbol1_idx</span><span class="p">)]</span> <span class="o">=</span> <span class="mf">1.</span>
+            <span class="k">else</span><span class="p">:</span>
+                <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;op_symbol:</span><span class="si">{</span><span class="n">op_symbol</span><span class="si">}</span><span class="s2"> is not supported&quot;</span><span class="p">)</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;op_symbol:</span><span class="si">{</span><span class="n">op_symbol</span><span class="si">}</span><span class="s2"> is not supported&quot;</span><span class="p">)</span>
+
+        <span class="k">return</span> <span class="n">mat</span> <span class="o">*</span> <span class="n">op_factor</span></div>
+
+<div class="viewcode-block" id="BasisMultiElectron.copy"><a class="viewcode-back" href="../../../model.html#renormalizer.model.basis.BasisMultiElectron.copy">[docs]</a>    <span class="k">def</span> <span class="nf">copy</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">new_dof</span><span class="p">):</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="vm">__class__</span><span class="p">(</span><span class="n">new_dof</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">sigmaqn</span><span class="p">)</span></div></div>
+
+
+<div class="viewcode-block" id="BasisMultiElectronVac"><a class="viewcode-back" href="../../../model.html#renormalizer.model.basis.BasisMultiElectronVac">[docs]</a><span class="k">class</span> <span class="nc">BasisMultiElectronVac</span><span class="p">(</span><span class="n">BasisSet</span><span class="p">):</span>
+    <span class="sa">r</span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Another basis set for multi electronic state on one single site.</span>
+<span class="sd">    Vacuum state is included.</span>
+<span class="sd">    The basis order is [vacuum, dof_names[0], dof_names[1],...].</span>
+<span class="sd">    sigma qn is [0, 1, 1, 1, ...]</span>
+
+<span class="sd">    Parameters</span>
+<span class="sd">    ----------</span>
+<span class="sd">    dof : a :class:`list` or :class:`tuple` of hashable objects.</span>
+<span class="sd">        The names of the DoFs contained in the basis set.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+
+    <span class="n">is_electron</span> <span class="o">=</span> <span class="kc">True</span>
+    <span class="n">multi_dof</span> <span class="o">=</span> <span class="kc">True</span>
+
+    <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">dof</span><span class="p">):</span>
+
+        <span class="n">sigmaqn</span> <span class="o">=</span> <span class="p">[</span><span class="mi">0</span><span class="p">]</span> <span class="o">+</span> <span class="p">[</span><span class="mi">1</span><span class="p">]</span> <span class="o">*</span> <span class="nb">len</span><span class="p">(</span><span class="n">dof</span><span class="p">)</span>
+        <span class="c1"># map external dof index into internal dof index</span>
+        <span class="c1"># the index 0 is reserved for vacuum</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">dof_name_map</span> <span class="o">=</span> <span class="p">{</span><span class="n">k</span><span class="p">:</span> <span class="n">v</span> <span class="o">+</span> <span class="mi">1</span> <span class="k">for</span> <span class="n">v</span><span class="p">,</span> <span class="n">k</span> <span class="ow">in</span> <span class="nb">enumerate</span><span class="p">(</span><span class="n">dof</span><span class="p">)}</span>
+        <span class="nb">super</span><span class="p">()</span><span class="o">.</span><span class="fm">__init__</span><span class="p">(</span><span class="n">dof</span><span class="p">,</span> <span class="nb">len</span><span class="p">(</span><span class="n">dof</span><span class="p">)</span> <span class="o">+</span> <span class="mi">1</span><span class="p">,</span> <span class="n">sigmaqn</span><span class="p">)</span>
+
+<div class="viewcode-block" id="BasisMultiElectronVac.op_mat"><a class="viewcode-back" href="../../../model.html#renormalizer.model.basis.BasisMultiElectronVac.op_mat">[docs]</a>    <span class="k">def</span> <span class="nf">op_mat</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">op</span><span class="p">:</span> <span class="n">Op</span><span class="p">):</span>
+
+        <span class="n">op_symbol</span><span class="p">,</span> <span class="n">op_factor</span> <span class="o">=</span> <span class="n">op</span><span class="o">.</span><span class="n">split_symbol</span><span class="p">,</span> <span class="n">op</span><span class="o">.</span><span class="n">factor</span>
+
+        <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">op_symbol</span><span class="p">)</span> <span class="o">==</span> <span class="mi">1</span><span class="p">:</span>
+            <span class="n">op_symbol</span> <span class="o">=</span> <span class="n">op_symbol</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span>
+            <span class="k">if</span> <span class="n">op_symbol</span> <span class="o">==</span> <span class="s2">&quot;I&quot;</span><span class="p">:</span>
+                <span class="n">mat</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">eye</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">nbas</span><span class="p">)</span>
+            <span class="k">else</span><span class="p">:</span>
+                <span class="n">mat</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">zeros</span><span class="p">((</span><span class="bp">self</span><span class="o">.</span><span class="n">nbas</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">nbas</span><span class="p">))</span>
+                <span class="n">op_symbol_idx</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">dof_name_map</span><span class="p">[</span><span class="n">op</span><span class="o">.</span><span class="n">dofs</span><span class="p">[</span><span class="mi">0</span><span class="p">]]</span>
+                <span class="k">if</span> <span class="n">op_symbol</span> <span class="o">==</span> <span class="sa">r</span><span class="s2">&quot;a^\dagger&quot;</span><span class="p">:</span>
+                    <span class="n">mat</span><span class="p">[</span><span class="n">op_symbol_idx</span><span class="p">,</span> <span class="mi">0</span><span class="p">]</span> <span class="o">=</span> <span class="mf">1.</span>
+                <span class="k">elif</span> <span class="n">op_symbol</span> <span class="o">==</span> <span class="sa">r</span><span class="s2">&quot;a&quot;</span><span class="p">:</span>
+                    <span class="n">mat</span><span class="p">[</span><span class="mi">0</span><span class="p">,</span> <span class="n">op_symbol_idx</span><span class="p">]</span> <span class="o">=</span> <span class="mf">1.</span>
+                <span class="k">else</span><span class="p">:</span>
+                    <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;op_symbol:</span><span class="si">{</span><span class="n">op_symbol</span><span class="si">}</span><span class="s2"> is not supported&quot;</span><span class="p">)</span>
+
+        <span class="k">elif</span> <span class="nb">len</span><span class="p">(</span><span class="n">op_symbol</span><span class="p">)</span> <span class="o">==</span> <span class="mi">2</span><span class="p">:</span>
+            <span class="n">op_symbol1</span><span class="p">,</span> <span class="n">op_symbol2</span> <span class="o">=</span> <span class="n">op_symbol</span>
+            <span class="k">if</span> <span class="n">op_symbol1</span> <span class="o">==</span> <span class="s2">&quot;I&quot;</span> <span class="ow">and</span> <span class="n">op_symbol2</span> <span class="o">==</span> <span class="s2">&quot;I&quot;</span><span class="p">:</span>
+                <span class="k">return</span> <span class="n">np</span><span class="o">.</span><span class="n">eye</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">nbas</span><span class="p">)</span>
+            <span class="n">op_symbol1_idx</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">dof_name_map</span><span class="p">[</span><span class="n">op</span><span class="o">.</span><span class="n">dofs</span><span class="p">[</span><span class="mi">0</span><span class="p">]]</span>
+            <span class="n">op_symbol2_idx</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">dof_name_map</span><span class="p">[</span><span class="n">op</span><span class="o">.</span><span class="n">dofs</span><span class="p">[</span><span class="mi">1</span><span class="p">]]</span>
+
+            <span class="n">mat</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">zeros</span><span class="p">((</span><span class="bp">self</span><span class="o">.</span><span class="n">nbas</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">nbas</span><span class="p">))</span>
+
+            <span class="k">if</span> <span class="n">op_symbol1</span> <span class="o">==</span> <span class="sa">r</span><span class="s2">&quot;a^\dagger&quot;</span> <span class="ow">and</span> <span class="n">op_symbol2</span> <span class="o">==</span> <span class="s2">&quot;a&quot;</span><span class="p">:</span>
+                <span class="n">mat</span><span class="p">[</span><span class="n">op_symbol1_idx</span><span class="p">,</span> <span class="n">op_symbol2_idx</span><span class="p">]</span> <span class="o">=</span> <span class="mf">1.</span>
+            <span class="k">elif</span> <span class="n">op_symbol1</span> <span class="o">==</span> <span class="sa">r</span><span class="s2">&quot;a&quot;</span> <span class="ow">and</span> <span class="n">op_symbol2</span> <span class="o">==</span> <span class="sa">r</span><span class="s2">&quot;a^\dagger&quot;</span><span class="p">:</span>
+                <span class="n">mat</span><span class="p">[</span><span class="n">op_symbol2_idx</span><span class="p">,</span> <span class="n">op_symbol1_idx</span><span class="p">]</span> <span class="o">=</span> <span class="mf">1.</span>
+            <span class="k">else</span><span class="p">:</span>
+                <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;op_symbol:</span><span class="si">{</span><span class="n">op_symbol</span><span class="si">}</span><span class="s2"> is not supported&quot;</span><span class="p">)</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="k">if</span> <span class="n">op_symbol</span><span class="o">.</span><span class="n">count</span><span class="p">(</span><span class="s2">&quot;I&quot;</span><span class="p">)</span> <span class="o">==</span> <span class="nb">len</span><span class="p">(</span><span class="n">op_symbol</span><span class="p">):</span>
+                <span class="k">return</span> <span class="n">np</span><span class="o">.</span><span class="n">eye</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">nbas</span><span class="p">)</span>
+            <span class="k">else</span><span class="p">:</span>
+                <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;op_symbol:</span><span class="si">{</span><span class="n">op_symbol</span><span class="si">}</span><span class="s2"> is not supported&quot;</span><span class="p">)</span>
+
+        <span class="k">return</span> <span class="n">mat</span> <span class="o">*</span> <span class="n">op_factor</span></div>
+
+<div class="viewcode-block" id="BasisMultiElectronVac.copy"><a class="viewcode-back" href="../../../model.html#renormalizer.model.basis.BasisMultiElectronVac.copy">[docs]</a>    <span class="k">def</span> <span class="nf">copy</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">new_dof</span><span class="p">):</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="vm">__class__</span><span class="p">(</span><span class="n">new_dof</span><span class="p">)</span></div></div>
+
+<div class="viewcode-block" id="BasisSimpleElectron"><a class="viewcode-back" href="../../../model.html#renormalizer.model.basis.BasisSimpleElectron">[docs]</a><span class="k">class</span> <span class="nc">BasisSimpleElectron</span><span class="p">(</span><span class="n">BasisSet</span><span class="p">):</span>
+
+    <span class="sa">r</span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    The basis set for simple electron DoF, two state with 0: unoccupied, 1: occupied</span>
+
+<span class="sd">    Parameters</span>
+<span class="sd">    ----------</span>
+<span class="sd">    dof : any hashable object</span>
+<span class="sd">        The name of the DoF contained in the basis set.</span>
+
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="n">is_electron</span> <span class="o">=</span> <span class="kc">True</span>
+
+    <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">dof</span><span class="p">):</span>
+        <span class="nb">super</span><span class="p">()</span><span class="o">.</span><span class="fm">__init__</span><span class="p">(</span><span class="n">dof</span><span class="p">,</span> <span class="mi">2</span><span class="p">,</span> <span class="p">[</span><span class="mi">0</span><span class="p">,</span> <span class="mi">1</span><span class="p">])</span>
+
+<div class="viewcode-block" id="BasisSimpleElectron.op_mat"><a class="viewcode-back" href="../../../model.html#renormalizer.model.basis.BasisSimpleElectron.op_mat">[docs]</a>    <span class="k">def</span> <span class="nf">op_mat</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">op</span><span class="p">):</span>
+        <span class="k">if</span> <span class="ow">not</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">op</span><span class="p">,</span> <span class="n">Op</span><span class="p">):</span>
+            <span class="n">op</span> <span class="o">=</span> <span class="n">Op</span><span class="p">(</span><span class="n">op</span><span class="p">,</span> <span class="kc">None</span><span class="p">)</span>
+        <span class="n">op_symbol</span><span class="p">,</span> <span class="n">op_factor</span> <span class="o">=</span> <span class="n">op</span><span class="o">.</span><span class="n">symbol</span><span class="p">,</span> <span class="n">op</span><span class="o">.</span><span class="n">factor</span>
+        
+        <span class="n">mat</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">zeros</span><span class="p">((</span><span class="mi">2</span><span class="p">,</span> <span class="mi">2</span><span class="p">))</span>
+        
+        <span class="k">if</span> <span class="n">op_symbol</span> <span class="o">==</span> <span class="sa">r</span><span class="s2">&quot;a^\dagger&quot;</span><span class="p">:</span>
+            <span class="n">mat</span><span class="p">[</span><span class="mi">1</span><span class="p">,</span> <span class="mi">0</span><span class="p">]</span> <span class="o">=</span> <span class="mf">1.</span>
+        <span class="k">elif</span> <span class="n">op_symbol</span> <span class="o">==</span> <span class="s2">&quot;a&quot;</span><span class="p">:</span>
+            <span class="n">mat</span><span class="p">[</span><span class="mi">0</span><span class="p">,</span> <span class="mi">1</span><span class="p">]</span> <span class="o">=</span> <span class="mf">1.</span>
+        <span class="k">elif</span> <span class="n">op_symbol</span> <span class="o">==</span> <span class="sa">r</span><span class="s2">&quot;a^\dagger a&quot;</span><span class="p">:</span>
+            <span class="n">mat</span><span class="p">[</span><span class="mi">1</span><span class="p">,</span> <span class="mi">1</span><span class="p">]</span> <span class="o">=</span> <span class="mf">1.</span>
+        <span class="k">elif</span> <span class="n">op_symbol</span> <span class="o">==</span> <span class="s2">&quot;I&quot;</span><span class="p">:</span>
+            <span class="n">mat</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">eye</span><span class="p">(</span><span class="mi">2</span><span class="p">)</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;op_symbol:</span><span class="si">{</span><span class="n">op_symbol</span><span class="si">}</span><span class="s2"> is not supported&quot;</span><span class="p">)</span>
+        
+        <span class="k">return</span> <span class="n">mat</span> <span class="o">*</span> <span class="n">op_factor</span></div>
+
+<div class="viewcode-block" id="BasisSimpleElectron.copy"><a class="viewcode-back" href="../../../model.html#renormalizer.model.basis.BasisSimpleElectron.copy">[docs]</a>    <span class="k">def</span> <span class="nf">copy</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">new_dof</span><span class="p">):</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="vm">__class__</span><span class="p">(</span><span class="n">new_dof</span><span class="p">)</span></div></div>
+
+
+<div class="viewcode-block" id="BasisHalfSpin"><a class="viewcode-back" href="../../../model.html#renormalizer.model.basis.BasisHalfSpin">[docs]</a><span class="k">class</span> <span class="nc">BasisHalfSpin</span><span class="p">(</span><span class="n">BasisSet</span><span class="p">):</span>
+    <span class="sa">r</span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    The basis the for 1/2 spin DoF</span>
+
+<span class="sd">    Parameters</span>
+<span class="sd">    ----------</span>
+<span class="sd">    dof : any hashable object</span>
+<span class="sd">        The name of the DoF contained in the basis set.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+
+    <span class="n">is_spin</span> <span class="o">=</span> <span class="kc">True</span>
+
+    <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">dof</span><span class="p">,</span> <span class="n">sigmaqn</span><span class="p">:</span><span class="n">List</span><span class="p">[</span><span class="nb">int</span><span class="p">]</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
+        <span class="k">if</span> <span class="n">sigmaqn</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="n">sigmaqn</span> <span class="o">=</span> <span class="p">[</span><span class="mi">0</span><span class="p">,</span> <span class="mi">0</span><span class="p">]</span>
+        <span class="nb">super</span><span class="p">()</span><span class="o">.</span><span class="fm">__init__</span><span class="p">(</span><span class="n">dof</span><span class="p">,</span> <span class="mi">2</span><span class="p">,</span> <span class="n">sigmaqn</span><span class="p">)</span>
+
+<div class="viewcode-block" id="BasisHalfSpin.op_mat"><a class="viewcode-back" href="../../../model.html#renormalizer.model.basis.BasisHalfSpin.op_mat">[docs]</a>    <span class="k">def</span> <span class="nf">op_mat</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">op</span><span class="p">:</span> <span class="n">Union</span><span class="p">[</span><span class="n">Op</span><span class="p">,</span> <span class="nb">str</span><span class="p">]):</span>
+        <span class="k">if</span> <span class="ow">not</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">op</span><span class="p">,</span> <span class="n">Op</span><span class="p">):</span>
+            <span class="n">op</span> <span class="o">=</span> <span class="n">Op</span><span class="p">(</span><span class="n">op</span><span class="p">,</span> <span class="kc">None</span><span class="p">)</span>
+        <span class="n">op_symbol</span><span class="p">,</span> <span class="n">op_factor</span> <span class="o">=</span> <span class="n">op</span><span class="o">.</span><span class="n">split_symbol</span><span class="p">,</span> <span class="n">op</span><span class="o">.</span><span class="n">factor</span>
+        
+        <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">op_symbol</span><span class="p">)</span> <span class="o">==</span> <span class="mi">1</span><span class="p">:</span>       
+            <span class="n">op_symbol</span> <span class="o">=</span> <span class="n">op_symbol</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span>
+            <span class="c1"># Todo: the string itself may sometimes consume a lot of memory when</span>
+            <span class="c1"># the number of terms in O is very huge</span>
+            <span class="c1"># replace sigma_x with s_x in the future</span>
+            <span class="k">if</span> <span class="n">op_symbol</span> <span class="o">==</span> <span class="s2">&quot;I&quot;</span><span class="p">:</span>
+                <span class="n">mat</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">eye</span><span class="p">(</span><span class="mi">2</span><span class="p">)</span>
+            <span class="k">elif</span> <span class="n">op_symbol</span> <span class="o">==</span> <span class="s2">&quot;sigma_x&quot;</span><span class="p">:</span>
+                <span class="n">mat</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">diag</span><span class="p">([</span><span class="mf">1.</span><span class="p">],</span> <span class="n">k</span><span class="o">=</span><span class="mi">1</span><span class="p">)</span>
+                <span class="n">mat</span> <span class="o">=</span> <span class="n">mat</span> <span class="o">+</span> <span class="n">mat</span><span class="o">.</span><span class="n">T</span><span class="o">.</span><span class="n">conj</span><span class="p">()</span>
+            <span class="k">elif</span> <span class="n">op_symbol</span> <span class="o">==</span> <span class="s2">&quot;sigma_y&quot;</span><span class="p">:</span>
+                <span class="n">mat</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">diag</span><span class="p">([</span><span class="o">-</span><span class="mf">1.0</span><span class="n">j</span><span class="p">],</span> <span class="n">k</span><span class="o">=</span><span class="mi">1</span><span class="p">)</span>
+                <span class="n">mat</span> <span class="o">=</span> <span class="n">mat</span> <span class="o">+</span> <span class="n">mat</span><span class="o">.</span><span class="n">T</span><span class="o">.</span><span class="n">conj</span><span class="p">()</span>
+            <span class="k">elif</span> <span class="n">op_symbol</span> <span class="o">==</span> <span class="s2">&quot;sigma_z&quot;</span><span class="p">:</span>
+                <span class="n">mat</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">diag</span><span class="p">([</span><span class="mf">1.</span><span class="p">,</span><span class="o">-</span><span class="mf">1.</span><span class="p">],</span> <span class="n">k</span><span class="o">=</span><span class="mi">0</span><span class="p">)</span>
+            <span class="k">elif</span> <span class="n">op_symbol</span> <span class="o">==</span> <span class="s2">&quot;sigma_-&quot;</span><span class="p">:</span>
+                <span class="n">mat</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">diag</span><span class="p">([</span><span class="mf">1.</span><span class="p">],</span> <span class="n">k</span><span class="o">=-</span><span class="mi">1</span><span class="p">)</span>
+            <span class="k">elif</span> <span class="n">op_symbol</span> <span class="o">==</span> <span class="s2">&quot;sigma_+&quot;</span><span class="p">:</span>
+                <span class="n">mat</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">diag</span><span class="p">([</span><span class="mf">1.</span><span class="p">,],</span> <span class="n">k</span><span class="o">=</span><span class="mi">1</span><span class="p">)</span>
+            <span class="k">else</span><span class="p">:</span>
+                <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;op_symbol:</span><span class="si">{</span><span class="n">op_symbol</span><span class="si">}</span><span class="s2"> is not supported&quot;</span><span class="p">)</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="n">mat</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">eye</span><span class="p">(</span><span class="mi">2</span><span class="p">)</span>
+            <span class="k">for</span> <span class="n">o</span> <span class="ow">in</span> <span class="n">op_symbol</span><span class="p">:</span>
+                <span class="n">mat</span> <span class="o">=</span> <span class="n">mat</span> <span class="o">@</span> <span class="bp">self</span><span class="o">.</span><span class="n">op_mat</span><span class="p">(</span><span class="n">o</span><span class="p">)</span>
+
+        <span class="k">return</span> <span class="n">mat</span> <span class="o">*</span> <span class="n">op_factor</span></div>
+
+<div class="viewcode-block" id="BasisHalfSpin.copy"><a class="viewcode-back" href="../../../model.html#renormalizer.model.basis.BasisHalfSpin.copy">[docs]</a>    <span class="k">def</span> <span class="nf">copy</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">new_dof</span><span class="p">):</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="vm">__class__</span><span class="p">(</span><span class="n">new_dof</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">sigmaqn</span><span class="p">)</span></div></div>
+
+
+<span class="k">def</span> <span class="nf">x_power_k</span><span class="p">(</span><span class="n">k</span><span class="p">,</span> <span class="n">m</span><span class="p">,</span> <span class="n">n</span><span class="p">):</span>
+<span class="c1"># &lt;m|x^k|n&gt;, origin is 0</span>
+<span class="c1">#\left\langle m\left|X^{k}\right| n\right\rangle=2^{-\frac{k}{2}} \sqrt{n ! m !}</span>
+<span class="c1">#\quad \sum_{s=\max \left\{0, \frac{m+n-k}{2}\right\}} \frac{k !}{(m-s) !</span>
+<span class="c1"># s !(n-s) !(k-m-n+2 s) ! !}</span>
+<span class="c1"># the problem is that large factorial may meet overflow problem</span>
+    <span class="k">assert</span> <span class="nb">type</span><span class="p">(</span><span class="n">k</span><span class="p">)</span> <span class="ow">is</span> <span class="nb">int</span>
+    <span class="k">assert</span> <span class="nb">type</span><span class="p">(</span><span class="n">m</span><span class="p">)</span> <span class="ow">is</span> <span class="nb">int</span>
+    <span class="k">assert</span> <span class="nb">type</span><span class="p">(</span><span class="n">n</span><span class="p">)</span> <span class="ow">is</span> <span class="nb">int</span>
+
+    <span class="k">if</span> <span class="p">(</span><span class="n">m</span><span class="o">+</span><span class="n">n</span><span class="o">-</span><span class="n">k</span><span class="p">)</span> <span class="o">%</span> <span class="mi">2</span> <span class="o">==</span> <span class="mi">1</span><span class="p">:</span>
+        <span class="k">return</span> <span class="mi">0</span>
+    <span class="k">else</span><span class="p">:</span>
+        <span class="n">factorial</span> <span class="o">=</span> <span class="n">scipy</span><span class="o">.</span><span class="n">special</span><span class="o">.</span><span class="n">factorial</span>
+        <span class="n">factorial2</span> <span class="o">=</span> <span class="n">scipy</span><span class="o">.</span><span class="n">special</span><span class="o">.</span><span class="n">factorial2</span>
+        <span class="n">s_start</span> <span class="o">=</span> <span class="nb">max</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="p">(</span><span class="n">m</span><span class="o">+</span><span class="n">n</span><span class="o">-</span><span class="n">k</span><span class="p">)</span><span class="o">//</span><span class="mi">2</span><span class="p">)</span>
+        <span class="n">res</span> <span class="o">=</span>  <span class="mi">2</span><span class="o">**</span><span class="p">(</span><span class="o">-</span><span class="n">k</span><span class="o">/</span><span class="mi">2</span><span class="p">)</span> <span class="o">*</span> <span class="n">np</span><span class="o">.</span><span class="n">sqrt</span><span class="p">(</span><span class="nb">float</span><span class="p">(</span><span class="n">factorial</span><span class="p">(</span><span class="n">m</span><span class="p">,</span><span class="n">exact</span><span class="o">=</span><span class="kc">True</span><span class="p">)))</span> <span class="o">*</span> \
+                <span class="n">np</span><span class="o">.</span><span class="n">sqrt</span><span class="p">(</span><span class="nb">float</span><span class="p">(</span><span class="n">factorial</span><span class="p">(</span><span class="n">n</span><span class="p">,</span> <span class="n">exact</span><span class="o">=</span><span class="kc">True</span><span class="p">)))</span>
+        <span class="n">sum0</span> <span class="o">=</span> <span class="mf">0.</span>
+        <span class="k">for</span> <span class="n">s</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="n">s_start</span><span class="p">,</span> <span class="nb">min</span><span class="p">(</span><span class="n">m</span><span class="p">,</span><span class="n">n</span><span class="p">)</span><span class="o">+</span><span class="mi">1</span><span class="p">):</span>
+            <span class="n">sum0</span> <span class="o">+=</span>  <span class="n">factorial</span><span class="p">(</span><span class="n">k</span><span class="p">,</span> <span class="n">exact</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span> <span class="o">/</span> <span class="n">factorial</span><span class="p">(</span><span class="n">m</span><span class="o">-</span><span class="n">s</span><span class="p">,</span> <span class="n">exact</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span> <span class="o">/</span> <span class="n">factorial</span><span class="p">(</span><span class="n">s</span><span class="p">,</span> <span class="n">exact</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span> <span class="o">/</span>\
+               <span class="n">factorial</span><span class="p">(</span><span class="n">n</span><span class="o">-</span><span class="n">s</span><span class="p">,</span> <span class="n">exact</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span> <span class="o">/</span> <span class="n">factorial2</span><span class="p">(</span><span class="n">k</span><span class="o">-</span><span class="n">m</span><span class="o">-</span><span class="n">n</span><span class="o">+</span><span class="mi">2</span><span class="o">*</span><span class="n">s</span><span class="p">,</span> <span class="n">exact</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+
+        <span class="k">return</span> <span class="n">res</span><span class="o">*</span><span class="n">sum0</span>
+
+
+<span class="k">def</span> <span class="nf">p_power_k</span><span class="p">(</span><span class="n">k</span><span class="p">,</span><span class="n">m</span><span class="p">,</span><span class="n">n</span><span class="p">):</span>
+<span class="c1"># &lt;m|p^k|n&gt;</span>
+    <span class="k">return</span> <span class="n">x_power_k</span><span class="p">(</span><span class="n">k</span><span class="p">,</span><span class="n">m</span><span class="p">,</span><span class="n">n</span><span class="p">)</span> <span class="o">*</span> <span class="p">(</span><span class="mi">1</span><span class="n">j</span><span class="p">)</span><span class="o">**</span><span class="p">(</span><span class="n">m</span><span class="o">-</span><span class="n">n</span><span class="p">)</span>
+</pre></div>
+
+           </div>
+           
+          </div>
+          <footer>
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>
+        &#169; Copyright 2019, Shuaigroup.
+
+    </p>
+  </div>
+    
+    
+    
+    Built with <a href="https://www.sphinx-doc.org/">Sphinx</a> using a
+    
+    <a href="https://github.com/readthedocs/sphinx_rtd_theme">theme</a>
+    
+    provided by <a href="https://readthedocs.org">Read the Docs</a>. 
+
+</footer>
+        </div>
+      </div>
+
+    </section>
+
+  </div>
+  
+
+  <script type="text/javascript">
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script>
+
+  
+  
+    
+   
+
+</body>
+</html>

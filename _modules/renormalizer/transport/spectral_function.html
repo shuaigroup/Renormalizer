@@ -1,0 +1,354 @@
+
+
+<!DOCTYPE html>
+<html class="writer-html5" lang="en" >
+<head>
+  <meta charset="utf-8" />
+  
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  
+  <title>renormalizer.transport.spectral_function &mdash; Renormalizer 0.1.0 documentation</title>
+  
+
+  
+  <link rel="stylesheet" href="../../../_static/css/theme.css" type="text/css" />
+  <link rel="stylesheet" href="../../../_static/pygments.css" type="text/css" />
+  <link rel="stylesheet" href="../../../_static/pygments.css" type="text/css" />
+  <link rel="stylesheet" href="../../../_static/css/theme.css" type="text/css" />
+
+  
+  
+
+  
+  
+
+  
+
+  
+  <!--[if lt IE 9]>
+    <script src="../../../_static/js/html5shiv.min.js"></script>
+  <![endif]-->
+  
+    
+      <script type="text/javascript" id="documentation_options" data-url_root="../../../" src="../../../_static/documentation_options.js"></script>
+        <script data-url_root="../../../" id="documentation_options" src="../../../_static/documentation_options.js"></script>
+        <script src="../../../_static/jquery.js"></script>
+        <script src="../../../_static/underscore.js"></script>
+        <script src="../../../_static/doctools.js"></script>
+    
+    <script type="text/javascript" src="../../../_static/js/theme.js"></script>
+
+    
+    <link rel="index" title="Index" href="../../../genindex.html" />
+    <link rel="search" title="Search" href="../../../search.html" /> 
+</head>
+
+<body class="wy-body-for-nav">
+
+   
+  <div class="wy-grid-for-nav">
+    
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search" >
+          
+
+          
+            <a href="../../../index.html" class="icon icon-home"> Renormalizer
+          
+
+          
+          </a>
+
+          
+            
+            
+              <div class="version">
+                0.1
+              </div>
+            
+          
+
+          
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="../../../search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+
+          
+        </div>
+
+        
+        <div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="main navigation">
+          
+            
+            
+              
+            
+            
+              <ul>
+<li class="toctree-l1"><a class="reference internal" href="../../../overview.html">1. An overview of Renormalizer</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../install.html">2. Installation guide</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../develop.html">3. How to develop Renormalizer</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../tutorial.html">4. Tutorial</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../model.html">5. Model</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../mps.html">6. Low Level Data Structure and Algorithms</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../static.html">7. Static Eigenstate Method</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../spectrum.html">8. spectra: absorption/emission spectrum at zero/finite temperature</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../ct.html">9. Charge Transport</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../cv.html">10. Frequency domain DMRG</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../configs.html">11. Calculation Configurations</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../lib.html">12. lib</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../sbm.html">13. sbm</a></li>
+</ul>
+
+            
+          
+        </div>
+        
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap">
+
+      
+      <nav class="wy-nav-top" aria-label="top navigation">
+        
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="../../../index.html">Renormalizer</a>
+        
+      </nav>
+
+
+      <div class="wy-nav-content">
+        
+        <div class="rst-content">
+        
+          
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+<div role="navigation" aria-label="breadcrumbs navigation">
+
+  <ul class="wy-breadcrumbs">
+    
+      <li><a href="../../../index.html" class="icon icon-home"></a> &raquo;</li>
+        
+          <li><a href="../../index.html">Module code</a> &raquo;</li>
+        
+      <li>renormalizer.transport.spectral_function</li>
+    
+    
+      <li class="wy-breadcrumbs-aside">
+        
+      </li>
+    
+  </ul>
+
+  
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+            
+  <h1>Source code for renormalizer.transport.spectral_function</h1><div class="highlight"><pre>
+<span></span><span class="c1"># -*- coding: utf-8 -*-</span>
+
+<span class="kn">import</span> <span class="nn">logging</span>
+
+<span class="kn">from</span> <span class="nn">renormalizer.mps.backend</span> <span class="kn">import</span> <span class="n">np</span>
+<span class="kn">from</span> <span class="nn">renormalizer.mps</span> <span class="kn">import</span> <span class="n">Mpo</span><span class="p">,</span> <span class="n">Mps</span>
+<span class="kn">from</span> <span class="nn">renormalizer.utils</span> <span class="kn">import</span> <span class="n">TdMpsJob</span><span class="p">,</span> <span class="n">Quantity</span><span class="p">,</span> <span class="n">EvolveConfig</span><span class="p">,</span> <span class="n">CompressConfig</span>
+<span class="kn">from</span> <span class="nn">renormalizer.model</span> <span class="kn">import</span> <span class="n">Model</span><span class="p">,</span> <span class="n">TI1DModel</span>
+
+
+<span class="n">logger</span> <span class="o">=</span> <span class="n">logging</span><span class="o">.</span><span class="n">getLogger</span><span class="p">(</span><span class="vm">__name__</span><span class="p">)</span>
+
+
+
+<div class="viewcode-block" id="SpectralFunctionZT"><a class="viewcode-back" href="../../../ct.html#renormalizer.transport.spectral_function.SpectralFunctionZT">[docs]</a><span class="k">class</span> <span class="nc">SpectralFunctionZT</span><span class="p">(</span><span class="n">TdMpsJob</span><span class="p">):</span>
+    <span class="sa">r</span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Calculate one-particle retarded Green&#39;s function at zero temperature for translational invariant one-dimensional model:</span>
+
+<span class="sd">    .. math::</span>
+<span class="sd">        iG_{ij}(t) = \langle 0 |c_i(t) c^\dagger_j | 0 \rangle</span>
+
+<span class="sd">    The value of the array is stored with key ``&quot;G array&quot;`` in the dumped output file.</span>
+<span class="sd">    Because of the translational invariance, there are only two dimension in this array.</span>
+<span class="sd">    The first dimension is :math:`t` and the second dimension is :math:`|i-j|`.</span>
+<span class="sd">    In k-space, :math:`iG_{ij}` is transformed to:</span>
+
+<span class="sd">    .. math::</span>
+<span class="sd">        iG_k(t) = \langle 0 |c_k(t) c^\dagger_k | 0 \rangle</span>
+
+<span class="sd">    and :math:`G_k(t)` is saved with key ``&quot;Gk array&quot;`` in the dumped output file.</span>
+<span class="sd">    Fourier transformation of :math:`G_k(t)` results in the spectral function:</span>
+
+<span class="sd">    .. math::</span>
+<span class="sd">        A(k, \omega) = -\frac{1}{\pi} \rm{Im} \int_0^\infty dt e^{i \omega t} G_k(t)</span>
+
+<span class="sd">    However, this value is not calculated directly in this class, since usually an broadening to :math:`G_k(t)`</span>
+<span class="sd">    is required and an optimal range of :math:`\omega` can not be determined without additional knowledge.</span>
+
+<span class="sd">    For finite temperature spectral function, it is recommended to use</span>
+<span class="sd">    thermal field dynamics and transform the Hamiltonian.</span>
+<span class="sd">    An example is included in the test case.</span>
+<span class="sd">    See J. Chem.Phys.145, 224101 (2016) and</span>
+<span class="sd">    Phys. Rev. Lett.123, 090402 (2019) for details.</span>
+
+<span class="sd">    Parameters</span>
+<span class="sd">    ==========</span>
+<span class="sd">    model : :class:`~renormalizer.model.TI1DModel`</span>
+<span class="sd">        system information. In principle should use :class:`~renormalizer.model.TI1DModel`.</span>
+<span class="sd">        Using custom :class:`~renormalizer.model.Model` is possible however</span>
+<span class="sd">        in this case the user should be responsible to ensure the translational invariance.</span>
+<span class="sd">        It is recommended to set the number of the electronic DoFs to be an even number</span>
+<span class="sd">        so that the :math:`k=\pi` point is well defined.</span>
+<span class="sd">    compress_config : :class:`~renormalizer.utils.configs.CompressConfig`</span>
+<span class="sd">        config when compressing MPS.</span>
+<span class="sd">    evolve_config : :class:`~renormalizer.utils.configs.EvolveConfig`</span>
+<span class="sd">        config when carrying out real time propagation.</span>
+<span class="sd">    dump_dir : str</span>
+<span class="sd">        the directory for logging and numerical result output.</span>
+<span class="sd">    job_name : str</span>
+<span class="sd">        the name of the calculation job which determines the file name of the logging and numerical result output.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+
+    <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span>
+            <span class="bp">self</span><span class="p">,</span>
+            <span class="n">model</span><span class="p">:</span> <span class="n">TI1DModel</span><span class="p">,</span>
+            <span class="n">compress_config</span><span class="p">:</span> <span class="n">CompressConfig</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
+            <span class="n">evolve_config</span><span class="p">:</span> <span class="n">EvolveConfig</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
+            <span class="n">dump_dir</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
+            <span class="n">job_name</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
+    <span class="p">):</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">model</span><span class="p">:</span> <span class="n">TI1DModel</span> <span class="o">=</span> <span class="n">model</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">compress_config</span> <span class="o">=</span> <span class="n">compress_config</span>
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">compress_config</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">compress_config</span> <span class="o">=</span> <span class="n">CompressConfig</span><span class="p">()</span>
+        <span class="c1"># electron-addition Green&#39;s function at different $t$ assuming translational invariance</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_G_array</span> <span class="o">=</span> <span class="p">[]</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">e_occupations_array</span> <span class="o">=</span> <span class="p">[]</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">temperature</span> <span class="o">=</span> <span class="n">Quantity</span><span class="p">(</span><span class="mi">0</span><span class="p">)</span>
+        <span class="nb">super</span><span class="p">()</span><span class="o">.</span><span class="fm">__init__</span><span class="p">(</span><span class="n">evolve_config</span><span class="p">,</span> <span class="kc">False</span><span class="p">,</span> <span class="n">dump_dir</span><span class="p">,</span> <span class="n">job_name</span><span class="p">)</span>
+
+    <span class="nd">@property</span>
+    <span class="k">def</span> <span class="nf">G_array</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        :math:`G_{ij}(t)` as a two dimensional array.</span>
+<span class="sd">        The first dimension is :math:`t` and the second dimension is :math:`|i-j|`.</span>
+
+<span class="sd">        Returns</span>
+<span class="sd">        =======</span>
+<span class="sd">        G_array : np.ndarray</span>
+<span class="sd">            The Green&#39;s function array</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">return</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_G_array</span><span class="p">)</span>
+
+<div class="viewcode-block" id="SpectralFunctionZT.init_mps"><a class="viewcode-back" href="../../../ct.html#renormalizer.transport.spectral_function.SpectralFunctionZT.init_mps">[docs]</a>    <span class="k">def</span> <span class="nf">init_mps</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="n">creation_oper</span> <span class="o">=</span> <span class="n">Mpo</span><span class="o">.</span><span class="n">onsite</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">model</span><span class="p">,</span> <span class="sa">r</span><span class="s2">&quot;a^\dagger&quot;</span><span class="p">,</span> <span class="n">dof_set</span><span class="o">=</span><span class="p">{</span><span class="bp">self</span><span class="o">.</span><span class="n">model</span><span class="o">.</span><span class="n">e_dofs</span><span class="p">[</span><span class="mi">0</span><span class="p">]})</span>
+        <span class="n">gs</span> <span class="o">=</span> <span class="n">Mps</span><span class="o">.</span><span class="n">ground_state</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">model</span><span class="p">,</span> <span class="kc">False</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">h_mpo</span> <span class="o">=</span> <span class="n">Mpo</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">model</span><span class="p">,</span> <span class="n">offset</span><span class="o">=</span><span class="n">Quantity</span><span class="p">(</span><span class="n">gs</span><span class="o">.</span><span class="n">expectation</span><span class="p">(</span><span class="n">Mpo</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">model</span><span class="p">))))</span>
+        <span class="n">a_ket</span> <span class="o">=</span> <span class="n">creation_oper</span><span class="o">.</span><span class="n">apply</span><span class="p">(</span><span class="n">gs</span><span class="p">,</span> <span class="n">canonicalise</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+        <span class="n">a_ket</span><span class="o">.</span><span class="n">compress_config</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">compress_config</span>
+        <span class="n">a_ket</span><span class="o">.</span><span class="n">evolve_config</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">evolve_config</span>
+        <span class="n">a_ket</span><span class="o">.</span><span class="n">canonical_normalize</span><span class="p">()</span>
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">evolve_config</span><span class="o">.</span><span class="n">is_tdvp</span><span class="p">:</span>
+            <span class="n">a_ket</span> <span class="o">=</span> <span class="n">a_ket</span><span class="o">.</span><span class="n">expand_bond_dimension</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">h_mpo</span><span class="p">)</span>
+        <span class="k">return</span> <span class="p">(</span><span class="n">gs</span><span class="p">,</span> <span class="n">a_ket</span><span class="p">)</span></div>
+
+<div class="viewcode-block" id="SpectralFunctionZT.process_mps"><a class="viewcode-back" href="../../../ct.html#renormalizer.transport.spectral_function.SpectralFunctionZT.process_mps">[docs]</a>    <span class="k">def</span> <span class="nf">process_mps</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">mps</span><span class="p">):</span>
+        <span class="n">key</span> <span class="o">=</span> <span class="s2">&quot;a&quot;</span>
+        <span class="k">if</span> <span class="n">key</span> <span class="ow">not</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">model</span><span class="o">.</span><span class="n">mpos</span><span class="p">:</span>
+            <span class="n">a_opers</span> <span class="o">=</span> <span class="p">[</span><span class="n">Mpo</span><span class="o">.</span><span class="n">onsite</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">model</span><span class="p">,</span> <span class="s2">&quot;a&quot;</span><span class="p">,</span> <span class="n">dof_set</span><span class="o">=</span><span class="p">{</span><span class="n">dof</span><span class="p">})</span> <span class="k">for</span> <span class="n">dof</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">model</span><span class="o">.</span><span class="n">e_dofs</span><span class="p">]</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">model</span><span class="o">.</span><span class="n">mpos</span><span class="p">[</span><span class="n">key</span><span class="p">]</span> <span class="o">=</span> <span class="n">a_opers</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="n">a_opers</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">model</span><span class="o">.</span><span class="n">mpos</span><span class="p">[</span><span class="n">key</span><span class="p">]</span>
+
+        <span class="n">a_bra_mpo</span><span class="p">,</span> <span class="n">a_ket_mpo</span> <span class="o">=</span> <span class="n">mps</span>
+        <span class="n">G</span> <span class="o">=</span> <span class="n">a_ket_mpo</span><span class="o">.</span><span class="n">expectations</span><span class="p">(</span><span class="n">a_opers</span><span class="p">,</span> <span class="n">a_bra_mpo</span><span class="o">.</span><span class="n">conj</span><span class="p">())</span> <span class="o">/</span> <span class="mi">1</span><span class="n">j</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_G_array</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">G</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">e_occupations_array</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">a_ket_mpo</span><span class="o">.</span><span class="n">e_occupations</span><span class="p">)</span></div>
+
+<div class="viewcode-block" id="SpectralFunctionZT.evolve_single_step"><a class="viewcode-back" href="../../../ct.html#renormalizer.transport.spectral_function.SpectralFunctionZT.evolve_single_step">[docs]</a>    <span class="k">def</span> <span class="nf">evolve_single_step</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">evolve_dt</span><span class="p">):</span>
+        <span class="n">prev_bra_mpdm</span><span class="p">,</span> <span class="n">prev_ket_mpdm</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">latest_mps</span>
+        <span class="n">latest_ket_mpdm</span> <span class="o">=</span> <span class="n">prev_ket_mpdm</span><span class="o">.</span><span class="n">evolve</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">h_mpo</span><span class="p">,</span> <span class="n">evolve_dt</span><span class="p">)</span>
+        <span class="k">return</span> <span class="p">(</span><span class="n">prev_bra_mpdm</span><span class="p">,</span> <span class="n">latest_ket_mpdm</span><span class="p">)</span></div>
+
+<div class="viewcode-block" id="SpectralFunctionZT.get_dump_dict"><a class="viewcode-back" href="../../../ct.html#renormalizer.transport.spectral_function.SpectralFunctionZT.get_dump_dict">[docs]</a>    <span class="k">def</span> <span class="nf">get_dump_dict</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="n">dump_dict</span> <span class="o">=</span> <span class="nb">dict</span><span class="p">()</span>
+        <span class="n">dump_dict</span><span class="p">[</span><span class="s1">&#39;temperature&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">temperature</span><span class="o">.</span><span class="n">as_au</span><span class="p">()</span>
+        <span class="n">dump_dict</span><span class="p">[</span><span class="s1">&#39;time series&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">evolve_times</span>
+        <span class="n">dump_dict</span><span class="p">[</span><span class="s2">&quot;G array&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">G_array</span>
+        <span class="n">ne</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">model</span><span class="o">.</span><span class="n">n_edofs</span>
+        <span class="n">kpoints_distance</span> <span class="o">=</span> <span class="p">(</span><span class="mi">2</span> <span class="o">*</span> <span class="n">np</span><span class="o">.</span><span class="n">pi</span><span class="p">)</span> <span class="o">/</span> <span class="n">ne</span>
+        <span class="n">n_kpoints</span> <span class="o">=</span> <span class="n">ne</span> <span class="o">//</span> <span class="mi">2</span> <span class="o">+</span> <span class="mi">1</span>
+        <span class="n">ka</span> <span class="o">=</span> <span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">arange</span><span class="p">(</span><span class="n">n_kpoints</span><span class="p">)</span> <span class="o">*</span> <span class="n">kpoints_distance</span><span class="p">)</span><span class="o">.</span><span class="n">reshape</span><span class="p">(</span><span class="mi">1</span><span class="p">,</span> <span class="mi">1</span><span class="p">,</span> <span class="o">-</span><span class="mi">1</span><span class="p">)</span>
+        <span class="n">ijdiff</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">arange</span><span class="p">(</span><span class="n">ne</span><span class="p">)</span><span class="o">.</span><span class="n">reshape</span><span class="p">(</span><span class="mi">1</span><span class="p">,</span> <span class="o">-</span><span class="mi">1</span><span class="p">,</span> <span class="mi">1</span><span class="p">)</span>
+        <span class="c1"># Green&#39;s function in k space</span>
+        <span class="n">dump_dict</span><span class="p">[</span><span class="s2">&quot;Gk array&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">sum</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">G_array</span><span class="o">.</span><span class="n">reshape</span><span class="p">(</span><span class="o">-</span><span class="mi">1</span><span class="p">,</span> <span class="n">ne</span><span class="p">,</span> <span class="mi">1</span><span class="p">)</span> <span class="o">*</span> <span class="n">np</span><span class="o">.</span><span class="n">exp</span><span class="p">(</span><span class="mi">1</span><span class="n">j</span> <span class="o">*</span> <span class="n">ka</span> <span class="o">*</span> <span class="n">ijdiff</span><span class="p">),</span> <span class="n">axis</span><span class="o">=</span><span class="mi">1</span><span class="p">)</span>
+        <span class="n">dump_dict</span><span class="p">[</span><span class="s2">&quot;electron occupations array&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">e_occupations_array</span>
+        <span class="k">return</span> <span class="n">dump_dict</span></div></div>
+</pre></div>
+
+           </div>
+           
+          </div>
+          <footer>
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>
+        &#169; Copyright 2019, Shuaigroup.
+
+    </p>
+  </div>
+    
+    
+    
+    Built with <a href="https://www.sphinx-doc.org/">Sphinx</a> using a
+    
+    <a href="https://github.com/readthedocs/sphinx_rtd_theme">theme</a>
+    
+    provided by <a href="https://readthedocs.org">Read the Docs</a>. 
+
+</footer>
+        </div>
+      </div>
+
+    </section>
+
+  </div>
+  
+
+  <script type="text/javascript">
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script>
+
+  
+  
+    
+   
+
+</body>
+</html>

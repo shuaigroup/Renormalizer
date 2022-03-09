@@ -1,0 +1,468 @@
+
+
+<!DOCTYPE html>
+<html class="writer-html5" lang="en" >
+<head>
+  <meta charset="utf-8" />
+  
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  
+  <title>renormalizer.model.op &mdash; Renormalizer 0.1.0 documentation</title>
+  
+
+  
+  <link rel="stylesheet" href="../../../_static/css/theme.css" type="text/css" />
+  <link rel="stylesheet" href="../../../_static/pygments.css" type="text/css" />
+  <link rel="stylesheet" href="../../../_static/pygments.css" type="text/css" />
+  <link rel="stylesheet" href="../../../_static/css/theme.css" type="text/css" />
+
+  
+  
+
+  
+  
+
+  
+
+  
+  <!--[if lt IE 9]>
+    <script src="../../../_static/js/html5shiv.min.js"></script>
+  <![endif]-->
+  
+    
+      <script type="text/javascript" id="documentation_options" data-url_root="../../../" src="../../../_static/documentation_options.js"></script>
+        <script data-url_root="../../../" id="documentation_options" src="../../../_static/documentation_options.js"></script>
+        <script src="../../../_static/jquery.js"></script>
+        <script src="../../../_static/underscore.js"></script>
+        <script src="../../../_static/doctools.js"></script>
+    
+    <script type="text/javascript" src="../../../_static/js/theme.js"></script>
+
+    
+    <link rel="index" title="Index" href="../../../genindex.html" />
+    <link rel="search" title="Search" href="../../../search.html" /> 
+</head>
+
+<body class="wy-body-for-nav">
+
+   
+  <div class="wy-grid-for-nav">
+    
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search" >
+          
+
+          
+            <a href="../../../index.html" class="icon icon-home"> Renormalizer
+          
+
+          
+          </a>
+
+          
+            
+            
+              <div class="version">
+                0.1
+              </div>
+            
+          
+
+          
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="../../../search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+
+          
+        </div>
+
+        
+        <div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="main navigation">
+          
+            
+            
+              
+            
+            
+              <ul>
+<li class="toctree-l1"><a class="reference internal" href="../../../overview.html">1. An overview of Renormalizer</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../install.html">2. Installation guide</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../develop.html">3. How to develop Renormalizer</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../tutorial.html">4. Tutorial</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../model.html">5. Model</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../mps.html">6. Low Level Data Structure and Algorithms</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../static.html">7. Static Eigenstate Method</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../spectrum.html">8. spectra: absorption/emission spectrum at zero/finite temperature</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../ct.html">9. Charge Transport</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../cv.html">10. Frequency domain DMRG</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../configs.html">11. Calculation Configurations</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../lib.html">12. lib</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../sbm.html">13. sbm</a></li>
+</ul>
+
+            
+          
+        </div>
+        
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap">
+
+      
+      <nav class="wy-nav-top" aria-label="top navigation">
+        
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="../../../index.html">Renormalizer</a>
+        
+      </nav>
+
+
+      <div class="wy-nav-content">
+        
+        <div class="rst-content">
+        
+          
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+<div role="navigation" aria-label="breadcrumbs navigation">
+
+  <ul class="wy-breadcrumbs">
+    
+      <li><a href="../../../index.html" class="icon icon-home"></a> &raquo;</li>
+        
+          <li><a href="../../index.html">Module code</a> &raquo;</li>
+        
+      <li>renormalizer.model.op</li>
+    
+    
+      <li class="wy-breadcrumbs-aside">
+        
+      </li>
+    
+  </ul>
+
+  
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+            
+  <h1>Source code for renormalizer.model.op</h1><div class="highlight"><pre>
+<span></span><span class="c1"># -*- coding: utf-8 -*-</span>
+<span class="kn">from</span> <span class="nn">collections</span> <span class="kn">import</span> <span class="n">defaultdict</span>
+<span class="kn">from</span> <span class="nn">itertools</span> <span class="kn">import</span> <span class="n">chain</span>
+<span class="kn">from</span> <span class="nn">typing</span> <span class="kn">import</span> <span class="n">List</span><span class="p">,</span> <span class="n">Union</span><span class="p">,</span> <span class="n">Tuple</span><span class="p">,</span> <span class="n">Dict</span>
+
+<span class="kn">import</span> <span class="nn">numpy</span> <span class="k">as</span> <span class="nn">np</span>
+
+<span class="kn">from</span> <span class="nn">renormalizer.utils</span> <span class="kn">import</span> <span class="n">Quantity</span>
+
+
+<div class="viewcode-block" id="Op"><a class="viewcode-back" href="../../../model.html#renormalizer.model.Op">[docs]</a><span class="k">class</span> <span class="nc">Op</span><span class="p">:</span>
+    <span class="sa">r</span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    The operator class. The class can be considered as a symbolic way to express</span>
+<span class="sd">    quantum operator such as :math:`a^\dagger_i a_j`, :math:`b^\dagger_i + b_i`</span>
+<span class="sd">    or :math:`g \omega a^\dagger_i a_i (b^\dagger_{ij} + b_{ij})`.</span>
+<span class="sd">    Multiplications between operators are supported.</span>
+
+<span class="sd">    Parameters</span>
+<span class="sd">    ----------</span>
+<span class="sd">    symbol : str</span>
+<span class="sd">        The string of the operator, such as ``&quot;a&quot;``, ``&quot;a^\dagger a&quot;`` and ``r&quot;b^\dagger + b&quot;``.</span>
+<span class="sd">        The supported operators are defined in :class:`~renormalizer.model.basis.BasisSet`.</span>
+<span class="sd">        For complex symbols consisting of multiplication of simple symbols,</span>
+<span class="sd">        separate the simple symbols with a single space.</span>
+<span class="sd">    dof : hashable object or :class:`list` of hashable objects.</span>
+<span class="sd">        The name of the DoF related to the operator.</span>
+<span class="sd">        For simple symbol such as ``&quot;a&quot;``, the type could be any hashable object.</span>
+<span class="sd">        :class:`int`, :class:`str` and :class:`tuple` of them are recommended types for ``dof``.</span>
+<span class="sd">        For complex symbol such as ``&quot;a^\dagger a&quot;``, the type should be a list of hashable objects,</span>
+<span class="sd">        with each element representing one of the simple symbol contained in the complex symbol.</span>
+<span class="sd">        Using a single hashable object is also supported for complex symbol,</span>
+<span class="sd">        in which case every symbol is assumed to share the same DoF name.</span>
+<span class="sd">    factor : :class:`float` or :class:`complex` or :class:`Quantity`</span>
+<span class="sd">        The prefactor of the operator.</span>
+<span class="sd">    qn : :class:`int` or :class:`list` of :class:`int`.</span>
+<span class="sd">        The quantum number of the symbol. For simple symbol the ``qn`` should be an :class:`int`.</span>
+<span class="sd">        For complex symbol quantum number of each simple symbol contained in the complex symbol</span>
+<span class="sd">        should be provided. If ``qn`` is set to `None`, then the quantum number for every symbol is set to 0</span>
+<span class="sd">        except for``&quot;a^\dagger&quot;`` and ``&quot;a&quot;``, whose quantum number are set to 1 and -1 respectively.</span>
+
+<span class="sd">    Notes</span>
+<span class="sd">    =====</span>
+<span class="sd">    Symbols connected by plus ``&quot;+&quot;`` such as ``r&quot;b^\dagger + b&quot;`` is considered as a simple symbol,</span>
+<span class="sd">    because this class is designed to deal with operator multiplication rather than addition.</span>
+
+<span class="sd">    Warnings</span>
+<span class="sd">    ========</span>
+<span class="sd">    If you wish to specify the DoF of each symbol in a complex symbol,</span>
+<span class="sd">    you should use a :class:`list` instead of :class:`tuple`.</span>
+<span class="sd">    Because in the latter case the :class:`tuple` is recognized as a single DoF</span>
+<span class="sd">    and the DoFs of all simple symbols are set to the :class:`tuple`.</span>
+
+<span class="sd">    &quot;&quot;&quot;</span>
+
+<div class="viewcode-block" id="Op.product"><a class="viewcode-back" href="../../../model.html#renormalizer.model.Op.product">[docs]</a>    <span class="nd">@classmethod</span>
+    <span class="k">def</span> <span class="nf">product</span><span class="p">(</span><span class="bp">cls</span><span class="p">,</span> <span class="n">op_list</span><span class="p">:</span> <span class="n">List</span><span class="p">[</span><span class="s2">&quot;Op&quot;</span><span class="p">]):</span>
+        <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Construct a new operator as a multiplication product of operators.</span>
+
+<span class="sd">        Parameters</span>
+<span class="sd">        ----------</span>
+<span class="sd">        op_list : :class:`list` of :class:`Op`</span>
+<span class="sd">            The operators to be multiplied.</span>
+<span class="sd">        Returns</span>
+<span class="sd">        -------</span>
+<span class="sd">        op : :class:`Op`</span>
+<span class="sd">            The product operator.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="n">symbol</span> <span class="o">=</span> <span class="s2">&quot; &quot;</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">op</span><span class="o">.</span><span class="n">symbol</span> <span class="k">for</span> <span class="n">op</span> <span class="ow">in</span> <span class="n">op_list</span><span class="p">)</span>
+        <span class="n">dof_name</span> <span class="o">=</span> <span class="nb">list</span><span class="p">(</span><span class="n">chain</span><span class="o">.</span><span class="n">from_iterable</span><span class="p">(</span><span class="n">op</span><span class="o">.</span><span class="n">dofs</span> <span class="k">for</span> <span class="n">op</span> <span class="ow">in</span> <span class="n">op_list</span><span class="p">))</span>
+        <span class="n">factor</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">product</span><span class="p">([</span><span class="n">op</span><span class="o">.</span><span class="n">factor</span> <span class="k">for</span> <span class="n">op</span> <span class="ow">in</span> <span class="n">op_list</span><span class="p">])</span>
+        <span class="n">qn</span> <span class="o">=</span> <span class="nb">list</span><span class="p">(</span><span class="n">chain</span><span class="o">.</span><span class="n">from_iterable</span><span class="p">(</span><span class="n">op</span><span class="o">.</span><span class="n">qn_list</span> <span class="k">for</span> <span class="n">op</span> <span class="ow">in</span> <span class="n">op_list</span><span class="p">))</span>
+        <span class="k">return</span> <span class="n">Op</span><span class="p">(</span><span class="n">symbol</span><span class="p">,</span> <span class="n">dof_name</span><span class="p">,</span> <span class="n">factor</span><span class="p">,</span> <span class="n">qn</span><span class="p">)</span></div>
+
+<div class="viewcode-block" id="Op.identity"><a class="viewcode-back" href="../../../model.html#renormalizer.model.Op.identity">[docs]</a>    <span class="nd">@classmethod</span>
+    <span class="k">def</span> <span class="nf">identity</span><span class="p">(</span><span class="bp">cls</span><span class="p">,</span> <span class="n">dof</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Construct identity operator.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">dof</span><span class="p">,</span> <span class="nb">list</span><span class="p">):</span>
+            <span class="k">return</span> <span class="bp">cls</span><span class="p">(</span><span class="s2">&quot; &quot;</span><span class="o">.</span><span class="n">join</span><span class="p">([</span><span class="s2">&quot;I&quot;</span><span class="p">]</span> <span class="o">*</span> <span class="nb">len</span><span class="p">(</span><span class="n">dof</span><span class="p">)),</span> <span class="n">dof</span><span class="p">)</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="k">return</span> <span class="bp">cls</span><span class="p">(</span><span class="s2">&quot;I&quot;</span><span class="p">,</span> <span class="n">dof</span><span class="p">)</span></div>
+
+    <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">symbol</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span> <span class="n">dof</span><span class="p">,</span> <span class="n">factor</span><span class="p">:</span> <span class="n">Union</span><span class="p">[</span><span class="nb">float</span><span class="p">,</span> <span class="n">Quantity</span><span class="p">]</span> <span class="o">=</span> <span class="mf">1.0</span><span class="p">,</span> <span class="n">qn</span><span class="p">:</span> <span class="n">Union</span><span class="p">[</span><span class="n">List</span><span class="p">,</span> <span class="nb">int</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">):</span>
+        <span class="c1"># This is one of the most external user interface, so detailed argument checking is necessary</span>
+        <span class="k">if</span> <span class="ow">not</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">symbol</span><span class="p">,</span> <span class="nb">str</span><span class="p">):</span>
+            <span class="k">raise</span> <span class="ne">TypeError</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;symbol should be a str. Got </span><span class="si">{</span><span class="n">symbol</span><span class="si">}</span><span class="s2"> as </span><span class="si">{</span><span class="nb">type</span><span class="p">(</span><span class="n">symbol</span><span class="p">)</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">symbol</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="n">symbol</span>
+        <span class="c1"># replace &quot; + &quot; so that &quot; &quot; can be used to split the symbol (&quot;b^\dagger + b&quot;)</span>
+        <span class="c1"># the logic of Op is based on multiplication of symbols. So special treatment on addition is inevitable</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">split_symbol</span> <span class="p">:</span> <span class="n">List</span><span class="p">[</span><span class="nb">str</span><span class="p">]</span> <span class="o">=</span> <span class="p">[</span><span class="n">s</span><span class="o">.</span><span class="n">replace</span><span class="p">(</span><span class="s2">&quot;plus&quot;</span><span class="p">,</span> <span class="s2">&quot; + &quot;</span><span class="p">)</span> <span class="k">for</span> <span class="n">s</span> <span class="ow">in</span> <span class="n">symbol</span><span class="o">.</span><span class="n">replace</span><span class="p">(</span><span class="s2">&quot; + &quot;</span><span class="p">,</span> <span class="s2">&quot;plus&quot;</span><span class="p">)</span><span class="o">.</span><span class="n">split</span><span class="p">(</span><span class="s2">&quot; &quot;</span><span class="p">)]</span>
+        <span class="n">num_simple_symbol</span> <span class="o">=</span> <span class="nb">len</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">split_symbol</span><span class="p">)</span>
+        <span class="c1"># simple symbol</span>
+        <span class="k">if</span> <span class="n">num_simple_symbol</span> <span class="o">==</span> <span class="mi">1</span><span class="p">:</span>
+            <span class="c1"># dof_name is a list. Check it&#39;s valid</span>
+            <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">dof</span><span class="p">,</span> <span class="nb">list</span><span class="p">):</span>
+                <span class="k">assert</span> <span class="nb">len</span><span class="p">(</span><span class="n">dof</span><span class="p">)</span> <span class="o">==</span> <span class="mi">1</span>
+                <span class="n">dofs</span> <span class="o">=</span> <span class="n">dof</span>
+            <span class="c1"># convert to list for unified treatment</span>
+            <span class="k">else</span><span class="p">:</span>
+                <span class="n">dofs</span> <span class="o">=</span> <span class="p">[</span><span class="n">dof</span><span class="p">]</span>
+            <span class="c1"># same for qn</span>
+            <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">qn</span><span class="p">,</span> <span class="nb">list</span><span class="p">):</span>
+                <span class="k">assert</span> <span class="nb">len</span><span class="p">(</span><span class="n">qn</span><span class="p">)</span> <span class="o">==</span> <span class="mi">1</span>
+                <span class="n">qn_list</span> <span class="o">=</span> <span class="n">qn</span>
+            <span class="k">else</span><span class="p">:</span>
+                <span class="n">qn_list</span> <span class="o">=</span> <span class="p">[</span><span class="n">qn</span><span class="p">]</span>
+        <span class="c1"># complex symbol</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="c1"># check dof_name length</span>
+            <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">dof</span><span class="p">,</span> <span class="nb">list</span><span class="p">):</span>
+                <span class="k">if</span> <span class="n">num_simple_symbol</span> <span class="o">!=</span> <span class="nb">len</span><span class="p">(</span><span class="n">dof</span><span class="p">):</span>
+                    <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s2">&quot;symbol and DoF name not match&quot;</span><span class="p">)</span>
+                <span class="n">dofs</span> <span class="o">=</span> <span class="n">dof</span>
+            <span class="c1"># other types. Assuming sharing the same dof name</span>
+            <span class="k">else</span><span class="p">:</span>
+                <span class="n">dofs</span> <span class="o">=</span> <span class="p">[</span><span class="n">dof</span><span class="p">]</span> <span class="o">*</span> <span class="n">num_simple_symbol</span>
+            <span class="c1"># check qn</span>
+            <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">qn</span><span class="p">,</span> <span class="nb">list</span><span class="p">):</span>
+                <span class="k">if</span> <span class="n">num_simple_symbol</span> <span class="o">!=</span> <span class="nb">len</span><span class="p">(</span><span class="n">qn</span><span class="p">):</span>
+                    <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s2">&quot;symbol and qn length not match&quot;</span><span class="p">)</span>
+                <span class="n">qn_list</span> <span class="o">=</span> <span class="n">qn</span>
+            <span class="c1"># the default value</span>
+            <span class="k">elif</span> <span class="n">qn</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+                <span class="n">qn_list</span> <span class="o">=</span> <span class="p">[</span><span class="kc">None</span><span class="p">]</span> <span class="o">*</span> <span class="n">num_simple_symbol</span>
+            <span class="c1"># Can&#39;t assume the same qn as Dof name above</span>
+            <span class="k">else</span><span class="p">:</span>
+                <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s2">&quot;qn should be a list.&quot;</span><span class="p">)</span>
+
+        <span class="k">for</span> <span class="n">dof</span> <span class="ow">in</span> <span class="n">dofs</span><span class="p">:</span>
+            <span class="k">if</span> <span class="n">dof</span><span class="o">.</span><span class="fm">__hash__</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+                <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;dof name should be hashable. Got </span><span class="si">{</span><span class="n">dof</span><span class="si">}</span><span class="s2">.&quot;</span><span class="p">)</span>
+        <span class="k">for</span> <span class="n">qn</span> <span class="ow">in</span> <span class="n">qn_list</span><span class="p">:</span>
+            <span class="k">if</span> <span class="n">qn</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span> <span class="ow">and</span> <span class="ow">not</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">qn</span><span class="p">,</span> <span class="nb">int</span><span class="p">):</span>
+                <span class="k">raise</span> <span class="ne">TypeError</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;qn for each symbol should be an integer. Got </span><span class="si">{</span><span class="n">qn_list</span><span class="si">}</span><span class="s2">.&quot;</span><span class="p">)</span>
+
+        <span class="c1"># argument checking done.</span>
+        <span class="k">assert</span> <span class="nb">len</span><span class="p">(</span><span class="n">dofs</span><span class="p">)</span> <span class="o">==</span> <span class="nb">len</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">split_symbol</span><span class="p">)</span>
+
+        <span class="bp">self</span><span class="o">.</span><span class="n">dofs</span><span class="p">:</span> <span class="n">List</span> <span class="o">=</span> <span class="n">dofs</span>
+        <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">factor</span><span class="p">,</span> <span class="n">Quantity</span><span class="p">):</span>
+            <span class="n">factor</span> <span class="o">=</span> <span class="n">factor</span><span class="o">.</span><span class="n">as_au</span><span class="p">()</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_factor</span><span class="p">:</span> <span class="nb">float</span> <span class="o">=</span> <span class="n">factor</span> <span class="o">+</span> <span class="mf">0.0</span> <span class="c1"># convert to float</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">qn_list</span><span class="p">:</span> <span class="n">List</span><span class="p">[</span><span class="nb">int</span><span class="p">]</span> <span class="o">=</span> <span class="n">qn_list</span>
+
+<div class="viewcode-block" id="Op.split_elementary"><a class="viewcode-back" href="../../../model.html#renormalizer.model.Op.split_elementary">[docs]</a>    <span class="k">def</span> <span class="nf">split_elementary</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">dof_to_siteidx</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Tuple</span><span class="p">[</span><span class="n">List</span><span class="p">[</span><span class="s2">&quot;Op&quot;</span><span class="p">],</span> <span class="n">Union</span><span class="p">[</span><span class="nb">float</span><span class="p">,</span> <span class="nb">complex</span><span class="p">]]:</span>
+        <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Construct elementary operators according to site index.</span>
+<span class="sd">        &quot;elementary operator&quot; means that in the operator every DoF is on the same MPS site.</span>
+
+<span class="sd">        Parameters</span>
+<span class="sd">        ----------</span>
+<span class="sd">        dof_to_siteidx : dict</span>
+<span class="sd">            Mapping from DoF name to MPS site index.</span>
+
+<span class="sd">        Returns</span>
+<span class="sd">        -------</span>
+<span class="sd">        elementary_operators : :class:`list` of :class:`Op`</span>
+<span class="sd">            A list of elementary operators. Factors are set to 1.</span>
+<span class="sd">        factor : :class:`float` or class:`complex`</span>
+<span class="sd">            Factor of the operator.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="c1"># simplest case</span>
+        <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">dofs</span><span class="p">)</span> <span class="o">==</span> <span class="mi">1</span><span class="p">:</span>
+            <span class="k">return</span> <span class="p">[</span><span class="n">Op</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">symbol</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">dofs</span><span class="p">,</span> <span class="n">qn</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">qn_list</span><span class="p">)],</span> <span class="bp">self</span><span class="o">.</span><span class="n">factor</span>
+        <span class="c1"># group operators according to site index.</span>
+        <span class="c1"># The same site idx (the same basis) in one group.</span>
+        <span class="n">grouped_op_info</span><span class="p">:</span> <span class="n">Dict</span><span class="p">[</span><span class="nb">int</span><span class="p">,</span> <span class="n">List</span><span class="p">[</span><span class="n">Op</span><span class="p">]]</span> <span class="o">=</span> <span class="n">defaultdict</span><span class="p">(</span><span class="nb">list</span><span class="p">)</span>
+        <span class="k">for</span> <span class="n">elem_symbol</span><span class="p">,</span> <span class="n">elem_name</span><span class="p">,</span> <span class="n">qn</span> <span class="ow">in</span> <span class="nb">zip</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">split_symbol</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">dofs</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">qn_list</span><span class="p">):</span>
+            <span class="n">site_idx</span> <span class="o">=</span> <span class="n">dof_to_siteidx</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="n">elem_name</span><span class="p">)</span>
+            <span class="k">if</span> <span class="n">site_idx</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+                <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Unknown DoF name </span><span class="si">{</span><span class="n">elem_name</span><span class="si">}</span><span class="s2"> in </span><span class="si">{</span><span class="bp">self</span><span class="si">}</span><span class="s2">.&quot;</span><span class="p">)</span>
+            <span class="c1"># Note that the order of operators on each site is not changed</span>
+            <span class="n">grouped_op_info</span><span class="p">[</span><span class="n">site_idx</span><span class="p">]</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">Op</span><span class="p">(</span><span class="n">elem_symbol</span><span class="p">,</span> <span class="n">elem_name</span><span class="p">,</span> <span class="n">qn</span><span class="o">=</span><span class="n">qn</span><span class="p">))</span>
+        <span class="c1"># Construct elementary operators. Small site index first.</span>
+        <span class="n">ops</span> <span class="o">=</span> <span class="p">[]</span>
+        <span class="k">for</span> <span class="n">site_idx</span> <span class="ow">in</span> <span class="nb">sorted</span><span class="p">(</span><span class="n">grouped_op_info</span><span class="o">.</span><span class="n">keys</span><span class="p">()):</span>
+            <span class="n">elem_ops</span><span class="p">:</span> <span class="n">List</span><span class="p">[</span><span class="n">Op</span><span class="p">]</span> <span class="o">=</span> <span class="n">grouped_op_info</span><span class="p">[</span><span class="n">site_idx</span><span class="p">]</span>
+            <span class="n">ops</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">Op</span><span class="o">.</span><span class="n">product</span><span class="p">(</span><span class="n">elem_ops</span><span class="p">))</span>
+        <span class="k">return</span> <span class="n">ops</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">factor</span></div>
+
+    <span class="nd">@property</span>
+    <span class="k">def</span> <span class="nf">factor</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        The factor of the operator.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="c1"># forbid rewriting factor since Op should be immutable</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_factor</span>
+
+    <span class="nd">@property</span>
+    <span class="k">def</span> <span class="nf">qn</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">int</span><span class="p">:</span>
+        <span class="sa">r</span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Total quantum number of the operator. Sum of ``self.qn_list``.</span>
+<span class="sd">        Quantum number of ``&quot;a^\dagger&quot;`` and ``&quot;a&quot;`` is taken to be 1 and -1</span>
+<span class="sd">        if not specified.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="c1"># should be the most common case</span>
+        <span class="k">if</span> <span class="nb">set</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">qn_list</span><span class="p">)</span> <span class="o">==</span> <span class="p">{</span><span class="kc">None</span><span class="p">}:</span>
+            <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">split_symbol</span><span class="o">.</span><span class="n">count</span><span class="p">(</span><span class="sa">r</span><span class="s2">&quot;a^\dagger&quot;</span><span class="p">)</span> <span class="o">-</span> <span class="bp">self</span><span class="o">.</span><span class="n">split_symbol</span><span class="o">.</span><span class="n">count</span><span class="p">(</span><span class="s2">&quot;a&quot;</span><span class="p">)</span>
+        <span class="c1"># None and integer both in self._qn_list. Not good</span>
+        <span class="k">elif</span> <span class="kc">None</span> <span class="ow">in</span> <span class="nb">set</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">qn_list</span><span class="p">):</span>
+            <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;qn ill-defined in </span><span class="si">{</span><span class="bp">self</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+        <span class="c1"># most general case</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="k">return</span> <span class="nb">sum</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">qn_list</span><span class="p">)</span>
+
+<div class="viewcode-block" id="Op.to_tuple"><a class="viewcode-back" href="../../../model.html#renormalizer.model.Op.to_tuple">[docs]</a>    <span class="k">def</span> <span class="nf">to_tuple</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Convert the operator into a tuple. The fields are the symbol, the DoFs</span>
+<span class="sd">        the factor and the quantum number list. The converted tuple can be hashed.</span>
+
+<span class="sd">        Returns</span>
+<span class="sd">        -------</span>
+<span class="sd">        op_tuple : tuple</span>
+<span class="sd">            The converted tuple.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">symbol</span><span class="p">,</span> <span class="nb">tuple</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">dofs</span><span class="p">),</span> <span class="bp">self</span><span class="o">.</span><span class="n">factor</span><span class="p">,</span> <span class="nb">tuple</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">qn_list</span><span class="p">)</span></div>
+
+    <span class="k">def</span> <span class="fm">__hash__</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="k">return</span> <span class="nb">hash</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">to_tuple</span><span class="p">())</span>
+
+    <span class="k">def</span> <span class="fm">__eq__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">other</span><span class="p">):</span>
+        <span class="c1"># compare float point directly because generally a small epsilon</span>
+        <span class="c1"># between floats can not be defined for all possible cases.</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">to_tuple</span><span class="p">()</span> <span class="o">==</span> <span class="n">other</span><span class="o">.</span><span class="n">to_tuple</span><span class="p">()</span>
+
+    <span class="k">def</span> <span class="fm">__str__</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="k">return</span> <span class="nb">str</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">to_tuple</span><span class="p">())</span>
+
+    <span class="k">def</span> <span class="fm">__mul__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">other</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="s2">&quot;Op&quot;</span><span class="p">:</span>
+        <span class="c1"># multiplication with another Op or with scalar</span>
+        <span class="c1"># convert numpy scalar to python scalar</span>
+        <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">other</span><span class="p">,</span> <span class="n">np</span><span class="o">.</span><span class="n">generic</span><span class="p">):</span>
+            <span class="n">other</span> <span class="o">=</span> <span class="n">other</span><span class="o">.</span><span class="n">item</span><span class="p">()</span>
+        <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">other</span><span class="p">,</span> <span class="n">Op</span><span class="p">):</span>
+            <span class="k">return</span> <span class="n">Op</span><span class="o">.</span><span class="n">product</span><span class="p">([</span><span class="bp">self</span><span class="p">,</span> <span class="n">other</span><span class="p">])</span>
+        <span class="k">elif</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">other</span><span class="p">,</span> <span class="p">(</span><span class="nb">int</span><span class="p">,</span> <span class="nb">float</span><span class="p">,</span> <span class="nb">complex</span><span class="p">)):</span>
+            <span class="n">new_symbol</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">symbol</span>
+            <span class="n">new_dof_name</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">dofs</span>
+            <span class="n">new_factor</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">factor</span> <span class="o">*</span> <span class="n">other</span>
+            <span class="n">new_qn</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">qn_list</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Unsupported type: </span><span class="si">{</span><span class="nb">type</span><span class="p">(</span><span class="n">other</span><span class="p">)</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+        <span class="k">return</span> <span class="n">Op</span><span class="p">(</span><span class="n">new_symbol</span><span class="p">,</span> <span class="n">new_dof_name</span><span class="p">,</span> <span class="n">new_factor</span><span class="p">,</span> <span class="n">new_qn</span><span class="p">)</span>
+
+    <span class="k">def</span> <span class="fm">__rmul__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">other</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="s2">&quot;Op&quot;</span><span class="p">:</span>
+        <span class="c1"># Operators not allowed due to commutation property.</span>
+        <span class="c1"># In principle Op * Op should use `__mul__` method.</span>
+        <span class="k">assert</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">other</span><span class="p">,</span> <span class="p">(</span><span class="nb">int</span><span class="p">,</span> <span class="nb">float</span><span class="p">,</span> <span class="nb">complex</span><span class="p">,</span> <span class="n">np</span><span class="o">.</span><span class="n">generic</span><span class="p">))</span>
+        <span class="k">return</span> <span class="bp">self</span> <span class="o">*</span> <span class="n">other</span></div>
+</pre></div>
+
+           </div>
+           
+          </div>
+          <footer>
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>
+        &#169; Copyright 2019, Shuaigroup.
+
+    </p>
+  </div>
+    
+    
+    
+    Built with <a href="https://www.sphinx-doc.org/">Sphinx</a> using a
+    
+    <a href="https://github.com/readthedocs/sphinx_rtd_theme">theme</a>
+    
+    provided by <a href="https://readthedocs.org">Read the Docs</a>. 
+
+</footer>
+        </div>
+      </div>
+
+    </section>
+
+  </div>
+  
+
+  <script type="text/javascript">
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script>
+
+  
+  
+    
+   
+
+</body>
+</html>

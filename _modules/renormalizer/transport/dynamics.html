@@ -1,0 +1,512 @@
+
+
+<!DOCTYPE html>
+<html class="writer-html5" lang="en" >
+<head>
+  <meta charset="utf-8" />
+  
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  
+  <title>renormalizer.transport.dynamics &mdash; Renormalizer 0.1.0 documentation</title>
+  
+
+  
+  <link rel="stylesheet" href="../../../_static/css/theme.css" type="text/css" />
+  <link rel="stylesheet" href="../../../_static/pygments.css" type="text/css" />
+  <link rel="stylesheet" href="../../../_static/pygments.css" type="text/css" />
+  <link rel="stylesheet" href="../../../_static/css/theme.css" type="text/css" />
+
+  
+  
+
+  
+  
+
+  
+
+  
+  <!--[if lt IE 9]>
+    <script src="../../../_static/js/html5shiv.min.js"></script>
+  <![endif]-->
+  
+    
+      <script type="text/javascript" id="documentation_options" data-url_root="../../../" src="../../../_static/documentation_options.js"></script>
+        <script data-url_root="../../../" id="documentation_options" src="../../../_static/documentation_options.js"></script>
+        <script src="../../../_static/jquery.js"></script>
+        <script src="../../../_static/underscore.js"></script>
+        <script src="../../../_static/doctools.js"></script>
+    
+    <script type="text/javascript" src="../../../_static/js/theme.js"></script>
+
+    
+    <link rel="index" title="Index" href="../../../genindex.html" />
+    <link rel="search" title="Search" href="../../../search.html" /> 
+</head>
+
+<body class="wy-body-for-nav">
+
+   
+  <div class="wy-grid-for-nav">
+    
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search" >
+          
+
+          
+            <a href="../../../index.html" class="icon icon-home"> Renormalizer
+          
+
+          
+          </a>
+
+          
+            
+            
+              <div class="version">
+                0.1
+              </div>
+            
+          
+
+          
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="../../../search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+
+          
+        </div>
+
+        
+        <div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="main navigation">
+          
+            
+            
+              
+            
+            
+              <ul>
+<li class="toctree-l1"><a class="reference internal" href="../../../overview.html">1. An overview of Renormalizer</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../install.html">2. Installation guide</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../develop.html">3. How to develop Renormalizer</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../tutorial.html">4. Tutorial</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../model.html">5. Model</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../mps.html">6. Low Level Data Structure and Algorithms</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../static.html">7. Static Eigenstate Method</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../spectrum.html">8. spectra: absorption/emission spectrum at zero/finite temperature</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../ct.html">9. Charge Transport</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../cv.html">10. Frequency domain DMRG</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../configs.html">11. Calculation Configurations</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../lib.html">12. lib</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../sbm.html">13. sbm</a></li>
+</ul>
+
+            
+          
+        </div>
+        
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap">
+
+      
+      <nav class="wy-nav-top" aria-label="top navigation">
+        
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="../../../index.html">Renormalizer</a>
+        
+      </nav>
+
+
+      <div class="wy-nav-content">
+        
+        <div class="rst-content">
+        
+          
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+<div role="navigation" aria-label="breadcrumbs navigation">
+
+  <ul class="wy-breadcrumbs">
+    
+      <li><a href="../../../index.html" class="icon icon-home"></a> &raquo;</li>
+        
+          <li><a href="../../index.html">Module code</a> &raquo;</li>
+        
+      <li>renormalizer.transport.dynamics</li>
+    
+    
+      <li class="wy-breadcrumbs-aside">
+        
+      </li>
+    
+  </ul>
+
+  
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+            
+  <h1>Source code for renormalizer.transport.dynamics</h1><div class="highlight"><pre>
+<span></span><span class="c1"># -*- coding: utf-8 -*-</span>
+<span class="c1"># Author: Jiajun Ren &lt;jiajunren0522@gmail.com&gt;</span>
+<span class="c1">#         Weitang Li &lt;liwt31@163.com&gt;</span>
+
+<span class="kn">import</span> <span class="nn">logging</span>
+<span class="kn">import</span> <span class="nn">os</span>
+<span class="kn">from</span> <span class="nn">enum</span> <span class="kn">import</span> <span class="n">Enum</span>
+<span class="kn">from</span> <span class="nn">collections</span> <span class="kn">import</span> <span class="n">OrderedDict</span>
+<span class="kn">from</span> <span class="nn">functools</span> <span class="kn">import</span> <span class="n">partial</span>
+
+<span class="kn">from</span> <span class="nn">scipy.linalg</span> <span class="kn">import</span> <span class="n">logm</span>
+
+<span class="kn">from</span> <span class="nn">renormalizer.mps</span> <span class="kn">import</span> <span class="n">Mpo</span><span class="p">,</span> <span class="n">Mps</span><span class="p">,</span> <span class="n">MpDm</span><span class="p">,</span> <span class="n">ThermalProp</span><span class="p">,</span> <span class="n">load_thermal_state</span>
+<span class="kn">from</span> <span class="nn">renormalizer.model</span> <span class="kn">import</span> <span class="n">HolsteinModel</span>
+<span class="kn">from</span> <span class="nn">renormalizer.utils</span> <span class="kn">import</span> <span class="n">TdMpsJob</span><span class="p">,</span> <span class="n">Quantity</span><span class="p">,</span> <span class="n">CompressConfig</span><span class="p">,</span> <span class="n">EvolveConfig</span>
+
+<span class="kn">import</span> <span class="nn">numpy</span> <span class="k">as</span> <span class="nn">np</span>
+
+<span class="n">logger</span> <span class="o">=</span> <span class="n">logging</span><span class="o">.</span><span class="n">getLogger</span><span class="p">(</span><span class="vm">__name__</span><span class="p">)</span>
+
+<span class="n">EDGE_THRESHOLD</span> <span class="o">=</span> <span class="mf">1e-4</span>
+
+
+<div class="viewcode-block" id="InitElectron"><a class="viewcode-back" href="../../../ct.html#renormalizer.transport.dynamics.InitElectron">[docs]</a><span class="k">class</span> <span class="nc">InitElectron</span><span class="p">(</span><span class="n">Enum</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Available methods to prepare initial state of charge diffusion</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="n">fc</span> <span class="o">=</span> <span class="s2">&quot;franck-condon excitation&quot;</span>
+    <span class="n">relaxed</span> <span class="o">=</span> <span class="s2">&quot;analytically relaxed phonon(s)&quot;</span></div>
+
+
+<div class="viewcode-block" id="ChargeDiffusionDynamics"><a class="viewcode-back" href="../../../ct.html#renormalizer.transport.dynamics.ChargeDiffusionDynamics">[docs]</a><span class="k">class</span> <span class="nc">ChargeDiffusionDynamics</span><span class="p">(</span><span class="n">TdMpsJob</span><span class="p">):</span>
+    <span class="sa">r</span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Simulate charge diffusion dynamics by TD-DMRG. It is possible to obtain mobility from the simulation,</span>
+<span class="sd">    but care must be taken to ensure that mean square displacement grows linearly with time.</span>
+
+<span class="sd">    Args:</span>
+<span class="sd">        model (:class:`~renormalizer.model.model.HolsteinModel`): system information.</span>
+<span class="sd">            Currently only support :class:`~renormalizer.model.model.HolsteinModel`.</span>
+<span class="sd">        temperature (:class:`~renormalizer.utils.quantity.Quantity`): simulation temperature.</span>
+<span class="sd">            Default is zero temperature. For finite temperature charge dynamics, it is recommended to use</span>
+<span class="sd">            thermal field dynamics and transform the Hamiltonian.</span>
+<span class="sd">            See the documentation of :class:`~renormalizer.transport.spectral_function.SpectralFunctionZT`</span>
+<span class="sd">            for more details.</span>
+<span class="sd">        compress_config (:class:`~renormalizer.utils.configs.CompressConfig`): config when compressing MPS.</span>
+<span class="sd">        evolve_config (:class:`~renormalizer.utils.configs.EvolveConfig`): config when evolving MPS.</span>
+<span class="sd">        stop_at_edge (bool): whether stop when charge has diffused to the boundary of the system. Default is ``True``.</span>
+<span class="sd">        init_electron (:class:`~renormalizer.transport.transport.InitElectron`):</span>
+<span class="sd">            the method to prepare the initial state.</span>
+<span class="sd">        rdm (bool): whether calculate reduced density matrix and k-space representation for the electron.</span>
+<span class="sd">            Default is ``False`` because usually the calculation is time consuming.</span>
+<span class="sd">            Using scheme 4 might partly solve the problem.</span>
+<span class="sd">        dump_dir (str): the directory for logging and numerical result output.</span>
+<span class="sd">            Also the directory from which to load previous thermal propagated initial state (if exists).</span>
+<span class="sd">        job_name (str): the name of the calculation job which determines the file name of the logging and numerical result output.</span>
+<span class="sd">            For thermal propagated initial state input/output the file name is appended with ``&quot;_impdm.npz&quot;``.</span>
+
+<span class="sd">    Attributes:</span>
+<span class="sd">        energies (np.ndarray): calculated energy of the states during the time evolution.</span>
+<span class="sd">            Without dissipation or TD-Hartree the value should remain unchanged and to some extent</span>
+<span class="sd">            can be used to measure the error during time evolution.</span>
+<span class="sd">        r_square_array (np.ndarray): calculated mean square displacement</span>
+<span class="sd">            :math:`\langle \psi | \hat r^2 | \psi \rangle - \langle \psi | \hat r | \psi \rangle^2`</span>
+<span class="sd">            at each evolution time step.</span>
+<span class="sd">        e_occupations_array (np.ndarray): calculated electron occupations in real space on each site for each evolution time step.</span>
+<span class="sd">        ph_occupations_array (np.ndarray): calculated phonon occupations on each site for each evolution time step.</span>
+<span class="sd">        reduced_density_matrices (list): calculated reduced density matrices of the electron for each evolution time step.</span>
+<span class="sd">            Only available when ``rdm`` is set to ``True``.</span>
+<span class="sd">        k_occupations_array (np.ndarray): calculated electron occupations in momentum (k) space</span>
+<span class="sd">            on each site for each evolution time step. Only available when ``rdm`` is set to ``True``.</span>
+<span class="sd">            The basis transformation is based on:</span>
+
+<span class="sd">            .. math::</span>
+<span class="sd">                | k \rangle = \sum_j e^{-ijk} | j \rangle</span>
+
+<span class="sd">            where :math:`k` starts from :math:`-\pi` to :math:`\pi` with interval :math:`2\pi/N`.</span>
+<span class="sd">            :math:`N` represents total number of electronic sites.</span>
+<span class="sd">        coherent_length_array (np.ndarray): coherent length :math:`L` calculated for each evolution time step.</span>
+
+<span class="sd">            .. math::</span>
+<span class="sd">                L = \sum_{ij, i \neq j} | \rho_{ij} |</span>
+
+<span class="sd">            where :math:`\rho` is the density matrix of the electron. Naturally this is only available when</span>
+<span class="sd">            ``rdm`` is set to ``True``.</span>
+
+<span class="sd">    &quot;&quot;&quot;</span>
+
+    <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span>
+        <span class="bp">self</span><span class="p">,</span>
+        <span class="n">model</span><span class="p">:</span> <span class="n">HolsteinModel</span><span class="p">,</span>
+        <span class="n">temperature</span><span class="p">:</span> <span class="n">Quantity</span> <span class="o">=</span> <span class="n">Quantity</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="s2">&quot;K&quot;</span><span class="p">),</span>
+        <span class="n">compress_config</span><span class="p">:</span> <span class="n">CompressConfig</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
+        <span class="n">evolve_config</span><span class="p">:</span> <span class="n">EvolveConfig</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
+        <span class="n">stop_at_edge</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">True</span><span class="p">,</span>
+        <span class="n">init_electron</span><span class="o">=</span><span class="n">InitElectron</span><span class="o">.</span><span class="n">relaxed</span><span class="p">,</span>
+        <span class="n">rdm</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">False</span><span class="p">,</span>
+        <span class="n">dump_dir</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
+        <span class="n">job_name</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
+    <span class="p">):</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">model</span><span class="p">:</span> <span class="n">HolsteinModel</span> <span class="o">=</span> <span class="n">model</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">temperature</span> <span class="o">=</span> <span class="n">temperature</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">mpo</span> <span class="o">=</span> <span class="kc">None</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">init_electron</span> <span class="o">=</span> <span class="n">init_electron</span>
+        <span class="k">if</span> <span class="n">compress_config</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">compress_config</span><span class="p">:</span> <span class="n">CompressConfig</span> <span class="o">=</span> <span class="n">CompressConfig</span><span class="p">()</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">compress_config</span><span class="p">:</span> <span class="n">CompressConfig</span> <span class="o">=</span> <span class="n">compress_config</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">energies</span> <span class="o">=</span> <span class="p">[]</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">r_square_array</span> <span class="o">=</span> <span class="p">[]</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">e_occupations_array</span> <span class="o">=</span> <span class="p">[]</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">ph_occupations_array</span> <span class="o">=</span> <span class="p">[]</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">reduced_density_matrices</span> <span class="o">=</span> <span class="p">[]</span> <span class="k">if</span> <span class="n">rdm</span> <span class="k">else</span> <span class="kc">None</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">k_occupations_array</span> <span class="o">=</span> <span class="p">[]</span>
+        <span class="c1"># von Neumann entropy between e and ph</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">eph_vn_entropy_array</span> <span class="o">=</span> <span class="p">[]</span>
+        <span class="c1"># entropy at each bond</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">bond_vn_entropy_array</span> <span class="o">=</span> <span class="p">[]</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">coherent_length_array</span> <span class="o">=</span> <span class="p">[]</span>
+
+        <span class="k">if</span> <span class="n">dump_dir</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span> <span class="ow">and</span> <span class="n">job_name</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">thermal_dump_path</span> <span class="o">=</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">dump_dir</span><span class="p">,</span> <span class="n">job_name</span> <span class="o">+</span> <span class="s1">&#39;_impdm.npz&#39;</span><span class="p">)</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">thermal_dump_path</span> <span class="o">=</span> <span class="kc">None</span>
+
+        <span class="nb">super</span><span class="p">(</span><span class="n">ChargeDiffusionDynamics</span><span class="p">,</span> <span class="bp">self</span><span class="p">)</span><span class="o">.</span><span class="fm">__init__</span><span class="p">(</span><span class="n">evolve_config</span><span class="o">=</span><span class="n">evolve_config</span><span class="p">,</span>
+                                                      <span class="n">dump_dir</span><span class="o">=</span><span class="n">dump_dir</span><span class="p">,</span> <span class="n">job_name</span><span class="o">=</span><span class="n">job_name</span><span class="p">)</span>
+        <span class="k">assert</span> <span class="bp">self</span><span class="o">.</span><span class="n">mpo</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span>
+
+        <span class="bp">self</span><span class="o">.</span><span class="n">elocalex_arrays</span> <span class="o">=</span> <span class="p">[]</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">j_arrays</span> <span class="o">=</span> <span class="p">[]</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">custom_dump_info</span> <span class="o">=</span> <span class="n">OrderedDict</span><span class="p">()</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">stop_at_edge</span> <span class="o">=</span> <span class="n">stop_at_edge</span>
+
+    <span class="nd">@property</span>
+    <span class="k">def</span> <span class="nf">mol_num</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">model</span><span class="o">.</span><span class="n">mol_num</span>
+
+<div class="viewcode-block" id="ChargeDiffusionDynamics.create_electron_fc"><a class="viewcode-back" href="../../../ct.html#renormalizer.transport.dynamics.ChargeDiffusionDynamics.create_electron_fc">[docs]</a>    <span class="k">def</span> <span class="nf">create_electron_fc</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">gs_mp</span><span class="p">):</span>
+        <span class="n">center_mol_idx</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">mol_num</span> <span class="o">//</span> <span class="mi">2</span>
+        <span class="n">creation_operator</span> <span class="o">=</span> <span class="n">Mpo</span><span class="o">.</span><span class="n">onsite</span><span class="p">(</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">model</span><span class="p">,</span> <span class="sa">r</span><span class="s2">&quot;a^\dagger&quot;</span><span class="p">,</span> <span class="n">dof_set</span><span class="o">=</span><span class="p">{</span><span class="n">center_mol_idx</span><span class="p">}</span>
+        <span class="p">)</span>
+        <span class="n">mps</span> <span class="o">=</span> <span class="n">creation_operator</span><span class="o">.</span><span class="n">apply</span><span class="p">(</span><span class="n">gs_mp</span><span class="p">)</span>
+        <span class="k">return</span> <span class="n">mps</span></div>
+
+<div class="viewcode-block" id="ChargeDiffusionDynamics.create_electron_relaxed"><a class="viewcode-back" href="../../../ct.html#renormalizer.transport.dynamics.ChargeDiffusionDynamics.create_electron_relaxed">[docs]</a>    <span class="k">def</span> <span class="nf">create_electron_relaxed</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">gs_mp</span><span class="p">):</span>
+        <span class="k">assert</span> <span class="n">np</span><span class="o">.</span><span class="n">allclose</span><span class="p">(</span><span class="n">gs_mp</span><span class="o">.</span><span class="n">bond_dims</span><span class="p">,</span> <span class="n">np</span><span class="o">.</span><span class="n">ones_like</span><span class="p">(</span><span class="n">gs_mp</span><span class="o">.</span><span class="n">bond_dims</span><span class="p">))</span>
+        <span class="n">center_mol_idx</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">mol_num</span> <span class="o">//</span> <span class="mi">2</span>
+        <span class="n">center_mol</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">model</span><span class="p">[</span><span class="n">center_mol_idx</span><span class="p">]</span>
+        <span class="c1"># start from phonon</span>
+        <span class="k">for</span> <span class="n">i</span><span class="p">,</span> <span class="n">ph</span> <span class="ow">in</span> <span class="nb">enumerate</span><span class="p">(</span><span class="n">center_mol</span><span class="o">.</span><span class="n">ph_list</span><span class="p">):</span>
+            <span class="n">idx</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">model</span><span class="o">.</span><span class="n">order</span><span class="p">[(</span><span class="n">center_mol_idx</span><span class="p">,</span> <span class="n">i</span><span class="p">)]</span>
+            <span class="n">mt</span> <span class="o">=</span> <span class="n">gs_mp</span><span class="p">[</span><span class="n">idx</span><span class="p">][</span><span class="mi">0</span><span class="p">,</span> <span class="o">...</span><span class="p">,</span> <span class="mi">0</span><span class="p">]</span><span class="o">.</span><span class="n">array</span>
+            <span class="n">evecs</span> <span class="o">=</span> <span class="n">ph</span><span class="o">.</span><span class="n">get_displacement_evecs</span><span class="p">()</span>
+            <span class="n">mt</span> <span class="o">=</span> <span class="n">evecs</span><span class="o">.</span><span class="n">dot</span><span class="p">(</span><span class="n">mt</span><span class="p">)</span>
+            <span class="n">logger</span><span class="o">.</span><span class="n">debug</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;relaxed mt: </span><span class="si">{</span><span class="n">mt</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+            <span class="n">gs_mp</span><span class="p">[</span><span class="n">idx</span><span class="p">]</span> <span class="o">=</span> <span class="n">mt</span><span class="o">.</span><span class="n">reshape</span><span class="p">([</span><span class="mi">1</span><span class="p">]</span> <span class="o">+</span> <span class="nb">list</span><span class="p">(</span><span class="n">mt</span><span class="o">.</span><span class="n">shape</span><span class="p">)</span> <span class="o">+</span> <span class="p">[</span><span class="mi">1</span><span class="p">])</span>
+
+        <span class="n">creation_operator</span> <span class="o">=</span> <span class="n">Mpo</span><span class="o">.</span><span class="n">onsite</span><span class="p">(</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">model</span><span class="p">,</span> <span class="sa">r</span><span class="s2">&quot;a^\dagger&quot;</span><span class="p">,</span> <span class="n">dof_set</span><span class="o">=</span><span class="p">{</span><span class="n">center_mol_idx</span><span class="p">}</span>
+        <span class="p">)</span>
+        <span class="n">mps</span> <span class="o">=</span> <span class="n">creation_operator</span><span class="o">.</span><span class="n">apply</span><span class="p">(</span><span class="n">gs_mp</span><span class="p">)</span>
+        <span class="k">return</span> <span class="n">mps</span></div>
+
+<div class="viewcode-block" id="ChargeDiffusionDynamics.create_electron"><a class="viewcode-back" href="../../../ct.html#renormalizer.transport.dynamics.ChargeDiffusionDynamics.create_electron">[docs]</a>    <span class="k">def</span> <span class="nf">create_electron</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">gs_mp</span><span class="p">):</span>
+        <span class="n">method_mapping</span> <span class="o">=</span> <span class="p">{</span>
+            <span class="n">InitElectron</span><span class="o">.</span><span class="n">fc</span><span class="p">:</span> <span class="bp">self</span><span class="o">.</span><span class="n">create_electron_fc</span><span class="p">,</span>
+            <span class="n">InitElectron</span><span class="o">.</span><span class="n">relaxed</span><span class="p">:</span> <span class="bp">self</span><span class="o">.</span><span class="n">create_electron_relaxed</span><span class="p">,</span>
+        <span class="p">}</span>
+        <span class="n">logger</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Creating electron using </span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">init_electron</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+        <span class="k">return</span> <span class="n">method_mapping</span><span class="p">[</span><span class="bp">self</span><span class="o">.</span><span class="n">init_electron</span><span class="p">](</span><span class="n">gs_mp</span><span class="p">)</span></div>
+
+<div class="viewcode-block" id="ChargeDiffusionDynamics.init_mps"><a class="viewcode-back" href="../../../ct.html#renormalizer.transport.dynamics.ChargeDiffusionDynamics.init_mps">[docs]</a>    <span class="k">def</span> <span class="nf">init_mps</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="n">tentative_mpo</span> <span class="o">=</span> <span class="n">Mpo</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">model</span><span class="p">)</span>
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">temperature</span> <span class="o">==</span> <span class="mi">0</span><span class="p">:</span>
+            <span class="n">gs_mp</span> <span class="o">=</span> <span class="n">Mps</span><span class="o">.</span><span class="n">ground_state</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">model</span><span class="p">,</span> <span class="n">max_entangled</span><span class="o">=</span><span class="kc">False</span><span class="p">)</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">thermal_dump_path</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+                <span class="n">gs_mp</span> <span class="o">=</span> <span class="n">load_thermal_state</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">model</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">thermal_dump_path</span><span class="p">)</span>
+            <span class="k">else</span><span class="p">:</span>
+                <span class="n">gs_mp</span> <span class="o">=</span> <span class="kc">None</span>
+            <span class="k">if</span> <span class="n">gs_mp</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+                <span class="n">gs_mp</span> <span class="o">=</span> <span class="n">MpDm</span><span class="o">.</span><span class="n">max_entangled_gs</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">model</span><span class="p">)</span>
+                <span class="n">tp</span> <span class="o">=</span> <span class="n">ThermalProp</span><span class="p">(</span><span class="n">gs_mp</span><span class="p">,</span> <span class="n">exact</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span> <span class="n">space</span><span class="o">=</span><span class="s2">&quot;GS&quot;</span><span class="p">)</span>
+                <span class="n">tp</span><span class="o">.</span><span class="n">evolve</span><span class="p">(</span><span class="kc">None</span><span class="p">,</span> <span class="nb">max</span><span class="p">(</span><span class="mi">20</span><span class="p">,</span> <span class="nb">len</span><span class="p">(</span><span class="n">gs_mp</span><span class="p">)),</span> <span class="bp">self</span><span class="o">.</span><span class="n">temperature</span><span class="o">.</span><span class="n">to_beta</span><span class="p">()</span> <span class="o">/</span> <span class="mi">2</span><span class="n">j</span><span class="p">)</span>
+                <span class="n">gs_mp</span> <span class="o">=</span> <span class="n">tp</span><span class="o">.</span><span class="n">latest_mps</span>
+                <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">thermal_dump_path</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+                    <span class="n">gs_mp</span><span class="o">.</span><span class="n">dump</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">thermal_dump_path</span><span class="p">)</span>
+        <span class="n">init_mp</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">create_electron</span><span class="p">(</span><span class="n">gs_mp</span><span class="p">)</span>
+        <span class="n">energy</span> <span class="o">=</span> <span class="n">Quantity</span><span class="p">(</span><span class="n">init_mp</span><span class="o">.</span><span class="n">expectation</span><span class="p">(</span><span class="n">tentative_mpo</span><span class="p">))</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">mpo</span> <span class="o">=</span> <span class="n">Mpo</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">model</span><span class="p">,</span> <span class="n">offset</span><span class="o">=</span><span class="n">energy</span><span class="p">)</span>
+        <span class="n">logger</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;mpo bond dims: </span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">mpo</span><span class="o">.</span><span class="n">bond_dims</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+        <span class="n">logger</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;mpo physical dims: </span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">mpo</span><span class="o">.</span><span class="n">pbond_list</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+        <span class="n">init_mp</span><span class="o">.</span><span class="n">evolve_config</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">evolve_config</span>
+        <span class="n">init_mp</span><span class="o">.</span><span class="n">compress_config</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">compress_config</span>
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">evolve_config</span><span class="o">.</span><span class="n">is_tdvp</span><span class="p">:</span>
+            <span class="n">init_mp</span> <span class="o">=</span> <span class="n">init_mp</span><span class="o">.</span><span class="n">expand_bond_dimension</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">mpo</span><span class="p">)</span>
+        <span class="n">init_mp</span><span class="o">.</span><span class="n">canonicalise</span><span class="p">()</span>
+        <span class="k">return</span> <span class="n">init_mp</span></div>
+
+<div class="viewcode-block" id="ChargeDiffusionDynamics.process_mps"><a class="viewcode-back" href="../../../ct.html#renormalizer.transport.dynamics.ChargeDiffusionDynamics.process_mps">[docs]</a>    <span class="k">def</span> <span class="nf">process_mps</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">mps</span><span class="p">):</span>
+        <span class="n">new_energy</span> <span class="o">=</span> <span class="n">mps</span><span class="o">.</span><span class="n">expectation</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">mpo</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">energies</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">new_energy</span><span class="p">)</span>
+        <span class="n">logger</span><span class="o">.</span><span class="n">debug</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Energy: </span><span class="si">{</span><span class="n">new_energy</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">reduced_density_matrices</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="n">logger</span><span class="o">.</span><span class="n">debug</span><span class="p">(</span><span class="s2">&quot;Calculating reduced density matrix&quot;</span><span class="p">)</span>
+            <span class="n">rdm</span> <span class="o">=</span> <span class="n">mps</span><span class="o">.</span><span class="n">calc_edof_rdm</span><span class="p">()</span>
+            <span class="n">logger</span><span class="o">.</span><span class="n">debug</span><span class="p">(</span><span class="s2">&quot;Calculate reduced density matrix finished&quot;</span><span class="p">)</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">reduced_density_matrices</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">rdm</span><span class="p">)</span>
+
+            <span class="c1"># k_space transform matrix</span>
+            <span class="n">n</span> <span class="o">=</span> <span class="nb">len</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">model</span><span class="p">)</span>
+            <span class="k">assert</span> <span class="n">rdm</span><span class="o">.</span><span class="n">shape</span> <span class="o">==</span> <span class="p">(</span><span class="n">n</span><span class="p">,</span> <span class="n">n</span><span class="p">)</span>
+            <span class="n">transform</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">exp</span><span class="p">(</span><span class="o">-</span><span class="mi">1</span><span class="n">j</span> <span class="o">*</span> <span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">arange</span><span class="p">(</span><span class="o">-</span><span class="n">n</span><span class="p">,</span> <span class="n">n</span><span class="p">,</span> <span class="mi">2</span><span class="p">)</span><span class="o">/</span><span class="n">n</span> <span class="o">*</span> <span class="n">np</span><span class="o">.</span><span class="n">pi</span><span class="p">)</span><span class="o">.</span><span class="n">reshape</span><span class="p">(</span><span class="o">-</span><span class="mi">1</span><span class="p">,</span> <span class="mi">1</span><span class="p">)</span> <span class="o">*</span> <span class="n">np</span><span class="o">.</span><span class="n">arange</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="n">n</span><span class="p">)</span><span class="o">.</span><span class="n">reshape</span><span class="p">(</span><span class="mi">1</span><span class="p">,</span> <span class="o">-</span><span class="mi">1</span><span class="p">))</span> <span class="o">/</span> <span class="n">np</span><span class="o">.</span><span class="n">sqrt</span><span class="p">(</span><span class="n">n</span><span class="p">)</span>
+            <span class="n">k</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">diag</span><span class="p">(</span><span class="n">transform</span> <span class="o">@</span> <span class="n">rdm</span> <span class="o">@</span> <span class="n">transform</span><span class="o">.</span><span class="n">conj</span><span class="p">()</span><span class="o">.</span><span class="n">T</span><span class="p">)</span><span class="o">.</span><span class="n">real</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">k_occupations_array</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">k</span><span class="p">)</span>
+
+            <span class="c1"># von Neumann entropy</span>
+            <span class="n">entropy</span> <span class="o">=</span> <span class="o">-</span><span class="n">np</span><span class="o">.</span><span class="n">trace</span><span class="p">(</span><span class="n">rdm</span> <span class="o">@</span> <span class="n">logm</span><span class="p">(</span><span class="n">rdm</span><span class="p">))</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">eph_vn_entropy_array</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">entropy</span><span class="p">)</span>
+
+            <span class="bp">self</span><span class="o">.</span><span class="n">coherent_length_array</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">abs</span><span class="p">(</span><span class="n">rdm</span><span class="p">)</span><span class="o">.</span><span class="n">sum</span><span class="p">()</span> <span class="o">-</span> <span class="n">np</span><span class="o">.</span><span class="n">trace</span><span class="p">(</span><span class="n">rdm</span><span class="p">)</span><span class="o">.</span><span class="n">real</span><span class="p">)</span>
+
+        <span class="k">else</span><span class="p">:</span>
+            <span class="n">rdm</span> <span class="o">=</span> <span class="kc">None</span>
+
+        <span class="k">if</span> <span class="n">rdm</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="n">e_occupations</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">diag</span><span class="p">(</span><span class="n">rdm</span><span class="p">)</span><span class="o">.</span><span class="n">real</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="n">e_occupations</span> <span class="o">=</span> <span class="n">mps</span><span class="o">.</span><span class="n">e_occupations</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">e_occupations_array</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">e_occupations</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">r_square_array</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">calc_r_square</span><span class="p">(</span><span class="n">e_occupations</span><span class="p">))</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">ph_occupations_array</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">mps</span><span class="o">.</span><span class="n">ph_occupations</span><span class="p">)</span>
+        <span class="n">logger</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;e occupations: </span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">e_occupations_array</span><span class="p">[</span><span class="o">-</span><span class="mi">1</span><span class="p">]</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+
+        <span class="n">bond_vn_entropy</span> <span class="o">=</span> <span class="n">mps</span><span class="o">.</span><span class="n">calc_bond_entropy</span><span class="p">()</span>
+        <span class="n">logger</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;bond entropy: </span><span class="si">{</span><span class="n">bond_vn_entropy</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">bond_vn_entropy_array</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">bond_vn_entropy</span><span class="p">)</span></div>
+
+<div class="viewcode-block" id="ChargeDiffusionDynamics.evolve_single_step"><a class="viewcode-back" href="../../../ct.html#renormalizer.transport.dynamics.ChargeDiffusionDynamics.evolve_single_step">[docs]</a>    <span class="k">def</span> <span class="nf">evolve_single_step</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">evolve_dt</span><span class="p">):</span>
+        <span class="n">old_mps</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">latest_mps</span>
+        <span class="n">new_mps</span> <span class="o">=</span> <span class="n">old_mps</span><span class="o">.</span><span class="n">evolve</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">mpo</span><span class="p">,</span> <span class="n">evolve_dt</span><span class="p">)</span>
+        <span class="k">return</span> <span class="n">new_mps</span></div>
+
+<div class="viewcode-block" id="ChargeDiffusionDynamics.stop_evolve_criteria"><a class="viewcode-back" href="../../../ct.html#renormalizer.transport.dynamics.ChargeDiffusionDynamics.stop_evolve_criteria">[docs]</a>    <span class="k">def</span> <span class="nf">stop_evolve_criteria</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="c1"># electron has moved to the edge</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">stop_at_edge</span> <span class="ow">and</span> <span class="n">EDGE_THRESHOLD</span> <span class="o">&lt;</span> <span class="bp">self</span><span class="o">.</span><span class="n">e_occupations_array</span><span class="p">[</span><span class="o">-</span><span class="mi">1</span><span class="p">][</span><span class="mi">0</span><span class="p">]</span></div>
+
+<div class="viewcode-block" id="ChargeDiffusionDynamics.get_dump_dict"><a class="viewcode-back" href="../../../ct.html#renormalizer.transport.dynamics.ChargeDiffusionDynamics.get_dump_dict">[docs]</a>    <span class="k">def</span> <span class="nf">get_dump_dict</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="n">dump_dict</span> <span class="o">=</span> <span class="n">OrderedDict</span><span class="p">()</span>
+        <span class="n">dump_dict</span><span class="p">[</span><span class="s2">&quot;mol list&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">model</span><span class="o">.</span><span class="n">to_dict</span><span class="p">()</span>
+        <span class="n">dump_dict</span><span class="p">[</span><span class="s2">&quot;tempearture&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">temperature</span><span class="o">.</span><span class="n">as_au</span><span class="p">()</span>
+        <span class="n">dump_dict</span><span class="p">[</span><span class="s2">&quot;total time&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">evolve_times</span><span class="p">[</span><span class="o">-</span><span class="mi">1</span><span class="p">]</span>
+        <span class="n">dump_dict</span><span class="p">[</span><span class="s2">&quot;other info&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">custom_dump_info</span>
+        <span class="c1"># make np array json serializable</span>
+        <span class="n">dump_dict</span><span class="p">[</span><span class="s2">&quot;r square array&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">r_square_array</span>
+        <span class="n">dump_dict</span><span class="p">[</span><span class="s2">&quot;electron occupations array&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">e_occupations_array</span>
+        <span class="n">dump_dict</span><span class="p">[</span><span class="s2">&quot;phonon occupations array&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">ph_occupations_array</span>
+        <span class="n">dump_dict</span><span class="p">[</span><span class="s2">&quot;k occupations array&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">k_occupations_array</span>
+        <span class="n">dump_dict</span><span class="p">[</span><span class="s2">&quot;eph entropy&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">eph_vn_entropy_array</span>
+        <span class="n">dump_dict</span><span class="p">[</span><span class="s2">&quot;bond entropy&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">bond_vn_entropy_array</span>
+        <span class="n">dump_dict</span><span class="p">[</span><span class="s2">&quot;coherent length array&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">coherent_length_array</span>
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">reduced_density_matrices</span><span class="p">:</span>
+            <span class="n">dump_dict</span><span class="p">[</span><span class="s2">&quot;reduced density matrices&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">reduced_density_matrices</span>
+        <span class="n">dump_dict</span><span class="p">[</span><span class="s2">&quot;time series&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="nb">list</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">evolve_times</span><span class="p">)</span>
+        <span class="k">return</span> <span class="n">dump_dict</span></div>
+
+<div class="viewcode-block" id="ChargeDiffusionDynamics.is_similar"><a class="viewcode-back" href="../../../ct.html#renormalizer.transport.dynamics.ChargeDiffusionDynamics.is_similar">[docs]</a>    <span class="k">def</span> <span class="nf">is_similar</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">other</span><span class="p">:</span> <span class="s2">&quot;ChargeDiffusionDynamics&quot;</span><span class="p">,</span> <span class="n">rtol</span><span class="o">=</span><span class="mf">1e-3</span><span class="p">):</span>
+        <span class="n">all_close_with_tol</span> <span class="o">=</span> <span class="n">partial</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">allclose</span><span class="p">,</span> <span class="n">rtol</span><span class="o">=</span><span class="n">rtol</span><span class="p">,</span> <span class="n">atol</span><span class="o">=</span><span class="mf">1e-3</span><span class="p">)</span>
+        <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">evolve_times</span><span class="p">)</span> <span class="o">!=</span> <span class="nb">len</span><span class="p">(</span><span class="n">other</span><span class="o">.</span><span class="n">evolve_times</span><span class="p">):</span>
+            <span class="k">return</span> <span class="kc">False</span>
+        <span class="n">attrs</span> <span class="o">=</span> <span class="p">[</span>
+            <span class="s2">&quot;evolve_times&quot;</span><span class="p">,</span>
+            <span class="s2">&quot;r_square_array&quot;</span><span class="p">,</span>
+            <span class="s2">&quot;energies&quot;</span><span class="p">,</span>
+            <span class="s2">&quot;e_occupations_array&quot;</span><span class="p">,</span>
+            <span class="s2">&quot;ph_occupations_array&quot;</span><span class="p">,</span>
+            <span class="s2">&quot;coherent_length_array&quot;</span><span class="p">,</span>
+        <span class="p">]</span>
+        <span class="k">for</span> <span class="n">attr</span> <span class="ow">in</span> <span class="n">attrs</span><span class="p">:</span>
+            <span class="n">s</span> <span class="o">=</span> <span class="nb">getattr</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">attr</span><span class="p">)</span>
+            <span class="n">o</span> <span class="o">=</span> <span class="nb">getattr</span><span class="p">(</span><span class="n">other</span><span class="p">,</span> <span class="n">attr</span><span class="p">)</span>
+            <span class="k">if</span> <span class="ow">not</span> <span class="n">all_close_with_tol</span><span class="p">(</span><span class="n">s</span><span class="p">,</span> <span class="n">o</span><span class="p">):</span>
+                <span class="k">return</span> <span class="kc">False</span>
+        <span class="k">return</span> <span class="kc">True</span></div></div>
+
+
+<div class="viewcode-block" id="calc_r_square"><a class="viewcode-back" href="../../../ct.html#renormalizer.transport.dynamics.calc_r_square">[docs]</a><span class="k">def</span> <span class="nf">calc_r_square</span><span class="p">(</span><span class="n">e_occupations</span><span class="p">):</span>
+    <span class="n">r_list</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">arange</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="nb">len</span><span class="p">(</span><span class="n">e_occupations</span><span class="p">))</span>
+    <span class="k">if</span> <span class="n">np</span><span class="o">.</span><span class="n">allclose</span><span class="p">(</span><span class="n">e_occupations</span><span class="p">,</span> <span class="n">np</span><span class="o">.</span><span class="n">zeros_like</span><span class="p">(</span><span class="n">e_occupations</span><span class="p">)):</span>
+        <span class="k">return</span> <span class="mi">0</span>
+    <span class="n">r_mean_square</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">average</span><span class="p">(</span><span class="n">r_list</span><span class="p">,</span> <span class="n">weights</span><span class="o">=</span><span class="n">e_occupations</span><span class="p">)</span> <span class="o">**</span> <span class="mi">2</span>
+    <span class="n">mean_r_square</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">average</span><span class="p">(</span><span class="n">r_list</span> <span class="o">**</span> <span class="mi">2</span><span class="p">,</span> <span class="n">weights</span><span class="o">=</span><span class="n">e_occupations</span><span class="p">)</span>
+    <span class="k">return</span> <span class="nb">float</span><span class="p">(</span><span class="n">mean_r_square</span> <span class="o">-</span> <span class="n">r_mean_square</span><span class="p">)</span></div>
+</pre></div>
+
+           </div>
+           
+          </div>
+          <footer>
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>
+        &#169; Copyright 2019, Shuaigroup.
+
+    </p>
+  </div>
+    
+    
+    
+    Built with <a href="https://www.sphinx-doc.org/">Sphinx</a> using a
+    
+    <a href="https://github.com/readthedocs/sphinx_rtd_theme">theme</a>
+    
+    provided by <a href="https://readthedocs.org">Read the Docs</a>. 
+
+</footer>
+        </div>
+      </div>
+
+    </section>
+
+  </div>
+  
+
+  <script type="text/javascript">
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script>
+
+  
+  
+    
+   
+
+</body>
+</html>
