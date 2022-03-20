@@ -7,6 +7,7 @@ import numpy as np
 import pytest
 
 from renormalizer.model import Model, h_qc
+from renormalizer.mps.backend import primme
 from renormalizer.mps.gs import construct_mps_mpo, optimize_mps
 from renormalizer.mps import Mpo, Mps
 from renormalizer.tests.parameter import holstein_model
@@ -42,7 +43,7 @@ def test_optimization(scheme, method):
 ))
 @pytest.mark.parametrize("algo", (
         "davidson",
-        "primme",
+        pytest.param("primme", marks=pytest.mark.skipif(primme is None, reason="primme not installed"))
 ))
 def test_multistate(method, algo):
     mps, mpo = construct_mps_mpo(holstein_model, procedure[0][0], nexciton)
