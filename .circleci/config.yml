@@ -51,7 +51,7 @@ jobs:
           command: cd doc; make html
 
       - persist_to_workspace:
-          root: docs/_build
+          root: doc/
           paths: html
 
   # ref: https://circleci.com/blog/deploying-documentation-to-github-pages-with-continuous-integration/
@@ -61,10 +61,10 @@ jobs:
     steps:
       - checkout
       - attach_workspace:
-          at: docs/_build
+          at: doc/
       - run:
           name: Disable jekyll builds
-          command: touch docs/_build/html/.nojekyll
+          command: touch doc/html/.nojekyll
       - run:
           name: Install and configure dependencies
           command: |
@@ -76,7 +76,7 @@ jobs:
             - "94:05:b4:03:2a:1a:dd:ff:56:19:58:09:a1:51:bb:b1"
       - run:
           name: Deploy docs to gh-pages branch
-          command: gh-pages --dotfiles --message "[skip ci] Updates" --dist docs/_build/html
+          command: gh-pages --dotfiles --message "[skip ci] Updates" --dist doc/html
 
 # Invoke jobs via workflows
 # See: https://circleci.com/docs/2.0/configuration-reference/#workflows
