@@ -11,6 +11,7 @@ from renormalizer.utils.configs import (
     EvolveConfig,
     EvolveMethod,
     RungeKutta,
+    TaylorExpansion,
     OFS,
 )
 

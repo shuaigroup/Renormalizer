@@ -801,11 +801,13 @@ class Mps(MatrixProduct):
         """
         The global propagation & compression evolution scheme
         only for time-independent Hamiltonian
+        Taylor expansion approximation to the formal propagator
         """
         config = self.evolve_config
         assert evolve_dt is not None
 
-        propagation_c = config.rk_config.coeff
+        propagation_c = config.taylor_config.coeff
+        order = len(propagation_c)-1
         termlist = [self]
         # don't let bond dim grow when contracting
         orig_compress_config = self.compress_config
@@ -843,9 +845,9 @@ class Mps(MatrixProduct):
                     [new_mps1, scaled_termlist[-1]]
                 ).normalize()
                 dis = new_mps1.distance(new_mps2)
-                # 0.2 is 1/5 for RK45, here the norm of mps is 1,
+                # here the norm of mps is 1,
                 # otherwise the relative value dis/norm should be used
-                p = (config.adaptive_rtol / (dis + 1e-30)) ** 0.2
+                p = (config.adaptive_rtol / (dis + 1e-30)) ** (1/(order-1))
                 logger.debug(f"RK45 error distance: {dis}, enlarge p parameter: {p}")
 
                 if xp.allclose(dt, evolve_dt):

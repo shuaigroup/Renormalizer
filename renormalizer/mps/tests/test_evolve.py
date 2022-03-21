@@ -73,6 +73,26 @@ def test_pc(init_state):
     mps.compress_config  = CompressConfig(CompressCriteria.fixed)
     check_result(mps, mpo, 0.2, 5)
 
+@pytest.mark.parametrize("init_state", (init_mps, init_mpdm))
+def test_pc_tdrk4(init_state):
+    mps = init_state.copy()
+    mps.evolve_config  = EvolveConfig(EvolveMethod.prop_and_compress_tdrk4)
+    mps.compress_config  = CompressConfig(CompressCriteria.fixed)
+    check_result(mps, mpo, 0.2, 5)
+
+@pytest.mark.parametrize("init_state", (init_mps, init_mpdm))
+@pytest.mark.parametrize("rk_solver", ("C_RK4", "Cash-Karp45"))
+def test_pc_tdrk(init_state, rk_solver):
+    mps = init_state.copy()
+    if rk_solver == "C_RK4":
+        mps.evolve_config  = EvolveConfig(EvolveMethod.prop_and_compress_tdrk,
+            rk_solver=rk_solver, adaptive=False)
+    elif rk_solver == "Cash-Karp45":
+        mps.evolve_config  = EvolveConfig(EvolveMethod.prop_and_compress_tdrk,
+            rk_solver=rk_solver, adaptive=True, guess_dt=0.01)
+
+    mps.compress_config  = CompressConfig(CompressCriteria.fixed)
+    check_result(mps, mpo, 0.2, 5)
 
 @pytest.mark.parametrize("init_state, atol", ([init_mps, 1e-4], [init_mpdm, 1e-3]))
 @pytest.mark.parametrize("with_mu", (True, False))
