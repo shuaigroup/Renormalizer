@@ -16,4 +16,4 @@ def test_rk():
         ("38rule_RK4", [1.0, 1.0, 0.5, 0.16666667, 0.04166667]),
     ]
     for method, std in std_list:
-        assert np.allclose(RungeKutta(method).coeff, std)
+        assert np.allclose(RungeKutta(method).runge_kutta_ti_coefficient(), std)

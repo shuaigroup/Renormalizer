@@ -2,7 +2,7 @@
 from enum import Enum
 import logging
 
-from renormalizer.utils.rk import RungeKutta
+from renormalizer.utils.rk import RungeKutta, TaylorExpansion
 import scipy.linalg
 import numpy as np
 
@@ -367,6 +367,8 @@ class EvolveConfig:
         adaptive=False,
         guess_dt=1e-1,
         adaptive_rtol=5e-4,
+        taylor_order:int = None,
+        rk_solver="C_RK4",
         reg_epsilon=1e-10,
         ivp_rtol=1e-5,
         ivp_atol=1e-8,
@@ -374,9 +376,15 @@ class EvolveConfig:
     ):
 
         self.method = method
-
-        self._adaptive = None
         self.adaptive = adaptive
+        self.rk_config = RungeKutta(rk_solver)
+        if taylor_order is None:
+            if adaptive:
+                taylor_order = 5  
+            else:
+                taylor_order = 4
+        self.taylor_config = TaylorExpansion(taylor_order)
+
         self.guess_dt: complex = guess_dt  # a guess of initial adaptive time step
         self.adaptive_rtol = adaptive_rtol
 
@@ -392,18 +400,6 @@ class EvolveConfig:
         self.force_ovlp: bool = force_ovlp
         # auto switch between mu_vmf and vmf for a higher efficiency
         self.vmf_auto_switch: bool = True
-
-    @property
-    def adaptive(self):
-        return self._adaptive
-
-    @adaptive.setter
-    def adaptive(self, v):
-        self._adaptive = v
-        if v:
-            self.rk_config = RungeKutta("RKF45")
-        else:
-            self.rk_config = RungeKutta()
 
     @property
     def is_tdvp(self):

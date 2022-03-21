@@ -25,35 +25,23 @@ method_list = [
     "Cash-Karp45",
 ]
 
+class TaylorExpansion:
+    # taylor expansion of the formal propagator
+    # for time-independent Hamiltonian
+    def  __init__(self, order):
+        self.order = order
+        self.coeff = np.array(
+                [1.0 / factorial(i) for i in range(self.order + 1)])
+
 
 class RungeKutta:
-    def __init__(self, method="C_RK4", td=False):
+    def __init__(self, method="C_RK4"):
 
         assert method in method_list
         self.method = method
 
-        # if the propagator is time dependent
-        self.td = td
-
-        self.adaptive = method == "RKF45"
-
         self.tableau, self.stage, self.order = self.get_tableau()
-        if not self.td:
-            # if time independent, stage is the same as order because of the
-            # taylor expansion
-            self.stage = self.order[0]
-            self._coeff = np.array(
-                [1.0 / factorial(i) for i in range(self.order[0] + 1)]
-            )
-
-    @property
-    def coeff(self):
-        """
-        Taylor_expansion_coefficient
-        """
-        assert self.td == False
-        return self._coeff
-
+        
     def get_tableau(self):
         r"""
         Butcher tableau of the explicit Runge-Kutta methods.
@@ -201,7 +189,7 @@ class RungeKutta:
 
         return [a, b, c], Nstage, order
 
-    def runge_kutta_explicit_coefficient(self):
+    def runge_kutta_ti_coefficient(self):
         """
         only suited for time-independent propagator
         y'(t) = fy(t) f is time-independent
@@ -217,7 +205,7 @@ class RungeKutta:
         Runge Kutta and 3/8 rule Runge Kutta has some coefficient.
         """
 
-        a, b, c = self.get_tableau
+        a, b, c = self.tableau
         Nstage = self.stage
 
         table = np.zeros([Nstage + 1, Nstage + 1])
