@@ -329,8 +329,11 @@ class MatrixProduct:
     def add(self, other: "MatrixProduct"):
         assert self.qntot == other.qntot
         assert self.site_num == other.site_num
-        #assert self.qnidx == other.qnidx
-
+        
+        # note that the coeff should be the same
+        if self.is_mps or self.is_mpdm:
+            assert np.allclose(self.coeff, other.coeff)
+        
         new_mps = self.metacopy()
         if other.dtype == backend.complex_dtype:
             new_mps.dtype = backend.complex_dtype
@@ -380,7 +383,8 @@ class MatrixProduct:
             new_mps[-1] = concatenate((self[-1], other[-1]), axis=0)
         else:
             assert False
-
+        
+        #assert self.qnidx == other.qnidx
         new_mps.move_qnidx(other.qnidx)
         new_mps.to_right = other.to_right
         new_mps.qn = [qn1 + qn2 for qn1, qn2 in zip(self.qn, other.qn)]
@@ -988,6 +992,8 @@ class MatrixProduct:
             data_dict[f"mt_{idx}"] = mt.array
         for attr in ["qn", "qnidx", "qntot", "to_right"] + other_attrs:
             data_dict[attr] = getattr(self, attr)
+            # qn is ragged array which will raise a VisibleDeprecationWarning
+            # and convert it to np.object
         try:
             np.savez(fname, **data_dict)
         except Exception:

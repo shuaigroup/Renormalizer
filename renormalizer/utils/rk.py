@@ -22,6 +22,7 @@ method_list = [
     "38rule_RK4",
     "Fehlberg5",
     "RKF45",
+    "Cash-Karp45",
 ]
 
 
@@ -40,9 +41,9 @@ class RungeKutta:
         if not self.td:
             # if time independent, stage is the same as order because of the
             # taylor expansion
-            self.stage = self.order[-1]
+            self.stage = self.order[0]
             self._coeff = np.array(
-                [1.0 / factorial(i) for i in range(self.order[-1] + 1)]
+                [1.0 / factorial(i) for i in range(self.order[0] + 1)]
             )
 
     @property
@@ -174,12 +175,28 @@ class RungeKutta:
                 ]
             )
             Nstage = 6
-            order = (4, 5)
+            # the order corresponds to b
+            order = (5, 4)
+        elif self.method == "Cash-Karp45":
+            a = np.array(
+            [[0, 0, 0, 0, 0, 0],
+             [1/5, 0, 0, 0, 0, 0],
+             [3/40, 9/40, 0, 0, 0, 0],
+             [3/10, -9/10, 6/5, 0, 0, 0],
+             [-11/54, 5/2, -70/27, 35/27, 0, 0],
+             [1631/55296, 175/512, 575/13824, 44275/110592, 253/4096, 0]])    
+            c = np.array([0, 1/5, 3/10, 3/5, 1, 7/8]) 
+            b = np.array([
+                    [37/378, 0, 250/621, 125/594, 0, 512/1771],
+                    [2825/27648, 0, 18575/48384, 13525/55296, 277/14336, 1/4]])
+            Nstage = 6
+            # the order corresponds to b
+            order = (5, 4)
         else:
             assert False
 
         a = a.astype(np.float64)
-        b = b.astype(np.float64)
+        b = b.astype(np.float64).reshape(-1, Nstage)
         c = c.astype(np.float64)
 
         return [a, b, c], Nstage, order

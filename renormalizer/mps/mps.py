@@ -2,9 +2,10 @@
 
 import logging
 from collections import Counter, deque
-from functools import wraps
+from functools import wraps, reduce
 from typing import Union, List, Dict
 import itertools
+
 
 import scipy
 from scipy import stats
@@ -70,7 +71,8 @@ def adaptive_tdvp(fun):
             logger.debug(
                     f"guess_dt: {config.guess_dt}, try time step size: {dt}"
             )
-
+            
+            # note that the wavefunction is normalized 
             mps_half1 = fun(cur_mps, mpo, dt / 2).normalize()
             mps_half2 = fun(mps_half1, mpo, dt / 2).normalize()
             mps = fun(cur_mps, mpo, dt).normalize()
@@ -603,8 +605,11 @@ class Mps(MatrixProduct):
             if include_ex:
                 if self.is_mps:
                     ex_state: MatrixProduct = self.ground_state(self.model, False)
-                    ex_state = Mpo.onsite(self.model, r"a^\dagger") @ ex_state
+                    # for self.qntot >= 1
+                    for i in range(self.qntot):
+                        ex_state = Mpo.onsite(self.model, r"a^\dagger") @ ex_state
                 elif self.is_mpdm:
+                    assert self.qntot == 1
                     ex_state: MatrixProduct = self.max_entangled_ex(self.model)
                 else:
                     assert False
@@ -639,10 +644,12 @@ class Mps(MatrixProduct):
         self.compress_config.bond_dim_max_value += self.bond_dims_mean
         return (self + expander.scale(coef, inplace=True)).canonicalise().canonicalise().canonical_normalize()
 
-    def evolve(self, mpo, evolve_dt) -> "Mps":
+    def evolve(self, mpo, evolve_dt, normalize=True) -> "Mps":
 
         method = {
             EvolveMethod.prop_and_compress: self._evolve_prop_and_compress,
+            EvolveMethod.prop_and_compress_tdrk4: self._evolve_prop_and_compress_tdrk4,
+            EvolveMethod.prop_and_compress_tdrk: self._evolve_prop_and_compress_tdrk,
             EvolveMethod.tdvp_mu_vmf: self._evolve_tdvp_mu_vmf,
             EvolveMethod.tdvp_vmf: self._evolve_tdvp_mu_vmf,
             EvolveMethod.tdvp_mu_cmf: self._evolve_tdvp_mu_cmf,
@@ -650,15 +657,150 @@ class Mps(MatrixProduct):
             EvolveMethod.tdvp_ps2: self._evolve_tdvp_ps2
         }[self.evolve_config.method]
         new_mps = method(mpo, evolve_dt)
-        if np.iscomplex(evolve_dt):
-            new_mps.normalize(1.0)
+        if normalize:
+            if np.iscomplex(evolve_dt):
+                new_mps.normalize(1.0)
+            else:
+                new_mps.normalize(None)
+        return new_mps
+    
+    def _evolve_prop_and_compress_tdrk4(self, mpo, evolve_dt) -> "Mps":
+        """
+        classical 4th order Runge-Kutta solver for time-dependent Hamiltonian
+        """
+        
+        if isinstance(mpo, Mpo): 
+            def mpo_t(t, *args, **kwargs):
+                return mpo
+        elif callable(mpo):
+            # mpo can be a function of time, the range is 0 -> evolve_dt
+            mpo_t = mpo
         else:
-            new_mps.normalize(None)
+            raise TypeError(f"unsupported mpo type: {mpo}")
+
+        k1 = mpo_t(0).contract(self).scale(-1j)
+        logger.debug(f"k1:{k1}")  
+        tmp_mps = self + k1.scale(0.5*evolve_dt)
+        tmp_mps.canonicalise().compress()
+        k2 = mpo_t(0.5*evolve_dt).contract(tmp_mps).scale(-1j)
+        logger.debug(f"k2:{k2}")  
+        tmp_mps = self + k2.scale(0.5*evolve_dt)
+        tmp_mps.canonicalise().compress()
+        k3 = mpo_t(0.5*evolve_dt).contract(tmp_mps).scale(-1j)
+        logger.debug(f"k3:{k3}")  
+        tmp_mps = self + k3.scale(evolve_dt)
+        tmp_mps.canonicalise().compress()
+        k4 = mpo_t(evolve_dt).contract(tmp_mps).scale(-1j)
+        logger.debug(f"k4:{k4}")  
+        
+        new_mps = compressed_sum([self, k1.scale(1/6*evolve_dt),
+            k2.scale(2/6*evolve_dt), 
+            k3.scale(2/6*evolve_dt),
+            k4.scale(1/6*evolve_dt)])
+        logger.info(f"new_mps:{new_mps}")  
+        
+        return new_mps
+    
+    def _evolve_prop_and_compress_tdrk(self, mpo, evolve_dt) -> "Mps":
+        """
+            The most general Runge-Kutta solver for both time-dependent and
+            time-independnet Hamiltonian and adaptive or unadaptive time-step
+            size evolution
+        """
+        if isinstance(mpo, Mpo): 
+            def mpo_t(t, *args, **kwargs):
+                return mpo
+        elif callable(mpo):
+            mpo_t = mpo
+        else:
+            raise TypeError(f"unsupported mpo type: {mpo}")
+        
+        rk_config = self.evolve_config.rk_config
+        a,b,c = rk_config.tableau
+        
+        def sub_time_step_evolve(y,tau,t0):
+            # error is relative error
+            k_list = []
+            for istage in range(rk_config.stage):
+                k = compressed_sum([y]+[k_list[i].scale(a[istage,i]*tau) for
+                    i in range(istage) if a[istage,i] != 0], batchsize=6)
+                k = mpo_t(c[istage]*tau+t0, mps=k).contract(k).scale(-1j)
+                logger.debug(f"k_{istage}: {k}") 
+                k_list.append(k)        
+            
+            new_mps = compressed_sum([y] +
+                    [k_list[istage].scale(b[0,istage]*tau) \
+                    for istage in range(rk_config.stage) if b[0,istage]!=0],
+                    batchsize=6)   
+            logger.debug(f"order_{rk_config.order[0]}: {new_mps}") 
+            
+            if self.evolve_config.adaptive:
+                assert len(rk_config.order) == 2
+                assert rk_config.order[0] - rk_config.order[1] == 1
+                error = reduce(lambda mps1, mps2: mps1.add(mps2),
+                    [k_list[istage].scale((b[0,istage]-b[1,istage])*tau) \
+                    for istage in range(rk_config.stage) if not \
+                    np.allclose(b[0,istage],b[1,istage])])
+
+                error_norm2 = error.conj().dot(error).real
+                if error_norm2 < 0:
+                    error_norm2 = 0
+                error = np.sqrt(error_norm2) / new_mps.dmrg_norm
+            else:
+                assert len(rk_config.order) == 1
+                error = 0
+                
+            return new_mps, error
+        
+        self.evolve_config.check_valid_dt(evolve_dt)
+        
+        if self.evolve_config.adaptive:
+            p_restart = 0.5  # restart threshold
+            p_min = 0.1  # safeguard for minimal allowed p
+            p_max = 2.0  # safeguard for maximal allowed p
+            
+            evolved_dt = 0
+            new_mps = self
+
+            while True:
+                dt = min_abs(new_mps.evolve_config.guess_dt, evolve_dt-evolved_dt)
+                logger.debug(f"guess_dt: {new_mps.evolve_config.guess_dt}, try time step size: {dt}")
+                new_mps, error = sub_time_step_evolve(new_mps, dt, evolved_dt)    
+                p = (new_mps.evolve_config.adaptive_rtol / (error + 1e-30)) ** 0.2
+                logger.debug(f"RK45 relative error: {error}, enlarge p parameter: {p}")
+                
+                if p < p_restart:
+                    # not accurate, will restart
+                    new_mps.config.guess_dt = dt * max(p_min, p)
+                    logger.debug(
+                        f"evolution not converged, new guess_dt: {new_mps.evolve_config.guess_dt}"
+                    )
+                else:
+                    if xp.allclose(dt+evolved_dt, evolve_dt):
+                        new_mps.evolve_config.guess_dt = min_abs(
+                            dt * p, new_mps.evolve_config.guess_dt
+                        )
+                        # normal exit
+                        logger.debug(
+                            f"evolution converged, new guess_dt: {new_mps.evolve_config.guess_dt}"
+                        )
+                        break
+                    else:
+                        new_mps.evolve_config.guess_dt *= min(p, p_max)
+                        evolved_dt += dt
+                        logger.debug(
+                            f"evolution converged, new guess_dt: {new_mps.evolve_config.guess_dt}"
+                        )
+                        logger.debug(f"sub-step {dt} further, remaining: {evolve_dt-evolved_dt}")
+        else:
+            new_mps, _ = sub_time_step_evolve(self, evolve_dt, 0)
+
         return new_mps
 
     def _evolve_prop_and_compress(self, mpo, evolve_dt) -> "Mps":
         """
         The global propagation & compression evolution scheme
+        only for time-independent Hamiltonian
         """
         config = self.evolve_config
         assert evolve_dt is not None
@@ -695,12 +837,14 @@ class Mps(MatrixProduct):
                     scale = (-1.0j * dt) ** idx * propagation_c[idx]
                     scaled_termlist.append(term.scale(scale))
                     del term
+                # Note that the wavefunction is normalized
                 new_mps1 = compressed_sum(scaled_termlist[:-1]).normalize()
                 new_mps2 = compressed_sum(
                     [new_mps1, scaled_termlist[-1]]
                 ).normalize()
                 dis = new_mps1.distance(new_mps2)
-                # 0.2 is 1/5 for RK45
+                # 0.2 is 1/5 for RK45, here the norm of mps is 1,
+                # otherwise the relative value dis/norm should be used
                 p = (config.adaptive_rtol / (dis + 1e-30)) ** 0.2
                 logger.debug(f"RK45 error distance: {dis}, enlarge p parameter: {p}")
 
@@ -745,7 +889,7 @@ class Mps(MatrixProduct):
                     (-1.0j * evolve_dt) ** idx * propagation_c[idx], inplace=True
                 )
             return compressed_sum(termlist)
-
+    
     def _evolve_tdvp_mu_vmf(self, mpo, evolve_dt) -> "Mps":
         """
         variable mean field
@@ -757,7 +901,15 @@ class Mps(MatrixProduct):
         /utils/configs.py
 
         """
-
+        
+        if isinstance(mpo, Mpo): 
+            def mpo_t(t, *args, **kwargs):
+                return mpo
+        elif callable(mpo):
+            mpo_t = mpo
+        else:
+            raise TypeError(f"unsupported mpo type: {mpo}")
+        
         # a workaround for https://github.com/scipy/scipy/issues/10164
         imag_time = np.iscomplex(evolve_dt)
         if imag_time:
@@ -766,7 +918,7 @@ class Mps(MatrixProduct):
             coef = -1
         else:
             coef = 1j
-
+        
         # only not canonicalise when force_ovlp=True and to_right=False
         if not (self.evolve_config.force_ovlp and not self.to_right):
             self.ensure_left_canon()
@@ -788,15 +940,16 @@ class Mps(MatrixProduct):
             position.append(position[-1]+np.sum(qnmat == qntot))
 
         sw_min_list = []
-
+        
         def func_vmf(t,y):
-
+            
             sw_min_list.clear()
 
             # update mps: from left to right
             for imps in range(mps.site_num):
                 mps[imps] = cvec2cmat(mps[imps].shape, asnumpy(y[position[imps]:position[imps + 1]]),
                                                            qnmat_list[imps], qntot)
+            mpo = mpo_t(t, mps=mps)
 
             if self.evolve_config.method == EvolveMethod.tdvp_mu_vmf:
                 environ_mps = mps.copy()
@@ -816,11 +969,9 @@ class Mps(MatrixProduct):
                     np.ones([1, 1], dtype=mps.dtype),
                 ]
                 for imps in range(mps.site_num):
-                    mps_conj = mps.conj()
                     S_L_list.append(
-                        transferMat(mps, mps_conj, "L", imps, S_L_list[imps])
+                        transferMat(mps, None, "L", imps, S_L_list[imps])
                     )
-                    del mps_conj
 
 
                 S_L_inv_list = []
@@ -888,9 +1039,8 @@ class Mps(MatrixProduct):
 
                     # regularize density matrix
                     # Note that S_R is (#.conj, #)
-                    S_R = transferMat(environ_mps, environ_mps.conj(), "R", imps + 1, S_R)
+                    S_R = transferMat(environ_mps, None, "R", imps + 1, S_R)
                     w, u = scipy.linalg.eigh(asnumpy(S_R))
-
                     # discard the negative eigenvalues due to numerical error
                     w = np.where(w>0, w, 0)
 
@@ -930,7 +1080,7 @@ class Mps(MatrixProduct):
             mps[imps] = cvec2cmat(mps[imps].shape, asnumpy(sol.y[:, -1][position[imps]:position[imps + 1]]),
                                                        qnmat_list[imps], qntot)
 
-        logger.debug(f"{self.evolve_config.method} VMF func called: {sol.nfev}. RKF steps: {len(sol.t)}")
+        logger.info(f"{self.evolve_config.method} VMF func called: {sol.nfev}. RKF steps: {len(sol.t)}")
 
         sw_min_list = xp.array(sw_min_list)
         # auto-switch between tdvp_mu_vmf and tdvp_vmf
@@ -1016,11 +1166,9 @@ class Mps(MatrixProduct):
                 # construct the S_L list (type: Matrix) and S_L_inv list (type: xp.array)
                 # len: mps.site_num+1
                 S_L_list = [np.ones([1, 1], dtype=mps.dtype),]
-                environ_mps_conj = environ_mps.conj()
                 for imps in range(mps.site_num):
-                    S_L_list.append(transferMat(environ_mps, environ_mps_conj, "L", imps,
+                    S_L_list.append(transferMat(environ_mps, None, "L", imps,
                         S_L_list[imps]))
-                del environ_mps_conj
 
                 S_L_inv_list = []
                 for imps in range(mps.site_num+1):
@@ -1317,10 +1465,16 @@ class Mps(MatrixProduct):
             res = np.tensordot(res, mt.array, axes=1).reshape(1, dim1, dim2)
         return res[0, :, 0]
     
-    def calc_1site_rdm(self):
+    def calc_1site_rdm(self, idx=None):
         r""" Calculate 1-site reduced density matrix
         
             :math:`\rho_i = \textrm{Tr}_{j \neq i} | \Psi \rangle \langle \Psi|`
+        
+        Parameters
+        ----------
+        idx : int, list, tuple, optional
+            site index of 1site_rdm. Default is None, which mean all the rdms
+            are calculated.
         
         Returns
         -------
@@ -1330,7 +1484,15 @@ class Mps(MatrixProduct):
 
         identity = Mpo.identity(self.model)
         environ = Environ(self, identity, "R")
-        
+        if idx is None:
+            idx = list(range(self.site_num))
+        elif type(idx) is int:
+            idx = [idx]
+        elif (type(idx) is list) or (type(idx) is tuple):  
+            idx = list(idx)
+        else:
+            assert False
+
         rdm = {}
         for ims, ms in enumerate(self):
             ltensor = environ.GetLR(
@@ -1339,6 +1501,9 @@ class Mps(MatrixProduct):
             rtensor = environ.GetLR(
                 "R", ims+1, self, identity, itensor=None, method="Enviro"
             )
+            if ims not in idx:
+                continue
+
             ltensor = ltensor.reshape(ltensor.shape[0], ltensor.shape[-1])
             rtensor = rtensor.reshape(rtensor.shape[0], rtensor.shape[-1])
             
@@ -1521,7 +1686,12 @@ class Mps(MatrixProduct):
             a NumPy array containing the entropy values.
         
         """
-        _, s_list = self.compress(temp_m_trunc=np.inf, ret_s=True)
+        
+        # Make sure that the bond entropy is from the left to the right and not
+        # destroy the original mps
+        mps = self.copy()
+        mps.ensure_right_canon()
+        _, s_list = mps.compress(temp_m_trunc=np.inf, ret_s=True)
         return np.array([calc_vn_entropy(sigma ** 2) for sigma in s_list])
 
     def dump(self, fname):
@@ -1559,7 +1729,6 @@ def projector(
     Iden = xp.array(xp.diag(xp.ones(sz)), dtype=backend.real_dtype).reshape(proj.shape)
     proj = Iden - proj
     return proj
-
 
 def integrand_func_factory(
     shape,
@@ -1608,7 +1777,12 @@ def transferMat(mps, mpsconj, domain, imps, val) -> np.ndarray:
     """
     calculate the transfer matrix from the left hand or the right hand
     """
-    ms, ms_conj = mps[imps].array, mpsconj[imps].array
+    if mpsconj is not None:
+        ms, ms_conj = mps[imps].array, mpsconj[imps].array
+    else:
+        ms = mps[imps].array
+        ms_conj = ms.conj()
+
     if mps[0].ndim == 3:
         if domain == "R":
             val = tensordot(ms_conj, val, axes=(2, 0))

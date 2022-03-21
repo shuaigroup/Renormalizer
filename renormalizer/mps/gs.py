@@ -77,6 +77,7 @@ def optimize_mps(mps: Mps, mpo: Mpo, omega: float = None) -> Tuple[List, Mps]:
     logger.info(f"optimization method: {mps.optimize_config.method}")
     logger.info(f"e_rtol: {mps.optimize_config.e_rtol}")
     logger.info(f"e_atol: {mps.optimize_config.e_atol}")
+    logger.info(f"procedure: {mps.optimize_config.procedure}")
 
     # ensure that mps is left or right-canonical
     # TODO: start from a mix-canonical MPS

@@ -26,10 +26,10 @@ class VibronicModelDynamics(TdMpsJob):
             mps0 = None,
             properties: Property = None,
             init_condition = None, 
-            dump_mps: bool = False,
+            dump_mps: str = None, 
             dump_dir: str = None,
             job_name: str = None,
-            expand: bool = False
+            auto_expand: bool = False
         ):
 
         self.model = model
@@ -46,8 +46,7 @@ class VibronicModelDynamics(TdMpsJob):
 
         self.mps0 = mps0
         self.init_condition = init_condition
-        self.properties = properties
-        self.expand = expand
+        self.auto_expand = auto_expand
         
         self.e_occupations_array = []
         self.autocorr_array = []
@@ -68,7 +67,7 @@ class VibronicModelDynamics(TdMpsJob):
         init_mp.compress_config = self.compress_config
         init_mp.evolve_config = self.evolve_config
         init_mp.model = self.model
-        if self.evolve_config.is_tdvp and self.expand:
+        if self.evolve_config.is_tdvp and self.auto_expand:
             init_mp = init_mp.expand_bond_dimension(self.h_mpo, include_ex=False)
         return init_mp
 
