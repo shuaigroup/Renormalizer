@@ -54,7 +54,7 @@ class BasisSet:
         Parameters
         ----------
         op : Op
-            The operator. For basis set with only one DoF, :class:`str`` is also acceptable.
+            The operator. For basis set with only one DoF, :class:``str`` is also acceptable.
 
         Returns
         -------
@@ -319,6 +319,47 @@ class BasisSHO(BasisSet):
         return self.__class__(new_dof, omega=self.omega,
                               nbas=self.nbas, x0=self.x0,
                               dvr=self.dvr, general_xp_power=self.general_xp_power)
+
+class BasisHopsBoson(BasisSet):
+    r"""
+    Bosonic like basis but with uncommon ladder operator, used in Hierarchy of Pure States method
+
+    .. math:: 
+        \tilde{b}^\dagger | n \rangle = (n+1) | n+1\rangle \\
+        \tilde{b} | n \rangle = | n-1\rangle
+
+    Parameters
+    ----------
+    dof : 
+        The name of the DoF contained in the basis set. The type could be anything that can be hashed.
+    nbas : int 
+        number of dimension of the basis set (highest occupation number)
+
+    """
+    
+    is_phonon = True
+
+    def __init__(self, dof, nbas):
+        super().__init__(dof, nbas, [0] * nbas)
+    
+    def op_mat(self, op: Union[Op, str]):
+        if not isinstance(op, Op):
+            op = Op(op, None)
+        op_symbol, op_factor = op.symbol, op.factor
+        
+        if op_symbol == r"b^\dagger b":
+            mat = np.diag(np.arange(self.nbas))
+        elif op_symbol == r"\tilde{b}^\dagger":
+            #\tilde{b}^\dagger |n\rangle = n+1 |n+1 \rangle
+            mat = np.diag(np.arange(1, self.nbas), k=-1)
+        elif op_symbol == r"\tilde{b}":
+            #\tilde{b} |n\rangle = |n-1 \rangle
+            mat = np.diag(np.ones(self.nbas-1), k=1)
+        elif op_symbol == "I":
+            mat = np.eye(self.nbas)
+        else:
+            raise ValueError(f"op_symbol:{op_symbol} is not supported.")
+        return mat * op_factor
 
 
 class BasisSineDVR(BasisSet):

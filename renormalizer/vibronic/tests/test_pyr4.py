@@ -159,7 +159,7 @@ def test_pyr_4mode(multi_e, dvr):
                     h_mpo = mpo,
                     compress_config=compress_config,
                     evolve_config=evolve_config,
-                    expand=True)
+                    auto_expand=True)
     time_step_fs = 2
     job.evolve(evolve_dt=time_step_fs * fs2au, nsteps=60)
 

@@ -324,8 +324,12 @@ class EvolveMethod(Enum):
     """
     Time evolution methods.
     """
-    # propagation and compression with RK45 propagator
+    # propagation and compression with RK45 propagator and time independent H
     prop_and_compress = "P&C"
+    # propagation and compression with RK4 propagator and time dependent/independent H
+    prop_and_compress_tdrk4 = "P&C TD RK4"
+    # propagation and compression with RK propagator and time dependent/independent H
+    prop_and_compress_tdrk = "P&C TD RK"
     # TDVP with projector splitting - one site
     tdvp_ps = "TDVP PS one-site"
     # TDVP with projector splitting - two site
@@ -403,7 +407,9 @@ class EvolveConfig:
 
     @property
     def is_tdvp(self):
-        return self.method is not EvolveMethod.prop_and_compress
+        return self.method not in [EvolveMethod.prop_and_compress,
+                EvolveMethod.prop_and_compress_tdrk4,
+                EvolveMethod.prop_and_compress_tdrk]
 
     def check_valid_dt(self, evolve_dt: complex):
         info_str = f"in config: {self.guess_dt}, in arg: {evolve_dt}"

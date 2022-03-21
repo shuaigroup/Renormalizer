@@ -17,7 +17,7 @@ logger = logging.getLogger(__name__)
 
 
 class TdMpsJob(object):
-    def __init__(self, evolve_config: EvolveConfig = None, dump_mps: bool=False, dump_dir: str=None, job_name: str=None):
+    def __init__(self, evolve_config: EvolveConfig = None, dump_mps: str=None, dump_dir: str=None, job_name: str=None):
         logger.info(f"Creating TDMPS job. dump_dir: {dump_dir}. job_name: {job_name}")
         if evolve_config is None:
             logger.debug("using default evolve config")
@@ -29,7 +29,14 @@ class TdMpsJob(object):
         self.evolve_times = [0]
         # output abstract of current mps every x steps
         self.info_interval = 1
-        self.dump_mps = dump_mps
+        # dump mps, None: not dumped, "all": dump all according to interval,  
+        # "one": dump only the latest mps according to interval
+        if dump_mps in [None, "all", "one"]:
+            self.dump_mps = dump_mps
+        else:
+            raise ValueError(f"dump_mps should be None, 'all', 'one'. Got {dump_mps}")
+
+        self._dump_mps = None
         self.dump_dir = dump_dir
         self.job_name = job_name
         mps = self.init_mps()
@@ -57,7 +64,7 @@ class TdMpsJob(object):
              The evolved new mps of the time step.
         """
         raise NotImplementedError
-
+    
     def evolve(self, evolve_dt=None, nsteps=None, evolve_time=None):
         '''
         Args:
@@ -133,8 +140,10 @@ class TdMpsJob(object):
             # output information
             if self.info_interval is not None and i % self.info_interval == 0:
                 mps_abstract = str(new_mps)
+                self._dump_mps = self.dump_mps
             else:
                 mps_abstract = ""
+                self._dump_mps = None
             
             logger.info(f"step {len(self.evolve_times)-1} complete, time cost {time_cost}. {mps_abstract}")
             
@@ -188,10 +197,15 @@ class TdMpsJob(object):
             os.remove(bak_path)
 
         # dump_mps
-        if self.dump_mps:
-            mps_path = os.path.join(self.dump_dir,
-                    self.job_name+"_mps_"+str(len(self.evolve_times)-1) + ".npz")
+        if (self._dump_mps is not None) and (self._dump_mps != False):
+            if self._dump_mps == "all":
+                mps_path = os.path.join(self.dump_dir,
+                        self.job_name+"_mps_"+str(len(self.evolve_times)-1) + ".npz")
+            else:
+                mps_path = os.path.join(self.dump_dir,
+                        self.job_name+"_mps" + ".npz")
             self.latest_mps.dump(mps_path)
+            
 
     def stop_evolve_criteria(self):
         return False

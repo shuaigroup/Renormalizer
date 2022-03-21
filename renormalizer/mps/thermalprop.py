@@ -28,7 +28,7 @@ class ThermalProp(TdMpsJob):
             If set to ``"EX"``, then the exact propagation is performed in one exciton space,
             i.e. the vibrations are regarded as displaced oscillators.
         evolve_config (:class:`~renormalizer.utils.EvolveConfig`): config when evolving the MpDm in imaginary time.
-        dump_mps (bool): if dump mps when dumping
+        dump_mps (str): if dump mps when dumping, "all", "one", None; Default to None
         dump_dir (str): the directory for logging and numerical result output.
         job_name (str): the name of the calculation job which determines the file name of the logging and numerical result output.
         properties (:class:`~renormalizer.property.Property`) calculate other properties with interface in Property
@@ -40,7 +40,7 @@ class ThermalProp(TdMpsJob):
         exact: bool = False,
         space: str = "GS",
         evolve_config: EvolveConfig = None,
-        dump_mps: bool = False, 
+        dump_mps: bool = None, 
         dump_dir: str = None,
         job_name: str = None,
         properties: Property = None,
