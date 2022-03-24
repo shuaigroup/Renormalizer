@@ -12,10 +12,9 @@ import logging
 import numpy as np
 import scipy
 import opt_einsum as oe
-import primme
 
 from renormalizer.lib import davidson
-from renormalizer.mps.backend import xp, OE_BACKEND
+from renormalizer.mps.backend import xp, OE_BACKEND, primme, IMPORT_PRIMME_EXCEPTION
 from renormalizer.mps.matrix import multi_tensor_contract, tensordot, asnumpy, asxp
 from renormalizer.mps.hop_expr import  hop_expr
 from renormalizer.mps import Mpo, Mps
@@ -458,6 +457,9 @@ def eigh_iterative(
     #    e, c = scipy.sparse.linalg.lobpcg(A, np.array(cguess).T,
     #            M=M, largest=False)
     elif algo == "primme":
+        if primme is None:
+            logger.error("can not import primme")
+            raise IMPORT_PRIMME_EXCEPTION
         h_dim = np.sum(qnmat == mps.qntot)
         precond = lambda x: scipy.sparse.diags(1 / (hdiag + 1e-4)) @ x
         A = scipy.sparse.linalg.LinearOperator((h_dim, h_dim), matvec=hop, matmat=hop)

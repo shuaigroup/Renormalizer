@@ -7,5 +7,4 @@ PyYAML==5.4.*
 recommonmark==0.7.*
 sphinx_rtd_theme==0.5.*
 opt_einsum==3.3.*
-primme==3.2.*
 qutip==4.6.*

@@ -1,0 +1,93 @@
+# Use the latest 2.1 version of CircleCI pipeline process engine.
+# See: https://circleci.com/docs/2.0/configuration-reference
+version: 2.1
+
+# Orbs are reusable packages of CircleCI configuration that you may share across projects, enabling you to create encapsulated, parameterized commands, jobs, and executors that can be used across multiple projects.
+# See: https://circleci.com/docs/2.0/orb-intro/
+orbs:
+  # The python orb contains a set of prepackaged CircleCI configuration you can use repeatedly in your configuration files
+  # Orb commands and jobs help you with common scripting around a language/tool
+  # so you dont have to copy and paste it everywhere.
+  # See the orb documentation here: https://circleci.com/developer/orbs/orb/circleci/python
+  python: circleci/python@1.5.0
+
+# Define a job to be invoked later in a workflow.
+# See: https://circleci.com/docs/2.0/configuration-reference/#jobs
+jobs:
+  build-and-test: # This is the name oAch the steps below will be executed - below will use a python 3.10.2 container
+    # Change the version below to your required version of python
+    docker:
+      - image: cimg/python:3.8
+    # Checkout the code as the first step. This is a dedicated CircleCI step.
+    # The python orb's install-packages step will install the dependencies from a Pipfile via Pipenv by default.
+    # Here we're making sure we use just use the system-wide pip. By default it uses the project root's requirements.txt.
+    # Then run your tests!
+    # CircleCI will report the results back to your VCS provider.
+    steps:
+      - checkout
+      - run:
+          name: install openblas
+          command: |
+              sudo apt-get update
+              sudo apt-get -y install libblas-dev liblapack-dev
+      - python/install-packages:
+          pkg-manager: pip
+          # app-dir: ~/project/package-directory/  # If you're requirements.txt isn't in the root directory.
+          # pip-dependency-file: test-requirements.txt  # if you have a different name for your requirements file, maybe one that combines your runtime and test requirements.
+      - run:
+          name: Run tests
+          # This assumes pytest is installed via the install-package step above
+          command: |
+              pytest --durations=0
+              pip install primme==3.2.*
+              pytest --durations=0 renormalizer/mps/tests/test_gs.py::test_multistate
+      - run:
+          name: Run examples
+          command: |
+              cd example; bash run.sh
+              cd ..
+      - run:
+          name: Build docs
+          command: cd doc; make html
+
+      - persist_to_workspace:
+          root: doc/
+          paths: html
+
+  # ref: https://circleci.com/blog/deploying-documentation-to-github-pages-with-continuous-integration/
+  docs-deploy:
+    docker:
+      - image: node:8.10.0
+    steps:
+      - checkout
+      - attach_workspace:
+          at: doc/
+      - run:
+          name: Disable jekyll builds
+          command: touch doc/html/.nojekyll
+      - run:
+          name: Install and configure dependencies
+          command: |
+            npm install -g --silent gh-pages@2.0.1
+            git config user.email "liwt31@163.com"
+            git config user.name "liwt31"
+      - add_ssh_keys:
+          fingerprints:
+            - "94:05:b4:03:2a:1a:dd:ff:56:19:58:09:a1:51:bb:b1"
+      - run:
+          name: Deploy docs to gh-pages branch
+          command: gh-pages --dotfiles --message "[skip ci] Updates" --dist doc/html
+
+# Invoke jobs via workflows
+# See: https://circleci.com/docs/2.0/configuration-reference/#workflows
+workflows:
+  test: # This is the name of the workflow, feel free to change it to better match your workflow.
+    # Inside the workflow, you define the jobs you want to run.
+    jobs:
+      - build-and-test
+      - docs-deploy:
+          requires:
+            - build-and-test
+          filters:
+            branches:
+              only: master

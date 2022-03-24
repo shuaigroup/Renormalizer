@@ -309,6 +309,7 @@ class OptimizeConfig:
         self.method = "2site"
         # algo: arpack(Implicitly Restarted Lanczos Method)
         #       davidson(pyscf/davidson)
+        #       primme (if installed)
         self.algo = "davidson"
         self.nroots = 1
         # the ground state energy convergence tolerance

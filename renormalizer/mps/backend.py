@@ -9,6 +9,13 @@ import numpy as np
 
 from renormalizer.utils.utils import sizeof_fmt
 
+try:
+    import primme
+    IMPORT_PRIMME_EXCEPTION = None
+except Exception as e:
+    primme = None
+    IMPORT_PRIMME_EXCEPTION = e
+
 
 logger = logging.getLogger(__name__)
 

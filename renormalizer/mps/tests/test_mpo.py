@@ -57,7 +57,7 @@ def test_swap_symbolic_mpo(nsites, nterms):
     basis = [BasisHalfSpin(i) for i in range(nsites)]
     model = Model(basis, ham_terms)
     mpo = Mpo(model)
-    for i in range(100):
+    for i in range(20):
         isite1 = max(int(random.random() * nsites) - 1, 0)
         isite2 = isite1 + 1
         basis = basis.copy()

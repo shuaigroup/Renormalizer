@@ -1,16 +1,17 @@
 # -*- coding: utf-8 -*-
-from renormalizer.mps.matrix import tensordot, multi_tensor_contract, asnumpy, asxp
-from renormalizer.mps.backend import xp, USE_GPU
-from renormalizer.mps import Mps, Mpo, MpDm
-from renormalizer.mps.lib import Environ, compressed_sum 
-from renormalizer.lib import davidson
+
+import logging
+from collections import defaultdict
 
 import numpy as np
 import scipy
-import logging
 import opt_einsum as oe
-import primme
-from collections import defaultdict
+
+from renormalizer.mps.matrix import tensordot, multi_tensor_contract, asnumpy, asxp
+from renormalizer.mps.backend import xp, USE_GPU, primme, IMPORT_PRIMME_EXCEPTION
+from renormalizer.mps import Mps
+from renormalizer.mps.lib import Environ, compressed_sum
+from renormalizer.lib import davidson
 
 logger = logging.getLogger(__name__)
 
@@ -30,8 +31,8 @@ class TDA(object):
     nroots: int, optional
         number of roots to be calculated. Default is ``1``.
     algo: str, optional
-        iterative diagonalization solver. Default is ``primme``.
-        Valid option are ``davidson`` and ``primme``.
+        iterative diagonalization solver. Default is ``"primme"`` if ``primme`` is installed.
+        Valid options are ``davidson`` and ``primme``.
 
     Note
     ----
@@ -39,13 +40,20 @@ class TDA(object):
 
     """
 
-    def __init__(self, model, hmpo, mps, nroots=1, algo="primme"):
+    def __init__(self, model, hmpo, mps, nroots=1, algo=None):
                
         self.model = model
         self.hmpo = hmpo
         self.mps = mps  # mps will be overwritten inplace
         self.nroots = nroots
-        self.algo = algo
+        if algo is None:
+            if primme is not None:
+                self.algo = "primme"
+            else:
+                self.algo = "davidson"
+        else:
+            self.algo = algo
+
         self.e = None
         # wavefunction: [mps_l_cano, mps_r_cano, tangent_u, tda_coeff_list]
         self.wfn = None
@@ -254,6 +262,10 @@ class TDA(object):
             c = np.stack(c, axis=1)
 
         elif algo == "primme":
+            if primme is None:
+                logger.error("can not import primme")
+                raise IMPORT_PRIMME_EXCEPTION
+
             if not restart:
                 cguess = None
 

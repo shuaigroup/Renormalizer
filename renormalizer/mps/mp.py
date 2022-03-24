@@ -659,11 +659,11 @@ class MatrixProduct:
                 elif ofs is OFS.ofs_ds:
                     if loss1 < 1e-10 and loss2 < 1e-10:
                         # at the end of the chain
-                        should_retain = entropy1 < entropy2
+                        should_retain = entropy1 <= entropy2
                     else:
                         should_retain = loss1 <= loss2
                 elif ofs is OFS.ofs_s:
-                    should_retain = entropy1 < entropy2
+                    should_retain = entropy1 <= entropy2
                 else:
                     assert ofs is  OFS.ofs_debug
                     should_retain = True

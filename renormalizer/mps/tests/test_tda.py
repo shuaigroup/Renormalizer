@@ -101,7 +101,7 @@ def test_tda():
     mps.optimize_config.nroots = 1
     energies, mps = gs.optimize_mps(mps, mpo)
     logger.info(f"M: {M}, energy : {np.array(energies[-1])*au2cm}")
-    tda = TDA(model, mpo, mps, nroots=3, algo="primme")
+    tda = TDA(model, mpo, mps, nroots=3)
     e = tda.kernel(include_psi0=False) 
     logger.info(f"tda energy : {(e-energies[-1])*au2cm}")
     assert np.allclose((e-energies[-1])*au2cm, [824.74925026, 936.42650242, 951.96826289], atol=1)
