@@ -1,11 +1,15 @@
 ![logo](./doc/source/logo.png)
 
-[![Build Status](https://travis-ci.com/shuaigroup/Renormalizer.svg?branch=master)](https://app.travis-ci.com/github/shuaigroup/Renormalizer)
+[![CircleCI](https://circleci.com/gh/shuaigroup/Renormalizer.svg?style=svg)](https://app.circleci.com/pipelines/github/shuaigroup/Renormalizer)
 
 Renormalizer is a python package based on tensor network states for electron-phonon quantum dynamics.
 
 ## Installation
-Installation guide can be found in the [project wiki](https://github.com/shuaigroup/Renormalizer/wiki/Installation-guide).
+```
+pip install renormalizer
+```
+
+For users who are not familiar with python, step-by-step installation guide can be found in the [document](https://github.com/shuaigroup/Renormalizer/wiki/Installation-guide).
 
 ## Documentation
 Primitive documentation could be found [here](https://shuaigroup.github.io/Renormalizer/).
