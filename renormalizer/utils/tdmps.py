@@ -197,7 +197,7 @@ class TdMpsJob(object):
             os.remove(bak_path)
 
         # dump_mps
-        if (self._dump_mps is not None) and (self._dump_mps != False):
+        if self._dump_mps is not None:
             if self._dump_mps == "all":
                 mps_path = os.path.join(self.dump_dir,
                         self.job_name+"_mps_"+str(len(self.evolve_times)-1) + ".npz")

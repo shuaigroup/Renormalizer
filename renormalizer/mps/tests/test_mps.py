@@ -73,7 +73,7 @@ def test_reduced_density_matrix():
 
 def test_site_entropy():
     mps = Mps.random(parameter.holstein_model, 1, 20)
-    mps.canonicalise().normalize()
+    mps.canonicalise().normalize("mps_only")
     entropy_1site = mps.calc_entropy("1site")
     entropy_2site = mps.calc_entropy("2site")
     entropy_bond = mps.calc_entropy("bond")

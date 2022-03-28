@@ -72,16 +72,15 @@ def adaptive_tdvp(fun):
                     f"guess_dt: {config.guess_dt}, try time step size: {dt}"
             )
             
-            # note that the wavefunction is normalized 
-            mps_half1 = fun(cur_mps, mpo, dt / 2).normalize()
-            mps_half2 = fun(mps_half1, mpo, dt / 2).normalize()
-            mps = fun(cur_mps, mpo, dt).normalize()
+            mps_half1 = fun(cur_mps, mpo, dt / 2)
+            mps_half2 = fun(mps_half1, mpo, dt / 2)
+            mps = fun(cur_mps, mpo, dt)
             dis = mps.distance(mps_half2)
 
             # prevent bug. save "some" memory.
             del mps_half1, mps
 
-            p = (0.75 * config.adaptive_rtol / (dis + 1e-30)) ** (1./3)
+            p = (0.75 * config.adaptive_rtol / (dis/mps_half2.mp_norm + 1e-30)) ** (1./3)
             logger.debug(f"distance: {dis}, enlarge p parameter: {p}")
             if p < p_min:
                 p = p_min
@@ -425,23 +424,9 @@ class Mps(MatrixProduct):
 
     @property
     def norm(self):
-        # return self.dmrg_norm * self.hartree_norm
-        return np.linalg.norm(self.coeff)
-
-    @property
-    def dmrg_norm(self) -> float:
-        # the fast version in the comment rarely makes sense because in a lot of cases
-        # the mps is not canonicalised (though qnidx is set)
-        """
-        if self.is_left_canon:
-            assert self.check_left_canonical()
-            return np.linalg.norm(np.ravel(self[-1]))
-        else:
-            assert self.check_right_canonical()
-            return np.linalg.norm(np.ravel(self[0]))
-        """
-        res = np.sqrt(self.conj().dot(self).real)
-        return float(res.real)
+        '''the norm of the total wavefunction
+        '''
+        return np.linalg.norm(self.coeff) * self.mp_norm
 
     def _expectation_path(self):
         # S--a--S--e--S
@@ -564,23 +549,34 @@ class Mps(MatrixProduct):
         new.evolve_config = self.evolve_config.copy()
         return new
 
-    def normalize(self, norm=None):
-        # real time propagation: dmrg should be normalized, coefficient is not changed,
-        #  use norm=None
-        # imag time propagation: dmrg should be normalized, coefficient is normalized to 1.0
-        # applied by a operator then normalize: dmrg should be normalized,
-        #   coefficient is set to the length
-        # these two cases should set `norm` equals to corresponding value
-        self.scale(1.0 / self.dmrg_norm, inplace=True)
-        if norm is not None:
-            self.coeff *= norm / (np.linalg.norm(self.coeff))
-        return self
+    def normalize(self, kind):
+        r''' normalize the wavefunction
 
-    def canonical_normalize(self):
-        # applied by a operator then normalize: dmrg should be normalized,
-        #   tdh should be normalized, coefficient is set to the length
-        # suppose length is only determined by dmrg part
-        return self.normalize(self.dmrg_norm)
+        Parameters
+        ----------
+        kind: str
+            "mps_only": the mps part is normalized and coeff is not modified;
+            "mps_norm_to_coeff": the mps part is normalized and the norm is multiplied to coeff;
+            "mps_and_coeff": both mps and coeff is normalized
+
+        Returns
+        -------
+        ``self`` is overwritten.
+        '''
+
+        if kind == "mps_only":
+            new_coeff = self.coeff
+        elif kind == "mps_and_coeff":
+            new_coeff = self.coeff / np.linalg.norm(self.coeff)
+        elif kind == "mps_norm_to_coeff":
+            new_coeff = self.coeff * self.mp_norm
+        else:
+            raise ValueError(f"kind={kind} is valid.")
+        new_mps = self.scale(1.0 / self.mp_norm, inplace=True)
+        new_mps.coeff = new_coeff
+
+        return new_mps
+
 
     def expand_bond_dimension(self, hint_mpo=None, coef=1e-10, include_ex=True):
         """
@@ -639,10 +635,10 @@ class Mps(MatrixProduct):
                     lastone = lastone.canonicalise().compress(
                         m_target // hint_mpo.bond_dims_mean + 1
                     )
-                lastone = (hint_mpo @ lastone).normalize()
+                lastone = (hint_mpo @ lastone).normalize("mps_and_coeff")
         logger.debug(f"expander bond dimension: {expander.bond_dims}")
         self.compress_config.bond_dim_max_value += self.bond_dims_mean
-        return (self + expander.scale(coef, inplace=True)).canonicalise().canonicalise().canonical_normalize()
+        return (self + expander.scale(coef*self.norm, inplace=True)).canonicalise().canonicalise().normalize("mps_norm_to_coeff")
 
     def evolve(self, mpo, evolve_dt, normalize=True) -> "Mps":
 
@@ -659,9 +655,9 @@ class Mps(MatrixProduct):
         new_mps = method(mpo, evolve_dt)
         if normalize:
             if np.iscomplex(evolve_dt):
-                new_mps.normalize(1.0)
+                new_mps.normalize("mps_and_coeff")
             else:
-                new_mps.normalize(None)
+                new_mps.normalize("mps_only")
         return new_mps
     
     def _evolve_prop_and_compress_tdrk4(self, mpo, evolve_dt) -> "Mps":
@@ -742,10 +738,7 @@ class Mps(MatrixProduct):
                     for istage in range(rk_config.stage) if not \
                     np.allclose(b[0,istage],b[1,istage])])
 
-                error_norm2 = error.conj().dot(error).real
-                if error_norm2 < 0:
-                    error_norm2 = 0
-                error = np.sqrt(error_norm2) / new_mps.dmrg_norm
+                error = error.norm / new_mps.norm
             else:
                 assert len(rk_config.order) == 1
                 error = 0
@@ -766,12 +759,12 @@ class Mps(MatrixProduct):
                 dt = min_abs(new_mps.evolve_config.guess_dt, evolve_dt-evolved_dt)
                 logger.debug(f"guess_dt: {new_mps.evolve_config.guess_dt}, try time step size: {dt}")
                 new_mps, error = sub_time_step_evolve(new_mps, dt, evolved_dt)    
-                p = (new_mps.evolve_config.adaptive_rtol / (error + 1e-30)) ** 0.2
-                logger.debug(f"RK45 relative error: {error}, enlarge p parameter: {p}")
+                p = (new_mps.evolve_config.adaptive_rtol / (error + 1e-30)) ** (1/rk_config.order[0])
+                logger.debug(f"RKsolver:{rk_config.method} relative error: {error}, enlarge p parameter: {p}")
                 
                 if p < p_restart:
                     # not accurate, will restart
-                    new_mps.config.guess_dt = dt * max(p_min, p)
+                    new_mps.evolve_config.guess_dt = dt * max(p_min, p)
                     logger.debug(
                         f"evolution not converged, new guess_dt: {new_mps.evolve_config.guess_dt}"
                     )
@@ -839,15 +832,13 @@ class Mps(MatrixProduct):
                     scale = (-1.0j * dt) ** idx * propagation_c[idx]
                     scaled_termlist.append(term.scale(scale))
                     del term
-                # Note that the wavefunction is normalized
-                new_mps1 = compressed_sum(scaled_termlist[:-1]).normalize()
+                
+                new_mps1 = compressed_sum(scaled_termlist[:-1])
                 new_mps2 = compressed_sum(
                     [new_mps1, scaled_termlist[-1]]
-                ).normalize()
+                )
                 dis = new_mps1.distance(new_mps2)
-                # here the norm of mps is 1,
-                # otherwise the relative value dis/norm should be used
-                p = (config.adaptive_rtol / (dis + 1e-30)) ** (1/(order-1))
+                p = (config.adaptive_rtol / (dis/new_mps2.mp_norm + 1e-30)) ** (1/order)
                 logger.debug(f"RK45 error distance: {dis}, enlarge p parameter: {p}")
 
                 if xp.allclose(dt, evolve_dt):
@@ -1701,6 +1692,23 @@ class Mps(MatrixProduct):
 
     def __setitem__(self, key, value):
         return super().__setitem__(key, value)
+
+    
+    def add(self, other):
+        if not np.allclose(self.coeff, other.coeff):
+            self.scale(self.coeff, inplace=True)
+            other.scale(other.coeff, inplace=True)
+            self.coeff = 1
+            other.coeff = 1
+        return super().add(other)
+    
+    def distance(self, other) -> float:
+        if not np.allclose(self.coeff, other.coeff):
+            self.scale(self.coeff, inplace=True)
+            other.scale(other.coeff, inplace=True)
+            self.coeff = 1
+            other.coeff = 1
+        return super().distance(other)
 
 
 def projector(

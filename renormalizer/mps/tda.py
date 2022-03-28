@@ -88,7 +88,7 @@ class TDA(object):
 
         if not restart:
             # make sure that M is not redundant near the edge
-            mps = self.mps.ensure_right_canon().canonicalise().normalize().canonicalise()
+            mps = self.mps.ensure_right_canon().canonicalise().normalize("mps_and_coeff").canonicalise()
             logger.debug(f"reference mps shape, {mps}")
             mps_r_cano = mps.copy()
             assert mps.to_right 

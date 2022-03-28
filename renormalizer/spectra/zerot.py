@@ -49,7 +49,7 @@ class SpectraZeroT(SpectraTdMpsJobBase):
             operator = r"a^\dagger"
         dipole_mpo = Mpo.onsite(self.model, operator, dipole=True)
         a_ket_mps = dipole_mpo.apply(self.get_imps(), canonicalise=True)
-        a_ket_mps.canonical_normalize()
+        a_ket_mps.normalize("mps_norm_to_coeff")
         a_ket_mps.evolve_config = self.evolve_config
         a_bra_mps = a_ket_mps.copy()
         return BraKetPair(a_bra_mps, a_ket_mps)

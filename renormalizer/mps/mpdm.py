@@ -61,7 +61,7 @@ class MpDm(Mps, Mpo):
 
         ex_mps = ex_mpo @ mps
         if normalize:
-            ex_mps.normalize(1.0)
+            ex_mps.normalize("mps_and_coeff")
         return cls.from_mps(ex_mps)
 
     @classmethod

@@ -86,7 +86,7 @@ class SpectraExact(SpectraTdMpsJobBase):
         else:
             ket_mps = i_mps
         a_ket_mps = dipole_mpo.apply(ket_mps, canonicalise=True)
-        a_ket_mps.canonical_normalize()
+        a_ket_mps.normalize("mps_norm_to_coeff")
 
         if self.temperature != 0:
             a_bra_mps = ket_mps.copy()

@@ -240,13 +240,13 @@ class TransportKubo(TdMpsJob):
         self.h_mpo = Mpo(self.model, offset=Quantity(e))
         mpdm.evolve_config = self.evolve_config
         logger.debug("Applying current operator")
-        ket_mpdm = self.j_oper.contract(mpdm).canonical_normalize()
+        ket_mpdm = self.j_oper.contract(mpdm).normalize("mps_norm_to_coeff")
         bra_mpdm = mpdm.copy()
         if self.j_oper2 is None:
             return BraKetPair(bra_mpdm, ket_mpdm, self.j_oper)
         else:
             logger.debug("Applying the second current operator")
-            ket_mpdm2 = self.j_oper2.contract(mpdm).canonical_normalize()
+            ket_mpdm2 = self.j_oper2.contract(mpdm).normalize("mps_norm_to_coeff")
             return BraKetPair(bra_mpdm, ket_mpdm, self.j_oper), BraKetPair(bra_mpdm, ket_mpdm2, self.j_oper2)
 
     def process_mps(self, mps):
