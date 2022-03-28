@@ -28,7 +28,7 @@ def test_save_load():
 
 
 def check_distance(a: Mps, b: Mps):
-    d1 = (a - b).dmrg_norm
+    d1 = (a - b).mp_norm
     d2 = a.distance(b)
     a_array = a.todense()
     b_array = b.todense()
@@ -92,7 +92,7 @@ def test_svd_compress(comp, mp):
         mps = Mps.random(holstein_model, 1, 10)
         if mp == "mpdm":
             mps = MpDm.from_mps(mps)
-        mps.canonicalise().normalize()
+        mps.canonicalise().normalize("mps_only")
         M = 36
     if comp:
         mps = mps.to_complex(inplace=True)
@@ -108,10 +108,10 @@ def test_svd_compress(comp, mp):
     mps.compress_config.bond_dim_max_value = M
     mps.compress_config.criteria = CompressCriteria.fixed
     svd_mps = mpo.contract(mps)
-    dis = svd_mps.distance(std_mps)/std_mps.dmrg_norm
+    dis = svd_mps.distance(std_mps)/std_mps.mp_norm
     print(f"svd_mps: {svd_mps}, dis: {dis}")
     assert np.allclose(dis, 0.0, atol=1e-3)
-    assert np.allclose(svd_mps.dmrg_norm, std_mps.dmrg_norm, atol=1e-4)
+    assert np.allclose(svd_mps.mp_norm, std_mps.mp_norm, atol=1e-4)
     
     
 @pytest.mark.parametrize("comp", (True, False))
@@ -125,7 +125,7 @@ def test_variational_compress(comp, mp):
         mps = Mps.random(holstein_model, 1, 10)
         if mp == "mpdm":
             mps = MpDm.from_mps(mps)
-        mps.canonicalise().normalize()
+        mps.canonicalise().normalize("mps_only")
         M = 36
     if comp:
         mps = mps.to_complex(inplace=True)
@@ -143,17 +143,17 @@ def test_variational_compress(comp, mp):
     mps.compress_config.vprocedure = [[M,1.0],[M,0.2],[M,0.1]]+[[M,0],]*10
     mps.compress_config.vmethod = "2site"
     var_mps = mps.variational_compress(mpo, guess=None)
-    dis = var_mps.distance(std_mps)/std_mps.dmrg_norm
+    dis = var_mps.distance(std_mps)/std_mps.mp_norm
     print(f"var2_mps: {var_mps}, dis: {dis}")
     assert np.allclose(dis, 0.0, atol=1e-4)
-    assert np.allclose(var_mps.dmrg_norm, std_mps.dmrg_norm, atol=1e-4)
+    assert np.allclose(var_mps.mp_norm, std_mps.mp_norm, atol=1e-4)
     
     # 1site algorithm with 2site result as a guess
     # 1site algorithm is easy to be trapped in a local minimum
     var_mps.compress_config.vprocedure = [[M,0],]*10
     var_mps.compress_config.vmethod = "1site"
     var_mps = mps.variational_compress(mpo, guess=var_mps)
-    dis = var_mps.distance(std_mps)/std_mps.dmrg_norm
+    dis = var_mps.distance(std_mps)/std_mps.mp_norm
     print(f"var1_mps: {var_mps}, dis: {dis}")
     assert np.allclose(dis, 0.0, atol=1e-4)
-    assert np.allclose(var_mps.dmrg_norm, std_mps.dmrg_norm, atol=1e-4)
+    assert np.allclose(var_mps.mp_norm, std_mps.mp_norm, atol=1e-4)

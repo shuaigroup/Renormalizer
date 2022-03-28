@@ -326,13 +326,29 @@ class MatrixProduct:
         qnmat = np.add.outer(qnbigl, qnbigr)
         return qnbigl, qnbigr, qnmat
 
+    @property
+    def mp_norm(self) -> float:
+        # the fast version in the comment rarely makes sense because in a lot of cases
+        # the mps is not canonicalised (though qnidx is set)
+        """
+        if self.is_left_canon:
+            assert self.check_left_canonical()
+            return np.linalg.norm(np.ravel(self[-1]))
+        else:
+            assert self.check_right_canonical()
+            return np.linalg.norm(np.ravel(self[0]))
+        """
+        res = self.conj().dot(self).real
+        if res < 0:
+            assert np.abs(res) < 1e-8
+            res = 0
+        res = np.sqrt(res)
+
+        return float(res)
+
     def add(self, other: "MatrixProduct"):
         assert self.qntot == other.qntot
         assert self.site_num == other.site_num
-        
-        # note that the coeff should be the same
-        if self.is_mps or self.is_mpdm:
-            assert np.allclose(self.coeff, other.coeff)
         
         new_mps = self.metacopy()
         if other.dtype == backend.complex_dtype:
@@ -1080,8 +1096,17 @@ class MatrixProduct:
         self._mp.append(new_mt)
     
     def __str__(self):
-        template_str = "current size: {}, Matrix product bond dim:{}"
-        return template_str.format(sizeof_fmt(self.total_bytes), self.bond_dims,)
+        if self.is_mps:
+            string = "mps"
+        elif self.is_mpo:
+            string = "mpo"
+        elif self.is_mpdm:
+            string = "mpdm"
+        else:
+            assert False
+        template_str = "{} current size: {}, Matrix product bond dim:{}"
+        
+        return template_str.format(string, sizeof_fmt(self.total_bytes), self.bond_dims,)
 
     def __del__(self):
         dir_with_id = os.path.join(self.compress_config.dump_matrix_dir, str(id(self)))

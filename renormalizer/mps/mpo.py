@@ -482,9 +482,5 @@ class Mpo(MatrixProduct):
             mpo.append(mt)
         mpo.build_empty_qn()
         return mpo
-    
-    @property
-    def dmrg_norm(self) -> float:
-        res = np.sqrt(self.conj().dot(self).real)
-        return float(res.real)
+
     

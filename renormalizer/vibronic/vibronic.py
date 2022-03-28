@@ -1,6 +1,5 @@
 from renormalizer.utils import TdMpsJob, CompressConfig, EvolveConfig
 from renormalizer.mps import Mps, Mpo
-from renormalizer.property import Property
 from renormalizer.model import Model
 
 import logging
@@ -24,7 +23,6 @@ class VibronicModelDynamics(TdMpsJob):
             evolve_config: EvolveConfig = None,
             h_mpo = None,
             mps0 = None,
-            properties: Property = None,
             init_condition = None, 
             dump_mps: str = None, 
             dump_dir: str = None,

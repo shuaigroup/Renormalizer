@@ -96,8 +96,8 @@ def test_ofs():
     mps.compress_config.ofs = OFS.ofs_s
     energies, mps_opt = optimize_mps(mps.copy(), mpo)
     assert energies[-1] == pytest.approx(GS_E, rel=1e-5)
+    mpo = Mpo(mps_opt.model)
     assert mps_opt.expectation(mpo) == pytest.approx(GS_E, rel=1e-5)
-
 
 @pytest.mark.parametrize("with_ofs", (True, False))
 def test_qc(with_ofs):
@@ -119,10 +119,12 @@ def test_qc(with_ofs):
     fci_e = -3.23747673055271 - nuc
 
     nelec = 6
-    M = 12
+    M = 20
     procedure = [[M, 0.4], [M, 0.2], [M, 0.1], [M, 0], [M, 0], [M, 0], [M, 0]]
     mps = Mps.random(model, nelec, M, percent=1.0)
-
+    hf = Mps.hartree_product_state(model, {i:1 for i in range(nelec)})
+    mps = mps.scale(1e-8)+hf
+    #print("hf energy", mps.expectation(mpo))
     mps.optimize_config.procedure = procedure
     mps.optimize_config.method = "2site"
     if with_ofs:

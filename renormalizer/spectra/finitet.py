@@ -97,7 +97,7 @@ class SpectraFiniteT(SpectraTdMpsJobBase):
         dipole_mpo_dagger = dipole_mpo.conj_trans()
         dipole_mpo_dagger.build_empty_qn()
         a_ket_mpo = ket_mpo.apply(dipole_mpo_dagger, canonicalise=True)
-        a_ket_mpo.canonical_normalize()
+        a_ket_mpo.normalize("mps_norm_to_coeff")
         a_bra_mpo = a_ket_mpo.copy()
         return BraKetPairEmiFiniteT(a_bra_mpo, a_ket_mpo)
 
@@ -133,7 +133,7 @@ class SpectraFiniteT(SpectraTdMpsJobBase):
         a_ket_mpo = dipole_mpo.apply(ket_mpo, canonicalise=True)
         if self.evolve_config.is_tdvp:
             a_ket_mpo = a_ket_mpo.expand_bond_dimension(self.h_mpo)
-        a_ket_mpo.canonical_normalize()
+        a_ket_mpo.normalize("mps_norm_to_coeff")
         a_bra_mpo = a_ket_mpo.copy()
         return BraKetPairAbsFiniteT(a_bra_mpo, a_ket_mpo)
 

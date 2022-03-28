@@ -66,11 +66,16 @@ def optimize_mps(mps: Mps, mpo: Mpo, omega: float = None) -> Tuple[List, Mps]:
     mps : renormalizer.mps.Mps
         optimized ground state MPS.
             Note it's not the same with the overwritten input MPS.
-
+    
     See Also
     --------
     renormalizer.utils.configs.OptimizeConfig : The optimization configuration.
 
+    Note
+    ----
+    When On-the-fly swapping algorithm is used, the site ordering of the returned
+    MPS is changed and the original MPO will not correspond to it and should be
+    updated with returned mps.model.
     """
 
     assert mps.optimize_config.method in ["2site", "1site"]
@@ -130,10 +135,10 @@ def optimize_mps(mps: Mps, mpo: Mpo, omega: float = None) -> Tuple[List, Mps]:
     assert res_mps is not None
     # remove the redundant basis near the edge
     if mps.optimize_config.nroots == 1:
-        res_mps = res_mps.normalize().ensure_left_canon().canonicalise()
+        res_mps = res_mps.normalize("mps_only").ensure_left_canon().canonicalise()
         logger.info(f"{res_mps}")
     else:
-        res_mps = [mp.normalize().ensure_left_canon().canonicalise() for mp in res_mps]
+        res_mps = [mp.normalize("mps_only").ensure_left_canon().canonicalise() for mp in res_mps]
         logger.info(f"{res_mps[0]}")
     return macro_iteration_result, res_mps
 

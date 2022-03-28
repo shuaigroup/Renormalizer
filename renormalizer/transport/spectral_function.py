@@ -98,7 +98,7 @@ class SpectralFunctionZT(TdMpsJob):
         a_ket = creation_oper.apply(gs, canonicalise=True)
         a_ket.compress_config = self.compress_config
         a_ket.evolve_config = self.evolve_config
-        a_ket.canonical_normalize()
+        a_ket.normalize("mps_norm_to_coeff")
         if self.evolve_config.is_tdvp:
             a_ket = a_ket.expand_bond_dimension(self.h_mpo)
         return (gs, a_ket)

@@ -133,7 +133,7 @@ class BasisSHO(BasisSet):
             self.dvr = True
 
     def __repr__(self):
-        return f"(x0: {self.x0}, omega: {self.omega}, nbas: {self.nbas})"
+        return f"(dof: {self.dof}, x0: {self.x0}, omega: {self.omega}, nbas: {self.nbas})"
     
     def op_mat(self, op: Union[Op, str]):
         if not isinstance(op, Op):

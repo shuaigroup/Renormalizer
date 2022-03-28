@@ -98,7 +98,7 @@ def test_offset(scheme):
 def test_identity():
     identity = Mpo.identity(holstein_model)
     mps = Mps.random(holstein_model, nexciton=1, m_max=5)
-    assert mps.expectation(identity) == pytest.approx(mps.dmrg_norm) == pytest.approx(1)
+    assert mps.expectation(identity) == pytest.approx(mps.mp_norm) == pytest.approx(1)
 
 
 def test_scheme4():
@@ -169,10 +169,10 @@ def test_phonon_onsite():
     gs = Mps.ground_state(holstein_model, max_entangled=False)
     assert not gs.ph_occupations.any()
     b2 = Mpo.ph_onsite(holstein_model, r"b^\dagger", 0, 0)
-    p1 = b2.apply(gs).normalize()
+    p1 = b2.apply(gs).normalize("mps_only")
     assert np.allclose(p1.ph_occupations, [1, 0, 0, 0, 0, 0])
-    p2 = b2.apply(p1).normalize()
+    p2 = b2.apply(p1).normalize("mps_only")
     assert np.allclose(p2.ph_occupations, [2, 0, 0, 0, 0, 0])
     b = b2.conj_trans()
     assert b.distance(Mpo.ph_onsite(holstein_model, r"b", 0, 0)) == 0
-    assert b.apply(p2).normalize().distance(p1) == pytest.approx(0, abs=1e-5)
+    assert b.apply(p2).normalize("mps_only").distance(p1) == pytest.approx(0, abs=1e-5)

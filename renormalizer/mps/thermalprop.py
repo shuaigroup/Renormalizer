@@ -99,7 +99,7 @@ class ThermalProp(TdMpsJob):
         new_mpdm = MPOprop.apply(old_mpdm, canonicalise=True)
         # partition function can't be obtained. It's not practical anyway.
         # The function is too large to be fit into float64 even float128
-        new_mpdm.normalize(1.0)
+        new_mpdm.normalize("mps_and_coeff")
         return new_mpdm
 
     def evolve_prop(self, old_mpdm, evolve_dt):
