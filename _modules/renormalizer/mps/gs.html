@@ -183,10 +183,9 @@
 <span class="kn">import</span> <span class="nn">numpy</span> <span class="k">as</span> <span class="nn">np</span>
 <span class="kn">import</span> <span class="nn">scipy</span>
 <span class="kn">import</span> <span class="nn">opt_einsum</span> <span class="k">as</span> <span class="nn">oe</span>
-<span class="kn">import</span> <span class="nn">primme</span>
 
 <span class="kn">from</span> <span class="nn">renormalizer.lib</span> <span class="kn">import</span> <span class="n">davidson</span>
-<span class="kn">from</span> <span class="nn">renormalizer.mps.backend</span> <span class="kn">import</span> <span class="n">xp</span><span class="p">,</span> <span class="n">OE_BACKEND</span>
+<span class="kn">from</span> <span class="nn">renormalizer.mps.backend</span> <span class="kn">import</span> <span class="n">xp</span><span class="p">,</span> <span class="n">OE_BACKEND</span><span class="p">,</span> <span class="n">primme</span><span class="p">,</span> <span class="n">IMPORT_PRIMME_EXCEPTION</span>
 <span class="kn">from</span> <span class="nn">renormalizer.mps.matrix</span> <span class="kn">import</span> <span class="n">multi_tensor_contract</span><span class="p">,</span> <span class="n">tensordot</span><span class="p">,</span> <span class="n">asnumpy</span><span class="p">,</span> <span class="n">asxp</span>
 <span class="kn">from</span> <span class="nn">renormalizer.mps.hop_expr</span> <span class="kn">import</span>  <span class="n">hop_expr</span>
 <span class="kn">from</span> <span class="nn">renormalizer.mps</span> <span class="kn">import</span> <span class="n">Mpo</span><span class="p">,</span> <span class="n">Mps</span>
@@ -629,6 +628,9 @@
     <span class="c1">#    e, c = scipy.sparse.linalg.lobpcg(A, np.array(cguess).T,</span>
     <span class="c1">#            M=M, largest=False)</span>
     <span class="k">elif</span> <span class="n">algo</span> <span class="o">==</span> <span class="s2">&quot;primme&quot;</span><span class="p">:</span>
+        <span class="k">if</span> <span class="n">primme</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="n">logger</span><span class="o">.</span><span class="n">error</span><span class="p">(</span><span class="s2">&quot;can not import primme&quot;</span><span class="p">)</span>
+            <span class="k">raise</span> <span class="n">IMPORT_PRIMME_EXCEPTION</span>
         <span class="n">h_dim</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">sum</span><span class="p">(</span><span class="n">qnmat</span> <span class="o">==</span> <span class="n">mps</span><span class="o">.</span><span class="n">qntot</span><span class="p">)</span>
         <span class="n">precond</span> <span class="o">=</span> <span class="k">lambda</span> <span class="n">x</span><span class="p">:</span> <span class="n">scipy</span><span class="o">.</span><span class="n">sparse</span><span class="o">.</span><span class="n">diags</span><span class="p">(</span><span class="mi">1</span> <span class="o">/</span> <span class="p">(</span><span class="n">hdiag</span> <span class="o">+</span> <span class="mf">1e-4</span><span class="p">))</span> <span class="o">@</span> <span class="n">x</span>
         <span class="n">A</span> <span class="o">=</span> <span class="n">scipy</span><span class="o">.</span><span class="n">sparse</span><span class="o">.</span><span class="n">linalg</span><span class="o">.</span><span class="n">LinearOperator</span><span class="p">((</span><span class="n">h_dim</span><span class="p">,</span> <span class="n">h_dim</span><span class="p">),</span> <span class="n">matvec</span><span class="o">=</span><span class="n">hop</span><span class="p">,</span> <span class="n">matmat</span><span class="o">=</span><span class="n">hop</span><span class="p">)</span>

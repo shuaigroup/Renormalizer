@@ -830,11 +830,11 @@
                 <span class="k">elif</span> <span class="n">ofs</span> <span class="ow">is</span> <span class="n">OFS</span><span class="o">.</span><span class="n">ofs_ds</span><span class="p">:</span>
                     <span class="k">if</span> <span class="n">loss1</span> <span class="o">&lt;</span> <span class="mf">1e-10</span> <span class="ow">and</span> <span class="n">loss2</span> <span class="o">&lt;</span> <span class="mf">1e-10</span><span class="p">:</span>
                         <span class="c1"># at the end of the chain</span>
-                        <span class="n">should_retain</span> <span class="o">=</span> <span class="n">entropy1</span> <span class="o">&lt;</span> <span class="n">entropy2</span>
+                        <span class="n">should_retain</span> <span class="o">=</span> <span class="n">entropy1</span> <span class="o">&lt;=</span> <span class="n">entropy2</span>
                     <span class="k">else</span><span class="p">:</span>
                         <span class="n">should_retain</span> <span class="o">=</span> <span class="n">loss1</span> <span class="o">&lt;=</span> <span class="n">loss2</span>
                 <span class="k">elif</span> <span class="n">ofs</span> <span class="ow">is</span> <span class="n">OFS</span><span class="o">.</span><span class="n">ofs_s</span><span class="p">:</span>
-                    <span class="n">should_retain</span> <span class="o">=</span> <span class="n">entropy1</span> <span class="o">&lt;</span> <span class="n">entropy2</span>
+                    <span class="n">should_retain</span> <span class="o">=</span> <span class="n">entropy1</span> <span class="o">&lt;=</span> <span class="n">entropy2</span>
                 <span class="k">else</span><span class="p">:</span>
                     <span class="k">assert</span> <span class="n">ofs</span> <span class="ow">is</span>  <span class="n">OFS</span><span class="o">.</span><span class="n">ofs_debug</span>
                     <span class="n">should_retain</span> <span class="o">=</span> <span class="kc">True</span>
