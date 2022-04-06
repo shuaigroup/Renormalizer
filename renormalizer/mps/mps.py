@@ -571,7 +571,7 @@ class Mps(MatrixProduct):
         elif kind == "mps_norm_to_coeff":
             new_coeff = self.coeff * self.mp_norm
         else:
-            raise ValueError(f"kind={kind} is valid.")
+            raise ValueError(f"kind={kind} is not valid.")
         new_mps = self.scale(1.0 / self.mp_norm, inplace=True)
         new_mps.coeff = new_coeff
 
