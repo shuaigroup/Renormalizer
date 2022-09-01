@@ -39,28 +39,33 @@ def read_fcidump(fname, norb):
             else:
                 nuc = integral
     
-    nsorb = norb*2
-    seri = np.zeros((nsorb, nsorb, nsorb, nsorb))
-    sh = np.zeros((nsorb,nsorb))
-    for p, q, r, s in itertools.product(range(nsorb),repeat=4):
-    # a_p^\dagger a_q^\dagger a_r a_s
-        if p % 2 == s % 2 and q % 2 == r % 2:
-            seri[p,q,r,s] = eri[p//2,s//2,q//2,r//2] 
-    
-    for q, s in itertools.product(range(nsorb),repeat=2):
-        if q % 2 == s % 2:
-            sh[q,s] = h[q//2,s//2]
-    
-    aseri = np.zeros((nsorb, nsorb, nsorb, nsorb))
-    for q, s in itertools.product(range(nsorb),repeat=2):
-        for p, r in itertools.product(range(q), range(s)):
-            #aseri[p,q,r,s] = seri[p,q,r,s] - seri[q,p,r,s]
-            aseri[p,q,r,s] = seri[p,q,r,s] - seri[p,q,s,r]
+    sh, aseri = int_to_h(h, eri)
     
     logger.info(f"nuclear repulsion: {nuc}")
     
     return sh, aseri, nuc
-    
+
+
+def int_to_h(h, eri):
+    nsorb = len(h) * 2
+    seri = np.zeros((nsorb, nsorb, nsorb, nsorb))
+    sh = np.zeros((nsorb, nsorb))
+    for p, q, r, s in itertools.product(range(nsorb), repeat=4):
+        # a_p^\dagger a_q^\dagger a_r a_s
+        if p % 2 == s % 2 and q % 2 == r % 2:
+            seri[p, q, r, s] = eri[p // 2, s // 2, q // 2, r // 2]
+
+    for q, s in itertools.product(range(nsorb), repeat=2):
+        if q % 2 == s % 2:
+            sh[q, s] = h[q // 2, s // 2]
+
+    aseri = np.zeros((nsorb, nsorb, nsorb, nsorb))
+    for q, s in itertools.product(range(nsorb), repeat=2):
+        for p, r in itertools.product(range(q), range(s)):
+            # aseri[p,q,r,s] = seri[p,q,r,s] - seri[q,p,r,s]
+            aseri[p, q, r, s] = seri[p, q, r, s] - seri[p, q, s, r]
+
+    return sh, aseri
 
 def qc_model(h1e, h2e):
     """
