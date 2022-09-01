@@ -86,11 +86,11 @@ def optimize_mps(mps: Mps, mpo: Mpo, omega: float = None) -> Tuple[List, Mps]:
 
     # ensure that mps is left or right-canonical
     # TODO: start from a mix-canonical MPS
-    if mps.is_left_canon:
-        mps.ensure_right_canon()
+    if mps.is_left_canonical:
+        mps.ensure_right_canonical()
         env = "R"
     else:
-        mps.ensure_left_canon()
+        mps.ensure_left_canonical()
         env = "L"
 
     # construct the environment matrix
@@ -135,10 +135,10 @@ def optimize_mps(mps: Mps, mpo: Mpo, omega: float = None) -> Tuple[List, Mps]:
     assert res_mps is not None
     # remove the redundant basis near the edge
     if mps.optimize_config.nroots == 1:
-        res_mps = res_mps.normalize("mps_only").ensure_left_canon().canonicalise()
+        res_mps = res_mps.normalize("mps_only").ensure_left_canonical().canonicalise()
         logger.info(f"{res_mps}")
     else:
-        res_mps = [mp.normalize("mps_only").ensure_left_canon().canonicalise() for mp in res_mps]
+        res_mps = [mp.normalize("mps_only").ensure_left_canonical().canonicalise() for mp in res_mps]
         logger.info(f"{res_mps[0]}")
     return macro_iteration_result, res_mps
 

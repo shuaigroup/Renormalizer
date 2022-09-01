@@ -73,7 +73,7 @@ jobs:
             git config user.name "liwt31"
       - add_ssh_keys:
           fingerprints:
-            - "cc:a3:29:5d:14:bb:bd:1b:e4:52:e2:c2:ac:e6:41:fa"
+            - "e6:24:b4:ab:d5:82:2b:6a:b5:a9:17:71:99:6d:0f:53"
       - run:
           name: Deploy docs to gh-pages branch
           command: gh-pages --dotfiles --message "[skip ci] Updates" --dist doc/html

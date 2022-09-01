@@ -110,13 +110,18 @@ class MatrixProduct:
         # return a list so that the logging result is more pretty
         return bond_dims
 
+
+    vbond_list = vbond_dims = bond_list = bond_dims
+
     @property
     def bond_dims_mean(self) -> int:
         return int(round(np.mean(self.bond_dims)))
 
     @property
-    def pbond_list(self):
+    def pbond_dims(self):
         return self.model.pbond_list
+
+    pbond_list = pbond_dims
 
     def build_empty_qn(self):
         self.qntot = 0
@@ -171,20 +176,20 @@ class MatrixProduct:
         return True
 
     @property
-    def is_left_canon(self):
+    def is_left_canonical(self):
         """
         check the qn center in the L-canonical structure
         """
         return self.qnidx == self.site_num - 1
 
     @property
-    def is_right_canon(self):
+    def is_right_canonical(self):
         """
         check the qn center in the R-canonical structure
         """
         return self.qnidx == 0
 
-    def ensure_left_canon(self, rtol=1e-5, atol=1e-8):
+    def ensure_left_canonical(self, rtol=1e-5, atol=1e-8):
         if self.to_right or self.qnidx != self.site_num-1 or \
                 (not self.check_left_canonical(rtol, atol)):
             self.move_qnidx(0)
@@ -193,7 +198,7 @@ class MatrixProduct:
         else:
             return self
         
-    def ensure_right_canon(self, rtol=1e-5, atol=1e-8):
+    def ensure_right_canonical(self, rtol=1e-5, atol=1e-8):
         if (not self.to_right) or self.qnidx != 0 or \
                 (not self.check_right_canonical(rtol, atol)):
             self.move_qnidx(self.site_num - 1)
@@ -437,7 +442,7 @@ class MatrixProduct:
         if not self.is_mpo:
             # ensure mps is canonicalised. This is time consuming.
             # to disable this, run python as `python -O`
-            if self.is_left_canon:
+            if self.is_left_canonical:
                 assert self.check_left_canonical()
             else:
                 assert self.check_right_canonical()
@@ -513,7 +518,7 @@ class MatrixProduct:
             # the attributes of guess would be the same as self
             guess = compressed_mpo.apply(compressed_mps)
         mps = guess
-        mps.ensure_left_canon()
+        mps.ensure_left_canonical()
         logger.info(f"initial guess bond dims: {mps.bond_dims}")
 
         procedure = mps.compress_config.vprocedure
@@ -1021,9 +1026,6 @@ class MatrixProduct:
 
     def _get_sigmaqn(self, idx):
         raise NotImplementedError
-
-    def set_threshold(self, val):
-        self.compress_config.threshold = val
 
     def __eq__(self, other):
         for m1, m2 in zip(self, other):
