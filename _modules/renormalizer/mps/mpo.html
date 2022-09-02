@@ -34,6 +34,7 @@
         <script data-url_root="../../../" id="documentation_options" src="../../../_static/documentation_options.js"></script>
         <script src="../../../_static/jquery.js"></script>
         <script src="../../../_static/underscore.js"></script>
+        <script src="../../../_static/_sphinx_javascript_frameworks_compat.js"></script>
         <script src="../../../_static/doctools.js"></script>
     
     <script type="text/javascript" src="../../../_static/js/theme.js"></script>
@@ -102,7 +103,7 @@
 <li class="toctree-l1"><a class="reference internal" href="../../../cv.html">10. Frequency domain DMRG</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../../../configs.html">11. Calculation Configurations</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../../../lib.html">12. lib</a></li>
-<li class="toctree-l1"><a class="reference internal" href="../../../sbm.html">13. sbm</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../sbm.html">13. Spin-Boson Model</a></li>
 </ul>
 
             
@@ -652,13 +653,7 @@
         <span class="k">for</span> <span class="n">mt</span> <span class="ow">in</span> <span class="n">mp</span><span class="p">:</span>
             <span class="n">mpo</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">mt</span><span class="p">)</span>
         <span class="n">mpo</span><span class="o">.</span><span class="n">build_empty_qn</span><span class="p">()</span>
-        <span class="k">return</span> <span class="n">mpo</span></div>
-    
-    <span class="nd">@property</span>
-    <span class="k">def</span> <span class="nf">dmrg_norm</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">float</span><span class="p">:</span>
-        <span class="n">res</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">sqrt</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">conj</span><span class="p">()</span><span class="o">.</span><span class="n">dot</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span><span class="o">.</span><span class="n">real</span><span class="p">)</span>
-        <span class="k">return</span> <span class="nb">float</span><span class="p">(</span><span class="n">res</span><span class="o">.</span><span class="n">real</span><span class="p">)</span></div>
-    
+        <span class="k">return</span> <span class="n">mpo</span></div></div>
 </pre></div>
 
            </div>

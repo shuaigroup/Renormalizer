@@ -7,7 +7,7 @@
   
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   
-  <title>13. sbm &mdash; Renormalizer 0.1.0 documentation</title>
+  <title>13. Spin-Boson Model &mdash; Renormalizer 0.1.0 documentation</title>
   
 
   
@@ -34,7 +34,9 @@
         <script data-url_root="./" id="documentation_options" src="_static/documentation_options.js"></script>
         <script src="_static/jquery.js"></script>
         <script src="_static/underscore.js"></script>
+        <script src="_static/_sphinx_javascript_frameworks_compat.js"></script>
         <script src="_static/doctools.js"></script>
+        <script async="async" src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-mml-chtml.js"></script>
     
     <script type="text/javascript" src="_static/js/theme.js"></script>
 
@@ -103,7 +105,7 @@
 <li class="toctree-l1"><a class="reference internal" href="cv.html">10. Frequency domain DMRG</a></li>
 <li class="toctree-l1"><a class="reference internal" href="configs.html">11. Calculation Configurations</a></li>
 <li class="toctree-l1"><a class="reference internal" href="lib.html">12. lib</a></li>
-<li class="toctree-l1 current"><a class="current reference internal" href="#">13. sbm</a></li>
+<li class="toctree-l1 current"><a class="current reference internal" href="#">13. Spin-Boson Model</a></li>
 </ul>
 
             
@@ -152,13 +154,13 @@
     
       <li><a href="index.html" class="icon icon-home"></a> &raquo;</li>
         
-      <li><span class="section-number">13. </span>sbm</li>
+      <li><span class="section-number">13. </span>Spin-Boson Model</li>
     
     
       <li class="wy-breadcrumbs-aside">
         
           
-            <a href="_sources/sbm.md.txt" rel="nofollow"> View page source</a>
+            <a href="_sources/sbm.rst.txt" rel="nofollow"> View page source</a>
           
         
       </li>
@@ -171,8 +173,62 @@
           <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
            <div itemprop="articleBody">
             
-  <div class="section" id="sbm">
-<h1><span class="section-number">13. </span>sbm<a class="headerlink" href="#sbm" title="Permalink to this headline">¶</a></h1>
+  <div class="section" id="module-renormalizer.sbm.sbm">
+<span id="spin-boson-model"></span><h1><span class="section-number">13. </span>Spin-Boson Model<a class="headerlink" href="#module-renormalizer.sbm.sbm" title="Permalink to this heading">¶</a></h1>
+<dl class="py class">
+<dt class="sig sig-object py" id="renormalizer.sbm.sbm.SpinBosonDynamics">
+<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">renormalizer.sbm.sbm.</span></span><span class="sig-name descname"><span class="pre">SpinBosonDynamics</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">model</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference internal" href="model.html#renormalizer.model.Model" title="renormalizer.model.model.Model"><span class="pre">Model</span></a></span></em>, <em class="sig-param"><span class="n"><span class="pre">auto_expand</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference external" href="https://docs.python.org/3/library/functions.html#bool" title="(in Python v3.10)"><span class="pre">bool</span></a></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">True</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">compress_config</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">evolve_config</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">dump_dir</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">dump_mps</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">job_name</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/renormalizer/sbm/sbm.html#SpinBosonDynamics"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#renormalizer.sbm.sbm.SpinBosonDynamics" title="Permalink to this definition">¶</a></dt>
+<dd><p>The Spin-Boson Model</p>
+<p>The initial state is a Hartree product state with all vibrations at <span class="math notranslate nohighlight">\(|
+0 \rangle\)</span> and spin at spin up state.
+The class can be used at zero temperature or finite temperature with
+thermofield dynamics method.</p>
+<dl class="py method">
+<dt class="sig sig-object py" id="renormalizer.sbm.sbm.SpinBosonDynamics.evolve_single_step">
+<span class="sig-name descname"><span class="pre">evolve_single_step</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">evolve_dt</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/renormalizer/sbm/sbm.html#SpinBosonDynamics.evolve_single_step"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#renormalizer.sbm.sbm.SpinBosonDynamics.evolve_single_step" title="Permalink to this definition">¶</a></dt>
+<dd><p>Evolve the mps for a single step with step size <code class="docutils literal notranslate"><span class="pre">evolve_dt</span></code>.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Returns</dt>
+<dd class="field-odd"><p>new mps after the evolution</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="renormalizer.sbm.sbm.SpinBosonDynamics.get_dump_dict">
+<span class="sig-name descname"><span class="pre">get_dump_dict</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="_modules/renormalizer/sbm/sbm.html#SpinBosonDynamics.get_dump_dict"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#renormalizer.sbm.sbm.SpinBosonDynamics.get_dump_dict" title="Permalink to this definition">¶</a></dt>
+<dd><p>Obtain calculated properties to dump in <code class="docutils literal notranslate"><span class="pre">dict</span></code> type.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Returns</dt>
+<dd class="field-odd"><p>return a (ordered) dict to dump as npz</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="renormalizer.sbm.sbm.SpinBosonDynamics.init_mps">
+<span class="sig-name descname"><span class="pre">init_mps</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="_modules/renormalizer/sbm/sbm.html#SpinBosonDynamics.init_mps"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#renormalizer.sbm.sbm.SpinBosonDynamics.init_mps" title="Permalink to this definition">¶</a></dt>
+<dd><dl class="field-list simple">
+<dt class="field-odd">Returns</dt>
+<dd class="field-odd"><p>initial mps of the system</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="renormalizer.sbm.sbm.SpinBosonDynamics.process_mps">
+<span class="sig-name descname"><span class="pre">process_mps</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">mps</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/renormalizer/sbm/sbm.html#SpinBosonDynamics.process_mps"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#renormalizer.sbm.sbm.SpinBosonDynamics.process_mps" title="Permalink to this definition">¶</a></dt>
+<dd><p>Process the newly evolved the mps. Primarily for the calculation of properties.
+Note that currently <code class="docutils literal notranslate"><span class="pre">self.latest_mps</span></code> has not been updated.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><p><strong>mps</strong> – The evolved new mps of the time step.</p>
+</dd>
+</dl>
+</dd></dl>
+
+</dd></dl>
+
 </div>
 
 

@@ -34,6 +34,7 @@
         <script data-url_root="./" id="documentation_options" src="_static/documentation_options.js"></script>
         <script src="_static/jquery.js"></script>
         <script src="_static/underscore.js"></script>
+        <script src="_static/_sphinx_javascript_frameworks_compat.js"></script>
         <script src="_static/doctools.js"></script>
     
     <script type="text/javascript" src="_static/js/theme.js"></script>
@@ -135,7 +136,7 @@
 <li class="toctree-l1"><a class="reference internal" href="cv.html">10. Frequency domain DMRG</a></li>
 <li class="toctree-l1"><a class="reference internal" href="configs.html">11. Calculation Configurations</a></li>
 <li class="toctree-l1"><a class="reference internal" href="lib.html">12. lib</a></li>
-<li class="toctree-l1"><a class="reference internal" href="sbm.html">13. sbm</a></li>
+<li class="toctree-l1"><a class="reference internal" href="sbm.html">13. Spin-Boson Model</a></li>
 </ul>
 
             
@@ -204,9 +205,9 @@
            <div itemprop="articleBody">
             
   <div class="section" id="installation-guide">
-<h1><span class="section-number">2. </span>Installation guide<a class="headerlink" href="#installation-guide" title="Permalink to this headline">¶</a></h1>
+<h1><span class="section-number">2. </span>Installation guide<a class="headerlink" href="#installation-guide" title="Permalink to this heading">¶</a></h1>
 <div class="section" id="quick-installation">
-<h2><span class="section-number">2.1. </span>Quick installation<a class="headerlink" href="#quick-installation" title="Permalink to this headline">¶</a></h2>
+<h2><span class="section-number">2.1. </span>Quick installation<a class="headerlink" href="#quick-installation" title="Permalink to this heading">¶</a></h2>
 <p>If you are familiar with Python and not concerned with the development of the package, install <code class="docutils literal notranslate"><span class="pre">renormalizer</span></code> via <code class="docutils literal notranslate"><span class="pre">pip</span></code></p>
 <div class="highlight-bash notranslate"><div class="highlight"><pre><span></span>pip install renormalizer
 </pre></div>
@@ -222,24 +223,24 @@ If <code class="docutils literal notranslate"><span class="pre">CuPy</span></cod
 <p>If you are not familiar with python or wish to setup a local development environment, continue reading.</p>
 </div>
 <div class="section" id="install-from-scratch">
-<h2><span class="section-number">2.2. </span>Install from scratch<a class="headerlink" href="#install-from-scratch" title="Permalink to this headline">¶</a></h2>
+<h2><span class="section-number">2.2. </span>Install from scratch<a class="headerlink" href="#install-from-scratch" title="Permalink to this heading">¶</a></h2>
 <p>This is a step by step guide on how to prepare an environment for Renormalizer from scratch.
 Although “install” is in the name of this section, we actually won’t “install” Renormalizer as a standalone package that can be imported anywhere. What we achieve in this section is to put source files of Renormalizer into your computer and prepare a Python environment that can run it.</p>
 <p>Renormalizer runs on both CPU and GPU. It is recommended to install CPU-only version first, then GPU support (if possible).</p>
 <p>The CPU-only version runs on Windows/MacOSX/Linux, whereas the GPU support is only tested on Linux.</p>
 <p>As operations on MacOSX are similar to those on Linux, from now on we’ll only talk about Windows and Linux.</p>
 <div class="section" id="python-environment">
-<h3><span class="section-number">2.2.1. </span>Python environment<a class="headerlink" href="#python-environment" title="Permalink to this headline">¶</a></h3>
+<h3><span class="section-number">2.2.1. </span>Python environment<a class="headerlink" href="#python-environment" title="Permalink to this heading">¶</a></h3>
 <p>There are various ways to prepare a Python environment for Renormalizer. Here we recommend using Anaconda (both 2 or 3 are ok, we recommend Anaconda 3) as a package and environment manager.</p>
 <div class="section" id="why-you-need-anaconda-when-you-already-have-python">
-<h4><span class="section-number">2.2.1.1. </span>Why you need Anaconda when you already have Python<a class="headerlink" href="#why-you-need-anaconda-when-you-already-have-python" title="Permalink to this headline">¶</a></h4>
+<h4><span class="section-number">2.2.1.1. </span>Why you need Anaconda when you already have Python<a class="headerlink" href="#why-you-need-anaconda-when-you-already-have-python" title="Permalink to this heading">¶</a></h4>
 <p>Anaconda manages <em>environments</em>. If you use Python frequently enough, one day you’ll face problems similar to this: project A runs on Python 3.5 but not Python 3.6, project B runs only on Python 3.6, how could I develop project A and project B on the same machine? Anaconda can help you solve these problems with ease.</p>
 <p>Another common issue about Python is that its environment screws up quite frequently. You may accidentally install multiple versions of the same package or delete some critical packages and then you’ll get a strange error importing the package you want. Find out what went wrong can take hours and you just wish you can reinstall Python. Anaconda can help you reinstall Python clean and easy with 2-3 commands.</p>
 <p>Anaconda has lots of other cool features, you’ll learn more while you’re using it.</p>
 <p>If you find the installation of Anaconda annoying and you already have Python 3.7, in theory, you can skip the installation and use your Python directly. But if something went wrong and your Python couldn’t work anymore, you’ll probably feel that using Anaconda is a good idea.</p>
 </div>
 <div class="section" id="install-anaconda">
-<h4><span class="section-number">2.2.1.2. </span>Install Anaconda<a class="headerlink" href="#install-anaconda" title="Permalink to this headline">¶</a></h4>
+<h4><span class="section-number">2.2.1.2. </span>Install Anaconda<a class="headerlink" href="#install-anaconda" title="Permalink to this heading">¶</a></h4>
 <p>You can skip this step if you already have access to Anaconda (which means you can use <code class="docutils literal notranslate"><span class="pre">conda</span></code> command in your command line). For Linux users, don’t worry if you don’t have the root privilege – installing Anaconda doesn’t require root.</p>
 <blockquote>
 <div><p>A reminder to <em>dirac</em> (The cluster in Shuai group) users: both Anaconda2 and Anaconda3 have been installed on the cluster. Try <code class="docutils literal notranslate"><span class="pre">module</span> <span class="pre">load</span> <span class="pre">anaconda/3</span></code>.</p>
@@ -251,7 +252,7 @@ Although “install” is in the name of this section, we actually won’t “in
 <p>After the installation, test the installation using <code class="docutils literal notranslate"><span class="pre">conda</span></code> command. Anaconda has a graphic user interface for MacOSX and Windows, however we recommend using a command-line interface. If your command line can’t find <code class="docutils literal notranslate"><span class="pre">conda</span></code>, please try to locate where <code class="docutils literal notranslate"><span class="pre">conda</span></code> is installed and add <code class="docutils literal notranslate"><span class="pre">conda</span></code> (<code class="docutils literal notranslate"><span class="pre">conda.exe</span></code> for Windows) to your system environment <code class="docutils literal notranslate"><span class="pre">PATH</span></code>, or you can use <code class="docutils literal notranslate"><span class="pre">conda</span> <span class="pre">prompt</span></code> if it is installed.</p>
 </div>
 <div class="section" id="create-an-environment">
-<h4><span class="section-number">2.2.1.3. </span>Create an environment<a class="headerlink" href="#create-an-environment" title="Permalink to this headline">¶</a></h4>
+<h4><span class="section-number">2.2.1.3. </span>Create an environment<a class="headerlink" href="#create-an-environment" title="Permalink to this heading">¶</a></h4>
 <p>If Anaconda has been installed you should now be able to use Python in the command line. This Python is shipped with Anaconda and we recommend <strong>not</strong> using it for any particular Python project. The best practice is to create an environment for every project so that they don’t mess up.</p>
 <p>Users inside Tsinghua may use <em>tuna</em> to speed up installation. See <a class="reference external" href="https://mirrors.tuna.tsinghua.edu.cn/help/anaconda/">this page</a> for the official document. In short, use the following command:</p>
 <div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="n">conda</span> <span class="n">config</span> <span class="o">--</span><span class="n">add</span> <span class="n">channels</span> <span class="n">https</span><span class="p">:</span><span class="o">//</span><span class="n">mirrors</span><span class="o">.</span><span class="n">tuna</span><span class="o">.</span><span class="n">tsinghua</span><span class="o">.</span><span class="n">edu</span><span class="o">.</span><span class="n">cn</span><span class="o">/</span><span class="n">anaconda</span><span class="o">/</span><span class="n">pkgs</span><span class="o">/</span><span class="n">free</span><span class="o">/</span>    
@@ -284,9 +285,9 @@ Although “install” is in the name of this section, we actually won’t “in
 </div>
 </div>
 <div class="section" id="download-renormalizer-and-run-tests">
-<h3><span class="section-number">2.2.2. </span>Download Renormalizer and run tests<a class="headerlink" href="#download-renormalizer-and-run-tests" title="Permalink to this headline">¶</a></h3>
+<h3><span class="section-number">2.2.2. </span>Download Renormalizer and run tests<a class="headerlink" href="#download-renormalizer-and-run-tests" title="Permalink to this heading">¶</a></h3>
 <div class="section" id="download-renormalizer">
-<h4><span class="section-number">2.2.2.1. </span>Download Renormalizer<a class="headerlink" href="#download-renormalizer" title="Permalink to this headline">¶</a></h4>
+<h4><span class="section-number">2.2.2.1. </span>Download Renormalizer<a class="headerlink" href="#download-renormalizer" title="Permalink to this heading">¶</a></h4>
 <ul>
 <li><p>If you wish to develop Renormalizer, <code class="docutils literal notranslate"><span class="pre">Git</span></code> is a necessary tool. Learning <code class="docutils literal notranslate"><span class="pre">Git</span></code> is beyond the scope of this guide. We assume you already know some basic knowledge of <code class="docutils literal notranslate"><span class="pre">Git</span></code> and how to download Renormalizer using <code class="docutils literal notranslate"><span class="pre">Git</span></code>:</p>
 <div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="n">git</span> <span class="n">clone</span> <span class="n">https</span><span class="p">:</span><span class="o">//</span><span class="n">github</span><span class="o">.</span><span class="n">com</span><span class="o">/</span><span class="n">jjren</span><span class="o">/</span><span class="n">Renormalizer</span><span class="o">.</span><span class="n">git</span>
@@ -297,7 +298,7 @@ Although “install” is in the name of this section, we actually won’t “in
 </ul>
 </div>
 <div class="section" id="install-dependencies">
-<h4><span class="section-number">2.2.2.2. </span>Install dependencies<a class="headerlink" href="#install-dependencies" title="Permalink to this headline">¶</a></h4>
+<h4><span class="section-number">2.2.2.2. </span>Install dependencies<a class="headerlink" href="#install-dependencies" title="Permalink to this heading">¶</a></h4>
 <p>Renormalizer relies on lots of other Python packages to run. We recommend using <code class="docutils literal notranslate"><span class="pre">pip</span></code> to install these packages. For users in Tsinghua, <em>tuna</em> makes life easier by providing the fastest download speed. According to the <a class="reference external" href="https://mirrors.tuna.tsinghua.edu.cn/help/pypi/">official document</a>, run the following command:</p>
 <div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="n">pip</span> <span class="n">config</span> <span class="nb">set</span> <span class="k">global</span><span class="o">.</span><span class="n">index</span><span class="o">-</span><span class="n">url</span> <span class="n">https</span><span class="p">:</span><span class="o">//</span><span class="n">pypi</span><span class="o">.</span><span class="n">tuna</span><span class="o">.</span><span class="n">tsinghua</span><span class="o">.</span><span class="n">edu</span><span class="o">.</span><span class="n">cn</span><span class="o">/</span><span class="n">simple</span>
 </pre></div>
@@ -323,7 +324,7 @@ Although “install” is in the name of this section, we actually won’t “in
 </ol>
 </div>
 <div class="section" id="run-tests">
-<h4><span class="section-number">2.2.2.3. </span>Run tests<a class="headerlink" href="#run-tests" title="Permalink to this headline">¶</a></h4>
+<h4><span class="section-number">2.2.2.3. </span>Run tests<a class="headerlink" href="#run-tests" title="Permalink to this heading">¶</a></h4>
 <p>To run tests, use the <code class="docutils literal notranslate"><span class="pre">pytest</span></code> command installed in the previous step in the Renormalizer source code directory:</p>
 <div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="n">pytest</span>
 </pre></div>
@@ -346,9 +347,9 @@ your <code class="docutils literal notranslate"><span class="pre">~/.bashrc</spa
 </div>
 </div>
 <div class="section" id="gpu-support">
-<h2><span class="section-number">2.3. </span>GPU-support<a class="headerlink" href="#gpu-support" title="Permalink to this headline">¶</a></h2>
+<h2><span class="section-number">2.3. </span>GPU-support<a class="headerlink" href="#gpu-support" title="Permalink to this heading">¶</a></h2>
 <div class="section" id="overview">
-<h3><span class="section-number">2.3.1. </span>Overview<a class="headerlink" href="#overview" title="Permalink to this headline">¶</a></h3>
+<h3><span class="section-number">2.3.1. </span>Overview<a class="headerlink" href="#overview" title="Permalink to this heading">¶</a></h3>
 <p>If you already have a CPU-only version working, the only step for GPU support is to install a new package called <a class="reference external" href="https://github.com/cupy/cupy"><code class="docutils literal notranslate"><span class="pre">CuPy</span></code></a>, which is a <code class="docutils literal notranslate"><span class="pre">NumPy</span></code> analog for GPU, and then Renormalizer can run with GPU backend.</p>
 <p>If the CPU-only version has not been installed, please follow <a class="reference external" href="#Install-from-scrach">the steps</a> first.</p>
 <p>A few things to notice before we start:</p>
@@ -358,13 +359,13 @@ your <code class="docutils literal notranslate"><span class="pre">~/.bashrc</spa
 </ul>
 </div>
 <div class="section" id="install-cuda">
-<h3><span class="section-number">2.3.2. </span>Install CUDA<a class="headerlink" href="#install-cuda" title="Permalink to this headline">¶</a></h3>
+<h3><span class="section-number">2.3.2. </span>Install CUDA<a class="headerlink" href="#install-cuda" title="Permalink to this heading">¶</a></h3>
 <p>Install CUDA following the <a class="reference external" href="https://docs.nvidia.com/cuda/cuda-quick-start-guide/index.html">official document</a>. All CUDA version later than 8.0 (included) should be OK. Use Google well if any troubles are met. <strong>Be sure to verify the installation</strong>.</p>
 <blockquote>
 <div><p>The computer cluster <em>dirac</em> of Shuai group has two nodes called <code class="docutils literal notranslate"><span class="pre">c91</span></code> and <code class="docutils literal notranslate"><span class="pre">c92</span></code> each equipped with 4 <a class="reference external" href="https://www.techpowerup.com/gpu-specs/tesla-v100-pcie-32-gb.c3184">V100</a> GPUs. CUDA has already been installed on the node and you can use the environment by <code class="docutils literal notranslate"><span class="pre">module</span></code> command.</p>
 </div></blockquote>
 <div class="section" id="optional-install-nvtop">
-<h4><span class="section-number">2.3.2.1. </span>(Optional) Install nvtop<a class="headerlink" href="#optional-install-nvtop" title="Permalink to this headline">¶</a></h4>
+<h4><span class="section-number">2.3.2.1. </span>(Optional) Install nvtop<a class="headerlink" href="#optional-install-nvtop" title="Permalink to this heading">¶</a></h4>
 <p><a class="reference external" href="https://github.com/Syllo/nvtop"><code class="docutils literal notranslate"><span class="pre">nvtop</span></code></a> is a handy tool to monitor GPU usage. The installation procedure can be quite formidable if you are not familiar with how to use Git and install software from source files. Feel free to skip this step.</p>
 <blockquote>
 <div><p><code class="docutils literal notranslate"><span class="pre">nvtop</span></code> has been installed on <code class="docutils literal notranslate"><span class="pre">c91</span></code> and <code class="docutils literal notranslate"><span class="pre">c92</span></code> on <em>dirac</em>.</p>
@@ -372,7 +373,7 @@ your <code class="docutils literal notranslate"><span class="pre">~/.bashrc</spa
 </div>
 </div>
 <div class="section" id="install-cupy">
-<h3><span class="section-number">2.3.3. </span>Install cupy<a class="headerlink" href="#install-cupy" title="Permalink to this headline">¶</a></h3>
+<h3><span class="section-number">2.3.3. </span>Install cupy<a class="headerlink" href="#install-cupy" title="Permalink to this heading">¶</a></h3>
 <p>After CUDA is installed and verified, you can install <code class="docutils literal notranslate"><span class="pre">CuPy</span></code> using the following commands. Remember when you install something you have to make sure you’re in the correct Python environment!</p>
 <div class="highlight-default notranslate"><div class="highlight"><pre><span></span>(For CUDA 8.0)
 $ pip install cupy-cuda80
@@ -394,7 +395,7 @@ $ pip install cupy-cuda100
 <div><p>Sometimes you have to install a package without network connection (such as in <code class="docutils literal notranslate"><span class="pre">c91</span></code>). In such cases, you can download the required wheel file under network connection, copy the files to the node and then install with <code class="docutils literal notranslate"><span class="pre">pip</span></code>.</p>
 </div></blockquote>
 <div class="section" id="verify-cupy">
-<h4><span class="section-number">2.3.3.1. </span>Verify cupy<a class="headerlink" href="#verify-cupy" title="Permalink to this headline">¶</a></h4>
+<h4><span class="section-number">2.3.3.1. </span>Verify cupy<a class="headerlink" href="#verify-cupy" title="Permalink to this heading">¶</a></h4>
 <p>Sometimes <code class="docutils literal notranslate"><span class="pre">CuPy</span></code> can be successfully installed but actually not working. Here is a sample script to test if it’s working or not:</p>
 <div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="kn">import</span> <span class="nn">cupy</span> <span class="k">as</span> <span class="nn">cp</span>
 <span class="n">a</span> <span class="o">=</span> <span class="n">cp</span><span class="o">.</span><span class="n">random</span><span class="o">.</span><span class="n">rand</span><span class="p">(</span><span class="mi">100</span><span class="p">,</span> <span class="mi">100</span><span class="p">)</span>
@@ -409,7 +410,7 @@ $ pip install cupy-cuda100
 </div>
 </div>
 <div class="section" id="id1">
-<h3><span class="section-number">2.3.4. </span>Run tests<a class="headerlink" href="#id1" title="Permalink to this headline">¶</a></h3>
+<h3><span class="section-number">2.3.4. </span>Run tests<a class="headerlink" href="#id1" title="Permalink to this heading">¶</a></h3>
 <p>Just as what we do in the CPU-only version, use</p>
 <div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="n">pytest</span>
 </pre></div>

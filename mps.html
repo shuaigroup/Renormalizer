@@ -34,6 +34,7 @@
         <script data-url_root="./" id="documentation_options" src="_static/documentation_options.js"></script>
         <script src="_static/jquery.js"></script>
         <script src="_static/underscore.js"></script>
+        <script src="_static/_sphinx_javascript_frameworks_compat.js"></script>
         <script src="_static/doctools.js"></script>
         <script async="async" src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-mml-chtml.js"></script>
     
@@ -112,7 +113,7 @@
 <li class="toctree-l1"><a class="reference internal" href="cv.html">10. Frequency domain DMRG</a></li>
 <li class="toctree-l1"><a class="reference internal" href="configs.html">11. Calculation Configurations</a></li>
 <li class="toctree-l1"><a class="reference internal" href="lib.html">12. lib</a></li>
-<li class="toctree-l1"><a class="reference internal" href="sbm.html">13. sbm</a></li>
+<li class="toctree-l1"><a class="reference internal" href="sbm.html">13. Spin-Boson Model</a></li>
 </ul>
 
             
@@ -181,9 +182,9 @@
            <div itemprop="articleBody">
             
   <div class="section" id="low-level-data-structure-and-algorithms">
-<h1><span class="section-number">6. </span>Low Level Data Structure and Algorithms<a class="headerlink" href="#low-level-data-structure-and-algorithms" title="Permalink to this headline">¶</a></h1>
+<h1><span class="section-number">6. </span>Low Level Data Structure and Algorithms<a class="headerlink" href="#low-level-data-structure-and-algorithms" title="Permalink to this heading">¶</a></h1>
 <div class="section" id="matrix-product-mp">
-<h2><span class="section-number">6.1. </span>Matrix Product (MP)<a class="headerlink" href="#matrix-product-mp" title="Permalink to this headline">¶</a></h2>
+<h2><span class="section-number">6.1. </span>Matrix Product (MP)<a class="headerlink" href="#matrix-product-mp" title="Permalink to this heading">¶</a></h2>
 <dl class="py class">
 <dt class="sig sig-object py" id="renormalizer.mps.mp.MatrixProduct">
 <em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">renormalizer.mps.mp.</span></span><span class="sig-name descname"><span class="pre">MatrixProduct</span></span><a class="reference internal" href="_modules/renormalizer/mps/mp.html#MatrixProduct"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#renormalizer.mps.mp.MatrixProduct" title="Permalink to this definition">¶</a></dt>
@@ -265,13 +266,13 @@ used for better initial guess in SA-DMRG algorithm. Otherwise,
 
 <dl class="py method">
 <dt class="sig sig-object py" id="renormalizer.mps.mp.MatrixProduct._update_ms">
-<span class="sig-name descname"><span class="pre">_update_ms</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">idx</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference external" href="https://docs.python.org/3/library/functions.html#int" title="(in Python v3.10)"><span class="pre">int</span></a></span></em>, <em class="sig-param"><span class="n"><span class="pre">u</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">numpy.ndarray</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">vt</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">numpy.ndarray</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">sigma</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">qnlset</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">qnrset</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">m_trunc</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/renormalizer/mps/mp.html#MatrixProduct._update_ms"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#renormalizer.mps.mp.MatrixProduct._update_ms" title="Permalink to this definition">¶</a></dt>
+<span class="sig-name descname"><span class="pre">_update_ms</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">idx</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference external" href="https://docs.python.org/3/library/functions.html#int" title="(in Python v3.10)"><span class="pre">int</span></a></span></em>, <em class="sig-param"><span class="n"><span class="pre">u</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">ndarray</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">vt</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">ndarray</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">sigma</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">qnlset</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">qnrset</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">m_trunc</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/renormalizer/mps/mp.html#MatrixProduct._update_ms"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#renormalizer.mps.mp.MatrixProduct._update_ms" title="Permalink to this definition">¶</a></dt>
 <dd><p>update mps directly after svd</p>
 </dd></dl>
 
 <dl class="py method">
 <dt class="sig sig-object py" id="renormalizer.mps.mp.MatrixProduct.add">
-<span class="sig-name descname"><span class="pre">add</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">other</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference internal" href="#renormalizer.mps.mp.MatrixProduct" title="renormalizer.mps.mp.MatrixProduct"><span class="pre">renormalizer.mps.mp.MatrixProduct</span></a></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/renormalizer/mps/mp.html#MatrixProduct.add"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#renormalizer.mps.mp.MatrixProduct.add" title="Permalink to this definition">¶</a></dt>
+<span class="sig-name descname"><span class="pre">add</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">other</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference internal" href="#renormalizer.mps.mp.MatrixProduct" title="renormalizer.mps.mp.MatrixProduct"><span class="pre">MatrixProduct</span></a></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/renormalizer/mps/mp.html#MatrixProduct.add"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#renormalizer.mps.mp.MatrixProduct.add" title="Permalink to this definition">¶</a></dt>
 <dd></dd></dl>
 
 <dl class="py method">
@@ -286,12 +287,17 @@ used for better initial guess in SA-DMRG algorithm. Otherwise,
 
 <dl class="py property">
 <dt class="sig sig-object py" id="renormalizer.mps.mp.MatrixProduct.bond_dims">
-<em class="property"><span class="pre">property</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">bond_dims</span></span><em class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="pre">List</span></em><a class="headerlink" href="#renormalizer.mps.mp.MatrixProduct.bond_dims" title="Permalink to this definition">¶</a></dt>
+<em class="property"><span class="pre">property</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">bond_dims</span></span><em class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><a class="reference external" href="https://docs.python.org/3/library/typing.html#typing.List" title="(in Python v3.10)"><span class="pre">List</span></a></em><a class="headerlink" href="#renormalizer.mps.mp.MatrixProduct.bond_dims" title="Permalink to this definition">¶</a></dt>
 <dd></dd></dl>
 
 <dl class="py property">
 <dt class="sig sig-object py" id="renormalizer.mps.mp.MatrixProduct.bond_dims_mean">
 <em class="property"><span class="pre">property</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">bond_dims_mean</span></span><em class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><a class="reference external" href="https://docs.python.org/3/library/functions.html#int" title="(in Python v3.10)"><span class="pre">int</span></a></em><a class="headerlink" href="#renormalizer.mps.mp.MatrixProduct.bond_dims_mean" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="py property">
+<dt class="sig sig-object py" id="renormalizer.mps.mp.MatrixProduct.bond_list">
+<em class="property"><span class="pre">property</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">bond_list</span></span><em class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><a class="reference external" href="https://docs.python.org/3/library/typing.html#typing.List" title="(in Python v3.10)"><span class="pre">List</span></a></em><a class="headerlink" href="#renormalizer.mps.mp.MatrixProduct.bond_list" title="Permalink to this definition">¶</a></dt>
 <dd></dd></dl>
 
 <dl class="py method">
@@ -366,7 +372,7 @@ output MPS is right canonicalised i.e. CRRR</p>
 
 <dl class="py method">
 <dt class="sig sig-object py" id="renormalizer.mps.mp.MatrixProduct.dot">
-<span class="sig-name descname"><span class="pre">dot</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">other</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference internal" href="#renormalizer.mps.mp.MatrixProduct" title="renormalizer.mps.mp.MatrixProduct"><span class="pre">renormalizer.mps.mp.MatrixProduct</span></a></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><a class="reference external" href="https://docs.python.org/3/library/functions.html#complex" title="(in Python v3.10)"><span class="pre">complex</span></a></span></span><a class="reference internal" href="_modules/renormalizer/mps/mp.html#MatrixProduct.dot"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#renormalizer.mps.mp.MatrixProduct.dot" title="Permalink to this definition">¶</a></dt>
+<span class="sig-name descname"><span class="pre">dot</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">other</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference internal" href="#renormalizer.mps.mp.MatrixProduct" title="renormalizer.mps.mp.MatrixProduct"><span class="pre">MatrixProduct</span></a></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><a class="reference external" href="https://docs.python.org/3/library/functions.html#complex" title="(in Python v3.10)"><span class="pre">complex</span></a></span></span><a class="reference internal" href="_modules/renormalizer/mps/mp.html#MatrixProduct.dot"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#renormalizer.mps.mp.MatrixProduct.dot" title="Permalink to this definition">¶</a></dt>
 <dd><p>dot product of two mps / mpo</p>
 </dd></dl>
 
@@ -376,13 +382,13 @@ output MPS is right canonicalised i.e. CRRR</p>
 <dd></dd></dl>
 
 <dl class="py method">
-<dt class="sig sig-object py" id="renormalizer.mps.mp.MatrixProduct.ensure_left_canon">
-<span class="sig-name descname"><span class="pre">ensure_left_canon</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">rtol</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">1e-05</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">atol</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">1e-08</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/renormalizer/mps/mp.html#MatrixProduct.ensure_left_canon"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#renormalizer.mps.mp.MatrixProduct.ensure_left_canon" title="Permalink to this definition">¶</a></dt>
+<dt class="sig sig-object py" id="renormalizer.mps.mp.MatrixProduct.ensure_left_canonical">
+<span class="sig-name descname"><span class="pre">ensure_left_canonical</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">rtol</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">1e-05</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">atol</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">1e-08</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/renormalizer/mps/mp.html#MatrixProduct.ensure_left_canonical"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#renormalizer.mps.mp.MatrixProduct.ensure_left_canonical" title="Permalink to this definition">¶</a></dt>
 <dd></dd></dl>
 
 <dl class="py method">
-<dt class="sig sig-object py" id="renormalizer.mps.mp.MatrixProduct.ensure_right_canon">
-<span class="sig-name descname"><span class="pre">ensure_right_canon</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">rtol</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">1e-05</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">atol</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">1e-08</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/renormalizer/mps/mp.html#MatrixProduct.ensure_right_canon"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#renormalizer.mps.mp.MatrixProduct.ensure_right_canon" title="Permalink to this definition">¶</a></dt>
+<dt class="sig sig-object py" id="renormalizer.mps.mp.MatrixProduct.ensure_right_canonical">
+<span class="sig-name descname"><span class="pre">ensure_right_canonical</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">rtol</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">1e-05</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">atol</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">1e-08</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/renormalizer/mps/mp.html#MatrixProduct.ensure_right_canonical"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#renormalizer.mps.mp.MatrixProduct.ensure_right_canonical" title="Permalink to this definition">¶</a></dt>
 <dd></dd></dl>
 
 <dl class="py property">
@@ -391,8 +397,8 @@ output MPS is right canonicalised i.e. CRRR</p>
 <dd></dd></dl>
 
 <dl class="py property">
-<dt class="sig sig-object py" id="renormalizer.mps.mp.MatrixProduct.is_left_canon">
-<em class="property"><span class="pre">property</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">is_left_canon</span></span><a class="headerlink" href="#renormalizer.mps.mp.MatrixProduct.is_left_canon" title="Permalink to this definition">¶</a></dt>
+<dt class="sig sig-object py" id="renormalizer.mps.mp.MatrixProduct.is_left_canonical">
+<em class="property"><span class="pre">property</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">is_left_canonical</span></span><a class="headerlink" href="#renormalizer.mps.mp.MatrixProduct.is_left_canonical" title="Permalink to this definition">¶</a></dt>
 <dd><p>check the qn center in the L-canonical structure</p>
 </dd></dl>
 
@@ -412,8 +418,8 @@ output MPS is right canonicalised i.e. CRRR</p>
 <dd></dd></dl>
 
 <dl class="py property">
-<dt class="sig sig-object py" id="renormalizer.mps.mp.MatrixProduct.is_right_canon">
-<em class="property"><span class="pre">property</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">is_right_canon</span></span><a class="headerlink" href="#renormalizer.mps.mp.MatrixProduct.is_right_canon" title="Permalink to this definition">¶</a></dt>
+<dt class="sig sig-object py" id="renormalizer.mps.mp.MatrixProduct.is_right_canonical">
+<em class="property"><span class="pre">property</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">is_right_canonical</span></span><a class="headerlink" href="#renormalizer.mps.mp.MatrixProduct.is_right_canonical" title="Permalink to this definition">¶</a></dt>
 <dd><p>check the qn center in the R-canonical structure</p>
 </dd></dl>
 
@@ -424,12 +430,12 @@ output MPS is right canonicalised i.e. CRRR</p>
 
 <dl class="py method">
 <dt class="sig sig-object py" id="renormalizer.mps.mp.MatrixProduct.load">
-<em class="property"><span class="pre">classmethod</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">load</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">model</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference internal" href="model.html#renormalizer.model.Model" title="renormalizer.model.model.Model"><span class="pre">renormalizer.model.model.Model</span></a></span></em>, <em class="sig-param"><span class="n"><span class="pre">fname</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.10)"><span class="pre">str</span></a></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/renormalizer/mps/mp.html#MatrixProduct.load"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#renormalizer.mps.mp.MatrixProduct.load" title="Permalink to this definition">¶</a></dt>
+<em class="property"><span class="pre">classmethod</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">load</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">model</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference internal" href="model.html#renormalizer.model.Model" title="renormalizer.model.model.Model"><span class="pre">Model</span></a></span></em>, <em class="sig-param"><span class="n"><span class="pre">fname</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.10)"><span class="pre">str</span></a></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/renormalizer/mps/mp.html#MatrixProduct.load"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#renormalizer.mps.mp.MatrixProduct.load" title="Permalink to this definition">¶</a></dt>
 <dd></dd></dl>
 
 <dl class="py method">
 <dt class="sig sig-object py" id="renormalizer.mps.mp.MatrixProduct.metacopy">
-<span class="sig-name descname"><span class="pre">metacopy</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><a class="reference internal" href="#renormalizer.mps.mp.MatrixProduct" title="renormalizer.mps.mp.MatrixProduct"><span class="pre">renormalizer.mps.mp.MatrixProduct</span></a></span></span><a class="reference internal" href="_modules/renormalizer/mps/mp.html#MatrixProduct.metacopy"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#renormalizer.mps.mp.MatrixProduct.metacopy" title="Permalink to this definition">¶</a></dt>
+<span class="sig-name descname"><span class="pre">metacopy</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><a class="reference internal" href="#renormalizer.mps.mp.MatrixProduct" title="renormalizer.mps.mp.MatrixProduct"><span class="pre">MatrixProduct</span></a></span></span><a class="reference internal" href="_modules/renormalizer/mps/mp.html#MatrixProduct.metacopy"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#renormalizer.mps.mp.MatrixProduct.metacopy" title="Permalink to this definition">¶</a></dt>
 <dd></dd></dl>
 
 <dl class="py method">
@@ -441,6 +447,24 @@ and R system is tot.</p>
 </dd></dl>
 
 <dl class="py property">
+<dt class="sig sig-object py" id="renormalizer.mps.mp.MatrixProduct.mp_norm">
+<em class="property"><span class="pre">property</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">mp_norm</span></span><em class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><a class="reference external" href="https://docs.python.org/3/library/functions.html#float" title="(in Python v3.10)"><span class="pre">float</span></a></em><a class="headerlink" href="#renormalizer.mps.mp.MatrixProduct.mp_norm" title="Permalink to this definition">¶</a></dt>
+<dd><dl class="simple">
+<dt>if self.is_left_canon:</dt><dd><p>assert self.check_left_canonical()
+return np.linalg.norm(np.ravel(self[-1]))</p>
+</dd>
+<dt>else:</dt><dd><p>assert self.check_right_canonical()
+return np.linalg.norm(np.ravel(self[0]))</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py property">
+<dt class="sig sig-object py" id="renormalizer.mps.mp.MatrixProduct.pbond_dims">
+<em class="property"><span class="pre">property</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">pbond_dims</span></span><a class="headerlink" href="#renormalizer.mps.mp.MatrixProduct.pbond_dims" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="py property">
 <dt class="sig sig-object py" id="renormalizer.mps.mp.MatrixProduct.pbond_list">
 <em class="property"><span class="pre">property</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">pbond_list</span></span><a class="headerlink" href="#renormalizer.mps.mp.MatrixProduct.pbond_list" title="Permalink to this definition">¶</a></dt>
 <dd></dd></dl>
@@ -448,11 +472,6 @@ and R system is tot.</p>
 <dl class="py method">
 <dt class="sig sig-object py" id="renormalizer.mps.mp.MatrixProduct.scale">
 <span class="sig-name descname"><span class="pre">scale</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">val</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">inplace</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">False</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/renormalizer/mps/mp.html#MatrixProduct.scale"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#renormalizer.mps.mp.MatrixProduct.scale" title="Permalink to this definition">¶</a></dt>
-<dd></dd></dl>
-
-<dl class="py method">
-<dt class="sig sig-object py" id="renormalizer.mps.mp.MatrixProduct.set_threshold">
-<span class="sig-name descname"><span class="pre">set_threshold</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">val</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/renormalizer/mps/mp.html#MatrixProduct.set_threshold"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#renormalizer.mps.mp.MatrixProduct.set_threshold" title="Permalink to this definition">¶</a></dt>
 <dd></dd></dl>
 
 <dl class="py property">
@@ -504,17 +523,27 @@ an approximation of <code class="docutils literal notranslate"><span class="pre"
 </dl>
 </dd></dl>
 
+<dl class="py property">
+<dt class="sig sig-object py" id="renormalizer.mps.mp.MatrixProduct.vbond_dims">
+<em class="property"><span class="pre">property</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">vbond_dims</span></span><em class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><a class="reference external" href="https://docs.python.org/3/library/typing.html#typing.List" title="(in Python v3.10)"><span class="pre">List</span></a></em><a class="headerlink" href="#renormalizer.mps.mp.MatrixProduct.vbond_dims" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="py property">
+<dt class="sig sig-object py" id="renormalizer.mps.mp.MatrixProduct.vbond_list">
+<em class="property"><span class="pre">property</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">vbond_list</span></span><em class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><a class="reference external" href="https://docs.python.org/3/library/typing.html#typing.List" title="(in Python v3.10)"><span class="pre">List</span></a></em><a class="headerlink" href="#renormalizer.mps.mp.MatrixProduct.vbond_list" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
 </dd></dl>
 
 </div>
 <div class="section" id="matrix-product-state-mps">
-<h2><span class="section-number">6.2. </span>Matrix Product State (MPS)<a class="headerlink" href="#matrix-product-state-mps" title="Permalink to this headline">¶</a></h2>
+<h2><span class="section-number">6.2. </span>Matrix Product State (MPS)<a class="headerlink" href="#matrix-product-state-mps" title="Permalink to this heading">¶</a></h2>
 <dl class="py class">
 <dt class="sig sig-object py" id="renormalizer.mps.Mps">
 <em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">renormalizer.mps.</span></span><span class="sig-name descname"><span class="pre">Mps</span></span><a class="reference internal" href="_modules/renormalizer/mps/mps.html#Mps"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#renormalizer.mps.Mps" title="Permalink to this definition">¶</a></dt>
 <dd><dl class="py method">
 <dt class="sig sig-object py" id="renormalizer.mps.Mps.add">
-<span class="sig-name descname"><span class="pre">add</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">other</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference internal" href="#renormalizer.mps.mp.MatrixProduct" title="renormalizer.mps.mp.MatrixProduct"><span class="pre">renormalizer.mps.mp.MatrixProduct</span></a></span></em><span class="sig-paren">)</span><a class="headerlink" href="#renormalizer.mps.Mps.add" title="Permalink to this definition">¶</a></dt>
+<span class="sig-name descname"><span class="pre">add</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">other</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/renormalizer/mps/mps.html#Mps.add"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#renormalizer.mps.Mps.add" title="Permalink to this definition">¶</a></dt>
 <dd></dd></dl>
 
 <dl class="py method">
@@ -529,12 +558,17 @@ an approximation of <code class="docutils literal notranslate"><span class="pre"
 
 <dl class="py property">
 <dt class="sig sig-object py" id="renormalizer.mps.Mps.bond_dims">
-<em class="property"><span class="pre">property</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">bond_dims</span></span><em class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="pre">List</span></em><a class="headerlink" href="#renormalizer.mps.Mps.bond_dims" title="Permalink to this definition">¶</a></dt>
+<em class="property"><span class="pre">property</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">bond_dims</span></span><em class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><a class="reference external" href="https://docs.python.org/3/library/typing.html#typing.List" title="(in Python v3.10)"><span class="pre">List</span></a></em><a class="headerlink" href="#renormalizer.mps.Mps.bond_dims" title="Permalink to this definition">¶</a></dt>
 <dd></dd></dl>
 
 <dl class="py property">
 <dt class="sig sig-object py" id="renormalizer.mps.Mps.bond_dims_mean">
 <em class="property"><span class="pre">property</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">bond_dims_mean</span></span><em class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><a class="reference external" href="https://docs.python.org/3/library/functions.html#int" title="(in Python v3.10)"><span class="pre">int</span></a></em><a class="headerlink" href="#renormalizer.mps.Mps.bond_dims_mean" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="py property">
+<dt class="sig sig-object py" id="renormalizer.mps.Mps.bond_list">
+<em class="property"><span class="pre">property</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">bond_list</span></span><em class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><a class="reference external" href="https://docs.python.org/3/library/typing.html#typing.List" title="(in Python v3.10)"><span class="pre">List</span></a></em><a class="headerlink" href="#renormalizer.mps.Mps.bond_list" title="Permalink to this definition">¶</a></dt>
 <dd></dd></dl>
 
 <dl class="py method">
@@ -554,17 +588,21 @@ an approximation of <code class="docutils literal notranslate"><span class="pre"
 
 <dl class="py method">
 <dt class="sig sig-object py" id="renormalizer.mps.Mps.calc_1site_rdm">
-<span class="sig-name descname"><span class="pre">calc_1site_rdm</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="_modules/renormalizer/mps/mps.html#Mps.calc_1site_rdm"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#renormalizer.mps.Mps.calc_1site_rdm" title="Permalink to this definition">¶</a></dt>
+<span class="sig-name descname"><span class="pre">calc_1site_rdm</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">idx</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/renormalizer/mps/mps.html#Mps.calc_1site_rdm"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#renormalizer.mps.Mps.calc_1site_rdm" title="Permalink to this definition">¶</a></dt>
 <dd><p>Calculate 1-site reduced density matrix</p>
 <blockquote>
 <div><p><span class="math notranslate nohighlight">\(\rho_i = \textrm{Tr}_{j \neq i} | \Psi \rangle \langle \Psi|\)</span></p>
 </div></blockquote>
 <dl class="field-list simple">
-<dt class="field-odd">Returns</dt>
-<dd class="field-odd"><p><strong>rdm</strong> – <span class="math notranslate nohighlight">\(\{0:\rho_0, 1:\rho_1, \cdots\}\)</span>. The key is the index of the site.</p>
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><p><strong>idx</strong> (<a class="reference external" href="https://docs.python.org/3/library/functions.html#int" title="(in Python v3.10)"><em>int</em></a><em>, </em><a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#list" title="(in Python v3.10)"><em>list</em></a><em>, </em><a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#tuple" title="(in Python v3.10)"><em>tuple</em></a><em>, </em><em>optional</em>) – site index of 1site_rdm. Default is None, which mean all the rdms
+are calculated.</p>
 </dd>
-<dt class="field-even">Return type</dt>
-<dd class="field-even"><p>Dict</p>
+<dt class="field-even">Returns</dt>
+<dd class="field-even"><p><strong>rdm</strong> – <span class="math notranslate nohighlight">\(\{0:\rho_0, 1:\rho_1, \cdots\}\)</span>. The key is the index of the site.</p>
+</dd>
+<dt class="field-odd">Return type</dt>
+<dd class="field-odd"><p>Dict</p>
 </dd>
 </dl>
 </dd></dl>
@@ -602,7 +640,7 @@ an approximation of <code class="docutils literal notranslate"><span class="pre"
 
 <dl class="py method">
 <dt class="sig sig-object py" id="renormalizer.mps.Mps.calc_bond_entropy">
-<span class="sig-name descname"><span class="pre">calc_bond_entropy</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">numpy.ndarray</span></span></span><a class="reference internal" href="_modules/renormalizer/mps/mps.html#Mps.calc_bond_entropy"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#renormalizer.mps.Mps.calc_bond_entropy" title="Permalink to this definition">¶</a></dt>
+<span class="sig-name descname"><span class="pre">calc_bond_entropy</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">ndarray</span></span></span><a class="reference internal" href="_modules/renormalizer/mps/mps.html#Mps.calc_bond_entropy"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#renormalizer.mps.Mps.calc_bond_entropy" title="Permalink to this definition">¶</a></dt>
 <dd><p>Calculate von Neumann entropy at each bond according to <span class="math notranslate nohighlight">\(S = -\textrm{Tr}(\rho \ln \rho)\)</span>
 where <span class="math notranslate nohighlight">\(\rho\)</span> is the reduced density matrix of either block.</p>
 <dl class="field-list simple">
@@ -617,7 +655,7 @@ where <span class="math notranslate nohighlight">\(\rho\)</span> is the reduced 
 
 <dl class="py method">
 <dt class="sig sig-object py" id="renormalizer.mps.Mps.calc_edof_rdm">
-<span class="sig-name descname"><span class="pre">calc_edof_rdm</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">numpy.ndarray</span></span></span><a class="reference internal" href="_modules/renormalizer/mps/mps.html#Mps.calc_edof_rdm"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#renormalizer.mps.Mps.calc_edof_rdm" title="Permalink to this definition">¶</a></dt>
+<span class="sig-name descname"><span class="pre">calc_edof_rdm</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">ndarray</span></span></span><a class="reference internal" href="_modules/renormalizer/mps/mps.html#Mps.calc_edof_rdm"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#renormalizer.mps.Mps.calc_edof_rdm" title="Permalink to this definition">¶</a></dt>
 <dd><p>Calculate the reduced density matrix of electronic DoF</p>
 <p><span class="math notranslate nohighlight">\(\rho_{ij} = \langle \Psi | a_i^\dagger a_j | \Psi \rangle\)</span></p>
 </dd></dl>
@@ -650,11 +688,6 @@ an ndarray is returned.</p>
 </dd>
 </dl>
 </dd></dl>
-
-<dl class="py method">
-<dt class="sig sig-object py" id="renormalizer.mps.Mps.canonical_normalize">
-<span class="sig-name descname"><span class="pre">canonical_normalize</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="_modules/renormalizer/mps/mps.html#Mps.canonical_normalize"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#renormalizer.mps.Mps.canonical_normalize" title="Permalink to this definition">¶</a></dt>
-<dd></dd></dl>
 
 <dl class="py method">
 <dt class="sig sig-object py" id="renormalizer.mps.Mps.canonicalise">
@@ -697,7 +730,7 @@ output MPS is right canonicalised i.e. CRRR</p>
 
 <dl class="py method">
 <dt class="sig sig-object py" id="renormalizer.mps.Mps.conj">
-<span class="sig-name descname"><span class="pre">conj</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><a class="reference internal" href="#renormalizer.mps.Mps" title="renormalizer.mps.mps.Mps"><span class="pre">renormalizer.mps.mps.Mps</span></a></span></span><a class="reference internal" href="_modules/renormalizer/mps/mps.html#Mps.conj"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#renormalizer.mps.Mps.conj" title="Permalink to this definition">¶</a></dt>
+<span class="sig-name descname"><span class="pre">conj</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><a class="reference internal" href="#renormalizer.mps.Mps" title="renormalizer.mps.mps.Mps"><span class="pre">Mps</span></a></span></span><a class="reference internal" href="_modules/renormalizer/mps/mps.html#Mps.conj"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#renormalizer.mps.Mps.conj" title="Permalink to this definition">¶</a></dt>
 <dd><p>complex conjugate</p>
 </dd></dl>
 
@@ -713,25 +746,12 @@ output MPS is right canonicalised i.e. CRRR</p>
 
 <dl class="py method">
 <dt class="sig sig-object py" id="renormalizer.mps.Mps.distance">
-<span class="sig-name descname"><span class="pre">distance</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">other</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><a class="reference external" href="https://docs.python.org/3/library/functions.html#float" title="(in Python v3.10)"><span class="pre">float</span></a></span></span><a class="headerlink" href="#renormalizer.mps.Mps.distance" title="Permalink to this definition">¶</a></dt>
+<span class="sig-name descname"><span class="pre">distance</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">other</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><a class="reference external" href="https://docs.python.org/3/library/functions.html#float" title="(in Python v3.10)"><span class="pre">float</span></a></span></span><a class="reference internal" href="_modules/renormalizer/mps/mps.html#Mps.distance"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#renormalizer.mps.Mps.distance" title="Permalink to this definition">¶</a></dt>
 <dd></dd></dl>
-
-<dl class="py property">
-<dt class="sig sig-object py" id="renormalizer.mps.Mps.dmrg_norm">
-<em class="property"><span class="pre">property</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">dmrg_norm</span></span><em class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><a class="reference external" href="https://docs.python.org/3/library/functions.html#float" title="(in Python v3.10)"><span class="pre">float</span></a></em><a class="headerlink" href="#renormalizer.mps.Mps.dmrg_norm" title="Permalink to this definition">¶</a></dt>
-<dd><dl class="simple">
-<dt>if self.is_left_canon:</dt><dd><p>assert self.check_left_canonical()
-return np.linalg.norm(np.ravel(self[-1]))</p>
-</dd>
-<dt>else:</dt><dd><p>assert self.check_right_canonical()
-return np.linalg.norm(np.ravel(self[0]))</p>
-</dd>
-</dl>
-</dd></dl>
 
 <dl class="py method">
 <dt class="sig sig-object py" id="renormalizer.mps.Mps.dot">
-<span class="sig-name descname"><span class="pre">dot</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">other</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference internal" href="#renormalizer.mps.mp.MatrixProduct" title="renormalizer.mps.mp.MatrixProduct"><span class="pre">renormalizer.mps.mp.MatrixProduct</span></a></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><a class="reference external" href="https://docs.python.org/3/library/functions.html#complex" title="(in Python v3.10)"><span class="pre">complex</span></a></span></span><a class="headerlink" href="#renormalizer.mps.Mps.dot" title="Permalink to this definition">¶</a></dt>
+<span class="sig-name descname"><span class="pre">dot</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">other</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference internal" href="#renormalizer.mps.mp.MatrixProduct" title="renormalizer.mps.mp.MatrixProduct"><span class="pre">MatrixProduct</span></a></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><a class="reference external" href="https://docs.python.org/3/library/functions.html#complex" title="(in Python v3.10)"><span class="pre">complex</span></a></span></span><a class="headerlink" href="#renormalizer.mps.Mps.dot" title="Permalink to this definition">¶</a></dt>
 <dd><p>dot product of two mps / mpo</p>
 </dd></dl>
 
@@ -748,18 +768,18 @@ The order is defined by <code class="xref py py-attr docutils literal notranslat
 </dd></dl>
 
 <dl class="py method">
-<dt class="sig sig-object py" id="renormalizer.mps.Mps.ensure_left_canon">
-<span class="sig-name descname"><span class="pre">ensure_left_canon</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">rtol</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">1e-05</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">atol</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">1e-08</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#renormalizer.mps.Mps.ensure_left_canon" title="Permalink to this definition">¶</a></dt>
+<dt class="sig sig-object py" id="renormalizer.mps.Mps.ensure_left_canonical">
+<span class="sig-name descname"><span class="pre">ensure_left_canonical</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">rtol</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">1e-05</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">atol</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">1e-08</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#renormalizer.mps.Mps.ensure_left_canonical" title="Permalink to this definition">¶</a></dt>
 <dd></dd></dl>
 
 <dl class="py method">
-<dt class="sig sig-object py" id="renormalizer.mps.Mps.ensure_right_canon">
-<span class="sig-name descname"><span class="pre">ensure_right_canon</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">rtol</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">1e-05</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">atol</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">1e-08</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#renormalizer.mps.Mps.ensure_right_canon" title="Permalink to this definition">¶</a></dt>
+<dt class="sig sig-object py" id="renormalizer.mps.Mps.ensure_right_canonical">
+<span class="sig-name descname"><span class="pre">ensure_right_canonical</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">rtol</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">1e-05</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">atol</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">1e-08</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#renormalizer.mps.Mps.ensure_right_canonical" title="Permalink to this definition">¶</a></dt>
 <dd></dd></dl>
 
 <dl class="py method">
 <dt class="sig sig-object py" id="renormalizer.mps.Mps.evolve">
-<span class="sig-name descname"><span class="pre">evolve</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">mpo</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">evolve_dt</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><a class="reference internal" href="#renormalizer.mps.Mps" title="renormalizer.mps.mps.Mps"><span class="pre">renormalizer.mps.mps.Mps</span></a></span></span><a class="reference internal" href="_modules/renormalizer/mps/mps.html#Mps.evolve"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#renormalizer.mps.Mps.evolve" title="Permalink to this definition">¶</a></dt>
+<span class="sig-name descname"><span class="pre">evolve</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">mpo</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">evolve_dt</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">normalize</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">True</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><a class="reference internal" href="#renormalizer.mps.Mps" title="renormalizer.mps.mps.Mps"><span class="pre">Mps</span></a></span></span><a class="reference internal" href="_modules/renormalizer/mps/mps.html#Mps.evolve"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#renormalizer.mps.Mps.evolve" title="Permalink to this definition">¶</a></dt>
 <dd></dd></dl>
 
 <dl class="py method">
@@ -780,17 +800,17 @@ The order is defined by <code class="xref py py-attr docutils literal notranslat
 
 <dl class="py method">
 <dt class="sig sig-object py" id="renormalizer.mps.Mps.expectations">
-<span class="sig-name descname"><span class="pre">expectations</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">mpos</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">self_conj</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">opt</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">True</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">numpy.ndarray</span></span></span><a class="reference internal" href="_modules/renormalizer/mps/mps.html#Mps.expectations"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#renormalizer.mps.Mps.expectations" title="Permalink to this definition">¶</a></dt>
+<span class="sig-name descname"><span class="pre">expectations</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">mpos</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">self_conj</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">opt</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">True</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">ndarray</span></span></span><a class="reference internal" href="_modules/renormalizer/mps/mps.html#Mps.expectations"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#renormalizer.mps.Mps.expectations" title="Permalink to this definition">¶</a></dt>
 <dd></dd></dl>
 
 <dl class="py method">
 <dt class="sig sig-object py" id="renormalizer.mps.Mps.from_dense">
-<em class="property"><span class="pre">classmethod</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">from_dense</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">model</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">wfn</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">numpy.ndarray</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/renormalizer/mps/mps.html#Mps.from_dense"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#renormalizer.mps.Mps.from_dense" title="Permalink to this definition">¶</a></dt>
+<em class="property"><span class="pre">classmethod</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">from_dense</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">model</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">wfn</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">ndarray</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/renormalizer/mps/mps.html#Mps.from_dense"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#renormalizer.mps.Mps.from_dense" title="Permalink to this definition">¶</a></dt>
 <dd></dd></dl>
 
 <dl class="py method">
 <dt class="sig sig-object py" id="renormalizer.mps.Mps.ground_state">
-<em class="property"><span class="pre">classmethod</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">ground_state</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">model</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference internal" href="model.html#renormalizer.model.Model" title="renormalizer.model.model.Model"><span class="pre">renormalizer.model.model.Model</span></a></span></em>, <em class="sig-param"><span class="n"><span class="pre">max_entangled</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference external" href="https://docs.python.org/3/library/functions.html#bool" title="(in Python v3.10)"><span class="pre">bool</span></a></span></em>, <em class="sig-param"><span class="n"><span class="pre">normalize</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference external" href="https://docs.python.org/3/library/functions.html#bool" title="(in Python v3.10)"><span class="pre">bool</span></a></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">True</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">condition</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference external" href="https://docs.python.org/3/library/typing.html#typing.Optional" title="(in Python v3.10)"><span class="pre">Optional</span></a><span class="p"><span class="pre">[</span></span><a class="reference external" href="https://docs.python.org/3/library/typing.html#typing.Dict" title="(in Python v3.10)"><span class="pre">Dict</span></a><span class="p"><span class="pre">]</span></span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/renormalizer/mps/mps.html#Mps.ground_state"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#renormalizer.mps.Mps.ground_state" title="Permalink to this definition">¶</a></dt>
+<em class="property"><span class="pre">classmethod</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">ground_state</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">model</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference internal" href="model.html#renormalizer.model.Model" title="renormalizer.model.model.Model"><span class="pre">Model</span></a></span></em>, <em class="sig-param"><span class="n"><span class="pre">max_entangled</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference external" href="https://docs.python.org/3/library/functions.html#bool" title="(in Python v3.10)"><span class="pre">bool</span></a></span></em>, <em class="sig-param"><span class="n"><span class="pre">normalize</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference external" href="https://docs.python.org/3/library/functions.html#bool" title="(in Python v3.10)"><span class="pre">bool</span></a></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">True</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">condition</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference external" href="https://docs.python.org/3/library/typing.html#typing.Optional" title="(in Python v3.10)"><span class="pre">Optional</span></a><span class="p"><span class="pre">[</span></span><a class="reference external" href="https://docs.python.org/3/library/typing.html#typing.Dict" title="(in Python v3.10)"><span class="pre">Dict</span></a><span class="p"><span class="pre">]</span></span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/renormalizer/mps/mps.html#Mps.ground_state"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#renormalizer.mps.Mps.ground_state" title="Permalink to this definition">¶</a></dt>
 <dd><p>Obtain ground state at <span class="math notranslate nohighlight">\(T = 0\)</span> or <span class="math notranslate nohighlight">\(T = \infty\)</span> (maximum entangled).
 Electronic DOFs are always at ground state. and vibrational DOFs depend on <code class="docutils literal notranslate"><span class="pre">max_entangled</span></code>.
 For Spin-Boson model the electronic DOF also depends on <code class="docutils literal notranslate"><span class="pre">max_entangled</span></code>.</p>
@@ -851,8 +871,8 @@ is added to the <code class="docutils literal notranslate"><span class="pre">0</
 <dd></dd></dl>
 
 <dl class="py property">
-<dt class="sig sig-object py" id="renormalizer.mps.Mps.is_left_canon">
-<em class="property"><span class="pre">property</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">is_left_canon</span></span><a class="headerlink" href="#renormalizer.mps.Mps.is_left_canon" title="Permalink to this definition">¶</a></dt>
+<dt class="sig sig-object py" id="renormalizer.mps.Mps.is_left_canonical">
+<em class="property"><span class="pre">property</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">is_left_canonical</span></span><a class="headerlink" href="#renormalizer.mps.Mps.is_left_canonical" title="Permalink to this definition">¶</a></dt>
 <dd><p>check the qn center in the L-canonical structure</p>
 </dd></dl>
 
@@ -872,8 +892,8 @@ is added to the <code class="docutils literal notranslate"><span class="pre">0</
 <dd></dd></dl>
 
 <dl class="py property">
-<dt class="sig sig-object py" id="renormalizer.mps.Mps.is_right_canon">
-<em class="property"><span class="pre">property</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">is_right_canon</span></span><a class="headerlink" href="#renormalizer.mps.Mps.is_right_canon" title="Permalink to this definition">¶</a></dt>
+<dt class="sig sig-object py" id="renormalizer.mps.Mps.is_right_canonical">
+<em class="property"><span class="pre">property</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">is_right_canonical</span></span><a class="headerlink" href="#renormalizer.mps.Mps.is_right_canonical" title="Permalink to this definition">¶</a></dt>
 <dd><p>check the qn center in the R-canonical structure</p>
 </dd></dl>
 
@@ -884,12 +904,12 @@ is added to the <code class="docutils literal notranslate"><span class="pre">0</
 
 <dl class="py method">
 <dt class="sig sig-object py" id="renormalizer.mps.Mps.load">
-<em class="property"><span class="pre">classmethod</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">load</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">model</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference internal" href="model.html#renormalizer.model.Model" title="renormalizer.model.model.Model"><span class="pre">renormalizer.model.model.Model</span></a></span></em>, <em class="sig-param"><span class="n"><span class="pre">fname</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.10)"><span class="pre">str</span></a></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/renormalizer/mps/mps.html#Mps.load"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#renormalizer.mps.Mps.load" title="Permalink to this definition">¶</a></dt>
+<em class="property"><span class="pre">classmethod</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">load</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">model</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference internal" href="model.html#renormalizer.model.Model" title="renormalizer.model.model.Model"><span class="pre">Model</span></a></span></em>, <em class="sig-param"><span class="n"><span class="pre">fname</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.10)"><span class="pre">str</span></a></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/renormalizer/mps/mps.html#Mps.load"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#renormalizer.mps.Mps.load" title="Permalink to this definition">¶</a></dt>
 <dd></dd></dl>
 
 <dl class="py method">
 <dt class="sig sig-object py" id="renormalizer.mps.Mps.metacopy">
-<span class="sig-name descname"><span class="pre">metacopy</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><a class="reference internal" href="#renormalizer.mps.Mps" title="renormalizer.mps.mps.Mps"><span class="pre">renormalizer.mps.mps.Mps</span></a></span></span><a class="reference internal" href="_modules/renormalizer/mps/mps.html#Mps.metacopy"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#renormalizer.mps.Mps.metacopy" title="Permalink to this definition">¶</a></dt>
+<span class="sig-name descname"><span class="pre">metacopy</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><a class="reference internal" href="#renormalizer.mps.Mps" title="renormalizer.mps.mps.Mps"><span class="pre">Mps</span></a></span></span><a class="reference internal" href="_modules/renormalizer/mps/mps.html#Mps.metacopy"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#renormalizer.mps.Mps.metacopy" title="Permalink to this definition">¶</a></dt>
 <dd></dd></dl>
 
 <dl class="py method">
@@ -901,6 +921,19 @@ and R system is tot.</p>
 </dd></dl>
 
 <dl class="py property">
+<dt class="sig sig-object py" id="renormalizer.mps.Mps.mp_norm">
+<em class="property"><span class="pre">property</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">mp_norm</span></span><em class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><a class="reference external" href="https://docs.python.org/3/library/functions.html#float" title="(in Python v3.10)"><span class="pre">float</span></a></em><a class="headerlink" href="#renormalizer.mps.Mps.mp_norm" title="Permalink to this definition">¶</a></dt>
+<dd><dl class="simple">
+<dt>if self.is_left_canon:</dt><dd><p>assert self.check_left_canonical()
+return np.linalg.norm(np.ravel(self[-1]))</p>
+</dd>
+<dt>else:</dt><dd><p>assert self.check_right_canonical()
+return np.linalg.norm(np.ravel(self[0]))</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py property">
 <dt class="sig sig-object py" id="renormalizer.mps.Mps.nexciton">
 <em class="property"><span class="pre">property</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">nexciton</span></span><a class="headerlink" href="#renormalizer.mps.Mps.nexciton" title="Permalink to this definition">¶</a></dt>
 <dd></dd></dl>
@@ -908,11 +941,28 @@ and R system is tot.</p>
 <dl class="py property">
 <dt class="sig sig-object py" id="renormalizer.mps.Mps.norm">
 <em class="property"><span class="pre">property</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">norm</span></span><a class="headerlink" href="#renormalizer.mps.Mps.norm" title="Permalink to this definition">¶</a></dt>
-<dd></dd></dl>
+<dd><p>the norm of the total wavefunction</p>
+</dd></dl>
 
 <dl class="py method">
 <dt class="sig sig-object py" id="renormalizer.mps.Mps.normalize">
-<span class="sig-name descname"><span class="pre">normalize</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">norm</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/renormalizer/mps/mps.html#Mps.normalize"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#renormalizer.mps.Mps.normalize" title="Permalink to this definition">¶</a></dt>
+<span class="sig-name descname"><span class="pre">normalize</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">kind</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/renormalizer/mps/mps.html#Mps.normalize"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#renormalizer.mps.Mps.normalize" title="Permalink to this definition">¶</a></dt>
+<dd><p>normalize the wavefunction</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><p><strong>kind</strong> (<a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.10)"><em>str</em></a>) – “mps_only”: the mps part is normalized and coeff is not modified;
+“mps_norm_to_coeff”: the mps part is normalized and the norm is multiplied to coeff;
+“mps_and_coeff”: both mps and coeff is normalized</p>
+</dd>
+<dt class="field-even">Return type</dt>
+<dd class="field-even"><p><code class="docutils literal notranslate"><span class="pre">self</span></code> is overwritten.</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py property">
+<dt class="sig sig-object py" id="renormalizer.mps.Mps.pbond_dims">
+<em class="property"><span class="pre">property</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">pbond_dims</span></span><a class="headerlink" href="#renormalizer.mps.Mps.pbond_dims" title="Permalink to this definition">¶</a></dt>
 <dd></dd></dl>
 
 <dl class="py property">
@@ -929,17 +979,12 @@ The order is defined by <code class="xref py py-attr docutils literal notranslat
 
 <dl class="py method">
 <dt class="sig sig-object py" id="renormalizer.mps.Mps.random">
-<em class="property"><span class="pre">classmethod</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">random</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">model</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference internal" href="model.html#renormalizer.model.Model" title="renormalizer.model.model.Model"><span class="pre">renormalizer.model.model.Model</span></a></span></em>, <em class="sig-param"><span class="n"><span class="pre">nexciton</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">m_max</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">percent</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">1.0</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><a class="reference internal" href="#renormalizer.mps.Mps" title="renormalizer.mps.mps.Mps"><span class="pre">renormalizer.mps.mps.Mps</span></a></span></span><a class="reference internal" href="_modules/renormalizer/mps/mps.html#Mps.random"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#renormalizer.mps.Mps.random" title="Permalink to this definition">¶</a></dt>
+<em class="property"><span class="pre">classmethod</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">random</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">model</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference internal" href="model.html#renormalizer.model.Model" title="renormalizer.model.model.Model"><span class="pre">Model</span></a></span></em>, <em class="sig-param"><span class="n"><span class="pre">nexciton</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">m_max</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">percent</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">1.0</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><a class="reference internal" href="#renormalizer.mps.Mps" title="renormalizer.mps.mps.Mps"><span class="pre">Mps</span></a></span></span><a class="reference internal" href="_modules/renormalizer/mps/mps.html#Mps.random"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#renormalizer.mps.Mps.random" title="Permalink to this definition">¶</a></dt>
 <dd></dd></dl>
 
 <dl class="py method">
 <dt class="sig sig-object py" id="renormalizer.mps.Mps.scale">
 <span class="sig-name descname"><span class="pre">scale</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">val</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">inplace</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">False</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#renormalizer.mps.Mps.scale" title="Permalink to this definition">¶</a></dt>
-<dd></dd></dl>
-
-<dl class="py method">
-<dt class="sig sig-object py" id="renormalizer.mps.Mps.set_threshold">
-<span class="sig-name descname"><span class="pre">set_threshold</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">val</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#renormalizer.mps.Mps.set_threshold" title="Permalink to this definition">¶</a></dt>
 <dd></dd></dl>
 
 <dl class="py property">
@@ -954,12 +999,12 @@ The order is defined by <code class="xref py py-attr docutils literal notranslat
 
 <dl class="py method">
 <dt class="sig sig-object py" id="renormalizer.mps.Mps.to_complex">
-<span class="sig-name descname"><span class="pre">to_complex</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">inplace</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">False</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><a class="reference internal" href="#renormalizer.mps.Mps" title="renormalizer.mps.mps.Mps"><span class="pre">renormalizer.mps.mps.Mps</span></a></span></span><a class="reference internal" href="_modules/renormalizer/mps/mps.html#Mps.to_complex"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#renormalizer.mps.Mps.to_complex" title="Permalink to this definition">¶</a></dt>
+<span class="sig-name descname"><span class="pre">to_complex</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">inplace</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">False</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><a class="reference internal" href="#renormalizer.mps.Mps" title="renormalizer.mps.mps.Mps"><span class="pre">Mps</span></a></span></span><a class="reference internal" href="_modules/renormalizer/mps/mps.html#Mps.to_complex"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#renormalizer.mps.Mps.to_complex" title="Permalink to this definition">¶</a></dt>
 <dd></dd></dl>
 
 <dl class="py method">
 <dt class="sig sig-object py" id="renormalizer.mps.Mps.todense">
-<span class="sig-name descname"><span class="pre">todense</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">numpy.array</span></span></span><a class="reference internal" href="_modules/renormalizer/mps/mps.html#Mps.todense"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#renormalizer.mps.Mps.todense" title="Permalink to this definition">¶</a></dt>
+<span class="sig-name descname"><span class="pre">todense</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">array</span></span></span><a class="reference internal" href="_modules/renormalizer/mps/mps.html#Mps.todense"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#renormalizer.mps.Mps.todense" title="Permalink to this definition">¶</a></dt>
 <dd></dd></dl>
 
 <dl class="py property">
@@ -996,18 +1041,28 @@ an approximation of <code class="docutils literal notranslate"><span class="pre"
 </dl>
 </dd></dl>
 
+<dl class="py property">
+<dt class="sig sig-object py" id="renormalizer.mps.Mps.vbond_dims">
+<em class="property"><span class="pre">property</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">vbond_dims</span></span><em class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><a class="reference external" href="https://docs.python.org/3/library/typing.html#typing.List" title="(in Python v3.10)"><span class="pre">List</span></a></em><a class="headerlink" href="#renormalizer.mps.Mps.vbond_dims" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="py property">
+<dt class="sig sig-object py" id="renormalizer.mps.Mps.vbond_list">
+<em class="property"><span class="pre">property</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">vbond_list</span></span><em class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><a class="reference external" href="https://docs.python.org/3/library/typing.html#typing.List" title="(in Python v3.10)"><span class="pre">List</span></a></em><a class="headerlink" href="#renormalizer.mps.Mps.vbond_list" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
 </dd></dl>
 
 </div>
 <div class="section" id="matrix-product-operator-mpo">
-<h2><span class="section-number">6.3. </span>Matrix Product Operator (MPO)<a class="headerlink" href="#matrix-product-operator-mpo" title="Permalink to this headline">¶</a></h2>
+<h2><span class="section-number">6.3. </span>Matrix Product Operator (MPO)<a class="headerlink" href="#matrix-product-operator-mpo" title="Permalink to this heading">¶</a></h2>
 <dl class="py class">
 <dt class="sig sig-object py" id="renormalizer.mps.Mpo">
-<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">renormalizer.mps.</span></span><span class="sig-name descname"><span class="pre">Mpo</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">model:</span> <span class="pre">typing.Optional[renormalizer.model.model.Model]</span> <span class="pre">=</span> <span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">terms:</span> <span class="pre">typing.Optional[typing.Union[renormalizer.model.op.Op</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">typing.List[renormalizer.model.op.Op]]]</span> <span class="pre">=</span> <span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">offset:</span> <span class="pre">renormalizer.utils.quantity.Quantity</span> <span class="pre">=</span> <span class="pre">&lt;renormalizer.utils.quantity.Quantity</span> <span class="pre">object&gt;</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/renormalizer/mps/mpo.html#Mpo"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#renormalizer.mps.Mpo" title="Permalink to this definition">¶</a></dt>
+<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">renormalizer.mps.</span></span><span class="sig-name descname"><span class="pre">Mpo</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">model:</span> <span class="pre">~typing.Optional[~renormalizer.model.model.Model]</span> <span class="pre">=</span> <span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">terms:</span> <span class="pre">~typing.Optional[~typing.Union[~renormalizer.model.op.Op</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">~typing.List[~renormalizer.model.op.Op]]]</span> <span class="pre">=</span> <span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">offset:</span> <span class="pre">~renormalizer.utils.quantity.Quantity</span> <span class="pre">=</span> <span class="pre">&lt;renormalizer.utils.quantity.Quantity</span> <span class="pre">object&gt;</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/renormalizer/mps/mpo.html#Mpo"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#renormalizer.mps.Mpo" title="Permalink to this definition">¶</a></dt>
 <dd><p>Matrix product operator (MPO)</p>
 <dl class="py method">
 <dt class="sig sig-object py" id="renormalizer.mps.Mpo.add">
-<span class="sig-name descname"><span class="pre">add</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">other</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference internal" href="#renormalizer.mps.mp.MatrixProduct" title="renormalizer.mps.mp.MatrixProduct"><span class="pre">renormalizer.mps.mp.MatrixProduct</span></a></span></em><span class="sig-paren">)</span><a class="headerlink" href="#renormalizer.mps.Mpo.add" title="Permalink to this definition">¶</a></dt>
+<span class="sig-name descname"><span class="pre">add</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">other</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference internal" href="#renormalizer.mps.mp.MatrixProduct" title="renormalizer.mps.mp.MatrixProduct"><span class="pre">MatrixProduct</span></a></span></em><span class="sig-paren">)</span><a class="headerlink" href="#renormalizer.mps.Mpo.add" title="Permalink to this definition">¶</a></dt>
 <dd></dd></dl>
 
 <dl class="py method">
@@ -1022,17 +1077,22 @@ an approximation of <code class="docutils literal notranslate"><span class="pre"
 
 <dl class="py method">
 <dt class="sig sig-object py" id="renormalizer.mps.Mpo.apply">
-<span class="sig-name descname"><span class="pre">apply</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">mp</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference internal" href="#renormalizer.mps.mp.MatrixProduct" title="renormalizer.mps.mp.MatrixProduct"><span class="pre">renormalizer.mps.mp.MatrixProduct</span></a></span></em>, <em class="sig-param"><span class="n"><span class="pre">canonicalise</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference external" href="https://docs.python.org/3/library/functions.html#bool" title="(in Python v3.10)"><span class="pre">bool</span></a></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">False</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><a class="reference internal" href="#renormalizer.mps.mp.MatrixProduct" title="renormalizer.mps.mp.MatrixProduct"><span class="pre">renormalizer.mps.mp.MatrixProduct</span></a></span></span><a class="reference internal" href="_modules/renormalizer/mps/mpo.html#Mpo.apply"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#renormalizer.mps.Mpo.apply" title="Permalink to this definition">¶</a></dt>
+<span class="sig-name descname"><span class="pre">apply</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">mp</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference internal" href="#renormalizer.mps.mp.MatrixProduct" title="renormalizer.mps.mp.MatrixProduct"><span class="pre">MatrixProduct</span></a></span></em>, <em class="sig-param"><span class="n"><span class="pre">canonicalise</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference external" href="https://docs.python.org/3/library/functions.html#bool" title="(in Python v3.10)"><span class="pre">bool</span></a></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">False</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><a class="reference internal" href="#renormalizer.mps.mp.MatrixProduct" title="renormalizer.mps.mp.MatrixProduct"><span class="pre">MatrixProduct</span></a></span></span><a class="reference internal" href="_modules/renormalizer/mps/mpo.html#Mpo.apply"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#renormalizer.mps.Mpo.apply" title="Permalink to this definition">¶</a></dt>
 <dd></dd></dl>
 
 <dl class="py property">
 <dt class="sig sig-object py" id="renormalizer.mps.Mpo.bond_dims">
-<em class="property"><span class="pre">property</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">bond_dims</span></span><em class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="pre">List</span></em><a class="headerlink" href="#renormalizer.mps.Mpo.bond_dims" title="Permalink to this definition">¶</a></dt>
+<em class="property"><span class="pre">property</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">bond_dims</span></span><em class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><a class="reference external" href="https://docs.python.org/3/library/typing.html#typing.List" title="(in Python v3.10)"><span class="pre">List</span></a></em><a class="headerlink" href="#renormalizer.mps.Mpo.bond_dims" title="Permalink to this definition">¶</a></dt>
 <dd></dd></dl>
 
 <dl class="py property">
 <dt class="sig sig-object py" id="renormalizer.mps.Mpo.bond_dims_mean">
 <em class="property"><span class="pre">property</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">bond_dims_mean</span></span><em class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><a class="reference external" href="https://docs.python.org/3/library/functions.html#int" title="(in Python v3.10)"><span class="pre">int</span></a></em><a class="headerlink" href="#renormalizer.mps.Mpo.bond_dims_mean" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="py property">
+<dt class="sig sig-object py" id="renormalizer.mps.Mpo.bond_list">
+<em class="property"><span class="pre">property</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">bond_list</span></span><em class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><a class="reference external" href="https://docs.python.org/3/library/typing.html#typing.List" title="(in Python v3.10)"><span class="pre">List</span></a></em><a class="headerlink" href="#renormalizer.mps.Mpo.bond_list" title="Permalink to this definition">¶</a></dt>
 <dd></dd></dl>
 
 <dl class="py method">
@@ -1146,14 +1206,9 @@ overwritten.</p>
 <span class="sig-name descname"><span class="pre">distance</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">other</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><a class="reference external" href="https://docs.python.org/3/library/functions.html#float" title="(in Python v3.10)"><span class="pre">float</span></a></span></span><a class="headerlink" href="#renormalizer.mps.Mpo.distance" title="Permalink to this definition">¶</a></dt>
 <dd></dd></dl>
 
-<dl class="py property">
-<dt class="sig sig-object py" id="renormalizer.mps.Mpo.dmrg_norm">
-<em class="property"><span class="pre">property</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">dmrg_norm</span></span><em class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><a class="reference external" href="https://docs.python.org/3/library/functions.html#float" title="(in Python v3.10)"><span class="pre">float</span></a></em><a class="headerlink" href="#renormalizer.mps.Mpo.dmrg_norm" title="Permalink to this definition">¶</a></dt>
-<dd></dd></dl>
-
 <dl class="py method">
 <dt class="sig sig-object py" id="renormalizer.mps.Mpo.dot">
-<span class="sig-name descname"><span class="pre">dot</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">other</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference internal" href="#renormalizer.mps.mp.MatrixProduct" title="renormalizer.mps.mp.MatrixProduct"><span class="pre">renormalizer.mps.mp.MatrixProduct</span></a></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><a class="reference external" href="https://docs.python.org/3/library/functions.html#complex" title="(in Python v3.10)"><span class="pre">complex</span></a></span></span><a class="headerlink" href="#renormalizer.mps.Mpo.dot" title="Permalink to this definition">¶</a></dt>
+<span class="sig-name descname"><span class="pre">dot</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">other</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference internal" href="#renormalizer.mps.mp.MatrixProduct" title="renormalizer.mps.mp.MatrixProduct"><span class="pre">MatrixProduct</span></a></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><a class="reference external" href="https://docs.python.org/3/library/functions.html#complex" title="(in Python v3.10)"><span class="pre">complex</span></a></span></span><a class="headerlink" href="#renormalizer.mps.Mpo.dot" title="Permalink to this definition">¶</a></dt>
 <dd><p>dot product of two mps / mpo</p>
 </dd></dl>
 
@@ -1168,18 +1223,18 @@ overwritten.</p>
 <dd></dd></dl>
 
 <dl class="py method">
-<dt class="sig sig-object py" id="renormalizer.mps.Mpo.ensure_left_canon">
-<span class="sig-name descname"><span class="pre">ensure_left_canon</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">rtol</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">1e-05</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">atol</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">1e-08</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#renormalizer.mps.Mpo.ensure_left_canon" title="Permalink to this definition">¶</a></dt>
+<dt class="sig sig-object py" id="renormalizer.mps.Mpo.ensure_left_canonical">
+<span class="sig-name descname"><span class="pre">ensure_left_canonical</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">rtol</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">1e-05</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">atol</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">1e-08</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#renormalizer.mps.Mpo.ensure_left_canonical" title="Permalink to this definition">¶</a></dt>
 <dd></dd></dl>
 
 <dl class="py method">
-<dt class="sig sig-object py" id="renormalizer.mps.Mpo.ensure_right_canon">
-<span class="sig-name descname"><span class="pre">ensure_right_canon</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">rtol</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">1e-05</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">atol</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">1e-08</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#renormalizer.mps.Mpo.ensure_right_canon" title="Permalink to this definition">¶</a></dt>
+<dt class="sig sig-object py" id="renormalizer.mps.Mpo.ensure_right_canonical">
+<span class="sig-name descname"><span class="pre">ensure_right_canonical</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">rtol</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">1e-05</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">atol</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">1e-08</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#renormalizer.mps.Mpo.ensure_right_canonical" title="Permalink to this definition">¶</a></dt>
 <dd></dd></dl>
 
 <dl class="py method">
 <dt class="sig sig-object py" id="renormalizer.mps.Mpo.exact_propagator">
-<em class="property"><span class="pre">classmethod</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">exact_propagator</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">model</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference internal" href="model.html#renormalizer.model.HolsteinModel" title="renormalizer.model.model.HolsteinModel"><span class="pre">renormalizer.model.model.HolsteinModel</span></a></span></em>, <em class="sig-param"><span class="n"><span class="pre">x</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">space</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">'GS'</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">shift</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">0.0</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/renormalizer/mps/mpo.html#Mpo.exact_propagator"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#renormalizer.mps.Mpo.exact_propagator" title="Permalink to this definition">¶</a></dt>
+<em class="property"><span class="pre">classmethod</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">exact_propagator</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">model</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference internal" href="model.html#renormalizer.model.HolsteinModel" title="renormalizer.model.model.HolsteinModel"><span class="pre">HolsteinModel</span></a></span></em>, <em class="sig-param"><span class="n"><span class="pre">x</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">space</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">'GS'</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">shift</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">0.0</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/renormalizer/mps/mpo.html#Mpo.exact_propagator"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#renormalizer.mps.Mpo.exact_propagator" title="Permalink to this definition">¶</a></dt>
 <dd><p>construct the GS space propagator e^{xH} exact MPO
 H=sum_{in} omega_{in} b^dagger_{in} b_{in}
 fortunately, the H is local. so e^{xH} = e^{xh1}e^{xh2}…e^{xhn}
@@ -1199,12 +1254,12 @@ shift is the a constant for H+shift</p>
 
 <dl class="py method">
 <dt class="sig sig-object py" id="renormalizer.mps.Mpo.identity">
-<em class="property"><span class="pre">classmethod</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">identity</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">model</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference internal" href="model.html#renormalizer.model.Model" title="renormalizer.model.model.Model"><span class="pre">renormalizer.model.model.Model</span></a></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/renormalizer/mps/mpo.html#Mpo.identity"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#renormalizer.mps.Mpo.identity" title="Permalink to this definition">¶</a></dt>
+<em class="property"><span class="pre">classmethod</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">identity</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">model</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference internal" href="model.html#renormalizer.model.Model" title="renormalizer.model.model.Model"><span class="pre">Model</span></a></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/renormalizer/mps/mpo.html#Mpo.identity"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#renormalizer.mps.Mpo.identity" title="Permalink to this definition">¶</a></dt>
 <dd></dd></dl>
 
 <dl class="py method">
 <dt class="sig sig-object py" id="renormalizer.mps.Mpo.intersite">
-<em class="property"><span class="pre">classmethod</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">intersite</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">model:</span> <span class="pre">renormalizer.model.model.HolsteinModel</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">e_opera:</span> <span class="pre">dict</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">ph_opera:</span> <span class="pre">dict</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">scale:</span> <span class="pre">renormalizer.utils.quantity.Quantity</span> <span class="pre">=</span> <span class="pre">&lt;renormalizer.utils.quantity.Quantity</span> <span class="pre">object&gt;</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/renormalizer/mps/mpo.html#Mpo.intersite"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#renormalizer.mps.Mpo.intersite" title="Permalink to this definition">¶</a></dt>
+<em class="property"><span class="pre">classmethod</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">intersite</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">model:</span> <span class="pre">~renormalizer.model.model.HolsteinModel</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">e_opera:</span> <span class="pre">dict</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">ph_opera:</span> <span class="pre">dict</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">scale:</span> <span class="pre">~renormalizer.utils.quantity.Quantity</span> <span class="pre">=</span> <span class="pre">&lt;renormalizer.utils.quantity.Quantity</span> <span class="pre">object&gt;</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/renormalizer/mps/mpo.html#Mpo.intersite"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#renormalizer.mps.Mpo.intersite" title="Permalink to this definition">¶</a></dt>
 <dd><p>construct the inter site MPO</p>
 <dl class="field-list simple">
 <dt class="field-odd">Parameters</dt>
@@ -1233,8 +1288,8 @@ shift is the a constant for H+shift</p>
 <dd></dd></dl>
 
 <dl class="py property">
-<dt class="sig sig-object py" id="renormalizer.mps.Mpo.is_left_canon">
-<em class="property"><span class="pre">property</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">is_left_canon</span></span><a class="headerlink" href="#renormalizer.mps.Mpo.is_left_canon" title="Permalink to this definition">¶</a></dt>
+<dt class="sig sig-object py" id="renormalizer.mps.Mpo.is_left_canonical">
+<em class="property"><span class="pre">property</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">is_left_canonical</span></span><a class="headerlink" href="#renormalizer.mps.Mpo.is_left_canonical" title="Permalink to this definition">¶</a></dt>
 <dd><p>check the qn center in the L-canonical structure</p>
 </dd></dl>
 
@@ -1254,8 +1309,8 @@ shift is the a constant for H+shift</p>
 <dd></dd></dl>
 
 <dl class="py property">
-<dt class="sig sig-object py" id="renormalizer.mps.Mpo.is_right_canon">
-<em class="property"><span class="pre">property</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">is_right_canon</span></span><a class="headerlink" href="#renormalizer.mps.Mpo.is_right_canon" title="Permalink to this definition">¶</a></dt>
+<dt class="sig sig-object py" id="renormalizer.mps.Mpo.is_right_canonical">
+<em class="property"><span class="pre">property</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">is_right_canonical</span></span><a class="headerlink" href="#renormalizer.mps.Mpo.is_right_canonical" title="Permalink to this definition">¶</a></dt>
 <dd><p>check the qn center in the R-canonical structure</p>
 </dd></dl>
 
@@ -1266,7 +1321,7 @@ shift is the a constant for H+shift</p>
 
 <dl class="py method">
 <dt class="sig sig-object py" id="renormalizer.mps.Mpo.load">
-<em class="property"><span class="pre">classmethod</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">load</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">model</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference internal" href="model.html#renormalizer.model.Model" title="renormalizer.model.model.Model"><span class="pre">renormalizer.model.model.Model</span></a></span></em>, <em class="sig-param"><span class="n"><span class="pre">fname</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.10)"><span class="pre">str</span></a></span></em><span class="sig-paren">)</span><a class="headerlink" href="#renormalizer.mps.Mpo.load" title="Permalink to this definition">¶</a></dt>
+<em class="property"><span class="pre">classmethod</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">load</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">model</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference internal" href="model.html#renormalizer.model.Model" title="renormalizer.model.model.Model"><span class="pre">Model</span></a></span></em>, <em class="sig-param"><span class="n"><span class="pre">fname</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.10)"><span class="pre">str</span></a></span></em><span class="sig-paren">)</span><a class="headerlink" href="#renormalizer.mps.Mpo.load" title="Permalink to this definition">¶</a></dt>
 <dd></dd></dl>
 
 <dl class="py method">
@@ -1282,9 +1337,27 @@ right hand of the side is R system qn, the sum of quantum number of L system
 and R system is tot.</p>
 </dd></dl>
 
+<dl class="py property">
+<dt class="sig sig-object py" id="renormalizer.mps.Mpo.mp_norm">
+<em class="property"><span class="pre">property</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">mp_norm</span></span><em class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><a class="reference external" href="https://docs.python.org/3/library/functions.html#float" title="(in Python v3.10)"><span class="pre">float</span></a></em><a class="headerlink" href="#renormalizer.mps.Mpo.mp_norm" title="Permalink to this definition">¶</a></dt>
+<dd><dl class="simple">
+<dt>if self.is_left_canon:</dt><dd><p>assert self.check_left_canonical()
+return np.linalg.norm(np.ravel(self[-1]))</p>
+</dd>
+<dt>else:</dt><dd><p>assert self.check_right_canonical()
+return np.linalg.norm(np.ravel(self[0]))</p>
+</dd>
+</dl>
+</dd></dl>
+
 <dl class="py method">
 <dt class="sig sig-object py" id="renormalizer.mps.Mpo.onsite">
-<em class="property"><span class="pre">classmethod</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">onsite</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">model</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference internal" href="model.html#renormalizer.model.Model" title="renormalizer.model.model.Model"><span class="pre">renormalizer.model.model.Model</span></a></span></em>, <em class="sig-param"><span class="n"><span class="pre">opera</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">dipole</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">False</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">dof_set</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/renormalizer/mps/mpo.html#Mpo.onsite"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#renormalizer.mps.Mpo.onsite" title="Permalink to this definition">¶</a></dt>
+<em class="property"><span class="pre">classmethod</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">onsite</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">model</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference internal" href="model.html#renormalizer.model.Model" title="renormalizer.model.model.Model"><span class="pre">Model</span></a></span></em>, <em class="sig-param"><span class="n"><span class="pre">opera</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">dipole</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">False</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">dof_set</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/renormalizer/mps/mpo.html#Mpo.onsite"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#renormalizer.mps.Mpo.onsite" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="py property">
+<dt class="sig sig-object py" id="renormalizer.mps.Mpo.pbond_dims">
+<em class="property"><span class="pre">property</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">pbond_dims</span></span><a class="headerlink" href="#renormalizer.mps.Mpo.pbond_dims" title="Permalink to this definition">¶</a></dt>
 <dd></dd></dl>
 
 <dl class="py property">
@@ -1294,7 +1367,7 @@ and R system is tot.</p>
 
 <dl class="py method">
 <dt class="sig sig-object py" id="renormalizer.mps.Mpo.ph_onsite">
-<em class="property"><span class="pre">classmethod</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">ph_onsite</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">model</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference internal" href="model.html#renormalizer.model.HolsteinModel" title="renormalizer.model.model.HolsteinModel"><span class="pre">renormalizer.model.model.HolsteinModel</span></a></span></em>, <em class="sig-param"><span class="n"><span class="pre">opera</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.10)"><span class="pre">str</span></a></span></em>, <em class="sig-param"><span class="n"><span class="pre">mol_idx</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference external" href="https://docs.python.org/3/library/functions.html#int" title="(in Python v3.10)"><span class="pre">int</span></a></span></em>, <em class="sig-param"><span class="n"><span class="pre">ph_idx</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">0</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/renormalizer/mps/mpo.html#Mpo.ph_onsite"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#renormalizer.mps.Mpo.ph_onsite" title="Permalink to this definition">¶</a></dt>
+<em class="property"><span class="pre">classmethod</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">ph_onsite</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">model</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference internal" href="model.html#renormalizer.model.HolsteinModel" title="renormalizer.model.model.HolsteinModel"><span class="pre">HolsteinModel</span></a></span></em>, <em class="sig-param"><span class="n"><span class="pre">opera</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.10)"><span class="pre">str</span></a></span></em>, <em class="sig-param"><span class="n"><span class="pre">mol_idx</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference external" href="https://docs.python.org/3/library/functions.html#int" title="(in Python v3.10)"><span class="pre">int</span></a></span></em>, <em class="sig-param"><span class="n"><span class="pre">ph_idx</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">0</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/renormalizer/mps/mpo.html#Mpo.ph_onsite"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#renormalizer.mps.Mpo.ph_onsite" title="Permalink to this definition">¶</a></dt>
 <dd></dd></dl>
 
 <dl class="py method">
@@ -1305,11 +1378,6 @@ and R system is tot.</p>
 <dl class="py method">
 <dt class="sig sig-object py" id="renormalizer.mps.Mpo.scale">
 <span class="sig-name descname"><span class="pre">scale</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">val</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">inplace</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">False</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#renormalizer.mps.Mpo.scale" title="Permalink to this definition">¶</a></dt>
-<dd></dd></dl>
-
-<dl class="py method">
-<dt class="sig sig-object py" id="renormalizer.mps.Mpo.set_threshold">
-<span class="sig-name descname"><span class="pre">set_threshold</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">val</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#renormalizer.mps.Mpo.set_threshold" title="Permalink to this definition">¶</a></dt>
 <dd></dd></dl>
 
 <dl class="py property">
@@ -1339,7 +1407,7 @@ and R system is tot.</p>
 
 <dl class="py method">
 <dt class="sig sig-object py" id="renormalizer.mps.Mpo.try_swap_site">
-<span class="sig-name descname"><span class="pre">try_swap_site</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">new_model</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference internal" href="model.html#renormalizer.model.Model" title="renormalizer.model.model.Model"><span class="pre">renormalizer.model.model.Model</span></a></span></em>, <em class="sig-param"><span class="n"><span class="pre">swap_jw</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference external" href="https://docs.python.org/3/library/functions.html#bool" title="(in Python v3.10)"><span class="pre">bool</span></a></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/renormalizer/mps/mpo.html#Mpo.try_swap_site"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#renormalizer.mps.Mpo.try_swap_site" title="Permalink to this definition">¶</a></dt>
+<span class="sig-name descname"><span class="pre">try_swap_site</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">new_model</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference internal" href="model.html#renormalizer.model.Model" title="renormalizer.model.model.Model"><span class="pre">Model</span></a></span></em>, <em class="sig-param"><span class="n"><span class="pre">swap_jw</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference external" href="https://docs.python.org/3/library/functions.html#bool" title="(in Python v3.10)"><span class="pre">bool</span></a></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/renormalizer/mps/mpo.html#Mpo.try_swap_site"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#renormalizer.mps.Mpo.try_swap_site" title="Permalink to this definition">¶</a></dt>
 <dd></dd></dl>
 
 <dl class="py method">
@@ -1371,17 +1439,27 @@ an approximation of <code class="docutils literal notranslate"><span class="pre"
 </dl>
 </dd></dl>
 
+<dl class="py property">
+<dt class="sig sig-object py" id="renormalizer.mps.Mpo.vbond_dims">
+<em class="property"><span class="pre">property</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">vbond_dims</span></span><em class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><a class="reference external" href="https://docs.python.org/3/library/typing.html#typing.List" title="(in Python v3.10)"><span class="pre">List</span></a></em><a class="headerlink" href="#renormalizer.mps.Mpo.vbond_dims" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="py property">
+<dt class="sig sig-object py" id="renormalizer.mps.Mpo.vbond_list">
+<em class="property"><span class="pre">property</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">vbond_list</span></span><em class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><a class="reference external" href="https://docs.python.org/3/library/typing.html#typing.List" title="(in Python v3.10)"><span class="pre">List</span></a></em><a class="headerlink" href="#renormalizer.mps.Mpo.vbond_list" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
 </dd></dl>
 
 </div>
 <div class="section" id="matrix-product-density-matrix-mpdm">
-<h2><span class="section-number">6.4. </span>Matrix Product Density Matrix (MPDM)<a class="headerlink" href="#matrix-product-density-matrix-mpdm" title="Permalink to this headline">¶</a></h2>
+<h2><span class="section-number">6.4. </span>Matrix Product Density Matrix (MPDM)<a class="headerlink" href="#matrix-product-density-matrix-mpdm" title="Permalink to this heading">¶</a></h2>
 <dl class="py class">
 <dt class="sig sig-object py" id="renormalizer.mps.MpDm">
 <em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">renormalizer.mps.</span></span><span class="sig-name descname"><span class="pre">MpDm</span></span><a class="reference internal" href="_modules/renormalizer/mps/mpdm.html#MpDm"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#renormalizer.mps.MpDm" title="Permalink to this definition">¶</a></dt>
 <dd><dl class="py method">
 <dt class="sig sig-object py" id="renormalizer.mps.MpDm.add">
-<span class="sig-name descname"><span class="pre">add</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">other</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference internal" href="#renormalizer.mps.mp.MatrixProduct" title="renormalizer.mps.mp.MatrixProduct"><span class="pre">renormalizer.mps.mp.MatrixProduct</span></a></span></em><span class="sig-paren">)</span><a class="headerlink" href="#renormalizer.mps.MpDm.add" title="Permalink to this definition">¶</a></dt>
+<span class="sig-name descname"><span class="pre">add</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">other</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#renormalizer.mps.MpDm.add" title="Permalink to this definition">¶</a></dt>
 <dd></dd></dl>
 
 <dl class="py method">
@@ -1401,12 +1479,17 @@ an approximation of <code class="docutils literal notranslate"><span class="pre"
 
 <dl class="py property">
 <dt class="sig sig-object py" id="renormalizer.mps.MpDm.bond_dims">
-<em class="property"><span class="pre">property</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">bond_dims</span></span><em class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="pre">List</span></em><a class="headerlink" href="#renormalizer.mps.MpDm.bond_dims" title="Permalink to this definition">¶</a></dt>
+<em class="property"><span class="pre">property</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">bond_dims</span></span><em class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><a class="reference external" href="https://docs.python.org/3/library/typing.html#typing.List" title="(in Python v3.10)"><span class="pre">List</span></a></em><a class="headerlink" href="#renormalizer.mps.MpDm.bond_dims" title="Permalink to this definition">¶</a></dt>
 <dd></dd></dl>
 
 <dl class="py property">
 <dt class="sig sig-object py" id="renormalizer.mps.MpDm.bond_dims_mean">
 <em class="property"><span class="pre">property</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">bond_dims_mean</span></span><em class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><a class="reference external" href="https://docs.python.org/3/library/functions.html#int" title="(in Python v3.10)"><span class="pre">int</span></a></em><a class="headerlink" href="#renormalizer.mps.MpDm.bond_dims_mean" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="py property">
+<dt class="sig sig-object py" id="renormalizer.mps.MpDm.bond_list">
+<em class="property"><span class="pre">property</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">bond_list</span></span><em class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><a class="reference external" href="https://docs.python.org/3/library/typing.html#typing.List" title="(in Python v3.10)"><span class="pre">List</span></a></em><a class="headerlink" href="#renormalizer.mps.MpDm.bond_list" title="Permalink to this definition">¶</a></dt>
 <dd></dd></dl>
 
 <dl class="py method">
@@ -1426,17 +1509,21 @@ an approximation of <code class="docutils literal notranslate"><span class="pre"
 
 <dl class="py method">
 <dt class="sig sig-object py" id="renormalizer.mps.MpDm.calc_1site_rdm">
-<span class="sig-name descname"><span class="pre">calc_1site_rdm</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#renormalizer.mps.MpDm.calc_1site_rdm" title="Permalink to this definition">¶</a></dt>
+<span class="sig-name descname"><span class="pre">calc_1site_rdm</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">idx</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#renormalizer.mps.MpDm.calc_1site_rdm" title="Permalink to this definition">¶</a></dt>
 <dd><p>Calculate 1-site reduced density matrix</p>
 <blockquote>
 <div><p><span class="math notranslate nohighlight">\(\rho_i = \textrm{Tr}_{j \neq i} | \Psi \rangle \langle \Psi|\)</span></p>
 </div></blockquote>
 <dl class="field-list simple">
-<dt class="field-odd">Returns</dt>
-<dd class="field-odd"><p><strong>rdm</strong> – <span class="math notranslate nohighlight">\(\{0:\rho_0, 1:\rho_1, \cdots\}\)</span>. The key is the index of the site.</p>
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><p><strong>idx</strong> (<a class="reference external" href="https://docs.python.org/3/library/functions.html#int" title="(in Python v3.10)"><em>int</em></a><em>, </em><a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#list" title="(in Python v3.10)"><em>list</em></a><em>, </em><a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#tuple" title="(in Python v3.10)"><em>tuple</em></a><em>, </em><em>optional</em>) – site index of 1site_rdm. Default is None, which mean all the rdms
+are calculated.</p>
 </dd>
-<dt class="field-even">Return type</dt>
-<dd class="field-even"><p>Dict</p>
+<dt class="field-even">Returns</dt>
+<dd class="field-even"><p><strong>rdm</strong> – <span class="math notranslate nohighlight">\(\{0:\rho_0, 1:\rho_1, \cdots\}\)</span>. The key is the index of the site.</p>
+</dd>
+<dt class="field-odd">Return type</dt>
+<dd class="field-odd"><p>Dict</p>
 </dd>
 </dl>
 </dd></dl>
@@ -1474,7 +1561,7 @@ an approximation of <code class="docutils literal notranslate"><span class="pre"
 
 <dl class="py method">
 <dt class="sig sig-object py" id="renormalizer.mps.MpDm.calc_bond_entropy">
-<span class="sig-name descname"><span class="pre">calc_bond_entropy</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">numpy.ndarray</span></span></span><a class="headerlink" href="#renormalizer.mps.MpDm.calc_bond_entropy" title="Permalink to this definition">¶</a></dt>
+<span class="sig-name descname"><span class="pre">calc_bond_entropy</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">ndarray</span></span></span><a class="headerlink" href="#renormalizer.mps.MpDm.calc_bond_entropy" title="Permalink to this definition">¶</a></dt>
 <dd><p>Calculate von Neumann entropy at each bond according to <span class="math notranslate nohighlight">\(S = -\textrm{Tr}(\rho \ln \rho)\)</span>
 where <span class="math notranslate nohighlight">\(\rho\)</span> is the reduced density matrix of either block.</p>
 <dl class="field-list simple">
@@ -1489,7 +1576,7 @@ where <span class="math notranslate nohighlight">\(\rho\)</span> is the reduced 
 
 <dl class="py method">
 <dt class="sig sig-object py" id="renormalizer.mps.MpDm.calc_edof_rdm">
-<span class="sig-name descname"><span class="pre">calc_edof_rdm</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">numpy.ndarray</span></span></span><a class="headerlink" href="#renormalizer.mps.MpDm.calc_edof_rdm" title="Permalink to this definition">¶</a></dt>
+<span class="sig-name descname"><span class="pre">calc_edof_rdm</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">ndarray</span></span></span><a class="headerlink" href="#renormalizer.mps.MpDm.calc_edof_rdm" title="Permalink to this definition">¶</a></dt>
 <dd><p>Calculate the reduced density matrix of electronic DoF</p>
 <p><span class="math notranslate nohighlight">\(\rho_{ij} = \langle \Psi | a_i^\dagger a_j | \Psi \rangle\)</span></p>
 </dd></dl>
@@ -1522,11 +1609,6 @@ an ndarray is returned.</p>
 </dd>
 </dl>
 </dd></dl>
-
-<dl class="py method">
-<dt class="sig sig-object py" id="renormalizer.mps.MpDm.canonical_normalize">
-<span class="sig-name descname"><span class="pre">canonical_normalize</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#renormalizer.mps.MpDm.canonical_normalize" title="Permalink to this definition">¶</a></dt>
-<dd></dd></dl>
 
 <dl class="py method">
 <dt class="sig sig-object py" id="renormalizer.mps.MpDm.canonicalise">
@@ -1569,7 +1651,7 @@ output MPS is right canonicalised i.e. CRRR</p>
 
 <dl class="py method">
 <dt class="sig sig-object py" id="renormalizer.mps.MpDm.conj">
-<span class="sig-name descname"><span class="pre">conj</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><a class="reference internal" href="#renormalizer.mps.Mps" title="renormalizer.mps.mps.Mps"><span class="pre">renormalizer.mps.mps.Mps</span></a></span></span><a class="headerlink" href="#renormalizer.mps.MpDm.conj" title="Permalink to this definition">¶</a></dt>
+<span class="sig-name descname"><span class="pre">conj</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><a class="reference internal" href="#renormalizer.mps.Mps" title="renormalizer.mps.mps.Mps"><span class="pre">Mps</span></a></span></span><a class="headerlink" href="#renormalizer.mps.MpDm.conj" title="Permalink to this definition">¶</a></dt>
 <dd><p>complex conjugate</p>
 </dd></dl>
 
@@ -1624,22 +1706,9 @@ overwritten.</p>
 <span class="sig-name descname"><span class="pre">distance</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">other</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><a class="reference external" href="https://docs.python.org/3/library/functions.html#float" title="(in Python v3.10)"><span class="pre">float</span></a></span></span><a class="headerlink" href="#renormalizer.mps.MpDm.distance" title="Permalink to this definition">¶</a></dt>
 <dd></dd></dl>
 
-<dl class="py property">
-<dt class="sig sig-object py" id="renormalizer.mps.MpDm.dmrg_norm">
-<em class="property"><span class="pre">property</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">dmrg_norm</span></span><em class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><a class="reference external" href="https://docs.python.org/3/library/functions.html#float" title="(in Python v3.10)"><span class="pre">float</span></a></em><a class="headerlink" href="#renormalizer.mps.MpDm.dmrg_norm" title="Permalink to this definition">¶</a></dt>
-<dd><dl class="simple">
-<dt>if self.is_left_canon:</dt><dd><p>assert self.check_left_canonical()
-return np.linalg.norm(np.ravel(self[-1]))</p>
-</dd>
-<dt>else:</dt><dd><p>assert self.check_right_canonical()
-return np.linalg.norm(np.ravel(self[0]))</p>
-</dd>
-</dl>
-</dd></dl>
-
 <dl class="py method">
 <dt class="sig sig-object py" id="renormalizer.mps.MpDm.dot">
-<span class="sig-name descname"><span class="pre">dot</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">other</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference internal" href="#renormalizer.mps.mp.MatrixProduct" title="renormalizer.mps.mp.MatrixProduct"><span class="pre">renormalizer.mps.mp.MatrixProduct</span></a></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><a class="reference external" href="https://docs.python.org/3/library/functions.html#complex" title="(in Python v3.10)"><span class="pre">complex</span></a></span></span><a class="headerlink" href="#renormalizer.mps.MpDm.dot" title="Permalink to this definition">¶</a></dt>
+<span class="sig-name descname"><span class="pre">dot</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">other</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference internal" href="#renormalizer.mps.mp.MatrixProduct" title="renormalizer.mps.mp.MatrixProduct"><span class="pre">MatrixProduct</span></a></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><a class="reference external" href="https://docs.python.org/3/library/functions.html#complex" title="(in Python v3.10)"><span class="pre">complex</span></a></span></span><a class="headerlink" href="#renormalizer.mps.MpDm.dot" title="Permalink to this definition">¶</a></dt>
 <dd><p>dot product of two mps / mpo</p>
 </dd></dl>
 
@@ -1661,18 +1730,18 @@ The order is defined by <code class="xref py py-attr docutils literal notranslat
 </dd></dl>
 
 <dl class="py method">
-<dt class="sig sig-object py" id="renormalizer.mps.MpDm.ensure_left_canon">
-<span class="sig-name descname"><span class="pre">ensure_left_canon</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">rtol</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">1e-05</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">atol</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">1e-08</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#renormalizer.mps.MpDm.ensure_left_canon" title="Permalink to this definition">¶</a></dt>
+<dt class="sig sig-object py" id="renormalizer.mps.MpDm.ensure_left_canonical">
+<span class="sig-name descname"><span class="pre">ensure_left_canonical</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">rtol</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">1e-05</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">atol</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">1e-08</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#renormalizer.mps.MpDm.ensure_left_canonical" title="Permalink to this definition">¶</a></dt>
 <dd></dd></dl>
 
 <dl class="py method">
-<dt class="sig sig-object py" id="renormalizer.mps.MpDm.ensure_right_canon">
-<span class="sig-name descname"><span class="pre">ensure_right_canon</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">rtol</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">1e-05</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">atol</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">1e-08</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#renormalizer.mps.MpDm.ensure_right_canon" title="Permalink to this definition">¶</a></dt>
+<dt class="sig sig-object py" id="renormalizer.mps.MpDm.ensure_right_canonical">
+<span class="sig-name descname"><span class="pre">ensure_right_canonical</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">rtol</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">1e-05</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">atol</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">1e-08</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#renormalizer.mps.MpDm.ensure_right_canonical" title="Permalink to this definition">¶</a></dt>
 <dd></dd></dl>
 
 <dl class="py method">
 <dt class="sig sig-object py" id="renormalizer.mps.MpDm.evolve">
-<span class="sig-name descname"><span class="pre">evolve</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">mpo</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">evolve_dt</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><a class="reference internal" href="#renormalizer.mps.Mps" title="renormalizer.mps.mps.Mps"><span class="pre">renormalizer.mps.mps.Mps</span></a></span></span><a class="headerlink" href="#renormalizer.mps.MpDm.evolve" title="Permalink to this definition">¶</a></dt>
+<span class="sig-name descname"><span class="pre">evolve</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">mpo</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">evolve_dt</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">normalize</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">True</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><a class="reference internal" href="#renormalizer.mps.Mps" title="renormalizer.mps.mps.Mps"><span class="pre">Mps</span></a></span></span><a class="headerlink" href="#renormalizer.mps.MpDm.evolve" title="Permalink to this definition">¶</a></dt>
 <dd></dd></dl>
 
 <dl class="py method">
@@ -1682,7 +1751,7 @@ The order is defined by <code class="xref py py-attr docutils literal notranslat
 
 <dl class="py method">
 <dt class="sig sig-object py" id="renormalizer.mps.MpDm.exact_propagator">
-<em class="property"><span class="pre">classmethod</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">exact_propagator</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">model</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference internal" href="model.html#renormalizer.model.HolsteinModel" title="renormalizer.model.model.HolsteinModel"><span class="pre">renormalizer.model.model.HolsteinModel</span></a></span></em>, <em class="sig-param"><span class="n"><span class="pre">x</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">space</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">'GS'</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">shift</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">0.0</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#renormalizer.mps.MpDm.exact_propagator" title="Permalink to this definition">¶</a></dt>
+<em class="property"><span class="pre">classmethod</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">exact_propagator</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">model</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference internal" href="model.html#renormalizer.model.HolsteinModel" title="renormalizer.model.model.HolsteinModel"><span class="pre">HolsteinModel</span></a></span></em>, <em class="sig-param"><span class="n"><span class="pre">x</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">space</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">'GS'</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">shift</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">0.0</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#renormalizer.mps.MpDm.exact_propagator" title="Permalink to this definition">¶</a></dt>
 <dd><p>construct the GS space propagator e^{xH} exact MPO
 H=sum_{in} omega_{in} b^dagger_{in} b_{in}
 fortunately, the H is local. so e^{xH} = e^{xh1}e^{xh2}…e^{xhn}
@@ -1703,7 +1772,7 @@ shift is the a constant for H+shift</p>
 
 <dl class="py method">
 <dt class="sig sig-object py" id="renormalizer.mps.MpDm.expectations">
-<span class="sig-name descname"><span class="pre">expectations</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">mpos</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">self_conj</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">opt</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">True</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">numpy.ndarray</span></span></span><a class="headerlink" href="#renormalizer.mps.MpDm.expectations" title="Permalink to this definition">¶</a></dt>
+<span class="sig-name descname"><span class="pre">expectations</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">mpos</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">self_conj</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">opt</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">True</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">ndarray</span></span></span><a class="headerlink" href="#renormalizer.mps.MpDm.expectations" title="Permalink to this definition">¶</a></dt>
 <dd></dd></dl>
 
 <dl class="py method">
@@ -1713,7 +1782,7 @@ shift is the a constant for H+shift</p>
 
 <dl class="py method">
 <dt class="sig sig-object py" id="renormalizer.mps.MpDm.from_dense">
-<em class="property"><span class="pre">classmethod</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">from_dense</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">model</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">wfn</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">numpy.ndarray</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/renormalizer/mps/mpdm.html#MpDm.from_dense"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#renormalizer.mps.MpDm.from_dense" title="Permalink to this definition">¶</a></dt>
+<em class="property"><span class="pre">classmethod</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">from_dense</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">model</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">wfn</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">ndarray</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/renormalizer/mps/mpdm.html#MpDm.from_dense"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#renormalizer.mps.MpDm.from_dense" title="Permalink to this definition">¶</a></dt>
 <dd></dd></dl>
 
 <dl class="py method">
@@ -1723,7 +1792,7 @@ shift is the a constant for H+shift</p>
 
 <dl class="py method">
 <dt class="sig sig-object py" id="renormalizer.mps.MpDm.from_mps">
-<em class="property"><span class="pre">classmethod</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">from_mps</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">mps</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference internal" href="#renormalizer.mps.Mps" title="renormalizer.mps.mps.Mps"><span class="pre">renormalizer.mps.mps.Mps</span></a></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/renormalizer/mps/mpdm.html#MpDm.from_mps"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#renormalizer.mps.MpDm.from_mps" title="Permalink to this definition">¶</a></dt>
+<em class="property"><span class="pre">classmethod</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">from_mps</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">mps</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference internal" href="#renormalizer.mps.Mps" title="renormalizer.mps.mps.Mps"><span class="pre">Mps</span></a></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/renormalizer/mps/mpdm.html#MpDm.from_mps"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#renormalizer.mps.MpDm.from_mps" title="Permalink to this definition">¶</a></dt>
 <dd></dd></dl>
 
 <dl class="py method">
@@ -1785,12 +1854,12 @@ is added to the <code class="docutils literal notranslate"><span class="pre">0</
 
 <dl class="py method">
 <dt class="sig sig-object py" id="renormalizer.mps.MpDm.identity">
-<em class="property"><span class="pre">classmethod</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">identity</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">model</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference internal" href="model.html#renormalizer.model.Model" title="renormalizer.model.model.Model"><span class="pre">renormalizer.model.model.Model</span></a></span></em><span class="sig-paren">)</span><a class="headerlink" href="#renormalizer.mps.MpDm.identity" title="Permalink to this definition">¶</a></dt>
+<em class="property"><span class="pre">classmethod</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">identity</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">model</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference internal" href="model.html#renormalizer.model.Model" title="renormalizer.model.model.Model"><span class="pre">Model</span></a></span></em><span class="sig-paren">)</span><a class="headerlink" href="#renormalizer.mps.MpDm.identity" title="Permalink to this definition">¶</a></dt>
 <dd></dd></dl>
 
 <dl class="py method">
 <dt class="sig sig-object py" id="renormalizer.mps.MpDm.intersite">
-<em class="property"><span class="pre">classmethod</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">intersite</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">model:</span> <span class="pre">renormalizer.model.model.HolsteinModel</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">e_opera:</span> <span class="pre">dict</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">ph_opera:</span> <span class="pre">dict</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">scale:</span> <span class="pre">renormalizer.utils.quantity.Quantity</span> <span class="pre">=</span> <span class="pre">&lt;renormalizer.utils.quantity.Quantity</span> <span class="pre">object&gt;</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#renormalizer.mps.MpDm.intersite" title="Permalink to this definition">¶</a></dt>
+<em class="property"><span class="pre">classmethod</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">intersite</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">model:</span> <span class="pre">~renormalizer.model.model.HolsteinModel</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">e_opera:</span> <span class="pre">dict</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">ph_opera:</span> <span class="pre">dict</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">scale:</span> <span class="pre">~renormalizer.utils.quantity.Quantity</span> <span class="pre">=</span> <span class="pre">&lt;renormalizer.utils.quantity.Quantity</span> <span class="pre">object&gt;</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#renormalizer.mps.MpDm.intersite" title="Permalink to this definition">¶</a></dt>
 <dd><p>construct the inter site MPO</p>
 <dl class="field-list simple">
 <dt class="field-odd">Parameters</dt>
@@ -1819,8 +1888,8 @@ is added to the <code class="docutils literal notranslate"><span class="pre">0</
 <dd></dd></dl>
 
 <dl class="py property">
-<dt class="sig sig-object py" id="renormalizer.mps.MpDm.is_left_canon">
-<em class="property"><span class="pre">property</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">is_left_canon</span></span><a class="headerlink" href="#renormalizer.mps.MpDm.is_left_canon" title="Permalink to this definition">¶</a></dt>
+<dt class="sig sig-object py" id="renormalizer.mps.MpDm.is_left_canonical">
+<em class="property"><span class="pre">property</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">is_left_canonical</span></span><a class="headerlink" href="#renormalizer.mps.MpDm.is_left_canonical" title="Permalink to this definition">¶</a></dt>
 <dd><p>check the qn center in the L-canonical structure</p>
 </dd></dl>
 
@@ -1840,8 +1909,8 @@ is added to the <code class="docutils literal notranslate"><span class="pre">0</
 <dd></dd></dl>
 
 <dl class="py property">
-<dt class="sig sig-object py" id="renormalizer.mps.MpDm.is_right_canon">
-<em class="property"><span class="pre">property</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">is_right_canon</span></span><a class="headerlink" href="#renormalizer.mps.MpDm.is_right_canon" title="Permalink to this definition">¶</a></dt>
+<dt class="sig sig-object py" id="renormalizer.mps.MpDm.is_right_canonical">
+<em class="property"><span class="pre">property</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">is_right_canonical</span></span><a class="headerlink" href="#renormalizer.mps.MpDm.is_right_canonical" title="Permalink to this definition">¶</a></dt>
 <dd><p>check the qn center in the R-canonical structure</p>
 </dd></dl>
 
@@ -1852,7 +1921,7 @@ is added to the <code class="docutils literal notranslate"><span class="pre">0</
 
 <dl class="py method">
 <dt class="sig sig-object py" id="renormalizer.mps.MpDm.load">
-<em class="property"><span class="pre">classmethod</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">load</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">model</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference internal" href="model.html#renormalizer.model.Model" title="renormalizer.model.model.Model"><span class="pre">renormalizer.model.model.Model</span></a></span></em>, <em class="sig-param"><span class="n"><span class="pre">fname</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.10)"><span class="pre">str</span></a></span></em><span class="sig-paren">)</span><a class="headerlink" href="#renormalizer.mps.MpDm.load" title="Permalink to this definition">¶</a></dt>
+<em class="property"><span class="pre">classmethod</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">load</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">model</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference internal" href="model.html#renormalizer.model.Model" title="renormalizer.model.model.Model"><span class="pre">Model</span></a></span></em>, <em class="sig-param"><span class="n"><span class="pre">fname</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.10)"><span class="pre">str</span></a></span></em><span class="sig-paren">)</span><a class="headerlink" href="#renormalizer.mps.MpDm.load" title="Permalink to this definition">¶</a></dt>
 <dd></dd></dl>
 
 <dl class="py method">
@@ -1863,12 +1932,12 @@ is added to the <code class="docutils literal notranslate"><span class="pre">0</
 
 <dl class="py method">
 <dt class="sig sig-object py" id="renormalizer.mps.MpDm.max_entangled_gs">
-<em class="property"><span class="pre">classmethod</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">max_entangled_gs</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">model</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><a class="reference internal" href="#renormalizer.mps.MpDm" title="renormalizer.mps.mpdm.MpDm"><span class="pre">renormalizer.mps.mpdm.MpDm</span></a></span></span><a class="reference internal" href="_modules/renormalizer/mps/mpdm.html#MpDm.max_entangled_gs"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#renormalizer.mps.MpDm.max_entangled_gs" title="Permalink to this definition">¶</a></dt>
+<em class="property"><span class="pre">classmethod</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">max_entangled_gs</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">model</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><a class="reference internal" href="#renormalizer.mps.MpDm" title="renormalizer.mps.mpdm.MpDm"><span class="pre">MpDm</span></a></span></span><a class="reference internal" href="_modules/renormalizer/mps/mpdm.html#MpDm.max_entangled_gs"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#renormalizer.mps.MpDm.max_entangled_gs" title="Permalink to this definition">¶</a></dt>
 <dd></dd></dl>
 
 <dl class="py method">
 <dt class="sig sig-object py" id="renormalizer.mps.MpDm.metacopy">
-<span class="sig-name descname"><span class="pre">metacopy</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><a class="reference internal" href="#renormalizer.mps.Mps" title="renormalizer.mps.mps.Mps"><span class="pre">renormalizer.mps.mps.Mps</span></a></span></span><a class="headerlink" href="#renormalizer.mps.MpDm.metacopy" title="Permalink to this definition">¶</a></dt>
+<span class="sig-name descname"><span class="pre">metacopy</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><a class="reference internal" href="#renormalizer.mps.Mps" title="renormalizer.mps.mps.Mps"><span class="pre">Mps</span></a></span></span><a class="headerlink" href="#renormalizer.mps.MpDm.metacopy" title="Permalink to this definition">¶</a></dt>
 <dd></dd></dl>
 
 <dl class="py method">
@@ -1880,6 +1949,19 @@ and R system is tot.</p>
 </dd></dl>
 
 <dl class="py property">
+<dt class="sig sig-object py" id="renormalizer.mps.MpDm.mp_norm">
+<em class="property"><span class="pre">property</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">mp_norm</span></span><em class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><a class="reference external" href="https://docs.python.org/3/library/functions.html#float" title="(in Python v3.10)"><span class="pre">float</span></a></em><a class="headerlink" href="#renormalizer.mps.MpDm.mp_norm" title="Permalink to this definition">¶</a></dt>
+<dd><dl class="simple">
+<dt>if self.is_left_canon:</dt><dd><p>assert self.check_left_canonical()
+return np.linalg.norm(np.ravel(self[-1]))</p>
+</dd>
+<dt>else:</dt><dd><p>assert self.check_right_canonical()
+return np.linalg.norm(np.ravel(self[0]))</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py property">
 <dt class="sig sig-object py" id="renormalizer.mps.MpDm.nexciton">
 <em class="property"><span class="pre">property</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">nexciton</span></span><a class="headerlink" href="#renormalizer.mps.MpDm.nexciton" title="Permalink to this definition">¶</a></dt>
 <dd></dd></dl>
@@ -1887,16 +1969,33 @@ and R system is tot.</p>
 <dl class="py property">
 <dt class="sig sig-object py" id="renormalizer.mps.MpDm.norm">
 <em class="property"><span class="pre">property</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">norm</span></span><a class="headerlink" href="#renormalizer.mps.MpDm.norm" title="Permalink to this definition">¶</a></dt>
-<dd></dd></dl>
+<dd><p>the norm of the total wavefunction</p>
+</dd></dl>
 
 <dl class="py method">
 <dt class="sig sig-object py" id="renormalizer.mps.MpDm.normalize">
-<span class="sig-name descname"><span class="pre">normalize</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">norm</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#renormalizer.mps.MpDm.normalize" title="Permalink to this definition">¶</a></dt>
-<dd></dd></dl>
+<span class="sig-name descname"><span class="pre">normalize</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">kind</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#renormalizer.mps.MpDm.normalize" title="Permalink to this definition">¶</a></dt>
+<dd><p>normalize the wavefunction</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><p><strong>kind</strong> (<a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.10)"><em>str</em></a>) – “mps_only”: the mps part is normalized and coeff is not modified;
+“mps_norm_to_coeff”: the mps part is normalized and the norm is multiplied to coeff;
+“mps_and_coeff”: both mps and coeff is normalized</p>
+</dd>
+<dt class="field-even">Return type</dt>
+<dd class="field-even"><p><code class="docutils literal notranslate"><span class="pre">self</span></code> is overwritten.</p>
+</dd>
+</dl>
+</dd></dl>
 
 <dl class="py method">
 <dt class="sig sig-object py" id="renormalizer.mps.MpDm.onsite">
-<em class="property"><span class="pre">classmethod</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">onsite</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">model</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference internal" href="model.html#renormalizer.model.Model" title="renormalizer.model.model.Model"><span class="pre">renormalizer.model.model.Model</span></a></span></em>, <em class="sig-param"><span class="n"><span class="pre">opera</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">dipole</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">False</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">dof_set</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#renormalizer.mps.MpDm.onsite" title="Permalink to this definition">¶</a></dt>
+<em class="property"><span class="pre">classmethod</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">onsite</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">model</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference internal" href="model.html#renormalizer.model.Model" title="renormalizer.model.model.Model"><span class="pre">Model</span></a></span></em>, <em class="sig-param"><span class="n"><span class="pre">opera</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">dipole</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">False</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">dof_set</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#renormalizer.mps.MpDm.onsite" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="py property">
+<dt class="sig sig-object py" id="renormalizer.mps.MpDm.pbond_dims">
+<em class="property"><span class="pre">property</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">pbond_dims</span></span><a class="headerlink" href="#renormalizer.mps.MpDm.pbond_dims" title="Permalink to this definition">¶</a></dt>
 <dd></dd></dl>
 
 <dl class="py property">
@@ -1913,7 +2012,7 @@ The order is defined by <code class="xref py py-attr docutils literal notranslat
 
 <dl class="py method">
 <dt class="sig sig-object py" id="renormalizer.mps.MpDm.ph_onsite">
-<em class="property"><span class="pre">classmethod</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">ph_onsite</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">model</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference internal" href="model.html#renormalizer.model.HolsteinModel" title="renormalizer.model.model.HolsteinModel"><span class="pre">renormalizer.model.model.HolsteinModel</span></a></span></em>, <em class="sig-param"><span class="n"><span class="pre">opera</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.10)"><span class="pre">str</span></a></span></em>, <em class="sig-param"><span class="n"><span class="pre">mol_idx</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference external" href="https://docs.python.org/3/library/functions.html#int" title="(in Python v3.10)"><span class="pre">int</span></a></span></em>, <em class="sig-param"><span class="n"><span class="pre">ph_idx</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">0</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#renormalizer.mps.MpDm.ph_onsite" title="Permalink to this definition">¶</a></dt>
+<em class="property"><span class="pre">classmethod</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">ph_onsite</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">model</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference internal" href="model.html#renormalizer.model.HolsteinModel" title="renormalizer.model.model.HolsteinModel"><span class="pre">HolsteinModel</span></a></span></em>, <em class="sig-param"><span class="n"><span class="pre">opera</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.10)"><span class="pre">str</span></a></span></em>, <em class="sig-param"><span class="n"><span class="pre">mol_idx</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference external" href="https://docs.python.org/3/library/functions.html#int" title="(in Python v3.10)"><span class="pre">int</span></a></span></em>, <em class="sig-param"><span class="n"><span class="pre">ph_idx</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">0</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#renormalizer.mps.MpDm.ph_onsite" title="Permalink to this definition">¶</a></dt>
 <dd></dd></dl>
 
 <dl class="py method">
@@ -1931,11 +2030,6 @@ The order is defined by <code class="xref py py-attr docutils literal notranslat
 <span class="sig-name descname"><span class="pre">scale</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">val</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">inplace</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">False</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#renormalizer.mps.MpDm.scale" title="Permalink to this definition">¶</a></dt>
 <dd></dd></dl>
 
-<dl class="py method">
-<dt class="sig sig-object py" id="renormalizer.mps.MpDm.set_threshold">
-<span class="sig-name descname"><span class="pre">set_threshold</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">val</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#renormalizer.mps.MpDm.set_threshold" title="Permalink to this definition">¶</a></dt>
-<dd></dd></dl>
-
 <dl class="py property">
 <dt class="sig sig-object py" id="renormalizer.mps.MpDm.site_num">
 <em class="property"><span class="pre">property</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">site_num</span></span><a class="headerlink" href="#renormalizer.mps.MpDm.site_num" title="Permalink to this definition">¶</a></dt>
@@ -1948,7 +2042,7 @@ The order is defined by <code class="xref py py-attr docutils literal notranslat
 
 <dl class="py method">
 <dt class="sig sig-object py" id="renormalizer.mps.MpDm.to_complex">
-<span class="sig-name descname"><span class="pre">to_complex</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">inplace</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">False</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><a class="reference internal" href="#renormalizer.mps.Mps" title="renormalizer.mps.mps.Mps"><span class="pre">renormalizer.mps.mps.Mps</span></a></span></span><a class="headerlink" href="#renormalizer.mps.MpDm.to_complex" title="Permalink to this definition">¶</a></dt>
+<span class="sig-name descname"><span class="pre">to_complex</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">inplace</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">False</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><a class="reference internal" href="#renormalizer.mps.Mps" title="renormalizer.mps.mps.Mps"><span class="pre">Mps</span></a></span></span><a class="headerlink" href="#renormalizer.mps.MpDm.to_complex" title="Permalink to this definition">¶</a></dt>
 <dd></dd></dl>
 
 <dl class="py method">
@@ -1963,7 +2057,7 @@ The order is defined by <code class="xref py py-attr docutils literal notranslat
 
 <dl class="py method">
 <dt class="sig sig-object py" id="renormalizer.mps.MpDm.try_swap_site">
-<span class="sig-name descname"><span class="pre">try_swap_site</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">new_model</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference internal" href="model.html#renormalizer.model.Model" title="renormalizer.model.model.Model"><span class="pre">renormalizer.model.model.Model</span></a></span></em>, <em class="sig-param"><span class="n"><span class="pre">swap_jw</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference external" href="https://docs.python.org/3/library/functions.html#bool" title="(in Python v3.10)"><span class="pre">bool</span></a></span></em><span class="sig-paren">)</span><a class="headerlink" href="#renormalizer.mps.MpDm.try_swap_site" title="Permalink to this definition">¶</a></dt>
+<span class="sig-name descname"><span class="pre">try_swap_site</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">new_model</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference internal" href="model.html#renormalizer.model.Model" title="renormalizer.model.model.Model"><span class="pre">Model</span></a></span></em>, <em class="sig-param"><span class="n"><span class="pre">swap_jw</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference external" href="https://docs.python.org/3/library/functions.html#bool" title="(in Python v3.10)"><span class="pre">bool</span></a></span></em><span class="sig-paren">)</span><a class="headerlink" href="#renormalizer.mps.MpDm.try_swap_site" title="Permalink to this definition">¶</a></dt>
 <dd></dd></dl>
 
 <dl class="py method">
@@ -1995,15 +2089,25 @@ an approximation of <code class="docutils literal notranslate"><span class="pre"
 </dl>
 </dd></dl>
 
+<dl class="py property">
+<dt class="sig sig-object py" id="renormalizer.mps.MpDm.vbond_dims">
+<em class="property"><span class="pre">property</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">vbond_dims</span></span><em class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><a class="reference external" href="https://docs.python.org/3/library/typing.html#typing.List" title="(in Python v3.10)"><span class="pre">List</span></a></em><a class="headerlink" href="#renormalizer.mps.MpDm.vbond_dims" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="py property">
+<dt class="sig sig-object py" id="renormalizer.mps.MpDm.vbond_list">
+<em class="property"><span class="pre">property</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">vbond_list</span></span><em class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><a class="reference external" href="https://docs.python.org/3/library/typing.html#typing.List" title="(in Python v3.10)"><span class="pre">List</span></a></em><a class="headerlink" href="#renormalizer.mps.MpDm.vbond_list" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
 </dd></dl>
 
 </div>
 <div class="section" id="module-renormalizer.mps.thermalprop">
-<span id="thermal-propagation"></span><h2><span class="section-number">6.5. </span>Thermal Propagation<a class="headerlink" href="#module-renormalizer.mps.thermalprop" title="Permalink to this headline">¶</a></h2>
+<span id="thermal-propagation"></span><h2><span class="section-number">6.5. </span>Thermal Propagation<a class="headerlink" href="#module-renormalizer.mps.thermalprop" title="Permalink to this heading">¶</a></h2>
 <dl class="py class">
 <dt class="sig sig-object py" id="renormalizer.mps.thermalprop.ThermalProp">
-<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">renormalizer.mps.thermalprop.</span></span><span class="sig-name descname"><span class="pre">ThermalProp</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">init_mpdm</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference internal" href="#renormalizer.mps.MpDm" title="renormalizer.mps.mpdm.MpDm"><span class="pre">renormalizer.mps.mpdm.MpDm</span></a></span></em>, <em class="sig-param"><span class="n"><span class="pre">h_mpo_model</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference external" href="https://docs.python.org/3/library/typing.html#typing.Optional" title="(in Python v3.10)"><span class="pre">Optional</span></a><span class="p"><span class="pre">[</span></span><a class="reference internal" href="model.html#renormalizer.model.Model" title="renormalizer.model.model.Model"><span class="pre">renormalizer.model.model.Model</span></a><span class="p"><span class="pre">]</span></span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">exact</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference external" href="https://docs.python.org/3/library/functions.html#bool" title="(in Python v3.10)"><span class="pre">bool</span></a></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">False</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">space</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.10)"><span class="pre">str</span></a></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">'GS'</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">evolve_config</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference external" href="https://docs.python.org/3/library/typing.html#typing.Optional" title="(in Python v3.10)"><span class="pre">Optional</span></a><span class="p"><span class="pre">[</span></span><a class="reference internal" href="configs.html#renormalizer.utils.configs.EvolveConfig" title="renormalizer.utils.configs.EvolveConfig"><span class="pre">renormalizer.utils.configs.EvolveConfig</span></a><span class="p"><span class="pre">]</span></span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">dump_mps</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference external" href="https://docs.python.org/3/library/functions.html#bool" title="(in Python v3.10)"><span class="pre">bool</span></a></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">False</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">dump_dir</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference external" href="https://docs.python.org/3/library/typing.html#typing.Optional" title="(in Python v3.10)"><span class="pre">Optional</span></a><span class="p"><span class="pre">[</span></span><a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.10)"><span class="pre">str</span></a><span class="p"><span class="pre">]</span></span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">job_name</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference external" href="https://docs.python.org/3/library/typing.html#typing.Optional" title="(in Python v3.10)"><span class="pre">Optional</span></a><span class="p"><span class="pre">[</span></span><a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.10)"><span class="pre">str</span></a><span class="p"><span class="pre">]</span></span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">properties</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference external" href="https://docs.python.org/3/library/typing.html#typing.Optional" title="(in Python v3.10)"><span class="pre">Optional</span></a><span class="p"><span class="pre">[</span></span><span class="pre">renormalizer.property.property.Property</span><span class="p"><span class="pre">]</span></span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">auto_expand</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference external" href="https://docs.python.org/3/library/functions.html#bool" title="(in Python v3.10)"><span class="pre">bool</span></a></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">True</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/renormalizer/mps/thermalprop.html#ThermalProp"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#renormalizer.mps.thermalprop.ThermalProp" title="Permalink to this definition">¶</a></dt>
-<dd><p>Bases: <code class="xref py py-class docutils literal notranslate"><span class="pre">renormalizer.utils.tdmps.TdMpsJob</span></code></p>
+<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">renormalizer.mps.thermalprop.</span></span><span class="sig-name descname"><span class="pre">ThermalProp</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">init_mpdm</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference internal" href="#renormalizer.mps.MpDm" title="renormalizer.mps.mpdm.MpDm"><span class="pre">MpDm</span></a></span></em>, <em class="sig-param"><span class="n"><span class="pre">h_mpo_model</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference external" href="https://docs.python.org/3/library/typing.html#typing.Optional" title="(in Python v3.10)"><span class="pre">Optional</span></a><span class="p"><span class="pre">[</span></span><a class="reference internal" href="model.html#renormalizer.model.Model" title="renormalizer.model.model.Model"><span class="pre">Model</span></a><span class="p"><span class="pre">]</span></span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">exact</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference external" href="https://docs.python.org/3/library/functions.html#bool" title="(in Python v3.10)"><span class="pre">bool</span></a></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">False</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">space</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.10)"><span class="pre">str</span></a></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">'GS'</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">evolve_config</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference external" href="https://docs.python.org/3/library/typing.html#typing.Optional" title="(in Python v3.10)"><span class="pre">Optional</span></a><span class="p"><span class="pre">[</span></span><a class="reference internal" href="configs.html#renormalizer.utils.configs.EvolveConfig" title="renormalizer.utils.configs.EvolveConfig"><span class="pre">EvolveConfig</span></a><span class="p"><span class="pre">]</span></span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">dump_mps</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference external" href="https://docs.python.org/3/library/typing.html#typing.Optional" title="(in Python v3.10)"><span class="pre">Optional</span></a><span class="p"><span class="pre">[</span></span><a class="reference external" href="https://docs.python.org/3/library/functions.html#bool" title="(in Python v3.10)"><span class="pre">bool</span></a><span class="p"><span class="pre">]</span></span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">dump_dir</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference external" href="https://docs.python.org/3/library/typing.html#typing.Optional" title="(in Python v3.10)"><span class="pre">Optional</span></a><span class="p"><span class="pre">[</span></span><a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.10)"><span class="pre">str</span></a><span class="p"><span class="pre">]</span></span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">job_name</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference external" href="https://docs.python.org/3/library/typing.html#typing.Optional" title="(in Python v3.10)"><span class="pre">Optional</span></a><span class="p"><span class="pre">[</span></span><a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.10)"><span class="pre">str</span></a><span class="p"><span class="pre">]</span></span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">properties</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference external" href="https://docs.python.org/3/library/typing.html#typing.Optional" title="(in Python v3.10)"><span class="pre">Optional</span></a><span class="p"><span class="pre">[</span></span><span class="pre">Property</span><span class="p"><span class="pre">]</span></span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">auto_expand</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference external" href="https://docs.python.org/3/library/functions.html#bool" title="(in Python v3.10)"><span class="pre">bool</span></a></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">True</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/renormalizer/mps/thermalprop.html#ThermalProp"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#renormalizer.mps.thermalprop.ThermalProp" title="Permalink to this definition">¶</a></dt>
+<dd><p>Bases: <code class="xref py py-class docutils literal notranslate"><span class="pre">TdMpsJob</span></code></p>
 <p>Thermally Propagate initial matrix product density operator (<a class="reference internal" href="#renormalizer.mps.MpDm" title="renormalizer.mps.MpDm"><code class="xref py py-class docutils literal notranslate"><span class="pre">MpDm</span></code></a>) in imaginary time.</p>
 <dl class="field-list simple">
 <dt class="field-odd">Parameters</dt>
@@ -2021,7 +2125,7 @@ If set to <code class="docutils literal notranslate"><span class="pre">&quot;GS&
 If set to <code class="docutils literal notranslate"><span class="pre">&quot;EX&quot;</span></code>, then the exact propagation is performed in one exciton space,
 i.e. the vibrations are regarded as displaced oscillators.</p></li>
 <li><p><strong>evolve_config</strong> (<code class="xref py py-class docutils literal notranslate"><span class="pre">EvolveConfig</span></code>) – config when evolving the MpDm in imaginary time.</p></li>
-<li><p><strong>dump_mps</strong> (<a class="reference external" href="https://docs.python.org/3/library/functions.html#bool" title="(in Python v3.10)"><em>bool</em></a>) – if dump mps when dumping</p></li>
+<li><p><strong>dump_mps</strong> (<a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.10)"><em>str</em></a>) – if dump mps when dumping, “all”, “one”, None; Default to None</p></li>
 <li><p><strong>dump_dir</strong> (<a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.10)"><em>str</em></a>) – the directory for logging and numerical result output.</p></li>
 <li><p><strong>job_name</strong> (<a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.10)"><em>str</em></a>) – the name of the calculation job which determines the file name of the logging and numerical result output.</p></li>
 <li><p><strong>properties</strong> (<code class="xref py py-class docutils literal notranslate"><span class="pre">Property</span></code>) – </p></li>
@@ -2058,7 +2162,7 @@ i.e. the vibrations are regarded as displaced oscillators.</p></li>
 
 <dl class="py method">
 <dt class="sig sig-object py" id="renormalizer.mps.thermalprop.ThermalProp.evolve_exact">
-<span class="sig-name descname"><span class="pre">evolve_exact</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">old_mpdm</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference internal" href="#renormalizer.mps.MpDm" title="renormalizer.mps.mpdm.MpDm"><span class="pre">renormalizer.mps.mpdm.MpDm</span></a></span></em>, <em class="sig-param"><span class="n"><span class="pre">evolve_dt</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/renormalizer/mps/thermalprop.html#ThermalProp.evolve_exact"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#renormalizer.mps.thermalprop.ThermalProp.evolve_exact" title="Permalink to this definition">¶</a></dt>
+<span class="sig-name descname"><span class="pre">evolve_exact</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">old_mpdm</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference internal" href="#renormalizer.mps.MpDm" title="renormalizer.mps.mpdm.MpDm"><span class="pre">MpDm</span></a></span></em>, <em class="sig-param"><span class="n"><span class="pre">evolve_dt</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/renormalizer/mps/thermalprop.html#ThermalProp.evolve_exact"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#renormalizer.mps.thermalprop.ThermalProp.evolve_exact" title="Permalink to this definition">¶</a></dt>
 <dd></dd></dl>
 
 <dl class="py method">

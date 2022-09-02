@@ -34,6 +34,7 @@
         <script data-url_root="./" id="documentation_options" src="_static/documentation_options.js"></script>
         <script src="_static/jquery.js"></script>
         <script src="_static/underscore.js"></script>
+        <script src="_static/_sphinx_javascript_frameworks_compat.js"></script>
         <script src="_static/doctools.js"></script>
     
     <script type="text/javascript" src="_static/js/theme.js"></script>
@@ -102,7 +103,7 @@
 <li class="toctree-l1"><a class="reference internal" href="cv.html">10. Frequency domain DMRG</a></li>
 <li class="toctree-l1"><a class="reference internal" href="configs.html">11. Calculation Configurations</a></li>
 <li class="toctree-l1"><a class="reference internal" href="lib.html">12. lib</a></li>
-<li class="toctree-l1"><a class="reference internal" href="sbm.html">13. sbm</a></li>
+<li class="toctree-l1"><a class="reference internal" href="sbm.html">13. Spin-Boson Model</a></li>
 </ul>
 
             
@@ -223,8 +224,6 @@
 <h2 id="A">A</h2>
 <table style="width: 100%" class="indextable genindextable"><tr>
   <td style="width: 33%; vertical-align: top;"><ul>
-      <li><a href="configs.html#renormalizer.utils.configs.EvolveConfig.adaptive">adaptive (renormalizer.utils.configs.EvolveConfig property)</a>
-</li>
       <li><a href="mps.html#renormalizer.mps.mp.MatrixProduct.add">add() (renormalizer.mps.mp.MatrixProduct method)</a>
 
       <ul>
@@ -287,6 +286,8 @@
       </ul></li>
       <li><a href="model.html#renormalizer.model.basis.BasisHalfSpin">BasisHalfSpin (class in renormalizer.model.basis)</a>
 </li>
+      <li><a href="model.html#renormalizer.model.basis.BasisHopsBoson">BasisHopsBoson (class in renormalizer.model.basis)</a>
+</li>
       <li><a href="model.html#renormalizer.model.basis.BasisMultiElectron">BasisMultiElectron (class in renormalizer.model.basis)</a>
 </li>
       <li><a href="model.html#renormalizer.model.basis.BasisMultiElectronVac">BasisMultiElectronVac (class in renormalizer.model.basis)</a>
@@ -321,6 +322,16 @@
       </ul></li>
   </ul></td>
   <td style="width: 33%; vertical-align: top;"><ul>
+      <li><a href="mps.html#renormalizer.mps.mp.MatrixProduct.bond_list">bond_list (renormalizer.mps.mp.MatrixProduct property)</a>
+
+      <ul>
+        <li><a href="mps.html#renormalizer.mps.MpDm.bond_list">(renormalizer.mps.MpDm property)</a>
+</li>
+        <li><a href="mps.html#renormalizer.mps.Mpo.bond_list">(renormalizer.mps.Mpo property)</a>
+</li>
+        <li><a href="mps.html#renormalizer.mps.Mps.bond_list">(renormalizer.mps.Mps property)</a>
+</li>
+      </ul></li>
       <li><a href="configs.html#renormalizer.utils.configs.CompressConfig.bonddim_should_set">bonddim_should_set (renormalizer.utils.configs.CompressConfig property)</a>
 </li>
       <li><a href="configs.html#renormalizer.utils.configs.BondDimDistri">BondDimDistri (class in renormalizer.utils.configs)</a>
@@ -403,12 +414,6 @@
 </li>
       <li><a href="ct.html#renormalizer.transport.dynamics.calc_r_square">calc_r_square() (in module renormalizer.transport.dynamics)</a>
 </li>
-      <li><a href="mps.html#renormalizer.mps.MpDm.canonical_normalize">canonical_normalize() (renormalizer.mps.MpDm method)</a>
-
-      <ul>
-        <li><a href="mps.html#renormalizer.mps.Mps.canonical_normalize">(renormalizer.mps.Mps method)</a>
-</li>
-      </ul></li>
       <li><a href="mps.html#renormalizer.mps.mp.MatrixProduct.canonicalise">canonicalise() (renormalizer.mps.mp.MatrixProduct method)</a>
 
       <ul>
@@ -465,10 +470,10 @@
         <li><a href="mps.html#renormalizer.mps.Mps.clear_qn">(renormalizer.mps.Mps method)</a>
 </li>
       </ul></li>
-  </ul></td>
-  <td style="width: 33%; vertical-align: top;"><ul>
       <li><a href="ct.html#renormalizer.transport.dynamics.ChargeDiffusionDynamics.coherent_length_array">coherent_length_array (renormalizer.transport.dynamics.ChargeDiffusionDynamics attribute)</a>
 </li>
+  </ul></td>
+  <td style="width: 33%; vertical-align: top;"><ul>
       <li><a href="mps.html#renormalizer.mps.mp.MatrixProduct.compress">compress() (renormalizer.mps.mp.MatrixProduct method)</a>
 
       <ul>
@@ -516,6 +521,8 @@
       <li><a href="model.html#renormalizer.model.basis.BasisHalfSpin.copy">copy() (renormalizer.model.basis.BasisHalfSpin method)</a>
 
       <ul>
+        <li><a href="model.html#renormalizer.model.basis.BasisHopsBoson.copy">(renormalizer.model.basis.BasisHopsBoson method)</a>
+</li>
         <li><a href="model.html#renormalizer.model.basis.BasisMultiElectron.copy">(renormalizer.model.basis.BasisMultiElectron method)</a>
 </li>
         <li><a href="model.html#renormalizer.model.basis.BasisMultiElectronVac.copy">(renormalizer.model.basis.BasisMultiElectronVac method)</a>
@@ -581,17 +588,11 @@
         <li><a href="mps.html#renormalizer.mps.Mps.distance">(renormalizer.mps.Mps method)</a>
 </li>
       </ul></li>
-      <li><a href="mps.html#renormalizer.mps.MpDm.dmrg_norm">dmrg_norm (renormalizer.mps.MpDm property)</a>
-
-      <ul>
-        <li><a href="mps.html#renormalizer.mps.Mpo.dmrg_norm">(renormalizer.mps.Mpo property)</a>
-</li>
-        <li><a href="mps.html#renormalizer.mps.Mps.dmrg_norm">(renormalizer.mps.Mps property)</a>
-</li>
-      </ul></li>
       <li><a href="model.html#renormalizer.model.basis.BasisHalfSpin.dofs">dofs (renormalizer.model.basis.BasisHalfSpin property)</a>
 
       <ul>
+        <li><a href="model.html#renormalizer.model.basis.BasisHopsBoson.dofs">(renormalizer.model.basis.BasisHopsBoson property)</a>
+</li>
         <li><a href="model.html#renormalizer.model.basis.BasisMultiElectron.dofs">(renormalizer.model.basis.BasisMultiElectron property)</a>
 </li>
         <li><a href="model.html#renormalizer.model.basis.BasisMultiElectronVac.dofs">(renormalizer.model.basis.BasisMultiElectronVac property)</a>
@@ -679,24 +680,24 @@
 </li>
       <li><a href="ct.html#renormalizer.transport.dynamics.ChargeDiffusionDynamics.energies">energies (renormalizer.transport.dynamics.ChargeDiffusionDynamics attribute)</a>
 </li>
-      <li><a href="mps.html#renormalizer.mps.mp.MatrixProduct.ensure_left_canon">ensure_left_canon() (renormalizer.mps.mp.MatrixProduct method)</a>
+      <li><a href="mps.html#renormalizer.mps.mp.MatrixProduct.ensure_left_canonical">ensure_left_canonical() (renormalizer.mps.mp.MatrixProduct method)</a>
 
       <ul>
-        <li><a href="mps.html#renormalizer.mps.MpDm.ensure_left_canon">(renormalizer.mps.MpDm method)</a>
+        <li><a href="mps.html#renormalizer.mps.MpDm.ensure_left_canonical">(renormalizer.mps.MpDm method)</a>
 </li>
-        <li><a href="mps.html#renormalizer.mps.Mpo.ensure_left_canon">(renormalizer.mps.Mpo method)</a>
+        <li><a href="mps.html#renormalizer.mps.Mpo.ensure_left_canonical">(renormalizer.mps.Mpo method)</a>
 </li>
-        <li><a href="mps.html#renormalizer.mps.Mps.ensure_left_canon">(renormalizer.mps.Mps method)</a>
+        <li><a href="mps.html#renormalizer.mps.Mps.ensure_left_canonical">(renormalizer.mps.Mps method)</a>
 </li>
       </ul></li>
-      <li><a href="mps.html#renormalizer.mps.mp.MatrixProduct.ensure_right_canon">ensure_right_canon() (renormalizer.mps.mp.MatrixProduct method)</a>
+      <li><a href="mps.html#renormalizer.mps.mp.MatrixProduct.ensure_right_canonical">ensure_right_canonical() (renormalizer.mps.mp.MatrixProduct method)</a>
 
       <ul>
-        <li><a href="mps.html#renormalizer.mps.MpDm.ensure_right_canon">(renormalizer.mps.MpDm method)</a>
+        <li><a href="mps.html#renormalizer.mps.MpDm.ensure_right_canonical">(renormalizer.mps.MpDm method)</a>
 </li>
-        <li><a href="mps.html#renormalizer.mps.Mpo.ensure_right_canon">(renormalizer.mps.Mpo method)</a>
+        <li><a href="mps.html#renormalizer.mps.Mpo.ensure_right_canonical">(renormalizer.mps.Mpo method)</a>
 </li>
-        <li><a href="mps.html#renormalizer.mps.Mps.ensure_right_canon">(renormalizer.mps.Mps method)</a>
+        <li><a href="mps.html#renormalizer.mps.Mps.ensure_right_canonical">(renormalizer.mps.Mps method)</a>
 </li>
       </ul></li>
       <li><a href="mps.html#renormalizer.mps.MpDm.evolve">evolve() (renormalizer.mps.MpDm method)</a>
@@ -722,6 +723,8 @@
       <li><a href="mps.html#renormalizer.mps.thermalprop.ThermalProp.evolve_single_step">evolve_single_step() (renormalizer.mps.thermalprop.ThermalProp method)</a>
 
       <ul>
+        <li><a href="sbm.html#renormalizer.sbm.sbm.SpinBosonDynamics.evolve_single_step">(renormalizer.sbm.sbm.SpinBosonDynamics method)</a>
+</li>
         <li><a href="spectrum.html#renormalizer.spectra.zerot.SpectraOneWayPropZeroT.evolve_single_step">(renormalizer.spectra.zerot.SpectraOneWayPropZeroT method)</a>
 </li>
         <li><a href="spectrum.html#renormalizer.spectra.zerot.SpectraTwoWayPropZeroT.evolve_single_step">(renormalizer.spectra.zerot.SpectraTwoWayPropZeroT method)</a>
@@ -808,6 +811,8 @@
       <li><a href="mps.html#renormalizer.mps.thermalprop.ThermalProp.get_dump_dict">get_dump_dict() (renormalizer.mps.thermalprop.ThermalProp method)</a>
 
       <ul>
+        <li><a href="sbm.html#renormalizer.sbm.sbm.SpinBosonDynamics.get_dump_dict">(renormalizer.sbm.sbm.SpinBosonDynamics method)</a>
+</li>
         <li><a href="ct.html#renormalizer.transport.dynamics.ChargeDiffusionDynamics.get_dump_dict">(renormalizer.transport.dynamics.ChargeDiffusionDynamics method)</a>
 </li>
         <li><a href="ct.html#renormalizer.transport.kubo.TransportKubo.get_dump_dict">(renormalizer.transport.kubo.TransportKubo method)</a>
@@ -894,6 +899,8 @@
       <li><a href="mps.html#renormalizer.mps.thermalprop.ThermalProp.init_mps">init_mps() (renormalizer.mps.thermalprop.ThermalProp method)</a>
 
       <ul>
+        <li><a href="sbm.html#renormalizer.sbm.sbm.SpinBosonDynamics.init_mps">(renormalizer.sbm.sbm.SpinBosonDynamics method)</a>
+</li>
         <li><a href="spectrum.html#renormalizer.spectra.zerot.SpectraZeroT.init_mps">(renormalizer.spectra.zerot.SpectraZeroT method)</a>
 </li>
         <li><a href="ct.html#renormalizer.transport.dynamics.ChargeDiffusionDynamics.init_mps">(renormalizer.transport.dynamics.ChargeDiffusionDynamics method)</a>
@@ -930,6 +937,8 @@
       <li><a href="model.html#renormalizer.model.basis.BasisHalfSpin.is_electron">is_electron (renormalizer.model.basis.BasisHalfSpin attribute)</a>
 
       <ul>
+        <li><a href="model.html#renormalizer.model.basis.BasisHopsBoson.is_electron">(renormalizer.model.basis.BasisHopsBoson attribute)</a>
+</li>
         <li><a href="model.html#renormalizer.model.basis.BasisMultiElectron.is_electron">(renormalizer.model.basis.BasisMultiElectron attribute)</a>
 </li>
         <li><a href="model.html#renormalizer.model.basis.BasisMultiElectronVac.is_electron">(renormalizer.model.basis.BasisMultiElectronVac attribute)</a>
@@ -949,14 +958,14 @@
         <li><a href="mps.html#renormalizer.mps.Mpo.is_hermitian">(renormalizer.mps.Mpo method)</a>
 </li>
       </ul></li>
-      <li><a href="mps.html#renormalizer.mps.mp.MatrixProduct.is_left_canon">is_left_canon (renormalizer.mps.mp.MatrixProduct property)</a>
+      <li><a href="mps.html#renormalizer.mps.mp.MatrixProduct.is_left_canonical">is_left_canonical (renormalizer.mps.mp.MatrixProduct property)</a>
 
       <ul>
-        <li><a href="mps.html#renormalizer.mps.MpDm.is_left_canon">(renormalizer.mps.MpDm property)</a>
+        <li><a href="mps.html#renormalizer.mps.MpDm.is_left_canonical">(renormalizer.mps.MpDm property)</a>
 </li>
-        <li><a href="mps.html#renormalizer.mps.Mpo.is_left_canon">(renormalizer.mps.Mpo property)</a>
+        <li><a href="mps.html#renormalizer.mps.Mpo.is_left_canonical">(renormalizer.mps.Mpo property)</a>
 </li>
-        <li><a href="mps.html#renormalizer.mps.Mps.is_left_canon">(renormalizer.mps.Mps property)</a>
+        <li><a href="mps.html#renormalizer.mps.Mps.is_left_canonical">(renormalizer.mps.Mps property)</a>
 </li>
       </ul></li>
   </ul></td>
@@ -994,6 +1003,8 @@
       <li><a href="model.html#renormalizer.model.basis.BasisHalfSpin.is_phonon">is_phonon (renormalizer.model.basis.BasisHalfSpin attribute)</a>
 
       <ul>
+        <li><a href="model.html#renormalizer.model.basis.BasisHopsBoson.is_phonon">(renormalizer.model.basis.BasisHopsBoson attribute)</a>
+</li>
         <li><a href="model.html#renormalizer.model.basis.BasisMultiElectron.is_phonon">(renormalizer.model.basis.BasisMultiElectron attribute)</a>
 </li>
         <li><a href="model.html#renormalizer.model.basis.BasisMultiElectronVac.is_phonon">(renormalizer.model.basis.BasisMultiElectronVac attribute)</a>
@@ -1007,14 +1018,14 @@
         <li><a href="model.html#renormalizer.model.basis.BasisSineDVR.is_phonon">(renormalizer.model.basis.BasisSineDVR attribute)</a>
 </li>
       </ul></li>
-      <li><a href="mps.html#renormalizer.mps.mp.MatrixProduct.is_right_canon">is_right_canon (renormalizer.mps.mp.MatrixProduct property)</a>
+      <li><a href="mps.html#renormalizer.mps.mp.MatrixProduct.is_right_canonical">is_right_canonical (renormalizer.mps.mp.MatrixProduct property)</a>
 
       <ul>
-        <li><a href="mps.html#renormalizer.mps.MpDm.is_right_canon">(renormalizer.mps.MpDm property)</a>
+        <li><a href="mps.html#renormalizer.mps.MpDm.is_right_canonical">(renormalizer.mps.MpDm property)</a>
 </li>
-        <li><a href="mps.html#renormalizer.mps.Mpo.is_right_canon">(renormalizer.mps.Mpo property)</a>
+        <li><a href="mps.html#renormalizer.mps.Mpo.is_right_canonical">(renormalizer.mps.Mpo property)</a>
 </li>
-        <li><a href="mps.html#renormalizer.mps.Mps.is_right_canon">(renormalizer.mps.Mps property)</a>
+        <li><a href="mps.html#renormalizer.mps.Mps.is_right_canonical">(renormalizer.mps.Mps property)</a>
 </li>
       </ul></li>
       <li><a href="ct.html#renormalizer.transport.dynamics.ChargeDiffusionDynamics.is_similar">is_similar() (renormalizer.transport.dynamics.ChargeDiffusionDynamics method)</a>
@@ -1022,6 +1033,8 @@
       <li><a href="model.html#renormalizer.model.basis.BasisHalfSpin.is_spin">is_spin (renormalizer.model.basis.BasisHalfSpin attribute)</a>
 
       <ul>
+        <li><a href="model.html#renormalizer.model.basis.BasisHopsBoson.is_spin">(renormalizer.model.basis.BasisHopsBoson attribute)</a>
+</li>
         <li><a href="model.html#renormalizer.model.basis.BasisMultiElectron.is_spin">(renormalizer.model.basis.BasisMultiElectron attribute)</a>
 </li>
         <li><a href="model.html#renormalizer.model.basis.BasisMultiElectronVac.is_spin">(renormalizer.model.basis.BasisMultiElectronVac attribute)</a>
@@ -1131,6 +1144,8 @@
 </li>
         <li><a href="mps.html#module-renormalizer.mps.thermalprop">renormalizer.mps.thermalprop</a>
 </li>
+        <li><a href="sbm.html#module-renormalizer.sbm.sbm">renormalizer.sbm.sbm</a>
+</li>
         <li><a href="spectrum.html#module-renormalizer.spectra.zerot">renormalizer.spectra.zerot</a>
 </li>
         <li><a href="ct.html#module-renormalizer.transport.dynamics">renormalizer.transport.dynamics</a>
@@ -1156,6 +1171,16 @@
         <li><a href="mps.html#renormalizer.mps.Mps.move_qnidx">(renormalizer.mps.Mps method)</a>
 </li>
       </ul></li>
+      <li><a href="mps.html#renormalizer.mps.mp.MatrixProduct.mp_norm">mp_norm (renormalizer.mps.mp.MatrixProduct property)</a>
+
+      <ul>
+        <li><a href="mps.html#renormalizer.mps.MpDm.mp_norm">(renormalizer.mps.MpDm property)</a>
+</li>
+        <li><a href="mps.html#renormalizer.mps.Mpo.mp_norm">(renormalizer.mps.Mpo property)</a>
+</li>
+        <li><a href="mps.html#renormalizer.mps.Mps.mp_norm">(renormalizer.mps.Mps property)</a>
+</li>
+      </ul></li>
       <li><a href="mps.html#renormalizer.mps.MpDm">MpDm (class in renormalizer.mps)</a>
 </li>
       <li><a href="mps.html#renormalizer.mps.Mpo">Mpo (class in renormalizer.mps)</a>
@@ -1165,6 +1190,8 @@
       <li><a href="model.html#renormalizer.model.basis.BasisHalfSpin.multi_dof">multi_dof (renormalizer.model.basis.BasisHalfSpin attribute)</a>
 
       <ul>
+        <li><a href="model.html#renormalizer.model.basis.BasisHopsBoson.multi_dof">(renormalizer.model.basis.BasisHopsBoson attribute)</a>
+</li>
         <li><a href="model.html#renormalizer.model.basis.BasisMultiElectron.multi_dof">(renormalizer.model.basis.BasisMultiElectron attribute)</a>
 </li>
         <li><a href="model.html#renormalizer.model.basis.BasisMultiElectronVac.multi_dof">(renormalizer.model.basis.BasisMultiElectronVac attribute)</a>
@@ -1271,6 +1298,8 @@
       <li><a href="model.html#renormalizer.model.basis.BasisHalfSpin.op_mat">op_mat() (renormalizer.model.basis.BasisHalfSpin method)</a>
 
       <ul>
+        <li><a href="model.html#renormalizer.model.basis.BasisHopsBoson.op_mat">(renormalizer.model.basis.BasisHopsBoson method)</a>
+</li>
         <li><a href="model.html#renormalizer.model.basis.BasisMultiElectron.op_mat">(renormalizer.model.basis.BasisMultiElectron method)</a>
 </li>
         <li><a href="model.html#renormalizer.model.basis.BasisMultiElectronVac.op_mat">(renormalizer.model.basis.BasisMultiElectronVac method)</a>
@@ -1310,6 +1339,16 @@
   <td style="width: 33%; vertical-align: top;"><ul>
       <li><a href="configs.html#renormalizer.utils.configs.parse_memory_limit">parse_memory_limit() (in module renormalizer.utils.configs)</a>
 </li>
+      <li><a href="mps.html#renormalizer.mps.mp.MatrixProduct.pbond_dims">pbond_dims (renormalizer.mps.mp.MatrixProduct property)</a>
+
+      <ul>
+        <li><a href="mps.html#renormalizer.mps.MpDm.pbond_dims">(renormalizer.mps.MpDm property)</a>
+</li>
+        <li><a href="mps.html#renormalizer.mps.Mpo.pbond_dims">(renormalizer.mps.Mpo property)</a>
+</li>
+        <li><a href="mps.html#renormalizer.mps.Mps.pbond_dims">(renormalizer.mps.Mps property)</a>
+</li>
+      </ul></li>
       <li><a href="mps.html#renormalizer.mps.mp.MatrixProduct.pbond_list">pbond_list (renormalizer.mps.mp.MatrixProduct property)</a>
 
       <ul>
@@ -1343,6 +1382,8 @@
       <li><a href="mps.html#renormalizer.mps.thermalprop.ThermalProp.process_mps">process_mps() (renormalizer.mps.thermalprop.ThermalProp method)</a>
 
       <ul>
+        <li><a href="sbm.html#renormalizer.sbm.sbm.SpinBosonDynamics.process_mps">(renormalizer.sbm.sbm.SpinBosonDynamics method)</a>
+</li>
         <li><a href="ct.html#renormalizer.transport.dynamics.ChargeDiffusionDynamics.process_mps">(renormalizer.transport.dynamics.ChargeDiffusionDynamics method)</a>
 </li>
         <li><a href="ct.html#renormalizer.transport.kubo.TransportKubo.process_mps">(renormalizer.transport.kubo.TransportKubo method)</a>
@@ -1359,6 +1400,10 @@
 </li>
       </ul></li>
       <li><a href="configs.html#renormalizer.utils.configs.EvolveMethod.prop_and_compress">prop_and_compress (renormalizer.utils.configs.EvolveMethod attribute)</a>
+</li>
+      <li><a href="configs.html#renormalizer.utils.configs.EvolveMethod.prop_and_compress_tdrk">prop_and_compress_tdrk (renormalizer.utils.configs.EvolveMethod attribute)</a>
+</li>
+      <li><a href="configs.html#renormalizer.utils.configs.EvolveMethod.prop_and_compress_tdrk4">prop_and_compress_tdrk4 (renormalizer.utils.configs.EvolveMethod attribute)</a>
 </li>
   </ul></td>
 </tr></table>
@@ -1430,6 +1475,13 @@
 </li>
       </ul></li>
       <li>
+    renormalizer.sbm.sbm
+
+      <ul>
+        <li><a href="sbm.html#module-renormalizer.sbm.sbm">module</a>
+</li>
+      </ul></li>
+      <li>
     renormalizer.spectra.zerot
 
       <ul>
@@ -1482,16 +1534,6 @@
       </ul></li>
       <li><a href="configs.html#renormalizer.utils.configs.CompressConfig.set_bonddim">set_bonddim() (renormalizer.utils.configs.CompressConfig method)</a>
 </li>
-      <li><a href="mps.html#renormalizer.mps.mp.MatrixProduct.set_threshold">set_threshold() (renormalizer.mps.mp.MatrixProduct method)</a>
-
-      <ul>
-        <li><a href="mps.html#renormalizer.mps.MpDm.set_threshold">(renormalizer.mps.MpDm method)</a>
-</li>
-        <li><a href="mps.html#renormalizer.mps.Mpo.set_threshold">(renormalizer.mps.Mpo method)</a>
-</li>
-        <li><a href="mps.html#renormalizer.mps.Mps.set_threshold">(renormalizer.mps.Mps method)</a>
-</li>
-      </ul></li>
       <li><a href="static.html#renormalizer.mps.gs.single_sweep">single_sweep() (in module renormalizer.mps.gs)</a>
 </li>
       <li><a href="mps.html#renormalizer.mps.mp.MatrixProduct.site_num">site_num (renormalizer.mps.mp.MatrixProduct property)</a>
@@ -1504,12 +1546,12 @@
         <li><a href="mps.html#renormalizer.mps.Mps.site_num">(renormalizer.mps.Mps property)</a>
 </li>
       </ul></li>
-  </ul></td>
-  <td style="width: 33%; vertical-align: top;"><ul>
       <li><a href="cv.html#renormalizer.cv.finitet.SpectraFtCV">SpectraFtCV (class in renormalizer.cv.finitet)</a>
 </li>
       <li><a href="ct.html#renormalizer.transport.spectral_function.SpectralFunctionZT">SpectralFunctionZT (class in renormalizer.transport.spectral_function)</a>
 </li>
+  </ul></td>
+  <td style="width: 33%; vertical-align: top;"><ul>
       <li><a href="spectrum.html#renormalizer.spectra.zerot.SpectraOneWayPropZeroT">SpectraOneWayPropZeroT (class in renormalizer.spectra.zerot)</a>
 </li>
       <li><a href="spectrum.html#renormalizer.spectra.zerot.SpectraTwoWayPropZeroT">SpectraTwoWayPropZeroT (class in renormalizer.spectra.zerot)</a>
@@ -1517,6 +1559,8 @@
       <li><a href="spectrum.html#renormalizer.spectra.zerot.SpectraZeroT">SpectraZeroT (class in renormalizer.spectra.zerot)</a>
 </li>
       <li><a href="cv.html#renormalizer.cv.zerot.SpectraZtCV">SpectraZtCV (class in renormalizer.cv.zerot)</a>
+</li>
+      <li><a href="sbm.html#renormalizer.sbm.sbm.SpinBosonDynamics">SpinBosonDynamics (class in renormalizer.sbm.sbm)</a>
 </li>
       <li><a href="model.html#renormalizer.model.SpinBosonModel">SpinBosonModel (class in renormalizer.model)</a>
 </li>
@@ -1654,8 +1698,6 @@
         <li><a href="model.html#renormalizer.model.TI1DModel.v_dofs">(renormalizer.model.TI1DModel attribute)</a>
 </li>
       </ul></li>
-  </ul></td>
-  <td style="width: 33%; vertical-align: top;"><ul>
       <li><a href="mps.html#renormalizer.mps.mp.MatrixProduct.variational_compress">variational_compress() (renormalizer.mps.mp.MatrixProduct method)</a>
 
       <ul>
@@ -1664,6 +1706,28 @@
         <li><a href="mps.html#renormalizer.mps.Mpo.variational_compress">(renormalizer.mps.Mpo method)</a>
 </li>
         <li><a href="mps.html#renormalizer.mps.Mps.variational_compress">(renormalizer.mps.Mps method)</a>
+</li>
+      </ul></li>
+  </ul></td>
+  <td style="width: 33%; vertical-align: top;"><ul>
+      <li><a href="mps.html#renormalizer.mps.mp.MatrixProduct.vbond_dims">vbond_dims (renormalizer.mps.mp.MatrixProduct property)</a>
+
+      <ul>
+        <li><a href="mps.html#renormalizer.mps.MpDm.vbond_dims">(renormalizer.mps.MpDm property)</a>
+</li>
+        <li><a href="mps.html#renormalizer.mps.Mpo.vbond_dims">(renormalizer.mps.Mpo property)</a>
+</li>
+        <li><a href="mps.html#renormalizer.mps.Mps.vbond_dims">(renormalizer.mps.Mps property)</a>
+</li>
+      </ul></li>
+      <li><a href="mps.html#renormalizer.mps.mp.MatrixProduct.vbond_list">vbond_list (renormalizer.mps.mp.MatrixProduct property)</a>
+
+      <ul>
+        <li><a href="mps.html#renormalizer.mps.MpDm.vbond_list">(renormalizer.mps.MpDm property)</a>
+</li>
+        <li><a href="mps.html#renormalizer.mps.Mpo.vbond_list">(renormalizer.mps.Mpo property)</a>
+</li>
+        <li><a href="mps.html#renormalizer.mps.Mps.vbond_list">(renormalizer.mps.Mps property)</a>
 </li>
       </ul></li>
       <li><a href="mps.html#renormalizer.mps.thermalprop.ThermalProp.vn_entropy_array">vn_entropy_array (renormalizer.mps.thermalprop.ThermalProp property)</a>

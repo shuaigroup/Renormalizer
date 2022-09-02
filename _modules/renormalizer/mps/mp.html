@@ -34,6 +34,7 @@
         <script data-url_root="../../../" id="documentation_options" src="../../../_static/documentation_options.js"></script>
         <script src="../../../_static/jquery.js"></script>
         <script src="../../../_static/underscore.js"></script>
+        <script src="../../../_static/_sphinx_javascript_frameworks_compat.js"></script>
         <script src="../../../_static/doctools.js"></script>
     
     <script type="text/javascript" src="../../../_static/js/theme.js"></script>
@@ -102,7 +103,7 @@
 <li class="toctree-l1"><a class="reference internal" href="../../../cv.html">10. Frequency domain DMRG</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../../../configs.html">11. Calculation Configurations</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../../../lib.html">12. lib</a></li>
-<li class="toctree-l1"><a class="reference internal" href="../../../sbm.html">13. sbm</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../sbm.html">13. Spin-Boson Model</a></li>
 </ul>
 
             
@@ -281,13 +282,18 @@
         <span class="c1"># return a list so that the logging result is more pretty</span>
         <span class="k">return</span> <span class="n">bond_dims</span>
 
+
+    <span class="n">vbond_list</span> <span class="o">=</span> <span class="n">vbond_dims</span> <span class="o">=</span> <span class="n">bond_list</span> <span class="o">=</span> <span class="n">bond_dims</span>
+
     <span class="nd">@property</span>
     <span class="k">def</span> <span class="nf">bond_dims_mean</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">int</span><span class="p">:</span>
         <span class="k">return</span> <span class="nb">int</span><span class="p">(</span><span class="nb">round</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">mean</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">bond_dims</span><span class="p">)))</span>
 
     <span class="nd">@property</span>
-    <span class="k">def</span> <span class="nf">pbond_list</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+    <span class="k">def</span> <span class="nf">pbond_dims</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
         <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">model</span><span class="o">.</span><span class="n">pbond_list</span>
+
+    <span class="n">pbond_list</span> <span class="o">=</span> <span class="n">pbond_dims</span>
 
 <div class="viewcode-block" id="MatrixProduct.build_empty_qn"><a class="viewcode-back" href="../../../mps.html#renormalizer.mps.mp.MatrixProduct.build_empty_qn">[docs]</a>    <span class="k">def</span> <span class="nf">build_empty_qn</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">qntot</span> <span class="o">=</span> <span class="mi">0</span>
@@ -342,20 +348,20 @@
         <span class="k">return</span> <span class="kc">True</span></div>
 
     <span class="nd">@property</span>
-    <span class="k">def</span> <span class="nf">is_left_canon</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+    <span class="k">def</span> <span class="nf">is_left_canonical</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
         <span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">        check the qn center in the L-canonical structure</span>
 <span class="sd">        &quot;&quot;&quot;</span>
         <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">qnidx</span> <span class="o">==</span> <span class="bp">self</span><span class="o">.</span><span class="n">site_num</span> <span class="o">-</span> <span class="mi">1</span>
 
     <span class="nd">@property</span>
-    <span class="k">def</span> <span class="nf">is_right_canon</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+    <span class="k">def</span> <span class="nf">is_right_canonical</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
         <span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">        check the qn center in the R-canonical structure</span>
 <span class="sd">        &quot;&quot;&quot;</span>
         <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">qnidx</span> <span class="o">==</span> <span class="mi">0</span>
 
-<div class="viewcode-block" id="MatrixProduct.ensure_left_canon"><a class="viewcode-back" href="../../../mps.html#renormalizer.mps.mp.MatrixProduct.ensure_left_canon">[docs]</a>    <span class="k">def</span> <span class="nf">ensure_left_canon</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">rtol</span><span class="o">=</span><span class="mf">1e-5</span><span class="p">,</span> <span class="n">atol</span><span class="o">=</span><span class="mf">1e-8</span><span class="p">):</span>
+<div class="viewcode-block" id="MatrixProduct.ensure_left_canonical"><a class="viewcode-back" href="../../../mps.html#renormalizer.mps.mp.MatrixProduct.ensure_left_canonical">[docs]</a>    <span class="k">def</span> <span class="nf">ensure_left_canonical</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">rtol</span><span class="o">=</span><span class="mf">1e-5</span><span class="p">,</span> <span class="n">atol</span><span class="o">=</span><span class="mf">1e-8</span><span class="p">):</span>
         <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">to_right</span> <span class="ow">or</span> <span class="bp">self</span><span class="o">.</span><span class="n">qnidx</span> <span class="o">!=</span> <span class="bp">self</span><span class="o">.</span><span class="n">site_num</span><span class="o">-</span><span class="mi">1</span> <span class="ow">or</span> \
                 <span class="p">(</span><span class="ow">not</span> <span class="bp">self</span><span class="o">.</span><span class="n">check_left_canonical</span><span class="p">(</span><span class="n">rtol</span><span class="p">,</span> <span class="n">atol</span><span class="p">)):</span>
             <span class="bp">self</span><span class="o">.</span><span class="n">move_qnidx</span><span class="p">(</span><span class="mi">0</span><span class="p">)</span>
@@ -364,7 +370,7 @@
         <span class="k">else</span><span class="p">:</span>
             <span class="k">return</span> <span class="bp">self</span></div>
         
-<div class="viewcode-block" id="MatrixProduct.ensure_right_canon"><a class="viewcode-back" href="../../../mps.html#renormalizer.mps.mp.MatrixProduct.ensure_right_canon">[docs]</a>    <span class="k">def</span> <span class="nf">ensure_right_canon</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">rtol</span><span class="o">=</span><span class="mf">1e-5</span><span class="p">,</span> <span class="n">atol</span><span class="o">=</span><span class="mf">1e-8</span><span class="p">):</span>
+<div class="viewcode-block" id="MatrixProduct.ensure_right_canonical"><a class="viewcode-back" href="../../../mps.html#renormalizer.mps.mp.MatrixProduct.ensure_right_canonical">[docs]</a>    <span class="k">def</span> <span class="nf">ensure_right_canonical</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">rtol</span><span class="o">=</span><span class="mf">1e-5</span><span class="p">,</span> <span class="n">atol</span><span class="o">=</span><span class="mf">1e-8</span><span class="p">):</span>
         <span class="k">if</span> <span class="p">(</span><span class="ow">not</span> <span class="bp">self</span><span class="o">.</span><span class="n">to_right</span><span class="p">)</span> <span class="ow">or</span> <span class="bp">self</span><span class="o">.</span><span class="n">qnidx</span> <span class="o">!=</span> <span class="mi">0</span> <span class="ow">or</span> \
                 <span class="p">(</span><span class="ow">not</span> <span class="bp">self</span><span class="o">.</span><span class="n">check_right_canonical</span><span class="p">(</span><span class="n">rtol</span><span class="p">,</span> <span class="n">atol</span><span class="p">)):</span>
             <span class="bp">self</span><span class="o">.</span><span class="n">move_qnidx</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">site_num</span> <span class="o">-</span> <span class="mi">1</span><span class="p">)</span>
@@ -497,11 +503,30 @@
         <span class="n">qnmat</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">add</span><span class="o">.</span><span class="n">outer</span><span class="p">(</span><span class="n">qnbigl</span><span class="p">,</span> <span class="n">qnbigr</span><span class="p">)</span>
         <span class="k">return</span> <span class="n">qnbigl</span><span class="p">,</span> <span class="n">qnbigr</span><span class="p">,</span> <span class="n">qnmat</span></div>
 
+    <span class="nd">@property</span>
+    <span class="k">def</span> <span class="nf">mp_norm</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">float</span><span class="p">:</span>
+        <span class="c1"># the fast version in the comment rarely makes sense because in a lot of cases</span>
+        <span class="c1"># the mps is not canonicalised (though qnidx is set)</span>
+        <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        if self.is_left_canon:</span>
+<span class="sd">            assert self.check_left_canonical()</span>
+<span class="sd">            return np.linalg.norm(np.ravel(self[-1]))</span>
+<span class="sd">        else:</span>
+<span class="sd">            assert self.check_right_canonical()</span>
+<span class="sd">            return np.linalg.norm(np.ravel(self[0]))</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="n">res</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">conj</span><span class="p">()</span><span class="o">.</span><span class="n">dot</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span><span class="o">.</span><span class="n">real</span>
+        <span class="k">if</span> <span class="n">res</span> <span class="o">&lt;</span> <span class="mi">0</span><span class="p">:</span>
+            <span class="k">assert</span> <span class="n">np</span><span class="o">.</span><span class="n">abs</span><span class="p">(</span><span class="n">res</span><span class="p">)</span> <span class="o">&lt;</span> <span class="mf">1e-8</span>
+            <span class="n">res</span> <span class="o">=</span> <span class="mi">0</span>
+        <span class="n">res</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">sqrt</span><span class="p">(</span><span class="n">res</span><span class="p">)</span>
+
+        <span class="k">return</span> <span class="nb">float</span><span class="p">(</span><span class="n">res</span><span class="p">)</span>
+
 <div class="viewcode-block" id="MatrixProduct.add"><a class="viewcode-back" href="../../../mps.html#renormalizer.mps.mp.MatrixProduct.add">[docs]</a>    <span class="k">def</span> <span class="nf">add</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">other</span><span class="p">:</span> <span class="s2">&quot;MatrixProduct&quot;</span><span class="p">):</span>
         <span class="k">assert</span> <span class="bp">self</span><span class="o">.</span><span class="n">qntot</span> <span class="o">==</span> <span class="n">other</span><span class="o">.</span><span class="n">qntot</span>
         <span class="k">assert</span> <span class="bp">self</span><span class="o">.</span><span class="n">site_num</span> <span class="o">==</span> <span class="n">other</span><span class="o">.</span><span class="n">site_num</span>
-        <span class="c1">#assert self.qnidx == other.qnidx</span>
-
+        
         <span class="n">new_mps</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">metacopy</span><span class="p">()</span>
         <span class="k">if</span> <span class="n">other</span><span class="o">.</span><span class="n">dtype</span> <span class="o">==</span> <span class="n">backend</span><span class="o">.</span><span class="n">complex_dtype</span><span class="p">:</span>
             <span class="n">new_mps</span><span class="o">.</span><span class="n">dtype</span> <span class="o">=</span> <span class="n">backend</span><span class="o">.</span><span class="n">complex_dtype</span>
@@ -551,7 +576,8 @@
             <span class="n">new_mps</span><span class="p">[</span><span class="o">-</span><span class="mi">1</span><span class="p">]</span> <span class="o">=</span> <span class="n">concatenate</span><span class="p">((</span><span class="bp">self</span><span class="p">[</span><span class="o">-</span><span class="mi">1</span><span class="p">],</span> <span class="n">other</span><span class="p">[</span><span class="o">-</span><span class="mi">1</span><span class="p">]),</span> <span class="n">axis</span><span class="o">=</span><span class="mi">0</span><span class="p">)</span>
         <span class="k">else</span><span class="p">:</span>
             <span class="k">assert</span> <span class="kc">False</span>
-
+        
+        <span class="c1">#assert self.qnidx == other.qnidx</span>
         <span class="n">new_mps</span><span class="o">.</span><span class="n">move_qnidx</span><span class="p">(</span><span class="n">other</span><span class="o">.</span><span class="n">qnidx</span><span class="p">)</span>
         <span class="n">new_mps</span><span class="o">.</span><span class="n">to_right</span> <span class="o">=</span> <span class="n">other</span><span class="o">.</span><span class="n">to_right</span>
         <span class="n">new_mps</span><span class="o">.</span><span class="n">qn</span> <span class="o">=</span> <span class="p">[</span><span class="n">qn1</span> <span class="o">+</span> <span class="n">qn2</span> <span class="k">for</span> <span class="n">qn1</span><span class="p">,</span> <span class="n">qn2</span> <span class="ow">in</span> <span class="nb">zip</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">qn</span><span class="p">,</span> <span class="n">other</span><span class="o">.</span><span class="n">qn</span><span class="p">)]</span>
@@ -588,7 +614,7 @@
         <span class="k">if</span> <span class="ow">not</span> <span class="bp">self</span><span class="o">.</span><span class="n">is_mpo</span><span class="p">:</span>
             <span class="c1"># ensure mps is canonicalised. This is time consuming.</span>
             <span class="c1"># to disable this, run python as `python -O`</span>
-            <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">is_left_canon</span><span class="p">:</span>
+            <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">is_left_canonical</span><span class="p">:</span>
                 <span class="k">assert</span> <span class="bp">self</span><span class="o">.</span><span class="n">check_left_canonical</span><span class="p">()</span>
             <span class="k">else</span><span class="p">:</span>
                 <span class="k">assert</span> <span class="bp">self</span><span class="o">.</span><span class="n">check_right_canonical</span><span class="p">()</span>
@@ -664,7 +690,7 @@
             <span class="c1"># the attributes of guess would be the same as self</span>
             <span class="n">guess</span> <span class="o">=</span> <span class="n">compressed_mpo</span><span class="o">.</span><span class="n">apply</span><span class="p">(</span><span class="n">compressed_mps</span><span class="p">)</span>
         <span class="n">mps</span> <span class="o">=</span> <span class="n">guess</span>
-        <span class="n">mps</span><span class="o">.</span><span class="n">ensure_left_canon</span><span class="p">()</span>
+        <span class="n">mps</span><span class="o">.</span><span class="n">ensure_left_canonical</span><span class="p">()</span>
         <span class="n">logger</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;initial guess bond dims: </span><span class="si">{</span><span class="n">mps</span><span class="o">.</span><span class="n">bond_dims</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
 
         <span class="n">procedure</span> <span class="o">=</span> <span class="n">mps</span><span class="o">.</span><span class="n">compress_config</span><span class="o">.</span><span class="n">vprocedure</span>
@@ -1159,6 +1185,8 @@
             <span class="n">data_dict</span><span class="p">[</span><span class="sa">f</span><span class="s2">&quot;mt_</span><span class="si">{</span><span class="n">idx</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="n">mt</span><span class="o">.</span><span class="n">array</span>
         <span class="k">for</span> <span class="n">attr</span> <span class="ow">in</span> <span class="p">[</span><span class="s2">&quot;qn&quot;</span><span class="p">,</span> <span class="s2">&quot;qnidx&quot;</span><span class="p">,</span> <span class="s2">&quot;qntot&quot;</span><span class="p">,</span> <span class="s2">&quot;to_right&quot;</span><span class="p">]</span> <span class="o">+</span> <span class="n">other_attrs</span><span class="p">:</span>
             <span class="n">data_dict</span><span class="p">[</span><span class="n">attr</span><span class="p">]</span> <span class="o">=</span> <span class="nb">getattr</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">attr</span><span class="p">)</span>
+            <span class="c1"># qn is ragged array which will raise a VisibleDeprecationWarning</span>
+            <span class="c1"># and convert it to np.object</span>
         <span class="k">try</span><span class="p">:</span>
             <span class="n">np</span><span class="o">.</span><span class="n">savez</span><span class="p">(</span><span class="n">fname</span><span class="p">,</span> <span class="o">**</span><span class="n">data_dict</span><span class="p">)</span>
         <span class="k">except</span> <span class="ne">Exception</span><span class="p">:</span>
@@ -1170,9 +1198,6 @@
 
 <div class="viewcode-block" id="MatrixProduct._get_sigmaqn"><a class="viewcode-back" href="../../../mps.html#renormalizer.mps.mp.MatrixProduct._get_sigmaqn">[docs]</a>    <span class="k">def</span> <span class="nf">_get_sigmaqn</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">idx</span><span class="p">):</span>
         <span class="k">raise</span> <span class="ne">NotImplementedError</span></div>
-
-<div class="viewcode-block" id="MatrixProduct.set_threshold"><a class="viewcode-back" href="../../../mps.html#renormalizer.mps.mp.MatrixProduct.set_threshold">[docs]</a>    <span class="k">def</span> <span class="nf">set_threshold</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">val</span><span class="p">):</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">compress_config</span><span class="o">.</span><span class="n">threshold</span> <span class="o">=</span> <span class="n">val</span></div>
 
     <span class="k">def</span> <span class="fm">__eq__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">other</span><span class="p">):</span>
         <span class="k">for</span> <span class="n">m1</span><span class="p">,</span> <span class="n">m2</span> <span class="ow">in</span> <span class="nb">zip</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">other</span><span class="p">):</span>
@@ -1245,8 +1270,17 @@
         <span class="bp">self</span><span class="o">.</span><span class="n">_mp</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">new_mt</span><span class="p">)</span></div>
     
     <span class="k">def</span> <span class="fm">__str__</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
-        <span class="n">template_str</span> <span class="o">=</span> <span class="s2">&quot;current size: </span><span class="si">{}</span><span class="s2">, Matrix product bond dim:</span><span class="si">{}</span><span class="s2">&quot;</span>
-        <span class="k">return</span> <span class="n">template_str</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">sizeof_fmt</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">total_bytes</span><span class="p">),</span> <span class="bp">self</span><span class="o">.</span><span class="n">bond_dims</span><span class="p">,)</span>
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">is_mps</span><span class="p">:</span>
+            <span class="n">string</span> <span class="o">=</span> <span class="s2">&quot;mps&quot;</span>
+        <span class="k">elif</span> <span class="bp">self</span><span class="o">.</span><span class="n">is_mpo</span><span class="p">:</span>
+            <span class="n">string</span> <span class="o">=</span> <span class="s2">&quot;mpo&quot;</span>
+        <span class="k">elif</span> <span class="bp">self</span><span class="o">.</span><span class="n">is_mpdm</span><span class="p">:</span>
+            <span class="n">string</span> <span class="o">=</span> <span class="s2">&quot;mpdm&quot;</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="k">assert</span> <span class="kc">False</span>
+        <span class="n">template_str</span> <span class="o">=</span> <span class="s2">&quot;</span><span class="si">{}</span><span class="s2"> current size: </span><span class="si">{}</span><span class="s2">, Matrix product bond dim:</span><span class="si">{}</span><span class="s2">&quot;</span>
+        
+        <span class="k">return</span> <span class="n">template_str</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">string</span><span class="p">,</span> <span class="n">sizeof_fmt</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">total_bytes</span><span class="p">),</span> <span class="bp">self</span><span class="o">.</span><span class="n">bond_dims</span><span class="p">,)</span>
 
     <span class="k">def</span> <span class="fm">__del__</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
         <span class="n">dir_with_id</span> <span class="o">=</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">compress_config</span><span class="o">.</span><span class="n">dump_matrix_dir</span><span class="p">,</span> <span class="nb">str</span><span class="p">(</span><span class="nb">id</span><span class="p">(</span><span class="bp">self</span><span class="p">)))</span>

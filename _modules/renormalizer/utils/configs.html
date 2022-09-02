@@ -34,6 +34,7 @@
         <script data-url_root="../../../" id="documentation_options" src="../../../_static/documentation_options.js"></script>
         <script src="../../../_static/jquery.js"></script>
         <script src="../../../_static/underscore.js"></script>
+        <script src="../../../_static/_sphinx_javascript_frameworks_compat.js"></script>
         <script src="../../../_static/doctools.js"></script>
     
     <script type="text/javascript" src="../../../_static/js/theme.js"></script>
@@ -102,7 +103,7 @@
 <li class="toctree-l1"><a class="reference internal" href="../../../cv.html">10. Frequency domain DMRG</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../../../configs.html">11. Calculation Configurations</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../../../lib.html">12. lib</a></li>
-<li class="toctree-l1"><a class="reference internal" href="../../../sbm.html">13. sbm</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../sbm.html">13. Spin-Boson Model</a></li>
 </ul>
 
             
@@ -173,7 +174,7 @@
 <span class="kn">from</span> <span class="nn">enum</span> <span class="kn">import</span> <span class="n">Enum</span>
 <span class="kn">import</span> <span class="nn">logging</span>
 
-<span class="kn">from</span> <span class="nn">renormalizer.utils.rk</span> <span class="kn">import</span> <span class="n">RungeKutta</span>
+<span class="kn">from</span> <span class="nn">renormalizer.utils.rk</span> <span class="kn">import</span> <span class="n">RungeKutta</span><span class="p">,</span> <span class="n">TaylorExpansion</span>
 <span class="kn">import</span> <span class="nn">scipy.linalg</span>
 <span class="kn">import</span> <span class="nn">numpy</span> <span class="k">as</span> <span class="nn">np</span>
 
@@ -495,8 +496,12 @@
     <span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">    Time evolution methods.</span>
 <span class="sd">    &quot;&quot;&quot;</span>
-    <span class="c1"># propagation and compression with RK45 propagator</span>
+    <span class="c1"># propagation and compression with RK45 propagator and time independent H</span>
     <span class="n">prop_and_compress</span> <span class="o">=</span> <span class="s2">&quot;P&amp;C&quot;</span>
+    <span class="c1"># propagation and compression with RK4 propagator and time dependent/independent H</span>
+    <span class="n">prop_and_compress_tdrk4</span> <span class="o">=</span> <span class="s2">&quot;P&amp;C TD RK4&quot;</span>
+    <span class="c1"># propagation and compression with RK propagator and time dependent/independent H</span>
+    <span class="n">prop_and_compress_tdrk</span> <span class="o">=</span> <span class="s2">&quot;P&amp;C TD RK&quot;</span>
     <span class="c1"># TDVP with projector splitting - one site</span>
     <span class="n">tdvp_ps</span> <span class="o">=</span> <span class="s2">&quot;TDVP PS one-site&quot;</span>
     <span class="c1"># TDVP with projector splitting - two site</span>
@@ -534,6 +539,8 @@
         <span class="n">adaptive</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span>
         <span class="n">guess_dt</span><span class="o">=</span><span class="mf">1e-1</span><span class="p">,</span>
         <span class="n">adaptive_rtol</span><span class="o">=</span><span class="mf">5e-4</span><span class="p">,</span>
+        <span class="n">taylor_order</span><span class="p">:</span><span class="nb">int</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
+        <span class="n">rk_solver</span><span class="o">=</span><span class="s2">&quot;C_RK4&quot;</span><span class="p">,</span>
         <span class="n">reg_epsilon</span><span class="o">=</span><span class="mf">1e-10</span><span class="p">,</span>
         <span class="n">ivp_rtol</span><span class="o">=</span><span class="mf">1e-5</span><span class="p">,</span>
         <span class="n">ivp_atol</span><span class="o">=</span><span class="mf">1e-8</span><span class="p">,</span>
@@ -541,9 +548,15 @@
     <span class="p">):</span>
 
         <span class="bp">self</span><span class="o">.</span><span class="n">method</span> <span class="o">=</span> <span class="n">method</span>
-
-        <span class="bp">self</span><span class="o">.</span><span class="n">_adaptive</span> <span class="o">=</span> <span class="kc">None</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">adaptive</span> <span class="o">=</span> <span class="n">adaptive</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">rk_config</span> <span class="o">=</span> <span class="n">RungeKutta</span><span class="p">(</span><span class="n">rk_solver</span><span class="p">)</span>
+        <span class="k">if</span> <span class="n">taylor_order</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="k">if</span> <span class="n">adaptive</span><span class="p">:</span>
+                <span class="n">taylor_order</span> <span class="o">=</span> <span class="mi">5</span>  
+            <span class="k">else</span><span class="p">:</span>
+                <span class="n">taylor_order</span> <span class="o">=</span> <span class="mi">4</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">taylor_config</span> <span class="o">=</span> <span class="n">TaylorExpansion</span><span class="p">(</span><span class="n">taylor_order</span><span class="p">)</span>
+
         <span class="bp">self</span><span class="o">.</span><span class="n">guess_dt</span><span class="p">:</span> <span class="nb">complex</span> <span class="o">=</span> <span class="n">guess_dt</span>  <span class="c1"># a guess of initial adaptive time step</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">adaptive_rtol</span> <span class="o">=</span> <span class="n">adaptive_rtol</span>
 
@@ -561,20 +574,10 @@
         <span class="bp">self</span><span class="o">.</span><span class="n">vmf_auto_switch</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">True</span>
 
     <span class="nd">@property</span>
-    <span class="k">def</span> <span class="nf">adaptive</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
-        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_adaptive</span>
-
-    <span class="nd">@adaptive</span><span class="o">.</span><span class="n">setter</span>
-    <span class="k">def</span> <span class="nf">adaptive</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">v</span><span class="p">):</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">_adaptive</span> <span class="o">=</span> <span class="n">v</span>
-        <span class="k">if</span> <span class="n">v</span><span class="p">:</span>
-            <span class="bp">self</span><span class="o">.</span><span class="n">rk_config</span> <span class="o">=</span> <span class="n">RungeKutta</span><span class="p">(</span><span class="s2">&quot;RKF45&quot;</span><span class="p">)</span>
-        <span class="k">else</span><span class="p">:</span>
-            <span class="bp">self</span><span class="o">.</span><span class="n">rk_config</span> <span class="o">=</span> <span class="n">RungeKutta</span><span class="p">()</span>
-
-    <span class="nd">@property</span>
     <span class="k">def</span> <span class="nf">is_tdvp</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
-        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">method</span> <span class="ow">is</span> <span class="ow">not</span> <span class="n">EvolveMethod</span><span class="o">.</span><span class="n">prop_and_compress</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">method</span> <span class="ow">not</span> <span class="ow">in</span> <span class="p">[</span><span class="n">EvolveMethod</span><span class="o">.</span><span class="n">prop_and_compress</span><span class="p">,</span>
+                <span class="n">EvolveMethod</span><span class="o">.</span><span class="n">prop_and_compress_tdrk4</span><span class="p">,</span>
+                <span class="n">EvolveMethod</span><span class="o">.</span><span class="n">prop_and_compress_tdrk</span><span class="p">]</span>
 
 <div class="viewcode-block" id="EvolveConfig.check_valid_dt"><a class="viewcode-back" href="../../../configs.html#renormalizer.utils.configs.EvolveConfig.check_valid_dt">[docs]</a>    <span class="k">def</span> <span class="nf">check_valid_dt</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">evolve_dt</span><span class="p">:</span> <span class="nb">complex</span><span class="p">):</span>
         <span class="n">info_str</span> <span class="o">=</span> <span class="sa">f</span><span class="s2">&quot;in config: </span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">guess_dt</span><span class="si">}</span><span class="s2">, in arg: </span><span class="si">{</span><span class="n">evolve_dt</span><span class="si">}</span><span class="s2">&quot;</span>

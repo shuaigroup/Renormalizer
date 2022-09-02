@@ -1,0 +1,311 @@
+
+
+<!DOCTYPE html>
+<html class="writer-html5" lang="en" >
+<head>
+  <meta charset="utf-8" />
+  
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  
+  <title>renormalizer.sbm.sbm &mdash; Renormalizer 0.1.0 documentation</title>
+  
+
+  
+  <link rel="stylesheet" href="../../../_static/css/theme.css" type="text/css" />
+  <link rel="stylesheet" href="../../../_static/pygments.css" type="text/css" />
+  <link rel="stylesheet" href="../../../_static/pygments.css" type="text/css" />
+  <link rel="stylesheet" href="../../../_static/css/theme.css" type="text/css" />
+
+  
+  
+
+  
+  
+
+  
+
+  
+  <!--[if lt IE 9]>
+    <script src="../../../_static/js/html5shiv.min.js"></script>
+  <![endif]-->
+  
+    
+      <script type="text/javascript" id="documentation_options" data-url_root="../../../" src="../../../_static/documentation_options.js"></script>
+        <script data-url_root="../../../" id="documentation_options" src="../../../_static/documentation_options.js"></script>
+        <script src="../../../_static/jquery.js"></script>
+        <script src="../../../_static/underscore.js"></script>
+        <script src="../../../_static/_sphinx_javascript_frameworks_compat.js"></script>
+        <script src="../../../_static/doctools.js"></script>
+    
+    <script type="text/javascript" src="../../../_static/js/theme.js"></script>
+
+    
+    <link rel="index" title="Index" href="../../../genindex.html" />
+    <link rel="search" title="Search" href="../../../search.html" /> 
+</head>
+
+<body class="wy-body-for-nav">
+
+   
+  <div class="wy-grid-for-nav">
+    
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search" >
+          
+
+          
+            <a href="../../../index.html" class="icon icon-home"> Renormalizer
+          
+
+          
+          </a>
+
+          
+            
+            
+              <div class="version">
+                0.1
+              </div>
+            
+          
+
+          
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="../../../search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+
+          
+        </div>
+
+        
+        <div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="main navigation">
+          
+            
+            
+              
+            
+            
+              <ul>
+<li class="toctree-l1"><a class="reference internal" href="../../../overview.html">1. An overview of Renormalizer</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../install.html">2. Installation guide</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../develop.html">3. How to develop Renormalizer</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../tutorial.html">4. Tutorial</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../model.html">5. Model</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../mps.html">6. Low Level Data Structure and Algorithms</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../static.html">7. Static Eigenstate Method</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../spectrum.html">8. spectra: absorption/emission spectrum at zero/finite temperature</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../ct.html">9. Charge Transport</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../cv.html">10. Frequency domain DMRG</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../configs.html">11. Calculation Configurations</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../lib.html">12. lib</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../sbm.html">13. Spin-Boson Model</a></li>
+</ul>
+
+            
+          
+        </div>
+        
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap">
+
+      
+      <nav class="wy-nav-top" aria-label="top navigation">
+        
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="../../../index.html">Renormalizer</a>
+        
+      </nav>
+
+
+      <div class="wy-nav-content">
+        
+        <div class="rst-content">
+        
+          
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+<div role="navigation" aria-label="breadcrumbs navigation">
+
+  <ul class="wy-breadcrumbs">
+    
+      <li><a href="../../../index.html" class="icon icon-home"></a> &raquo;</li>
+        
+          <li><a href="../../index.html">Module code</a> &raquo;</li>
+        
+      <li>renormalizer.sbm.sbm</li>
+    
+    
+      <li class="wy-breadcrumbs-aside">
+        
+      </li>
+    
+  </ul>
+
+  
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+            
+  <h1>Source code for renormalizer.sbm.sbm</h1><div class="highlight"><pre>
+<span></span><span class="c1"># -*- coding: utf-8 -*-</span>
+
+<span class="kn">import</span> <span class="nn">logging</span>
+<span class="kn">from</span> <span class="nn">functools</span> <span class="kn">import</span> <span class="n">partial</span>
+
+<span class="kn">from</span> <span class="nn">renormalizer.model</span> <span class="kn">import</span> <span class="n">Model</span>
+<span class="kn">from</span> <span class="nn">renormalizer.mps</span> <span class="kn">import</span> <span class="n">Mpo</span><span class="p">,</span> <span class="n">Mps</span>
+<span class="kn">from</span> <span class="nn">renormalizer.utils</span> <span class="kn">import</span> <span class="n">TdMpsJob</span><span class="p">,</span> <span class="n">Quantity</span><span class="p">,</span> <span class="n">CompressConfig</span>
+<span class="kn">import</span> <span class="nn">numpy</span> <span class="k">as</span> <span class="nn">np</span>
+
+<span class="n">logger</span> <span class="o">=</span> <span class="n">logging</span><span class="o">.</span><span class="n">getLogger</span><span class="p">(</span><span class="vm">__name__</span><span class="p">)</span>
+
+
+<div class="viewcode-block" id="SpinBosonDynamics"><a class="viewcode-back" href="../../../sbm.html#renormalizer.sbm.sbm.SpinBosonDynamics">[docs]</a><span class="k">class</span> <span class="nc">SpinBosonDynamics</span><span class="p">(</span><span class="n">TdMpsJob</span><span class="p">):</span>
+    
+    <span class="sa">r</span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    The Spin-Boson Model</span>
+
+<span class="sd">    The initial state is a Hartree product state with all vibrations at :math:`|</span>
+<span class="sd">    0 \rangle` and spin at spin up state. </span>
+<span class="sd">    The class can be used at zero temperature or finite temperature with</span>
+<span class="sd">    thermofield dynamics method. </span>
+<span class="sd">    </span>
+<span class="sd">    &quot;&quot;&quot;</span>
+
+    <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> 
+            <span class="n">model</span><span class="p">:</span> <span class="n">Model</span><span class="p">,</span> 
+            <span class="n">auto_expand</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">True</span><span class="p">,</span>
+            <span class="n">compress_config</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> 
+            <span class="n">evolve_config</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> 
+            <span class="n">dump_dir</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
+            <span class="n">dump_mps</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> 
+            <span class="n">job_name</span><span class="o">=</span><span class="kc">None</span>
+            <span class="p">):</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">model</span> <span class="o">=</span> <span class="n">model</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">h_mpo</span> <span class="o">=</span> <span class="n">Mpo</span><span class="p">(</span><span class="n">model</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">auto_expand</span> <span class="o">=</span> <span class="n">auto_expand</span>
+        
+        <span class="k">if</span> <span class="n">compress_config</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">compress_config</span> <span class="o">=</span> <span class="n">CompressConfig</span><span class="p">()</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">compress_config</span> <span class="o">=</span> <span class="n">compress_config</span>
+
+        <span class="bp">self</span><span class="o">.</span><span class="n">sigma_x</span> <span class="o">=</span> <span class="p">[]</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">sigma_z</span> <span class="o">=</span> <span class="p">[]</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">rho</span> <span class="o">=</span> <span class="p">[]</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">bond_entropy</span> <span class="o">=</span> <span class="p">[]</span>
+
+        <span class="nb">super</span><span class="p">()</span><span class="o">.</span><span class="fm">__init__</span><span class="p">(</span><span class="n">evolve_config</span><span class="o">=</span><span class="n">evolve_config</span><span class="p">,</span> <span class="n">dump_dir</span><span class="o">=</span><span class="n">dump_dir</span><span class="p">,</span>
+                <span class="n">dump_mps</span><span class="o">=</span><span class="n">dump_mps</span><span class="p">,</span> <span class="n">job_name</span><span class="o">=</span><span class="n">job_name</span><span class="p">)</span>
+
+<div class="viewcode-block" id="SpinBosonDynamics.init_mps"><a class="viewcode-back" href="../../../sbm.html#renormalizer.sbm.sbm.SpinBosonDynamics.init_mps">[docs]</a>    <span class="k">def</span> <span class="nf">init_mps</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="n">logger</span><span class="o">.</span><span class="n">debug</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;mpo bond and physical dimension: </span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">h_mpo</span><span class="o">.</span><span class="n">bond_dims</span><span class="si">}</span><span class="s2">, </span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">h_mpo</span><span class="o">.</span><span class="n">pbond_list</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+        <span class="n">init_mps</span> <span class="o">=</span> <span class="n">Mps</span><span class="o">.</span><span class="n">ground_state</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">model</span><span class="p">,</span> <span class="kc">False</span><span class="p">)</span>
+        <span class="n">init_mps</span><span class="o">.</span><span class="n">compress_config</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">compress_config</span>
+        <span class="n">init_mps</span><span class="o">.</span><span class="n">evolve_config</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">evolve_config</span>
+        
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">evolve_config</span><span class="o">.</span><span class="n">is_tdvp</span> <span class="ow">and</span> <span class="bp">self</span><span class="o">.</span><span class="n">auto_expand</span><span class="p">:</span> 
+            <span class="n">init_mps</span> <span class="o">=</span> <span class="n">init_mps</span><span class="o">.</span><span class="n">expand_bond_dimension</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">h_mpo</span><span class="p">,</span> <span class="n">coef</span><span class="o">=</span><span class="mf">1e-16</span><span class="p">,</span> <span class="n">include_ex</span><span class="o">=</span><span class="kc">False</span><span class="p">)</span>
+        <span class="k">return</span> <span class="n">init_mps</span></div>
+
+<div class="viewcode-block" id="SpinBosonDynamics.process_mps"><a class="viewcode-back" href="../../../sbm.html#renormalizer.sbm.sbm.SpinBosonDynamics.process_mps">[docs]</a>    <span class="k">def</span> <span class="nf">process_mps</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">mps</span><span class="p">):</span>
+        <span class="k">for</span> <span class="n">idx</span><span class="p">,</span> <span class="n">bas</span> <span class="ow">in</span> <span class="nb">enumerate</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">model</span><span class="o">.</span><span class="n">basis</span><span class="p">):</span>
+            <span class="k">if</span> <span class="n">bas</span><span class="o">.</span><span class="n">is_spin</span><span class="p">:</span>
+                <span class="k">break</span>
+        <span class="n">rho</span> <span class="o">=</span> <span class="n">mps</span><span class="o">.</span><span class="n">calc_1site_rdm</span><span class="p">(</span><span class="n">idx</span><span class="o">=</span><span class="n">idx</span><span class="p">)[</span><span class="n">idx</span><span class="p">]</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">rho</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">rho</span><span class="p">)</span>
+        
+        <span class="c1">#sigma_z_mpo = self.model.get_mpos(&quot;sigma_z&quot;, partial(Mpo.onsite, opera=&quot;sigma_z&quot;, dof_set={&quot;spin&quot;}))</span>
+        <span class="c1">#sigma_z0 = mps.expectation(sigma_z_mpo)</span>
+        <span class="c1">#assert np.allclose(sigma_z0, rho[0,0]-rho[1,1])</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">sigma_z</span><span class="o">.</span><span class="n">append</span><span class="p">((</span><span class="n">rho</span><span class="p">[</span><span class="mi">0</span><span class="p">,</span><span class="mi">0</span><span class="p">]</span><span class="o">-</span><span class="n">rho</span><span class="p">[</span><span class="mi">1</span><span class="p">,</span><span class="mi">1</span><span class="p">])</span><span class="o">.</span><span class="n">real</span><span class="p">)</span>
+        
+        <span class="c1">#sigma_x_mpo = self.model.get_mpos(&quot;sigma_x&quot;, partial(Mpo.onsite, opera=&quot;sigma_x&quot;, dof_set={&quot;spin&quot;}))</span>
+        <span class="c1">#sigma_x0 = mps.expectation(sigma_x_mpo)</span>
+        <span class="c1">#assert np.allclose(sigma_x0, rho[0,1]+rho[1,0])</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">sigma_x</span><span class="o">.</span><span class="n">append</span><span class="p">((</span><span class="n">rho</span><span class="p">[</span><span class="mi">0</span><span class="p">,</span><span class="mi">1</span><span class="p">]</span><span class="o">+</span><span class="n">rho</span><span class="p">[</span><span class="mi">1</span><span class="p">,</span><span class="mi">0</span><span class="p">])</span><span class="o">.</span><span class="n">real</span><span class="p">)</span>
+        <span class="n">logger</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;sigma_z: </span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">sigma_z</span><span class="p">[</span><span class="o">-</span><span class="mi">1</span><span class="p">]</span><span class="si">}</span><span class="s2">. sigma_x: </span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">sigma_x</span><span class="p">[</span><span class="o">-</span><span class="mi">1</span><span class="p">]</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+        
+        <span class="n">bond_entropy</span> <span class="o">=</span> <span class="n">mps</span><span class="o">.</span><span class="n">calc_entropy</span><span class="p">(</span><span class="s2">&quot;bond&quot;</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">bond_entropy</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">bond_entropy</span><span class="p">)</span></div>
+
+<div class="viewcode-block" id="SpinBosonDynamics.evolve_single_step"><a class="viewcode-back" href="../../../sbm.html#renormalizer.sbm.sbm.SpinBosonDynamics.evolve_single_step">[docs]</a>    <span class="k">def</span> <span class="nf">evolve_single_step</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">evolve_dt</span><span class="p">):</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">latest_mps</span><span class="o">.</span><span class="n">evolve</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">h_mpo</span><span class="p">,</span> <span class="n">evolve_dt</span><span class="p">)</span></div>
+
+<div class="viewcode-block" id="SpinBosonDynamics.get_dump_dict"><a class="viewcode-back" href="../../../sbm.html#renormalizer.sbm.sbm.SpinBosonDynamics.get_dump_dict">[docs]</a>    <span class="k">def</span> <span class="nf">get_dump_dict</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="n">dump_dict</span> <span class="o">=</span> <span class="nb">dict</span><span class="p">()</span>
+        <span class="n">dump_dict</span><span class="p">[</span><span class="s2">&quot;time series&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">evolve_times</span>
+        <span class="n">dump_dict</span><span class="p">[</span><span class="s2">&quot;sigma_x&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">sigma_x</span>
+        <span class="n">dump_dict</span><span class="p">[</span><span class="s2">&quot;sigma_z&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">sigma_z</span>
+        <span class="n">dump_dict</span><span class="p">[</span><span class="s2">&quot;rho&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">rho</span>
+        <span class="n">dump_dict</span><span class="p">[</span><span class="s2">&quot;bond_entropy&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">bond_entropy</span>
+        <span class="k">return</span> <span class="n">dump_dict</span></div></div>
+</pre></div>
+
+           </div>
+           
+          </div>
+          <footer>
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>
+        &#169; Copyright 2019, Shuaigroup.
+
+    </p>
+  </div>
+    
+    
+    
+    Built with <a href="https://www.sphinx-doc.org/">Sphinx</a> using a
+    
+    <a href="https://github.com/readthedocs/sphinx_rtd_theme">theme</a>
+    
+    provided by <a href="https://readthedocs.org">Read the Docs</a>. 
+
+</footer>
+        </div>
+      </div>
+
+    </section>
+
+  </div>
+  
+
+  <script type="text/javascript">
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script>
+
+  
+  
+    
+   
+
+</body>
+</html>

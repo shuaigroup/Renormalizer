@@ -34,6 +34,7 @@
         <script data-url_root="../../../" id="documentation_options" src="../../../_static/documentation_options.js"></script>
         <script src="../../../_static/jquery.js"></script>
         <script src="../../../_static/underscore.js"></script>
+        <script src="../../../_static/_sphinx_javascript_frameworks_compat.js"></script>
         <script src="../../../_static/doctools.js"></script>
     
     <script type="text/javascript" src="../../../_static/js/theme.js"></script>
@@ -102,7 +103,7 @@
 <li class="toctree-l1"><a class="reference internal" href="../../../cv.html">10. Frequency domain DMRG</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../../../configs.html">11. Calculation Configurations</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../../../lib.html">12. lib</a></li>
-<li class="toctree-l1"><a class="reference internal" href="../../../sbm.html">13. sbm</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../sbm.html">13. Spin-Boson Model</a></li>
 </ul>
 
             
@@ -173,9 +174,10 @@
 
 <span class="kn">import</span> <span class="nn">logging</span>
 <span class="kn">from</span> <span class="nn">collections</span> <span class="kn">import</span> <span class="n">Counter</span><span class="p">,</span> <span class="n">deque</span>
-<span class="kn">from</span> <span class="nn">functools</span> <span class="kn">import</span> <span class="n">wraps</span>
+<span class="kn">from</span> <span class="nn">functools</span> <span class="kn">import</span> <span class="n">wraps</span><span class="p">,</span> <span class="n">reduce</span>
 <span class="kn">from</span> <span class="nn">typing</span> <span class="kn">import</span> <span class="n">Union</span><span class="p">,</span> <span class="n">List</span><span class="p">,</span> <span class="n">Dict</span>
 <span class="kn">import</span> <span class="nn">itertools</span>
+
 
 <span class="kn">import</span> <span class="nn">scipy</span>
 <span class="kn">from</span> <span class="nn">scipy</span> <span class="kn">import</span> <span class="n">stats</span>
@@ -241,16 +243,16 @@
             <span class="n">logger</span><span class="o">.</span><span class="n">debug</span><span class="p">(</span>
                     <span class="sa">f</span><span class="s2">&quot;guess_dt: </span><span class="si">{</span><span class="n">config</span><span class="o">.</span><span class="n">guess_dt</span><span class="si">}</span><span class="s2">, try time step size: </span><span class="si">{</span><span class="n">dt</span><span class="si">}</span><span class="s2">&quot;</span>
             <span class="p">)</span>
-
-            <span class="n">mps_half1</span> <span class="o">=</span> <span class="n">fun</span><span class="p">(</span><span class="n">cur_mps</span><span class="p">,</span> <span class="n">mpo</span><span class="p">,</span> <span class="n">dt</span> <span class="o">/</span> <span class="mi">2</span><span class="p">)</span><span class="o">.</span><span class="n">normalize</span><span class="p">()</span>
-            <span class="n">mps_half2</span> <span class="o">=</span> <span class="n">fun</span><span class="p">(</span><span class="n">mps_half1</span><span class="p">,</span> <span class="n">mpo</span><span class="p">,</span> <span class="n">dt</span> <span class="o">/</span> <span class="mi">2</span><span class="p">)</span><span class="o">.</span><span class="n">normalize</span><span class="p">()</span>
-            <span class="n">mps</span> <span class="o">=</span> <span class="n">fun</span><span class="p">(</span><span class="n">cur_mps</span><span class="p">,</span> <span class="n">mpo</span><span class="p">,</span> <span class="n">dt</span><span class="p">)</span><span class="o">.</span><span class="n">normalize</span><span class="p">()</span>
+            
+            <span class="n">mps_half1</span> <span class="o">=</span> <span class="n">fun</span><span class="p">(</span><span class="n">cur_mps</span><span class="p">,</span> <span class="n">mpo</span><span class="p">,</span> <span class="n">dt</span> <span class="o">/</span> <span class="mi">2</span><span class="p">)</span>
+            <span class="n">mps_half2</span> <span class="o">=</span> <span class="n">fun</span><span class="p">(</span><span class="n">mps_half1</span><span class="p">,</span> <span class="n">mpo</span><span class="p">,</span> <span class="n">dt</span> <span class="o">/</span> <span class="mi">2</span><span class="p">)</span>
+            <span class="n">mps</span> <span class="o">=</span> <span class="n">fun</span><span class="p">(</span><span class="n">cur_mps</span><span class="p">,</span> <span class="n">mpo</span><span class="p">,</span> <span class="n">dt</span><span class="p">)</span>
             <span class="n">dis</span> <span class="o">=</span> <span class="n">mps</span><span class="o">.</span><span class="n">distance</span><span class="p">(</span><span class="n">mps_half2</span><span class="p">)</span>
 
             <span class="c1"># prevent bug. save &quot;some&quot; memory.</span>
             <span class="k">del</span> <span class="n">mps_half1</span><span class="p">,</span> <span class="n">mps</span>
 
-            <span class="n">p</span> <span class="o">=</span> <span class="p">(</span><span class="mf">0.75</span> <span class="o">*</span> <span class="n">config</span><span class="o">.</span><span class="n">adaptive_rtol</span> <span class="o">/</span> <span class="p">(</span><span class="n">dis</span> <span class="o">+</span> <span class="mf">1e-30</span><span class="p">))</span> <span class="o">**</span> <span class="p">(</span><span class="mf">1.</span><span class="o">/</span><span class="mi">3</span><span class="p">)</span>
+            <span class="n">p</span> <span class="o">=</span> <span class="p">(</span><span class="mf">0.75</span> <span class="o">*</span> <span class="n">config</span><span class="o">.</span><span class="n">adaptive_rtol</span> <span class="o">/</span> <span class="p">(</span><span class="n">dis</span><span class="o">/</span><span class="n">mps_half2</span><span class="o">.</span><span class="n">mp_norm</span> <span class="o">+</span> <span class="mf">1e-30</span><span class="p">))</span> <span class="o">**</span> <span class="p">(</span><span class="mf">1.</span><span class="o">/</span><span class="mi">3</span><span class="p">)</span>
             <span class="n">logger</span><span class="o">.</span><span class="n">debug</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;distance: </span><span class="si">{</span><span class="n">dis</span><span class="si">}</span><span class="s2">, enlarge p parameter: </span><span class="si">{</span><span class="n">p</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
             <span class="k">if</span> <span class="n">p</span> <span class="o">&lt;</span> <span class="n">p_min</span><span class="p">:</span>
                 <span class="n">p</span> <span class="o">=</span> <span class="n">p_min</span>
@@ -594,23 +596,9 @@
 
     <span class="nd">@property</span>
     <span class="k">def</span> <span class="nf">norm</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
-        <span class="c1"># return self.dmrg_norm * self.hartree_norm</span>
-        <span class="k">return</span> <span class="n">np</span><span class="o">.</span><span class="n">linalg</span><span class="o">.</span><span class="n">norm</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">coeff</span><span class="p">)</span>
-
-    <span class="nd">@property</span>
-    <span class="k">def</span> <span class="nf">dmrg_norm</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">float</span><span class="p">:</span>
-        <span class="c1"># the fast version in the comment rarely makes sense because in a lot of cases</span>
-        <span class="c1"># the mps is not canonicalised (though qnidx is set)</span>
-        <span class="sd">&quot;&quot;&quot;</span>
-<span class="sd">        if self.is_left_canon:</span>
-<span class="sd">            assert self.check_left_canonical()</span>
-<span class="sd">            return np.linalg.norm(np.ravel(self[-1]))</span>
-<span class="sd">        else:</span>
-<span class="sd">            assert self.check_right_canonical()</span>
-<span class="sd">            return np.linalg.norm(np.ravel(self[0]))</span>
-<span class="sd">        &quot;&quot;&quot;</span>
-        <span class="n">res</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">sqrt</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">conj</span><span class="p">()</span><span class="o">.</span><span class="n">dot</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span><span class="o">.</span><span class="n">real</span><span class="p">)</span>
-        <span class="k">return</span> <span class="nb">float</span><span class="p">(</span><span class="n">res</span><span class="o">.</span><span class="n">real</span><span class="p">)</span>
+        <span class="sd">&#39;&#39;&#39;the norm of the total wavefunction</span>
+<span class="sd">        &#39;&#39;&#39;</span>
+        <span class="k">return</span> <span class="n">np</span><span class="o">.</span><span class="n">linalg</span><span class="o">.</span><span class="n">norm</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">coeff</span><span class="p">)</span> <span class="o">*</span> <span class="bp">self</span><span class="o">.</span><span class="n">mp_norm</span>
 
     <span class="k">def</span> <span class="nf">_expectation_path</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
         <span class="c1"># S--a--S--e--S</span>
@@ -733,23 +721,34 @@
         <span class="n">new</span><span class="o">.</span><span class="n">evolve_config</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">evolve_config</span><span class="o">.</span><span class="n">copy</span><span class="p">()</span>
         <span class="k">return</span> <span class="n">new</span></div>
 
-<div class="viewcode-block" id="Mps.normalize"><a class="viewcode-back" href="../../../mps.html#renormalizer.mps.Mps.normalize">[docs]</a>    <span class="k">def</span> <span class="nf">normalize</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">norm</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
-        <span class="c1"># real time propagation: dmrg should be normalized, coefficient is not changed,</span>
-        <span class="c1">#  use norm=None</span>
-        <span class="c1"># imag time propagation: dmrg should be normalized, coefficient is normalized to 1.0</span>
-        <span class="c1"># applied by a operator then normalize: dmrg should be normalized,</span>
-        <span class="c1">#   coefficient is set to the length</span>
-        <span class="c1"># these two cases should set `norm` equals to corresponding value</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">scale</span><span class="p">(</span><span class="mf">1.0</span> <span class="o">/</span> <span class="bp">self</span><span class="o">.</span><span class="n">dmrg_norm</span><span class="p">,</span> <span class="n">inplace</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
-        <span class="k">if</span> <span class="n">norm</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
-            <span class="bp">self</span><span class="o">.</span><span class="n">coeff</span> <span class="o">*=</span> <span class="n">norm</span> <span class="o">/</span> <span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">linalg</span><span class="o">.</span><span class="n">norm</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">coeff</span><span class="p">))</span>
-        <span class="k">return</span> <span class="bp">self</span></div>
+<div class="viewcode-block" id="Mps.normalize"><a class="viewcode-back" href="../../../mps.html#renormalizer.mps.Mps.normalize">[docs]</a>    <span class="k">def</span> <span class="nf">normalize</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">kind</span><span class="p">):</span>
+        <span class="sa">r</span><span class="sd">&#39;&#39;&#39; normalize the wavefunction</span>
 
-<div class="viewcode-block" id="Mps.canonical_normalize"><a class="viewcode-back" href="../../../mps.html#renormalizer.mps.Mps.canonical_normalize">[docs]</a>    <span class="k">def</span> <span class="nf">canonical_normalize</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
-        <span class="c1"># applied by a operator then normalize: dmrg should be normalized,</span>
-        <span class="c1">#   tdh should be normalized, coefficient is set to the length</span>
-        <span class="c1"># suppose length is only determined by dmrg part</span>
-        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">normalize</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">dmrg_norm</span><span class="p">)</span></div>
+<span class="sd">        Parameters</span>
+<span class="sd">        ----------</span>
+<span class="sd">        kind: str</span>
+<span class="sd">            &quot;mps_only&quot;: the mps part is normalized and coeff is not modified;</span>
+<span class="sd">            &quot;mps_norm_to_coeff&quot;: the mps part is normalized and the norm is multiplied to coeff;</span>
+<span class="sd">            &quot;mps_and_coeff&quot;: both mps and coeff is normalized</span>
+
+<span class="sd">        Returns</span>
+<span class="sd">        -------</span>
+<span class="sd">        ``self`` is overwritten.</span>
+<span class="sd">        &#39;&#39;&#39;</span>
+
+        <span class="k">if</span> <span class="n">kind</span> <span class="o">==</span> <span class="s2">&quot;mps_only&quot;</span><span class="p">:</span>
+            <span class="n">new_coeff</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">coeff</span>
+        <span class="k">elif</span> <span class="n">kind</span> <span class="o">==</span> <span class="s2">&quot;mps_and_coeff&quot;</span><span class="p">:</span>
+            <span class="n">new_coeff</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">coeff</span> <span class="o">/</span> <span class="n">np</span><span class="o">.</span><span class="n">linalg</span><span class="o">.</span><span class="n">norm</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">coeff</span><span class="p">)</span>
+        <span class="k">elif</span> <span class="n">kind</span> <span class="o">==</span> <span class="s2">&quot;mps_norm_to_coeff&quot;</span><span class="p">:</span>
+            <span class="n">new_coeff</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">coeff</span> <span class="o">*</span> <span class="bp">self</span><span class="o">.</span><span class="n">mp_norm</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;kind=</span><span class="si">{</span><span class="n">kind</span><span class="si">}</span><span class="s2"> is not valid.&quot;</span><span class="p">)</span>
+        <span class="n">new_mps</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">scale</span><span class="p">(</span><span class="mf">1.0</span> <span class="o">/</span> <span class="bp">self</span><span class="o">.</span><span class="n">mp_norm</span><span class="p">,</span> <span class="n">inplace</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+        <span class="n">new_mps</span><span class="o">.</span><span class="n">coeff</span> <span class="o">=</span> <span class="n">new_coeff</span>
+
+        <span class="k">return</span> <span class="n">new_mps</span></div>
+
 
 <div class="viewcode-block" id="Mps.expand_bond_dimension"><a class="viewcode-back" href="../../../mps.html#renormalizer.mps.Mps.expand_bond_dimension">[docs]</a>    <span class="k">def</span> <span class="nf">expand_bond_dimension</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">hint_mpo</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">coef</span><span class="o">=</span><span class="mf">1e-10</span><span class="p">,</span> <span class="n">include_ex</span><span class="o">=</span><span class="kc">True</span><span class="p">):</span>
         <span class="sd">&quot;&quot;&quot;</span>
@@ -774,8 +773,11 @@
             <span class="k">if</span> <span class="n">include_ex</span><span class="p">:</span>
                 <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">is_mps</span><span class="p">:</span>
                     <span class="n">ex_state</span><span class="p">:</span> <span class="n">MatrixProduct</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">ground_state</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">model</span><span class="p">,</span> <span class="kc">False</span><span class="p">)</span>
-                    <span class="n">ex_state</span> <span class="o">=</span> <span class="n">Mpo</span><span class="o">.</span><span class="n">onsite</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">model</span><span class="p">,</span> <span class="sa">r</span><span class="s2">&quot;a^\dagger&quot;</span><span class="p">)</span> <span class="o">@</span> <span class="n">ex_state</span>
+                    <span class="c1"># for self.qntot &gt;= 1</span>
+                    <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">qntot</span><span class="p">):</span>
+                        <span class="n">ex_state</span> <span class="o">=</span> <span class="n">Mpo</span><span class="o">.</span><span class="n">onsite</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">model</span><span class="p">,</span> <span class="sa">r</span><span class="s2">&quot;a^\dagger&quot;</span><span class="p">)</span> <span class="o">@</span> <span class="n">ex_state</span>
                 <span class="k">elif</span> <span class="bp">self</span><span class="o">.</span><span class="n">is_mpdm</span><span class="p">:</span>
+                    <span class="k">assert</span> <span class="bp">self</span><span class="o">.</span><span class="n">qntot</span> <span class="o">==</span> <span class="mi">1</span>
                     <span class="n">ex_state</span><span class="p">:</span> <span class="n">MatrixProduct</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">max_entangled_ex</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">model</span><span class="p">)</span>
                 <span class="k">else</span><span class="p">:</span>
                     <span class="k">assert</span> <span class="kc">False</span>
@@ -805,15 +807,17 @@
                     <span class="n">lastone</span> <span class="o">=</span> <span class="n">lastone</span><span class="o">.</span><span class="n">canonicalise</span><span class="p">()</span><span class="o">.</span><span class="n">compress</span><span class="p">(</span>
                         <span class="n">m_target</span> <span class="o">//</span> <span class="n">hint_mpo</span><span class="o">.</span><span class="n">bond_dims_mean</span> <span class="o">+</span> <span class="mi">1</span>
                     <span class="p">)</span>
-                <span class="n">lastone</span> <span class="o">=</span> <span class="p">(</span><span class="n">hint_mpo</span> <span class="o">@</span> <span class="n">lastone</span><span class="p">)</span><span class="o">.</span><span class="n">normalize</span><span class="p">()</span>
+                <span class="n">lastone</span> <span class="o">=</span> <span class="p">(</span><span class="n">hint_mpo</span> <span class="o">@</span> <span class="n">lastone</span><span class="p">)</span><span class="o">.</span><span class="n">normalize</span><span class="p">(</span><span class="s2">&quot;mps_and_coeff&quot;</span><span class="p">)</span>
         <span class="n">logger</span><span class="o">.</span><span class="n">debug</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;expander bond dimension: </span><span class="si">{</span><span class="n">expander</span><span class="o">.</span><span class="n">bond_dims</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">compress_config</span><span class="o">.</span><span class="n">bond_dim_max_value</span> <span class="o">+=</span> <span class="bp">self</span><span class="o">.</span><span class="n">bond_dims_mean</span>
-        <span class="k">return</span> <span class="p">(</span><span class="bp">self</span> <span class="o">+</span> <span class="n">expander</span><span class="o">.</span><span class="n">scale</span><span class="p">(</span><span class="n">coef</span><span class="p">,</span> <span class="n">inplace</span><span class="o">=</span><span class="kc">True</span><span class="p">))</span><span class="o">.</span><span class="n">canonicalise</span><span class="p">()</span><span class="o">.</span><span class="n">canonicalise</span><span class="p">()</span><span class="o">.</span><span class="n">canonical_normalize</span><span class="p">()</span></div>
+        <span class="k">return</span> <span class="p">(</span><span class="bp">self</span> <span class="o">+</span> <span class="n">expander</span><span class="o">.</span><span class="n">scale</span><span class="p">(</span><span class="n">coef</span><span class="o">*</span><span class="bp">self</span><span class="o">.</span><span class="n">norm</span><span class="p">,</span> <span class="n">inplace</span><span class="o">=</span><span class="kc">True</span><span class="p">))</span><span class="o">.</span><span class="n">canonicalise</span><span class="p">()</span><span class="o">.</span><span class="n">canonicalise</span><span class="p">()</span><span class="o">.</span><span class="n">normalize</span><span class="p">(</span><span class="s2">&quot;mps_norm_to_coeff&quot;</span><span class="p">)</span></div>
 
-<div class="viewcode-block" id="Mps.evolve"><a class="viewcode-back" href="../../../mps.html#renormalizer.mps.Mps.evolve">[docs]</a>    <span class="k">def</span> <span class="nf">evolve</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">mpo</span><span class="p">,</span> <span class="n">evolve_dt</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="s2">&quot;Mps&quot;</span><span class="p">:</span>
+<div class="viewcode-block" id="Mps.evolve"><a class="viewcode-back" href="../../../mps.html#renormalizer.mps.Mps.evolve">[docs]</a>    <span class="k">def</span> <span class="nf">evolve</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">mpo</span><span class="p">,</span> <span class="n">evolve_dt</span><span class="p">,</span> <span class="n">normalize</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="s2">&quot;Mps&quot;</span><span class="p">:</span>
 
         <span class="n">method</span> <span class="o">=</span> <span class="p">{</span>
             <span class="n">EvolveMethod</span><span class="o">.</span><span class="n">prop_and_compress</span><span class="p">:</span> <span class="bp">self</span><span class="o">.</span><span class="n">_evolve_prop_and_compress</span><span class="p">,</span>
+            <span class="n">EvolveMethod</span><span class="o">.</span><span class="n">prop_and_compress_tdrk4</span><span class="p">:</span> <span class="bp">self</span><span class="o">.</span><span class="n">_evolve_prop_and_compress_tdrk4</span><span class="p">,</span>
+            <span class="n">EvolveMethod</span><span class="o">.</span><span class="n">prop_and_compress_tdrk</span><span class="p">:</span> <span class="bp">self</span><span class="o">.</span><span class="n">_evolve_prop_and_compress_tdrk</span><span class="p">,</span>
             <span class="n">EvolveMethod</span><span class="o">.</span><span class="n">tdvp_mu_vmf</span><span class="p">:</span> <span class="bp">self</span><span class="o">.</span><span class="n">_evolve_tdvp_mu_vmf</span><span class="p">,</span>
             <span class="n">EvolveMethod</span><span class="o">.</span><span class="n">tdvp_vmf</span><span class="p">:</span> <span class="bp">self</span><span class="o">.</span><span class="n">_evolve_tdvp_mu_vmf</span><span class="p">,</span>
             <span class="n">EvolveMethod</span><span class="o">.</span><span class="n">tdvp_mu_cmf</span><span class="p">:</span> <span class="bp">self</span><span class="o">.</span><span class="n">_evolve_tdvp_mu_cmf</span><span class="p">,</span>
@@ -821,20 +825,154 @@
             <span class="n">EvolveMethod</span><span class="o">.</span><span class="n">tdvp_ps2</span><span class="p">:</span> <span class="bp">self</span><span class="o">.</span><span class="n">_evolve_tdvp_ps2</span>
         <span class="p">}[</span><span class="bp">self</span><span class="o">.</span><span class="n">evolve_config</span><span class="o">.</span><span class="n">method</span><span class="p">]</span>
         <span class="n">new_mps</span> <span class="o">=</span> <span class="n">method</span><span class="p">(</span><span class="n">mpo</span><span class="p">,</span> <span class="n">evolve_dt</span><span class="p">)</span>
-        <span class="k">if</span> <span class="n">np</span><span class="o">.</span><span class="n">iscomplex</span><span class="p">(</span><span class="n">evolve_dt</span><span class="p">):</span>
-            <span class="n">new_mps</span><span class="o">.</span><span class="n">normalize</span><span class="p">(</span><span class="mf">1.0</span><span class="p">)</span>
-        <span class="k">else</span><span class="p">:</span>
-            <span class="n">new_mps</span><span class="o">.</span><span class="n">normalize</span><span class="p">(</span><span class="kc">None</span><span class="p">)</span>
+        <span class="k">if</span> <span class="n">normalize</span><span class="p">:</span>
+            <span class="k">if</span> <span class="n">np</span><span class="o">.</span><span class="n">iscomplex</span><span class="p">(</span><span class="n">evolve_dt</span><span class="p">):</span>
+                <span class="n">new_mps</span><span class="o">.</span><span class="n">normalize</span><span class="p">(</span><span class="s2">&quot;mps_and_coeff&quot;</span><span class="p">)</span>
+            <span class="k">else</span><span class="p">:</span>
+                <span class="n">new_mps</span><span class="o">.</span><span class="n">normalize</span><span class="p">(</span><span class="s2">&quot;mps_only&quot;</span><span class="p">)</span>
         <span class="k">return</span> <span class="n">new_mps</span></div>
+    
+    <span class="k">def</span> <span class="nf">_evolve_prop_and_compress_tdrk4</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">mpo</span><span class="p">,</span> <span class="n">evolve_dt</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="s2">&quot;Mps&quot;</span><span class="p">:</span>
+        <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        classical 4th order Runge-Kutta solver for time-dependent Hamiltonian</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        
+        <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">mpo</span><span class="p">,</span> <span class="n">Mpo</span><span class="p">):</span> 
+            <span class="k">def</span> <span class="nf">mpo_t</span><span class="p">(</span><span class="n">t</span><span class="p">,</span> <span class="o">*</span><span class="n">args</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">):</span>
+                <span class="k">return</span> <span class="n">mpo</span>
+        <span class="k">elif</span> <span class="n">callable</span><span class="p">(</span><span class="n">mpo</span><span class="p">):</span>
+            <span class="c1"># mpo can be a function of time, the range is 0 -&gt; evolve_dt</span>
+            <span class="n">mpo_t</span> <span class="o">=</span> <span class="n">mpo</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="ne">TypeError</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;unsupported mpo type: </span><span class="si">{</span><span class="n">mpo</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+
+        <span class="n">k1</span> <span class="o">=</span> <span class="n">mpo_t</span><span class="p">(</span><span class="mi">0</span><span class="p">)</span><span class="o">.</span><span class="n">contract</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span><span class="o">.</span><span class="n">scale</span><span class="p">(</span><span class="o">-</span><span class="mi">1</span><span class="n">j</span><span class="p">)</span>
+        <span class="n">logger</span><span class="o">.</span><span class="n">debug</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;k1:</span><span class="si">{</span><span class="n">k1</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>  
+        <span class="n">tmp_mps</span> <span class="o">=</span> <span class="bp">self</span> <span class="o">+</span> <span class="n">k1</span><span class="o">.</span><span class="n">scale</span><span class="p">(</span><span class="mf">0.5</span><span class="o">*</span><span class="n">evolve_dt</span><span class="p">)</span>
+        <span class="n">tmp_mps</span><span class="o">.</span><span class="n">canonicalise</span><span class="p">()</span><span class="o">.</span><span class="n">compress</span><span class="p">()</span>
+        <span class="n">k2</span> <span class="o">=</span> <span class="n">mpo_t</span><span class="p">(</span><span class="mf">0.5</span><span class="o">*</span><span class="n">evolve_dt</span><span class="p">)</span><span class="o">.</span><span class="n">contract</span><span class="p">(</span><span class="n">tmp_mps</span><span class="p">)</span><span class="o">.</span><span class="n">scale</span><span class="p">(</span><span class="o">-</span><span class="mi">1</span><span class="n">j</span><span class="p">)</span>
+        <span class="n">logger</span><span class="o">.</span><span class="n">debug</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;k2:</span><span class="si">{</span><span class="n">k2</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>  
+        <span class="n">tmp_mps</span> <span class="o">=</span> <span class="bp">self</span> <span class="o">+</span> <span class="n">k2</span><span class="o">.</span><span class="n">scale</span><span class="p">(</span><span class="mf">0.5</span><span class="o">*</span><span class="n">evolve_dt</span><span class="p">)</span>
+        <span class="n">tmp_mps</span><span class="o">.</span><span class="n">canonicalise</span><span class="p">()</span><span class="o">.</span><span class="n">compress</span><span class="p">()</span>
+        <span class="n">k3</span> <span class="o">=</span> <span class="n">mpo_t</span><span class="p">(</span><span class="mf">0.5</span><span class="o">*</span><span class="n">evolve_dt</span><span class="p">)</span><span class="o">.</span><span class="n">contract</span><span class="p">(</span><span class="n">tmp_mps</span><span class="p">)</span><span class="o">.</span><span class="n">scale</span><span class="p">(</span><span class="o">-</span><span class="mi">1</span><span class="n">j</span><span class="p">)</span>
+        <span class="n">logger</span><span class="o">.</span><span class="n">debug</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;k3:</span><span class="si">{</span><span class="n">k3</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>  
+        <span class="n">tmp_mps</span> <span class="o">=</span> <span class="bp">self</span> <span class="o">+</span> <span class="n">k3</span><span class="o">.</span><span class="n">scale</span><span class="p">(</span><span class="n">evolve_dt</span><span class="p">)</span>
+        <span class="n">tmp_mps</span><span class="o">.</span><span class="n">canonicalise</span><span class="p">()</span><span class="o">.</span><span class="n">compress</span><span class="p">()</span>
+        <span class="n">k4</span> <span class="o">=</span> <span class="n">mpo_t</span><span class="p">(</span><span class="n">evolve_dt</span><span class="p">)</span><span class="o">.</span><span class="n">contract</span><span class="p">(</span><span class="n">tmp_mps</span><span class="p">)</span><span class="o">.</span><span class="n">scale</span><span class="p">(</span><span class="o">-</span><span class="mi">1</span><span class="n">j</span><span class="p">)</span>
+        <span class="n">logger</span><span class="o">.</span><span class="n">debug</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;k4:</span><span class="si">{</span><span class="n">k4</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>  
+        
+        <span class="n">new_mps</span> <span class="o">=</span> <span class="n">compressed_sum</span><span class="p">([</span><span class="bp">self</span><span class="p">,</span> <span class="n">k1</span><span class="o">.</span><span class="n">scale</span><span class="p">(</span><span class="mi">1</span><span class="o">/</span><span class="mi">6</span><span class="o">*</span><span class="n">evolve_dt</span><span class="p">),</span>
+            <span class="n">k2</span><span class="o">.</span><span class="n">scale</span><span class="p">(</span><span class="mi">2</span><span class="o">/</span><span class="mi">6</span><span class="o">*</span><span class="n">evolve_dt</span><span class="p">),</span> 
+            <span class="n">k3</span><span class="o">.</span><span class="n">scale</span><span class="p">(</span><span class="mi">2</span><span class="o">/</span><span class="mi">6</span><span class="o">*</span><span class="n">evolve_dt</span><span class="p">),</span>
+            <span class="n">k4</span><span class="o">.</span><span class="n">scale</span><span class="p">(</span><span class="mi">1</span><span class="o">/</span><span class="mi">6</span><span class="o">*</span><span class="n">evolve_dt</span><span class="p">)])</span>
+        <span class="n">logger</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;new_mps:</span><span class="si">{</span><span class="n">new_mps</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>  
+        
+        <span class="k">return</span> <span class="n">new_mps</span>
+    
+    <span class="k">def</span> <span class="nf">_evolve_prop_and_compress_tdrk</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">mpo</span><span class="p">,</span> <span class="n">evolve_dt</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="s2">&quot;Mps&quot;</span><span class="p">:</span>
+        <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">            The most general Runge-Kutta solver for both time-dependent and</span>
+<span class="sd">            time-independnet Hamiltonian and adaptive or unadaptive time-step</span>
+<span class="sd">            size evolution</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">mpo</span><span class="p">,</span> <span class="n">Mpo</span><span class="p">):</span> 
+            <span class="k">def</span> <span class="nf">mpo_t</span><span class="p">(</span><span class="n">t</span><span class="p">,</span> <span class="o">*</span><span class="n">args</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">):</span>
+                <span class="k">return</span> <span class="n">mpo</span>
+        <span class="k">elif</span> <span class="n">callable</span><span class="p">(</span><span class="n">mpo</span><span class="p">):</span>
+            <span class="n">mpo_t</span> <span class="o">=</span> <span class="n">mpo</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="ne">TypeError</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;unsupported mpo type: </span><span class="si">{</span><span class="n">mpo</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+        
+        <span class="n">rk_config</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">evolve_config</span><span class="o">.</span><span class="n">rk_config</span>
+        <span class="n">a</span><span class="p">,</span><span class="n">b</span><span class="p">,</span><span class="n">c</span> <span class="o">=</span> <span class="n">rk_config</span><span class="o">.</span><span class="n">tableau</span>
+        
+        <span class="k">def</span> <span class="nf">sub_time_step_evolve</span><span class="p">(</span><span class="n">y</span><span class="p">,</span><span class="n">tau</span><span class="p">,</span><span class="n">t0</span><span class="p">):</span>
+            <span class="c1"># error is relative error</span>
+            <span class="n">k_list</span> <span class="o">=</span> <span class="p">[]</span>
+            <span class="k">for</span> <span class="n">istage</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="n">rk_config</span><span class="o">.</span><span class="n">stage</span><span class="p">):</span>
+                <span class="n">k</span> <span class="o">=</span> <span class="n">compressed_sum</span><span class="p">([</span><span class="n">y</span><span class="p">]</span><span class="o">+</span><span class="p">[</span><span class="n">k_list</span><span class="p">[</span><span class="n">i</span><span class="p">]</span><span class="o">.</span><span class="n">scale</span><span class="p">(</span><span class="n">a</span><span class="p">[</span><span class="n">istage</span><span class="p">,</span><span class="n">i</span><span class="p">]</span><span class="o">*</span><span class="n">tau</span><span class="p">)</span> <span class="k">for</span>
+                    <span class="n">i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="n">istage</span><span class="p">)</span> <span class="k">if</span> <span class="n">a</span><span class="p">[</span><span class="n">istage</span><span class="p">,</span><span class="n">i</span><span class="p">]</span> <span class="o">!=</span> <span class="mi">0</span><span class="p">],</span> <span class="n">batchsize</span><span class="o">=</span><span class="mi">6</span><span class="p">)</span>
+                <span class="n">k</span> <span class="o">=</span> <span class="n">mpo_t</span><span class="p">(</span><span class="n">c</span><span class="p">[</span><span class="n">istage</span><span class="p">]</span><span class="o">*</span><span class="n">tau</span><span class="o">+</span><span class="n">t0</span><span class="p">,</span> <span class="n">mps</span><span class="o">=</span><span class="n">k</span><span class="p">)</span><span class="o">.</span><span class="n">contract</span><span class="p">(</span><span class="n">k</span><span class="p">)</span><span class="o">.</span><span class="n">scale</span><span class="p">(</span><span class="o">-</span><span class="mi">1</span><span class="n">j</span><span class="p">)</span>
+                <span class="n">logger</span><span class="o">.</span><span class="n">debug</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;k_</span><span class="si">{</span><span class="n">istage</span><span class="si">}</span><span class="s2">: </span><span class="si">{</span><span class="n">k</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span> 
+                <span class="n">k_list</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">k</span><span class="p">)</span>        
+            
+            <span class="n">new_mps</span> <span class="o">=</span> <span class="n">compressed_sum</span><span class="p">([</span><span class="n">y</span><span class="p">]</span> <span class="o">+</span>
+                    <span class="p">[</span><span class="n">k_list</span><span class="p">[</span><span class="n">istage</span><span class="p">]</span><span class="o">.</span><span class="n">scale</span><span class="p">(</span><span class="n">b</span><span class="p">[</span><span class="mi">0</span><span class="p">,</span><span class="n">istage</span><span class="p">]</span><span class="o">*</span><span class="n">tau</span><span class="p">)</span> \
+                    <span class="k">for</span> <span class="n">istage</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="n">rk_config</span><span class="o">.</span><span class="n">stage</span><span class="p">)</span> <span class="k">if</span> <span class="n">b</span><span class="p">[</span><span class="mi">0</span><span class="p">,</span><span class="n">istage</span><span class="p">]</span><span class="o">!=</span><span class="mi">0</span><span class="p">],</span>
+                    <span class="n">batchsize</span><span class="o">=</span><span class="mi">6</span><span class="p">)</span>   
+            <span class="n">logger</span><span class="o">.</span><span class="n">debug</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;order_</span><span class="si">{</span><span class="n">rk_config</span><span class="o">.</span><span class="n">order</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span><span class="si">}</span><span class="s2">: </span><span class="si">{</span><span class="n">new_mps</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span> 
+            
+            <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">evolve_config</span><span class="o">.</span><span class="n">adaptive</span><span class="p">:</span>
+                <span class="k">assert</span> <span class="nb">len</span><span class="p">(</span><span class="n">rk_config</span><span class="o">.</span><span class="n">order</span><span class="p">)</span> <span class="o">==</span> <span class="mi">2</span>
+                <span class="k">assert</span> <span class="n">rk_config</span><span class="o">.</span><span class="n">order</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span> <span class="o">-</span> <span class="n">rk_config</span><span class="o">.</span><span class="n">order</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span> <span class="o">==</span> <span class="mi">1</span>
+                <span class="n">error</span> <span class="o">=</span> <span class="n">reduce</span><span class="p">(</span><span class="k">lambda</span> <span class="n">mps1</span><span class="p">,</span> <span class="n">mps2</span><span class="p">:</span> <span class="n">mps1</span><span class="o">.</span><span class="n">add</span><span class="p">(</span><span class="n">mps2</span><span class="p">),</span>
+                    <span class="p">[</span><span class="n">k_list</span><span class="p">[</span><span class="n">istage</span><span class="p">]</span><span class="o">.</span><span class="n">scale</span><span class="p">((</span><span class="n">b</span><span class="p">[</span><span class="mi">0</span><span class="p">,</span><span class="n">istage</span><span class="p">]</span><span class="o">-</span><span class="n">b</span><span class="p">[</span><span class="mi">1</span><span class="p">,</span><span class="n">istage</span><span class="p">])</span><span class="o">*</span><span class="n">tau</span><span class="p">)</span> \
+                    <span class="k">for</span> <span class="n">istage</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="n">rk_config</span><span class="o">.</span><span class="n">stage</span><span class="p">)</span> <span class="k">if</span> <span class="ow">not</span> \
+                    <span class="n">np</span><span class="o">.</span><span class="n">allclose</span><span class="p">(</span><span class="n">b</span><span class="p">[</span><span class="mi">0</span><span class="p">,</span><span class="n">istage</span><span class="p">],</span><span class="n">b</span><span class="p">[</span><span class="mi">1</span><span class="p">,</span><span class="n">istage</span><span class="p">])])</span>
+
+                <span class="n">error</span> <span class="o">=</span> <span class="n">error</span><span class="o">.</span><span class="n">norm</span> <span class="o">/</span> <span class="n">new_mps</span><span class="o">.</span><span class="n">norm</span>
+            <span class="k">else</span><span class="p">:</span>
+                <span class="k">assert</span> <span class="nb">len</span><span class="p">(</span><span class="n">rk_config</span><span class="o">.</span><span class="n">order</span><span class="p">)</span> <span class="o">==</span> <span class="mi">1</span>
+                <span class="n">error</span> <span class="o">=</span> <span class="mi">0</span>
+                
+            <span class="k">return</span> <span class="n">new_mps</span><span class="p">,</span> <span class="n">error</span>
+        
+        <span class="bp">self</span><span class="o">.</span><span class="n">evolve_config</span><span class="o">.</span><span class="n">check_valid_dt</span><span class="p">(</span><span class="n">evolve_dt</span><span class="p">)</span>
+        
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">evolve_config</span><span class="o">.</span><span class="n">adaptive</span><span class="p">:</span>
+            <span class="n">p_restart</span> <span class="o">=</span> <span class="mf">0.5</span>  <span class="c1"># restart threshold</span>
+            <span class="n">p_min</span> <span class="o">=</span> <span class="mf">0.1</span>  <span class="c1"># safeguard for minimal allowed p</span>
+            <span class="n">p_max</span> <span class="o">=</span> <span class="mf">2.0</span>  <span class="c1"># safeguard for maximal allowed p</span>
+            
+            <span class="n">evolved_dt</span> <span class="o">=</span> <span class="mi">0</span>
+            <span class="n">new_mps</span> <span class="o">=</span> <span class="bp">self</span>
+
+            <span class="k">while</span> <span class="kc">True</span><span class="p">:</span>
+                <span class="n">dt</span> <span class="o">=</span> <span class="n">min_abs</span><span class="p">(</span><span class="n">new_mps</span><span class="o">.</span><span class="n">evolve_config</span><span class="o">.</span><span class="n">guess_dt</span><span class="p">,</span> <span class="n">evolve_dt</span><span class="o">-</span><span class="n">evolved_dt</span><span class="p">)</span>
+                <span class="n">logger</span><span class="o">.</span><span class="n">debug</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;guess_dt: </span><span class="si">{</span><span class="n">new_mps</span><span class="o">.</span><span class="n">evolve_config</span><span class="o">.</span><span class="n">guess_dt</span><span class="si">}</span><span class="s2">, try time step size: </span><span class="si">{</span><span class="n">dt</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+                <span class="n">new_mps</span><span class="p">,</span> <span class="n">error</span> <span class="o">=</span> <span class="n">sub_time_step_evolve</span><span class="p">(</span><span class="n">new_mps</span><span class="p">,</span> <span class="n">dt</span><span class="p">,</span> <span class="n">evolved_dt</span><span class="p">)</span>    
+                <span class="n">p</span> <span class="o">=</span> <span class="p">(</span><span class="n">new_mps</span><span class="o">.</span><span class="n">evolve_config</span><span class="o">.</span><span class="n">adaptive_rtol</span> <span class="o">/</span> <span class="p">(</span><span class="n">error</span> <span class="o">+</span> <span class="mf">1e-30</span><span class="p">))</span> <span class="o">**</span> <span class="p">(</span><span class="mi">1</span><span class="o">/</span><span class="n">rk_config</span><span class="o">.</span><span class="n">order</span><span class="p">[</span><span class="mi">0</span><span class="p">])</span>
+                <span class="n">logger</span><span class="o">.</span><span class="n">debug</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;RKsolver:</span><span class="si">{</span><span class="n">rk_config</span><span class="o">.</span><span class="n">method</span><span class="si">}</span><span class="s2"> relative error: </span><span class="si">{</span><span class="n">error</span><span class="si">}</span><span class="s2">, enlarge p parameter: </span><span class="si">{</span><span class="n">p</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+                
+                <span class="k">if</span> <span class="n">p</span> <span class="o">&lt;</span> <span class="n">p_restart</span><span class="p">:</span>
+                    <span class="c1"># not accurate, will restart</span>
+                    <span class="n">new_mps</span><span class="o">.</span><span class="n">evolve_config</span><span class="o">.</span><span class="n">guess_dt</span> <span class="o">=</span> <span class="n">dt</span> <span class="o">*</span> <span class="nb">max</span><span class="p">(</span><span class="n">p_min</span><span class="p">,</span> <span class="n">p</span><span class="p">)</span>
+                    <span class="n">logger</span><span class="o">.</span><span class="n">debug</span><span class="p">(</span>
+                        <span class="sa">f</span><span class="s2">&quot;evolution not converged, new guess_dt: </span><span class="si">{</span><span class="n">new_mps</span><span class="o">.</span><span class="n">evolve_config</span><span class="o">.</span><span class="n">guess_dt</span><span class="si">}</span><span class="s2">&quot;</span>
+                    <span class="p">)</span>
+                <span class="k">else</span><span class="p">:</span>
+                    <span class="k">if</span> <span class="n">xp</span><span class="o">.</span><span class="n">allclose</span><span class="p">(</span><span class="n">dt</span><span class="o">+</span><span class="n">evolved_dt</span><span class="p">,</span> <span class="n">evolve_dt</span><span class="p">):</span>
+                        <span class="n">new_mps</span><span class="o">.</span><span class="n">evolve_config</span><span class="o">.</span><span class="n">guess_dt</span> <span class="o">=</span> <span class="n">min_abs</span><span class="p">(</span>
+                            <span class="n">dt</span> <span class="o">*</span> <span class="n">p</span><span class="p">,</span> <span class="n">new_mps</span><span class="o">.</span><span class="n">evolve_config</span><span class="o">.</span><span class="n">guess_dt</span>
+                        <span class="p">)</span>
+                        <span class="c1"># normal exit</span>
+                        <span class="n">logger</span><span class="o">.</span><span class="n">debug</span><span class="p">(</span>
+                            <span class="sa">f</span><span class="s2">&quot;evolution converged, new guess_dt: </span><span class="si">{</span><span class="n">new_mps</span><span class="o">.</span><span class="n">evolve_config</span><span class="o">.</span><span class="n">guess_dt</span><span class="si">}</span><span class="s2">&quot;</span>
+                        <span class="p">)</span>
+                        <span class="k">break</span>
+                    <span class="k">else</span><span class="p">:</span>
+                        <span class="n">new_mps</span><span class="o">.</span><span class="n">evolve_config</span><span class="o">.</span><span class="n">guess_dt</span> <span class="o">*=</span> <span class="nb">min</span><span class="p">(</span><span class="n">p</span><span class="p">,</span> <span class="n">p_max</span><span class="p">)</span>
+                        <span class="n">evolved_dt</span> <span class="o">+=</span> <span class="n">dt</span>
+                        <span class="n">logger</span><span class="o">.</span><span class="n">debug</span><span class="p">(</span>
+                            <span class="sa">f</span><span class="s2">&quot;evolution converged, new guess_dt: </span><span class="si">{</span><span class="n">new_mps</span><span class="o">.</span><span class="n">evolve_config</span><span class="o">.</span><span class="n">guess_dt</span><span class="si">}</span><span class="s2">&quot;</span>
+                        <span class="p">)</span>
+                        <span class="n">logger</span><span class="o">.</span><span class="n">debug</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;sub-step </span><span class="si">{</span><span class="n">dt</span><span class="si">}</span><span class="s2"> further, remaining: </span><span class="si">{</span><span class="n">evolve_dt</span><span class="o">-</span><span class="n">evolved_dt</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="n">new_mps</span><span class="p">,</span> <span class="n">_</span> <span class="o">=</span> <span class="n">sub_time_step_evolve</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">evolve_dt</span><span class="p">,</span> <span class="mi">0</span><span class="p">)</span>
+
+        <span class="k">return</span> <span class="n">new_mps</span>
 
     <span class="k">def</span> <span class="nf">_evolve_prop_and_compress</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">mpo</span><span class="p">,</span> <span class="n">evolve_dt</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="s2">&quot;Mps&quot;</span><span class="p">:</span>
         <span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">        The global propagation &amp; compression evolution scheme</span>
+<span class="sd">        only for time-independent Hamiltonian</span>
+<span class="sd">        Taylor expansion approximation to the formal propagator</span>
 <span class="sd">        &quot;&quot;&quot;</span>
         <span class="n">config</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">evolve_config</span>
         <span class="k">assert</span> <span class="n">evolve_dt</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span>
 
-        <span class="n">propagation_c</span> <span class="o">=</span> <span class="n">config</span><span class="o">.</span><span class="n">rk_config</span><span class="o">.</span><span class="n">coeff</span>
+        <span class="n">propagation_c</span> <span class="o">=</span> <span class="n">config</span><span class="o">.</span><span class="n">taylor_config</span><span class="o">.</span><span class="n">coeff</span>
+        <span class="n">order</span> <span class="o">=</span> <span class="nb">len</span><span class="p">(</span><span class="n">propagation_c</span><span class="p">)</span><span class="o">-</span><span class="mi">1</span>
         <span class="n">termlist</span> <span class="o">=</span> <span class="p">[</span><span class="bp">self</span><span class="p">]</span>
         <span class="c1"># don&#39;t let bond dim grow when contracting</span>
         <span class="n">orig_compress_config</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">compress_config</span>
@@ -866,13 +1004,13 @@
                     <span class="n">scale</span> <span class="o">=</span> <span class="p">(</span><span class="o">-</span><span class="mf">1.0</span><span class="n">j</span> <span class="o">*</span> <span class="n">dt</span><span class="p">)</span> <span class="o">**</span> <span class="n">idx</span> <span class="o">*</span> <span class="n">propagation_c</span><span class="p">[</span><span class="n">idx</span><span class="p">]</span>
                     <span class="n">scaled_termlist</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">term</span><span class="o">.</span><span class="n">scale</span><span class="p">(</span><span class="n">scale</span><span class="p">))</span>
                     <span class="k">del</span> <span class="n">term</span>
-                <span class="n">new_mps1</span> <span class="o">=</span> <span class="n">compressed_sum</span><span class="p">(</span><span class="n">scaled_termlist</span><span class="p">[:</span><span class="o">-</span><span class="mi">1</span><span class="p">])</span><span class="o">.</span><span class="n">normalize</span><span class="p">()</span>
+                
+                <span class="n">new_mps1</span> <span class="o">=</span> <span class="n">compressed_sum</span><span class="p">(</span><span class="n">scaled_termlist</span><span class="p">[:</span><span class="o">-</span><span class="mi">1</span><span class="p">])</span>
                 <span class="n">new_mps2</span> <span class="o">=</span> <span class="n">compressed_sum</span><span class="p">(</span>
                     <span class="p">[</span><span class="n">new_mps1</span><span class="p">,</span> <span class="n">scaled_termlist</span><span class="p">[</span><span class="o">-</span><span class="mi">1</span><span class="p">]]</span>
-                <span class="p">)</span><span class="o">.</span><span class="n">normalize</span><span class="p">()</span>
+                <span class="p">)</span>
                 <span class="n">dis</span> <span class="o">=</span> <span class="n">new_mps1</span><span class="o">.</span><span class="n">distance</span><span class="p">(</span><span class="n">new_mps2</span><span class="p">)</span>
-                <span class="c1"># 0.2 is 1/5 for RK45</span>
-                <span class="n">p</span> <span class="o">=</span> <span class="p">(</span><span class="n">config</span><span class="o">.</span><span class="n">adaptive_rtol</span> <span class="o">/</span> <span class="p">(</span><span class="n">dis</span> <span class="o">+</span> <span class="mf">1e-30</span><span class="p">))</span> <span class="o">**</span> <span class="mf">0.2</span>
+                <span class="n">p</span> <span class="o">=</span> <span class="p">(</span><span class="n">config</span><span class="o">.</span><span class="n">adaptive_rtol</span> <span class="o">/</span> <span class="p">(</span><span class="n">dis</span><span class="o">/</span><span class="n">new_mps2</span><span class="o">.</span><span class="n">mp_norm</span> <span class="o">+</span> <span class="mf">1e-30</span><span class="p">))</span> <span class="o">**</span> <span class="p">(</span><span class="mi">1</span><span class="o">/</span><span class="n">order</span><span class="p">)</span>
                 <span class="n">logger</span><span class="o">.</span><span class="n">debug</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;RK45 error distance: </span><span class="si">{</span><span class="n">dis</span><span class="si">}</span><span class="s2">, enlarge p parameter: </span><span class="si">{</span><span class="n">p</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
 
                 <span class="k">if</span> <span class="n">xp</span><span class="o">.</span><span class="n">allclose</span><span class="p">(</span><span class="n">dt</span><span class="p">,</span> <span class="n">evolve_dt</span><span class="p">):</span>
@@ -916,7 +1054,7 @@
                     <span class="p">(</span><span class="o">-</span><span class="mf">1.0</span><span class="n">j</span> <span class="o">*</span> <span class="n">evolve_dt</span><span class="p">)</span> <span class="o">**</span> <span class="n">idx</span> <span class="o">*</span> <span class="n">propagation_c</span><span class="p">[</span><span class="n">idx</span><span class="p">],</span> <span class="n">inplace</span><span class="o">=</span><span class="kc">True</span>
                 <span class="p">)</span>
             <span class="k">return</span> <span class="n">compressed_sum</span><span class="p">(</span><span class="n">termlist</span><span class="p">)</span>
-
+    
     <span class="k">def</span> <span class="nf">_evolve_tdvp_mu_vmf</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">mpo</span><span class="p">,</span> <span class="n">evolve_dt</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="s2">&quot;Mps&quot;</span><span class="p">:</span>
         <span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">        variable mean field</span>
@@ -928,7 +1066,15 @@
 <span class="sd">        /utils/configs.py</span>
 
 <span class="sd">        &quot;&quot;&quot;</span>
-
+        
+        <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">mpo</span><span class="p">,</span> <span class="n">Mpo</span><span class="p">):</span> 
+            <span class="k">def</span> <span class="nf">mpo_t</span><span class="p">(</span><span class="n">t</span><span class="p">,</span> <span class="o">*</span><span class="n">args</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">):</span>
+                <span class="k">return</span> <span class="n">mpo</span>
+        <span class="k">elif</span> <span class="n">callable</span><span class="p">(</span><span class="n">mpo</span><span class="p">):</span>
+            <span class="n">mpo_t</span> <span class="o">=</span> <span class="n">mpo</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="ne">TypeError</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;unsupported mpo type: </span><span class="si">{</span><span class="n">mpo</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+        
         <span class="c1"># a workaround for https://github.com/scipy/scipy/issues/10164</span>
         <span class="n">imag_time</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">iscomplex</span><span class="p">(</span><span class="n">evolve_dt</span><span class="p">)</span>
         <span class="k">if</span> <span class="n">imag_time</span><span class="p">:</span>
@@ -937,10 +1083,10 @@
             <span class="n">coef</span> <span class="o">=</span> <span class="o">-</span><span class="mi">1</span>
         <span class="k">else</span><span class="p">:</span>
             <span class="n">coef</span> <span class="o">=</span> <span class="mi">1</span><span class="n">j</span>
-
+        
         <span class="c1"># only not canonicalise when force_ovlp=True and to_right=False</span>
         <span class="k">if</span> <span class="ow">not</span> <span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">evolve_config</span><span class="o">.</span><span class="n">force_ovlp</span> <span class="ow">and</span> <span class="ow">not</span> <span class="bp">self</span><span class="o">.</span><span class="n">to_right</span><span class="p">):</span>
-            <span class="bp">self</span><span class="o">.</span><span class="n">ensure_left_canon</span><span class="p">()</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">ensure_left_canonical</span><span class="p">()</span>
 
         <span class="c1"># `self` should not be modified during the evolution</span>
         <span class="k">if</span> <span class="n">imag_time</span><span class="p">:</span>
@@ -959,15 +1105,16 @@
             <span class="n">position</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">position</span><span class="p">[</span><span class="o">-</span><span class="mi">1</span><span class="p">]</span><span class="o">+</span><span class="n">np</span><span class="o">.</span><span class="n">sum</span><span class="p">(</span><span class="n">qnmat</span> <span class="o">==</span> <span class="n">qntot</span><span class="p">))</span>
 
         <span class="n">sw_min_list</span> <span class="o">=</span> <span class="p">[]</span>
-
+        
         <span class="k">def</span> <span class="nf">func_vmf</span><span class="p">(</span><span class="n">t</span><span class="p">,</span><span class="n">y</span><span class="p">):</span>
-
+            
             <span class="n">sw_min_list</span><span class="o">.</span><span class="n">clear</span><span class="p">()</span>
 
             <span class="c1"># update mps: from left to right</span>
             <span class="k">for</span> <span class="n">imps</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="n">mps</span><span class="o">.</span><span class="n">site_num</span><span class="p">):</span>
                 <span class="n">mps</span><span class="p">[</span><span class="n">imps</span><span class="p">]</span> <span class="o">=</span> <span class="n">cvec2cmat</span><span class="p">(</span><span class="n">mps</span><span class="p">[</span><span class="n">imps</span><span class="p">]</span><span class="o">.</span><span class="n">shape</span><span class="p">,</span> <span class="n">asnumpy</span><span class="p">(</span><span class="n">y</span><span class="p">[</span><span class="n">position</span><span class="p">[</span><span class="n">imps</span><span class="p">]:</span><span class="n">position</span><span class="p">[</span><span class="n">imps</span> <span class="o">+</span> <span class="mi">1</span><span class="p">]]),</span>
                                                            <span class="n">qnmat_list</span><span class="p">[</span><span class="n">imps</span><span class="p">],</span> <span class="n">qntot</span><span class="p">)</span>
+            <span class="n">mpo</span> <span class="o">=</span> <span class="n">mpo_t</span><span class="p">(</span><span class="n">t</span><span class="p">,</span> <span class="n">mps</span><span class="o">=</span><span class="n">mps</span><span class="p">)</span>
 
             <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">evolve_config</span><span class="o">.</span><span class="n">method</span> <span class="o">==</span> <span class="n">EvolveMethod</span><span class="o">.</span><span class="n">tdvp_mu_vmf</span><span class="p">:</span>
                 <span class="n">environ_mps</span> <span class="o">=</span> <span class="n">mps</span><span class="o">.</span><span class="n">copy</span><span class="p">()</span>
@@ -987,11 +1134,9 @@
                     <span class="n">np</span><span class="o">.</span><span class="n">ones</span><span class="p">([</span><span class="mi">1</span><span class="p">,</span> <span class="mi">1</span><span class="p">],</span> <span class="n">dtype</span><span class="o">=</span><span class="n">mps</span><span class="o">.</span><span class="n">dtype</span><span class="p">),</span>
                 <span class="p">]</span>
                 <span class="k">for</span> <span class="n">imps</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="n">mps</span><span class="o">.</span><span class="n">site_num</span><span class="p">):</span>
-                    <span class="n">mps_conj</span> <span class="o">=</span> <span class="n">mps</span><span class="o">.</span><span class="n">conj</span><span class="p">()</span>
                     <span class="n">S_L_list</span><span class="o">.</span><span class="n">append</span><span class="p">(</span>
-                        <span class="n">transferMat</span><span class="p">(</span><span class="n">mps</span><span class="p">,</span> <span class="n">mps_conj</span><span class="p">,</span> <span class="s2">&quot;L&quot;</span><span class="p">,</span> <span class="n">imps</span><span class="p">,</span> <span class="n">S_L_list</span><span class="p">[</span><span class="n">imps</span><span class="p">])</span>
+                        <span class="n">transferMat</span><span class="p">(</span><span class="n">mps</span><span class="p">,</span> <span class="kc">None</span><span class="p">,</span> <span class="s2">&quot;L&quot;</span><span class="p">,</span> <span class="n">imps</span><span class="p">,</span> <span class="n">S_L_list</span><span class="p">[</span><span class="n">imps</span><span class="p">])</span>
                     <span class="p">)</span>
-                    <span class="k">del</span> <span class="n">mps_conj</span>
 
 
                 <span class="n">S_L_inv_list</span> <span class="o">=</span> <span class="p">[]</span>
@@ -1059,9 +1204,8 @@
 
                     <span class="c1"># regularize density matrix</span>
                     <span class="c1"># Note that S_R is (#.conj, #)</span>
-                    <span class="n">S_R</span> <span class="o">=</span> <span class="n">transferMat</span><span class="p">(</span><span class="n">environ_mps</span><span class="p">,</span> <span class="n">environ_mps</span><span class="o">.</span><span class="n">conj</span><span class="p">(),</span> <span class="s2">&quot;R&quot;</span><span class="p">,</span> <span class="n">imps</span> <span class="o">+</span> <span class="mi">1</span><span class="p">,</span> <span class="n">S_R</span><span class="p">)</span>
+                    <span class="n">S_R</span> <span class="o">=</span> <span class="n">transferMat</span><span class="p">(</span><span class="n">environ_mps</span><span class="p">,</span> <span class="kc">None</span><span class="p">,</span> <span class="s2">&quot;R&quot;</span><span class="p">,</span> <span class="n">imps</span> <span class="o">+</span> <span class="mi">1</span><span class="p">,</span> <span class="n">S_R</span><span class="p">)</span>
                     <span class="n">w</span><span class="p">,</span> <span class="n">u</span> <span class="o">=</span> <span class="n">scipy</span><span class="o">.</span><span class="n">linalg</span><span class="o">.</span><span class="n">eigh</span><span class="p">(</span><span class="n">asnumpy</span><span class="p">(</span><span class="n">S_R</span><span class="p">))</span>
-
                     <span class="c1"># discard the negative eigenvalues due to numerical error</span>
                     <span class="n">w</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">where</span><span class="p">(</span><span class="n">w</span><span class="o">&gt;</span><span class="mi">0</span><span class="p">,</span> <span class="n">w</span><span class="p">,</span> <span class="mi">0</span><span class="p">)</span>
 
@@ -1101,7 +1245,7 @@
             <span class="n">mps</span><span class="p">[</span><span class="n">imps</span><span class="p">]</span> <span class="o">=</span> <span class="n">cvec2cmat</span><span class="p">(</span><span class="n">mps</span><span class="p">[</span><span class="n">imps</span><span class="p">]</span><span class="o">.</span><span class="n">shape</span><span class="p">,</span> <span class="n">asnumpy</span><span class="p">(</span><span class="n">sol</span><span class="o">.</span><span class="n">y</span><span class="p">[:,</span> <span class="o">-</span><span class="mi">1</span><span class="p">][</span><span class="n">position</span><span class="p">[</span><span class="n">imps</span><span class="p">]:</span><span class="n">position</span><span class="p">[</span><span class="n">imps</span> <span class="o">+</span> <span class="mi">1</span><span class="p">]]),</span>
                                                        <span class="n">qnmat_list</span><span class="p">[</span><span class="n">imps</span><span class="p">],</span> <span class="n">qntot</span><span class="p">)</span>
 
-        <span class="n">logger</span><span class="o">.</span><span class="n">debug</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;</span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">evolve_config</span><span class="o">.</span><span class="n">method</span><span class="si">}</span><span class="s2"> VMF func called: </span><span class="si">{</span><span class="n">sol</span><span class="o">.</span><span class="n">nfev</span><span class="si">}</span><span class="s2">. RKF steps: </span><span class="si">{</span><span class="nb">len</span><span class="p">(</span><span class="n">sol</span><span class="o">.</span><span class="n">t</span><span class="p">)</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+        <span class="n">logger</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;</span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">evolve_config</span><span class="o">.</span><span class="n">method</span><span class="si">}</span><span class="s2"> VMF func called: </span><span class="si">{</span><span class="n">sol</span><span class="o">.</span><span class="n">nfev</span><span class="si">}</span><span class="s2">. RKF steps: </span><span class="si">{</span><span class="nb">len</span><span class="p">(</span><span class="n">sol</span><span class="o">.</span><span class="n">t</span><span class="p">)</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
 
         <span class="n">sw_min_list</span> <span class="o">=</span> <span class="n">xp</span><span class="o">.</span><span class="n">array</span><span class="p">(</span><span class="n">sw_min_list</span><span class="p">)</span>
         <span class="c1"># auto-switch between tdvp_mu_vmf and tdvp_vmf</span>
@@ -1147,7 +1291,7 @@
         <span class="k">else</span><span class="p">:</span>
             <span class="n">coef</span> <span class="o">=</span> <span class="mi">1</span><span class="n">j</span>
 
-        <span class="bp">self</span><span class="o">.</span><span class="n">ensure_left_canon</span><span class="p">()</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">ensure_left_canonical</span><span class="p">()</span>
 
         <span class="c1"># `self` should not be modified during the evolution</span>
         <span class="c1"># mps: the mps to return</span>
@@ -1187,11 +1331,9 @@
                 <span class="c1"># construct the S_L list (type: Matrix) and S_L_inv list (type: xp.array)</span>
                 <span class="c1"># len: mps.site_num+1</span>
                 <span class="n">S_L_list</span> <span class="o">=</span> <span class="p">[</span><span class="n">np</span><span class="o">.</span><span class="n">ones</span><span class="p">([</span><span class="mi">1</span><span class="p">,</span> <span class="mi">1</span><span class="p">],</span> <span class="n">dtype</span><span class="o">=</span><span class="n">mps</span><span class="o">.</span><span class="n">dtype</span><span class="p">),]</span>
-                <span class="n">environ_mps_conj</span> <span class="o">=</span> <span class="n">environ_mps</span><span class="o">.</span><span class="n">conj</span><span class="p">()</span>
                 <span class="k">for</span> <span class="n">imps</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="n">mps</span><span class="o">.</span><span class="n">site_num</span><span class="p">):</span>
-                    <span class="n">S_L_list</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">transferMat</span><span class="p">(</span><span class="n">environ_mps</span><span class="p">,</span> <span class="n">environ_mps_conj</span><span class="p">,</span> <span class="s2">&quot;L&quot;</span><span class="p">,</span> <span class="n">imps</span><span class="p">,</span>
+                    <span class="n">S_L_list</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">transferMat</span><span class="p">(</span><span class="n">environ_mps</span><span class="p">,</span> <span class="kc">None</span><span class="p">,</span> <span class="s2">&quot;L&quot;</span><span class="p">,</span> <span class="n">imps</span><span class="p">,</span>
                         <span class="n">S_L_list</span><span class="p">[</span><span class="n">imps</span><span class="p">]))</span>
-                <span class="k">del</span> <span class="n">environ_mps_conj</span>
 
                 <span class="n">S_L_inv_list</span> <span class="o">=</span> <span class="p">[]</span>
                 <span class="k">for</span> <span class="n">imps</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="n">mps</span><span class="o">.</span><span class="n">site_num</span><span class="o">+</span><span class="mi">1</span><span class="p">):</span>
@@ -1488,10 +1630,16 @@
             <span class="n">res</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">tensordot</span><span class="p">(</span><span class="n">res</span><span class="p">,</span> <span class="n">mt</span><span class="o">.</span><span class="n">array</span><span class="p">,</span> <span class="n">axes</span><span class="o">=</span><span class="mi">1</span><span class="p">)</span><span class="o">.</span><span class="n">reshape</span><span class="p">(</span><span class="mi">1</span><span class="p">,</span> <span class="n">dim1</span><span class="p">,</span> <span class="n">dim2</span><span class="p">)</span>
         <span class="k">return</span> <span class="n">res</span><span class="p">[</span><span class="mi">0</span><span class="p">,</span> <span class="p">:,</span> <span class="mi">0</span><span class="p">]</span></div>
     
-<div class="viewcode-block" id="Mps.calc_1site_rdm"><a class="viewcode-back" href="../../../mps.html#renormalizer.mps.Mps.calc_1site_rdm">[docs]</a>    <span class="k">def</span> <span class="nf">calc_1site_rdm</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+<div class="viewcode-block" id="Mps.calc_1site_rdm"><a class="viewcode-back" href="../../../mps.html#renormalizer.mps.Mps.calc_1site_rdm">[docs]</a>    <span class="k">def</span> <span class="nf">calc_1site_rdm</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">idx</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
         <span class="sa">r</span><span class="sd">&quot;&quot;&quot; Calculate 1-site reduced density matrix</span>
 <span class="sd">        </span>
 <span class="sd">            :math:`\rho_i = \textrm{Tr}_{j \neq i} | \Psi \rangle \langle \Psi|`</span>
+<span class="sd">        </span>
+<span class="sd">        Parameters</span>
+<span class="sd">        ----------</span>
+<span class="sd">        idx : int, list, tuple, optional</span>
+<span class="sd">            site index of 1site_rdm. Default is None, which mean all the rdms</span>
+<span class="sd">            are calculated.</span>
 <span class="sd">        </span>
 <span class="sd">        Returns</span>
 <span class="sd">        -------</span>
@@ -1501,7 +1649,15 @@
 
         <span class="n">identity</span> <span class="o">=</span> <span class="n">Mpo</span><span class="o">.</span><span class="n">identity</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">model</span><span class="p">)</span>
         <span class="n">environ</span> <span class="o">=</span> <span class="n">Environ</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">identity</span><span class="p">,</span> <span class="s2">&quot;R&quot;</span><span class="p">)</span>
-        
+        <span class="k">if</span> <span class="n">idx</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="n">idx</span> <span class="o">=</span> <span class="nb">list</span><span class="p">(</span><span class="nb">range</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">site_num</span><span class="p">))</span>
+        <span class="k">elif</span> <span class="nb">type</span><span class="p">(</span><span class="n">idx</span><span class="p">)</span> <span class="ow">is</span> <span class="nb">int</span><span class="p">:</span>
+            <span class="n">idx</span> <span class="o">=</span> <span class="p">[</span><span class="n">idx</span><span class="p">]</span>
+        <span class="k">elif</span> <span class="p">(</span><span class="nb">type</span><span class="p">(</span><span class="n">idx</span><span class="p">)</span> <span class="ow">is</span> <span class="nb">list</span><span class="p">)</span> <span class="ow">or</span> <span class="p">(</span><span class="nb">type</span><span class="p">(</span><span class="n">idx</span><span class="p">)</span> <span class="ow">is</span> <span class="nb">tuple</span><span class="p">):</span>  
+            <span class="n">idx</span> <span class="o">=</span> <span class="nb">list</span><span class="p">(</span><span class="n">idx</span><span class="p">)</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="k">assert</span> <span class="kc">False</span>
+
         <span class="n">rdm</span> <span class="o">=</span> <span class="p">{}</span>
         <span class="k">for</span> <span class="n">ims</span><span class="p">,</span> <span class="n">ms</span> <span class="ow">in</span> <span class="nb">enumerate</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
             <span class="n">ltensor</span> <span class="o">=</span> <span class="n">environ</span><span class="o">.</span><span class="n">GetLR</span><span class="p">(</span>
@@ -1510,6 +1666,9 @@
             <span class="n">rtensor</span> <span class="o">=</span> <span class="n">environ</span><span class="o">.</span><span class="n">GetLR</span><span class="p">(</span>
                 <span class="s2">&quot;R&quot;</span><span class="p">,</span> <span class="n">ims</span><span class="o">+</span><span class="mi">1</span><span class="p">,</span> <span class="bp">self</span><span class="p">,</span> <span class="n">identity</span><span class="p">,</span> <span class="n">itensor</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">method</span><span class="o">=</span><span class="s2">&quot;Enviro&quot;</span>
             <span class="p">)</span>
+            <span class="k">if</span> <span class="n">ims</span> <span class="ow">not</span> <span class="ow">in</span> <span class="n">idx</span><span class="p">:</span>
+                <span class="k">continue</span>
+
             <span class="n">ltensor</span> <span class="o">=</span> <span class="n">ltensor</span><span class="o">.</span><span class="n">reshape</span><span class="p">(</span><span class="n">ltensor</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="mi">0</span><span class="p">],</span> <span class="n">ltensor</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="o">-</span><span class="mi">1</span><span class="p">])</span>
             <span class="n">rtensor</span> <span class="o">=</span> <span class="n">rtensor</span><span class="o">.</span><span class="n">reshape</span><span class="p">(</span><span class="n">rtensor</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="mi">0</span><span class="p">],</span> <span class="n">rtensor</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="o">-</span><span class="mi">1</span><span class="p">])</span>
             
@@ -1692,14 +1851,36 @@
 <span class="sd">            a NumPy array containing the entropy values.</span>
 <span class="sd">        </span>
 <span class="sd">        &quot;&quot;&quot;</span>
-        <span class="n">_</span><span class="p">,</span> <span class="n">s_list</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">compress</span><span class="p">(</span><span class="n">temp_m_trunc</span><span class="o">=</span><span class="n">np</span><span class="o">.</span><span class="n">inf</span><span class="p">,</span> <span class="n">ret_s</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+        
+        <span class="c1"># Make sure that the bond entropy is from the left to the right and not</span>
+        <span class="c1"># destroy the original mps</span>
+        <span class="n">mps</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">copy</span><span class="p">()</span>
+        <span class="n">mps</span><span class="o">.</span><span class="n">ensure_right_canonical</span><span class="p">()</span>
+        <span class="n">_</span><span class="p">,</span> <span class="n">s_list</span> <span class="o">=</span> <span class="n">mps</span><span class="o">.</span><span class="n">compress</span><span class="p">(</span><span class="n">temp_m_trunc</span><span class="o">=</span><span class="n">np</span><span class="o">.</span><span class="n">inf</span><span class="p">,</span> <span class="n">ret_s</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
         <span class="k">return</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">([</span><span class="n">calc_vn_entropy</span><span class="p">(</span><span class="n">sigma</span> <span class="o">**</span> <span class="mi">2</span><span class="p">)</span> <span class="k">for</span> <span class="n">sigma</span> <span class="ow">in</span> <span class="n">s_list</span><span class="p">])</span></div>
 
 <div class="viewcode-block" id="Mps.dump"><a class="viewcode-back" href="../../../mps.html#renormalizer.mps.Mps.dump">[docs]</a>    <span class="k">def</span> <span class="nf">dump</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">fname</span><span class="p">):</span>
         <span class="nb">super</span><span class="p">()</span><span class="o">.</span><span class="n">dump</span><span class="p">(</span><span class="n">fname</span><span class="p">,</span> <span class="n">other_attrs</span><span class="o">=</span><span class="p">[</span><span class="s2">&quot;coeff&quot;</span><span class="p">])</span></div>
 
     <span class="k">def</span> <span class="fm">__setitem__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">key</span><span class="p">,</span> <span class="n">value</span><span class="p">):</span>
-        <span class="k">return</span> <span class="nb">super</span><span class="p">()</span><span class="o">.</span><span class="fm">__setitem__</span><span class="p">(</span><span class="n">key</span><span class="p">,</span> <span class="n">value</span><span class="p">)</span></div>
+        <span class="k">return</span> <span class="nb">super</span><span class="p">()</span><span class="o">.</span><span class="fm">__setitem__</span><span class="p">(</span><span class="n">key</span><span class="p">,</span> <span class="n">value</span><span class="p">)</span>
+
+    
+<div class="viewcode-block" id="Mps.add"><a class="viewcode-back" href="../../../mps.html#renormalizer.mps.Mps.add">[docs]</a>    <span class="k">def</span> <span class="nf">add</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">other</span><span class="p">):</span>
+        <span class="k">if</span> <span class="ow">not</span> <span class="n">np</span><span class="o">.</span><span class="n">allclose</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">coeff</span><span class="p">,</span> <span class="n">other</span><span class="o">.</span><span class="n">coeff</span><span class="p">):</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">scale</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">coeff</span><span class="p">,</span> <span class="n">inplace</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+            <span class="n">other</span><span class="o">.</span><span class="n">scale</span><span class="p">(</span><span class="n">other</span><span class="o">.</span><span class="n">coeff</span><span class="p">,</span> <span class="n">inplace</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">coeff</span> <span class="o">=</span> <span class="mi">1</span>
+            <span class="n">other</span><span class="o">.</span><span class="n">coeff</span> <span class="o">=</span> <span class="mi">1</span>
+        <span class="k">return</span> <span class="nb">super</span><span class="p">()</span><span class="o">.</span><span class="n">add</span><span class="p">(</span><span class="n">other</span><span class="p">)</span></div>
+    
+<div class="viewcode-block" id="Mps.distance"><a class="viewcode-back" href="../../../mps.html#renormalizer.mps.Mps.distance">[docs]</a>    <span class="k">def</span> <span class="nf">distance</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">other</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">float</span><span class="p">:</span>
+        <span class="k">if</span> <span class="ow">not</span> <span class="n">np</span><span class="o">.</span><span class="n">allclose</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">coeff</span><span class="p">,</span> <span class="n">other</span><span class="o">.</span><span class="n">coeff</span><span class="p">):</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">scale</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">coeff</span><span class="p">,</span> <span class="n">inplace</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+            <span class="n">other</span><span class="o">.</span><span class="n">scale</span><span class="p">(</span><span class="n">other</span><span class="o">.</span><span class="n">coeff</span><span class="p">,</span> <span class="n">inplace</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">coeff</span> <span class="o">=</span> <span class="mi">1</span>
+            <span class="n">other</span><span class="o">.</span><span class="n">coeff</span> <span class="o">=</span> <span class="mi">1</span>
+        <span class="k">return</span> <span class="nb">super</span><span class="p">()</span><span class="o">.</span><span class="n">distance</span><span class="p">(</span><span class="n">other</span><span class="p">)</span></div></div>
 
 
 <span class="k">def</span> <span class="nf">projector</span><span class="p">(</span>
@@ -1730,7 +1911,6 @@
     <span class="n">Iden</span> <span class="o">=</span> <span class="n">xp</span><span class="o">.</span><span class="n">array</span><span class="p">(</span><span class="n">xp</span><span class="o">.</span><span class="n">diag</span><span class="p">(</span><span class="n">xp</span><span class="o">.</span><span class="n">ones</span><span class="p">(</span><span class="n">sz</span><span class="p">)),</span> <span class="n">dtype</span><span class="o">=</span><span class="n">backend</span><span class="o">.</span><span class="n">real_dtype</span><span class="p">)</span><span class="o">.</span><span class="n">reshape</span><span class="p">(</span><span class="n">proj</span><span class="o">.</span><span class="n">shape</span><span class="p">)</span>
     <span class="n">proj</span> <span class="o">=</span> <span class="n">Iden</span> <span class="o">-</span> <span class="n">proj</span>
     <span class="k">return</span> <span class="n">proj</span>
-
 
 <span class="k">def</span> <span class="nf">integrand_func_factory</span><span class="p">(</span>
     <span class="n">shape</span><span class="p">,</span>
@@ -1779,7 +1959,12 @@
     <span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">    calculate the transfer matrix from the left hand or the right hand</span>
 <span class="sd">    &quot;&quot;&quot;</span>
-    <span class="n">ms</span><span class="p">,</span> <span class="n">ms_conj</span> <span class="o">=</span> <span class="n">mps</span><span class="p">[</span><span class="n">imps</span><span class="p">]</span><span class="o">.</span><span class="n">array</span><span class="p">,</span> <span class="n">mpsconj</span><span class="p">[</span><span class="n">imps</span><span class="p">]</span><span class="o">.</span><span class="n">array</span>
+    <span class="k">if</span> <span class="n">mpsconj</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+        <span class="n">ms</span><span class="p">,</span> <span class="n">ms_conj</span> <span class="o">=</span> <span class="n">mps</span><span class="p">[</span><span class="n">imps</span><span class="p">]</span><span class="o">.</span><span class="n">array</span><span class="p">,</span> <span class="n">mpsconj</span><span class="p">[</span><span class="n">imps</span><span class="p">]</span><span class="o">.</span><span class="n">array</span>
+    <span class="k">else</span><span class="p">:</span>
+        <span class="n">ms</span> <span class="o">=</span> <span class="n">mps</span><span class="p">[</span><span class="n">imps</span><span class="p">]</span><span class="o">.</span><span class="n">array</span>
+        <span class="n">ms_conj</span> <span class="o">=</span> <span class="n">ms</span><span class="o">.</span><span class="n">conj</span><span class="p">()</span>
+
     <span class="k">if</span> <span class="n">mps</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span><span class="o">.</span><span class="n">ndim</span> <span class="o">==</span> <span class="mi">3</span><span class="p">:</span>
         <span class="k">if</span> <span class="n">domain</span> <span class="o">==</span> <span class="s2">&quot;R&quot;</span><span class="p">:</span>
             <span class="n">val</span> <span class="o">=</span> <span class="n">tensordot</span><span class="p">(</span><span class="n">ms_conj</span><span class="p">,</span> <span class="n">val</span><span class="p">,</span> <span class="n">axes</span><span class="o">=</span><span class="p">(</span><span class="mi">2</span><span class="p">,</span> <span class="mi">0</span><span class="p">))</span>

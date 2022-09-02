@@ -34,6 +34,7 @@
         <script data-url_root="./" id="documentation_options" src="_static/documentation_options.js"></script>
         <script src="_static/jquery.js"></script>
         <script src="_static/underscore.js"></script>
+        <script src="_static/_sphinx_javascript_frameworks_compat.js"></script>
         <script src="_static/doctools.js"></script>
     
     <script type="text/javascript" src="_static/js/theme.js"></script>
@@ -109,7 +110,7 @@
 <li class="toctree-l1"><a class="reference internal" href="cv.html">10. Frequency domain DMRG</a></li>
 <li class="toctree-l1"><a class="reference internal" href="configs.html">11. Calculation Configurations</a></li>
 <li class="toctree-l1"><a class="reference internal" href="lib.html">12. lib</a></li>
-<li class="toctree-l1"><a class="reference internal" href="sbm.html">13. sbm</a></li>
+<li class="toctree-l1"><a class="reference internal" href="sbm.html">13. Spin-Boson Model</a></li>
 </ul>
 
             
@@ -178,11 +179,11 @@
            <div itemprop="articleBody">
             
   <div class="section" id="how-to-develop-renormalizer">
-<h1><span class="section-number">3. </span>How to develop Renormalizer<a class="headerlink" href="#how-to-develop-renormalizer" title="Permalink to this headline">¶</a></h1>
+<h1><span class="section-number">3. </span>How to develop Renormalizer<a class="headerlink" href="#how-to-develop-renormalizer" title="Permalink to this heading">¶</a></h1>
 <p>The development protocol is very similar in all <code class="docutils literal notranslate"><span class="pre">Git</span></code> projects.
 For reference, you can check out the <a class="reference external" href="https://docs.scipy.org/doc/numpy/dev/">development guide of NumPy</a>.</p>
 <div class="section" id="development-process">
-<h2><span class="section-number">3.1. </span>Development Process<a class="headerlink" href="#development-process" title="Permalink to this headline">¶</a></h2>
+<h2><span class="section-number">3.1. </span>Development Process<a class="headerlink" href="#development-process" title="Permalink to this heading">¶</a></h2>
 <p>You can hardly use <code class="docutils literal notranslate"><span class="pre">Git</span></code> effectively if you have no idea how it works. There are several ways to learn:</p>
 <ul class="simple">
 <li><p>Read the first 3 chapters of the <a class="reference external" href="https://git-scm.com/book/en/v2"><em>Pro Git</em> book</a>.</p></li>
@@ -231,7 +232,7 @@ or you can start a new branch.</p>
 <p>There is a <a class="reference external" href="https://liwt31.github.io/2019/09/01/nopush/">blog post</a> on why you shouldn’t push to master.</p>
 </div>
 <div class="section" id="stylistic-guidelines">
-<h2><span class="section-number">3.2. </span>Stylistic Guidelines<a class="headerlink" href="#stylistic-guidelines" title="Permalink to this headline">¶</a></h2>
+<h2><span class="section-number">3.2. </span>Stylistic Guidelines<a class="headerlink" href="#stylistic-guidelines" title="Permalink to this heading">¶</a></h2>
 <p>The style of the code (naming conventions, etc) follows <a class="reference external" href="https://www.python.org/dev/peps/pep-0008/">PEP 8</a>
 and you can find an explanation with better readability <a class="reference external" href="https://pep8.org/">here</a>. Some most important things:</p>
 <ul>
@@ -250,7 +251,7 @@ and you can find an explanation with better readability <a class="reference exte
 <p>Automatic style checking is enabled in common IDEs such as PyCharm and there are <a class="reference external" href="https://github.com/nvie/vim-flake8">plugins for vim</a>. You can also format your code with <a class="reference external" href="https://github.com/psf/black"><code class="docutils literal notranslate"><span class="pre">Black</span></code></a>.</p>
 </div>
 <div class="section" id="common-mistakes-during-development">
-<h2><span class="section-number">3.3. </span>Common Mistakes during Development<a class="headerlink" href="#common-mistakes-during-development" title="Permalink to this headline">¶</a></h2>
+<h2><span class="section-number">3.3. </span>Common Mistakes during Development<a class="headerlink" href="#common-mistakes-during-development" title="Permalink to this heading">¶</a></h2>
 <p>A list of mistakes that the developers have made multiple times previously</p>
 <ul class="simple">
 <li><p>Forget to convert from float datatype to complex datatype. Usually NumPy will issue a warning.</p></li>

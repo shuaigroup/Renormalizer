@@ -34,6 +34,7 @@
         <script data-url_root="../../../" id="documentation_options" src="../../../_static/documentation_options.js"></script>
         <script src="../../../_static/jquery.js"></script>
         <script src="../../../_static/underscore.js"></script>
+        <script src="../../../_static/_sphinx_javascript_frameworks_compat.js"></script>
         <script src="../../../_static/doctools.js"></script>
     
     <script type="text/javascript" src="../../../_static/js/theme.js"></script>
@@ -102,7 +103,7 @@
 <li class="toctree-l1"><a class="reference internal" href="../../../cv.html">10. Frequency domain DMRG</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../../../configs.html">11. Calculation Configurations</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../../../lib.html">12. lib</a></li>
-<li class="toctree-l1"><a class="reference internal" href="../../../sbm.html">13. sbm</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../sbm.html">13. Spin-Boson Model</a></li>
 </ul>
 
             
@@ -225,7 +226,7 @@
 <span class="sd">        Parameters</span>
 <span class="sd">        ----------</span>
 <span class="sd">        op : Op</span>
-<span class="sd">            The operator. For basis set with only one DoF, :class:`str`` is also acceptable.</span>
+<span class="sd">            The operator. For basis set with only one DoF, :class:``str`` is also acceptable.</span>
 
 <span class="sd">        Returns</span>
 <span class="sd">        -------</span>
@@ -304,7 +305,7 @@
             <span class="bp">self</span><span class="o">.</span><span class="n">dvr</span> <span class="o">=</span> <span class="kc">True</span>
 
     <span class="k">def</span> <span class="fm">__repr__</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
-        <span class="k">return</span> <span class="sa">f</span><span class="s2">&quot;(x0: </span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">x0</span><span class="si">}</span><span class="s2">, omega: </span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">omega</span><span class="si">}</span><span class="s2">, nbas: </span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">nbas</span><span class="si">}</span><span class="s2">)&quot;</span>
+        <span class="k">return</span> <span class="sa">f</span><span class="s2">&quot;(dof: </span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">dof</span><span class="si">}</span><span class="s2">, x0: </span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">x0</span><span class="si">}</span><span class="s2">, omega: </span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">omega</span><span class="si">}</span><span class="s2">, nbas: </span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">nbas</span><span class="si">}</span><span class="s2">)&quot;</span>
     
 <div class="viewcode-block" id="BasisSHO.op_mat"><a class="viewcode-back" href="../../../model.html#renormalizer.model.basis.BasisSHO.op_mat">[docs]</a>    <span class="k">def</span> <span class="nf">op_mat</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">op</span><span class="p">:</span> <span class="n">Union</span><span class="p">[</span><span class="n">Op</span><span class="p">,</span> <span class="nb">str</span><span class="p">]):</span>
         <span class="k">if</span> <span class="ow">not</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">op</span><span class="p">,</span> <span class="n">Op</span><span class="p">):</span>
@@ -490,6 +491,47 @@
         <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="vm">__class__</span><span class="p">(</span><span class="n">new_dof</span><span class="p">,</span> <span class="n">omega</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">omega</span><span class="p">,</span>
                               <span class="n">nbas</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">nbas</span><span class="p">,</span> <span class="n">x0</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">x0</span><span class="p">,</span>
                               <span class="n">dvr</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">dvr</span><span class="p">,</span> <span class="n">general_xp_power</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">general_xp_power</span><span class="p">)</span></div></div>
+
+<div class="viewcode-block" id="BasisHopsBoson"><a class="viewcode-back" href="../../../model.html#renormalizer.model.basis.BasisHopsBoson">[docs]</a><span class="k">class</span> <span class="nc">BasisHopsBoson</span><span class="p">(</span><span class="n">BasisSet</span><span class="p">):</span>
+    <span class="sa">r</span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Bosonic like basis but with uncommon ladder operator, used in Hierarchy of Pure States method</span>
+
+<span class="sd">    .. math:: </span>
+<span class="sd">        \tilde{b}^\dagger | n \rangle = (n+1) | n+1\rangle \\</span>
+<span class="sd">        \tilde{b} | n \rangle = | n-1\rangle</span>
+
+<span class="sd">    Parameters</span>
+<span class="sd">    ----------</span>
+<span class="sd">    dof : </span>
+<span class="sd">        The name of the DoF contained in the basis set. The type could be anything that can be hashed.</span>
+<span class="sd">    nbas : int </span>
+<span class="sd">        number of dimension of the basis set (highest occupation number)</span>
+
+<span class="sd">    &quot;&quot;&quot;</span>
+    
+    <span class="n">is_phonon</span> <span class="o">=</span> <span class="kc">True</span>
+
+    <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">dof</span><span class="p">,</span> <span class="n">nbas</span><span class="p">):</span>
+        <span class="nb">super</span><span class="p">()</span><span class="o">.</span><span class="fm">__init__</span><span class="p">(</span><span class="n">dof</span><span class="p">,</span> <span class="n">nbas</span><span class="p">,</span> <span class="p">[</span><span class="mi">0</span><span class="p">]</span> <span class="o">*</span> <span class="n">nbas</span><span class="p">)</span>
+    
+<div class="viewcode-block" id="BasisHopsBoson.op_mat"><a class="viewcode-back" href="../../../model.html#renormalizer.model.basis.BasisHopsBoson.op_mat">[docs]</a>    <span class="k">def</span> <span class="nf">op_mat</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">op</span><span class="p">:</span> <span class="n">Union</span><span class="p">[</span><span class="n">Op</span><span class="p">,</span> <span class="nb">str</span><span class="p">]):</span>
+        <span class="k">if</span> <span class="ow">not</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">op</span><span class="p">,</span> <span class="n">Op</span><span class="p">):</span>
+            <span class="n">op</span> <span class="o">=</span> <span class="n">Op</span><span class="p">(</span><span class="n">op</span><span class="p">,</span> <span class="kc">None</span><span class="p">)</span>
+        <span class="n">op_symbol</span><span class="p">,</span> <span class="n">op_factor</span> <span class="o">=</span> <span class="n">op</span><span class="o">.</span><span class="n">symbol</span><span class="p">,</span> <span class="n">op</span><span class="o">.</span><span class="n">factor</span>
+        
+        <span class="k">if</span> <span class="n">op_symbol</span> <span class="o">==</span> <span class="sa">r</span><span class="s2">&quot;b^\dagger b&quot;</span><span class="p">:</span>
+            <span class="n">mat</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">diag</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">arange</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">nbas</span><span class="p">))</span>
+        <span class="k">elif</span> <span class="n">op_symbol</span> <span class="o">==</span> <span class="sa">r</span><span class="s2">&quot;\tilde</span><span class="si">{b}</span><span class="s2">^\dagger&quot;</span><span class="p">:</span>
+            <span class="c1">#\tilde{b}^\dagger |n\rangle = n+1 |n+1 \rangle</span>
+            <span class="n">mat</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">diag</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">arange</span><span class="p">(</span><span class="mi">1</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">nbas</span><span class="p">),</span> <span class="n">k</span><span class="o">=-</span><span class="mi">1</span><span class="p">)</span>
+        <span class="k">elif</span> <span class="n">op_symbol</span> <span class="o">==</span> <span class="sa">r</span><span class="s2">&quot;\tilde</span><span class="si">{b}</span><span class="s2">&quot;</span><span class="p">:</span>
+            <span class="c1">#\tilde{b} |n\rangle = |n-1 \rangle</span>
+            <span class="n">mat</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">diag</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">ones</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">nbas</span><span class="o">-</span><span class="mi">1</span><span class="p">),</span> <span class="n">k</span><span class="o">=</span><span class="mi">1</span><span class="p">)</span>
+        <span class="k">elif</span> <span class="n">op_symbol</span> <span class="o">==</span> <span class="s2">&quot;I&quot;</span><span class="p">:</span>
+            <span class="n">mat</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">eye</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">nbas</span><span class="p">)</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;op_symbol:</span><span class="si">{</span><span class="n">op_symbol</span><span class="si">}</span><span class="s2"> is not supported.&quot;</span><span class="p">)</span>
+        <span class="k">return</span> <span class="n">mat</span> <span class="o">*</span> <span class="n">op_factor</span></div></div>
 
 
 <div class="viewcode-block" id="BasisSineDVR"><a class="viewcode-back" href="../../../model.html#renormalizer.model.basis.BasisSineDVR">[docs]</a><span class="k">class</span> <span class="nc">BasisSineDVR</span><span class="p">(</span><span class="n">BasisSet</span><span class="p">):</span>
