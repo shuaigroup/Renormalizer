@@ -482,5 +482,3 @@ class Mpo(MatrixProduct):
             mpo.append(mt)
         mpo.build_empty_qn()
         return mpo
-
-    

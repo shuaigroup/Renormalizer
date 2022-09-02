@@ -39,11 +39,11 @@ class Vscf():
         mpo = self.h_mpo
 
         # the default hartree_product_state is both L-/R- canonical
-        if mps.is_left_canon:
-            mps.ensure_right_canon()
+        if mps.is_left_canonical:
+            mps.ensure_right_canonical()
             env = "R"
         else:
-            mps.ensure_left_canon()
+            mps.ensure_left_canonical()
             env = "L"
         environ = Environ(mps, mpo, env)
 

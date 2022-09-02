@@ -914,7 +914,7 @@ class Mps(MatrixProduct):
         
         # only not canonicalise when force_ovlp=True and to_right=False
         if not (self.evolve_config.force_ovlp and not self.to_right):
-            self.ensure_left_canon()
+            self.ensure_left_canonical()
 
         # `self` should not be modified during the evolution
         if imag_time:
@@ -1119,7 +1119,7 @@ class Mps(MatrixProduct):
         else:
             coef = 1j
 
-        self.ensure_left_canon()
+        self.ensure_left_canonical()
 
         # `self` should not be modified during the evolution
         # mps: the mps to return
@@ -1683,7 +1683,7 @@ class Mps(MatrixProduct):
         # Make sure that the bond entropy is from the left to the right and not
         # destroy the original mps
         mps = self.copy()
-        mps.ensure_right_canon()
+        mps.ensure_right_canonical()
         _, s_list = mps.compress(temp_m_trunc=np.inf, ret_s=True)
         return np.array([calc_vn_entropy(sigma ** 2) for sigma in s_list])
 
