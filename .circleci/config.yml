@@ -38,7 +38,9 @@ jobs:
           name: Run tests
           # This assumes pytest is installed via the install-package step above
           command: |
-              pytest --durations=0
+              pip install pytest-xdist
+              export RENO_NUM_THREADS=1
+              pytest -n 4 --durations=0
               pip install primme==3.2.*
               pytest --durations=0 renormalizer/mps/tests/test_gs.py::test_multistate
       - run:
