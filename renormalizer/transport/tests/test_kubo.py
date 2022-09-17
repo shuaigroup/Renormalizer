@@ -7,6 +7,7 @@ import qutip
 from renormalizer.model import Phonon, Mol, HolsteinModel, Model
 from renormalizer.model.basis import BasisSimpleElectron, BasisSHO
 from renormalizer.model.op import Op
+from renormalizer.mps.backend import backend
 from renormalizer.transport.kubo import TransportKubo
 from renormalizer.utils import Quantity, CompressConfig, EvolveConfig, EvolveMethod, CompressCriteria
 from renormalizer.utils.qutip_utils import get_clist, get_blist, get_holstein_hamiltonian, get_qnidx, \
@@ -58,6 +59,8 @@ def get_qutip_holstein_kubo(model, temperature, time_series):
 
 
 def test_peierls_kubo():
+    if backend.is_32bits:
+        pytest.skip("VMF too stiff for 32 bit float point operation")
     # number of mol
     n = 4
     # electronic coupling

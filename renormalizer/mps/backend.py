@@ -67,8 +67,10 @@ class Backend:
         self.first_mp = False
         self._real_dtype = None
         self._complex_dtype = None
-        #self.use_32bits()
-        self.use_64bits()
+        if os.environ.get("RENO_FP32") is None:
+            self.use_64bits()
+        else:
+            self.use_32bits()
 
     def free_all_blocks(self):
         if not USE_GPU:
@@ -129,6 +131,13 @@ class Backend:
     @dtypes.setter
     def dtypes(self, target):
         self.real_dtype, self.complex_dtype = target
+
+    @property
+    def canonical_atol(self):
+        if self.is_32bits:
+            return 1e-4
+        else:
+            return 1e-5
 
 
 backend = Backend()
