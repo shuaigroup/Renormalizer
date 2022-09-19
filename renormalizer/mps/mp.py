@@ -157,21 +157,21 @@ class MatrixProduct:
             self.qn[idx] = [self.qntot - i for i in self.qn[idx]]
         self.qnidx = dstidx
 
-    def check_left_canonical(self, rtol=1e-5, atol=1e-8):
+    def check_left_canonical(self, atol=None):
         """
         check L-canonical
         """
         for i in range(len(self)-1):
-            if not self[i].check_lortho(rtol, atol):
+            if not self[i].check_lortho(atol):
                 return False
         return True
 
-    def check_right_canonical(self, rtol=1e-5, atol=1e-8):
+    def check_right_canonical(self, atol=None):
         """
         check R-canonical
         """
         for i in range(1, len(self)):
-            if not self[i].check_rortho(rtol, atol):
+            if not self[i].check_rortho(atol):
                 return False
         return True
 
@@ -189,18 +189,18 @@ class MatrixProduct:
         """
         return self.qnidx == 0
 
-    def ensure_left_canonical(self, rtol=1e-5, atol=1e-8):
+    def ensure_left_canonical(self, atol=None):
         if self.to_right or self.qnidx != self.site_num-1 or \
-                (not self.check_left_canonical(rtol, atol)):
+                (not self.check_left_canonical(atol)):
             self.move_qnidx(0)
             self.to_right = True
             return self.canonicalise()
         else:
             return self
-        
-    def ensure_right_canonical(self, rtol=1e-5, atol=1e-8):
+
+    def ensure_right_canonical(self, atol=None):
         if (not self.to_right) or self.qnidx != 0 or \
-                (not self.check_right_canonical(rtol, atol)):
+                (not self.check_right_canonical(atol)):
             self.move_qnidx(self.site_num - 1)
             self.to_right = False
             return self.canonicalise()
@@ -226,9 +226,9 @@ class MatrixProduct:
         self, idx: int, u: np.ndarray, vt: np.ndarray, sigma=None, qnlset=None, qnrset=None, m_trunc=None
     ):
         r""" update mps directly after svd
-        
+
         """
-        
+
         if m_trunc is None:
             m_trunc = u.shape[1]
         u = u[:, :m_trunc]
@@ -286,8 +286,8 @@ class MatrixProduct:
             # assert self.check_right_canonical()
 
     def _get_big_qn(self, cidx: List[int], swap=False):
-        r""" get the quantum number of L-block and R-block renormalized basis 
-        
+        r""" get the quantum number of L-block and R-block renormalized basis
+
         Parameters
         ----------
         cidx : list
@@ -302,7 +302,7 @@ class MatrixProduct:
             super-R-block (active site + R-block if necessary) quantum number
         qnmat : np.ndarray
             L-block + active site + R-block quantum number
-        
+
         """
 
         if len(cidx) == 2:
@@ -311,7 +311,7 @@ class MatrixProduct:
         elif len(cidx) > 2:
             assert False
         assert self.qnidx in cidx
-        
+
         sigmaqn = [np.array(self._get_sigmaqn(idx)) for idx in cidx]
         if swap:
             assert len(sigmaqn) == 2
@@ -354,7 +354,7 @@ class MatrixProduct:
     def add(self, other: "MatrixProduct"):
         assert self.qntot == other.qntot
         assert self.site_num == other.site_num
-        
+
         new_mps = self.metacopy()
         if other.dtype == backend.complex_dtype:
             new_mps.dtype = backend.complex_dtype
@@ -404,7 +404,7 @@ class MatrixProduct:
             new_mps[-1] = concatenate((self[-1], other[-1]), axis=0)
         else:
             assert False
-        
+
         #assert self.qnidx == other.qnidx
         new_mps.move_qnidx(other.qnidx)
         new_mps.to_right = other.to_right
@@ -434,7 +434,7 @@ class MatrixProduct:
             assert self.qnidx == 0
         else:
             assert self.qnidx == self.site_num-1
-        
+
         if self.compress_config.bonddim_should_set:
             self.compress_config.set_bonddim(len(self)+1)
         # used for logging at exit
@@ -481,18 +481,18 @@ class MatrixProduct:
         else:
             # return singular value list
             return self, s_list
-    
+
     def variational_compress(self, mpo=None, guess=None):
         r"""Variational compress an mps/mpdm/mpo
-        
+
         Parameters
         ----------
-        mpo : renormalizer.mps.Mpo, optional 
+        mpo : renormalizer.mps.Mpo, optional
             Default is ``None``. if mpo is not ``None``, the returned mps is
             an approximation of ``mpo @ self``
         guess : renormalizer.mps.MatrixProduct, optional
-            Initial guess of compressed mps/mpdm/mpo. Default is ``None``. 
-        
+            Initial guess of compressed mps/mpdm/mpo. Default is ``None``.
+
         Note
         ----
         the variational compress related configurations is defined in
@@ -503,12 +503,12 @@ class MatrixProduct:
         mp : renormalizer.mps.MatrixProduct
             a new compressed mps/mpdm/mpo, ``self`` is not overwritten.
             ``guess`` is overwritten.
-        
+
         """
 
         if mpo is None:
             raise NotImplementedError("Recommend to use svd to compress a single mps/mpo/mpdm.")
-        
+
         if guess is None:
             # a minimal representation of self and mpo
             compressed_mpo = mpo.copy().canonicalise().compress(
@@ -530,13 +530,13 @@ class MatrixProduct:
             logger.debug(f"isweep: {isweep}")
             logger.debug(f"mmax, percent: {mmax}, {percent}")
             logger.debug(f"mps bond dims: {mps.bond_dims}")
-            
+
             for imps in mps.iter_idx_list(full=True):
                 if method == "2site" and \
                     ((mps.to_right and imps == mps.site_num-1)
                     or ((not mps.to_right) and imps == 0)):
                     break
-                
+
                 if mps.to_right:
                     lmethod, rmethod = "System", "Enviro"
                 else:
@@ -549,7 +549,7 @@ class MatrixProduct:
                 elif method == "2site":
                     if mps.to_right:
                         lidx = imps - 1
-                        cidx = [imps, imps+1] 
+                        cidx = [imps, imps+1]
                         ridx = imps + 2
                     else:
                         lidx = imps - 2
@@ -571,7 +571,7 @@ class MatrixProduct:
 
                 # get the quantum number pattern
                 qnbigl, qnbigr, qnmat = mps._get_big_qn(cidx)
-                
+
                 # center mo
                 cmo = [asxp(mpo[idx]) for idx in cidx]
                 if method == "1site":
@@ -587,9 +587,9 @@ class MatrixProduct:
                 if mps.compress_config.ofs is not None:
                     # need to swap the original MPS. Tedious to implement and probably not useful.
                     raise NotImplementedError("OFS for variational compress not implemented")
-            
+
             mps._switch_direction()
-            
+
             # check convergence
             if isweep > 0 and percent == 0:
                 error = mps.distance(mps_old) / np.sqrt(mps.dot(mps.conj()).real)
@@ -597,21 +597,21 @@ class MatrixProduct:
                 if error < mps.compress_config.vrtol:
                     logger.info("Variational compress is converged!")
                     break
-            
+
             mps_old = mps.copy()
         else:
             logger.warning("Variational compress is not converged! Please increase the procedure!")
-        
+
         # remove the redundant bond dimension near the boundary of the MPS
         mps.canonicalise()
         logger.info(f"{mps}")
-        
+
         return mps
-    
+
     def _update_mps(self, cstruct, cidx, qnbigl, qnbigr, Mmax, percent=0):
         r"""update mps with basis selection algorithm of J. Chem. Phys. 120,
         3172 (2004).
-        
+
         Parameters
         ---------
         cstruct : ndarray, List[ndarray]
@@ -627,21 +627,21 @@ class MatrixProduct:
         percent : float, int
             The percentage of renormalized basis which is equally selected from
             each quantum number section rather than according to singular
-            values. ``percent`` is defined in ``procedure`` of 
+            values. ``percent`` is defined in ``procedure`` of
             `renormalizer.utils.configs.OptimizeConfig` and ``vprocedure`` of
             `renormalizer.utils.configs.CompressConfig`.
 
         Returns
         -------
-        averaged_ms : 
+        averaged_ms :
             if ``cstruct`` is a list, ``averaged_ms`` is a list of rotated ms of
                 each element in ``cstruct`` as a single site calculation. It is
                 used for better initial guess in SA-DMRG algorithm. Otherwise,
                 ``None`` is returned.
-                ``self`` is overwritten inplace. 
-        
+                ``self`` is overwritten inplace.
+
         """
-        
+
         system = "L" if self.to_right else "R"
 
         # step 1: get the selected U, S, V
@@ -720,9 +720,9 @@ class MatrixProduct:
                 ms, msdim, msqn, compms = select_basis(
                     Vset, SVset, qnrnew, Uset, Mmax, percent=percent
                 )
-                ms = xp.moveaxis(ms.reshape(list(qnbigr.shape) + [msdim]), -1, 0) 
+                ms = xp.moveaxis(ms.reshape(list(qnbigr.shape) + [msdim]), -1, 0)
                 compms = compms.reshape(list(qnbigl.shape) + [msdim])
-        
+
         else:
             # state-averaged method
             ddm = 0.0
@@ -796,14 +796,14 @@ class MatrixProduct:
                 if cidx[0] != 0:
                     if type(cstruct) is list:
                         for c in rotated_c:
-                            averaged_ms.append(tensordot(self[cidx[0] - 1], c, axes=1)) 
+                            averaged_ms.append(tensordot(self[cidx[0] - 1], c, axes=1))
                     self[cidx[0] - 1] = tensordot(self[cidx[0] - 1], compms, axes=1)
                     self.qn[cidx[0]] = msqn
                     self.qnidx = cidx[0] - 1
                 else:
                     if type(cstruct) is list:
                         for c in rotated_c:
-                            averaged_ms.append(tensordot(c, self[cidx[0]], axes=1)) 
+                            averaged_ms.append(tensordot(c, self[cidx[0]], axes=1))
                     self[cidx[0]] = tensordot(compms, self[cidx[0]], axes=1)
                     self.qnidx = 0
         else:
@@ -993,12 +993,12 @@ class MatrixProduct:
             return dump_name
 
         return mt
-    
+
     def build_empty_mp(self, num):
         self._mp = [[None]] * num
-    
+
     def dump(self, fname, other_attrs=None):
-        
+
         if other_attrs is None:
             other_attrs = []
         elif isinstance(other_attrs, str):
@@ -1096,7 +1096,7 @@ class MatrixProduct:
     def append(self, array):
         new_mt = self._array2mt(array, len(self))
         self._mp.append(new_mt)
-    
+
     def __str__(self):
         if self.is_mps:
             string = "mps"
@@ -1107,7 +1107,7 @@ class MatrixProduct:
         else:
             assert False
         template_str = "{} current size: {}, Matrix product bond dim:{}"
-        
+
         return template_str.format(string, sizeof_fmt(self.total_bytes), self.bond_dims,)
 
     def __del__(self):

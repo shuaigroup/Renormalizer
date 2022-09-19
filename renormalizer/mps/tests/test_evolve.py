@@ -8,6 +8,7 @@ import pytest
 import numpy as np
 
 from renormalizer.model import Model
+from renormalizer.mps.backend import backend
 from renormalizer.mps import Mps, Mpo, MpDm
 from renormalizer.utils import EvolveMethod, EvolveConfig, CompressConfig, CompressCriteria, Quantity, OFS
 from renormalizer.tests.parameter_exact import qutip_clist, qutip_h, model
@@ -23,7 +24,7 @@ def f(model, run_qutip=True):
     init_mpdm = MpDm.from_mps(init_mps).expand_bond_dimension(hint_mpo=tentative_mpo)
     e = init_mps.expectation(tentative_mpo)
     mpo = Mpo(model, offset=Quantity(e))
-    
+
     if run_qutip:
         # calculate result in ZT. FT result is exactly the same
         TIME_LIMIT = 10
@@ -98,6 +99,8 @@ def test_pc_tdrk(init_state, rk_solver):
 @pytest.mark.parametrize("with_mu", (True, False))
 @pytest.mark.parametrize("force_ovlp", (True, False))
 def test_tdvp_vmf(init_state, with_mu, force_ovlp, atol):
+    if backend.is_32bits:
+        pytest.skip("VMF too stiff for 32 bit float point operation")
     mps = init_state.copy()
     method = EvolveMethod.tdvp_mu_vmf if with_mu else EvolveMethod.tdvp_vmf
     mps.evolve_config  = EvolveConfig(method, ivp_rtol=1e-4, ivp_atol=1e-7, force_ovlp=force_ovlp)

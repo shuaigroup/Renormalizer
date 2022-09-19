@@ -4,7 +4,7 @@ import logging
 
 import scipy.linalg
 
-from renormalizer.mps.backend import np
+from renormalizer.mps.backend import np, backend
 
 logger = logging.getLogger(__name__)
 
@@ -53,13 +53,13 @@ def add_orthonormal_basis(u):
     # add `n` basis. `n` is empirical
     m, n = u.shape
     assert 2 * n < m
-    assert np.allclose(u.T.conj() @ u, np.eye(n))
+    assert np.allclose(u.T.conj() @ u, np.eye(n), atol=backend.canonical_atol)
     a = np.random.rand(m,n)
     a = a - u @ (u.T.conj() @ a)
     q, _ = scipy.linalg.qr(a, mode='economic')
     res = np.concatenate([u, q], axis=1)
 
-    assert np.allclose(res.T.conj() @ res, np.eye(2 * n))
+    assert np.allclose(res.T.conj() @ res, np.eye(2 * n), atol=backend.canonical_atol)
     return res
 
 
