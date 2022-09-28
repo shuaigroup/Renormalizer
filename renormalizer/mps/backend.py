@@ -1,7 +1,6 @@
 # -*- coding: utf-8 -*-
 
 import os
-import importlib.util
 import logging
 import random
 
@@ -23,28 +22,45 @@ logger = logging.getLogger(__name__)
 GPU_KEY = "RENO_GPU"
 USE_GPU = False
 
+GPU_ID = os.environ.get(GPU_KEY, None)
 
-if importlib.util.find_spec("cupy"):
-    import cupy as xp
-    gpu_id = os.environ.get(GPU_KEY, 0)
-    logger.info(f"Using GPU: {gpu_id}")
-    xp.cuda.Device(gpu_id).use()
-    USE_GPU = True
-else:
-    gpu_id = os.environ.get(GPU_KEY, None)
-    if gpu_id is not None:
-        logger.warning(f"Cupy is not installed. Setting {GPU_KEY} to {gpu_id} has no effect.")
-    xp = np
+
+def try_import_cupy():
+    global GPU_ID
+
+    try:
+        import cupy as cp
+    except ImportError as e:
+        if GPU_ID is not None:
+            logger.warning(f"CuPy is not installed. Setting {GPU_KEY} to {GPU_ID} has no effect.")
+            logger.exception(e)
+        return False, np
+
+    if GPU_ID is None:
+        GPU_ID = 0
+
+    try:
+        cp.cuda.Device(GPU_ID).use()
+    except cp.cuda.runtime.CUDARuntimeError as e:
+        logger.warning("Failed to initialize CuPy.")
+        logger.exception(e)
+        return False, np
+
+    logger.info(f"Using GPU: {GPU_ID}")
+    return True, cp
+
+
+USE_GPU, xp = try_import_cupy()
 
 
 #USE_GPU = False
 #xp = np
 
 if not USE_GPU:
-    logger.info("use numpy as backend")
+    logger.info("Use NumPy as backend")
     OE_BACKEND = "numpy"
 else:
-    logger.info("use cupy as backend")
+    logger.info("Use CuPy as backend")
     OE_BACKEND = "cupy"
 
 
@@ -88,7 +104,7 @@ class Backend:
     def sync(self):
         # only works with one GPU
         if USE_GPU:
-            xp.cuda.device.Device(gpu_id).synchronize()
+            xp.cuda.device.Device(GPU_ID).synchronize()
 
     def use_32bits(self):
         logger.info("use 32 bits")
