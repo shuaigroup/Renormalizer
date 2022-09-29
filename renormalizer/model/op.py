@@ -89,7 +89,7 @@ class Op:
         self.symbol: str = symbol
         # replace " + " so that " " can be used to split the symbol ("b^\dagger + b")
         # the logic of Op is based on multiplication of symbols. So special treatment on addition is inevitable
-        self.split_symbol : List[str] = [s.replace("plus", " + ") for s in symbol.replace(" + ", "plus").split(" ")]
+        self.split_symbol : List[str] = symbol.replace(r"b^\dagger + b", "b^\dagger+b").split(" ")
         num_simple_symbol = len(self.split_symbol)
         # simple symbol
         if num_simple_symbol == 1:

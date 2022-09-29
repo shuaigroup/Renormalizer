@@ -20,7 +20,7 @@ def read_fcidump(fname, norb):
     """
     eri = np.zeros((norb, norb, norb, norb))
     h = np.zeros((norb,norb))
-    
+
     with open(fname, "r") as f:
         a = f.readlines()
         for line, info in enumerate(a):
@@ -38,11 +38,11 @@ def read_fcidump(fname, norb):
                 h[q-1,p-1] = integral
             else:
                 nuc = integral
-    
+
     sh, aseri = int_to_h(h, eri)
-    
+
     logger.info(f"nuclear repulsion: {nuc}")
-    
+
     return sh, aseri, nuc
 
 
@@ -78,14 +78,14 @@ def qc_model(h1e, h2e):
     #------------------------------------------------------------------------
     # Jordan-Wigner transformation maps fermion problem into spin problem
     #
-    # |0> => |alpha> and |1> => |beta >: 
+    # |0> => |alpha> and |1> => |beta >:
     #
     #    a_j   => Prod_{l=0}^{j-1}(sigma_z[l]) * sigma_+[j]
     #    a_j^+ => Prod_{l=0}^{j-1}(sigma_z[l]) * sigma_-[j]
     # j starts from 0 as in computer science convention to be consistent
     # with the following code.
     #------------------------------------------------------------------------
-    
+
     norbs = h1e.shape[0]
     logger.info(f"spin norbs: {norbs}")
     assert np.all(np.array(h1e.shape) == norbs)
@@ -96,9 +96,9 @@ def qc_model(h1e, h2e):
     a_dag_ops = []
     for j in range(norbs):
         # qn for each op will be processed in `process_op`
-        sigma_z_list = [Op("sigma_z", l) for l in range(j)]
-        a_ops.append( Op.product(sigma_z_list + [Op("sigma_+", j)]) )
-        a_dag_ops.append( Op.product(sigma_z_list + [Op("sigma_-", j)]) )
+        sigma_z_list = [Op("Z", l) for l in range(j)]
+        a_ops.append( Op.product(sigma_z_list + [Op("+", j)]) )
+        a_dag_ops.append( Op.product(sigma_z_list + [Op("-", j)]) )
 
     ham_terms = []
 
@@ -107,25 +107,25 @@ def qc_model(h1e, h2e):
     # and {sigma_z, sigma_-} = 0 to simplify operators,
     # and set quantum number
     dof_to_siteidx = dict(zip(range(norbs), range(norbs)))
-    qn_dict = {"sigma_+": -1, "sigma_-": 1, "sigma_z": 0}
+    qn_dict = {"+": -1, "-": 1, "Z": 0}
     def process_op(old_op: Op):
         old_ops, _ = old_op.split_elementary(dof_to_siteidx)
         new_ops = []
         for elem_op in old_ops:
             # move all sigma_z to the start of the operator
             # and cancel as many as possible
-            n_sigma_z = elem_op.split_symbol.count("sigma_z")
+            n_sigma_z = elem_op.split_symbol.count("Z")
             n_non_sigma_z = 0
             n_permute = 0
             for simple_elem_op in elem_op.split_symbol:
-                if simple_elem_op != "sigma_z":
+                if simple_elem_op != "Z":
                     n_non_sigma_z += 1
                 else:
                     n_permute += n_non_sigma_z
             # remove as many "sigma_z" as possible
-            new_symbol = [s for s in elem_op.split_symbol if s != "sigma_z"]
+            new_symbol = [s for s in elem_op.split_symbol if s != "Z"]
             if n_sigma_z % 2 == 1:
-                new_symbol.insert(0, "sigma_z")
+                new_symbol.insert(0, "Z")
             # this op is identity, discard it
             if not new_symbol:
                 continue

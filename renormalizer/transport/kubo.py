@@ -22,12 +22,12 @@ class TransportKubo(TdMpsJob):
         .. math::
             \mu = \frac{1}{k_B T} \int_0^\infty dt \langle \hat j (t) \hat j(0) \rangle
             = \frac{1}{k_B T} \int_0^\infty dt C(t)
-    
+
     where
 
         .. math::
            \hat j = -\frac{i}{\hbar}[\hat P, \hat H]
-    
+
     and :math:`\hat P = e_0 \sum_m R_m a^\dagger_m a_m` is the polarization operator.
 
     .. note::
@@ -37,7 +37,7 @@ class TransportKubo(TdMpsJob):
 
         .. math::
             C(t) = \textrm{Tr}\{\rho(T) e^{i \hat H t} \hat j(0) e^{- i \hat H t} \hat j (0)\}
-    
+
     where we have assumed :math:`\rho(T)` is normalized
     (i.e. it is divided by the partition function :math:`\textrm{Tr}\{\rho(T)\}`).
 
@@ -188,7 +188,7 @@ class TransportKubo(TdMpsJob):
             if len(ham_op.dofs) == 3:
                 # total term idx should be 0 + 1 + 2 = 3
                 phonon_dof_idx = 3 - dof_op_idx1 - dof_op_idx2
-                assert ham_op.split_symbol[phonon_dof_idx] in (r"b^\dagger + b", "x")
+                assert ham_op.split_symbol[phonon_dof_idx] in (r"b^\dagger+b", "x")
             symbol1, symbol2 = ham_op.split_symbol[dof_op_idx1], ham_op.split_symbol[dof_op_idx2]
             if not {symbol1, symbol2} == {r"a^\dagger", "a"}:
                 raise ValueError(f"Unknown symbol: {symbol1}, {symbol2}")
@@ -314,18 +314,18 @@ class TransportKubo(TdMpsJob):
             \hat H = \sum_{mn}  [\epsilon_{mn} + \sum_\lambda \hbar g_{mn\lambda} \omega_\lambda
             (b^\dagger_\lambda + b_\lambda) ] a^\dagger_m a_n
             + \sum_\lambda \hbar \omega_\lambda b^\dagger_\lambda  b_\lambda
-        
+
         Then current operator without phonon assistance is defined as:
 
         .. math::
             \hat j_1 = \frac{e_0}{i\hbar} \sum_{mn} (R_m - R_n) \epsilon_{mn} a^\dagger_m a_n
-        
+
         and the current operator with phonon assistance is defined as:
 
         .. math::
             \hat j_2 = \frac{e_0}{i\hbar} \sum_{mn} (R_m - R_n) \hbar g_{mn\lambda} \omega_\lambda
             (b^\dagger_\lambda + b_\lambda) a^\dagger_m a_n
-        
+
         With :math:`\hat j = \hat j_1 + \hat j_2`, the correlation function can be
         decomposed into four parts:
 
@@ -353,7 +353,7 @@ class TransportKubo(TdMpsJob):
         if self.properties is not None:
             for prop_str in self.properties.prop_res.keys():
                 dump_dict[prop_str] = self.properties.prop_res[prop_str]
-        
+
         return dump_dict
 
     def calc_mobility(self):

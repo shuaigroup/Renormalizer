@@ -45,7 +45,7 @@ class BasisSet:
 
     def __repr__(self):
         return f"(dof: {self.dof}, nbas: {self.nbas}, qn: {self.sigmaqn})"
-    
+
     def op_mat(self, op: Op):
         """
         Matrix representation under the basis set of the input operator.
@@ -134,13 +134,13 @@ class BasisSHO(BasisSet):
 
     def __repr__(self):
         return f"(dof: {self.dof}, x0: {self.x0}, omega: {self.omega}, nbas: {self.nbas})"
-    
+
     def op_mat(self, op: Union[Op, str]):
         if not isinstance(op, Op):
             op = Op(op, None)
         op_symbol, op_factor = op.symbol, op.factor
 
-        if op_symbol in ["b", "b b", r"b^\dagger", r"b^\dagger b^\dagger", r"b^\dagger b", r"b b^\dagger", r"b^\dagger + b"]:
+        if op_symbol in ["b", "b b", r"b^\dagger", r"b^\dagger b^\dagger", r"b^\dagger b", r"b b^\dagger", r"b^\dagger+b"]:
             if self._recurssion_flag == 0 and not np.allclose(self.x0, 0):
                 logger.warning("the second quantization doesn't support nonzero x0")
 
@@ -148,7 +148,7 @@ class BasisSHO(BasisSet):
 
         # so many if-else might be a potential performance problem in the future
         # changing to lazy-evaluation dict should be better
-        
+
         # second quantization formula
         if op_symbol == "b":
             mat = np.diag(np.sqrt(np.arange(1, self.nbas)), k=1)
@@ -170,7 +170,7 @@ class BasisSHO(BasisSet):
             else:
                 mat = np.diag(np.sqrt(np.arange(1, self.nbas - 1) * np.arange(2, self.nbas)), k=-2)
 
-        elif op_symbol == r"b^\dagger + b":
+        elif op_symbol == r"b^\dagger+b":
             mat = self.op_mat(r"b^\dagger") + self.op_mat("b")
 
         elif op_symbol == r"b^\dagger b":
@@ -184,12 +184,12 @@ class BasisSHO(BasisSet):
             if not self.dvr:
                 # define x-x0 = y or x = y+x0, return x
                 # <m|y|n> = sqrt(1/2w) <m| b^\dagger + b |n>
-                mat = np.sqrt(0.5/self.omega) * self.op_mat(r"b^\dagger + b") + np.eye(self.nbas) * self.x0
+                mat = np.sqrt(0.5/self.omega) * self.op_mat(r"b^\dagger+b") + np.eye(self.nbas) * self.x0
             else:
                 mat = np.diag(self.dvr_x)
 
         elif op_symbol == "x^2" and (not self.general_xp_power):
-            
+
             if not self.dvr:
                 # can't do things like the commented code below due to numeric error around highest quantum number
                 # x_mat = self.op_mat("x")
@@ -199,7 +199,7 @@ class BasisSHO(BasisSet):
                 mat = np.eye(self.nbas) * self.x0**2
 
                 # 2 x0 * y
-                mat += 2 * self.x0 * np.sqrt(0.5/self.omega) * self.op_mat(r"b^\dagger + b")
+                mat += 2 * self.x0 * np.sqrt(0.5/self.omega) * self.op_mat(r"b^\dagger+b")
 
                 #  y^2: 1/2w * (b^\dagger b^\dagger + b^dagger b + b b^\dagger + bb)
                 mat += 0.5/self.omega * (self.op_mat(r"b^\dagger b^\dagger")
@@ -212,24 +212,24 @@ class BasisSHO(BasisSet):
         elif set(op_symbol.split(" ")) == set("x"):
             moment = len(op_symbol.split(" "))
             mat = self.op_mat(f"x^{moment}")
-        
+
         elif op_symbol.split("^")[0] == "x":
             # moments of x
             if len(op_symbol.split("^")) == 1:
                 moment = 1
             else:
                 moment = float(op_symbol.split("^")[1])
-            
+
             if not self.dvr:
                 # Analytical expression for integer moment
-                assert np.allclose(moment, round(moment)) 
+                assert np.allclose(moment, round(moment))
                 moment = round(moment)
                 mat = np.zeros((self.nbas, self.nbas))
                 for imoment in range(moment+1):
                     factor = scipy.special.comb(moment, imoment) * np.sqrt(1/self.omega) ** imoment
                     for i,j in itertools.product(range(self.nbas), repeat=2):
                         mat[i,j] += factor * x_power_k(imoment, i, j) * self.x0**(moment-imoment)
-                
+
             else:
                 mat = np.diag(self.dvr_x ** moment)
 
@@ -258,9 +258,9 @@ class BasisSHO(BasisSet):
                 moment = 1
             else:
                 moment = float(op_symbol.split("^")[1])
-            
+
             # the moment for p should be integer
-            assert np.allclose(moment, round(moment)) 
+            assert np.allclose(moment, round(moment))
             moment = round(moment)
             if moment % 2 == 0:
                 dtype = np.float64
@@ -274,39 +274,39 @@ class BasisSHO(BasisSet):
                     mat[i,j] = np.real(res)
                 else:
                     mat[i,j] = res
-                
+
             if self.dvr:
                 mat = self.dvr_v.T @ mat @ self.dvr_v
-        
+
         elif op_symbol == "x p":
             mat = -1.0j/2 *(self.op_mat(r"b b")
                     - self.op_mat(r"b^\dagger b^\dagger")
                     + self.op_mat(r"b b^\dagger")
                     - self.op_mat(r"b^\dagger b"))
-        
+
         elif op_symbol == "x partialx":
             # x partialx is real, while x p is imaginary
             mat = (self.op_mat("x p") / -1.0j).real
-        
+
         elif op_symbol == "p x":
             mat = -1.0j/2 *(self.op_mat(r"b b")
                     - self.op_mat(r"b^\dagger b^\dagger")
                     - self.op_mat(r"b b^\dagger")
                     + self.op_mat(r"b^\dagger b"))
-        
+
         elif op_symbol == "partialx x":
             mat = (self.op_mat("p x") / -1.0j).real
 
         elif op_symbol == "partialx":
             mat = (self.op_mat("p") / -1.0j).real
-        
+
         elif op_symbol in ["partialx^2", "partialx partialx"]:
             mat = self.op_mat("p^2") * -1
         elif op_symbol == "I":
             mat = np.eye(self.nbas)
-        
+
         elif op_symbol == "n":
-            # since b^\dagger b is not allowed to shift the origin, 
+            # since b^\dagger b is not allowed to shift the origin,
             # n is designed for occupation number of the SHO basis
             mat = np.diag(np.arange(self.nbas))
         else:
@@ -324,29 +324,29 @@ class BasisHopsBoson(BasisSet):
     r"""
     Bosonic like basis but with uncommon ladder operator, used in Hierarchy of Pure States method
 
-    .. math:: 
+    .. math::
         \tilde{b}^\dagger | n \rangle = (n+1) | n+1\rangle \\
         \tilde{b} | n \rangle = | n-1\rangle
 
     Parameters
     ----------
-    dof : 
+    dof :
         The name of the DoF contained in the basis set. The type could be anything that can be hashed.
-    nbas : int 
+    nbas : int
         number of dimension of the basis set (highest occupation number)
 
     """
-    
+
     is_phonon = True
 
     def __init__(self, dof, nbas):
         super().__init__(dof, nbas, [0] * nbas)
-    
+
     def op_mat(self, op: Union[Op, str]):
         if not isinstance(op, Op):
             op = Op(op, None)
         op_symbol, op_factor = op.symbol, op.factor
-        
+
         if op_symbol == r"b^\dagger b":
             mat = np.diag(np.arange(self.nbas))
         elif op_symbol == r"\tilde{b}^\dagger":
@@ -376,15 +376,15 @@ class BasisSineDVR(BasisSet):
 
         .. math::
             x_\alpha = x_0 + \alpha \frac{L}{N+1}
-    
+
     Operators supported:
         .. math::
-            I, x, x^1, x^2, x^\textrm{moment}, partialx, partialx^2, p, p^2, 
-            x partialx, x^2 p^2, x^2 partialx, x p^2, x^3 p^2 
-    
+            I, x, x^1, x^2, x^\textrm{moment}, partialx, partialx^2, p, p^2,
+            x partialx, x^2 p^2, x^2 partialx, x p^2, x^3 p^2
+
     Parameters
     ----------
-    dof: str, int 
+    dof: str, int
         The name of the DoF contained in the basis set. The type could be anything that can be hashed.
     nbas: int
         Number of grid points.
@@ -395,12 +395,12 @@ class BasisSineDVR(BasisSet):
     endpoint: bool, optional
         If ``endpoint=False``, :math:`x_0=x_i, x_{N+1}=x_f`; otherwise
         :math:`x_1=x_i, x_{N}=x_f`.
-            
+
     """
     is_phonon = True
 
     def __init__(self, dof, nbas, xi, xf, endpoint=False):
-        
+
         assert xi < xf
         if endpoint:
             interval = (xf-xi) / (nbas-1)
@@ -412,7 +412,7 @@ class BasisSineDVR(BasisSet):
 
         self.L = xf-xi
         super().__init__(dof, nbas, [0] * nbas)
-        
+
         tmp = np.arange(1,nbas+1)
         self.dvr_x = xi + tmp * self.L / (nbas+1)
         self.dvr_v = np.sqrt(2/(nbas+1)) * \
@@ -420,15 +420,15 @@ class BasisSineDVR(BasisSet):
 
     def __repr__(self):
         return f"(xi: {self.xi}, xf: {self.xf}, nbas: {self.nbas})"
-    
+
     def op_mat(self, op: Union[Op, str]):
         if not isinstance(op, Op):
             op = Op(op, None)
         op_symbol, op_factor = op.symbol, op.factor
-        
+
         if op_symbol == "I":
             mat = np.eye(self.nbas)
-        
+
         elif op_symbol.split("^")[0] == "x" and " " not in op_symbol:
             if len(op_symbol.split("^")) == 1:
                 # legacy for check
@@ -447,7 +447,7 @@ class BasisSineDVR(BasisSet):
 
                 mat = self._I()*self.xi+self._u()
                 assert np.allclose(mat, mat1)
-                
+
                 mat = self.dvr_v.T @ mat @ self.dvr_v
             else:
                 moment = float(op_symbol.split("^")[1])
@@ -456,13 +456,13 @@ class BasisSineDVR(BasisSet):
                 if moment == 2:
                     mat = self._I()*self.xi**2+self._u()*self.xi*2+self._uu()
                     mat = self.dvr_v.T @ mat @ self.dvr_v
-                else:    
+                else:
                     mat = np.diag(self.dvr_x ** moment)
-        
+
         elif set(op_symbol.split(" ")) == set("x"):
             moment = len(op_symbol.split(" "))
             mat = self.op_mat(f"x^{moment}")
-        
+
         elif op_symbol == "partialx":
             # legacy for check
             mat1 = np.zeros((self.nbas, self.nbas))
@@ -470,13 +470,13 @@ class BasisSineDVR(BasisSet):
                 for k in range(j):
                     if (j-k) % 2 != 0:
                         mat1[j,k] = 4 / self.L * (j+1) * (k+1) / ((j+1)**2 - (k+1)**2)
-            mat1 -= mat1.T 
-            
+            mat1 -= mat1.T
+
             mat = self._du()
             assert np.allclose(mat, mat1)
 
             mat = self.dvr_v.T @ mat @ self.dvr_v
-            
+
         elif op_symbol in ["partialx^2", "partialx partialx"]:
             mat = self.op_mat("p^2") * -1
 
@@ -489,7 +489,7 @@ class BasisSineDVR(BasisSet):
             mat = np.einsum("jk,k->jk",self._I(),self._eigene()*2)
             assert np.allclose(mat, mat1)
             mat = self.dvr_v.T @ mat @ self.dvr_v
-        
+
         elif op_symbol[:3] == "cos":
             # cos(alpha * x), the format cos(x,float)
             term_split = op_symbol[4:-1].split(",")
@@ -498,7 +498,7 @@ class BasisSineDVR(BasisSet):
             else:
                 scalar = float(term_split[1])
             mat = np.diag(np.cos(np.diag(self.op_mat(term_split[0]))*scalar))
-        
+
         elif op_symbol == "x partialx":
             # legacy for check
             mat1 = np.zeros((self.nbas, self.nbas))
@@ -519,7 +519,7 @@ class BasisSineDVR(BasisSet):
             mat = self.dvr_v.T @ mat @ self.dvr_v
 
         elif op_symbol == "x^2 p^2":
-            
+
             # legacy for check
             mat1 = np.zeros((self.nbas, self.nbas))
             # analytical integral
@@ -536,17 +536,17 @@ class BasisSineDVR(BasisSet):
                     else:
                         res = 2*(1/a1**2-1/a2**2)
                     mat1[j-1,k-1] = res * k**2*np.pi**2/self.L**2
-            
+
             tmp = self._I()*self.xi**2 + self._u()*2*self.xi + self._uu()
             mat = np.einsum("jk,k->jk", tmp, self._eigene()*2)
             assert np.allclose(mat, mat1)
             mat = self.dvr_v.T @ mat @ self.dvr_v
-        
+
         elif op_symbol == "x^2 partialx^2":
             mat = self.op_mat("x^2 p^2") * -1
-        
+
         elif op_symbol == "x^2 partialx":
-            
+
             mat = self._uudu() + 2*self.xi*self._udu() + self.xi**2*self._du()
             mat = self.dvr_v.T @ mat @ self.dvr_v
 
@@ -556,26 +556,26 @@ class BasisSineDVR(BasisSet):
             mat1 = self.dvr_v @ self.op_mat("x") @ self.dvr_v.T
             mat1 = np.einsum("jk,k->jk",mat1,
                     np.arange(1,self.nbas+1)**2*np.pi**2/self.L**2)
-            
+
             mat = np.einsum("jk, k-> jk", self._I()*self.xi + self._u(), self._eigene()*2)
             assert np.allclose(mat, mat1)
             mat = self.dvr_v.T @ mat @ self.dvr_v
-        
+
         elif op_symbol == "x partialx^2":
             mat = self.op_mat("x p^2") * -1
-        
+
         elif op_symbol == "x^3 p^2":
             tmp = self._I()*self.xi**3 + 3*self._uu()*self.xi + 3*self._u()*self.xi**2 + self._uuu()
             mat = np.einsum("jk,k->jk", tmp, self._eigene()*2)
             mat = self.dvr_v.T @ mat @ self.dvr_v
-        
+
         elif op_symbol == "x^3 partialx^2":
             mat = self.op_mat("x^3 p^2") * -1
         else:
             raise ValueError(f"op_symbol:{op_symbol} is not supported. ")
 
         return mat * op_factor
-    
+
     def _du(self):
         # int_0^L <j(u)|1*du|k(u)>  u=x-xi du=\frac{\partial}{\partial u}
         mat = np.zeros((self.nbas, self.nbas))
@@ -584,7 +584,7 @@ class BasisSineDVR(BasisSet):
                 if (j+k)%2 == 1:
                     mat[j-1,k-1] = 4*k*j/self.L/(j**2-k**2)
         return mat
-    
+
     def _udu(self):
         # int_0^L <j(u)|u*du|k(u)>
         mat = np.zeros((self.nbas, self.nbas))
@@ -619,9 +619,9 @@ class BasisSineDVR(BasisSet):
 
     def _I(self):
         # int_0^L <j(u)|1|k(u)>
-        mat = np.eye(self.nbas) 
+        mat = np.eye(self.nbas)
         return mat
-    
+
     def _u(self):
         # int_0^L <j(u)|u|k(u)>
         mat = np.zeros((self.nbas, self.nbas))
@@ -637,7 +637,7 @@ class BasisSineDVR(BasisSet):
                     res = 0
                 mat[j-1,k-1] = -1/self.L*res
         return mat
-    
+
     def _uu(self):
         # int_0^L <j(u)|uu|k(u)>
         mat = np.zeros((self.nbas, self.nbas))
@@ -653,7 +653,7 @@ class BasisSineDVR(BasisSet):
                     res = 2*self.L*(1/a1**2 - 1/a2**2)
                 mat[j-1,k-1] = -1/self.L*res
         return mat
-    
+
     def _uuu(self):
         # int_0^L <j(u)|uuu|k(u)>
         mat = np.zeros((self.nbas, self.nbas))
@@ -669,7 +669,7 @@ class BasisSineDVR(BasisSet):
                     res = 3*self.L**2/a1**2 - 3*self.L**2/a2**2
                 mat[j-1,k-1] = -1/self.L*res
         return mat
-    
+
     def _eigene(self):
         return np.pi**2*np.arange(1,self.nbas+1)**2/self.L**2/2
 
@@ -691,9 +691,9 @@ class BasisMultiElectron(BasisSet):
 
     is_electron = True
     multi_dof = True
-    
+
     def __init__(self, dof, sigmaqn: List[int]):
-        
+
         assert len(sigmaqn) == len(sigmaqn)
         self.dof_name_map = {name: i for i, name in enumerate(dof)}
         super().__init__(dof, len(dof), sigmaqn)
@@ -701,7 +701,7 @@ class BasisMultiElectron(BasisSet):
     def op_mat(self, op: Op):
 
         op_symbol, op_factor = op.split_symbol, op.factor
-        
+
         if len(op_symbol) == 1:
             if op_symbol[0] == "I":
                 mat = np.eye(self.nbas)
@@ -709,7 +709,7 @@ class BasisMultiElectron(BasisSet):
                 raise ValueError(f"op_symbol:{op_symbol} is not supported. Try use BasisMultiElectronVac.")
             else:
                 raise ValueError(f"op_symbol:{op_symbol} is not supported")
-            
+
         elif len(op_symbol) == 2:
             op_symbol1, op_symbol2 = op_symbol
             if op_symbol1 == "I" and op_symbol2 == "I":
@@ -718,7 +718,7 @@ class BasisMultiElectron(BasisSet):
             op_symbol2_idx = self.dof_name_map[op.dofs[1]]
 
             mat = np.zeros((self.nbas, self.nbas))
-            
+
             if op_symbol1 == r"a^\dagger" and op_symbol2 == "a":
                 mat[int(op_symbol1_idx), int(op_symbol2_idx)] = 1.
             elif op_symbol1 == r"a" and op_symbol2 == r"a^\dagger":
@@ -822,9 +822,9 @@ class BasisSimpleElectron(BasisSet):
         if not isinstance(op, Op):
             op = Op(op, None)
         op_symbol, op_factor = op.symbol, op.factor
-        
+
         mat = np.zeros((2, 2))
-        
+
         if op_symbol == r"a^\dagger":
             mat[1, 0] = 1.
         elif op_symbol == "a":
@@ -835,7 +835,7 @@ class BasisSimpleElectron(BasisSet):
             mat = np.eye(2)
         else:
             raise ValueError(f"op_symbol:{op_symbol} is not supported")
-        
+
         return mat * op_factor
 
     def copy(self, new_dof):
@@ -863,25 +863,22 @@ class BasisHalfSpin(BasisSet):
         if not isinstance(op, Op):
             op = Op(op, None)
         op_symbol, op_factor = op.split_symbol, op.factor
-        
-        if len(op_symbol) == 1:       
+
+        if len(op_symbol) == 1:
             op_symbol = op_symbol[0]
-            # Todo: the string itself may sometimes consume a lot of memory when
-            # the number of terms in O is very huge
-            # replace sigma_x with s_x in the future
             if op_symbol == "I":
                 mat = np.eye(2)
-            elif op_symbol == "sigma_x":
+            elif op_symbol in ["sigma_x", "X", "x"]:
                 mat = np.diag([1.], k=1)
                 mat = mat + mat.T.conj()
-            elif op_symbol == "sigma_y":
+            elif op_symbol in ["sigma_y", "Y", "y"]:
                 mat = np.diag([-1.0j], k=1)
                 mat = mat + mat.T.conj()
-            elif op_symbol == "sigma_z":
+            elif op_symbol in ["sigma_z", "Z", "z"]:
                 mat = np.diag([1.,-1.], k=0)
-            elif op_symbol == "sigma_-":
+            elif op_symbol in ["sigma_-", "-"]:
                 mat = np.diag([1.], k=-1)
-            elif op_symbol == "sigma_+":
+            elif op_symbol in ["sigma_+", "+"]:
                 mat = np.diag([1.,], k=1)
             else:
                 raise ValueError(f"op_symbol:{op_symbol} is not supported")
