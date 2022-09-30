@@ -39,6 +39,6 @@ def register_file_output(file_path, mode="w", level=DEBUG):
     package_logger.addHandler(file_handler)
 
 
-NP_ERRCONFIG = {"divide": "raise", "over": "raise", "under": "warn", "invalid": "raise"}
+NP_ERRCONFIG = {"divide": "raise", "over": "raise", "under": "ignore", "invalid": "raise"}
 
 DEFAULT_NP_ERRCONFIG = np.seterr(**NP_ERRCONFIG)
