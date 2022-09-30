@@ -13,7 +13,7 @@ class Op:
     The operator class. The class can be considered as a symbolic way to express
     quantum operator such as :math:`a^\dagger_i a_j`, :math:`b^\dagger_i + b_i`
     or :math:`g \omega a^\dagger_i a_i (b^\dagger_{ij} + b_{ij})`.
-    Multiplications between operators are supported.
+    Additions and multiplications between operators are supported.
 
     Parameters
     ----------
@@ -39,17 +39,36 @@ class Op:
         except for``"a^\dagger"`` and ``"a"``, whose quantum number are set to 1 and -1 respectively.
 
     Notes
-    =====
+    -----
     Symbols connected by plus ``"+"`` such as ``r"b^\dagger + b"`` is considered as a simple symbol,
     because this class is designed to deal with operator multiplication rather than addition.
 
     Warnings
-    ========
+    --------
     If you wish to specify the DoF of each symbol in a complex symbol,
     you should use a :class:`list` instead of :class:`tuple`.
     Because in the latter case the :class:`tuple` is recognized as a single DoF
     and the DoFs of all simple symbols are set to the :class:`tuple`.
 
+    Examples
+    --------
+    >>> from renormalizer.model import Op
+    >>> Op(r"a^\dagger a", ['site0', "site1"], 2., qn=[1, -1])
+    Op('a^\\dagger a', ['site0', 'site1'], 2.0, [1, -1])
+    >>> x = Op("X", 0, 0.5)
+    >>> 3 * x
+    Op('X', [0], 1.5)
+    >>> y = Op("Y", 1, 0.2)
+    >>> x + y
+    [Op('X', [0], 0.5), Op('Y', [1], 0.2)]
+    >>> x * y
+    Op('X Y', [0, 1], 0.1)
+    >>> x * (x + y)
+    [Op('X X', [0, 0], 0.25), Op('X Y', [0, 1], 0.1)]
+    >>> (y + x) * x
+    [Op('Y X', [1, 0], 0.1), Op('X X', [0, 0], 0.25)]
+    >>> (y + x) * (x + y)
+    [Op('Y X', [1, 0], 0.1), Op('Y Y', [1, 1], 0.04000000000000001), Op('X X', [0, 0], 0.25), Op('X Y', [0, 1], 0.1)]
     """
 
     @classmethod
@@ -141,7 +160,7 @@ class Op:
         self.dofs: List = dofs
         if isinstance(factor, Quantity):
             factor = factor.as_au()
-        self._factor: float = factor + 0.0 # convert to float
+        self._factor: float = factor + 0.0 # convert to float. Note this works for complex number
         self.qn_list: List[int] = qn_list
 
     def split_elementary(self, dof_to_siteidx) -> Tuple[List["Op"], Union[float, complex]]:
@@ -205,7 +224,71 @@ class Op:
         else:
             return sum(self.qn_list)
 
-    def to_tuple(self):
+    @property
+    def is_identity(self) -> bool:
+        """
+        Whether the operator is the identity operator. Note the factor is not taken into account.
+        """
+        return set(self.split_symbol) == {"I"}
+
+    def squeeze_identity(self):
+        """
+        Remove all the identity terms in ``Op``.
+
+        Returns
+        -------
+        op: Op
+             The operator with identity term removed
+
+        Examples
+        --------
+        >>> from renormalizer.model import Op
+        >>> op = Op("X I Y I", [0, 1, 2, 3], 0.5)
+        >>> op.squeeze_identity()
+        Op('X Y', [0, 2], 0.5)
+        """
+        if self.is_identity:
+            return self.__class__.identity(self.dofs[0])
+        new_symbol_list = []
+        new_dof_list = []
+        new_qn_list = []
+        for symbol, dof, qn in zip(self.split_symbol, self.dofs, self.qn_list):
+            if symbol == "I":
+                assert qn is None or qn == 0
+                continue
+            new_symbol_list.append(symbol)
+            new_dof_list.append(dof)
+            new_qn_list.append(qn)
+        return Op(" ".join(new_symbol_list), new_dof_list, self.factor, new_qn_list)
+
+    def same_term(self, other) -> bool:
+        """
+        Judge whether two operators are the same term and can be added together.
+
+        Parameters
+        ----------
+        other: Op
+            The other operator to compare
+
+        Returns
+        -------
+        result: bool
+            Whether the two terms
+
+        Examples
+        --------
+        >>> from renormalizer.model import Op
+        >>> op1 = Op("X", 0, 0.1)
+        >>> op2 = Op("X", 0, 0.2)
+        >>> op1.same_term(op2)
+        True
+        >>> op3 = Op("Y", 1)
+        >>> op1.same_term(op3)
+        False
+        """
+        return self.symbol == other.symbol and self.dofs == other.dofs
+
+    def to_tuple(self) -> Tuple:
         """
         Convert the operator into a tuple. The fields are the symbol, the DoFs
         the factor and the quantum number list. The converted tuple can be hashed.
@@ -226,9 +309,24 @@ class Op:
         return self.to_tuple() == other.to_tuple()
 
     def __str__(self):
-        return str(self.to_tuple())
+        ret =  ", ".join([repr(self.symbol), str(self.dofs), str(self.factor)])
+        if set(self.qn_list) != {None}:
+            ret = ret + f", {self.qn_list}"
+        return f"Op({ret})"
 
-    def __mul__(self, other) -> "Op":
+    def __repr__(self):
+        # good formatting in a list
+        return str(self)
+
+    def __add__(self, other):
+        if isinstance(other, Op):
+            return OpSum([self, other])
+        elif isinstance(other, list):
+            return OpSum([self] + other)
+        else:
+            raise TypeError(f"Unknown operand type {type(other)}")
+
+    def __mul__(self, other) -> Union["Op", List["Op"]]:
         # multiplication with another Op or with scalar
         # convert numpy scalar to python scalar
         if isinstance(other, np.generic):
@@ -236,16 +334,55 @@ class Op:
         if isinstance(other, Op):
             return Op.product([self, other])
         elif isinstance(other, (int, float, complex)):
-            new_symbol = self.symbol
-            new_dof_name = self.dofs
-            new_factor = self.factor * other
-            new_qn = self.qn_list
+            return Op(self.symbol, self.dofs, self.factor * other, self.qn_list)
+        elif isinstance(other, list):
+            for item in other:
+                if not isinstance(item, Op):
+                    raise TypeError(f"Operand must be a list of `Op`. Got {type(item)}")
+            return OpSum([self * item for item in other])
         else:
-            raise ValueError(f"Unsupported type: {type(other)}")
-        return Op(new_symbol, new_dof_name, new_factor, new_qn)
+            raise TypeError(f"Unsupported type: {type(other)}")
 
     def __rmul__(self, other) -> "Op":
-        # Operators not allowed due to commutation property.
-        # In principle Op * Op should use `__mul__` method.
-        assert isinstance(other, (int, float, complex, np.generic))
-        return self * other
+        if isinstance(other, (int, float, complex, np.generic)):
+            return self * other
+        elif isinstance(other, list):
+            return OpSum(other) * self
+        else:
+            raise TypeError(f"Unknwon type {type(other)}")
+
+
+class OpSum(list):
+    def copy(self):
+        return OpSum(super().copy())
+
+    def __add__(self, other):
+        if not isinstance(other, (Op, list)):
+            raise TypeError("OpSum can only add with `Op` or list of `Op`")
+        if isinstance(other, Op):
+            other = [other]
+        return OpSum(super().__add__(other))
+
+    def __iadd__(self, other):
+        if isinstance(other, Op):
+            self.append(other)
+            return self
+        else:
+            return super().__iadd__(other)
+
+    def __mul__(self, other):
+        if isinstance(other, list):
+            res = []
+            for op1 in self:
+                res.extend(op1 * other)
+            return OpSum(res)
+        elif isinstance(other, (int, float, complex, np.generic, Op)):
+            # note the behavior is different from `list` for int type
+            return OpSum([op * other for op in self])
+        else:
+            return OpSum(super().__mul__(other))
+
+    def __rmul__(self, other):
+        if isinstance(other, (int, float, complex, np.generic)):
+            return self * other
+        return OpSum(super().__rmul__(other))
