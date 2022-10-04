@@ -194,12 +194,12 @@
 <span class="sd">        .. math::</span>
 <span class="sd">            \mu = \frac{1}{k_B T} \int_0^\infty dt \langle \hat j (t) \hat j(0) \rangle</span>
 <span class="sd">            = \frac{1}{k_B T} \int_0^\infty dt C(t)</span>
-<span class="sd">    </span>
+
 <span class="sd">    where</span>
 
 <span class="sd">        .. math::</span>
 <span class="sd">           \hat j = -\frac{i}{\hbar}[\hat P, \hat H]</span>
-<span class="sd">    </span>
+
 <span class="sd">    and :math:`\hat P = e_0 \sum_m R_m a^\dagger_m a_m` is the polarization operator.</span>
 
 <span class="sd">    .. note::</span>
@@ -209,7 +209,7 @@
 
 <span class="sd">        .. math::</span>
 <span class="sd">            C(t) = \textrm{Tr}\{\rho(T) e^{i \hat H t} \hat j(0) e^{- i \hat H t} \hat j (0)\}</span>
-<span class="sd">    </span>
+
 <span class="sd">    where we have assumed :math:`\rho(T)` is normalized</span>
 <span class="sd">    (i.e. it is divided by the partition function :math:`\textrm{Tr}\{\rho(T)\}`).</span>
 
@@ -360,7 +360,7 @@
             <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">ham_op</span><span class="o">.</span><span class="n">dofs</span><span class="p">)</span> <span class="o">==</span> <span class="mi">3</span><span class="p">:</span>
                 <span class="c1"># total term idx should be 0 + 1 + 2 = 3</span>
                 <span class="n">phonon_dof_idx</span> <span class="o">=</span> <span class="mi">3</span> <span class="o">-</span> <span class="n">dof_op_idx1</span> <span class="o">-</span> <span class="n">dof_op_idx2</span>
-                <span class="k">assert</span> <span class="n">ham_op</span><span class="o">.</span><span class="n">split_symbol</span><span class="p">[</span><span class="n">phonon_dof_idx</span><span class="p">]</span> <span class="ow">in</span> <span class="p">(</span><span class="sa">r</span><span class="s2">&quot;b^\dagger + b&quot;</span><span class="p">,</span> <span class="s2">&quot;x&quot;</span><span class="p">)</span>
+                <span class="k">assert</span> <span class="n">ham_op</span><span class="o">.</span><span class="n">split_symbol</span><span class="p">[</span><span class="n">phonon_dof_idx</span><span class="p">]</span> <span class="ow">in</span> <span class="p">(</span><span class="sa">r</span><span class="s2">&quot;b^\dagger+b&quot;</span><span class="p">,</span> <span class="s2">&quot;x&quot;</span><span class="p">)</span>
             <span class="n">symbol1</span><span class="p">,</span> <span class="n">symbol2</span> <span class="o">=</span> <span class="n">ham_op</span><span class="o">.</span><span class="n">split_symbol</span><span class="p">[</span><span class="n">dof_op_idx1</span><span class="p">],</span> <span class="n">ham_op</span><span class="o">.</span><span class="n">split_symbol</span><span class="p">[</span><span class="n">dof_op_idx2</span><span class="p">]</span>
             <span class="k">if</span> <span class="ow">not</span> <span class="p">{</span><span class="n">symbol1</span><span class="p">,</span> <span class="n">symbol2</span><span class="p">}</span> <span class="o">==</span> <span class="p">{</span><span class="sa">r</span><span class="s2">&quot;a^\dagger&quot;</span><span class="p">,</span> <span class="s2">&quot;a&quot;</span><span class="p">}:</span>
                 <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Unknown symbol: </span><span class="si">{</span><span class="n">symbol1</span><span class="si">}</span><span class="s2">, </span><span class="si">{</span><span class="n">symbol2</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
@@ -486,18 +486,18 @@
 <span class="sd">            \hat H = \sum_{mn}  [\epsilon_{mn} + \sum_\lambda \hbar g_{mn\lambda} \omega_\lambda</span>
 <span class="sd">            (b^\dagger_\lambda + b_\lambda) ] a^\dagger_m a_n</span>
 <span class="sd">            + \sum_\lambda \hbar \omega_\lambda b^\dagger_\lambda  b_\lambda</span>
-<span class="sd">        </span>
+
 <span class="sd">        Then current operator without phonon assistance is defined as:</span>
 
 <span class="sd">        .. math::</span>
 <span class="sd">            \hat j_1 = \frac{e_0}{i\hbar} \sum_{mn} (R_m - R_n) \epsilon_{mn} a^\dagger_m a_n</span>
-<span class="sd">        </span>
+
 <span class="sd">        and the current operator with phonon assistance is defined as:</span>
 
 <span class="sd">        .. math::</span>
 <span class="sd">            \hat j_2 = \frac{e_0}{i\hbar} \sum_{mn} (R_m - R_n) \hbar g_{mn\lambda} \omega_\lambda</span>
 <span class="sd">            (b^\dagger_\lambda + b_\lambda) a^\dagger_m a_n</span>
-<span class="sd">        </span>
+
 <span class="sd">        With :math:`\hat j = \hat j_1 + \hat j_2`, the correlation function can be</span>
 <span class="sd">        decomposed into four parts:</span>
 
@@ -525,7 +525,7 @@
         <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">properties</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
             <span class="k">for</span> <span class="n">prop_str</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">properties</span><span class="o">.</span><span class="n">prop_res</span><span class="o">.</span><span class="n">keys</span><span class="p">():</span>
                 <span class="n">dump_dict</span><span class="p">[</span><span class="n">prop_str</span><span class="p">]</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">properties</span><span class="o">.</span><span class="n">prop_res</span><span class="p">[</span><span class="n">prop_str</span><span class="p">]</span>
-        
+
         <span class="k">return</span> <span class="n">dump_dict</span></div>
 
 <div class="viewcode-block" id="TransportKubo.calc_mobility"><a class="viewcode-back" href="../../../ct.html#renormalizer.transport.kubo.TransportKubo.calc_mobility">[docs]</a>    <span class="k">def</span> <span class="nf">calc_mobility</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
