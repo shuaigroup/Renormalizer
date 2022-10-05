@@ -1,9 +1,10 @@
 import logging
 import time
 
-from renormalizer.model import Model, h_qc, basis as ba
-from renormalizer.mps import Mps, Mpo, gs
-from renormalizer.mps.backend import np
+import numpy as np
+
+from renormalizer import Model, Mps, Mpo, optimize_mps
+from renormalizer.model import h_qc
 from renormalizer.utils import log
 
 '''
@@ -47,7 +48,7 @@ mps = Mps.random(model, nelec, M, percent=1.0)
 
 mps.optimize_config.procedure = procedure
 mps.optimize_config.method = "2site"
-energies, mps = gs.optimize_mps(mps.copy(), mpo)
+energies, mps = optimize_mps(mps.copy(), mpo)
 gs_e = min(energies)+nuc
 logger.info(f"lowest energy: {gs_e}")
 # fci result
