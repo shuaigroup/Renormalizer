@@ -531,7 +531,10 @@
             <span class="n">mat</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">eye</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">nbas</span><span class="p">)</span>
         <span class="k">else</span><span class="p">:</span>
             <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;op_symbol:</span><span class="si">{</span><span class="n">op_symbol</span><span class="si">}</span><span class="s2"> is not supported.&quot;</span><span class="p">)</span>
-        <span class="k">return</span> <span class="n">mat</span> <span class="o">*</span> <span class="n">op_factor</span></div></div>
+        <span class="k">return</span> <span class="n">mat</span> <span class="o">*</span> <span class="n">op_factor</span></div>
+
+<div class="viewcode-block" id="BasisHopsBoson.copy"><a class="viewcode-back" href="../../../model.html#renormalizer.model.basis.BasisHopsBoson.copy">[docs]</a>    <span class="k">def</span> <span class="nf">copy</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">new_dof</span><span class="p">):</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="vm">__class__</span><span class="p">(</span><span class="n">new_dof</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">nbas</span><span class="p">)</span></div></div>
 
 
 <div class="viewcode-block" id="BasisSineDVR"><a class="viewcode-back" href="../../../model.html#renormalizer.model.basis.BasisSineDVR">[docs]</a><span class="k">class</span> <span class="nc">BasisSineDVR</span><span class="p">(</span><span class="n">BasisSet</span><span class="p">):</span>
@@ -847,6 +850,7 @@
 
 <div class="viewcode-block" id="BasisSineDVR.copy"><a class="viewcode-back" href="../../../model.html#renormalizer.model.basis.BasisSineDVR.copy">[docs]</a>    <span class="k">def</span> <span class="nf">copy</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">new_dof</span><span class="p">):</span>
         <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="vm">__class__</span><span class="p">(</span><span class="n">new_dof</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">nbas</span><span class="p">,</span> <span class="n">xi</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">xi</span><span class="p">,</span> <span class="n">xf</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">xf</span><span class="p">)</span></div></div>
+
 
 <div class="viewcode-block" id="BasisMultiElectron"><a class="viewcode-back" href="../../../model.html#renormalizer.model.basis.BasisMultiElectron">[docs]</a><span class="k">class</span> <span class="nc">BasisMultiElectron</span><span class="p">(</span><span class="n">BasisSet</span><span class="p">):</span>
     <span class="sa">r</span><span class="sd">&quot;&quot;&quot;</span>
