@@ -51,7 +51,7 @@ if __name__ == "__main__":
 
     mps.optimize_config.procedure = procedure
     mps.optimize_config.method = "2site"
-    energies, mps = gs.optimize_mps(mps.copy(), mpo)
+    energies, mps = optimize_mps(mps.copy(), mpo)
     gs_e = min(energies)+nuc
     logger.info(f"lowest energy: {gs_e}")
     # fci result
