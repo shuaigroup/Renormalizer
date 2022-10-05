@@ -7,7 +7,7 @@ import numpy as np
 
 def e_ph_static_correlation(model: HolsteinModel, imol:int =0, jph:int =0,
                             periodic:bool =False, name:str="S"):
-    '''
+    r'''
     construct the electron-phonon static correlation operator in polaron problem
     The details of the definition, see 
     Qiang Shi et al. J. Chem. Phys. 142, 174103 (2015) or
@@ -50,7 +50,7 @@ def e_ph_static_correlation(model: HolsteinModel, imol:int =0, jph:int =0,
         for jmol in range(nmols):
             op_name = "_".join([name, str(imol), str(jmol), str(jph)])
             ph = model[jmol].ph_list[jph]
-            prop_mpos[op_name] = Mpo.intersite(model, {imol: r"a^\dagger a"}, {(jmol, jph): r"b^\dagger + b"},
+            prop_mpos[op_name] = Mpo.intersite(model, {imol: r"a^\dagger a"}, {(jmol, jph): r"b^\dagger+b"},
                                                scale=Quantity(np.sqrt(1./2.0/ph.omega[0])/ph.dis[1]))
         # normalized by the displacement D
     else:
@@ -60,7 +60,7 @@ def e_ph_static_correlation(model: HolsteinModel, imol:int =0, jph:int =0,
             for jmol in range(nmols):
                 kmol = (jmol+dis) % nmols
                 ph = model[kmol].ph_list[jph]
-                dis_list.append(Mpo.intersite(model, {jmol: r"a^\dagger a"}, {(kmol, jph): r"b^\dagger + b"},
+                dis_list.append(Mpo.intersite(model, {jmol: r"a^\dagger a"}, {(kmol, jph): r"b^\dagger+b"},
                                               scale=Quantity(np.sqrt(1./2.0/ph.omega[0])/ph.dis[1])))
             for item in dis_list[1:]:
                 dis_list[0] = dis_list[0].add(item)

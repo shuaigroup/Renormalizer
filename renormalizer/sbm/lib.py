@@ -12,7 +12,7 @@ from renormalizer.utils import Quantity
 
 
 class DebyeSpectralDensityFunction:
-    """
+    r"""
     the Debye-type ohmic spectral density function
     J(\omega)= \frac{2 \lambda \omega \omega_{c}}{\omega^{2}+\omega_{c}^{2}}
     """
@@ -29,7 +29,7 @@ class DebyeSpectralDensityFunction:
 
 
 class SpectralDensityFunction:
-    """
+    r"""
     the ohmic spectral density function
     J(\omega) = \pi / 2 \alpha \omega e^{-\omega/\omega_c}
     """
@@ -73,7 +73,7 @@ class SpectralDensityFunction:
         return omega_list, displacement_list
 
     def _dos_Wang1(self, nb, omega_value):
-        """
+        r"""
         Wang's 1st scheme DOS \rho(\omega)
         """
         return (nb + 1) / self.omega_c * np.exp(-omega_value / self.omega_c)
