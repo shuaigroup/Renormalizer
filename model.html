@@ -1548,7 +1548,7 @@ The factor is included.</p>
 <dd><p>The operator class. The class can be considered as a symbolic way to express
 quantum operator such as <span class="math notranslate nohighlight">\(a^\dagger_i a_j\)</span>, <span class="math notranslate nohighlight">\(b^\dagger_i + b_i\)</span>
 or <span class="math notranslate nohighlight">\(g \omega a^\dagger_i a_i (b^\dagger_{ij} + b_{ij})\)</span>.
-Multiplications between operators are supported.</p>
+Additions and multiplications between operators are supported.</p>
 <dl class="field-list simple">
 <dt class="field-odd">Parameters</dt>
 <dd class="field-odd"><ul class="simple">
@@ -1581,6 +1581,26 @@ you should use a <a class="reference external" href="https://docs.python.org/3/l
 Because in the latter case the <a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#tuple" title="(in Python v3.10)"><code class="xref py py-class docutils literal notranslate"><span class="pre">tuple</span></code></a> is recognized as a single DoF
 and the DoFs of all simple symbols are set to the <a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#tuple" title="(in Python v3.10)"><code class="xref py py-class docutils literal notranslate"><span class="pre">tuple</span></code></a>.</p>
 </div>
+<p class="rubric">Examples</p>
+<div class="doctest highlight-default notranslate"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="kn">from</span> <span class="nn">renormalizer.model</span> <span class="kn">import</span> <span class="n">Op</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">Op</span><span class="p">(</span><span class="sa">r</span><span class="s2">&quot;a^\dagger a&quot;</span><span class="p">,</span> <span class="p">[</span><span class="s1">&#39;site0&#39;</span><span class="p">,</span> <span class="s2">&quot;site1&quot;</span><span class="p">],</span> <span class="mf">2.</span><span class="p">,</span> <span class="n">qn</span><span class="o">=</span><span class="p">[</span><span class="mi">1</span><span class="p">,</span> <span class="o">-</span><span class="mi">1</span><span class="p">])</span>
+<span class="go">Op(&#39;a^\\dagger a&#39;, [&#39;site0&#39;, &#39;site1&#39;], 2.0, [1, -1])</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">x</span> <span class="o">=</span> <span class="n">Op</span><span class="p">(</span><span class="s2">&quot;X&quot;</span><span class="p">,</span> <span class="mi">0</span><span class="p">,</span> <span class="mf">0.5</span><span class="p">)</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="mi">3</span> <span class="o">*</span> <span class="n">x</span>
+<span class="go">Op(&#39;X&#39;, [0], 1.5)</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">y</span> <span class="o">=</span> <span class="n">Op</span><span class="p">(</span><span class="s2">&quot;Y&quot;</span><span class="p">,</span> <span class="mi">1</span><span class="p">,</span> <span class="mf">0.2</span><span class="p">)</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">x</span> <span class="o">+</span> <span class="n">y</span>
+<span class="go">[Op(&#39;X&#39;, [0], 0.5), Op(&#39;Y&#39;, [1], 0.2)]</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">x</span> <span class="o">*</span> <span class="n">y</span>
+<span class="go">Op(&#39;X Y&#39;, [0, 1], 0.1)</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">x</span> <span class="o">*</span> <span class="p">(</span><span class="n">x</span> <span class="o">+</span> <span class="n">y</span><span class="p">)</span>
+<span class="go">[Op(&#39;X X&#39;, [0, 0], 0.25), Op(&#39;X Y&#39;, [0, 1], 0.1)]</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="p">(</span><span class="n">y</span> <span class="o">+</span> <span class="n">x</span><span class="p">)</span> <span class="o">*</span> <span class="n">x</span>
+<span class="go">[Op(&#39;Y X&#39;, [1, 0], 0.1), Op(&#39;X X&#39;, [0, 0], 0.25)]</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="p">(</span><span class="n">y</span> <span class="o">+</span> <span class="n">x</span><span class="p">)</span> <span class="o">*</span> <span class="p">(</span><span class="n">x</span> <span class="o">+</span> <span class="n">y</span><span class="p">)</span>
+<span class="go">[Op(&#39;Y X&#39;, [1, 0], 0.1), Op(&#39;Y Y&#39;, [1, 1], 0.04000000000000001), Op(&#39;X X&#39;, [0, 0], 0.25), Op(&#39;X Y&#39;, [0, 1], 0.1)]</span>
+</pre></div>
+</div>
 <dl class="py property">
 <dt class="sig sig-object py" id="renormalizer.model.Op.factor">
 <em class="property"><span class="pre">property</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">factor</span></span><a class="headerlink" href="#renormalizer.model.Op.factor" title="Permalink to this definition">¶</a></dt>
@@ -1591,6 +1611,12 @@ and the DoFs of all simple symbols are set to the <a class="reference external" 
 <dt class="sig sig-object py" id="renormalizer.model.Op.identity">
 <em class="property"><span class="pre">classmethod</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">identity</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">dof</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/renormalizer/model/op.html#Op.identity"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#renormalizer.model.Op.identity" title="Permalink to this definition">¶</a></dt>
 <dd><p>Construct identity operator.</p>
+</dd></dl>
+
+<dl class="py property">
+<dt class="sig sig-object py" id="renormalizer.model.Op.is_identity">
+<em class="property"><span class="pre">property</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">is_identity</span></span><em class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><a class="reference external" href="https://docs.python.org/3/library/functions.html#bool" title="(in Python v3.10)"><span class="pre">bool</span></a></em><a class="headerlink" href="#renormalizer.model.Op.is_identity" title="Permalink to this definition">¶</a></dt>
+<dd><p>Whether the operator is the identity operator. Note the factor is not taken into account.</p>
 </dd></dl>
 
 <dl class="py method">
@@ -1619,6 +1645,34 @@ if not specified.</p>
 </dd></dl>
 
 <dl class="py method">
+<dt class="sig sig-object py" id="renormalizer.model.Op.same_term">
+<span class="sig-name descname"><span class="pre">same_term</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">other</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><a class="reference external" href="https://docs.python.org/3/library/functions.html#bool" title="(in Python v3.10)"><span class="pre">bool</span></a></span></span><a class="reference internal" href="_modules/renormalizer/model/op.html#Op.same_term"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#renormalizer.model.Op.same_term" title="Permalink to this definition">¶</a></dt>
+<dd><p>Judge whether two operators are the same term and can be added together.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><p><strong>other</strong> (<a class="reference internal" href="#renormalizer.model.Op" title="renormalizer.model.Op"><em>Op</em></a>) – The other operator to compare</p>
+</dd>
+<dt class="field-even">Returns</dt>
+<dd class="field-even"><p><strong>result</strong> – Whether the two terms</p>
+</dd>
+<dt class="field-odd">Return type</dt>
+<dd class="field-odd"><p><a class="reference external" href="https://docs.python.org/3/library/functions.html#bool" title="(in Python v3.10)">bool</a></p>
+</dd>
+</dl>
+<p class="rubric">Examples</p>
+<div class="doctest highlight-default notranslate"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="kn">from</span> <span class="nn">renormalizer.model</span> <span class="kn">import</span> <span class="n">Op</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">op1</span> <span class="o">=</span> <span class="n">Op</span><span class="p">(</span><span class="s2">&quot;X&quot;</span><span class="p">,</span> <span class="mi">0</span><span class="p">,</span> <span class="mf">0.1</span><span class="p">)</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">op2</span> <span class="o">=</span> <span class="n">Op</span><span class="p">(</span><span class="s2">&quot;X&quot;</span><span class="p">,</span> <span class="mi">0</span><span class="p">,</span> <span class="mf">0.2</span><span class="p">)</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">op1</span><span class="o">.</span><span class="n">same_term</span><span class="p">(</span><span class="n">op2</span><span class="p">)</span>
+<span class="go">True</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">op3</span> <span class="o">=</span> <span class="n">Op</span><span class="p">(</span><span class="s2">&quot;Y&quot;</span><span class="p">,</span> <span class="mi">1</span><span class="p">)</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">op1</span><span class="o">.</span><span class="n">same_term</span><span class="p">(</span><span class="n">op3</span><span class="p">)</span>
+<span class="go">False</span>
+</pre></div>
+</div>
+</dd></dl>
+
+<dl class="py method">
 <dt class="sig sig-object py" id="renormalizer.model.Op.split_elementary">
 <span class="sig-name descname"><span class="pre">split_elementary</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">dof_to_siteidx</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><a class="reference external" href="https://docs.python.org/3/library/typing.html#typing.Tuple" title="(in Python v3.10)"><span class="pre">Tuple</span></a><span class="p"><span class="pre">[</span></span><a class="reference external" href="https://docs.python.org/3/library/typing.html#typing.List" title="(in Python v3.10)"><span class="pre">List</span></a><span class="p"><span class="pre">[</span></span><a class="reference internal" href="#renormalizer.model.Op" title="renormalizer.model.op.Op"><span class="pre">Op</span></a><span class="p"><span class="pre">]</span></span><span class="p"><span class="pre">,</span></span><span class="w"> </span><a class="reference external" href="https://docs.python.org/3/library/typing.html#typing.Union" title="(in Python v3.10)"><span class="pre">Union</span></a><span class="p"><span class="pre">[</span></span><a class="reference external" href="https://docs.python.org/3/library/functions.html#float" title="(in Python v3.10)"><span class="pre">float</span></a><span class="p"><span class="pre">,</span></span><span class="w"> </span><a class="reference external" href="https://docs.python.org/3/library/functions.html#complex" title="(in Python v3.10)"><span class="pre">complex</span></a><span class="p"><span class="pre">]</span></span><span class="p"><span class="pre">]</span></span></span></span><a class="reference internal" href="_modules/renormalizer/model/op.html#Op.split_elementary"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#renormalizer.model.Op.split_elementary" title="Permalink to this definition">¶</a></dt>
 <dd><p>Construct elementary operators according to site index.
@@ -1638,8 +1692,29 @@ if not specified.</p>
 </dd></dl>
 
 <dl class="py method">
+<dt class="sig sig-object py" id="renormalizer.model.Op.squeeze_identity">
+<span class="sig-name descname"><span class="pre">squeeze_identity</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="_modules/renormalizer/model/op.html#Op.squeeze_identity"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#renormalizer.model.Op.squeeze_identity" title="Permalink to this definition">¶</a></dt>
+<dd><p>Remove all the identity terms in <code class="docutils literal notranslate"><span class="pre">Op</span></code>.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Returns</dt>
+<dd class="field-odd"><p><strong>op</strong> – The operator with identity term removed</p>
+</dd>
+<dt class="field-even">Return type</dt>
+<dd class="field-even"><p><a class="reference internal" href="#renormalizer.model.Op" title="renormalizer.model.Op">Op</a></p>
+</dd>
+</dl>
+<p class="rubric">Examples</p>
+<div class="doctest highlight-default notranslate"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="kn">from</span> <span class="nn">renormalizer.model</span> <span class="kn">import</span> <span class="n">Op</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">op</span> <span class="o">=</span> <span class="n">Op</span><span class="p">(</span><span class="s2">&quot;X I Y I&quot;</span><span class="p">,</span> <span class="p">[</span><span class="mi">0</span><span class="p">,</span> <span class="mi">1</span><span class="p">,</span> <span class="mi">2</span><span class="p">,</span> <span class="mi">3</span><span class="p">],</span> <span class="mf">0.5</span><span class="p">)</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">op</span><span class="o">.</span><span class="n">squeeze_identity</span><span class="p">()</span>
+<span class="go">Op(&#39;X Y&#39;, [0, 2], 0.5)</span>
+</pre></div>
+</div>
+</dd></dl>
+
+<dl class="py method">
 <dt class="sig sig-object py" id="renormalizer.model.Op.to_tuple">
-<span class="sig-name descname"><span class="pre">to_tuple</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="_modules/renormalizer/model/op.html#Op.to_tuple"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#renormalizer.model.Op.to_tuple" title="Permalink to this definition">¶</a></dt>
+<span class="sig-name descname"><span class="pre">to_tuple</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><a class="reference external" href="https://docs.python.org/3/library/typing.html#typing.Tuple" title="(in Python v3.10)"><span class="pre">Tuple</span></a></span></span><a class="reference internal" href="_modules/renormalizer/model/op.html#Op.to_tuple"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#renormalizer.model.Op.to_tuple" title="Permalink to this definition">¶</a></dt>
 <dd><p>Convert the operator into a tuple. The fields are the symbol, the DoFs
 the factor and the quantum number list. The converted tuple can be hashed.</p>
 <dl class="field-list simple">

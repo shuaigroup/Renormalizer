@@ -185,7 +185,7 @@
 <span class="sd">    The operator class. The class can be considered as a symbolic way to express</span>
 <span class="sd">    quantum operator such as :math:`a^\dagger_i a_j`, :math:`b^\dagger_i + b_i`</span>
 <span class="sd">    or :math:`g \omega a^\dagger_i a_i (b^\dagger_{ij} + b_{ij})`.</span>
-<span class="sd">    Multiplications between operators are supported.</span>
+<span class="sd">    Additions and multiplications between operators are supported.</span>
 
 <span class="sd">    Parameters</span>
 <span class="sd">    ----------</span>
@@ -211,17 +211,36 @@
 <span class="sd">        except for``&quot;a^\dagger&quot;`` and ``&quot;a&quot;``, whose quantum number are set to 1 and -1 respectively.</span>
 
 <span class="sd">    Notes</span>
-<span class="sd">    =====</span>
+<span class="sd">    -----</span>
 <span class="sd">    Symbols connected by plus ``&quot;+&quot;`` such as ``r&quot;b^\dagger + b&quot;`` is considered as a simple symbol,</span>
 <span class="sd">    because this class is designed to deal with operator multiplication rather than addition.</span>
 
 <span class="sd">    Warnings</span>
-<span class="sd">    ========</span>
+<span class="sd">    --------</span>
 <span class="sd">    If you wish to specify the DoF of each symbol in a complex symbol,</span>
 <span class="sd">    you should use a :class:`list` instead of :class:`tuple`.</span>
 <span class="sd">    Because in the latter case the :class:`tuple` is recognized as a single DoF</span>
 <span class="sd">    and the DoFs of all simple symbols are set to the :class:`tuple`.</span>
 
+<span class="sd">    Examples</span>
+<span class="sd">    --------</span>
+<span class="sd">    &gt;&gt;&gt; from renormalizer.model import Op</span>
+<span class="sd">    &gt;&gt;&gt; Op(r&quot;a^\dagger a&quot;, [&#39;site0&#39;, &quot;site1&quot;], 2., qn=[1, -1])</span>
+<span class="sd">    Op(&#39;a^\\dagger a&#39;, [&#39;site0&#39;, &#39;site1&#39;], 2.0, [1, -1])</span>
+<span class="sd">    &gt;&gt;&gt; x = Op(&quot;X&quot;, 0, 0.5)</span>
+<span class="sd">    &gt;&gt;&gt; 3 * x</span>
+<span class="sd">    Op(&#39;X&#39;, [0], 1.5)</span>
+<span class="sd">    &gt;&gt;&gt; y = Op(&quot;Y&quot;, 1, 0.2)</span>
+<span class="sd">    &gt;&gt;&gt; x + y</span>
+<span class="sd">    [Op(&#39;X&#39;, [0], 0.5), Op(&#39;Y&#39;, [1], 0.2)]</span>
+<span class="sd">    &gt;&gt;&gt; x * y</span>
+<span class="sd">    Op(&#39;X Y&#39;, [0, 1], 0.1)</span>
+<span class="sd">    &gt;&gt;&gt; x * (x + y)</span>
+<span class="sd">    [Op(&#39;X X&#39;, [0, 0], 0.25), Op(&#39;X Y&#39;, [0, 1], 0.1)]</span>
+<span class="sd">    &gt;&gt;&gt; (y + x) * x</span>
+<span class="sd">    [Op(&#39;Y X&#39;, [1, 0], 0.1), Op(&#39;X X&#39;, [0, 0], 0.25)]</span>
+<span class="sd">    &gt;&gt;&gt; (y + x) * (x + y)</span>
+<span class="sd">    [Op(&#39;Y X&#39;, [1, 0], 0.1), Op(&#39;Y Y&#39;, [1, 1], 0.04000000000000001), Op(&#39;X X&#39;, [0, 0], 0.25), Op(&#39;X Y&#39;, [0, 1], 0.1)]</span>
 <span class="sd">    &quot;&quot;&quot;</span>
 
 <div class="viewcode-block" id="Op.product"><a class="viewcode-back" href="../../../model.html#renormalizer.model.Op.product">[docs]</a>    <span class="nd">@classmethod</span>
@@ -313,7 +332,7 @@
         <span class="bp">self</span><span class="o">.</span><span class="n">dofs</span><span class="p">:</span> <span class="n">List</span> <span class="o">=</span> <span class="n">dofs</span>
         <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">factor</span><span class="p">,</span> <span class="n">Quantity</span><span class="p">):</span>
             <span class="n">factor</span> <span class="o">=</span> <span class="n">factor</span><span class="o">.</span><span class="n">as_au</span><span class="p">()</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">_factor</span><span class="p">:</span> <span class="nb">float</span> <span class="o">=</span> <span class="n">factor</span> <span class="o">+</span> <span class="mf">0.0</span> <span class="c1"># convert to float</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_factor</span><span class="p">:</span> <span class="nb">float</span> <span class="o">=</span> <span class="n">factor</span> <span class="o">+</span> <span class="mf">0.0</span> <span class="c1"># convert to float. Note this works for complex number</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">qn_list</span><span class="p">:</span> <span class="n">List</span><span class="p">[</span><span class="nb">int</span><span class="p">]</span> <span class="o">=</span> <span class="n">qn_list</span>
 
 <div class="viewcode-block" id="Op.split_elementary"><a class="viewcode-back" href="../../../model.html#renormalizer.model.Op.split_elementary">[docs]</a>    <span class="k">def</span> <span class="nf">split_elementary</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">dof_to_siteidx</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Tuple</span><span class="p">[</span><span class="n">List</span><span class="p">[</span><span class="s2">&quot;Op&quot;</span><span class="p">],</span> <span class="n">Union</span><span class="p">[</span><span class="nb">float</span><span class="p">,</span> <span class="nb">complex</span><span class="p">]]:</span>
@@ -377,7 +396,71 @@
         <span class="k">else</span><span class="p">:</span>
             <span class="k">return</span> <span class="nb">sum</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">qn_list</span><span class="p">)</span>
 
-<div class="viewcode-block" id="Op.to_tuple"><a class="viewcode-back" href="../../../model.html#renormalizer.model.Op.to_tuple">[docs]</a>    <span class="k">def</span> <span class="nf">to_tuple</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+    <span class="nd">@property</span>
+    <span class="k">def</span> <span class="nf">is_identity</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">bool</span><span class="p">:</span>
+        <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Whether the operator is the identity operator. Note the factor is not taken into account.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">return</span> <span class="nb">set</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">split_symbol</span><span class="p">)</span> <span class="o">==</span> <span class="p">{</span><span class="s2">&quot;I&quot;</span><span class="p">}</span>
+
+<div class="viewcode-block" id="Op.squeeze_identity"><a class="viewcode-back" href="../../../model.html#renormalizer.model.Op.squeeze_identity">[docs]</a>    <span class="k">def</span> <span class="nf">squeeze_identity</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Remove all the identity terms in ``Op``.</span>
+
+<span class="sd">        Returns</span>
+<span class="sd">        -------</span>
+<span class="sd">        op: Op</span>
+<span class="sd">             The operator with identity term removed</span>
+
+<span class="sd">        Examples</span>
+<span class="sd">        --------</span>
+<span class="sd">        &gt;&gt;&gt; from renormalizer.model import Op</span>
+<span class="sd">        &gt;&gt;&gt; op = Op(&quot;X I Y I&quot;, [0, 1, 2, 3], 0.5)</span>
+<span class="sd">        &gt;&gt;&gt; op.squeeze_identity()</span>
+<span class="sd">        Op(&#39;X Y&#39;, [0, 2], 0.5)</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">is_identity</span><span class="p">:</span>
+            <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="vm">__class__</span><span class="o">.</span><span class="n">identity</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">dofs</span><span class="p">[</span><span class="mi">0</span><span class="p">])</span>
+        <span class="n">new_symbol_list</span> <span class="o">=</span> <span class="p">[]</span>
+        <span class="n">new_dof_list</span> <span class="o">=</span> <span class="p">[]</span>
+        <span class="n">new_qn_list</span> <span class="o">=</span> <span class="p">[]</span>
+        <span class="k">for</span> <span class="n">symbol</span><span class="p">,</span> <span class="n">dof</span><span class="p">,</span> <span class="n">qn</span> <span class="ow">in</span> <span class="nb">zip</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">split_symbol</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">dofs</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">qn_list</span><span class="p">):</span>
+            <span class="k">if</span> <span class="n">symbol</span> <span class="o">==</span> <span class="s2">&quot;I&quot;</span><span class="p">:</span>
+                <span class="k">assert</span> <span class="n">qn</span> <span class="ow">is</span> <span class="kc">None</span> <span class="ow">or</span> <span class="n">qn</span> <span class="o">==</span> <span class="mi">0</span>
+                <span class="k">continue</span>
+            <span class="n">new_symbol_list</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">symbol</span><span class="p">)</span>
+            <span class="n">new_dof_list</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">dof</span><span class="p">)</span>
+            <span class="n">new_qn_list</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">qn</span><span class="p">)</span>
+        <span class="k">return</span> <span class="n">Op</span><span class="p">(</span><span class="s2">&quot; &quot;</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">new_symbol_list</span><span class="p">),</span> <span class="n">new_dof_list</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">factor</span><span class="p">,</span> <span class="n">new_qn_list</span><span class="p">)</span></div>
+
+<div class="viewcode-block" id="Op.same_term"><a class="viewcode-back" href="../../../model.html#renormalizer.model.Op.same_term">[docs]</a>    <span class="k">def</span> <span class="nf">same_term</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">other</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">bool</span><span class="p">:</span>
+        <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Judge whether two operators are the same term and can be added together.</span>
+
+<span class="sd">        Parameters</span>
+<span class="sd">        ----------</span>
+<span class="sd">        other: Op</span>
+<span class="sd">            The other operator to compare</span>
+
+<span class="sd">        Returns</span>
+<span class="sd">        -------</span>
+<span class="sd">        result: bool</span>
+<span class="sd">            Whether the two terms</span>
+
+<span class="sd">        Examples</span>
+<span class="sd">        --------</span>
+<span class="sd">        &gt;&gt;&gt; from renormalizer.model import Op</span>
+<span class="sd">        &gt;&gt;&gt; op1 = Op(&quot;X&quot;, 0, 0.1)</span>
+<span class="sd">        &gt;&gt;&gt; op2 = Op(&quot;X&quot;, 0, 0.2)</span>
+<span class="sd">        &gt;&gt;&gt; op1.same_term(op2)</span>
+<span class="sd">        True</span>
+<span class="sd">        &gt;&gt;&gt; op3 = Op(&quot;Y&quot;, 1)</span>
+<span class="sd">        &gt;&gt;&gt; op1.same_term(op3)</span>
+<span class="sd">        False</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">symbol</span> <span class="o">==</span> <span class="n">other</span><span class="o">.</span><span class="n">symbol</span> <span class="ow">and</span> <span class="bp">self</span><span class="o">.</span><span class="n">dofs</span> <span class="o">==</span> <span class="n">other</span><span class="o">.</span><span class="n">dofs</span></div>
+
+<div class="viewcode-block" id="Op.to_tuple"><a class="viewcode-back" href="../../../model.html#renormalizer.model.Op.to_tuple">[docs]</a>    <span class="k">def</span> <span class="nf">to_tuple</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Tuple</span><span class="p">:</span>
         <span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">        Convert the operator into a tuple. The fields are the symbol, the DoFs</span>
 <span class="sd">        the factor and the quantum number list. The converted tuple can be hashed.</span>
@@ -398,9 +481,24 @@
         <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">to_tuple</span><span class="p">()</span> <span class="o">==</span> <span class="n">other</span><span class="o">.</span><span class="n">to_tuple</span><span class="p">()</span>
 
     <span class="k">def</span> <span class="fm">__str__</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
-        <span class="k">return</span> <span class="nb">str</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">to_tuple</span><span class="p">())</span>
+        <span class="n">ret</span> <span class="o">=</span>  <span class="s2">&quot;, &quot;</span><span class="o">.</span><span class="n">join</span><span class="p">([</span><span class="nb">repr</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">symbol</span><span class="p">),</span> <span class="nb">str</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">dofs</span><span class="p">),</span> <span class="nb">str</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">factor</span><span class="p">)])</span>
+        <span class="k">if</span> <span class="nb">set</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">qn_list</span><span class="p">)</span> <span class="o">!=</span> <span class="p">{</span><span class="kc">None</span><span class="p">}:</span>
+            <span class="n">ret</span> <span class="o">=</span> <span class="n">ret</span> <span class="o">+</span> <span class="sa">f</span><span class="s2">&quot;, </span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">qn_list</span><span class="si">}</span><span class="s2">&quot;</span>
+        <span class="k">return</span> <span class="sa">f</span><span class="s2">&quot;Op(</span><span class="si">{</span><span class="n">ret</span><span class="si">}</span><span class="s2">)&quot;</span>
 
-    <span class="k">def</span> <span class="fm">__mul__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">other</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="s2">&quot;Op&quot;</span><span class="p">:</span>
+    <span class="k">def</span> <span class="fm">__repr__</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="c1"># good formatting in a list</span>
+        <span class="k">return</span> <span class="nb">str</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span>
+
+    <span class="k">def</span> <span class="fm">__add__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">other</span><span class="p">):</span>
+        <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">other</span><span class="p">,</span> <span class="n">Op</span><span class="p">):</span>
+            <span class="k">return</span> <span class="n">OpSum</span><span class="p">([</span><span class="bp">self</span><span class="p">,</span> <span class="n">other</span><span class="p">])</span>
+        <span class="k">elif</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">other</span><span class="p">,</span> <span class="nb">list</span><span class="p">):</span>
+            <span class="k">return</span> <span class="n">OpSum</span><span class="p">([</span><span class="bp">self</span><span class="p">]</span> <span class="o">+</span> <span class="n">other</span><span class="p">)</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="ne">TypeError</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Unknown operand type </span><span class="si">{</span><span class="nb">type</span><span class="p">(</span><span class="n">other</span><span class="p">)</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+
+    <span class="k">def</span> <span class="fm">__mul__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">other</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Union</span><span class="p">[</span><span class="s2">&quot;Op&quot;</span><span class="p">,</span> <span class="n">List</span><span class="p">[</span><span class="s2">&quot;Op&quot;</span><span class="p">]]:</span>
         <span class="c1"># multiplication with another Op or with scalar</span>
         <span class="c1"># convert numpy scalar to python scalar</span>
         <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">other</span><span class="p">,</span> <span class="n">np</span><span class="o">.</span><span class="n">generic</span><span class="p">):</span>
@@ -408,19 +506,58 @@
         <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">other</span><span class="p">,</span> <span class="n">Op</span><span class="p">):</span>
             <span class="k">return</span> <span class="n">Op</span><span class="o">.</span><span class="n">product</span><span class="p">([</span><span class="bp">self</span><span class="p">,</span> <span class="n">other</span><span class="p">])</span>
         <span class="k">elif</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">other</span><span class="p">,</span> <span class="p">(</span><span class="nb">int</span><span class="p">,</span> <span class="nb">float</span><span class="p">,</span> <span class="nb">complex</span><span class="p">)):</span>
-            <span class="n">new_symbol</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">symbol</span>
-            <span class="n">new_dof_name</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">dofs</span>
-            <span class="n">new_factor</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">factor</span> <span class="o">*</span> <span class="n">other</span>
-            <span class="n">new_qn</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">qn_list</span>
+            <span class="k">return</span> <span class="n">Op</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">symbol</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">dofs</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">factor</span> <span class="o">*</span> <span class="n">other</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">qn_list</span><span class="p">)</span>
+        <span class="k">elif</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">other</span><span class="p">,</span> <span class="nb">list</span><span class="p">):</span>
+            <span class="k">for</span> <span class="n">item</span> <span class="ow">in</span> <span class="n">other</span><span class="p">:</span>
+                <span class="k">if</span> <span class="ow">not</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">item</span><span class="p">,</span> <span class="n">Op</span><span class="p">):</span>
+                    <span class="k">raise</span> <span class="ne">TypeError</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Operand must be a list of `Op`. Got </span><span class="si">{</span><span class="nb">type</span><span class="p">(</span><span class="n">item</span><span class="p">)</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+            <span class="k">return</span> <span class="n">OpSum</span><span class="p">([</span><span class="bp">self</span> <span class="o">*</span> <span class="n">item</span> <span class="k">for</span> <span class="n">item</span> <span class="ow">in</span> <span class="n">other</span><span class="p">])</span>
         <span class="k">else</span><span class="p">:</span>
-            <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Unsupported type: </span><span class="si">{</span><span class="nb">type</span><span class="p">(</span><span class="n">other</span><span class="p">)</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
-        <span class="k">return</span> <span class="n">Op</span><span class="p">(</span><span class="n">new_symbol</span><span class="p">,</span> <span class="n">new_dof_name</span><span class="p">,</span> <span class="n">new_factor</span><span class="p">,</span> <span class="n">new_qn</span><span class="p">)</span>
+            <span class="k">raise</span> <span class="ne">TypeError</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Unsupported type: </span><span class="si">{</span><span class="nb">type</span><span class="p">(</span><span class="n">other</span><span class="p">)</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
 
     <span class="k">def</span> <span class="fm">__rmul__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">other</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="s2">&quot;Op&quot;</span><span class="p">:</span>
-        <span class="c1"># Operators not allowed due to commutation property.</span>
-        <span class="c1"># In principle Op * Op should use `__mul__` method.</span>
-        <span class="k">assert</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">other</span><span class="p">,</span> <span class="p">(</span><span class="nb">int</span><span class="p">,</span> <span class="nb">float</span><span class="p">,</span> <span class="nb">complex</span><span class="p">,</span> <span class="n">np</span><span class="o">.</span><span class="n">generic</span><span class="p">))</span>
-        <span class="k">return</span> <span class="bp">self</span> <span class="o">*</span> <span class="n">other</span></div>
+        <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">other</span><span class="p">,</span> <span class="p">(</span><span class="nb">int</span><span class="p">,</span> <span class="nb">float</span><span class="p">,</span> <span class="nb">complex</span><span class="p">,</span> <span class="n">np</span><span class="o">.</span><span class="n">generic</span><span class="p">)):</span>
+            <span class="k">return</span> <span class="bp">self</span> <span class="o">*</span> <span class="n">other</span>
+        <span class="k">elif</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">other</span><span class="p">,</span> <span class="nb">list</span><span class="p">):</span>
+            <span class="k">return</span> <span class="n">OpSum</span><span class="p">(</span><span class="n">other</span><span class="p">)</span> <span class="o">*</span> <span class="bp">self</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="ne">TypeError</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Unknwon type </span><span class="si">{</span><span class="nb">type</span><span class="p">(</span><span class="n">other</span><span class="p">)</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span></div>
+
+
+<span class="k">class</span> <span class="nc">OpSum</span><span class="p">(</span><span class="nb">list</span><span class="p">):</span>
+    <span class="k">def</span> <span class="nf">copy</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="k">return</span> <span class="n">OpSum</span><span class="p">(</span><span class="nb">super</span><span class="p">()</span><span class="o">.</span><span class="n">copy</span><span class="p">())</span>
+
+    <span class="k">def</span> <span class="fm">__add__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">other</span><span class="p">):</span>
+        <span class="k">if</span> <span class="ow">not</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">other</span><span class="p">,</span> <span class="p">(</span><span class="n">Op</span><span class="p">,</span> <span class="nb">list</span><span class="p">)):</span>
+            <span class="k">raise</span> <span class="ne">TypeError</span><span class="p">(</span><span class="s2">&quot;OpSum can only add with `Op` or list of `Op`&quot;</span><span class="p">)</span>
+        <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">other</span><span class="p">,</span> <span class="n">Op</span><span class="p">):</span>
+            <span class="n">other</span> <span class="o">=</span> <span class="p">[</span><span class="n">other</span><span class="p">]</span>
+        <span class="k">return</span> <span class="n">OpSum</span><span class="p">(</span><span class="nb">super</span><span class="p">()</span><span class="o">.</span><span class="fm">__add__</span><span class="p">(</span><span class="n">other</span><span class="p">))</span>
+
+    <span class="k">def</span> <span class="fm">__iadd__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">other</span><span class="p">):</span>
+        <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">other</span><span class="p">,</span> <span class="n">Op</span><span class="p">):</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">other</span><span class="p">)</span>
+            <span class="k">return</span> <span class="bp">self</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="k">return</span> <span class="nb">super</span><span class="p">()</span><span class="o">.</span><span class="fm">__iadd__</span><span class="p">(</span><span class="n">other</span><span class="p">)</span>
+
+    <span class="k">def</span> <span class="fm">__mul__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">other</span><span class="p">):</span>
+        <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">other</span><span class="p">,</span> <span class="nb">list</span><span class="p">):</span>
+            <span class="n">res</span> <span class="o">=</span> <span class="p">[]</span>
+            <span class="k">for</span> <span class="n">op1</span> <span class="ow">in</span> <span class="bp">self</span><span class="p">:</span>
+                <span class="n">res</span><span class="o">.</span><span class="n">extend</span><span class="p">(</span><span class="n">op1</span> <span class="o">*</span> <span class="n">other</span><span class="p">)</span>
+            <span class="k">return</span> <span class="n">OpSum</span><span class="p">(</span><span class="n">res</span><span class="p">)</span>
+        <span class="k">elif</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">other</span><span class="p">,</span> <span class="p">(</span><span class="nb">int</span><span class="p">,</span> <span class="nb">float</span><span class="p">,</span> <span class="nb">complex</span><span class="p">,</span> <span class="n">np</span><span class="o">.</span><span class="n">generic</span><span class="p">,</span> <span class="n">Op</span><span class="p">)):</span>
+            <span class="c1"># note the behavior is different from `list` for int type</span>
+            <span class="k">return</span> <span class="n">OpSum</span><span class="p">([</span><span class="n">op</span> <span class="o">*</span> <span class="n">other</span> <span class="k">for</span> <span class="n">op</span> <span class="ow">in</span> <span class="bp">self</span><span class="p">])</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="k">return</span> <span class="n">OpSum</span><span class="p">(</span><span class="nb">super</span><span class="p">()</span><span class="o">.</span><span class="fm">__mul__</span><span class="p">(</span><span class="n">other</span><span class="p">))</span>
+
+    <span class="k">def</span> <span class="fm">__rmul__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">other</span><span class="p">):</span>
+        <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">other</span><span class="p">,</span> <span class="p">(</span><span class="nb">int</span><span class="p">,</span> <span class="nb">float</span><span class="p">,</span> <span class="nb">complex</span><span class="p">,</span> <span class="n">np</span><span class="o">.</span><span class="n">generic</span><span class="p">)):</span>
+            <span class="k">return</span> <span class="bp">self</span> <span class="o">*</span> <span class="n">other</span>
+        <span class="k">return</span> <span class="n">OpSum</span><span class="p">(</span><span class="nb">super</span><span class="p">()</span><span class="o">.</span><span class="fm">__rmul__</span><span class="p">(</span><span class="n">other</span><span class="p">))</span>
 </pre></div>
 
            </div>
