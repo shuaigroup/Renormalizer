@@ -7,7 +7,7 @@ import warnings
 
 reno_num_threads = os.environ.get("RENO_NUM_THREADS")
 if reno_num_threads is not None:
-    # set environment variables to limit NumPy cpu usage
+    # Set environment variables to limit NumPy CPU usage
     # Note that this should be done before NumPy is imported
 
     if "numpy" in sys.modules:
@@ -24,3 +24,11 @@ from renormalizer.utils.log import init_log
 init_log()
 
 del init_log
+
+
+# user interfaces
+from renormalizer.model import Model, HolsteinModel, SpinBosonModel, TI1DModel, Op
+from renormalizer.model.basis import BasisSHO, BasisHopsBoson, BasisSineDVR, BasisMultiElectron, \
+    BasisMultiElectronVac, BasisSimpleElectron, BasisHalfSpin
+from renormalizer.mps import Mpo, Mps, optimize_mps
+from renormalizer.utils import Quantity

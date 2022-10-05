@@ -361,6 +361,9 @@ class BasisHopsBoson(BasisSet):
             raise ValueError(f"op_symbol:{op_symbol} is not supported.")
         return mat * op_factor
 
+    def copy(self, new_dof):
+        return self.__class__(new_dof, self.nbas)
+
 
 class BasisSineDVR(BasisSet):
     r"""
@@ -675,6 +678,7 @@ class BasisSineDVR(BasisSet):
 
     def copy(self, new_dof):
         return self.__class__(new_dof, self.nbas, xi=self.xi, xf=self.xf)
+
 
 class BasisMultiElectron(BasisSet):
     r"""
