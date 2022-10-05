@@ -67,7 +67,7 @@ def int_to_h(h, eri):
 
     return sh, aseri
 
-def qc_model(h1e, h2e):
+def qc_model(h1e, h2e, conserve_qn=True):
     """
     Ab initio electronic Hamiltonian in spin-orbitals
     h1e: sh above
@@ -107,7 +107,10 @@ def qc_model(h1e, h2e):
     # and {sigma_z, sigma_-} = 0 to simplify operators,
     # and set quantum number
     dof_to_siteidx = dict(zip(range(norbs), range(norbs)))
-    qn_dict = {"+": -1, "-": 1, "Z": 0}
+    if conserve_qn:
+        qn_dict = {"+": -1, "-": 1, "Z": 0}
+    else:
+        qn_dict = {"+": 0, "-": 0, "Z": 0}
     def process_op(old_op: Op):
         old_ops, _ = old_op.split_elementary(dof_to_siteidx)
         new_ops = []
@@ -145,6 +148,10 @@ def qc_model(h1e, h2e):
             op = process_op(Op.product([a_dag_ops[p], a_dag_ops[q], a_ops[r], a_ops[s]]))
             ham_terms.append(op * h2e[p, q, r, s])
 
-    basis = [BasisHalfSpin(iorb, sigmaqn=[0, 1]) for iorb in range(norbs)]
+    if conserve_qn:
+        sigmaqn = [0,1]
+    else:
+        sigmaqn=[0, 0]
+    basis = [BasisHalfSpin(iorb, sigmaqn=sigmaqn) for iorb in range(norbs)]
 
     return basis, ham_terms
