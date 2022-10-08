@@ -36,6 +36,7 @@
         <script src="_static/underscore.js"></script>
         <script src="_static/_sphinx_javascript_frameworks_compat.js"></script>
         <script src="_static/doctools.js"></script>
+        <script src="_static/sphinx_highlight.js"></script>
         <script async="async" src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-mml-chtml.js"></script>
     
     <script type="text/javascript" src="_static/js/theme.js"></script>
@@ -104,7 +105,35 @@
 <li class="toctree-l1"><a class="reference internal" href="spectrum.html">8. spectra: absorption/emission spectrum at zero/finite temperature</a></li>
 <li class="toctree-l1"><a class="reference internal" href="ct.html">9. Charge Transport</a></li>
 <li class="toctree-l1 current"><a class="current reference internal" href="#">10. Frequency domain DMRG</a><ul>
-<li class="toctree-l2"><a class="reference internal" href="#cv-correction-vector">10.1. cv — correction vector</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#cv-correction-vector">10.1. cv — correction vector</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="#renormalizer.cv.zerot.SpectraZtCV"><code class="docutils literal notranslate"><span class="pre">SpectraZtCV</span></code></a><ul>
+<li class="toctree-l4"><a class="reference internal" href="#renormalizer.cv.zerot.SpectraZtCV.init_b_mps"><code class="docutils literal notranslate"><span class="pre">SpectraZtCV.init_b_mps()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#renormalizer.cv.zerot.SpectraZtCV.init_cv_mps"><code class="docutils literal notranslate"><span class="pre">SpectraZtCV.init_cv_mps()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#renormalizer.cv.zerot.SpectraZtCV.initialize_LR"><code class="docutils literal notranslate"><span class="pre">SpectraZtCV.initialize_LR()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#renormalizer.cv.zerot.SpectraZtCV.oper_prepare"><code class="docutils literal notranslate"><span class="pre">SpectraZtCV.oper_prepare()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#renormalizer.cv.zerot.SpectraZtCV.optimize_cv"><code class="docutils literal notranslate"><span class="pre">SpectraZtCV.optimize_cv()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#renormalizer.cv.zerot.SpectraZtCV.update_LR"><code class="docutils literal notranslate"><span class="pre">SpectraZtCV.update_LR()</span></code></a></li>
+</ul>
+</li>
+<li class="toctree-l3"><a class="reference internal" href="#renormalizer.cv.finitet.SpectraFtCV"><code class="docutils literal notranslate"><span class="pre">SpectraFtCV</span></code></a><ul>
+<li class="toctree-l4"><a class="reference internal" href="#renormalizer.cv.finitet.SpectraFtCV.condition"><code class="docutils literal notranslate"><span class="pre">SpectraFtCV.condition()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#renormalizer.cv.finitet.SpectraFtCV.construct_X_qnmat"><code class="docutils literal notranslate"><span class="pre">SpectraFtCV.construct_X_qnmat()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#renormalizer.cv.finitet.SpectraFtCV.dag2mat"><code class="docutils literal notranslate"><span class="pre">SpectraFtCV.dag2mat()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#renormalizer.cv.finitet.SpectraFtCV.init_b_mpo"><code class="docutils literal notranslate"><span class="pre">SpectraFtCV.init_b_mpo()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#renormalizer.cv.finitet.SpectraFtCV.init_b_mps"><code class="docutils literal notranslate"><span class="pre">SpectraFtCV.init_b_mps()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#renormalizer.cv.finitet.SpectraFtCV.init_cv_mpo"><code class="docutils literal notranslate"><span class="pre">SpectraFtCV.init_cv_mpo()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#renormalizer.cv.finitet.SpectraFtCV.init_cv_mps"><code class="docutils literal notranslate"><span class="pre">SpectraFtCV.init_cv_mps()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#renormalizer.cv.finitet.SpectraFtCV.initialize_LR"><code class="docutils literal notranslate"><span class="pre">SpectraFtCV.initialize_LR()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#renormalizer.cv.finitet.SpectraFtCV.oper_prepare"><code class="docutils literal notranslate"><span class="pre">SpectraFtCV.oper_prepare()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#renormalizer.cv.finitet.SpectraFtCV.optimize_cv"><code class="docutils literal notranslate"><span class="pre">SpectraFtCV.optimize_cv()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#renormalizer.cv.finitet.SpectraFtCV.qnmat_add"><code class="docutils literal notranslate"><span class="pre">SpectraFtCV.qnmat_add()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#renormalizer.cv.finitet.SpectraFtCV.swap"><code class="docutils literal notranslate"><span class="pre">SpectraFtCV.swap()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#renormalizer.cv.finitet.SpectraFtCV.update_LR"><code class="docutils literal notranslate"><span class="pre">SpectraFtCV.update_LR()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#renormalizer.cv.finitet.SpectraFtCV.x_svd"><code class="docutils literal notranslate"><span class="pre">SpectraFtCV.x_svd()</span></code></a></li>
+</ul>
+</li>
+</ul>
+</li>
 </ul>
 </li>
 <li class="toctree-l1"><a class="reference internal" href="configs.html">11. Calculation Configurations</a></li>

@@ -36,6 +36,7 @@
         <script src="_static/underscore.js"></script>
         <script src="_static/_sphinx_javascript_frameworks_compat.js"></script>
         <script src="_static/doctools.js"></script>
+        <script src="_static/sphinx_highlight.js"></script>
         <script async="async" src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-mml-chtml.js"></script>
     
     <script type="text/javascript" src="_static/js/theme.js"></script>
@@ -99,9 +100,172 @@
 <li class="toctree-l1"><a class="reference internal" href="develop.html">3. How to develop Renormalizer</a></li>
 <li class="toctree-l1"><a class="reference internal" href="tutorial.html">4. Tutorial</a></li>
 <li class="toctree-l1 current"><a class="current reference internal" href="#">5. Model</a><ul>
-<li class="toctree-l2"><a class="reference internal" href="#the-model-classes">5.1. The Model classes</a></li>
-<li class="toctree-l2"><a class="reference internal" href="#basis-functions">5.2. Basis Functions</a></li>
-<li class="toctree-l2"><a class="reference internal" href="#the-operator-class">5.3. The Operator Class</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#the-model-classes">5.1. The Model classes</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="#renormalizer.model.Model"><code class="docutils literal notranslate"><span class="pre">Model</span></code></a><ul>
+<li class="toctree-l4"><a class="reference internal" href="#renormalizer.model.Model.check_operator_terms"><code class="docutils literal notranslate"><span class="pre">Model.check_operator_terms()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#renormalizer.model.Model.copy"><code class="docutils literal notranslate"><span class="pre">Model.copy()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#renormalizer.model.Model.dofs"><code class="docutils literal notranslate"><span class="pre">Model.dofs</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#renormalizer.model.Model.e_dofs"><code class="docutils literal notranslate"><span class="pre">Model.e_dofs</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#renormalizer.model.Model.get_mpos"><code class="docutils literal notranslate"><span class="pre">Model.get_mpos()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#renormalizer.model.Model.n_dofs"><code class="docutils literal notranslate"><span class="pre">Model.n_dofs</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#renormalizer.model.Model.n_edofs"><code class="docutils literal notranslate"><span class="pre">Model.n_edofs</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#renormalizer.model.Model.n_vdofs"><code class="docutils literal notranslate"><span class="pre">Model.n_vdofs</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#renormalizer.model.Model.nsite"><code class="docutils literal notranslate"><span class="pre">Model.nsite</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#renormalizer.model.Model.to_dict"><code class="docutils literal notranslate"><span class="pre">Model.to_dict()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#renormalizer.model.Model.v_dofs"><code class="docutils literal notranslate"><span class="pre">Model.v_dofs</span></code></a></li>
+</ul>
+</li>
+<li class="toctree-l3"><a class="reference internal" href="#renormalizer.model.HolsteinModel"><code class="docutils literal notranslate"><span class="pre">HolsteinModel</span></code></a><ul>
+<li class="toctree-l4"><a class="reference internal" href="#renormalizer.model.HolsteinModel.basis"><code class="docutils literal notranslate"><span class="pre">HolsteinModel.basis</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#renormalizer.model.HolsteinModel.check_operator_terms"><code class="docutils literal notranslate"><span class="pre">HolsteinModel.check_operator_terms()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#renormalizer.model.HolsteinModel.copy"><code class="docutils literal notranslate"><span class="pre">HolsteinModel.copy()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#renormalizer.model.HolsteinModel.dofs"><code class="docutils literal notranslate"><span class="pre">HolsteinModel.dofs</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#renormalizer.model.HolsteinModel.e_dofs"><code class="docutils literal notranslate"><span class="pre">HolsteinModel.e_dofs</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#renormalizer.model.HolsteinModel.get_mpos"><code class="docutils literal notranslate"><span class="pre">HolsteinModel.get_mpos()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#renormalizer.model.HolsteinModel.gs_zpe"><code class="docutils literal notranslate"><span class="pre">HolsteinModel.gs_zpe</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#renormalizer.model.HolsteinModel.ham_terms"><code class="docutils literal notranslate"><span class="pre">HolsteinModel.ham_terms</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#renormalizer.model.HolsteinModel.j_constant"><code class="docutils literal notranslate"><span class="pre">HolsteinModel.j_constant</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#renormalizer.model.HolsteinModel.n_dofs"><code class="docutils literal notranslate"><span class="pre">HolsteinModel.n_dofs</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#renormalizer.model.HolsteinModel.n_edofs"><code class="docutils literal notranslate"><span class="pre">HolsteinModel.n_edofs</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#renormalizer.model.HolsteinModel.n_vdofs"><code class="docutils literal notranslate"><span class="pre">HolsteinModel.n_vdofs</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#renormalizer.model.HolsteinModel.nsite"><code class="docutils literal notranslate"><span class="pre">HolsteinModel.nsite</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#renormalizer.model.HolsteinModel.switch_scheme"><code class="docutils literal notranslate"><span class="pre">HolsteinModel.switch_scheme()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#renormalizer.model.HolsteinModel.to_dict"><code class="docutils literal notranslate"><span class="pre">HolsteinModel.to_dict()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#renormalizer.model.HolsteinModel.v_dofs"><code class="docutils literal notranslate"><span class="pre">HolsteinModel.v_dofs</span></code></a></li>
+</ul>
+</li>
+<li class="toctree-l3"><a class="reference internal" href="#renormalizer.model.SpinBosonModel"><code class="docutils literal notranslate"><span class="pre">SpinBosonModel</span></code></a><ul>
+<li class="toctree-l4"><a class="reference internal" href="#renormalizer.model.SpinBosonModel.basis"><code class="docutils literal notranslate"><span class="pre">SpinBosonModel.basis</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#renormalizer.model.SpinBosonModel.check_operator_terms"><code class="docutils literal notranslate"><span class="pre">SpinBosonModel.check_operator_terms()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#renormalizer.model.SpinBosonModel.copy"><code class="docutils literal notranslate"><span class="pre">SpinBosonModel.copy()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#renormalizer.model.SpinBosonModel.dofs"><code class="docutils literal notranslate"><span class="pre">SpinBosonModel.dofs</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#renormalizer.model.SpinBosonModel.e_dofs"><code class="docutils literal notranslate"><span class="pre">SpinBosonModel.e_dofs</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#renormalizer.model.SpinBosonModel.get_mpos"><code class="docutils literal notranslate"><span class="pre">SpinBosonModel.get_mpos()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#renormalizer.model.SpinBosonModel.ham_terms"><code class="docutils literal notranslate"><span class="pre">SpinBosonModel.ham_terms</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#renormalizer.model.SpinBosonModel.n_dofs"><code class="docutils literal notranslate"><span class="pre">SpinBosonModel.n_dofs</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#renormalizer.model.SpinBosonModel.n_edofs"><code class="docutils literal notranslate"><span class="pre">SpinBosonModel.n_edofs</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#renormalizer.model.SpinBosonModel.n_vdofs"><code class="docutils literal notranslate"><span class="pre">SpinBosonModel.n_vdofs</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#renormalizer.model.SpinBosonModel.nsite"><code class="docutils literal notranslate"><span class="pre">SpinBosonModel.nsite</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#renormalizer.model.SpinBosonModel.to_dict"><code class="docutils literal notranslate"><span class="pre">SpinBosonModel.to_dict()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#renormalizer.model.SpinBosonModel.v_dofs"><code class="docutils literal notranslate"><span class="pre">SpinBosonModel.v_dofs</span></code></a></li>
+</ul>
+</li>
+<li class="toctree-l3"><a class="reference internal" href="#renormalizer.model.TI1DModel"><code class="docutils literal notranslate"><span class="pre">TI1DModel</span></code></a><ul>
+<li class="toctree-l4"><a class="reference internal" href="#renormalizer.model.TI1DModel.basis"><code class="docutils literal notranslate"><span class="pre">TI1DModel.basis</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#renormalizer.model.TI1DModel.check_operator_terms"><code class="docutils literal notranslate"><span class="pre">TI1DModel.check_operator_terms()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#renormalizer.model.TI1DModel.copy"><code class="docutils literal notranslate"><span class="pre">TI1DModel.copy()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#renormalizer.model.TI1DModel.dofs"><code class="docutils literal notranslate"><span class="pre">TI1DModel.dofs</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#renormalizer.model.TI1DModel.e_dofs"><code class="docutils literal notranslate"><span class="pre">TI1DModel.e_dofs</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#renormalizer.model.TI1DModel.get_mpos"><code class="docutils literal notranslate"><span class="pre">TI1DModel.get_mpos()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#renormalizer.model.TI1DModel.ham_terms"><code class="docutils literal notranslate"><span class="pre">TI1DModel.ham_terms</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#renormalizer.model.TI1DModel.n_dofs"><code class="docutils literal notranslate"><span class="pre">TI1DModel.n_dofs</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#renormalizer.model.TI1DModel.n_edofs"><code class="docutils literal notranslate"><span class="pre">TI1DModel.n_edofs</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#renormalizer.model.TI1DModel.n_vdofs"><code class="docutils literal notranslate"><span class="pre">TI1DModel.n_vdofs</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#renormalizer.model.TI1DModel.nsite"><code class="docutils literal notranslate"><span class="pre">TI1DModel.nsite</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#renormalizer.model.TI1DModel.to_dict"><code class="docutils literal notranslate"><span class="pre">TI1DModel.to_dict()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#renormalizer.model.TI1DModel.v_dofs"><code class="docutils literal notranslate"><span class="pre">TI1DModel.v_dofs</span></code></a></li>
+</ul>
+</li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="#basis-functions">5.2. Basis Functions</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="#renormalizer.model.basis.BasisSet"><code class="docutils literal notranslate"><span class="pre">BasisSet</span></code></a><ul>
+<li class="toctree-l4"><a class="reference internal" href="#renormalizer.model.basis.BasisSet.copy"><code class="docutils literal notranslate"><span class="pre">BasisSet.copy()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#renormalizer.model.basis.BasisSet.dofs"><code class="docutils literal notranslate"><span class="pre">BasisSet.dofs</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#renormalizer.model.basis.BasisSet.is_electron"><code class="docutils literal notranslate"><span class="pre">BasisSet.is_electron</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#renormalizer.model.basis.BasisSet.is_phonon"><code class="docutils literal notranslate"><span class="pre">BasisSet.is_phonon</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#renormalizer.model.basis.BasisSet.is_spin"><code class="docutils literal notranslate"><span class="pre">BasisSet.is_spin</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#renormalizer.model.basis.BasisSet.multi_dof"><code class="docutils literal notranslate"><span class="pre">BasisSet.multi_dof</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#renormalizer.model.basis.BasisSet.op_mat"><code class="docutils literal notranslate"><span class="pre">BasisSet.op_mat()</span></code></a></li>
+</ul>
+</li>
+<li class="toctree-l3"><a class="reference internal" href="#renormalizer.model.basis.BasisSHO"><code class="docutils literal notranslate"><span class="pre">BasisSHO</span></code></a><ul>
+<li class="toctree-l4"><a class="reference internal" href="#renormalizer.model.basis.BasisSHO.copy"><code class="docutils literal notranslate"><span class="pre">BasisSHO.copy()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#renormalizer.model.basis.BasisSHO.dofs"><code class="docutils literal notranslate"><span class="pre">BasisSHO.dofs</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#renormalizer.model.basis.BasisSHO.is_electron"><code class="docutils literal notranslate"><span class="pre">BasisSHO.is_electron</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#renormalizer.model.basis.BasisSHO.is_phonon"><code class="docutils literal notranslate"><span class="pre">BasisSHO.is_phonon</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#renormalizer.model.basis.BasisSHO.is_spin"><code class="docutils literal notranslate"><span class="pre">BasisSHO.is_spin</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#renormalizer.model.basis.BasisSHO.multi_dof"><code class="docutils literal notranslate"><span class="pre">BasisSHO.multi_dof</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#renormalizer.model.basis.BasisSHO.op_mat"><code class="docutils literal notranslate"><span class="pre">BasisSHO.op_mat()</span></code></a></li>
+</ul>
+</li>
+<li class="toctree-l3"><a class="reference internal" href="#renormalizer.model.basis.BasisHopsBoson"><code class="docutils literal notranslate"><span class="pre">BasisHopsBoson</span></code></a><ul>
+<li class="toctree-l4"><a class="reference internal" href="#renormalizer.model.basis.BasisHopsBoson.copy"><code class="docutils literal notranslate"><span class="pre">BasisHopsBoson.copy()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#renormalizer.model.basis.BasisHopsBoson.dofs"><code class="docutils literal notranslate"><span class="pre">BasisHopsBoson.dofs</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#renormalizer.model.basis.BasisHopsBoson.is_electron"><code class="docutils literal notranslate"><span class="pre">BasisHopsBoson.is_electron</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#renormalizer.model.basis.BasisHopsBoson.is_phonon"><code class="docutils literal notranslate"><span class="pre">BasisHopsBoson.is_phonon</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#renormalizer.model.basis.BasisHopsBoson.is_spin"><code class="docutils literal notranslate"><span class="pre">BasisHopsBoson.is_spin</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#renormalizer.model.basis.BasisHopsBoson.multi_dof"><code class="docutils literal notranslate"><span class="pre">BasisHopsBoson.multi_dof</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#renormalizer.model.basis.BasisHopsBoson.op_mat"><code class="docutils literal notranslate"><span class="pre">BasisHopsBoson.op_mat()</span></code></a></li>
+</ul>
+</li>
+<li class="toctree-l3"><a class="reference internal" href="#renormalizer.model.basis.BasisSineDVR"><code class="docutils literal notranslate"><span class="pre">BasisSineDVR</span></code></a><ul>
+<li class="toctree-l4"><a class="reference internal" href="#renormalizer.model.basis.BasisSineDVR.copy"><code class="docutils literal notranslate"><span class="pre">BasisSineDVR.copy()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#renormalizer.model.basis.BasisSineDVR.dofs"><code class="docutils literal notranslate"><span class="pre">BasisSineDVR.dofs</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#renormalizer.model.basis.BasisSineDVR.is_electron"><code class="docutils literal notranslate"><span class="pre">BasisSineDVR.is_electron</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#renormalizer.model.basis.BasisSineDVR.is_phonon"><code class="docutils literal notranslate"><span class="pre">BasisSineDVR.is_phonon</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#renormalizer.model.basis.BasisSineDVR.is_spin"><code class="docutils literal notranslate"><span class="pre">BasisSineDVR.is_spin</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#renormalizer.model.basis.BasisSineDVR.multi_dof"><code class="docutils literal notranslate"><span class="pre">BasisSineDVR.multi_dof</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#renormalizer.model.basis.BasisSineDVR.op_mat"><code class="docutils literal notranslate"><span class="pre">BasisSineDVR.op_mat()</span></code></a></li>
+</ul>
+</li>
+<li class="toctree-l3"><a class="reference internal" href="#renormalizer.model.basis.BasisSimpleElectron"><code class="docutils literal notranslate"><span class="pre">BasisSimpleElectron</span></code></a><ul>
+<li class="toctree-l4"><a class="reference internal" href="#renormalizer.model.basis.BasisSimpleElectron.copy"><code class="docutils literal notranslate"><span class="pre">BasisSimpleElectron.copy()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#renormalizer.model.basis.BasisSimpleElectron.dofs"><code class="docutils literal notranslate"><span class="pre">BasisSimpleElectron.dofs</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#renormalizer.model.basis.BasisSimpleElectron.is_electron"><code class="docutils literal notranslate"><span class="pre">BasisSimpleElectron.is_electron</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#renormalizer.model.basis.BasisSimpleElectron.is_phonon"><code class="docutils literal notranslate"><span class="pre">BasisSimpleElectron.is_phonon</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#renormalizer.model.basis.BasisSimpleElectron.is_spin"><code class="docutils literal notranslate"><span class="pre">BasisSimpleElectron.is_spin</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#renormalizer.model.basis.BasisSimpleElectron.multi_dof"><code class="docutils literal notranslate"><span class="pre">BasisSimpleElectron.multi_dof</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#renormalizer.model.basis.BasisSimpleElectron.op_mat"><code class="docutils literal notranslate"><span class="pre">BasisSimpleElectron.op_mat()</span></code></a></li>
+</ul>
+</li>
+<li class="toctree-l3"><a class="reference internal" href="#renormalizer.model.basis.BasisMultiElectron"><code class="docutils literal notranslate"><span class="pre">BasisMultiElectron</span></code></a><ul>
+<li class="toctree-l4"><a class="reference internal" href="#renormalizer.model.basis.BasisMultiElectron.copy"><code class="docutils literal notranslate"><span class="pre">BasisMultiElectron.copy()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#renormalizer.model.basis.BasisMultiElectron.dofs"><code class="docutils literal notranslate"><span class="pre">BasisMultiElectron.dofs</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#renormalizer.model.basis.BasisMultiElectron.is_electron"><code class="docutils literal notranslate"><span class="pre">BasisMultiElectron.is_electron</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#renormalizer.model.basis.BasisMultiElectron.is_phonon"><code class="docutils literal notranslate"><span class="pre">BasisMultiElectron.is_phonon</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#renormalizer.model.basis.BasisMultiElectron.is_spin"><code class="docutils literal notranslate"><span class="pre">BasisMultiElectron.is_spin</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#renormalizer.model.basis.BasisMultiElectron.multi_dof"><code class="docutils literal notranslate"><span class="pre">BasisMultiElectron.multi_dof</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#renormalizer.model.basis.BasisMultiElectron.op_mat"><code class="docutils literal notranslate"><span class="pre">BasisMultiElectron.op_mat()</span></code></a></li>
+</ul>
+</li>
+<li class="toctree-l3"><a class="reference internal" href="#renormalizer.model.basis.BasisMultiElectronVac"><code class="docutils literal notranslate"><span class="pre">BasisMultiElectronVac</span></code></a><ul>
+<li class="toctree-l4"><a class="reference internal" href="#renormalizer.model.basis.BasisMultiElectronVac.copy"><code class="docutils literal notranslate"><span class="pre">BasisMultiElectronVac.copy()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#renormalizer.model.basis.BasisMultiElectronVac.dofs"><code class="docutils literal notranslate"><span class="pre">BasisMultiElectronVac.dofs</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#renormalizer.model.basis.BasisMultiElectronVac.is_electron"><code class="docutils literal notranslate"><span class="pre">BasisMultiElectronVac.is_electron</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#renormalizer.model.basis.BasisMultiElectronVac.is_phonon"><code class="docutils literal notranslate"><span class="pre">BasisMultiElectronVac.is_phonon</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#renormalizer.model.basis.BasisMultiElectronVac.is_spin"><code class="docutils literal notranslate"><span class="pre">BasisMultiElectronVac.is_spin</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#renormalizer.model.basis.BasisMultiElectronVac.multi_dof"><code class="docutils literal notranslate"><span class="pre">BasisMultiElectronVac.multi_dof</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#renormalizer.model.basis.BasisMultiElectronVac.op_mat"><code class="docutils literal notranslate"><span class="pre">BasisMultiElectronVac.op_mat()</span></code></a></li>
+</ul>
+</li>
+<li class="toctree-l3"><a class="reference internal" href="#renormalizer.model.basis.BasisHalfSpin"><code class="docutils literal notranslate"><span class="pre">BasisHalfSpin</span></code></a><ul>
+<li class="toctree-l4"><a class="reference internal" href="#renormalizer.model.basis.BasisHalfSpin.copy"><code class="docutils literal notranslate"><span class="pre">BasisHalfSpin.copy()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#renormalizer.model.basis.BasisHalfSpin.dofs"><code class="docutils literal notranslate"><span class="pre">BasisHalfSpin.dofs</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#renormalizer.model.basis.BasisHalfSpin.is_electron"><code class="docutils literal notranslate"><span class="pre">BasisHalfSpin.is_electron</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#renormalizer.model.basis.BasisHalfSpin.is_phonon"><code class="docutils literal notranslate"><span class="pre">BasisHalfSpin.is_phonon</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#renormalizer.model.basis.BasisHalfSpin.is_spin"><code class="docutils literal notranslate"><span class="pre">BasisHalfSpin.is_spin</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#renormalizer.model.basis.BasisHalfSpin.multi_dof"><code class="docutils literal notranslate"><span class="pre">BasisHalfSpin.multi_dof</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#renormalizer.model.basis.BasisHalfSpin.op_mat"><code class="docutils literal notranslate"><span class="pre">BasisHalfSpin.op_mat()</span></code></a></li>
+</ul>
+</li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="#the-operator-class">5.3. The Operator Class</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="#renormalizer.model.Op"><code class="docutils literal notranslate"><span class="pre">Op</span></code></a><ul>
+<li class="toctree-l4"><a class="reference internal" href="#renormalizer.model.Op.factor"><code class="docutils literal notranslate"><span class="pre">Op.factor</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#renormalizer.model.Op.identity"><code class="docutils literal notranslate"><span class="pre">Op.identity()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#renormalizer.model.Op.is_identity"><code class="docutils literal notranslate"><span class="pre">Op.is_identity</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#renormalizer.model.Op.product"><code class="docutils literal notranslate"><span class="pre">Op.product()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#renormalizer.model.Op.qn"><code class="docutils literal notranslate"><span class="pre">Op.qn</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#renormalizer.model.Op.same_term"><code class="docutils literal notranslate"><span class="pre">Op.same_term()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#renormalizer.model.Op.split_elementary"><code class="docutils literal notranslate"><span class="pre">Op.split_elementary()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#renormalizer.model.Op.squeeze_identity"><code class="docutils literal notranslate"><span class="pre">Op.squeeze_identity()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#renormalizer.model.Op.to_tuple"><code class="docutils literal notranslate"><span class="pre">Op.to_tuple()</span></code></a></li>
+</ul>
+</li>
+</ul>
+</li>
 </ul>
 </li>
 <li class="toctree-l1"><a class="reference internal" href="mps.html">6. Low Level Data Structure and Algorithms</a></li>

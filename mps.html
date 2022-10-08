@@ -36,6 +36,7 @@
         <script src="_static/underscore.js"></script>
         <script src="_static/_sphinx_javascript_frameworks_compat.js"></script>
         <script src="_static/doctools.js"></script>
+        <script src="_static/sphinx_highlight.js"></script>
         <script async="async" src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-mml-chtml.js"></script>
     
     <script type="text/javascript" src="_static/js/theme.js"></script>
@@ -100,11 +101,303 @@
 <li class="toctree-l1"><a class="reference internal" href="tutorial.html">4. Tutorial</a></li>
 <li class="toctree-l1"><a class="reference internal" href="model.html">5. Model</a></li>
 <li class="toctree-l1 current"><a class="current reference internal" href="#">6. Low Level Data Structure and Algorithms</a><ul>
-<li class="toctree-l2"><a class="reference internal" href="#matrix-product-mp">6.1. Matrix Product (MP)</a></li>
-<li class="toctree-l2"><a class="reference internal" href="#matrix-product-state-mps">6.2. Matrix Product State (MPS)</a></li>
-<li class="toctree-l2"><a class="reference internal" href="#matrix-product-operator-mpo">6.3. Matrix Product Operator (MPO)</a></li>
-<li class="toctree-l2"><a class="reference internal" href="#matrix-product-density-matrix-mpdm">6.4. Matrix Product Density Matrix (MPDM)</a></li>
-<li class="toctree-l2"><a class="reference internal" href="#module-renormalizer.mps.thermalprop">6.5. Thermal Propagation</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#matrix-product-mp">6.1. Matrix Product (MP)</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="#renormalizer.mps.mp.MatrixProduct"><code class="docutils literal notranslate"><span class="pre">MatrixProduct</span></code></a><ul>
+<li class="toctree-l4"><a class="reference internal" href="#renormalizer.mps.mp.MatrixProduct._array2mt"><code class="docutils literal notranslate"><span class="pre">MatrixProduct._array2mt()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#renormalizer.mps.mp.MatrixProduct._get_big_qn"><code class="docutils literal notranslate"><span class="pre">MatrixProduct._get_big_qn()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#renormalizer.mps.mp.MatrixProduct._get_sigmaqn"><code class="docutils literal notranslate"><span class="pre">MatrixProduct._get_sigmaqn()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#renormalizer.mps.mp.MatrixProduct._push_cano"><code class="docutils literal notranslate"><span class="pre">MatrixProduct._push_cano()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#renormalizer.mps.mp.MatrixProduct._switch_direction"><code class="docutils literal notranslate"><span class="pre">MatrixProduct._switch_direction()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#renormalizer.mps.mp.MatrixProduct._update_mps"><code class="docutils literal notranslate"><span class="pre">MatrixProduct._update_mps()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#renormalizer.mps.mp.MatrixProduct._update_ms"><code class="docutils literal notranslate"><span class="pre">MatrixProduct._update_ms()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#renormalizer.mps.mp.MatrixProduct.add"><code class="docutils literal notranslate"><span class="pre">MatrixProduct.add()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#renormalizer.mps.mp.MatrixProduct.angle"><code class="docutils literal notranslate"><span class="pre">MatrixProduct.angle()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#renormalizer.mps.mp.MatrixProduct.append"><code class="docutils literal notranslate"><span class="pre">MatrixProduct.append()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#renormalizer.mps.mp.MatrixProduct.bond_dims"><code class="docutils literal notranslate"><span class="pre">MatrixProduct.bond_dims</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#renormalizer.mps.mp.MatrixProduct.bond_dims_mean"><code class="docutils literal notranslate"><span class="pre">MatrixProduct.bond_dims_mean</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#renormalizer.mps.mp.MatrixProduct.bond_list"><code class="docutils literal notranslate"><span class="pre">MatrixProduct.bond_list</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#renormalizer.mps.mp.MatrixProduct.build_empty_mp"><code class="docutils literal notranslate"><span class="pre">MatrixProduct.build_empty_mp()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#renormalizer.mps.mp.MatrixProduct.build_empty_qn"><code class="docutils literal notranslate"><span class="pre">MatrixProduct.build_empty_qn()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#renormalizer.mps.mp.MatrixProduct.build_none_qn"><code class="docutils literal notranslate"><span class="pre">MatrixProduct.build_none_qn()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#renormalizer.mps.mp.MatrixProduct.canonicalise"><code class="docutils literal notranslate"><span class="pre">MatrixProduct.canonicalise()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#renormalizer.mps.mp.MatrixProduct.check_left_canonical"><code class="docutils literal notranslate"><span class="pre">MatrixProduct.check_left_canonical()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#renormalizer.mps.mp.MatrixProduct.check_right_canonical"><code class="docutils literal notranslate"><span class="pre">MatrixProduct.check_right_canonical()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#renormalizer.mps.mp.MatrixProduct.clear_qn"><code class="docutils literal notranslate"><span class="pre">MatrixProduct.clear_qn()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#renormalizer.mps.mp.MatrixProduct.compress"><code class="docutils literal notranslate"><span class="pre">MatrixProduct.compress()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#renormalizer.mps.mp.MatrixProduct.conj"><code class="docutils literal notranslate"><span class="pre">MatrixProduct.conj()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#renormalizer.mps.mp.MatrixProduct.copy"><code class="docutils literal notranslate"><span class="pre">MatrixProduct.copy()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#renormalizer.mps.mp.MatrixProduct.distance"><code class="docutils literal notranslate"><span class="pre">MatrixProduct.distance()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#renormalizer.mps.mp.MatrixProduct.dot"><code class="docutils literal notranslate"><span class="pre">MatrixProduct.dot()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#renormalizer.mps.mp.MatrixProduct.dump"><code class="docutils literal notranslate"><span class="pre">MatrixProduct.dump()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#renormalizer.mps.mp.MatrixProduct.ensure_left_canonical"><code class="docutils literal notranslate"><span class="pre">MatrixProduct.ensure_left_canonical()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#renormalizer.mps.mp.MatrixProduct.ensure_right_canonical"><code class="docutils literal notranslate"><span class="pre">MatrixProduct.ensure_right_canonical()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#renormalizer.mps.mp.MatrixProduct.is_complex"><code class="docutils literal notranslate"><span class="pre">MatrixProduct.is_complex</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#renormalizer.mps.mp.MatrixProduct.is_left_canonical"><code class="docutils literal notranslate"><span class="pre">MatrixProduct.is_left_canonical</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#renormalizer.mps.mp.MatrixProduct.is_mpdm"><code class="docutils literal notranslate"><span class="pre">MatrixProduct.is_mpdm</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#renormalizer.mps.mp.MatrixProduct.is_mpo"><code class="docutils literal notranslate"><span class="pre">MatrixProduct.is_mpo</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#renormalizer.mps.mp.MatrixProduct.is_mps"><code class="docutils literal notranslate"><span class="pre">MatrixProduct.is_mps</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#renormalizer.mps.mp.MatrixProduct.is_right_canonical"><code class="docutils literal notranslate"><span class="pre">MatrixProduct.is_right_canonical</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#renormalizer.mps.mp.MatrixProduct.iter_idx_list"><code class="docutils literal notranslate"><span class="pre">MatrixProduct.iter_idx_list()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#renormalizer.mps.mp.MatrixProduct.load"><code class="docutils literal notranslate"><span class="pre">MatrixProduct.load()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#renormalizer.mps.mp.MatrixProduct.metacopy"><code class="docutils literal notranslate"><span class="pre">MatrixProduct.metacopy()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#renormalizer.mps.mp.MatrixProduct.move_qnidx"><code class="docutils literal notranslate"><span class="pre">MatrixProduct.move_qnidx()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#renormalizer.mps.mp.MatrixProduct.mp_norm"><code class="docutils literal notranslate"><span class="pre">MatrixProduct.mp_norm</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#renormalizer.mps.mp.MatrixProduct.pbond_dims"><code class="docutils literal notranslate"><span class="pre">MatrixProduct.pbond_dims</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#renormalizer.mps.mp.MatrixProduct.pbond_list"><code class="docutils literal notranslate"><span class="pre">MatrixProduct.pbond_list</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#renormalizer.mps.mp.MatrixProduct.scale"><code class="docutils literal notranslate"><span class="pre">MatrixProduct.scale()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#renormalizer.mps.mp.MatrixProduct.site_num"><code class="docutils literal notranslate"><span class="pre">MatrixProduct.site_num</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#renormalizer.mps.mp.MatrixProduct.threshold"><code class="docutils literal notranslate"><span class="pre">MatrixProduct.threshold</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#renormalizer.mps.mp.MatrixProduct.to_complex"><code class="docutils literal notranslate"><span class="pre">MatrixProduct.to_complex()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#renormalizer.mps.mp.MatrixProduct.total_bytes"><code class="docutils literal notranslate"><span class="pre">MatrixProduct.total_bytes</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#renormalizer.mps.mp.MatrixProduct.variational_compress"><code class="docutils literal notranslate"><span class="pre">MatrixProduct.variational_compress()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#renormalizer.mps.mp.MatrixProduct.vbond_dims"><code class="docutils literal notranslate"><span class="pre">MatrixProduct.vbond_dims</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#renormalizer.mps.mp.MatrixProduct.vbond_list"><code class="docutils literal notranslate"><span class="pre">MatrixProduct.vbond_list</span></code></a></li>
+</ul>
+</li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="#matrix-product-state-mps">6.2. Matrix Product State (MPS)</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="#renormalizer.mps.Mps"><code class="docutils literal notranslate"><span class="pre">Mps</span></code></a><ul>
+<li class="toctree-l4"><a class="reference internal" href="#renormalizer.mps.Mps.add"><code class="docutils literal notranslate"><span class="pre">Mps.add()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#renormalizer.mps.Mps.angle"><code class="docutils literal notranslate"><span class="pre">Mps.angle()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#renormalizer.mps.Mps.append"><code class="docutils literal notranslate"><span class="pre">Mps.append()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#renormalizer.mps.Mps.bond_dims"><code class="docutils literal notranslate"><span class="pre">Mps.bond_dims</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#renormalizer.mps.Mps.bond_dims_mean"><code class="docutils literal notranslate"><span class="pre">Mps.bond_dims_mean</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#renormalizer.mps.Mps.bond_list"><code class="docutils literal notranslate"><span class="pre">Mps.bond_list</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#renormalizer.mps.Mps.build_empty_mp"><code class="docutils literal notranslate"><span class="pre">Mps.build_empty_mp()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#renormalizer.mps.Mps.build_empty_qn"><code class="docutils literal notranslate"><span class="pre">Mps.build_empty_qn()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#renormalizer.mps.Mps.build_none_qn"><code class="docutils literal notranslate"><span class="pre">Mps.build_none_qn()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#renormalizer.mps.Mps.calc_1site_rdm"><code class="docutils literal notranslate"><span class="pre">Mps.calc_1site_rdm()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#renormalizer.mps.Mps.calc_2site_mutual_entropy"><code class="docutils literal notranslate"><span class="pre">Mps.calc_2site_mutual_entropy()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#renormalizer.mps.Mps.calc_2site_rdm"><code class="docutils literal notranslate"><span class="pre">Mps.calc_2site_rdm()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#renormalizer.mps.Mps.calc_bond_entropy"><code class="docutils literal notranslate"><span class="pre">Mps.calc_bond_entropy()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#renormalizer.mps.Mps.calc_edof_rdm"><code class="docutils literal notranslate"><span class="pre">Mps.calc_edof_rdm()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#renormalizer.mps.Mps.calc_entropy"><code class="docutils literal notranslate"><span class="pre">Mps.calc_entropy()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#renormalizer.mps.Mps.canonicalise"><code class="docutils literal notranslate"><span class="pre">Mps.canonicalise()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#renormalizer.mps.Mps.check_left_canonical"><code class="docutils literal notranslate"><span class="pre">Mps.check_left_canonical()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#renormalizer.mps.Mps.check_right_canonical"><code class="docutils literal notranslate"><span class="pre">Mps.check_right_canonical()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#renormalizer.mps.Mps.clear_qn"><code class="docutils literal notranslate"><span class="pre">Mps.clear_qn()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#renormalizer.mps.Mps.compress"><code class="docutils literal notranslate"><span class="pre">Mps.compress()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#renormalizer.mps.Mps.conj"><code class="docutils literal notranslate"><span class="pre">Mps.conj()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#renormalizer.mps.Mps.copy"><code class="docutils literal notranslate"><span class="pre">Mps.copy()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#renormalizer.mps.Mps.digest"><code class="docutils literal notranslate"><span class="pre">Mps.digest</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#renormalizer.mps.Mps.distance"><code class="docutils literal notranslate"><span class="pre">Mps.distance()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#renormalizer.mps.Mps.dot"><code class="docutils literal notranslate"><span class="pre">Mps.dot()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#renormalizer.mps.Mps.dump"><code class="docutils literal notranslate"><span class="pre">Mps.dump()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#renormalizer.mps.Mps.e_occupations"><code class="docutils literal notranslate"><span class="pre">Mps.e_occupations</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#renormalizer.mps.Mps.ensure_left_canonical"><code class="docutils literal notranslate"><span class="pre">Mps.ensure_left_canonical()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#renormalizer.mps.Mps.ensure_right_canonical"><code class="docutils literal notranslate"><span class="pre">Mps.ensure_right_canonical()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#renormalizer.mps.Mps.evolve"><code class="docutils literal notranslate"><span class="pre">Mps.evolve()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#renormalizer.mps.Mps.evolve_exact"><code class="docutils literal notranslate"><span class="pre">Mps.evolve_exact()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#renormalizer.mps.Mps.expand_bond_dimension"><code class="docutils literal notranslate"><span class="pre">Mps.expand_bond_dimension()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#renormalizer.mps.Mps.expectation"><code class="docutils literal notranslate"><span class="pre">Mps.expectation()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#renormalizer.mps.Mps.expectations"><code class="docutils literal notranslate"><span class="pre">Mps.expectations()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#renormalizer.mps.Mps.from_dense"><code class="docutils literal notranslate"><span class="pre">Mps.from_dense()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#renormalizer.mps.Mps.ground_state"><code class="docutils literal notranslate"><span class="pre">Mps.ground_state()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#renormalizer.mps.Mps.hartree_product_state"><code class="docutils literal notranslate"><span class="pre">Mps.hartree_product_state()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#renormalizer.mps.Mps.is_complex"><code class="docutils literal notranslate"><span class="pre">Mps.is_complex</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#renormalizer.mps.Mps.is_left_canonical"><code class="docutils literal notranslate"><span class="pre">Mps.is_left_canonical</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#renormalizer.mps.Mps.is_mpdm"><code class="docutils literal notranslate"><span class="pre">Mps.is_mpdm</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#renormalizer.mps.Mps.is_mpo"><code class="docutils literal notranslate"><span class="pre">Mps.is_mpo</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#renormalizer.mps.Mps.is_mps"><code class="docutils literal notranslate"><span class="pre">Mps.is_mps</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#renormalizer.mps.Mps.is_right_canonical"><code class="docutils literal notranslate"><span class="pre">Mps.is_right_canonical</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#renormalizer.mps.Mps.iter_idx_list"><code class="docutils literal notranslate"><span class="pre">Mps.iter_idx_list()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#renormalizer.mps.Mps.load"><code class="docutils literal notranslate"><span class="pre">Mps.load()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#renormalizer.mps.Mps.metacopy"><code class="docutils literal notranslate"><span class="pre">Mps.metacopy()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#renormalizer.mps.Mps.move_qnidx"><code class="docutils literal notranslate"><span class="pre">Mps.move_qnidx()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#renormalizer.mps.Mps.mp_norm"><code class="docutils literal notranslate"><span class="pre">Mps.mp_norm</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#renormalizer.mps.Mps.nexciton"><code class="docutils literal notranslate"><span class="pre">Mps.nexciton</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#renormalizer.mps.Mps.norm"><code class="docutils literal notranslate"><span class="pre">Mps.norm</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#renormalizer.mps.Mps.normalize"><code class="docutils literal notranslate"><span class="pre">Mps.normalize()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#renormalizer.mps.Mps.pbond_dims"><code class="docutils literal notranslate"><span class="pre">Mps.pbond_dims</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#renormalizer.mps.Mps.pbond_list"><code class="docutils literal notranslate"><span class="pre">Mps.pbond_list</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#renormalizer.mps.Mps.ph_occupations"><code class="docutils literal notranslate"><span class="pre">Mps.ph_occupations</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#renormalizer.mps.Mps.random"><code class="docutils literal notranslate"><span class="pre">Mps.random()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#renormalizer.mps.Mps.scale"><code class="docutils literal notranslate"><span class="pre">Mps.scale()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#renormalizer.mps.Mps.site_num"><code class="docutils literal notranslate"><span class="pre">Mps.site_num</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#renormalizer.mps.Mps.threshold"><code class="docutils literal notranslate"><span class="pre">Mps.threshold</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#renormalizer.mps.Mps.to_complex"><code class="docutils literal notranslate"><span class="pre">Mps.to_complex()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#renormalizer.mps.Mps.todense"><code class="docutils literal notranslate"><span class="pre">Mps.todense()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#renormalizer.mps.Mps.total_bytes"><code class="docutils literal notranslate"><span class="pre">Mps.total_bytes</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#renormalizer.mps.Mps.variational_compress"><code class="docutils literal notranslate"><span class="pre">Mps.variational_compress()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#renormalizer.mps.Mps.vbond_dims"><code class="docutils literal notranslate"><span class="pre">Mps.vbond_dims</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#renormalizer.mps.Mps.vbond_list"><code class="docutils literal notranslate"><span class="pre">Mps.vbond_list</span></code></a></li>
+</ul>
+</li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="#matrix-product-operator-mpo">6.3. Matrix Product Operator (MPO)</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="#renormalizer.mps.Mpo"><code class="docutils literal notranslate"><span class="pre">Mpo</span></code></a><ul>
+<li class="toctree-l4"><a class="reference internal" href="#renormalizer.mps.Mpo.add"><code class="docutils literal notranslate"><span class="pre">Mpo.add()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#renormalizer.mps.Mpo.angle"><code class="docutils literal notranslate"><span class="pre">Mpo.angle()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#renormalizer.mps.Mpo.append"><code class="docutils literal notranslate"><span class="pre">Mpo.append()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#renormalizer.mps.Mpo.apply"><code class="docutils literal notranslate"><span class="pre">Mpo.apply()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#renormalizer.mps.Mpo.bond_dims"><code class="docutils literal notranslate"><span class="pre">Mpo.bond_dims</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#renormalizer.mps.Mpo.bond_dims_mean"><code class="docutils literal notranslate"><span class="pre">Mpo.bond_dims_mean</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#renormalizer.mps.Mpo.bond_list"><code class="docutils literal notranslate"><span class="pre">Mpo.bond_list</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#renormalizer.mps.Mpo.build_empty_mp"><code class="docutils literal notranslate"><span class="pre">Mpo.build_empty_mp()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#renormalizer.mps.Mpo.build_empty_qn"><code class="docutils literal notranslate"><span class="pre">Mpo.build_empty_qn()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#renormalizer.mps.Mpo.build_none_qn"><code class="docutils literal notranslate"><span class="pre">Mpo.build_none_qn()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#renormalizer.mps.Mpo.canonicalise"><code class="docutils literal notranslate"><span class="pre">Mpo.canonicalise()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#renormalizer.mps.Mpo.check_left_canonical"><code class="docutils literal notranslate"><span class="pre">Mpo.check_left_canonical()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#renormalizer.mps.Mpo.check_right_canonical"><code class="docutils literal notranslate"><span class="pre">Mpo.check_right_canonical()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#renormalizer.mps.Mpo.clear_qn"><code class="docutils literal notranslate"><span class="pre">Mpo.clear_qn()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#renormalizer.mps.Mpo.compress"><code class="docutils literal notranslate"><span class="pre">Mpo.compress()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#renormalizer.mps.Mpo.conj"><code class="docutils literal notranslate"><span class="pre">Mpo.conj()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#renormalizer.mps.Mpo.conj_trans"><code class="docutils literal notranslate"><span class="pre">Mpo.conj_trans()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#renormalizer.mps.Mpo.contract"><code class="docutils literal notranslate"><span class="pre">Mpo.contract()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#renormalizer.mps.Mpo.copy"><code class="docutils literal notranslate"><span class="pre">Mpo.copy()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#renormalizer.mps.Mpo.digest"><code class="docutils literal notranslate"><span class="pre">Mpo.digest</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#renormalizer.mps.Mpo.distance"><code class="docutils literal notranslate"><span class="pre">Mpo.distance()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#renormalizer.mps.Mpo.dot"><code class="docutils literal notranslate"><span class="pre">Mpo.dot()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#renormalizer.mps.Mpo.dummy_qn"><code class="docutils literal notranslate"><span class="pre">Mpo.dummy_qn</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#renormalizer.mps.Mpo.dump"><code class="docutils literal notranslate"><span class="pre">Mpo.dump()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#renormalizer.mps.Mpo.ensure_left_canonical"><code class="docutils literal notranslate"><span class="pre">Mpo.ensure_left_canonical()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#renormalizer.mps.Mpo.ensure_right_canonical"><code class="docutils literal notranslate"><span class="pre">Mpo.ensure_right_canonical()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#renormalizer.mps.Mpo.exact_propagator"><code class="docutils literal notranslate"><span class="pre">Mpo.exact_propagator()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#renormalizer.mps.Mpo.finiteT_cv"><code class="docutils literal notranslate"><span class="pre">Mpo.finiteT_cv()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#renormalizer.mps.Mpo.from_mp"><code class="docutils literal notranslate"><span class="pre">Mpo.from_mp()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#renormalizer.mps.Mpo.identity"><code class="docutils literal notranslate"><span class="pre">Mpo.identity()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#renormalizer.mps.Mpo.intersite"><code class="docutils literal notranslate"><span class="pre">Mpo.intersite()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#renormalizer.mps.Mpo.is_complex"><code class="docutils literal notranslate"><span class="pre">Mpo.is_complex</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#renormalizer.mps.Mpo.is_hermitian"><code class="docutils literal notranslate"><span class="pre">Mpo.is_hermitian()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#renormalizer.mps.Mpo.is_left_canonical"><code class="docutils literal notranslate"><span class="pre">Mpo.is_left_canonical</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#renormalizer.mps.Mpo.is_mpdm"><code class="docutils literal notranslate"><span class="pre">Mpo.is_mpdm</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#renormalizer.mps.Mpo.is_mpo"><code class="docutils literal notranslate"><span class="pre">Mpo.is_mpo</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#renormalizer.mps.Mpo.is_mps"><code class="docutils literal notranslate"><span class="pre">Mpo.is_mps</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#renormalizer.mps.Mpo.is_right_canonical"><code class="docutils literal notranslate"><span class="pre">Mpo.is_right_canonical</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#renormalizer.mps.Mpo.iter_idx_list"><code class="docutils literal notranslate"><span class="pre">Mpo.iter_idx_list()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#renormalizer.mps.Mpo.load"><code class="docutils literal notranslate"><span class="pre">Mpo.load()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#renormalizer.mps.Mpo.metacopy"><code class="docutils literal notranslate"><span class="pre">Mpo.metacopy()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#renormalizer.mps.Mpo.move_qnidx"><code class="docutils literal notranslate"><span class="pre">Mpo.move_qnidx()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#renormalizer.mps.Mpo.mp_norm"><code class="docutils literal notranslate"><span class="pre">Mpo.mp_norm</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#renormalizer.mps.Mpo.onsite"><code class="docutils literal notranslate"><span class="pre">Mpo.onsite()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#renormalizer.mps.Mpo.pbond_dims"><code class="docutils literal notranslate"><span class="pre">Mpo.pbond_dims</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#renormalizer.mps.Mpo.pbond_list"><code class="docutils literal notranslate"><span class="pre">Mpo.pbond_list</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#renormalizer.mps.Mpo.ph_onsite"><code class="docutils literal notranslate"><span class="pre">Mpo.ph_onsite()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#renormalizer.mps.Mpo.promote_mt_type"><code class="docutils literal notranslate"><span class="pre">Mpo.promote_mt_type()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#renormalizer.mps.Mpo.scale"><code class="docutils literal notranslate"><span class="pre">Mpo.scale()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#renormalizer.mps.Mpo.site_num"><code class="docutils literal notranslate"><span class="pre">Mpo.site_num</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#renormalizer.mps.Mpo.threshold"><code class="docutils literal notranslate"><span class="pre">Mpo.threshold</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#renormalizer.mps.Mpo.to_complex"><code class="docutils literal notranslate"><span class="pre">Mpo.to_complex()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#renormalizer.mps.Mpo.todense"><code class="docutils literal notranslate"><span class="pre">Mpo.todense()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#renormalizer.mps.Mpo.total_bytes"><code class="docutils literal notranslate"><span class="pre">Mpo.total_bytes</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#renormalizer.mps.Mpo.try_swap_site"><code class="docutils literal notranslate"><span class="pre">Mpo.try_swap_site()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#renormalizer.mps.Mpo.variational_compress"><code class="docutils literal notranslate"><span class="pre">Mpo.variational_compress()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#renormalizer.mps.Mpo.vbond_dims"><code class="docutils literal notranslate"><span class="pre">Mpo.vbond_dims</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#renormalizer.mps.Mpo.vbond_list"><code class="docutils literal notranslate"><span class="pre">Mpo.vbond_list</span></code></a></li>
+</ul>
+</li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="#matrix-product-density-matrix-mpdm">6.4. Matrix Product Density Matrix (MPDM)</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="#renormalizer.mps.MpDm"><code class="docutils literal notranslate"><span class="pre">MpDm</span></code></a><ul>
+<li class="toctree-l4"><a class="reference internal" href="#renormalizer.mps.MpDm.add"><code class="docutils literal notranslate"><span class="pre">MpDm.add()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#renormalizer.mps.MpDm.angle"><code class="docutils literal notranslate"><span class="pre">MpDm.angle()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#renormalizer.mps.MpDm.append"><code class="docutils literal notranslate"><span class="pre">MpDm.append()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#renormalizer.mps.MpDm.apply"><code class="docutils literal notranslate"><span class="pre">MpDm.apply()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#renormalizer.mps.MpDm.bond_dims"><code class="docutils literal notranslate"><span class="pre">MpDm.bond_dims</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#renormalizer.mps.MpDm.bond_dims_mean"><code class="docutils literal notranslate"><span class="pre">MpDm.bond_dims_mean</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#renormalizer.mps.MpDm.bond_list"><code class="docutils literal notranslate"><span class="pre">MpDm.bond_list</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#renormalizer.mps.MpDm.build_empty_mp"><code class="docutils literal notranslate"><span class="pre">MpDm.build_empty_mp()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#renormalizer.mps.MpDm.build_empty_qn"><code class="docutils literal notranslate"><span class="pre">MpDm.build_empty_qn()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#renormalizer.mps.MpDm.build_none_qn"><code class="docutils literal notranslate"><span class="pre">MpDm.build_none_qn()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#renormalizer.mps.MpDm.calc_1site_rdm"><code class="docutils literal notranslate"><span class="pre">MpDm.calc_1site_rdm()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#renormalizer.mps.MpDm.calc_2site_mutual_entropy"><code class="docutils literal notranslate"><span class="pre">MpDm.calc_2site_mutual_entropy()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#renormalizer.mps.MpDm.calc_2site_rdm"><code class="docutils literal notranslate"><span class="pre">MpDm.calc_2site_rdm()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#renormalizer.mps.MpDm.calc_bond_entropy"><code class="docutils literal notranslate"><span class="pre">MpDm.calc_bond_entropy()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#renormalizer.mps.MpDm.calc_edof_rdm"><code class="docutils literal notranslate"><span class="pre">MpDm.calc_edof_rdm()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#renormalizer.mps.MpDm.calc_entropy"><code class="docutils literal notranslate"><span class="pre">MpDm.calc_entropy()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#renormalizer.mps.MpDm.canonicalise"><code class="docutils literal notranslate"><span class="pre">MpDm.canonicalise()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#renormalizer.mps.MpDm.check_left_canonical"><code class="docutils literal notranslate"><span class="pre">MpDm.check_left_canonical()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#renormalizer.mps.MpDm.check_right_canonical"><code class="docutils literal notranslate"><span class="pre">MpDm.check_right_canonical()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#renormalizer.mps.MpDm.clear_qn"><code class="docutils literal notranslate"><span class="pre">MpDm.clear_qn()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#renormalizer.mps.MpDm.compress"><code class="docutils literal notranslate"><span class="pre">MpDm.compress()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#renormalizer.mps.MpDm.conj"><code class="docutils literal notranslate"><span class="pre">MpDm.conj()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#renormalizer.mps.MpDm.conj_trans"><code class="docutils literal notranslate"><span class="pre">MpDm.conj_trans()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#renormalizer.mps.MpDm.contract"><code class="docutils literal notranslate"><span class="pre">MpDm.contract()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#renormalizer.mps.MpDm.copy"><code class="docutils literal notranslate"><span class="pre">MpDm.copy()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#renormalizer.mps.MpDm.digest"><code class="docutils literal notranslate"><span class="pre">MpDm.digest</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#renormalizer.mps.MpDm.distance"><code class="docutils literal notranslate"><span class="pre">MpDm.distance()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#renormalizer.mps.MpDm.dot"><code class="docutils literal notranslate"><span class="pre">MpDm.dot()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#renormalizer.mps.MpDm.dummy_qn"><code class="docutils literal notranslate"><span class="pre">MpDm.dummy_qn</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#renormalizer.mps.MpDm.dump"><code class="docutils literal notranslate"><span class="pre">MpDm.dump()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#renormalizer.mps.MpDm.e_occupations"><code class="docutils literal notranslate"><span class="pre">MpDm.e_occupations</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#renormalizer.mps.MpDm.ensure_left_canonical"><code class="docutils literal notranslate"><span class="pre">MpDm.ensure_left_canonical()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#renormalizer.mps.MpDm.ensure_right_canonical"><code class="docutils literal notranslate"><span class="pre">MpDm.ensure_right_canonical()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#renormalizer.mps.MpDm.evolve"><code class="docutils literal notranslate"><span class="pre">MpDm.evolve()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#renormalizer.mps.MpDm.evolve_exact"><code class="docutils literal notranslate"><span class="pre">MpDm.evolve_exact()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#renormalizer.mps.MpDm.exact_propagator"><code class="docutils literal notranslate"><span class="pre">MpDm.exact_propagator()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#renormalizer.mps.MpDm.expand_bond_dimension"><code class="docutils literal notranslate"><span class="pre">MpDm.expand_bond_dimension()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#renormalizer.mps.MpDm.expectation"><code class="docutils literal notranslate"><span class="pre">MpDm.expectation()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#renormalizer.mps.MpDm.expectations"><code class="docutils literal notranslate"><span class="pre">MpDm.expectations()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#renormalizer.mps.MpDm.finiteT_cv"><code class="docutils literal notranslate"><span class="pre">MpDm.finiteT_cv()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#renormalizer.mps.MpDm.from_dense"><code class="docutils literal notranslate"><span class="pre">MpDm.from_dense()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#renormalizer.mps.MpDm.from_mp"><code class="docutils literal notranslate"><span class="pre">MpDm.from_mp()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#renormalizer.mps.MpDm.from_mps"><code class="docutils literal notranslate"><span class="pre">MpDm.from_mps()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#renormalizer.mps.MpDm.ground_state"><code class="docutils literal notranslate"><span class="pre">MpDm.ground_state()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#renormalizer.mps.MpDm.hartree_product_state"><code class="docutils literal notranslate"><span class="pre">MpDm.hartree_product_state()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#renormalizer.mps.MpDm.identity"><code class="docutils literal notranslate"><span class="pre">MpDm.identity()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#renormalizer.mps.MpDm.intersite"><code class="docutils literal notranslate"><span class="pre">MpDm.intersite()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#renormalizer.mps.MpDm.is_complex"><code class="docutils literal notranslate"><span class="pre">MpDm.is_complex</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#renormalizer.mps.MpDm.is_hermitian"><code class="docutils literal notranslate"><span class="pre">MpDm.is_hermitian()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#renormalizer.mps.MpDm.is_left_canonical"><code class="docutils literal notranslate"><span class="pre">MpDm.is_left_canonical</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#renormalizer.mps.MpDm.is_mpdm"><code class="docutils literal notranslate"><span class="pre">MpDm.is_mpdm</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#renormalizer.mps.MpDm.is_mpo"><code class="docutils literal notranslate"><span class="pre">MpDm.is_mpo</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#renormalizer.mps.MpDm.is_mps"><code class="docutils literal notranslate"><span class="pre">MpDm.is_mps</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#renormalizer.mps.MpDm.is_right_canonical"><code class="docutils literal notranslate"><span class="pre">MpDm.is_right_canonical</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#renormalizer.mps.MpDm.iter_idx_list"><code class="docutils literal notranslate"><span class="pre">MpDm.iter_idx_list()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#renormalizer.mps.MpDm.load"><code class="docutils literal notranslate"><span class="pre">MpDm.load()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#renormalizer.mps.MpDm.max_entangled_ex"><code class="docutils literal notranslate"><span class="pre">MpDm.max_entangled_ex()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#renormalizer.mps.MpDm.max_entangled_gs"><code class="docutils literal notranslate"><span class="pre">MpDm.max_entangled_gs()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#renormalizer.mps.MpDm.metacopy"><code class="docutils literal notranslate"><span class="pre">MpDm.metacopy()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#renormalizer.mps.MpDm.move_qnidx"><code class="docutils literal notranslate"><span class="pre">MpDm.move_qnidx()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#renormalizer.mps.MpDm.mp_norm"><code class="docutils literal notranslate"><span class="pre">MpDm.mp_norm</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#renormalizer.mps.MpDm.nexciton"><code class="docutils literal notranslate"><span class="pre">MpDm.nexciton</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#renormalizer.mps.MpDm.norm"><code class="docutils literal notranslate"><span class="pre">MpDm.norm</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#renormalizer.mps.MpDm.normalize"><code class="docutils literal notranslate"><span class="pre">MpDm.normalize()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#renormalizer.mps.MpDm.onsite"><code class="docutils literal notranslate"><span class="pre">MpDm.onsite()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#renormalizer.mps.MpDm.pbond_dims"><code class="docutils literal notranslate"><span class="pre">MpDm.pbond_dims</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#renormalizer.mps.MpDm.pbond_list"><code class="docutils literal notranslate"><span class="pre">MpDm.pbond_list</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#renormalizer.mps.MpDm.ph_occupations"><code class="docutils literal notranslate"><span class="pre">MpDm.ph_occupations</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#renormalizer.mps.MpDm.ph_onsite"><code class="docutils literal notranslate"><span class="pre">MpDm.ph_onsite()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#renormalizer.mps.MpDm.promote_mt_type"><code class="docutils literal notranslate"><span class="pre">MpDm.promote_mt_type()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#renormalizer.mps.MpDm.random"><code class="docutils literal notranslate"><span class="pre">MpDm.random()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#renormalizer.mps.MpDm.scale"><code class="docutils literal notranslate"><span class="pre">MpDm.scale()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#renormalizer.mps.MpDm.site_num"><code class="docutils literal notranslate"><span class="pre">MpDm.site_num</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#renormalizer.mps.MpDm.threshold"><code class="docutils literal notranslate"><span class="pre">MpDm.threshold</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#renormalizer.mps.MpDm.to_complex"><code class="docutils literal notranslate"><span class="pre">MpDm.to_complex()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#renormalizer.mps.MpDm.todense"><code class="docutils literal notranslate"><span class="pre">MpDm.todense()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#renormalizer.mps.MpDm.total_bytes"><code class="docutils literal notranslate"><span class="pre">MpDm.total_bytes</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#renormalizer.mps.MpDm.try_swap_site"><code class="docutils literal notranslate"><span class="pre">MpDm.try_swap_site()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#renormalizer.mps.MpDm.variational_compress"><code class="docutils literal notranslate"><span class="pre">MpDm.variational_compress()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#renormalizer.mps.MpDm.vbond_dims"><code class="docutils literal notranslate"><span class="pre">MpDm.vbond_dims</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#renormalizer.mps.MpDm.vbond_list"><code class="docutils literal notranslate"><span class="pre">MpDm.vbond_list</span></code></a></li>
+</ul>
+</li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="#module-renormalizer.mps.thermalprop">6.5. Thermal Propagation</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="#renormalizer.mps.thermalprop.ThermalProp"><code class="docutils literal notranslate"><span class="pre">ThermalProp</span></code></a><ul>
+<li class="toctree-l4"><a class="reference internal" href="#renormalizer.mps.thermalprop.ThermalProp.dump_dict"><code class="docutils literal notranslate"><span class="pre">ThermalProp.dump_dict()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#renormalizer.mps.thermalprop.ThermalProp.e_occupations_array"><code class="docutils literal notranslate"><span class="pre">ThermalProp.e_occupations_array</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#renormalizer.mps.thermalprop.ThermalProp.evolve"><code class="docutils literal notranslate"><span class="pre">ThermalProp.evolve()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#renormalizer.mps.thermalprop.ThermalProp.evolve_exact"><code class="docutils literal notranslate"><span class="pre">ThermalProp.evolve_exact()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#renormalizer.mps.thermalprop.ThermalProp.evolve_prop"><code class="docutils literal notranslate"><span class="pre">ThermalProp.evolve_prop()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#renormalizer.mps.thermalprop.ThermalProp.evolve_single_step"><code class="docutils literal notranslate"><span class="pre">ThermalProp.evolve_single_step()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#renormalizer.mps.thermalprop.ThermalProp.evolve_times_array"><code class="docutils literal notranslate"><span class="pre">ThermalProp.evolve_times_array</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#renormalizer.mps.thermalprop.ThermalProp.get_dump_dict"><code class="docutils literal notranslate"><span class="pre">ThermalProp.get_dump_dict()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#renormalizer.mps.thermalprop.ThermalProp.init_mps"><code class="docutils literal notranslate"><span class="pre">ThermalProp.init_mps()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#renormalizer.mps.thermalprop.ThermalProp.latest_evolve_time"><code class="docutils literal notranslate"><span class="pre">ThermalProp.latest_evolve_time</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#renormalizer.mps.thermalprop.ThermalProp.ph_occupations_array"><code class="docutils literal notranslate"><span class="pre">ThermalProp.ph_occupations_array</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#renormalizer.mps.thermalprop.ThermalProp.process_mps"><code class="docutils literal notranslate"><span class="pre">ThermalProp.process_mps()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#renormalizer.mps.thermalprop.ThermalProp.stop_evolve_criteria"><code class="docutils literal notranslate"><span class="pre">ThermalProp.stop_evolve_criteria()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#renormalizer.mps.thermalprop.ThermalProp.vn_entropy_array"><code class="docutils literal notranslate"><span class="pre">ThermalProp.vn_entropy_array</span></code></a></li>
+</ul>
+</li>
+<li class="toctree-l3"><a class="reference internal" href="#renormalizer.mps.thermalprop.load_thermal_state"><code class="docutils literal notranslate"><span class="pre">load_thermal_state()</span></code></a></li>
+</ul>
+</li>
 </ul>
 </li>
 <li class="toctree-l1"><a class="reference internal" href="static.html">7. Static Eigenstate Method</a></li>

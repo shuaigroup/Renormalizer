@@ -36,6 +36,7 @@
         <script src="_static/underscore.js"></script>
         <script src="_static/_sphinx_javascript_frameworks_compat.js"></script>
         <script src="_static/doctools.js"></script>
+        <script src="_static/sphinx_highlight.js"></script>
         <script async="async" src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-mml-chtml.js"></script>
     
     <script type="text/javascript" src="_static/js/theme.js"></script>
@@ -101,8 +102,26 @@
 <li class="toctree-l1"><a class="reference internal" href="model.html">5. Model</a></li>
 <li class="toctree-l1"><a class="reference internal" href="mps.html">6. Low Level Data Structure and Algorithms</a></li>
 <li class="toctree-l1 current"><a class="current reference internal" href="#">7. Static Eigenstate Method</a><ul>
-<li class="toctree-l2"><a class="reference internal" href="#module-renormalizer.mps.gs">7.1. Ground state and state-averaged method</a></li>
-<li class="toctree-l2"><a class="reference internal" href="#tamm-dancoff-approximation-for-excited-state">7.2. Tamm-Dancoff approximation for excited state</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#module-renormalizer.mps.gs">7.1. Ground state and state-averaged method</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="#renormalizer.mps.gs.construct_mps_mpo"><code class="docutils literal notranslate"><span class="pre">construct_mps_mpo()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="#renormalizer.mps.gs.eigh_direct"><code class="docutils literal notranslate"><span class="pre">eigh_direct()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="#renormalizer.mps.gs.eigh_iterative"><code class="docutils literal notranslate"><span class="pre">eigh_iterative()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="#renormalizer.mps.gs.optimize_mps"><code class="docutils literal notranslate"><span class="pre">optimize_mps()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="#renormalizer.mps.gs.single_sweep"><code class="docutils literal notranslate"><span class="pre">single_sweep()</span></code></a></li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="#tamm-dancoff-approximation-for-excited-state">7.2. Tamm-Dancoff approximation for excited state</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="#renormalizer.mps.tda.TDA"><code class="docutils literal notranslate"><span class="pre">TDA</span></code></a><ul>
+<li class="toctree-l4"><a class="reference internal" href="#renormalizer.mps.tda.TDA.analysis_1ordm"><code class="docutils literal notranslate"><span class="pre">TDA.analysis_1ordm()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#renormalizer.mps.tda.TDA.analysis_dominant_config"><code class="docutils literal notranslate"><span class="pre">TDA.analysis_dominant_config()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#renormalizer.mps.tda.TDA.dump_wfn"><code class="docutils literal notranslate"><span class="pre">TDA.dump_wfn()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#renormalizer.mps.tda.TDA.kernel"><code class="docutils literal notranslate"><span class="pre">TDA.kernel()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#renormalizer.mps.tda.TDA.load_wfn"><code class="docutils literal notranslate"><span class="pre">TDA.load_wfn()</span></code></a></li>
+</ul>
+</li>
+<li class="toctree-l3"><a class="reference internal" href="#renormalizer.mps.tda.merge"><code class="docutils literal notranslate"><span class="pre">merge()</span></code></a></li>
+</ul>
+</li>
 </ul>
 </li>
 <li class="toctree-l1"><a class="reference internal" href="spectrum.html">8. spectra: absorption/emission spectrum at zero/finite temperature</a></li>
