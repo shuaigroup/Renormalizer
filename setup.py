@@ -11,6 +11,8 @@ req = ["numpy",
 
 setuptools.setup(
     name="renormalizer",
+    author="renormalizer",
+    description="Python package based on tensor network states for electron-phonon quantum dynamics.",
     version="0.0.4",
     packages=setuptools.find_packages(),
     long_description=long_description,
