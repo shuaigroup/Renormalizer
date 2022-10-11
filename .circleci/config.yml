@@ -38,11 +38,11 @@ jobs:
           name: Run tests
           # This assumes pytest is installed via the install-package step above
           command: |
-              pip install pytest-xdist
+              pip install pytest-xdist pytest-cov
               export RENO_NUM_THREADS=1
-              pytest -n 4 --durations=0
+              pytest -n 4 --durations=0 --cov=renormalizer
               pip install primme==3.2.*
-              pytest --durations=0 renormalizer/mps/tests/test_gs.py::test_multistate
+              pytest --durations=0 renormalizer/mps/tests/test_gs.py::test_multistate --cov=renormalizer --cov-append
       - run:
           name: Run examples
           command: |
@@ -51,7 +51,12 @@ jobs:
       - run:
           name: Build docs
           command: cd doc; make html
-
+      - run:
+          name: Codecov report
+          command: |
+              curl -Os https://uploader.codecov.io/latest/linux/codecov
+              chmod +x codecov
+              ./codecov
       - persist_to_workspace:
           root: doc/
           paths: html
