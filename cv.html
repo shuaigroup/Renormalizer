@@ -1,100 +1,160 @@
+<!doctype html>
+<html class="no-js" lang="en">
+  <head><meta charset="utf-8"/>
+    <meta name="viewport" content="width=device-width,initial-scale=1"/>
+    <meta name="color-scheme" content="light dark"><meta name="generator" content="Docutils 0.19: https://docutils.sourceforge.io/" />
+<link rel="index" title="Index" href="genindex.html" /><link rel="search" title="Search" href="search.html" /><link rel="next" title="11. Calculation Configurations" href="configs.html" /><link rel="prev" title="9. Charge Transport" href="ct.html" />
 
-
-<!DOCTYPE html>
-<html class="writer-html5" lang="en" >
-<head>
-  <meta charset="utf-8" />
-  
-  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  
-  <title>10. Frequency domain DMRG &mdash; Renormalizer 0.1.0 documentation</title>
-  
-
-  
-  <link rel="stylesheet" href="_static/css/theme.css" type="text/css" />
-  <link rel="stylesheet" href="_static/pygments.css" type="text/css" />
-  <link rel="stylesheet" href="_static/pygments.css" type="text/css" />
-  <link rel="stylesheet" href="_static/css/theme.css" type="text/css" />
-
-  
-  
-
-  
-  
-
-  
-
-  
-  <!--[if lt IE 9]>
-    <script src="_static/js/html5shiv.min.js"></script>
-  <![endif]-->
-  
+    <meta name="generator" content="sphinx-5.3.0, furo 2022.09.29"/>
+        <title>10. Frequency domain DMRG - Renormalizer 0.1.0 documentation</title>
+      <link rel="stylesheet" type="text/css" href="_static/pygments.css" />
+    <link rel="stylesheet" type="text/css" href="_static/styles/furo.css?digest=d81277517bee4d6b0349d71bb2661d4890b5617c" />
+    <link rel="stylesheet" type="text/css" href="_static/styles/furo-extensions.css?digest=30d1aed668e5c3a91c3e3bf6a60b675221979f0e" />
     
-      <script type="text/javascript" id="documentation_options" data-url_root="./" src="_static/documentation_options.js"></script>
-        <script data-url_root="./" id="documentation_options" src="_static/documentation_options.js"></script>
-        <script src="_static/jquery.js"></script>
-        <script src="_static/underscore.js"></script>
-        <script src="_static/_sphinx_javascript_frameworks_compat.js"></script>
-        <script src="_static/doctools.js"></script>
-        <script src="_static/sphinx_highlight.js"></script>
-        <script async="async" src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-mml-chtml.js"></script>
     
-    <script type="text/javascript" src="_static/js/theme.js"></script>
 
+
+<style>
+  body {
+    --color-code-background: #eeffcc;
+  --color-code-foreground: black;
+  
+  }
+  @media not print {
+    body[data-theme="dark"] {
+      --color-code-background: #202020;
+  --color-code-foreground: #d0d0d0;
+  
+    }
+    @media (prefers-color-scheme: dark) {
+      body:not([data-theme="light"]) {
+        --color-code-background: #202020;
+  --color-code-foreground: #d0d0d0;
+  
+      }
+    }
+  }
+</style></head>
+  <body>
     
-    <link rel="index" title="Index" href="genindex.html" />
-    <link rel="search" title="Search" href="search.html" />
-    <link rel="next" title="11. Calculation Configurations" href="configs.html" />
-    <link rel="prev" title="9. Charge Transport" href="ct.html" /> 
-</head>
-
-<body class="wy-body-for-nav">
-
-   
-  <div class="wy-grid-for-nav">
+    <script>
+      document.body.dataset.theme = localStorage.getItem("theme") || "auto";
+    </script>
     
-    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
-      <div class="wy-side-scroll">
-        <div class="wy-side-nav-search" >
-          
 
-          
-            <a href="index.html" class="icon icon-home"> Renormalizer
-          
+<svg xmlns="http://www.w3.org/2000/svg" style="display: none;">
+  <symbol id="svg-toc" viewBox="0 0 24 24">
+    <title>Contents</title>
+    <svg stroke="currentColor" fill="currentColor" stroke-width="0" viewBox="0 0 1024 1024">
+      <path d="M408 442h480c4.4 0 8-3.6 8-8v-56c0-4.4-3.6-8-8-8H408c-4.4 0-8 3.6-8 8v56c0 4.4 3.6 8 8 8zm-8 204c0 4.4 3.6 8 8 8h480c4.4 0 8-3.6 8-8v-56c0-4.4-3.6-8-8-8H408c-4.4 0-8 3.6-8 8v56zm504-486H120c-4.4 0-8 3.6-8 8v56c0 4.4 3.6 8 8 8h784c4.4 0 8-3.6 8-8v-56c0-4.4-3.6-8-8-8zm0 632H120c-4.4 0-8 3.6-8 8v56c0 4.4 3.6 8 8 8h784c4.4 0 8-3.6 8-8v-56c0-4.4-3.6-8-8-8zM115.4 518.9L271.7 642c5.8 4.6 14.4.5 14.4-6.9V388.9c0-7.4-8.5-11.5-14.4-6.9L115.4 505.1a8.74 8.74 0 0 0 0 13.8z"/>
+    </svg>
+  </symbol>
+  <symbol id="svg-menu" viewBox="0 0 24 24">
+    <title>Menu</title>
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+      stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="feather-menu">
+      <line x1="3" y1="12" x2="21" y2="12"></line>
+      <line x1="3" y1="6" x2="21" y2="6"></line>
+      <line x1="3" y1="18" x2="21" y2="18"></line>
+    </svg>
+  </symbol>
+  <symbol id="svg-arrow-right" viewBox="0 0 24 24">
+    <title>Expand</title>
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+      stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="feather-chevron-right">
+      <polyline points="9 18 15 12 9 6"></polyline>
+    </svg>
+  </symbol>
+  <symbol id="svg-sun" viewBox="0 0 24 24">
+    <title>Light mode</title>
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+      stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" class="feather-sun">
+      <circle cx="12" cy="12" r="5"></circle>
+      <line x1="12" y1="1" x2="12" y2="3"></line>
+      <line x1="12" y1="21" x2="12" y2="23"></line>
+      <line x1="4.22" y1="4.22" x2="5.64" y2="5.64"></line>
+      <line x1="18.36" y1="18.36" x2="19.78" y2="19.78"></line>
+      <line x1="1" y1="12" x2="3" y2="12"></line>
+      <line x1="21" y1="12" x2="23" y2="12"></line>
+      <line x1="4.22" y1="19.78" x2="5.64" y2="18.36"></line>
+      <line x1="18.36" y1="5.64" x2="19.78" y2="4.22"></line>
+    </svg>
+  </symbol>
+  <symbol id="svg-moon" viewBox="0 0 24 24">
+    <title>Dark mode</title>
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+      stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" class="icon-tabler-moon">
+      <path stroke="none" d="M0 0h24v24H0z" fill="none" />
+      <path d="M12 3c.132 0 .263 0 .393 0a7.5 7.5 0 0 0 7.92 12.446a9 9 0 1 1 -8.313 -12.454z" />
+    </svg>
+  </symbol>
+  <symbol id="svg-sun-half" viewBox="0 0 24 24">
+    <title>Auto light/dark mode</title>
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+      stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" class="icon-tabler-shadow">
+      <path stroke="none" d="M0 0h24v24H0z" fill="none"/>
+      <circle cx="12" cy="12" r="9" />
+      <path d="M13 12h5" />
+      <path d="M13 15h4" />
+      <path d="M13 18h1" />
+      <path d="M13 9h4" />
+      <path d="M13 6h1" />
+    </svg>
+  </symbol>
+</svg>
 
-          
-          </a>
+<input type="checkbox" class="sidebar-toggle" name="__navigation" id="__navigation">
+<input type="checkbox" class="sidebar-toggle" name="__toc" id="__toc">
+<label class="overlay sidebar-overlay" for="__navigation">
+  <div class="visually-hidden">Hide navigation sidebar</div>
+</label>
+<label class="overlay toc-overlay" for="__toc">
+  <div class="visually-hidden">Hide table of contents sidebar</div>
+</label>
 
-          
-            
-            
-              <div class="version">
-                0.1
-              </div>
-            
-          
 
-          
-<div role="search">
-  <form id="rtd-search-form" class="wy-form" action="search.html" method="get">
-    <input type="text" name="q" placeholder="Search docs" />
-    <input type="hidden" name="check_keywords" value="yes" />
-    <input type="hidden" name="area" value="default" />
-  </form>
-</div>
 
-          
-        </div>
-
-        
-        <div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="main navigation">
-          
-            
-            
-              
-            
-            
-              <ul class="current">
+<div class="page">
+  <header class="mobile-header">
+    <div class="header-left">
+      <label class="nav-overlay-icon" for="__navigation">
+        <div class="visually-hidden">Toggle site navigation sidebar</div>
+        <i class="icon"><svg><use href="#svg-menu"></use></svg></i>
+      </label>
+    </div>
+    <div class="header-center">
+      <a href="index.html"><div class="brand">Renormalizer 0.1.0 documentation</div></a>
+    </div>
+    <div class="header-right">
+      <div class="theme-toggle-container theme-toggle-header">
+        <button class="theme-toggle">
+          <div class="visually-hidden">Toggle Light / Dark / Auto color theme</div>
+          <svg class="theme-icon-when-auto"><use href="#svg-sun-half"></use></svg>
+          <svg class="theme-icon-when-dark"><use href="#svg-moon"></use></svg>
+          <svg class="theme-icon-when-light"><use href="#svg-sun"></use></svg>
+        </button>
+      </div>
+      <label class="toc-overlay-icon toc-header-icon" for="__toc">
+        <div class="visually-hidden">Toggle table of contents sidebar</div>
+        <i class="icon"><svg><use href="#svg-toc"></use></svg></i>
+      </label>
+    </div>
+  </header>
+  <aside class="sidebar-drawer">
+    <div class="sidebar-container">
+      
+      <div class="sidebar-sticky"><a class="sidebar-brand" href="index.html">
+  
+  
+  <span class="sidebar-brand-text">Renormalizer 0.1.0 documentation</span>
+  
+</a><form class="sidebar-search-container" method="get" action="search.html" role="search">
+  <input class="sidebar-search" placeholder=Search name="q" aria-label="Search">
+  <input type="hidden" name="check_keywords" value="yes">
+  <input type="hidden" name="area" value="default">
+</form>
+<div id="searchbox"></div><div class="sidebar-scroll"><div class="sidebar-tree">
+  <ul class="current">
 <li class="toctree-l1"><a class="reference internal" href="overview.html">1. An overview of Renormalizer</a></li>
 <li class="toctree-l1"><a class="reference internal" href="install.html">2. Installation guide</a></li>
 <li class="toctree-l1"><a class="reference internal" href="develop.html">3. How to develop Renormalizer</a></li>
@@ -104,131 +164,73 @@
 <li class="toctree-l1"><a class="reference internal" href="static.html">7. Static Eigenstate Method</a></li>
 <li class="toctree-l1"><a class="reference internal" href="spectrum.html">8. spectra: absorption/emission spectrum at zero/finite temperature</a></li>
 <li class="toctree-l1"><a class="reference internal" href="ct.html">9. Charge Transport</a></li>
-<li class="toctree-l1 current"><a class="current reference internal" href="#">10. Frequency domain DMRG</a><ul>
-<li class="toctree-l2"><a class="reference internal" href="#cv-correction-vector">10.1. cv — correction vector</a><ul>
-<li class="toctree-l3"><a class="reference internal" href="#renormalizer.cv.zerot.SpectraZtCV"><code class="docutils literal notranslate"><span class="pre">SpectraZtCV</span></code></a><ul>
-<li class="toctree-l4"><a class="reference internal" href="#renormalizer.cv.zerot.SpectraZtCV.init_b_mps"><code class="docutils literal notranslate"><span class="pre">SpectraZtCV.init_b_mps()</span></code></a></li>
-<li class="toctree-l4"><a class="reference internal" href="#renormalizer.cv.zerot.SpectraZtCV.init_cv_mps"><code class="docutils literal notranslate"><span class="pre">SpectraZtCV.init_cv_mps()</span></code></a></li>
-<li class="toctree-l4"><a class="reference internal" href="#renormalizer.cv.zerot.SpectraZtCV.initialize_LR"><code class="docutils literal notranslate"><span class="pre">SpectraZtCV.initialize_LR()</span></code></a></li>
-<li class="toctree-l4"><a class="reference internal" href="#renormalizer.cv.zerot.SpectraZtCV.oper_prepare"><code class="docutils literal notranslate"><span class="pre">SpectraZtCV.oper_prepare()</span></code></a></li>
-<li class="toctree-l4"><a class="reference internal" href="#renormalizer.cv.zerot.SpectraZtCV.optimize_cv"><code class="docutils literal notranslate"><span class="pre">SpectraZtCV.optimize_cv()</span></code></a></li>
-<li class="toctree-l4"><a class="reference internal" href="#renormalizer.cv.zerot.SpectraZtCV.update_LR"><code class="docutils literal notranslate"><span class="pre">SpectraZtCV.update_LR()</span></code></a></li>
-</ul>
-</li>
-<li class="toctree-l3"><a class="reference internal" href="#renormalizer.cv.finitet.SpectraFtCV"><code class="docutils literal notranslate"><span class="pre">SpectraFtCV</span></code></a><ul>
-<li class="toctree-l4"><a class="reference internal" href="#renormalizer.cv.finitet.SpectraFtCV.condition"><code class="docutils literal notranslate"><span class="pre">SpectraFtCV.condition()</span></code></a></li>
-<li class="toctree-l4"><a class="reference internal" href="#renormalizer.cv.finitet.SpectraFtCV.construct_X_qnmat"><code class="docutils literal notranslate"><span class="pre">SpectraFtCV.construct_X_qnmat()</span></code></a></li>
-<li class="toctree-l4"><a class="reference internal" href="#renormalizer.cv.finitet.SpectraFtCV.dag2mat"><code class="docutils literal notranslate"><span class="pre">SpectraFtCV.dag2mat()</span></code></a></li>
-<li class="toctree-l4"><a class="reference internal" href="#renormalizer.cv.finitet.SpectraFtCV.init_b_mpo"><code class="docutils literal notranslate"><span class="pre">SpectraFtCV.init_b_mpo()</span></code></a></li>
-<li class="toctree-l4"><a class="reference internal" href="#renormalizer.cv.finitet.SpectraFtCV.init_b_mps"><code class="docutils literal notranslate"><span class="pre">SpectraFtCV.init_b_mps()</span></code></a></li>
-<li class="toctree-l4"><a class="reference internal" href="#renormalizer.cv.finitet.SpectraFtCV.init_cv_mpo"><code class="docutils literal notranslate"><span class="pre">SpectraFtCV.init_cv_mpo()</span></code></a></li>
-<li class="toctree-l4"><a class="reference internal" href="#renormalizer.cv.finitet.SpectraFtCV.init_cv_mps"><code class="docutils literal notranslate"><span class="pre">SpectraFtCV.init_cv_mps()</span></code></a></li>
-<li class="toctree-l4"><a class="reference internal" href="#renormalizer.cv.finitet.SpectraFtCV.initialize_LR"><code class="docutils literal notranslate"><span class="pre">SpectraFtCV.initialize_LR()</span></code></a></li>
-<li class="toctree-l4"><a class="reference internal" href="#renormalizer.cv.finitet.SpectraFtCV.oper_prepare"><code class="docutils literal notranslate"><span class="pre">SpectraFtCV.oper_prepare()</span></code></a></li>
-<li class="toctree-l4"><a class="reference internal" href="#renormalizer.cv.finitet.SpectraFtCV.optimize_cv"><code class="docutils literal notranslate"><span class="pre">SpectraFtCV.optimize_cv()</span></code></a></li>
-<li class="toctree-l4"><a class="reference internal" href="#renormalizer.cv.finitet.SpectraFtCV.qnmat_add"><code class="docutils literal notranslate"><span class="pre">SpectraFtCV.qnmat_add()</span></code></a></li>
-<li class="toctree-l4"><a class="reference internal" href="#renormalizer.cv.finitet.SpectraFtCV.swap"><code class="docutils literal notranslate"><span class="pre">SpectraFtCV.swap()</span></code></a></li>
-<li class="toctree-l4"><a class="reference internal" href="#renormalizer.cv.finitet.SpectraFtCV.update_LR"><code class="docutils literal notranslate"><span class="pre">SpectraFtCV.update_LR()</span></code></a></li>
-<li class="toctree-l4"><a class="reference internal" href="#renormalizer.cv.finitet.SpectraFtCV.x_svd"><code class="docutils literal notranslate"><span class="pre">SpectraFtCV.x_svd()</span></code></a></li>
-</ul>
-</li>
-</ul>
-</li>
-</ul>
-</li>
+<li class="toctree-l1 current current-page"><a class="current reference internal" href="#">10. Frequency domain DMRG</a></li>
 <li class="toctree-l1"><a class="reference internal" href="configs.html">11. Calculation Configurations</a></li>
 <li class="toctree-l1"><a class="reference internal" href="lib.html">12. lib</a></li>
 <li class="toctree-l1"><a class="reference internal" href="sbm.html">13. Spin-Boson Model</a></li>
 </ul>
 
-            
-          
-        </div>
-        
-      </div>
-    </nav>
-
-    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap">
-
-      
-      <nav class="wy-nav-top" aria-label="top navigation">
-        
-          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
-          <a href="index.html">Renormalizer</a>
-        
-      </nav>
-
-
-      <div class="wy-nav-content">
-        
-        <div class="rst-content">
-        
-          
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-<div role="navigation" aria-label="breadcrumbs navigation">
-
-  <ul class="wy-breadcrumbs">
-    
-      <li><a href="index.html" class="icon icon-home"></a> &raquo;</li>
-        
-      <li><span class="section-number">10. </span>Frequency domain DMRG</li>
-    
-    
-      <li class="wy-breadcrumbs-aside">
-        
-          
-            <a href="_sources/cv.rst.txt" rel="nofollow"> View page source</a>
-          
-        
-      </li>
-    
-  </ul>
-
-  
-  <hr/>
 </div>
-          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
-           <div itemprop="articleBody">
-            
-  <div class="section" id="frequency-domain-dmrg">
-<h1><span class="section-number">10. </span>Frequency domain DMRG<a class="headerlink" href="#frequency-domain-dmrg" title="Permalink to this heading">¶</a></h1>
-<div class="section" id="cv-correction-vector">
-<h2><span class="section-number">10.1. </span>cv — correction vector<a class="headerlink" href="#cv-correction-vector" title="Permalink to this heading">¶</a></h2>
+</div>
+
+      </div>
+      
+    </div>
+  </aside>
+  <div class="main">
+    <div class="content">
+      <div class="article-container">
+        <a href="#" class="back-to-top muted-link">
+          <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24">
+            <path d="M13 20h-2V8l-5.5 5.5-1.42-1.42L12 4.16l7.92 7.92-1.42 1.42L13 8v12z"></path>
+          </svg>
+          <span>Back to top</span>
+        </a>
+        <div class="content-icon-container">
+          
+<div class="theme-toggle-container theme-toggle-content">
+            <button class="theme-toggle">
+              <div class="visually-hidden">Toggle Light / Dark / Auto color theme</div>
+              <svg class="theme-icon-when-auto"><use href="#svg-sun-half"></use></svg>
+              <svg class="theme-icon-when-dark"><use href="#svg-moon"></use></svg>
+              <svg class="theme-icon-when-light"><use href="#svg-sun"></use></svg>
+            </button>
+          </div>
+          <label class="toc-overlay-icon toc-content-icon" for="__toc">
+            <div class="visually-hidden">Toggle table of contents sidebar</div>
+            <i class="icon"><svg><use href="#svg-toc"></use></svg></i>
+          </label>
+        </div>
+        <article role="main">
+          <section id="frequency-domain-dmrg">
+<h1><span class="section-number">10. </span>Frequency domain DMRG<a class="headerlink" href="#frequency-domain-dmrg" title="Permalink to this heading">#</a></h1>
+<section id="cv-correction-vector">
+<h2><span class="section-number">10.1. </span>cv — correction vector<a class="headerlink" href="#cv-correction-vector" title="Permalink to this heading">#</a></h2>
 <p>Use correction vector to calculate spectral function (currently only auto-correlalation funtion,
 general correlation function will be implemented later), here the spectral function is:</p>
+<div class="math-wrapper docutils container">
 <div class="math notranslate nohighlight">
 \[I_{\mu\mu}=-\frac{1}{\pi}\rm{Im}\langle\Psi_0|\hat{\mu}^\dagger\frac{1}{\omega-\hat{H}+\omega_0)+i\eta}\hat{\mu}|\Psi_0\rangle.\]</div>
+</div>
 <p>at zero temperature, where <span class="math notranslate nohighlight">\(\hat{\mu}\)</span> is the dipole operator here to calculate the absorption/emission spectrum,
 properties such as optical conductivity is with current operator, also will be implemented soon. <span class="math notranslate nohighlight">\(\eta\)</span> is a Lorentzian broaden width.</p>
+<div class="math-wrapper docutils container">
 <div class="math notranslate nohighlight">
 \[I_{\mu\mu}=-\frac{1}{\pi}\rm{Im}\rm{Tr}\{\hat{\mu}\frac{1}{\omega-\hat{L}+i\eta}\hat{\mu}\hat{\rho}_{\beta}\}.\]</div>
+</div>
 <p>which is actually calculated in a symmetrized form:</p>
+<div class="math-wrapper docutils container">
 <div class="math notranslate nohighlight">
 \[I_{\mu\mu}=-\frac{1}{\pi}\rm{Im}\rm{Tr}\{\hat{\rho}_{\beta}^{1/2}\hat{\mu}\frac{1}{\omega-\hat{L}+i\eta}\hat{\mu}\hat{\rho}_{\beta}^{1/2}\}.\]</div>
+</div>
 <p>at finite temperature, where <span class="math notranslate nohighlight">\(\hat{\rho}_{\beta}^{1/2}\)</span> represents <span class="math notranslate nohighlight">\(e^{-\beta H/2}\)</span>, which is obtianed from imaginary time evolution,
 <span class="math notranslate nohighlight">\(\hat{L}\)</span> is a Liouville operator.</p>
 <span class="target" id="module-renormalizer.cv.zerot"></span><dl class="py class">
 <dt class="sig sig-object py" id="renormalizer.cv.zerot.SpectraZtCV">
-<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">renormalizer.cv.zerot.</span></span><span class="sig-name descname"><span class="pre">SpectraZtCV</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">model</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">spectratype</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">m_max</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">eta</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">h_mpo</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">method</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">'1site'</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">procedure_cv</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">rtol</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">1e-05</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">b_mps</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">e0</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">cv_mps</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">procedure_gs</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/renormalizer/cv/zerot.html#SpectraZtCV"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#renormalizer.cv.zerot.SpectraZtCV" title="Permalink to this definition">¶</a></dt>
+<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">renormalizer.cv.zerot.</span></span><span class="sig-name descname"><span class="pre">SpectraZtCV</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">model</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">spectratype</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">m_max</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">eta</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">h_mpo</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">method</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">'1site'</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">procedure_cv</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">rtol</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">1e-05</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">b_mps</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">e0</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">cv_mps</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">procedure_gs</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/renormalizer/cv/zerot.html#SpectraZtCV"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#renormalizer.cv.zerot.SpectraZtCV" title="Permalink to this definition">#</a></dt>
 <dd><p>Use DDMRG to calculate the zero temperature spectrum from frequency domain</p>
 <dl class="field-list simple">
-<dt class="field-odd">Parameters</dt>
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
 <dd class="field-odd"><ul class="simple">
 <li><p><strong>model</strong> (<a class="reference internal" href="model.html#renormalizer.model.Model" title="renormalizer.model.Model"><code class="xref py py-class docutils literal notranslate"><span class="pre">Model</span></code></a>) – system information.</p></li>
 <li><p><strong>spectratype</strong> (<a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.10)"><em>str</em></a>) – “abs” or “emi”.</p></li>
@@ -258,42 +260,42 @@ warning: the default one won’t be enough for large systems!</p></li>
 </dl>
 <dl class="py method">
 <dt class="sig sig-object py" id="renormalizer.cv.zerot.SpectraZtCV.init_b_mps">
-<span class="sig-name descname"><span class="pre">init_b_mps</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="_modules/renormalizer/cv/zerot.html#SpectraZtCV.init_b_mps"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#renormalizer.cv.zerot.SpectraZtCV.init_b_mps" title="Permalink to this definition">¶</a></dt>
+<span class="sig-name descname"><span class="pre">init_b_mps</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="_modules/renormalizer/cv/zerot.html#SpectraZtCV.init_b_mps"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#renormalizer.cv.zerot.SpectraZtCV.init_b_mps" title="Permalink to this definition">#</a></dt>
 <dd></dd></dl>
 
 <dl class="py method">
 <dt class="sig sig-object py" id="renormalizer.cv.zerot.SpectraZtCV.init_cv_mps">
-<span class="sig-name descname"><span class="pre">init_cv_mps</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="_modules/renormalizer/cv/zerot.html#SpectraZtCV.init_cv_mps"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#renormalizer.cv.zerot.SpectraZtCV.init_cv_mps" title="Permalink to this definition">¶</a></dt>
+<span class="sig-name descname"><span class="pre">init_cv_mps</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="_modules/renormalizer/cv/zerot.html#SpectraZtCV.init_cv_mps"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#renormalizer.cv.zerot.SpectraZtCV.init_cv_mps" title="Permalink to this definition">#</a></dt>
 <dd></dd></dl>
 
 <dl class="py method">
 <dt class="sig sig-object py" id="renormalizer.cv.zerot.SpectraZtCV.initialize_LR">
-<span class="sig-name descname"><span class="pre">initialize_LR</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="_modules/renormalizer/cv/zerot.html#SpectraZtCV.initialize_LR"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#renormalizer.cv.zerot.SpectraZtCV.initialize_LR" title="Permalink to this definition">¶</a></dt>
+<span class="sig-name descname"><span class="pre">initialize_LR</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="_modules/renormalizer/cv/zerot.html#SpectraZtCV.initialize_LR"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#renormalizer.cv.zerot.SpectraZtCV.initialize_LR" title="Permalink to this definition">#</a></dt>
 <dd></dd></dl>
 
 <dl class="py method">
 <dt class="sig sig-object py" id="renormalizer.cv.zerot.SpectraZtCV.oper_prepare">
-<span class="sig-name descname"><span class="pre">oper_prepare</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">omega</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/renormalizer/cv/zerot.html#SpectraZtCV.oper_prepare"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#renormalizer.cv.zerot.SpectraZtCV.oper_prepare" title="Permalink to this definition">¶</a></dt>
+<span class="sig-name descname"><span class="pre">oper_prepare</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">omega</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/renormalizer/cv/zerot.html#SpectraZtCV.oper_prepare"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#renormalizer.cv.zerot.SpectraZtCV.oper_prepare" title="Permalink to this definition">#</a></dt>
 <dd></dd></dl>
 
 <dl class="py method">
 <dt class="sig sig-object py" id="renormalizer.cv.zerot.SpectraZtCV.optimize_cv">
-<span class="sig-name descname"><span class="pre">optimize_cv</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">lr_group</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">isite</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">percent</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">0.0</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/renormalizer/cv/zerot.html#SpectraZtCV.optimize_cv"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#renormalizer.cv.zerot.SpectraZtCV.optimize_cv" title="Permalink to this definition">¶</a></dt>
+<span class="sig-name descname"><span class="pre">optimize_cv</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">lr_group</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">isite</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">percent</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">0.0</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/renormalizer/cv/zerot.html#SpectraZtCV.optimize_cv"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#renormalizer.cv.zerot.SpectraZtCV.optimize_cv" title="Permalink to this definition">#</a></dt>
 <dd></dd></dl>
 
 <dl class="py method">
 <dt class="sig sig-object py" id="renormalizer.cv.zerot.SpectraZtCV.update_LR">
-<span class="sig-name descname"><span class="pre">update_LR</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">lr_group</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">isite</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/renormalizer/cv/zerot.html#SpectraZtCV.update_LR"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#renormalizer.cv.zerot.SpectraZtCV.update_LR" title="Permalink to this definition">¶</a></dt>
+<span class="sig-name descname"><span class="pre">update_LR</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">lr_group</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">isite</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/renormalizer/cv/zerot.html#SpectraZtCV.update_LR"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#renormalizer.cv.zerot.SpectraZtCV.update_LR" title="Permalink to this definition">#</a></dt>
 <dd></dd></dl>
 
 </dd></dl>
 
 <span class="target" id="module-renormalizer.cv.finitet"></span><dl class="py class">
 <dt class="sig sig-object py" id="renormalizer.cv.finitet.SpectraFtCV">
-<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">renormalizer.cv.finitet.</span></span><span class="sig-name descname"><span class="pre">SpectraFtCV</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">model</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">spectratype</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">m_max</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">eta</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">temperature</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">h_mpo</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">method</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">'1site'</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">procedure_cv</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">rtol</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">1e-05</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">b_mps</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">cv_mps</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">icompress_config</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">ievolve_config</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">insteps</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">dump_dir</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference external" href="https://docs.python.org/3/library/typing.html#typing.Optional" title="(in Python v3.10)"><span class="pre">Optional</span></a><span class="p"><span class="pre">[</span></span><a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.10)"><span class="pre">str</span></a><span class="p"><span class="pre">]</span></span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">job_name</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/renormalizer/cv/finitet.html#SpectraFtCV"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#renormalizer.cv.finitet.SpectraFtCV" title="Permalink to this definition">¶</a></dt>
+<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">renormalizer.cv.finitet.</span></span><span class="sig-name descname"><span class="pre">SpectraFtCV</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">model</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">spectratype</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">m_max</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">eta</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">temperature</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">h_mpo</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">method</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">'1site'</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">procedure_cv</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">rtol</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">1e-05</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">b_mps</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">cv_mps</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">icompress_config</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">ievolve_config</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">insteps</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">dump_dir</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference external" href="https://docs.python.org/3/library/typing.html#typing.Optional" title="(in Python v3.10)"><span class="pre">Optional</span></a><span class="p"><span class="pre">[</span></span><a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.10)"><span class="pre">str</span></a><span class="p"><span class="pre">]</span></span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">job_name</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/renormalizer/cv/finitet.html#SpectraFtCV"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#renormalizer.cv.finitet.SpectraFtCV" title="Permalink to this definition">#</a></dt>
 <dd><p>Use DDMRG to calculate the finite temperature spectrum from frequency domain</p>
 <dl class="field-list simple">
-<dt class="field-odd">Parameters</dt>
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
 <dd class="field-odd"><ul class="simple">
 <li><p><strong>model</strong> (<a class="reference internal" href="model.html#renormalizer.model.Model" title="renormalizer.model.Model"><code class="xref py py-class docutils literal notranslate"><span class="pre">Model</span></code></a>) – system information.</p></li>
 <li><p><strong>spectratype</strong> (<em>string</em>) – “abs” or “emi”.</p></li>
@@ -322,125 +324,184 @@ Also the directory from which to load previous thermal propagated initial state 
 </dl>
 <dl class="py method">
 <dt class="sig sig-object py" id="renormalizer.cv.finitet.SpectraFtCV.condition">
-<span class="sig-name descname"><span class="pre">condition</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">mat</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">qn</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/renormalizer/cv/finitet.html#SpectraFtCV.condition"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#renormalizer.cv.finitet.SpectraFtCV.condition" title="Permalink to this definition">¶</a></dt>
+<span class="sig-name descname"><span class="pre">condition</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">mat</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">qn</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/renormalizer/cv/finitet.html#SpectraFtCV.condition"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#renormalizer.cv.finitet.SpectraFtCV.condition" title="Permalink to this definition">#</a></dt>
 <dd></dd></dl>
 
 <dl class="py method">
 <dt class="sig sig-object py" id="renormalizer.cv.finitet.SpectraFtCV.construct_X_qnmat">
-<span class="sig-name descname"><span class="pre">construct_X_qnmat</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">addlist</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/renormalizer/cv/finitet.html#SpectraFtCV.construct_X_qnmat"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#renormalizer.cv.finitet.SpectraFtCV.construct_X_qnmat" title="Permalink to this definition">¶</a></dt>
+<span class="sig-name descname"><span class="pre">construct_X_qnmat</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">addlist</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/renormalizer/cv/finitet.html#SpectraFtCV.construct_X_qnmat"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#renormalizer.cv.finitet.SpectraFtCV.construct_X_qnmat" title="Permalink to this definition">#</a></dt>
 <dd></dd></dl>
 
 <dl class="py method">
 <dt class="sig sig-object py" id="renormalizer.cv.finitet.SpectraFtCV.dag2mat">
-<span class="sig-name descname"><span class="pre">dag2mat</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">xshape</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">x</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">dag_qnmat</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/renormalizer/cv/finitet.html#SpectraFtCV.dag2mat"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#renormalizer.cv.finitet.SpectraFtCV.dag2mat" title="Permalink to this definition">¶</a></dt>
+<span class="sig-name descname"><span class="pre">dag2mat</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">xshape</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">x</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">dag_qnmat</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/renormalizer/cv/finitet.html#SpectraFtCV.dag2mat"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#renormalizer.cv.finitet.SpectraFtCV.dag2mat" title="Permalink to this definition">#</a></dt>
 <dd></dd></dl>
 
 <dl class="py method">
 <dt class="sig sig-object py" id="renormalizer.cv.finitet.SpectraFtCV.init_b_mpo">
-<span class="sig-name descname"><span class="pre">init_b_mpo</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="_modules/renormalizer/cv/finitet.html#SpectraFtCV.init_b_mpo"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#renormalizer.cv.finitet.SpectraFtCV.init_b_mpo" title="Permalink to this definition">¶</a></dt>
+<span class="sig-name descname"><span class="pre">init_b_mpo</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="_modules/renormalizer/cv/finitet.html#SpectraFtCV.init_b_mpo"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#renormalizer.cv.finitet.SpectraFtCV.init_b_mpo" title="Permalink to this definition">#</a></dt>
 <dd></dd></dl>
 
 <dl class="py method">
 <dt class="sig sig-object py" id="renormalizer.cv.finitet.SpectraFtCV.init_b_mps">
-<span class="sig-name descname"><span class="pre">init_b_mps</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#renormalizer.cv.finitet.SpectraFtCV.init_b_mps" title="Permalink to this definition">¶</a></dt>
+<span class="sig-name descname"><span class="pre">init_b_mps</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#renormalizer.cv.finitet.SpectraFtCV.init_b_mps" title="Permalink to this definition">#</a></dt>
 <dd></dd></dl>
 
 <dl class="py method">
 <dt class="sig sig-object py" id="renormalizer.cv.finitet.SpectraFtCV.init_cv_mpo">
-<span class="sig-name descname"><span class="pre">init_cv_mpo</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="_modules/renormalizer/cv/finitet.html#SpectraFtCV.init_cv_mpo"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#renormalizer.cv.finitet.SpectraFtCV.init_cv_mpo" title="Permalink to this definition">¶</a></dt>
+<span class="sig-name descname"><span class="pre">init_cv_mpo</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="_modules/renormalizer/cv/finitet.html#SpectraFtCV.init_cv_mpo"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#renormalizer.cv.finitet.SpectraFtCV.init_cv_mpo" title="Permalink to this definition">#</a></dt>
 <dd></dd></dl>
 
 <dl class="py method">
 <dt class="sig sig-object py" id="renormalizer.cv.finitet.SpectraFtCV.init_cv_mps">
-<span class="sig-name descname"><span class="pre">init_cv_mps</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#renormalizer.cv.finitet.SpectraFtCV.init_cv_mps" title="Permalink to this definition">¶</a></dt>
+<span class="sig-name descname"><span class="pre">init_cv_mps</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#renormalizer.cv.finitet.SpectraFtCV.init_cv_mps" title="Permalink to this definition">#</a></dt>
 <dd></dd></dl>
 
 <dl class="py method">
 <dt class="sig sig-object py" id="renormalizer.cv.finitet.SpectraFtCV.initialize_LR">
-<span class="sig-name descname"><span class="pre">initialize_LR</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="_modules/renormalizer/cv/finitet.html#SpectraFtCV.initialize_LR"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#renormalizer.cv.finitet.SpectraFtCV.initialize_LR" title="Permalink to this definition">¶</a></dt>
+<span class="sig-name descname"><span class="pre">initialize_LR</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="_modules/renormalizer/cv/finitet.html#SpectraFtCV.initialize_LR"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#renormalizer.cv.finitet.SpectraFtCV.initialize_LR" title="Permalink to this definition">#</a></dt>
 <dd></dd></dl>
 
 <dl class="py method">
 <dt class="sig sig-object py" id="renormalizer.cv.finitet.SpectraFtCV.oper_prepare">
-<span class="sig-name descname"><span class="pre">oper_prepare</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">omega</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/renormalizer/cv/finitet.html#SpectraFtCV.oper_prepare"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#renormalizer.cv.finitet.SpectraFtCV.oper_prepare" title="Permalink to this definition">¶</a></dt>
+<span class="sig-name descname"><span class="pre">oper_prepare</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">omega</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/renormalizer/cv/finitet.html#SpectraFtCV.oper_prepare"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#renormalizer.cv.finitet.SpectraFtCV.oper_prepare" title="Permalink to this definition">#</a></dt>
 <dd></dd></dl>
 
 <dl class="py method">
 <dt class="sig sig-object py" id="renormalizer.cv.finitet.SpectraFtCV.optimize_cv">
-<span class="sig-name descname"><span class="pre">optimize_cv</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">lr_group</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">isite</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">percent</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">0</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/renormalizer/cv/finitet.html#SpectraFtCV.optimize_cv"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#renormalizer.cv.finitet.SpectraFtCV.optimize_cv" title="Permalink to this definition">¶</a></dt>
+<span class="sig-name descname"><span class="pre">optimize_cv</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">lr_group</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">isite</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">percent</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">0</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/renormalizer/cv/finitet.html#SpectraFtCV.optimize_cv"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#renormalizer.cv.finitet.SpectraFtCV.optimize_cv" title="Permalink to this definition">#</a></dt>
 <dd></dd></dl>
 
 <dl class="py method">
 <dt class="sig sig-object py" id="renormalizer.cv.finitet.SpectraFtCV.qnmat_add">
-<span class="sig-name descname"><span class="pre">qnmat_add</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">mat_l</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">mat_r</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/renormalizer/cv/finitet.html#SpectraFtCV.qnmat_add"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#renormalizer.cv.finitet.SpectraFtCV.qnmat_add" title="Permalink to this definition">¶</a></dt>
+<span class="sig-name descname"><span class="pre">qnmat_add</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">mat_l</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">mat_r</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/renormalizer/cv/finitet.html#SpectraFtCV.qnmat_add"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#renormalizer.cv.finitet.SpectraFtCV.qnmat_add" title="Permalink to this definition">#</a></dt>
 <dd></dd></dl>
 
 <dl class="py method">
 <dt class="sig sig-object py" id="renormalizer.cv.finitet.SpectraFtCV.swap">
-<span class="sig-name descname"><span class="pre">swap</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">mat</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">qnbigl</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">qnbigr</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/renormalizer/cv/finitet.html#SpectraFtCV.swap"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#renormalizer.cv.finitet.SpectraFtCV.swap" title="Permalink to this definition">¶</a></dt>
+<span class="sig-name descname"><span class="pre">swap</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">mat</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">qnbigl</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">qnbigr</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/renormalizer/cv/finitet.html#SpectraFtCV.swap"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#renormalizer.cv.finitet.SpectraFtCV.swap" title="Permalink to this definition">#</a></dt>
 <dd></dd></dl>
 
 <dl class="py method">
 <dt class="sig sig-object py" id="renormalizer.cv.finitet.SpectraFtCV.update_LR">
-<span class="sig-name descname"><span class="pre">update_LR</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">lr_group</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">isite</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/renormalizer/cv/finitet.html#SpectraFtCV.update_LR"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#renormalizer.cv.finitet.SpectraFtCV.update_LR" title="Permalink to this definition">¶</a></dt>
+<span class="sig-name descname"><span class="pre">update_LR</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">lr_group</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">isite</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/renormalizer/cv/finitet.html#SpectraFtCV.update_LR"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#renormalizer.cv.finitet.SpectraFtCV.update_LR" title="Permalink to this definition">#</a></dt>
 <dd></dd></dl>
 
 <dl class="py method">
 <dt class="sig sig-object py" id="renormalizer.cv.finitet.SpectraFtCV.x_svd">
-<span class="sig-name descname"><span class="pre">x_svd</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">xstruct</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">xqnbigl</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">xqnbigr</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">nexciton</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">percent</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">0</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/renormalizer/cv/finitet.html#SpectraFtCV.x_svd"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#renormalizer.cv.finitet.SpectraFtCV.x_svd" title="Permalink to this definition">¶</a></dt>
+<span class="sig-name descname"><span class="pre">x_svd</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">xstruct</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">xqnbigl</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">xqnbigr</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">nexciton</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">percent</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">0</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/renormalizer/cv/finitet.html#SpectraFtCV.x_svd"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#renormalizer.cv.finitet.SpectraFtCV.x_svd" title="Permalink to this definition">#</a></dt>
 <dd></dd></dl>
 
 </dd></dl>
 
-</div>
-</div>
+</section>
+</section>
 
-
-           </div>
-           
+        </article>
+      </div>
+      <footer>
+        
+        <div class="related-pages">
+          <a class="next-page" href="configs.html">
+              <div class="page-info">
+                <div class="context">
+                  <span>Next</span>
+                </div>
+                <div class="title"><span class="section-number">11. </span>Calculation Configurations</div>
+              </div>
+              <svg class="furo-related-icon"><use href="#svg-arrow-right"></use></svg>
+            </a>
+          <a class="prev-page" href="ct.html">
+              <svg class="furo-related-icon"><use href="#svg-arrow-right"></use></svg>
+              <div class="page-info">
+                <div class="context">
+                  <span>Previous</span>
+                </div>
+                
+                <div class="title"><span class="section-number">9. </span>Charge Transport</div>
+                
+              </div>
+            </a>
+        </div>
+        <div class="bottom-of-page">
+          <div class="left-details">
+            <div class="copyright">
+                Copyright &#169; 2019, Shuaigroup
+            </div>
+            Made with <a href="https://www.sphinx-doc.org/">Sphinx</a> and <a class="muted-link" href="https://pradyunsg.me">@pradyunsg</a>'s
+            
+            <a href="https://github.com/pradyunsg/furo">Furo</a>
+            
           </div>
-          <footer>
-    <div class="rst-footer-buttons" role="navigation" aria-label="footer navigation">
-        <a href="configs.html" class="btn btn-neutral float-right" title="11. Calculation Configurations" accesskey="n" rel="next">Next <span class="fa fa-arrow-circle-right" aria-hidden="true"></span></a>
-        <a href="ct.html" class="btn btn-neutral float-left" title="9. Charge Transport" accesskey="p" rel="prev"><span class="fa fa-arrow-circle-left" aria-hidden="true"></span> Previous</a>
+          <div class="right-details">
+            <div class="icons">
+              
+            </div>
+          </div>
+        </div>
+        
+      </footer>
     </div>
+    <aside class="toc-drawer">
+      
+      
+      <div class="toc-sticky toc-scroll">
+        <div class="toc-title-container">
+          <span class="toc-title">
+            On this page
+          </span>
+        </div>
+        <div class="toc-tree-container">
+          <div class="toc-tree">
+            <ul>
+<li><a class="reference internal" href="#">10. Frequency domain DMRG</a><ul>
+<li><a class="reference internal" href="#cv-correction-vector">10.1. cv — correction vector</a><ul>
+<li><a class="reference internal" href="#renormalizer.cv.zerot.SpectraZtCV"><code class="docutils literal notranslate"><span class="pre">SpectraZtCV</span></code></a><ul>
+<li><a class="reference internal" href="#renormalizer.cv.zerot.SpectraZtCV.init_b_mps"><code class="docutils literal notranslate"><span class="pre">SpectraZtCV.init_b_mps()</span></code></a></li>
+<li><a class="reference internal" href="#renormalizer.cv.zerot.SpectraZtCV.init_cv_mps"><code class="docutils literal notranslate"><span class="pre">SpectraZtCV.init_cv_mps()</span></code></a></li>
+<li><a class="reference internal" href="#renormalizer.cv.zerot.SpectraZtCV.initialize_LR"><code class="docutils literal notranslate"><span class="pre">SpectraZtCV.initialize_LR()</span></code></a></li>
+<li><a class="reference internal" href="#renormalizer.cv.zerot.SpectraZtCV.oper_prepare"><code class="docutils literal notranslate"><span class="pre">SpectraZtCV.oper_prepare()</span></code></a></li>
+<li><a class="reference internal" href="#renormalizer.cv.zerot.SpectraZtCV.optimize_cv"><code class="docutils literal notranslate"><span class="pre">SpectraZtCV.optimize_cv()</span></code></a></li>
+<li><a class="reference internal" href="#renormalizer.cv.zerot.SpectraZtCV.update_LR"><code class="docutils literal notranslate"><span class="pre">SpectraZtCV.update_LR()</span></code></a></li>
+</ul>
+</li>
+<li><a class="reference internal" href="#renormalizer.cv.finitet.SpectraFtCV"><code class="docutils literal notranslate"><span class="pre">SpectraFtCV</span></code></a><ul>
+<li><a class="reference internal" href="#renormalizer.cv.finitet.SpectraFtCV.condition"><code class="docutils literal notranslate"><span class="pre">SpectraFtCV.condition()</span></code></a></li>
+<li><a class="reference internal" href="#renormalizer.cv.finitet.SpectraFtCV.construct_X_qnmat"><code class="docutils literal notranslate"><span class="pre">SpectraFtCV.construct_X_qnmat()</span></code></a></li>
+<li><a class="reference internal" href="#renormalizer.cv.finitet.SpectraFtCV.dag2mat"><code class="docutils literal notranslate"><span class="pre">SpectraFtCV.dag2mat()</span></code></a></li>
+<li><a class="reference internal" href="#renormalizer.cv.finitet.SpectraFtCV.init_b_mpo"><code class="docutils literal notranslate"><span class="pre">SpectraFtCV.init_b_mpo()</span></code></a></li>
+<li><a class="reference internal" href="#renormalizer.cv.finitet.SpectraFtCV.init_b_mps"><code class="docutils literal notranslate"><span class="pre">SpectraFtCV.init_b_mps()</span></code></a></li>
+<li><a class="reference internal" href="#renormalizer.cv.finitet.SpectraFtCV.init_cv_mpo"><code class="docutils literal notranslate"><span class="pre">SpectraFtCV.init_cv_mpo()</span></code></a></li>
+<li><a class="reference internal" href="#renormalizer.cv.finitet.SpectraFtCV.init_cv_mps"><code class="docutils literal notranslate"><span class="pre">SpectraFtCV.init_cv_mps()</span></code></a></li>
+<li><a class="reference internal" href="#renormalizer.cv.finitet.SpectraFtCV.initialize_LR"><code class="docutils literal notranslate"><span class="pre">SpectraFtCV.initialize_LR()</span></code></a></li>
+<li><a class="reference internal" href="#renormalizer.cv.finitet.SpectraFtCV.oper_prepare"><code class="docutils literal notranslate"><span class="pre">SpectraFtCV.oper_prepare()</span></code></a></li>
+<li><a class="reference internal" href="#renormalizer.cv.finitet.SpectraFtCV.optimize_cv"><code class="docutils literal notranslate"><span class="pre">SpectraFtCV.optimize_cv()</span></code></a></li>
+<li><a class="reference internal" href="#renormalizer.cv.finitet.SpectraFtCV.qnmat_add"><code class="docutils literal notranslate"><span class="pre">SpectraFtCV.qnmat_add()</span></code></a></li>
+<li><a class="reference internal" href="#renormalizer.cv.finitet.SpectraFtCV.swap"><code class="docutils literal notranslate"><span class="pre">SpectraFtCV.swap()</span></code></a></li>
+<li><a class="reference internal" href="#renormalizer.cv.finitet.SpectraFtCV.update_LR"><code class="docutils literal notranslate"><span class="pre">SpectraFtCV.update_LR()</span></code></a></li>
+<li><a class="reference internal" href="#renormalizer.cv.finitet.SpectraFtCV.x_svd"><code class="docutils literal notranslate"><span class="pre">SpectraFtCV.x_svd()</span></code></a></li>
+</ul>
+</li>
+</ul>
+</li>
+</ul>
+</li>
+</ul>
 
-  <hr/>
-
-  <div role="contentinfo">
-    <p>
-        &#169; Copyright 2019, Shuaigroup.
-
-    </p>
-  </div>
-    
-    
-    
-    Built with <a href="https://www.sphinx-doc.org/">Sphinx</a> using a
-    
-    <a href="https://github.com/readthedocs/sphinx_rtd_theme">theme</a>
-    
-    provided by <a href="https://readthedocs.org">Read the Docs</a>. 
-
-</footer>
+          </div>
         </div>
       </div>
-
-    </section>
-
+      
+      
+    </aside>
   </div>
-  
-
-  <script type="text/javascript">
-      jQuery(function () {
-          SphinxRtdTheme.Navigation.enable(true);
-      });
-  </script>
-
-  
-  
-    
-   
-
-</body>
+</div><script data-url_root="./" id="documentation_options" src="_static/documentation_options.js"></script>
+    <script src="_static/jquery.js"></script>
+    <script src="_static/underscore.js"></script>
+    <script src="_static/_sphinx_javascript_frameworks_compat.js"></script>
+    <script src="_static/doctools.js"></script>
+    <script src="_static/sphinx_highlight.js"></script>
+    <script src="_static/scripts/furo.js"></script>
+    <script async="async" src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-mml-chtml.js"></script>
+    </body>
 </html>
