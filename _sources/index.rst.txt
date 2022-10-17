@@ -21,8 +21,7 @@ Contents
 
    overview.rst
    install.md
-   develop.md
-   tutorial.md
+   tutorial.rst
    model.rst
    mps.rst
    static.rst
@@ -32,6 +31,7 @@ Contents
    configs.rst
    lib.md
    sbm.md
+   develop.md
 
 
 
