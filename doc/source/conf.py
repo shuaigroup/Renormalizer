@@ -43,7 +43,9 @@ extensions = ['sphinx.ext.autodoc',
     'sphinx.ext.ifconfig',
     'sphinx.ext.viewcode',
     'sphinx.ext.githubpages',
-    'recommonmark']
+    'recommonmark',
+    'nbsphinx',
+]
 
 # Add any paths that contain templates here, relative to this directory.
 templates_path = ['_templates']
@@ -62,7 +64,7 @@ master_doc = 'index'
 
 # General information about the project.
 project = 'Renormalizer'
-copyright = '2019, Shuaigroup'
+copyright = '2022, Shuaigroup'
 author = 'Shuaigroup'
 
 # The version info for the project you're documenting, acts as replacement for
@@ -79,7 +81,7 @@ release = '0.1.0'
 #
 # This is also used if you do content translation via gettext catalogs.
 # Usually you set "language" from the command line for these cases.
-language = None
+language = "en"
 
 # List of patterns, relative to source directory, that match files and
 # directories to ignore when looking for source files.
@@ -182,3 +184,12 @@ default_role = 'any'
 autodoc_default_options = {
     'undoc-members': True,
 }
+
+# copy tutorial notebooks
+import glob
+import shutil
+
+for fname in glob.glob("../../example/*.ipynb"):
+    print(f"copying {fname}")
+    nbname = fname.split("/")[-1]
+    shutil.copy(fname, f"./tutorials")

@@ -10,9 +10,9 @@ Optionally, install `primme` for high-performance static DMRG
 ```
 pip install primme
 ```
-If any error occurs during the installation, see the [official document](https://github.com/primme/primme) for details.
+If any error occurs during the installation, see the [primme official document](https://github.com/primme/primme) for details.
 
-Optionally, install `CuPy` for GPU backend. Please see the [official document](https://docs.cupy.dev/en/stable/install.html) for details.
+Optionally, install `CuPy` for GPU backend. Please see the [CuPy official document](https://docs.cupy.dev/en/stable/install.html) for details.
 `renormalizer` auto-detects whether `CuPy` is installed during its import.
 If `CuPy` is installed, then `renormalzier` will automatically use GPU to accelerate tensor contractions.
 
@@ -193,5 +193,3 @@ pytest
 and wait.
 
 During the test, you can monitor the GPU usage by `nvidia-smi` or `nvtop`. Moderate GPU usage is expected. If GPU usage is zero, probably Renormalizer still runs on CPU. Make sure the python interpreter running the tests can import `cupy`.
-
-Note: **Renormalizer is still under heavy development. API changes come without any prior deprecation.**

@@ -854,6 +854,16 @@ class BasisHalfSpin(BasisSet):
     ----------
     dof : any hashable object
         The name of the DoF contained in the basis set.
+
+    Examples
+    --------
+    >>> b = BasisHalfSpin(0)
+    >>> b.op_mat("X")
+    array([[0., 1.],
+           [1., 0.]])
+    >>> -1 * b.op_mat("iY") @ b.op_mat("iY")  # convenient for real Hamiltonian
+    array([[1., 0.],
+           [0., 1.]])
     """
 
     is_spin = True
@@ -878,6 +888,8 @@ class BasisHalfSpin(BasisSet):
             elif op_symbol in ["sigma_y", "Y", "y"]:
                 mat = np.diag([-1.0j], k=1)
                 mat = mat + mat.T.conj()
+            elif op_symbol in ["isigma_y", "iY", "iy"]:
+                mat = (1j * self.op_mat("Y")).real
             elif op_symbol in ["sigma_z", "Z", "z"]:
                 mat = np.diag([1.,-1.], k=0)
             elif op_symbol in ["sigma_-", "-"]:
