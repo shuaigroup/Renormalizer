@@ -386,3 +386,6 @@ class OpSum(list):
         if isinstance(other, (int, float, complex, np.generic)):
             return self * other
         return OpSum(super().__rmul__(other))
+
+    # prevents NumPy universal function call
+    __array_ufunc__ = None
