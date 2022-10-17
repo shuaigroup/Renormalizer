@@ -61,6 +61,8 @@ class Op:
     >>> y = Op("Y", 1, 0.2)
     >>> x + y
     [Op('X', [0], 0.5), Op('Y', [1], 0.2)]
+    >>> x - y
+    [Op('X', [0], 0.5), Op('Y', [1], -0.2)]
     >>> x * y
     Op('X Y', [0, 1], 0.1)
     >>> x * (x + y)
@@ -326,6 +328,12 @@ class Op:
         else:
             raise TypeError(f"Unknown operand type {type(other)}")
 
+    def __neg__(self):
+        return Op(self.symbol, self.dofs, -self.factor, self.qn_list)
+
+    def __sub__(self, other):
+        return self + (-other)
+
     def __mul__(self, other) -> Union["Op", List["Op"]]:
         # multiplication with another Op or with scalar
         # convert numpy scalar to python scalar
@@ -353,8 +361,48 @@ class Op:
 
 
 class OpSum(list):
+    r"""
+    Sum of ``Op`` as a subclass of ``list``.
+    Supports addition, subtraction and multiplication with ``Op`` and ``OpSum``.
+
+    Examples
+    --------
+    >>> from renormalizer.model import Op, OpSum
+    >>> opsum = Op("X", 0, 1.) + Op("Y", 1, 2.)
+    >>> type(opsum)
+    <class 'renormalizer.model.op.OpSum'>
+    >>> opsum + opsum
+    [Op('X', [0], 1.0), Op('Y', [1], 2.0), Op('X', [0], 1.0), Op('Y', [1], 2.0)]
+    >>> (opsum + opsum).simplify()
+    [Op('X', [0], 2.0), Op('Y', [1], 4.0)]
+    >>> (opsum - opsum).simplify()
+    []
+    >>> opsum * opsum
+    [Op('X X', [0, 0], 1.0), Op('X Y', [0, 1], 2.0), Op('Y X', [1, 0], 2.0), Op('Y Y', [1, 1], 4.0)]
+    """
     def copy(self):
         return OpSum(super().copy())
+
+    def simplify(self, atol=0) -> "OpSum":
+        # combine same terms and remove zero. `atol` defines "zero"
+        # take reverse so that `pop` starts from the beginning
+        old_opsum = OpSum(reversed(self.copy()))
+        new_opsum = []
+        while old_opsum:
+            op = old_opsum.pop()
+            identical_indices = []
+            for i, other_op in enumerate(old_opsum):
+                if op.same_term(other_op):
+                    identical_indices.append(i)
+            op = Op(op.symbol, op.dofs, op.factor + sum([old_opsum[i].factor for i in identical_indices]), op.qn_list)
+            for ii, i in enumerate(identical_indices):
+                old_opsum.pop(i - ii)
+            new_opsum.append(op)
+
+        # separate the combining and removing process for easy debugging
+        new_opsum = [op for op in new_opsum if np.abs(op.factor) > atol]
+
+        return OpSum(new_opsum)
 
     def __add__(self, other):
         if not isinstance(other, (Op, list)):
@@ -369,6 +417,12 @@ class OpSum(list):
             return self
         else:
             return super().__iadd__(other)
+
+    def __neg__(self):
+        return OpSum([-op for op in self])
+
+    def __sub__(self, other):
+        return self + (-other)
 
     def __mul__(self, other):
         if isinstance(other, list):
