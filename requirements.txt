@@ -4,6 +4,6 @@ pytest==6.2.*
 h5py==3.1.*
 PyYAML==5.4.*
 recommonmark==0.7.*
-sphinx_rtd_theme==0.5.*
+furo==2022.9.*
 opt_einsum==3.3.*
 qutip==4.6.*
