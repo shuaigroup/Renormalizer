@@ -49,6 +49,9 @@ jobs:
               cd example; bash run.sh
               cd ..
       - run:
+          name: install pandoc
+          command: sudo apt-get install pandoc
+      - run:
           name: Build docs
           command: cd doc; make html
       - run:

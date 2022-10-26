@@ -31,6 +31,7 @@ Contents
    configs.rst
    lib.md
    sbm.md
+   faq.rst
    develop.md
 
 
