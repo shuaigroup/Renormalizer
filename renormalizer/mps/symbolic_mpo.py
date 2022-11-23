@@ -342,8 +342,8 @@ def _terms_to_table(model: Model, terms: List[Op], const: float):
 
     table = []
     factor_list = []
-
-    dummy_table_entry = [Op.identity(b.dof) for b in model.basis]
+    
+    dummy_table_entry = [Op.identity(b.dof) if not b.multi_dof else Op.identity(b.dof[0]) for b in model.basis]
     for op in terms:
         elem_ops, factor = op.split_elementary(model.dof_to_siteidx)
         table_entry = dummy_table_entry.copy()
