@@ -13,6 +13,7 @@ from scipy import stats
 from renormalizer.lib import solve_ivp, expm_krylov
 from renormalizer.model import Model, Op, basis as ba
 from renormalizer.mps import svd_qn
+from renormalizer.mps.svd_qn import add_outer, get_qn_mask
 from renormalizer.mps.backend import backend, np, xp
 from renormalizer.mps.lib import (
     Environ,
@@ -116,34 +117,38 @@ def adaptive_tdvp(fun):
 
 class Mps(MatrixProduct):
     @classmethod
-    def random(cls, model: Model, nexciton, m_max, percent=1.0) -> "Mps":
+    def random(cls, model: Model, qntot, m_max, percent=1.0) -> "Mps":
         # a high percent makes the result more random
         # sometimes critical for getting correct optimization result
         mps = cls()
         mps.model = model
-        mps.qn = [[0]]
+        if isinstance(qntot, int):
+            qntot = np.array([qntot])
+        qn_size = len(qntot)
+        assert qn_size == model.qn_size
+        mps.qn = [np.zeros((1, qn_size), dtype=int)]
         dim_list = [1]
 
         for imps in range(model.nsite - 1):
 
             # quantum number
-            qnbig = np.add.outer(mps.qn[imps], mps._get_sigmaqn(imps)).flatten()
+            qnbig = add_outer(mps.qn[imps], mps._get_sigmaqn(imps)).reshape(-1, qn_size)
             u_set = []
             s_set = []
             qnset = []
-            
-            # this random state is only suitable for positive quantum number is 0,1,2,3...
-            for iblock in range(min(qnbig), nexciton + 1):
-                # find the quantum number index
-                indices = [i for i, x in enumerate(qnbig) if x == iblock]
 
-                if len(indices) != 0:
-                    a: np.ndarray = np.random.random([len(indices), len(indices)]) - 0.5
-                    a = a + a.T
-                    s, u = scipy.linalg.eigh(a=a)
-                    u_set.append(svd_qn.blockrecover(indices, u, len(qnbig)))
-                    s_set.append(s)
-                    qnset += [iblock] * len(indices)
+            for iblock in set([tuple(t) for t in qnbig]):
+                if np.all(np.array(qntot) < np.array(iblock)):
+                    continue
+                # find the quantum number index
+                indices = [i for i, x in enumerate(qnbig) if tuple(x) == iblock]
+                assert len(indices) != 0
+                a = np.random.random([len(indices), len(indices)]) - 0.5
+                a = a + a.T
+                s, u = scipy.linalg.eigh(a=a)
+                u_set.append(svd_qn.blockrecover(indices, u, len(qnbig)))
+                s_set.append(s)
+                qnset += [iblock] * len(indices)
 
             u_set = np.concatenate(u_set, axis=1)
             s_set = np.concatenate(s_set)
@@ -156,7 +161,7 @@ class Mps(MatrixProduct):
             mps.qn.append(mpsqn)
 
         # the last site
-        mps.qn.append([0])
+        mps.qn.append(np.zeros((1, qn_size), dtype=int))
         dim_list.append(1)
         last_mt = (
             xp.random.random([dim_list[-2], mps.pbond_list[-1], dim_list[-1]]) - 0.5
@@ -167,7 +172,7 @@ class Mps(MatrixProduct):
 
         mps.qnidx = len(mps) - 1
         mps.to_right = False
-        mps.qntot = nexciton
+        mps.qntot = np.array(qntot)
 
         return mps
 
@@ -198,7 +203,8 @@ class Mps(MatrixProduct):
         mps = cls()
         mps.model = model
         mps.build_empty_mp(model.nsite)
-        qn_single = [[],] * model.nsite
+        qn_size = model.qn_size
+        mps.qn = [np.zeros((1, qn_size), dtype=int)]
 
         # check that the condition is not duplicated
         # each site has at most 1 single key to assign the occupation  
@@ -219,22 +225,18 @@ class Mps(MatrixProduct):
                 ms[0, :, 0] = local_state
                 # quantum numbers for all states occupied
                 all_qn = np.array(local_basis.sigmaqn)[np.nonzero(local_state)]
-                if all_qn.std() != 0:
+                if not np.allclose(all_qn.std(axis=0), 0):
                     raise ValueError("Quantum numbers are mixed in the condition.")
                 qn = all_qn[0]
 
             mps[isite] = ms
-            qn_single[isite] = qn
+            mps.qn.append(mps.qn[-1] + qn.reshape(1, qn_size))
 
         if len(condition) != 0:
-            raise ValueError(f"Condition not complete used: {condition}")
-        qn_single = np.array(qn_single)
-        mps.qn = [[0]]
-        for isite in range(model.nsite):
-            mps.qn.append([np.sum(qn_single[:isite+1])])
-        mps.qnidx = model.nsite - 1
+            raise ValueError(f"Condition not completely used: {condition}")
         mps.qntot = mps.qn[-1][0]
-        mps.qn[-1] = [0]
+        mps.qn[-1] = np.zeros((1, qn_size), dtype=int)
+        mps.qnidx = model.nsite - 1
         mps.to_right = False
 
         return mps
@@ -269,10 +271,10 @@ class Mps(MatrixProduct):
         
         mps = cls()
         mps.model = model
-        mps.qn = [[0]] * (model.nsite + 1)
+        mps.qn = [np.zeros((1, model.qn_size), dtype=int)] * (model.nsite + 1)
         mps.qnidx = model.nsite - 1
         mps.to_right = False
-        mps.qntot = 0
+        mps.qntot = np.zeros(model.qn_size, dtype=int)
             
         mps.build_empty_mp(model.nsite)
         
@@ -347,7 +349,7 @@ class Mps(MatrixProduct):
             mp.append(mt)
         mp.qn = npload["qn"]
         mp.qnidx = int(npload["qnidx"])
-        mp.qntot = int(npload["qntot"])
+        mp.qntot = npload["qntot"]
         version = npload["version"]
         if version == "0.1":
             mp.to_right = bool(npload["left"])
@@ -602,7 +604,8 @@ class Mps(MatrixProduct):
                 if self.is_mps:
                     ex_state: MatrixProduct = self.ground_state(self.model, False)
                     # for self.qntot >= 1
-                    for i in range(self.qntot):
+                    assert self.model.qn_size == 1 # otherwise not supported
+                    for i in range(self.qntot[0]):
                         ex_state = Mpo.onsite(self.model, r"a^\dagger") @ ex_state
                 elif self.is_mpdm:
                     assert self.qntot == 1
@@ -923,14 +926,15 @@ class Mps(MatrixProduct):
             mps = self.to_complex()
 
         # the quantum number symmetry is used
-        qnmat_list = []
+        qn_mask_list = []
         position = [0]
         qntot = mps.qntot
         for imps in range(mps.site_num):
             mps.move_qnidx(imps)
-            qnbigl, qnbigr, qnmat= mps._get_big_qn([imps])
-            qnmat_list.append(qnmat)
-            position.append(position[-1]+np.sum(qnmat == qntot))
+            qnbigl, qnbigr, qnmat = mps._get_big_qn([imps])
+            qn_mask = get_qn_mask(qnmat, mps.qntot)
+            qn_mask_list.append(qn_mask)
+            position.append(position[-1]+np.sum(qn_mask))
 
         sw_min_list = []
         
@@ -940,8 +944,7 @@ class Mps(MatrixProduct):
 
             # update mps: from left to right
             for imps in range(mps.site_num):
-                mps[imps] = cvec2cmat(mps[imps].shape, asnumpy(y[position[imps]:position[imps + 1]]),
-                                                           qnmat_list[imps], qntot)
+                mps[imps] = cvec2cmat(asnumpy(y[position[imps]:position[imps + 1]]), qn_mask_list[imps])
             mpo = mpo_t(t, mps=mps)
 
             if self.evolve_config.method == EvolveMethod.tdvp_mu_vmf:
@@ -994,7 +997,7 @@ class Mps(MatrixProduct):
                             ovlp_inv0=S_L_inv_list[imps], ovlp0=S_L_list[imps])
 
                     hop_y[position[imps]:position[imps+1]] = func(0,
-                            mps[imps].array.ravel()).reshape(mps[imps].shape)[qnmat_list[imps]==qntot]
+                            mps[imps].array.ravel()).reshape(mps[imps].shape)[qn_mask_list[imps]]
 
                     continue
 
@@ -1053,11 +1056,11 @@ class Mps(MatrixProduct):
                         ovlp_inv0=S_L_inv_list[imps], ovlp0=S_L_list[imps])
 
                 hop_y[position[imps]:position[imps+1]] = func(0,
-                        asxp(mps[imps].array.ravel())).reshape(mps[imps].shape)[qnmat_list[imps]==qntot]
+                        asxp(mps[imps].array.ravel())).reshape(mps[imps].shape)[qn_mask_list[imps]]
 
             return hop_y
 
-        init_y = xp.concatenate([asxp(ms.array[qnmat_list[ims]==qntot]) for ims, ms in enumerate(mps)])
+        init_y = xp.concatenate([asxp(ms.array[qn_mask_list[ims]]) for ims, ms in enumerate(mps)])
         # the ivp local error, please refer to the Scipy default setting
         sol = solve_ivp(
             func_vmf,
@@ -1070,8 +1073,7 @@ class Mps(MatrixProduct):
 
         # update mps: from left to right
         for imps in range(mps.site_num):
-            mps[imps] = cvec2cmat(mps[imps].shape, asnumpy(sol.y[:, -1][position[imps]:position[imps + 1]]),
-                                                       qnmat_list[imps], qntot)
+            mps[imps] = cvec2cmat(asnumpy(sol.y[:, -1][position[imps]:position[imps + 1]]), qn_mask_list[imps])
 
         logger.info(f"{self.evolve_config.method} VMF func called: {sol.nfev}. RKF steps: {len(sol.t)}")
 

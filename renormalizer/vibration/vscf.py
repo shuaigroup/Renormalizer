@@ -7,6 +7,7 @@ import logging
 from renormalizer.mps.backend import xp, OE_BACKEND
 from renormalizer.mps.lib import Environ, cvec2cmat
 from renormalizer.mps import Mpo, Mps
+from renormalizer.mps.svd_qn import get_qn_mask
 from renormalizer.mps.matrix import asnumpy, asxp
 
 logger = logging.getLogger(__name__)
@@ -72,7 +73,7 @@ class Vscf():
                 
                 # get the quantum number pattern
                 qnbigl, qnbigr, qnmat = mps._get_big_qn(cidx)
-                cshape = qnmat.shape
+                qn_mask = get_qn_mask(qnmat, mps.qntot)
 
                 # center mo
                 cmo = [asxp(mpo[idx]) for idx in cidx]
@@ -87,13 +88,13 @@ class Vscf():
                     ltensor, cmo[0], rtensor,
                     backend=OE_BACKEND
                 )
-                ham = ham[:, :, :, qnmat == mps.qntot][qnmat == mps.qntot, :]
+                ham = ham[:, :, :, qn_mask][qn_mask, :]
                 
                 w, v = scipy.linalg.eigh(asnumpy(ham))
                 # update modal energy
                 self.e[imps] = w
 
-                cstruct = cvec2cmat(cshape, v, qnmat, mps.qntot, nroots=len(w))
+                cstruct = cvec2cmat(v, qn_mask, nroots=len(w))
                 mps._update_mps(cstruct[0], cidx, qnbigl, qnbigr, 1, 0)
 
                 for cs in cstruct:

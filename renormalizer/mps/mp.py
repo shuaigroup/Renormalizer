@@ -9,6 +9,7 @@ from typing import List, Union
 from renormalizer.model import Model, HolsteinModel
 from renormalizer.mps.backend import np, xp
 from renormalizer.mps import svd_qn
+from renormalizer.mps.svd_qn import add_outer, get_qn_mask
 from renormalizer.mps.matrix import (
     asnumpy,
     asxp,
@@ -46,7 +47,7 @@ class MatrixProduct:
             mp.append(mt)
         mp.qn = npload["qn"]
         mp.qnidx = int(npload["qnidx"])
-        mp.qntot = int(npload["qntot"])
+        mp.qntot = npload["qntot"]
         mp.to_right = bool(npload["to_right"])
         return mp
 
@@ -63,9 +64,9 @@ class MatrixProduct:
         self.compress_config: CompressConfig = CompressConfig()
 
         # QN related
-        self.qn: List[List[int]] = []
+        self.qn: List[np.ndarray] = []
         self.qnidx: int = None
-        self.qntot: int = None
+        self.qntot: np.ndarray = None
         # if sweeping to right: True else False
         self.to_right: bool = None
 
@@ -124,11 +125,11 @@ class MatrixProduct:
     pbond_list = pbond_dims
 
     def build_empty_qn(self):
-        self.qntot = 0
+        self.qntot = np.array([0] * self.model.qn_size)
         # set qnidx to the right to be consistent with most MPS/MPO setups
         if self.qnidx is None:
             self.qnidx = len(self) - 1
-        self.qn = [[0] * dim for dim in self.bond_dims]
+        self.qn = [np.zeros((dim, self.model.qn_size), dtype=int) for dim in self.bond_dims]
         if self.to_right is None:
             self.to_right = False
 
@@ -137,10 +138,6 @@ class MatrixProduct:
         self.qnidx = None
         self.qn = None
         self.to_right = None
-
-    def clear_qn(self):
-        self.qntot = 0
-        self.qn = [[0] * dim for dim in self.bond_dims]
 
     def move_qnidx(self, dstidx: int):
         """
@@ -256,7 +253,7 @@ class MatrixProduct:
                 [u.shape[0] // self[idx].pdim_prod] + list(self[idx].pdim) + [m_trunc]
             )
             if qnlset is not None:
-                self.qn[idx + 1] = qnlset[:m_trunc]
+                self.qn[idx + 1] = np.array(qnlset[:m_trunc])
                 self.qnidx = idx + 1
         else:
             self[idx - 1] = tensordot(self[idx - 1], u, axes=1)
@@ -264,7 +261,7 @@ class MatrixProduct:
                 [m_trunc] + list(self[idx].pdim) + [vt.shape[1] // self[idx].pdim_prod]
             )
             if qnrset is not None:
-                self.qn[idx] = qnrset[:m_trunc]
+                self.qn[idx] = np.array(qnrset[:m_trunc])
                 self.qnidx = idx - 1
         if ret_mpsi.nbytes < ret_mpsi.base.nbytes * 0.8:
             # do copy here to discard unnecessary data. Note that in NumPy common slicing returns
@@ -320,15 +317,15 @@ class MatrixProduct:
         qnr = np.array(self.qn[cidx[-1]+1])
         if len(cidx) == 1:
             if self.to_right:
-                qnbigl = np.add.outer(qnl, sigmaqn[0])
+                qnbigl = add_outer(qnl, sigmaqn[0])
                 qnbigr = qnr
             else:
                 qnbigl = qnl
-                qnbigr = np.add.outer(sigmaqn[0], qnr)
+                qnbigr = add_outer(sigmaqn[0], qnr)
         else:
-            qnbigl = np.add.outer(qnl, sigmaqn[0])
-            qnbigr = np.add.outer(sigmaqn[1], qnr)
-        qnmat = np.add.outer(qnbigl, qnbigr)
+            qnbigl = add_outer(qnl, sigmaqn[0])
+            qnbigr = add_outer(sigmaqn[1], qnr)
+        qnmat = add_outer(qnbigl, qnbigr)
         return qnbigl, qnbigr, qnmat
 
     @property
@@ -352,7 +349,7 @@ class MatrixProduct:
         return float(res)
 
     def add(self, other: "MatrixProduct"):
-        assert self.qntot == other.qntot
+        assert np.all(self.qntot == other.qntot)
         assert self.site_num == other.site_num
 
         new_mps = self.metacopy()
@@ -408,9 +405,10 @@ class MatrixProduct:
         #assert self.qnidx == other.qnidx
         new_mps.move_qnidx(other.qnidx)
         new_mps.to_right = other.to_right
-        new_mps.qn = [qn1 + qn2 for qn1, qn2 in zip(self.qn, other.qn)]
-        new_mps.qn[0] = [0]
-        new_mps.qn[-1] = [0]
+        new_mps.qn = [np.concatenate([qn1, qn2]) for qn1, qn2 in zip(self.qn, other.qn)]
+        # qn at the boundary should have dimension 1
+        new_mps.qn[0] = np.zeros((1, new_mps.qn[0].shape[1]), dtype=int)
+        new_mps.qn[-1] = np.zeros((1, new_mps.qn[0].shape[1]), dtype=int)
         if self.compress_add:
             new_mps.canonicalise()
             new_mps.compress()
@@ -571,6 +569,7 @@ class MatrixProduct:
 
                 # get the quantum number pattern
                 qnbigl, qnbigr, qnmat = mps._get_big_qn(cidx)
+                qn_mask = get_qn_mask(qnmat, mps.qntot)
 
                 # center mo
                 cmo = [asxp(mpo[idx]) for idx in cidx]
@@ -582,7 +581,7 @@ class MatrixProduct:
                 hop = hop_expr(ltensor, rtensor, cmo, cms.shape)
                 cout = hop(cms)
                 # clean up the elements which do not meet the qn requirements
-                cout[qnmat!=mps.qntot] = 0
+                cout[~qn_mask] = 0
                 mps._update_mps(cout, cidx, qnbigl, qnbigr, mmax, percent)
                 if mps.compress_config.ofs is not None:
                     # need to swap the original MPS. Tedious to implement and probably not useful.
@@ -713,15 +712,15 @@ class MatrixProduct:
                 ms, msdim, msqn, compms = select_basis(
                     Uset, SUset, qnlnew, Vset, Mmax, percent=percent
                 )
-                ms = ms.reshape(list(qnbigl.shape) + [msdim])
-                compms = xp.moveaxis(compms.reshape(list(qnbigr.shape) + [msdim]), -1, 0)
+                ms = ms.reshape(list(qnbigl.shape[:-1]) + [msdim])
+                compms = xp.moveaxis(compms.reshape(list(qnbigr.shape[:-1]) + [msdim]), -1, 0)
 
             else:
                 ms, msdim, msqn, compms = select_basis(
                     Vset, SVset, qnrnew, Uset, Mmax, percent=percent
                 )
-                ms = xp.moveaxis(ms.reshape(list(qnbigr.shape) + [msdim]), -1, 0)
-                compms = compms.reshape(list(qnbigl.shape) + [msdim])
+                ms = xp.moveaxis(ms.reshape(list(qnbigr.shape[:-1]) + [msdim]), -1, 0)
+                compms = compms.reshape(list(qnbigl.shape[:-1]) + [msdim])
 
         else:
             # state-averaged method
@@ -732,15 +731,15 @@ class MatrixProduct:
                         cstruct[iroot],
                         cstruct[iroot],
                         axes=(
-                            range(qnbigl.ndim, cstruct[iroot].ndim),
-                            range(qnbigl.ndim, cstruct[iroot].ndim),
+                            range(qnbigl.ndim-1, cstruct[iroot].ndim),
+                            range(qnbigl.ndim-1, cstruct[iroot].ndim),
                         ),
                     )
                 else:
                     ddm += tensordot(
                         cstruct[iroot],
                         cstruct[iroot],
-                        axes=(range(qnbigl.ndim), range(qnbigl.ndim)),
+                        axes=(range(qnbigl.ndim-1), range(qnbigl.ndim-1)),
                     )
             ddm /= len(cstruct)
             Uset, Sset, qnnew = svd_qn.eigh_qn(
@@ -752,22 +751,22 @@ class MatrixProduct:
             rotated_c = []
             averaged_ms = []
             if self.to_right:
-                ms = ms.reshape(list(qnbigl.shape) + [msdim])
+                ms = ms.reshape(list(qnbigl.shape[:-1]) + [msdim])
                 for c in cstruct:
                     compms = tensordot(
                             ms,
                             c,
-                            axes=(range(qnbigl.ndim), range(qnbigl.ndim)),
+                            axes=(range(qnbigl.ndim-1), range(qnbigl.ndim-1)),
                             )
                     rotated_c.append(compms)
                 compms = rotated_c[0]
             else:
-                ms = ms.reshape(list(qnbigr.shape) + [msdim])
+                ms = ms.reshape(list(qnbigr.shape[:-1]) + [msdim])
                 for c in cstruct:
                     compms = tensordot(
                             c,
                             ms,
-                            axes=(range(qnbigl.ndim, cstruct[0].ndim), range(qnbigr.ndim)),
+                            axes=(range(qnbigl.ndim-1, cstruct[0].ndim), range(qnbigr.ndim-1)),
                             )
                     rotated_c.append(compms)
                 compms = rotated_c[0]

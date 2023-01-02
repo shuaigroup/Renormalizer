@@ -6,6 +6,7 @@ import numpy as np
 
 from renormalizer.mps.backend import xp
 from renormalizer.mps.matrix import tensordot
+from renormalizer.mps.svd_qn import add_outer
 from renormalizer.mps import Mpo, Mps
 
 logger = logging.getLogger(__name__)
@@ -13,7 +14,7 @@ logger = logging.getLogger(__name__)
 # MPS first. `digest`, `metacopy`
 class MpDm(Mps, Mpo):
     @classmethod
-    def random(cls, mpo, nexciton, m_max, percent=0):
+    def random(cls, mpo, qntot, m_max, percent=0):
         # avoid misuse to produce mps
         raise ValueError("MpDm don't have to produce random state")
 
@@ -71,7 +72,7 @@ class MpDm(Mps, Mpo):
     def _get_sigmaqn(self, idx):
         array_up = self.model.basis[idx].sigmaqn
         array_down = np.zeros_like(array_up)
-        return np.add.outer(array_up, array_down)
+        return add_outer(array_up, array_down)
 
     def evolve_exact(self, h_mpo, evolve_dt, space):
         MPOprop = Mpo.exact_propagator(
@@ -124,7 +125,6 @@ class MpDm(Mps, Mpo):
         raise NotImplementedError
         logger.warning("using conj_trans on mpdm leads to dummy qn")
         new_mpdm: "MpDmBase" = super().conj_trans()
-        new_mpdm.use_dummy_qn = True
         new_mpdm.coeff = new_mpdm.coeff.conjugate()
         return new_mpdm
 
@@ -154,7 +154,7 @@ class MpDm(Mps, Mpo):
             new_mpdm[i] = mt
         qn = mp.dummy_qn
         new_mpdm.qn = [
-            np.add.outer(np.array(qn_o), np.array(qn_m)).ravel().tolist()
+            add_outer(np.array(qn_o), np.array(qn_m)).reshape(-1, qn_o.shape[1])
             for qn_o, qn_m in zip(self.qn, qn)
         ]
         if canonicalise:

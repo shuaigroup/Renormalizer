@@ -17,6 +17,7 @@ from renormalizer.lib import davidson
 from renormalizer.mps.backend import xp, OE_BACKEND, primme, IMPORT_PRIMME_EXCEPTION
 from renormalizer.mps.matrix import multi_tensor_contract, tensordot, asnumpy, asxp
 from renormalizer.mps.hop_expr import  hop_expr
+from renormalizer.mps.svd_qn import get_qn_mask
 from renormalizer.mps import Mpo, Mps
 from renormalizer.mps.lib import Environ, cvec2cmat
 from renormalizer.utils import Quantity
@@ -201,14 +202,15 @@ def single_sweep(
 
         # get the quantum number pattern
         qnbigl, qnbigr, qnmat = mps._get_big_qn(cidx)
-        cshape = qnmat.shape
+        qn_mask = get_qn_mask(qnmat, mps.qntot)
+        cshape = qn_mask.shape
 
         # center mo
         cmo = [asxp(mpo[idx]) for idx in cidx]
 
-        use_direct_eigh = qnmat.size < 1000 or mps.optimize_config.algo == "direct"
+        use_direct_eigh = np.prod(cshape) < 1000 or mps.optimize_config.algo == "direct"
         if use_direct_eigh:
-            e, c = eigh_direct(mps, qnmat, ltensor, rtensor, cmo, omega)
+            e, c = eigh_direct(mps, qn_mask, ltensor, rtensor, cmo, omega)
         else:
             # the iterative approach
             # generate initial guess
@@ -221,7 +223,7 @@ def single_sweep(
                     # initial guess b-S-c-S-e
                     #                 a   d
                     raw_cguess = tensordot(mps[cidx[0]], mps[cidx[1]], axes=1)
-                cguess = [asnumpy(raw_cguess)[qnmat == mps.qntot]]
+                cguess = [asnumpy(raw_cguess)[qn_mask]]
             else:
                 cguess = []
                 for ms in averaged_ms:
@@ -232,13 +234,13 @@ def single_sweep(
                             raw_cguess = tensordot(ms, mps[cidx[1]], axes=1)
                         else:
                             raw_cguess = tensordot(mps[cidx[0]], ms, axes=1)
-                    cguess.append(asnumpy(raw_cguess)[qnmat == mps.qntot])
+                    cguess.append(asnumpy(raw_cguess)[qn_mask])
 
-            guess_dim = np.sum(qnmat == mps.qntot)
+            guess_dim = np.sum(qn_mask)
             cguess.extend(
                 [np.random.rand(guess_dim) - 0.5 for i in range(len(cguess), nroots)]
             )
-            e, c = eigh_iterative(mps, qnmat, ltensor, rtensor, cmo, omega, cguess)
+            e, c = eigh_iterative(mps, qn_mask, ltensor, rtensor, cmo, omega, cguess)
 
         # if multi roots, both davidson and primme return np.ndarray
         if nroots > 1:
@@ -246,7 +248,7 @@ def single_sweep(
         logger.debug(f"energy: {e}")
         micro_iteration_result.append((e, cidx))
 
-        cstruct = cvec2cmat(cshape, c, qnmat, mps.qntot, nroots=nroots)
+        cstruct = cvec2cmat(c, qn_mask, nroots=nroots)
 
         # store the "optimal" mps (usually in the middle of each sweep)
         if cidx == last_opt_e_idx:
@@ -270,7 +272,7 @@ def single_sweep(
 
 def eigh_direct(
     mps: Mps,
-    qnmat: np.ndarray,
+    qn_mask: np.ndarray,
     ltensor: xp.ndarray,
     rtensor: xp.ndarray,
     cmo: List[xp.ndarray],
@@ -291,7 +293,7 @@ def eigh_direct(
                 ltensor, cmo[0], rtensor,
                 backend=OE_BACKEND
             )
-            ham = ham[:, :, :, qnmat == mps.qntot][qnmat == mps.qntot, :]
+            ham = ham[:, :, :, qn_mask][qn_mask, :]
         else:
             # S-a       l-S
             #     d   g
@@ -303,7 +305,7 @@ def eigh_direct(
                 ltensor, cmo[0], cmo[1], rtensor,
                 backend=OE_BACKEND,
             )
-            ham = ham[:, :, :, :, qnmat == mps.qntot][qnmat == mps.qntot, :]
+            ham = ham[:, :, :, :, qn_mask][qn_mask, :]
     else:
         if mps.optimize_config.method == "1site":
             #   S-a e j-S
@@ -316,7 +318,7 @@ def eigh_direct(
                 ltensor, cmo[0], cmo[0], rtensor,
                 backend=OE_BACKEND,
             )
-            ham = ham[:, :, :, qnmat == mps.qntot][qnmat == mps.qntot, :]
+            ham = ham[:, :, :, qn_mask][qn_mask, :]
         else:
             #   S-a e   j o-S
             #   O-b-O-g-O-l-O
@@ -328,7 +330,7 @@ def eigh_direct(
                 ltensor, cmo[0], cmo[0], cmo[1], cmo[1], rtensor,
                 backend=OE_BACKEND,
             )
-            ham = ham[:, :, :, :, qnmat == mps.qntot][qnmat == mps.qntot, :]
+            ham = ham[:, :, :, :, qn_mask][qn_mask, :]
 
     inverse = mps.optimize_config.inverse
     w, v = scipy.linalg.eigh(asnumpy(ham) * inverse)
@@ -345,7 +347,7 @@ def eigh_direct(
 
 def eigh_iterative(
     mps: Mps,
-    qnmat: np.ndarray,
+    qn_mask: np.ndarray,
     ltensor: xp.ndarray,
     rtensor: xp.ndarray,
     cmo: List[xp.ndarray],
@@ -404,12 +406,12 @@ def eigh_iterative(
                 backend=OE_BACKEND,
             )
 
-    hdiag = asnumpy(hdiag[(qnmat == mps.qntot)] * inverse)
+    hdiag = asnumpy(hdiag[qn_mask] * inverse)
 
     # Define the H operator
 
     # contraction expression
-    cshape = qnmat.shape
+    cshape = qn_mask.shape
     expr = hop_expr(ltensor, rtensor, cmo, cshape, omega is not None)
 
     count = 0
@@ -426,10 +428,10 @@ def eigh_iterative(
         res = []
         for c in clist:
             # convert c to initial structure according to qn pattern
-            cstruct = asxp(cvec2cmat(cshape, c, qnmat, mps.qntot))
+            cstruct = asxp(cvec2cmat(c, qn_mask))
             cout = expr(cstruct) * inverse
             # convert structure c to 1d according to qn
-            res.append(asnumpy(cout)[qnmat == mps.qntot])
+            res.append(asnumpy(cout)[qn_mask])
 
         if len(res) == 1:
             return res[0]
@@ -466,7 +468,7 @@ def eigh_iterative(
         if primme is None:
             logger.error("can not import primme")
             raise IMPORT_PRIMME_EXCEPTION
-        h_dim = np.sum(qnmat == mps.qntot)
+        h_dim = np.sum(qn_mask)
         precond = lambda x: scipy.sparse.diags(1 / (hdiag + 1e-4)) @ x
         A = scipy.sparse.linalg.LinearOperator((h_dim, h_dim), matvec=hop, matmat=hop)
         M = scipy.sparse.linalg.LinearOperator((h_dim, h_dim), matvec=precond, matmat=hop)

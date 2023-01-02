@@ -25,7 +25,6 @@ def test_zt():
     mps = Mps.ground_state(model, False)
     mps.compress_config = CompressConfig(threshold=1e-6)
     mps.evolve_config = EvolveConfig(adaptive=True, guess_dt=0.1)
-    mps.use_dummy_qn = True
     mpo = Mpo(model)
     time_series = [0]
     spin = [1]

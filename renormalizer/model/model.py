@@ -44,6 +44,10 @@ class Model:
         if len(all_dof_list) != len(set(all_dof_list)):
             raise ValueError("Duplicate DoF definition found in the basis list.")
         self.basis: List[BasisSet] = basis
+        qn_size_list = [b.sigmaqn.shape[1] for b in basis]
+        if len(set(qn_size_list)) != 1:
+            raise ValueError(f"Inconsistent quantum number size: {set(qn_size_list)}")
+        self.qn_size: int = qn_size_list[0]
         if output_ordering is None:
             self.output_ordering = self.basis
         else:
