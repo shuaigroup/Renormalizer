@@ -158,6 +158,7 @@ class Op:
                 raise ValueError("qn should be a list.")
 
         # handle default qn when qn_list is None
+        # "a^\dagger" and "a" are taken to be 1 and -1 respectively
         if qn_list is None:
             qn_list = []
             for s in self.split_symbol:
