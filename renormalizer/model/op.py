@@ -395,7 +395,18 @@ class OpSum(list):
     []
     >>> opsum * opsum
     [Op('X X', [0, 0], 1.0), Op('X Y', [0, 1], 2.0), Op('Y X', [1, 0], 2.0), Op('Y Y', [1, 1], 4.0)]
+    >>> OpSum.product([opsum, opsum])
+    [Op('X X', [0, 0], 1.0), Op('X Y', [0, 1], 2.0), Op('Y X', [1, 0], 2.0), Op('Y Y', [1, 1], 4.0)]
     """
+    @classmethod
+    def product(cls, op_list):
+        if len(op_list) == 0:
+            return cls()
+        prod = op_list[0]
+        for op in op_list[1:]:
+            prod = prod * op
+        return prod
+
     def copy(self):
         return OpSum(super().copy())
 
