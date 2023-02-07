@@ -222,6 +222,7 @@
 <span class="kn">from</span> <span class="nn">renormalizer.mps.backend</span> <span class="kn">import</span> <span class="n">xp</span><span class="p">,</span> <span class="n">OE_BACKEND</span><span class="p">,</span> <span class="n">primme</span><span class="p">,</span> <span class="n">IMPORT_PRIMME_EXCEPTION</span>
 <span class="kn">from</span> <span class="nn">renormalizer.mps.matrix</span> <span class="kn">import</span> <span class="n">multi_tensor_contract</span><span class="p">,</span> <span class="n">tensordot</span><span class="p">,</span> <span class="n">asnumpy</span><span class="p">,</span> <span class="n">asxp</span>
 <span class="kn">from</span> <span class="nn">renormalizer.mps.hop_expr</span> <span class="kn">import</span>  <span class="n">hop_expr</span>
+<span class="kn">from</span> <span class="nn">renormalizer.mps.svd_qn</span> <span class="kn">import</span> <span class="n">get_qn_mask</span>
 <span class="kn">from</span> <span class="nn">renormalizer.mps</span> <span class="kn">import</span> <span class="n">Mpo</span><span class="p">,</span> <span class="n">Mps</span>
 <span class="kn">from</span> <span class="nn">renormalizer.mps.lib</span> <span class="kn">import</span> <span class="n">Environ</span><span class="p">,</span> <span class="n">cvec2cmat</span>
 <span class="kn">from</span> <span class="nn">renormalizer.utils</span> <span class="kn">import</span> <span class="n">Quantity</span>
@@ -230,17 +231,17 @@
 
 
 <div class="viewcode-block" id="construct_mps_mpo"><a class="viewcode-back" href="../../../static.html#renormalizer.mps.gs.construct_mps_mpo">[docs]</a><span class="k">def</span> <span class="nf">construct_mps_mpo</span><span class="p">(</span><span class="n">model</span><span class="p">,</span> <span class="n">mmax</span><span class="p">,</span> <span class="n">nexciton</span><span class="p">,</span> <span class="n">offset</span><span class="o">=</span><span class="n">Quantity</span><span class="p">(</span><span class="mi">0</span><span class="p">)):</span>
-    <span class="sd">&quot;&quot;&quot;</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">    MPO/MPS structure 2</span>
 <span class="sd">    e1,ph11,ph12,..e2,ph21,ph22,...en,phn1,phn2...</span>
 <span class="sd">    &quot;&quot;&quot;</span>
 
-    <span class="sd">&quot;&quot;&quot;</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">    initialize MPO</span>
 <span class="sd">    &quot;&quot;&quot;</span>
     <span class="n">mpo</span> <span class="o">=</span> <span class="n">Mpo</span><span class="p">(</span><span class="n">model</span><span class="p">,</span> <span class="n">offset</span><span class="o">=</span><span class="n">offset</span><span class="p">)</span>
 
-    <span class="sd">&quot;&quot;&quot;</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">    initialize MPS according to quantum number</span>
 <span class="sd">    &quot;&quot;&quot;</span>
     <span class="n">mps</span> <span class="o">=</span> <span class="n">Mps</span><span class="o">.</span><span class="n">random</span><span class="p">(</span><span class="n">model</span><span class="p">,</span> <span class="n">nexciton</span><span class="p">,</span> <span class="n">mmax</span><span class="p">,</span> <span class="n">percent</span><span class="o">=</span><span class="mi">1</span><span class="p">)</span>
@@ -250,7 +251,7 @@
 
 
 <div class="viewcode-block" id="optimize_mps"><a class="viewcode-back" href="../../../static.html#renormalizer.mps.gs.optimize_mps">[docs]</a><span class="k">def</span> <span class="nf">optimize_mps</span><span class="p">(</span><span class="n">mps</span><span class="p">:</span> <span class="n">Mps</span><span class="p">,</span> <span class="n">mpo</span><span class="p">:</span> <span class="n">Mpo</span><span class="p">,</span> <span class="n">omega</span><span class="p">:</span> <span class="nb">float</span> <span class="o">=</span> <span class="kc">None</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Tuple</span><span class="p">[</span><span class="n">List</span><span class="p">,</span> <span class="n">Mps</span><span class="p">]:</span>
-    <span class="sa">r</span><span class="sd">&quot;&quot;&quot;DMRG ground state algorithm and state-averaged excited states algorithm</span>
+<span class="w">    </span><span class="sa">r</span><span class="sd">&quot;&quot;&quot;DMRG ground state algorithm and state-averaged excited states algorithm</span>
 
 <span class="sd">    Parameters</span>
 <span class="sd">    ----------</span>
@@ -406,14 +407,15 @@
 
         <span class="c1"># get the quantum number pattern</span>
         <span class="n">qnbigl</span><span class="p">,</span> <span class="n">qnbigr</span><span class="p">,</span> <span class="n">qnmat</span> <span class="o">=</span> <span class="n">mps</span><span class="o">.</span><span class="n">_get_big_qn</span><span class="p">(</span><span class="n">cidx</span><span class="p">)</span>
-        <span class="n">cshape</span> <span class="o">=</span> <span class="n">qnmat</span><span class="o">.</span><span class="n">shape</span>
+        <span class="n">qn_mask</span> <span class="o">=</span> <span class="n">get_qn_mask</span><span class="p">(</span><span class="n">qnmat</span><span class="p">,</span> <span class="n">mps</span><span class="o">.</span><span class="n">qntot</span><span class="p">)</span>
+        <span class="n">cshape</span> <span class="o">=</span> <span class="n">qn_mask</span><span class="o">.</span><span class="n">shape</span>
 
         <span class="c1"># center mo</span>
         <span class="n">cmo</span> <span class="o">=</span> <span class="p">[</span><span class="n">asxp</span><span class="p">(</span><span class="n">mpo</span><span class="p">[</span><span class="n">idx</span><span class="p">])</span> <span class="k">for</span> <span class="n">idx</span> <span class="ow">in</span> <span class="n">cidx</span><span class="p">]</span>
 
-        <span class="n">use_direct_eigh</span> <span class="o">=</span> <span class="n">qnmat</span><span class="o">.</span><span class="n">size</span> <span class="o">&lt;</span> <span class="mi">1000</span> <span class="ow">or</span> <span class="n">mps</span><span class="o">.</span><span class="n">optimize_config</span><span class="o">.</span><span class="n">algo</span> <span class="o">==</span> <span class="s2">&quot;direct&quot;</span>
+        <span class="n">use_direct_eigh</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">prod</span><span class="p">(</span><span class="n">cshape</span><span class="p">)</span> <span class="o">&lt;</span> <span class="mi">1000</span> <span class="ow">or</span> <span class="n">mps</span><span class="o">.</span><span class="n">optimize_config</span><span class="o">.</span><span class="n">algo</span> <span class="o">==</span> <span class="s2">&quot;direct&quot;</span>
         <span class="k">if</span> <span class="n">use_direct_eigh</span><span class="p">:</span>
-            <span class="n">e</span><span class="p">,</span> <span class="n">c</span> <span class="o">=</span> <span class="n">eigh_direct</span><span class="p">(</span><span class="n">mps</span><span class="p">,</span> <span class="n">qnmat</span><span class="p">,</span> <span class="n">ltensor</span><span class="p">,</span> <span class="n">rtensor</span><span class="p">,</span> <span class="n">cmo</span><span class="p">,</span> <span class="n">omega</span><span class="p">)</span>
+            <span class="n">e</span><span class="p">,</span> <span class="n">c</span> <span class="o">=</span> <span class="n">eigh_direct</span><span class="p">(</span><span class="n">mps</span><span class="p">,</span> <span class="n">qn_mask</span><span class="p">,</span> <span class="n">ltensor</span><span class="p">,</span> <span class="n">rtensor</span><span class="p">,</span> <span class="n">cmo</span><span class="p">,</span> <span class="n">omega</span><span class="p">)</span>
         <span class="k">else</span><span class="p">:</span>
             <span class="c1"># the iterative approach</span>
             <span class="c1"># generate initial guess</span>
@@ -426,7 +428,7 @@
                     <span class="c1"># initial guess b-S-c-S-e</span>
                     <span class="c1">#                 a   d</span>
                     <span class="n">raw_cguess</span> <span class="o">=</span> <span class="n">tensordot</span><span class="p">(</span><span class="n">mps</span><span class="p">[</span><span class="n">cidx</span><span class="p">[</span><span class="mi">0</span><span class="p">]],</span> <span class="n">mps</span><span class="p">[</span><span class="n">cidx</span><span class="p">[</span><span class="mi">1</span><span class="p">]],</span> <span class="n">axes</span><span class="o">=</span><span class="mi">1</span><span class="p">)</span>
-                <span class="n">cguess</span> <span class="o">=</span> <span class="p">[</span><span class="n">asnumpy</span><span class="p">(</span><span class="n">raw_cguess</span><span class="p">)[</span><span class="n">qnmat</span> <span class="o">==</span> <span class="n">mps</span><span class="o">.</span><span class="n">qntot</span><span class="p">]]</span>
+                <span class="n">cguess</span> <span class="o">=</span> <span class="p">[</span><span class="n">asnumpy</span><span class="p">(</span><span class="n">raw_cguess</span><span class="p">)[</span><span class="n">qn_mask</span><span class="p">]]</span>
             <span class="k">else</span><span class="p">:</span>
                 <span class="n">cguess</span> <span class="o">=</span> <span class="p">[]</span>
                 <span class="k">for</span> <span class="n">ms</span> <span class="ow">in</span> <span class="n">averaged_ms</span><span class="p">:</span>
@@ -437,13 +439,13 @@
                             <span class="n">raw_cguess</span> <span class="o">=</span> <span class="n">tensordot</span><span class="p">(</span><span class="n">ms</span><span class="p">,</span> <span class="n">mps</span><span class="p">[</span><span class="n">cidx</span><span class="p">[</span><span class="mi">1</span><span class="p">]],</span> <span class="n">axes</span><span class="o">=</span><span class="mi">1</span><span class="p">)</span>
                         <span class="k">else</span><span class="p">:</span>
                             <span class="n">raw_cguess</span> <span class="o">=</span> <span class="n">tensordot</span><span class="p">(</span><span class="n">mps</span><span class="p">[</span><span class="n">cidx</span><span class="p">[</span><span class="mi">0</span><span class="p">]],</span> <span class="n">ms</span><span class="p">,</span> <span class="n">axes</span><span class="o">=</span><span class="mi">1</span><span class="p">)</span>
-                    <span class="n">cguess</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">asnumpy</span><span class="p">(</span><span class="n">raw_cguess</span><span class="p">)[</span><span class="n">qnmat</span> <span class="o">==</span> <span class="n">mps</span><span class="o">.</span><span class="n">qntot</span><span class="p">])</span>
+                    <span class="n">cguess</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">asnumpy</span><span class="p">(</span><span class="n">raw_cguess</span><span class="p">)[</span><span class="n">qn_mask</span><span class="p">])</span>
 
-            <span class="n">guess_dim</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">sum</span><span class="p">(</span><span class="n">qnmat</span> <span class="o">==</span> <span class="n">mps</span><span class="o">.</span><span class="n">qntot</span><span class="p">)</span>
+            <span class="n">guess_dim</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">sum</span><span class="p">(</span><span class="n">qn_mask</span><span class="p">)</span>
             <span class="n">cguess</span><span class="o">.</span><span class="n">extend</span><span class="p">(</span>
                 <span class="p">[</span><span class="n">np</span><span class="o">.</span><span class="n">random</span><span class="o">.</span><span class="n">rand</span><span class="p">(</span><span class="n">guess_dim</span><span class="p">)</span> <span class="o">-</span> <span class="mf">0.5</span> <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="n">cguess</span><span class="p">),</span> <span class="n">nroots</span><span class="p">)]</span>
             <span class="p">)</span>
-            <span class="n">e</span><span class="p">,</span> <span class="n">c</span> <span class="o">=</span> <span class="n">eigh_iterative</span><span class="p">(</span><span class="n">mps</span><span class="p">,</span> <span class="n">qnmat</span><span class="p">,</span> <span class="n">ltensor</span><span class="p">,</span> <span class="n">rtensor</span><span class="p">,</span> <span class="n">cmo</span><span class="p">,</span> <span class="n">omega</span><span class="p">,</span> <span class="n">cguess</span><span class="p">)</span>
+            <span class="n">e</span><span class="p">,</span> <span class="n">c</span> <span class="o">=</span> <span class="n">eigh_iterative</span><span class="p">(</span><span class="n">mps</span><span class="p">,</span> <span class="n">qn_mask</span><span class="p">,</span> <span class="n">ltensor</span><span class="p">,</span> <span class="n">rtensor</span><span class="p">,</span> <span class="n">cmo</span><span class="p">,</span> <span class="n">omega</span><span class="p">,</span> <span class="n">cguess</span><span class="p">)</span>
 
         <span class="c1"># if multi roots, both davidson and primme return np.ndarray</span>
         <span class="k">if</span> <span class="n">nroots</span> <span class="o">&gt;</span> <span class="mi">1</span><span class="p">:</span>
@@ -451,7 +453,7 @@
         <span class="n">logger</span><span class="o">.</span><span class="n">debug</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;energy: </span><span class="si">{</span><span class="n">e</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
         <span class="n">micro_iteration_result</span><span class="o">.</span><span class="n">append</span><span class="p">((</span><span class="n">e</span><span class="p">,</span> <span class="n">cidx</span><span class="p">))</span>
 
-        <span class="n">cstruct</span> <span class="o">=</span> <span class="n">cvec2cmat</span><span class="p">(</span><span class="n">cshape</span><span class="p">,</span> <span class="n">c</span><span class="p">,</span> <span class="n">qnmat</span><span class="p">,</span> <span class="n">mps</span><span class="o">.</span><span class="n">qntot</span><span class="p">,</span> <span class="n">nroots</span><span class="o">=</span><span class="n">nroots</span><span class="p">)</span>
+        <span class="n">cstruct</span> <span class="o">=</span> <span class="n">cvec2cmat</span><span class="p">(</span><span class="n">c</span><span class="p">,</span> <span class="n">qn_mask</span><span class="p">,</span> <span class="n">nroots</span><span class="o">=</span><span class="n">nroots</span><span class="p">)</span>
 
         <span class="c1"># store the &quot;optimal&quot; mps (usually in the middle of each sweep)</span>
         <span class="k">if</span> <span class="n">cidx</span> <span class="o">==</span> <span class="n">last_opt_e_idx</span><span class="p">:</span>
@@ -475,7 +477,7 @@
 
 <div class="viewcode-block" id="eigh_direct"><a class="viewcode-back" href="../../../static.html#renormalizer.mps.gs.eigh_direct">[docs]</a><span class="k">def</span> <span class="nf">eigh_direct</span><span class="p">(</span>
     <span class="n">mps</span><span class="p">:</span> <span class="n">Mps</span><span class="p">,</span>
-    <span class="n">qnmat</span><span class="p">:</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">,</span>
+    <span class="n">qn_mask</span><span class="p">:</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">,</span>
     <span class="n">ltensor</span><span class="p">:</span> <span class="n">xp</span><span class="o">.</span><span class="n">ndarray</span><span class="p">,</span>
     <span class="n">rtensor</span><span class="p">:</span> <span class="n">xp</span><span class="o">.</span><span class="n">ndarray</span><span class="p">,</span>
     <span class="n">cmo</span><span class="p">:</span> <span class="n">List</span><span class="p">[</span><span class="n">xp</span><span class="o">.</span><span class="n">ndarray</span><span class="p">],</span>
@@ -496,7 +498,7 @@
                 <span class="n">ltensor</span><span class="p">,</span> <span class="n">cmo</span><span class="p">[</span><span class="mi">0</span><span class="p">],</span> <span class="n">rtensor</span><span class="p">,</span>
                 <span class="n">backend</span><span class="o">=</span><span class="n">OE_BACKEND</span>
             <span class="p">)</span>
-            <span class="n">ham</span> <span class="o">=</span> <span class="n">ham</span><span class="p">[:,</span> <span class="p">:,</span> <span class="p">:,</span> <span class="n">qnmat</span> <span class="o">==</span> <span class="n">mps</span><span class="o">.</span><span class="n">qntot</span><span class="p">][</span><span class="n">qnmat</span> <span class="o">==</span> <span class="n">mps</span><span class="o">.</span><span class="n">qntot</span><span class="p">,</span> <span class="p">:]</span>
+            <span class="n">ham</span> <span class="o">=</span> <span class="n">ham</span><span class="p">[:,</span> <span class="p">:,</span> <span class="p">:,</span> <span class="n">qn_mask</span><span class="p">][</span><span class="n">qn_mask</span><span class="p">,</span> <span class="p">:]</span>
         <span class="k">else</span><span class="p">:</span>
             <span class="c1"># S-a       l-S</span>
             <span class="c1">#     d   g</span>
@@ -508,7 +510,7 @@
                 <span class="n">ltensor</span><span class="p">,</span> <span class="n">cmo</span><span class="p">[</span><span class="mi">0</span><span class="p">],</span> <span class="n">cmo</span><span class="p">[</span><span class="mi">1</span><span class="p">],</span> <span class="n">rtensor</span><span class="p">,</span>
                 <span class="n">backend</span><span class="o">=</span><span class="n">OE_BACKEND</span><span class="p">,</span>
             <span class="p">)</span>
-            <span class="n">ham</span> <span class="o">=</span> <span class="n">ham</span><span class="p">[:,</span> <span class="p">:,</span> <span class="p">:,</span> <span class="p">:,</span> <span class="n">qnmat</span> <span class="o">==</span> <span class="n">mps</span><span class="o">.</span><span class="n">qntot</span><span class="p">][</span><span class="n">qnmat</span> <span class="o">==</span> <span class="n">mps</span><span class="o">.</span><span class="n">qntot</span><span class="p">,</span> <span class="p">:]</span>
+            <span class="n">ham</span> <span class="o">=</span> <span class="n">ham</span><span class="p">[:,</span> <span class="p">:,</span> <span class="p">:,</span> <span class="p">:,</span> <span class="n">qn_mask</span><span class="p">][</span><span class="n">qn_mask</span><span class="p">,</span> <span class="p">:]</span>
     <span class="k">else</span><span class="p">:</span>
         <span class="k">if</span> <span class="n">mps</span><span class="o">.</span><span class="n">optimize_config</span><span class="o">.</span><span class="n">method</span> <span class="o">==</span> <span class="s2">&quot;1site&quot;</span><span class="p">:</span>
             <span class="c1">#   S-a e j-S</span>
@@ -521,7 +523,7 @@
                 <span class="n">ltensor</span><span class="p">,</span> <span class="n">cmo</span><span class="p">[</span><span class="mi">0</span><span class="p">],</span> <span class="n">cmo</span><span class="p">[</span><span class="mi">0</span><span class="p">],</span> <span class="n">rtensor</span><span class="p">,</span>
                 <span class="n">backend</span><span class="o">=</span><span class="n">OE_BACKEND</span><span class="p">,</span>
             <span class="p">)</span>
-            <span class="n">ham</span> <span class="o">=</span> <span class="n">ham</span><span class="p">[:,</span> <span class="p">:,</span> <span class="p">:,</span> <span class="n">qnmat</span> <span class="o">==</span> <span class="n">mps</span><span class="o">.</span><span class="n">qntot</span><span class="p">][</span><span class="n">qnmat</span> <span class="o">==</span> <span class="n">mps</span><span class="o">.</span><span class="n">qntot</span><span class="p">,</span> <span class="p">:]</span>
+            <span class="n">ham</span> <span class="o">=</span> <span class="n">ham</span><span class="p">[:,</span> <span class="p">:,</span> <span class="p">:,</span> <span class="n">qn_mask</span><span class="p">][</span><span class="n">qn_mask</span><span class="p">,</span> <span class="p">:]</span>
         <span class="k">else</span><span class="p">:</span>
             <span class="c1">#   S-a e   j o-S</span>
             <span class="c1">#   O-b-O-g-O-l-O</span>
@@ -533,7 +535,7 @@
                 <span class="n">ltensor</span><span class="p">,</span> <span class="n">cmo</span><span class="p">[</span><span class="mi">0</span><span class="p">],</span> <span class="n">cmo</span><span class="p">[</span><span class="mi">0</span><span class="p">],</span> <span class="n">cmo</span><span class="p">[</span><span class="mi">1</span><span class="p">],</span> <span class="n">cmo</span><span class="p">[</span><span class="mi">1</span><span class="p">],</span> <span class="n">rtensor</span><span class="p">,</span>
                 <span class="n">backend</span><span class="o">=</span><span class="n">OE_BACKEND</span><span class="p">,</span>
             <span class="p">)</span>
-            <span class="n">ham</span> <span class="o">=</span> <span class="n">ham</span><span class="p">[:,</span> <span class="p">:,</span> <span class="p">:,</span> <span class="p">:,</span> <span class="n">qnmat</span> <span class="o">==</span> <span class="n">mps</span><span class="o">.</span><span class="n">qntot</span><span class="p">][</span><span class="n">qnmat</span> <span class="o">==</span> <span class="n">mps</span><span class="o">.</span><span class="n">qntot</span><span class="p">,</span> <span class="p">:]</span>
+            <span class="n">ham</span> <span class="o">=</span> <span class="n">ham</span><span class="p">[:,</span> <span class="p">:,</span> <span class="p">:,</span> <span class="p">:,</span> <span class="n">qn_mask</span><span class="p">][</span><span class="n">qn_mask</span><span class="p">,</span> <span class="p">:]</span>
 
     <span class="n">inverse</span> <span class="o">=</span> <span class="n">mps</span><span class="o">.</span><span class="n">optimize_config</span><span class="o">.</span><span class="n">inverse</span>
     <span class="n">w</span><span class="p">,</span> <span class="n">v</span> <span class="o">=</span> <span class="n">scipy</span><span class="o">.</span><span class="n">linalg</span><span class="o">.</span><span class="n">eigh</span><span class="p">(</span><span class="n">asnumpy</span><span class="p">(</span><span class="n">ham</span><span class="p">)</span> <span class="o">*</span> <span class="n">inverse</span><span class="p">)</span>
@@ -550,7 +552,7 @@
 
 <div class="viewcode-block" id="eigh_iterative"><a class="viewcode-back" href="../../../static.html#renormalizer.mps.gs.eigh_iterative">[docs]</a><span class="k">def</span> <span class="nf">eigh_iterative</span><span class="p">(</span>
     <span class="n">mps</span><span class="p">:</span> <span class="n">Mps</span><span class="p">,</span>
-    <span class="n">qnmat</span><span class="p">:</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">,</span>
+    <span class="n">qn_mask</span><span class="p">:</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">,</span>
     <span class="n">ltensor</span><span class="p">:</span> <span class="n">xp</span><span class="o">.</span><span class="n">ndarray</span><span class="p">,</span>
     <span class="n">rtensor</span><span class="p">:</span> <span class="n">xp</span><span class="o">.</span><span class="n">ndarray</span><span class="p">,</span>
     <span class="n">cmo</span><span class="p">:</span> <span class="n">List</span><span class="p">[</span><span class="n">xp</span><span class="o">.</span><span class="n">ndarray</span><span class="p">],</span>
@@ -609,12 +611,12 @@
                 <span class="n">backend</span><span class="o">=</span><span class="n">OE_BACKEND</span><span class="p">,</span>
             <span class="p">)</span>
 
-    <span class="n">hdiag</span> <span class="o">=</span> <span class="n">asnumpy</span><span class="p">(</span><span class="n">hdiag</span><span class="p">[(</span><span class="n">qnmat</span> <span class="o">==</span> <span class="n">mps</span><span class="o">.</span><span class="n">qntot</span><span class="p">)]</span> <span class="o">*</span> <span class="n">inverse</span><span class="p">)</span>
+    <span class="n">hdiag</span> <span class="o">=</span> <span class="n">asnumpy</span><span class="p">(</span><span class="n">hdiag</span><span class="p">[</span><span class="n">qn_mask</span><span class="p">]</span> <span class="o">*</span> <span class="n">inverse</span><span class="p">)</span>
 
     <span class="c1"># Define the H operator</span>
 
     <span class="c1"># contraction expression</span>
-    <span class="n">cshape</span> <span class="o">=</span> <span class="n">qnmat</span><span class="o">.</span><span class="n">shape</span>
+    <span class="n">cshape</span> <span class="o">=</span> <span class="n">qn_mask</span><span class="o">.</span><span class="n">shape</span>
     <span class="n">expr</span> <span class="o">=</span> <span class="n">hop_expr</span><span class="p">(</span><span class="n">ltensor</span><span class="p">,</span> <span class="n">rtensor</span><span class="p">,</span> <span class="n">cmo</span><span class="p">,</span> <span class="n">cshape</span><span class="p">,</span> <span class="n">omega</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">)</span>
 
     <span class="n">count</span> <span class="o">=</span> <span class="mi">0</span>
@@ -631,10 +633,10 @@
         <span class="n">res</span> <span class="o">=</span> <span class="p">[]</span>
         <span class="k">for</span> <span class="n">c</span> <span class="ow">in</span> <span class="n">clist</span><span class="p">:</span>
             <span class="c1"># convert c to initial structure according to qn pattern</span>
-            <span class="n">cstruct</span> <span class="o">=</span> <span class="n">asxp</span><span class="p">(</span><span class="n">cvec2cmat</span><span class="p">(</span><span class="n">cshape</span><span class="p">,</span> <span class="n">c</span><span class="p">,</span> <span class="n">qnmat</span><span class="p">,</span> <span class="n">mps</span><span class="o">.</span><span class="n">qntot</span><span class="p">))</span>
+            <span class="n">cstruct</span> <span class="o">=</span> <span class="n">asxp</span><span class="p">(</span><span class="n">cvec2cmat</span><span class="p">(</span><span class="n">c</span><span class="p">,</span> <span class="n">qn_mask</span><span class="p">))</span>
             <span class="n">cout</span> <span class="o">=</span> <span class="n">expr</span><span class="p">(</span><span class="n">cstruct</span><span class="p">)</span> <span class="o">*</span> <span class="n">inverse</span>
             <span class="c1"># convert structure c to 1d according to qn</span>
-            <span class="n">res</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">asnumpy</span><span class="p">(</span><span class="n">cout</span><span class="p">)[</span><span class="n">qnmat</span> <span class="o">==</span> <span class="n">mps</span><span class="o">.</span><span class="n">qntot</span><span class="p">])</span>
+            <span class="n">res</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">asnumpy</span><span class="p">(</span><span class="n">cout</span><span class="p">)[</span><span class="n">qn_mask</span><span class="p">])</span>
 
         <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">res</span><span class="p">)</span> <span class="o">==</span> <span class="mi">1</span><span class="p">:</span>
             <span class="k">return</span> <span class="n">res</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span>
@@ -671,7 +673,7 @@
         <span class="k">if</span> <span class="n">primme</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
             <span class="n">logger</span><span class="o">.</span><span class="n">error</span><span class="p">(</span><span class="s2">&quot;can not import primme&quot;</span><span class="p">)</span>
             <span class="k">raise</span> <span class="n">IMPORT_PRIMME_EXCEPTION</span>
-        <span class="n">h_dim</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">sum</span><span class="p">(</span><span class="n">qnmat</span> <span class="o">==</span> <span class="n">mps</span><span class="o">.</span><span class="n">qntot</span><span class="p">)</span>
+        <span class="n">h_dim</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">sum</span><span class="p">(</span><span class="n">qn_mask</span><span class="p">)</span>
         <span class="n">precond</span> <span class="o">=</span> <span class="k">lambda</span> <span class="n">x</span><span class="p">:</span> <span class="n">scipy</span><span class="o">.</span><span class="n">sparse</span><span class="o">.</span><span class="n">diags</span><span class="p">(</span><span class="mi">1</span> <span class="o">/</span> <span class="p">(</span><span class="n">hdiag</span> <span class="o">+</span> <span class="mf">1e-4</span><span class="p">))</span> <span class="o">@</span> <span class="n">x</span>
         <span class="n">A</span> <span class="o">=</span> <span class="n">scipy</span><span class="o">.</span><span class="n">sparse</span><span class="o">.</span><span class="n">linalg</span><span class="o">.</span><span class="n">LinearOperator</span><span class="p">((</span><span class="n">h_dim</span><span class="p">,</span> <span class="n">h_dim</span><span class="p">),</span> <span class="n">matvec</span><span class="o">=</span><span class="n">hop</span><span class="p">,</span> <span class="n">matmat</span><span class="o">=</span><span class="n">hop</span><span class="p">)</span>
         <span class="n">M</span> <span class="o">=</span> <span class="n">scipy</span><span class="o">.</span><span class="n">sparse</span><span class="o">.</span><span class="n">linalg</span><span class="o">.</span><span class="n">LinearOperator</span><span class="p">((</span><span class="n">h_dim</span><span class="p">,</span> <span class="n">h_dim</span><span class="p">),</span> <span class="n">matvec</span><span class="o">=</span><span class="n">precond</span><span class="p">,</span> <span class="n">matmat</span><span class="o">=</span><span class="n">hop</span><span class="p">)</span>

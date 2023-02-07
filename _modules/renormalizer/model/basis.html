@@ -216,7 +216,7 @@
 
 
 <div class="viewcode-block" id="BasisSet"><a class="viewcode-back" href="../../../model.html#renormalizer.model.basis.BasisSet">[docs]</a><span class="k">class</span> <span class="nc">BasisSet</span><span class="p">:</span>
-    <span class="sa">r</span><span class="sd">&quot;&quot;&quot;</span>
+<span class="w">    </span><span class="sa">r</span><span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">    the parent class for local basis set</span>
 
 <span class="sd">    Args:</span>
@@ -225,7 +225,7 @@
 <span class="sd">            For basis containing multiple DoFs, the type should be a ``list`` or ``tuple``</span>
 <span class="sd">            of anything that can be hashed.</span>
 <span class="sd">        nbas (int): number of dimension of the basis set</span>
-<span class="sd">        sigmaqn (List(int)): the qn of each basis</span>
+<span class="sd">        sigmaqn (List): the quantum number of each basis. Could be an integer or tuple of integers</span>
 
 <span class="sd">    &quot;&quot;&quot;</span>
 
@@ -238,21 +238,30 @@
     <span class="c1">#: If the basis set contains multiple DoFs.</span>
     <span class="n">multi_dof</span> <span class="o">=</span> <span class="kc">False</span>
 
-    <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">dof</span><span class="p">,</span> <span class="n">nbas</span><span class="p">:</span> <span class="nb">int</span><span class="p">,</span> <span class="n">sigmaqn</span><span class="p">:</span> <span class="n">List</span><span class="p">[</span><span class="nb">int</span><span class="p">]):</span>
+    <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">dof</span><span class="p">,</span> <span class="n">nbas</span><span class="p">:</span> <span class="nb">int</span><span class="p">,</span> <span class="n">sigmaqn</span><span class="p">:</span> <span class="n">List</span><span class="p">):</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">dof</span> <span class="o">=</span> <span class="n">dof</span>
 
         <span class="k">assert</span> <span class="nb">type</span><span class="p">(</span><span class="n">nbas</span><span class="p">)</span> <span class="ow">is</span> <span class="nb">int</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">nbas</span> <span class="o">=</span> <span class="n">nbas</span>
 
+        <span class="bp">self</span><span class="o">.</span><span class="n">sigmaqn</span> <span class="o">=</span> <span class="p">[]</span>
         <span class="k">for</span> <span class="n">qn</span> <span class="ow">in</span> <span class="n">sigmaqn</span><span class="p">:</span>
-            <span class="k">assert</span> <span class="nb">type</span><span class="p">(</span><span class="n">qn</span><span class="p">)</span> <span class="ow">is</span> <span class="nb">int</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">sigmaqn</span> <span class="o">=</span> <span class="n">sigmaqn</span>
+            <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">qn</span><span class="p">,</span> <span class="nb">int</span><span class="p">):</span>
+                <span class="n">qn</span> <span class="o">=</span> <span class="p">[</span><span class="n">qn</span><span class="p">]</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">sigmaqn</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">(</span><span class="n">qn</span><span class="p">))</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">sigmaqn</span><span class="p">:</span><span class="n">np</span><span class="o">.</span><span class="n">ndarray</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">sigmaqn</span><span class="p">)</span>
+
+    <span class="k">def</span> <span class="fm">__str__</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="n">ret</span> <span class="o">=</span> <span class="sa">f</span><span class="s2">&quot;dof: </span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">dof</span><span class="si">}</span><span class="s2">, nbas: </span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">nbas</span><span class="si">}</span><span class="s2">&quot;</span>
+        <span class="k">if</span> <span class="ow">not</span> <span class="n">np</span><span class="o">.</span><span class="n">all</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">sigmaqn</span> <span class="o">==</span> <span class="mi">0</span><span class="p">):</span>
+            <span class="n">ret</span> <span class="o">=</span> <span class="n">ret</span> <span class="o">+</span> <span class="sa">f</span><span class="s2">&quot;, qn: </span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">sigmaqn</span><span class="o">.</span><span class="n">tolist</span><span class="p">()</span><span class="si">}</span><span class="s2">&quot;</span>
+        <span class="k">return</span> <span class="sa">f</span><span class="s2">&quot;</span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="vm">__class__</span><span class="o">.</span><span class="vm">__name__</span><span class="si">}</span><span class="s2">(</span><span class="si">{</span><span class="n">ret</span><span class="si">}</span><span class="s2">)&quot;</span>
 
     <span class="k">def</span> <span class="fm">__repr__</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
-        <span class="k">return</span> <span class="sa">f</span><span class="s2">&quot;(dof: </span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">dof</span><span class="si">}</span><span class="s2">, nbas: </span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">nbas</span><span class="si">}</span><span class="s2">, qn: </span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">sigmaqn</span><span class="si">}</span><span class="s2">)&quot;</span>
+        <span class="k">return</span> <span class="nb">str</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span>
 
 <div class="viewcode-block" id="BasisSet.op_mat"><a class="viewcode-back" href="../../../model.html#renormalizer.model.basis.BasisSet.op_mat">[docs]</a>    <span class="k">def</span> <span class="nf">op_mat</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">op</span><span class="p">:</span> <span class="n">Op</span><span class="p">):</span>
-        <span class="sd">&quot;&quot;&quot;</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">        Matrix representation under the basis set of the input operator.</span>
 <span class="sd">        The factor is included.</span>
 
@@ -270,7 +279,7 @@
 
     <span class="nd">@property</span>
     <span class="k">def</span> <span class="nf">dofs</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
-        <span class="sd">&quot;&quot;&quot;</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">        Names of the DoFs contained in the basis.</span>
 <span class="sd">        Returns a tuple even if the basis contains only one DoF.</span>
 
@@ -286,7 +295,7 @@
 
 
 <div class="viewcode-block" id="BasisSet.copy"><a class="viewcode-back" href="../../../model.html#renormalizer.model.basis.BasisSet.copy">[docs]</a>    <span class="k">def</span> <span class="nf">copy</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">new_dof</span><span class="p">):</span>
-        <span class="sd">&quot;&quot;&quot;</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">        Return a copy of the basis set with new DoF name specified in the argument.</span>
 
 <span class="sd">        Parameters</span>
@@ -303,7 +312,7 @@
 
 
 <div class="viewcode-block" id="BasisSHO"><a class="viewcode-back" href="../../../model.html#renormalizer.model.basis.BasisSHO">[docs]</a><span class="k">class</span> <span class="nc">BasisSHO</span><span class="p">(</span><span class="n">BasisSet</span><span class="p">):</span>
-    <span class="sd">&quot;&quot;&quot;</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">    simple harmonic oscillator basis set</span>
 
 <span class="sd">    Args:</span>
@@ -337,8 +346,8 @@
             <span class="bp">self</span><span class="o">.</span><span class="n">dvr_x</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">dvr_v</span> <span class="o">=</span> <span class="n">scipy</span><span class="o">.</span><span class="n">linalg</span><span class="o">.</span><span class="n">eigh</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">op_mat</span><span class="p">(</span><span class="s2">&quot;x&quot;</span><span class="p">))</span>
             <span class="bp">self</span><span class="o">.</span><span class="n">dvr</span> <span class="o">=</span> <span class="kc">True</span>
 
-    <span class="k">def</span> <span class="fm">__repr__</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
-        <span class="k">return</span> <span class="sa">f</span><span class="s2">&quot;(dof: </span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">dof</span><span class="si">}</span><span class="s2">, x0: </span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">x0</span><span class="si">}</span><span class="s2">, omega: </span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">omega</span><span class="si">}</span><span class="s2">, nbas: </span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">nbas</span><span class="si">}</span><span class="s2">)&quot;</span>
+    <span class="k">def</span> <span class="fm">__str__</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="k">return</span> <span class="sa">f</span><span class="s2">&quot;BasisSHO(dof: </span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">dof</span><span class="si">}</span><span class="s2">, x0: </span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">x0</span><span class="si">}</span><span class="s2">, omega: </span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">omega</span><span class="si">}</span><span class="s2">, nbas: </span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">nbas</span><span class="si">}</span><span class="s2">)&quot;</span>
 
 <div class="viewcode-block" id="BasisSHO.op_mat"><a class="viewcode-back" href="../../../model.html#renormalizer.model.basis.BasisSHO.op_mat">[docs]</a>    <span class="k">def</span> <span class="nf">op_mat</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">op</span><span class="p">:</span> <span class="n">Union</span><span class="p">[</span><span class="n">Op</span><span class="p">,</span> <span class="nb">str</span><span class="p">]):</span>
         <span class="k">if</span> <span class="ow">not</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">op</span><span class="p">,</span> <span class="n">Op</span><span class="p">):</span>
@@ -526,7 +535,7 @@
                               <span class="n">dvr</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">dvr</span><span class="p">,</span> <span class="n">general_xp_power</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">general_xp_power</span><span class="p">)</span></div></div>
 
 <div class="viewcode-block" id="BasisHopsBoson"><a class="viewcode-back" href="../../../model.html#renormalizer.model.basis.BasisHopsBoson">[docs]</a><span class="k">class</span> <span class="nc">BasisHopsBoson</span><span class="p">(</span><span class="n">BasisSet</span><span class="p">):</span>
-    <span class="sa">r</span><span class="sd">&quot;&quot;&quot;</span>
+<span class="w">    </span><span class="sa">r</span><span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">    Bosonic like basis but with uncommon ladder operator, used in Hierarchy of Pure States method</span>
 
 <span class="sd">    .. math::</span>
@@ -538,7 +547,7 @@
 <span class="sd">    dof :</span>
 <span class="sd">        The name of the DoF contained in the basis set. The type could be anything that can be hashed.</span>
 <span class="sd">    nbas : int</span>
-<span class="sd">        number of dimension of the basis set (highest occupation number)</span>
+<span class="sd">        number of dimension of the basis set (the highest occupation number)</span>
 
 <span class="sd">    &quot;&quot;&quot;</span>
 
@@ -571,7 +580,7 @@
 
 
 <div class="viewcode-block" id="BasisSineDVR"><a class="viewcode-back" href="../../../model.html#renormalizer.model.basis.BasisSineDVR">[docs]</a><span class="k">class</span> <span class="nc">BasisSineDVR</span><span class="p">(</span><span class="n">BasisSet</span><span class="p">):</span>
-    <span class="sa">r</span><span class="sd">&quot;&quot;&quot;</span>
+<span class="w">    </span><span class="sa">r</span><span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">    Sine DVR basis (particle-in-a-box) for vibrational, angular, and</span>
 <span class="sd">    dissociative modes.</span>
 <span class="sd">    See Phys. Rep. 324, 1–105 (2000).</span>
@@ -626,8 +635,8 @@
         <span class="bp">self</span><span class="o">.</span><span class="n">dvr_v</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">sqrt</span><span class="p">(</span><span class="mi">2</span><span class="o">/</span><span class="p">(</span><span class="n">nbas</span><span class="o">+</span><span class="mi">1</span><span class="p">))</span> <span class="o">*</span> \
             <span class="n">np</span><span class="o">.</span><span class="n">sin</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">tensordot</span><span class="p">(</span><span class="n">tmp</span><span class="p">,</span> <span class="n">tmp</span><span class="p">,</span> <span class="n">axes</span><span class="o">=</span><span class="mi">0</span><span class="p">)</span><span class="o">*</span><span class="n">np</span><span class="o">.</span><span class="n">pi</span><span class="o">/</span><span class="p">(</span><span class="n">nbas</span><span class="o">+</span><span class="mi">1</span><span class="p">))</span>
 
-    <span class="k">def</span> <span class="fm">__repr__</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
-        <span class="k">return</span> <span class="sa">f</span><span class="s2">&quot;(xi: </span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">xi</span><span class="si">}</span><span class="s2">, xf: </span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">xf</span><span class="si">}</span><span class="s2">, nbas: </span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">nbas</span><span class="si">}</span><span class="s2">)&quot;</span>
+    <span class="k">def</span> <span class="fm">__str__</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="k">return</span> <span class="sa">f</span><span class="s2">&quot;BasisSineDVR(xi: </span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">xi</span><span class="si">}</span><span class="s2">, xf: </span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">xf</span><span class="si">}</span><span class="s2">, nbas: </span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">nbas</span><span class="si">}</span><span class="s2">)&quot;</span>
 
 <div class="viewcode-block" id="BasisSineDVR.op_mat"><a class="viewcode-back" href="../../../model.html#renormalizer.model.basis.BasisSineDVR.op_mat">[docs]</a>    <span class="k">def</span> <span class="nf">op_mat</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">op</span><span class="p">:</span> <span class="n">Union</span><span class="p">[</span><span class="n">Op</span><span class="p">,</span> <span class="nb">str</span><span class="p">]):</span>
         <span class="k">if</span> <span class="ow">not</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">op</span><span class="p">,</span> <span class="n">Op</span><span class="p">):</span>
@@ -886,7 +895,7 @@
 
 
 <div class="viewcode-block" id="BasisMultiElectron"><a class="viewcode-back" href="../../../model.html#renormalizer.model.basis.BasisMultiElectron">[docs]</a><span class="k">class</span> <span class="nc">BasisMultiElectron</span><span class="p">(</span><span class="n">BasisSet</span><span class="p">):</span>
-    <span class="sa">r</span><span class="sd">&quot;&quot;&quot;</span>
+<span class="w">    </span><span class="sa">r</span><span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">    The basis set for multi electronic state on one single site,</span>
 <span class="sd">    The basis order is [dof_names[0], dof_names[1], dof_names[2], ...].</span>
 
@@ -894,16 +903,16 @@
 <span class="sd">    ----------</span>
 <span class="sd">    dof : a :class:`list` or :class:`tuple` of hashable objects.</span>
 <span class="sd">        The names of the DoFs contained in the basis set.</span>
-<span class="sd">    sigmaqn : :class:`list` of :class:`int`</span>
-<span class="sd">        The sigmaqn of each basis</span>
+<span class="sd">    sigmaqn : :class:`list` of :class:`int` or :class:`list` of containers of :class:`int`</span>
+<span class="sd">        The quantum number of each basis</span>
 <span class="sd">    &quot;&quot;&quot;</span>
 
     <span class="n">is_electron</span> <span class="o">=</span> <span class="kc">True</span>
     <span class="n">multi_dof</span> <span class="o">=</span> <span class="kc">True</span>
 
-    <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">dof</span><span class="p">,</span> <span class="n">sigmaqn</span><span class="p">:</span> <span class="n">List</span><span class="p">[</span><span class="nb">int</span><span class="p">]):</span>
+    <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">dof</span><span class="p">,</span> <span class="n">sigmaqn</span><span class="p">:</span> <span class="n">List</span><span class="p">):</span>
 
-        <span class="k">assert</span> <span class="nb">len</span><span class="p">(</span><span class="n">sigmaqn</span><span class="p">)</span> <span class="o">==</span> <span class="nb">len</span><span class="p">(</span><span class="n">sigmaqn</span><span class="p">)</span>
+        <span class="k">assert</span> <span class="nb">len</span><span class="p">(</span><span class="n">dof</span><span class="p">)</span> <span class="o">==</span> <span class="nb">len</span><span class="p">(</span><span class="n">sigmaqn</span><span class="p">)</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">dof_name_map</span> <span class="o">=</span> <span class="p">{</span><span class="n">name</span><span class="p">:</span> <span class="n">i</span> <span class="k">for</span> <span class="n">i</span><span class="p">,</span> <span class="n">name</span> <span class="ow">in</span> <span class="nb">enumerate</span><span class="p">(</span><span class="n">dof</span><span class="p">)}</span>
         <span class="nb">super</span><span class="p">()</span><span class="o">.</span><span class="fm">__init__</span><span class="p">(</span><span class="n">dof</span><span class="p">,</span> <span class="nb">len</span><span class="p">(</span><span class="n">dof</span><span class="p">),</span> <span class="n">sigmaqn</span><span class="p">)</span>
 
@@ -944,7 +953,7 @@
 
 
 <div class="viewcode-block" id="BasisMultiElectronVac"><a class="viewcode-back" href="../../../model.html#renormalizer.model.basis.BasisMultiElectronVac">[docs]</a><span class="k">class</span> <span class="nc">BasisMultiElectronVac</span><span class="p">(</span><span class="n">BasisSet</span><span class="p">):</span>
-    <span class="sa">r</span><span class="sd">&quot;&quot;&quot;</span>
+<span class="w">    </span><span class="sa">r</span><span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">    Another basis set for multi electronic state on one single site.</span>
 <span class="sd">    Vacuum state is included.</span>
 <span class="sd">    The basis order is [vacuum, dof_names[0], dof_names[1],...].</span>
@@ -1011,9 +1020,10 @@
 <div class="viewcode-block" id="BasisMultiElectronVac.copy"><a class="viewcode-back" href="../../../model.html#renormalizer.model.basis.BasisMultiElectronVac.copy">[docs]</a>    <span class="k">def</span> <span class="nf">copy</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">new_dof</span><span class="p">):</span>
         <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="vm">__class__</span><span class="p">(</span><span class="n">new_dof</span><span class="p">)</span></div></div>
 
+
 <div class="viewcode-block" id="BasisSimpleElectron"><a class="viewcode-back" href="../../../model.html#renormalizer.model.basis.BasisSimpleElectron">[docs]</a><span class="k">class</span> <span class="nc">BasisSimpleElectron</span><span class="p">(</span><span class="n">BasisSet</span><span class="p">):</span>
 
-    <span class="sa">r</span><span class="sd">&quot;&quot;&quot;</span>
+<span class="w">    </span><span class="sa">r</span><span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">    The basis set for simple electron DoF, two state with 0: unoccupied, 1: occupied</span>
 
 <span class="sd">    Parameters</span>
@@ -1021,6 +1031,14 @@
 <span class="sd">    dof : any hashable object</span>
 <span class="sd">        The name of the DoF contained in the basis set.</span>
 
+<span class="sd">    Examples</span>
+<span class="sd">    --------</span>
+<span class="sd">    &gt;&gt;&gt; b = BasisSimpleElectron(0)</span>
+<span class="sd">    &gt;&gt;&gt; b</span>
+<span class="sd">    BasisSimpleElectron(dof: 0, nbas: 2, qn: [[0], [1]])</span>
+<span class="sd">    &gt;&gt;&gt; b.op_mat(r&quot;a^\dagger&quot;)</span>
+<span class="sd">    array([[0., 0.],</span>
+<span class="sd">           [1., 0.]])</span>
 <span class="sd">    &quot;&quot;&quot;</span>
     <span class="n">is_electron</span> <span class="o">=</span> <span class="kc">True</span>
 
@@ -1052,17 +1070,21 @@
 
 
 <div class="viewcode-block" id="BasisHalfSpin"><a class="viewcode-back" href="../../../model.html#renormalizer.model.basis.BasisHalfSpin">[docs]</a><span class="k">class</span> <span class="nc">BasisHalfSpin</span><span class="p">(</span><span class="n">BasisSet</span><span class="p">):</span>
-    <span class="sa">r</span><span class="sd">&quot;&quot;&quot;</span>
+<span class="w">    </span><span class="sa">r</span><span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">    The basis the for 1/2 spin DoF</span>
 
 <span class="sd">    Parameters</span>
 <span class="sd">    ----------</span>
-<span class="sd">    dof : any hashable object</span>
+<span class="sd">    dof : any hashable object such as integer</span>
 <span class="sd">        The name of the DoF contained in the basis set.</span>
+<span class="sd">    sigmaqn : :class:`list` of :class:`int` or :class:`list` of containers of :class:`int`</span>
+<span class="sd">        The quantum number of each basis</span>
 
 <span class="sd">    Examples</span>
 <span class="sd">    --------</span>
 <span class="sd">    &gt;&gt;&gt; b = BasisHalfSpin(0)</span>
+<span class="sd">    &gt;&gt;&gt; b</span>
+<span class="sd">    BasisHalfSpin(dof: 0, nbas: 2)</span>
 <span class="sd">    &gt;&gt;&gt; b.op_mat(&quot;X&quot;)</span>
 <span class="sd">    array([[0., 1.],</span>
 <span class="sd">           [1., 0.]])</span>
@@ -1073,7 +1095,7 @@
 
     <span class="n">is_spin</span> <span class="o">=</span> <span class="kc">True</span>
 
-    <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">dof</span><span class="p">,</span> <span class="n">sigmaqn</span><span class="p">:</span><span class="n">List</span><span class="p">[</span><span class="nb">int</span><span class="p">]</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
+    <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">dof</span><span class="p">,</span> <span class="n">sigmaqn</span><span class="p">:</span><span class="n">List</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
         <span class="k">if</span> <span class="n">sigmaqn</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
             <span class="n">sigmaqn</span> <span class="o">=</span> <span class="p">[</span><span class="mi">0</span><span class="p">,</span> <span class="mi">0</span><span class="p">]</span>
         <span class="nb">super</span><span class="p">()</span><span class="o">.</span><span class="fm">__init__</span><span class="p">(</span><span class="n">dof</span><span class="p">,</span> <span class="mi">2</span><span class="p">,</span> <span class="n">sigmaqn</span><span class="p">)</span>

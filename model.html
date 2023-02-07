@@ -502,6 +502,11 @@ If J is actually not a constant, a value error will be raised.</p>
 Length of <code class="docutils literal notranslate"><span class="pre">self.basis</span></code>.</p>
 </dd></dl>
 
+<dl class="py attribute">
+<dt class="sig sig-object py" id="renormalizer.model.HolsteinModel.qn_size">
+<span class="sig-name descname"><span class="pre">qn_size</span></span><em class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><a class="reference external" href="https://docs.python.org/3/library/functions.html#int" title="(in Python v3.11)"><span class="pre">int</span></a></em><a class="headerlink" href="#renormalizer.model.HolsteinModel.qn_size" title="Permalink to this definition">#</a></dt>
+<dd></dd></dl>
+
 <dl class="py method">
 <dt class="sig sig-object py" id="renormalizer.model.HolsteinModel.switch_scheme">
 <span class="sig-name descname"><span class="pre">switch_scheme</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">scheme</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference external" href="https://docs.python.org/3/library/functions.html#int" title="(in Python v3.11)"><span class="pre">int</span></a></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><a class="reference internal" href="#renormalizer.model.HolsteinModel" title="renormalizer.model.model.HolsteinModel"><span class="pre">HolsteinModel</span></a></span></span><a class="reference internal" href="_modules/renormalizer/model/model.html#HolsteinModel.switch_scheme"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#renormalizer.model.HolsteinModel.switch_scheme" title="Permalink to this definition">#</a></dt>
@@ -651,6 +656,11 @@ which is the model and return a <a class="reference external" href="https://docs
 <dd><p>Number of sites in the MPS/MPO to be constructed.
 Length of <code class="docutils literal notranslate"><span class="pre">self.basis</span></code>.</p>
 </dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="renormalizer.model.SpinBosonModel.qn_size">
+<span class="sig-name descname"><span class="pre">qn_size</span></span><em class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><a class="reference external" href="https://docs.python.org/3/library/functions.html#int" title="(in Python v3.11)"><span class="pre">int</span></a></em><a class="headerlink" href="#renormalizer.model.SpinBosonModel.qn_size" title="Permalink to this definition">#</a></dt>
+<dd></dd></dl>
 
 <dl class="py method">
 <dt class="sig sig-object py" id="renormalizer.model.SpinBosonModel.to_dict">
@@ -812,6 +822,11 @@ which is the model and return a <a class="reference external" href="https://docs
 Length of <code class="docutils literal notranslate"><span class="pre">self.basis</span></code>.</p>
 </dd></dl>
 
+<dl class="py attribute">
+<dt class="sig sig-object py" id="renormalizer.model.TI1DModel.qn_size">
+<span class="sig-name descname"><span class="pre">qn_size</span></span><em class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><a class="reference external" href="https://docs.python.org/3/library/functions.html#int" title="(in Python v3.11)"><span class="pre">int</span></a></em><a class="headerlink" href="#renormalizer.model.TI1DModel.qn_size" title="Permalink to this definition">#</a></dt>
+<dd></dd></dl>
+
 <dl class="py method">
 <dt class="sig sig-object py" id="renormalizer.model.TI1DModel.to_dict">
 <span class="sig-name descname"><span class="pre">to_dict</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><a class="reference external" href="https://docs.python.org/3/library/typing.html#typing.Dict" title="(in Python v3.11)"><span class="pre">Dict</span></a></span></span><a class="headerlink" href="#renormalizer.model.TI1DModel.to_dict" title="Permalink to this definition">#</a></dt>
@@ -841,7 +856,7 @@ This is primarily for dump purposes.</p>
 <h2><span class="section-number">4.2. </span>Basis Functions<a class="headerlink" href="#basis-functions" title="Permalink to this heading">#</a></h2>
 <dl class="py class">
 <dt class="sig sig-object py" id="renormalizer.model.basis.BasisSet">
-<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">renormalizer.model.basis.</span></span><span class="sig-name descname"><span class="pre">BasisSet</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">dof</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">nbas</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference external" href="https://docs.python.org/3/library/functions.html#int" title="(in Python v3.11)"><span class="pre">int</span></a></span></em>, <em class="sig-param"><span class="n"><span class="pre">sigmaqn</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference external" href="https://docs.python.org/3/library/typing.html#typing.List" title="(in Python v3.11)"><span class="pre">List</span></a><span class="p"><span class="pre">[</span></span><a class="reference external" href="https://docs.python.org/3/library/functions.html#int" title="(in Python v3.11)"><span class="pre">int</span></a><span class="p"><span class="pre">]</span></span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/renormalizer/model/basis.html#BasisSet"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#renormalizer.model.basis.BasisSet" title="Permalink to this definition">#</a></dt>
+<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">renormalizer.model.basis.</span></span><span class="sig-name descname"><span class="pre">BasisSet</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">dof</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">nbas</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference external" href="https://docs.python.org/3/library/functions.html#int" title="(in Python v3.11)"><span class="pre">int</span></a></span></em>, <em class="sig-param"><span class="n"><span class="pre">sigmaqn</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference external" href="https://docs.python.org/3/library/typing.html#typing.List" title="(in Python v3.11)"><span class="pre">List</span></a></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/renormalizer/model/basis.html#BasisSet"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#renormalizer.model.basis.BasisSet" title="Permalink to this definition">#</a></dt>
 <dd><p>the parent class for local basis set</p>
 <dl class="field-list simple">
 <dt class="field-odd">Parameters<span class="colon">:</span></dt>
@@ -851,7 +866,7 @@ For basis containing only one DoF, the type could be anything that can be hashed
 For basis containing multiple DoFs, the type should be a <code class="docutils literal notranslate"><span class="pre">list</span></code> or <code class="docutils literal notranslate"><span class="pre">tuple</span></code>
 of anything that can be hashed.</p></li>
 <li><p><strong>nbas</strong> (<a class="reference external" href="https://docs.python.org/3/library/functions.html#int" title="(in Python v3.11)"><em>int</em></a>) – number of dimension of the basis set</p></li>
-<li><p><strong>sigmaqn</strong> (<em>List</em><em>(</em><a class="reference external" href="https://docs.python.org/3/library/functions.html#int" title="(in Python v3.11)"><em>int</em></a><em>)</em>) – the qn of each basis</p></li>
+<li><p><strong>sigmaqn</strong> (<em>List</em>) – the quantum number of each basis. Could be an integer or tuple of integers</p></li>
 </ul>
 </dd>
 </dl>
@@ -1024,6 +1039,11 @@ The factor is included.</p>
 </dl>
 </dd></dl>
 
+<dl class="py attribute">
+<dt class="sig sig-object py" id="renormalizer.model.basis.BasisSHO.sigmaqn">
+<span class="sig-name descname"><span class="pre">sigmaqn</span></span><em class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="pre">ndarray</span></em><a class="headerlink" href="#renormalizer.model.basis.BasisSHO.sigmaqn" title="Permalink to this definition">#</a></dt>
+<dd></dd></dl>
+
 </dd></dl>
 
 <dl class="py class">
@@ -1039,7 +1059,7 @@ The factor is included.</p>
 <dt class="field-odd">Parameters<span class="colon">:</span></dt>
 <dd class="field-odd"><ul class="simple">
 <li><p><strong>dof</strong> – The name of the DoF contained in the basis set. The type could be anything that can be hashed.</p></li>
-<li><p><strong>nbas</strong> (<a class="reference external" href="https://docs.python.org/3/library/functions.html#int" title="(in Python v3.11)"><em>int</em></a>) – number of dimension of the basis set (highest occupation number)</p></li>
+<li><p><strong>nbas</strong> (<a class="reference external" href="https://docs.python.org/3/library/functions.html#int" title="(in Python v3.11)"><em>int</em></a>) – number of dimension of the basis set (the highest occupation number)</p></li>
 </ul>
 </dd>
 </dl>
@@ -1116,6 +1136,11 @@ The factor is included.</p>
 </dd>
 </dl>
 </dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="renormalizer.model.basis.BasisHopsBoson.sigmaqn">
+<span class="sig-name descname"><span class="pre">sigmaqn</span></span><em class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="pre">ndarray</span></em><a class="headerlink" href="#renormalizer.model.basis.BasisHopsBoson.sigmaqn" title="Permalink to this definition">#</a></dt>
+<dd></dd></dl>
 
 </dd></dl>
 
@@ -1233,6 +1258,11 @@ The factor is included.</p>
 </dl>
 </dd></dl>
 
+<dl class="py attribute">
+<dt class="sig sig-object py" id="renormalizer.model.basis.BasisSineDVR.sigmaqn">
+<span class="sig-name descname"><span class="pre">sigmaqn</span></span><em class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="pre">ndarray</span></em><a class="headerlink" href="#renormalizer.model.basis.BasisSineDVR.sigmaqn" title="Permalink to this definition">#</a></dt>
+<dd></dd></dl>
+
 </dd></dl>
 
 <dl class="py class">
@@ -1244,6 +1274,15 @@ The factor is included.</p>
 <dd class="field-odd"><p><strong>dof</strong> (<em>any hashable object</em>) – The name of the DoF contained in the basis set.</p>
 </dd>
 </dl>
+<p class="rubric">Examples</p>
+<div class="doctest highlight-default notranslate"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="n">b</span> <span class="o">=</span> <span class="n">BasisSimpleElectron</span><span class="p">(</span><span class="mi">0</span><span class="p">)</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">b</span>
+<span class="go">BasisSimpleElectron(dof: 0, nbas: 2, qn: [[0], [1]])</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">b</span><span class="o">.</span><span class="n">op_mat</span><span class="p">(</span><span class="sa">r</span><span class="s2">&quot;a^\dagger&quot;</span><span class="p">)</span>
+<span class="go">array([[0., 0.],</span>
+<span class="go">       [1., 0.]])</span>
+</pre></div>
+</div>
 <dl class="py method">
 <dt class="sig sig-object py" id="renormalizer.model.basis.BasisSimpleElectron.copy">
 <span class="sig-name descname"><span class="pre">copy</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">new_dof</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/renormalizer/model/basis.html#BasisSimpleElectron.copy"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#renormalizer.model.basis.BasisSimpleElectron.copy" title="Permalink to this definition">#</a></dt>
@@ -1318,18 +1357,23 @@ The factor is included.</p>
 </dl>
 </dd></dl>
 
+<dl class="py attribute">
+<dt class="sig sig-object py" id="renormalizer.model.basis.BasisSimpleElectron.sigmaqn">
+<span class="sig-name descname"><span class="pre">sigmaqn</span></span><em class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="pre">ndarray</span></em><a class="headerlink" href="#renormalizer.model.basis.BasisSimpleElectron.sigmaqn" title="Permalink to this definition">#</a></dt>
+<dd></dd></dl>
+
 </dd></dl>
 
 <dl class="py class">
 <dt class="sig sig-object py" id="renormalizer.model.basis.BasisMultiElectron">
-<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">renormalizer.model.basis.</span></span><span class="sig-name descname"><span class="pre">BasisMultiElectron</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">dof</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">sigmaqn</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference external" href="https://docs.python.org/3/library/typing.html#typing.List" title="(in Python v3.11)"><span class="pre">List</span></a><span class="p"><span class="pre">[</span></span><a class="reference external" href="https://docs.python.org/3/library/functions.html#int" title="(in Python v3.11)"><span class="pre">int</span></a><span class="p"><span class="pre">]</span></span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/renormalizer/model/basis.html#BasisMultiElectron"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#renormalizer.model.basis.BasisMultiElectron" title="Permalink to this definition">#</a></dt>
+<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">renormalizer.model.basis.</span></span><span class="sig-name descname"><span class="pre">BasisMultiElectron</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">dof</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">sigmaqn</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference external" href="https://docs.python.org/3/library/typing.html#typing.List" title="(in Python v3.11)"><span class="pre">List</span></a></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/renormalizer/model/basis.html#BasisMultiElectron"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#renormalizer.model.basis.BasisMultiElectron" title="Permalink to this definition">#</a></dt>
 <dd><p>The basis set for multi electronic state on one single site,
 The basis order is [dof_names[0], dof_names[1], dof_names[2], …].</p>
 <dl class="field-list simple">
 <dt class="field-odd">Parameters<span class="colon">:</span></dt>
 <dd class="field-odd"><ul class="simple">
 <li><p><strong>dof</strong> (a <a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#list" title="(in Python v3.11)"><code class="xref py py-class docutils literal notranslate"><span class="pre">list</span></code></a> or <a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#tuple" title="(in Python v3.11)"><code class="xref py py-class docutils literal notranslate"><span class="pre">tuple</span></code></a> of hashable objects.) – The names of the DoFs contained in the basis set.</p></li>
-<li><p><strong>sigmaqn</strong> (<a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#list" title="(in Python v3.11)"><code class="xref py py-class docutils literal notranslate"><span class="pre">list</span></code></a> of <a class="reference external" href="https://docs.python.org/3/library/functions.html#int" title="(in Python v3.11)"><code class="xref py py-class docutils literal notranslate"><span class="pre">int</span></code></a>) – The sigmaqn of each basis</p></li>
+<li><p><strong>sigmaqn</strong> (<a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#list" title="(in Python v3.11)"><code class="xref py py-class docutils literal notranslate"><span class="pre">list</span></code></a> of <a class="reference external" href="https://docs.python.org/3/library/functions.html#int" title="(in Python v3.11)"><code class="xref py py-class docutils literal notranslate"><span class="pre">int</span></code></a> or <a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#list" title="(in Python v3.11)"><code class="xref py py-class docutils literal notranslate"><span class="pre">list</span></code></a> of containers of <a class="reference external" href="https://docs.python.org/3/library/functions.html#int" title="(in Python v3.11)"><code class="xref py py-class docutils literal notranslate"><span class="pre">int</span></code></a>) – The quantum number of each basis</p></li>
 </ul>
 </dd>
 </dl>
@@ -1406,6 +1450,11 @@ The factor is included.</p>
 </dd>
 </dl>
 </dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="renormalizer.model.basis.BasisMultiElectron.sigmaqn">
+<span class="sig-name descname"><span class="pre">sigmaqn</span></span><em class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="pre">ndarray</span></em><a class="headerlink" href="#renormalizer.model.basis.BasisMultiElectron.sigmaqn" title="Permalink to this definition">#</a></dt>
+<dd></dd></dl>
 
 </dd></dl>
 
@@ -1495,19 +1544,29 @@ The factor is included.</p>
 </dl>
 </dd></dl>
 
+<dl class="py attribute">
+<dt class="sig sig-object py" id="renormalizer.model.basis.BasisMultiElectronVac.sigmaqn">
+<span class="sig-name descname"><span class="pre">sigmaqn</span></span><em class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="pre">ndarray</span></em><a class="headerlink" href="#renormalizer.model.basis.BasisMultiElectronVac.sigmaqn" title="Permalink to this definition">#</a></dt>
+<dd></dd></dl>
+
 </dd></dl>
 
 <dl class="py class">
 <dt class="sig sig-object py" id="renormalizer.model.basis.BasisHalfSpin">
-<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">renormalizer.model.basis.</span></span><span class="sig-name descname"><span class="pre">BasisHalfSpin</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">dof</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">sigmaqn</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference external" href="https://docs.python.org/3/library/typing.html#typing.Optional" title="(in Python v3.11)"><span class="pre">Optional</span></a><span class="p"><span class="pre">[</span></span><a class="reference external" href="https://docs.python.org/3/library/typing.html#typing.List" title="(in Python v3.11)"><span class="pre">List</span></a><span class="p"><span class="pre">[</span></span><a class="reference external" href="https://docs.python.org/3/library/functions.html#int" title="(in Python v3.11)"><span class="pre">int</span></a><span class="p"><span class="pre">]</span></span><span class="p"><span class="pre">]</span></span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/renormalizer/model/basis.html#BasisHalfSpin"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#renormalizer.model.basis.BasisHalfSpin" title="Permalink to this definition">#</a></dt>
+<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">renormalizer.model.basis.</span></span><span class="sig-name descname"><span class="pre">BasisHalfSpin</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">dof</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">sigmaqn</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference external" href="https://docs.python.org/3/library/typing.html#typing.Optional" title="(in Python v3.11)"><span class="pre">Optional</span></a><span class="p"><span class="pre">[</span></span><a class="reference external" href="https://docs.python.org/3/library/typing.html#typing.List" title="(in Python v3.11)"><span class="pre">List</span></a><span class="p"><span class="pre">]</span></span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/renormalizer/model/basis.html#BasisHalfSpin"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#renormalizer.model.basis.BasisHalfSpin" title="Permalink to this definition">#</a></dt>
 <dd><p>The basis the for 1/2 spin DoF</p>
 <dl class="field-list simple">
 <dt class="field-odd">Parameters<span class="colon">:</span></dt>
-<dd class="field-odd"><p><strong>dof</strong> (<em>any hashable object</em>) – The name of the DoF contained in the basis set.</p>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>dof</strong> (<em>any hashable object such as integer</em>) – The name of the DoF contained in the basis set.</p></li>
+<li><p><strong>sigmaqn</strong> (<a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#list" title="(in Python v3.11)"><code class="xref py py-class docutils literal notranslate"><span class="pre">list</span></code></a> of <a class="reference external" href="https://docs.python.org/3/library/functions.html#int" title="(in Python v3.11)"><code class="xref py py-class docutils literal notranslate"><span class="pre">int</span></code></a> or <a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#list" title="(in Python v3.11)"><code class="xref py py-class docutils literal notranslate"><span class="pre">list</span></code></a> of containers of <a class="reference external" href="https://docs.python.org/3/library/functions.html#int" title="(in Python v3.11)"><code class="xref py py-class docutils literal notranslate"><span class="pre">int</span></code></a>) – The quantum number of each basis</p></li>
+</ul>
 </dd>
 </dl>
 <p class="rubric">Examples</p>
 <div class="doctest highlight-default notranslate"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="n">b</span> <span class="o">=</span> <span class="n">BasisHalfSpin</span><span class="p">(</span><span class="mi">0</span><span class="p">)</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">b</span>
+<span class="go">BasisHalfSpin(dof: 0, nbas: 2)</span>
 <span class="gp">&gt;&gt;&gt; </span><span class="n">b</span><span class="o">.</span><span class="n">op_mat</span><span class="p">(</span><span class="s2">&quot;X&quot;</span><span class="p">)</span>
 <span class="go">array([[0., 1.],</span>
 <span class="go">       [1., 0.]])</span>
@@ -1590,6 +1649,11 @@ The factor is included.</p>
 </dl>
 </dd></dl>
 
+<dl class="py attribute">
+<dt class="sig sig-object py" id="renormalizer.model.basis.BasisHalfSpin.sigmaqn">
+<span class="sig-name descname"><span class="pre">sigmaqn</span></span><em class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="pre">ndarray</span></em><a class="headerlink" href="#renormalizer.model.basis.BasisHalfSpin.sigmaqn" title="Permalink to this definition">#</a></dt>
+<dd></dd></dl>
+
 </dd></dl>
 
 </section>
@@ -1617,10 +1681,13 @@ with each element representing one of the simple symbol contained in the complex
 Using a single hashable object is also supported for complex symbol,
 in which case every symbol is assumed to share the same DoF name.</p></li>
 <li><p><strong>factor</strong> (<a class="reference external" href="https://docs.python.org/3/library/functions.html#float" title="(in Python v3.11)"><code class="xref py py-class docutils literal notranslate"><span class="pre">float</span></code></a> or <a class="reference external" href="https://docs.python.org/3/library/functions.html#complex" title="(in Python v3.11)"><code class="xref py py-class docutils literal notranslate"><span class="pre">complex</span></code></a> or <code class="xref py py-class docutils literal notranslate"><span class="pre">Quantity</span></code>) – The prefactor of the operator.</p></li>
-<li><p><strong>qn</strong> (<a class="reference external" href="https://docs.python.org/3/library/functions.html#int" title="(in Python v3.11)"><code class="xref py py-class docutils literal notranslate"><span class="pre">int</span></code></a> or <a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#list" title="(in Python v3.11)"><code class="xref py py-class docutils literal notranslate"><span class="pre">list</span></code></a> of <a class="reference external" href="https://docs.python.org/3/library/functions.html#int" title="(in Python v3.11)"><code class="xref py py-class docutils literal notranslate"><span class="pre">int</span></code></a>.) – The quantum number of the symbol. For simple symbol the <code class="docutils literal notranslate"><span class="pre">qn</span></code> should be an <a class="reference external" href="https://docs.python.org/3/library/functions.html#int" title="(in Python v3.11)"><code class="xref py py-class docutils literal notranslate"><span class="pre">int</span></code></a>.
+<li><p><strong>qn</strong> (<a class="reference external" href="https://docs.python.org/3/library/functions.html#int" title="(in Python v3.11)"><code class="xref py py-class docutils literal notranslate"><span class="pre">int</span></code></a> or <a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#list" title="(in Python v3.11)"><code class="xref py py-class docutils literal notranslate"><span class="pre">list</span></code></a> of <a class="reference external" href="https://docs.python.org/3/library/functions.html#int" title="(in Python v3.11)"><code class="xref py py-class docutils literal notranslate"><span class="pre">int</span></code></a> or <a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#list" title="(in Python v3.11)"><code class="xref py py-class docutils literal notranslate"><span class="pre">list</span></code></a> of containers of <a class="reference external" href="https://docs.python.org/3/library/functions.html#int" title="(in Python v3.11)"><code class="xref py py-class docutils literal notranslate"><span class="pre">int</span></code></a>.) – The quantum number of the symbol. For simple symbol the <code class="docutils literal notranslate"><span class="pre">qn</span></code> should be an <a class="reference external" href="https://docs.python.org/3/library/functions.html#int" title="(in Python v3.11)"><code class="xref py py-class docutils literal notranslate"><span class="pre">int</span></code></a>.
 For complex symbol quantum number of each simple symbol contained in the complex symbol
-should be provided. If <code class="docutils literal notranslate"><span class="pre">qn</span></code> is set to <a class="reference external" href="https://docs.python.org/3/library/constants.html#None" title="(in Python v3.11)"><code class="xref any docutils literal notranslate"><span class="pre">None</span></code></a>, then the quantum number for every symbol is set to 0
-except for``”a^dagger”`` and <code class="docutils literal notranslate"><span class="pre">&quot;a&quot;</span></code>, whose quantum number are set to 1 and -1 respectively.</p></li>
+should be provided in a <a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#list" title="(in Python v3.11)"><code class="xref py py-class docutils literal notranslate"><span class="pre">list</span></code></a>.
+If <code class="docutils literal notranslate"><span class="pre">qn</span></code> is set to <a class="reference external" href="https://docs.python.org/3/library/constants.html#None" title="(in Python v3.11)"><code class="xref any docutils literal notranslate"><span class="pre">None</span></code></a>, then the quantum number for every symbol is set to 0
+except for``”a^dagger”`` and <code class="docutils literal notranslate"><span class="pre">&quot;a&quot;</span></code>, whose quantum number are set to 1 and -1 respectively.
+For multiple quantum numbers <a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#list" title="(in Python v3.11)"><code class="xref py py-class docutils literal notranslate"><span class="pre">list</span></code></a> of containers of <a class="reference external" href="https://docs.python.org/3/library/functions.html#int" title="(in Python v3.11)"><code class="xref py py-class docutils literal notranslate"><span class="pre">int</span></code></a>
+should be provided without any abbreviation.</p></li>
 </ul>
 </dd>
 </dl>
@@ -1637,7 +1704,7 @@ and the DoFs of all simple symbols are set to the <a class="reference external" 
 <p class="rubric">Examples</p>
 <div class="doctest highlight-default notranslate"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="kn">from</span> <span class="nn">renormalizer.model</span> <span class="kn">import</span> <span class="n">Op</span>
 <span class="gp">&gt;&gt;&gt; </span><span class="n">Op</span><span class="p">(</span><span class="sa">r</span><span class="s2">&quot;a^\dagger a&quot;</span><span class="p">,</span> <span class="p">[</span><span class="s1">&#39;site0&#39;</span><span class="p">,</span> <span class="s2">&quot;site1&quot;</span><span class="p">],</span> <span class="mf">2.</span><span class="p">,</span> <span class="n">qn</span><span class="o">=</span><span class="p">[</span><span class="mi">1</span><span class="p">,</span> <span class="o">-</span><span class="mi">1</span><span class="p">])</span>
-<span class="go">Op(&#39;a^\\dagger a&#39;, [&#39;site0&#39;, &#39;site1&#39;], 2.0, [1, -1])</span>
+<span class="go">Op(&#39;a^\\dagger a&#39;, [&#39;site0&#39;, &#39;site1&#39;], 2.0, [[1], [-1]])</span>
 <span class="gp">&gt;&gt;&gt; </span><span class="n">x</span> <span class="o">=</span> <span class="n">Op</span><span class="p">(</span><span class="s2">&quot;X&quot;</span><span class="p">,</span> <span class="mi">0</span><span class="p">,</span> <span class="mf">0.5</span><span class="p">)</span>
 <span class="gp">&gt;&gt;&gt; </span><span class="mi">3</span> <span class="o">*</span> <span class="n">x</span>
 <span class="go">Op(&#39;X&#39;, [0], 1.5)</span>
@@ -1664,7 +1731,7 @@ and the DoFs of all simple symbols are set to the <a class="reference external" 
 
 <dl class="py method">
 <dt class="sig sig-object py" id="renormalizer.model.Op.identity">
-<em class="property"><span class="pre">classmethod</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">identity</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">dof</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/renormalizer/model/op.html#Op.identity"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#renormalizer.model.Op.identity" title="Permalink to this definition">#</a></dt>
+<em class="property"><span class="pre">classmethod</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">identity</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">dof</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">qn_size</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">1</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/renormalizer/model/op.html#Op.identity"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#renormalizer.model.Op.identity" title="Permalink to this definition">#</a></dt>
 <dd><p>Construct identity operator.</p>
 </dd></dl>
 
@@ -1693,10 +1760,16 @@ and the DoFs of all simple symbols are set to the <a class="reference external" 
 
 <dl class="py property">
 <dt class="sig sig-object py" id="renormalizer.model.Op.qn">
-<em class="property"><span class="pre">property</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">qn</span></span><em class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><a class="reference external" href="https://docs.python.org/3/library/functions.html#int" title="(in Python v3.11)"><span class="pre">int</span></a></em><a class="headerlink" href="#renormalizer.model.Op.qn" title="Permalink to this definition">#</a></dt>
+<em class="property"><span class="pre">property</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">qn</span></span><em class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="pre">ndarray</span></em><a class="headerlink" href="#renormalizer.model.Op.qn" title="Permalink to this definition">#</a></dt>
 <dd><p>Total quantum number of the operator. Sum of <code class="docutils literal notranslate"><span class="pre">self.qn_list</span></code>.
 Quantum number of <code class="docutils literal notranslate"><span class="pre">&quot;a^\dagger&quot;</span></code> and <code class="docutils literal notranslate"><span class="pre">&quot;a&quot;</span></code> is taken to be 1 and -1
 if not specified.</p>
+</dd></dl>
+
+<dl class="py property">
+<dt class="sig sig-object py" id="renormalizer.model.Op.qn_size">
+<em class="property"><span class="pre">property</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">qn_size</span></span><em class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><a class="reference external" href="https://docs.python.org/3/library/functions.html#int" title="(in Python v3.11)"><span class="pre">int</span></a></em><a class="headerlink" href="#renormalizer.model.Op.qn_size" title="Permalink to this definition">#</a></dt>
+<dd><p>Size of the quantum numbers</p>
 </dd></dl>
 
 <dl class="py method">
@@ -1874,6 +1947,7 @@ the factor and the quantum number list. The converted tuple can be hashed.</p>
 <li><a class="reference internal" href="#renormalizer.model.HolsteinModel.n_edofs"><code class="docutils literal notranslate"><span class="pre">HolsteinModel.n_edofs</span></code></a></li>
 <li><a class="reference internal" href="#renormalizer.model.HolsteinModel.n_vdofs"><code class="docutils literal notranslate"><span class="pre">HolsteinModel.n_vdofs</span></code></a></li>
 <li><a class="reference internal" href="#renormalizer.model.HolsteinModel.nsite"><code class="docutils literal notranslate"><span class="pre">HolsteinModel.nsite</span></code></a></li>
+<li><a class="reference internal" href="#renormalizer.model.HolsteinModel.qn_size"><code class="docutils literal notranslate"><span class="pre">HolsteinModel.qn_size</span></code></a></li>
 <li><a class="reference internal" href="#renormalizer.model.HolsteinModel.switch_scheme"><code class="docutils literal notranslate"><span class="pre">HolsteinModel.switch_scheme()</span></code></a></li>
 <li><a class="reference internal" href="#renormalizer.model.HolsteinModel.to_dict"><code class="docutils literal notranslate"><span class="pre">HolsteinModel.to_dict()</span></code></a></li>
 <li><a class="reference internal" href="#renormalizer.model.HolsteinModel.v_dofs"><code class="docutils literal notranslate"><span class="pre">HolsteinModel.v_dofs</span></code></a></li>
@@ -1891,6 +1965,7 @@ the factor and the quantum number list. The converted tuple can be hashed.</p>
 <li><a class="reference internal" href="#renormalizer.model.SpinBosonModel.n_edofs"><code class="docutils literal notranslate"><span class="pre">SpinBosonModel.n_edofs</span></code></a></li>
 <li><a class="reference internal" href="#renormalizer.model.SpinBosonModel.n_vdofs"><code class="docutils literal notranslate"><span class="pre">SpinBosonModel.n_vdofs</span></code></a></li>
 <li><a class="reference internal" href="#renormalizer.model.SpinBosonModel.nsite"><code class="docutils literal notranslate"><span class="pre">SpinBosonModel.nsite</span></code></a></li>
+<li><a class="reference internal" href="#renormalizer.model.SpinBosonModel.qn_size"><code class="docutils literal notranslate"><span class="pre">SpinBosonModel.qn_size</span></code></a></li>
 <li><a class="reference internal" href="#renormalizer.model.SpinBosonModel.to_dict"><code class="docutils literal notranslate"><span class="pre">SpinBosonModel.to_dict()</span></code></a></li>
 <li><a class="reference internal" href="#renormalizer.model.SpinBosonModel.v_dofs"><code class="docutils literal notranslate"><span class="pre">SpinBosonModel.v_dofs</span></code></a></li>
 </ul>
@@ -1907,6 +1982,7 @@ the factor and the quantum number list. The converted tuple can be hashed.</p>
 <li><a class="reference internal" href="#renormalizer.model.TI1DModel.n_edofs"><code class="docutils literal notranslate"><span class="pre">TI1DModel.n_edofs</span></code></a></li>
 <li><a class="reference internal" href="#renormalizer.model.TI1DModel.n_vdofs"><code class="docutils literal notranslate"><span class="pre">TI1DModel.n_vdofs</span></code></a></li>
 <li><a class="reference internal" href="#renormalizer.model.TI1DModel.nsite"><code class="docutils literal notranslate"><span class="pre">TI1DModel.nsite</span></code></a></li>
+<li><a class="reference internal" href="#renormalizer.model.TI1DModel.qn_size"><code class="docutils literal notranslate"><span class="pre">TI1DModel.qn_size</span></code></a></li>
 <li><a class="reference internal" href="#renormalizer.model.TI1DModel.to_dict"><code class="docutils literal notranslate"><span class="pre">TI1DModel.to_dict()</span></code></a></li>
 <li><a class="reference internal" href="#renormalizer.model.TI1DModel.v_dofs"><code class="docutils literal notranslate"><span class="pre">TI1DModel.v_dofs</span></code></a></li>
 </ul>
@@ -1932,6 +2008,7 @@ the factor and the quantum number list. The converted tuple can be hashed.</p>
 <li><a class="reference internal" href="#renormalizer.model.basis.BasisSHO.is_spin"><code class="docutils literal notranslate"><span class="pre">BasisSHO.is_spin</span></code></a></li>
 <li><a class="reference internal" href="#renormalizer.model.basis.BasisSHO.multi_dof"><code class="docutils literal notranslate"><span class="pre">BasisSHO.multi_dof</span></code></a></li>
 <li><a class="reference internal" href="#renormalizer.model.basis.BasisSHO.op_mat"><code class="docutils literal notranslate"><span class="pre">BasisSHO.op_mat()</span></code></a></li>
+<li><a class="reference internal" href="#renormalizer.model.basis.BasisSHO.sigmaqn"><code class="docutils literal notranslate"><span class="pre">BasisSHO.sigmaqn</span></code></a></li>
 </ul>
 </li>
 <li><a class="reference internal" href="#renormalizer.model.basis.BasisHopsBoson"><code class="docutils literal notranslate"><span class="pre">BasisHopsBoson</span></code></a><ul>
@@ -1942,6 +2019,7 @@ the factor and the quantum number list. The converted tuple can be hashed.</p>
 <li><a class="reference internal" href="#renormalizer.model.basis.BasisHopsBoson.is_spin"><code class="docutils literal notranslate"><span class="pre">BasisHopsBoson.is_spin</span></code></a></li>
 <li><a class="reference internal" href="#renormalizer.model.basis.BasisHopsBoson.multi_dof"><code class="docutils literal notranslate"><span class="pre">BasisHopsBoson.multi_dof</span></code></a></li>
 <li><a class="reference internal" href="#renormalizer.model.basis.BasisHopsBoson.op_mat"><code class="docutils literal notranslate"><span class="pre">BasisHopsBoson.op_mat()</span></code></a></li>
+<li><a class="reference internal" href="#renormalizer.model.basis.BasisHopsBoson.sigmaqn"><code class="docutils literal notranslate"><span class="pre">BasisHopsBoson.sigmaqn</span></code></a></li>
 </ul>
 </li>
 <li><a class="reference internal" href="#renormalizer.model.basis.BasisSineDVR"><code class="docutils literal notranslate"><span class="pre">BasisSineDVR</span></code></a><ul>
@@ -1952,6 +2030,7 @@ the factor and the quantum number list. The converted tuple can be hashed.</p>
 <li><a class="reference internal" href="#renormalizer.model.basis.BasisSineDVR.is_spin"><code class="docutils literal notranslate"><span class="pre">BasisSineDVR.is_spin</span></code></a></li>
 <li><a class="reference internal" href="#renormalizer.model.basis.BasisSineDVR.multi_dof"><code class="docutils literal notranslate"><span class="pre">BasisSineDVR.multi_dof</span></code></a></li>
 <li><a class="reference internal" href="#renormalizer.model.basis.BasisSineDVR.op_mat"><code class="docutils literal notranslate"><span class="pre">BasisSineDVR.op_mat()</span></code></a></li>
+<li><a class="reference internal" href="#renormalizer.model.basis.BasisSineDVR.sigmaqn"><code class="docutils literal notranslate"><span class="pre">BasisSineDVR.sigmaqn</span></code></a></li>
 </ul>
 </li>
 <li><a class="reference internal" href="#renormalizer.model.basis.BasisSimpleElectron"><code class="docutils literal notranslate"><span class="pre">BasisSimpleElectron</span></code></a><ul>
@@ -1962,6 +2041,7 @@ the factor and the quantum number list. The converted tuple can be hashed.</p>
 <li><a class="reference internal" href="#renormalizer.model.basis.BasisSimpleElectron.is_spin"><code class="docutils literal notranslate"><span class="pre">BasisSimpleElectron.is_spin</span></code></a></li>
 <li><a class="reference internal" href="#renormalizer.model.basis.BasisSimpleElectron.multi_dof"><code class="docutils literal notranslate"><span class="pre">BasisSimpleElectron.multi_dof</span></code></a></li>
 <li><a class="reference internal" href="#renormalizer.model.basis.BasisSimpleElectron.op_mat"><code class="docutils literal notranslate"><span class="pre">BasisSimpleElectron.op_mat()</span></code></a></li>
+<li><a class="reference internal" href="#renormalizer.model.basis.BasisSimpleElectron.sigmaqn"><code class="docutils literal notranslate"><span class="pre">BasisSimpleElectron.sigmaqn</span></code></a></li>
 </ul>
 </li>
 <li><a class="reference internal" href="#renormalizer.model.basis.BasisMultiElectron"><code class="docutils literal notranslate"><span class="pre">BasisMultiElectron</span></code></a><ul>
@@ -1972,6 +2052,7 @@ the factor and the quantum number list. The converted tuple can be hashed.</p>
 <li><a class="reference internal" href="#renormalizer.model.basis.BasisMultiElectron.is_spin"><code class="docutils literal notranslate"><span class="pre">BasisMultiElectron.is_spin</span></code></a></li>
 <li><a class="reference internal" href="#renormalizer.model.basis.BasisMultiElectron.multi_dof"><code class="docutils literal notranslate"><span class="pre">BasisMultiElectron.multi_dof</span></code></a></li>
 <li><a class="reference internal" href="#renormalizer.model.basis.BasisMultiElectron.op_mat"><code class="docutils literal notranslate"><span class="pre">BasisMultiElectron.op_mat()</span></code></a></li>
+<li><a class="reference internal" href="#renormalizer.model.basis.BasisMultiElectron.sigmaqn"><code class="docutils literal notranslate"><span class="pre">BasisMultiElectron.sigmaqn</span></code></a></li>
 </ul>
 </li>
 <li><a class="reference internal" href="#renormalizer.model.basis.BasisMultiElectronVac"><code class="docutils literal notranslate"><span class="pre">BasisMultiElectronVac</span></code></a><ul>
@@ -1982,6 +2063,7 @@ the factor and the quantum number list. The converted tuple can be hashed.</p>
 <li><a class="reference internal" href="#renormalizer.model.basis.BasisMultiElectronVac.is_spin"><code class="docutils literal notranslate"><span class="pre">BasisMultiElectronVac.is_spin</span></code></a></li>
 <li><a class="reference internal" href="#renormalizer.model.basis.BasisMultiElectronVac.multi_dof"><code class="docutils literal notranslate"><span class="pre">BasisMultiElectronVac.multi_dof</span></code></a></li>
 <li><a class="reference internal" href="#renormalizer.model.basis.BasisMultiElectronVac.op_mat"><code class="docutils literal notranslate"><span class="pre">BasisMultiElectronVac.op_mat()</span></code></a></li>
+<li><a class="reference internal" href="#renormalizer.model.basis.BasisMultiElectronVac.sigmaqn"><code class="docutils literal notranslate"><span class="pre">BasisMultiElectronVac.sigmaqn</span></code></a></li>
 </ul>
 </li>
 <li><a class="reference internal" href="#renormalizer.model.basis.BasisHalfSpin"><code class="docutils literal notranslate"><span class="pre">BasisHalfSpin</span></code></a><ul>
@@ -1992,6 +2074,7 @@ the factor and the quantum number list. The converted tuple can be hashed.</p>
 <li><a class="reference internal" href="#renormalizer.model.basis.BasisHalfSpin.is_spin"><code class="docutils literal notranslate"><span class="pre">BasisHalfSpin.is_spin</span></code></a></li>
 <li><a class="reference internal" href="#renormalizer.model.basis.BasisHalfSpin.multi_dof"><code class="docutils literal notranslate"><span class="pre">BasisHalfSpin.multi_dof</span></code></a></li>
 <li><a class="reference internal" href="#renormalizer.model.basis.BasisHalfSpin.op_mat"><code class="docutils literal notranslate"><span class="pre">BasisHalfSpin.op_mat()</span></code></a></li>
+<li><a class="reference internal" href="#renormalizer.model.basis.BasisHalfSpin.sigmaqn"><code class="docutils literal notranslate"><span class="pre">BasisHalfSpin.sigmaqn</span></code></a></li>
 </ul>
 </li>
 </ul>
@@ -2003,6 +2086,7 @@ the factor and the quantum number list. The converted tuple can be hashed.</p>
 <li><a class="reference internal" href="#renormalizer.model.Op.is_identity"><code class="docutils literal notranslate"><span class="pre">Op.is_identity</span></code></a></li>
 <li><a class="reference internal" href="#renormalizer.model.Op.product"><code class="docutils literal notranslate"><span class="pre">Op.product()</span></code></a></li>
 <li><a class="reference internal" href="#renormalizer.model.Op.qn"><code class="docutils literal notranslate"><span class="pre">Op.qn</span></code></a></li>
+<li><a class="reference internal" href="#renormalizer.model.Op.qn_size"><code class="docutils literal notranslate"><span class="pre">Op.qn_size</span></code></a></li>
 <li><a class="reference internal" href="#renormalizer.model.Op.same_term"><code class="docutils literal notranslate"><span class="pre">Op.same_term()</span></code></a></li>
 <li><a class="reference internal" href="#renormalizer.model.Op.split_elementary"><code class="docutils literal notranslate"><span class="pre">Op.split_elementary()</span></code></a></li>
 <li><a class="reference internal" href="#renormalizer.model.Op.squeeze_identity"><code class="docutils literal notranslate"><span class="pre">Op.squeeze_identity()</span></code></a></li>

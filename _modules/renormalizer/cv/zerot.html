@@ -209,7 +209,8 @@
 <span class="kn">from</span> <span class="nn">renormalizer.cv.spectra_cv</span> <span class="kn">import</span> <span class="n">SpectraCv</span>
 <span class="kn">from</span> <span class="nn">renormalizer.mps.backend</span> <span class="kn">import</span> <span class="n">np</span><span class="p">,</span> <span class="n">xp</span><span class="p">,</span> <span class="n">USE_GPU</span>
 <span class="kn">from</span> <span class="nn">renormalizer.mps.lib</span> <span class="kn">import</span> <span class="n">cvec2cmat</span>
-<span class="kn">from</span> <span class="nn">renormalizer.mps</span> <span class="kn">import</span> <span class="n">Mpo</span><span class="p">,</span> <span class="n">Mps</span><span class="p">,</span> <span class="n">gs</span><span class="p">,</span> <span class="n">svd_qn</span>
+<span class="kn">from</span> <span class="nn">renormalizer.mps</span> <span class="kn">import</span> <span class="n">Mpo</span><span class="p">,</span> <span class="n">Mps</span><span class="p">,</span> <span class="n">gs</span>
+<span class="kn">from</span> <span class="nn">renormalizer.mps.svd_qn</span> <span class="kn">import</span> <span class="n">get_qn_mask</span>
 <span class="kn">from</span> <span class="nn">renormalizer.mps.matrix</span> <span class="kn">import</span> <span class="p">(</span>
     <span class="n">asnumpy</span><span class="p">,</span>
     <span class="n">asxp</span><span class="p">,</span>
@@ -226,7 +227,7 @@
 
 
 <div class="viewcode-block" id="SpectraZtCV"><a class="viewcode-back" href="../../../cv.html#renormalizer.cv.zerot.SpectraZtCV">[docs]</a><span class="k">class</span> <span class="nc">SpectraZtCV</span><span class="p">(</span><span class="n">SpectraCv</span><span class="p">):</span>
-    <span class="sa">r</span><span class="sd">&quot;&quot;&quot;</span>
+<span class="w">    </span><span class="sa">r</span><span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">    Use DDMRG to calculate the zero temperature spectrum from frequency domain</span>
 
 <span class="sd">    Args:</span>
@@ -360,26 +361,28 @@
 
         <span class="c1"># this part just be similar with ground state calculation</span>
         <span class="n">qnbigl</span><span class="p">,</span> <span class="n">qnbigr</span><span class="p">,</span> <span class="n">qnmat</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">cv_mps</span><span class="o">.</span><span class="n">_get_big_qn</span><span class="p">(</span><span class="n">cidx</span><span class="p">)</span>
-        <span class="n">xshape</span> <span class="o">=</span> <span class="n">qnmat</span><span class="o">.</span><span class="n">shape</span>
-        <span class="n">nonzeros</span> <span class="o">=</span> <span class="nb">int</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">sum</span><span class="p">(</span><span class="n">qnmat</span> <span class="o">==</span> <span class="n">constrain_qn</span><span class="p">))</span>
+        <span class="n">qn_mask</span> <span class="o">=</span> <span class="n">get_qn_mask</span><span class="p">(</span><span class="n">qnmat</span><span class="p">,</span> <span class="n">constrain_qn</span><span class="p">)</span>
+        <span class="k">del</span> <span class="n">qnmat</span>
+        <span class="n">xshape</span> <span class="o">=</span> <span class="n">qn_mask</span><span class="o">.</span><span class="n">shape</span>
+        <span class="n">nonzeros</span> <span class="o">=</span> <span class="nb">int</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">sum</span><span class="p">(</span><span class="n">qn_mask</span><span class="p">))</span>
         <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">method</span> <span class="o">==</span> <span class="s1">&#39;1site&#39;</span><span class="p">:</span>
-            <span class="n">guess</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">cv_mps</span><span class="p">[</span><span class="n">isite</span> <span class="o">-</span> <span class="mi">1</span><span class="p">][</span><span class="n">qnmat</span> <span class="o">==</span> <span class="n">constrain_qn</span><span class="p">]</span>
+            <span class="n">guess</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">cv_mps</span><span class="p">[</span><span class="n">isite</span> <span class="o">-</span> <span class="mi">1</span><span class="p">][</span><span class="n">qn_mask</span><span class="p">]</span>
             <span class="n">path_b</span> <span class="o">=</span> <span class="p">[([</span><span class="mi">0</span><span class="p">,</span> <span class="mi">1</span><span class="p">],</span> <span class="s2">&quot;ab, acd-&gt;bcd&quot;</span><span class="p">),</span>
                       <span class="p">([</span><span class="mi">1</span><span class="p">,</span> <span class="mi">0</span><span class="p">],</span> <span class="s2">&quot;bcd, de-&gt;bce&quot;</span><span class="p">)]</span>
             <span class="n">vec_b</span> <span class="o">=</span> <span class="n">multi_tensor_contract</span><span class="p">(</span>
                 <span class="n">path_b</span><span class="p">,</span> <span class="n">second_L</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">b_mps</span><span class="p">[</span><span class="n">isite</span> <span class="o">-</span> <span class="mi">1</span><span class="p">],</span> <span class="n">second_R</span>
-            <span class="p">)[</span><span class="n">qnmat</span> <span class="o">==</span> <span class="n">constrain_qn</span><span class="p">]</span>
+            <span class="p">)[</span><span class="n">qn_mask</span><span class="p">]</span>
         <span class="k">else</span><span class="p">:</span>
             <span class="n">guess</span> <span class="o">=</span> <span class="n">tensordot</span><span class="p">(</span>
                 <span class="bp">self</span><span class="o">.</span><span class="n">cv_mps</span><span class="p">[</span><span class="n">isite</span> <span class="o">-</span> <span class="mi">2</span><span class="p">],</span> <span class="bp">self</span><span class="o">.</span><span class="n">cv_mps</span><span class="p">[</span><span class="n">isite</span> <span class="o">-</span> <span class="mi">1</span><span class="p">],</span> <span class="n">axes</span><span class="o">=</span><span class="p">(</span><span class="o">-</span><span class="mi">1</span><span class="p">,</span> <span class="mi">0</span><span class="p">)</span>
-            <span class="p">)[</span><span class="n">qnmat</span> <span class="o">==</span> <span class="n">constrain_qn</span><span class="p">]</span>
+            <span class="p">)[</span><span class="n">qn_mask</span><span class="p">]</span>
             <span class="n">path_b</span> <span class="o">=</span> <span class="p">[([</span><span class="mi">0</span><span class="p">,</span> <span class="mi">1</span><span class="p">],</span> <span class="s2">&quot;ab, acd-&gt;bcd&quot;</span><span class="p">),</span>
                       <span class="p">([</span><span class="mi">2</span><span class="p">,</span> <span class="mi">0</span><span class="p">],</span> <span class="s2">&quot;bcd, def-&gt;bcef&quot;</span><span class="p">),</span>
                       <span class="p">([</span><span class="mi">1</span><span class="p">,</span> <span class="mi">0</span><span class="p">],</span> <span class="s2">&quot;bcef, fg-&gt;bceg&quot;</span><span class="p">)]</span>
             <span class="n">vec_b</span> <span class="o">=</span> <span class="n">multi_tensor_contract</span><span class="p">(</span>
                 <span class="n">path_b</span><span class="p">,</span> <span class="n">second_L</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">b_mps</span><span class="p">[</span><span class="n">isite</span> <span class="o">-</span> <span class="mi">2</span><span class="p">],</span>
                 <span class="bp">self</span><span class="o">.</span><span class="n">b_mps</span><span class="p">[</span><span class="n">isite</span> <span class="o">-</span> <span class="mi">1</span><span class="p">],</span> <span class="n">second_R</span>
-            <span class="p">)[</span><span class="n">qnmat</span> <span class="o">==</span> <span class="n">constrain_qn</span><span class="p">]</span>
+            <span class="p">)[</span><span class="n">qn_mask</span><span class="p">]</span>
 
         <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">method</span> <span class="o">==</span> <span class="s2">&quot;2site&quot;</span><span class="p">:</span>
             <span class="n">a_oper_isite2</span> <span class="o">=</span> <span class="n">asxp</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">a_oper</span><span class="p">[</span><span class="n">isite</span> <span class="o">-</span> <span class="mi">2</span><span class="p">])</span>
@@ -403,7 +406,7 @@
                                            <span class="n">a_oper_isite1</span><span class="p">)</span>
             <span class="n">a_diag</span> <span class="o">=</span> <span class="n">xp</span><span class="o">.</span><span class="n">einsum</span><span class="p">(</span><span class="s2">&quot;adfdg -&gt; adfg&quot;</span><span class="p">,</span> <span class="n">a_diag</span><span class="p">)</span>
             <span class="n">a_diag</span> <span class="o">=</span> <span class="n">xp</span><span class="o">.</span><span class="n">tensordot</span><span class="p">(</span><span class="n">a_diag</span><span class="p">,</span> <span class="n">part_r</span><span class="p">,</span>
-                                  <span class="n">axes</span><span class="o">=</span><span class="p">([</span><span class="mi">2</span><span class="p">,</span> <span class="mi">3</span><span class="p">],</span> <span class="p">[</span><span class="mi">1</span><span class="p">,</span> <span class="mi">2</span><span class="p">]))[</span><span class="n">qnmat</span> <span class="o">==</span> <span class="n">constrain_qn</span><span class="p">]</span>
+                                  <span class="n">axes</span><span class="o">=</span><span class="p">([</span><span class="mi">2</span><span class="p">,</span> <span class="mi">3</span><span class="p">],</span> <span class="p">[</span><span class="mi">1</span><span class="p">,</span> <span class="mi">2</span><span class="p">]))[</span><span class="n">qn_mask</span><span class="p">]</span>
         <span class="k">else</span><span class="p">:</span>
             <span class="c1">#  S-a   d     k   h-S</span>
             <span class="c1">#  O-b  -O- j -O-  f-O</span>
@@ -425,7 +428,7 @@
             <span class="n">a_diagr</span> <span class="o">=</span> <span class="n">xp</span><span class="o">.</span><span class="n">einsum</span><span class="p">(</span><span class="s2">&quot;hjkmk -&gt; khjm&quot;</span><span class="p">,</span> <span class="n">a_diagr</span><span class="p">)</span>
 
             <span class="n">a_diag</span> <span class="o">=</span> <span class="n">xp</span><span class="o">.</span><span class="n">tensordot</span><span class="p">(</span>
-                <span class="n">a_diagl</span><span class="p">,</span> <span class="n">a_diagr</span><span class="p">,</span> <span class="n">axes</span><span class="o">=</span><span class="p">([</span><span class="mi">2</span><span class="p">,</span> <span class="mi">3</span><span class="p">],</span> <span class="p">[</span><span class="mi">2</span><span class="p">,</span> <span class="mi">3</span><span class="p">]))[</span><span class="n">qnmat</span> <span class="o">==</span> <span class="n">constrain_qn</span><span class="p">]</span>
+                <span class="n">a_diagl</span><span class="p">,</span> <span class="n">a_diagr</span><span class="p">,</span> <span class="n">axes</span><span class="o">=</span><span class="p">([</span><span class="mi">2</span><span class="p">,</span> <span class="mi">3</span><span class="p">],</span> <span class="p">[</span><span class="mi">2</span><span class="p">,</span> <span class="mi">3</span><span class="p">]))[</span><span class="n">qn_mask</span><span class="p">]</span>
 
         <span class="n">a_diag</span> <span class="o">=</span> <span class="n">asnumpy</span><span class="p">(</span><span class="n">a_diag</span> <span class="o">+</span> <span class="n">xp</span><span class="o">.</span><span class="n">ones</span><span class="p">(</span><span class="n">nonzeros</span><span class="p">)</span> <span class="o">*</span> <span class="bp">self</span><span class="o">.</span><span class="n">eta</span><span class="o">**</span><span class="mi">2</span><span class="p">)</span>
         <span class="n">M_x</span> <span class="o">=</span> <span class="k">lambda</span> <span class="n">x</span><span class="p">:</span> <span class="n">x</span> <span class="o">/</span> <span class="n">a_diag</span>
@@ -444,7 +447,7 @@
         <span class="k">def</span> <span class="nf">hop</span><span class="p">(</span><span class="n">c</span><span class="p">):</span>
             <span class="k">nonlocal</span> <span class="n">count</span>
             <span class="n">count</span> <span class="o">+=</span> <span class="mi">1</span>
-            <span class="n">xstruct</span> <span class="o">=</span> <span class="n">asxp</span><span class="p">(</span><span class="n">cvec2cmat</span><span class="p">(</span><span class="n">xshape</span><span class="p">,</span> <span class="n">c</span><span class="p">,</span> <span class="n">qnmat</span><span class="p">,</span> <span class="n">constrain_qn</span><span class="p">))</span>
+            <span class="n">xstruct</span> <span class="o">=</span> <span class="n">asxp</span><span class="p">(</span><span class="n">cvec2cmat</span><span class="p">(</span><span class="n">c</span><span class="p">,</span> <span class="n">qn_mask</span><span class="p">))</span>
             <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">method</span> <span class="o">==</span> <span class="s2">&quot;1site&quot;</span><span class="p">:</span>
                 <span class="n">path_a</span> <span class="o">=</span> <span class="p">[([</span><span class="mi">0</span><span class="p">,</span> <span class="mi">1</span><span class="p">],</span> <span class="s2">&quot;abcd, aef-&gt;bcdef&quot;</span><span class="p">),</span>
                           <span class="p">([</span><span class="mi">3</span><span class="p">,</span> <span class="mi">0</span><span class="p">],</span> <span class="s2">&quot;bcdef, begh-&gt;cdfgh&quot;</span><span class="p">),</span>
@@ -480,7 +483,7 @@
                 <span class="c1">#                           a_oper_isite2, a_oper_isite1,</span>
                 <span class="c1">#                           first_R)</span>
             <span class="n">ax</span> <span class="o">=</span> <span class="n">ax1</span> <span class="o">+</span> <span class="n">xstruct</span> <span class="o">*</span> <span class="bp">self</span><span class="o">.</span><span class="n">eta</span><span class="o">**</span><span class="mi">2</span>
-            <span class="n">cout</span> <span class="o">=</span> <span class="n">ax</span><span class="p">[</span><span class="n">qnmat</span> <span class="o">==</span> <span class="n">constrain_qn</span><span class="p">]</span>
+            <span class="n">cout</span> <span class="o">=</span> <span class="n">ax</span><span class="p">[</span><span class="n">qn_mask</span><span class="p">]</span>
             <span class="k">return</span> <span class="n">asnumpy</span><span class="p">(</span><span class="n">cout</span><span class="p">)</span>
 
         <span class="n">mat_a</span> <span class="o">=</span> <span class="n">scipy</span><span class="o">.</span><span class="n">sparse</span><span class="o">.</span><span class="n">linalg</span><span class="o">.</span><span class="n">LinearOperator</span><span class="p">((</span><span class="n">nonzeros</span><span class="p">,</span> <span class="n">nonzeros</span><span class="p">),</span>
@@ -495,7 +498,7 @@
             <span class="n">logger</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;iteration solver not converged&quot;</span><span class="p">)</span>
         <span class="c1"># the value of the functional L</span>
         <span class="n">l_value</span> <span class="o">=</span> <span class="n">xp</span><span class="o">.</span><span class="n">dot</span><span class="p">(</span><span class="n">asxp</span><span class="p">(</span><span class="n">hop</span><span class="p">(</span><span class="n">x</span><span class="p">)),</span> <span class="n">asxp</span><span class="p">(</span><span class="n">x</span><span class="p">))</span> <span class="o">-</span> <span class="mi">2</span> <span class="o">*</span> <span class="n">xp</span><span class="o">.</span><span class="n">dot</span><span class="p">(</span><span class="n">vec_b</span><span class="p">,</span> <span class="n">asxp</span><span class="p">(</span><span class="n">x</span><span class="p">))</span>
-        <span class="n">xstruct</span> <span class="o">=</span> <span class="n">cvec2cmat</span><span class="p">(</span><span class="n">xshape</span><span class="p">,</span> <span class="n">x</span><span class="p">,</span> <span class="n">qnmat</span><span class="p">,</span> <span class="n">constrain_qn</span><span class="p">)</span>
+        <span class="n">xstruct</span> <span class="o">=</span> <span class="n">cvec2cmat</span><span class="p">(</span><span class="n">x</span><span class="p">,</span> <span class="n">qn_mask</span><span class="p">)</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">cv_mps</span><span class="o">.</span><span class="n">_update_mps</span><span class="p">(</span><span class="n">xstruct</span><span class="p">,</span> <span class="n">cidx</span><span class="p">,</span> <span class="n">qnbigl</span><span class="p">,</span> <span class="n">qnbigr</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">m_max</span><span class="p">,</span> <span class="n">percent</span><span class="p">)</span>
         <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">cv_mps</span><span class="o">.</span><span class="n">compress_config</span><span class="o">.</span><span class="n">ofs</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
             <span class="k">raise</span> <span class="ne">NotImplementedError</span><span class="p">(</span><span class="s2">&quot;OFS for correction vector not implemented&quot;</span><span class="p">)</span>
