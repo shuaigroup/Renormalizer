@@ -32,11 +32,14 @@ class Op:
         in which case every symbol is assumed to share the same DoF name.
     factor : :class:`float` or :class:`complex` or :class:`Quantity`
         The prefactor of the operator.
-    qn : :class:`int` or :class:`list` of :class:`int`.
+    qn : :class:`int` or :class:`list` of :class:`int` or :class:`list` of containers of :class:`int`.
         The quantum number of the symbol. For simple symbol the ``qn`` should be an :class:`int`.
         For complex symbol quantum number of each simple symbol contained in the complex symbol
-        should be provided. If ``qn`` is set to `None`, then the quantum number for every symbol is set to 0
+        should be provided in a :class:`list`.
+        If ``qn`` is set to `None`, then the quantum number for every symbol is set to 0
         except for``"a^\dagger"`` and ``"a"``, whose quantum number are set to 1 and -1 respectively.
+        For multiple quantum numbers :class:`list` of containers of :class:`int`
+        should be provided without any abbreviation.
 
     Notes
     -----
@@ -54,7 +57,7 @@ class Op:
     --------
     >>> from renormalizer.model import Op
     >>> Op(r"a^\dagger a", ['site0', "site1"], 2., qn=[1, -1])
-    Op('a^\\dagger a', ['site0', 'site1'], 2.0, [1, -1])
+    Op('a^\\dagger a', ['site0', 'site1'], 2.0, [[1], [-1]])
     >>> x = Op("X", 0, 0.5)
     >>> 3 * x
     Op('X', [0], 1.5)
@@ -94,14 +97,16 @@ class Op:
         return Op(symbol, dof_name, factor, qn)
 
     @classmethod
-    def identity(cls, dof):
+    def identity(cls, dof, qn_size=1):
         """
         Construct identity operator.
         """
         if isinstance(dof, list):
-            return cls(" ".join(["I"] * len(dof)), dof)
+            qn = [np.zeros(qn_size, dtype=int)] * len(dof)
+            return cls(" ".join(["I"] * len(dof)), dof, qn=qn)
         else:
-            return cls("I", dof)
+            qn = [np.zeros(qn_size, dtype=int)]
+            return cls("I", dof, qn=qn)
 
     def __init__(self, symbol: str, dof, factor: Union[float, Quantity] = 1.0, qn: Union[List, int] = None):
         # This is one of the most external user interface, so detailed argument checking is necessary
@@ -123,8 +128,11 @@ class Op:
                 dofs = [dof]
             # same for qn
             if isinstance(qn, list):
-                assert len(qn) == 1
+                if len(qn) != 1:
+                    raise ValueError(f"Incompatible sizes of quantum number {qn} and symbol {self.split_symbol}")
                 qn_list = qn
+            elif qn is None:
+                qn_list = None
             else:
                 qn_list = [qn]
         # complex symbol
@@ -144,17 +152,26 @@ class Op:
                 qn_list = qn
             # the default value
             elif qn is None:
-                qn_list = [None] * num_simple_symbol
+                qn_list = None
             # Can't assume the same qn as Dof name above
             else:
                 raise ValueError("qn should be a list.")
 
+        # handle default qn when qn_list is None
+        # "a^\dagger" and "a" are taken to be 1 and -1 respectively
+        if qn_list is None:
+            qn_list = []
+            for s in self.split_symbol:
+                if s == r"a^\dagger":
+                    qn_list.append(1)
+                elif s == "a":
+                    qn_list.append(-1)
+                else:
+                    qn_list.append(0)
+
         for dof in dofs:
             if dof.__hash__ is None:
                 raise ValueError(f"dof name should be hashable. Got {dof}.")
-        for qn in qn_list:
-            if qn is not None and not isinstance(qn, int):
-                raise TypeError(f"qn for each symbol should be an integer. Got {qn_list}.")
 
         # argument checking done.
         assert len(dofs) == len(self.split_symbol)
@@ -163,7 +180,7 @@ class Op:
         if isinstance(factor, Quantity):
             factor = factor.as_au()
         self._factor: float = factor + 0.0 # convert to float. Note this works for complex number
-        self.qn_list: List[int] = qn_list
+        self.qn_list: List[np.ndarray] = [np.array(qn).reshape(-1) for qn in qn_list]
 
     def split_elementary(self, dof_to_siteidx) -> Tuple[List["Op"], Union[float, complex]]:
         """
@@ -210,21 +227,20 @@ class Op:
         return self._factor
 
     @property
-    def qn(self) -> int:
+    def qn(self) -> np.ndarray:
         r"""
         Total quantum number of the operator. Sum of ``self.qn_list``.
         Quantum number of ``"a^\dagger"`` and ``"a"`` is taken to be 1 and -1
         if not specified.
         """
-        # should be the most common case
-        if set(self.qn_list) == {None}:
-            return self.split_symbol.count(r"a^\dagger") - self.split_symbol.count("a")
-        # None and integer both in self._qn_list. Not good
-        elif None in set(self.qn_list):
-            raise ValueError(f"qn ill-defined in {self}")
-        # most general case
-        else:
-            return sum(self.qn_list)
+        return sum(self.qn_list)
+
+    @property
+    def qn_size(self) -> int:
+        """
+        Size of the quantum numbers
+        """
+        return len(self.qn)
 
     @property
     def is_identity(self) -> bool:
@@ -250,7 +266,7 @@ class Op:
         Op('X Y', [0, 2], 0.5)
         """
         if self.is_identity:
-            return self.__class__.identity(self.dofs[0])
+            return self.__class__.identity(self.dofs[0], qn_size=self.qn_size)
         new_symbol_list = []
         new_dof_list = []
         new_qn_list = []
@@ -300,7 +316,7 @@ class Op:
         op_tuple : tuple
             The converted tuple.
         """
-        return self.symbol, tuple(self.dofs), self.factor, tuple(self.qn_list)
+        return self.symbol, tuple(self.dofs), self.factor, tuple(tuple(t) for t in self.qn_list)
 
     def __hash__(self):
         return hash(self.to_tuple())
@@ -312,8 +328,8 @@ class Op:
 
     def __str__(self):
         ret =  ", ".join([repr(self.symbol), str(self.dofs), str(self.factor)])
-        if set(self.qn_list) != {None}:
-            ret = ret + f", {self.qn_list}"
+        if not np.all(np.array(self.qn_list) == 0):
+            ret = ret + f", {[qn.tolist() for qn in self.qn_list]}"
         return f"Op({ret})"
 
     def __repr__(self):
@@ -379,7 +395,18 @@ class OpSum(list):
     []
     >>> opsum * opsum
     [Op('X X', [0, 0], 1.0), Op('X Y', [0, 1], 2.0), Op('Y X', [1, 0], 2.0), Op('Y Y', [1, 1], 4.0)]
+    >>> OpSum.product([opsum, opsum])
+    [Op('X X', [0, 0], 1.0), Op('X Y', [0, 1], 2.0), Op('Y X', [1, 0], 2.0), Op('Y Y', [1, 1], 4.0)]
     """
+    @classmethod
+    def product(cls, op_list):
+        if len(op_list) == 0:
+            return cls()
+        prod = op_list[0]
+        for op in op_list[1:]:
+            prod = prod * op
+        return prod
+
     def copy(self):
         return OpSum(super().copy())
 

@@ -100,7 +100,7 @@ def svd_qn(
         coef_array: np.ndarray,
         qnbigl: np.ndarray,
         qnbigr: np.ndarray,
-        qntot: int,
+        qntot: np.ndarray,
         QR: bool=False,
         system: str=None,
         full_matrices: bool=True,
@@ -119,7 +119,7 @@ def svd_qn(
     qnbigr : np.ndarray
         Quantum number of the right side (aka the super-R-block quantum number)
         Corresponds to the last index (or indices) of ``cstruct``.
-    qntot : int
+    qntot : np.ndarray
         The quantum number to be preserved.
     QR : bool
         Whether carry out QR decomposition instead of SVD decomposition. Default is False.
@@ -154,10 +154,11 @@ def svd_qn(
         New quantum number for V (super-R-block).
     """
     SVD = not QR
-    coef_matrix = coef_array.reshape((np.prod(qnbigl.shape), np.prod(qnbigr.shape)))
+    coef_matrix = coef_array.reshape((np.prod(qnbigl.shape[:-1]), np.prod(qnbigr.shape[:-1])))
 
-    localqnl = qnbigl.ravel()
-    localqnr = qnbigr.ravel()
+    qn_size = len(qntot)
+    localqnl = qnbigl.reshape(-1, qn_size)
+    localqnr = qnbigr.reshape(-1, qn_size)
 
     block_u_list = []  # corresponds to nonzero svd value
     block_u_list0 = []  # corresponds to zero svd value
@@ -171,15 +172,13 @@ def svd_qn(
     qnr_list = []
     qnr_list0 = []
 
-    combine = [[x, qntot - x] for x in set(localqnl)]
-
     # loop through each set of valid quantum numbers
-    for nl, nr in combine:
-        lset = np.where(localqnl == nl)[0]
-        rset = np.where(localqnr == nr)[0]
-
-        if len(lset) == 0 or len(rset) == 0:
+    for nl in set([tuple(t) for t in localqnl]):
+        nr = qntot - nl
+        rset = np.where(get_qn_mask(localqnr, nr))[0]
+        if len(rset) == 0:
             continue
+        lset = np.where(get_qn_mask(localqnl, nl))[0]
         block = coef_matrix.ravel().take(
             (lset * coef_matrix.shape[1]).reshape(-1, 1) + rset
         )
@@ -216,7 +215,8 @@ def svd_qn(
     if not full_matrices:
         for l in [block_u_list0, block_v_list0, block_su_list0, block_sv_list0, qnl_list0, qnr_list0]:
             assert len(l) == 0
-
+    if len(block_u_list) + len(block_u_list0) == 0 or len(block_v_list) + len(block_v_list0) == 0:
+        raise ValueError("Invalid quantum number")
     # concatenate the blocks and return them
     u = np.concatenate(block_u_list + block_u_list0, axis=1)
     v = np.concatenate(block_v_list + block_v_list0, axis=1)
@@ -250,7 +250,7 @@ def eigh_qn(dm, qnbigl, qnbigr, qntot, system):
         Quantum number of the left side (aka the super-L-block quantum number).
     qnbigr : np.ndarray
         Quantum number of the right side (aka the super-R-block quantum number)
-    qntot : int
+    qntot : np.ndarray
         The quantum number to be preserved.
     system: str
         The side of the system. Possible values are ``"L"`` and ``"R"``.
@@ -271,17 +271,18 @@ def eigh_qn(dm, qnbigl, qnbigr, qntot, system):
     else:
         qnbig, comp_qnbig = qnbigr, qnbigl
     del qnbigl, qnbigr
-    localqn = qnbig.ravel()
+    qn_size = len(qntot)
+    localqn = qnbig.reshape(-1, qn_size)
 
     block_u_list = []
     block_s_list = []
     new_qn = []
 
-    combine = [[x, x] for x in set(localqn) if (qntot - x) in set(comp_qnbig.ravel())]
-    for nl, nr in combine:
-        lset = rset = np.where(localqn == nl)[0]
-        if len(lset) == 0 or len(rset) == 0:
+    for nl in set([tuple(t) for t in localqn]):
+        nr = qntot - nl
+        if np.sum(get_qn_mask(comp_qnbig, nr)) == 0:
             continue
+        lset = rset = np.where(get_qn_mask(localqn, nl))[0]
         block = dm.ravel().take(
             (lset * len(localqn)).reshape(-1, 1) + rset
         )
@@ -298,3 +299,18 @@ def eigh_qn(dm, qnbigl, qnbigr, qntot, system):
     u = np.concatenate(block_u_list, axis=1)
     s = np.concatenate(block_s_list)
     return u, s, new_qn
+
+
+def add_outer(a:np.ndarray, b:np.ndarray):
+    # a variant of np.add.outer which keeps the last dimension
+    assert a.shape[-1] == b.shape[-1]
+    qn_size = a.shape[-1]
+    out_list = []
+    for i in range(qn_size):
+        out_list.append(np.add.outer(a[..., i], b[..., i]))
+    out_list = np.array(out_list)
+    return out_list.transpose(list(range(1, out_list.ndim))+[0])
+
+
+def get_qn_mask(qnmat:np.ndarray, qntot):
+    return np.all(qnmat == np.array(qntot), axis=-1)

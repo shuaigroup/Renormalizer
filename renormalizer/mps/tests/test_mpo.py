@@ -97,7 +97,7 @@ def test_offset(scheme):
 
 def test_identity():
     identity = Mpo.identity(holstein_model)
-    mps = Mps.random(holstein_model, nexciton=1, m_max=5)
+    mps = Mps.random(holstein_model, qntot=1, m_max=5)
     assert mps.expectation(identity) == pytest.approx(mps.mp_norm) == pytest.approx(1)
 
 

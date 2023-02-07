@@ -11,6 +11,7 @@ from renormalizer.model import Model, HolsteinModel
 from renormalizer.mps.backend import xp
 from renormalizer.mps.matrix import moveaxis, tensordot
 from renormalizer.mps.mp import MatrixProduct
+from renormalizer.mps.svd_qn import add_outer
 from renormalizer.mps import svd_qn
 from renormalizer.mps.lib import update_cv
 from renormalizer.mps.symbolic_mpo import construct_symbolic_mpo, _terms_to_table, symbolic_mo_to_numeric_mo, swap_site
@@ -90,9 +91,9 @@ class Mpo(MatrixProduct):
                     assert False
         # shift the H by plus a constant
 
-        mpo.qn = [[0]] * (len(mpo) + 1)
+        mpo.qn = [np.zeros((1, model.qn_size), dtype=int)] * (len(mpo) + 1)
         mpo.qnidx = len(mpo) - 1
-        mpo.qntot = 0
+        mpo.qntot = np.zeros(model.qn_size, dtype=int)
 
         # np.exp(shift * x) is usually very large
         mpo = mpo.scale(np.exp(shift * x), inplace=True)
@@ -289,7 +290,7 @@ class Mpo(MatrixProduct):
 
     def _get_sigmaqn(self, idx):
         array_up = self.model.basis[idx].sigmaqn
-        return np.subtract.outer(array_up, array_up)
+        return add_outer(array_up, -array_up)
 
     @property
     def is_mps(self):
@@ -314,7 +315,7 @@ class Mpo(MatrixProduct):
 
     @property
     def dummy_qn(self):
-        return [[0] * dim for dim in self.bond_dims]
+        return [np.zeros((dim, self.model.qn_size), dtype=int) for dim in self.bond_dims]
 
     @property
     def digest(self):
@@ -370,7 +371,7 @@ class Mpo(MatrixProduct):
         orig_idx = new_mps.qnidx
         new_mps.move_qnidx(self.qnidx)
         new_mps.qn = [
-            np.add.outer(np.array(qn_o), np.array(qn_m)).ravel().tolist()
+            add_outer(np.array(qn_o), np.array(qn_m)).reshape(-1, qn_o.shape[1])
             for qn_o, qn_m in zip(self.qn, new_mps.qn)
         ]
         new_mps.qntot += self.qntot
@@ -451,7 +452,7 @@ class Mpo(MatrixProduct):
         new_mpo = self.metacopy()
         for i in range(new_mpo.site_num):
             new_mpo[i] = moveaxis(self[i], (1, 2), (2, 1)).conj()
-        new_mpo.qn = [[-i for i in mt_qn] for mt_qn in new_mpo.qn]
+        new_mpo.qn = [np.array([-i for i in mt_qn]) for mt_qn in new_mpo.qn]
         return new_mpo
 
     def todense(self):

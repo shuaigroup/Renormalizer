@@ -4,7 +4,8 @@
 from renormalizer.cv.spectra_cv import SpectraCv
 from renormalizer.mps.backend import np, xp, USE_GPU
 from renormalizer.mps.lib import cvec2cmat
-from renormalizer.mps import Mpo, Mps, gs, svd_qn
+from renormalizer.mps import Mpo, Mps, gs
+from renormalizer.mps.svd_qn import get_qn_mask
 from renormalizer.mps.matrix import (
     asnumpy,
     asxp,
@@ -155,26 +156,28 @@ class SpectraZtCV(SpectraCv):
 
         # this part just be similar with ground state calculation
         qnbigl, qnbigr, qnmat = self.cv_mps._get_big_qn(cidx)
-        xshape = qnmat.shape
-        nonzeros = int(np.sum(qnmat == constrain_qn))
+        qn_mask = get_qn_mask(qnmat, constrain_qn)
+        del qnmat
+        xshape = qn_mask.shape
+        nonzeros = int(np.sum(qn_mask))
         if self.method == '1site':
-            guess = self.cv_mps[isite - 1][qnmat == constrain_qn]
+            guess = self.cv_mps[isite - 1][qn_mask]
             path_b = [([0, 1], "ab, acd->bcd"),
                       ([1, 0], "bcd, de->bce")]
             vec_b = multi_tensor_contract(
                 path_b, second_L, self.b_mps[isite - 1], second_R
-            )[qnmat == constrain_qn]
+            )[qn_mask]
         else:
             guess = tensordot(
                 self.cv_mps[isite - 2], self.cv_mps[isite - 1], axes=(-1, 0)
-            )[qnmat == constrain_qn]
+            )[qn_mask]
             path_b = [([0, 1], "ab, acd->bcd"),
                       ([2, 0], "bcd, def->bcef"),
                       ([1, 0], "bcef, fg->bceg")]
             vec_b = multi_tensor_contract(
                 path_b, second_L, self.b_mps[isite - 2],
                 self.b_mps[isite - 1], second_R
-            )[qnmat == constrain_qn]
+            )[qn_mask]
 
         if self.method == "2site":
             a_oper_isite2 = asxp(self.a_oper[isite - 2])
@@ -198,7 +201,7 @@ class SpectraZtCV(SpectraCv):
                                            a_oper_isite1)
             a_diag = xp.einsum("adfdg -> adfg", a_diag)
             a_diag = xp.tensordot(a_diag, part_r,
-                                  axes=([2, 3], [1, 2]))[qnmat == constrain_qn]
+                                  axes=([2, 3], [1, 2]))[qn_mask]
         else:
             #  S-a   d     k   h-S
             #  O-b  -O- j -O-  f-O
@@ -220,7 +223,7 @@ class SpectraZtCV(SpectraCv):
             a_diagr = xp.einsum("hjkmk -> khjm", a_diagr)
 
             a_diag = xp.tensordot(
-                a_diagl, a_diagr, axes=([2, 3], [2, 3]))[qnmat == constrain_qn]
+                a_diagl, a_diagr, axes=([2, 3], [2, 3]))[qn_mask]
 
         a_diag = asnumpy(a_diag + xp.ones(nonzeros) * self.eta**2)
         M_x = lambda x: x / a_diag
@@ -239,7 +242,7 @@ class SpectraZtCV(SpectraCv):
         def hop(c):
             nonlocal count
             count += 1
-            xstruct = asxp(cvec2cmat(xshape, c, qnmat, constrain_qn))
+            xstruct = asxp(cvec2cmat(c, qn_mask))
             if self.method == "1site":
                 path_a = [([0, 1], "abcd, aef->bcdef"),
                           ([3, 0], "bcdef, begh->cdfgh"),
@@ -275,7 +278,7 @@ class SpectraZtCV(SpectraCv):
                 #                           a_oper_isite2, a_oper_isite1,
                 #                           first_R)
             ax = ax1 + xstruct * self.eta**2
-            cout = ax[qnmat == constrain_qn]
+            cout = ax[qn_mask]
             return asnumpy(cout)
 
         mat_a = scipy.sparse.linalg.LinearOperator((nonzeros, nonzeros),
@@ -290,7 +293,7 @@ class SpectraZtCV(SpectraCv):
             logger.info(f"iteration solver not converged")
         # the value of the functional L
         l_value = xp.dot(asxp(hop(x)), asxp(x)) - 2 * xp.dot(vec_b, asxp(x))
-        xstruct = cvec2cmat(xshape, x, qnmat, constrain_qn)
+        xstruct = cvec2cmat(x, qn_mask)
         self.cv_mps._update_mps(xstruct, cidx, qnbigl, qnbigr, self.m_max, percent)
         if self.cv_mps.compress_config.ofs is not None:
             raise NotImplementedError("OFS for correction vector not implemented")

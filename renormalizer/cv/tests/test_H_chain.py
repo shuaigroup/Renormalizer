@@ -16,7 +16,6 @@ def test_H_chain_LDOS():
     # example to use Mollist2 to do CV calculation
 
     spatial_norbs = 4
-    spin_norbs = spatial_norbs * 2
     h1e, h2e, nuc = h_qc.read_fcidump(os.path.join(cur_dir,
         "fcidump_lowdin_h4.txt"), spatial_norbs) 
 
@@ -25,7 +24,7 @@ def test_H_chain_LDOS():
     model = Model(basis, ham_terms)
     mpo = Mpo(model)
     
-    nelec = spatial_norbs
+    nelec = [spatial_norbs//2, spatial_norbs//2]
     M = 50
     procedure = [[M, 0.4], [M, 0.2]] + [[M, 0],]*6
     mps = Mps.random(model, nelec, M, percent=1.0)
@@ -41,10 +40,10 @@ def test_H_chain_LDOS():
     def photoelectron_operator(idx):
         # norbs is the spin orbitals
         # green function
-        op_list = [Op("sigma_z", iorb, qn=0) for iorb in range(idx)]
-        return Op.product(op_list + [Op("sigma_+", idx, qn=-1)])
+        op_list = [Op("sigma_z", iorb, qn=[[0, 0]]) for iorb in range(idx)]
+        return Op.product(op_list + [Op("sigma_+", idx, qn=[[0, -1]])]) # always beta
 
-    dipole_model = photoelectron_operator(nelec-1)
+    dipole_model = photoelectron_operator(sum(nelec)-1)
     dipole_op = Mpo(model, dipole_model)
     b_mps = dipole_op.apply(mps)
 

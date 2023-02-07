@@ -20,7 +20,7 @@ class BasisSet:
             For basis containing multiple DoFs, the type should be a ``list`` or ``tuple``
             of anything that can be hashed.
         nbas (int): number of dimension of the basis set
-        sigmaqn (List(int)): the qn of each basis
+        sigmaqn (List): the quantum number of each basis. Could be an integer or tuple of integers
 
     """
 
@@ -33,18 +33,27 @@ class BasisSet:
     #: If the basis set contains multiple DoFs.
     multi_dof = False
 
-    def __init__(self, dof, nbas: int, sigmaqn: List[int]):
+    def __init__(self, dof, nbas: int, sigmaqn: List):
         self.dof = dof
 
         assert type(nbas) is int
         self.nbas = nbas
 
+        self.sigmaqn = []
         for qn in sigmaqn:
-            assert type(qn) is int
-        self.sigmaqn = sigmaqn
+            if isinstance(qn, int):
+                qn = [qn]
+            self.sigmaqn.append(np.array(qn))
+        self.sigmaqn:np.ndarray = np.array(self.sigmaqn)
+
+    def __str__(self):
+        ret = f"dof: {self.dof}, nbas: {self.nbas}"
+        if not np.all(self.sigmaqn == 0):
+            ret = ret + f", qn: {self.sigmaqn.tolist()}"
+        return f"{self.__class__.__name__}({ret})"
 
     def __repr__(self):
-        return f"(dof: {self.dof}, nbas: {self.nbas}, qn: {self.sigmaqn})"
+        return str(self)
 
     def op_mat(self, op: Op):
         """
@@ -132,8 +141,8 @@ class BasisSHO(BasisSet):
             self.dvr_x, self.dvr_v = scipy.linalg.eigh(self.op_mat("x"))
             self.dvr = True
 
-    def __repr__(self):
-        return f"(dof: {self.dof}, x0: {self.x0}, omega: {self.omega}, nbas: {self.nbas})"
+    def __str__(self):
+        return f"BasisSHO(dof: {self.dof}, x0: {self.x0}, omega: {self.omega}, nbas: {self.nbas})"
 
     def op_mat(self, op: Union[Op, str]):
         if not isinstance(op, Op):
@@ -333,7 +342,7 @@ class BasisHopsBoson(BasisSet):
     dof :
         The name of the DoF contained in the basis set. The type could be anything that can be hashed.
     nbas : int
-        number of dimension of the basis set (highest occupation number)
+        number of dimension of the basis set (the highest occupation number)
 
     """
 
@@ -421,8 +430,8 @@ class BasisSineDVR(BasisSet):
         self.dvr_v = np.sqrt(2/(nbas+1)) * \
             np.sin(np.tensordot(tmp, tmp, axes=0)*np.pi/(nbas+1))
 
-    def __repr__(self):
-        return f"(xi: {self.xi}, xf: {self.xf}, nbas: {self.nbas})"
+    def __str__(self):
+        return f"BasisSineDVR(xi: {self.xi}, xf: {self.xf}, nbas: {self.nbas})"
 
     def op_mat(self, op: Union[Op, str]):
         if not isinstance(op, Op):
@@ -689,16 +698,16 @@ class BasisMultiElectron(BasisSet):
     ----------
     dof : a :class:`list` or :class:`tuple` of hashable objects.
         The names of the DoFs contained in the basis set.
-    sigmaqn : :class:`list` of :class:`int`
-        The sigmaqn of each basis
+    sigmaqn : :class:`list` of :class:`int` or :class:`list` of containers of :class:`int`
+        The quantum number of each basis
     """
 
     is_electron = True
     multi_dof = True
 
-    def __init__(self, dof, sigmaqn: List[int]):
+    def __init__(self, dof, sigmaqn: List):
 
-        assert len(sigmaqn) == len(sigmaqn)
+        assert len(dof) == len(sigmaqn)
         self.dof_name_map = {name: i for i, name in enumerate(dof)}
         super().__init__(dof, len(dof), sigmaqn)
 
@@ -806,6 +815,7 @@ class BasisMultiElectronVac(BasisSet):
     def copy(self, new_dof):
         return self.__class__(new_dof)
 
+
 class BasisSimpleElectron(BasisSet):
 
     r"""
@@ -816,6 +826,14 @@ class BasisSimpleElectron(BasisSet):
     dof : any hashable object
         The name of the DoF contained in the basis set.
 
+    Examples
+    --------
+    >>> b = BasisSimpleElectron(0)
+    >>> b
+    BasisSimpleElectron(dof: 0, nbas: 2, qn: [[0], [1]])
+    >>> b.op_mat(r"a^\dagger")
+    array([[0., 0.],
+           [1., 0.]])
     """
     is_electron = True
 
@@ -852,12 +870,16 @@ class BasisHalfSpin(BasisSet):
 
     Parameters
     ----------
-    dof : any hashable object
+    dof : any hashable object such as integer
         The name of the DoF contained in the basis set.
+    sigmaqn : :class:`list` of :class:`int` or :class:`list` of containers of :class:`int`
+        The quantum number of each basis
 
     Examples
     --------
     >>> b = BasisHalfSpin(0)
+    >>> b
+    BasisHalfSpin(dof: 0, nbas: 2)
     >>> b.op_mat("X")
     array([[0., 1.],
            [1., 0.]])
@@ -868,7 +890,7 @@ class BasisHalfSpin(BasisSet):
 
     is_spin = True
 
-    def __init__(self, dof, sigmaqn:List[int]=None):
+    def __init__(self, dof, sigmaqn:List=None):
         if sigmaqn is None:
             sigmaqn = [0, 0]
         super().__init__(dof, 2, sigmaqn)

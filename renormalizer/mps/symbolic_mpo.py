@@ -102,26 +102,27 @@ def construct_symbolic_mpo(table, factor, algo="Hopcroft-Karp"):
     The local mpo is the transformation matrix between 0'',1'' to 0'''
     """
 
+    qn_size = len(table[0][0].qn)
     # Simplest case. Cut to the chase
     if len(table) == 1:
         # The first layer: number of sites. The 2nd and 3rd layer: in and out virtual bond
         # the 4th layer: operator sums
         mpo: List[List[List[List[[Op]]]]] = []
-        mpoqn = [[0]]
+        mpoqn = [np.zeros((1, qn_size), dtype=int)]
         primary_ops = list(set(table[0]))
         op2idx = dict(zip(primary_ops, range(len(primary_ops))))
         out_ops_list: List[List[OpTuple]] = [[OpTuple([0], qn=0, factor=1)]]
         for op in table[0]:
             mpo.append([[[op]]])
             qn = mpoqn[-1][0] + op.qn
-            mpoqn.append([qn])
+            mpoqn.append(np.array([qn]))
             out_ops_list.append([OpTuple([0, op2idx[op]], qn=qn, factor=1)])
 
         mpo[-1][0][0][0] = factor[0] * mpo[-1][0][0][0]
         last_optuple = out_ops_list[-1][0]
         out_ops_list[-1][0] = OpTuple(last_optuple.symbol, qn=last_optuple.qn, factor=factor[0]*last_optuple.factor)
         qntot = qn
-        mpoqn[-1] = [0]
+        mpoqn[-1] = np.zeros((1, qn_size), dtype=int)
         qnidx = len(mpo) - 1
         # the last two terms are not set for fast construction of the operators
         return mpo, mpoqn, qntot, qnidx, out_ops_list, primary_ops
@@ -156,7 +157,8 @@ def construct_symbolic_mpo(table, factor, algo="Hopcroft-Karp"):
         for idx in range(len(primary_ops)):
             coord = np.nonzero(new_table == idx)
             # check that op with the same symbol has the same factor and qn
-            assert np.unique(qn_table[coord]).size == 1
+            for j in range(qn_size):
+                assert np.unique(qn_table[:, :, j][coord]).size == 1
             assert np.all(factor_table[coord] == factor_table[coord][0])
 
         del factor_table, qn_table
@@ -181,7 +183,7 @@ def construct_symbolic_mpo(table, factor, algo="Hopcroft-Karp"):
     # 0 represents the identity symbol. Identity might not present
     # in `primary_ops` but the algorithm still works.
 
-    in_ops = [[OpTuple([0], qn=0, factor=1)]]
+    in_ops = [[OpTuple([0], qn=np.zeros(qn_size, dtype=int), factor=1)]]
 
     out_ops_list = _construct_symbolic_mpo(table, in_ops, factor, primary_ops, algo)
     # number of sites + 1. Note that the table was expanded for convenience
@@ -193,11 +195,11 @@ def construct_symbolic_mpo(table, factor, algo="Hopcroft-Karp"):
 
     mpoqn = []
     for out_ops in out_ops_list:
-        qn = [out_op[0].qn for out_op in out_ops]
+        qn = np.array([out_op[0].qn for out_op in out_ops])
         mpoqn.append(qn)
 
     qntot = mpoqn[-1][0]
-    mpoqn[-1] = [0]
+    mpoqn[-1] = np.zeros((1, qn_size), dtype=int)
     qnidx = len(mpo) - 1
 
     return mpo, mpoqn, qntot, qnidx, out_ops_list, primary_ops
@@ -343,7 +345,14 @@ def _terms_to_table(model: Model, terms: List[Op], const: float):
     table = []
     factor_list = []
     
-    dummy_table_entry = [Op.identity(b.dof) if not b.multi_dof else Op.identity(b.dof[0]) for b in model.basis]
+    dummy_table_entry = []
+    for b in model.basis:
+        if b.multi_dof:
+            dof = b.dof[0]
+        else:
+            dof = b.dof
+        op = Op.identity(dof, qn_size=model.qn_size)
+        dummy_table_entry.append(op)
     for op in terms:
         elem_ops, factor = op.split_elementary(model.dof_to_siteidx)
         table_entry = dummy_table_entry.copy()

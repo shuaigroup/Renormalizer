@@ -22,11 +22,11 @@ if __name__ == "__main__":
     job_name = "qc"  #########
     log.set_stream_level(logging.DEBUG)
     log.register_file_output(dump_dir+job_name+".log", mode="w")
-    logger = logging.getLogger(__name__)
+    logger = logging.getLogger("renormalizer")
 
     spatial_norbs = 7
     spin_norbs = spatial_norbs * 2
-    h1e, h2e, nuc = h_qc.read_fcidump("h2o_fcidump.txt", spatial_norbs) 
+    h1e, h2e, nuc = h_qc.read_fcidump("h2o_fcidump.txt", spatial_norbs)
 
     # Potential for H2O has high symmetry and constructed MPO is smaller
     # than MPO in normal case. Use random potential to compare with normal MPO.
@@ -43,7 +43,7 @@ if __name__ == "__main__":
     mpo = Mpo(model)
     logger.info(f"mpo_bond_dims:{mpo.bond_dims}")
 
-    nelec = 10
+    nelec = [5, 5]
     energy_list = {}
     M = 50
     procedure = [[M, 0.4], [M, 0.2], [M, 0.1], [M, 0], [M, 0], [M,0], [M,0]]

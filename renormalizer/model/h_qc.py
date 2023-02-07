@@ -108,9 +108,10 @@ def qc_model(h1e, h2e, conserve_qn=True):
     # and set quantum number
     dof_to_siteidx = dict(zip(range(norbs), range(norbs)))
     if conserve_qn:
-        qn_dict = {"+": -1, "-": 1, "Z": 0}
+        qn_dict0 = {"+": [-1, 0], "-": [1, 0], "Z": [0, 0]}
+        qn_dict1 = {"+": [0, -1], "-": [0, 1], "Z": [0, 0]}
     else:
-        qn_dict = {"+": 0, "-": 0, "Z": 0}
+        qn_dict0 = {"+": 0, "-": 0, "Z": 0}
     def process_op(old_op: Op):
         old_ops, _ = old_op.split_elementary(dof_to_siteidx)
         new_ops = []
@@ -132,8 +133,12 @@ def qc_model(h1e, h2e, conserve_qn=True):
             # this op is identity, discard it
             if not new_symbol:
                 continue
-            new_qn = [qn_dict[s] for s in new_symbol]
             new_dof_name = elem_op.dofs[0]
+            if conserve_qn and new_dof_name % 2 == 1:
+                qn_dict = qn_dict1
+            else:
+                qn_dict = qn_dict0
+            new_qn = [qn_dict[s] for s in new_symbol]
             new_ops.append(Op(" ".join(new_symbol), new_dof_name, (-1) ** n_permute, new_qn))
         return Op.product(new_ops)
 
@@ -148,10 +153,17 @@ def qc_model(h1e, h2e, conserve_qn=True):
             op = process_op(Op.product([a_dag_ops[p], a_dag_ops[q], a_ops[r], a_ops[s]]))
             ham_terms.append(op * h2e[p, q, r, s])
 
-    if conserve_qn:
-        sigmaqn = [0,1]
-    else:
-        sigmaqn=[0, 0]
-    basis = [BasisHalfSpin(iorb, sigmaqn=sigmaqn) for iorb in range(norbs)]
+
+    basis = []
+    for iorb in range(norbs):
+        if conserve_qn:
+            if iorb % 2 == 0:
+                sigmaqn = np.array([[0, 0], [1, 0]])
+            else:
+                sigmaqn = np.array([[0, 0], [0, 1]])
+        else:
+            sigmaqn = [0, 0]
+        b = BasisHalfSpin(iorb, sigmaqn=sigmaqn)
+        basis.append(b)
 
     return basis, ham_terms

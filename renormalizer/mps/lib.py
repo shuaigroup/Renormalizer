@@ -250,19 +250,20 @@ def contract_one_site(environ, ms, mo, domain, ms_conj=None):
     return outtensor
 
 
-def select_basis(vset, sset, qnset, compset, Mmax, percent=0):
+def select_basis(vset, sset, qnlist, compset, Mmax, percent=0):
     """
     select basis to construct new mps, and complementary mps
     vset, compset is the column vector
     """
+    qnlist = [tuple(qn) for qn in qnlist]
     # allowed qn subsection
-    qnlist = set(qnset)
+    qnset = set(qnlist)
     # convert to dict
     basdic = dict()
-    for i in range(len(qnset)):
+    for i in range(len(qnlist)):
         # clean quantum number outside qnlist
-        if qnset[i] in qnlist:
-            basdic[i] = [qnset[i], sset[i]]
+        if qnlist[i] in qnset:
+            basdic[i] = [qnlist[i], sset[i]]
 
     # each good quantum number block equally get percent/nblocks
     def block_select(basdic, qn, n):
@@ -284,8 +285,8 @@ def select_basis(vset, sset, qnset, compset, Mmax, percent=0):
 
     # equally select from each quantum number block
     if percent != 0:
-        nbas_block = int(nbasis * percent / len(qnlist))
-        for iqn in qnlist:
+        nbas_block = int(nbasis * percent / len(qnset))
+        for iqn in qnset:
             sidx += block_select(basdic, iqn, nbas_block)
 
     # others
@@ -311,14 +312,14 @@ def select_basis(vset, sset, qnset, compset, Mmax, percent=0):
         ms[:, idim] = vset[:, sidx[idim]].copy()
         if (compset is not None) and sidx[idim] < compset.shape[1]:
             compmps[:, idim] = compset[:, sidx[idim]].copy() * sset[sidx[idim]]
-        mpsqn.append(qnset[sidx[idim]])
+        mpsqn.append(qnlist[sidx[idim]])
         stot += sset[sidx[idim]] ** 2
 
     # print("discard:", 1.0 - stot)
     if compmps is not None:
         compmps = asxp(compmps)
 
-    return asxp(ms), mpsdim, mpsqn, compmps
+    return asxp(ms), mpsdim, np.array(mpsqn), compmps
 
 
 def update_cv(vset, sset, qnset, compset, nexciton, Mmax, spectratype,
@@ -433,19 +434,19 @@ def _sum(mps_list, compress=True, temp_m_trunc=None):
     return new_mps
 
 
-def cvec2cmat(cshape, c, qnmat, nexciton, nroots=1):
+def cvec2cmat(c, qn_mask, nroots=1):
     # recover good quantum number vector c to matrix format
     if nroots == 1:
-        cstruct = np.zeros(cshape, dtype=c.dtype)
-        np.place(cstruct, qnmat == nexciton, c)
+        cstruct = np.zeros(qn_mask.shape, dtype=c.dtype)
+        np.place(cstruct, qn_mask, c)
     else:
         cstruct = []
         if type(c) is not list:
             assert c.ndim == 2
             c = [c[:,iroot] for iroot in range(c.shape[1])]
         for ic in c:
-            icstruct = np.zeros(cshape, dtype=ic.dtype)
-            np.place(icstruct, qnmat == nexciton, ic)
+            icstruct = np.zeros(qn_mask.shape, dtype=ic.dtype)
+            np.place(icstruct, qn_mask, ic)
             cstruct.append(icstruct)
 
     return cstruct
