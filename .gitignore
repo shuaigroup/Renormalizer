@@ -25,3 +25,7 @@ doc/html
 doc/doctrees
 doc/build
 
+build/
+dist/
+*egg-info/
+.coverage*
