@@ -302,16 +302,16 @@
         <span class="k">return</span> <span class="n">Op</span><span class="p">(</span><span class="n">symbol</span><span class="p">,</span> <span class="n">dof_name</span><span class="p">,</span> <span class="n">factor</span><span class="p">,</span> <span class="n">qn</span><span class="p">)</span></div>
 
 <div class="viewcode-block" id="Op.identity"><a class="viewcode-back" href="../../../model.html#renormalizer.model.Op.identity">[docs]</a>    <span class="nd">@classmethod</span>
-    <span class="k">def</span> <span class="nf">identity</span><span class="p">(</span><span class="bp">cls</span><span class="p">,</span> <span class="n">dof</span><span class="p">,</span> <span class="n">qn_size</span><span class="o">=</span><span class="mi">1</span><span class="p">):</span>
+    <span class="k">def</span> <span class="nf">identity</span><span class="p">(</span><span class="bp">cls</span><span class="p">,</span> <span class="n">dof</span><span class="p">,</span> <span class="n">qn_size</span><span class="o">=</span><span class="mi">1</span><span class="p">,</span> <span class="n">factor</span><span class="o">=</span><span class="mf">1.0</span><span class="p">):</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">        Construct identity operator.</span>
 <span class="sd">        &quot;&quot;&quot;</span>
         <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">dof</span><span class="p">,</span> <span class="nb">list</span><span class="p">):</span>
             <span class="n">qn</span> <span class="o">=</span> <span class="p">[</span><span class="n">np</span><span class="o">.</span><span class="n">zeros</span><span class="p">(</span><span class="n">qn_size</span><span class="p">,</span> <span class="n">dtype</span><span class="o">=</span><span class="nb">int</span><span class="p">)]</span> <span class="o">*</span> <span class="nb">len</span><span class="p">(</span><span class="n">dof</span><span class="p">)</span>
-            <span class="k">return</span> <span class="bp">cls</span><span class="p">(</span><span class="s2">&quot; &quot;</span><span class="o">.</span><span class="n">join</span><span class="p">([</span><span class="s2">&quot;I&quot;</span><span class="p">]</span> <span class="o">*</span> <span class="nb">len</span><span class="p">(</span><span class="n">dof</span><span class="p">)),</span> <span class="n">dof</span><span class="p">,</span> <span class="n">qn</span><span class="o">=</span><span class="n">qn</span><span class="p">)</span>
+            <span class="k">return</span> <span class="bp">cls</span><span class="p">(</span><span class="s2">&quot; &quot;</span><span class="o">.</span><span class="n">join</span><span class="p">([</span><span class="s2">&quot;I&quot;</span><span class="p">]</span> <span class="o">*</span> <span class="nb">len</span><span class="p">(</span><span class="n">dof</span><span class="p">)),</span> <span class="n">dof</span><span class="p">,</span> <span class="n">factor</span><span class="o">=</span><span class="n">factor</span><span class="p">,</span> <span class="n">qn</span><span class="o">=</span><span class="n">qn</span><span class="p">)</span>
         <span class="k">else</span><span class="p">:</span>
             <span class="n">qn</span> <span class="o">=</span> <span class="p">[</span><span class="n">np</span><span class="o">.</span><span class="n">zeros</span><span class="p">(</span><span class="n">qn_size</span><span class="p">,</span> <span class="n">dtype</span><span class="o">=</span><span class="nb">int</span><span class="p">)]</span>
-            <span class="k">return</span> <span class="bp">cls</span><span class="p">(</span><span class="s2">&quot;I&quot;</span><span class="p">,</span> <span class="n">dof</span><span class="p">,</span> <span class="n">qn</span><span class="o">=</span><span class="n">qn</span><span class="p">)</span></div>
+            <span class="k">return</span> <span class="bp">cls</span><span class="p">(</span><span class="s2">&quot;I&quot;</span><span class="p">,</span> <span class="n">dof</span><span class="p">,</span> <span class="n">factor</span><span class="o">=</span><span class="n">factor</span><span class="p">,</span> <span class="n">qn</span><span class="o">=</span><span class="n">qn</span><span class="p">)</span></div>
 
     <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">symbol</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span> <span class="n">dof</span><span class="p">,</span> <span class="n">factor</span><span class="p">:</span> <span class="n">Union</span><span class="p">[</span><span class="nb">float</span><span class="p">,</span> <span class="n">Quantity</span><span class="p">]</span> <span class="o">=</span> <span class="mf">1.0</span><span class="p">,</span> <span class="n">qn</span><span class="p">:</span> <span class="n">Union</span><span class="p">[</span><span class="n">List</span><span class="p">,</span> <span class="nb">int</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">):</span>
         <span class="c1"># This is one of the most external user interface, so detailed argument checking is necessary</span>
@@ -400,9 +400,18 @@
 <span class="sd">        Returns</span>
 <span class="sd">        -------</span>
 <span class="sd">        elementary_operators : :class:`list` of :class:`Op`</span>
-<span class="sd">            A list of elementary operators. Factors are set to 1.</span>
+<span class="sd">            A list of elementary operators.</span>
+<span class="sd">            The order is determined by the DoF name.</span>
+<span class="sd">            Factors are set to 1.</span>
 <span class="sd">        factor : :class:`float` or class:`complex`</span>
 <span class="sd">            Factor of the operator.</span>
+
+<span class="sd">        Examples</span>
+<span class="sd">        --------</span>
+<span class="sd">        &gt;&gt;&gt; from renormalizer.model import Op</span>
+<span class="sd">        &gt;&gt;&gt; op = Op(&quot;X Y&quot;, [3, 2], 0.5) * Op(&quot;Y X&quot;, [2, 3], 3.0) * Op(&quot;Z Z&quot;, [2, 2], 1.0)</span>
+<span class="sd">        &gt;&gt;&gt; op.split_elementary({2:0, 3:1})</span>
+<span class="sd">        ([Op(&#39;Y Y Z Z&#39;, [2, 2, 2, 2], 1.0), Op(&#39;X X&#39;, [3, 3], 1.0)], 1.5)</span>
 <span class="sd">        &quot;&quot;&quot;</span>
         <span class="c1"># simplest case</span>
         <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">dofs</span><span class="p">)</span> <span class="o">==</span> <span class="mi">1</span><span class="p">:</span>
@@ -469,9 +478,12 @@
 <span class="sd">        &gt;&gt;&gt; op = Op(&quot;X I Y I&quot;, [0, 1, 2, 3], 0.5)</span>
 <span class="sd">        &gt;&gt;&gt; op.squeeze_identity()</span>
 <span class="sd">        Op(&#39;X Y&#39;, [0, 2], 0.5)</span>
+<span class="sd">        &gt;&gt;&gt; op = Op(&quot;I&quot;, 0, -0.5)</span>
+<span class="sd">        &gt;&gt;&gt; op.squeeze_identity()</span>
+<span class="sd">        Op(&#39;I&#39;, [0], -0.5)</span>
 <span class="sd">        &quot;&quot;&quot;</span>
         <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">is_identity</span><span class="p">:</span>
-            <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="vm">__class__</span><span class="o">.</span><span class="n">identity</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">dofs</span><span class="p">[</span><span class="mi">0</span><span class="p">],</span> <span class="n">qn_size</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">qn_size</span><span class="p">)</span>
+            <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="vm">__class__</span><span class="o">.</span><span class="n">identity</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">dofs</span><span class="p">[</span><span class="mi">0</span><span class="p">],</span> <span class="n">factor</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">factor</span><span class="p">,</span> <span class="n">qn_size</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">qn_size</span><span class="p">)</span>
         <span class="n">new_symbol_list</span> <span class="o">=</span> <span class="p">[]</span>
         <span class="n">new_dof_list</span> <span class="o">=</span> <span class="p">[]</span>
         <span class="n">new_qn_list</span> <span class="o">=</span> <span class="p">[]</span>
@@ -596,6 +608,8 @@
 <span class="sd">    [Op(&#39;X&#39;, [0], 1.0), Op(&#39;Y&#39;, [1], 2.0), Op(&#39;X&#39;, [0], 1.0), Op(&#39;Y&#39;, [1], 2.0)]</span>
 <span class="sd">    &gt;&gt;&gt; (opsum + opsum).simplify()</span>
 <span class="sd">    [Op(&#39;X&#39;, [0], 2.0), Op(&#39;Y&#39;, [1], 4.0)]</span>
+<span class="sd">    &gt;&gt;&gt; opsum / 0.5</span>
+<span class="sd">    [Op(&#39;X&#39;, [0], 2.0), Op(&#39;Y&#39;, [1], 4.0)]</span>
 <span class="sd">    &gt;&gt;&gt; (opsum - opsum).simplify()</span>
 <span class="sd">    []</span>
 <span class="sd">    &gt;&gt;&gt; opsum * opsum</span>
@@ -616,9 +630,32 @@
         <span class="k">return</span> <span class="n">OpSum</span><span class="p">(</span><span class="nb">super</span><span class="p">()</span><span class="o">.</span><span class="n">copy</span><span class="p">())</span>
 
     <span class="k">def</span> <span class="nf">simplify</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">atol</span><span class="o">=</span><span class="mi">0</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="s2">&quot;OpSum&quot;</span><span class="p">:</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Simplifies the operator sum by firstly removing zero, and then group same terms by adding them together,</span>
+<span class="sd">        and finally removing terms close to zero if applicable.</span>
+
+<span class="sd">        Parameters</span>
+<span class="sd">        ----------</span>
+<span class="sd">        atol : float</span>
+<span class="sd">            The coefficient tolerance for removing terms. Default to 0.</span>
+
+<span class="sd">        Returns</span>
+<span class="sd">        -------</span>
+<span class="sd">        opsum: OpSum</span>
+<span class="sd">             The simplified summation</span>
+
+<span class="sd">        Examples</span>
+<span class="sd">        --------</span>
+<span class="sd">        &gt;&gt;&gt; from renormalizer.model import Op, OpSum</span>
+<span class="sd">        &gt;&gt;&gt; op1 = Op(&quot;X I Y I&quot;, [0, 1, 2, 3], 0.5)</span>
+<span class="sd">        &gt;&gt;&gt; op2 = Op(&quot;X Y&quot;, [0, 2], 0.5)</span>
+<span class="sd">        &gt;&gt;&gt; op3 = Op(&quot;Z&quot;, [1], 1e-4)</span>
+<span class="sd">        &gt;&gt;&gt; OpSum([op1, op2, op3]).simplify(atol=1e-3)</span>
+<span class="sd">        [Op(&#39;X Y&#39;, [0, 2], 1.0)]</span>
+<span class="sd">        &quot;&quot;&quot;</span>
         <span class="c1"># combine same terms and remove zero. `atol` defines &quot;zero&quot;</span>
         <span class="c1"># take reverse so that `pop` starts from the beginning</span>
-        <span class="n">old_opsum</span> <span class="o">=</span> <span class="n">OpSum</span><span class="p">(</span><span class="nb">reversed</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">copy</span><span class="p">()))</span>
+        <span class="n">old_opsum</span> <span class="o">=</span> <span class="n">OpSum</span><span class="p">(</span><span class="nb">reversed</span><span class="p">([</span><span class="n">op</span><span class="o">.</span><span class="n">squeeze_identity</span><span class="p">()</span> <span class="k">for</span> <span class="n">op</span> <span class="ow">in</span> <span class="bp">self</span><span class="p">]))</span>
         <span class="n">new_opsum</span> <span class="o">=</span> <span class="p">[]</span>
         <span class="k">while</span> <span class="n">old_opsum</span><span class="p">:</span>
             <span class="n">op</span> <span class="o">=</span> <span class="n">old_opsum</span><span class="o">.</span><span class="n">pop</span><span class="p">()</span>
@@ -672,6 +709,10 @@
         <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">other</span><span class="p">,</span> <span class="p">(</span><span class="nb">int</span><span class="p">,</span> <span class="nb">float</span><span class="p">,</span> <span class="nb">complex</span><span class="p">,</span> <span class="n">np</span><span class="o">.</span><span class="n">generic</span><span class="p">)):</span>
             <span class="k">return</span> <span class="bp">self</span> <span class="o">*</span> <span class="n">other</span>
         <span class="k">return</span> <span class="n">OpSum</span><span class="p">(</span><span class="nb">super</span><span class="p">()</span><span class="o">.</span><span class="fm">__rmul__</span><span class="p">(</span><span class="n">other</span><span class="p">))</span>
+
+    <span class="k">def</span> <span class="fm">__truediv__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">other</span><span class="p">):</span>
+        <span class="k">assert</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">other</span><span class="p">,</span> <span class="p">(</span><span class="nb">int</span><span class="p">,</span> <span class="nb">float</span><span class="p">,</span> <span class="nb">complex</span><span class="p">,</span> <span class="n">np</span><span class="o">.</span><span class="n">generic</span><span class="p">))</span>
+        <span class="k">return</span> <span class="bp">self</span> <span class="o">*</span> <span class="p">(</span><span class="mi">1</span><span class="o">/</span><span class="n">other</span><span class="p">)</span>
 
     <span class="c1"># prevents NumPy universal function call</span>
     <span class="n">__array_ufunc__</span> <span class="o">=</span> <span class="kc">None</span>

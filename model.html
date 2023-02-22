@@ -1731,7 +1731,7 @@ and the DoFs of all simple symbols are set to the <a class="reference external" 
 
 <dl class="py method">
 <dt class="sig sig-object py" id="renormalizer.model.Op.identity">
-<em class="property"><span class="pre">classmethod</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">identity</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">dof</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">qn_size</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">1</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/renormalizer/model/op.html#Op.identity"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#renormalizer.model.Op.identity" title="Permalink to this definition">#</a></dt>
+<em class="property"><span class="pre">classmethod</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">identity</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">dof</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">qn_size</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">1</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">factor</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">1.0</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/renormalizer/model/op.html#Op.identity"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#renormalizer.model.Op.identity" title="Permalink to this definition">#</a></dt>
 <dd><p>Construct identity operator.</p>
 </dd></dl>
 
@@ -1811,12 +1811,21 @@ if not specified.</p>
 </dd>
 <dt class="field-even">Returns<span class="colon">:</span></dt>
 <dd class="field-even"><p><ul class="simple">
-<li><p><strong>elementary_operators</strong> (<a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#list" title="(in Python v3.11)"><code class="xref py py-class docutils literal notranslate"><span class="pre">list</span></code></a> of <a class="reference internal" href="#renormalizer.model.Op" title="renormalizer.model.Op"><code class="xref py py-class docutils literal notranslate"><span class="pre">Op</span></code></a>) – A list of elementary operators. Factors are set to 1.</p></li>
+<li><p><strong>elementary_operators</strong> (<a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#list" title="(in Python v3.11)"><code class="xref py py-class docutils literal notranslate"><span class="pre">list</span></code></a> of <a class="reference internal" href="#renormalizer.model.Op" title="renormalizer.model.Op"><code class="xref py py-class docutils literal notranslate"><span class="pre">Op</span></code></a>) – A list of elementary operators.
+The order is determined by the DoF name.
+Factors are set to 1.</p></li>
 <li><p><strong>factor</strong> (<a class="reference external" href="https://docs.python.org/3/library/functions.html#float" title="(in Python v3.11)"><code class="xref py py-class docutils literal notranslate"><span class="pre">float</span></code></a> or class:<a class="reference external" href="https://docs.python.org/3/library/functions.html#complex" title="(in Python v3.11)"><code class="xref any docutils literal notranslate"><span class="pre">complex</span></code></a>) – Factor of the operator.</p></li>
 </ul>
 </p>
 </dd>
 </dl>
+<p class="rubric">Examples</p>
+<div class="doctest highlight-default notranslate"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="kn">from</span> <span class="nn">renormalizer.model</span> <span class="kn">import</span> <span class="n">Op</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">op</span> <span class="o">=</span> <span class="n">Op</span><span class="p">(</span><span class="s2">&quot;X Y&quot;</span><span class="p">,</span> <span class="p">[</span><span class="mi">3</span><span class="p">,</span> <span class="mi">2</span><span class="p">],</span> <span class="mf">0.5</span><span class="p">)</span> <span class="o">*</span> <span class="n">Op</span><span class="p">(</span><span class="s2">&quot;Y X&quot;</span><span class="p">,</span> <span class="p">[</span><span class="mi">2</span><span class="p">,</span> <span class="mi">3</span><span class="p">],</span> <span class="mf">3.0</span><span class="p">)</span> <span class="o">*</span> <span class="n">Op</span><span class="p">(</span><span class="s2">&quot;Z Z&quot;</span><span class="p">,</span> <span class="p">[</span><span class="mi">2</span><span class="p">,</span> <span class="mi">2</span><span class="p">],</span> <span class="mf">1.0</span><span class="p">)</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">op</span><span class="o">.</span><span class="n">split_elementary</span><span class="p">({</span><span class="mi">2</span><span class="p">:</span><span class="mi">0</span><span class="p">,</span> <span class="mi">3</span><span class="p">:</span><span class="mi">1</span><span class="p">})</span>
+<span class="go">([Op(&#39;Y Y Z Z&#39;, [2, 2, 2, 2], 1.0), Op(&#39;X X&#39;, [3, 3], 1.0)], 1.5)</span>
+</pre></div>
+</div>
 </dd></dl>
 
 <dl class="py method">
@@ -1836,6 +1845,9 @@ if not specified.</p>
 <span class="gp">&gt;&gt;&gt; </span><span class="n">op</span> <span class="o">=</span> <span class="n">Op</span><span class="p">(</span><span class="s2">&quot;X I Y I&quot;</span><span class="p">,</span> <span class="p">[</span><span class="mi">0</span><span class="p">,</span> <span class="mi">1</span><span class="p">,</span> <span class="mi">2</span><span class="p">,</span> <span class="mi">3</span><span class="p">],</span> <span class="mf">0.5</span><span class="p">)</span>
 <span class="gp">&gt;&gt;&gt; </span><span class="n">op</span><span class="o">.</span><span class="n">squeeze_identity</span><span class="p">()</span>
 <span class="go">Op(&#39;X Y&#39;, [0, 2], 0.5)</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">op</span> <span class="o">=</span> <span class="n">Op</span><span class="p">(</span><span class="s2">&quot;I&quot;</span><span class="p">,</span> <span class="mi">0</span><span class="p">,</span> <span class="o">-</span><span class="mf">0.5</span><span class="p">)</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">op</span><span class="o">.</span><span class="n">squeeze_identity</span><span class="p">()</span>
+<span class="go">Op(&#39;I&#39;, [0], -0.5)</span>
 </pre></div>
 </div>
 </dd></dl>
