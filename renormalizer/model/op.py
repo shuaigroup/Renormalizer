@@ -97,16 +97,16 @@ class Op:
         return Op(symbol, dof_name, factor, qn)
 
     @classmethod
-    def identity(cls, dof, qn_size=1):
+    def identity(cls, dof, qn_size=1, factor=1.0):
         """
         Construct identity operator.
         """
         if isinstance(dof, list):
             qn = [np.zeros(qn_size, dtype=int)] * len(dof)
-            return cls(" ".join(["I"] * len(dof)), dof, qn=qn)
+            return cls(" ".join(["I"] * len(dof)), dof, factor=factor, qn=qn)
         else:
             qn = [np.zeros(qn_size, dtype=int)]
-            return cls("I", dof, qn=qn)
+            return cls("I", dof, factor=factor, qn=qn)
 
     def __init__(self, symbol: str, dof, factor: Union[float, Quantity] = 1.0, qn: Union[List, int] = None):
         # This is one of the most external user interface, so detailed argument checking is necessary
@@ -195,9 +195,18 @@ class Op:
         Returns
         -------
         elementary_operators : :class:`list` of :class:`Op`
-            A list of elementary operators. Factors are set to 1.
+            A list of elementary operators.
+            The order is determined by the DoF name.
+            Factors are set to 1.
         factor : :class:`float` or class:`complex`
             Factor of the operator.
+
+        Examples
+        --------
+        >>> from renormalizer.model import Op
+        >>> op = Op("X Y", [3, 2], 0.5) * Op("Y X", [2, 3], 3.0) * Op("Z Z", [2, 2], 1.0)
+        >>> op.split_elementary({2:0, 3:1})
+        ([Op('Y Y Z Z', [2, 2, 2, 2], 1.0), Op('X X', [3, 3], 1.0)], 1.5)
         """
         # simplest case
         if len(self.dofs) == 1:
@@ -264,9 +273,12 @@ class Op:
         >>> op = Op("X I Y I", [0, 1, 2, 3], 0.5)
         >>> op.squeeze_identity()
         Op('X Y', [0, 2], 0.5)
+        >>> op = Op("I", 0, -0.5)
+        >>> op.squeeze_identity()
+        Op('I', [0], -0.5)
         """
         if self.is_identity:
-            return self.__class__.identity(self.dofs[0], qn_size=self.qn_size)
+            return self.__class__.identity(self.dofs[0], factor=self.factor, qn_size=self.qn_size)
         new_symbol_list = []
         new_dof_list = []
         new_qn_list = []
@@ -391,6 +403,8 @@ class OpSum(list):
     [Op('X', [0], 1.0), Op('Y', [1], 2.0), Op('X', [0], 1.0), Op('Y', [1], 2.0)]
     >>> (opsum + opsum).simplify()
     [Op('X', [0], 2.0), Op('Y', [1], 4.0)]
+    >>> opsum / 0.5
+    [Op('X', [0], 2.0), Op('Y', [1], 4.0)]
     >>> (opsum - opsum).simplify()
     []
     >>> opsum * opsum
@@ -411,9 +425,32 @@ class OpSum(list):
         return OpSum(super().copy())
 
     def simplify(self, atol=0) -> "OpSum":
+        """
+        Simplifies the operator sum by firstly removing zero, and then group same terms by adding them together,
+        and finally removing terms close to zero if applicable.
+
+        Parameters
+        ----------
+        atol : float
+            The coefficient tolerance for removing terms. Default to 0.
+
+        Returns
+        -------
+        opsum: OpSum
+             The simplified summation
+
+        Examples
+        --------
+        >>> from renormalizer.model import Op, OpSum
+        >>> op1 = Op("X I Y I", [0, 1, 2, 3], 0.5)
+        >>> op2 = Op("X Y", [0, 2], 0.5)
+        >>> op3 = Op("Z", [1], 1e-4)
+        >>> OpSum([op1, op2, op3]).simplify(atol=1e-3)
+        [Op('X Y', [0, 2], 1.0)]
+        """
         # combine same terms and remove zero. `atol` defines "zero"
         # take reverse so that `pop` starts from the beginning
-        old_opsum = OpSum(reversed(self.copy()))
+        old_opsum = OpSum(reversed([op.squeeze_identity() for op in self]))
         new_opsum = []
         while old_opsum:
             op = old_opsum.pop()
@@ -467,6 +504,10 @@ class OpSum(list):
         if isinstance(other, (int, float, complex, np.generic)):
             return self * other
         return OpSum(super().__rmul__(other))
+
+    def __truediv__(self, other):
+        assert isinstance(other, (int, float, complex, np.generic))
+        return self * (1/other)
 
     # prevents NumPy universal function call
     __array_ufunc__ = None
