@@ -9,6 +9,7 @@ import scipy
 import scipy.sparse
 
 from renormalizer.model import Model
+from renormalizer.model.basis import BasisSet
 from renormalizer.model.op import Op
 from renormalizer.lib import bipartite_vertex_cover
 
@@ -105,15 +106,17 @@ def construct_symbolic_mpo(table, factor, algo="Hopcroft-Karp"):
     qn_size = len(table[0][0].qn)
     # Simplest case. Cut to the chase
     if len(table) == 1:
-        # The first layer: number of sites. The 2nd and 3rd layer: in and out virtual bond
+        # The first layer: number of sites. The middle array: in and out virtual bond
         # the 4th layer: operator sums
-        mpo: List[List[List[List[[Op]]]]] = []
+        mpo: List[np.ndarray[List[Op]]] = []
         mpoqn = [np.zeros((1, qn_size), dtype=int)]
         primary_ops = list(set(table[0]))
         op2idx = dict(zip(primary_ops, range(len(primary_ops))))
         out_ops_list: List[List[OpTuple]] = [[OpTuple([0], qn=0, factor=1)]]
         for op in table[0]:
-            mpo.append([[[op]]])
+            mo = np.full((1, 1), None)
+            mo[0][0] = [op]
+            mpo.append(mo)
             qn = mpoqn[-1][0] + op.qn
             mpoqn.append(np.array([qn]))
             out_ops_list.append([OpTuple([0, op2idx[op]], qn=qn, factor=1)])
@@ -127,58 +130,15 @@ def construct_symbolic_mpo(table, factor, algo="Hopcroft-Karp"):
         # the last two terms are not set for fast construction of the operators
         return mpo, mpoqn, qntot, qnidx, out_ops_list, primary_ops
 
-    # use np.uint32, np.uint16 to save memory
-    max_uint32 = np.iinfo(np.uint32).max
-    max_uint16 = np.iinfo(np.uint16).max
-
     logger.debug(f"symbolic mpo algorithm: {algo}")
     logger.debug(f"Input operator terms: {len(table)}")
 
-    # translate the symbolic operator table to an easy to manipulate numpy array
-    table = np.array(table)
-    # unique operators with DoF names taken into consideration
-    # The inclusion of DoF names is necessary for multi-dof basis.
-    unique_op: Set[Op] = set(table.ravel())
-
-    # check the index of different operators could be represented with np.uint16
-    assert len(unique_op) < max_uint16
-
-    # Construct mapping from easy-to-manipulate integer to actual Op
-    primary_ops = list(unique_op)
-
-    op2idx = dict(zip(unique_op, range(len(unique_op))))
-    new_table = np.vectorize(op2idx.get)(table).astype(np.uint16)
-
-    del unique_op
-
-    if __debug__:
-        qn_table = np.array([[x.qn for x in ta] for ta in table])
-        factor_table = np.array([[x.factor for x in ta] for ta in table])
-        for idx in range(len(primary_ops)):
-            coord = np.nonzero(new_table == idx)
-            # check that op with the same symbol has the same factor and qn
-            for j in range(qn_size):
-                assert np.unique(qn_table[:, :, j][coord]).size == 1
-            assert np.all(factor_table[coord] == factor_table[coord][0])
-
-        del factor_table, qn_table
-
-    # combine the same terms but with different factors(add them together)
-    unique_term, unique_inverse = np.unique(new_table, axis=0, return_inverse=True)
-    # it is efficient to vectorize the operation that moves the rows and cols
-    # and sum them together
-    coord = np.array([[newidx, oldidx] for oldidx, newidx in enumerate(unique_inverse)])
-    mask = scipy.sparse.csr_matrix((np.ones(len(coord)), (coord[:, 0], coord[:, 1])))
-    factor = mask.dot(factor)
+    table, factor, primary_ops = _transform_table(table, factor)
 
     # add the first and last column for convenience
-    ta = np.zeros((unique_term.shape[0], 1), dtype=np.uint16)
-    table = np.concatenate((ta, unique_term, ta), axis=1)
+    ta = np.zeros((table.shape[0], 1), dtype=np.uint16)
+    table = np.concatenate((ta, table, ta), axis=1)
     logger.debug(f"After combination of the same terms: {table.shape[0]}")
-    # check the index of interaction could be represented with np.uint32
-    assert table.shape[0] < max_uint32
-
-    del unique_term, unique_inverse
 
     # 0 represents the identity symbol. Identity might not present
     # in `primary_ops` but the algorithm still works.
@@ -212,115 +172,14 @@ def _construct_symbolic_mpo(table, in_ops, factor, primary_ops, algo="Hopcroft-K
     out_ops_list = [in_ops]
 
     for isite in range(nsite):
-        # split table into the row and col part
-        term_row, row_unique_inverse = np.unique(table[:, :2], axis=0, return_inverse=True)
-
-        # faster version of the following code
-        # term_col, col_unique_inverse = np.unique(table[:, 2:], axis=0, return_inverse=True)
-        term_col = {}
-        col_unique_inverse = []
-        for row in table[:, 2:]:
-            row_bytes = row.tobytes()
-            i_and_row = term_col.get(row_bytes)
-            if i_and_row is None:
-                i_and_row = (len(term_col), row)
-                term_col[row_bytes] = i_and_row
-            col_unique_inverse.append(i_and_row[0])
-        term_col = [v[1] for v in term_col.values()]
-
-        # get the non_redudant ops
-        # the +1 trick is to use the csr sparse matrix format
-        non_red = scipy.sparse.diags(np.arange(1, table.shape[0] + 1), format="csr", dtype=np.uint32)
-        coord = np.array([[newidx, oldidx] for oldidx, newidx in enumerate(row_unique_inverse)])
-        mask = scipy.sparse.csr_matrix((np.ones(len(coord), dtype=np.uint32), (coord[:, 0], coord[:, 1])))
-        non_red = mask.dot(non_red)
-        coord = np.array([[oldidx, newidx] for oldidx, newidx in enumerate(col_unique_inverse)])
-        mask = scipy.sparse.csr_matrix((np.ones(len(coord), dtype=np.uint32), (coord[:, 0], coord[:, 1])))
-        non_red = non_red.dot(mask)
-        # use sparse matrix to represent non_red will be inefficient a little
-        # bit compared to dense matrix, but saves a lot of memory when the
-        # number of terms is huge
-        # logger.info(f"isite: {isite}, bipartite graph size: {non_red.shape}")
-
-        # the usual case
-
-        bigraph = []
-        if non_red.shape[0] < non_red.shape[1]:
-            for i in range(non_red.shape[0]):
-                bigraph.append(non_red.indices[non_red.indptr[i]:non_red.indptr[i + 1]])
-            rowbool, colbool = bipartite_vertex_cover(bigraph, algo=algo)
-        else:
-            non_red_csc = non_red.tocsc()
-            for i in range(non_red.shape[1]):
-                bigraph.append(non_red_csc.indices[non_red_csc.indptr[i]:non_red_csc.indptr[i + 1]])
-            colbool, rowbool = bipartite_vertex_cover(bigraph, algo=algo)
-
-        row_select = np.nonzero(rowbool)[0]
-        # largest cover first
-        row_select = sorted(row_select, key=lambda i: non_red.indptr[i + 1] - non_red.indptr[i], reverse=True)
-        col_select = np.nonzero(colbool)[0]
-
-
-        if len(row_select) > 0:
-            assert np.amax(row_select) < non_red.shape[0]
-        if len(col_select) > 0:
-            assert np.amax(col_select) < non_red.shape[1]
-
-        # select the reserved ops
-        out_ops: List[List[OpTuple]] = []
-        new_table = []
-        new_factor = []
-
-        for row_idx in row_select:
-            # construct out_op
-            # dealing with row (left side of the table). One row corresponds to multiple cols.
-            # Produce one out operator and multiple new_table entries
-            symbol = term_row[row_idx]
-            qn = in_ops[symbol[0]][0].qn + primary_ops[symbol[1]].qn
-            out_op = OpTuple(symbol, qn, factor=1.0)
-            out_ops.append([out_op])
-
-            col_link = non_red.indices[non_red.indptr[row_idx]:non_red.indptr[row_idx + 1]]
-            stack = np.array([len(out_ops) - 1] * len(col_link), dtype=np.uint16).reshape(-1, 1)
-            new_table.append(np.hstack((stack, [term_col[i] for i in col_link])))
-            new_factor.append(factor[non_red[row_idx, col_link].toarray() - 1])
-            non_red.data[non_red.indptr[row_idx]:non_red.indptr[row_idx + 1]] = 0
-
-        non_red.eliminate_zeros()
-
-        nonzero_row_idx, nonzero_col_idx = non_red.nonzero()
-        for col_idx in col_select:
-
-            out_ops.append([])
-            # complementary operator
-            # dealing with column (right side of the table). One col correspond to multiple rows.
-            # Produce multiple out operators and one new_table entry
-            non_red_one_col = non_red[:, col_idx].toarray().flatten()
-            for i in nonzero_row_idx[np.nonzero(nonzero_col_idx == col_idx)[0]]:
-                symbol = term_row[i]
-                qn = in_ops[symbol[0]][0].qn + primary_ops[symbol[1]].qn
-                out_op = OpTuple(symbol, qn, factor=factor[non_red_one_col[i] - 1])
-                out_ops[-1].append(out_op)
-
-            new_table.append(np.array([len(out_ops) - 1] + list(term_col[col_idx]), dtype=np.uint16).reshape(1, -1))
-            new_factor.append(1.0)
-
-            # it is not necessary to remove the column nonzero elements
-            # non_red[:, col_idx] = 0
-            # non_red.eliminate_zeros()
-
-        # reconstruct the table in new operator
-        table = np.concatenate(new_table)
-        # check the number of incoming operators could be represent as np.uint16
-        assert len(out_ops) <= np.iinfo(np.uint16).max
-        factor = np.concatenate(new_factor, axis=None)
-
-        assert len(table) == len(factor)
+        table_row = table[:, :2]
+        table_col = table[:, 2:]
+        out_ops, table, factor = _construct_symbolic_mpo_one_site(table_row, table_col, [in_ops], factor, primary_ops, algo)
 
         # debug
         # logger.debug(f"in_ops: {in_ops}")
         # logger.debug(f"out_ops: {out_ops}")
-        # logger.debug(f"new_factor: {new_factor}")
+        # logger.debug(f"new_factor: {factor}")
 
         in_ops = out_ops
         # in_ops_full_symbol = out_ops_full_symbol
@@ -329,12 +188,118 @@ def _construct_symbolic_mpo(table, in_ops, factor, primary_ops, algo="Hopcroft-K
     return out_ops_list
 
 
-def add_idx(symbol, idx):
-    symbols = symbol.split(" ")
-    for i in range(len(symbols)):
-        symbols[i] = symbols[i] + f"_{idx}"
-    return " ".join(symbols)
+def _construct_symbolic_mpo_one_site(table_row, table_col, in_ops_list, factor, primary_ops, algo):
+    # split table into the row and col part
+    term_row, row_unique_inverse = np.unique(table_row, axis=0, return_inverse=True)
+    assert len(in_ops_list) + 1 == term_row.shape[1]
 
+    # faster version of the following code
+    # term_col, col_unique_inverse = np.unique(table_col, axis=0, return_inverse=True)
+    term_col = {}
+    col_unique_inverse = []
+    for row in table_col:
+        row_bytes = row.tobytes()
+        i_and_row = term_col.get(row_bytes)
+        if i_and_row is None:
+            i_and_row = (len(term_col), row)
+            term_col[row_bytes] = i_and_row
+        col_unique_inverse.append(i_and_row[0])
+    term_col = [v[1] for v in term_col.values()]
+
+    # get the non_redudant ops
+    # the +1 trick is to use the csr sparse matrix format
+    non_red = scipy.sparse.diags(np.arange(1, table_row.shape[0] + 1), format="csr", dtype=np.uint32)
+    coord = np.array([[newidx, oldidx] for oldidx, newidx in enumerate(row_unique_inverse)])
+    mask = scipy.sparse.csr_matrix((np.ones(len(coord), dtype=np.uint32), (coord[:, 0], coord[:, 1])))
+    non_red = mask.dot(non_red)
+    coord = np.array([[oldidx, newidx] for oldidx, newidx in enumerate(col_unique_inverse)])
+    mask = scipy.sparse.csr_matrix((np.ones(len(coord), dtype=np.uint32), (coord[:, 0], coord[:, 1])))
+    non_red = non_red.dot(mask)
+    # use sparse matrix to represent non_red will be inefficient a little
+    # bit compared to dense matrix, but saves a lot of memory when the
+    # number of terms is huge
+    # logger.info(f"isite: {isite}, bipartite graph size: {non_red.shape}")
+
+    # the usual case
+
+    bigraph = []
+    if non_red.shape[0] < non_red.shape[1]:
+        for i in range(non_red.shape[0]):
+            bigraph.append(non_red.indices[non_red.indptr[i]:non_red.indptr[i + 1]])
+        rowbool, colbool = bipartite_vertex_cover(bigraph, algo=algo)
+    else:
+        non_red_csc = non_red.tocsc()
+        for i in range(non_red.shape[1]):
+            bigraph.append(non_red_csc.indices[non_red_csc.indptr[i]:non_red_csc.indptr[i + 1]])
+        colbool, rowbool = bipartite_vertex_cover(bigraph, algo=algo)
+
+    row_select = np.nonzero(rowbool)[0]
+    # largest cover first
+    row_select = sorted(row_select, key=lambda i: non_red.indptr[i + 1] - non_red.indptr[i], reverse=True)
+    col_select = np.nonzero(colbool)[0]
+
+    if len(row_select) > 0:
+        assert np.amax(row_select) < non_red.shape[0]
+    if len(col_select) > 0:
+        assert np.amax(col_select) < non_red.shape[1]
+
+    # select the reserved ops
+    out_ops: List[List[OpTuple]] = []
+    new_table = []
+    new_factor = []
+
+    for row_idx in row_select:
+        # construct out_op
+        # dealing with row (left side of the table). One row corresponds to multiple cols.
+        # Produce one out operator and multiple new_table entries
+        symbol = term_row[row_idx]
+        qn = _compute_qn(in_ops_list, symbol, primary_ops)
+        out_op = OpTuple(symbol, qn, factor=1.0)
+        out_ops.append([out_op])
+
+        col_link = non_red.indices[non_red.indptr[row_idx]:non_red.indptr[row_idx + 1]]
+        stack = np.array([len(out_ops) - 1] * len(col_link), dtype=np.uint16).reshape(-1, 1)
+        new_table.append(np.hstack((stack, [term_col[i] for i in col_link])))
+        new_factor.append(factor[non_red[row_idx, col_link].toarray() - 1])
+        non_red.data[non_red.indptr[row_idx]:non_red.indptr[row_idx + 1]] = 0
+
+    non_red.eliminate_zeros()
+
+    nonzero_row_idx, nonzero_col_idx = non_red.nonzero()
+    for col_idx in col_select:
+
+        out_ops.append([])
+        # complementary operator
+        # dealing with column (right side of the table). One col correspond to multiple rows.
+        # Produce multiple out operators and one new_table entry
+        non_red_one_col = non_red[:, col_idx].toarray().flatten()
+        for i in nonzero_row_idx[np.nonzero(nonzero_col_idx == col_idx)[0]]:
+            symbol = term_row[i]
+            qn = _compute_qn(in_ops_list, symbol, primary_ops)
+            out_op = OpTuple(symbol, qn, factor=factor[non_red_one_col[i] - 1])
+            out_ops[-1].append(out_op)
+
+        new_table.append(np.array([len(out_ops) - 1] + list(term_col[col_idx]), dtype=np.uint16).reshape(1, -1))
+        new_factor.append(1.0)
+
+        # it is not necessary to remove the column nonzero elements
+        # non_red[:, col_idx] = 0
+        # non_red.eliminate_zeros()
+
+    # reconstruct the table in new operator
+    table = np.concatenate(new_table)
+    # check the number of incoming operators could be represented as np.uint16
+    assert len(out_ops) <= np.iinfo(np.uint16).max
+    factor = np.concatenate(new_factor, axis=None)
+
+    assert len(table) == len(factor)
+    return out_ops, table, factor
+
+
+def _compute_qn(in_ops_list, symbol, primary_ops) -> int:
+    qn = sum(in_ops[i][0].qn for in_ops, i in zip(in_ops_list, symbol[:-1]))
+    qn += primary_ops[symbol[-1]].qn
+    return qn
 
 def _terms_to_table(model: Model, terms: List[Op], const: float):
     r"""
@@ -375,9 +340,62 @@ def _terms_to_table(model: Model, terms: List[Op], const: float):
     return table, factor_list
 
 
+def _transform_table(table, factor):
+    """Transforms the table to integer table and combine duplicate terms."""
+    qn_size = len(table[0][0].qn)
+    # use np.uint32, np.uint16 to save memory
+    max_uint32 = np.iinfo(np.uint32).max
+    max_uint16 = np.iinfo(np.uint16).max
+
+    # translate the symbolic operator table to an easy to manipulate numpy array
+    table = np.array(table)
+    # unique operators with DoF names taken into consideration
+    # The inclusion of DoF names is necessary for multi-dof basis.
+    unique_op: Set[Op] = set(table.ravel())
+
+    # check the index of different operators could be represented with np.uint16
+    assert len(unique_op) < max_uint16
+
+    # Construct mapping from easy-to-manipulate integer to actual Op
+    primary_ops = list(unique_op)
+
+    op2idx = dict(zip(unique_op, range(len(unique_op))))
+    new_table = np.vectorize(op2idx.get)(table).astype(np.uint16)
+
+    del unique_op
+
+    if __debug__:
+        qn_table = np.array([[x.qn for x in ta] for ta in table])
+        factor_table = np.array([[x.factor for x in ta] for ta in table])
+        for idx in range(len(primary_ops)):
+            coord = np.nonzero(new_table == idx)
+            # check that op with the same symbol has the same factor and qn
+            for j in range(qn_size):
+                assert np.unique(qn_table[:, :, j][coord]).size == 1
+            assert np.all(factor_table[coord] == factor_table[coord][0])
+
+        del factor_table, qn_table
+
+    # combine the same terms but with different factors(add them together)
+    unique_term, unique_inverse = np.unique(new_table, axis=0, return_inverse=True)
+    # it is efficient to vectorize the operation that moves the rows and cols
+    # and sum them together
+    coord = np.array([[newidx, oldidx] for oldidx, newidx in enumerate(unique_inverse)])
+    mask = scipy.sparse.csr_matrix((np.ones(len(coord)), (coord[:, 0], coord[:, 1])))
+    factor = mask.dot(factor)
+
+    # check the index of interaction could be represented with np.uint32
+    assert table.shape[0] < max_uint32
+
+    return np.array(unique_term), factor, primary_ops
+
+
 # translate the numbers into symbolic Matrix Operator
 def compose_symbolic_mo(in_ops, out_ops, primary_ops):
-    mo = [[[] for o in range(len(out_ops))] for i in range(len(in_ops))]
+    shape = [len(in_ops), len(out_ops)]
+    mo = np.full(shape, None, dtype=object)
+    for i, _ in np.ndenumerate(mo):
+        mo[i] = []
     for iop, out_op in enumerate(out_ops):
         for composed_op in out_op:
             in_idx = composed_op.symbol[0]
@@ -387,15 +405,18 @@ def compose_symbolic_mo(in_ops, out_ops, primary_ops):
 
 
 # translate symbolic Matrix Operator to numerical matrix operator defined with certain basis
-def symbolic_mo_to_numeric_mo(basis, mo, dtype):
+def symbolic_mo_to_numeric_mo(basis: BasisSet, mo, dtype):
     pdim = basis.nbas
-    nrow, ncol = len(mo), len(mo[0])
-    mo_mat = np.zeros((nrow, pdim, pdim, ncol), dtype=dtype)
+    shape = list(mo.shape) + [pdim, pdim]
+    mo_mat = np.zeros(shape, dtype=dtype)
 
-    for irow, icol in itertools.product(range(nrow), range(ncol)):
-        for term in mo[irow][icol]:
-            mo_mat[irow, :, :, icol] += basis.op_mat(term)
-    return mo_mat
+    for i, terms in np.ndenumerate(mo):
+        for term in terms:
+            mo_mat[i] += basis.op_mat(term)
+
+    axes = list(range(mo.ndim + 2))
+    axes = axes[:-3] + axes[-2:] + [axes[-3]]
+    return mo_mat.transpose(axes)
 
 
 def _format_symbolic_mpo(symbolic_mpo):
