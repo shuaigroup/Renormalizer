@@ -9,3 +9,4 @@ furo==2022.9.*
 nbsphinx==0.8.*
 opt_einsum==3.3.*
 qutip==4.6.*
+print-tree2==0.9.10

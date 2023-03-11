@@ -32,7 +32,7 @@ del os, log_level, init_log
 
 
 # user interfaces
-from renormalizer.model import Model, HolsteinModel, SpinBosonModel, TI1DModel, Op
+from renormalizer.model import Model, HolsteinModel, SpinBosonModel, TI1DModel, Op, OpSum
 from renormalizer.model.basis import BasisSHO, BasisHopsBoson, BasisSineDVR, BasisMultiElectron, \
     BasisMultiElectronVac, BasisSimpleElectron, BasisHalfSpin
 from renormalizer.mps import Mpo, Mps, optimize_mps
