@@ -1,6 +1,6 @@
 from typing import List, Dict, Any, Union
 
-from renormalizer.model.basis import BasisSet, BasisHalfSpin
+from renormalizer.model.basis import BasisSet
 from renormalizer.mps.backend import xp
 
 

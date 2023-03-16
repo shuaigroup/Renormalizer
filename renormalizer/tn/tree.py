@@ -1,12 +1,11 @@
 from typing import List, Dict
-from collections import deque
 
 import numpy as np
 import scipy
-import opt_einsum
+import opt_einsum as oe
 from print_tree import print_tree
 
-from renormalizer import Op, Mps, Model, BasisHalfSpin, Mpo
+from renormalizer import Op, Mps, Model
 from renormalizer.model.basis import BasisSet
 from renormalizer.mps.symbolic_mpo import symbolic_mo_to_numeric_mo
 from renormalizer.tn.node import TreeNodeTensor, TreeNodeBasis, NodeUnion, copy_connection, TreeNodeEnviron
@@ -63,6 +62,7 @@ class TreeWorkspace:
 
 
 class BasisTree(Tree):
+    """Tree of basis sets."""
     @classmethod
     def linear(cls, basis_list: List[BasisSet]):
         node_list = [TreeNodeBasis(basis) for basis in basis_list]
@@ -143,7 +143,7 @@ class TensorTreeOperator(Tree):
         self.tn2bn = {tn: bn for tn, bn in zip(self.node_list, self.basis.node_list)}
         self.tn2dofs = {tn: bn.basis_set.dofs for tn, bn in self.tn2bn.items()}
 
-    def todense(self, order:List[BasisSet]=None):
+    def todense(self, order:List[BasisSet]=None) -> np.ndarray:
         _id = str(id(self))
         args = self.to_contract_args(_id, _id)
         if order is None:
@@ -155,7 +155,7 @@ class TensorTreeOperator(Tree):
             indices_down.append((_id, str(basis.dofs), "down"))
         output_indices = [(_id, "root", str(self.tn2dofs[self.root]))] + indices_up + indices_down
         args.append(output_indices)
-        res = opt_einsum.contract(*args)
+        res = oe.contract(*args)
         assert res.shape[0] == 1
         res = res[0]
         dim = round(np.sqrt(np.prod(res.shape)))
@@ -238,7 +238,7 @@ class TensorTreeState(Tree):
         args = self.to_contract_args("ket")
         args.extend(self.to_contract_args("bra", conj=True))
         args.extend(tto.to_contract_args("bra", "ket"))
-        return opt_einsum.contract(*args).ravel()[0]
+        return oe.contract(*args).ravel()[0]
 
     def to_contract_args(self, prefix, conj=False):
         args = []
@@ -330,7 +330,7 @@ class TensorTreeEnviron(Tree):
         # indices for the resulting tensor
         indices = self.get_parent_indices(enode, tts, tto)
         args.append(indices)
-        res = opt_einsum.contract(*args)
+        res = oe.contract(*args)
         if len(enode.parent.environ_children) != len(enode.parent.children):
             # first run
             enode.parent.environ_children.append(res)
@@ -368,7 +368,7 @@ class TensorTreeEnviron(Tree):
         indices = self.get_child_indices(enode, ichild, tts, tto)
 
         args.append(indices)
-        res = opt_einsum.contract(*args)
+        res = oe.contract(*args)
         enode.children[ichild].environ_parent = res
 
     def get_child_indices(self, enode, i, tts, tto):
