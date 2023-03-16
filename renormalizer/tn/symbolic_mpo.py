@@ -1,11 +1,9 @@
 import logging
-from typing import Set, List
-from collections import namedtuple
+from typing import List
 
 import numpy as np
-import scipy
 
-from renormalizer import OpSum, Op, Model
+from renormalizer import Op, Model
 from renormalizer.tn.tree import BasisTree
 from renormalizer.mps.symbolic_mpo import _terms_to_table, _transform_table, _construct_symbolic_mpo_one_site, OpTuple
 
