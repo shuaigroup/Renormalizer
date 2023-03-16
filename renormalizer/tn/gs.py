@@ -1,6 +1,6 @@
 import numpy as np
 import scipy
-import opt_einsum
+import opt_einsum as oe
 
 from renormalizer.tn.node import TreeNodeTensor
 from renormalizer.tn.tree import TensorTreeState, TensorTreeOperator, TensorTreeEnviron
@@ -54,8 +54,8 @@ def optimize_2site(snode: TreeNodeTensor, tts: TensorTreeState, tto: TensorTreeO
             continue
         args.append(enode_environchild)
         args.append(tte.get_child_indices(eparent, i, tts, tto))
-    # eparent parent environments
 
+    # eparent parent environments
     args.append(eparent.environ_parent)
     args.append(tte.get_parent_indices(eparent, tts, tto))
 
@@ -74,10 +74,12 @@ def optimize_2site(snode: TreeNodeTensor, tts: TensorTreeState, tto: TensorTreeO
     for i in range(2):
         output_indices.remove(shared_bond)
 
+    # cache the contraction path
     expr = hop_expr(args, shape, merged_indices, output_indices)
     def hop(x):
         return expr(x.reshape(shape)).ravel()
 
+    # todo: add preconditioner
     A = scipy.sparse.linalg.LinearOperator((dim,dim), matvec=hop)
     e, c = scipy.sparse.linalg.eigsh(A, k=1, which="SA", v0=cguess)
     e = e[0]
@@ -96,17 +98,16 @@ def merge_parent(snode, tts: TensorTreeState):
     for i in range(2):
         output_indices.remove(shared_bond)
     args.append(output_indices)
-    return opt_einsum.contract(*args), output_indices
+    return oe.contract(*args), output_indices
 
 
 def hop_expr(args, x_shape, x_indices, y_indices):
-    from opt_einsum.parser import convert_interleaved_input
     args_fake = args.copy()
     args_fake.extend([np.empty(x_shape), x_indices])
     args_fake.append(y_indices)
-    indices, tensors = convert_interleaved_input(args_fake)
+    indices, tensors = oe.parser.convert_interleaved_input(args_fake)
     args = tensors[:-1] + [x_shape]
-    expr = opt_einsum.contract_expression(
+    expr = oe.contract_expression(
         indices,
         *args,
         constants=list(range(len(tensors)))[:-1],
