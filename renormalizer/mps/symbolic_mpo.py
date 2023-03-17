@@ -188,10 +188,10 @@ def _construct_symbolic_mpo(table, in_ops, factor, primary_ops, algo="Hopcroft-K
     return out_ops_list
 
 
-def _construct_symbolic_mpo_one_site(table_row, table_col, in_ops_list, factor, primary_ops, algo):
+def _construct_symbolic_mpo_one_site(table_row, table_col, in_ops_list, factor, primary_ops, algo, k=1):
     # split table into the row and col part
     term_row, row_unique_inverse = np.unique(table_row, axis=0, return_inverse=True)
-    assert len(in_ops_list) + 1 == term_row.shape[1]
+    assert len(in_ops_list) + k == term_row.shape[1]
 
     # faster version of the following code
     # term_col, col_unique_inverse = np.unique(table_col, axis=0, return_inverse=True)
@@ -253,7 +253,7 @@ def _construct_symbolic_mpo_one_site(table_row, table_col, in_ops_list, factor, 
         # dealing with row (left side of the table). One row corresponds to multiple cols.
         # Produce one out operator and multiple new_table entries
         symbol = term_row[row_idx]
-        qn = _compute_qn(in_ops_list, symbol, primary_ops)
+        qn = _compute_qn(in_ops_list, symbol, primary_ops, k)
         out_op = OpTuple(symbol, qn, factor=1.0)
         out_ops.append([out_op])
 
@@ -275,7 +275,7 @@ def _construct_symbolic_mpo_one_site(table_row, table_col, in_ops_list, factor, 
         non_red_one_col = non_red[:, col_idx].toarray().flatten()
         for i in nonzero_row_idx[np.nonzero(nonzero_col_idx == col_idx)[0]]:
             symbol = term_row[i]
-            qn = _compute_qn(in_ops_list, symbol, primary_ops)
+            qn = _compute_qn(in_ops_list, symbol, primary_ops, k)
             out_op = OpTuple(symbol, qn, factor=factor[non_red_one_col[i] - 1])
             out_ops[-1].append(out_op)
 
@@ -296,9 +296,9 @@ def _construct_symbolic_mpo_one_site(table_row, table_col, in_ops_list, factor, 
     return out_ops, table, factor
 
 
-def _compute_qn(in_ops_list, symbol, primary_ops) -> int:
-    qn = sum(in_ops[i][0].qn for in_ops, i in zip(in_ops_list, symbol[:-1]))
-    qn += primary_ops[symbol[-1]].qn
+def _compute_qn(in_ops_list, symbol, primary_ops, k) -> int:
+    qn = sum(in_ops[i][0].qn for in_ops, i in zip(in_ops_list, symbol[:-k]))
+    qn += sum(primary_ops[i].qn for i in symbol[-k:])
     return qn
 
 def _terms_to_table(model: Model, terms: List[Op], const: float):

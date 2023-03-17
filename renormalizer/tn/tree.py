@@ -1,3 +1,4 @@
+from itertools import chain
 from typing import List, Dict
 
 import numpy as np
@@ -7,7 +8,6 @@ from print_tree import print_tree
 
 from renormalizer import Op, Mps, Model
 from renormalizer.model.basis import BasisSet
-from renormalizer.mps.symbolic_mpo import symbolic_mo_to_numeric_mo
 from renormalizer.tn.node import TreeNodeTensor, TreeNodeBasis, NodeUnion, copy_connection, TreeNodeEnviron
 
 
@@ -47,32 +47,18 @@ class Tree:
         return len(self.node_list)
 
 
-class TreeWorkspace:
-
-    def __init__(self, tree: Tree):
-        self.tree: Tree = tree
-
-    def __enter__(self):
-        for node in self.tree.node_list:
-            assert node.workspace is None
-
-    def __exit__(self, exc_type, exc_val, exc_tb):
-        for node in self.tree.node_list:
-            node.workspace = None
-
-
 class BasisTree(Tree):
     """Tree of basis sets."""
     @classmethod
     def linear(cls, basis_list: List[BasisSet]):
-        node_list = [TreeNodeBasis(basis) for basis in basis_list]
+        node_list = [TreeNodeBasis([basis]) for basis in basis_list]
         for i in range(len(node_list) - 1):
             node_list[i].add_child(node_list[i+1])
         return cls(node_list[0])
 
     @classmethod
     def binary(cls, basis_list: List[BasisSet]):
-        node_list = [TreeNodeBasis(basis) for basis in basis_list]
+        node_list = [TreeNodeBasis([basis]) for basis in basis_list]
         def binary_recursion(node: TreeNodeBasis, offspring: List[TreeNodeBasis]):
             if len(offspring) == 0:
                 return
@@ -92,19 +78,10 @@ class BasisTree(Tree):
         super().__init__(root)
         for node in self.node_list:
             assert isinstance(node, TreeNodeBasis)
-        qn_size_list = [n.basis_set.sigmaqn.shape[1] for n in self.node_list]
+        qn_size_list = [n.qn_size for n in self.node_list]
         if len(set(qn_size_list)) != 1:
             raise ValueError(f"Inconsistent quantum number size: {set(qn_size_list)}")
         self.qn_size: int = qn_size_list[0]
-
-    def split_tensor_tree(self):
-        def recursion(node: TreeNodeBasis):
-            new_node = TreeNodeTensor(node.workspace)
-            for child in node.children:
-                new_node.add_child(recursion(child))
-            return new_node
-        root = recursion(self.root)
-        return root
 
     def print(self):
         class print_tn_basis(print_tree):
@@ -113,13 +90,13 @@ class BasisTree(Tree):
                 return node.children
 
             def get_node_str(self, node):
-                return str(node.basis_set.dofs)
+                return str([b.dofs for b in node.basis_sets])
 
         print_tn_basis(self.root)
 
     @property
     def basis_list(self) -> List[BasisSet]:
-        return [n.basis_set for n in self.node_list]
+        return list(chain(*[n.basis_sets for n in self.node_list]))
 
 
 class TensorTreeOperator(Tree):
@@ -127,7 +104,7 @@ class TensorTreeOperator(Tree):
         self.basis: BasisTree = basis
         self.dtype = np.float64
         # temporary solution to avoid cyclic import
-        from renormalizer.tn.symbolic_mpo import construct_symbolic_mpo
+        from renormalizer.tn.symbolic_mpo import construct_symbolic_mpo, symbolic_mo_to_numeric_mo_general
         symbolic_mpo = construct_symbolic_mpo(basis, ham_terms)
         #from renormalizer.mps.symbolic_mpo import _format_symbolic_mpo
         #print(_format_symbolic_mpo(symbolic_mpo))
@@ -135,19 +112,19 @@ class TensorTreeOperator(Tree):
         node_list_op = []
         for impo, mo in enumerate(symbolic_mpo):
             node_basis: TreeNodeBasis = node_list_basis[impo]
-            mo_mat = symbolic_mo_to_numeric_mo(node_basis.basis_set, mo, self.dtype)
+            mo_mat = symbolic_mo_to_numeric_mo_general(node_basis.basis_sets, mo, self.dtype)
             node_list_op.append(TreeNodeTensor(mo_mat))
         root = copy_connection(node_list_basis, node_list_op)
         super().__init__(root)
         # tensor node to basis node
         self.tn2bn = {tn: bn for tn, bn in zip(self.node_list, self.basis.node_list)}
-        self.tn2dofs = {tn: bn.basis_set.dofs for tn, bn in self.tn2bn.items()}
+        self.tn2dofs = {tn: bn.dofs for tn, bn in self.tn2bn.items()}
 
     def todense(self, order:List[BasisSet]=None) -> np.ndarray:
         _id = str(id(self))
         args = self.to_contract_args(_id, _id)
         if order is None:
-            order = [n.basis_set for n in self.basis.node_list]
+            order = self.basis.basis_list
         indices_up = []
         indices_down = []
         for basis in order:
@@ -171,16 +148,17 @@ class TensorTreeOperator(Tree):
 
     def get_node_indices(self, node, prefix_up, prefix_down):
         _id = str(id(self))
-        dofs = self.tn2dofs[node]
+        all_dofs = self.tn2dofs[node]
         indices = []
         for child in node.children:
-            indices.append((_id, str(dofs), str(self.tn2dofs[child])))
-        indices.append((prefix_up, str(dofs), "up"))
-        indices.append((prefix_down, str(dofs), "down"))
+            indices.append((_id, str(all_dofs), str(self.tn2dofs[child])))
+        for dofs in all_dofs:
+            indices.append((prefix_up, str(dofs), "up"))
+            indices.append((prefix_down, str(dofs), "down"))
         if node.parent is None:
-            indices.append((_id, "root", str(dofs)))
+            indices.append((_id, "root", str(all_dofs)))
         else:
-            indices.append((_id, str(self.tn2dofs[node.parent]), str(dofs)))
+            indices.append((_id, str(self.tn2dofs[node.parent]), str(all_dofs)))
         assert len(indices) == node.tensor.ndim
         return indices
 
@@ -190,26 +168,30 @@ class TensorTreeState(Tree):
         self.basis = basis
         if condition is None:
             condition = {}
-        mps = Mps.hartree_product_state(Model(basis.basis_list, []), condition)
-        node_list_basis = basis.node_list
+        basis_list = basis.basis_list
+        mps = Mps.hartree_product_state(Model(basis_list, []), condition)
         node_list_state = []
 
-        for i, ms in enumerate(mps):
-            node_basis: TreeNodeBasis = node_list_basis[i]
-            ms_mat = ms.array.reshape([1] * len(node_basis.children) + [-1, 1])
-            node_list_state.append(TreeNodeTensor(ms_mat))
+        for node_basis in basis.node_list:
+            mps_indices = [basis_list.index(b) for b in node_basis.basis_sets]
+            tensor = np.eye(1)
+            for i in mps_indices:
+                tensor = np.tensordot(tensor, mps[i].array, axes=1)
+            tensor = tensor.reshape([1] * len(node_basis.children) + list(tensor.shape)[1:-1] + [1])
+            node_list_state.append(TreeNodeTensor(tensor))
 
-        root = copy_connection(node_list_basis, node_list_state)
+        root = copy_connection(basis.node_list, node_list_state)
         super().__init__(root)
         self.check_shape()
         # tensor node to basis node
         self.tn2bn = {tn: bn for tn, bn in zip(self.node_list, self.basis.node_list)}
-        self.tn2dofs = {tn: bn.basis_set.dofs for tn, bn in self.tn2bn.items()}
+        self.tn2dofs = {tn: bn.dofs for tn, bn in self.tn2bn.items()}
 
     def check_shape(self):
-        for i, node in enumerate(self.node_list):
-            assert node.tensor.ndim == len(node.children) + 2
-            assert node.tensor.shape[-2] == self.basis.basis_list[i].nbas
+        for snode, bnode in zip(self.node_list, self.basis.node_list):
+            assert snode.tensor.ndim == len(snode.children) + bnode.n_sets + 1
+            for i, b in enumerate(bnode.basis_sets):
+                assert snode.tensor.shape[len(snode.children) + i] == b.nbas
 
     def update_2site(self, snode, tensor, m:int, cano_parent=True):
         """cano_parent: set canonical center at parent"""
@@ -256,15 +238,16 @@ class TensorTreeState(Tree):
             ud = "up"
             _id = str(id(self)) + "_conj"
 
-        dofs = self.tn2dofs[node]
+        all_dofs = self.tn2dofs[node]
         indices = []
         for child in node.children:
-            indices.append((_id, str(dofs), str(self.tn2dofs[child])))
-        indices.append((prefix, str(dofs), ud))
+            indices.append((_id, str(all_dofs), str(self.tn2dofs[child])))
+        for dofs in all_dofs:
+            indices.append((prefix, str(dofs), ud))
         if node.parent is None:
-            indices.append((_id, "root", str(dofs)))
+            indices.append((_id, "root", str(all_dofs)))
         else:
-            indices.append((_id, str(self.tn2dofs[node.parent]), str(dofs)))
+            indices.append((_id, str(self.tn2dofs[node.parent]), str(all_dofs)))
         assert len(indices) == node.tensor.ndim
         return indices
 
@@ -279,7 +262,7 @@ class TensorTreeEnviron(Tree):
         self.root.environ_parent = np.array([1]).reshape([1, 1, 1])
         # tensor node to basis node. todo: remove duplication?
         self.tn2bn = {tn: bn for tn, bn in zip(self.node_list, self.basis.node_list)}
-        self.tn2dofs = {tn: bn.basis_set.dofs for tn, bn in self.tn2bn.items()}
+        self.tn2dofs = {tn: bn.dofs for tn, bn in self.tn2bn.items()}
         self.build_children_environ(tts, tto)
         self.build_parent_environ(tts, tto)
 
