@@ -1,9 +1,11 @@
+from itertools import chain
 import logging
 from typing import List
 
 import numpy as np
 
-from renormalizer import Op, Model
+from renormalizer import Op, Model, Mpo
+from renormalizer.model.basis import BasisSet
 from renormalizer.tn.tree import BasisTree
 from renormalizer.mps.symbolic_mpo import _terms_to_table, _transform_table, _construct_symbolic_mpo_one_site, OpTuple
 
@@ -12,42 +14,64 @@ logger = logging.getLogger(__name__)
 
 
 # translate the numbers into symbolic Matrix Operator
-def compose_symbolic_mo_general(in_ops_list, out_ops, primary_ops):
+def compose_symbolic_mo_general(in_ops_list, out_ops, primary_ops, k):
     shape = [len(in_ops) for in_ops in in_ops_list] + [len(out_ops)]
     mo = np.full(shape, None, dtype=object)
     for i, _ in np.ndenumerate(mo):
         mo[i] = []
     for iop, out_op in enumerate(out_ops):
         for composed_op in out_op:
-            op = primary_ops[composed_op.symbol[-1]]
             if in_ops_list:
-                in_idx = tuple(composed_op.symbol[:-1])
+                in_idx = tuple(composed_op.symbol[:-k])
                 l = mo[in_idx][iop]
             else:
                 l = mo[iop]
-            l.append(composed_op.factor * op)
+            op = composed_op.factor
+            for s in composed_op.symbol[-k:]:
+                op = op * primary_ops[s]
+            l.append(op)
     return mo
 
+
+# translate symbolic Matrix Operator to numerical matrix operator defined with certain basis
+def symbolic_mo_to_numeric_mo_general(basis_sets: List[BasisSet], mo, dtype):
+    model = Model(basis_sets, [])
+    pdims = [b.nbas for b in basis_sets]
+    shape = list(mo.shape) + list(chain(*[[pdim, pdim] for pdim in pdims]))
+    mo_tensor = np.zeros(shape, dtype=dtype)
+    terms: List[Op]
+    for i, terms in np.ndenumerate(mo):
+        for term in terms:
+            term_split, factor = term.split_elementary(model.dof_to_siteidx)
+            assert len(term_split) == len(basis_sets)
+            mo_elem = np.eye(1) * factor
+            for symbol, b in zip(term_split, basis_sets):
+                mo_elem = np.tensordot(mo_elem, b.op_mat(symbol)[None, :, :, None], axes=1)
+            mo_tensor[i] += mo_elem[0, ..., 0]
+
+    return np.moveaxis(mo_tensor, mo.ndim-1, -1)
 
 
 def construct_symbolic_mpo(tn:BasisTree, terms: List[Op], const:float=0):
     algo = "Hopcroft-Karp"
     nodes = tn.postorder_list()
-    basis = [n.basis_set for n in nodes]
+    basis = list(chain(*[n.basis_sets for n in nodes]))
     model = Model(basis, [])
     qn_size = model.qn_size
     table, factor = _terms_to_table(model, terms, const)
     table, factor, primary_ops = _transform_table(table, factor)
 
     dummy_in_ops = [[OpTuple([0], qn=np.zeros(qn_size, dtype=int), factor=1)]]
+    out_ops: List[List[OpTuple]]
     out_ops_list = []
 
     for i, node in enumerate(nodes):
+        k = node.n_sets
         if not node.children:
             ta = np.zeros((table.shape[0], 1), dtype=np.uint16)
             table = np.concatenate((ta, table), axis=1)
-            table_row = table[:, :2]
-            table_col = table[:, 2:]
+            table_row = table[:, :k+1]
+            table_col = table[:, k+1:]
             in_ops_list = [dummy_in_ops]
         else:
             # the children must have been visited
@@ -57,10 +81,10 @@ def construct_symbolic_mpo(tn:BasisTree, terms: List[Op], const:float=0):
             m = len(node.children)
             # roll relevant columns to the front
             table = np.roll(table, m, axis=1)
-            table_row = table[:, :m+1]
-            table_col = table[:, m+1:]
+            table_row = table[:, :m+k]
+            table_col = table[:, m+k:]
         out_ops, table, factor = \
-            _construct_symbolic_mpo_one_site(table_row, table_col, in_ops_list, factor, primary_ops, algo)
+            _construct_symbolic_mpo_one_site(table_row, table_col, in_ops_list, factor, primary_ops, algo, k)
         # move the new column at the first index to the last index
         table = np.roll(table, -1, axis=1)
         out_ops_list.append(out_ops)
@@ -69,7 +93,7 @@ def construct_symbolic_mpo(tn:BasisTree, terms: List[Op], const:float=0):
     for i, node in enumerate(nodes):
         children_idx = [nodes.index(n) for n in node.children]
         in_ops_list = [out_ops_list[i] for i in children_idx]
-        mo = compose_symbolic_mo_general(in_ops_list, out_ops_list[i], primary_ops)
+        mo = compose_symbolic_mo_general(in_ops_list, out_ops_list[i], primary_ops, node.n_sets)
         mpo.append(mo)
 
     return mpo

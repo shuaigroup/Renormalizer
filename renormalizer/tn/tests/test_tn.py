@@ -1,4 +1,5 @@
 import numpy as np
+import pytest
 
 from renormalizer import BasisHalfSpin, Model, Mpo, Mps, BasisMultiElectronVac, BasisMultiElectron
 from renormalizer.model.model import heisenberg_ops
@@ -8,11 +9,28 @@ from renormalizer.tn.gs import optimize_tts
 from renormalizer.tests.parameter import holstein_model
 
 
-def test_tto():
+def multi_basis_tree(basis_list):
+    node1 = TreeNodeBasis([basis_list[0], basis_list[1]])
+    node2 = TreeNodeBasis([basis_list[2]])
+    node3 = TreeNodeBasis([basis_list[3]])
+    node4 = TreeNodeBasis([basis_list[4], basis_list[5], basis_list[6]])
+    node3.add_child(node2)
+    node2.add_child(node1)
+    node2.add_child(node4)
+    basis = BasisTree(node3)
+    return basis
+
+
+@pytest.mark.parametrize("multi_basis", [True, False])
+def test_tto(multi_basis):
     nspin = 7
     basis_list = [BasisHalfSpin(i) for i in range(nspin)]
-    basis = BasisTree.binary(basis_list)
-    assert basis.size == nspin
+    if not multi_basis:
+        basis = BasisTree.binary(basis_list)
+        assert basis.size == nspin
+    else:
+        basis = multi_basis_tree(basis_list)
+
     ham_terms = heisenberg_ops(nspin)
 
     tto = TensorTreeOperator(basis, ham_terms)
@@ -22,10 +40,15 @@ def test_tto():
     np.testing.assert_allclose(dense, dense2)
 
 
-def test_tts():
+@pytest.mark.parametrize("multi_basis", [True, False])
+def test_tts(multi_basis):
     nspin = 7
     basis_list = [BasisHalfSpin(i) for i in range(nspin)]
-    basis = BasisTree.binary(basis_list)
+    if not multi_basis:
+        basis = BasisTree.binary(basis_list)
+        assert basis.size == nspin
+    else:
+        basis = multi_basis_tree(basis_list)
     ham_terms = heisenberg_ops(nspin)
     condition = {1:1, 3:1}
     tts = TensorTreeState(basis, condition)
@@ -43,10 +66,15 @@ def test_tts():
             np.testing.assert_allclose(e3, e2)
 
 
-def test_gs_heisenberg():
-    nspin = 8
+@pytest.mark.parametrize("multi_basis", [True, False])
+def test_gs_heisenberg(multi_basis):
+    nspin = 7
     basis_list = [BasisHalfSpin(i) for i in range(nspin)]
-    basis_tree = BasisTree.linear(basis_list)
+    if not multi_basis:
+        basis_tree = BasisTree.binary(basis_list)
+        assert basis_tree.size == nspin
+    else:
+        basis_tree = multi_basis_tree(basis_list)
     ham_terms = heisenberg_ops(4)
     condition = {1:1, 3:1}
     tts = TensorTreeState(basis_tree, condition)
@@ -60,11 +88,11 @@ def test_gs_heisenberg():
 
 def test_gs_holstein():
     model = holstein_model.switch_scheme(4)
-    node_list = [TreeNodeBasis(basis) for basis in model.basis]
+    node_list = [TreeNodeBasis([basis]) for basis in model.basis]
     root = node_list.pop(2)
-    assert isinstance(root.basis_set, BasisMultiElectronVac)
+    assert isinstance(root.basis_sets[0], BasisMultiElectronVac)
     # does not support QN so use another basis set
-    root = TreeNodeBasis(BasisMultiElectron(root.basis_set.dofs, [0]*len(root.basis_set.dofs)))
+    root = TreeNodeBasis([BasisMultiElectron(root.basis_sets[0].dofs, [0]*len(root.basis_sets[0].dofs))])
     assert len(node_list) == 6
     for i in range(3):
         root.add_child(node_list[2*i])

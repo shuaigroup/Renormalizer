@@ -1,3 +1,4 @@
+from itertools import chain
 from typing import List, Dict, Any, Union
 
 from renormalizer.model.basis import BasisSet
@@ -17,9 +18,16 @@ class TreeNode:
 
 
 class TreeNodeBasis(TreeNode):
-    def __init__(self, basis_set):
+    def __init__(self, basis_sets: List[BasisSet]):
         super().__init__()
-        self.basis_set: BasisSet = basis_set
+        self.basis_sets: List[BasisSet] = basis_sets
+        self.n_sets = len(basis_sets)
+        qn_size_list = [b.sigmaqn.shape[1] for b in self.basis_sets]
+        if len(set(qn_size_list)) != 1:
+            raise ValueError(f"Inconsistent quantum number size: {set(qn_size_list)}")
+        self.qn_size: int = qn_size_list[0]
+        self.dofs = [b.dofs for b in basis_sets]
+
 
 
 class TreeNodeTensor(TreeNode):
