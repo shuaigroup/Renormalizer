@@ -520,8 +520,8 @@ def load_from_dict(param, scheme, lam: bool):
 def heisenberg_ops(nspin):
     ham_terms = []
     for ispin in range(nspin - 1):
-        op1 = Op("sigma_z sigma_z", [ispin, ispin + 1], 1.0 / 4)
-        op2 = Op("sigma_+ sigma_-", [ispin, ispin + 1], 1.0 / 2)
-        op3 = Op("sigma_- sigma_+", [ispin, ispin + 1], 1.0 / 2)
+        op1 = Op("sigma_z sigma_z", [ispin, ispin + 1], 1.0 / 4, qn=[0, 0])
+        op2 = Op("sigma_+ sigma_-", [ispin, ispin + 1], 1.0 / 2, qn=[-2, 2])
+        op3 = Op("sigma_- sigma_+", [ispin, ispin + 1], 1.0 / 2, qn=[2, -2])
         ham_terms.extend([op1, op2, op3])
     return ham_terms

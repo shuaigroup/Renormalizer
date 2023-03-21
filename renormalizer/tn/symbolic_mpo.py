@@ -96,4 +96,9 @@ def construct_symbolic_mpo(tn:BasisTree, terms: List[Op], const:float=0):
         mo = compose_symbolic_mo_general(in_ops_list, out_ops_list[i], primary_ops, node.n_sets)
         mpo.append(mo)
 
-    return mpo
+    mpoqn = []
+    for out_ops in out_ops_list:
+        qn = np.array([out_op[0].qn for out_op in out_ops])
+        mpoqn.append(qn)
+
+    return mpo, mpoqn

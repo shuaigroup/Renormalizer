@@ -1,14 +1,22 @@
+import logging
+
 import numpy as np
 import scipy
 import opt_einsum as oe
 
+from renormalizer.mps.backend import primme, IMPORT_PRIMME_EXCEPTION
+from renormalizer.mps.svd_qn import get_qn_mask
 from renormalizer.tn.node import TreeNodeTensor
 from renormalizer.tn.tree import TensorTreeState, TensorTreeOperator, TensorTreeEnviron
+
+
+logger = logging.getLogger(__name__)
 
 
 def optimize_tts(tts: TensorTreeState, tto: TensorTreeOperator, m:int):
     tte = TensorTreeEnviron(tts, tto)
     for i in range(20):
+        # todo: better converge condition
         e = optimize_recursion(tts.root, tts, tto, tte, m)
     return e
 
@@ -60,37 +68,70 @@ def optimize_2site(snode: TreeNodeTensor, tts: TensorTreeState, tto: TensorTreeO
     args.append(tte.get_parent_indices(eparent, tts, tto))
 
     # operator
-    args.extend([oparent.tensor, tto.get_node_indices(oparent, "bra", "ket")])
-    args.extend([onode.tensor, tto.get_node_indices(onode, "bra", "ket")])
+    args.extend([oparent.tensor, tto.get_node_indices(oparent, "up", "down")])
+    args.extend([onode.tensor, tto.get_node_indices(onode, "up", "down")])
 
     # input and output
-    cguess, merged_indices = merge_parent(snode, tts)
+    cguess, input_indices = merge_parent(snode, tts)
+    qnmat = tts.get_qnmat(snode)[-1]
+    qn_mask = get_qn_mask(qnmat, tts.qntot)
     shape = cguess.shape
-    cguess = cguess.ravel()
-    dim = cguess.shape[0]
-    output_indices = tts.get_node_indices(snode, "bra", True)
+    assert qn_mask.shape == shape
+    cguess = cguess[qn_mask].ravel()
+    h_dim = len(cguess)
+    output_indices = tts.get_node_indices(snode, True)
     shared_bond = output_indices[-1]
-    output_indices.extend(tts.get_node_indices(snode.parent, "bra", True))
+    output_indices.extend(tts.get_node_indices(snode.parent, True))
     for i in range(2):
         output_indices.remove(shared_bond)
 
+    hdiag = _get_hdiag(args, input_indices)[qn_mask].ravel()
+    assert len(hdiag) == h_dim
     # cache the contraction path
-    expr = hop_expr(args, shape, merged_indices, output_indices)
+    expr = hop_expr(args, shape, input_indices, output_indices)
     def hop(x):
-        return expr(x.reshape(shape)).ravel()
+        cstruct = vec2tensor(x, qn_mask)
+        return expr(cstruct)[qn_mask].ravel()
 
-    # todo: add preconditioner
-    A = scipy.sparse.linalg.LinearOperator((dim,dim), matvec=hop)
-    e, c = scipy.sparse.linalg.eigsh(A, k=1, which="SA", v0=cguess)
-    e = e[0]
-    return e, c.reshape(shape)
+    if True:
+        if primme is None:
+            logger.error("can not import primme")
+            raise IMPORT_PRIMME_EXCEPTION
+        precond = lambda x: scipy.sparse.diags(1 / (hdiag + 1e-4)) @ x
+        A = scipy.sparse.linalg.LinearOperator((h_dim, h_dim), matvec=hop, matmat=hop)
+        M = scipy.sparse.linalg.LinearOperator((h_dim, h_dim), matvec=precond, matmat=hop)
+        e, c = primme.eigsh(
+            A,
+            k=1,
+            which="SA",
+            v0=np.array(cguess).reshape(-1, 1),
+            OPinv=M,
+            method="PRIMME_DYNAMIC",
+            tol=1e-6,
+        )
+    elif False:
+        A = scipy.sparse.linalg.LinearOperator((h_dim,h_dim), matvec=hop)
+        e, c = scipy.sparse.linalg.eigsh(A, k=1, which="SA", v0=cguess)
+        e = e[0]
+    else:
+        # direct algorithm. Poor performance, debugging only.
+        a_list = []
+        for i in range(h_dim):
+            a = np.zeros(h_dim)
+            a[i] = 1
+            a_list.append(hop(a))
+        evals, evecs = np.linalg.eigh(np.array(a_list))
+        e = evals[0]
+        c = evecs[:, 0]
+    c = vec2tensor(c, qn_mask)
+    return e, c
 
 
 def merge_parent(snode, tts: TensorTreeState):
     # merge a node with its parent
     args = []
-    snode_indices = tts.get_node_indices(snode, "ket")
-    parent_indices = tts.get_node_indices(snode.parent, "ket")
+    snode_indices = tts.get_node_indices(snode)
+    parent_indices = tts.get_node_indices(snode.parent)
     args.extend([snode.tensor, snode_indices])
     args.extend([snode.parent.tensor, parent_indices])
     output_indices = snode_indices + parent_indices
@@ -99,6 +140,26 @@ def merge_parent(snode, tts: TensorTreeState):
         output_indices.remove(shared_bond)
     args.append(output_indices)
     return oe.contract(*args), output_indices
+
+
+def _get_hdiag(args, input_indices):
+    new_args = []
+    for arg in args:
+        if not isinstance(arg, tuple):
+            new_args.append(arg)
+            continue
+        arg = list(arg)
+        if arg[0][-5:] == "_conj":
+            # the environ
+            arg[0] = arg[0][:-5]
+        elif arg[1] == "up":
+            # mpo part
+            arg[1] = "down"
+        else:
+            pass
+        args.append(tuple(arg))
+    new_args.append(input_indices)
+    return oe.contract(*new_args)
 
 
 def hop_expr(args, x_shape, x_indices, y_indices):
@@ -113,3 +174,9 @@ def hop_expr(args, x_shape, x_indices, y_indices):
         constants=list(range(len(tensors)))[:-1],
     )
     return expr
+
+
+def vec2tensor(c, qn_mask):
+    cstruct = np.zeros(qn_mask.shape, dtype=c.dtype)
+    np.place(cstruct, qn_mask, c)
+    return cstruct

@@ -8,6 +8,8 @@ from print_tree import print_tree
 
 from renormalizer import Op, Mps, Model
 from renormalizer.model.basis import BasisSet
+from renormalizer.mps.svd_qn import add_outer, svd_qn
+from renormalizer.mps.lib import select_basis
 from renormalizer.tn.node import TreeNodeTensor, TreeNodeBasis, NodeUnion, copy_connection, TreeNodeEnviron
 
 
@@ -98,6 +100,10 @@ class BasisTree(Tree):
     def basis_list(self) -> List[BasisSet]:
         return list(chain(*[n.basis_sets for n in self.node_list]))
 
+    @property
+    def basis_list_postorder(self) -> List[BasisSet]:
+        return list(chain(*[n.basis_sets for n in self.postorder_list()]))
+
 
 class TensorTreeOperator(Tree):
     def __init__(self, basis:BasisTree, ham_terms: List[Op]):
@@ -105,15 +111,15 @@ class TensorTreeOperator(Tree):
         self.dtype = np.float64
         # temporary solution to avoid cyclic import
         from renormalizer.tn.symbolic_mpo import construct_symbolic_mpo, symbolic_mo_to_numeric_mo_general
-        symbolic_mpo = construct_symbolic_mpo(basis, ham_terms)
+        symbolic_mpo, mpoqn = construct_symbolic_mpo(basis, ham_terms)
         #from renormalizer.mps.symbolic_mpo import _format_symbolic_mpo
         #print(_format_symbolic_mpo(symbolic_mpo))
         node_list_basis = self.basis.postorder_list()
         node_list_op = []
-        for impo, mo in enumerate(symbolic_mpo):
+        for impo, (mo, qn) in enumerate(zip(symbolic_mpo, mpoqn)):
             node_basis: TreeNodeBasis = node_list_basis[impo]
             mo_mat = symbolic_mo_to_numeric_mo_general(node_basis.basis_sets, mo, self.dtype)
-            node_list_op.append(TreeNodeTensor(mo_mat))
+            node_list_op.append(TreeNodeTensor(mo_mat, qn))
         root = copy_connection(node_list_basis, node_list_op)
         super().__init__(root)
         # tensor node to basis node
@@ -122,14 +128,14 @@ class TensorTreeOperator(Tree):
 
     def todense(self, order:List[BasisSet]=None) -> np.ndarray:
         _id = str(id(self))
-        args = self.to_contract_args(_id, _id)
+        args = self.to_contract_args("up", "down")
         if order is None:
             order = self.basis.basis_list
         indices_up = []
         indices_down = []
         for basis in order:
-            indices_up.append((_id, str(basis.dofs), "up"))
-            indices_down.append((_id, str(basis.dofs), "down"))
+            indices_up.append(("up", str(basis.dofs)))
+            indices_down.append(("down", str(basis.dofs)))
         output_indices = [(_id, "root", str(self.tn2dofs[self.root]))] + indices_up + indices_down
         args.append(output_indices)
         res = oe.contract(*args)
@@ -153,8 +159,8 @@ class TensorTreeOperator(Tree):
         for child in node.children:
             indices.append((_id, str(all_dofs), str(self.tn2dofs[child])))
         for dofs in all_dofs:
-            indices.append((prefix_up, str(dofs), "up"))
-            indices.append((prefix_down, str(dofs), "down"))
+            indices.append((prefix_up, str(dofs)))
+            indices.append((prefix_down, str(dofs)))
         if node.parent is None:
             indices.append((_id, "root", str(all_dofs)))
         else:
@@ -162,26 +168,43 @@ class TensorTreeOperator(Tree):
         assert len(indices) == node.tensor.ndim
         return indices
 
+    @property
+    def qntot(self):
+        # duplicate with tts
+        return self.root.qn[0]
+
 
 class TensorTreeState(Tree):
     def __init__(self, basis:BasisTree, condition:Dict=None):
         self.basis = basis
         if condition is None:
             condition = {}
-        basis_list = basis.basis_list
-        mps = Mps.hartree_product_state(Model(basis_list, []), condition)
+        basis_list = basis.basis_list_postorder
+        mps = Mps.hartree_product_state(Model(basis_list, []), condition, len(basis_list))
+        # can't directly use MPS qn because the topology is different
+        site_qn = [mps.qn[i+1] - mps.qn[i] for i in range(len(mps))]
         node_list_state = []
 
         for node_basis in basis.node_list:
             mps_indices = [basis_list.index(b) for b in node_basis.basis_sets]
+            assert mps_indices
             tensor = np.eye(1)
+            # here only the site qn is set
+            qn = 0
             for i in mps_indices:
                 tensor = np.tensordot(tensor, mps[i].array, axes=1)
+                qn += site_qn[i]
             tensor = tensor.reshape([1] * len(node_basis.children) + list(tensor.shape)[1:-1] + [1])
-            node_list_state.append(TreeNodeTensor(tensor))
+            node_list_state.append(TreeNodeTensor(tensor, qn))
 
         root = copy_connection(basis.node_list, node_list_state)
+
         super().__init__(root)
+
+        # summing up the site qn
+        for node in self.postorder_list():
+            for child in node.children:
+                node.qn += child.qn
         self.check_shape()
         # tensor node to basis node
         self.tn2bn = {tn: bn for tn, bn in zip(self.node_list, self.basis.node_list)}
@@ -190,14 +213,72 @@ class TensorTreeState(Tree):
     def check_shape(self):
         for snode, bnode in zip(self.node_list, self.basis.node_list):
             assert snode.tensor.ndim == len(snode.children) + bnode.n_sets + 1
+            assert snode.qn.shape[1] == bnode.qn_size
             for i, b in enumerate(bnode.basis_sets):
                 assert snode.tensor.shape[len(snode.children) + i] == b.nbas
 
-    def update_2site(self, snode, tensor, m:int, cano_parent=True):
-        """cano_parent: set canonical center at parent"""
-        parent = snode.parent
+    def get_qnmat(self, node, include_parent=True):
+        qnbigl = np.zeros(self.basis.qn_size, dtype=int)
+        for child in node.children:
+            qnbigl = add_outer(qnbigl, child.qn)
+        for b in self.tn2bn[node].basis_sets:
+            qnbigl = add_outer(qnbigl, b.sigmaqn)
+        if not include_parent:
+            qnbigr = self.qntot - node.qn
+            # single site
+            qnmat = add_outer(qnbigl, qnbigr)
+            assert list(qnmat.shape) == list(node.tensor.shape) + [self.basis.qn_size]
+            return qnbigl, qnbigr, qnmat
+        # two site
+        qnbigr = np.zeros(self.basis.qn_size, dtype=int)
+        assert node.parent is not None
+        for child in node.parent.children:
+            if child is node:
+                continue
+            qnbigr = add_outer(qnbigr, child.qn)
+        for b in self.tn2bn[node.parent].basis_sets:
+            qnbigr = add_outer(qnbigr, b.sigmaqn)
+        qnbigr = add_outer(qnbigr, self.qntot - node.parent.qn)
+        qnmat = add_outer(qnbigl, qnbigr)
+        return qnbigl, qnbigr, qnmat
+
+    def update_2site(self, node, tensor, m:int, percent:float=0, cano_parent:bool=True):
+        """cano_parent: set canonical center at parent. to_right = True"""
+        parent = node.parent
         assert parent is not None
-        dim1 = np.prod(snode.tensor.shape[:-1])
+        qnbigl, qnbigr, _ = self.get_qnmat(node)
+        dim1 = np.prod(qnbigl.shape)
+        tensor = tensor.reshape(dim1, -1)
+        # u for snode and v for parent
+        # duplicate with MatrixProduct._udpate_mps. Should consider merging when doing e.g. state averaged algorithm.
+        u_list, su_list, qnlnew, v_list, sv_list, qnrnew = svd_qn(tensor, qnbigl, qnbigr, self.qntot)
+        if cano_parent:
+            m_node, msdim, msqn, m_parent = select_basis(
+                u_list, su_list, qnlnew, v_list, m, percent=percent
+            )
+            m_parent = m_parent.T
+        else:
+            m_parent, msdim, msqn, m_node = select_basis(
+                v_list, sv_list, qnrnew, u_list, m, percent=percent
+            )
+            m_node = m_node.T
+        node.tensor = m_node.reshape(list(node.tensor.shape[:-1]) + [-1])
+        if cano_parent:
+            node.qn = msqn
+        else:
+            node.qn = self.qntot - msqn
+        assert len(node.qn) == node.tensor.shape[-1]
+        shape = list(parent.tensor.shape)
+        ichild = parent.children.index(node)
+        del shape[ichild]
+        shape = [-1] + shape
+        parent.tensor = np.moveaxis(m_parent.reshape(shape), 0, ichild)
+
+    def update_2site2(self, node, tensor, m:int, cano_parent=True):
+        """cano_parent: set canonical center at parent"""
+        parent = node.parent
+        assert parent is not None
+        dim1 = np.prod(node.tensor.shape[:-1])
         tensor = tensor.reshape(dim1, -1)
         # u for snode and vt for parent
         u, s, vt = scipy.linalg.svd(tensor, full_matrices=False)
@@ -209,28 +290,28 @@ class TensorTreeState(Tree):
             vt = s.reshape(-1, 1) * vt
         else:
             u = u * s.reshape(1, -1)
-        snode.tensor = u.reshape(list(snode.tensor.shape[:-1]) + [-1])
+        node.tensor = u.reshape(list(node.tensor.shape[:-1]) + [-1])
         shape = list(parent.tensor.shape)
-        ichild = parent.children.index(snode)
+        ichild = parent.children.index(node)
         del shape[ichild]
         shape = [-1] + shape
         parent.tensor = np.moveaxis(vt.reshape(shape), 0, ichild)
 
     def expectation(self, tto: TensorTreeOperator):
-        args = self.to_contract_args("ket")
-        args.extend(self.to_contract_args("bra", conj=True))
-        args.extend(tto.to_contract_args("bra", "ket"))
+        args = self.to_contract_args()
+        args.extend(self.to_contract_args(conj=True))
+        args.extend(tto.to_contract_args("up", "down"))
         return oe.contract(*args).ravel()[0]
 
-    def to_contract_args(self, prefix, conj=False):
+    def to_contract_args(self, conj=False):
         args = []
         for node in self.node_list:
             assert isinstance(node, TreeNodeTensor)
-            indices = self.get_node_indices(node, prefix, conj)
+            indices = self.get_node_indices(node, conj)
             args.extend([node.tensor, indices])
         return args
 
-    def get_node_indices(self, node, prefix, conj=False):
+    def get_node_indices(self, node, conj=False):
         if not conj:
             ud = "down"
             _id = str(id(self))
@@ -243,13 +324,18 @@ class TensorTreeState(Tree):
         for child in node.children:
             indices.append((_id, str(all_dofs), str(self.tn2dofs[child])))
         for dofs in all_dofs:
-            indices.append((prefix, str(dofs), ud))
+            indices.append((ud, str(dofs)))
         if node.parent is None:
             indices.append((_id, "root", str(all_dofs)))
         else:
             indices.append((_id, str(self.tn2dofs[node.parent]), str(all_dofs)))
         assert len(indices) == node.tensor.ndim
         return indices
+
+    @property
+    def qntot(self):
+        # duplicate with tto
+        return self.root.qn[0]
 
 
 class TensorTreeEnviron(Tree):
@@ -302,13 +388,13 @@ class TensorTreeEnviron(Tree):
             args.extend([child_tensor, indices])
 
         args.append(snode.tensor.conj())
-        args.append(tts.get_node_indices(snode, "bra", conj=True))
+        args.append(tts.get_node_indices(snode, conj=True))
 
         args.append(onode.tensor)
-        args.append(tto.get_node_indices(onode, "bra", "ket"))
+        args.append(tto.get_node_indices(onode, "up", "down"))
 
         args.append(snode.tensor)
-        args.append(tts.get_node_indices(snode, "ket"))
+        args.append(tts.get_node_indices(snode))
 
         # indices for the resulting tensor
         indices = self.get_parent_indices(enode, tts, tto)
@@ -339,13 +425,13 @@ class TensorTreeEnviron(Tree):
         args.extend([enode.environ_parent, indices])
 
         args.append(snode.tensor.conj())
-        args.append(tts.get_node_indices(snode, "bra", conj=True))
+        args.append(tts.get_node_indices(snode, conj=True))
 
         args.append(onode.tensor)
-        args.append(tto.get_node_indices(onode, "bra", "ket"))
+        args.append(tto.get_node_indices(onode, "up", "down"))
 
         args.append(snode.tensor)
-        args.append(tts.get_node_indices(snode, "ket"))
+        args.append(tts.get_node_indices(snode))
 
         # indices for the resulting tensor
         indices = self.get_child_indices(enode, ichild, tts, tto)
