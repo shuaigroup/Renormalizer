@@ -1,5 +1,6 @@
-from itertools import chain
 from typing import List, Dict, Any, Union
+
+import numpy as np
 
 from renormalizer.model.basis import BasisSet
 from renormalizer.mps.backend import xp
@@ -31,9 +32,10 @@ class TreeNodeBasis(TreeNode):
 
 
 class TreeNodeTensor(TreeNode):
-    def __init__(self, tensor):
+    def __init__(self, tensor, qn=None):
         super().__init__()
         self.tensor: xp.ndarray = tensor
+        self.qn: np.ndarray = qn
 
 
 class TreeNodeEnviron(TreeNode):

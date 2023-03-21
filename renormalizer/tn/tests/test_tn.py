@@ -10,6 +10,11 @@ from renormalizer.tests.parameter import holstein_model
 
 
 def multi_basis_tree(basis_list):
+    #         3
+    #        / \
+    #       2
+    #    /     \
+    #  0,1    4, 5, 6
     node1 = TreeNodeBasis([basis_list[0], basis_list[1]])
     node2 = TreeNodeBasis([basis_list[2]])
     node3 = TreeNodeBasis([basis_list[3]])
@@ -24,7 +29,7 @@ def multi_basis_tree(basis_list):
 @pytest.mark.parametrize("multi_basis", [True, False])
 def test_tto(multi_basis):
     nspin = 7
-    basis_list = [BasisHalfSpin(i) for i in range(nspin)]
+    basis_list = [BasisHalfSpin(i, [1, -1]) for i in range(nspin)]
     if not multi_basis:
         basis = BasisTree.binary(basis_list)
         assert basis.size == nspin
@@ -43,7 +48,7 @@ def test_tto(multi_basis):
 @pytest.mark.parametrize("multi_basis", [True, False])
 def test_tts(multi_basis):
     nspin = 7
-    basis_list = [BasisHalfSpin(i) for i in range(nspin)]
+    basis_list = [BasisHalfSpin(i, [1, -1]) for i in range(nspin)]
     if not multi_basis:
         basis = BasisTree.binary(basis_list)
         assert basis.size == nspin
@@ -69,7 +74,7 @@ def test_tts(multi_basis):
 @pytest.mark.parametrize("multi_basis", [True, False])
 def test_gs_heisenberg(multi_basis):
     nspin = 7
-    basis_list = [BasisHalfSpin(i) for i in range(nspin)]
+    basis_list = [BasisHalfSpin(i, [1, -1]) for i in range(nspin)]
     if not multi_basis:
         basis_tree = BasisTree.binary(basis_list)
         assert basis_tree.size == nspin
@@ -90,15 +95,12 @@ def test_gs_holstein():
     model = holstein_model.switch_scheme(4)
     node_list = [TreeNodeBasis([basis]) for basis in model.basis]
     root = node_list.pop(2)
-    assert isinstance(root.basis_sets[0], BasisMultiElectronVac)
-    # does not support QN so use another basis set
-    root = TreeNodeBasis([BasisMultiElectron(root.basis_sets[0].dofs, [0]*len(root.basis_sets[0].dofs))])
     assert len(node_list) == 6
     for i in range(3):
         root.add_child(node_list[2*i])
         node_list[2*i].add_child(node_list[2*i+1])
     basis = BasisTree(root)
-    tts = TensorTreeState(basis)
+    tts = TensorTreeState(basis, {1:1})  # set the correct qntot
     tto = TensorTreeOperator(basis, model.ham_terms)
     m = 4
     e1 = optimize_tts(tts, tto, m)

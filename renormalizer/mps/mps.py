@@ -177,7 +177,7 @@ class Mps(MatrixProduct):
         return mps
 
     @classmethod
-    def hartree_product_state(cls, model, condition: Dict):
+    def hartree_product_state(cls, model, condition: Dict, qn_idx:int=None):
         r"""
         Construct a Hartree product state
         
@@ -195,6 +195,7 @@ class Mps(MatrixProduct):
                     ``{"e_1": 1}`` (``{"e_1": [0, 1, 0]}``) means ``"e_2"`` is occupied.
                     Be aware that in :class:`renormalizer.BasisMultiElectronVac` the vacuum state
                     is added to the ``0`` index.
+            qn_idx (int): the site index of the quantum number center.
 
         Returns:
             Constructed mps (:class:`Mps`)
@@ -235,8 +236,10 @@ class Mps(MatrixProduct):
         if len(condition) != 0:
             raise ValueError(f"Condition not completely used: {condition}")
         mps.qntot = mps.qn[-1][0]
-        mps.qn[-1] = np.zeros((1, qn_size), dtype=int)
-        mps.qnidx = model.nsite - 1
+        mps.qnidx = model.nsite
+        if qn_idx is None:
+            qn_idx = model.nsite - 1
+        mps.move_qnidx(qn_idx)
         mps.to_right = False
 
         return mps

@@ -146,11 +146,11 @@ class MatrixProduct:
         and R system is tot.
         """
         # construct the L system qn
-        for idx in range(self.qnidx + 1, self.site_num):
+        for idx in range(self.qnidx + 1, self.site_num + 1):
             self.qn[idx] = [self.qntot - i for i in self.qn[idx]]
 
         # set boundary to fsite:
-        for idx in range(self.site_num - 1, dstidx, -1):
+        for idx in range(self.site_num, dstidx, -1):
             self.qn[idx] = [self.qntot - i for i in self.qn[idx]]
         self.qnidx = dstidx
 

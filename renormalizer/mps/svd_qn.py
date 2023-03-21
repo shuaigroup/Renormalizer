@@ -156,6 +156,7 @@ def svd_qn(
     SVD = not QR
     coef_matrix = coef_array.reshape((np.prod(qnbigl.shape[:-1]), np.prod(qnbigr.shape[:-1])))
 
+    assert qntot.ndim == 1
     qn_size = len(qntot)
     localqnl = qnbigl.reshape(-1, qn_size)
     localqnr = qnbigr.reshape(-1, qn_size)
