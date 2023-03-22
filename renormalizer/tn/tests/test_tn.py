@@ -85,10 +85,11 @@ def test_gs_heisenberg(multi_basis):
     tts = TensorTreeState(basis_tree, condition)
     tto = TensorTreeOperator(basis_tree, ham_terms)
     m = 20
-    e1 = optimize_tts(tts, tto, m)
+    procedure = [[5, 0.4], [10, 0.2], [m, 0.1], [m, 0], [m, 0]]
+    e1 = optimize_tts(tts, tto, procedure)
     h = tto.todense()
     e2 = np.linalg.eigh(h)[0][0]
-    np.testing.assert_allclose(e1, e2)
+    np.testing.assert_allclose(min(e1), e2)
 
 
 def test_gs_holstein():
@@ -100,9 +101,10 @@ def test_gs_holstein():
         root.add_child(node_list[2*i])
         node_list[2*i].add_child(node_list[2*i+1])
     basis = BasisTree(root)
-    tts = TensorTreeState(basis, {1:1})  # set the correct qntot
-    tto = TensorTreeOperator(basis, model.ham_terms)
     m = 4
-    e1 = optimize_tts(tts, tto, m)
+    tts = TensorTreeState.random(basis, qntot=1, m_max=m)
+    tto = TensorTreeOperator(basis, model.ham_terms)
+    procedure = [[m, 0.4], [m, 0.2], [m, 0.1], [m, 0], [m, 0]]
+    e1 = optimize_tts(tts, tto, procedure)
     e2 = 0.08401412 + model.gs_zpe
-    np.testing.assert_allclose(e1, e2)
+    np.testing.assert_allclose(min(e1), e2)

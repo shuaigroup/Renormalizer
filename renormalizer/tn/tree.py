@@ -8,7 +8,7 @@ from print_tree import print_tree
 
 from renormalizer import Op, Mps, Model
 from renormalizer.model.basis import BasisSet
-from renormalizer.mps.svd_qn import add_outer, svd_qn
+from renormalizer.mps.svd_qn import add_outer, svd_qn, blockrecover, get_qn_mask
 from renormalizer.mps.lib import select_basis
 from renormalizer.tn.node import TreeNodeTensor, TreeNodeBasis, NodeUnion, copy_connection, TreeNodeEnviron
 
@@ -175,6 +175,53 @@ class TensorTreeOperator(Tree):
 
 
 class TensorTreeState(Tree):
+
+    @classmethod
+    def random(cls, basis:BasisTree, qntot, m_max, percent=1.0):
+        tts = cls(basis)
+        if isinstance(qntot, int):
+            qntot = np.array([qntot])
+        qn_size = len(qntot)
+        assert basis.qn_size == qn_size
+
+        for node in tts.postorder_list()[:-1]:
+            qnbigl, _, _ = tts.get_qnmat(node, include_parent=False)
+            qnbigl_shape = qnbigl.shape
+            qnbigl = qnbigl.reshape(-1, qn_size)
+            u_list = []
+            s_list = []
+            qn_list = []
+
+            for iblock in set([tuple(t) for t in qnbigl]):
+                if np.all(np.array(qntot) < np.array(iblock)):
+                    continue
+                # find the quantum number index
+                indices = [i for i, x in enumerate(qnbigl) if tuple(x) == iblock]
+                assert len(indices) != 0
+                a = np.random.random([len(indices), len(indices)]) - 0.5
+                a = a + a.T
+                s, u = scipy.linalg.eigh(a=a)
+                u_list.append(blockrecover(indices, u, len(qnbigl)))
+                s_list.append(s)
+                qn_list += [iblock] * len(indices)
+
+            u = np.concatenate(u_list, axis=1)
+            s = np.concatenate(s_list)
+            mt, mpsdim, mpsqn, nouse = select_basis(
+                u, s, qn_list, u, m_max, percent=percent
+            )
+            node.tensor = mt.reshape(list(qnbigl_shape)[:-1] + [mpsdim])
+            node.qn = mpsqn
+        # deal with root
+        tts.root.qn = np.ones((1, qn_size), dtype=int) * qntot
+        _, _, qnmat = tts.get_qnmat(tts.root, include_parent=False)
+        qn_mask = get_qn_mask(qnmat, tts.qntot)
+        tts.root.tensor = np.random.random(qn_mask.shape) - 0.5
+        tts.root.tensor[~qn_mask] = 0
+        tts.root.tensor /= np.linalg.norm(tts.root.tensor.ravel())
+        tts.check_shape()
+        return tts
+
     def __init__(self, basis:BasisTree, condition:Dict=None):
         self.basis = basis
         if condition is None:
@@ -189,7 +236,7 @@ class TensorTreeState(Tree):
             mps_indices = [basis_list.index(b) for b in node_basis.basis_sets]
             assert mps_indices
             tensor = np.eye(1)
-            # here only the site qn is set
+            # here only the site qn (rather than bond qn) is set
             qn = 0
             for i in mps_indices:
                 tensor = np.tensordot(tensor, mps[i].array, axes=1)
@@ -227,7 +274,6 @@ class TensorTreeState(Tree):
             qnbigr = self.qntot - node.qn
             # single site
             qnmat = add_outer(qnbigl, qnbigr)
-            assert list(qnmat.shape) == list(node.tensor.shape) + [self.basis.qn_size]
             return qnbigl, qnbigr, qnmat
         # two site
         qnbigr = np.zeros(self.basis.qn_size, dtype=int)
