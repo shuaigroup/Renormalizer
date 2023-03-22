@@ -40,7 +40,7 @@ jobs:
           command: |
               pip install pytest-xdist pytest-cov
               export RENO_NUM_THREADS=1
-              pytest -n 2 --durations=0 --cov=renormalizer
+              pytest -n 4 --durations=0 --cov=renormalizer
               pip install primme==3.2.*
               pytest --durations=0 renormalizer/mps/tests/test_gs.py::test_multistate --cov=renormalizer --cov-append
       - run:
