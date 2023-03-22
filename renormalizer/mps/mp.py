@@ -153,11 +153,11 @@ class MatrixProduct:
         """
         # construct the L system qn
         for idx in range(self.qnidx + 1, self.site_num + 1):
-            self.qn[idx] = [self.qntot - i for i in self.qn[idx]]
+            self.qn[idx] = self.qntot - self.qn[idx]
 
         # set boundary to fsite:
         for idx in range(self.site_num, dstidx, -1):
-            self.qn[idx] = [self.qntot - i for i in self.qn[idx]]
+            self.qn[idx] = self.qntot - self.qn[idx]
         self.qnidx = dstidx
 
     def check_left_canonical(self, atol=None):

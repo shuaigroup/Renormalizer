@@ -4,6 +4,7 @@ import numpy as np
 import scipy
 import opt_einsum as oe
 
+from renormalizer.lib import davidson
 from renormalizer.mps.backend import primme, IMPORT_PRIMME_EXCEPTION
 from renormalizer.mps.svd_qn import get_qn_mask
 from renormalizer.tn.node import TreeNodeTensor
@@ -13,22 +14,24 @@ from renormalizer.tn.tree import TensorTreeState, TensorTreeOperator, TensorTree
 logger = logging.getLogger(__name__)
 
 
-def optimize_tts(tts: TensorTreeState, tto: TensorTreeOperator, m:int):
+def optimize_tts(tts: TensorTreeState, tto: TensorTreeOperator, procedure):
     tte = TensorTreeEnviron(tts, tto)
-    for i in range(20):
+    e_list = []
+    for m, percent in procedure:
         # todo: better converge condition
-        e = optimize_recursion(tts.root, tts, tto, tte, m)
-    return e
+        e = optimize_recursion(tts.root, tts, tto, tte, m, percent)
+        e_list.append(e)
+    return e_list
 
 
-def optimize_recursion(snode: TreeNodeTensor, tts, tto, tte, m:int):
+def optimize_recursion(snode: TreeNodeTensor, tts, tto, tte, m:int, percent:float=0):
     for ichild, child in enumerate(snode.children):
 
         if child.children:
             # optimize snode + child
             e, c = optimize_2site(child, tts, tto, tte)
             # cano to child
-            tts.update_2site(child, c, m, cano_parent=False)
+            tts.update_2site(child, c, m, percent, cano_parent=False)
             # update env
             tte.update_2site(child, tts, tto)
             # recursion optimization
@@ -37,7 +40,7 @@ def optimize_recursion(snode: TreeNodeTensor, tts, tto, tte, m:int):
         # optimize snode + child
         e, c = optimize_2site(child, tts, tto, tte)
         # cano to snode
-        tts.update_2site(child, c, m, cano_parent=True)
+        tts.update_2site(child, c, m, percent, cano_parent=True)
         # update env
         tte.update_2site(child, tts, tto)
     return e
@@ -93,7 +96,14 @@ def optimize_2site(snode: TreeNodeTensor, tts: TensorTreeState, tto: TensorTreeO
         cstruct = vec2tensor(x, qn_mask)
         return expr(cstruct)[qn_mask].ravel()
 
-    if True:
+    # todo: choose solver in the future
+    if False:
+        precond = lambda x, e, *args: x / (hdiag - e + 1e-4)
+
+        e, c = davidson(
+            hop, cguess, precond, max_cycle=100, nroots=1, max_memory=64000
+        )
+    elif False:
         if primme is None:
             logger.error("can not import primme")
             raise IMPORT_PRIMME_EXCEPTION
@@ -109,7 +119,8 @@ def optimize_2site(snode: TreeNodeTensor, tts: TensorTreeState, tto: TensorTreeO
             method="PRIMME_DYNAMIC",
             tol=1e-6,
         )
-    elif False:
+        c = c[:, 0]
+    elif True:
         A = scipy.sparse.linalg.LinearOperator((h_dim,h_dim), matvec=hop)
         e, c = scipy.sparse.linalg.eigsh(A, k=1, which="SA", v0=cguess)
         e = e[0]
