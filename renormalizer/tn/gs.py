@@ -1,4 +1,5 @@
 import logging
+from typing import List
 
 import numpy as np
 import scipy
@@ -19,31 +20,36 @@ def optimize_tts(tts: TensorTreeState, tto: TensorTreeOperator, procedure):
     e_list = []
     for m, percent in procedure:
         # todo: better converge condition
-        e = optimize_recursion(tts.root, tts, tto, tte, m, percent)
-        e_list.append(e)
+        micro_e = optimize_recursion(tts.root, tts, tto, tte, m, percent)
+        logger.info(f"Micro e: {micro_e}")
+        e_list.append(micro_e[-1])
     return e_list
 
 
-def optimize_recursion(snode: TreeNodeTensor, tts, tto, tte, m:int, percent:float=0):
+def optimize_recursion(snode: TreeNodeTensor, tts, tto, tte, m:int, percent:float=0) -> List[float]:
+    micro_e = []
     for ichild, child in enumerate(snode.children):
 
         if child.children:
             # optimize snode + child
             e, c = optimize_2site(child, tts, tto, tte)
+            micro_e.append(e)
             # cano to child
             tts.update_2site(child, c, m, percent, cano_parent=False)
             # update env
             tte.update_2site(child, tts, tto)
             # recursion optimization
-            optimize_recursion(child, tts, tto, tte, m)
+            micro_e_child = optimize_recursion(child, tts, tto, tte, m)
+            micro_e.extend(micro_e_child)
 
         # optimize snode + child
         e, c = optimize_2site(child, tts, tto, tte)
+        micro_e.append(e)
         # cano to snode
         tts.update_2site(child, c, m, percent, cano_parent=True)
         # update env
         tte.update_2site(child, tts, tto)
-    return e
+    return micro_e
 
 
 def optimize_2site(snode: TreeNodeTensor, tts: TensorTreeState, tto: TensorTreeOperator, tte: TensorTreeEnviron):
@@ -97,13 +103,13 @@ def optimize_2site(snode: TreeNodeTensor, tts: TensorTreeState, tto: TensorTreeO
         return expr(cstruct)[qn_mask].ravel()
 
     # todo: choose solver in the future
-    if False:
+    if True:
         precond = lambda x, e, *args: x / (hdiag - e + 1e-4)
 
         e, c = davidson(
-            hop, cguess, precond, max_cycle=100, nroots=1, max_memory=64000
+            hop, cguess, precond, max_cycle=100, nroots=1, max_memory=64000, verbose=0
         )
-    elif False:
+    elif True:
         if primme is None:
             logger.error("can not import primme")
             raise IMPORT_PRIMME_EXCEPTION
@@ -120,6 +126,7 @@ def optimize_2site(snode: TreeNodeTensor, tts: TensorTreeState, tto: TensorTreeO
             tol=1e-6,
         )
         c = c[:, 0]
+        e = e[0]
     elif True:
         A = scipy.sparse.linalg.LinearOperator((h_dim,h_dim), matvec=hop)
         e, c = scipy.sparse.linalg.eigsh(A, k=1, which="SA", v0=cguess)
@@ -131,7 +138,9 @@ def optimize_2site(snode: TreeNodeTensor, tts: TensorTreeState, tto: TensorTreeO
             a = np.zeros(h_dim)
             a[i] = 1
             a_list.append(hop(a))
-        evals, evecs = np.linalg.eigh(np.array(a_list))
+        a = np.array(a_list)
+        assert np.allclose(a, a.conj().T)
+        evals, evecs = np.linalg.eigh(a)
         e = evals[0]
         c = evecs[:, 0]
     c = vec2tensor(c, qn_mask)
