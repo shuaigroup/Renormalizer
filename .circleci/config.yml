@@ -54,12 +54,6 @@ jobs:
       - run:
           name: Build docs
           command: cd doc; make html
-      - run:
-          name: Codecov report
-          command: |
-              curl -Os https://uploader.codecov.io/latest/linux/codecov
-              chmod +x codecov
-              ./codecov
       - persist_to_workspace:
           root: doc/
           paths: html

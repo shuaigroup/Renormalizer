@@ -85,9 +85,7 @@ def test_gs_heisenberg(multi_basis):
     condition = {1:1, 3:1}
     tts = TensorTreeState(basis_tree, condition)
     tto = TensorTreeOperator(basis_tree, ham_terms)
-    m = 20
-    procedure = [[5, 0.4], [10, 0.2], [m, 0.1], [m, 0], [m, 0]]
-    e1 = optimize_tts(tts, tto, procedure)
+    e1 = optimize_tts(tts, tto)
     h = tto.todense()
     e2 = np.linalg.eigh(h)[0][0]
     np.testing.assert_allclose(min(e1), e2)
