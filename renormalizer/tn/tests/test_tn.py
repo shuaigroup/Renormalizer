@@ -1,10 +1,11 @@
 import numpy as np
 import pytest
 
-from renormalizer import BasisHalfSpin, Model, Mpo, Mps, BasisMultiElectronVac, BasisMultiElectron
+from renormalizer import BasisHalfSpin, Model, Mpo, Mps
 from renormalizer.model.model import heisenberg_ops
 from renormalizer.tn.node import TreeNodeBasis
-from renormalizer.tn.tree import TensorTreeOperator, TensorTreeState, TensorTreeEnviron, BasisTree
+from renormalizer.tn.tree import TensorTreeOperator, TensorTreeState, TensorTreeEnviron
+from renormalizer.tn.treebase import BasisTree
 from renormalizer.tn.gs import optimize_tts
 from renormalizer.tests.parameter import holstein_model
 
@@ -92,14 +93,26 @@ def test_gs_heisenberg(multi_basis):
     np.testing.assert_allclose(min(e1), e2)
 
 
-def test_gs_holstein():
-    model = holstein_model.switch_scheme(4)
-    node_list = [TreeNodeBasis([basis]) for basis in model.basis]
-    root = node_list.pop(2)
-    assert len(node_list) == 6
-    for i in range(3):
-        root.add_child(node_list[2*i])
-        node_list[2*i].add_child(node_list[2*i+1])
+@pytest.mark.parametrize("scheme", [3, 4])
+def test_gs_holstein(scheme):
+    if scheme == 3:
+        model = holstein_model
+        node_list = [TreeNodeBasis([basis]) for basis in model.basis]
+        root = node_list[3]
+        root.add_child(node_list[0])
+        root.add_child(node_list[6])
+        for i in range(3):
+            node_list[3 * i].add_child(node_list[3 * i + 1])
+            node_list[3 * i + 1].add_child(node_list[3 * i + 2])
+    else:
+        assert scheme == 4
+        model = holstein_model.switch_scheme(4)
+        node_list = [TreeNodeBasis([basis]) for basis in model.basis]
+        root = node_list.pop(2)
+        assert len(node_list) == 6
+        for i in range(3):
+            root.add_child(node_list[2*i])
+            node_list[2*i].add_child(node_list[2*i+1])
     basis = BasisTree(root)
     m = 4
     tts = TensorTreeState.random(basis, qntot=1, m_max=m)

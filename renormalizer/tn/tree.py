@@ -1,116 +1,23 @@
-from itertools import chain
 from typing import List, Dict
 
 import numpy as np
 import scipy
 import opt_einsum as oe
-from print_tree import print_tree
 
 from renormalizer import Op, Mps, Model
 from renormalizer.model.basis import BasisSet
 from renormalizer.mps.svd_qn import add_outer, svd_qn, blockrecover, get_qn_mask
 from renormalizer.mps.lib import select_basis
-from renormalizer.tn.node import TreeNodeTensor, TreeNodeBasis, NodeUnion, copy_connection, TreeNodeEnviron
-
-
-class Tree:
-    def __init__(self, root: NodeUnion):
-        assert root.parent is None
-        self.root = root
-        self.node_list = self.preorder_list()
-        self.node_idx = {node:i for i, node in enumerate(self.node_list)}
-
-    def preorder_list(self, func=None) -> List[NodeUnion]:
-        def recursion(node: NodeUnion):
-            if func is None:
-                ret = [node]
-            else:
-                ret = [func(node)]
-            if not node.children:
-                return ret
-            for child in node.children:
-                ret += recursion(child)
-            return ret
-        return recursion(self.root)
-
-    def postorder_list(self) -> List[NodeUnion]:
-        def recursion(node: NodeUnion):
-            if not node.children:
-                return [node]
-            ret = []
-            for child in node.children:
-                ret += recursion(child)
-            ret.append(node)
-            return ret
-        return recursion(self.root)
-
-    @property
-    def size(self):
-        return len(self.node_list)
-
-
-class BasisTree(Tree):
-    """Tree of basis sets."""
-    @classmethod
-    def linear(cls, basis_list: List[BasisSet]):
-        node_list = [TreeNodeBasis([basis]) for basis in basis_list]
-        for i in range(len(node_list) - 1):
-            node_list[i].add_child(node_list[i+1])
-        return cls(node_list[0])
-
-    @classmethod
-    def binary(cls, basis_list: List[BasisSet]):
-        node_list = [TreeNodeBasis([basis]) for basis in basis_list]
-        def binary_recursion(node: TreeNodeBasis, offspring: List[TreeNodeBasis]):
-            if len(offspring) == 0:
-                return
-            node.add_child(offspring[0])
-            if len(offspring) == 1:
-                return
-            node.add_child(offspring[1])
-            new_offspring = offspring[2:]
-            mid_idx = len(new_offspring) // 2
-            binary_recursion(offspring[0], new_offspring[:mid_idx])
-            binary_recursion(offspring[1], new_offspring[mid_idx:])
-        binary_recursion(node_list[0], node_list[1:])
-        return cls(node_list[0])
-
-
-    def __init__(self, root: TreeNodeBasis):
-        super().__init__(root)
-        for node in self.node_list:
-            assert isinstance(node, TreeNodeBasis)
-        qn_size_list = [n.qn_size for n in self.node_list]
-        if len(set(qn_size_list)) != 1:
-            raise ValueError(f"Inconsistent quantum number size: {set(qn_size_list)}")
-        self.qn_size: int = qn_size_list[0]
-
-    def print(self):
-        class print_tn_basis(print_tree):
-
-            def get_children(self, node):
-                return node.children
-
-            def get_node_str(self, node):
-                return str([b.dofs for b in node.basis_sets])
-
-        print_tn_basis(self.root)
-
-    @property
-    def basis_list(self) -> List[BasisSet]:
-        return list(chain(*[n.basis_sets for n in self.node_list]))
-
-    @property
-    def basis_list_postorder(self) -> List[BasisSet]:
-        return list(chain(*[n.basis_sets for n in self.postorder_list()]))
+from renormalizer.tn.node import TreeNodeTensor, TreeNodeBasis, copy_connection, TreeNodeEnviron
+from renormalizer.tn.treebase import Tree, BasisTree
+from renormalizer.tn.symbolic_mpo import construct_symbolic_mpo, symbolic_mo_to_numeric_mo_general
 
 
 class TensorTreeOperator(Tree):
-    def __init__(self, basis:BasisTree, ham_terms: List[Op]):
+    def __init__(self, basis: BasisTree, ham_terms: List[Op]):
         self.basis: BasisTree = basis
         self.dtype = np.float64
-        # temporary solution to avoid cyclic import
-        from renormalizer.tn.symbolic_mpo import construct_symbolic_mpo, symbolic_mo_to_numeric_mo_general
+
         symbolic_mpo, mpoqn = construct_symbolic_mpo(basis, ham_terms)
         #from renormalizer.mps.symbolic_mpo import _format_symbolic_mpo
         #print(_format_symbolic_mpo(symbolic_mpo))
@@ -177,7 +84,7 @@ class TensorTreeOperator(Tree):
 class TensorTreeState(Tree):
 
     @classmethod
-    def random(cls, basis:BasisTree, qntot, m_max, percent=1.0):
+    def random(cls, basis: BasisTree, qntot, m_max, percent=1.0):
         tts = cls(basis)
         if isinstance(qntot, int):
             qntot = np.array([qntot])
@@ -222,7 +129,7 @@ class TensorTreeState(Tree):
         tts.check_shape()
         return tts
 
-    def __init__(self, basis:BasisTree, condition:Dict=None):
+    def __init__(self, basis: BasisTree, condition:Dict=None):
         self.basis = basis
         if condition is None:
             condition = {}
@@ -302,12 +209,11 @@ class TensorTreeState(Tree):
             m_node, msdim, msqn, m_parent = select_basis(
                 u_list, su_list, qnlnew, v_list, m, percent=percent
             )
-            m_parent = m_parent.T
         else:
             m_parent, msdim, msqn, m_node = select_basis(
                 v_list, sv_list, qnrnew, u_list, m, percent=percent
             )
-            m_node = m_node.T
+        m_parent = m_parent.T
         node.tensor = m_node.reshape(list(node.tensor.shape[:-1]) + [-1])
         if cano_parent:
             node.qn = msqn

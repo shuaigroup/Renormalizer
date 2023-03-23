@@ -4,9 +4,9 @@ from typing import List
 
 import numpy as np
 
-from renormalizer import Op, Model, Mpo
+from renormalizer import Op, Model
 from renormalizer.model.basis import BasisSet
-from renormalizer.tn.tree import BasisTree
+from renormalizer.tn.treebase import BasisTree
 from renormalizer.mps.symbolic_mpo import _terms_to_table, _transform_table, _construct_symbolic_mpo_one_site, OpTuple
 
 
