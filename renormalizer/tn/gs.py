@@ -15,7 +15,9 @@ from renormalizer.tn.tree import TensorTreeState, TensorTreeOperator, TensorTree
 logger = logging.getLogger(__name__)
 
 
-def optimize_tts(tts: TensorTreeState, tto: TensorTreeOperator, procedure):
+def optimize_tts(tts: TensorTreeState, tto: TensorTreeOperator, procedure=None):
+    if procedure is None:
+        procedure = tts.optimize_config.procedure
     tte = TensorTreeEnviron(tts, tto)
     e_list = []
     for m, percent in procedure:
@@ -87,7 +89,6 @@ def optimize_2site(snode: TreeNodeTensor, tts: TensorTreeState, tto: TensorTreeO
     shape = cguess.shape
     assert qn_mask.shape == shape
     cguess = cguess[qn_mask].ravel()
-    h_dim = len(cguess)
     output_indices = tts.get_node_indices(snode, True)
     shared_bond = output_indices[-1]
     output_indices.extend(tts.get_node_indices(snode.parent, True))
@@ -95,54 +96,15 @@ def optimize_2site(snode: TreeNodeTensor, tts: TensorTreeState, tto: TensorTreeO
         output_indices.remove(shared_bond)
 
     hdiag = _get_hdiag(args, input_indices)[qn_mask].ravel()
-    assert len(hdiag) == h_dim
     # cache the contraction path
     expr = hop_expr(args, shape, input_indices, output_indices)
     def hop(x):
         cstruct = vec2tensor(x, qn_mask)
         return expr(cstruct)[qn_mask].ravel()
 
-    # todo: choose solver in the future
-    if True:
-        precond = lambda x, e, *args: x / (hdiag - e + 1e-4)
-
-        e, c = davidson(
-            hop, cguess, precond, max_cycle=100, nroots=1, max_memory=64000, verbose=0
-        )
-    elif True:
-        if primme is None:
-            logger.error("can not import primme")
-            raise IMPORT_PRIMME_EXCEPTION
-        precond = lambda x: scipy.sparse.diags(1 / (hdiag + 1e-4)) @ x
-        A = scipy.sparse.linalg.LinearOperator((h_dim, h_dim), matvec=hop, matmat=hop)
-        M = scipy.sparse.linalg.LinearOperator((h_dim, h_dim), matvec=precond, matmat=hop)
-        e, c = primme.eigsh(
-            A,
-            k=1,
-            which="SA",
-            v0=np.array(cguess).reshape(-1, 1),
-            OPinv=M,
-            method="PRIMME_DYNAMIC",
-            tol=1e-6,
-        )
-        c = c[:, 0]
-        e = e[0]
-    elif True:
-        A = scipy.sparse.linalg.LinearOperator((h_dim,h_dim), matvec=hop)
-        e, c = scipy.sparse.linalg.eigsh(A, k=1, which="SA", v0=cguess)
-        e = e[0]
-    else:
-        # direct algorithm. Poor performance, debugging only.
-        a_list = []
-        for i in range(h_dim):
-            a = np.zeros(h_dim)
-            a[i] = 1
-            a_list.append(hop(a))
-        a = np.array(a_list)
-        assert np.allclose(a, a.conj().T)
-        evals, evecs = np.linalg.eigh(a)
-        e = evals[0]
-        c = evecs[:, 0]
+    assert tts.optimize_config.nroots == 1
+    algo:str = tts.optimize_config.algo
+    e, c = eigh_iterative(hop, hdiag, cguess, algo)
     c = vec2tensor(c, qn_mask)
     return e, c
 
@@ -194,6 +156,55 @@ def hop_expr(args, x_shape, x_indices, y_indices):
         constants=list(range(len(tensors)))[:-1],
     )
     return expr
+
+
+def eigh_iterative(hop, hdiag, cguess, algo):
+    h_dim = len(hdiag)
+
+    if algo == "davidson":
+        precond = lambda x, e, *args: x / (hdiag - e + 1e-4)
+
+        e, c = davidson(
+            hop, cguess, precond, max_cycle=100, nroots=1, max_memory=64000, verbose=0
+        )
+    elif algo == "primme":
+        if primme is None:
+            logger.error("can not import primme")
+            raise IMPORT_PRIMME_EXCEPTION
+        precond = lambda x: scipy.sparse.diags(1 / (hdiag + 1e-4)) @ x
+        A = scipy.sparse.linalg.LinearOperator((h_dim, h_dim), matvec=hop, matmat=hop)
+        M = scipy.sparse.linalg.LinearOperator((h_dim, h_dim), matvec=precond, matmat=hop)
+        e, c = primme.eigsh(
+            A,
+            k=1,
+            which="SA",
+            v0=np.array(cguess).reshape(-1, 1),
+            OPinv=M,
+            method="PRIMME_DYNAMIC",
+            tol=1e-6,
+        )
+        c = c[:, 0]
+        e = e[0]
+    elif algo == "arpack":
+        A = scipy.sparse.linalg.LinearOperator((h_dim, h_dim), matvec=hop)
+        e, c = scipy.sparse.linalg.eigsh(A, k=1, which="SA", v0=cguess)
+        e = e[0]
+    elif algo == "direct":
+        # direct algorithm. Poor performance, debugging only.
+        a_list = []
+        for i in range(h_dim):
+            a = np.zeros(h_dim)
+            a[i] = 1
+            a_list.append(hop(a))
+        a = np.array(a_list)
+        assert np.allclose(a, a.conj().T)
+        evals, evecs = np.linalg.eigh(a)
+        e = evals[0]
+        c = evecs[:, 0]
+    else:
+        assert False
+
+    return e, c
 
 
 def vec2tensor(c, qn_mask):
