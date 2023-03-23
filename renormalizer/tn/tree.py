@@ -8,6 +8,7 @@ from renormalizer import Op, Mps, Model
 from renormalizer.model.basis import BasisSet
 from renormalizer.mps.svd_qn import add_outer, svd_qn, blockrecover, get_qn_mask
 from renormalizer.mps.lib import select_basis
+from renormalizer.utils.configs import OptimizeConfig
 from renormalizer.tn.node import TreeNodeTensor, TreeNodeBasis, copy_connection, TreeNodeEnviron
 from renormalizer.tn.treebase import Tree, BasisTree
 from renormalizer.tn.symbolic_mpo import construct_symbolic_mpo, symbolic_mo_to_numeric_mo_general
@@ -163,6 +164,8 @@ class TensorTreeState(Tree):
         # tensor node to basis node
         self.tn2bn = {tn: bn for tn, bn in zip(self.node_list, self.basis.node_list)}
         self.tn2dofs = {tn: bn.dofs for tn, bn in self.tn2bn.items()}
+
+        self.optimize_config = OptimizeConfig()
 
     def check_shape(self):
         for snode, bnode in zip(self.node_list, self.basis.node_list):
