@@ -2,8 +2,7 @@ from itertools import chain
 import logging
 from typing import List
 
-import numpy as np
-
+from renormalizer.mps.backend import np
 from renormalizer import Op, Model
 from renormalizer.model.basis import BasisSet
 from renormalizer.tn.treebase import BasisTree

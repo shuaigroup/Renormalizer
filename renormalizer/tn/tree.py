@@ -1,11 +1,11 @@
-from typing import List, Dict
+from typing import List, Dict, Tuple
 
-import numpy as np
 import scipy
 import opt_einsum as oe
 
 from renormalizer import Op, Mps, Model
 from renormalizer.model.basis import BasisSet
+from renormalizer.mps.backend import np
 from renormalizer.mps.svd_qn import add_outer, svd_qn, blockrecover, get_qn_mask
 from renormalizer.mps.lib import select_basis
 from renormalizer.utils.configs import OptimizeConfig
@@ -15,6 +15,12 @@ from renormalizer.tn.symbolic_mpo import construct_symbolic_mpo, symbolic_mo_to_
 
 
 class TensorTreeOperator(Tree):
+    @classmethod
+    def identity(cls, basis:BasisTree):
+        if not basis.identity_op:
+            basis.identity_op = cls(basis, [Op("I", basis.root.dofs[0][0])])
+        return basis.identity_op
+
     def __init__(self, basis: BasisTree, ham_terms: List[Op]):
         self.basis: BasisTree = basis
         self.dtype = np.float64
@@ -128,6 +134,18 @@ class TensorTreeState(Tree):
         tts.root.tensor[~qn_mask] = 0
         tts.root.tensor /= np.linalg.norm(tts.root.tensor.ravel())
         tts.check_shape()
+        tts.check_canonical()
+        return tts
+
+    @classmethod
+    def from_tensors(cls, template: "TensorTreeState", tensors):
+        tts = cls(template.basis)
+        cursor = 0
+        for node, tnode in zip(tts.node_list, template.node_list):
+            length = np.product(tnode.shape)
+            node.tensor = tensors[cursor:cursor+length].reshape(tnode.shape)
+            node.qn = tnode.qn
+            cursor += length
         return tts
 
     def __init__(self, basis: BasisTree, condition:Dict=None):
@@ -161,7 +179,7 @@ class TensorTreeState(Tree):
             for child in node.children:
                 node.qn += child.qn
         self.check_shape()
-        # tensor node to basis node
+        # tensor node to basis node. make a property?
         self.tn2bn = {tn: bn for tn, bn in zip(self.node_list, self.basis.node_list)}
         self.tn2dofs = {tn: bn.dofs for tn, bn in self.tn2bn.items()}
 
@@ -172,7 +190,125 @@ class TensorTreeState(Tree):
             assert snode.tensor.ndim == len(snode.children) + bnode.n_sets + 1
             assert snode.qn.shape[1] == bnode.qn_size
             for i, b in enumerate(bnode.basis_sets):
-                assert snode.tensor.shape[len(snode.children) + i] == b.nbas
+                assert snode.shape[len(snode.children) + i] == b.nbas
+
+    def check_canonical(self, atol=None):
+        for node in self.node_list[1:]:
+            node.check_canonical(atol)
+        return True
+
+    def is_canonical(self, atol=None):
+        for node in self.node_list[1:]:
+            if not node.check_canonical(atol, assertion=False):
+                return False
+        return True
+
+    def canonicalise(self):
+        for node in self.postorder_list()[:-1]:
+            self._push_cano(node)
+
+    def expectation(self, tto: TensorTreeOperator, bra:"TensorTreeState"=None):
+        if bra is None:
+            bra = self
+        args = self.to_contract_args()
+        args.extend(bra.to_contract_args(conj=True))
+        args.extend(tto.to_contract_args("up", "down"))
+        val = oe.contract(*args).ravel()[0]
+
+        if np.isclose(float(val.imag), 0):
+            return float(val.real)
+        else:
+            return complex(val)
+
+    def add(self, other: "TensorTreeState") -> "TensorTreeState":
+        # todo: deal with dtype
+        new = self.metacopy()
+        for new_node, node1, node2 in zip(new, self, other):
+            new_shape = []
+            indices1 = []
+            indices2 = []
+            for i, (dim1, dim2) in enumerate(zip(node1.shape, node2.shape)):
+                is_physical_idx = len(node1.children) <= i and i != node1.tensor.ndim - 1
+                is_parent_idx = i == node1.tensor.ndim - 1
+                if is_physical_idx or (is_parent_idx and node1 is self.root):
+                    assert dim1 == dim2
+                    new_shape.append(dim1)
+                    indices1.append(slice(0, dim1))
+                    indices2.append(slice(0, dim1))
+                else:
+                    # virtual indices
+                    new_shape.append(dim1 + dim2)
+                    indices1.append(slice(0, dim1))
+                    indices2.append(slice(dim1, dim1 + dim2))
+            new_node.tensor = np.zeros(new_shape, dtype=node1.tensor.dtype)
+            indices1 = tuple(indices1)
+            indices2 = tuple(indices2)
+            new_node.tensor[indices1] = node1.tensor
+            new_node.tensor[indices2] = node2.tensor
+            new_node.qn = np.concatenate([node1.qn, node2.qn], axis=0)
+        new.check_shape()
+        #assert new.check_canonical()
+        return new
+
+    def metacopy(self):
+        # node tensor and qn not set
+        new = self.__class__(self.basis)
+        new.optimize_config = self.optimize_config
+        return new
+
+    def to_complex(self, inplace=False):
+        if inplace:
+            new = self
+        else:
+            new = self.metacopy()
+        for node1, node2 in zip(self, new):
+            node2.tensor = np.array(node1.tensor, dtype=complex)
+            node2.qn = node1.qn.copy()
+        return new
+
+    def todense(self, order:List[BasisSet]=None) -> np.ndarray:
+        _id = str(id(self))
+        args = self.to_contract_args()
+        if order is None:
+            order = self.basis.basis_list
+        indices_up = []
+        for basis in order:
+            indices_up.append(("down", str(basis.dofs)))
+        output_indices = [(_id, "root", str(self.tn2dofs[self.root]))] + indices_up
+        args.append(output_indices)
+        res = oe.contract(*args)
+        assert res.shape[0] == 1
+        return res[0]
+
+    def to_contract_args(self, conj=False):
+        args = []
+        for node in self.node_list:
+            assert isinstance(node, TreeNodeTensor)
+            indices = self.get_node_indices(node, conj)
+            tensor = node.tensor
+            if conj:
+                tensor = tensor.conj()
+            args.extend([tensor, indices])
+        return args
+
+    def _push_cano(self, node):
+        assert node.parent
+        # move the cano center to parent
+        qnbigl, qnbigr, _ = self.get_qnmat(node, include_parent=False)
+        tensor = node.tensor.reshape(-1, node.shape[-1])
+        u, qnlnew, v, qnrnew = svd_qn(tensor, qnbigl, qnbigr, self.qntot, QR=True, system="L", full_matrices=False)
+        # could shrink during QR
+        node.tensor = u.reshape(list(node.shape[:-1]) + [u.shape[1]])
+        node.qn = np.array(qnlnew)
+        parent_indices = self.get_node_indices(node.parent)
+        args = [node.parent.tensor, parent_indices]
+        child_idx1 = parent_indices[node.idx_as_child]
+        child_idx2 = tuple(list(child_idx1) + ["_idx2"])
+        args.extend([v, (child_idx1, child_idx2)])
+        output_indices = parent_indices.copy()
+        output_indices[node.idx_as_child] = child_idx2
+        args.append(output_indices)
+        node.parent.tensor = oe.contract(*args)
 
     def get_qnmat(self, node, include_parent=True):
         qnbigl = np.zeros(self.basis.qn_size, dtype=int)
@@ -207,66 +343,38 @@ class TensorTreeState(Tree):
         tensor = tensor.reshape(dim1, -1)
         # u for snode and v for parent
         # duplicate with MatrixProduct._udpate_mps. Should consider merging when doing e.g. state averaged algorithm.
-        u_list, su_list, qnlnew, v_list, sv_list, qnrnew = svd_qn(tensor, qnbigl, qnbigr, self.qntot)
+        u, su, qnlnew, v, sv, qnrnew = svd_qn(tensor, qnbigl, qnbigr, self.qntot)
         if cano_parent:
             m_node, msdim, msqn, m_parent = select_basis(
-                u_list, su_list, qnlnew, v_list, m, percent=percent
+                u, su, qnlnew, v, m, percent=percent
             )
         else:
             m_parent, msdim, msqn, m_node = select_basis(
-                v_list, sv_list, qnrnew, u_list, m, percent=percent
+                v, sv, qnrnew, u, m, percent=percent
             )
         m_parent = m_parent.T
-        node.tensor = m_node.reshape(list(node.tensor.shape[:-1]) + [-1])
+        node.tensor = m_node.reshape(list(node.shape[:-1]) + [-1])
         if cano_parent:
             node.qn = msqn
         else:
             node.qn = self.qntot - msqn
-        assert len(node.qn) == node.tensor.shape[-1]
+        assert len(node.qn) == node.shape[-1]
         shape = list(parent.tensor.shape)
         ichild = parent.children.index(node)
         del shape[ichild]
         shape = [-1] + shape
         parent.tensor = np.moveaxis(m_parent.reshape(shape), 0, ichild)
 
-    def update_2site2(self, node, tensor, m:int, cano_parent=True):
-        """cano_parent: set canonical center at parent"""
-        parent = node.parent
-        assert parent is not None
-        dim1 = np.prod(node.tensor.shape[:-1])
-        tensor = tensor.reshape(dim1, -1)
-        # u for snode and vt for parent
-        u, s, vt = scipy.linalg.svd(tensor, full_matrices=False)
-        if m < len(s):
-            u = u[:, :m]
-            s = s[:m]
-            vt = vt[:m, :]
-        if cano_parent:
-            vt = s.reshape(-1, 1) * vt
-        else:
-            u = u * s.reshape(1, -1)
-        node.tensor = u.reshape(list(node.tensor.shape[:-1]) + [-1])
-        shape = list(parent.tensor.shape)
-        ichild = parent.children.index(node)
-        del shape[ichild]
-        shape = [-1] + shape
-        parent.tensor = np.moveaxis(vt.reshape(shape), 0, ichild)
+    def get_node_indices(self, node, conj=False, include_parent=False) -> List[Tuple[str]]:
+        if include_parent:
+            snode_indices = self.get_node_indices(node, conj)
+            parent_indices = self.get_node_indices(node.parent, conj)
+            indices = snode_indices + parent_indices
+            shared_bond = snode_indices[-1]
+            for i in range(2):
+                indices.remove(shared_bond)
+            return indices
 
-    def expectation(self, tto: TensorTreeOperator):
-        args = self.to_contract_args()
-        args.extend(self.to_contract_args(conj=True))
-        args.extend(tto.to_contract_args("up", "down"))
-        return oe.contract(*args).ravel()[0]
-
-    def to_contract_args(self, conj=False):
-        args = []
-        for node in self.node_list:
-            assert isinstance(node, TreeNodeTensor)
-            indices = self.get_node_indices(node, conj)
-            args.extend([node.tensor, indices])
-        return args
-
-    def get_node_indices(self, node, conj=False):
         if not conj:
             ud = "down"
             _id = str(id(self))
@@ -287,10 +395,47 @@ class TensorTreeState(Tree):
         assert len(indices) == node.tensor.ndim
         return indices
 
+    def merge_with_parent(self, node):
+        # merge a node with its parent
+        args = []
+        snode_indices = self.get_node_indices(node)
+        parent_indices = self.get_node_indices(node.parent)
+        args.extend([node.tensor, snode_indices])
+        args.extend([node.parent.tensor, parent_indices])
+        output_indices = self.get_node_indices(node, include_parent=True)
+        args.append(output_indices)
+        return oe.contract(*args)
+
     @property
     def qntot(self):
         # duplicate with tto
         return self.root.qn[0]
+
+    @property
+    def tts_norm(self):
+        res = self.expectation(TensorTreeOperator.identity(self.basis))
+
+        if res < 0:
+            assert np.abs(res) < 1e-8
+            res = 0
+        res = np.sqrt(res)
+        return float(res)
+
+    def scale(self, val, inplace=False):
+        assert inplace
+        new_mp = self
+        if np.iscomplex(val):
+            new_mp.to_complex(inplace=True)
+        else:
+            val = val.real
+        self.check_canonical()
+        res = self
+        res.root.tensor *= val
+        return res
+
+    def __add__(self, other: "TensorTreeState"):
+        return self.add(other)
+
 
 
 class TensorTreeEnviron(Tree):
