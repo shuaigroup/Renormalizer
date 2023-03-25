@@ -42,6 +42,9 @@ class Tree:
     def size(self):
         return len(self.node_list)
 
+    def __iter__(self):
+        return iter(self.node_list)
+
 
 class BasisTree(Tree):
     """Tree of basis sets."""
@@ -78,6 +81,8 @@ class BasisTree(Tree):
         if len(set(qn_size_list)) != 1:
             raise ValueError(f"Inconsistent quantum number size: {set(qn_size_list)}")
         self.qn_size: int = qn_size_list[0]
+        # identity operator
+        self.identity_op = None
 
     def print(self):
         class print_tn_basis(print_tree):

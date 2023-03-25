@@ -1,7 +1,7 @@
-from typing import List, Dict, Any, Union
+from typing import List, Dict, Union
 
-import numpy as np
 
+from renormalizer.mps.backend import np, backend
 from renormalizer.model.basis import BasisSet
 from renormalizer.mps.backend import xp
 
@@ -10,12 +10,16 @@ class TreeNode:
     def __init__(self):
         self.children: List[__class__] = []
         self.parent: TreeNode = None
-        self.workspace: Any = None
 
     def add_child(self, node: "TreeNode"):
         assert node.parent is None
         self.children.append(node)
         node.parent = self
+
+    @property
+    def idx_as_child(self) -> int:
+        assert self.parent
+        return self.parent.children.index(self)
 
 
 class TreeNodeBasis(TreeNode):
@@ -36,6 +40,20 @@ class TreeNodeTensor(TreeNode):
         super().__init__()
         self.tensor: xp.ndarray = tensor
         self.qn: np.ndarray = qn
+
+    def check_canonical(self, atol=None, assertion=True):
+        if atol is None:
+            atol = backend.canonical_atol
+        tensor = self.tensor.reshape(-1, self.tensor.shape[-1])
+        s = tensor.conj().T @ tensor
+        res = np.allclose(s, np.eye(s.shape[0]), atol=atol)
+        if assertion:
+            assert res
+        return res
+
+    @property
+    def shape(self):
+        return self.tensor.shape
 
 
 class TreeNodeEnviron(TreeNode):

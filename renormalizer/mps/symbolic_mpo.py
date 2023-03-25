@@ -342,7 +342,7 @@ def _terms_to_table(model: Model, terms: List[Op], const: float):
 
 def _transform_table(table, factor):
     """Transforms the table to integer table and combine duplicate terms."""
-    qn_size = len(table[0][0].qn)
+
     # use np.uint32, np.uint16 to save memory
     max_uint32 = np.iinfo(np.uint32).max
     max_uint16 = np.iinfo(np.uint16).max
@@ -365,6 +365,7 @@ def _transform_table(table, factor):
     del unique_op
 
     if __debug__:
+        qn_size = len(table[0][0].qn)
         qn_table = np.array([[x.qn for x in ta] for ta in table])
         factor_table = np.array([[x.factor for x in ta] for ta in table])
         for idx in range(len(primary_ops)):

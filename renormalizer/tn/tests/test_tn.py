@@ -1,13 +1,16 @@
-import numpy as np
 import pytest
 
-from renormalizer import BasisHalfSpin, Model, Mpo, Mps
+from renormalizer import BasisHalfSpin, Model, Mpo, Mps, Op
+from renormalizer.mps.backend import np
 from renormalizer.model.model import heisenberg_ops
 from renormalizer.tn.node import TreeNodeBasis
 from renormalizer.tn.tree import TensorTreeOperator, TensorTreeState, TensorTreeEnviron
 from renormalizer.tn.treebase import BasisTree
 from renormalizer.tn.gs import optimize_tts
+from renormalizer.tn.time_evolution import evolve
 from renormalizer.tests.parameter import holstein_model
+from renormalizer.tests.parameter_exact import model
+from renormalizer.mps.tests.test_evolve import qutip_expectations, QUTIP_STEP
 
 
 def multi_basis_tree(basis_list):
@@ -30,7 +33,7 @@ def multi_basis_tree(basis_list):
 @pytest.mark.parametrize("multi_basis", [True, False])
 def test_tto(multi_basis):
     nspin = 7
-    basis_list = [BasisHalfSpin(i, [1, -1]) for i in range(nspin)]
+    basis_list = [BasisHalfSpin(i) for i in range(nspin)]
     if not multi_basis:
         basis = BasisTree.binary(basis_list)
         assert basis.size == nspin
@@ -49,7 +52,7 @@ def test_tto(multi_basis):
 @pytest.mark.parametrize("multi_basis", [True, False])
 def test_tts(multi_basis):
     nspin = 7
-    basis_list = [BasisHalfSpin(i, [1, -1]) for i in range(nspin)]
+    basis_list = [BasisHalfSpin(i) for i in range(nspin)]
     if not multi_basis:
         basis = BasisTree.binary(basis_list)
         assert basis.size == nspin
@@ -73,22 +76,31 @@ def test_tts(multi_basis):
 
 
 @pytest.mark.parametrize("multi_basis", [True, False])
-def test_gs_heisenberg(multi_basis):
+@pytest.mark.parametrize("ite", [False, True])
+def test_gs_heisenberg(multi_basis, ite):
     nspin = 7
-    basis_list = [BasisHalfSpin(i, [1, -1]) for i in range(nspin)]
+    basis_list = [BasisHalfSpin(i) for i in range(nspin)]
     if not multi_basis:
         basis_tree = BasisTree.binary(basis_list)
         assert basis_tree.size == nspin
     else:
         basis_tree = multi_basis_tree(basis_list)
     ham_terms = heisenberg_ops(4)
-    condition = {1:1, 3:1}
-    tts = TensorTreeState(basis_tree, condition)
+    tts = TensorTreeState.random(basis_tree, qntot=0, m_max=20)
     tto = TensorTreeOperator(basis_tree, ham_terms)
-    e1 = optimize_tts(tts, tto)
+    if not ite:
+        e1 = optimize_tts(tts, tto)
+        e1 = min(e1)
+    else:
+        # imaginary time evolution for the ground state
+        for i in range(10):
+            tts.check_canonical()
+            tts = evolve(tts, tto, -2j)
+            tts.scale(1 / tts.tts_norm, inplace=True)
+        e1 = tts.expectation(tto)
     h = tto.todense()
     e2 = np.linalg.eigh(h)[0][0]
-    np.testing.assert_allclose(min(e1), e2)
+    np.testing.assert_allclose(e1, e2)
 
 
 @pytest.mark.parametrize("scheme", [3, 4])
@@ -119,3 +131,44 @@ def test_gs_holstein(scheme):
     e1 = optimize_tts(tts, tto, procedure)
     e2 = 0.08401412 + model.gs_zpe
     np.testing.assert_allclose(min(e1), e2)
+
+
+@pytest.mark.parametrize("multi_basis", [True, False])
+def test_add(multi_basis):
+    nspin = 7
+    basis_list = [BasisHalfSpin(i) for i in range(nspin)]
+    if not multi_basis:
+        basis_tree = BasisTree.binary(basis_list)
+        assert basis_tree.size == nspin
+    else:
+        basis_tree = multi_basis_tree(basis_list)
+    tts1 = TensorTreeState.random(basis_tree, qntot=0, m_max=4)
+    tts2 = TensorTreeState.random(basis_tree, qntot=0, m_max=2)
+    tts3 = tts1.add(tts2)
+    s1 = tts1.todense()
+    s2 = tts2.todense()
+    s3 = tts3.todense()
+    np.testing.assert_allclose(s1 + s2, s3)
+
+
+def test_vmf():
+    basis = BasisTree.linear(model.basis)
+    tto = TensorTreeOperator(basis, model.ham_terms)
+    op_n_list = [TensorTreeOperator(basis, [Op(r"a^\dagger a", i)]) for i in range(3)]
+
+    tts = TensorTreeState(basis, {0: 1})
+    # expand bond dimension
+    tts = tts + tts.random(basis, 1, 5).scale(1e-5, inplace=True)
+    tts.canonicalise()
+
+    tau = 0.5
+    final_time = 2
+    expectations = [[tts.expectation(o) for o in op_n_list]]
+    for i in range(round(final_time / tau)):
+        tts = evolve(tts, tto, tau)
+        es = [tts.expectation(o) for o in op_n_list]
+        expectations.append(es)
+    qutip_end = round(final_time / QUTIP_STEP) + 1
+    qutip_interval = round(tau / QUTIP_STEP)
+    np.testing.assert_allclose(expectations, qutip_expectations[:qutip_end:qutip_interval], atol=5e-4)
+
