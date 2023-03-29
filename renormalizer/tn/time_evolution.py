@@ -25,15 +25,15 @@ def time_derivative_vmf(tts: TensorTreeState, tto: TensorTreeOperator):
         dim_parent = node.shape[-1]
         shape_2d = (-1, dim_parent)
         deriv = hop(node.tensor).reshape(shape_2d)
-        if node.parent is None:
-            deriv_list.append(deriv.ravel())
-            continue
-        tensor = node.tensor.reshape(shape_2d)
-        proj = tensor.conj() @ tensor.T
-        ovlp = environ_s.node_list[inode].environ_parent.reshape(dim_parent, dim_parent)
-        ovlp_inv = regularized_inversion(ovlp, 1e-8)
-        deriv = oe.contract("bf, bg, fh -> gh", deriv, np.eye(proj.shape[0]) - proj, ovlp_inv.T)
-        deriv_list.append(deriv.ravel())
+        if node.parent is not None:
+            # apply projector and S^-1
+            tensor = node.tensor.reshape(shape_2d)
+            proj = tensor.conj() @ tensor.T
+            ovlp = environ_s.node_list[inode].environ_parent.reshape(dim_parent, dim_parent)
+            ovlp_inv = regularized_inversion(ovlp, 1e-8)
+            deriv = oe.contract("bf, bg, fh -> gh", deriv, np.eye(proj.shape[0]) - proj, ovlp_inv.T)
+        qnmask = tts.get_qnmask(node).reshape(deriv.shape)
+        deriv_list.append(deriv[qnmask].ravel())
     return np.concatenate(deriv_list)
 
 
@@ -82,7 +82,7 @@ def evolve(tts:TensorTreeState, tto:TensorTreeOperator, tau:Union[complex, float
     def ivp_func(t, params):
         tts_t = TensorTreeState.from_tensors(tts, params)
         return coef * time_derivative_vmf(tts_t, tto)
-    init_y = np.concatenate([node.tensor.ravel() for node in tts.node_list])
+    init_y = np.concatenate([node.tensor[tts.get_qnmask(node)].ravel() for node in tts.node_list])
     sol = solve_ivp(ivp_func, (0, tau), init_y, first_step=first_step)
     logger.info(f"VMF func called: {sol.nfev}. RKF steps: {len(sol.t)}")
     new_tts = TensorTreeState.from_tensors(tts, sol.y[:, -1])
