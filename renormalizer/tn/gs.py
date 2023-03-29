@@ -58,8 +58,7 @@ def optimize_recursion(snode: TreeNodeTensor, tts, tto, tte, m:int, percent:floa
 def optimize_2site(snode: TreeNodeTensor, tts: TensorTreeState, tto: TensorTreeOperator, tte: TensorTreeEnviron):
 
     cguess = tts.merge_with_parent(snode)
-    qnmat = tts.get_qnmat(snode)[-1]
-    qn_mask = get_qn_mask(qnmat, tts.qntot)
+    qn_mask = tts.get_qnmask(snode, include_parent=True)
     cguess = cguess[qn_mask].ravel()
     expr, hdiag = hop_expr2(snode, tts, tto, tte)
     hdiag = hdiag[qn_mask].ravel()
