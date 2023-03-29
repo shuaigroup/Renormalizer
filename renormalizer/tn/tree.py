@@ -128,8 +128,7 @@ class TensorTreeState(Tree):
             node.qn = mpsqn
         # deal with root
         tts.root.qn = np.ones((1, qn_size), dtype=int) * qntot
-        _, _, qnmat = tts.get_qnmat(tts.root, include_parent=False)
-        qn_mask = get_qn_mask(qnmat, tts.qntot)
+        qn_mask = tts.get_qnmask(tts.root, include_parent=False)
         tts.root.tensor = np.random.random(qn_mask.shape) - 0.5
         tts.root.tensor[~qn_mask] = 0
         tts.root.tensor /= np.linalg.norm(tts.root.tensor.ravel())
@@ -139,13 +138,17 @@ class TensorTreeState(Tree):
 
     @classmethod
     def from_tensors(cls, template: "TensorTreeState", tensors):
+        """QN is taken into account"""
         tts = cls(template.basis)
         cursor = 0
         for node, tnode in zip(tts.node_list, template.node_list):
-            length = np.product(tnode.shape)
-            node.tensor = tensors[cursor:cursor+length].reshape(tnode.shape)
+            qnmask = template.get_qnmask(tnode)
+            length = np.sum(qnmask)
+            node.tensor = np.zeros(tnode.shape, dtype=tensors.dtype)
+            node.tensor[qnmask] = tensors[cursor:cursor+length]
             node.qn = tnode.qn
             cursor += length
+        assert len(tensors) == cursor
         return tts
 
     def __init__(self, basis: BasisTree, condition:Dict=None):
@@ -188,6 +191,7 @@ class TensorTreeState(Tree):
     def check_shape(self):
         for snode, bnode in zip(self.node_list, self.basis.node_list):
             assert snode.tensor.ndim == len(snode.children) + bnode.n_sets + 1
+            assert snode.qn.shape[0] == snode.tensor.shape[-1]
             assert snode.qn.shape[1] == bnode.qn_size
             for i, b in enumerate(bnode.basis_sets):
                 assert snode.shape[len(snode.children) + i] == b.nbas
@@ -221,7 +225,7 @@ class TensorTreeState(Tree):
             return complex(val)
 
     def add(self, other: "TensorTreeState") -> "TensorTreeState":
-        # todo: deal with dtype
+        # todo: deal with dtype (check all `dtype=`). Maybe best when dealing with backend
         new = self.metacopy()
         for new_node, node1, node2 in zip(new, self, other):
             new_shape = []
@@ -245,7 +249,11 @@ class TensorTreeState(Tree):
             indices2 = tuple(indices2)
             new_node.tensor[indices1] = node1.tensor
             new_node.tensor[indices2] = node2.tensor
-            new_node.qn = np.concatenate([node1.qn, node2.qn], axis=0)
+            if node1 is self.root:
+                np.testing.assert_allclose(node1.qn, node2.qn)
+                new_node.qn = node1.qn.copy()
+            else:
+                new_node.qn = np.concatenate([node1.qn, node2.qn], axis=0)
         new.check_shape()
         #assert new.check_canonical()
         return new
@@ -310,7 +318,7 @@ class TensorTreeState(Tree):
         args.append(output_indices)
         node.parent.tensor = oe.contract(*args)
 
-    def get_qnmat(self, node, include_parent=True):
+    def get_qnmat(self, node, include_parent=False):
         qnbigl = np.zeros(self.basis.qn_size, dtype=int)
         for child in node.children:
             qnbigl = add_outer(qnbigl, child.qn)
@@ -334,11 +342,15 @@ class TensorTreeState(Tree):
         qnmat = add_outer(qnbigl, qnbigr)
         return qnbigl, qnbigr, qnmat
 
+    def get_qnmask(self, node, include_parent=False):
+        qnmat = self.get_qnmat(node, include_parent)[-1]
+        return get_qn_mask(qnmat, self.qntot)
+
     def update_2site(self, node, tensor, m:int, percent:float=0, cano_parent:bool=True):
         """cano_parent: set canonical center at parent. to_right = True"""
         parent = node.parent
         assert parent is not None
-        qnbigl, qnbigr, _ = self.get_qnmat(node)
+        qnbigl, qnbigr, _ = self.get_qnmat(node, include_parent=True)
         dim1 = np.prod(qnbigl.shape)
         tensor = tensor.reshape(dim1, -1)
         # u for snode and v for parent

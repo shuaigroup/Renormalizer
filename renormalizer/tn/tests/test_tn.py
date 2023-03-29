@@ -151,8 +151,23 @@ def test_add(multi_basis):
     np.testing.assert_allclose(s1 + s2, s3)
 
 
-def test_vmf():
-    basis = BasisTree.linear(model.basis)
+@pytest.mark.parametrize("geometry", ["chain", "tree"])
+def test_vmf(geometry):
+    if geometry == "chain":
+        basis = BasisTree.linear(model.basis)
+    else:
+        assert geometry == "tree"
+        node_list = [TreeNodeBasis([basis]) for basis in model.basis]
+        # 0 - 2 - 4
+        # |   |   |
+        # 1   3   5
+        root = node_list[2]
+        root.add_child(node_list[0])
+        root.add_child(node_list[3])
+        root.add_child(node_list[4])
+        node_list[0].add_child(node_list[1])
+        node_list[4].add_child(node_list[5])
+        basis = BasisTree(root)
     tto = TensorTreeOperator(basis, model.ham_terms)
     op_n_list = [TensorTreeOperator(basis, [Op(r"a^\dagger a", i)]) for i in range(3)]
 
@@ -171,4 +186,3 @@ def test_vmf():
     qutip_end = round(final_time / QUTIP_STEP) + 1
     qutip_interval = round(tau / QUTIP_STEP)
     np.testing.assert_allclose(expectations, qutip_expectations[:qutip_end:qutip_interval], atol=5e-4)
-
