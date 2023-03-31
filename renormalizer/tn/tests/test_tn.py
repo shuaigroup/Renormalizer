@@ -4,7 +4,7 @@ from renormalizer import BasisHalfSpin, Model, Mpo, Mps, Op
 from renormalizer.mps.backend import np
 from renormalizer.model.model import heisenberg_ops
 from renormalizer.tn.node import TreeNodeBasis
-from renormalizer.tn.tree import TensorTreeOperator, TensorTreeState, TensorTreeEnviron
+from renormalizer.tn.tree import TensorTreeOperator, TensorTreeState, TensorTreeEnviron, from_mps
 from renormalizer.tn.treebase import BasisTree
 from renormalizer.tn.gs import optimize_tts
 from renormalizer.tn.time_evolution import evolve
@@ -73,6 +73,15 @@ def test_tts(multi_basis):
         for child, environ_child in zip(node.children, node.environ_children):
             e3 = environ_child.ravel() @ child.environ_parent.ravel()
             np.testing.assert_allclose(e3, e2)
+
+
+def test_from_mps():
+    mps = Mps.random(model, 1, 10)
+    mpo = Mpo(model)
+    e_ref = mps.expectation(mpo)
+    basis, tts, tto = from_mps(mps)
+    e = tts.expectation(tto)
+    np.testing.assert_allclose(e, e_ref)
 
 
 @pytest.mark.parametrize("multi_basis", [True, False])
@@ -185,4 +194,4 @@ def test_vmf(geometry):
         expectations.append(es)
     qutip_end = round(final_time / QUTIP_STEP) + 1
     qutip_interval = round(tau / QUTIP_STEP)
-    np.testing.assert_allclose(expectations, qutip_expectations[:qutip_end:qutip_interval], atol=5e-4)
+    np.testing.assert_allclose(expectations, qutip_expectations[:qutip_end:qutip_interval], atol=1e-4)

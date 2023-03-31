@@ -23,6 +23,7 @@ class TensorTreeOperator(Tree):
 
     def __init__(self, basis: BasisTree, ham_terms: List[Op]):
         self.basis: BasisTree = basis
+        self.ham_terms = ham_terms
         self.dtype = np.float64
 
         symbolic_mpo, mpoqn = construct_symbolic_mpo(basis, ham_terms)
@@ -574,3 +575,27 @@ class TensorTreeEnviron(Tree):
             (str(id(tts)), str(dofs_parent), str(dofs)),
         ]
         return indices
+
+
+def from_mps(mps: Mps) -> Tuple[BasisTree, TensorTreeState, TensorTreeOperator]:
+    # useful function for comparing results with MPS
+    mps = mps.copy()
+    mps.ensure_left_canonical()
+    mps.move_qnidx(len(mps) + 1)
+    # take reverse because in `node` the order of the indices is
+    # children + physical + parent
+    # |    |    |     |
+    # o -> o -> o -> root (canonical center)
+    basis = BasisTree.linear(mps.model.basis[::-1])
+    tts = TensorTreeState(basis)
+    for i in range(len(mps)):
+        node = tts.node_list[::-1][i]
+        node.tensor = mps[i].array
+        node.qn = mps.qn[i + 1]
+        if i == 0:
+            # remove the last index
+            node.tensor = node.tensor[0, ...]
+    tts.check_shape()
+    tts.check_canonical()
+    tto = TensorTreeOperator(basis, mps.model.ham_terms)
+    return basis, tts, tto
