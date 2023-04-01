@@ -6,7 +6,6 @@ import scipy
 
 from renormalizer.lib import davidson
 from renormalizer.mps.backend import primme, IMPORT_PRIMME_EXCEPTION, np
-from renormalizer.mps.svd_qn import get_qn_mask
 from renormalizer.tn.node import TreeNodeTensor
 from renormalizer.tn.tree import TensorTreeState, TensorTreeOperator, TensorTreeEnviron
 from renormalizer.tn.hop_expr import hop_expr2

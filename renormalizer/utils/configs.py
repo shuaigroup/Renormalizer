@@ -319,6 +319,11 @@ class OptimizeConfig:
         # -1.0 to get the largest eigenvalue
         self.inverse = 1.0
 
+    def copy(self):
+        new = self.__class__.__new__(self.__class__)
+        new.__dict__ = self.__dict__.copy()
+        new.procedure = self.procedure.copy()
+        return new
 
 class EvolveMethod(Enum):
     """

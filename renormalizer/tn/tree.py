@@ -5,10 +5,10 @@ import opt_einsum as oe
 
 from renormalizer import Op, Mps, Model
 from renormalizer.model.basis import BasisSet
-from renormalizer.mps.backend import np
+from renormalizer.mps.backend import np, backend
 from renormalizer.mps.svd_qn import add_outer, svd_qn, blockrecover, get_qn_mask
 from renormalizer.mps.lib import select_basis
-from renormalizer.utils.configs import OptimizeConfig
+from renormalizer.utils.configs import OptimizeConfig, EvolveConfig, EvolveMethod
 from renormalizer.tn.node import TreeNodeTensor, TreeNodeBasis, copy_connection, TreeNodeEnviron
 from renormalizer.tn.treebase import Tree, BasisTree
 from renormalizer.tn.symbolic_mpo import construct_symbolic_mpo, symbolic_mo_to_numeric_mo_general
@@ -24,7 +24,6 @@ class TensorTreeOperator(Tree):
     def __init__(self, basis: BasisTree, ham_terms: List[Op]):
         self.basis: BasisTree = basis
         self.ham_terms = ham_terms
-        self.dtype = np.float64
 
         symbolic_mpo, mpoqn = construct_symbolic_mpo(basis, ham_terms)
         #from renormalizer.mps.symbolic_mpo import _format_symbolic_mpo
@@ -33,7 +32,7 @@ class TensorTreeOperator(Tree):
         node_list_op = []
         for impo, (mo, qn) in enumerate(zip(symbolic_mpo, mpoqn)):
             node_basis: TreeNodeBasis = node_list_basis[impo]
-            mo_mat = symbolic_mo_to_numeric_mo_general(node_basis.basis_sets, mo, self.dtype)
+            mo_mat = symbolic_mo_to_numeric_mo_general(node_basis.basis_sets, mo, backend.real_dtype)
             node_list_op.append(TreeNodeTensor(mo_mat, qn))
         root = copy_connection(node_list_basis, node_list_op)
         super().__init__(root)
@@ -140,7 +139,7 @@ class TensorTreeState(Tree):
     @classmethod
     def from_tensors(cls, template: "TensorTreeState", tensors):
         """QN is taken into account"""
-        tts = cls(template.basis)
+        tts = template.metacopy()
         cursor = 0
         for node, tnode in zip(tts.node_list, template.node_list):
             qnmask = template.get_qnmask(tnode)
@@ -150,6 +149,7 @@ class TensorTreeState(Tree):
             node.qn = tnode.qn
             cursor += length
         assert len(tensors) == cursor
+        tts.check_shape()
         return tts
 
     def __init__(self, basis: BasisTree, condition:Dict=None):
@@ -188,6 +188,7 @@ class TensorTreeState(Tree):
         self.tn2dofs = {tn: bn.dofs for tn, bn in self.tn2bn.items()}
 
         self.optimize_config = OptimizeConfig()
+        self.evolve_config = EvolveConfig(EvolveMethod.tdvp_vmf, force_ovlp=False)
 
     def check_shape(self):
         for snode, bnode in zip(self.node_list, self.basis.node_list):
@@ -226,7 +227,6 @@ class TensorTreeState(Tree):
             return complex(val)
 
     def add(self, other: "TensorTreeState") -> "TensorTreeState":
-        # todo: deal with dtype (check all `dtype=`). Maybe best when dealing with backend
         new = self.metacopy()
         for new_node, node1, node2 in zip(new, self, other):
             new_shape = []
@@ -245,7 +245,8 @@ class TensorTreeState(Tree):
                     new_shape.append(dim1 + dim2)
                     indices1.append(slice(0, dim1))
                     indices2.append(slice(dim1, dim1 + dim2))
-            new_node.tensor = np.zeros(new_shape, dtype=node1.tensor.dtype)
+            dtype = np.promote_types(node1.tensor.dtype, node2.tensor.dtype)
+            new_node.tensor = np.zeros(new_shape, dtype=dtype)
             indices1 = tuple(indices1)
             indices2 = tuple(indices2)
             new_node.tensor[indices1] = node1.tensor
@@ -262,7 +263,15 @@ class TensorTreeState(Tree):
     def metacopy(self):
         # node tensor and qn not set
         new = self.__class__(self.basis)
-        new.optimize_config = self.optimize_config
+        new.optimize_config = self.optimize_config.copy()
+        new.evolve_config = self.evolve_config.copy()
+        return new
+
+    def copy(self):
+        new = self.metacopy()
+        for node1, node2 in zip(new, self):
+            node1.tensor = node2.tensor.copy()
+            node1.qn = node2.qn.copy()
         return new
 
     def to_complex(self, inplace=False):
@@ -435,16 +444,18 @@ class TensorTreeState(Tree):
         return float(res)
 
     def scale(self, val, inplace=False):
-        assert inplace
-        new_mp = self
+        self.check_canonical()
+        if inplace:
+            new_mp = self
+        else:
+            new_mp = self.copy()
         if np.iscomplex(val):
             new_mp.to_complex(inplace=True)
         else:
             val = val.real
-        self.check_canonical()
-        res = self
-        res.root.tensor *= val
-        return res
+
+        new_mp.root.tensor *= val
+        return new_mp
 
     def __add__(self, other: "TensorTreeState"):
         return self.add(other)
