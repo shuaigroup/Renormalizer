@@ -38,7 +38,7 @@ class TreeNodeBasis(TreeNode):
 class TreeNodeTensor(TreeNode):
     def __init__(self, tensor, qn=None):
         super().__init__()
-        self.tensor: xp.ndarray = tensor
+        self._tensor: xp.ndarray = tensor
         self.qn: np.ndarray = qn
 
     def check_canonical(self, atol=None, assertion=True):
@@ -54,6 +54,18 @@ class TreeNodeTensor(TreeNode):
     @property
     def shape(self):
         return self.tensor.shape
+
+    @property
+    def tensor(self):
+        return self._tensor
+
+    @tensor.setter
+    def tensor(self, tensor):
+        if np.iscomplexobj(tensor):
+            dtype = backend.complex_dtype
+        else:
+            dtype = backend.real_dtype
+        self._tensor = np.asarray(tensor, dtype=dtype)
 
 
 class TreeNodeEnviron(TreeNode):

@@ -552,7 +552,7 @@ class Mps(MatrixProduct):
     def metacopy(self) -> "Mps":
         new: Mps = super().metacopy()
         new.coeff = self.coeff
-        new.optimize_config = self.optimize_config
+        new.optimize_config = self.optimize_config.copy()
         # evolve_config has its own data
         new.evolve_config = self.evolve_config.copy()
         return new
