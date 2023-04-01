@@ -6,6 +6,7 @@ import opt_einsum as oe
 from renormalizer import Op, Mps, Model
 from renormalizer.model.basis import BasisSet
 from renormalizer.mps.backend import np, backend
+from renormalizer.mps.matrix import asnumpy, asxp_oe_args
 from renormalizer.mps.svd_qn import add_outer, svd_qn, blockrecover, get_qn_mask
 from renormalizer.mps.lib import select_basis
 from renormalizer.utils.configs import OptimizeConfig, EvolveConfig, EvolveMethod
@@ -52,7 +53,9 @@ class TensorTreeOperator(Tree):
             indices_down.append(("down", str(basis.dofs)))
         output_indices = [(_id, "root", str(self.tn2dofs[self.root]))] + indices_up + indices_down
         args.append(output_indices)
-        res = oe.contract(*args)
+        res = oe.contract(*asxp_oe_args(args))
+        # to be consistent with the behavior of MPS/MPO
+        res = asnumpy(res)
         assert res.shape[0] == 1
         res = res[0]
         dim = round(np.sqrt(np.prod(res.shape)))
@@ -145,7 +148,7 @@ class TensorTreeState(Tree):
             qnmask = template.get_qnmask(tnode)
             length = np.sum(qnmask)
             node.tensor = np.zeros(tnode.shape, dtype=tensors.dtype)
-            node.tensor[qnmask] = tensors[cursor:cursor+length]
+            node.tensor[qnmask] = asnumpy(tensors[cursor:cursor+length])
             node.qn = tnode.qn
             cursor += length
         assert len(tensors) == cursor
@@ -219,7 +222,7 @@ class TensorTreeState(Tree):
         args = self.to_contract_args()
         args.extend(bra.to_contract_args(conj=True))
         args.extend(tto.to_contract_args("up", "down"))
-        val = oe.contract(*args).ravel()[0]
+        val = oe.contract(*asxp_oe_args(args)).ravel()[0]
 
         if np.isclose(float(val.imag), 0):
             return float(val.real)
@@ -294,7 +297,9 @@ class TensorTreeState(Tree):
             indices_up.append(("down", str(basis.dofs)))
         output_indices = [(_id, "root", str(self.tn2dofs[self.root]))] + indices_up
         args.append(output_indices)
-        res = oe.contract(*args)
+        res = oe.contract(*asxp_oe_args(args))
+        # to be consistent with the behavior of MPS/MPO
+        res = asnumpy(res)
         assert res.shape[0] == 1
         return res[0]
 
@@ -326,7 +331,7 @@ class TensorTreeState(Tree):
         output_indices = parent_indices.copy()
         output_indices[node.idx_as_child] = child_idx2
         args.append(output_indices)
-        node.parent.tensor = oe.contract(*args)
+        node.parent.tensor = oe.contract(*asxp_oe_args(args))
 
     def get_qnmat(self, node, include_parent=False):
         qnbigl = np.zeros(self.basis.qn_size, dtype=int)
@@ -426,7 +431,7 @@ class TensorTreeState(Tree):
         args.extend([node.parent.tensor, parent_indices])
         output_indices = self.get_node_indices(node, include_parent=True)
         args.append(output_indices)
-        return oe.contract(*args)
+        return oe.contract(*asxp_oe_args(args))
 
     @property
     def qntot(self):
@@ -523,14 +528,14 @@ class TensorTreeEnviron(Tree):
         # indices for the resulting tensor
         indices = self.get_parent_indices(enode, tts, tto)
         args.append(indices)
-        res = oe.contract(*args)
+        res = oe.contract(*asxp_oe_args(args))
         if len(enode.parent.environ_children) != len(enode.parent.children):
             # first run
-            enode.parent.environ_children.append(res)
+            enode.parent.environ_children.append(asnumpy(res))
         else:
             # updating
             ichild = snode.parent.children.index(snode)
-            enode.parent.environ_children[ichild] = res
+            enode.parent.environ_children[ichild] = asnumpy(res)
 
     def build_parent_environ_node(self, snode:TreeNodeTensor, ichild: int, tts: TensorTreeState, tto: TensorTreeOperator):
         # build the environment for the ith child of snode
@@ -561,8 +566,8 @@ class TensorTreeEnviron(Tree):
         indices = self.get_child_indices(enode, ichild, tts, tto)
 
         args.append(indices)
-        res = oe.contract(*args)
-        enode.children[ichild].environ_parent = res
+        res = oe.contract(*asxp_oe_args(args))
+        enode.children[ichild].environ_parent = asnumpy(res)
 
     def get_child_indices(self, enode, i, tts, tto):
         dofs = self.tn2dofs[enode]

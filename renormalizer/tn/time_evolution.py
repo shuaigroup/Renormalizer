@@ -4,7 +4,8 @@ import logging
 import scipy
 import opt_einsum as oe
 
-from renormalizer.mps.backend import np
+from renormalizer.mps.backend import np, xp
+from renormalizer.mps.matrix import asxp
 from renormalizer.lib import solve_ivp
 from renormalizer.tn.tree import TensorTreeOperator, TensorTreeState, TensorTreeEnviron
 from renormalizer.tn.hop_expr import hop_expr1
@@ -14,7 +15,7 @@ logger = logging.getLogger(__name__)
 
 
 def time_derivative_vmf(tts: TensorTreeState, tto: TensorTreeOperator):
-    # first get it right. Then add QN. Then benchmark and optimize
+    # todo: benchmark and optimize
     environ_s = TensorTreeEnviron(tts, TensorTreeOperator.identity(tts.basis))
     environ_h = TensorTreeEnviron(tts, tto)
 
@@ -23,15 +24,16 @@ def time_derivative_vmf(tts: TensorTreeState, tto: TensorTreeOperator):
         hop, _ = hop_expr1(node, tts, tto, environ_h)
         # idx1: children+physical, idx2: parent
         dim_parent = node.shape[-1]
+        tensor = asxp(node.tensor)
         shape_2d = (-1, dim_parent)
-        deriv = hop(node.tensor).reshape(shape_2d)
+        deriv = hop(tensor).reshape(shape_2d)
         if node.parent is not None:
             # apply projector and S^-1
-            tensor = node.tensor.reshape(shape_2d)
+            tensor = tensor.reshape(shape_2d)
             proj = tensor.conj() @ tensor.T
             ovlp = environ_s.node_list[inode].environ_parent.reshape(dim_parent, dim_parent)
             ovlp_inv = regularized_inversion(ovlp, tts.evolve_config.reg_epsilon)
-            deriv = oe.contract("bf, bg, fh -> gh", deriv, np.eye(proj.shape[0]) - proj, ovlp_inv.T)
+            deriv = oe.contract("bf, bg, fh -> gh", deriv, xp.eye(proj.shape[0]) - proj, asxp(ovlp_inv.T))
         qnmask = tts.get_qnmask(node).reshape(deriv.shape)
         deriv_list.append(deriv[qnmask].ravel())
     return np.concatenate(deriv_list)

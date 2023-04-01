@@ -1,11 +1,12 @@
 import opt_einsum as oe
 
 from renormalizer.mps.backend import np
+from renormalizer.mps.matrix import asxp
 from renormalizer.tn.node import TreeNodeTensor
 from renormalizer.tn.tree import TensorTreeState, TensorTreeOperator, TensorTreeEnviron
 
 
-def hop_expr1(snode: TreeNodeTensor, tts: TensorTreeState, tto: TensorTreeOperator, tte: TensorTreeEnviron):
+def hop_expr1(snode: TreeNodeTensor, tts: TensorTreeState, tto: TensorTreeOperator, tte: TensorTreeEnviron,):
     # one site
     enode = tte.node_list[tts.node_idx[snode]]
     onode = tto.node_list[tts.node_idx[snode]]
@@ -82,7 +83,7 @@ def _contract_expression(args, x_shape, x_indices, y_indices):
     args_fake.extend([np.empty(x_shape), x_indices])
     args_fake.append(y_indices)
     indices, tensors = oe.parser.convert_interleaved_input(args_fake)
-    args = tensors[:-1] + [x_shape]
+    args = [asxp(t) for t in tensors[:-1]] + [x_shape]
     expr = oe.contract_expression(
         indices,
         *args,
@@ -94,9 +95,11 @@ def _contract_expression(args, x_shape, x_indices, y_indices):
 def _get_hdiag(args, input_indices):
     new_args = []
     for arg in args:
-        if not isinstance(arg, tuple):
-            new_args.append(arg)
+        if not isinstance(arg, (tuple, list)):
+            # tensors
+            new_args.append(asxp(arg))
             continue
+        # indices
         arg = list(arg)
         if arg[0][-5:] == "_conj":
             # the environ
@@ -106,6 +109,6 @@ def _get_hdiag(args, input_indices):
             arg[1] = "down"
         else:
             pass
-        args.append(tuple(arg))
+        new_args.append(tuple(arg))
     new_args.append(input_indices)
     return oe.contract(*new_args)
