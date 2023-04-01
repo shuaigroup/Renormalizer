@@ -3,6 +3,7 @@ import pytest
 from renormalizer import BasisHalfSpin, Model, Mpo, Mps, Op
 from renormalizer.mps.backend import np
 from renormalizer.model.model import heisenberg_ops
+from renormalizer.utils.configs import EvolveConfig, EvolveMethod
 from renormalizer.tn.node import TreeNodeBasis
 from renormalizer.tn.tree import TensorTreeOperator, TensorTreeState, TensorTreeEnviron, from_mps
 from renormalizer.tn.treebase import BasisTree
@@ -152,10 +153,11 @@ def test_add(multi_basis):
     else:
         basis_tree = multi_basis_tree(basis_list)
     tts1 = TensorTreeState.random(basis_tree, qntot=0, m_max=4)
-    tts2 = TensorTreeState.random(basis_tree, qntot=0, m_max=2)
+    tts2 = TensorTreeState.random(basis_tree, qntot=0, m_max=2).scale(1j)
     tts3 = tts1.add(tts2)
     s1 = tts1.todense()
     s2 = tts2.todense()
+    assert np.iscomplexobj(s2)
     s3 = tts3.todense()
     np.testing.assert_allclose(s1 + s2, s3)
 
@@ -184,6 +186,7 @@ def test_vmf(geometry):
     # expand bond dimension
     tts = tts + tts.random(basis, 1, 5).scale(1e-5, inplace=True)
     tts.canonicalise()
+    tts.evolve_config = EvolveConfig(EvolveMethod.tdvp_vmf, ivp_rtol=1e-4, ivp_atol=1e-7, force_ovlp=False)
 
     tau = 0.5
     final_time = 2
