@@ -46,7 +46,7 @@ def symbolic_mo_to_numeric_mo_general(basis_sets: List[BasisSet], mo, dtype):
             mo_elem = np.eye(1) * factor
             for symbol, b in zip(term_split, basis_sets):
                 mo_elem = np.tensordot(mo_elem, b.op_mat(symbol)[None, :, :, None], axes=1)
-            assert not np.iscomplexobj(mo_elem, "complex operator not supported yet")
+            assert not np.iscomplexobj(mo_elem), "complex operator not supported yet"
             mo_tensor[i] += mo_elem[0, ..., 0]
 
     return np.moveaxis(mo_tensor, mo.ndim-1, -1)
