@@ -1,9 +1,8 @@
 from typing import List, Dict, Union
 
-
 from renormalizer.mps.backend import np, backend
+from renormalizer.mps.matrix import asnumpy
 from renormalizer.model.basis import BasisSet
-from renormalizer.mps.backend import xp
 
 
 class TreeNode:
@@ -38,7 +37,7 @@ class TreeNodeBasis(TreeNode):
 class TreeNodeTensor(TreeNode):
     def __init__(self, tensor, qn=None):
         super().__init__()
-        self._tensor: xp.ndarray = tensor
+        self._tensor: np.ndarray = tensor
         self.qn: np.ndarray = qn
 
     def check_canonical(self, atol=None, assertion=True):
@@ -65,7 +64,7 @@ class TreeNodeTensor(TreeNode):
             dtype = backend.complex_dtype
         else:
             dtype = backend.real_dtype
-        self._tensor = np.asarray(tensor, dtype=dtype)
+        self._tensor = np.asarray(asnumpy(tensor), dtype=dtype)
 
 
 class TreeNodeEnviron(TreeNode):
@@ -73,9 +72,9 @@ class TreeNodeEnviron(TreeNode):
         super().__init__()
         self.parent: TreeNodeEnviron = None
         # environ from parent
-        self.environ_parent: xp.ndarray = None
+        self.environ_parent: np.ndarray = None
         # environ from children
-        self.environ_children: List[xp.ndarray] = []
+        self.environ_children: List[np.ndarray] = []
 
 
 NodeUnion = Union[TreeNodeTensor, TreeNodeBasis, TreeNodeEnviron]

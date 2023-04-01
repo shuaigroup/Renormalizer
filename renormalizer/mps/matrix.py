@@ -314,3 +314,16 @@ def asxp(array: Union[np.ndarray, xp.ndarray, Matrix]) -> xp.ndarray:
         assert isinstance(array, np.ndarray)
         return array
     return xp.asarray(array)
+
+
+def asxp_oe_args(oe_args):
+    # opt_einsum.contract args in interleaved format
+    new_args = []
+    # the last one is the output index
+    for i in range(len(oe_args) - 1):
+        if i % 2 == 0:
+            new_args.append(asxp(oe_args[i]))
+        else:
+            new_args.append(oe_args[i])
+    new_args.append(oe_args[-1])
+    return new_args

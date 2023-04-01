@@ -6,6 +6,7 @@ import scipy
 
 from renormalizer.lib import davidson
 from renormalizer.mps.backend import primme, IMPORT_PRIMME_EXCEPTION, np
+from renormalizer.mps.matrix import asnumpy, asxp
 from renormalizer.tn.node import TreeNodeTensor
 from renormalizer.tn.tree import TensorTreeState, TensorTreeOperator, TensorTreeEnviron
 from renormalizer.tn.hop_expr import hop_expr2
@@ -64,7 +65,8 @@ def optimize_2site(snode: TreeNodeTensor, tts: TensorTreeState, tto: TensorTreeO
 
     def hop(x):
         cstruct = vec2tensor(x, qn_mask)
-        return expr(cstruct)[qn_mask].ravel()
+        ret = expr(asxp(cstruct))[qn_mask].ravel()
+        return asnumpy(ret)
 
     assert tts.optimize_config.nroots == 1
     algo:str = tts.optimize_config.algo
@@ -74,6 +76,8 @@ def optimize_2site(snode: TreeNodeTensor, tts: TensorTreeState, tto: TensorTreeO
 
 
 def eigh_iterative(hop, hdiag, cguess, algo):
+    hdiag = asnumpy(hdiag)
+    cguess = asnumpy(cguess)
     h_dim = len(hdiag)
 
     if algo == "davidson":
