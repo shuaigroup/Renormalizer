@@ -31,16 +31,26 @@ def multi_basis_tree(basis_list):
     return basis
 
 
-@pytest.mark.parametrize("multi_basis", [True, False])
-def test_tto(multi_basis):
-    nspin = 7
-    basis_list = [BasisHalfSpin(i) for i in range(nspin)]
-    if not multi_basis:
-        basis = BasisTree.binary(basis_list)
-        assert basis.size == nspin
-    else:
-        basis = multi_basis_tree(basis_list)
+nspin = 7
+basis_list = [BasisHalfSpin(i) for i in range(nspin)]
+basis_binary = BasisTree.binary(basis_list)
+basis_multi_basis = multi_basis_tree(basis_list)
 
+
+def holstein_scheme3() -> BasisTree:
+    model = holstein_model
+    node_list = [TreeNodeBasis([basis]) for basis in model.basis]
+    root = node_list[3]
+    root.add_child(node_list[0])
+    root.add_child(node_list[6])
+    for i in range(3):
+        node_list[3 * i].add_child(node_list[3 * i + 1])
+        node_list[3 * i + 1].add_child(node_list[3 * i + 2])
+    return BasisTree(root)
+
+
+@pytest.mark.parametrize("basis", [basis_binary, basis_multi_basis])
+def test_tto(basis):
     ham_terms = heisenberg_ops(nspin)
 
     tto = TensorTreeOperator(basis, ham_terms)
@@ -50,15 +60,8 @@ def test_tto(multi_basis):
     np.testing.assert_allclose(dense, dense2)
 
 
-@pytest.mark.parametrize("multi_basis", [True, False])
-def test_tts(multi_basis):
-    nspin = 7
-    basis_list = [BasisHalfSpin(i) for i in range(nspin)]
-    if not multi_basis:
-        basis = BasisTree.binary(basis_list)
-        assert basis.size == nspin
-    else:
-        basis = multi_basis_tree(basis_list)
+@pytest.mark.parametrize("basis", [basis_binary, basis_multi_basis])
+def test_tts(basis):
     ham_terms = heisenberg_ops(nspin)
     condition = {1:1, 3:1}
     tts = TensorTreeState(basis, condition)
@@ -85,16 +88,9 @@ def test_from_mps():
     np.testing.assert_allclose(e, e_ref)
 
 
-@pytest.mark.parametrize("multi_basis", [True, False])
+@pytest.mark.parametrize("basis_tree", [basis_binary, basis_multi_basis])
 @pytest.mark.parametrize("ite", [False, True])
-def test_gs_heisenberg(multi_basis, ite):
-    nspin = 7
-    basis_list = [BasisHalfSpin(i) for i in range(nspin)]
-    if not multi_basis:
-        basis_tree = BasisTree.binary(basis_list)
-        assert basis_tree.size == nspin
-    else:
-        basis_tree = multi_basis_tree(basis_list)
+def test_gs_heisenberg(basis_tree, ite):
     ham_terms = heisenberg_ops(4)
     tts = TensorTreeState.random(basis_tree, qntot=0, m_max=20)
     tto = TensorTreeOperator(basis_tree, ham_terms)
@@ -117,13 +113,7 @@ def test_gs_heisenberg(multi_basis, ite):
 def test_gs_holstein(scheme):
     if scheme == 3:
         model = holstein_model
-        node_list = [TreeNodeBasis([basis]) for basis in model.basis]
-        root = node_list[3]
-        root.add_child(node_list[0])
-        root.add_child(node_list[6])
-        for i in range(3):
-            node_list[3 * i].add_child(node_list[3 * i + 1])
-            node_list[3 * i + 1].add_child(node_list[3 * i + 2])
+        basis = holstein_scheme3()
     else:
         assert scheme == 4
         model = holstein_model.switch_scheme(4)
@@ -133,7 +123,7 @@ def test_gs_holstein(scheme):
         for i in range(3):
             root.add_child(node_list[2*i])
             node_list[2*i].add_child(node_list[2*i+1])
-    basis = BasisTree(root)
+        basis = BasisTree(root)
     m = 4
     tts = TensorTreeState.random(basis, qntot=1, m_max=m)
     tto = TensorTreeOperator(basis, model.ham_terms)
@@ -143,15 +133,8 @@ def test_gs_holstein(scheme):
     np.testing.assert_allclose(min(e1), e2)
 
 
-@pytest.mark.parametrize("multi_basis", [True, False])
-def test_add(multi_basis):
-    nspin = 7
-    basis_list = [BasisHalfSpin(i) for i in range(nspin)]
-    if not multi_basis:
-        basis_tree = BasisTree.binary(basis_list)
-        assert basis_tree.size == nspin
-    else:
-        basis_tree = multi_basis_tree(basis_list)
+@pytest.mark.parametrize("basis_tree", [basis_binary, basis_multi_basis])
+def test_add(basis_tree):
     tts1 = TensorTreeState.random(basis_tree, qntot=0, m_max=4)
     tts2 = TensorTreeState.random(basis_tree, qntot=0, m_max=2).scale(1j)
     tts3 = tts1.add(tts2)
@@ -160,6 +143,33 @@ def test_add(multi_basis):
     assert np.iscomplexobj(s2)
     s3 = tts3.todense()
     np.testing.assert_allclose(s1 + s2, s3)
+
+
+@pytest.mark.parametrize("basis_tree", [basis_binary, basis_multi_basis])
+def test_apply(basis_tree):
+    tts1 = TensorTreeState.random(basis_tree, qntot=0, m_max=4)
+    tto = TensorTreeOperator(basis_tree, heisenberg_ops(nspin))
+    tts2 = tto.apply(tts1)
+    s1 = tts1.todense()
+    s2 = tts2.todense()
+    op = tto.todense()
+    np.testing.assert_allclose(s2.ravel(), op @ s1.ravel())
+
+
+def test_compress():
+    m1 = 5
+    m2 = 4
+    basis = holstein_scheme3()
+    tto = TensorTreeOperator(basis, holstein_model.ham_terms)
+    tts = TensorTreeState.random(basis, 1, m1)
+    procedure1, procedure2 = [[[m, 0.4], [m, 0.2], [m, 0.1], [m, 0], [m, 0]] for m in [m1, m2]]
+    optimize_tts(tts, tto, procedure1)
+    tts2 = tts.copy().compress(m2)
+    optimize_tts(tts, tto, procedure2)
+    s1 = tts.todense().ravel()
+    s2 = tts2.todense().ravel()
+
+    np.testing.assert_allclose(np.abs(s1 @ s2), 1, atol=1e-5)
 
 
 @pytest.mark.parametrize("geometry", ["chain", "tree"])

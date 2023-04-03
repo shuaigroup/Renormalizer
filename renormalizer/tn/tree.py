@@ -6,7 +6,7 @@ import opt_einsum as oe
 from renormalizer import Op, Mps, Model
 from renormalizer.model.basis import BasisSet
 from renormalizer.mps.backend import np, backend
-from renormalizer.mps.matrix import asnumpy, asxp_oe_args
+from renormalizer.mps.matrix import asnumpy, asxp_oe_args, tensordot
 from renormalizer.mps.svd_qn import add_outer, svd_qn, blockrecover, get_qn_mask
 from renormalizer.mps.lib import select_basis
 from renormalizer.utils.configs import OptimizeConfig, EvolveConfig, EvolveMethod
@@ -40,6 +40,42 @@ class TensorTreeOperator(Tree):
         # tensor node to basis node
         self.tn2bn = {tn: bn for tn, bn in zip(self.node_list, self.basis.node_list)}
         self.tn2dofs = {tn: bn.dofs for tn, bn in self.tn2bn.items()}
+
+    def apply(self, tts:"TensorTreeState", canonicalise: bool=False) -> "TensorTreeState":
+        # todo: apply to mpdm. Allow partial apply and ignore some indices
+        new = tts.metacopy()
+
+        for snode1, snode2, onode in zip(new, tts, self):
+            assert len(snode2.children) == len(onode.children)
+
+            bnode = self.tn2bn[onode]
+            indices1 = tts.get_node_indices(snode2)
+            indices2 = self.get_node_indices(onode, "up", "down")
+            output_indices = []
+            output_shape = []
+            # children indices
+            for i in range(len(snode2.children)):
+                output_shape.append(snode2.shape[i] * onode.shape[i])
+                output_indices.extend([indices1[i], indices2[i]])
+            # physical indices
+            for i in range(bnode.n_sets):
+                j = len(snode2.children) + 2 * i
+                output_shape.append(onode.shape[j])
+                output_indices.append(indices2[j])
+            # parent indices
+            output_shape.append(snode2.shape[-1] * onode.shape[-1])
+            output_indices.extend([indices1[-1], indices2[-1]])
+            # do contraction
+            args = [snode2.tensor, indices1, onode.tensor, indices2, output_indices]
+            res = oe.contract(*(asxp_oe_args(args))).reshape(output_shape)
+            snode1.tensor = res
+            snode1.qn = add_outer(snode2.qn, onode.qn).reshape(output_shape[-1], tts.basis.qn_size)
+
+        new.check_shape()
+        if canonicalise:
+            new.canonicalise()
+        return new
+
 
     def todense(self, order:List[BasisSet]=None) -> np.ndarray:
         _id = str(id(self))
@@ -76,6 +112,7 @@ class TensorTreeOperator(Tree):
         for child in node.children:
             indices.append((_id, str(all_dofs), str(self.tn2dofs[child])))
         for dofs in all_dofs:
+            # interleaved up and down
             indices.append((prefix_up, str(dofs)))
             indices.append((prefix_down, str(dofs)))
         if node.parent is None:
@@ -214,7 +251,18 @@ class TensorTreeState(Tree):
 
     def canonicalise(self):
         for node in self.postorder_list()[:-1]:
-            self._push_cano(node)
+            self.push_cano_to_parent(node)
+
+    def compress(self, temp_m_trunc=None, ret_s=False):
+        s_dict: Dict[TreeNodeTensor, np.ndarray] = {self.root: np.array([1])}
+        compress_recursion(self.root, self, temp_m_trunc, s_dict)
+        self.check_shape()
+        self.check_canonical()
+        if not ret_s:
+            return self
+        else:
+            s_list = [s_dict[n] for n in self.node_list]
+            return self, s_list
 
     def expectation(self, tto: TensorTreeOperator, bra:"TensorTreeState"=None):
         if bra is None:
@@ -314,7 +362,7 @@ class TensorTreeState(Tree):
             args.extend([tensor, indices])
         return args
 
-    def _push_cano(self, node):
+    def push_cano_to_parent(self, node: TreeNodeTensor):
         assert node.parent
         # move the cano center to parent
         qnbigl, qnbigr, _ = self.get_qnmat(node, include_parent=False)
@@ -323,17 +371,62 @@ class TensorTreeState(Tree):
         # could shrink during QR
         node.tensor = u.reshape(list(node.shape[:-1]) + [u.shape[1]])
         node.qn = np.array(qnlnew)
+        # contract parent
         parent_indices = self.get_node_indices(node.parent)
         args = [node.parent.tensor, parent_indices]
-        child_idx1 = parent_indices[node.idx_as_child]
-        child_idx2 = tuple(list(child_idx1) + ["_idx2"])
+        child_idx1 = parent_indices[node.idx_as_child]  # old child index
+        child_idx2 = tuple(list(child_idx1) + ["_idx2"])  # new child index
         args.extend([v, (child_idx1, child_idx2)])
         output_indices = parent_indices.copy()
         output_indices[node.idx_as_child] = child_idx2
         args.append(output_indices)
         node.parent.tensor = oe.contract(*asxp_oe_args(args))
 
-    def get_qnmat(self, node, include_parent=False):
+    def compress_node(self, node:TreeNodeTensor, ichild:int, m:int, cano_child:bool=True) -> np.ndarray:
+        """Compress the bond between node and ichild"""
+        # left indices: other children + physical bonds + parent
+        qnbigl = np.zeros(self.basis.qn_size, dtype=int)
+        # other children
+        for child in node.children:
+            if child == node.children[ichild]:
+                continue
+            qnbigl = add_outer(qnbigl, child.qn)
+        # physical bonds
+        for b in self.tn2bn[node].basis_sets:
+            qnbigl = add_outer(qnbigl, b.sigmaqn)
+        # parent
+        qnbigl = add_outer(qnbigl, self.qntot - node.qn)
+        # right indices: the ith child
+        qnbigr = node.children[ichild].qn
+        # 2d tensor (node, child)
+        tensor = np.moveaxis(node.tensor, ichild, -1)
+        shape = list(tensor.shape)
+        tensor = tensor.reshape(-1, node.shape[ichild])
+        # u for node and v for child
+        u, s, qnl, v, s, qnr = svd_qn(
+            tensor,
+            qnbigl,
+            qnbigr,
+            self.qntot,
+            full_matrices=False,
+        )
+        orig_s = s.copy()
+        u, s, v, qnl, qnr = truncate_tensors(u, s, v, qnl, qnr, m)
+
+        if cano_child:
+            v *= s.reshape(1, -1)
+        else:
+            u *= s.reshape(1, -1)
+
+        shape[-1] = min(m, u.shape[-1])
+        node.tensor = np.moveaxis(u.reshape(shape), -1, ichild)
+        child = node.children[ichild]
+        child.tensor = tensordot(child.tensor, v, axes=[-1, 0])
+        child.qn = qnr
+        return orig_s
+
+
+    def get_qnmat(self, node:TreeNodeTensor, include_parent:bool=False):
         qnbigl = np.zeros(self.basis.qn_size, dtype=int)
         for child in node.children:
             qnbigl = add_outer(qnbigl, child.qn)
@@ -392,7 +485,7 @@ class TensorTreeState(Tree):
         shape = [-1] + shape
         parent.tensor = np.moveaxis(m_parent.reshape(shape), 0, ichild)
 
-    def get_node_indices(self, node, conj=False, include_parent=False) -> List[Tuple[str]]:
+    def get_node_indices(self, node:TreeNodeTensor, conj:bool=False, include_parent:bool=False) -> List[Tuple[str]]:
         if include_parent:
             snode_indices = self.get_node_indices(node, conj)
             parent_indices = self.get_node_indices(node.parent, conj)
@@ -464,7 +557,6 @@ class TensorTreeState(Tree):
 
     def __add__(self, other: "TensorTreeState"):
         return self.add(other)
-
 
 
 class TensorTreeEnviron(Tree):
@@ -609,9 +701,32 @@ def from_mps(mps: Mps) -> Tuple[BasisTree, TensorTreeState, TensorTreeOperator]:
         node.tensor = mps[i].array
         node.qn = mps.qn[i + 1]
         if i == 0:
-            # remove the last index
+            # remove the empty children index
             node.tensor = node.tensor[0, ...]
     tts.check_shape()
     tts.check_canonical()
     tto = TensorTreeOperator(basis, mps.model.ham_terms)
     return basis, tts, tto
+
+
+def compress_recursion(snode: TreeNodeTensor, tts: TensorTreeState, m: int, s_dict:Dict):
+    assert snode.children, "can't compress a single tree node"
+    for ichild, child in enumerate(snode.children):
+        cano_child = bool(child.children)
+        # compress snode - child
+        s = tts.compress_node(snode, ichild, m, cano_child)
+        s_dict[child] = s
+
+        if cano_child:
+            compress_recursion(child, tts, m, s_dict)
+            # cano to snode
+            tts.push_cano_to_parent(child)
+
+
+def truncate_tensors(u, s, v, qnl, qnr, m):
+    u = u[:, :m]
+    s = s[:m]
+    v = v[:, :m]
+    qnl = qnl[:m]
+    qnr = qnr[:m]
+    return u, s, v, qnl, qnr

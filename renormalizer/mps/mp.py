@@ -418,12 +418,6 @@ class MatrixProduct:
         """
         inp: canonicalise MPS (or MPO)
 
-        side='l': compress LEFT-canonicalised MPS
-                  by sweeping from RIGHT to LEFT
-                  output MPS is right canonicalised i.e. CRRR
-
-        side='r': reverse of 'l'
-
         Returns
         -------
              truncated MPS
