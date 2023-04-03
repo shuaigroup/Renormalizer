@@ -29,6 +29,7 @@ def optimize_tts(tts: TensorTreeState, tto: TensorTreeOperator, procedure=None):
 
 
 def optimize_recursion(snode: TreeNodeTensor, tts, tto, tte, m:int, percent:float=0) -> List[float]:
+    """Optimize snode and all of its children"""
     assert snode.children  # 2 site can't do only one node
     micro_e = []
     for ichild, child in enumerate(snode.children):
