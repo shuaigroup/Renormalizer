@@ -29,6 +29,9 @@ def test_expm(N, imag, block_size):
     if imag:
         v = v + v / 1j
     #res1 = expm(a1) @ v
+    # expm has bugs, so I decide to use "exact" eigh intead of expm
+    # https://github.com/scipy/scipy/issues/18086
+
     w, x = eigh(a1)
     res1 = x @ xp.diag(xp.exp(w)) @ x.conj().T @ v
     res2, _ = expm_krylov(lambda x: a2.dot(x), 1, xp.array(v), block_size)
