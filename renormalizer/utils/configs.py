@@ -85,7 +85,10 @@ class CompressConfig:
         algorithm to converge the final mps.
 
     vprocedure : list, optional
-        The procedure to do variational compression.
+        The procedure to do variational compression. In the sublist, the first
+        element is a CompressConfig, which controls the compression in each
+        sweep. For backward compatibility, it can also be an int, which indicates
+        CompressCriteria.fixed with the int as the max_bonddim.
         The Default is
 
         .. code-block::
@@ -299,6 +302,12 @@ class CompressConfig:
 class OptimizeConfig:
     r""" DMRG ground state algorithm optimization configuration
 
+        The procedure to do ground state optimization. In the sublist, the first
+        element is a CompressConfig, which controls the compression in each
+        sweep. For backward compatibility, it can also be an int, which indicates
+        CompressCriteria.fixed with the int as the max_bonddim.
+        The second element is the percent to choose the renormalied basis from
+        each symmetry block to avoid trapping into local minimum.
     """
 
     def __init__(self, procedure=None):
@@ -372,6 +381,7 @@ class EvolveConfig:
         reg_epsilon=1e-10,
         ivp_rtol=1e-5,
         ivp_atol=1e-8,
+        ivp_solver="krylov",
         force_ovlp=True
     ):
 
@@ -395,6 +405,7 @@ class EvolveConfig:
         # scipy.ivp rtol and atol
         self.ivp_rtol: float = ivp_rtol
         self.ivp_atol: float = ivp_atol
+        self.ivp_solver : str = ivp_solver
         # the EOM has already considered the non-orthogonality of the left and right
         # renormalized basis, see arXiv:1907.12044
         self.force_ovlp: bool = force_ovlp

@@ -1,5 +1,6 @@
-numpy==1.21.*
-scipy==1.7.*
+numpy==1.24.*
+scipy==1.10.*
+sympy==1.11.*
 pytest==6.2.*
 h5py==3.1.*
 PyYAML==5.4.*

@@ -5,7 +5,8 @@ import scipy.linalg
 import scipy.special
 import itertools
 import logging
-
+import sympy as sp
+import scipy.integrate
 
 logger = logging.getLogger(__name__)
 
@@ -106,6 +107,14 @@ class BasisSet:
         raise NotImplementedError
 
 
+class BasisDummy(BasisSet):
+    """
+    Dummy basis set used in soft truncated TNPI
+    """
+    def  __init__(self, dof, nbas):
+        super().__init__(dof, nbas, [0] * nbas)
+
+
 class BasisSHO(BasisSet):
     """
     simple harmonic oscillator basis set
@@ -131,8 +140,8 @@ class BasisSHO(BasisSet):
 
         self.general_xp_power = general_xp_power
 
-        # whether under recurssion
-        self._recurssion_flag = 0
+        # whether under recursion
+        self._recursion_flag = 0
 
         self.dvr = False
         self.dvr_x = None  # the expectation value of x on SHO_dvr
@@ -148,12 +157,14 @@ class BasisSHO(BasisSet):
         if not isinstance(op, Op):
             op = Op(op, None)
         op_symbol, op_factor = op.symbol, op.factor
+        
+        op_symbol = op_symbol.replace("partialx", "dx")
 
         if op_symbol in ["b", "b b", r"b^\dagger", r"b^\dagger b^\dagger", r"b^\dagger b", r"b b^\dagger", r"b^\dagger+b"]:
-            if self._recurssion_flag == 0 and not np.allclose(self.x0, 0):
+            if self._recursion_flag == 0 and not np.allclose(self.x0, 0):
                 logger.warning("the second quantization doesn't support nonzero x0")
 
-        self._recurssion_flag += 1
+        self._recursion_flag += 1
 
         # so many if-else might be a potential performance problem in the future
         # changing to lazy-evaluation dict should be better
@@ -296,8 +307,8 @@ class BasisSHO(BasisSet):
                     + self.op_mat(r"b b^\dagger")
                     - self.op_mat(r"b^\dagger b"))
 
-        elif op_symbol == "x partialx":
-            # x partialx is real, while x p is imaginary
+        elif op_symbol == "x dx":
+            # x dx is real, while x p is imaginary
             mat = (self.op_mat("x p") / -1.0j).real
 
         elif op_symbol == "p x":
@@ -306,13 +317,13 @@ class BasisSHO(BasisSet):
                     - self.op_mat(r"b b^\dagger")
                     + self.op_mat(r"b^\dagger b"))
 
-        elif op_symbol == "partialx x":
+        elif op_symbol == "dx x":
             mat = (self.op_mat("p x") / -1.0j).real
 
-        elif op_symbol == "partialx":
+        elif op_symbol == "dx":
             mat = (self.op_mat("p") / -1.0j).real
 
-        elif op_symbol in ["partialx^2", "partialx partialx"]:
+        elif op_symbol in ["dx^2", "dx dx"]:
             mat = self.op_mat("p^2") * -1
         elif op_symbol == "I":
             mat = np.eye(self.nbas)
@@ -324,7 +335,7 @@ class BasisSHO(BasisSet):
         else:
             raise ValueError(f"op_symbol:{op_symbol} is not supported. ")
 
-        self._recurssion_flag -= 1
+        self._recursion_flag -= 1
         return mat * op_factor
 
     def copy(self, new_dof):
@@ -394,8 +405,8 @@ class BasisSineDVR(BasisSet):
 
     Operators supported:
         .. math::
-            I, x, x^1, x^2, x^\textrm{moment}, partialx, partialx^2, p, p^2,
-            x partialx, x^2 p^2, x^2 partialx, x p^2, x^3 p^2
+            I, x, x^1, x^2, x^\textrm{moment}, dx, dx^2, p, p^2,
+            x dx, x^2 p^2, x^2 dx, x p^2, x^3 p^2
 
     Parameters
     ----------
@@ -413,8 +424,9 @@ class BasisSineDVR(BasisSet):
 
     """
     is_phonon = True
-
-    def __init__(self, dof, nbas, xi, xf, endpoint=False):
+    
+    def __init__(self, dof, nbas, xi, xf, endpoint=False, quadrature=False,
+            dvr=False):
 
         assert xi < xf
         if endpoint:
@@ -427,58 +439,67 @@ class BasisSineDVR(BasisSet):
 
         self.L = xf-xi
         super().__init__(dof, nbas, [0] * nbas)
+        
+        # whether under recursion
+        self._recursion_flag = 0
 
         tmp = np.arange(1,nbas+1)
         self.dvr_x = xi + tmp * self.L / (nbas+1)
         self.dvr_v = np.sqrt(2/(nbas+1)) * \
             np.sin(np.tensordot(tmp, tmp, axes=0)*np.pi/(nbas+1))
+        self.quadrature = quadrature
+        self.dvr = dvr
 
     def __str__(self):
         return f"BasisSineDVR(xi: {self.xi}, xf: {self.xf}, nbas: {self.nbas})"
 
     def op_mat(self, op: Union[Op, str]):
+        
         if not isinstance(op, Op):
             op = Op(op, None)
         op_symbol, op_factor = op.symbol, op.factor
-
+        
+        # partialx is deprecated
+        op_symbol = op_symbol.replace("partialx", "dx")
+        
+        self._recursion_flag += 1
+        
+        # operators having analytical matrix elements
         if op_symbol == "I":
             mat = np.eye(self.nbas)
 
-        elif op_symbol.split("^")[0] == "x" and " " not in op_symbol:
-            if len(op_symbol.split("^")) == 1:
-                # legacy for check
-                mat1 = np.zeros((self.nbas, self.nbas))
-                for j in range(1,self.nbas+1,1):
-                    for k in range(1,self.nbas+1,1):
-                        a1 = (j+k)*np.pi/self.L
-                        a2 = (j-k)*np.pi/self.L
-                        if (j+k)%2 == 1:
-                            res = -1/self.L*(-2/a1**2+2/a2**2)
-                        elif j-k == 0:
-                            res = self.xi + 0.5*self.L
-                        else:
-                            res = 0
-                        mat1[j-1,k-1] = res
+        elif op_symbol == "x":
+            # legacy for check
+            mat1 = np.zeros((self.nbas, self.nbas))
+            for j in range(1,self.nbas+1,1):
+                for k in range(1,self.nbas+1,1):
+                    a1 = (j+k)*np.pi/self.L
+                    a2 = (j-k)*np.pi/self.L
+                    if (j+k)%2 == 1:
+                        res = -1/self.L*(-2/a1**2+2/a2**2)
+                    elif j-k == 0:
+                        res = self.xi + 0.5*self.L
+                    else:
+                        res = 0
+                    mat1[j-1,k-1] = res
 
-                mat = self._I()*self.xi+self._u()
-                assert np.allclose(mat, mat1)
+            mat = self._I()*self.xi+self._u()
+            assert np.allclose(mat, mat1)
 
-                mat = self.dvr_v.T @ mat @ self.dvr_v
-            else:
-                moment = float(op_symbol.split("^")[1])
-                if moment == 1:
-                    mat = self.op_mat("x")
-                if moment == 2:
-                    mat = self._I()*self.xi**2+self._u()*self.xi*2+self._uu()
-                    mat = self.dvr_v.T @ mat @ self.dvr_v
-                else:
-                    mat = np.diag(self.dvr_x ** moment)
+        elif op_symbol == "x^1":
+            mat = self.op_mat("x")
 
+        elif op_symbol == "x^2":
+             mat = self._I()*self.xi**2+self._u()*self.xi*2+self._uu()
+        
+        elif op_symbol == "x^3":
+            mat = self._I()*self.xi**3 + 3*self._uu()*self.xi + 3*self._u()*self.xi**2 + self._uuu()
+        
         elif set(op_symbol.split(" ")) == set("x"):
             moment = len(op_symbol.split(" "))
             mat = self.op_mat(f"x^{moment}")
 
-        elif op_symbol == "partialx":
+        elif op_symbol == "dx":
             # legacy for check
             mat1 = np.zeros((self.nbas, self.nbas))
             for j in range(self.nbas):
@@ -490,31 +511,19 @@ class BasisSineDVR(BasisSet):
             mat = self._du()
             assert np.allclose(mat, mat1)
 
-            mat = self.dvr_v.T @ mat @ self.dvr_v
-
-        elif op_symbol in ["partialx^2", "partialx partialx"]:
+        elif op_symbol in ["dx^2", "dx dx"]:
             mat = self.op_mat("p^2") * -1
 
         elif op_symbol == "p":
-            mat = self.op_mat("partialx") * -1.0j
+            mat = self.op_mat("dx") * -1.0j
 
         elif op_symbol == "p^2":
             # legacy for check
             mat1 = np.diag(np.arange(1, self.nbas+1)*np.pi/self.L)**2
             mat = np.einsum("jk,k->jk",self._I(),self._eigene()*2)
             assert np.allclose(mat, mat1)
-            mat = self.dvr_v.T @ mat @ self.dvr_v
 
-        elif op_symbol[:3] == "cos":
-            # cos(alpha * x), the format cos(x,float)
-            term_split = op_symbol[4:-1].split(",")
-            if "j" in term_split[1]:
-                scalar = complex(term_split[1])
-            else:
-                scalar = float(term_split[1])
-            mat = np.diag(np.cos(np.diag(self.op_mat(term_split[0]))*scalar))
-
-        elif op_symbol == "x partialx":
+        elif op_symbol == "x dx":
             # legacy for check
             mat1 = np.zeros((self.nbas, self.nbas))
             for j in range(1,self.nbas+1,1):
@@ -531,7 +540,6 @@ class BasisSineDVR(BasisSet):
                     mat1[j-1,k-1] = res
             mat = self._du()*self.xi + self._udu()
             assert np.allclose(mat, mat1)
-            mat = self.dvr_v.T @ mat @ self.dvr_v
 
         elif op_symbol == "x^2 p^2":
 
@@ -555,42 +563,98 @@ class BasisSineDVR(BasisSet):
             tmp = self._I()*self.xi**2 + self._u()*2*self.xi + self._uu()
             mat = np.einsum("jk,k->jk", tmp, self._eigene()*2)
             assert np.allclose(mat, mat1)
-            mat = self.dvr_v.T @ mat @ self.dvr_v
 
-        elif op_symbol == "x^2 partialx^2":
+        elif op_symbol == "x^2 dx^2":
             mat = self.op_mat("x^2 p^2") * -1
 
-        elif op_symbol == "x^2 partialx":
+        elif op_symbol == "x^2 dx":
 
             mat = self._uudu() + 2*self.xi*self._udu() + self.xi**2*self._du()
-            mat = self.dvr_v.T @ mat @ self.dvr_v
 
         elif op_symbol == "x p^2":
             ## p^2 is 2H
-            # legacy for check
-            mat1 = self.dvr_v @ self.op_mat("x") @ self.dvr_v.T
-            mat1 = np.einsum("jk,k->jk",mat1,
-                    np.arange(1,self.nbas+1)**2*np.pi**2/self.L**2)
 
             mat = np.einsum("jk, k-> jk", self._I()*self.xi + self._u(), self._eigene()*2)
-            assert np.allclose(mat, mat1)
-            mat = self.dvr_v.T @ mat @ self.dvr_v
 
-        elif op_symbol == "x partialx^2":
+        elif op_symbol == "x dx^2":
             mat = self.op_mat("x p^2") * -1
 
         elif op_symbol == "x^3 p^2":
             tmp = self._I()*self.xi**3 + 3*self._uu()*self.xi + 3*self._u()*self.xi**2 + self._uuu()
             mat = np.einsum("jk,k->jk", tmp, self._eigene()*2)
-            mat = self.dvr_v.T @ mat @ self.dvr_v
 
-        elif op_symbol == "x^3 partialx^2":
+        elif op_symbol == "x^3 dx^2":
             mat = self.op_mat("x^3 p^2") * -1
+        
+        # operators currently not having analytical matrix elements
         else:
-            raise ValueError(f"op_symbol:{op_symbol} is not supported. ")
+            logger.warning("Note that the quadrature part is not fully tested!")
+            op_symbol = "*".join(op_symbol.split())
+            
+            # potential operators
+            if "dx" not in op_symbol:
 
+                # if dvr is True, potential term is calculated by dvr
+                if self.dvr:
+                    op_symbol = op_symbol.replace("^", "**")
+                    x = sp.symbols("x")
+                    expr = sp.lambdify(x, op_symbol, "numpy")
+                    mat = np.diag(expr(self.dvr_x))
+                    mat = self.dvr_v @ mat @ self.dvr_v.T
+                elif self.quadrature:
+                    mat = self.quad(op_symbol)
+                else:
+                    raise ValueError(f"op_symbol:{op_symbol} is not supported.You can try dvr or explicit quadrature")
+                # kinetic operators
+            else:
+                # if dvr is false, both potential and kinetic terms are calculated by
+                # quadrature
+                if self.quadrature:
+                    mat = self.quad(op_symbol)
+                else:
+                    raise ValueError(f"op_symbol:{op_symbol} is not supported. You can try explicit quadrature")
+        
+        self._recursion_flag -= 1
+
+        if self.dvr and self._recursion_flag == 0:
+            mat = self.dvr_v.T @ mat @ self.dvr_v
+        
         return mat * op_factor
+    
+    @property
+    def eigenfunc(self):
+        return "sqrt(2/sL) * sin((sibas+1)*pi*(x-sxi)/sL)" 
 
+    def quad(self, expr):
+        x,sL,sxi,sibas,sjbas = sp.symbols("x sL sxi sibas sjbas")
+        bra = self.eigenfunc
+        ket = self.eigenfunc.replace("ibas","jbas")
+        expr = "*".join((bra,expr,ket))
+        expr_s = expr.split("dx")
+        expr_s = [s.rstrip('*') for s in expr_s]
+        expr_s = [s.lstrip('*') for s in expr_s]
+        expr_s = [s.replace("^", "**") for s in expr_s]
+        if len(expr_s) == 1:
+            expr = sp.sympify(expr_s[0])
+        else:
+            expr = sp.sympify(expr_s[-1])
+            for s in expr_s[::-1][1:]:
+                expr = sp.diff(expr, x)
+                if s != "":
+                    expr = sp.sympify(s)*expr
+        expr = expr.subs({sL:self.L, sxi:self.xi})
+        print(expr)
+        expr = sp.lambdify([x, sibas, sjbas], expr, "numpy")
+    
+        mat = np.zeros((self.nbas, self.nbas))
+        for ibas in range(self.nbas):
+            for jbas in range(self.nbas):
+                val, error = scipy.integrate.quad(lambda x: expr(x, ibas, jbas), 
+                        self.xi, self.xf)
+                mat[ibas, jbas] = val
+        return mat
+
+    
     def _du(self):
         # int_0^L <j(u)|1*du|k(u)>  u=x-xi du=\frac{\partial}{\partial u}
         mat = np.zeros((self.nbas, self.nbas))
