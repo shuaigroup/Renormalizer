@@ -5,7 +5,7 @@
 import numpy as np
 
 from renormalizer.mps import Mpo
-from renormalizer.utils import TdMpsJob, Quantity
+from renormalizer.utils import TdMpsJob, Quantity, CompressConfig
 
 
 class SpectraTdMpsJobBase(TdMpsJob):
@@ -15,6 +15,7 @@ class SpectraTdMpsJobBase(TdMpsJob):
         spectratype,
         temperature,
         evolve_config=None,
+        compress_config=None,
         offset=Quantity(0),
         dump_dir=None,
         job_name=None
@@ -26,6 +27,12 @@ class SpectraTdMpsJobBase(TdMpsJob):
             self.nexciton = 1
         else:
             self.nexciton = 0
+
+        if compress_config is None:
+            self.compress_config = CompressConfig()
+        else:
+            self.compress_config = compress_config()
+
         self.temperature = temperature
         self.h_mpo: Mpo = Mpo(model, offset=offset)
         self._autocorr = []

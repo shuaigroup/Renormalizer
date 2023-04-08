@@ -38,7 +38,7 @@ Another common issue about Python is that its environment screws up quite freque
 
 Anaconda has lots of other cool features, you'll learn more while you're using it.
 
-If you find the installation of Anaconda annoying and you already have Python 3.7, in theory, you can skip the installation and use your Python directly. But if something went wrong and your Python couldn't work anymore, you'll probably feel that using Anaconda is a good idea.
+If you find the installation of Anaconda annoying and you already have Python 3.8, in theory, you can skip the installation and use your Python directly. But if something went wrong and your Python couldn't work anymore, you'll probably feel that using Anaconda is a good idea.
 
 #### Install Anaconda
 You can skip this step if you already have access to Anaconda (which means you can use `conda` command in your command line). For Linux users, don't worry if you don't have the root privilege -- installing Anaconda doesn't require root.
@@ -67,13 +67,13 @@ conda config --set show_channel_urls yes
 to let Anaconda know it can download resources from *tuna*.
 
 In this step, we're going to create a Python environment for Renormalizer using Anaconda. Two things must be taken into consideration while creating a Python environment:
-* Python version. **Python version higher than Python 3.5 is required for Renormalizer**. We recommend using Python 3.7 or higher. 
+* Python version. **Python version higher than Python 3.5 is required for Renormalizer**. We recommend using Python 3.8 or higher. 
     > Renormalizer uses *type annotation* like `a: int = 3` or `b: float = 3.0` which helps to make code clearer but requires Python 3.6 or higher. For more info about *type annotation*, see the [typing module](https://docs.python.org/3/library/typing.html) or [PEP484](https://www.python.org/dev/peps/pep-0484/).
 * Name of the environment. Choose anything you like. **In this guide we are going to use `Reno` as it is the nickname of the project**.
 
 With Python version and name of the environment determined, create the environment using the following command (Note the environment name `Reno`)
 ```
-conda create -n Reno python=3.7 -y
+conda create -n Reno python=3.8 -y
 ```
 This might take 1 to 20 minutes depending on network conditions. After the process finished, you'll have a Python environment named `Reno` managed by Anaconda.
 
@@ -83,7 +83,7 @@ To use this environment:
 
 In most cases the name of the environment will appear in the command line interface. 
 
-To verify the environment is activated, use `python --version` to ensure that you're using Python 3.7. You can also use `which python` (for Linux) or `where python` (for Windows) to see where the Python program locates. It should locate under a directory like `~/anaconda/envs/Reno/bin/` (Note the environment name `Reno` in the path).
+To verify the environment is activated, use `python --version` to ensure that you're using Python 3.8. You can also use `which python` (for Linux) or `where python` (for Windows) to see where the Python program locates. It should locate under a directory like `~/anaconda/envs/Reno/bin/` (Note the environment name `Reno` in the path).
 
 ### Download Renormalizer and run tests
 #### Download Renormalizer

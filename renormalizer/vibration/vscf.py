@@ -9,6 +9,7 @@ from renormalizer.mps.lib import Environ, cvec2cmat
 from renormalizer.mps import Mpo, Mps
 from renormalizer.mps.svd_qn import get_qn_mask
 from renormalizer.mps.matrix import asnumpy, asxp
+from renormalizer.utils import CompressConfig, CompressCriteria
 
 logger = logging.getLogger(__name__)
 
@@ -95,7 +96,9 @@ class Vscf():
                 self.e[imps] = w
 
                 cstruct = cvec2cmat(v, qn_mask, nroots=len(w))
-                mps._update_mps(cstruct[0], cidx, qnbigl, qnbigr, 1, 0)
+                mps.compress_config = CompressConfig(CompressCriteria.fixed,
+                        max_bonddim=1)
+                mps._update_mps(cstruct[0], cidx, qnbigl, qnbigr, 0)
 
                 for cs in cstruct:
                     assert cs.shape == mps[imps].shape

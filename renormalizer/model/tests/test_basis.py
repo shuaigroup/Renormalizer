@@ -104,7 +104,6 @@ def test_SineDVR(op):
     
     op = " ".join([str1, str2]).strip()
     mat = basis.op_mat(op)
-    mat = basis.dvr_v @ mat @ basis.dvr_v.T
     def psi(x, j):
         return np.sin(j*np.pi*(x-x0)/(x1-x0)) * np.sqrt(2 / (x1-x0))
     
@@ -123,4 +122,18 @@ def test_SineDVR(op):
     
     assert np.allclose(std, mat)
 
+
+
+def test_SineDVR_quadrature():
+    
+    nbas = 10
+    basis1 = Ba.BasisSineDVR("R1", nbas, 1, 7, endpoint=False)
+    basis2 = Ba.BasisSineDVR("R1", nbas, 1, 7, endpoint=False, quadrature=True)
+    mat1 = basis1.op_mat("I") + basis1.op_mat("x dx")
+    mat2 = basis2.op_mat("dx*x")
+    assert np.allclose(mat1, mat2)
+    
+    mat1 = basis1.op_mat("dx") + basis1.op_mat("x dx^2")
+    mat2 = basis2.op_mat("dx*x*dx")
+    assert np.allclose(mat1, mat2)
 

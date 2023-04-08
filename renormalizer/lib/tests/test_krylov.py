@@ -5,7 +5,7 @@ from renormalizer.mps.backend import xp
 from renormalizer.lib import expm_krylov
 import pytest
 import numpy as np
-from scipy.linalg import expm
+from scipy.linalg import expm, eigh
 
 
 @pytest.mark.parametrize("N", (
@@ -28,6 +28,8 @@ def test_expm(N, imag, block_size):
     v = np.random.rand(N)
     if imag:
         v = v + v / 1j
-    res1 = expm(a1) @ v
+    #res1 = expm(a1) @ v
+    w, x = eigh(a1)
+    res1 = x @ xp.diag(xp.exp(w)) @ x.conj().T @ v
     res2, _ = expm_krylov(lambda x: a2.dot(x), 1, xp.array(v), block_size)
     assert xp.allclose(res1, res2)

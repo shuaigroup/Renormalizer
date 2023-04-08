@@ -26,7 +26,7 @@ from renormalizer.mps.lib import (
     select_basis,
     )
 from renormalizer.mps.hop_expr import hop_expr
-from renormalizer.utils import sizeof_fmt, CompressConfig, OFS, calc_vn_entropy
+from renormalizer.utils import sizeof_fmt, CompressConfig, CompressCriteria, OFS, calc_vn_entropy
 
 logger = logging.getLogger(__name__)
 
@@ -38,16 +38,22 @@ class MatrixProduct:
         npload = np.load(fname, allow_pickle=True)
         mp = cls()
         mp.model = model
-        for i in range(int(npload["nsites"])):
+        nsites = int(npload["nsites"])
+        for i in range(nsites):
             mt = npload[f"mt_{i}"]
             if np.iscomplexobj(mt):
                 mp.dtype = backend.complex_dtype
             else:
                 mp.dtype = backend.real_dtype
             mp.append(mt)
-        mp.qn = npload["qn"]
+
+        mp.qn = []
+        for i in range(nsites+1):
+            subqn = npload[f"subqn_{i}"].astype(int).tolist()    
+            mp.qn.append(subqn)
+
         mp.qnidx = int(npload["qnidx"])
-        mp.qntot = npload["qntot"]
+        mp.qntot = npload["qntot"].astype(int)
         mp.to_right = bool(npload["to_right"])
         return mp
 
@@ -524,10 +530,18 @@ class MatrixProduct:
 
         environ = Environ(self, mpo, "L", mps_conj=mps.conj())
 
-        for isweep, (mmax, percent) in enumerate(procedure):
+        for isweep, (compress_config, percent) in enumerate(procedure):
             logger.debug(f"isweep: {isweep}")
-            logger.debug(f"mmax, percent: {mmax}, {percent}")
             logger.debug(f"mps bond dims: {mps.bond_dims}")
+            if isinstance(compress_config, CompressConfig):
+                mps.compress_config = compress_config
+                logger.debug(f"compress_config, percent: {compress_config}, {percent}")
+            elif isinstance(compress_config, int):
+                mps.compress_config = CompressConfig(CompressCriteria.fixed,
+                        max_bonddim=compress_config)
+                logger.debug(f"mmax, percent: {compress_config}, {percent}")
+            else:
+                assert False
 
             for imps in mps.iter_idx_list(full=True):
                 if method == "2site" and \
@@ -582,7 +596,7 @@ class MatrixProduct:
                 cout = hop(cms)
                 # clean up the elements which do not meet the qn requirements
                 cout[~qn_mask] = 0
-                mps._update_mps(cout, cidx, qnbigl, qnbigr, mmax, percent)
+                mps._update_mps(cout, cidx, qnbigl, qnbigr, percent)
                 if mps.compress_config.ofs is not None:
                     # need to swap the original MPS. Tedious to implement and probably not useful.
                     raise NotImplementedError("OFS for variational compress not implemented")
@@ -607,7 +621,7 @@ class MatrixProduct:
 
         return mps
 
-    def _update_mps(self, cstruct, cidx, qnbigl, qnbigr, Mmax, percent=0):
+    def _update_mps(self, cstruct, cidx, qnbigl, qnbigr, percent=0):
         r"""update mps with basis selection algorithm of J. Chem. Phys. 120,
         3172 (2004).
 
@@ -621,8 +635,6 @@ class MatrixProduct:
             The super-L-block quantum number.
         qnbigr : ndarray
             The super-R-block quantum number.
-        Mmax : int
-            The maximal bond dimension.
         percent : float, int
             The percentage of renormalized basis which is equally selected from
             each quantum number section rather than according to singular
@@ -642,6 +654,9 @@ class MatrixProduct:
         """
 
         system = "L" if self.to_right else "R"
+        
+        if self.compress_config.bonddim_should_set:
+            self.compress_config.set_bonddim(len(self)+1)
 
         # step 1: get the selected U, S, V
         if type(cstruct) is not list:
@@ -675,6 +690,12 @@ class MatrixProduct:
                 )
                 entropy1 = calc_vn_entropy(SUset1**2)
                 entropy2 = calc_vn_entropy(SUset2**2)
+                
+                # TODO: more general control according to
+                # CompressCriteria.thresh
+                assert self.compress_config.criteria == CompressCriteria.fixed
+                Mmax = self.compress_config.bond_dim_max_value
+
                 loss1 = (np.sort(SUset1)[::-1][Mmax:] ** 2).sum()
                 loss2 = (np.sort(SUset2)[::-1][Mmax:] ** 2).sum()
                 ofs = self.compress_config.ofs
@@ -707,17 +728,27 @@ class MatrixProduct:
                     # Need some additional testing at production level calculation
                     self.model: Model = Model(new_basis, self.model.ham_terms, self.model.dipole, self.model.output_ordering)
                 logger.debug(f"DOF ordering: {[b.dof for b in self.model.basis]}")
+            
+
+
 
             if self.to_right:
+                m_trunc = self.compress_config.compute_m_trunc(
+                    SUset, cidx[0], self.to_right
+                )
                 ms, msdim, msqn, compms = select_basis(
-                    Uset, SUset, qnlnew, Vset, Mmax, percent=percent
+                    Uset, SUset, qnlnew, Vset, m_trunc, percent=percent
                 )
                 ms = ms.reshape(list(qnbigl.shape[:-1]) + [msdim])
                 compms = xp.moveaxis(compms.reshape(list(qnbigr.shape[:-1]) + [msdim]), -1, 0)
 
             else:
+                m_trunc = self.compress_config.compute_m_trunc(
+                    SVset, cidx[-1], self.to_right
+                )
+                
                 ms, msdim, msqn, compms = select_basis(
-                    Vset, SVset, qnrnew, Uset, Mmax, percent=percent
+                    Vset, SVset, qnrnew, Uset, m_trunc, percent=percent
                 )
                 ms = xp.moveaxis(ms.reshape(list(qnbigr.shape[:-1]) + [msdim]), -1, 0)
                 compms = compms.reshape(list(qnbigl.shape[:-1]) + [msdim])
@@ -745,8 +776,19 @@ class MatrixProduct:
             Uset, Sset, qnnew = svd_qn.eigh_qn(
                 asnumpy(ddm), qnbigl, qnbigr, self.qntot, system=system
             )
+            
+            
+            if self.to_right:
+                m_trunc = self.compress_config.compute_m_trunc(
+                    Sset, cidx[0], self.to_right
+                )
+            else:
+                m_trunc = self.compress_config.compute_m_trunc(
+                    Sset, cidx[-1], self.to_right
+                )
+            
             ms, msdim, msqn, compms = select_basis(
-                Uset, Sset, qnnew, None, Mmax, percent=percent
+                Uset, Sset, qnnew, None, m_trunc, percent=percent
             )
             rotated_c = []
             averaged_ms = []
@@ -890,6 +932,31 @@ class MatrixProduct:
                 assert False
 
         return complex(e0[0, 0])
+    
+    def dot_ob(self, other: "MatrixProduct") -> complex:
+        """
+        dot product of two mps / mpo with open boundary, but the boundary of mps/mpo is larger than
+        1, different from the normal mps/mpo
+        """
+
+        assert len(self) == len(other)
+        
+        e0 = xp.eye(self[0].shape[0])
+        tmp = xp.eye(other[0].shape[0])
+        e0 = tensordot(e0, tmp, 0).transpose(0,2,1,3)
+        
+        for mt1, mt2 in zip(self, other):
+            e0 = tensordot(e0, mt2.array, 1)
+            if mt1.ndim == 3:
+                e0 = tensordot(e0, mt1.array, ([2, 3], [0, 1])).transpose(0,1,3,2)
+            elif mt1.ndim == 4:
+                e0 = tensordot(e0, mt1.array, ([2, 3, 4], [0, 1, 2])).transpose(0,1,3,2)
+            else:
+                assert False
+
+        return e0
+
+
 
     def angle(self, other):
         return abs(self.conj().dot(other))
@@ -1006,18 +1073,18 @@ class MatrixProduct:
 
         data_dict = dict()
         # version of the protocol
-        data_dict["version"] = "0.3"
+        data_dict["version"] = "0.4"
         data_dict["nsites"] = self.site_num
         for idx, mt in enumerate(self):
             data_dict[f"mt_{idx}"] = mt.array
-        for attr in ["qn", "qnidx", "qntot", "to_right"] + other_attrs:
+
+        for attr in ["qnidx", "qntot", "qn", "to_right"] + other_attrs:
             data_dict[attr] = getattr(self, attr)
-            # qn is ragged array which will raise a VisibleDeprecationWarning
-            # and convert it to np.object
         qn = data_dict['qn']
         arr = np.empty(len(qn), object)
         arr[:] = qn
         data_dict['qn'] = arr
+        
         try:
             np.savez(fname, **data_dict)
         except Exception:
@@ -1098,6 +1165,8 @@ class MatrixProduct:
 
     def append(self, array):
         new_mt = self._array2mt(array, len(self))
+        if len(self._mp) != 0:
+            assert new_mt.array.shape[0] == self._mp[-1].shape[-1]
         self._mp.append(new_mt)
 
     def __str__(self):
@@ -1120,3 +1189,17 @@ class MatrixProduct:
                 shutil.rmtree(dir_with_id)
             except OSError:
                 logger.exception(f"Removing temperary dump dir {dir_with_id} failed")
+    
+    @classmethod
+    def from_mp(cls, model, mplist):
+        # mps/mpo/mpdm from matrix product
+        mp = cls()
+        mp.model = model
+        for mt in mplist:
+            if np.iscomplexobj(mt):
+                mp.dtype = backend.complex_dtype
+                break
+        for mt in mplist:
+            mp.append(mt)
+        mp.build_empty_qn()
+        return mp

@@ -110,9 +110,11 @@ def test_tdvp_vmf(init_state, with_mu, force_ovlp, atol):
 
 @pytest.mark.parametrize("init_state", (init_mps, init_mpdm))
 @pytest.mark.parametrize("tdvp_cmf_c_trapz", (True, False))
-def test_tdvp_cmf(init_state,tdvp_cmf_c_trapz):
+@pytest.mark.parametrize("solver", ("krylov", "RK45"))
+def test_tdvp_cmf(init_state,tdvp_cmf_c_trapz,solver):
     mps = init_state.copy()
-    mps.evolve_config  = EvolveConfig(EvolveMethod.tdvp_mu_cmf)
+    mps.evolve_config  = EvolveConfig(EvolveMethod.tdvp_mu_cmf,
+            ivp_solver=solver)
     mps.evolve_config.tdvp_cmf_c_trapz = tdvp_cmf_c_trapz
     check_result(mps, mpo, 0.01, 0.5, 5e-4)
 
@@ -121,9 +123,10 @@ def test_tdvp_cmf(init_state,tdvp_cmf_c_trapz):
         [init_mps, mpo],
         [init_mpdm, mpo],
 ))
-def test_tdvp_ps(init_state, mpo):
+@pytest.mark.parametrize("solver", ("krylov", "RK45"))
+def test_tdvp_ps(init_state, mpo, solver):
     mps = init_state.copy()
-    mps.evolve_config  = EvolveConfig(EvolveMethod.tdvp_ps)
+    mps.evolve_config  = EvolveConfig(EvolveMethod.tdvp_ps, ivp_solver=solver)
     check_result(mps, mpo, 0.4, 5)
 
 
@@ -131,10 +134,11 @@ def test_tdvp_ps(init_state, mpo):
         [init_mps, mpo],
         [init_mpdm, mpo],
 ))
-def test_tdvp_ps2(init_state, mpo):
+@pytest.mark.parametrize("solver", ("krylov", "RK45"))
+def test_tdvp_ps2(init_state, mpo, solver):
     mps = init_state.copy()
-    mps.evolve_config  = EvolveConfig(EvolveMethod.tdvp_ps2)
-    mps.compress_config = CompressConfig(max_bonddim=5)
+    mps.evolve_config  = EvolveConfig(EvolveMethod.tdvp_ps2, ivp_solver=solver)
+    mps.compress_config = CompressConfig(CompressCriteria.fixed, max_bonddim=5)
     # lower accuracy because of the truncation,
     # which is included to test the ability of adjusting bond dimension
     mps = check_result(mps, mpo, 0.4, 5, atol=5e-4)
@@ -152,7 +156,7 @@ def test_ofs(init_state, mpo):
     # avoid the side-effect of OFS
     mpo = mpo.copy()
     mps.evolve_config  = EvolveConfig(EvolveMethod.tdvp_ps2)
-    mps.compress_config = CompressConfig(max_bonddim=5, ofs=OFS.ofs_s)
+    mps.compress_config = CompressConfig(CompressCriteria.fixed, max_bonddim=5, ofs=OFS.ofs_s)
     # same truncation, yet more accurate than simple tdvp-ps2
     mps = check_result(mps, mpo, 0.4, 5, atol=1e-4)
     assert max(mps.bond_dims) == 5

@@ -330,6 +330,8 @@ class Mpo(MatrixProduct):
         # todo: use meta copy to save time, could be subtle when complex type is involved
         # todo: inplace version (saved memory and can be used in `hybrid_exact_propagator`)
         # the model is the same as the mps.model
+        
+        assert self.site_num == mp.site_num
         new_mps = self.promote_mt_type(mp.copy())
         if mp.is_mps:
             # mpo x mps
@@ -474,12 +476,3 @@ class Mpo(MatrixProduct):
     def __matmul__(self, other):
         return self.apply(other)
 
-    @classmethod
-    def from_mp(cls, model, mp):
-        # mpo from matrix product
-        mpo = cls()
-        mpo.model = model
-        for mt in mp:
-            mpo.append(mt)
-        mpo.build_empty_qn()
-        return mpo

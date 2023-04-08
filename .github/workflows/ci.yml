@@ -30,6 +30,9 @@ jobs:
         run: |
             cd example; bash run.sh
             cd ..
+      - name: install pandoc
+        run:
+            sudo apt-get install pandoc
       - name: test build doc
         run: |
           cd doc

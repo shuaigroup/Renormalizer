@@ -142,6 +142,8 @@ def test_variational_compress(comp, mp):
     # 2site algorithm
     mps.compress_config.vprocedure = [[M,1.0],[M,0.2],[M,0.1]]+[[M,0],]*10
     mps.compress_config.vmethod = "2site"
+    mps.compress_config.bond_dim_max_value = M
+    mps.compress_config.criteria = CompressCriteria.fixed
     var_mps = mps.variational_compress(mpo, guess=None)
     dis = var_mps.distance(std_mps)/std_mps.mp_norm
     print(f"var2_mps: {var_mps}, dis: {dis}")
@@ -152,6 +154,8 @@ def test_variational_compress(comp, mp):
     # 1site algorithm is easy to be trapped in a local minimum
     var_mps.compress_config.vprocedure = [[M,0],]*10
     var_mps.compress_config.vmethod = "1site"
+    var_mps.compress_config.bond_dim_max_value = M
+    var_mps.compress_config.criteria = CompressCriteria.fixed
     var_mps = mps.variational_compress(mpo, guess=var_mps)
     dis = var_mps.distance(std_mps)/std_mps.mp_norm
     print(f"var1_mps: {var_mps}, dis: {dis}")

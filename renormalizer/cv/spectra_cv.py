@@ -5,11 +5,12 @@ import numpy as np
 from multiprocessing import Pool
 import multiprocessing
 from renormalizer.mps import Mpo
-from renormalizer.utils import Quantity
+from renormalizer.utils import Quantity, CompressCriteria, CompressConfig
 from renormalizer.utils.elementop import construct_e_op_dict, ph_op_matrix
 import importlib.util
 import logging
 from typing import List
+
 
 logger = logging.getLogger(__name__)
 
@@ -103,6 +104,8 @@ class SpectraCv(object):
         else:
             self.cv_mps = cv_mps
         
+        self.cv_mps.compress_config = CompressConfig(CompressCriteria.fixed, max_bonddim=m_max)
+
         # results
         self.hop_time = []
         self.macro_iteration_result = []

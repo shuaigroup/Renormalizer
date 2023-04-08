@@ -340,17 +340,20 @@ class Mps(MatrixProduct):
         npload = np.load(fname, allow_pickle=True)
         mp = cls()
         mp.model = model
-        for i in range(int(npload["nsites"])):
+        nsites = int(npload["nsites"])
+        for i in range(nsites):
             mt = npload[f"mt_{i}"]
             if np.iscomplexobj(mt):
                 mp.dtype = backend.complex_dtype
             else:
                 mp.dtype = backend.real_dtype
             mp.append(mt)
+        
+        version = npload["version"]
         mp.qn = npload["qn"]
         mp.qnidx = int(npload["qnidx"])
-        mp.qntot = npload["qntot"]
-        version = npload["version"]
+        mp.qntot = npload["qntot"].astype(int)
+
         if version == "0.1":
             mp.to_right = bool(npload["left"])
             # in this protocol, TDH and coeff is not dumped
@@ -361,7 +364,7 @@ class Mps(MatrixProduct):
             # in this protocol, TDH is dumped, but it's not useful anymore
             logger.warning("Using old dump/load protocol. TD Hartree part will be lost")
             mp.coeff = npload["tdh_wfns"][-1]
-        elif version == "0.3":
+        elif version in ["0.3", "0.4"]:
             mp.to_right = bool(npload["to_right"])
             mp.coeff = npload["coeff"].item(0)
         else:
@@ -1190,9 +1193,21 @@ class Mps(MatrixProduct):
                                     coef, ovlp_inv1=S_L_inv_list[imps+1],
                                     ovlp_inv0=S_L_inv_list[imps], ovlp0=S_L_list[imps])
                             return func(0, y)
+                        
+                        if self.evolve_config.ivp_solver == "krylov":
+                            ms, Lanczos_vectors = expm_krylov(func1, evolve_dt, mps[imps].ravel().array)
+                            logger.debug(f"# of Lanczos_vectors, {Lanczos_vectors}")
+                        else:
+                            sol = solve_ivp(lambda t, y: func1(y), 
+                                    (0, evolve_dt), 
+                                    mps[imps].ravel().array,
+                                    method=self.evolve_config.ivp_solver,
+                                    rtol=self.evolve_config.ivp_rtol,
+                                    atol=self.evolve_config.ivp_atol,
+                                    )
+                            ms = sol.y
+                            logger.debug(f"# of Hc, {sol.nfev}")
 
-                        ms, Lanczos_vectors = expm_krylov(func1, evolve_dt, mps[imps].ravel().array)
-                        logger.debug(f"# of Lanczos_vectors, {Lanczos_vectors}")
                         mps[imps] = ms.reshape(shape)
 
                     if loop == 1 and self.evolve_config.tdvp_cmf_c_trapz:
@@ -1261,8 +1276,14 @@ class Mps(MatrixProduct):
         # one-site
         if np.iscomplex(evolve_dt):
             mps = self.copy()
+            if self.evolve_config.ivp_solver != "krylov":
+                evolve_dt = -evolve_dt.imag
+                # used in calculating derivatives
+                coef = -1
         else:
             mps = self.to_complex()
+            if self.evolve_config.ivp_solver != "krylov":
+                coef = 1j
 
         # construct the environment matrix
         # almost half is not used. Not a big deal.
@@ -1279,10 +1300,23 @@ class Mps(MatrixProduct):
 
                 shape = list(mps[imps].shape)
                 hop = hop_expr(l_array, r_array, [asxp(mpo[imps].array)], shape)
-                mps_t, j = expm_krylov(
-                    lambda y: hop(y.reshape(shape)).ravel(),
-                    -1j * evolve_dt / 2, mps[imps].ravel().array
-                )
+
+                if self.evolve_config.ivp_solver == "krylov":
+                    mps_t, j = expm_krylov(
+                        lambda y: hop(y.reshape(shape)).ravel(),
+                        -1j * evolve_dt / 2, mps[imps].ravel().array
+                    )
+                else:
+                    sol = solve_ivp(
+                        lambda t, y: hop(y.reshape(shape)).ravel() / coef,
+                        (0, evolve_dt/2),
+                        mps[imps].ravel().array,
+                        method=self.evolve_config.ivp_solver,
+                        rtol=self.evolve_config.ivp_rtol,
+                        atol=self.evolve_config.ivp_atol,
+                    )
+                    mps_t, j = sol.y, sol.nfev
+
                 local_steps.append(j)
                 mps_t = mps_t.reshape(shape)
 
@@ -1310,10 +1344,22 @@ class Mps(MatrixProduct):
                     # reverse update u site
                     shape_u = u.shape
                     hop_u = hop_expr(l_array, r_array, [], shape_u)
-                    mps_t, j = expm_krylov(
-                        lambda y: hop_u(y.reshape(shape_u)).ravel(),
-                        1j * evolve_dt / 2, u.ravel()
-                    )
+                    if self.evolve_config.ivp_solver == "krylov":
+                        mps_t, j = expm_krylov(
+                            lambda y: hop_u(y.reshape(shape_u)).ravel(),
+                            1j * evolve_dt / 2, u.ravel()
+                        )
+                    else:
+                        sol = solve_ivp(
+                            lambda t, y: hop_u(y.reshape(shape_u)).ravel() / -coef,
+                            (0, evolve_dt/2),
+                            u.ravel(),
+                            method=self.evolve_config.ivp_solver,
+                            rtol=self.evolve_config.ivp_rtol,
+                            atol=self.evolve_config.ivp_atol,
+                        )
+                        mps_t, j = sol.y, sol.nfev
+
                     local_steps.append(j)
                     mps_t = mps_t.reshape(shape_u)
 
@@ -1331,10 +1377,22 @@ class Mps(MatrixProduct):
                     # reverse update svt site
                     shape_svt = vt.shape
                     hop_svt = hop_expr(l_array, r_array, [], shape_svt)
-                    mps_t, j = expm_krylov(
-                        lambda y: hop_svt(y.reshape(shape_svt)).ravel(),
-                        1j * evolve_dt / 2, vt.ravel()
-                    )
+                    if self.evolve_config.ivp_solver == "krylov":
+                        mps_t, j = expm_krylov(
+                            lambda y: hop_svt(y.reshape(shape_svt)).ravel(),
+                            1j * evolve_dt / 2, vt.ravel()
+                        )
+                    else:
+                        sol = solve_ivp(
+                            lambda t, y: hop_svt(y.reshape(shape_svt)).ravel() / -coef,
+                            (0, evolve_dt/2),
+                            vt.ravel(),
+                            method=self.evolve_config.ivp_solver,
+                            rtol=self.evolve_config.ivp_rtol,
+                            atol=self.evolve_config.ivp_atol,
+                        )
+                        mps_t, j = sol.y, sol.nfev
+
                     local_steps.append(j)
                     mps_t = mps_t.reshape(shape_svt)
 
@@ -1357,10 +1415,14 @@ class Mps(MatrixProduct):
         # two-site
         if np.iscomplex(evolve_dt):
             mps = self.copy()
+            if self.evolve_config.ivp_solver != "krylov":
+                evolve_dt = -evolve_dt.imag
+                # used in calculating derivatives
+                coef = -1
         else:
             mps = self.to_complex()
-
-        M = self.compress_config.bond_dim_max_value
+            if self.evolve_config.ivp_solver != "krylov":
+                coef = 1j
 
         # construct the environment matrix
         # almost half is not used. Not a big deal.
@@ -1388,16 +1450,29 @@ class Mps(MatrixProduct):
                 # the two-site matrix state
                 ms2 = tensordot(mps[cidx0], mps[cidx1], axes=1)
                 hop = hop_expr(l_array, r_array, [mpo[cidx0], mpo[cidx1]], ms2.shape)
-                mps_t, j = expm_krylov(
-                    lambda y: hop(y.reshape(ms2.shape)).ravel(),
-                    -1j * evolve_dt / 2,
-                    ms2.ravel()
-                )
+                
+                if self.evolve_config.ivp_solver == "krylov":
+                    mps_t, j = expm_krylov(
+                        lambda y: hop(y.reshape(ms2.shape)).ravel(),
+                        -1j * evolve_dt / 2,
+                        ms2.ravel()
+                    )
+                else:
+                    sol = solve_ivp(
+                        lambda t, y: hop(y.reshape(ms2.shape)).ravel() / coef,
+                        (0, evolve_dt/2),
+                        ms2.ravel(),
+                        method=self.evolve_config.ivp_solver,
+                        rtol=self.evolve_config.ivp_rtol,
+                        atol=self.evolve_config.ivp_atol,
+                    )
+                    mps_t, j = sol.y, sol.nfev
+                    
                 local_steps.append(j)
 
                 mps_t = mps_t.reshape(ms2.shape)
                 qnbigl, qnbigr, _ = mps._get_big_qn([cidx0, cidx1])
-                mps._update_mps(mps_t, [cidx0, cidx1], qnbigl, qnbigr, M)
+                mps._update_mps(mps_t, [cidx0, cidx1], qnbigl, qnbigr)
                 if mps.compress_config.ofs is not None:
                     mpo.try_swap_site(mps.model, mps.compress_config.ofs_swap_jw)
                 if imps == last_idx:
@@ -1415,10 +1490,24 @@ class Mps(MatrixProduct):
                 # reverse update the next site
                 ms1 = mps[cidx2]
                 hop = hop_expr(l_array, r_array, [mpo[cidx2]], ms1.shape)
-                mps_t, j = expm_krylov(
-                    lambda y: hop(y.reshape(ms1.shape)).ravel(),
-                    1j * evolve_dt / 2, ms1.ravel()
-                )
+                
+
+                if self.evolve_config.ivp_solver == "krylov":
+                    mps_t, j = expm_krylov(
+                        lambda y: hop(y.reshape(ms1.shape)).ravel(),
+                        1j * evolve_dt / 2, ms1.ravel()
+                    )
+                else:
+                    sol = solve_ivp(
+                        lambda t, y: hop(y.reshape(ms1.shape)).ravel() / -coef,
+                        (0, evolve_dt/2),
+                        ms1.ravel(),
+                        method=self.evolve_config.ivp_solver,
+                        rtol=self.evolve_config.ivp_rtol,
+                        atol=self.evolve_config.ivp_atol,
+                    )
+                    mps_t, j = sol.y, sol.nfev
+
                 local_steps.append(j)
                 mps_t = mps_t.reshape(ms1.shape)
                 mps[cidx2] = mps_t
@@ -1429,7 +1518,7 @@ class Mps(MatrixProduct):
         steps_stat = stats.describe(local_steps)
         logger.debug(f"TDVP-PS Krylov space: {steps_stat}")
         mps.evolve_config.stat = steps_stat
-
+        #logger.debug(f"current mps: {mps}")
         return mps
 
     def evolve_exact(self, h_mpo, evolve_dt, space):

@@ -31,6 +31,7 @@ class SpectraZeroT(SpectraTdMpsJobBase):
         spectratype,
         optimize_config=None,
         evolve_config=None,
+        compress_config=None,
         offset=Quantity(0),
     ):
         if optimize_config is None:
@@ -39,7 +40,7 @@ class SpectraZeroT(SpectraTdMpsJobBase):
             self.optimize_config = optimize_config
 
         super(SpectraZeroT, self).__init__(
-            model, spectratype, Quantity(0), evolve_config, offset
+            model, spectratype, Quantity(0), evolve_config, compress_config, offset
         )
 
     def init_mps(self):
@@ -52,6 +53,8 @@ class SpectraZeroT(SpectraTdMpsJobBase):
         a_ket_mps.normalize("mps_norm_to_coeff")
         a_ket_mps.evolve_config = self.evolve_config
         a_bra_mps = a_ket_mps.copy()
+        a_bra_mps.compress_config = self.compress_config
+        a_ket_mps.compress_config = self.compress_config
         return BraKetPair(a_bra_mps, a_ket_mps)
 
     def get_imps(self):
