@@ -76,6 +76,18 @@ def test_tts(basis):
             np.testing.assert_allclose(e3, e2)
 
 
+@pytest.mark.parametrize("basis", [basis_binary, basis_multi_basis])
+def test_push_cano(basis):
+    tts = TensorTreeState.random(basis, 0, 5, 1)
+    s1 = tts.todense()
+    tts.push_cano_to_child(tts.root, 0)
+    s2 = tts.todense()
+    np.testing.assert_allclose(s2, s1)
+    tts.push_cano_to_parent(tts.root.children[0])
+    s3 = tts.todense()
+    np.testing.assert_allclose(s3, s1)
+
+
 def test_from_mps():
     mps = Mps.random(model, 1, 10)
     mpo = Mpo(model)
