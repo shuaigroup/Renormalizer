@@ -3,6 +3,7 @@ from typing import List
 
 from print_tree import print_tree
 
+from renormalizer import Op
 from renormalizer.model.basis import BasisSet
 from renormalizer.tn.node import NodeUnion, TreeNodeBasis
 
@@ -82,7 +83,9 @@ class BasisTree(Tree):
             raise ValueError(f"Inconsistent quantum number size: {set(qn_size_list)}")
         self.qn_size: int = qn_size_list[0]
         # identity operator
-        self.identity_op = None
+        self.identity_op: Op = Op("I", self.root.dofs[0][0])
+        # identity tto
+        self.identity_tto = None
 
     def print(self):
         class print_tn_basis(print_tree):

@@ -38,7 +38,6 @@ class MpDm(Mps, Mpo):
 
         mpo.optimize_config = mps.optimize_config
         mpo.evolve_config = mps.evolve_config
-        mpo.compress_add = mps.compress_add
 
         mpo.qn = [qn.copy() for qn in mps.qn]
         mpo.qntot = mps.qntot
