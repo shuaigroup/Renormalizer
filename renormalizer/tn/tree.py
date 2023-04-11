@@ -446,26 +446,27 @@ class TensorTreeState(Tree):
         args.append(output_indices)
         node.parent.tensor = oe.contract(*asxp_oe_args(args))
 
+    def push_cano_to_child(self, node:TreeNodeTensor, ichild):
+        qnbigl, qnbigr, tensor, shape = moveaxis(self, node, ichild)
+        # u for node and v for child
+        u, qnl, v, qnr = svd_qn(
+            tensor,
+            qnbigl,
+            qnbigr,
+            self.qntot,
+            QR=True,
+            system="L",
+            full_matrices=False
+        )
+        shape[-1] = u.shape[-1]
+        node.tensor = np.moveaxis(u.reshape(shape), -1, ichild)
+        child = node.children[ichild]
+        child.tensor = tensordot(child.tensor, v, axes=[-1, 0])
+        child.qn = qnr
+
     def compress_node(self, node:TreeNodeTensor, ichild:int, temp_m_trunc:int=None, cano_child:bool=True) -> np.ndarray:
         """Compress the bond between node and ichild"""
-        # left indices: other children + physical bonds + parent
-        qnbigl = np.zeros(self.basis.qn_size, dtype=int)
-        # other children
-        for child in node.children:
-            if child == node.children[ichild]:
-                continue
-            qnbigl = add_outer(qnbigl, child.qn)
-        # physical bonds
-        for b in self.tn2bn[node].basis_sets:
-            qnbigl = add_outer(qnbigl, b.sigmaqn)
-        # parent
-        qnbigl = add_outer(qnbigl, self.qntot - node.qn)
-        # right indices: the ith child
-        qnbigr = node.children[ichild].qn
-        # 2d tensor (node, child)
-        tensor = np.moveaxis(node.tensor, ichild, -1)
-        shape = list(tensor.shape)
-        tensor = tensor.reshape(-1, node.shape[ichild])
+        qnbigl, qnbigr, tensor, shape = moveaxis(self, node, ichild)
         # u for node and v for child
         u, s, qnl, v, s, qnr = svd_qn(
             tensor,
@@ -529,7 +530,7 @@ class TensorTreeState(Tree):
         assert parent is not None
         qnbigl, qnbigr, _ = self.get_qnmat(node, include_parent=True)
         dim1 = np.prod(qnbigl.shape)
-        tensor = tensor.reshape(dim1, -1)
+        tensor = asnumpy(tensor.reshape(dim1, -1))
         # u for snode and v for parent
         # duplicate with MatrixProduct._udpate_mps. Should consider merging when doing e.g. state averaged algorithm.
         u, su, qnlnew, v, sv, qnrnew = svd_qn(tensor, qnbigl, qnbigr, self.qntot)
@@ -609,6 +610,10 @@ class TensorTreeState(Tree):
             res = 0
         res = np.sqrt(res)
         return float(res)
+
+    @property
+    def bond_dims(self):
+        return [node.tensor.shape[-1] for node in self]
 
     def scale(self, val, inplace=False):
         self.check_canonical()
@@ -799,3 +804,25 @@ def truncate_tensors(u, s, v, qnl, qnr, m):
     qnl = qnl[:m]
     qnr = qnr[:m]
     return u, s, v, qnl, qnr
+
+
+def moveaxis(tts:TensorTreeState, node:TreeNodeTensor, ichild:int):
+    # left indices: other children + physical bonds + parent
+    qnbigl = np.zeros(tts.basis.qn_size, dtype=int)
+    # other children
+    for child in node.children:
+        if child == node.children[ichild]:
+            continue
+        qnbigl = add_outer(qnbigl, child.qn)
+    # physical bonds
+    for b in tts.tn2bn[node].basis_sets:
+        qnbigl = add_outer(qnbigl, b.sigmaqn)
+    # parent
+    qnbigl = add_outer(qnbigl, tts.qntot - node.qn)
+    # right indices: the ith child
+    qnbigr = node.children[ichild].qn
+    # 2d tensor (node, child)
+    tensor = np.moveaxis(node.tensor, ichild, -1)
+    shape = list(tensor.shape)
+    tensor = tensor.reshape(-1, node.shape[ichild])
+    return qnbigl, qnbigr, tensor, shape

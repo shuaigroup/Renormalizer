@@ -42,7 +42,7 @@ def optimize_recursion(snode: TreeNodeTensor, tts, tto, tte, m:int, percent:floa
             tts.update_2site(child, c, m, percent, cano_parent=False)
             # update env
             tte.update_2site(child, tts, tto)
-            # recursion optimization
+            # recursive optimization
             micro_e_child = optimize_recursion(child, tts, tto, tte, m)
             micro_e.extend(micro_e_child)
 
