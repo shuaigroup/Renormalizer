@@ -1,13 +1,16 @@
+from math import factorial
 from typing import Union
 import logging
 
 import scipy
 import opt_einsum as oe
 
+from renormalizer.mps.lib import compressed_sum
 from renormalizer.mps.backend import np, xp
 from renormalizer.mps.matrix import asxp
 from renormalizer.lib import solve_ivp
-from renormalizer.tn.tree import TensorTreeOperator, TensorTreeState, TensorTreeEnviron
+from renormalizer.utils.configs import EvolveMethod
+from renormalizer.tn.tree import TensorTreeOperator, TensorTreeState, TensorTreeEnviron, EVOLVE_METHODS
 from renormalizer.tn.hop_expr import hop_expr1
 
 
@@ -69,21 +72,11 @@ def regularized_inversion(m, eps):
     return evecs @ np.diag(1 / evals) @ evecs.T.conj()
 
 
-def evolve(tts:TensorTreeState, tto:TensorTreeOperator, tau:Union[complex, float], first_step=None):
-    imag_time = np.iscomplex(tau)
-    # trick to avoid complex algebra
-    # exp{coeff * H * tau}
-    # coef and tau are different from MPS implementation
-    if imag_time:
-        coef = 1
-        tau = tau.imag
-    else:
-        coef = -1j
-        tts = tts.to_complex()
+def evolve_tdvp_vmf(tts:TensorTreeState, tto:TensorTreeOperator, coeff:Union[complex, float], tau:float, first_step=None):
 
     def ivp_func(t, params):
         tts_t = TensorTreeState.from_tensors(tts, params)
-        return coef * time_derivative_vmf(tts_t, tto)
+        return coeff * time_derivative_vmf(tts_t, tto)
     init_y = np.concatenate([node.tensor[tts.get_qnmask(node)].ravel() for node in tts.node_list])
     atol = tts.evolve_config.ivp_atol
     rtol = tts.evolve_config.ivp_rtol
@@ -92,3 +85,16 @@ def evolve(tts:TensorTreeState, tto:TensorTreeOperator, tau:Union[complex, float
     new_tts = TensorTreeState.from_tensors(tts, sol.y[:, -1])
     new_tts.canonicalise()
     return new_tts
+
+
+def evolve_prop_and_compress_tdrk4(tts:TensorTreeState, tto:TensorTreeOperator, coeff:Union[complex, float], tau:float):
+    termlist = [tts]
+    for i in range(4):
+        termlist.append(tto.contract(termlist[-1]))
+    for i, term in enumerate(termlist):
+        term.scale((coeff * tau) ** i / factorial(i), inplace=True)
+    return compressed_sum(termlist)
+
+
+EVOLVE_METHODS[EvolveMethod.tdvp_vmf] = evolve_tdvp_vmf
+EVOLVE_METHODS[EvolveMethod.prop_and_compress_tdrk4] = evolve_prop_and_compress_tdrk4

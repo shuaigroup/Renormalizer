@@ -70,8 +70,6 @@ class MatrixProduct:
         # if sweeping to right: True else False
         self.to_right: bool = None
 
-        # compress after add?
-        self.compress_add: bool = False
 
     @property
     def site_num(self):
@@ -409,9 +407,6 @@ class MatrixProduct:
         # qn at the boundary should have dimension 1
         new_mps.qn[0] = np.zeros((1, new_mps.qn[0].shape[1]), dtype=int)
         new_mps.qn[-1] = np.zeros((1, new_mps.qn[0].shape[1]), dtype=int)
-        if self.compress_add:
-            new_mps.canonicalise()
-            new_mps.compress()
         return new_mps
 
     def compress(self, temp_m_trunc=None, ret_s=False):
@@ -949,7 +944,6 @@ class MatrixProduct:
         new.qnidx = self.qnidx
         new.qntot = self.qntot
         new.to_right = self.to_right
-        new.compress_add = self.compress_add
         return new
 
     def _array2mt(self, array, idx, allow_dump=True):

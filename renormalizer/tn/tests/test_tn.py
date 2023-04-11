@@ -1,17 +1,14 @@
 import pytest
 
-from renormalizer import BasisHalfSpin, Model, Mpo, Mps, Op
+from renormalizer import BasisHalfSpin, Model, Mpo, Mps
 from renormalizer.mps.backend import np
 from renormalizer.model.model import heisenberg_ops
-from renormalizer.utils.configs import EvolveConfig, EvolveMethod
 from renormalizer.tn.node import TreeNodeBasis
 from renormalizer.tn.tree import TensorTreeOperator, TensorTreeState, TensorTreeEnviron, from_mps
 from renormalizer.tn.treebase import BasisTree
 from renormalizer.tn.gs import optimize_tts
-from renormalizer.tn.time_evolution import evolve
 from renormalizer.tests.parameter import holstein_model
 from renormalizer.tests.parameter_exact import model
-from renormalizer.mps.tests.test_evolve import qutip_expectations, QUTIP_STEP
 
 
 def multi_basis_tree(basis_list):
@@ -101,8 +98,7 @@ def test_gs_heisenberg(basis_tree, ite):
         # imaginary time evolution for the ground state
         for i in range(10):
             tts.check_canonical()
-            tts = evolve(tts, tto, -2j)
-            tts.scale(1 / tts.tts_norm, inplace=True)
+            tts = tts.evolve(tto, -2j)
         e1 = tts.expectation(tto)
     h = tto.todense()
     e2 = np.linalg.eigh(h)[0][0]
@@ -170,41 +166,3 @@ def test_compress():
     s2 = tts2.todense().ravel()
 
     np.testing.assert_allclose(np.abs(s1 @ s2), 1, atol=1e-5)
-
-
-@pytest.mark.parametrize("geometry", ["chain", "tree"])
-def test_vmf(geometry):
-    if geometry == "chain":
-        basis = BasisTree.linear(model.basis)
-    else:
-        assert geometry == "tree"
-        node_list = [TreeNodeBasis([basis]) for basis in model.basis]
-        # 0 - 2 - 4
-        # |   |   |
-        # 1   3   5
-        root = node_list[2]
-        root.add_child(node_list[0])
-        root.add_child(node_list[3])
-        root.add_child(node_list[4])
-        node_list[0].add_child(node_list[1])
-        node_list[4].add_child(node_list[5])
-        basis = BasisTree(root)
-    tto = TensorTreeOperator(basis, model.ham_terms)
-    op_n_list = [TensorTreeOperator(basis, [Op(r"a^\dagger a", i)]) for i in range(3)]
-
-    tts = TensorTreeState(basis, {0: 1})
-    # expand bond dimension
-    tts = tts + tts.random(basis, 1, 5).scale(1e-5, inplace=True)
-    tts.canonicalise()
-    tts.evolve_config = EvolveConfig(EvolveMethod.tdvp_vmf, ivp_rtol=1e-4, ivp_atol=1e-7, force_ovlp=False)
-
-    tau = 0.5
-    final_time = 2
-    expectations = [[tts.expectation(o) for o in op_n_list]]
-    for i in range(round(final_time / tau)):
-        tts = evolve(tts, tto, tau)
-        es = [tts.expectation(o) for o in op_n_list]
-        expectations.append(es)
-    qutip_end = round(final_time / QUTIP_STEP) + 1
-    qutip_interval = round(tau / QUTIP_STEP)
-    np.testing.assert_allclose(expectations, qutip_expectations[:qutip_end:qutip_interval], atol=1e-4)

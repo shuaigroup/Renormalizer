@@ -1,4 +1,4 @@
-from typing import List, Dict, Tuple
+from typing import List, Dict, Tuple, Union
 
 import scipy
 import opt_einsum as oe
@@ -9,7 +9,7 @@ from renormalizer.mps.backend import np, backend
 from renormalizer.mps.matrix import asnumpy, asxp_oe_args, tensordot
 from renormalizer.mps.svd_qn import add_outer, svd_qn, blockrecover, get_qn_mask
 from renormalizer.mps.lib import select_basis
-from renormalizer.utils.configs import OptimizeConfig, EvolveConfig, EvolveMethod
+from renormalizer.utils.configs import CompressConfig, OptimizeConfig, EvolveConfig, EvolveMethod
 from renormalizer.tn.node import TreeNodeTensor, TreeNodeBasis, copy_connection, TreeNodeEnviron
 from renormalizer.tn.treebase import Tree, BasisTree
 from renormalizer.tn.symbolic_mpo import construct_symbolic_mpo, symbolic_mo_to_numeric_mo_general
@@ -18,9 +18,9 @@ from renormalizer.tn.symbolic_mpo import construct_symbolic_mpo, symbolic_mo_to_
 class TensorTreeOperator(Tree):
     @classmethod
     def identity(cls, basis:BasisTree):
-        if not basis.identity_op:
-            basis.identity_op = cls(basis, [Op("I", basis.root.dofs[0][0])])
-        return basis.identity_op
+        if not basis.identity_tto:
+            basis.identity_tto = cls(basis, [basis.identity_op])
+        return basis.identity_tto
 
     def __init__(self, basis: BasisTree, ham_terms: List[Op]):
         self.basis: BasisTree = basis
@@ -76,6 +76,12 @@ class TensorTreeOperator(Tree):
             new.canonicalise()
         return new
 
+    def contract(self, tts:"TensorTreeState", algo="svd") -> "TensorTreeState":
+        assert algo == "svd", "variational compress not supported yet"
+        new_tts = self.apply(tts)
+        new_tts.canonicalise()
+        new_tts.compress()
+        return new_tts
 
     def todense(self, order:List[BasisSet]=None) -> np.ndarray:
         _id = str(id(self))
@@ -126,6 +132,9 @@ class TensorTreeOperator(Tree):
     def qntot(self):
         # duplicate with tts
         return self.root.qn[0]
+
+# values are set in time_evolution.py
+EVOLVE_METHODS = {}
 
 
 class TensorTreeState(Tree):
@@ -217,6 +226,7 @@ class TensorTreeState(Tree):
         root = copy_connection(basis.node_list, node_list_state)
 
         super().__init__(root)
+        self.coeff = 1
 
         # summing up the site qn
         for node in self.postorder_list():
@@ -227,6 +237,7 @@ class TensorTreeState(Tree):
         self.tn2bn = {tn: bn for tn, bn in zip(self.node_list, self.basis.node_list)}
         self.tn2dofs = {tn: bn.dofs for tn, bn in self.tn2bn.items()}
 
+        self.compress_config = CompressConfig()
         self.optimize_config = OptimizeConfig()
         self.evolve_config = EvolveConfig(EvolveMethod.tdvp_vmf, force_ovlp=False)
 
@@ -254,8 +265,10 @@ class TensorTreeState(Tree):
             self.push_cano_to_parent(node)
 
     def compress(self, temp_m_trunc=None, ret_s=False):
+        if self.compress_config.bonddim_should_set:
+            self.compress_config.set_bonddim(len(self.node_list)+1)
         s_dict: Dict[TreeNodeTensor, np.ndarray] = {self.root: np.array([1])}
-        compress_recursion(self.root, self, temp_m_trunc, s_dict)
+        compress_recursion(self.root, self, s_dict, temp_m_trunc)
         self.check_shape()
         self.check_canonical()
         if not ret_s:
@@ -311,11 +324,62 @@ class TensorTreeState(Tree):
         #assert new.check_canonical()
         return new
 
+    def normalize(self, kind):
+        r''' normalize the wavefunction
+
+        Parameters
+        ----------
+        kind: str
+            "tts_only": the tts part is normalized and coeff is not modified;
+            "tts_norm_to_coeff": the tts part is normalized and the norm is multiplied to coeff;
+            "tts_and_coeff": both tts and coeff is normalized
+
+        Returns
+        -------
+        ``self`` is overwritten.
+        '''
+
+        if kind == "mps_only":
+            new_coeff = self.coeff
+        elif kind == "mps_and_coeff":
+            new_coeff = self.coeff / np.linalg.norm(self.coeff)
+        elif kind == "mps_norm_to_coeff":
+            new_coeff = self.coeff * self.tts_norm
+        else:
+            raise ValueError(f"kind={kind} is not valid.")
+        new_mps = self.scale(1.0 / self.tts_norm, inplace=True)
+        new_mps.coeff = new_coeff
+
+        return new_mps
+
+    def evolve(self, tto:TensorTreeOperator, tau:Union[complex, float], normalize:bool=True):
+        imag_time = np.iscomplex(tau)
+        # trick to avoid complex algebra
+        # exp{coeff * H * tau}
+        # coef and tau are different from MPS implementation
+        if imag_time:
+            coeff = 1
+            tau = tau.imag
+            tts = self
+        else:
+            coeff = -1j
+            tts = self.to_complex()
+        method = EVOLVE_METHODS[self.evolve_config.method]
+        new_tts = method(tts, tto, coeff, tau)
+        if normalize:
+            if imag_time:
+                new_tts.normalize("mps_and_coeff")
+            else:
+                new_tts.normalize("mps_only")
+        return new_tts
+
     def metacopy(self):
         # node tensor and qn not set
         new = self.__class__(self.basis)
+        new.coeff = self.coeff
         new.optimize_config = self.optimize_config.copy()
         new.evolve_config = self.evolve_config.copy()
+        new.compress_config = self.compress_config.copy()
         return new
 
     def copy(self):
@@ -382,7 +446,7 @@ class TensorTreeState(Tree):
         args.append(output_indices)
         node.parent.tensor = oe.contract(*asxp_oe_args(args))
 
-    def compress_node(self, node:TreeNodeTensor, ichild:int, m:int, cano_child:bool=True) -> np.ndarray:
+    def compress_node(self, node:TreeNodeTensor, ichild:int, temp_m_trunc:int=None, cano_child:bool=True) -> np.ndarray:
         """Compress the bond between node and ichild"""
         # left indices: other children + physical bonds + parent
         qnbigl = np.zeros(self.basis.qn_size, dtype=int)
@@ -410,15 +474,20 @@ class TensorTreeState(Tree):
             self.qntot,
             full_matrices=False,
         )
+        if temp_m_trunc is None:
+            idx = self.node_idx[node.children[ichild]]
+            m_trunc = self.compress_config.compute_m_trunc(s, idx, left=False)
+        else:
+            m_trunc = min(temp_m_trunc, len(s))
         orig_s = s.copy()
-        u, s, v, qnl, qnr = truncate_tensors(u, s, v, qnl, qnr, m)
+        u, s, v, qnl, qnr = truncate_tensors(u, s, v, qnl, qnr, m_trunc)
 
         if cano_child:
             v *= s.reshape(1, -1)
         else:
             u *= s.reshape(1, -1)
 
-        shape[-1] = min(m, u.shape[-1])
+        shape[-1] = min(m_trunc, u.shape[-1])
         node.tensor = np.moveaxis(u.reshape(shape), -1, ichild)
         child = node.children[ichild]
         child.tensor = tensordot(child.tensor, v, axes=[-1, 0])
@@ -709,16 +778,16 @@ def from_mps(mps: Mps) -> Tuple[BasisTree, TensorTreeState, TensorTreeOperator]:
     return basis, tts, tto
 
 
-def compress_recursion(snode: TreeNodeTensor, tts: TensorTreeState, m: int, s_dict:Dict):
+def compress_recursion(snode: TreeNodeTensor, tts: TensorTreeState, s_dict:Dict, temp_m_trunc: int = None):
     assert snode.children, "can't compress a single tree node"
     for ichild, child in enumerate(snode.children):
         cano_child = bool(child.children)
         # compress snode - child
-        s = tts.compress_node(snode, ichild, m, cano_child)
+        s = tts.compress_node(snode, ichild, temp_m_trunc, cano_child)
         s_dict[child] = s
 
         if cano_child:
-            compress_recursion(child, tts, m, s_dict)
+            compress_recursion(child, tts, s_dict, temp_m_trunc)
             # cano to snode
             tts.push_cano_to_parent(child)
 
