@@ -1,30 +1,32 @@
 from math import factorial
-from typing import Union
+from typing import Union, List
 import logging
 
 import scipy
+from scipy import stats
 import opt_einsum as oe
 
 from renormalizer.mps.lib import compressed_sum
 from renormalizer.mps.backend import np, xp
 from renormalizer.mps.matrix import asxp
-from renormalizer.lib import solve_ivp
+from renormalizer.lib import solve_ivp, expm_krylov
 from renormalizer.utils.configs import EvolveMethod
-from renormalizer.tn.tree import TensorTreeOperator, TensorTreeState, TensorTreeEnviron, EVOLVE_METHODS
-from renormalizer.tn.hop_expr import hop_expr1
+from renormalizer.tn.node import TreeNodeTensor
+from renormalizer.tn.tree import TTNO, TTNS, TTNEnviron, EVOLVE_METHODS
+from renormalizer.tn.hop_expr import hop_expr1, hop_expr2
 
 
 logger = logging.getLogger(__name__)
 
 
-def time_derivative_vmf(tts: TensorTreeState, tto: TensorTreeOperator):
+def time_derivative_vmf(ttns: TTNS, ttno: TTNO):
     # todo: benchmark and optimize
-    environ_s = TensorTreeEnviron(tts, TensorTreeOperator.identity(tts.basis))
-    environ_h = TensorTreeEnviron(tts, tto)
+    environ_s = TTNEnviron(ttns, TTNO.identity(ttns.basis))
+    environ_h = TTNEnviron(ttns, ttno)
 
     deriv_list = []
-    for inode, node in enumerate(tts.node_list):
-        hop, _ = hop_expr1(node, tts, tto, environ_h)
+    for inode, node in enumerate(ttns.node_list):
+        hop, _ = hop_expr1(node, ttns, ttno, environ_h)
         # idx1: children+physical, idx2: parent
         dim_parent = node.shape[-1]
         tensor = asxp(node.tensor)
@@ -35,9 +37,9 @@ def time_derivative_vmf(tts: TensorTreeState, tto: TensorTreeOperator):
             tensor = tensor.reshape(shape_2d)
             proj = tensor.conj() @ tensor.T
             ovlp = environ_s.node_list[inode].environ_parent.reshape(dim_parent, dim_parent)
-            ovlp_inv = regularized_inversion(ovlp, tts.evolve_config.reg_epsilon)
+            ovlp_inv = regularized_inversion(ovlp, ttns.evolve_config.reg_epsilon)
             deriv = oe.contract("bf, bg, fh -> gh", deriv, xp.eye(proj.shape[0]) - proj, asxp(ovlp_inv.T))
-        qnmask = tts.get_qnmask(node).reshape(deriv.shape)
+        qnmask = ttns.get_qnmask(node).reshape(deriv.shape)
         deriv_list.append(deriv[qnmask].ravel())
     return np.concatenate(deriv_list)
 
@@ -72,28 +74,29 @@ def regularized_inversion(m, eps):
     return evecs @ np.diag(1 / evals) @ evecs.T.conj()
 
 
-def evolve_tdvp_vmf(tts:TensorTreeState, tto:TensorTreeOperator, coeff:Union[complex, float], tau:float, first_step=None):
+def evolve_tdvp_vmf(tts:TTNS, tto:TTNO, coeff:Union[complex, float], tau:float, first_step=None):
 
     def ivp_func(t, params):
-        tts_t = TensorTreeState.from_tensors(tts, params)
+        tts_t = TTNS.from_tensors(tts, params)
         return coeff * time_derivative_vmf(tts_t, tto)
     init_y = np.concatenate([node.tensor[tts.get_qnmask(node)].ravel() for node in tts.node_list])
     atol = tts.evolve_config.ivp_atol
     rtol = tts.evolve_config.ivp_rtol
     sol = solve_ivp(ivp_func, (0, tau), init_y, first_step=first_step, atol=atol, rtol=rtol)
     logger.info(f"VMF func called: {sol.nfev}. RKF steps: {len(sol.t)}")
-    new_tts = TensorTreeState.from_tensors(tts, sol.y[:, -1])
+    new_tts = TTNS.from_tensors(tts, sol.y[:, -1])
     new_tts.canonicalise()
     return new_tts
 
 
-def evolve_prop_and_compress_tdrk4(tts:TensorTreeState, tto:TensorTreeOperator, coeff:Union[complex, float], tau:float):
-    termlist = [tts]
+def evolve_prop_and_compress_tdrk4(ttns:TTNS, ttno:TTNO, coeff:Union[complex, float], tau:float):
+    termlist = [ttns]
     for i in range(4):
-        termlist.append(tto.contract(termlist[-1]))
+        termlist.append(ttno.contract(termlist[-1]))
     for i, term in enumerate(termlist):
         term.scale((coeff * tau) ** i / factorial(i), inplace=True)
     return compressed_sum(termlist)
+
 
 
 EVOLVE_METHODS[EvolveMethod.tdvp_vmf] = evolve_tdvp_vmf

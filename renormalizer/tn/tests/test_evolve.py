@@ -5,23 +5,23 @@ from renormalizer import Op
 from renormalizer.mps.backend import np
 from renormalizer.mps.tests.test_evolve import QUTIP_STEP, qutip_expectations, init_mps
 from renormalizer.tests.parameter_exact import model
-from renormalizer.tn import BasisTree, TensorTreeOperator, TensorTreeState
+from renormalizer.tn import BasisTree, TTNO, TTNS
 from renormalizer.tn.tree import from_mps
 from renormalizer.tn.node import TreeNodeBasis
 from renormalizer.utils import EvolveConfig, EvolveMethod, CompressConfig, CompressCriteria
 
 
-def add_tto_offset(tts: TensorTreeState, tto: TensorTreeOperator):
+def add_tto_offset(tts: TTNS, tto: TTNO):
     e = tts.expectation(tto)
     ham_terms = tto.ham_terms.copy()
     ham_terms.append(tts.basis.identity_op * (-e))
-    return TensorTreeOperator(tto.basis, ham_terms)
+    return TTNO(tto.basis, ham_terms)
 
 
 
 def construct_tts_and_tto_chain():
     basis, tts, tto = from_mps(init_mps)
-    op_n_list = [TensorTreeOperator(basis, [Op(r"a^\dagger a", i)]) for i in range(3)]
+    op_n_list = [TTNO(basis, [Op(r"a^\dagger a", i)]) for i in range(3)]
     tto = add_tto_offset(tts, tto)
     return tts, tto, op_n_list
 
@@ -38,9 +38,9 @@ def construct_tts_and_tto_tree():
     node_list[0].add_child(node_list[1])
     node_list[4].add_child(node_list[5])
     basis = BasisTree(root)
-    tto = TensorTreeOperator(basis, model.ham_terms)
-    op_n_list = [TensorTreeOperator(basis, [Op(r"a^\dagger a", i)]) for i in range(3)]
-    tts = TensorTreeState(basis, {0: 1})
+    tto = TTNO(basis, model.ham_terms)
+    op_n_list = [TTNO(basis, [Op(r"a^\dagger a", i)]) for i in range(3)]
+    tts = TTNS(basis, {0: 1})
     tto = add_tto_offset(tts, tto)
     return tts, tto, op_n_list
 
@@ -49,7 +49,7 @@ init_chain = construct_tts_and_tto_chain()
 init_tree = construct_tts_and_tto_tree()
 
 
-def check_result(tts: TensorTreeState, tto: TensorTreeOperator, time_step: float, final_time: float, op_n_list: List, atol: float=1e-4):
+def check_result(tts: TTNS, tto: TTNO, time_step: float, final_time: float, op_n_list: List, atol: float=1e-4):
     expectations = [[tts.expectation(o) for o in op_n_list]]
     for i in range(round(final_time / time_step)):
         tts = tts.evolve(tto, time_step)
@@ -62,7 +62,7 @@ def check_result(tts: TensorTreeState, tto: TensorTreeOperator, time_step: float
 
 
 @pytest.mark.parametrize("tts_and_tto", [init_chain, init_tree])
-def test_vmf(tts_and_tto):
+def test_tdvp_vmf(tts_and_tto):
     tts, tto, op_n_list = tts_and_tto
     # expand bond dimension
     tts = tts + tts.random(tts.basis, 1, 5).scale(1e-5, inplace=True)
