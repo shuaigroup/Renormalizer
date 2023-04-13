@@ -1,3 +1,5 @@
+import logging
+
 import pytest
 from  typing import List
 
@@ -55,10 +57,14 @@ def check_result(tts: TTNS, tto: TTNO, time_step: float, final_time: float, op_n
         tts = tts.evolve(tto, time_step)
         es = [tts.expectation(o) for o in op_n_list]
         expectations.append(es)
+    expectations = np.array(expectations)
     qutip_end = round(final_time / QUTIP_STEP) + 1
     qutip_interval = round(time_step / QUTIP_STEP)
     # more strict than mcd (the error criteria used for mps tests)
     np.testing.assert_allclose(expectations, qutip_expectations[:qutip_end:qutip_interval], atol=atol)
+    diff = np.max(np.abs(expectations - qutip_expectations[:qutip_end:qutip_interval]), axis=0)
+    print(diff)
+    return tts
 
 
 @pytest.mark.parametrize("tts_and_tto", [init_chain, init_tree])
@@ -78,3 +84,12 @@ def test_pc(tts_and_tto):
     tts.evolve_config = EvolveConfig(EvolveMethod.prop_and_compress_tdrk4)
     tts.compress_config = CompressConfig(CompressCriteria.fixed)
     check_result(tts, tto, 0.2, 5, op_n_list, 5e-4)
+
+
+@pytest.mark.parametrize("ttns_and_ttno", [init_chain, init_tree])
+def test_tdvp_ps2(ttns_and_ttno):
+    ttns, ttno, op_n_list = ttns_and_ttno
+    ttns = ttns.copy()
+    ttns.evolve_config = EvolveConfig(EvolveMethod.tdvp_ps2)
+    ttns.compress_config = CompressConfig(CompressCriteria.fixed)
+    check_result(ttns, ttno, 2, 10, op_n_list, 5e-4)

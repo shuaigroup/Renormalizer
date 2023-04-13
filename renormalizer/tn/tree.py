@@ -668,6 +668,12 @@ class TTNEnviron(Tree):
         self.build_children_environ_node(snode, ttns, ttno)
         self.build_parent_environ_node(snode.parent, snode.idx_as_child, ttns, ttno)
 
+    def update_1site(self, snode: TreeNodeTensor, ttns: TTNS, ttno: TTNO):
+        # update environ based on snode
+        self.build_children_environ_node(snode, ttns, ttno)
+        for ichild in range(len(snode.children)):
+            self.build_parent_environ_node(snode, ichild, ttns, ttno)
+
     def update_2site(self, snode, ttns, ttno):
         # update environ based on snode and its parent
         self.build_children_environ_node(snode, ttns, ttno)

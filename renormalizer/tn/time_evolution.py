@@ -98,6 +98,124 @@ def evolve_prop_and_compress_tdrk4(ttns:TTNS, ttno:TTNO, coeff:Union[complex, fl
     return compressed_sum(termlist)
 
 
+def evolve_tdvp_ps2(ttns:TTNS, ttno:TTNO, coeff:Union[complex, float], tau:float):
+    # second order 2-site projector splitting
+    tte = TTNEnviron(ttns, ttno)
+    # in MPS language: left to right sweep
+    local_steps1 = _tdvp_ps2_recursion_forward(ttns.root, ttns, ttno, tte, coeff, tau / 2)
+    # in MPS language: right to left sweep
+    local_steps2 = _tdvp_ps2_recursion_backward(ttns.root, ttns, ttno, tte, coeff, tau / 2)
+    steps_stat = stats.describe(local_steps1 + local_steps2)
+    logger.debug(f"TDVP-PS Krylov space: {steps_stat}")
+    return ttns
+
+
+def _tdvp_ps2_recursion_forward(snode: TreeNodeTensor,
+                                ttns: TTNS,
+                                ttno: TTNO,
+                                ttne: TTNEnviron,
+                                coeff:Union[complex, float],
+                                tau:float) -> List[int]:
+    """time evolution all of snode's children (without evolve snode!).
+    The exception is when snode == tts.root, which is evolved.
+    Cano center at snode when entering and leaving"""
+    assert snode.children  # 2 site can't do only one node
+    # todo: update to more general cases like truncation based on singular values
+    m = ttns.compress_config.bond_dim_max_value
+    local_steps = []
+    for ichild, child in enumerate(snode.children):
+
+        if child.children:
+            # cano to child
+            ttns.push_cano_to_child(snode, ichild)
+            # update env
+            ttne.update_1bond(child, ttns, ttno)
+            # recursive time evolution
+            local_steps_child = _tdvp_ps2_recursion_forward(child, ttns, ttno, ttne, coeff, tau)
+            local_steps.extend(local_steps_child)
+
+        # forward time evolution for snode + child
+        ms2, j = evolve_2site(child, ttns, ttno, ttne, coeff, tau)
+        local_steps.append(j)
+        # cano to snode
+        ttns.update_2site(child, ms2, m, cano_parent=True)
+        # update env
+        ttne.update_2site(child, ttns, ttno)
+        # backward time evolution for snode
+        if snode is ttns.root and ichild == len(snode.children) - 1:
+            continue
+        ms, j = evolve_1site(snode, ttns, ttno, ttne, coeff, -tau)
+        snode.tensor = ms.reshape(snode.shape)
+        local_steps.append(j)
+        # update env
+        ttne.update_1site(snode, ttns, ttno)
+    return local_steps
+
+
+def _tdvp_ps2_recursion_backward(snode: TreeNodeTensor,
+                                 ttns: TTNS,
+                                 ttno: TTNO,
+                                 ttne: TTNEnviron,
+                                 coeff:Union[complex, float],
+                                 tau:float) -> List[int]:
+    """time evolution all of snode's children (without evolve snode!).
+    The exception is when snode == tts.root, which is evolved.
+    Cano center at snode when entering and leaving"""
+    assert snode.children  # 2 site can't do only one node
+    # todo: update to more general cases like truncation based on singular values
+    m = ttns.compress_config.bond_dim_max_value
+    local_steps = []
+    for ichild, child in reversed(list(enumerate(snode.children))):
+        # backward time evolution for snode
+        if not (snode is ttns.root and ichild == len(snode.children) - 1):
+            ms, j = evolve_1site(snode, ttns, ttno, ttne, coeff, -tau)
+            snode.tensor = ms.reshape(snode.shape)
+            local_steps.append(j)
+            # update env
+            ttne.update_1site(snode, ttns, ttno)
+
+        # forward time evolution for snode + child
+        ms2, j = evolve_2site(child, ttns, ttno, ttne, coeff, tau)
+        local_steps.append(j)
+        # cano to snode
+        ttns.update_2site(child, ms2, m, cano_parent=not child.children)
+        # update env
+        ttne.update_2site(child, ttns, ttno)
+
+        if child.children:
+            # recursive time evolution
+            local_steps_child = _tdvp_ps2_recursion_backward(child, ttns, ttno, ttne, coeff, tau)
+            local_steps.extend(local_steps_child)
+            # cano to snode
+            ttns.push_cano_to_parent(child)
+            # update env
+            ttne.update_1bond(child, ttns, ttno)
+    return local_steps
+
+
+def evolve_2site(snode: TreeNodeTensor, ttns: TTNS, ttno: TTNO, ttne: TTNEnviron, coeff:Union[complex, float], tau:float):
+    # evolve snode and parent
+    ms2 = ttns.merge_with_parent(snode)
+    hop, _ = hop_expr2(snode, ttns, ttno, ttne)
+    ms2_t, j = expm_krylov(
+        lambda y: hop(y.reshape(ms2.shape)).ravel(),
+        coeff * tau,
+        ms2.ravel()
+    )
+    return ms2_t, j
+
+
+def evolve_1site(snode: TreeNodeTensor, ttns: TTNS, ttno: TTNO, ttne: TTNEnviron, coeff:Union[complex, float], tau:float):
+    ms = snode.tensor
+    hop, _ = hop_expr1(snode, ttns, ttno, ttne)
+    ms_t, j = expm_krylov(
+        lambda y: hop(y.reshape(ms.shape)).ravel(),
+        coeff * tau,
+        ms.ravel()
+    )
+    return ms_t, j
+
 
 EVOLVE_METHODS[EvolveMethod.tdvp_vmf] = evolve_tdvp_vmf
 EVOLVE_METHODS[EvolveMethod.prop_and_compress_tdrk4] = evolve_prop_and_compress_tdrk4
+EVOLVE_METHODS[EvolveMethod.tdvp_ps2] = evolve_tdvp_ps2
