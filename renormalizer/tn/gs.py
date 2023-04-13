@@ -8,17 +8,17 @@ from renormalizer.lib import davidson
 from renormalizer.mps.backend import primme, IMPORT_PRIMME_EXCEPTION, np
 from renormalizer.mps.matrix import asnumpy, asxp
 from renormalizer.tn.node import TreeNodeTensor
-from renormalizer.tn.tree import TensorTreeState, TensorTreeOperator, TensorTreeEnviron
+from renormalizer.tn.tree import TTNS, TTNO, TTNEnviron
 from renormalizer.tn.hop_expr import hop_expr2
 
 
 logger = logging.getLogger(__name__)
 
 
-def optimize_tts(tts: TensorTreeState, tto: TensorTreeOperator, procedure=None):
+def optimize_tts(tts: TTNS, tto: TTNO, procedure=None):
     if procedure is None:
         procedure = tts.optimize_config.procedure
-    tte = TensorTreeEnviron(tts, tto)
+    tte = TTNEnviron(tts, tto)
     e_list = []
     for m, percent in procedure:
         # todo: better converge condition
@@ -56,7 +56,7 @@ def optimize_recursion(snode: TreeNodeTensor, tts, tto, tte, m:int, percent:floa
     return micro_e
 
 
-def optimize_2site(snode: TreeNodeTensor, tts: TensorTreeState, tto: TensorTreeOperator, tte: TensorTreeEnviron):
+def optimize_2site(snode: TreeNodeTensor, tts: TTNS, tto: TTNO, tte: TTNEnviron):
 
     cguess = tts.merge_with_parent(snode)
     qn_mask = tts.get_qnmask(snode, include_parent=True)

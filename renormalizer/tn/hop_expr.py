@@ -3,28 +3,28 @@ import opt_einsum as oe
 from renormalizer.mps.backend import np
 from renormalizer.mps.matrix import asxp
 from renormalizer.tn.node import TreeNodeTensor
-from renormalizer.tn.tree import TensorTreeState, TensorTreeOperator, TensorTreeEnviron
+from renormalizer.tn.tree import TTNS, TTNO, TTNEnviron
 
 
-def hop_expr1(snode: TreeNodeTensor, tts: TensorTreeState, tto: TensorTreeOperator, tte: TensorTreeEnviron,):
+def hop_expr1(snode: TreeNodeTensor, ttns: TTNS, ttno: TTNO, ttne: TTNEnviron):
     # one site
-    enode = tte.node_list[tts.node_idx[snode]]
-    onode = tto.node_list[tts.node_idx[snode]]
+    enode = ttne.node_list[ttns.node_idx[snode]]
+    onode = ttno.node_list[ttns.node_idx[snode]]
 
     args = []
     # enode children environments
     for i, echild_environchild in enumerate(enode.environ_children):
         args.append(echild_environchild)
-        args.append(tte.get_child_indices(enode, i, tts, tto))
+        args.append(ttne.get_child_indices(enode, i, ttns, ttno))
     # parent environments
     args.append(enode.environ_parent)
-    args.append(tte.get_parent_indices(enode, tts, tto))
+    args.append(ttne.get_parent_indices(enode, ttns, ttno))
     # operator
-    args.extend([onode.tensor, tto.get_node_indices(onode, "up", "down")])
+    args.extend([onode.tensor, ttno.get_node_indices(onode, "up", "down")])
 
     # input and output
-    input_indices = tts.get_node_indices(snode)
-    output_indices = tts.get_node_indices(snode, True)
+    input_indices = ttns.get_node_indices(snode)
+    output_indices = ttns.get_node_indices(snode, True)
 
     shape = snode.shape
     # cache the contraction path
@@ -33,38 +33,38 @@ def hop_expr1(snode: TreeNodeTensor, tts: TensorTreeState, tto: TensorTreeOperat
     return expr, hdiag
 
 
-def hop_expr2(snode: TreeNodeTensor, tts: TensorTreeState, tto: TensorTreeOperator, tte: TensorTreeEnviron):
+def hop_expr2(snode: TreeNodeTensor, ttns: TTNS, ttno: TTNO, ttne: TTNEnviron):
     # two sites
     sparent = snode.parent
-    enode = tte.node_list[tts.node_idx[snode]]
-    eparent = tte.node_list[tts.node_idx[sparent]]
-    onode = tto.node_list[tts.node_idx[snode]]
-    oparent = tto.node_list[tts.node_idx[sparent]]
+    enode = ttne.node_list[ttns.node_idx[snode]]
+    eparent = ttne.node_list[ttns.node_idx[sparent]]
+    onode = ttno.node_list[ttns.node_idx[snode]]
+    oparent = ttno.node_list[ttns.node_idx[sparent]]
 
     args = []
     # enode children environments
     for i, echild_environchild in enumerate(enode.environ_children):
         args.append(echild_environchild)
-        args.append(tte.get_child_indices(enode, i, tts, tto))
+        args.append(ttne.get_child_indices(enode, i, ttns, ttno))
 
     # eparent children environments
     for i, enode_environchild in enumerate(eparent.environ_children):
         if eparent.children[i] is enode:
             continue
         args.append(enode_environchild)
-        args.append(tte.get_child_indices(eparent, i, tts, tto))
+        args.append(ttne.get_child_indices(eparent, i, ttns, ttno))
 
     # eparent parent environments
     args.append(eparent.environ_parent)
-    args.append(tte.get_parent_indices(eparent, tts, tto))
+    args.append(ttne.get_parent_indices(eparent, ttns, ttno))
 
     # operator
-    args.extend([oparent.tensor, tto.get_node_indices(oparent, "up", "down")])
-    args.extend([onode.tensor, tto.get_node_indices(onode, "up", "down")])
+    args.extend([oparent.tensor, ttno.get_node_indices(oparent, "up", "down")])
+    args.extend([onode.tensor, ttno.get_node_indices(onode, "up", "down")])
 
     # input and output
-    input_indices = tts.get_node_indices(snode, include_parent=True)
-    output_indices = tts.get_node_indices(snode, True, include_parent=True)
+    input_indices = ttns.get_node_indices(snode, include_parent=True)
+    output_indices = ttns.get_node_indices(snode, True, include_parent=True)
 
     # shape
     shape = list(snode.shape[:-1])

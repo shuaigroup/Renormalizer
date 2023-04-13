@@ -15,12 +15,12 @@ from renormalizer.tn.treebase import Tree, BasisTree
 from renormalizer.tn.symbolic_mpo import construct_symbolic_mpo, symbolic_mo_to_numeric_mo_general
 
 
-class TensorTreeOperator(Tree):
+class TTNO(Tree):
     @classmethod
     def identity(cls, basis:BasisTree):
-        if not basis.identity_tto:
-            basis.identity_tto = cls(basis, [basis.identity_op])
-        return basis.identity_tto
+        if not basis.identity_ttno:
+            basis.identity_ttno = cls(basis, [basis.identity_op])
+        return basis.identity_ttno
 
     def __init__(self, basis: BasisTree, ham_terms: List[Op]):
         self.basis: BasisTree = basis
@@ -41,15 +41,15 @@ class TensorTreeOperator(Tree):
         self.tn2bn = {tn: bn for tn, bn in zip(self.node_list, self.basis.node_list)}
         self.tn2dofs = {tn: bn.dofs for tn, bn in self.tn2bn.items()}
 
-    def apply(self, tts:"TensorTreeState", canonicalise: bool=False) -> "TensorTreeState":
+    def apply(self, ttns: "TTNS", canonicalise: bool=False) -> "TTNS":
         # todo: apply to mpdm. Allow partial apply and ignore some indices
-        new = tts.metacopy()
+        new = ttns.metacopy()
 
-        for snode1, snode2, onode in zip(new, tts, self):
+        for snode1, snode2, onode in zip(new, ttns, self):
             assert len(snode2.children) == len(onode.children)
 
             bnode = self.tn2bn[onode]
-            indices1 = tts.get_node_indices(snode2)
+            indices1 = ttns.get_node_indices(snode2)
             indices2 = self.get_node_indices(onode, "up", "down")
             output_indices = []
             output_shape = []
@@ -69,19 +69,19 @@ class TensorTreeOperator(Tree):
             args = [snode2.tensor, indices1, onode.tensor, indices2, output_indices]
             res = oe.contract(*(asxp_oe_args(args))).reshape(output_shape)
             snode1.tensor = res
-            snode1.qn = add_outer(snode2.qn, onode.qn).reshape(output_shape[-1], tts.basis.qn_size)
+            snode1.qn = add_outer(snode2.qn, onode.qn).reshape(output_shape[-1], ttns.basis.qn_size)
 
         new.check_shape()
         if canonicalise:
             new.canonicalise()
         return new
 
-    def contract(self, tts:"TensorTreeState", algo="svd") -> "TensorTreeState":
+    def contract(self, ttns: "TTNS", algo="svd") -> "TTNS":
         assert algo == "svd", "variational compress not supported yet"
-        new_tts = self.apply(tts)
-        new_tts.canonicalise()
-        new_tts.compress()
-        return new_tts
+        new_ttns = self.apply(ttns)
+        new_ttns.canonicalise()
+        new_ttns.compress()
+        return new_ttns
 
     def todense(self, order:List[BasisSet]=None) -> np.ndarray:
         _id = str(id(self))
@@ -130,25 +130,25 @@ class TensorTreeOperator(Tree):
 
     @property
     def qntot(self):
-        # duplicate with tts
+        # duplicate with ttns
         return self.root.qn[0]
 
 # values are set in time_evolution.py
 EVOLVE_METHODS = {}
 
 
-class TensorTreeState(Tree):
+class TTNS(Tree):
 
     @classmethod
     def random(cls, basis: BasisTree, qntot, m_max, percent=1.0):
-        tts = cls(basis)
+        ttns = cls(basis)
         if isinstance(qntot, int):
             qntot = np.array([qntot])
         qn_size = len(qntot)
         assert basis.qn_size == qn_size
 
-        for node in tts.postorder_list()[:-1]:
-            qnbigl, _, _ = tts.get_qnmat(node, include_parent=False)
+        for node in ttns.postorder_list()[:-1]:
+            qnbigl, _, _ = ttns.get_qnmat(node, include_parent=False)
             qnbigl_shape = qnbigl.shape
             qnbigl = qnbigl.reshape(-1, qn_size)
             u_list = []
@@ -176,21 +176,21 @@ class TensorTreeState(Tree):
             node.tensor = mt.reshape(list(qnbigl_shape)[:-1] + [mpsdim])
             node.qn = mpsqn
         # deal with root
-        tts.root.qn = np.ones((1, qn_size), dtype=int) * qntot
-        qn_mask = tts.get_qnmask(tts.root, include_parent=False)
-        tts.root.tensor = np.random.random(qn_mask.shape) - 0.5
-        tts.root.tensor[~qn_mask] = 0
-        tts.root.tensor /= np.linalg.norm(tts.root.tensor.ravel())
-        tts.check_shape()
-        tts.check_canonical()
-        return tts
+        ttns.root.qn = np.ones((1, qn_size), dtype=int) * qntot
+        qn_mask = ttns.get_qnmask(ttns.root, include_parent=False)
+        ttns.root.tensor = np.random.random(qn_mask.shape) - 0.5
+        ttns.root.tensor[~qn_mask] = 0
+        ttns.root.tensor /= np.linalg.norm(ttns.root.tensor.ravel())
+        ttns.check_shape()
+        ttns.check_canonical()
+        return ttns
 
     @classmethod
-    def from_tensors(cls, template: "TensorTreeState", tensors):
+    def from_tensors(cls, template: "TTNS", tensors):
         """QN is taken into account"""
-        tts = template.metacopy()
+        ttns = template.metacopy()
         cursor = 0
-        for node, tnode in zip(tts.node_list, template.node_list):
+        for node, tnode in zip(ttns.node_list, template.node_list):
             qnmask = template.get_qnmask(tnode)
             length = np.sum(qnmask)
             node.tensor = np.zeros(tnode.shape, dtype=tensors.dtype)
@@ -198,8 +198,8 @@ class TensorTreeState(Tree):
             node.qn = tnode.qn
             cursor += length
         assert len(tensors) == cursor
-        tts.check_shape()
-        return tts
+        ttns.check_shape()
+        return ttns
 
     def __init__(self, basis: BasisTree, condition:Dict=None):
         self.basis = basis
@@ -277,12 +277,12 @@ class TensorTreeState(Tree):
             s_list = [s_dict[n] for n in self.node_list]
             return self, s_list
 
-    def expectation(self, tto: TensorTreeOperator, bra:"TensorTreeState"=None):
+    def expectation(self, ttno: TTNO, bra: "TTNS" =None):
         if bra is None:
             bra = self
         args = self.to_contract_args()
         args.extend(bra.to_contract_args(conj=True))
-        args.extend(tto.to_contract_args("up", "down"))
+        args.extend(ttno.to_contract_args("up", "down"))
         val = oe.contract(*asxp_oe_args(args)).ravel()[0]
 
         if np.isclose(float(val.imag), 0):
@@ -290,7 +290,7 @@ class TensorTreeState(Tree):
         else:
             return complex(val)
 
-    def add(self, other: "TensorTreeState") -> "TensorTreeState":
+    def add(self, other: "TTNS") -> "TTNS":
         new = self.metacopy()
         for new_node, node1, node2 in zip(new, self, other):
             new_shape = []
@@ -330,9 +330,9 @@ class TensorTreeState(Tree):
         Parameters
         ----------
         kind: str
-            "tts_only": the tts part is normalized and coeff is not modified;
-            "tts_norm_to_coeff": the tts part is normalized and the norm is multiplied to coeff;
-            "tts_and_coeff": both tts and coeff is normalized
+            "ttns_only": the ttns part is normalized and coeff is not modified;
+            "ttns_norm_to_coeff": the ttns part is normalized and the norm is multiplied to coeff;
+            "ttns_and_coeff": both ttns and coeff is normalized
 
         Returns
         -------
@@ -344,15 +344,15 @@ class TensorTreeState(Tree):
         elif kind == "mps_and_coeff":
             new_coeff = self.coeff / np.linalg.norm(self.coeff)
         elif kind == "mps_norm_to_coeff":
-            new_coeff = self.coeff * self.tts_norm
+            new_coeff = self.coeff * self.ttns_norm
         else:
             raise ValueError(f"kind={kind} is not valid.")
-        new_mps = self.scale(1.0 / self.tts_norm, inplace=True)
+        new_mps = self.scale(1.0 / self.ttns_norm, inplace=True)
         new_mps.coeff = new_coeff
 
         return new_mps
 
-    def evolve(self, tto:TensorTreeOperator, tau:Union[complex, float], normalize:bool=True):
+    def evolve(self, ttno:TTNO, tau:Union[complex, float], normalize:bool=True):
         imag_time = np.iscomplex(tau)
         # trick to avoid complex algebra
         # exp{coeff * H * tau}
@@ -360,18 +360,18 @@ class TensorTreeState(Tree):
         if imag_time:
             coeff = 1
             tau = tau.imag
-            tts = self
+            ttns = self
         else:
             coeff = -1j
-            tts = self.to_complex()
+            ttns = self.to_complex()
         method = EVOLVE_METHODS[self.evolve_config.method]
-        new_tts = method(tts, tto, coeff, tau)
+        new_ttns = method(ttns, ttno, coeff, tau)
         if normalize:
             if imag_time:
-                new_tts.normalize("mps_and_coeff")
+                new_ttns.normalize("mps_and_coeff")
             else:
-                new_tts.normalize("mps_only")
-        return new_tts
+                new_ttns.normalize("mps_only")
+        return new_ttns
 
     def metacopy(self):
         # node tensor and qn not set
@@ -598,12 +598,12 @@ class TensorTreeState(Tree):
 
     @property
     def qntot(self):
-        # duplicate with tto
+        # duplicate with ttno
         return self.root.qn[0]
 
     @property
-    def tts_norm(self):
-        res = self.expectation(TensorTreeOperator.identity(self.basis))
+    def ttns_norm(self):
+        res = self.expectation(TTNO.identity(self.basis))
 
         if res < 0:
             assert np.abs(res) < 1e-8
@@ -629,70 +629,76 @@ class TensorTreeState(Tree):
         new_mp.root.tensor *= val
         return new_mp
 
-    def __add__(self, other: "TensorTreeState"):
+    def __add__(self, other: "TTNS"):
         return self.add(other)
 
 
-class TensorTreeEnviron(Tree):
-    def __init__(self, tts:TensorTreeState, tto:TensorTreeOperator):
-        self.basis =  tts.basis
-        enodes: List[TreeNodeEnviron] = [TreeNodeEnviron() for _ in range(tts.size)]
-        copy_connection(tts.node_list, enodes)
+class TTNEnviron(Tree):
+    def __init__(self, ttns:TTNS, ttno:TTNO):
+        self.basis =  ttns.basis
+        enodes: List[TreeNodeEnviron] = [TreeNodeEnviron() for _ in range(ttns.size)]
+        copy_connection(ttns.node_list, enodes)
         super().__init__(enodes[0])
         assert self.root.parent is None
         self.root.environ_parent = np.array([1]).reshape([1, 1, 1])
         # tensor node to basis node. todo: remove duplication?
         self.tn2bn = {tn: bn for tn, bn in zip(self.node_list, self.basis.node_list)}
         self.tn2dofs = {tn: bn.dofs for tn, bn in self.tn2bn.items()}
-        self.build_children_environ(tts, tto)
-        self.build_parent_environ(tts, tto)
+        self.build_children_environ(ttns, ttno)
+        self.build_parent_environ(ttns, ttno)
 
 
-    def build_children_environ(self, tts, tto):
+    def build_children_environ(self, ttns, ttno):
         # first run, children environment to the parent.
         # set enode.environ_children
-        snodes: List[TreeNodeTensor] = tts.postorder_list()
+        snodes: List[TreeNodeTensor] = ttns.postorder_list()
         for snode in snodes:
-            self.build_children_environ_node(snode, tts, tto)
+            self.build_children_environ_node(snode, ttns, ttno)
 
-    def build_parent_environ(self, tts, tto):
+    def build_parent_environ(self, ttns, ttno):
         # second run, parent environment to children
         # set enode.environ_parent
-        snodes: List[TreeNodeTensor] = tts.node_list
+        snodes: List[TreeNodeTensor] = ttns.node_list
         for snode in snodes:
             for ichild in range(len(snode.children)):
-                self.build_parent_environ_node(snode, ichild, tts, tto)
+                self.build_parent_environ_node(snode, ichild, ttns, ttno)
 
-    def update_2site(self, snode, tts, tto):
+    def update_1bond(self, snode: TreeNodeTensor, ttns: TTNS, ttno: TTNO):
+        # update environ for the bond between snode and snode.parent
+        self.build_children_environ_node(snode, ttns, ttno)
+        self.build_parent_environ_node(snode.parent, snode.idx_as_child, ttns, ttno)
+
+    def update_2site(self, snode, ttns, ttno):
         # update environ based on snode and its parent
-        self.build_children_environ_node(snode, tts, tto)
-        self.build_children_environ_node(snode.parent, tts, tto)
+        self.build_children_environ_node(snode, ttns, ttno)
+        self.build_children_environ_node(snode.parent, ttns, ttno)
         for ichild in range(len(snode.parent.children)):
-            self.build_parent_environ_node(snode.parent, ichild, tts, tto)
+            self.build_parent_environ_node(snode.parent, ichild, ttns, ttno)
         for ichild in range(len(snode.children)):
-            self.build_parent_environ_node(snode, ichild, tts, tto)
+            self.build_parent_environ_node(snode, ichild, ttns, ttno)
 
-    def build_children_environ_node(self, snode:TreeNodeTensor, tts: TensorTreeState, tto: TensorTreeOperator):
+    def build_children_environ_node(self, snode:TreeNodeTensor, ttns: TTNS, ttno: TTNO):
+        # build the environment from snode to its parent
         if snode.parent is None:
             return
-        enode = self.node_list[tts.node_idx[snode]]
-        onode = tto.node_list[tts.node_idx[snode]]
+        enode = self.node_list[ttns.node_idx[snode]]
+        onode = ttno.node_list[ttns.node_idx[snode]]
         args = []
         for i, child_tensor in enumerate(enode.environ_children):
-            indices = self.get_child_indices(enode, i, tts, tto)
+            indices = self.get_child_indices(enode, i, ttns, ttno)
             args.extend([child_tensor, indices])
 
         args.append(snode.tensor.conj())
-        args.append(tts.get_node_indices(snode, conj=True))
+        args.append(ttns.get_node_indices(snode, conj=True))
 
         args.append(onode.tensor)
-        args.append(tto.get_node_indices(onode, "up", "down"))
+        args.append(ttno.get_node_indices(onode, "up", "down"))
 
         args.append(snode.tensor)
-        args.append(tts.get_node_indices(snode))
+        args.append(ttns.get_node_indices(snode))
 
         # indices for the resulting tensor
-        indices = self.get_parent_indices(enode, tts, tto)
+        indices = self.get_parent_indices(enode, ttns, ttno)
         args.append(indices)
         res = oe.contract(*asxp_oe_args(args))
         if len(enode.parent.environ_children) != len(enode.parent.children):
@@ -703,63 +709,63 @@ class TensorTreeEnviron(Tree):
             ichild = snode.parent.children.index(snode)
             enode.parent.environ_children[ichild] = asnumpy(res)
 
-    def build_parent_environ_node(self, snode:TreeNodeTensor, ichild: int, tts: TensorTreeState, tto: TensorTreeOperator):
-        # build the environment for the ith child of snode
-        enode = self.node_list[tts.node_idx[snode]]
-        onode = tto.node_list[tts.node_idx[snode]]
+    def build_parent_environ_node(self, snode:TreeNodeTensor, ichild: int, ttns: TTNS, ttno: TTNO):
+        # build the environment from snode to the ith child of snode
+        enode = self.node_list[ttns.node_idx[snode]]
+        onode = ttno.node_list[ttns.node_idx[snode]]
         args = []
         # children tensor
         for j, child_tensor in enumerate(enode.environ_children):
             if j == ichild:
                 continue
-            indices = self.get_child_indices(enode, j, tts, tto)
+            indices = self.get_child_indices(enode, j, ttns, ttno)
             args.extend([child_tensor, indices])
 
         # parent tensor
-        indices = self.get_parent_indices(enode, tts, tto)
+        indices = self.get_parent_indices(enode, ttns, ttno)
         args.extend([enode.environ_parent, indices])
 
         args.append(snode.tensor.conj())
-        args.append(tts.get_node_indices(snode, conj=True))
+        args.append(ttns.get_node_indices(snode, conj=True))
 
         args.append(onode.tensor)
-        args.append(tto.get_node_indices(onode, "up", "down"))
+        args.append(ttno.get_node_indices(onode, "up", "down"))
 
         args.append(snode.tensor)
-        args.append(tts.get_node_indices(snode))
+        args.append(ttns.get_node_indices(snode))
 
         # indices for the resulting tensor
-        indices = self.get_child_indices(enode, ichild, tts, tto)
+        indices = self.get_child_indices(enode, ichild, ttns, ttno)
 
         args.append(indices)
         res = oe.contract(*asxp_oe_args(args))
         enode.children[ichild].environ_parent = asnumpy(res)
 
-    def get_child_indices(self, enode, i, tts, tto):
+    def get_child_indices(self, enode, i, ttns, ttno):
         dofs = self.tn2dofs[enode]
         dofs_child = self.tn2dofs[enode.children[i]]
         indices = [
-            (str(id(tts)) + "_conj", str(dofs), str(dofs_child)),
-            (str(id(tto)), str(dofs), str(dofs_child)),
-            (str(id(tts)), str(dofs), str(dofs_child)),
+            (str(id(ttns)) + "_conj", str(dofs), str(dofs_child)),
+            (str(id(ttno)), str(dofs), str(dofs_child)),
+            (str(id(ttns)), str(dofs), str(dofs_child)),
         ]
         return indices
 
-    def get_parent_indices(self, enode, tts, tto):
+    def get_parent_indices(self, enode, ttns, ttno):
         dofs = self.tn2dofs[enode]
         if enode.parent is not None:
             dofs_parent = self.tn2dofs[enode.parent]
         else:
             dofs_parent = "root"
         indices = [
-            (str(id(tts)) + "_conj", str(dofs_parent), str(dofs)),
-            (str(id(tto)), str(dofs_parent), str(dofs)),
-            (str(id(tts)), str(dofs_parent), str(dofs)),
+            (str(id(ttns)) + "_conj", str(dofs_parent), str(dofs)),
+            (str(id(ttno)), str(dofs_parent), str(dofs)),
+            (str(id(ttns)), str(dofs_parent), str(dofs)),
         ]
         return indices
 
 
-def from_mps(mps: Mps) -> Tuple[BasisTree, TensorTreeState, TensorTreeOperator]:
+def from_mps(mps: Mps) -> Tuple[BasisTree, TTNS, TTNO]:
     # useful function for comparing results with MPS
     mps = mps.copy()
     mps.ensure_left_canonical()
@@ -769,32 +775,32 @@ def from_mps(mps: Mps) -> Tuple[BasisTree, TensorTreeState, TensorTreeOperator]:
     # |    |    |     |
     # o -> o -> o -> root (canonical center)
     basis = BasisTree.linear(mps.model.basis[::-1])
-    tts = TensorTreeState(basis)
+    ttns = TTNS(basis)
     for i in range(len(mps)):
-        node = tts.node_list[::-1][i]
+        node = ttns.node_list[::-1][i]
         node.tensor = mps[i].array
         node.qn = mps.qn[i + 1]
         if i == 0:
             # remove the empty children index
             node.tensor = node.tensor[0, ...]
-    tts.check_shape()
-    tts.check_canonical()
-    tto = TensorTreeOperator(basis, mps.model.ham_terms)
-    return basis, tts, tto
+    ttns.check_shape()
+    ttns.check_canonical()
+    ttno = TTNO(basis, mps.model.ham_terms)
+    return basis, ttns, ttno
 
 
-def compress_recursion(snode: TreeNodeTensor, tts: TensorTreeState, s_dict:Dict, temp_m_trunc: int = None):
+def compress_recursion(snode: TreeNodeTensor, ttns: TTNS, s_dict:Dict, temp_m_trunc: int = None):
     assert snode.children, "can't compress a single tree node"
     for ichild, child in enumerate(snode.children):
         cano_child = bool(child.children)
         # compress snode - child
-        s = tts.compress_node(snode, ichild, temp_m_trunc, cano_child)
+        s = ttns.compress_node(snode, ichild, temp_m_trunc, cano_child)
         s_dict[child] = s
 
         if cano_child:
-            compress_recursion(child, tts, s_dict, temp_m_trunc)
+            compress_recursion(child, ttns, s_dict, temp_m_trunc)
             # cano to snode
-            tts.push_cano_to_parent(child)
+            ttns.push_cano_to_parent(child)
 
 
 def truncate_tensors(u, s, v, qnl, qnr, m):
@@ -806,19 +812,19 @@ def truncate_tensors(u, s, v, qnl, qnr, m):
     return u, s, v, qnl, qnr
 
 
-def moveaxis(tts:TensorTreeState, node:TreeNodeTensor, ichild:int):
+def moveaxis(ttns:TTNS, node:TreeNodeTensor, ichild:int):
     # left indices: other children + physical bonds + parent
-    qnbigl = np.zeros(tts.basis.qn_size, dtype=int)
+    qnbigl = np.zeros(ttns.basis.qn_size, dtype=int)
     # other children
     for child in node.children:
         if child == node.children[ichild]:
             continue
         qnbigl = add_outer(qnbigl, child.qn)
     # physical bonds
-    for b in tts.tn2bn[node].basis_sets:
+    for b in ttns.tn2bn[node].basis_sets:
         qnbigl = add_outer(qnbigl, b.sigmaqn)
     # parent
-    qnbigl = add_outer(qnbigl, tts.qntot - node.qn)
+    qnbigl = add_outer(qnbigl, ttns.qntot - node.qn)
     # right indices: the ith child
     qnbigr = node.children[ichild].qn
     # 2d tensor (node, child)
