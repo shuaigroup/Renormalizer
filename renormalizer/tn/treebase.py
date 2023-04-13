@@ -84,8 +84,8 @@ class BasisTree(Tree):
         self.qn_size: int = qn_size_list[0]
         # identity operator
         self.identity_op: Op = Op("I", self.root.dofs[0][0])
-        # identity tto
-        self.identity_tto = None
+        # identity ttno
+        self.identity_ttno = None
 
     def print(self):
         class print_tn_basis(print_tree):

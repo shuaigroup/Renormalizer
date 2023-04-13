@@ -4,7 +4,7 @@ from renormalizer import BasisHalfSpin, Model, Mpo, Mps
 from renormalizer.mps.backend import np
 from renormalizer.model.model import heisenberg_ops
 from renormalizer.tn.node import TreeNodeBasis
-from renormalizer.tn.tree import TensorTreeOperator, TensorTreeState, TensorTreeEnviron, from_mps
+from renormalizer.tn.tree import TTNO, TTNS, TTNEnviron, from_mps
 from renormalizer.tn.treebase import BasisTree
 from renormalizer.tn.gs import optimize_tts
 from renormalizer.tests.parameter import holstein_model
@@ -50,7 +50,7 @@ def holstein_scheme3() -> BasisTree:
 def test_tto(basis):
     ham_terms = heisenberg_ops(nspin)
 
-    tto = TensorTreeOperator(basis, ham_terms)
+    tto = TTNO(basis, ham_terms)
     dense = tto.todense(basis_list)
 
     dense2 = Mpo(Model(basis_list, ham_terms)).todense()
@@ -61,15 +61,15 @@ def test_tto(basis):
 def test_tts(basis):
     ham_terms = heisenberg_ops(nspin)
     condition = {1:1, 3:1}
-    tts = TensorTreeState(basis, condition)
-    tto = TensorTreeOperator(basis, ham_terms)
+    tts = TTNS(basis, condition)
+    tto = TTNO(basis, ham_terms)
     e1 = tts.expectation(tto)
     model = Model([BasisHalfSpin(i) for i in range(nspin)], ham_terms)
     mps = Mps.hartree_product_state(model, condition)
     mpo = Mpo(model)
     e2 = mps.expectation(mpo)
     np.testing.assert_allclose(e1, e2)
-    env = TensorTreeEnviron(tts, tto)
+    env = TTNEnviron(tts, tto)
     for node in env.node_list:
         for child, environ_child in zip(node.children, node.environ_children):
             e3 = environ_child.ravel() @ child.environ_parent.ravel()
@@ -78,7 +78,7 @@ def test_tts(basis):
 
 @pytest.mark.parametrize("basis", [basis_binary, basis_multi_basis])
 def test_push_cano(basis):
-    tts = TensorTreeState.random(basis, 0, 5, 1)
+    tts = TTNS.random(basis, 0, 5, 1)
     s1 = tts.todense()
     tts.push_cano_to_child(tts.root, 0)
     s2 = tts.todense()
@@ -101,8 +101,8 @@ def test_from_mps():
 @pytest.mark.parametrize("ite", [False, True])
 def test_gs_heisenberg(basis_tree, ite):
     ham_terms = heisenberg_ops(4)
-    tts = TensorTreeState.random(basis_tree, qntot=0, m_max=20)
-    tto = TensorTreeOperator(basis_tree, ham_terms)
+    tts = TTNS.random(basis_tree, qntot=0, m_max=20)
+    tto = TTNO(basis_tree, ham_terms)
     if not ite:
         e1 = optimize_tts(tts, tto)
         e1 = min(e1)
@@ -133,8 +133,8 @@ def test_gs_holstein(scheme):
             node_list[2*i].add_child(node_list[2*i+1])
         basis = BasisTree(root)
     m = 4
-    tts = TensorTreeState.random(basis, qntot=1, m_max=m)
-    tto = TensorTreeOperator(basis, model.ham_terms)
+    tts = TTNS.random(basis, qntot=1, m_max=m)
+    tto = TTNO(basis, model.ham_terms)
     procedure = [[m, 0.4], [m, 0.2], [m, 0.1], [m, 0], [m, 0]]
     e1 = optimize_tts(tts, tto, procedure)
     e2 = 0.08401412 + model.gs_zpe
@@ -143,8 +143,8 @@ def test_gs_holstein(scheme):
 
 @pytest.mark.parametrize("basis_tree", [basis_binary, basis_multi_basis])
 def test_add(basis_tree):
-    tts1 = TensorTreeState.random(basis_tree, qntot=0, m_max=4)
-    tts2 = TensorTreeState.random(basis_tree, qntot=0, m_max=2).scale(1j)
+    tts1 = TTNS.random(basis_tree, qntot=0, m_max=4)
+    tts2 = TTNS.random(basis_tree, qntot=0, m_max=2).scale(1j)
     tts3 = tts1.add(tts2)
     s1 = tts1.todense()
     s2 = tts2.todense()
@@ -155,8 +155,8 @@ def test_add(basis_tree):
 
 @pytest.mark.parametrize("basis_tree", [basis_binary, basis_multi_basis])
 def test_apply(basis_tree):
-    tts1 = TensorTreeState.random(basis_tree, qntot=0, m_max=4)
-    tto = TensorTreeOperator(basis_tree, heisenberg_ops(nspin))
+    tts1 = TTNS.random(basis_tree, qntot=0, m_max=4)
+    tto = TTNO(basis_tree, heisenberg_ops(nspin))
     tts2 = tto.apply(tts1)
     s1 = tts1.todense()
     s2 = tts2.todense()
@@ -168,8 +168,8 @@ def test_compress():
     m1 = 5
     m2 = 4
     basis = holstein_scheme3()
-    tto = TensorTreeOperator(basis, holstein_model.ham_terms)
-    tts = TensorTreeState.random(basis, 1, m1)
+    tto = TTNO(basis, holstein_model.ham_terms)
+    tts = TTNS.random(basis, 1, m1)
     procedure1, procedure2 = [[[m, 0.4], [m, 0.2], [m, 0.1], [m, 0], [m, 0]] for m in [m1, m2]]
     optimize_tts(tts, tto, procedure1)
     tts2 = tts.copy().compress(m2)
