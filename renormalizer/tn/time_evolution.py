@@ -13,7 +13,7 @@ from renormalizer.lib import solve_ivp, expm_krylov
 from renormalizer.utils.configs import EvolveMethod
 from renormalizer.tn.node import TreeNodeTensor
 from renormalizer.tn.tree import TTNO, TTNS, TTNEnviron, EVOLVE_METHODS
-from renormalizer.tn.hop_expr import hop_expr1, hop_expr2
+from renormalizer.tn.hop_expr import hop_expr0, hop_expr1, hop_expr2
 
 
 logger = logging.getLogger(__name__)
@@ -98,6 +98,90 @@ def evolve_prop_and_compress_tdrk4(ttns:TTNS, ttno:TTNO, coeff:Union[complex, fl
     return compressed_sum(termlist)
 
 
+def evolve_tdvp_ps(ttns:TTNS, ttno:TTNO, coeff:Union[complex, float], tau:float):
+    # second order 1-site projector splitting
+    tte = TTNEnviron(ttns, ttno)
+    # in MPS language: left to right sweep
+    local_steps1 = _tdvp_ps_recursion_forward(ttns.root, ttns, ttno, tte, coeff, tau / 2)
+    # in MPS language: right to left sweep
+    local_steps2 = _tdvp_ps_recursion_backward(ttns.root, ttns, ttno, tte, coeff, tau / 2)
+    steps_stat = stats.describe(local_steps1 + local_steps2)
+    logger.debug(f"TDVP-PS Krylov space: {steps_stat}")
+    return ttns
+
+
+def _tdvp_ps_recursion_forward(snode: TreeNodeTensor,
+                                ttns: TTNS,
+                                ttno: TTNO,
+                                ttne: TTNEnviron,
+                                coeff:Union[complex, float],
+                                tau:float) -> List[int]:
+    """time evolution snode and all of its children.
+    Cano center at snode when entering and leaving"""
+    local_steps: List[int] = []
+    for ichild, child in enumerate(snode.children):
+        # cano to child
+        ttns.push_cano_to_child(snode, ichild)
+        # update env
+        ttne.update_1bond(child, ttns, ttno)
+        # recursive time evolution
+        local_steps_child = _tdvp_ps_recursion_forward(child, ttns, ttno, ttne, coeff, tau)
+        local_steps.extend(local_steps_child)
+        # decompose, the first index for parent, the second index for child
+        ms = ttns.decompose_to_parent(child)
+        # update env
+        ttne.update_1bond(child, ttns, ttno)
+        # backward time evolution for snode
+        ms_t, j = evolve_0site(ms.T, child, ttns, ttno, ttne, coeff, -tau)
+        ttns.merge_to_parent(child, ms_t.reshape(ms.T.shape).T)
+        local_steps.append(j)
+        # update env
+        ttne.update_1site(snode, ttns, ttno)
+
+    ms, j = evolve_1site(snode, ttns, ttno, ttne, coeff, tau)
+    snode.tensor = ms.reshape(snode.shape)
+    local_steps.append(j)
+    ttne.update_1site(snode, ttns, ttno)
+    return local_steps
+
+
+def _tdvp_ps_recursion_backward(snode: TreeNodeTensor,
+                                ttns: TTNS,
+                                ttno: TTNO,
+                                ttne: TTNEnviron,
+                                coeff:Union[complex, float],
+                                tau:float) -> List[int]:
+    """time evolution snode and all of its children.
+    Cano center at snode when entering and leaving"""
+    local_steps: List[int] = []
+
+    ms, j = evolve_1site(snode, ttns, ttno, ttne, coeff, tau)
+    snode.tensor = ms.reshape(snode.shape)
+    local_steps.append(j)
+    ttne.update_1site(snode, ttns, ttno)
+
+    for ichild, child in reversed(list(enumerate(snode.children))):
+        # decompose, the first index for child, the second index for parent
+        ms = ttns.decompose_to_child(snode, ichild)
+        # update env
+        ttne.update_1bond(child, ttns, ttno)
+        # backward time evolution for snode
+        shape = ms.shape
+        ms, j = evolve_0site(ms, child, ttns, ttno, ttne, coeff, -tau)
+        ttns.merge_to_child(snode, ichild, ms.reshape(shape))
+        local_steps.append(j)
+        # update env
+        ttne.update_1site(child, ttns, ttno)
+        # recursive time evolution
+        local_steps_child = _tdvp_ps_recursion_backward(child, ttns, ttno, ttne, coeff, tau)
+        local_steps.extend(local_steps_child)
+        ttns.push_cano_to_parent(child)
+        ttne.update_1bond(child, ttns, ttno)
+
+
+    return local_steps
+
+
 def evolve_tdvp_ps2(ttns:TTNS, ttno:TTNO, coeff:Union[complex, float], tau:float):
     # second order 2-site projector splitting
     tte = TTNEnviron(ttns, ttno)
@@ -122,7 +206,7 @@ def _tdvp_ps2_recursion_forward(snode: TreeNodeTensor,
     assert snode.children  # 2 site can't do only one node
     # todo: update to more general cases like truncation based on singular values
     m = ttns.compress_config.bond_dim_max_value
-    local_steps = []
+    local_steps: List[int] = []
     for ichild, child in enumerate(snode.children):
 
         if child.children:
@@ -164,7 +248,7 @@ def _tdvp_ps2_recursion_backward(snode: TreeNodeTensor,
     assert snode.children  # 2 site can't do only one node
     # todo: update to more general cases like truncation based on singular values
     m = ttns.compress_config.bond_dim_max_value
-    local_steps = []
+    local_steps: List[int] = []
     for ichild, child in reversed(list(enumerate(snode.children))):
         # backward time evolution for snode
         if not (snode is ttns.root and ichild == len(snode.children) - 1):
@@ -216,6 +300,17 @@ def evolve_1site(snode: TreeNodeTensor, ttns: TTNS, ttno: TTNO, ttne: TTNEnviron
     return ms_t, j
 
 
+def evolve_0site(ms: np.ndarray, snode: TreeNodeTensor, ttns: TTNS, ttno: TTNO, ttne: TTNEnviron, coeff:Union[complex, float], tau:float):
+    hop = hop_expr0(snode, ttns, ttno, ttne)
+    ms_t, j = expm_krylov(
+        lambda y: hop(y.reshape(ms.shape)).ravel(),
+        coeff * tau,
+        ms.ravel()
+    )
+    return ms_t, j
+
+
 EVOLVE_METHODS[EvolveMethod.tdvp_vmf] = evolve_tdvp_vmf
 EVOLVE_METHODS[EvolveMethod.prop_and_compress_tdrk4] = evolve_prop_and_compress_tdrk4
+EVOLVE_METHODS[EvolveMethod.tdvp_ps] = evolve_tdvp_ps
 EVOLVE_METHODS[EvolveMethod.tdvp_ps2] = evolve_tdvp_ps2

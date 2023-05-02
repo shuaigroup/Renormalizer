@@ -426,27 +426,36 @@ class TTNS(Tree):
             args.extend([tensor, indices])
         return args
 
-    def push_cano_to_parent(self, node: TreeNodeTensor):
+    def decompose_to_parent(self, node: TreeNodeTensor) -> np.ndarray:
         assert node.parent
-        # move the cano center to parent
         qnbigl, qnbigr, _ = self.get_qnmat(node, include_parent=False)
         tensor = node.tensor.reshape(-1, node.shape[-1])
         u, qnlnew, v, qnrnew = svd_qn(tensor, qnbigl, qnbigr, self.qntot, QR=True, system="L", full_matrices=False)
         # could shrink during QR
         node.tensor = u.reshape(list(node.shape[:-1]) + [u.shape[1]])
         node.qn = np.array(qnlnew)
+        return v
+
+    def merge_to_parent(self, node: TreeNodeTensor, v: np.ndarray) -> np.ndarray:
         # contract parent
         parent_indices = self.get_node_indices(node.parent)
         args = [node.parent.tensor, parent_indices]
-        child_idx1 = parent_indices[node.idx_as_child]  # old child index
-        child_idx2 = tuple(list(child_idx1) + ["_idx2"])  # new child index
+        child_idx1 = parent_indices[node.idx_as_child]  # old parent->child index
+        child_idx2 = tuple(list(child_idx1) + ["_idx2"])  # new parent->child index
         args.extend([v, (child_idx1, child_idx2)])
         output_indices = parent_indices.copy()
         output_indices[node.idx_as_child] = child_idx2
         args.append(output_indices)
         node.parent.tensor = oe.contract(*asxp_oe_args(args))
 
-    def push_cano_to_child(self, node:TreeNodeTensor, ichild):
+    def push_cano_to_parent(self, node: TreeNodeTensor):
+        assert node.parent
+        # move the cano center to parent
+        v = self.decompose_to_parent(node)
+        self.merge_to_parent(node, v)
+
+
+    def decompose_to_child(self, node: TreeNodeTensor, ichild):
         qnbigl, qnbigr, tensor, shape = moveaxis(self, node, ichild)
         # u for node and v for child
         u, qnl, v, qnr = svd_qn(
@@ -460,9 +469,16 @@ class TTNS(Tree):
         )
         shape[-1] = u.shape[-1]
         node.tensor = np.moveaxis(u.reshape(shape), -1, ichild)
+        node.children[ichild].qn = qnr
+        return v
+
+    def merge_to_child(self, node:TreeNodeTensor, ichild, v: np.ndarray):
         child = node.children[ichild]
         child.tensor = tensordot(child.tensor, v, axes=[-1, 0])
-        child.qn = qnr
+
+    def push_cano_to_child(self, node:TreeNodeTensor, ichild):
+        v = self.decompose_to_child(node, ichild)
+        self.merge_to_child(node, ichild, v)
 
     def compress_node(self, node:TreeNodeTensor, ichild:int, temp_m_trunc:int=None, cano_child:bool=True) -> np.ndarray:
         """Compress the bond between node and ichild"""
@@ -819,6 +835,8 @@ def truncate_tensors(u, s, v, qnl, qnr, m):
 
 
 def moveaxis(ttns:TTNS, node:TreeNodeTensor, ichild:int):
+    # move one of the children indices to the end
+
     # left indices: other children + physical bonds + parent
     qnbigl = np.zeros(ttns.basis.qn_size, dtype=int)
     # other children
