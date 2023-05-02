@@ -67,14 +67,14 @@ def check_result(tts: TTNS, tto: TTNO, time_step: float, final_time: float, op_n
     return tts
 
 
-@pytest.mark.parametrize("tts_and_tto", [init_chain, init_tree])
-def test_tdvp_vmf(tts_and_tto):
-    tts, tto, op_n_list = tts_and_tto
+@pytest.mark.parametrize("ttns_and_ttno", [init_chain, init_tree])
+def test_tdvp_vmf(ttns_and_ttno):
+    ttns, ttno, op_n_list = ttns_and_ttno
     # expand bond dimension
-    tts = tts + tts.random(tts.basis, 1, 5).scale(1e-5, inplace=True)
-    tts.canonicalise()
-    tts.evolve_config = EvolveConfig(EvolveMethod.tdvp_vmf, ivp_rtol=1e-4, ivp_atol=1e-7, force_ovlp=False)
-    check_result(tts, tto, 0.5, 2, op_n_list)
+    ttns = ttns + ttns.random(ttns.basis, 1, 5).scale(1e-5, inplace=True)
+    ttns.canonicalise()
+    ttns.evolve_config = EvolveConfig(EvolveMethod.tdvp_vmf, ivp_rtol=1e-4, ivp_atol=1e-7, force_ovlp=False)
+    check_result(ttns, ttno, 0.5, 2, op_n_list)
 
 
 @pytest.mark.parametrize("tts_and_tto", [init_chain, init_tree])
@@ -84,6 +84,20 @@ def test_pc(tts_and_tto):
     tts.evolve_config = EvolveConfig(EvolveMethod.prop_and_compress_tdrk4)
     tts.compress_config = CompressConfig(CompressCriteria.fixed)
     check_result(tts, tto, 0.2, 5, op_n_list, 5e-4)
+
+
+@pytest.mark.parametrize("ttns_and_ttno", [init_chain, init_tree])
+def test_tdvp_ps(ttns_and_ttno):
+    ttns, ttno, op_n_list = ttns_and_ttno
+    if ttns_and_ttno is init_chain:
+        ttns = ttns.copy()
+    else:
+        # expand bond dimension
+        ttns = ttns + ttns.random(ttns.basis, 1, 5).scale(1e-5, inplace=True)
+        ttns.canonicalise()
+    ttns.evolve_config = EvolveConfig(EvolveMethod.tdvp_ps)
+    ttns.compress_config = CompressConfig(CompressCriteria.fixed)
+    check_result(ttns, ttno, 0.4, 5, op_n_list)
 
 
 @pytest.mark.parametrize("ttns_and_ttno", [init_chain, init_tree])

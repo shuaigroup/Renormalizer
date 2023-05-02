@@ -6,6 +6,44 @@ from renormalizer.tn.node import TreeNodeTensor
 from renormalizer.tn.tree import TTNS, TTNO, TTNEnviron
 
 
+def hop_expr0(snode: TreeNodeTensor, ttns: TTNS, ttno: TTNO, ttne: TTNEnviron):
+    # zero site, used in tdvp time evolution
+    # assuming the first index connects child and the second index connects parent
+    # #--------o---------#
+    # child--coeff--parent
+    enode = ttne.node_list[ttns.node_idx[snode]]
+
+    args = []
+    input_indices = []
+    output_indices = []
+    shape = []
+
+    tensor = enode.parent.environ_children[enode.idx_as_child]
+    shape.append(tensor.shape[0])
+    args.append(tensor)
+    indices = ttne.get_child_indices(enode.parent, enode.idx_as_child, ttns, ttno)
+    output_indices.append(indices[0])
+    input_indices.append(indices[2])
+    args.append(indices)
+
+    tensor = enode.environ_parent
+    shape.append(tensor.shape[0])
+    args.append(tensor)
+    indices = ttne.get_parent_indices(enode, ttns, ttno)
+    assert len(indices) == 3
+    indices[0] = tuple(list(indices[0]) + ["hop0_conj"])
+    indices[2] = tuple(list(indices[2]) + ["hop0"])
+    output_indices.append(indices[0])
+    input_indices.append(indices[2])
+    args.append(indices)
+
+    expr = _contract_expression(args, shape, input_indices, output_indices)
+
+    return expr
+
+
+
+
 def hop_expr1(snode: TreeNodeTensor, ttns: TTNS, ttno: TTNO, ttne: TTNEnviron):
     # one site
     enode = ttne.node_list[ttns.node_idx[snode]]
