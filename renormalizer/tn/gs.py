@@ -15,20 +15,20 @@ from renormalizer.tn.hop_expr import hop_expr2
 logger = logging.getLogger(__name__)
 
 
-def optimize_tts(tts: TTNS, tto: TTNO, procedure=None):
+def optimize_tts(ttns: TTNS, ttno: TTNO, procedure=None):
     if procedure is None:
-        procedure = tts.optimize_config.procedure
-    tte = TTNEnviron(tts, tto)
+        procedure = ttns.optimize_config.procedure
+    tte = TTNEnviron(ttns, ttno)
     e_list = []
     for m, percent in procedure:
         # todo: better converge condition
-        micro_e = optimize_recursion(tts.root, tts, tto, tte, m, percent)
+        micro_e = optimize_recursion(ttns.root, ttns, ttno, tte, m, percent)
         logger.info(f"Micro e: {micro_e}")
         e_list.append(micro_e[-1])
     return e_list
 
 
-def optimize_recursion(snode: TreeNodeTensor, tts, tto, tte, m:int, percent:float=0) -> List[float]:
+def optimize_recursion(snode: TreeNodeTensor, ttns: TTNS, ttno: TTNO, ttne: TTNEnviron, m:int, percent:float=0) -> List[float]:
     """Optimize snode and all of its children"""
     assert snode.children  # 2 site can't do only one node
     micro_e = []
@@ -36,23 +36,23 @@ def optimize_recursion(snode: TreeNodeTensor, tts, tto, tte, m:int, percent:floa
 
         if child.children:
             # optimize snode + child
-            e, c = optimize_2site(child, tts, tto, tte)
+            e, c = optimize_2site(child, ttns, ttno, ttne)
             micro_e.append(e)
             # cano to child
-            tts.update_2site(child, c, m, percent, cano_parent=False)
+            ttns.update_2site(child, c, m, percent, cano_parent=False)
             # update env
-            tte.update_2site(child, tts, tto)
+            ttne.update_2site(child, ttns, ttno)
             # recursive optimization
-            micro_e_child = optimize_recursion(child, tts, tto, tte, m)
+            micro_e_child = optimize_recursion(child, ttns, ttno, ttne, m)
             micro_e.extend(micro_e_child)
 
         # optimize snode + child
-        e, c = optimize_2site(child, tts, tto, tte)
+        e, c = optimize_2site(child, ttns, ttno, ttne)
         micro_e.append(e)
         # cano to snode
-        tts.update_2site(child, c, m, percent, cano_parent=True)
+        ttns.update_2site(child, c, m, percent, cano_parent=True)
         # update env
-        tte.update_2site(child, tts, tto)
+        ttne.update_2site(child, ttns, ttno)
     return micro_e
 
 
