@@ -387,6 +387,9 @@
         <span class="k">elif</span> <span class="n">op_symbol</span> <span class="o">==</span> <span class="sa">r</span><span class="s2">&quot;b^\dagger+b&quot;</span><span class="p">:</span>
             <span class="n">mat</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">op_mat</span><span class="p">(</span><span class="sa">r</span><span class="s2">&quot;b^\dagger&quot;</span><span class="p">)</span> <span class="o">+</span> <span class="bp">self</span><span class="o">.</span><span class="n">op_mat</span><span class="p">(</span><span class="s2">&quot;b&quot;</span><span class="p">)</span>
 
+        <span class="k">elif</span> <span class="n">op_symbol</span> <span class="o">==</span> <span class="sa">r</span><span class="s2">&quot;b^\dagger-b&quot;</span><span class="p">:</span>
+            <span class="n">mat</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">op_mat</span><span class="p">(</span><span class="sa">r</span><span class="s2">&quot;b^\dagger&quot;</span><span class="p">)</span> <span class="o">-</span> <span class="bp">self</span><span class="o">.</span><span class="n">op_mat</span><span class="p">(</span><span class="s2">&quot;b&quot;</span><span class="p">)</span>
+
         <span class="k">elif</span> <span class="n">op_symbol</span> <span class="o">==</span> <span class="sa">r</span><span class="s2">&quot;b^\dagger b&quot;</span><span class="p">:</span>
             <span class="c1"># b^dagger b = n delta(n,n)</span>
             <span class="n">mat</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">diag</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">arange</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">nbas</span><span class="p">))</span>
