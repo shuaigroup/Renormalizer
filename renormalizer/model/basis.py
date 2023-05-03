@@ -182,6 +182,9 @@ class BasisSHO(BasisSet):
         elif op_symbol == r"b^\dagger+b":
             mat = self.op_mat(r"b^\dagger") + self.op_mat("b")
 
+        elif op_symbol == r"b^\dagger-b":
+            mat = self.op_mat(r"b^\dagger") - self.op_mat("b")
+
         elif op_symbol == r"b^\dagger b":
             # b^dagger b = n delta(n,n)
             mat = np.diag(np.arange(self.nbas))
