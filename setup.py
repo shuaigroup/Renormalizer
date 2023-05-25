@@ -11,7 +11,7 @@ req = ["numpy",
 
 setuptools.setup(
     name="renormalizer",
-    version="0.0.5",
+    version="0.0.10",
     packages=setuptools.find_packages(),
     long_description=long_description,
     long_description_content_type="text/markdown",
