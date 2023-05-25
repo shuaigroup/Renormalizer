@@ -1009,7 +1009,7 @@ class MatrixProduct:
         new.compress_config = self.compress_config.copy()
         new.qn = [qn.copy() for qn in self.qn]
         new.qnidx = self.qnidx
-        new.qntot = self.qntot
+        new.qntot = self.qntot.copy()
         new.to_right = self.to_right
         return new
 

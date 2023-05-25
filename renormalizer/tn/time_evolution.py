@@ -99,6 +99,7 @@ def evolve_prop_and_compress_tdrk4(ttns:TTNS, ttno:TTNO, coeff:Union[complex, fl
 
 
 def evolve_tdvp_ps(ttns:TTNS, ttno:TTNO, coeff:Union[complex, float], tau:float):
+    ttns.check_canonical()
     # second order 1-site projector splitting
     tte = TTNEnviron(ttns, ttno)
     # in MPS language: left to right sweep
@@ -183,6 +184,7 @@ def _tdvp_ps_recursion_backward(snode: TreeNodeTensor,
 
 
 def evolve_tdvp_ps2(ttns:TTNS, ttno:TTNO, coeff:Union[complex, float], tau:float):
+    ttns.check_canonical()
     # second order 2-site projector splitting
     tte = TTNEnviron(ttns, ttno)
     # in MPS language: left to right sweep

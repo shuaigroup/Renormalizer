@@ -904,8 +904,10 @@ class BasisSimpleElectron(BasisSet):
     """
     is_electron = True
 
-    def __init__(self, dof):
-        super().__init__(dof, 2, [0, 1])
+    def __init__(self, dof, sigmaqn=None):
+        if sigmaqn is None:
+            sigmaqn = [0, 1]
+        super().__init__(dof, 2, sigmaqn)
 
     def op_mat(self, op):
         if not isinstance(op, Op):
@@ -997,6 +999,27 @@ class BasisHalfSpin(BasisSet):
     def copy(self, new_dof):
         return self.__class__(new_dof, self.sigmaqn)
 
+
+class BasisDummy(BasisSet):
+    def __init__(self, dof, sigmaqn:List=None):
+        if sigmaqn is None:
+            sigmaqn = [0]
+        super().__init__(dof, 1, sigmaqn)
+
+    def op_mat(self, op: Union[Op, str]):
+        if not isinstance(op, Op):
+            op = Op(op, None)
+        op_symbol, op_factor = op.split_symbol, op.factor
+
+        if len(op_symbol) == 1 and op_symbol[0] == "I":
+            mat = np.eye(1)
+        else:
+            raise ValueError(f"op_symbol:{op_symbol} is not supported")
+
+        return mat * op_factor
+
+    def copy(self, new_dof):
+        return self.__class__(new_dof, self.sigmaqn)
 
 def x_power_k(k, m, n):
 # <m|x^k|n>, origin is 0
