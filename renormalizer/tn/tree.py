@@ -4,7 +4,7 @@ import scipy
 import opt_einsum as oe
 
 from renormalizer import Op, Mps, Model
-from renormalizer.model.basis import BasisSet
+from renormalizer.model.basis import BasisSet, BasisDummy
 from renormalizer.mps.backend import np, backend
 from renormalizer.mps.matrix import asnumpy, asxp_oe_args, tensordot
 from renormalizer.mps.svd_qn import add_outer, svd_qn, blockrecover, get_qn_mask
@@ -91,15 +91,15 @@ class TTNO(Tree):
         indices_up = []
         indices_down = []
         for basis in order:
+            if isinstance(basis, BasisDummy):
+                continue
             indices_up.append(("up", str(basis.dofs)))
             indices_down.append(("down", str(basis.dofs)))
-        output_indices = [(_id, "root", str(self.tn2dofs[self.root]))] + indices_up + indices_down
+        output_indices = indices_up + indices_down
         args.append(output_indices)
         res = oe.contract(*asxp_oe_args(args))
         # to be consistent with the behavior of MPS/MPO
         res = asnumpy(res)
-        assert res.shape[0] == 1
-        res = res[0]
         dim = round(np.sqrt(np.prod(res.shape)))
         return res.reshape(dim, dim)
 
@@ -108,7 +108,10 @@ class TTNO(Tree):
         for node in self.node_list:
             assert isinstance(node, TreeNodeTensor)
             indices = self.get_node_indices(node, prefix_up, prefix_down)
-            args.extend([node.tensor, indices])
+            indices = [indices[i] for i, s in enumerate(node.tensor.shape) if s != 1]
+            tensor = node.tensor.squeeze()
+            assert len(indices) == tensor.ndim
+            args.extend([tensor, indices])
         return args
 
     def get_node_indices(self, node, prefix_up, prefix_down):
@@ -407,13 +410,12 @@ class TTNS(Tree):
         indices_up = []
         for basis in order:
             indices_up.append(("down", str(basis.dofs)))
-        output_indices = [(_id, "root", str(self.tn2dofs[self.root]))] + indices_up
+        output_indices = indices_up
         args.append(output_indices)
         res = oe.contract(*asxp_oe_args(args))
         # to be consistent with the behavior of MPS/MPO
         res = asnumpy(res)
-        assert res.shape[0] == 1
-        return res[0]
+        return res
 
     def to_contract_args(self, conj=False):
         args = []
@@ -423,6 +425,9 @@ class TTNS(Tree):
             tensor = node.tensor
             if conj:
                 tensor = tensor.conj()
+            indices = [indices[i] for i, s in enumerate(tensor.shape) if s != 1]
+            tensor = tensor.squeeze()
+            assert len(indices) == tensor.ndim
             args.extend([tensor, indices])
         return args
 

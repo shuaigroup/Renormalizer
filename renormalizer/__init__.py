@@ -7,6 +7,9 @@ import warnings
 
 
 reno_num_threads = os.environ.get("RENO_NUM_THREADS")
+# for debugging
+# os.environ["CUDA_VISIBLE_DEVICES"] = "-1"
+# reno_num_threads = "1"
 if reno_num_threads is not None:
     # Set environment variables to limit NumPy CPU usage
     # Note that this should be done before NumPy is imported
@@ -34,6 +37,6 @@ del os, log_level, init_log
 # user interfaces
 from renormalizer.model import Model, HolsteinModel, SpinBosonModel, TI1DModel, Op, OpSum
 from renormalizer.model.basis import BasisSHO, BasisHopsBoson, BasisSineDVR, BasisMultiElectron, \
-    BasisMultiElectronVac, BasisSimpleElectron, BasisHalfSpin
+    BasisMultiElectronVac, BasisSimpleElectron, BasisHalfSpin, BasisDummy
 from renormalizer.mps import Mpo, Mps, optimize_mps
 from renormalizer.utils import Quantity
