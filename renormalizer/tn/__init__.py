@@ -1,3 +1,4 @@
+from renormalizer.tn.node import TreeNodeBasis
 from renormalizer.tn.treebase import BasisTree
 from renormalizer.tn.tree import TTNO, TTNS
 # set the variable

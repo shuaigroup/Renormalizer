@@ -17,7 +17,7 @@ def _expm_krylov(alpha, beta, V, v_norm, dt):
     try:
         w_hess, u_hess = eigh_tridiagonal(alpha, beta)
     except np.linalg.LinAlgError:
-        logger.warning("tridiagonal failed")
+        logger.warning(f"tridiagonal diagonalization failed, size:{len(alpha)}")
         h = np.diag(alpha) + np.diag(beta, k=-1) + np.diag(beta, k=1)
         w_hess, u_hess = np.linalg.eigh(h)
 
