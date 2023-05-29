@@ -55,7 +55,7 @@ def get_qutip_holstein_kubo(model, temperature, time_series):
     j_oper = sum(terms).extract_states(qn_idx)
 
     # Add the negative sign because j is taken to be real
-    return -qutip.correlation(H, init_state, [0], time_series, [], j_oper, j_oper)[0]
+    return -qutip.correlation_2op_2t(H, init_state, [0], time_series, [], j_oper, j_oper)[0]
 
 
 def test_peierls_kubo():
@@ -129,9 +129,9 @@ def get_qutip_peierls_kubo(J, nsites, ph_levels, omega, g, temperature, time_ser
     j_oper2 = sum(peierls_terms).extract_states(qn_idx)
 
     # Add negative signs because j is taken to be real
-    corr1 = -qutip.correlation(H, init_state, [0], time_series, [], j_oper1, j_oper1)[0]
-    corr2 = -qutip.correlation(H, init_state, [0], time_series, [], j_oper1, j_oper2)[0]
-    corr3 = -qutip.correlation(H, init_state, [0], time_series, [], j_oper2, j_oper1)[0]
-    corr4 = -qutip.correlation(H, init_state, [0], time_series, [], j_oper2, j_oper2)[0]
+    corr1 = -qutip.correlation_2op_2t(H, init_state, [0], time_series, [], j_oper1, j_oper1)[0]
+    corr2 = -qutip.correlation_2op_2t(H, init_state, [0], time_series, [], j_oper1, j_oper2)[0]
+    corr3 = -qutip.correlation_2op_2t(H, init_state, [0], time_series, [], j_oper2, j_oper1)[0]
+    corr4 = -qutip.correlation_2op_2t(H, init_state, [0], time_series, [], j_oper2, j_oper2)[0]
     corr = corr1 + corr2 + corr3 + corr4
     return corr, np.array([corr1, corr2, corr3, corr4]).T
