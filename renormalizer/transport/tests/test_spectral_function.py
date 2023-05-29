@@ -69,4 +69,4 @@ def get_qutip_holstein_sf(nsites, J, ph_levels, omega, g, temperature, time_seri
         init_state_list.append((-beta * (omega * b.dag() * b)).expm().unit())
     init_state = qutip.tensor(init_state_list)
 
-    return qutip.correlation(H, init_state, [0], time_series, [], clist[1], clist[0].dag())[0] / 1j
+    return qutip.correlation_2op_2t(H, init_state, [0], time_series, [], clist[1], clist[0].dag())[0] / 1j
