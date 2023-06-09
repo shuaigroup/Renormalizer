@@ -1,0 +1,10 @@
+numpy==1.22.*
+scipy==1.8.*
+pytest==6.2.*
+h5py==3.1.*
+PyYAML==5.4.*
+recommonmark==0.7.*
+furo==2022.9.*
+nbsphinx==0.8.*
+opt_einsum==3.3.*
+qutip==4.6.*

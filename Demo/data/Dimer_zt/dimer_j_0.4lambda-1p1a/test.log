@@ -1,0 +1,540 @@
+2022-09-19 23:12:57,072[INFO] d1:[ 0.         12.52068664]
+2022-09-19 23:12:57,073[INFO] reE: 0.003189434677038241 j: -0.0012757738708152966
+2022-09-19 23:12:57,073[INFO] j_matrix: [[ 0.         -0.00127577]
+ [-0.00127577  0.        ]]
+2022-09-19 23:12:57,074[INFO] w: [1400. 1400.]
+2022-09-19 23:12:57,074[INFO] s1 energy_mono: 0.038273216124458886
+2022-09-19 23:12:57,074[INFO] s1 energy_agg: 0.044652085478535365
+2022-09-19 23:12:57,075[DEBUG] # of operator terms: 2
+2022-09-19 23:12:57,075[DEBUG] symbolic mpo algorithm: Hopcroft-Karp
+2022-09-19 23:12:57,075[DEBUG] Input operator terms: 2
+2022-09-19 23:12:57,076[DEBUG] After combination of the same terms: 2
+2022-09-19 23:12:57,091[INFO] current size: 77.5KiB, Matrix product bond dim:[1, 2, 2, 2, 2, 1, 1]
+2022-09-19 23:12:57,092[DEBUG] # of operator terms: 24
+2022-09-19 23:12:57,092[DEBUG] symbolic mpo algorithm: Hopcroft-Karp
+2022-09-19 23:12:57,092[DEBUG] Input operator terms: 24
+2022-09-19 23:12:57,094[DEBUG] After combination of the same terms: 22
+2022-09-19 23:12:57,114[INFO] current size: 366.1KiB, Matrix product bond dim:[1, 4, 5, 4, 3, 3, 1]
+2022-09-19 23:12:57,159[INFO] optimization method: 2site
+2022-09-19 23:12:57,160[INFO] e_rtol: 1e-06
+2022-09-19 23:12:57,160[INFO] e_atol: 1e-08
+2022-09-19 23:12:57,764[DEBUG] isweep: 0
+2022-09-19 23:12:57,764[DEBUG] mmax, percent: 10, 0.5
+2022-09-19 23:12:57,764[DEBUG] current size: 55.5KiB, Matrix product bond dim:[1, 2, 10, 10, 10, 10, 1]
+2022-09-19 23:12:57,764[DEBUG] optimize site: [4, 5]
+2022-09-19 23:12:57,765[DEBUG] Hmat dim: 4500
+2022-09-19 23:12:57,895[DEBUG] use davidson, HC hops: 42
+2022-09-19 23:12:57,895[DEBUG] energy: 0.2211921486690072
+2022-09-19 23:12:57,901[DEBUG] optimize site: [3, 4]
+2022-09-19 23:12:57,909[DEBUG] Hmat dim: 3000
+2022-09-19 23:12:57,958[DEBUG] use davidson, HC hops: 13
+2022-09-19 23:12:57,958[DEBUG] energy: 0.21129817200392326
+2022-09-19 23:12:57,964[DEBUG] optimize site: [2, 3]
+2022-09-19 23:12:57,972[DEBUG] Hmat dim: 3000
+2022-09-19 23:12:58,083[DEBUG] use davidson, HC hops: 38
+2022-09-19 23:12:58,084[DEBUG] energy: 0.10634402990768207
+2022-09-19 23:12:58,087[DEBUG] optimize site: [1, 2]
+2022-09-19 23:12:58,096[DEBUG] Hmat dim: 9000
+2022-09-19 23:12:58,257[DEBUG] use davidson, HC hops: 57
+2022-09-19 23:12:58,258[DEBUG] energy: 0.043774528379255065
+2022-09-19 23:12:58,263[DEBUG] optimize site: [0, 1]
+2022-09-19 23:12:58,268[DEBUG] Hmat dim: 300
+2022-09-19 23:12:58,269[DEBUG] use direct eigensolver
+2022-09-19 23:12:58,328[DEBUG] energy: 0.04377452837923774
+2022-09-19 23:12:58,331[DEBUG] isweep: 1
+2022-09-19 23:12:58,331[DEBUG] mmax, percent: 10, 0.3
+2022-09-19 23:12:58,332[DEBUG] current size: 74.4KiB, Matrix product bond dim:[1, 10, 10, 10, 10, 10, 1]
+2022-09-19 23:12:58,332[DEBUG] optimize site: [0, 1]
+2022-09-19 23:12:58,332[DEBUG] Hmat dim: 300
+2022-09-19 23:12:58,332[DEBUG] use direct eigensolver
+2022-09-19 23:12:58,359[DEBUG] energy: 0.04377452837923774
+2022-09-19 23:12:58,361[DEBUG] optimize site: [1, 2]
+2022-09-19 23:12:58,365[DEBUG] Hmat dim: 9000
+2022-09-19 23:12:58,372[DEBUG] use davidson, HC hops: 1
+2022-09-19 23:12:58,372[DEBUG] energy: 0.043774528379237745
+2022-09-19 23:12:58,375[DEBUG] optimize site: [2, 3]
+2022-09-19 23:12:58,378[DEBUG] Hmat dim: 3000
+2022-09-19 23:12:58,391[DEBUG] use davidson, HC hops: 4
+2022-09-19 23:12:58,391[DEBUG] energy: 0.04377452715507182
+2022-09-19 23:12:58,395[DEBUG] optimize site: [3, 4]
+2022-09-19 23:12:58,402[DEBUG] Hmat dim: 3000
+2022-09-19 23:12:58,420[DEBUG] use davidson, HC hops: 1
+2022-09-19 23:12:58,421[DEBUG] energy: 0.04377452715507184
+2022-09-19 23:12:58,426[DEBUG] optimize site: [4, 5]
+2022-09-19 23:12:58,434[DEBUG] Hmat dim: 9000
+2022-09-19 23:12:58,453[DEBUG] use davidson, HC hops: 2
+2022-09-19 23:12:58,453[DEBUG] energy: 0.043774527021299615
+2022-09-19 23:12:58,458[DEBUG] isweep: 2
+2022-09-19 23:12:58,458[DEBUG] mmax, percent: 10, 0.1
+2022-09-19 23:12:58,458[DEBUG] current size: 55.5KiB, Matrix product bond dim:[1, 2, 10, 10, 10, 10, 1]
+2022-09-19 23:12:58,459[DEBUG] optimize site: [4, 5]
+2022-09-19 23:12:58,459[DEBUG] Hmat dim: 9000
+2022-09-19 23:12:58,478[DEBUG] use davidson, HC hops: 1
+2022-09-19 23:12:58,478[DEBUG] energy: 0.043774527021299636
+2022-09-19 23:12:58,483[DEBUG] optimize site: [3, 4]
+2022-09-19 23:12:58,490[DEBUG] Hmat dim: 3000
+2022-09-19 23:12:58,507[DEBUG] use davidson, HC hops: 1
+2022-09-19 23:12:58,507[DEBUG] energy: 0.04377452702129965
+2022-09-19 23:12:58,512[DEBUG] optimize site: [2, 3]
+2022-09-19 23:12:58,519[DEBUG] Hmat dim: 3000
+2022-09-19 23:12:58,539[DEBUG] use davidson, HC hops: 1
+2022-09-19 23:12:58,539[DEBUG] energy: 0.04377452702129964
+2022-09-19 23:12:58,546[DEBUG] optimize site: [1, 2]
+2022-09-19 23:12:58,559[DEBUG] Hmat dim: 9000
+2022-09-19 23:12:58,580[DEBUG] use davidson, HC hops: 1
+2022-09-19 23:12:58,580[DEBUG] energy: 0.04377452702129962
+2022-09-19 23:12:58,585[DEBUG] optimize site: [0, 1]
+2022-09-19 23:12:58,594[DEBUG] Hmat dim: 300
+2022-09-19 23:12:58,594[DEBUG] use direct eigensolver
+2022-09-19 23:12:58,623[DEBUG] energy: 0.04377452702129581
+2022-09-19 23:12:58,627[DEBUG] isweep: 3
+2022-09-19 23:12:58,627[DEBUG] mmax, percent: 10, 0
+2022-09-19 23:12:58,628[DEBUG] current size: 74.4KiB, Matrix product bond dim:[1, 10, 10, 10, 10, 10, 1]
+2022-09-19 23:12:58,628[DEBUG] optimize site: [0, 1]
+2022-09-19 23:12:58,628[DEBUG] Hmat dim: 300
+2022-09-19 23:12:58,628[DEBUG] use direct eigensolver
+2022-09-19 23:12:58,655[DEBUG] energy: 0.04377452702129581
+2022-09-19 23:12:58,659[DEBUG] optimize site: [1, 2]
+2022-09-19 23:12:58,665[DEBUG] Hmat dim: 9000
+2022-09-19 23:12:58,682[DEBUG] use davidson, HC hops: 1
+2022-09-19 23:12:58,682[DEBUG] energy: 0.04377452702129583
+2022-09-19 23:12:58,687[DEBUG] optimize site: [2, 3]
+2022-09-19 23:12:58,701[DEBUG] Hmat dim: 3000
+2022-09-19 23:12:58,728[DEBUG] use davidson, HC hops: 1
+2022-09-19 23:12:58,729[DEBUG] energy: 0.043774527021295834
+2022-09-19 23:12:58,733[DEBUG] optimize site: [3, 4]
+2022-09-19 23:12:58,742[DEBUG] Hmat dim: 3000
+2022-09-19 23:12:58,760[DEBUG] use davidson, HC hops: 1
+2022-09-19 23:12:58,761[DEBUG] energy: 0.04377452702129585
+2022-09-19 23:12:58,765[DEBUG] optimize site: [4, 5]
+2022-09-19 23:12:58,772[DEBUG] Hmat dim: 9000
+2022-09-19 23:12:58,789[DEBUG] use davidson, HC hops: 1
+2022-09-19 23:12:58,789[DEBUG] energy: 0.04377452702129579
+2022-09-19 23:12:58,796[DEBUG] 4 sweeps are finished, lowest energy = 0.04377452702129579
+2022-09-19 23:12:58,796[INFO] DMRG is converged!
+2022-09-19 23:12:58,815[INFO] current size: 55.5KiB, Matrix product bond dim:[1, 2, 10, 10, 10, 10, 1]
+2022-09-19 23:12:58,815[DEBUG] # of operator terms: 1
+2022-09-19 23:12:58,816[DEBUG] symbolic mpo algorithm: Hopcroft-Karp
+2022-09-19 23:12:58,816[DEBUG] Input operator terms: 1
+2022-09-19 23:12:58,816[DEBUG] After combination of the same terms: 1
+2022-09-19 23:12:58,827[INFO] current size: 28.2KiB, Matrix product bond dim:[1, 1, 1, 1, 1, 1, 1]
+2022-09-19 23:12:58,827[DEBUG] # of operator terms: 1
+2022-09-19 23:12:58,827[DEBUG] symbolic mpo algorithm: Hopcroft-Karp
+2022-09-19 23:12:58,827[DEBUG] Input operator terms: 1
+2022-09-19 23:12:58,828[DEBUG] After combination of the same terms: 1
+2022-09-19 23:12:58,838[INFO] current size: 28.2KiB, Matrix product bond dim:[1, 1, 1, 1, 1, 1, 1]
+2022-09-19 23:12:58,882[INFO] [0.49999988 0.50000012]
+2022-09-19 23:12:58,883[DEBUG] # of operator terms: 1
+2022-09-19 23:12:58,883[DEBUG] symbolic mpo algorithm: Hopcroft-Karp
+2022-09-19 23:12:58,883[DEBUG] Input operator terms: 1
+2022-09-19 23:12:58,884[DEBUG] After combination of the same terms: 1
+2022-09-19 23:12:58,894[INFO] current size: 28.2KiB, Matrix product bond dim:[1, 1, 1, 1, 1, 1, 1]
+2022-09-19 23:12:58,894[DEBUG] # of operator terms: 1
+2022-09-19 23:12:58,894[DEBUG] symbolic mpo algorithm: Hopcroft-Karp
+2022-09-19 23:12:58,894[DEBUG] Input operator terms: 1
+2022-09-19 23:12:58,895[DEBUG] After combination of the same terms: 1
+2022-09-19 23:12:58,905[INFO] current size: 28.2KiB, Matrix product bond dim:[1, 1, 1, 1, 1, 1, 1]
+2022-09-19 23:12:58,905[DEBUG] # of operator terms: 1
+2022-09-19 23:12:58,905[DEBUG] symbolic mpo algorithm: Hopcroft-Karp
+2022-09-19 23:12:58,905[DEBUG] Input operator terms: 1
+2022-09-19 23:12:58,906[DEBUG] After combination of the same terms: 1
+2022-09-19 23:12:58,916[INFO] current size: 28.2KiB, Matrix product bond dim:[1, 1, 1, 1, 1, 1, 1]
+2022-09-19 23:12:58,916[DEBUG] # of operator terms: 1
+2022-09-19 23:12:58,916[DEBUG] symbolic mpo algorithm: Hopcroft-Karp
+2022-09-19 23:12:58,916[DEBUG] Input operator terms: 1
+2022-09-19 23:12:58,917[DEBUG] After combination of the same terms: 1
+2022-09-19 23:12:58,927[INFO] current size: 28.2KiB, Matrix product bond dim:[1, 1, 1, 1, 1, 1, 1]
+2022-09-19 23:12:59,015[INFO] [1.79712417e-31 2.03124707e-01 2.10993457e-13 2.03124814e-01]
+2022-09-19 23:12:59,016[DEBUG] # of operator terms: 1
+2022-09-19 23:12:59,016[DEBUG] symbolic mpo algorithm: Hopcroft-Karp
+2022-09-19 23:12:59,016[DEBUG] Input operator terms: 1
+2022-09-19 23:12:59,016[DEBUG] After combination of the same terms: 1
+2022-09-19 23:12:59,027[INFO] current size: 28.2KiB, Matrix product bond dim:[1, 1, 1, 1, 1, 1, 1]
+2022-09-19 23:12:59,027[DEBUG] # of operator terms: 1
+2022-09-19 23:12:59,027[DEBUG] symbolic mpo algorithm: Hopcroft-Karp
+2022-09-19 23:12:59,027[DEBUG] Input operator terms: 1
+2022-09-19 23:12:59,027[DEBUG] After combination of the same terms: 1
+2022-09-19 23:12:59,038[INFO] current size: 28.2KiB, Matrix product bond dim:[1, 1, 1, 1, 1, 1, 1]
+2022-09-19 23:12:59,038[DEBUG] # of operator terms: 1
+2022-09-19 23:12:59,038[DEBUG] symbolic mpo algorithm: Hopcroft-Karp
+2022-09-19 23:12:59,038[DEBUG] Input operator terms: 1
+2022-09-19 23:12:59,039[DEBUG] After combination of the same terms: 1
+2022-09-19 23:12:59,049[INFO] current size: 28.2KiB, Matrix product bond dim:[1, 1, 1, 1, 1, 1, 1]
+2022-09-19 23:12:59,135[INFO] e_rdm: [[0.49999988-0.j 0.37764578+0.j]
+ [0.37764578-0.j 0.50000012-0.j]]
+2022-09-19 23:12:59,162[INFO] imps.mps_norm is 0.9999999999999996
+2022-09-19 23:12:59,187[INFO] imps.norm is 0.9999999999999996
+2022-09-19 23:12:59,187[DEBUG] # of operator terms: 1
+2022-09-19 23:12:59,187[DEBUG] symbolic mpo algorithm: Hopcroft-Karp
+2022-09-19 23:12:59,187[DEBUG] Input operator terms: 1
+2022-09-19 23:12:59,188[DEBUG] After combination of the same terms: 1
+2022-09-19 23:12:59,198[INFO] current size: 28.2KiB, Matrix product bond dim:[1, 1, 1, 1, 1, 1, 1]
+2022-09-19 23:12:59,230[DEBUG] # of operator terms: 1
+2022-09-19 23:12:59,230[DEBUG] symbolic mpo algorithm: Hopcroft-Karp
+2022-09-19 23:12:59,231[DEBUG] Input operator terms: 1
+2022-09-19 23:12:59,231[DEBUG] After combination of the same terms: 1
+2022-09-19 23:12:59,242[INFO] current size: 28.2KiB, Matrix product bond dim:[1, 1, 1, 1, 1, 1, 1]
+2022-09-19 23:12:59,274[DEBUG] # of operator terms: 1
+2022-09-19 23:12:59,274[DEBUG] symbolic mpo algorithm: Hopcroft-Karp
+2022-09-19 23:12:59,274[DEBUG] Input operator terms: 1
+2022-09-19 23:12:59,275[DEBUG] After combination of the same terms: 1
+2022-09-19 23:12:59,285[INFO] current size: 28.2KiB, Matrix product bond dim:[1, 1, 1, 1, 1, 1, 1]
+2022-09-19 23:12:59,319[DEBUG] # of operator terms: 1
+2022-09-19 23:12:59,319[DEBUG] symbolic mpo algorithm: Hopcroft-Karp
+2022-09-19 23:12:59,319[DEBUG] Input operator terms: 1
+2022-09-19 23:12:59,320[DEBUG] After combination of the same terms: 1
+2022-09-19 23:12:59,330[INFO] current size: 28.2KiB, Matrix product bond dim:[1, 1, 1, 1, 1, 1, 1]
+2022-09-19 23:12:59,363[DEBUG] # of operator terms: 1
+2022-09-19 23:12:59,363[DEBUG] symbolic mpo algorithm: Hopcroft-Karp
+2022-09-19 23:12:59,363[DEBUG] Input operator terms: 1
+2022-09-19 23:12:59,363[DEBUG] After combination of the same terms: 1
+2022-09-19 23:12:59,374[INFO] current size: 28.2KiB, Matrix product bond dim:[1, 1, 1, 1, 1, 1, 1]
+2022-09-19 23:12:59,417[DEBUG] # of operator terms: 1
+2022-09-19 23:12:59,417[DEBUG] symbolic mpo algorithm: Hopcroft-Karp
+2022-09-19 23:12:59,418[DEBUG] Input operator terms: 1
+2022-09-19 23:12:59,418[DEBUG] After combination of the same terms: 1
+2022-09-19 23:12:59,429[INFO] current size: 28.2KiB, Matrix product bond dim:[1, 1, 1, 1, 1, 1, 1]
+2022-09-19 23:12:59,458[DEBUG] # of operator terms: 1
+2022-09-19 23:12:59,458[DEBUG] symbolic mpo algorithm: Hopcroft-Karp
+2022-09-19 23:12:59,458[DEBUG] Input operator terms: 1
+2022-09-19 23:12:59,459[DEBUG] After combination of the same terms: 1
+2022-09-19 23:12:59,469[INFO] current size: 28.2KiB, Matrix product bond dim:[1, 1, 1, 1, 1, 1, 1]
+2022-09-19 23:12:59,498[DEBUG] # of operator terms: 1
+2022-09-19 23:12:59,498[DEBUG] symbolic mpo algorithm: Hopcroft-Karp
+2022-09-19 23:12:59,499[DEBUG] Input operator terms: 1
+2022-09-19 23:12:59,499[DEBUG] After combination of the same terms: 1
+2022-09-19 23:12:59,510[INFO] current size: 28.2KiB, Matrix product bond dim:[1, 1, 1, 1, 1, 1, 1]
+2022-09-19 23:12:59,560[INFO] e_ph_corrrelation: [[[ 0.00000000e+00 -5.41010635e-06]
+  [ 8.98540732e-31 -1.97004553e-07]]
+
+ [[-5.58900754e+00 -6.71337681e-01]
+  [-6.71333121e-01 -5.58900993e+00]]]
+2022-09-19 23:12:59,563[INFO] load nac_mpo form model.mpos
+2022-09-19 23:12:59,564[INFO] load nac_mpo form model.mpos
+2022-09-19 23:12:59,597[INFO] Creating TDMPS job. dump_dir: ./. job_name: test
+2022-09-19 23:12:59,597[INFO] evolve_config: 
+method: EvolveMethod.tdvp_ps
+_adaptive: False
+rk_config: <renormalizer.utils.rk.RungeKutta object at 0x7f1440cc4b70>
+guess_dt: 0.1
+adaptive_rtol: 0.0005
+tdvp_cmf_midpoint: True
+tdvp_cmf_c_trapz: False
+reg_epsilon: 1e-10
+ivp_rtol: 1e-05
+ivp_atol: 1e-08
+force_ovlp: True
+vmf_auto_switch: True
+2022-09-19 23:12:59,597[INFO] Step 0/?. Preparing MPS in the initial state.
+2022-09-19 23:12:59,712[INFO] ket_mps.mps_norm is 1.0
+2022-09-19 23:12:59,738[INFO] ket_mps.norm is 0.056475079812092065
+2022-09-19 23:13:00,029[INFO] ket_mps.mps_norm is 1.0
+2022-09-19 23:13:00,053[INFO] ket_mps.norm is 0.05647507981209206
+2022-09-19 23:13:00,145[DEBUG] size before/after compress: 53.1KiB/53.1KiB, ratio: 1.0
+2022-09-19 23:13:00,257[DEBUG] size before/after compress: 53.1KiB/53.1KiB, ratio: 1.0
+2022-09-19 23:13:00,291[INFO] ket_mps.mps_norm is 1.0
+2022-09-19 23:13:00,302[INFO] ket_mps.norm is 0.05647507981209206
+2022-09-19 23:13:00,486[INFO] TDMPS job created.
+2022-09-19 23:13:00,556[DEBUG] e_ket:0.02172802065241229, e_bra:0.02172802065241229
+2022-09-19 23:13:00,558[INFO] step 1/50, at time 0/413.4137333518211 begin.
+2022-09-19 23:13:00,683[DEBUG] the krylov subspace is equal to the full space
+2022-09-19 23:13:01,450[DEBUG] the krylov subspace is equal to the full space
+2022-09-19 23:13:01,469[DEBUG] TDVP-PS CMF steps: DescribeResult(nobs=22, minmax=(1, 7), mean=5.909090909090909, variance=5.610389610389612, skewness=-1.6499158227686102, kurtosis=0.7222222222222197)
+2022-09-19 23:13:01,757[INFO] step 1 complete, time cost 0:00:01.198439. bra: current size: 106.3KiB, Matrix product bond dim:[1, 1, 10, 10, 10, 10, 1], ket: current size: 106.3KiB, Matrix product bond dim:[1, 1, 10, 10, 10, 10, 1], ft: 0.00318199+2.77975e-07j
+2022-09-19 23:13:01,797[INFO] Dumping time cost 0:00:00.040580
+2022-09-19 23:13:01,797[INFO] step 2/50, at time 8.268274667036422/413.4137333518211 begin.
+2022-09-19 23:13:01,876[DEBUG] the krylov subspace is equal to the full space
+2022-09-19 23:13:02,614[DEBUG] the krylov subspace is equal to the full space
+2022-09-19 23:13:02,628[DEBUG] TDVP-PS CMF steps: DescribeResult(nobs=22, minmax=(1, 7), mean=5.909090909090909, variance=5.610389610389612, skewness=-1.6499158227686102, kurtosis=0.7222222222222197)
+2022-09-19 23:13:02,908[INFO] step 2 complete, time cost 0:00:01.151539. bra: current size: 106.3KiB, Matrix product bond dim:[1, 1, 10, 10, 10, 10, 1], ket: current size: 106.3KiB, Matrix product bond dim:[1, 1, 10, 10, 10, 10, 1], ft: 0.00315985+2.20368e-06j
+2022-09-19 23:13:02,913[INFO] Dumping time cost 0:00:00.004442
+2022-09-19 23:13:02,913[INFO] step 3/50, at time 16.536549334072845/413.4137333518211 begin.
+2022-09-19 23:13:02,996[DEBUG] the krylov subspace is equal to the full space
+2022-09-19 23:13:03,778[DEBUG] the krylov subspace is equal to the full space
+2022-09-19 23:13:03,792[DEBUG] TDVP-PS CMF steps: DescribeResult(nobs=22, minmax=(1, 7), mean=5.909090909090909, variance=5.610389610389612, skewness=-1.6499158227686102, kurtosis=0.7222222222222197)
+2022-09-19 23:13:04,055[INFO] step 3 complete, time cost 0:00:01.146663. bra: current size: 106.3KiB, Matrix product bond dim:[1, 1, 10, 10, 10, 10, 1], ket: current size: 106.3KiB, Matrix product bond dim:[1, 1, 10, 10, 10, 10, 1], ft: 0.0031236+7.3263e-06j
+2022-09-19 23:13:04,060[INFO] Dumping time cost 0:00:00.004883
+2022-09-19 23:13:04,060[INFO] step 4/50, at time 24.804824001109267/413.4137333518211 begin.
+2022-09-19 23:13:04,163[DEBUG] the krylov subspace is equal to the full space
+2022-09-19 23:13:04,911[DEBUG] the krylov subspace is equal to the full space
+2022-09-19 23:13:04,925[DEBUG] TDVP-PS CMF steps: DescribeResult(nobs=22, minmax=(1, 7), mean=5.909090909090909, variance=5.610389610389612, skewness=-1.6499158227686102, kurtosis=0.7222222222222197)
+2022-09-19 23:13:05,197[INFO] step 4 complete, time cost 0:00:01.141819. bra: current size: 106.3KiB, Matrix product bond dim:[1, 1, 10, 10, 10, 10, 1], ket: current size: 106.3KiB, Matrix product bond dim:[1, 1, 10, 10, 10, 10, 1], ft: 0.00307417+1.70074e-05j
+2022-09-19 23:13:05,202[INFO] Dumping time cost 0:00:00.004972
+2022-09-19 23:13:05,202[INFO] step 5/50, at time 33.07309866814569/413.4137333518211 begin.
+2022-09-19 23:13:05,284[DEBUG] the krylov subspace is equal to the full space
+2022-09-19 23:13:06,096[DEBUG] the krylov subspace is equal to the full space
+2022-09-19 23:13:06,109[DEBUG] TDVP-PS CMF steps: DescribeResult(nobs=22, minmax=(1, 7), mean=5.909090909090909, variance=5.610389610389612, skewness=-1.6499158227686102, kurtosis=0.7222222222222197)
+2022-09-19 23:13:06,381[INFO] step 5 complete, time cost 0:00:01.184644. bra: current size: 106.3KiB, Matrix product bond dim:[1, 1, 10, 10, 10, 10, 1], ket: current size: 106.3KiB, Matrix product bond dim:[1, 1, 10, 10, 10, 10, 1], ft: 0.00301277+3.23494e-05j
+2022-09-19 23:13:06,427[INFO] Dumping time cost 0:00:00.045313
+2022-09-19 23:13:06,427[INFO] step 6/50, at time 41.34137333518211/413.4137333518211 begin.
+2022-09-19 23:13:06,528[DEBUG] the krylov subspace is equal to the full space
+2022-09-19 23:13:07,218[DEBUG] the krylov subspace is equal to the full space
+2022-09-19 23:13:07,246[DEBUG] TDVP-PS CMF steps: DescribeResult(nobs=22, minmax=(1, 7), mean=5.909090909090909, variance=5.610389610389612, skewness=-1.6499158227686102, kurtosis=0.7222222222222197)
+2022-09-19 23:13:07,501[INFO] step 6 complete, time cost 0:00:01.119878. bra: current size: 106.3KiB, Matrix product bond dim:[1, 1, 10, 10, 10, 10, 1], ket: current size: 106.3KiB, Matrix product bond dim:[1, 1, 10, 10, 10, 10, 1], ft: 0.00294078+5.41472e-05j
+2022-09-19 23:13:07,510[INFO] Dumping time cost 0:00:00.008592
+2022-09-19 23:13:07,510[INFO] step 7/50, at time 49.609648002218535/413.4137333518211 begin.
+2022-09-19 23:13:07,616[DEBUG] the krylov subspace is equal to the full space
+2022-09-19 23:13:08,394[DEBUG] the krylov subspace is equal to the full space
+2022-09-19 23:13:08,407[DEBUG] TDVP-PS CMF steps: DescribeResult(nobs=22, minmax=(1, 7), mean=5.909090909090909, variance=5.610389610389612, skewness=-1.6499158227686102, kurtosis=0.7222222222222197)
+2022-09-19 23:13:08,683[INFO] step 7 complete, time cost 0:00:01.181911. bra: current size: 106.3KiB, Matrix product bond dim:[1, 1, 10, 10, 10, 10, 1], ket: current size: 106.3KiB, Matrix product bond dim:[1, 1, 10, 10, 10, 10, 1], ft: 0.00285973+8.28656e-05j
+2022-09-19 23:13:08,688[INFO] Dumping time cost 0:00:00.004720
+2022-09-19 23:13:08,688[INFO] step 8/50, at time 57.87792266925496/413.4137333518211 begin.
+2022-09-19 23:13:08,781[DEBUG] the krylov subspace is equal to the full space
+2022-09-19 23:13:09,518[DEBUG] the krylov subspace is equal to the full space
+2022-09-19 23:13:09,536[DEBUG] TDVP-PS CMF steps: DescribeResult(nobs=22, minmax=(1, 7), mean=5.909090909090909, variance=5.610389610389612, skewness=-1.6499158227686102, kurtosis=0.7222222222222197)
+2022-09-19 23:13:09,805[INFO] step 8 complete, time cost 0:00:01.121392. bra: current size: 106.3KiB, Matrix product bond dim:[1, 1, 10, 10, 10, 10, 1], ket: current size: 106.3KiB, Matrix product bond dim:[1, 1, 10, 10, 10, 10, 1], ft: 0.00277115+0.000118642j
+2022-09-19 23:13:09,809[INFO] Dumping time cost 0:00:00.004923
+2022-09-19 23:13:09,809[INFO] step 9/50, at time 66.14619733629138/413.4137333518211 begin.
+2022-09-19 23:13:09,888[DEBUG] the krylov subspace is equal to the full space
+2022-09-19 23:13:10,664[DEBUG] the krylov subspace is equal to the full space
+2022-09-19 23:13:10,680[DEBUG] TDVP-PS CMF steps: DescribeResult(nobs=22, minmax=(1, 7), mean=5.909090909090909, variance=5.610389610389612, skewness=-1.6499158227686102, kurtosis=0.7222222222222197)
+2022-09-19 23:13:10,969[INFO] step 9 complete, time cost 0:00:01.164406. bra: current size: 106.3KiB, Matrix product bond dim:[1, 1, 10, 10, 10, 10, 1], ket: current size: 106.3KiB, Matrix product bond dim:[1, 1, 10, 10, 10, 10, 1], ft: 0.00267653+0.000161311j
+2022-09-19 23:13:10,991[INFO] Dumping time cost 0:00:00.021731
+2022-09-19 23:13:10,991[INFO] step 10/50, at time 74.4144720033278/413.4137333518211 begin.
+2022-09-19 23:13:11,067[DEBUG] the krylov subspace is equal to the full space
+2022-09-19 23:13:11,821[DEBUG] the krylov subspace is equal to the full space
+2022-09-19 23:13:11,836[DEBUG] TDVP-PS CMF steps: DescribeResult(nobs=22, minmax=(1, 7), mean=5.909090909090909, variance=5.610389610389612, skewness=-1.6499158227686102, kurtosis=0.7222222222222197)
+2022-09-19 23:13:12,128[INFO] step 10 complete, time cost 0:00:01.159531. bra: current size: 106.3KiB, Matrix product bond dim:[1, 1, 10, 10, 10, 10, 1], ket: current size: 106.3KiB, Matrix product bond dim:[1, 1, 10, 10, 10, 10, 1], ft: 0.00257724+0.000210447j
+2022-09-19 23:13:12,134[INFO] Dumping time cost 0:00:00.005280
+2022-09-19 23:13:12,134[INFO] step 11/50, at time 82.68274667036422/413.4137333518211 begin.
+2022-09-19 23:13:12,212[DEBUG] the krylov subspace is equal to the full space
+2022-09-19 23:13:12,995[DEBUG] the krylov subspace is equal to the full space
+2022-09-19 23:13:13,008[DEBUG] TDVP-PS CMF steps: DescribeResult(nobs=22, minmax=(1, 7), mean=5.909090909090909, variance=5.610389610389612, skewness=-1.6499158227686102, kurtosis=0.7222222222222197)
+2022-09-19 23:13:13,272[INFO] step 11 complete, time cost 0:00:01.143395. bra: current size: 106.3KiB, Matrix product bond dim:[1, 1, 10, 10, 10, 10, 1], ket: current size: 106.3KiB, Matrix product bond dim:[1, 1, 10, 10, 10, 10, 1], ft: 0.00247449+0.000265414j
+2022-09-19 23:13:13,277[INFO] Dumping time cost 0:00:00.005565
+2022-09-19 23:13:13,277[INFO] step 12/50, at time 90.95102133740065/413.4137333518211 begin.
+2022-09-19 23:13:13,353[DEBUG] the krylov subspace is equal to the full space
+2022-09-19 23:13:14,136[DEBUG] the krylov subspace is equal to the full space
+2022-09-19 23:13:14,152[DEBUG] TDVP-PS CMF steps: DescribeResult(nobs=22, minmax=(1, 7), mean=5.909090909090909, variance=5.610389610389612, skewness=-1.6499158227686102, kurtosis=0.7222222222222197)
+2022-09-19 23:13:14,425[INFO] step 12 complete, time cost 0:00:01.153607. bra: current size: 106.3KiB, Matrix product bond dim:[1, 1, 10, 10, 10, 10, 1], ket: current size: 106.3KiB, Matrix product bond dim:[1, 1, 10, 10, 10, 10, 1], ft: 0.00236933+0.000325424j
+2022-09-19 23:13:14,450[INFO] Dumping time cost 0:00:00.024978
+2022-09-19 23:13:14,450[INFO] step 13/50, at time 99.21929600443707/413.4137333518211 begin.
+2022-09-19 23:13:14,538[DEBUG] the krylov subspace is equal to the full space
+2022-09-19 23:13:15,338[DEBUG] the krylov subspace is equal to the full space
+2022-09-19 23:13:15,352[DEBUG] TDVP-PS CMF steps: DescribeResult(nobs=22, minmax=(1, 7), mean=5.909090909090909, variance=5.610389610389612, skewness=-1.6499158227686102, kurtosis=0.7222222222222197)
+2022-09-19 23:13:15,581[INFO] step 13 complete, time cost 0:00:01.155200. bra: current size: 106.3KiB, Matrix product bond dim:[1, 1, 10, 10, 10, 10, 1], ket: current size: 106.3KiB, Matrix product bond dim:[1, 1, 10, 10, 10, 10, 1], ft: 0.00226257+0.000389593j
+2022-09-19 23:13:15,587[INFO] Dumping time cost 0:00:00.006341
+2022-09-19 23:13:15,587[INFO] step 14/50, at time 107.48757067147349/413.4137333518211 begin.
+2022-09-19 23:13:15,662[DEBUG] the krylov subspace is equal to the full space
+2022-09-19 23:13:16,462[DEBUG] the krylov subspace is equal to the full space
+2022-09-19 23:13:16,480[DEBUG] TDVP-PS CMF steps: DescribeResult(nobs=22, minmax=(1, 7), mean=5.909090909090909, variance=5.610389610389612, skewness=-1.6499158227686102, kurtosis=0.7222222222222197)
+2022-09-19 23:13:16,745[INFO] step 14 complete, time cost 0:00:01.164435. bra: current size: 106.3KiB, Matrix product bond dim:[1, 1, 10, 10, 10, 10, 1], ket: current size: 106.3KiB, Matrix product bond dim:[1, 1, 10, 10, 10, 10, 1], ft: 0.00215488+0.000456991j
+2022-09-19 23:13:16,750[INFO] Dumping time cost 0:00:00.005212
+2022-09-19 23:13:16,750[INFO] step 15/50, at time 115.75584533850991/413.4137333518211 begin.
+2022-09-19 23:13:16,848[DEBUG] the krylov subspace is equal to the full space
+2022-09-19 23:13:17,630[DEBUG] the krylov subspace is equal to the full space
+2022-09-19 23:13:17,644[DEBUG] TDVP-PS CMF steps: DescribeResult(nobs=22, minmax=(1, 7), mean=5.909090909090909, variance=5.610389610389612, skewness=-1.6499158227686102, kurtosis=0.7222222222222197)
+2022-09-19 23:13:17,878[INFO] step 15 complete, time cost 0:00:01.133133. bra: current size: 106.3KiB, Matrix product bond dim:[1, 1, 10, 10, 10, 10, 1], ket: current size: 106.3KiB, Matrix product bond dim:[1, 1, 10, 10, 10, 10, 1], ft: 0.00204671+0.000526686j
+2022-09-19 23:13:17,883[INFO] Dumping time cost 0:00:00.005188
+2022-09-19 23:13:17,883[INFO] step 16/50, at time 124.02412000554634/413.4137333518211 begin.
+2022-09-19 23:13:17,978[DEBUG] the krylov subspace is equal to the full space
+2022-09-19 23:13:18,781[DEBUG] the krylov subspace is equal to the full space
+2022-09-19 23:13:18,796[DEBUG] TDVP-PS CMF steps: DescribeResult(nobs=22, minmax=(1, 7), mean=5.909090909090909, variance=5.610389610389612, skewness=-1.6499158227686102, kurtosis=0.7222222222222197)
+2022-09-19 23:13:19,066[INFO] step 16 complete, time cost 0:00:01.187469. bra: current size: 106.3KiB, Matrix product bond dim:[1, 1, 10, 10, 10, 10, 1], ket: current size: 106.3KiB, Matrix product bond dim:[1, 1, 10, 10, 10, 10, 1], ft: 0.00193839+0.000597778j
+2022-09-19 23:13:19,116[INFO] Dumping time cost 0:00:00.050536
+2022-09-19 23:13:19,116[INFO] step 17/50, at time 132.29239467258276/413.4137333518211 begin.
+2022-09-19 23:13:19,216[DEBUG] the krylov subspace is equal to the full space
+2022-09-19 23:13:19,959[DEBUG] the krylov subspace is equal to the full space
+2022-09-19 23:13:19,973[DEBUG] TDVP-PS CMF steps: DescribeResult(nobs=22, minmax=(1, 7), mean=5.909090909090909, variance=5.610389610389612, skewness=-1.6499158227686102, kurtosis=0.7222222222222197)
+2022-09-19 23:13:20,241[INFO] step 17 complete, time cost 0:00:01.175511. bra: current size: 106.3KiB, Matrix product bond dim:[1, 1, 10, 10, 10, 10, 1], ket: current size: 106.3KiB, Matrix product bond dim:[1, 1, 10, 10, 10, 10, 1], ft: 0.00183008+0.000669421j
+2022-09-19 23:13:20,247[INFO] Dumping time cost 0:00:00.005864
+2022-09-19 23:13:20,247[INFO] step 18/50, at time 140.56066933961918/413.4137333518211 begin.
+2022-09-19 23:13:20,344[DEBUG] the krylov subspace is equal to the full space
+2022-09-19 23:13:21,126[DEBUG] the krylov subspace is equal to the full space
+2022-09-19 23:13:21,143[DEBUG] TDVP-PS CMF steps: DescribeResult(nobs=22, minmax=(1, 7), mean=5.909090909090909, variance=5.610389610389612, skewness=-1.6499158227686102, kurtosis=0.7222222222222197)
+2022-09-19 23:13:21,426[INFO] step 18 complete, time cost 0:00:01.184434. bra: current size: 106.3KiB, Matrix product bond dim:[1, 1, 10, 10, 10, 10, 1], ket: current size: 106.3KiB, Matrix product bond dim:[1, 1, 10, 10, 10, 10, 1], ft: 0.00172187+0.000740844j
+2022-09-19 23:13:21,459[INFO] Dumping time cost 0:00:00.033917
+2022-09-19 23:13:21,460[INFO] step 19/50, at time 148.8289440066556/413.4137333518211 begin.
+2022-09-19 23:13:21,540[DEBUG] the krylov subspace is equal to the full space
+2022-09-19 23:13:22,291[DEBUG] the krylov subspace is equal to the full space
+2022-09-19 23:13:22,308[DEBUG] TDVP-PS CMF steps: DescribeResult(nobs=22, minmax=(1, 7), mean=5.909090909090909, variance=5.610389610389612, skewness=-1.6499158227686102, kurtosis=0.7222222222222197)
+2022-09-19 23:13:22,594[INFO] step 19 complete, time cost 0:00:01.167720. bra: current size: 106.3KiB, Matrix product bond dim:[1, 1, 10, 10, 10, 10, 1], ket: current size: 106.3KiB, Matrix product bond dim:[1, 1, 10, 10, 10, 10, 1], ft: 0.00161375+0.000811355j
+2022-09-19 23:13:22,606[INFO] Dumping time cost 0:00:00.013053
+2022-09-19 23:13:22,606[INFO] step 20/50, at time 157.09721867369203/413.4137333518211 begin.
+2022-09-19 23:13:22,688[DEBUG] the krylov subspace is equal to the full space
+2022-09-19 23:13:23,478[DEBUG] the krylov subspace is equal to the full space
+2022-09-19 23:13:23,494[DEBUG] TDVP-PS CMF steps: DescribeResult(nobs=22, minmax=(1, 7), mean=5.909090909090909, variance=5.610389610389612, skewness=-1.6499158227686102, kurtosis=0.7222222222222197)
+2022-09-19 23:13:23,763[INFO] step 20 complete, time cost 0:00:01.170072. bra: current size: 106.3KiB, Matrix product bond dim:[1, 1, 10, 10, 10, 10, 1], ket: current size: 106.3KiB, Matrix product bond dim:[1, 1, 10, 10, 10, 10, 1], ft: 0.00150566+0.00088035j
+2022-09-19 23:13:23,769[INFO] Dumping time cost 0:00:00.005952
+2022-09-19 23:13:23,769[INFO] step 21/50, at time 165.36549334072845/413.4137333518211 begin.
+2022-09-19 23:13:23,868[DEBUG] the krylov subspace is equal to the full space
+2022-09-19 23:13:24,608[DEBUG] the krylov subspace is equal to the full space
+2022-09-19 23:13:24,621[DEBUG] TDVP-PS CMF steps: DescribeResult(nobs=22, minmax=(1, 7), mean=5.909090909090909, variance=5.610389610389612, skewness=-1.6499158227686102, kurtosis=0.7222222222222197)
+2022-09-19 23:13:24,894[INFO] step 21 complete, time cost 0:00:01.130347. bra: current size: 106.3KiB, Matrix product bond dim:[1, 1, 10, 10, 10, 10, 1], ket: current size: 106.3KiB, Matrix product bond dim:[1, 1, 10, 10, 10, 10, 1], ft: 0.00139749+0.000947303j
+2022-09-19 23:13:24,917[INFO] Dumping time cost 0:00:00.022986
+2022-09-19 23:13:24,917[INFO] step 22/50, at time 173.63376800776487/413.4137333518211 begin.
+2022-09-19 23:13:25,017[DEBUG] the krylov subspace is equal to the full space
+2022-09-19 23:13:25,805[DEBUG] the krylov subspace is equal to the full space
+2022-09-19 23:13:25,819[DEBUG] TDVP-PS CMF steps: DescribeResult(nobs=22, minmax=(1, 7), mean=5.909090909090909, variance=5.610389610389612, skewness=-1.6499158227686102, kurtosis=0.7222222222222197)
+2022-09-19 23:13:26,087[INFO] step 22 complete, time cost 0:00:01.192819. bra: current size: 106.3KiB, Matrix product bond dim:[1, 1, 10, 10, 10, 10, 1], ket: current size: 106.3KiB, Matrix product bond dim:[1, 1, 10, 10, 10, 10, 1], ft: 0.00128912+0.00101177j
+2022-09-19 23:13:26,130[INFO] Dumping time cost 0:00:00.043488
+2022-09-19 23:13:26,130[INFO] step 23/50, at time 181.9020426748013/413.4137333518211 begin.
+2022-09-19 23:13:26,222[DEBUG] the krylov subspace is equal to the full space
+2022-09-19 23:13:26,968[DEBUG] the krylov subspace is equal to the full space
+2022-09-19 23:13:26,983[DEBUG] TDVP-PS CMF steps: DescribeResult(nobs=22, minmax=(1, 7), mean=5.909090909090909, variance=5.610389610389612, skewness=-1.6499158227686102, kurtosis=0.7222222222222197)
+2022-09-19 23:13:27,257[INFO] step 23 complete, time cost 0:00:01.170012. bra: current size: 106.3KiB, Matrix product bond dim:[1, 1, 10, 10, 10, 10, 1], ket: current size: 106.3KiB, Matrix product bond dim:[1, 1, 10, 10, 10, 10, 1], ft: 0.00118042+0.00107338j
+2022-09-19 23:13:27,263[INFO] Dumping time cost 0:00:00.006701
+2022-09-19 23:13:27,263[INFO] step 24/50, at time 190.17031734183772/413.4137333518211 begin.
+2022-09-19 23:13:27,358[DEBUG] the krylov subspace is equal to the full space
+2022-09-19 23:13:28,131[DEBUG] the krylov subspace is equal to the full space
+2022-09-19 23:13:28,152[DEBUG] TDVP-PS CMF steps: DescribeResult(nobs=22, minmax=(1, 7), mean=5.909090909090909, variance=5.610389610389612, skewness=-1.6499158227686102, kurtosis=0.7222222222222197)
+2022-09-19 23:13:28,429[INFO] step 24 complete, time cost 0:00:01.171988. bra: current size: 106.3KiB, Matrix product bond dim:[1, 1, 10, 10, 10, 10, 1], ket: current size: 106.3KiB, Matrix product bond dim:[1, 1, 10, 10, 10, 10, 1], ft: 0.00107123+0.00113182j
+2022-09-19 23:13:28,478[INFO] Dumping time cost 0:00:00.049549
+2022-09-19 23:13:28,478[INFO] step 25/50, at time 198.43859200887414/413.4137333518211 begin.
+2022-09-19 23:13:28,554[DEBUG] the krylov subspace is equal to the full space
+2022-09-19 23:13:29,332[DEBUG] the krylov subspace is equal to the full space
+2022-09-19 23:13:29,352[DEBUG] TDVP-PS CMF steps: DescribeResult(nobs=22, minmax=(1, 7), mean=5.909090909090909, variance=5.610389610389612, skewness=-1.6499158227686102, kurtosis=0.7222222222222197)
+2022-09-19 23:13:29,628[INFO] step 25 complete, time cost 0:00:01.199667. bra: current size: 106.3KiB, Matrix product bond dim:[1, 1, 10, 10, 10, 10, 1], ket: current size: 106.3KiB, Matrix product bond dim:[1, 1, 10, 10, 10, 10, 1], ft: 0.000961426+0.00118686j
+2022-09-19 23:13:29,634[INFO] Dumping time cost 0:00:00.005646
+2022-09-19 23:13:29,634[INFO] step 26/50, at time 206.70686667591056/413.4137333518211 begin.
+2022-09-19 23:13:29,718[DEBUG] the krylov subspace is equal to the full space
+2022-09-19 23:13:30,519[DEBUG] the krylov subspace is equal to the full space
+2022-09-19 23:13:30,535[DEBUG] TDVP-PS CMF steps: DescribeResult(nobs=22, minmax=(1, 7), mean=5.909090909090909, variance=5.610389610389612, skewness=-1.6499158227686102, kurtosis=0.7222222222222197)
+2022-09-19 23:13:30,777[INFO] step 26 complete, time cost 0:00:01.149042. bra: current size: 106.3KiB, Matrix product bond dim:[1, 1, 10, 10, 10, 10, 1], ket: current size: 106.3KiB, Matrix product bond dim:[1, 1, 10, 10, 10, 10, 1], ft: 0.000850882+0.00123829j
+2022-09-19 23:13:30,784[INFO] Dumping time cost 0:00:00.006601
+2022-09-19 23:13:30,784[INFO] step 27/50, at time 214.97514134294698/413.4137333518211 begin.
+2022-09-19 23:13:30,864[DEBUG] the krylov subspace is equal to the full space
+2022-09-19 23:13:31,667[DEBUG] the krylov subspace is equal to the full space
+2022-09-19 23:13:31,683[DEBUG] TDVP-PS CMF steps: DescribeResult(nobs=22, minmax=(1, 7), mean=5.909090909090909, variance=5.610389610389612, skewness=-1.6499158227686102, kurtosis=0.7222222222222197)
+2022-09-19 23:13:31,949[INFO] step 27 complete, time cost 0:00:01.171811. bra: current size: 106.3KiB, Matrix product bond dim:[1, 1, 10, 10, 10, 10, 1], ket: current size: 106.3KiB, Matrix product bond dim:[1, 1, 10, 10, 10, 10, 1], ft: 0.000739478+0.00128597j
+2022-09-19 23:13:31,954[INFO] Dumping time cost 0:00:00.005016
+2022-09-19 23:13:31,954[INFO] step 28/50, at time 223.2434160099834/413.4137333518211 begin.
+2022-09-19 23:13:32,049[DEBUG] the krylov subspace is equal to the full space
+2022-09-19 23:13:32,839[DEBUG] the krylov subspace is equal to the full space
+2022-09-19 23:13:32,854[DEBUG] TDVP-PS CMF steps: DescribeResult(nobs=22, minmax=(1, 7), mean=5.909090909090909, variance=5.610389610389612, skewness=-1.6499158227686102, kurtosis=0.7222222222222197)
+2022-09-19 23:13:33,086[INFO] step 28 complete, time cost 0:00:01.137293. bra: current size: 106.3KiB, Matrix product bond dim:[1, 1, 10, 10, 10, 10, 1], ket: current size: 106.3KiB, Matrix product bond dim:[1, 1, 10, 10, 10, 10, 1], ft: 0.00062711+0.0013298j
+2022-09-19 23:13:33,094[INFO] Dumping time cost 0:00:00.007492
+2022-09-19 23:13:33,094[INFO] step 29/50, at time 231.51169067701983/413.4137333518211 begin.
+2022-09-19 23:13:33,187[DEBUG] the krylov subspace is equal to the full space
+2022-09-19 23:13:33,995[DEBUG] the krylov subspace is equal to the full space
+2022-09-19 23:13:34,010[DEBUG] TDVP-PS CMF steps: DescribeResult(nobs=22, minmax=(1, 7), mean=5.909090909090909, variance=5.610389610389612, skewness=-1.6499158227686102, kurtosis=0.7222222222222197)
+2022-09-19 23:13:34,275[INFO] step 29 complete, time cost 0:00:01.189052. bra: current size: 106.3KiB, Matrix product bond dim:[1, 1, 10, 10, 10, 10, 1], ket: current size: 106.3KiB, Matrix product bond dim:[1, 1, 10, 10, 10, 10, 1], ft: 0.000513685+0.00136971j
+2022-09-19 23:13:34,281[INFO] Dumping time cost 0:00:00.005156
+2022-09-19 23:13:34,281[INFO] step 30/50, at time 239.77996534405625/413.4137333518211 begin.
+2022-09-19 23:13:34,372[DEBUG] the krylov subspace is equal to the full space
+2022-09-19 23:13:35,141[DEBUG] the krylov subspace is equal to the full space
+2022-09-19 23:13:35,155[DEBUG] TDVP-PS CMF steps: DescribeResult(nobs=22, minmax=(1, 7), mean=5.909090909090909, variance=5.610389610389612, skewness=-1.6499158227686102, kurtosis=0.7222222222222197)
+2022-09-19 23:13:35,411[INFO] step 30 complete, time cost 0:00:01.135738. bra: current size: 106.3KiB, Matrix product bond dim:[1, 1, 10, 10, 10, 10, 1], ket: current size: 106.3KiB, Matrix product bond dim:[1, 1, 10, 10, 10, 10, 1], ft: 0.000399121+0.00140568j
+2022-09-19 23:13:35,417[INFO] Dumping time cost 0:00:00.006021
+2022-09-19 23:13:35,417[INFO] step 31/50, at time 248.04824001109267/413.4137333518211 begin.
+2022-09-19 23:13:35,508[DEBUG] the krylov subspace is equal to the full space
+2022-09-19 23:13:36,305[DEBUG] the krylov subspace is equal to the full space
+2022-09-19 23:13:36,320[DEBUG] TDVP-PS CMF steps: DescribeResult(nobs=22, minmax=(1, 7), mean=5.909090909090909, variance=5.610389610389612, skewness=-1.6499158227686102, kurtosis=0.7222222222222197)
+2022-09-19 23:13:36,599[INFO] step 31 complete, time cost 0:00:01.188050. bra: current size: 106.3KiB, Matrix product bond dim:[1, 1, 10, 10, 10, 10, 1], ket: current size: 106.3KiB, Matrix product bond dim:[1, 1, 10, 10, 10, 10, 1], ft: 0.000283348+0.00143771j
+2022-09-19 23:13:36,635[INFO] Dumping time cost 0:00:00.035841
+2022-09-19 23:13:36,635[INFO] step 32/50, at time 256.3165146781291/413.4137333518211 begin.
+2022-09-19 23:13:36,720[DEBUG] the krylov subspace is equal to the full space
+2022-09-19 23:13:37,470[DEBUG] the krylov subspace is equal to the full space
+2022-09-19 23:13:37,485[DEBUG] TDVP-PS CMF steps: DescribeResult(nobs=22, minmax=(1, 7), mean=5.909090909090909, variance=5.610389610389612, skewness=-1.6499158227686102, kurtosis=0.7222222222222197)
+2022-09-19 23:13:37,768[INFO] step 32 complete, time cost 0:00:01.168415. bra: current size: 106.3KiB, Matrix product bond dim:[1, 1, 10, 10, 10, 10, 1], ket: current size: 106.3KiB, Matrix product bond dim:[1, 1, 10, 10, 10, 10, 1], ft: 0.000166307+0.00146586j
+2022-09-19 23:13:37,776[INFO] Dumping time cost 0:00:00.008903
+2022-09-19 23:13:37,777[INFO] step 33/50, at time 264.5847893451655/413.4137333518211 begin.
+2022-09-19 23:13:37,873[DEBUG] the krylov subspace is equal to the full space
+2022-09-19 23:13:38,663[DEBUG] the krylov subspace is equal to the full space
+2022-09-19 23:13:38,679[DEBUG] TDVP-PS CMF steps: DescribeResult(nobs=22, minmax=(1, 7), mean=5.909090909090909, variance=5.610389610389612, skewness=-1.6499158227686102, kurtosis=0.7222222222222197)
+2022-09-19 23:13:38,951[INFO] step 33 complete, time cost 0:00:01.183255. bra: current size: 106.3KiB, Matrix product bond dim:[1, 1, 10, 10, 10, 10, 1], ket: current size: 106.3KiB, Matrix product bond dim:[1, 1, 10, 10, 10, 10, 1], ft: 4.79501e-05+0.00149021j
+2022-09-19 23:13:39,027[INFO] Dumping time cost 0:00:00.076643
+2022-09-19 23:13:39,028[INFO] step 34/50, at time 272.8530640122019/413.4137333518211 begin.
+2022-09-19 23:13:39,122[DEBUG] the krylov subspace is equal to the full space
+2022-09-19 23:13:39,874[DEBUG] the krylov subspace is equal to the full space
+2022-09-19 23:13:39,889[DEBUG] TDVP-PS CMF steps: DescribeResult(nobs=22, minmax=(1, 7), mean=5.909090909090909, variance=5.610389610389612, skewness=-1.6499158227686102, kurtosis=0.7222222222222197)
+2022-09-19 23:13:40,163[INFO] step 34 complete, time cost 0:00:01.212501. bra: current size: 106.3KiB, Matrix product bond dim:[1, 1, 10, 10, 10, 10, 1], ket: current size: 106.3KiB, Matrix product bond dim:[1, 1, 10, 10, 10, 10, 1], ft: -7.17609e-05+0.00151087j
+2022-09-19 23:13:40,171[INFO] Dumping time cost 0:00:00.007911
+2022-09-19 23:13:40,171[INFO] step 35/50, at time 281.1213386792383/413.4137333518211 begin.
+2022-09-19 23:13:40,268[DEBUG] the krylov subspace is equal to the full space
+2022-09-19 23:13:41,068[DEBUG] the krylov subspace is equal to the full space
+2022-09-19 23:13:41,082[DEBUG] TDVP-PS CMF steps: DescribeResult(nobs=22, minmax=(1, 7), mean=5.909090909090909, variance=5.610389610389612, skewness=-1.6499158227686102, kurtosis=0.7222222222222197)
+2022-09-19 23:13:41,355[INFO] step 35 complete, time cost 0:00:01.191338. bra: current size: 106.3KiB, Matrix product bond dim:[1, 1, 10, 10, 10, 10, 1], ket: current size: 106.3KiB, Matrix product bond dim:[1, 1, 10, 10, 10, 10, 1], ft: -0.00019285+0.00152801j
+2022-09-19 23:13:41,403[INFO] Dumping time cost 0:00:00.048640
+2022-09-19 23:13:41,403[INFO] step 36/50, at time 289.3896133462747/413.4137333518211 begin.
+2022-09-19 23:13:41,492[DEBUG] the krylov subspace is equal to the full space
+2022-09-19 23:13:42,252[DEBUG] the krylov subspace is equal to the full space
+2022-09-19 23:13:42,266[DEBUG] TDVP-PS CMF steps: DescribeResult(nobs=22, minmax=(1, 7), mean=5.909090909090909, variance=5.610389610389612, skewness=-1.6499158227686102, kurtosis=0.7222222222222197)
+2022-09-19 23:13:42,542[INFO] step 36 complete, time cost 0:00:01.187354. bra: current size: 106.3KiB, Matrix product bond dim:[1, 1, 10, 10, 10, 10, 1], ket: current size: 106.3KiB, Matrix product bond dim:[1, 1, 10, 10, 10, 10, 1], ft: -0.000315326+0.00154184j
+2022-09-19 23:13:42,565[INFO] Dumping time cost 0:00:00.023313
+2022-09-19 23:13:42,566[INFO] step 37/50, at time 297.6578880133111/413.4137333518211 begin.
+2022-09-19 23:13:42,661[DEBUG] the krylov subspace is equal to the full space
+2022-09-19 23:13:43,452[DEBUG] the krylov subspace is equal to the full space
+2022-09-19 23:13:43,467[DEBUG] TDVP-PS CMF steps: DescribeResult(nobs=22, minmax=(1, 7), mean=5.909090909090909, variance=5.610389610389612, skewness=-1.6499158227686102, kurtosis=0.7222222222222197)
+2022-09-19 23:13:43,734[INFO] step 37 complete, time cost 0:00:01.191547. bra: current size: 106.3KiB, Matrix product bond dim:[1, 1, 10, 10, 10, 10, 1], ket: current size: 106.3KiB, Matrix product bond dim:[1, 1, 10, 10, 10, 10, 1], ft: -0.000439178+0.00155261j
+2022-09-19 23:13:43,739[INFO] Dumping time cost 0:00:00.005315
+2022-09-19 23:13:43,739[INFO] step 38/50, at time 305.9261626803475/413.4137333518211 begin.
+2022-09-19 23:13:43,816[DEBUG] the krylov subspace is equal to the full space
+2022-09-19 23:13:44,593[DEBUG] the krylov subspace is equal to the full space
+2022-09-19 23:13:44,611[DEBUG] TDVP-PS CMF steps: DescribeResult(nobs=22, minmax=(1, 7), mean=5.909090909090909, variance=5.610389610389612, skewness=-1.6499158227686102, kurtosis=0.7222222222222197)
+2022-09-19 23:13:44,894[INFO] step 38 complete, time cost 0:00:01.160207. bra: current size: 106.3KiB, Matrix product bond dim:[1, 1, 10, 10, 10, 10, 1], ket: current size: 106.3KiB, Matrix product bond dim:[1, 1, 10, 10, 10, 10, 1], ft: -0.00056437+0.00156062j
+2022-09-19 23:13:44,899[INFO] Dumping time cost 0:00:00.005242
+2022-09-19 23:13:44,899[INFO] step 39/50, at time 314.1944373473839/413.4137333518211 begin.
+2022-09-19 23:13:44,982[DEBUG] the krylov subspace is equal to the full space
+2022-09-19 23:13:45,781[DEBUG] the krylov subspace is equal to the full space
+2022-09-19 23:13:45,798[DEBUG] TDVP-PS CMF steps: DescribeResult(nobs=22, minmax=(1, 7), mean=5.909090909090909, variance=5.610389610389612, skewness=-1.6499158227686102, kurtosis=0.7222222222222197)
+2022-09-19 23:13:46,043[INFO] step 39 complete, time cost 0:00:01.148718. bra: current size: 106.3KiB, Matrix product bond dim:[1, 1, 10, 10, 10, 10, 1], ket: current size: 106.3KiB, Matrix product bond dim:[1, 1, 10, 10, 10, 10, 1], ft: -0.000690834+0.00156623j
+2022-09-19 23:13:46,048[INFO] Dumping time cost 0:00:00.005208
+2022-09-19 23:13:46,048[INFO] step 40/50, at time 322.4627120144203/413.4137333518211 begin.
+2022-09-19 23:13:46,125[DEBUG] the krylov subspace is equal to the full space
+2022-09-19 23:13:46,927[DEBUG] the krylov subspace is equal to the full space
+2022-09-19 23:13:46,944[DEBUG] TDVP-PS CMF steps: DescribeResult(nobs=22, minmax=(1, 7), mean=5.909090909090909, variance=5.610389610389612, skewness=-1.6499158227686102, kurtosis=0.7222222222222197)
+2022-09-19 23:13:47,211[INFO] step 40 complete, time cost 0:00:01.168639. bra: current size: 106.3KiB, Matrix product bond dim:[1, 1, 10, 10, 10, 10, 1], ket: current size: 106.3KiB, Matrix product bond dim:[1, 1, 10, 10, 10, 10, 1], ft: -0.000818456+0.00156984j
+2022-09-19 23:13:47,216[INFO] Dumping time cost 0:00:00.005212
+2022-09-19 23:13:47,216[INFO] step 41/50, at time 330.73098668145667/413.4137333518211 begin.
+2022-09-19 23:13:47,312[DEBUG] the krylov subspace is equal to the full space
+2022-09-19 23:13:48,105[DEBUG] the krylov subspace is equal to the full space
+2022-09-19 23:13:48,119[DEBUG] TDVP-PS CMF steps: DescribeResult(nobs=22, minmax=(1, 7), mean=5.909090909090909, variance=5.610389610389612, skewness=-1.6499158227686102, kurtosis=0.7222222222222197)
+2022-09-19 23:13:48,350[INFO] step 41 complete, time cost 0:00:01.138614. bra: current size: 106.3KiB, Matrix product bond dim:[1, 1, 10, 10, 10, 10, 1], ket: current size: 106.3KiB, Matrix product bond dim:[1, 1, 10, 10, 10, 10, 1], ft: -0.000947068+0.00157192j
+2022-09-19 23:13:48,355[INFO] Dumping time cost 0:00:00.005114
+2022-09-19 23:13:48,355[INFO] step 42/50, at time 338.99926134849306/413.4137333518211 begin.
+2022-09-19 23:13:48,444[DEBUG] the krylov subspace is equal to the full space
+2022-09-19 23:13:49,253[DEBUG] the krylov subspace is equal to the full space
+2022-09-19 23:13:49,268[DEBUG] TDVP-PS CMF steps: DescribeResult(nobs=22, minmax=(1, 7), mean=5.909090909090909, variance=5.610389610389612, skewness=-1.6499158227686102, kurtosis=0.7222222222222197)
+2022-09-19 23:13:49,536[INFO] step 42 complete, time cost 0:00:01.185923. bra: current size: 106.3KiB, Matrix product bond dim:[1, 1, 10, 10, 10, 10, 1], ket: current size: 106.3KiB, Matrix product bond dim:[1, 1, 10, 10, 10, 10, 1], ft: -0.00107643+0.00157298j
+2022-09-19 23:13:49,542[INFO] Dumping time cost 0:00:00.005982
+2022-09-19 23:13:49,542[INFO] step 43/50, at time 347.26753601552946/413.4137333518211 begin.
+2022-09-19 23:13:49,632[DEBUG] the krylov subspace is equal to the full space
+2022-09-19 23:13:50,406[DEBUG] the krylov subspace is equal to the full space
+2022-09-19 23:13:50,420[DEBUG] TDVP-PS CMF steps: DescribeResult(nobs=22, minmax=(1, 7), mean=5.909090909090909, variance=5.610389610389612, skewness=-1.6499158227686102, kurtosis=0.7222222222222197)
+2022-09-19 23:13:50,629[INFO] step 43 complete, time cost 0:00:01.093264. bra: current size: 106.3KiB, Matrix product bond dim:[1, 1, 10, 10, 10, 10, 1], ket: current size: 106.3KiB, Matrix product bond dim:[1, 1, 10, 10, 10, 10, 1], ft: -0.00120623+0.00157359j
+2022-09-19 23:13:50,643[INFO] Dumping time cost 0:00:00.013880
+2022-09-19 23:13:50,643[INFO] step 44/50, at time 355.53581068256585/413.4137333518211 begin.
+2022-09-19 23:13:50,743[DEBUG] the krylov subspace is equal to the full space
+2022-09-19 23:13:51,533[DEBUG] the krylov subspace is equal to the full space
+2022-09-19 23:13:51,546[DEBUG] TDVP-PS CMF steps: DescribeResult(nobs=22, minmax=(1, 7), mean=5.909090909090909, variance=5.610389610389612, skewness=-1.6499158227686102, kurtosis=0.7222222222222197)
+2022-09-19 23:13:51,813[INFO] step 44 complete, time cost 0:00:01.184393. bra: current size: 106.3KiB, Matrix product bond dim:[1, 1, 10, 10, 10, 10, 1], ket: current size: 106.3KiB, Matrix product bond dim:[1, 1, 10, 10, 10, 10, 1], ft: -0.00133603+0.00157432j
+2022-09-19 23:13:51,820[INFO] Dumping time cost 0:00:00.006739
+2022-09-19 23:13:51,820[INFO] step 45/50, at time 363.80408534960225/413.4137333518211 begin.
+2022-09-19 23:13:51,925[DEBUG] the krylov subspace is equal to the full space
+2022-09-19 23:13:52,677[DEBUG] the krylov subspace is equal to the full space
+2022-09-19 23:13:52,690[DEBUG] TDVP-PS CMF steps: DescribeResult(nobs=22, minmax=(1, 7), mean=5.909090909090909, variance=5.610389610389612, skewness=-1.6499158227686102, kurtosis=0.7222222222222197)
+2022-09-19 23:13:52,949[INFO] step 45 complete, time cost 0:00:01.135684. bra: current size: 106.3KiB, Matrix product bond dim:[1, 1, 10, 10, 10, 10, 1], ket: current size: 106.3KiB, Matrix product bond dim:[1, 1, 10, 10, 10, 10, 1], ft: -0.00146528+0.00157579j
+2022-09-19 23:13:52,964[INFO] Dumping time cost 0:00:00.015225
+2022-09-19 23:13:52,964[INFO] step 46/50, at time 372.07236001663864/413.4137333518211 begin.
+2022-09-19 23:13:53,049[DEBUG] the krylov subspace is equal to the full space
+2022-09-19 23:13:53,834[DEBUG] the krylov subspace is equal to the full space
+2022-09-19 23:13:53,848[DEBUG] TDVP-PS CMF steps: DescribeResult(nobs=22, minmax=(1, 7), mean=5.909090909090909, variance=5.610389610389612, skewness=-1.6499158227686102, kurtosis=0.7222222222222197)
+2022-09-19 23:13:54,102[INFO] step 46 complete, time cost 0:00:01.153111. bra: current size: 106.3KiB, Matrix product bond dim:[1, 1, 10, 10, 10, 10, 1], ket: current size: 106.3KiB, Matrix product bond dim:[1, 1, 10, 10, 10, 10, 1], ft: -0.00159331+0.00157858j
+2022-09-19 23:13:54,120[INFO] Dumping time cost 0:00:00.017751
+2022-09-19 23:13:54,120[INFO] step 47/50, at time 380.34063468367503/413.4137333518211 begin.
+2022-09-19 23:13:54,208[DEBUG] the krylov subspace is equal to the full space
+2022-09-19 23:13:54,903[DEBUG] the krylov subspace is equal to the full space
+2022-09-19 23:13:54,916[DEBUG] TDVP-PS CMF steps: DescribeResult(nobs=22, minmax=(1, 7), mean=5.909090909090909, variance=5.610389610389612, skewness=-1.6499158227686102, kurtosis=0.7222222222222197)
+2022-09-19 23:13:55,147[INFO] step 47 complete, time cost 0:00:01.044461. bra: current size: 106.3KiB, Matrix product bond dim:[1, 1, 10, 10, 10, 10, 1], ket: current size: 106.3KiB, Matrix product bond dim:[1, 1, 10, 10, 10, 10, 1], ft: -0.0017193+0.00158326j
+2022-09-19 23:13:55,155[INFO] Dumping time cost 0:00:00.008532
+2022-09-19 23:13:55,155[INFO] step 48/50, at time 388.60890935071143/413.4137333518211 begin.
+2022-09-19 23:13:55,257[DEBUG] the krylov subspace is equal to the full space
+2022-09-19 23:13:56,043[DEBUG] the krylov subspace is equal to the full space
+2022-09-19 23:13:56,056[DEBUG] TDVP-PS CMF steps: DescribeResult(nobs=22, minmax=(1, 7), mean=5.909090909090909, variance=5.610389610389612, skewness=-1.6499158227686102, kurtosis=0.7222222222222197)
+2022-09-19 23:13:56,309[INFO] step 48 complete, time cost 0:00:01.161963. bra: current size: 106.3KiB, Matrix product bond dim:[1, 1, 10, 10, 10, 10, 1], ket: current size: 106.3KiB, Matrix product bond dim:[1, 1, 10, 10, 10, 10, 1], ft: -0.00184227+0.00159029j
+2022-09-19 23:13:56,320[INFO] Dumping time cost 0:00:00.011556
+2022-09-19 23:13:56,320[INFO] step 49/50, at time 396.8771840177478/413.4137333518211 begin.
+2022-09-19 23:13:56,433[DEBUG] the krylov subspace is equal to the full space
+2022-09-19 23:13:57,081[DEBUG] the krylov subspace is equal to the full space
+2022-09-19 23:13:57,094[DEBUG] TDVP-PS CMF steps: DescribeResult(nobs=22, minmax=(1, 7), mean=5.909090909090909, variance=5.610389610389612, skewness=-1.6499158227686102, kurtosis=0.7222222222222197)
+2022-09-19 23:13:57,326[INFO] step 49 complete, time cost 0:00:01.017556. bra: current size: 106.3KiB, Matrix product bond dim:[1, 1, 10, 10, 10, 10, 1], ket: current size: 106.3KiB, Matrix product bond dim:[1, 1, 10, 10, 10, 10, 1], ft: -0.00196112+0.00160003j
+2022-09-19 23:13:57,343[INFO] Dumping time cost 0:00:00.017119
+2022-09-19 23:13:57,343[INFO] step 50/50, at time 405.1454586847842/413.4137333518211 begin.
+2022-09-19 23:13:57,419[DEBUG] the krylov subspace is equal to the full space
+2022-09-19 23:13:58,106[DEBUG] the krylov subspace is equal to the full space
+2022-09-19 23:13:58,121[DEBUG] TDVP-PS CMF steps: DescribeResult(nobs=22, minmax=(1, 7), mean=5.909090909090909, variance=5.610389610389612, skewness=-1.6499158227686102, kurtosis=0.7222222222222197)
+2022-09-19 23:13:58,374[INFO] step 50 complete, time cost 0:00:01.047860. bra: current size: 106.3KiB, Matrix product bond dim:[1, 1, 10, 10, 10, 10, 1], ket: current size: 106.3KiB, Matrix product bond dim:[1, 1, 10, 10, 10, 10, 1], ft: -0.00207459+0.00161269j
+2022-09-19 23:13:58,379[INFO] Dumping time cost 0:00:00.005205
+2022-09-19 23:13:58,379[INFO] 50 steps of evolution complete!
+2022-09-19 23:13:58,379[INFO] Normal termination. Time cost: 0:00:57.815820
