@@ -1014,6 +1014,10 @@ class MatrixProduct:
             data_dict[attr] = getattr(self, attr)
             # qn is ragged array which will raise a VisibleDeprecationWarning
             # and convert it to np.object
+        qn = data_dict['qn']
+        arr = np.empty(len(qn), object)
+        arr[:] = qn
+        data_dict['qn'] = arr
         try:
             np.savez(fname, **data_dict)
         except Exception:
