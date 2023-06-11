@@ -1219,6 +1219,10 @@
             <span class="n">data_dict</span><span class="p">[</span><span class="n">attr</span><span class="p">]</span> <span class="o">=</span> <span class="nb">getattr</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">attr</span><span class="p">)</span>
             <span class="c1"># qn is ragged array which will raise a VisibleDeprecationWarning</span>
             <span class="c1"># and convert it to np.object</span>
+        <span class="n">qn</span> <span class="o">=</span> <span class="n">data_dict</span><span class="p">[</span><span class="s1">&#39;qn&#39;</span><span class="p">]</span>
+        <span class="n">arr</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">empty</span><span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="n">qn</span><span class="p">),</span> <span class="nb">object</span><span class="p">)</span>
+        <span class="n">arr</span><span class="p">[:]</span> <span class="o">=</span> <span class="n">qn</span>
+        <span class="n">data_dict</span><span class="p">[</span><span class="s1">&#39;qn&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">arr</span>
         <span class="k">try</span><span class="p">:</span>
             <span class="n">np</span><span class="o">.</span><span class="n">savez</span><span class="p">(</span><span class="n">fname</span><span class="p">,</span> <span class="o">**</span><span class="n">data_dict</span><span class="p">)</span>
         <span class="k">except</span> <span class="ne">Exception</span><span class="p">:</span>
