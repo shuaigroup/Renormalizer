@@ -417,13 +417,18 @@ def select_Xbasis(qnset, Sset, qnlist, Mmax, spectratype, percent=0.0):
 def compressed_sum(mps_list, batchsize=5, temp_m_trunc=None):
     assert len(mps_list) != 0
     mps_queue = deque(mps_list)
-    while len(mps_queue) != 1:
-        term_to_sum = []
-        for i in range(min(batchsize, len(mps_queue))):
-            term_to_sum.append(mps_queue.popleft())
-        s = _sum(term_to_sum, temp_m_trunc=temp_m_trunc)
-        mps_queue.append(s)
-    return mps_queue[0]
+    if len(mps_queue) > 1:
+        while len(mps_queue) != 1:
+            term_to_sum = []
+            for i in range(min(batchsize, len(mps_queue))):
+                term_to_sum.append(mps_queue.popleft())
+            s = _sum(term_to_sum, temp_m_trunc=temp_m_trunc)
+            mps_queue.append(s)
+        return mps_queue[0]
+    else:
+        new_mps = mps_list[0].canonicalise()
+        new_mps.compress(temp_m_trunc=temp_m_trunc)
+        return new_mps
 
 
 def _sum(mps_list, compress=True, temp_m_trunc=None):

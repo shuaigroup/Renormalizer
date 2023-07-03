@@ -3,6 +3,7 @@
 
 from renormalizer.mps.backend import xp
 from renormalizer.lib import expm_krylov
+from renormalizer.mps.matrix import asxp
 import pytest
 import numpy as np
 from scipy.linalg import expm, eigh
@@ -33,6 +34,6 @@ def test_expm(N, imag, block_size):
     # https://github.com/scipy/scipy/issues/18086
 
     w, x = eigh(a1)
-    res1 = x @ xp.diag(xp.exp(w)) @ x.conj().T @ v
+    res1 = x @ np.diag(np.exp(w)) @ x.conj().T @ v
     res2, _ = expm_krylov(lambda x: a2.dot(x), 1, xp.array(v), block_size)
     assert xp.allclose(res1, res2)
