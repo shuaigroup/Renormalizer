@@ -23,7 +23,6 @@ def test_H_chain_LDOS():
     
     model = Model(basis, ham_terms)
     mpo = Mpo(model)
-    
     nelec = [spatial_norbs//2, spatial_norbs//2]
     M = 50
     procedure = [[M, 0.4], [M, 0.2]] + [[M, 0],]*6
@@ -51,7 +50,10 @@ def test_H_chain_LDOS():
     #test_freq = np.linspace(0.25, 1.25, 100, endpoint=False).tolist()
     test_freq = np.linspace(0.25, 1.25, 20, endpoint=False).tolist()
     eta = 0.05
-    M = 10
+    # when M=10, the last site of random mps will sometimes of size (1,2,1)
+    # because of the qn conservation. I slightly enlarge it to make the test
+    # more robust.
+    M = 16
     procedure_cv = [0.4, 0.2] + [0]*6
     spectra = SpectraZtCV(model, None, M, eta, h_mpo=mpo, method="2site",
             procedure_cv=procedure_cv, b_mps=b_mps.scale(-eta), e0=mps_e)
