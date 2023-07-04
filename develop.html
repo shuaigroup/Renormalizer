@@ -3,10 +3,10 @@
   <head><meta charset="utf-8"/>
     <meta name="viewport" content="width=device-width,initial-scale=1"/>
     <meta name="color-scheme" content="light dark"><meta name="generator" content="Docutils 0.19: https://docutils.sourceforge.io/" />
-<link rel="index" title="Index" href="genindex.html" /><link rel="search" title="Search" href="search.html" /><link rel="prev" title="12. Spin-Boson Model" href="sbm.html" />
+<link rel="index" title="Index" href="genindex.html" /><link rel="search" title="Search" href="search.html" /><link rel="prev" title="13. Frequently Asked Questions" href="faq.html" />
 
     <meta name="generator" content="sphinx-5.3.0, furo 2022.09.29"/>
-        <title>13. How to develop Renormalizer - Renormalizer 0.1.0 documentation</title>
+        <title>14. How to develop Renormalizer - Renormalizer 0.1.0 documentation</title>
       <link rel="stylesheet" type="text/css" href="_static/pygments.css" />
     <link rel="stylesheet" type="text/css" href="_static/styles/furo.css?digest=d81277517bee4d6b0349d71bb2661d4890b5617c" />
     <link rel="stylesheet" type="text/css" href="_static/styles/furo-extensions.css?digest=30d1aed668e5c3a91c3e3bf6a60b675221979f0e" />
@@ -157,7 +157,10 @@
   <ul class="current">
 <li class="toctree-l1"><a class="reference internal" href="overview.html">1. An overview of Renormalizer</a></li>
 <li class="toctree-l1"><a class="reference internal" href="install.html">2. Installation guide</a></li>
-<li class="toctree-l1 has-children"><a class="reference internal" href="tutorial.html">3. Tutorial</a><input class="toctree-checkbox" id="toctree-checkbox-1" name="toctree-checkbox-1" role="switch" type="checkbox"/><label for="toctree-checkbox-1"><div class="visually-hidden">Toggle child pages in navigation</div><i class="icon"><svg><use href="#svg-arrow-right"></use></svg></i></label><ul class="simple">
+<li class="toctree-l1 has-children"><a class="reference internal" href="tutorial.html">3. Tutorial</a><input class="toctree-checkbox" id="toctree-checkbox-1" name="toctree-checkbox-1" role="switch" type="checkbox"/><label for="toctree-checkbox-1"><div class="visually-hidden">Toggle child pages in navigation</div><i class="icon"><svg><use href="#svg-arrow-right"></use></svg></i></label><ul>
+<li class="toctree-l2"><a class="reference internal" href="tutorials/1D-Heisenberg.html">3.1. Spin-1/2 1-D Heisenberg model</a></li>
+<li class="toctree-l2"><a class="reference internal" href="tutorials/define_model.html">3.2. Define Your Model</a></li>
+<li class="toctree-l2"><a class="reference internal" href="time_evolution.html">3.3. Time Evolution Algorithms</a></li>
 </ul>
 </li>
 <li class="toctree-l1"><a class="reference internal" href="model.html">4. Model</a></li>
@@ -169,7 +172,8 @@
 <li class="toctree-l1"><a class="reference internal" href="configs.html">10. Calculation Configurations</a></li>
 <li class="toctree-l1"><a class="reference internal" href="lib.html">11. lib</a></li>
 <li class="toctree-l1"><a class="reference internal" href="sbm.html">12. Spin-Boson Model</a></li>
-<li class="toctree-l1 current current-page"><a class="current reference internal" href="#">13. How to develop Renormalizer</a></li>
+<li class="toctree-l1"><a class="reference internal" href="faq.html">13. Frequently Asked Questions</a></li>
+<li class="toctree-l1 current current-page"><a class="current reference internal" href="#">14. How to develop Renormalizer</a></li>
 </ul>
 
 </div>
@@ -205,11 +209,11 @@
         </div>
         <article role="main">
           <section id="how-to-develop-renormalizer">
-<h1><span class="section-number">13. </span>How to develop Renormalizer<a class="headerlink" href="#how-to-develop-renormalizer" title="Permalink to this heading">#</a></h1>
+<h1><span class="section-number">14. </span>How to develop Renormalizer<a class="headerlink" href="#how-to-develop-renormalizer" title="Permalink to this heading">#</a></h1>
 <p>The development protocol is very similar in all <code class="docutils literal notranslate"><span class="pre">Git</span></code> projects.
 For reference, you can check out the <a class="reference external" href="https://docs.scipy.org/doc/numpy/dev/">development guide of NumPy</a>.</p>
 <section id="development-process">
-<h2><span class="section-number">13.1. </span>Development Process<a class="headerlink" href="#development-process" title="Permalink to this heading">#</a></h2>
+<h2><span class="section-number">14.1. </span>Development Process<a class="headerlink" href="#development-process" title="Permalink to this heading">#</a></h2>
 <p>You can hardly use <code class="docutils literal notranslate"><span class="pre">Git</span></code> effectively if you have no idea how it works. There are several ways to learn:</p>
 <ul class="simple">
 <li><p>Read the first 3 chapters of the <a class="reference external" href="https://git-scm.com/book/en/v2"><em>Pro Git</em> book</a>.</p></li>
@@ -258,7 +262,7 @@ or you can start a new branch.</p>
 <p>There is a <a class="reference external" href="https://liwt31.github.io/2019/09/01/nopush/">blog post</a> on why you shouldn’t push to master.</p>
 </section>
 <section id="stylistic-guidelines">
-<h2><span class="section-number">13.2. </span>Stylistic Guidelines<a class="headerlink" href="#stylistic-guidelines" title="Permalink to this heading">#</a></h2>
+<h2><span class="section-number">14.2. </span>Stylistic Guidelines<a class="headerlink" href="#stylistic-guidelines" title="Permalink to this heading">#</a></h2>
 <p>The style of the code (naming conventions, etc) follows <a class="reference external" href="https://www.python.org/dev/peps/pep-0008/">PEP 8</a>
 and you can find an explanation with better readability <a class="reference external" href="https://pep8.org/">here</a>. Some most important things:</p>
 <ul>
@@ -277,7 +281,7 @@ and you can find an explanation with better readability <a class="reference exte
 <p>Automatic style checking is enabled in common IDEs such as PyCharm and there are <a class="reference external" href="https://github.com/nvie/vim-flake8">plugins for vim</a>. You can also format your code with <a class="reference external" href="https://github.com/psf/black"><code class="docutils literal notranslate"><span class="pre">Black</span></code></a>.</p>
 </section>
 <section id="common-mistakes-during-development">
-<h2><span class="section-number">13.3. </span>Common Mistakes during Development<a class="headerlink" href="#common-mistakes-during-development" title="Permalink to this heading">#</a></h2>
+<h2><span class="section-number">14.3. </span>Common Mistakes during Development<a class="headerlink" href="#common-mistakes-during-development" title="Permalink to this heading">#</a></h2>
 <p>A list of mistakes that the developers have made multiple times previously</p>
 <ul class="simple">
 <li><p>Forget to convert from float datatype to complex datatype. Usually NumPy will issue a warning.</p></li>
@@ -291,14 +295,14 @@ and you can find an explanation with better readability <a class="reference exte
         
         <div class="related-pages">
           
-          <a class="prev-page" href="sbm.html">
+          <a class="prev-page" href="faq.html">
               <svg class="furo-related-icon"><use href="#svg-arrow-right"></use></svg>
               <div class="page-info">
                 <div class="context">
                   <span>Previous</span>
                 </div>
                 
-                <div class="title"><span class="section-number">12. </span>Spin-Boson Model</div>
+                <div class="title"><span class="section-number">13. </span>Frequently Asked Questions</div>
                 
               </div>
             </a>
@@ -334,10 +338,10 @@ and you can find an explanation with better readability <a class="reference exte
         <div class="toc-tree-container">
           <div class="toc-tree">
             <ul>
-<li><a class="reference internal" href="#">13. How to develop Renormalizer</a><ul>
-<li><a class="reference internal" href="#development-process">13.1. Development Process</a></li>
-<li><a class="reference internal" href="#stylistic-guidelines">13.2. Stylistic Guidelines</a></li>
-<li><a class="reference internal" href="#common-mistakes-during-development">13.3. Common Mistakes during Development</a></li>
+<li><a class="reference internal" href="#">14. How to develop Renormalizer</a><ul>
+<li><a class="reference internal" href="#development-process">14.1. Development Process</a></li>
+<li><a class="reference internal" href="#stylistic-guidelines">14.2. Stylistic Guidelines</a></li>
+<li><a class="reference internal" href="#common-mistakes-during-development">14.3. Common Mistakes during Development</a></li>
 </ul>
 </li>
 </ul>

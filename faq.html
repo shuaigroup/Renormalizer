@@ -3,10 +3,10 @@
   <head><meta charset="utf-8"/>
     <meta name="viewport" content="width=device-width,initial-scale=1"/>
     <meta name="color-scheme" content="light dark"><meta name="generator" content="Docutils 0.19: https://docutils.sourceforge.io/" />
-<link rel="index" title="Index" href="genindex.html" /><link rel="search" title="Search" href="search.html" /><link rel="next" title="12. Spin-Boson Model" href="sbm.html" /><link rel="prev" title="10. Calculation Configurations" href="configs.html" />
+<link rel="index" title="Index" href="genindex.html" /><link rel="search" title="Search" href="search.html" /><link rel="next" title="14. How to develop Renormalizer" href="develop.html" /><link rel="prev" title="12. Spin-Boson Model" href="sbm.html" />
 
     <meta name="generator" content="sphinx-5.3.0, furo 2022.09.29"/>
-        <title>11. lib - Renormalizer 0.1.0 documentation</title>
+        <title>13. Frequently Asked Questions - Renormalizer 0.1.0 documentation</title>
       <link rel="stylesheet" type="text/css" href="_static/pygments.css" />
     <link rel="stylesheet" type="text/css" href="_static/styles/furo.css?digest=d81277517bee4d6b0349d71bb2661d4890b5617c" />
     <link rel="stylesheet" type="text/css" href="_static/styles/furo-extensions.css?digest=30d1aed668e5c3a91c3e3bf6a60b675221979f0e" />
@@ -134,7 +134,7 @@
           <svg class="theme-icon-when-light"><use href="#svg-sun"></use></svg>
         </button>
       </div>
-      <label class="toc-overlay-icon toc-header-icon no-toc" for="__toc">
+      <label class="toc-overlay-icon toc-header-icon" for="__toc">
         <div class="visually-hidden">Toggle table of contents sidebar</div>
         <i class="icon"><svg><use href="#svg-toc"></use></svg></i>
       </label>
@@ -170,9 +170,9 @@
 <li class="toctree-l1"><a class="reference internal" href="ct.html">8. Charge Transport</a></li>
 <li class="toctree-l1"><a class="reference internal" href="cv.html">9. Frequency domain DMRG</a></li>
 <li class="toctree-l1"><a class="reference internal" href="configs.html">10. Calculation Configurations</a></li>
-<li class="toctree-l1 current current-page"><a class="current reference internal" href="#">11. lib</a></li>
+<li class="toctree-l1"><a class="reference internal" href="lib.html">11. lib</a></li>
 <li class="toctree-l1"><a class="reference internal" href="sbm.html">12. Spin-Boson Model</a></li>
-<li class="toctree-l1"><a class="reference internal" href="faq.html">13. Frequently Asked Questions</a></li>
+<li class="toctree-l1 current current-page"><a class="current reference internal" href="#">13. Frequently Asked Questions</a></li>
 <li class="toctree-l1"><a class="reference internal" href="develop.html">14. How to develop Renormalizer</a></li>
 </ul>
 
@@ -202,14 +202,30 @@
               <svg class="theme-icon-when-light"><use href="#svg-sun"></use></svg>
             </button>
           </div>
-          <label class="toc-overlay-icon toc-content-icon no-toc" for="__toc">
+          <label class="toc-overlay-icon toc-content-icon" for="__toc">
             <div class="visually-hidden">Toggle table of contents sidebar</div>
             <i class="icon"><svg><use href="#svg-toc"></use></svg></i>
           </label>
         </div>
         <article role="main">
-          <section id="lib">
-<h1><span class="section-number">11. </span>lib<a class="headerlink" href="#lib" title="Permalink to this heading">#</a></h1>
+          <section id="frequently-asked-questions">
+<h1><span class="section-number">13. </span>Frequently Asked Questions<a class="headerlink" href="#frequently-asked-questions" title="Permalink to this heading">#</a></h1>
+<section id="how-to-build-docs-and-view-them-locally">
+<h2><span class="section-number">13.1. </span>How to build docs and view them locally?<a class="headerlink" href="#how-to-build-docs-and-view-them-locally" title="Permalink to this heading">#</a></h2>
+<p>In the <code class="docutils literal notranslate"><span class="pre">doc</span></code> directory where <code class="docutils literal notranslate"><span class="pre">Makefile</span></code> is located, run</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="n">make</span> <span class="n">html</span>
+</pre></div>
+</div>
+<p>This will build the document.
+Then, in the <code class="docutils literal notranslate"><span class="pre">html</span></code> directory, run</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="n">python</span> <span class="o">-</span><span class="n">m</span> <span class="n">http</span><span class="o">.</span><span class="n">server</span>
+</pre></div>
+</div>
+<p>This will setup a HTTP server on the 8000 port.
+You can visit the document via <code class="docutils literal notranslate"><span class="pre">http://localhost:8000</span></code>
+if the document is built in local host.
+Or you may need to change <code class="docutils literal notranslate"><span class="pre">localhost</span></code> to the actual IP of the host where the doc is built.</p>
+</section>
 </section>
 
         </article>
@@ -217,23 +233,23 @@
       <footer>
         
         <div class="related-pages">
-          <a class="next-page" href="sbm.html">
+          <a class="next-page" href="develop.html">
               <div class="page-info">
                 <div class="context">
                   <span>Next</span>
                 </div>
-                <div class="title"><span class="section-number">12. </span>Spin-Boson Model</div>
+                <div class="title"><span class="section-number">14. </span>How to develop Renormalizer</div>
               </div>
               <svg class="furo-related-icon"><use href="#svg-arrow-right"></use></svg>
             </a>
-          <a class="prev-page" href="configs.html">
+          <a class="prev-page" href="sbm.html">
               <svg class="furo-related-icon"><use href="#svg-arrow-right"></use></svg>
               <div class="page-info">
                 <div class="context">
                   <span>Previous</span>
                 </div>
                 
-                <div class="title"><span class="section-number">10. </span>Calculation Configurations</div>
+                <div class="title"><span class="section-number">12. </span>Spin-Boson Model</div>
                 
               </div>
             </a>
@@ -257,8 +273,27 @@
         
       </footer>
     </div>
-    <aside class="toc-drawer no-toc">
+    <aside class="toc-drawer">
       
+      
+      <div class="toc-sticky toc-scroll">
+        <div class="toc-title-container">
+          <span class="toc-title">
+            On this page
+          </span>
+        </div>
+        <div class="toc-tree-container">
+          <div class="toc-tree">
+            <ul>
+<li><a class="reference internal" href="#">13. Frequently Asked Questions</a><ul>
+<li><a class="reference internal" href="#how-to-build-docs-and-view-them-locally">13.1. How to build docs and view them locally?</a></li>
+</ul>
+</li>
+</ul>
+
+          </div>
+        </div>
+      </div>
       
       
     </aside>

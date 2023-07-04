@@ -156,7 +156,10 @@
   <ul>
 <li class="toctree-l1"><a class="reference internal" href="../../../overview.html">1. An overview of Renormalizer</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../../../install.html">2. Installation guide</a></li>
-<li class="toctree-l1 has-children"><a class="reference internal" href="../../../tutorial.html">3. Tutorial</a><input class="toctree-checkbox" id="toctree-checkbox-1" name="toctree-checkbox-1" role="switch" type="checkbox"/><label for="toctree-checkbox-1"><div class="visually-hidden">Toggle child pages in navigation</div><i class="icon"><svg><use href="#svg-arrow-right"></use></svg></i></label><ul class="simple">
+<li class="toctree-l1 has-children"><a class="reference internal" href="../../../tutorial.html">3. Tutorial</a><input class="toctree-checkbox" id="toctree-checkbox-1" name="toctree-checkbox-1" role="switch" type="checkbox"/><label for="toctree-checkbox-1"><div class="visually-hidden">Toggle child pages in navigation</div><i class="icon"><svg><use href="#svg-arrow-right"></use></svg></i></label><ul>
+<li class="toctree-l2"><a class="reference internal" href="../../../tutorials/1D-Heisenberg.html">3.1. Spin-1/2 1-D Heisenberg model</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../../tutorials/define_model.html">3.2. Define Your Model</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../../time_evolution.html">3.3. Time Evolution Algorithms</a></li>
 </ul>
 </li>
 <li class="toctree-l1"><a class="reference internal" href="../../../model.html">4. Model</a></li>
@@ -168,7 +171,8 @@
 <li class="toctree-l1"><a class="reference internal" href="../../../configs.html">10. Calculation Configurations</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../../../lib.html">11. lib</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../../../sbm.html">12. Spin-Boson Model</a></li>
-<li class="toctree-l1"><a class="reference internal" href="../../../develop.html">13. How to develop Renormalizer</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../faq.html">13. Frequently Asked Questions</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../develop.html">14. How to develop Renormalizer</a></li>
 </ul>
 
 </div>
@@ -290,7 +294,10 @@
 <span class="sd">        algorithm to converge the final mps.</span>
 
 <span class="sd">    vprocedure : list, optional</span>
-<span class="sd">        The procedure to do variational compression.</span>
+<span class="sd">        The procedure to do variational compression. In the sublist, the first</span>
+<span class="sd">        element is a CompressConfig, which controls the compression in each</span>
+<span class="sd">        sweep. For backward compatibility, it can also be an int, which indicates</span>
+<span class="sd">        CompressCriteria.fixed with the int as the max_bonddim.</span>
 <span class="sd">        The Default is</span>
 
 <span class="sd">        .. code-block::</span>
@@ -504,6 +511,12 @@
 <div class="viewcode-block" id="OptimizeConfig"><a class="viewcode-back" href="../../../configs.html#renormalizer.utils.configs.OptimizeConfig">[docs]</a><span class="k">class</span> <span class="nc">OptimizeConfig</span><span class="p">:</span>
 <span class="w">    </span><span class="sa">r</span><span class="sd">&quot;&quot;&quot; DMRG ground state algorithm optimization configuration</span>
 
+<span class="sd">        The procedure to do ground state optimization. In the sublist, the first</span>
+<span class="sd">        element is a CompressConfig, which controls the compression in each</span>
+<span class="sd">        sweep. For backward compatibility, it can also be an int, which indicates</span>
+<span class="sd">        CompressCriteria.fixed with the int as the max_bonddim.</span>
+<span class="sd">        The second element is the percent to choose the renormalied basis from</span>
+<span class="sd">        each symmetry block to avoid trapping into local minimum.</span>
 <span class="sd">    &quot;&quot;&quot;</span>
 
     <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">procedure</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
@@ -577,6 +590,7 @@
         <span class="n">reg_epsilon</span><span class="o">=</span><span class="mf">1e-10</span><span class="p">,</span>
         <span class="n">ivp_rtol</span><span class="o">=</span><span class="mf">1e-5</span><span class="p">,</span>
         <span class="n">ivp_atol</span><span class="o">=</span><span class="mf">1e-8</span><span class="p">,</span>
+        <span class="n">ivp_solver</span><span class="o">=</span><span class="s2">&quot;krylov&quot;</span><span class="p">,</span>
         <span class="n">force_ovlp</span><span class="o">=</span><span class="kc">True</span>
     <span class="p">):</span>
 
@@ -600,6 +614,7 @@
         <span class="c1"># scipy.ivp rtol and atol</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">ivp_rtol</span><span class="p">:</span> <span class="nb">float</span> <span class="o">=</span> <span class="n">ivp_rtol</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">ivp_atol</span><span class="p">:</span> <span class="nb">float</span> <span class="o">=</span> <span class="n">ivp_atol</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">ivp_solver</span> <span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="n">ivp_solver</span>
         <span class="c1"># the EOM has already considered the non-orthogonality of the left and right</span>
         <span class="c1"># renormalized basis, see arXiv:1907.12044</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">force_ovlp</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="n">force_ovlp</span>

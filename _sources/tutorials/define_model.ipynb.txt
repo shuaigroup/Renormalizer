@@ -1,0 +1,714 @@
+{
+ "cells": [
+  {
+   "cell_type": "markdown",
+   "id": "a845056f-8d44-4d6f-b911-630cbf0022a2",
+   "metadata": {},
+   "source": [
+    "# Define Your Model"
+   ]
+  },
+  {
+   "cell_type": "markdown",
+   "id": "1a9a29c7-3877-4c9c-a72b-8ecb0e9b2f1a",
+   "metadata": {},
+   "source": [
+    "## Overview\n",
+    "\n",
+    "In this notebook we will introduce 3 basic components for Renormalizer: `Op`, `BasisSet` and `Model`.\n",
+    "These components are essential for MPS/MPO construction/manipulation for a given physical model."
+   ]
+  },
+  {
+   "cell_type": "code",
+   "execution_count": 1,
+   "id": "f93bbb6c-6087-4fc4-ae77-61f3c98b4e22",
+   "metadata": {},
+   "outputs": [],
+   "source": [
+    "# add renormalizer to path\n",
+    "import sys\n",
+    "sys.path.append(\"..\")"
+   ]
+  },
+  {
+   "cell_type": "markdown",
+   "id": "ce4ab8f2-26f3-48f1-a93a-6b27e1c46047",
+   "metadata": {},
+   "source": [
+    "## `Op`\n",
+    "\n",
+    "`Op` is the abbreviation for \"operators\". It offers a convenient interface to represent operators of your interest.\n",
+    "`Op` is the bridge between symbolic math equations and numerical tensors in MPS/MPO."
+   ]
+  },
+  {
+   "cell_type": "code",
+   "execution_count": 2,
+   "id": "4bc1aac4-9fec-48f2-a801-abd479d1adc7",
+   "metadata": {},
+   "outputs": [
+    {
+     "name": "stderr",
+     "output_type": "stream",
+     "text": [
+      "2022-10-28 13:29:10,474[INFO] Use NumPy as backend\n",
+      "2022-10-28 13:29:10,475[INFO] use 64 bits\n"
+     ]
+    }
+   ],
+   "source": [
+    "from renormalizer import Op"
+   ]
+  },
+  {
+   "cell_type": "markdown",
+   "id": "b90b8c22-3d60-4503-a21d-c47330d34278",
+   "metadata": {},
+   "source": [
+    "### Basics\n",
+    "\n",
+    "There are 3 basic attributes for an operator:\n",
+    "\n",
+    "- The operation or its symbol, such as $\\hat X$, $\\hat a^\\dagger$, $\\hat p^2$\n",
+    "- The DOF at wich the operation is operated on, such as \"spin 0\", \"exiton 1\". In mathematical expression this is usually the subscript for an operator, i.e., $\\hat X_0$ or $\\hat a^\\dagger_1$\n",
+    "- The factor or coefficient for the operator.\n",
+    "\n",
+    "There is an additional useful attributes that is sometimes quite useful: the quantum number.\n",
+    "\n",
+    "`Op` are constructed from the above 4 attributes. The first 2 are necessary and the last 2 are optional."
+   ]
+  },
+  {
+   "cell_type": "code",
+   "execution_count": 3,
+   "id": "47aa28d6-2bb6-4a19-8244-d80a99fca2f9",
+   "metadata": {},
+   "outputs": [
+    {
+     "data": {
+      "text/plain": [
+       "Op('X', [0], 0.5, [0])"
+      ]
+     },
+     "execution_count": 3,
+     "metadata": {},
+     "output_type": "execute_result"
+    }
+   ],
+   "source": [
+    "Op(\"X\", 0, factor=0.5, qn=0)"
+   ]
+  },
+  {
+   "cell_type": "markdown",
+   "id": "620740be-ee2d-4c1b-901c-d08f8d346436",
+   "metadata": {},
+   "source": [
+    "In renormalizer, you may use anything that can be hashed and compared to denote a DOF.\n",
+    "Common examples include `int`, `str`, and `tuple` of them."
+   ]
+  },
+  {
+   "cell_type": "code",
+   "execution_count": 4,
+   "id": "303d5892-1992-4e4f-ac56-e3257bf237b4",
+   "metadata": {},
+   "outputs": [
+    {
+     "data": {
+      "text/plain": [
+       "Op('X', [('spin 0', 'cool stuff', 2077)], 1.0)"
+      ]
+     },
+     "execution_count": 4,
+     "metadata": {},
+     "output_type": "execute_result"
+    }
+   ],
+   "source": [
+    "Op(\"X\", (\"spin 0\", \"cool stuff\", 2077))"
+   ]
+  },
+  {
+   "cell_type": "markdown",
+   "id": "e0009852-e217-46ec-aee3-630e6578267b",
+   "metadata": {},
+   "source": [
+    "You may wonder what are the allowed symbols for operators. For that please refer to the `BasisSet` section."
+   ]
+  },
+  {
+   "cell_type": "markdown",
+   "id": "19c2ad5f-abad-449a-8a3a-2006f2ec8aca",
+   "metadata": {},
+   "source": [
+    "Products of operators can be constructed intuitively"
+   ]
+  },
+  {
+   "cell_type": "code",
+   "execution_count": 5,
+   "id": "8fe6c36d-0179-480e-84ec-f23c32af61d6",
+   "metadata": {},
+   "outputs": [
+    {
+     "data": {
+      "text/plain": [
+       "Op('a^\\\\dagger a', [0, 1], 1.0)"
+      ]
+     },
+     "execution_count": 5,
+     "metadata": {},
+     "output_type": "execute_result"
+    }
+   ],
+   "source": [
+    "Op(r\"a^\\dagger a\", [0, 1])"
+   ]
+  },
+  {
+   "cell_type": "markdown",
+   "id": "6ee3173b-739d-46c5-bd76-56dbd6c8f704",
+   "metadata": {},
+   "source": [
+    "Here, DOFs for the operators are specified through a list, where the first element is the DOF for $a^\\dagger$ and the second element is the DOF for $a$.\n",
+    "\n",
+    "Note that using tuple to specify the DOF has a totally different meaning. Renormalizer will recognize the tuple as a single DOF and set all DOFs in the operator to that DOF. "
+   ]
+  },
+  {
+   "cell_type": "code",
+   "execution_count": 6,
+   "id": "d900115e-4775-4b84-90fa-0b3339d90cc7",
+   "metadata": {},
+   "outputs": [
+    {
+     "data": {
+      "text/plain": [
+       "Op('a^\\\\dagger a', [(0, 1), (0, 1)], 1.0)"
+      ]
+     },
+     "execution_count": 6,
+     "metadata": {},
+     "output_type": "execute_result"
+    }
+   ],
+   "source": [
+    "Op(r\"a^\\dagger a\", (0, 1))"
+   ]
+  },
+  {
+   "cell_type": "markdown",
+   "id": "f34a791e-dbae-4830-aef6-ccd574d1d70d",
+   "metadata": {},
+   "source": [
+    "`Op` also has a lot of useful functions and attributes, please refer to the API document for more details."
+   ]
+  },
+  {
+   "cell_type": "markdown",
+   "id": "dbd21203-9ac8-45b4-bd35-26c844b8241b",
+   "metadata": {},
+   "source": [
+    "### Operations and `OpSum`"
+   ]
+  },
+  {
+   "cell_type": "markdown",
+   "id": "c680bd59-0c99-45aa-8335-f2ba3db1959e",
+   "metadata": {},
+   "source": [
+    "Common and simple operations between operators are supported"
+   ]
+  },
+  {
+   "cell_type": "code",
+   "execution_count": 7,
+   "id": "7e00cea9-1bfc-4c58-bcee-38b885ec7d9d",
+   "metadata": {},
+   "outputs": [
+    {
+     "data": {
+      "text/plain": [
+       "Op('X Z', [0, 1], 0.25)"
+      ]
+     },
+     "execution_count": 7,
+     "metadata": {},
+     "output_type": "execute_result"
+    }
+   ],
+   "source": [
+    "op1 = Op(\"X\", 0, 0.5)\n",
+    "op2 = Op(\"Z\", 1, 0.5)\n",
+    "op1 * op2"
+   ]
+  },
+  {
+   "cell_type": "markdown",
+   "id": "4823f97b-6a2d-4fc4-9d1f-dc31eb056f9f",
+   "metadata": {},
+   "source": [
+    "Addition between `Op` will result in an `OpSum` instance that is a subclass of list."
+   ]
+  },
+  {
+   "cell_type": "code",
+   "execution_count": 8,
+   "id": "84b34017-8b9b-4288-8730-e1f12de2806b",
+   "metadata": {},
+   "outputs": [
+    {
+     "data": {
+      "text/plain": [
+       "([Op('X', [0], 0.5), Op('Z', [1], 0.5)], renormalizer.model.op.OpSum)"
+      ]
+     },
+     "execution_count": 8,
+     "metadata": {},
+     "output_type": "execute_result"
+    }
+   ],
+   "source": [
+    "op1 + op2, type(op1 + op2)"
+   ]
+  },
+  {
+   "cell_type": "markdown",
+   "id": "cc0683c8-e355-4225-a4f2-a0d23271a3cd",
+   "metadata": {},
+   "source": [
+    "`OpSum` supports simple operator algebra such as multiplication/addition, etc."
+   ]
+  },
+  {
+   "cell_type": "code",
+   "execution_count": 9,
+   "id": "c1cf78f8-ed8a-4bf5-a629-b786f43210b2",
+   "metadata": {},
+   "outputs": [
+    {
+     "data": {
+      "text/plain": [
+       "[Op('X X', [0, 0], 0.25), Op('Z X', [1, 0], 0.25)]"
+      ]
+     },
+     "execution_count": 9,
+     "metadata": {},
+     "output_type": "execute_result"
+    }
+   ],
+   "source": [
+    "# multiplication\n",
+    "opsum = op1 + op2\n",
+    "opsum * op1"
+   ]
+  },
+  {
+   "cell_type": "code",
+   "execution_count": 10,
+   "id": "26cf73a7-ef15-41ab-9f1e-96ce3d9612d8",
+   "metadata": {},
+   "outputs": [
+    {
+     "data": {
+      "text/plain": [
+       "[Op('X X', [0, 0], 0.25),\n",
+       " Op('X Z', [0, 1], 0.25),\n",
+       " Op('Z X', [1, 0], 0.25),\n",
+       " Op('Z Z', [1, 1], 0.25)]"
+      ]
+     },
+     "execution_count": 10,
+     "metadata": {},
+     "output_type": "execute_result"
+    }
+   ],
+   "source": [
+    "opsum * opsum"
+   ]
+  },
+  {
+   "cell_type": "code",
+   "execution_count": 11,
+   "id": "fa103eaa-78ba-482d-a796-808fe67c5cc0",
+   "metadata": {},
+   "outputs": [
+    {
+     "data": {
+      "text/plain": [
+       "[Op('X', [0], 0.5), Op('Z', [1], 0.5), Op('Z', [1], -0.5)]"
+      ]
+     },
+     "execution_count": 11,
+     "metadata": {},
+     "output_type": "execute_result"
+    }
+   ],
+   "source": [
+    "# addition/subtraction\n",
+    "opsum -= op2\n",
+    "opsum"
+   ]
+  },
+  {
+   "cell_type": "code",
+   "execution_count": 12,
+   "id": "cb924ed7-6a00-4cb5-8339-a5d468e72d06",
+   "metadata": {},
+   "outputs": [
+    {
+     "data": {
+      "text/plain": [
+       "[Op('X', [0], 0.5)]"
+      ]
+     },
+     "execution_count": 12,
+     "metadata": {},
+     "output_type": "execute_result"
+    }
+   ],
+   "source": [
+    "opsum.simplify()"
+   ]
+  },
+  {
+   "cell_type": "markdown",
+   "id": "b24fed67-f38e-491e-ad84-709a51bbb5f9",
+   "metadata": {},
+   "source": [
+    "However, in general the functionalities are limited and the performance is not optimized.\n",
+    "We recommand using [SymPy](https://www.sympy.org/en/index.html) for advanced symbolic mathematics and convert the final result to Renormalizer `Op`."
+   ]
+  },
+  {
+   "cell_type": "markdown",
+   "id": "641befa7-4c71-44d7-8763-64bbac2a45c7",
+   "metadata": {},
+   "source": [
+    "## `BasisSet`\n",
+    "An essential step for converting symbolic operators into numeric tensors is to specify a set of basis.\n",
+    "Renormalizer includes a zoo of basis set with an emphasis for electron-phonon or vibronic models."
+   ]
+  },
+  {
+   "cell_type": "code",
+   "execution_count": 13,
+   "id": "24f5feb6-94ec-4f8f-a655-c23782ad3457",
+   "metadata": {},
+   "outputs": [
+    {
+     "data": {
+      "text/plain": [
+       "['BasisHalfSpin',\n",
+       " 'BasisHopsBoson',\n",
+       " 'BasisMultiElectron',\n",
+       " 'BasisMultiElectronVac',\n",
+       " 'BasisSHO',\n",
+       " 'BasisSimpleElectron',\n",
+       " 'BasisSineDVR']"
+      ]
+     },
+     "execution_count": 13,
+     "metadata": {},
+     "output_type": "execute_result"
+    }
+   ],
+   "source": [
+    "import renormalizer\n",
+    "[s for s in dir(renormalizer) if s.startswith(\"Basis\")]"
+   ]
+  },
+  {
+   "cell_type": "markdown",
+   "id": "60704ece-a915-494b-ad2d-c202bbc8195b",
+   "metadata": {},
+   "source": [
+    "Each BasisSet is associated with one or more DOFs. For example, we can setup the spin-1/2 basis set for a spin DOF denoted as `(\"spin\", 0)`"
+   ]
+  },
+  {
+   "cell_type": "code",
+   "execution_count": 14,
+   "id": "66b6d810-e472-426a-a222-b47de5df86d7",
+   "metadata": {},
+   "outputs": [
+    {
+     "data": {
+      "text/plain": [
+       "(dof: ('spin', 0), nbas: 2, qn: [0, 0])"
+      ]
+     },
+     "execution_count": 14,
+     "metadata": {},
+     "output_type": "execute_result"
+    }
+   ],
+   "source": [
+    "from renormalizer import BasisHalfSpin\n",
+    "b = BasisHalfSpin((\"spin\", 0))\n",
+    "b"
+   ]
+  },
+  {
+   "cell_type": "markdown",
+   "id": "7992808a-0d34-4307-8f24-81aa6fbc6701",
+   "metadata": {},
+   "source": [
+    "Each basis set supports a variety of operations. The spin-1/2 basis set naturally supports Pauli operators such as `\"X\"`, `\"sigma_y\"`."
+   ]
+  },
+  {
+   "cell_type": "code",
+   "execution_count": 15,
+   "id": "04cbaf61-3d57-4ebb-b270-0882a7675e60",
+   "metadata": {},
+   "outputs": [
+    {
+     "data": {
+      "text/plain": [
+       "(array([[0., 1.],\n",
+       "        [1., 0.]]),\n",
+       " array([[0.+0.j, 0.-1.j],\n",
+       "        [0.+1.j, 0.+0.j]]))"
+      ]
+     },
+     "execution_count": 15,
+     "metadata": {},
+     "output_type": "execute_result"
+    }
+   ],
+   "source": [
+    "b.op_mat(\"X\"), b.op_mat(\"sigma_y\")"
+   ]
+  },
+  {
+   "cell_type": "markdown",
+   "id": "6f41ff7f-fb28-436f-a4cb-f67730a18939",
+   "metadata": {},
+   "source": [
+    "For phonon DOF, it is necessary to specify the quanta truncated in the basis set"
+   ]
+  },
+  {
+   "cell_type": "code",
+   "execution_count": 16,
+   "id": "f563057c-1ffd-4312-b207-0629e57b5fc8",
+   "metadata": {},
+   "outputs": [
+    {
+     "data": {
+      "text/plain": [
+       "(array([[0.        , 1.        , 0.        , 0.        ],\n",
+       "        [1.        , 0.        , 1.41421356, 0.        ],\n",
+       "        [0.        , 1.41421356, 0.        , 1.73205081],\n",
+       "        [0.        , 0.        , 1.73205081, 0.        ]]),\n",
+       " array([[0.        , 0.1       , 0.        , 0.        ],\n",
+       "        [0.1       , 0.        , 0.14142136, 0.        ],\n",
+       "        [0.        , 0.14142136, 0.        , 0.17320508],\n",
+       "        [0.        , 0.        , 0.17320508, 0.        ]]))"
+      ]
+     },
+     "execution_count": 16,
+     "metadata": {},
+     "output_type": "execute_result"
+    }
+   ],
+   "source": [
+    "# SHO represent simple harmonic oscillator\n",
+    "from renormalizer import BasisSHO\n",
+    "# omega is the vibration frequency, nbas is the number of basis\n",
+    "b = BasisSHO(dof=0, omega=50, nbas=4)\n",
+    "# note the different value because of omega\n",
+    "b.op_mat(\"b^\\dagger+b\"), b.op_mat(\"x\")"
+   ]
+  },
+  {
+   "cell_type": "markdown",
+   "id": "c7364e91-6fb0-47f8-bcf6-2430562b712b",
+   "metadata": {},
+   "source": [
+    "Note that `BasisSHO` supports both first and second-quantized operators such as\n",
+    "$$\n",
+    "\\hat x = \\sqrt{\\frac{1}{2\\omega}} (b^\\dagger + b)\n",
+    "$$\n",
+    "\n",
+    "here $x$ is the mass-weighted coordinate."
+   ]
+  },
+  {
+   "cell_type": "markdown",
+   "id": "950dc6cf-b139-424e-b055-9881d4daf858",
+   "metadata": {},
+   "source": [
+    "The number of possible basis sets is infinite and highly customized basis set for a particular problem is rairly common.\n",
+    "You may subclass the `BasisSet` parent class in `renormalizer.model.basis.BasisSet` to customize the basis set and the numerical behavior of the operators."
+   ]
+  },
+  {
+   "cell_type": "markdown",
+   "id": "a6f14db1-0938-4c84-a44e-7467cddd5def",
+   "metadata": {},
+   "source": [
+    "## `Model`\n",
+    "\n",
+    "A `Model` is basically made up with a list of `BasisSet` and the Hamiltonian in `OpSum`/`list` form.\n",
+    "A `Model` instance is necessary for any MPS/MPO construction."
+   ]
+  },
+  {
+   "cell_type": "code",
+   "execution_count": 17,
+   "id": "e67e21ac-a3c5-4b56-abd6-c4a40960e503",
+   "metadata": {},
+   "outputs": [],
+   "source": [
+    "from renormalizer import Model\n",
+    "model = Model([BasisHalfSpin(0)], [Op(\"X\", 0)])"
+   ]
+  },
+  {
+   "cell_type": "markdown",
+   "id": "d20b8956-06bb-456a-af54-ed6815ad0d4c",
+   "metadata": {},
+   "source": [
+    "For example, the corresponding MPO can be constructed from the above model conveniently"
+   ]
+  },
+  {
+   "cell_type": "code",
+   "execution_count": 18,
+   "id": "0b0d473e-00e2-4f1b-901e-afa39e2a46bc",
+   "metadata": {},
+   "outputs": [
+    {
+     "name": "stderr",
+     "output_type": "stream",
+     "text": [
+      "2022-10-28 13:29:10,610[DEBUG] # of operator terms: 1\n"
+     ]
+    },
+    {
+     "data": {
+      "text/plain": [
+       "<class 'renormalizer.mps.mpo.Mpo'> with 1 sites"
+      ]
+     },
+     "execution_count": 18,
+     "metadata": {},
+     "output_type": "execute_result"
+    }
+   ],
+   "source": [
+    "from renormalizer import Mpo\n",
+    "mpo = Mpo(model)\n",
+    "mpo"
+   ]
+  },
+  {
+   "cell_type": "code",
+   "execution_count": 19,
+   "id": "390b4aa0-91fe-472b-b9fb-21571659da66",
+   "metadata": {},
+   "outputs": [
+    {
+     "data": {
+      "text/plain": [
+       "array([[0., 1.],\n",
+       "       [1., 0.]])"
+      ]
+     },
+     "execution_count": 19,
+     "metadata": {},
+     "output_type": "execute_result"
+    }
+   ],
+   "source": [
+    "mpo.todense()"
+   ]
+  },
+  {
+   "cell_type": "markdown",
+   "id": "3e6296f7-a532-4386-bda3-65204b19d86e",
+   "metadata": {},
+   "source": [
+    "You may wonder \n",
+    "\n",
+    "- What are the limitations for the model, in particular the operator terms, to construct MPO? For example, is nearest-neighbour interaction or at most two-body operator enforced?\n",
+    "- If any numerical compression is involved in the construction. If so, how to control the accuracy? \n",
+    "- What are the time cost of constructing MPO for an arbitrary model?\n",
+    "\n",
+    "The answer is: renormalizer offers a unique algorithm for exact and efficient MPO construction of arbitrary operators.\n",
+    "It means\n",
+    "\n",
+    "- There's **NO limitation** for the model. Long-range interaction, three-body operators, anything you like.\n",
+    "- Numerical compression is not involved and the construction is **exact**.\n",
+    "- The construction time cost is neglegible for most models\n",
+    "\n",
+    "Additionally, we also guarantee that the constructed MPO is **optimal** in terms of bond dimension. \n",
+    "\n",
+    "For details of our algorithm, see [A general automatic method for optimal construction of matrix product operators using bipartite graph theory](https://aip.scitation.org/doi/10.1063/5.0018149)."
+   ]
+  },
+  {
+   "cell_type": "markdown",
+   "id": "f80d95e0-0ae6-41f6-a23e-52f04295bade",
+   "metadata": {},
+   "source": [
+    "Renormalizer also offers a set of built-in models for fast construction of common models. Please refer to the API document for more details."
+   ]
+  },
+  {
+   "cell_type": "code",
+   "execution_count": 20,
+   "id": "cf659b50-c31c-4fe3-a4bf-ee671a901d5c",
+   "metadata": {},
+   "outputs": [
+    {
+     "data": {
+      "text/plain": [
+       "['HolsteinModel', 'Model', 'SpinBosonModel', 'TI1DModel']"
+      ]
+     },
+     "execution_count": 20,
+     "metadata": {},
+     "output_type": "execute_result"
+    }
+   ],
+   "source": [
+    "import renormalizer\n",
+    "[s for s in dir(renormalizer) if s.endswith(\"Model\")]"
+   ]
+  },
+  {
+   "cell_type": "code",
+   "execution_count": null,
+   "id": "d8123a08-bd1e-4702-885e-aff9db9fc0fd",
+   "metadata": {},
+   "outputs": [],
+   "source": []
+  }
+ ],
+ "metadata": {
+  "kernelspec": {
+   "display_name": "Python 3 (ipykernel)",
+   "language": "python",
+   "name": "python3"
+  },
+  "language_info": {
+   "codemirror_mode": {
+    "name": "ipython",
+    "version": 3
+   },
+   "file_extension": ".py",
+   "mimetype": "text/x-python",
+   "name": "python",
+   "nbconvert_exporter": "python",
+   "pygments_lexer": "ipython3",
+   "version": "3.7.13"
+  }
+ },
+ "nbformat": 4,
+ "nbformat_minor": 5
+}

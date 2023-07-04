@@ -156,7 +156,10 @@
   <ul>
 <li class="toctree-l1"><a class="reference internal" href="../../../overview.html">1. An overview of Renormalizer</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../../../install.html">2. Installation guide</a></li>
-<li class="toctree-l1 has-children"><a class="reference internal" href="../../../tutorial.html">3. Tutorial</a><input class="toctree-checkbox" id="toctree-checkbox-1" name="toctree-checkbox-1" role="switch" type="checkbox"/><label for="toctree-checkbox-1"><div class="visually-hidden">Toggle child pages in navigation</div><i class="icon"><svg><use href="#svg-arrow-right"></use></svg></i></label><ul class="simple">
+<li class="toctree-l1 has-children"><a class="reference internal" href="../../../tutorial.html">3. Tutorial</a><input class="toctree-checkbox" id="toctree-checkbox-1" name="toctree-checkbox-1" role="switch" type="checkbox"/><label for="toctree-checkbox-1"><div class="visually-hidden">Toggle child pages in navigation</div><i class="icon"><svg><use href="#svg-arrow-right"></use></svg></i></label><ul>
+<li class="toctree-l2"><a class="reference internal" href="../../../tutorials/1D-Heisenberg.html">3.1. Spin-1/2 1-D Heisenberg model</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../../tutorials/define_model.html">3.2. Define Your Model</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../../time_evolution.html">3.3. Time Evolution Algorithms</a></li>
 </ul>
 </li>
 <li class="toctree-l1"><a class="reference internal" href="../../../model.html">4. Model</a></li>
@@ -168,7 +171,8 @@
 <li class="toctree-l1"><a class="reference internal" href="../../../configs.html">10. Calculation Configurations</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../../../lib.html">11. lib</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../../../sbm.html">12. Spin-Boson Model</a></li>
-<li class="toctree-l1"><a class="reference internal" href="../../../develop.html">13. How to develop Renormalizer</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../faq.html">13. Frequently Asked Questions</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../develop.html">14. How to develop Renormalizer</a></li>
 </ul>
 
 </div>
@@ -231,7 +235,7 @@
     <span class="n">select_basis</span><span class="p">,</span>
     <span class="p">)</span>
 <span class="kn">from</span> <span class="nn">renormalizer.mps.hop_expr</span> <span class="kn">import</span> <span class="n">hop_expr</span>
-<span class="kn">from</span> <span class="nn">renormalizer.utils</span> <span class="kn">import</span> <span class="n">sizeof_fmt</span><span class="p">,</span> <span class="n">CompressConfig</span><span class="p">,</span> <span class="n">OFS</span><span class="p">,</span> <span class="n">calc_vn_entropy</span>
+<span class="kn">from</span> <span class="nn">renormalizer.utils</span> <span class="kn">import</span> <span class="n">sizeof_fmt</span><span class="p">,</span> <span class="n">CompressConfig</span><span class="p">,</span> <span class="n">CompressCriteria</span><span class="p">,</span> <span class="n">OFS</span><span class="p">,</span> <span class="n">calc_vn_entropy</span>
 
 <span class="n">logger</span> <span class="o">=</span> <span class="n">logging</span><span class="o">.</span><span class="n">getLogger</span><span class="p">(</span><span class="vm">__name__</span><span class="p">)</span>
 
@@ -243,16 +247,22 @@
         <span class="n">npload</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">load</span><span class="p">(</span><span class="n">fname</span><span class="p">,</span> <span class="n">allow_pickle</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
         <span class="n">mp</span> <span class="o">=</span> <span class="bp">cls</span><span class="p">()</span>
         <span class="n">mp</span><span class="o">.</span><span class="n">model</span> <span class="o">=</span> <span class="n">model</span>
-        <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="nb">int</span><span class="p">(</span><span class="n">npload</span><span class="p">[</span><span class="s2">&quot;nsites&quot;</span><span class="p">])):</span>
+        <span class="n">nsites</span> <span class="o">=</span> <span class="nb">int</span><span class="p">(</span><span class="n">npload</span><span class="p">[</span><span class="s2">&quot;nsites&quot;</span><span class="p">])</span>
+        <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="n">nsites</span><span class="p">):</span>
             <span class="n">mt</span> <span class="o">=</span> <span class="n">npload</span><span class="p">[</span><span class="sa">f</span><span class="s2">&quot;mt_</span><span class="si">{</span><span class="n">i</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">]</span>
             <span class="k">if</span> <span class="n">np</span><span class="o">.</span><span class="n">iscomplexobj</span><span class="p">(</span><span class="n">mt</span><span class="p">):</span>
                 <span class="n">mp</span><span class="o">.</span><span class="n">dtype</span> <span class="o">=</span> <span class="n">backend</span><span class="o">.</span><span class="n">complex_dtype</span>
             <span class="k">else</span><span class="p">:</span>
                 <span class="n">mp</span><span class="o">.</span><span class="n">dtype</span> <span class="o">=</span> <span class="n">backend</span><span class="o">.</span><span class="n">real_dtype</span>
             <span class="n">mp</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">mt</span><span class="p">)</span>
-        <span class="n">mp</span><span class="o">.</span><span class="n">qn</span> <span class="o">=</span> <span class="n">npload</span><span class="p">[</span><span class="s2">&quot;qn&quot;</span><span class="p">]</span>
+
+        <span class="n">mp</span><span class="o">.</span><span class="n">qn</span> <span class="o">=</span> <span class="p">[]</span>
+        <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="n">nsites</span><span class="o">+</span><span class="mi">1</span><span class="p">):</span>
+            <span class="n">subqn</span> <span class="o">=</span> <span class="n">npload</span><span class="p">[</span><span class="sa">f</span><span class="s2">&quot;subqn_</span><span class="si">{</span><span class="n">i</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">]</span><span class="o">.</span><span class="n">astype</span><span class="p">(</span><span class="nb">int</span><span class="p">)</span><span class="o">.</span><span class="n">tolist</span><span class="p">()</span>    
+            <span class="n">mp</span><span class="o">.</span><span class="n">qn</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">subqn</span><span class="p">)</span>
+
         <span class="n">mp</span><span class="o">.</span><span class="n">qnidx</span> <span class="o">=</span> <span class="nb">int</span><span class="p">(</span><span class="n">npload</span><span class="p">[</span><span class="s2">&quot;qnidx&quot;</span><span class="p">])</span>
-        <span class="n">mp</span><span class="o">.</span><span class="n">qntot</span> <span class="o">=</span> <span class="n">npload</span><span class="p">[</span><span class="s2">&quot;qntot&quot;</span><span class="p">]</span>
+        <span class="n">mp</span><span class="o">.</span><span class="n">qntot</span> <span class="o">=</span> <span class="n">npload</span><span class="p">[</span><span class="s2">&quot;qntot&quot;</span><span class="p">]</span><span class="o">.</span><span class="n">astype</span><span class="p">(</span><span class="nb">int</span><span class="p">)</span>
         <span class="n">mp</span><span class="o">.</span><span class="n">to_right</span> <span class="o">=</span> <span class="nb">bool</span><span class="p">(</span><span class="n">npload</span><span class="p">[</span><span class="s2">&quot;to_right&quot;</span><span class="p">])</span>
         <span class="k">return</span> <span class="n">mp</span></div>
 
@@ -729,10 +739,18 @@
 
         <span class="n">environ</span> <span class="o">=</span> <span class="n">Environ</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">mpo</span><span class="p">,</span> <span class="s2">&quot;L&quot;</span><span class="p">,</span> <span class="n">mps_conj</span><span class="o">=</span><span class="n">mps</span><span class="o">.</span><span class="n">conj</span><span class="p">())</span>
 
-        <span class="k">for</span> <span class="n">isweep</span><span class="p">,</span> <span class="p">(</span><span class="n">mmax</span><span class="p">,</span> <span class="n">percent</span><span class="p">)</span> <span class="ow">in</span> <span class="nb">enumerate</span><span class="p">(</span><span class="n">procedure</span><span class="p">):</span>
+        <span class="k">for</span> <span class="n">isweep</span><span class="p">,</span> <span class="p">(</span><span class="n">compress_config</span><span class="p">,</span> <span class="n">percent</span><span class="p">)</span> <span class="ow">in</span> <span class="nb">enumerate</span><span class="p">(</span><span class="n">procedure</span><span class="p">):</span>
             <span class="n">logger</span><span class="o">.</span><span class="n">debug</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;isweep: </span><span class="si">{</span><span class="n">isweep</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
-            <span class="n">logger</span><span class="o">.</span><span class="n">debug</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;mmax, percent: </span><span class="si">{</span><span class="n">mmax</span><span class="si">}</span><span class="s2">, </span><span class="si">{</span><span class="n">percent</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
             <span class="n">logger</span><span class="o">.</span><span class="n">debug</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;mps bond dims: </span><span class="si">{</span><span class="n">mps</span><span class="o">.</span><span class="n">bond_dims</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+            <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">compress_config</span><span class="p">,</span> <span class="n">CompressConfig</span><span class="p">):</span>
+                <span class="n">mps</span><span class="o">.</span><span class="n">compress_config</span> <span class="o">=</span> <span class="n">compress_config</span>
+                <span class="n">logger</span><span class="o">.</span><span class="n">debug</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;compress_config, percent: </span><span class="si">{</span><span class="n">compress_config</span><span class="si">}</span><span class="s2">, </span><span class="si">{</span><span class="n">percent</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+            <span class="k">elif</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">compress_config</span><span class="p">,</span> <span class="nb">int</span><span class="p">):</span>
+                <span class="n">mps</span><span class="o">.</span><span class="n">compress_config</span> <span class="o">=</span> <span class="n">CompressConfig</span><span class="p">(</span><span class="n">CompressCriteria</span><span class="o">.</span><span class="n">fixed</span><span class="p">,</span>
+                        <span class="n">max_bonddim</span><span class="o">=</span><span class="n">compress_config</span><span class="p">)</span>
+                <span class="n">logger</span><span class="o">.</span><span class="n">debug</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;mmax, percent: </span><span class="si">{</span><span class="n">compress_config</span><span class="si">}</span><span class="s2">, </span><span class="si">{</span><span class="n">percent</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+            <span class="k">else</span><span class="p">:</span>
+                <span class="k">assert</span> <span class="kc">False</span>
 
             <span class="k">for</span> <span class="n">imps</span> <span class="ow">in</span> <span class="n">mps</span><span class="o">.</span><span class="n">iter_idx_list</span><span class="p">(</span><span class="n">full</span><span class="o">=</span><span class="kc">True</span><span class="p">):</span>
                 <span class="k">if</span> <span class="n">method</span> <span class="o">==</span> <span class="s2">&quot;2site&quot;</span> <span class="ow">and</span> \
@@ -787,7 +805,7 @@
                 <span class="n">cout</span> <span class="o">=</span> <span class="n">hop</span><span class="p">(</span><span class="n">cms</span><span class="p">)</span>
                 <span class="c1"># clean up the elements which do not meet the qn requirements</span>
                 <span class="n">cout</span><span class="p">[</span><span class="o">~</span><span class="n">qn_mask</span><span class="p">]</span> <span class="o">=</span> <span class="mi">0</span>
-                <span class="n">mps</span><span class="o">.</span><span class="n">_update_mps</span><span class="p">(</span><span class="n">cout</span><span class="p">,</span> <span class="n">cidx</span><span class="p">,</span> <span class="n">qnbigl</span><span class="p">,</span> <span class="n">qnbigr</span><span class="p">,</span> <span class="n">mmax</span><span class="p">,</span> <span class="n">percent</span><span class="p">)</span>
+                <span class="n">mps</span><span class="o">.</span><span class="n">_update_mps</span><span class="p">(</span><span class="n">cout</span><span class="p">,</span> <span class="n">cidx</span><span class="p">,</span> <span class="n">qnbigl</span><span class="p">,</span> <span class="n">qnbigr</span><span class="p">,</span> <span class="n">percent</span><span class="p">)</span>
                 <span class="k">if</span> <span class="n">mps</span><span class="o">.</span><span class="n">compress_config</span><span class="o">.</span><span class="n">ofs</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
                     <span class="c1"># need to swap the original MPS. Tedious to implement and probably not useful.</span>
                     <span class="k">raise</span> <span class="ne">NotImplementedError</span><span class="p">(</span><span class="s2">&quot;OFS for variational compress not implemented&quot;</span><span class="p">)</span>
@@ -812,7 +830,7 @@
 
         <span class="k">return</span> <span class="n">mps</span></div>
 
-<div class="viewcode-block" id="MatrixProduct._update_mps"><a class="viewcode-back" href="../../../mps.html#renormalizer.mps.mp.MatrixProduct._update_mps">[docs]</a>    <span class="k">def</span> <span class="nf">_update_mps</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">cstruct</span><span class="p">,</span> <span class="n">cidx</span><span class="p">,</span> <span class="n">qnbigl</span><span class="p">,</span> <span class="n">qnbigr</span><span class="p">,</span> <span class="n">Mmax</span><span class="p">,</span> <span class="n">percent</span><span class="o">=</span><span class="mi">0</span><span class="p">):</span>
+<div class="viewcode-block" id="MatrixProduct._update_mps"><a class="viewcode-back" href="../../../mps.html#renormalizer.mps.mp.MatrixProduct._update_mps">[docs]</a>    <span class="k">def</span> <span class="nf">_update_mps</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">cstruct</span><span class="p">,</span> <span class="n">cidx</span><span class="p">,</span> <span class="n">qnbigl</span><span class="p">,</span> <span class="n">qnbigr</span><span class="p">,</span> <span class="n">percent</span><span class="o">=</span><span class="mi">0</span><span class="p">):</span>
 <span class="w">        </span><span class="sa">r</span><span class="sd">&quot;&quot;&quot;update mps with basis selection algorithm of J. Chem. Phys. 120,</span>
 <span class="sd">        3172 (2004).</span>
 
@@ -826,8 +844,6 @@
 <span class="sd">            The super-L-block quantum number.</span>
 <span class="sd">        qnbigr : ndarray</span>
 <span class="sd">            The super-R-block quantum number.</span>
-<span class="sd">        Mmax : int</span>
-<span class="sd">            The maximal bond dimension.</span>
 <span class="sd">        percent : float, int</span>
 <span class="sd">            The percentage of renormalized basis which is equally selected from</span>
 <span class="sd">            each quantum number section rather than according to singular</span>
@@ -847,6 +863,9 @@
 <span class="sd">        &quot;&quot;&quot;</span>
 
         <span class="n">system</span> <span class="o">=</span> <span class="s2">&quot;L&quot;</span> <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">to_right</span> <span class="k">else</span> <span class="s2">&quot;R&quot;</span>
+        
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">compress_config</span><span class="o">.</span><span class="n">bonddim_should_set</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">compress_config</span><span class="o">.</span><span class="n">set_bonddim</span><span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span><span class="o">+</span><span class="mi">1</span><span class="p">)</span>
 
         <span class="c1"># step 1: get the selected U, S, V</span>
         <span class="k">if</span> <span class="nb">type</span><span class="p">(</span><span class="n">cstruct</span><span class="p">)</span> <span class="ow">is</span> <span class="ow">not</span> <span class="nb">list</span><span class="p">:</span>
@@ -880,6 +899,12 @@
                 <span class="p">)</span>
                 <span class="n">entropy1</span> <span class="o">=</span> <span class="n">calc_vn_entropy</span><span class="p">(</span><span class="n">SUset1</span><span class="o">**</span><span class="mi">2</span><span class="p">)</span>
                 <span class="n">entropy2</span> <span class="o">=</span> <span class="n">calc_vn_entropy</span><span class="p">(</span><span class="n">SUset2</span><span class="o">**</span><span class="mi">2</span><span class="p">)</span>
+                
+                <span class="c1"># TODO: more general control according to</span>
+                <span class="c1"># CompressCriteria.thresh</span>
+                <span class="k">assert</span> <span class="bp">self</span><span class="o">.</span><span class="n">compress_config</span><span class="o">.</span><span class="n">criteria</span> <span class="o">==</span> <span class="n">CompressCriteria</span><span class="o">.</span><span class="n">fixed</span>
+                <span class="n">Mmax</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">compress_config</span><span class="o">.</span><span class="n">bond_dim_max_value</span>
+
                 <span class="n">loss1</span> <span class="o">=</span> <span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">sort</span><span class="p">(</span><span class="n">SUset1</span><span class="p">)[::</span><span class="o">-</span><span class="mi">1</span><span class="p">][</span><span class="n">Mmax</span><span class="p">:]</span> <span class="o">**</span> <span class="mi">2</span><span class="p">)</span><span class="o">.</span><span class="n">sum</span><span class="p">()</span>
                 <span class="n">loss2</span> <span class="o">=</span> <span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">sort</span><span class="p">(</span><span class="n">SUset2</span><span class="p">)[::</span><span class="o">-</span><span class="mi">1</span><span class="p">][</span><span class="n">Mmax</span><span class="p">:]</span> <span class="o">**</span> <span class="mi">2</span><span class="p">)</span><span class="o">.</span><span class="n">sum</span><span class="p">()</span>
                 <span class="n">ofs</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">compress_config</span><span class="o">.</span><span class="n">ofs</span>
@@ -912,17 +937,27 @@
                     <span class="c1"># Need some additional testing at production level calculation</span>
                     <span class="bp">self</span><span class="o">.</span><span class="n">model</span><span class="p">:</span> <span class="n">Model</span> <span class="o">=</span> <span class="n">Model</span><span class="p">(</span><span class="n">new_basis</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">model</span><span class="o">.</span><span class="n">ham_terms</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">model</span><span class="o">.</span><span class="n">dipole</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">model</span><span class="o">.</span><span class="n">output_ordering</span><span class="p">)</span>
                 <span class="n">logger</span><span class="o">.</span><span class="n">debug</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;DOF ordering: </span><span class="si">{</span><span class="p">[</span><span class="n">b</span><span class="o">.</span><span class="n">dof</span><span class="w"> </span><span class="k">for</span><span class="w"> </span><span class="n">b</span><span class="w"> </span><span class="ow">in</span><span class="w"> </span><span class="bp">self</span><span class="o">.</span><span class="n">model</span><span class="o">.</span><span class="n">basis</span><span class="p">]</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+            
+
+
 
             <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">to_right</span><span class="p">:</span>
+                <span class="n">m_trunc</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">compress_config</span><span class="o">.</span><span class="n">compute_m_trunc</span><span class="p">(</span>
+                    <span class="n">SUset</span><span class="p">,</span> <span class="n">cidx</span><span class="p">[</span><span class="mi">0</span><span class="p">],</span> <span class="bp">self</span><span class="o">.</span><span class="n">to_right</span>
+                <span class="p">)</span>
                 <span class="n">ms</span><span class="p">,</span> <span class="n">msdim</span><span class="p">,</span> <span class="n">msqn</span><span class="p">,</span> <span class="n">compms</span> <span class="o">=</span> <span class="n">select_basis</span><span class="p">(</span>
-                    <span class="n">Uset</span><span class="p">,</span> <span class="n">SUset</span><span class="p">,</span> <span class="n">qnlnew</span><span class="p">,</span> <span class="n">Vset</span><span class="p">,</span> <span class="n">Mmax</span><span class="p">,</span> <span class="n">percent</span><span class="o">=</span><span class="n">percent</span>
+                    <span class="n">Uset</span><span class="p">,</span> <span class="n">SUset</span><span class="p">,</span> <span class="n">qnlnew</span><span class="p">,</span> <span class="n">Vset</span><span class="p">,</span> <span class="n">m_trunc</span><span class="p">,</span> <span class="n">percent</span><span class="o">=</span><span class="n">percent</span>
                 <span class="p">)</span>
                 <span class="n">ms</span> <span class="o">=</span> <span class="n">ms</span><span class="o">.</span><span class="n">reshape</span><span class="p">(</span><span class="nb">list</span><span class="p">(</span><span class="n">qnbigl</span><span class="o">.</span><span class="n">shape</span><span class="p">[:</span><span class="o">-</span><span class="mi">1</span><span class="p">])</span> <span class="o">+</span> <span class="p">[</span><span class="n">msdim</span><span class="p">])</span>
                 <span class="n">compms</span> <span class="o">=</span> <span class="n">xp</span><span class="o">.</span><span class="n">moveaxis</span><span class="p">(</span><span class="n">compms</span><span class="o">.</span><span class="n">reshape</span><span class="p">(</span><span class="nb">list</span><span class="p">(</span><span class="n">qnbigr</span><span class="o">.</span><span class="n">shape</span><span class="p">[:</span><span class="o">-</span><span class="mi">1</span><span class="p">])</span> <span class="o">+</span> <span class="p">[</span><span class="n">msdim</span><span class="p">]),</span> <span class="o">-</span><span class="mi">1</span><span class="p">,</span> <span class="mi">0</span><span class="p">)</span>
 
             <span class="k">else</span><span class="p">:</span>
+                <span class="n">m_trunc</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">compress_config</span><span class="o">.</span><span class="n">compute_m_trunc</span><span class="p">(</span>
+                    <span class="n">SVset</span><span class="p">,</span> <span class="n">cidx</span><span class="p">[</span><span class="o">-</span><span class="mi">1</span><span class="p">],</span> <span class="bp">self</span><span class="o">.</span><span class="n">to_right</span>
+                <span class="p">)</span>
+                
                 <span class="n">ms</span><span class="p">,</span> <span class="n">msdim</span><span class="p">,</span> <span class="n">msqn</span><span class="p">,</span> <span class="n">compms</span> <span class="o">=</span> <span class="n">select_basis</span><span class="p">(</span>
-                    <span class="n">Vset</span><span class="p">,</span> <span class="n">SVset</span><span class="p">,</span> <span class="n">qnrnew</span><span class="p">,</span> <span class="n">Uset</span><span class="p">,</span> <span class="n">Mmax</span><span class="p">,</span> <span class="n">percent</span><span class="o">=</span><span class="n">percent</span>
+                    <span class="n">Vset</span><span class="p">,</span> <span class="n">SVset</span><span class="p">,</span> <span class="n">qnrnew</span><span class="p">,</span> <span class="n">Uset</span><span class="p">,</span> <span class="n">m_trunc</span><span class="p">,</span> <span class="n">percent</span><span class="o">=</span><span class="n">percent</span>
                 <span class="p">)</span>
                 <span class="n">ms</span> <span class="o">=</span> <span class="n">xp</span><span class="o">.</span><span class="n">moveaxis</span><span class="p">(</span><span class="n">ms</span><span class="o">.</span><span class="n">reshape</span><span class="p">(</span><span class="nb">list</span><span class="p">(</span><span class="n">qnbigr</span><span class="o">.</span><span class="n">shape</span><span class="p">[:</span><span class="o">-</span><span class="mi">1</span><span class="p">])</span> <span class="o">+</span> <span class="p">[</span><span class="n">msdim</span><span class="p">]),</span> <span class="o">-</span><span class="mi">1</span><span class="p">,</span> <span class="mi">0</span><span class="p">)</span>
                 <span class="n">compms</span> <span class="o">=</span> <span class="n">compms</span><span class="o">.</span><span class="n">reshape</span><span class="p">(</span><span class="nb">list</span><span class="p">(</span><span class="n">qnbigl</span><span class="o">.</span><span class="n">shape</span><span class="p">[:</span><span class="o">-</span><span class="mi">1</span><span class="p">])</span> <span class="o">+</span> <span class="p">[</span><span class="n">msdim</span><span class="p">])</span>
@@ -950,8 +985,19 @@
             <span class="n">Uset</span><span class="p">,</span> <span class="n">Sset</span><span class="p">,</span> <span class="n">qnnew</span> <span class="o">=</span> <span class="n">svd_qn</span><span class="o">.</span><span class="n">eigh_qn</span><span class="p">(</span>
                 <span class="n">asnumpy</span><span class="p">(</span><span class="n">ddm</span><span class="p">),</span> <span class="n">qnbigl</span><span class="p">,</span> <span class="n">qnbigr</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">qntot</span><span class="p">,</span> <span class="n">system</span><span class="o">=</span><span class="n">system</span>
             <span class="p">)</span>
+            
+            
+            <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">to_right</span><span class="p">:</span>
+                <span class="n">m_trunc</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">compress_config</span><span class="o">.</span><span class="n">compute_m_trunc</span><span class="p">(</span>
+                    <span class="n">Sset</span><span class="p">,</span> <span class="n">cidx</span><span class="p">[</span><span class="mi">0</span><span class="p">],</span> <span class="bp">self</span><span class="o">.</span><span class="n">to_right</span>
+                <span class="p">)</span>
+            <span class="k">else</span><span class="p">:</span>
+                <span class="n">m_trunc</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">compress_config</span><span class="o">.</span><span class="n">compute_m_trunc</span><span class="p">(</span>
+                    <span class="n">Sset</span><span class="p">,</span> <span class="n">cidx</span><span class="p">[</span><span class="o">-</span><span class="mi">1</span><span class="p">],</span> <span class="bp">self</span><span class="o">.</span><span class="n">to_right</span>
+                <span class="p">)</span>
+            
             <span class="n">ms</span><span class="p">,</span> <span class="n">msdim</span><span class="p">,</span> <span class="n">msqn</span><span class="p">,</span> <span class="n">compms</span> <span class="o">=</span> <span class="n">select_basis</span><span class="p">(</span>
-                <span class="n">Uset</span><span class="p">,</span> <span class="n">Sset</span><span class="p">,</span> <span class="n">qnnew</span><span class="p">,</span> <span class="kc">None</span><span class="p">,</span> <span class="n">Mmax</span><span class="p">,</span> <span class="n">percent</span><span class="o">=</span><span class="n">percent</span>
+                <span class="n">Uset</span><span class="p">,</span> <span class="n">Sset</span><span class="p">,</span> <span class="n">qnnew</span><span class="p">,</span> <span class="kc">None</span><span class="p">,</span> <span class="n">m_trunc</span><span class="p">,</span> <span class="n">percent</span><span class="o">=</span><span class="n">percent</span>
             <span class="p">)</span>
             <span class="n">rotated_c</span> <span class="o">=</span> <span class="p">[]</span>
             <span class="n">averaged_ms</span> <span class="o">=</span> <span class="p">[]</span>
@@ -1095,6 +1141,31 @@
                 <span class="k">assert</span> <span class="kc">False</span>
 
         <span class="k">return</span> <span class="nb">complex</span><span class="p">(</span><span class="n">e0</span><span class="p">[</span><span class="mi">0</span><span class="p">,</span> <span class="mi">0</span><span class="p">])</span></div>
+    
+<div class="viewcode-block" id="MatrixProduct.dot_ob"><a class="viewcode-back" href="../../../mps.html#renormalizer.mps.mp.MatrixProduct.dot_ob">[docs]</a>    <span class="k">def</span> <span class="nf">dot_ob</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">other</span><span class="p">:</span> <span class="s2">&quot;MatrixProduct&quot;</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">complex</span><span class="p">:</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        dot product of two mps / mpo with open boundary, but the boundary of mps/mpo is larger than</span>
+<span class="sd">        1, different from the normal mps/mpo</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+
+        <span class="k">assert</span> <span class="nb">len</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">==</span> <span class="nb">len</span><span class="p">(</span><span class="n">other</span><span class="p">)</span>
+        
+        <span class="n">e0</span> <span class="o">=</span> <span class="n">xp</span><span class="o">.</span><span class="n">eye</span><span class="p">(</span><span class="bp">self</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="mi">0</span><span class="p">])</span>
+        <span class="n">tmp</span> <span class="o">=</span> <span class="n">xp</span><span class="o">.</span><span class="n">eye</span><span class="p">(</span><span class="n">other</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="mi">0</span><span class="p">])</span>
+        <span class="n">e0</span> <span class="o">=</span> <span class="n">tensordot</span><span class="p">(</span><span class="n">e0</span><span class="p">,</span> <span class="n">tmp</span><span class="p">,</span> <span class="mi">0</span><span class="p">)</span><span class="o">.</span><span class="n">transpose</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span><span class="mi">2</span><span class="p">,</span><span class="mi">1</span><span class="p">,</span><span class="mi">3</span><span class="p">)</span>
+        
+        <span class="k">for</span> <span class="n">mt1</span><span class="p">,</span> <span class="n">mt2</span> <span class="ow">in</span> <span class="nb">zip</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">other</span><span class="p">):</span>
+            <span class="n">e0</span> <span class="o">=</span> <span class="n">tensordot</span><span class="p">(</span><span class="n">e0</span><span class="p">,</span> <span class="n">mt2</span><span class="o">.</span><span class="n">array</span><span class="p">,</span> <span class="mi">1</span><span class="p">)</span>
+            <span class="k">if</span> <span class="n">mt1</span><span class="o">.</span><span class="n">ndim</span> <span class="o">==</span> <span class="mi">3</span><span class="p">:</span>
+                <span class="n">e0</span> <span class="o">=</span> <span class="n">tensordot</span><span class="p">(</span><span class="n">e0</span><span class="p">,</span> <span class="n">mt1</span><span class="o">.</span><span class="n">array</span><span class="p">,</span> <span class="p">([</span><span class="mi">2</span><span class="p">,</span> <span class="mi">3</span><span class="p">],</span> <span class="p">[</span><span class="mi">0</span><span class="p">,</span> <span class="mi">1</span><span class="p">]))</span><span class="o">.</span><span class="n">transpose</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span><span class="mi">1</span><span class="p">,</span><span class="mi">3</span><span class="p">,</span><span class="mi">2</span><span class="p">)</span>
+            <span class="k">elif</span> <span class="n">mt1</span><span class="o">.</span><span class="n">ndim</span> <span class="o">==</span> <span class="mi">4</span><span class="p">:</span>
+                <span class="n">e0</span> <span class="o">=</span> <span class="n">tensordot</span><span class="p">(</span><span class="n">e0</span><span class="p">,</span> <span class="n">mt1</span><span class="o">.</span><span class="n">array</span><span class="p">,</span> <span class="p">([</span><span class="mi">2</span><span class="p">,</span> <span class="mi">3</span><span class="p">,</span> <span class="mi">4</span><span class="p">],</span> <span class="p">[</span><span class="mi">0</span><span class="p">,</span> <span class="mi">1</span><span class="p">,</span> <span class="mi">2</span><span class="p">]))</span><span class="o">.</span><span class="n">transpose</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span><span class="mi">1</span><span class="p">,</span><span class="mi">3</span><span class="p">,</span><span class="mi">2</span><span class="p">)</span>
+            <span class="k">else</span><span class="p">:</span>
+                <span class="k">assert</span> <span class="kc">False</span>
+
+        <span class="k">return</span> <span class="n">e0</span></div>
+
+
 
 <div class="viewcode-block" id="MatrixProduct.angle"><a class="viewcode-back" href="../../../mps.html#renormalizer.mps.mp.MatrixProduct.angle">[docs]</a>    <span class="k">def</span> <span class="nf">angle</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">other</span><span class="p">):</span>
         <span class="k">return</span> <span class="nb">abs</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">conj</span><span class="p">()</span><span class="o">.</span><span class="n">dot</span><span class="p">(</span><span class="n">other</span><span class="p">))</span></div>
@@ -1211,18 +1282,18 @@
 
         <span class="n">data_dict</span> <span class="o">=</span> <span class="nb">dict</span><span class="p">()</span>
         <span class="c1"># version of the protocol</span>
-        <span class="n">data_dict</span><span class="p">[</span><span class="s2">&quot;version&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="s2">&quot;0.3&quot;</span>
+        <span class="n">data_dict</span><span class="p">[</span><span class="s2">&quot;version&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="s2">&quot;0.4&quot;</span>
         <span class="n">data_dict</span><span class="p">[</span><span class="s2">&quot;nsites&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">site_num</span>
         <span class="k">for</span> <span class="n">idx</span><span class="p">,</span> <span class="n">mt</span> <span class="ow">in</span> <span class="nb">enumerate</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
             <span class="n">data_dict</span><span class="p">[</span><span class="sa">f</span><span class="s2">&quot;mt_</span><span class="si">{</span><span class="n">idx</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="n">mt</span><span class="o">.</span><span class="n">array</span>
-        <span class="k">for</span> <span class="n">attr</span> <span class="ow">in</span> <span class="p">[</span><span class="s2">&quot;qn&quot;</span><span class="p">,</span> <span class="s2">&quot;qnidx&quot;</span><span class="p">,</span> <span class="s2">&quot;qntot&quot;</span><span class="p">,</span> <span class="s2">&quot;to_right&quot;</span><span class="p">]</span> <span class="o">+</span> <span class="n">other_attrs</span><span class="p">:</span>
+
+        <span class="k">for</span> <span class="n">attr</span> <span class="ow">in</span> <span class="p">[</span><span class="s2">&quot;qnidx&quot;</span><span class="p">,</span> <span class="s2">&quot;qntot&quot;</span><span class="p">,</span> <span class="s2">&quot;qn&quot;</span><span class="p">,</span> <span class="s2">&quot;to_right&quot;</span><span class="p">]</span> <span class="o">+</span> <span class="n">other_attrs</span><span class="p">:</span>
             <span class="n">data_dict</span><span class="p">[</span><span class="n">attr</span><span class="p">]</span> <span class="o">=</span> <span class="nb">getattr</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">attr</span><span class="p">)</span>
-            <span class="c1"># qn is ragged array which will raise a VisibleDeprecationWarning</span>
-            <span class="c1"># and convert it to np.object</span>
         <span class="n">qn</span> <span class="o">=</span> <span class="n">data_dict</span><span class="p">[</span><span class="s1">&#39;qn&#39;</span><span class="p">]</span>
         <span class="n">arr</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">empty</span><span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="n">qn</span><span class="p">),</span> <span class="nb">object</span><span class="p">)</span>
         <span class="n">arr</span><span class="p">[:]</span> <span class="o">=</span> <span class="n">qn</span>
         <span class="n">data_dict</span><span class="p">[</span><span class="s1">&#39;qn&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">arr</span>
+        
         <span class="k">try</span><span class="p">:</span>
             <span class="n">np</span><span class="o">.</span><span class="n">savez</span><span class="p">(</span><span class="n">fname</span><span class="p">,</span> <span class="o">**</span><span class="n">data_dict</span><span class="p">)</span>
         <span class="k">except</span> <span class="ne">Exception</span><span class="p">:</span>
@@ -1303,6 +1374,8 @@
 
 <div class="viewcode-block" id="MatrixProduct.append"><a class="viewcode-back" href="../../../mps.html#renormalizer.mps.mp.MatrixProduct.append">[docs]</a>    <span class="k">def</span> <span class="nf">append</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">array</span><span class="p">):</span>
         <span class="n">new_mt</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_array2mt</span><span class="p">(</span><span class="n">array</span><span class="p">,</span> <span class="nb">len</span><span class="p">(</span><span class="bp">self</span><span class="p">))</span>
+        <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_mp</span><span class="p">)</span> <span class="o">!=</span> <span class="mi">0</span><span class="p">:</span>
+            <span class="k">assert</span> <span class="n">new_mt</span><span class="o">.</span><span class="n">array</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span> <span class="o">==</span> <span class="bp">self</span><span class="o">.</span><span class="n">_mp</span><span class="p">[</span><span class="o">-</span><span class="mi">1</span><span class="p">]</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="o">-</span><span class="mi">1</span><span class="p">]</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">_mp</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">new_mt</span><span class="p">)</span></div>
 
     <span class="k">def</span> <span class="fm">__str__</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
@@ -1324,7 +1397,21 @@
             <span class="k">try</span><span class="p">:</span>
                 <span class="n">shutil</span><span class="o">.</span><span class="n">rmtree</span><span class="p">(</span><span class="n">dir_with_id</span><span class="p">)</span>
             <span class="k">except</span> <span class="ne">OSError</span><span class="p">:</span>
-                <span class="n">logger</span><span class="o">.</span><span class="n">exception</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Removing temperary dump dir </span><span class="si">{</span><span class="n">dir_with_id</span><span class="si">}</span><span class="s2"> failed&quot;</span><span class="p">)</span></div>
+                <span class="n">logger</span><span class="o">.</span><span class="n">exception</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Removing temperary dump dir </span><span class="si">{</span><span class="n">dir_with_id</span><span class="si">}</span><span class="s2"> failed&quot;</span><span class="p">)</span>
+    
+<div class="viewcode-block" id="MatrixProduct.from_mp"><a class="viewcode-back" href="../../../mps.html#renormalizer.mps.mp.MatrixProduct.from_mp">[docs]</a>    <span class="nd">@classmethod</span>
+    <span class="k">def</span> <span class="nf">from_mp</span><span class="p">(</span><span class="bp">cls</span><span class="p">,</span> <span class="n">model</span><span class="p">,</span> <span class="n">mplist</span><span class="p">):</span>
+        <span class="c1"># mps/mpo/mpdm from matrix product</span>
+        <span class="n">mp</span> <span class="o">=</span> <span class="bp">cls</span><span class="p">()</span>
+        <span class="n">mp</span><span class="o">.</span><span class="n">model</span> <span class="o">=</span> <span class="n">model</span>
+        <span class="k">for</span> <span class="n">mt</span> <span class="ow">in</span> <span class="n">mplist</span><span class="p">:</span>
+            <span class="k">if</span> <span class="n">np</span><span class="o">.</span><span class="n">iscomplexobj</span><span class="p">(</span><span class="n">mt</span><span class="p">):</span>
+                <span class="n">mp</span><span class="o">.</span><span class="n">dtype</span> <span class="o">=</span> <span class="n">backend</span><span class="o">.</span><span class="n">complex_dtype</span>
+                <span class="k">break</span>
+        <span class="k">for</span> <span class="n">mt</span> <span class="ow">in</span> <span class="n">mplist</span><span class="p">:</span>
+            <span class="n">mp</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">mt</span><span class="p">)</span>
+        <span class="n">mp</span><span class="o">.</span><span class="n">build_empty_qn</span><span class="p">()</span>
+        <span class="k">return</span> <span class="n">mp</span></div></div>
 </pre></div>
         </article>
       </div>
