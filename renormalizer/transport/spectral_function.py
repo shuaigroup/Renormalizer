@@ -76,7 +76,7 @@ class SpectralFunctionZT(TdMpsJob):
         self._G_array = []
         self.e_occupations_array = []
         self.temperature = Quantity(0)
-        super().__init__(evolve_config, dump_dir, job_name)
+        super().__init__(evolve_config=evolve_config, dump_dir=dump_dir, job_name=job_name)
 
     @property
     def G_array(self):
