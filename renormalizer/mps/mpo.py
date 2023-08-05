@@ -476,3 +476,7 @@ class Mpo(MatrixProduct):
     def __matmul__(self, other):
         return self.apply(other)
 
+
+class StackedMpo:
+    def __init__(self, mpos: List[Mpo]):
+        self.mpos = mpos
