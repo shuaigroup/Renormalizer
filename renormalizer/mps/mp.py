@@ -47,11 +47,7 @@ class MatrixProduct:
                 mp.dtype = backend.real_dtype
             mp.append(mt)
 
-        mp.qn = []
-        for i in range(nsites+1):
-            subqn = npload[f"subqn_{i}"].astype(int).tolist()    
-            mp.qn.append(subqn)
-
+        mp.qn = npload["qn"]
         mp.qnidx = int(npload["qnidx"])
         mp.qntot = npload["qntot"].astype(int)
         mp.to_right = bool(npload["to_right"])
@@ -353,65 +349,65 @@ class MatrixProduct:
         res = np.sqrt(res)
 
         return float(res)
-
-    def add(self, other: "MatrixProduct"):
-        assert np.all(self.qntot == other.qntot)
-        assert self.site_num == other.site_num
-
+    
+    def add(self, others: List["MatrixProduct"]):
+        
+        logger.info(f"new_mps:{type(others)}")
+        
+        if not isinstance(others, list):
+            others = [others]
+        
         new_mps = self.metacopy()
-        if other.dtype == backend.complex_dtype:
-            new_mps.dtype = backend.complex_dtype
-        if self.is_complex:
+        for other in others:
+            assert np.all(self.qntot == other.qntot)
+            assert self.site_num == other.site_num
+            if other.dtype == backend.complex_dtype:
+                new_mps.dtype = backend.complex_dtype
+
+        if new_mps.is_complex:
             new_mps.to_complex(inplace=True)
         new_mps.compress_config.update(self.compress_config)
 
-        if self.is_mps:  # MPS
-            new_mps[0] = dstack([self[0], other[0]])
-            for i in range(1, self.site_num - 1):
-                mta = self[i]
-                mtb = other[i]
-                pdim = mta.shape[1]
-                assert pdim == mtb.shape[1]
-                new_ms = zeros(
-                    [mta.shape[0] + mtb.shape[0], pdim, mta.shape[2] + mtb.shape[2]],
-                    dtype=new_mps.dtype,
-                )
-                new_ms[: mta.shape[0], :, : mta.shape[2]] = mta
-                new_ms[mta.shape[0] :, :, mta.shape[2] :] = mtb
-                new_mps[i] = new_ms
+        new_mps[0] = concatenate([self[0]] + [other[0] for other in others], axis=-1)
+        
+        for i in range(1, self.site_num - 1):
+            mts = [self[i]] + [other[i] for other in others]
+            pdim = self[i].shape[1:-1]
+            for mt in mts:
+                assert pdim == mt.shape[1:-1]
+            new_ms = zeros(
+                    (sum([mt.shape[0] for mt in mts]),) + pdim +
+                        (sum([mt.shape[-1] for mt in mts]),), dtype=new_mps.dtype,
+            )
+            start_first = 0
+            start_last = 0
+            for mt in mts:
+                if len(pdim) == 1:
+                    new_ms[start_first:start_first+mt.shape[0], :, start_last:start_last+mt.shape[-1]] = mt
+                elif len(pdim) == 2:
+                    new_ms[start_first:start_first+mt.shape[0], :, :, start_last:start_last+mt.shape[-1]] = mt
+                else:
+                    assert False
 
-            new_mps[-1] = vstack([self[-1], other[-1]])
-        elif self.is_mpo or self.is_mpdm:  # MPO
-            new_mps[0] = concatenate((self[0], other[0]), axis=3)
-            for i in range(1, self.site_num - 1):
-                mta = self[i]
-                mtb = other[i]
-                pdimu = mta.shape[1]
-                pdimd = mta.shape[2]
-                assert pdimu == mtb.shape[1]
-                assert pdimd == mtb.shape[2]
+                start_first += mt.shape[0]
+                start_last += mt.shape[-1]
+            new_mps[i] = new_ms
 
-                new_ms = zeros(
-                    [
-                        mta.shape[0] + mtb.shape[0],
-                        pdimu,
-                        pdimd,
-                        mta.shape[3] + mtb.shape[3],
-                    ],
-                    dtype=new_mps.dtype,
-                )
-                new_ms[: mta.shape[0], :, :, : mta.shape[3]] = mta[:, :, :, :]
-                new_ms[mta.shape[0] :, :, :, mta.shape[3] :] = mtb[:, :, :, :]
-                new_mps[i] = new_ms
-
-            new_mps[-1] = concatenate((self[-1], other[-1]), axis=0)
-        else:
-            assert False
+        new_mps[-1] = concatenate([self[-1]] + [other[-1] for other in others], axis=0)
 
         #assert self.qnidx == other.qnidx
-        new_mps.move_qnidx(other.qnidx)
-        new_mps.to_right = other.to_right
-        new_mps.qn = [np.concatenate([qn1, qn2]) for qn1, qn2 in zip(self.qn, other.qn)]
+        original_qnidx = []
+        for other in others:
+            original_qnidx.append(other.qnidx)
+            other.move_qnidx(self.qnidx)
+
+        new_mps.to_right = self.to_right
+        qn_all = [self.qn] + [other.qn for other in others]
+        new_mps.qn = [np.concatenate(qns) for qns in zip(*qn_all)]
+        
+        for i, other in enumerate(others):
+            other.move_qnidx(original_qnidx[i])
+        
         # qn at the boundary should have dimension 1
         new_mps.qn[0] = np.zeros((1, new_mps.qn[0].shape[1]), dtype=int)
         new_mps.qn[-1] = np.zeros((1, new_mps.qn[0].shape[1]), dtype=int)
@@ -419,7 +415,7 @@ class MatrixProduct:
             new_mps.canonicalise()
             new_mps.compress()
         return new_mps
-
+    
     def compress(self, temp_m_trunc=None, ret_s=False):
         """
         inp: canonicalise MPS (or MPO)

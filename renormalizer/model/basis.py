@@ -588,7 +588,7 @@ class BasisSineDVR(BasisSet):
         
         # operators currently not having analytical matrix elements
         else:
-            logger.warning("Note that the quadrature part is not fully tested!")
+            logger.debug("Note that the quadrature part is not fully tested!")
             op_symbol = "*".join(op_symbol.split())
             
             # potential operators
@@ -643,7 +643,7 @@ class BasisSineDVR(BasisSet):
                 if s != "":
                     expr = sp.sympify(s)*expr
         expr = expr.subs({sL:self.L, sxi:self.xi})
-        print(expr)
+        logger.debug(f"operator expr: {expr}")
         expr = sp.lambdify([x, sibas, sjbas], expr, "numpy")
     
         mat = np.zeros((self.nbas, self.nbas))
@@ -651,6 +651,7 @@ class BasisSineDVR(BasisSet):
             for jbas in range(self.nbas):
                 val, error = scipy.integrate.quad(lambda x: expr(x, ibas, jbas), 
                         self.xi, self.xf)
+                logger.debug(f"quadrature value and error: {val}, {error}")
                 mat[ibas, jbas] = val
         return mat
 

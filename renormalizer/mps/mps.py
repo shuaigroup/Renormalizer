@@ -390,6 +390,28 @@ class Mps(MatrixProduct):
         mp.append(residual_wfn)
         mp.build_empty_qn()
         return mp
+    
+    @classmethod
+    def from_mpo(cls, mpo: Mpo):
+        # convert diagonal mpo to mps, which usually happens in
+        # potential energy surface
+        mps = cls()
+        mps.model = mpo.model
+        for mo in mpo:
+            ms = np.zeros(tuple([mo.shape[0]] + [mo.shape[1]] + [mo.shape[3]]))
+            for iaxis in range(mo.shape[1]):
+                ms[:, iaxis, :] = mo[:, iaxis, iaxis, :].array
+            mps.append(ms)
+
+        mps.coeff = 1
+        if mpo.is_mpo:
+            logger.warning("Note that the qn part is directly inherited from mpo, make sure it is what you want!")
+        mps.qn = [qn.copy() for qn in mpo.qn]
+        mps.qntot = mpo.qntot
+        mps.qnidx = mpo.qnidx
+        mps.to_right = None
+        mps.compress_config = mpo.compress_config.copy()
+        return mps
 
     def __init__(self):
         super().__init__()
@@ -1785,13 +1807,20 @@ class Mps(MatrixProduct):
         return super().__setitem__(key, value)
 
     
-    def add(self, other):
-        if not np.allclose(self.coeff, other.coeff):
-            self.scale(self.coeff, inplace=True)
-            other.scale(other.coeff, inplace=True)
-            self.coeff = 1
-            other.coeff = 1
-        return super().add(other)
+    def add(self, others):
+        """
+        support add many mpss together in a batch way
+        """
+        if not isinstance(others, list):
+            others = [others]
+
+        for other in others:
+            if not np.allclose(self.coeff, other.coeff):
+                self.scale(self.coeff, inplace=True)
+                other.scale(other.coeff, inplace=True)
+                self.coeff = 1
+                other.coeff = 1
+        return super().add(others)
     
     def distance(self, other) -> float:
         if not np.allclose(self.coeff, other.coeff):

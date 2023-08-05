@@ -26,25 +26,9 @@ class MpDm(Mps, Mpo):
 
     @classmethod
     def from_mps(cls, mps: Mps):
-        mpo = cls()
-        mpo.model = mps.model
-        for ms in mps:
-            mo = np.zeros(tuple([ms.shape[0]] + [ms.shape[1]] * 2 + [ms.shape[2]]))
-            for iaxis in range(ms.shape[1]):
-                mo[:, iaxis, iaxis, :] = ms[:, iaxis, :].array
-            mpo.append(mo)
-
+        mpo = super().from_mps(mps)
         mpo.coeff = mps.coeff
-
-        mpo.optimize_config = mps.optimize_config
         mpo.evolve_config = mps.evolve_config
-        mpo.compress_add = mps.compress_add
-
-        mpo.qn = [qn.copy() for qn in mps.qn]
-        mpo.qntot = mps.qntot
-        mpo.qnidx = mps.qnidx
-        mpo.to_right = mps.to_right
-        mpo.compress_config = mps.compress_config.copy()
         return mpo
 
     @classmethod

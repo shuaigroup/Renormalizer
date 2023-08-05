@@ -247,6 +247,31 @@ class Mpo(MatrixProduct):
         mpo.build_empty_qn()
         return mpo
 
+    @classmethod
+    def from_mps(cls, mps):
+        mpo = cls()
+        mpo.model = mps.model
+        for ms in mps:
+            mo = np.zeros(tuple([ms.shape[0]] + [ms.shape[1]] * 2 + [ms.shape[2]]))
+            for iaxis in range(ms.shape[1]):
+                mo[:, iaxis, iaxis, :] = ms[:, iaxis, :].array
+            mpo.append(mo)
+
+        mpo.optimize_config = mps.optimize_config
+        mpo.compress_add = mps.compress_add
+        
+        if mpo.is_mpo:
+            assert np.allclose(mps.coeff, 1)
+            # currently, only used when qn is zeros
+            for qn in mps.qn:
+                assert np.allclose(qn, np.zeros_like(qn))
+        mpo.qn = [qn.copy() for qn in mps.qn]
+        mpo.qntot = mps.qntot
+        mpo.qnidx = mps.qnidx
+        mpo.to_right = mps.to_right
+        mpo.compress_config = mps.compress_config.copy()
+        return mpo
+
     def __init__(self, model: Model = None, terms: Union[Op, List[Op]] = None, offset: Quantity = Quantity(0), ):
 
         """
