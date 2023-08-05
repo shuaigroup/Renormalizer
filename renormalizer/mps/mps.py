@@ -405,11 +405,11 @@ class Mps(MatrixProduct):
 
         mps.coeff = 1
         if mpo.is_mpo:
-            logger.warning("Note that the qn part is directly inherited from mpo, make sure it is what you want!")
+            logger.debug("Note that the qn part is directly inherited from mpo, make sure it is what you want!")
         mps.qn = [qn.copy() for qn in mpo.qn]
         mps.qntot = mpo.qntot
         mps.qnidx = mpo.qnidx
-        mps.to_right = None
+        mps.to_right = mpo.to_right
         mps.compress_config = mpo.compress_config.copy()
         return mps
 
