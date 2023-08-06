@@ -9,7 +9,7 @@ import pytest
 from renormalizer.model import Model, h_qc
 from renormalizer.mps.backend import primme
 from renormalizer.mps.gs import construct_mps_mpo, optimize_mps
-from renormalizer.mps import Mpo, Mps
+from renormalizer.mps import Mpo, Mps, StackedMpo
 from renormalizer.tests.parameter import holstein_model
 from renormalizer.utils.configs import OFS
 from renormalizer.mps.tests import cur_dir
@@ -136,3 +136,14 @@ def test_qc(with_ofs):
     print(mpo)
     gs_e = min(energies)
     assert np.allclose(gs_e, fci_e, atol=5e-3)
+
+
+def test_stackedmpo():
+    scheme = 1
+    method = '1site'
+    mps, mpo = construct_mps_mpo(holstein_model.switch_scheme(scheme), procedure[0][0], nexciton)
+    mps.optimize_config.procedure = procedure
+    mps.optimize_config.method = method
+    energies1, _ = optimize_mps(mps.copy(), mpo)
+    energies2, _ = optimize_mps(mps.copy(), StackedMpo([mpo, mpo]))
+    assert np.all(np.abs(np.array(energies2) - np.array(energies1) * 2) < 1e-8)
