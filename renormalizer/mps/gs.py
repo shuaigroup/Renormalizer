@@ -301,8 +301,8 @@ def single_sweep(
 def get_ham_direct(
     mps: Mps,
     qn_mask: np.ndarray,
-    ltensor: xp.ndarray,
-    rtensor: xp.ndarray,
+    ltensor: Union[xp.ndarray, List[xp.ndarray]],
+    rtensor: Union[xp.ndarray, List[xp.ndarray]],
     cmo: List[xp.ndarray],
     omega: float,
 ):
@@ -366,8 +366,8 @@ def get_ham_direct(
 def eigh_direct(
     mps: Mps,
     qn_mask: np.ndarray,
-    ltensor: xp.ndarray,
-    rtensor: xp.ndarray,
+    ltensor: Union[xp.ndarray, List[xp.ndarray]],
+    rtensor: Union[xp.ndarray, List[xp.ndarray]],
     cmo: List[xp.ndarray],
     omega: float,
 ):
@@ -393,8 +393,8 @@ def eigh_direct(
 def get_ham_iterative(
     mps: Mps,
     qn_mask: np.ndarray,
-    ltensor: xp.ndarray,
-    rtensor: xp.ndarray,
+    ltensor: Union[xp.ndarray, List[xp.ndarray]],
+    rtensor: Union[xp.ndarray, List[xp.ndarray]],
     cmo: List[xp.ndarray],
     omega: float,
 ):
@@ -469,8 +469,8 @@ def func_sum(funcs):
 def eigh_iterative(
     mps: Mps,
     qn_mask: np.ndarray,
-    ltensor: xp.ndarray,
-    rtensor: xp.ndarray,
+    ltensor: Union[xp.ndarray, List[xp.ndarray]],
+    rtensor: Union[xp.ndarray, List[xp.ndarray]],
     cmo: List[xp.ndarray],
     omega: float,
     cguess: List[np.ndarray],
