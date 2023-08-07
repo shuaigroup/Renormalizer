@@ -52,7 +52,7 @@ def optimize_mps(mps: Mps, mpo: Union[Mpo, StackedMpo], omega: float = None) -> 
     ----------
     mps : renormalizer.mps.Mps
         initial guess of mps. The MPS is overwritten during the optimization.
-    mpo : renormalizer.mps.Mpo
+    mpo : Union[renormalizer.mps.Mpo, renormalizer.mps.StackedMpo]
         mpo of Hamiltonian
     omega: float, optional
         target the eigenpair near omega with special variational function
@@ -167,7 +167,7 @@ def optimize_mps(mps: Mps, mpo: Union[Mpo, StackedMpo], omega: float = None) -> 
 
 def single_sweep(
     mps: Mps,
-    mpo: Mpo,
+    mpo: Union[Mpo, StackedMpo],
     environ: Environ,
     omega: float,
     percent: float,
