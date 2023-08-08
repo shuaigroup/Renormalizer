@@ -18,7 +18,7 @@ from renormalizer.mps.backend import xp, OE_BACKEND, primme, IMPORT_PRIMME_EXCEP
 from renormalizer.mps.matrix import multi_tensor_contract, tensordot, asnumpy, asxp
 from renormalizer.mps.hop_expr import  hop_expr
 from renormalizer.mps.svd_qn import get_qn_mask
-from renormalizer.mps import Mpo, Mps
+from renormalizer.mps import Mpo, Mps, StackedMpo
 from renormalizer.mps.lib import Environ, cvec2cmat
 from renormalizer.utils import Quantity, CompressConfig, CompressCriteria
 
@@ -45,14 +45,14 @@ def construct_mps_mpo(model, mmax, nexciton, offset=Quantity(0)):
     return mps, mpo
 
 
-def optimize_mps(mps: Mps, mpo: Mpo, omega: float = None) -> Tuple[List, Mps]:
+def optimize_mps(mps: Mps, mpo: Union[Mpo, StackedMpo], omega: float = None) -> Tuple[List, Mps]:
     r"""DMRG ground state algorithm and state-averaged excited states algorithm
 
     Parameters
     ----------
     mps : renormalizer.mps.Mps
         initial guess of mps. The MPS is overwritten during the optimization.
-    mpo : renormalizer.mps.Mpo
+    mpo : Union[renormalizer.mps.Mpo, renormalizer.mps.StackedMpo]
         mpo of Hamiltonian
     omega: float, optional
         target the eigenpair near omega with special variational function
@@ -67,7 +67,7 @@ def optimize_mps(mps: Mps, mpo: Mpo, omega: float = None) -> Tuple[List, Mps]:
     mps : renormalizer.mps.Mps
         optimized ground state MPS.
             Note it's not the same with the overwritten input MPS.
-    
+
     See Also
     --------
     renormalizer.utils.configs.OptimizeConfig : The optimization configuration.
@@ -95,14 +95,19 @@ def optimize_mps(mps: Mps, mpo: Mpo, omega: float = None) -> Tuple[List, Mps]:
         env = "L"
 
     compress_config_bk = mps.compress_config
-    
+
     # construct the environment matrix
     if omega is not None:
+        if isinstance(mpo, StackedMpo):
+            raise NotImplementedError("StackedMPO + omega is not implemented yet")
         identity = Mpo.identity(mpo.model)
         mpo = mpo.add(identity.scale(-omega))
         environ = Environ(mps, [mpo, mpo], env)
     else:
-        environ = Environ(mps, mpo, env)
+        if isinstance(mpo, StackedMpo):
+            environ = [Environ(mps, item, env) for item in mpo.mpos]
+        else:
+            environ = Environ(mps, mpo, env)
 
     macro_iteration_result = []
     # Idx of the active site with lowest energy for each sweep
@@ -111,7 +116,7 @@ def optimize_mps(mps: Mps, mpo: Mpo, omega: float = None) -> Tuple[List, Mps]:
     res_mps: Union[Mps, List[Mps]] = None
     for isweep, (compress_config, percent) in enumerate(mps.optimize_config.procedure):
         logger.debug(f"isweep: {isweep}")
-        
+
         if isinstance(compress_config, CompressConfig):
             mps.compress_config = compress_config
         elif isinstance(compress_config, int):
@@ -156,19 +161,19 @@ def optimize_mps(mps: Mps, mpo: Mpo, omega: float = None) -> Tuple[List, Mps]:
         for res in res_mps:
             res.compress_config = compress_config_bk
         logger.info(f"{res_mps[0]}")
-    
+
     return macro_iteration_result, res_mps
 
 
 def single_sweep(
     mps: Mps,
-    mpo: Mpo,
+    mpo: Union[Mpo, StackedMpo],
     environ: Environ,
     omega: float,
     percent: float,
     last_opt_e_idx: int
 ):
-    
+
     method = mps.optimize_config.method
     nroots = mps.optimize_config.nroots
 
@@ -210,10 +215,15 @@ def single_sweep(
         if omega is None:
             operator = mpo
         else:
+            assert isinstance(mpo, Mpo)
             operator = [mpo, mpo]
 
-        ltensor = environ.GetLR("L", lidx, mps, operator, itensor=None, method=lmethod)
-        rtensor = environ.GetLR("R", ridx, mps, operator, itensor=None, method=rmethod)
+        if isinstance(mpo, StackedMpo):
+            ltensor = [environ_item.GetLR("L", lidx, mps, operator_item, itensor=None, method=lmethod) for environ_item, operator_item in zip(environ, operator.mpos)]
+            rtensor = [environ_item.GetLR("R", ridx, mps, operator_item, itensor=None, method=rmethod) for environ_item, operator_item in zip(environ, operator.mpos)]
+        else:
+            ltensor = environ.GetLR("L", lidx, mps, operator, itensor=None, method=lmethod)
+            rtensor = environ.GetLR("R", ridx, mps, operator, itensor=None, method=rmethod)
 
         # get the quantum number pattern
         qnbigl, qnbigr, qnmat = mps._get_big_qn(cidx)
@@ -221,7 +231,10 @@ def single_sweep(
         cshape = qn_mask.shape
 
         # center mo
-        cmo = [asxp(mpo[idx]) for idx in cidx]
+        if isinstance(mpo, StackedMpo):
+            cmo = [[asxp(mpo_item[idx]) for idx in cidx] for mpo_item in mpo.mpos]
+        else:
+            cmo = [asxp(mpo[idx]) for idx in cidx]
 
         use_direct_eigh = np.prod(cshape) < 1000 or mps.optimize_config.algo == "direct"
         if use_direct_eigh:
@@ -285,15 +298,15 @@ def single_sweep(
     return micro_iteration_result, res_mps, mpo
 
 
-def eigh_direct(
+def get_ham_direct(
     mps: Mps,
     qn_mask: np.ndarray,
-    ltensor: xp.ndarray,
-    rtensor: xp.ndarray,
+    ltensor: Union[xp.ndarray, List[xp.ndarray]],
+    rtensor: Union[xp.ndarray, List[xp.ndarray]],
     cmo: List[xp.ndarray],
     omega: float,
 ):
-    logger.debug(f"use direct eigensolver")
+    logger.debug("use direct eigensolver")
 
     # direct algorithm
     if omega is None:
@@ -347,6 +360,23 @@ def eigh_direct(
             )
             ham = ham[:, :, :, :, qn_mask][qn_mask, :]
 
+    return ham
+
+
+def eigh_direct(
+    mps: Mps,
+    qn_mask: np.ndarray,
+    ltensor: Union[xp.ndarray, List[xp.ndarray]],
+    rtensor: Union[xp.ndarray, List[xp.ndarray]],
+    cmo: List[xp.ndarray],
+    omega: float,
+):
+    if isinstance(ltensor, list):
+        assert isinstance(rtensor, list)
+        assert len(ltensor) == len(rtensor)
+        ham = sum([get_ham_direct(mps, qn_mask, ltensor_item, rtensor_item, cmo_item, omega) for ltensor_item, rtensor_item, cmo_item in zip(ltensor, rtensor, cmo)])
+    else:
+        ham = get_ham_direct(mps, qn_mask, ltensor, rtensor, cmo, omega)
     inverse = mps.optimize_config.inverse
     w, v = scipy.linalg.eigh(asnumpy(ham) * inverse)
 
@@ -360,14 +390,13 @@ def eigh_direct(
     return e, c
 
 
-def eigh_iterative(
+def get_ham_iterative(
     mps: Mps,
     qn_mask: np.ndarray,
-    ltensor: xp.ndarray,
-    rtensor: xp.ndarray,
+    ltensor: Union[xp.ndarray, List[xp.ndarray]],
+    rtensor: Union[xp.ndarray, List[xp.ndarray]],
     cmo: List[xp.ndarray],
     omega: float,
-    cguess: List[np.ndarray],
 ):
     # iterative algorithm
     method = mps.optimize_config.method
@@ -428,6 +457,34 @@ def eigh_iterative(
     # contraction expression
     cshape = qn_mask.shape
     expr = hop_expr(ltensor, rtensor, cmo, cshape, omega is not None)
+    return hdiag, expr
+
+
+def func_sum(funcs):
+    def new_func(*args, **kwargs):
+        return sum([func(*args, **kwargs) for func in funcs])
+    return new_func
+
+
+def eigh_iterative(
+    mps: Mps,
+    qn_mask: np.ndarray,
+    ltensor: Union[xp.ndarray, List[xp.ndarray]],
+    rtensor: Union[xp.ndarray, List[xp.ndarray]],
+    cmo: List[xp.ndarray],
+    omega: float,
+    cguess: List[np.ndarray],
+):
+    # iterative algorithm
+    inverse = mps.optimize_config.inverse
+    if isinstance(ltensor, list):
+        assert isinstance(rtensor, list)
+        assert len(ltensor) == len(rtensor)
+        ham = [get_ham_iterative(mps, qn_mask, ltensor_item, rtensor_item, cmo_item, omega) for ltensor_item, rtensor_item, cmo_item in zip(ltensor, rtensor, cmo)]
+        hdiag = sum([hdiag_item for hdiag_item, expr_item in ham])
+        expr = func_sum([expr_item for hdiag_item, expr_item in ham])
+    else:
+        hdiag, expr = get_ham_iterative(mps, qn_mask, ltensor, rtensor, cmo, omega)
 
     count = 0
 
