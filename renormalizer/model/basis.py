@@ -123,12 +123,16 @@ class BasisSHO(BasisSet):
         dof: The name of the DoF contained in the basis set. The type could be anything that can be hashed.
         omega (float): the frequency of the oscillator.
         nbas (int): number of dimension of the basis set (highest occupation number of the harmonic oscillator)
-        x0 (float): the origin of the harmonic oscillator. Default = 0.
+        x0 (float): the origin of the harmonic oscillator. Default = 0. 
         dvr (bool): whether to use discrete variable representation. Default = False.
         general_xp_power (bool): whether calculate :math:`x` and :math:`x^2` (or :math:`p` and :math:`p^2`)
             through general expression for :math:`x`power or :math:`p` power. This is not efficient because
             :math:`x` and :math:`x^2` (or :math:`p` and :math:`p^2`) have been hard-coded already.
             The option is only used for testing.
+        
+    Note
+    -----
+    Currently, only the mass reduced coordinates are supported.
     """
 
     is_phonon = True
@@ -333,7 +337,19 @@ class BasisSHO(BasisSet):
             # n is designed for occupation number of the SHO basis
             mat = np.diag(np.arange(self.nbas))
         else:
-            raise ValueError(f"op_symbol:{op_symbol} is not supported. ")
+            op_symbol = "*".join(op_symbol.split())
+
+            if "dx" not in op_symbol:
+                op_symbol = op_symbol.replace("^", "**")
+                x = sp.symbols("x")
+                expr = sp.lambdify(x, op_symbol, "numpy")
+                mat = np.diag(expr(self.dvr_x))
+                if not self.dvr:
+                    mat = self.dvr_v @ mat @ self.dvr_v.T
+            else:
+                #mat = self.quad(op_symbol, complex_func=True)
+                #mat = self.dvr_v @ mat @ self.dvr_v.conj().T
+                raise ValueError(f"op_symbol:{op_symbol} is not supported. Quadrature is not implemented yet!")
 
         self._recursion_flag -= 1
         return mat * op_factor
@@ -388,6 +404,129 @@ class BasisHopsBoson(BasisSet):
         return self.__class__(new_dof, self.nbas)
 
 
+def quad(bas, expr, complex_func=False):
+    x,sL,sxi,sibas,sjbas = sp.symbols("x sL sxi sibas sjbas")
+    bra = bas.eigenfunc
+    if complex_func:
+        bra = bra.replace("I","-I")
+    ket = bas.eigenfunc.replace("ibas","jbas")
+    expr = "*".join((bra,expr,ket))
+
+    expr = expr.replace("dx^2", "dx*dx")
+    expr = expr.replace("dx**2", "dx*dx")
+    
+    expr_s = expr.split("dx")
+    expr_s = [s.rstrip('*') for s in expr_s]
+    expr_s = [s.lstrip('*') for s in expr_s]
+    expr_s = [s.replace("^", "**") for s in expr_s]
+    if len(expr_s) == 1:
+        expr = sp.sympify(expr_s[0])
+    else:
+        expr = sp.sympify(expr_s[-1])
+        for s in expr_s[::-1][1:]:
+            expr = sp.diff(expr, x)
+            if s != "":
+                expr = sp.sympify(s)*expr
+    expr = expr.subs({sL:bas.L, sxi:bas.xi})
+    logger.debug(f"operator expr: {expr}")
+    expr = sp.lambdify([x, sibas, sjbas], expr, "numpy")
+    
+    if complex_func:
+        mat = np.zeros((bas.nbas, bas.nbas), dtype=np.complex128)
+    else:
+        mat = np.zeros((bas.nbas, bas.nbas), dtype=np.float64)
+    for ibas in range(bas.nbas):
+        for jbas in range(bas.nbas):
+            val, error = scipy.integrate.quad(lambda x: expr(x, ibas, jbas), 
+                    bas.xi, bas.xf, complex_func=complex_func)
+            logger.debug(f"ibas, jbas, quadrature value and error: {ibas},{jbas}, {val}, {error}")
+            mat[ibas, jbas] = val
+    return mat
+
+
+class BasisExpDVR(BasisSet):
+    r"""
+    Exponential DVR
+    See Phys. Rep. 324, 1–105 (2000). B.4.5
+     J. Chem. Phys. 96, 1 (1992).
+    usually used in angular DoF with periodic boundary condition
+    """
+    is_phonon = True
+    quad = quad
+    
+    def __init__(self, dof, nbas, xi, xf, force_quadrature=False):
+        if nbas % 2 == 0:
+            raise ValueError("In EXP-DVR, the number of basis should be odd!")
+
+        self.dvr = True
+        self.L = xf - xi
+        self.xi = xi
+        self.xf = xf
+        self.dvr_x = xi + np.arange(1,nbas+1) * self.L / nbas 
+        self.force_quadrature = force_quadrature # for debug
+
+        self.dvr_v = np.zeros((nbas, nbas), dtype=np.complex128)
+        for ik, k in enumerate(range(-(nbas // 2), nbas//2+1)):
+            vec = 1/np.sqrt(self.L)*np.exp(2*np.pi*1j*k*(self.dvr_x-xi)/self.L)*np.sqrt((self.L/nbas))
+            self.dvr_v[:,ik] = vec  #(grid,basis)
+        assert np.allclose(np.eye(nbas), self.dvr_v.T.conj() @ self.dvr_v)
+        assert np.allclose(np.eye(nbas),  self.dvr_v @ self.dvr_v.T.conj())
+        super().__init__(dof, nbas, [0] * nbas)
+    
+    
+    def __str__(self):
+        return f"BasisExpDVR(xi: {self.xi}, xf: {self.xf}, nbas: {self.nbas})"
+
+    def op_mat(self, op: Union[Op, str]):
+        
+        if not isinstance(op, Op):
+            op = Op(op, None)
+        op_symbol, op_factor = op.symbol, op.factor
+        
+        # partialx is deprecated
+        op_symbol = op_symbol.replace("partialx", "dx")
+        
+        if op_symbol == "I":
+            mat = np.eye(self.nbas)
+
+        elif op_symbol == "dx": # and not self.force_quadrature:
+            mat = np.zeros((self.nbas, self.nbas))
+            for i in range(1, self.nbas+1):
+                for j in range(1, i):
+                    res = np.pi / self.L * (-1)**(i-j) / np.sin(np.pi*(i-j)/self.nbas)
+                    mat[i-1, j-1] = res
+                    mat[j-1, i-1] = -res
+        
+        elif op_symbol in ["dx^2", "dx dx"]: # and not self.force_quadrature:
+            mat = np.zeros((self.nbas, self.nbas))
+            for i in range(1, self.nbas+1):
+                for j in range(1, i+1):
+                    if i == j:
+                        res = -np.pi**2/3/self.L**2*(self.nbas**2-1)
+                        mat[i-1, i-1] = res
+                    else:
+                        res = -2*np.pi**2 / self.L**2 * (-1)**(i-j) * \
+                            np.cos(np.pi*(i-j)/self.nbas) / np.sin(np.pi*(i-j)/self.nbas)**2
+                        mat[i-1, j-1] = res
+                        mat[j-1, i-1] = res
+        else:
+            op_symbol = "*".join(op_symbol.split())
+
+            if "dx" not in op_symbol and not self.force_quadrature:
+                op_symbol = op_symbol.replace("^", "**")
+                x = sp.symbols("x")
+                expr = sp.lambdify(x, op_symbol, "numpy")
+                mat = np.diag(expr(self.dvr_x))
+            else:
+                mat = self.quad(op_symbol, complex_func=True)
+                mat = self.dvr_v @ mat @ self.dvr_v.conj().T
+
+        return mat * op_factor
+    
+    @property
+    def eigenfunc(self):
+        return f"sqrt(1/sL) * exp(2*I*pi*(sibas-{self.nbas//2})*(x-sxi)/sL)" 
+
 class BasisSineDVR(BasisSet):
     r"""
     Sine DVR basis (particle-in-a-box) for vibrational, angular, and
@@ -424,6 +563,7 @@ class BasisSineDVR(BasisSet):
 
     """
     is_phonon = True
+    quad = quad
     
     def __init__(self, dof, nbas, xi, xf, endpoint=False, quadrature=False,
             dvr=False):
@@ -447,6 +587,8 @@ class BasisSineDVR(BasisSet):
         self.dvr_x = xi + tmp * self.L / (nbas+1)
         self.dvr_v = np.sqrt(2/(nbas+1)) * \
             np.sin(np.tensordot(tmp, tmp, axes=0)*np.pi/(nbas+1))
+        assert np.allclose(self.dvr_v, self.dvr_v.T)
+        assert np.allclose(self.dvr_v @ self.dvr_v, np.eye(nbas))
         self.quadrature = quadrature
         self.dvr = dvr
 
@@ -625,37 +767,6 @@ class BasisSineDVR(BasisSet):
     def eigenfunc(self):
         return "sqrt(2/sL) * sin((sibas+1)*pi*(x-sxi)/sL)" 
 
-    def quad(self, expr):
-        x,sL,sxi,sibas,sjbas = sp.symbols("x sL sxi sibas sjbas")
-        bra = self.eigenfunc
-        ket = self.eigenfunc.replace("ibas","jbas")
-        expr = "*".join((bra,expr,ket))
-        expr_s = expr.split("dx")
-        expr_s = [s.rstrip('*') for s in expr_s]
-        expr_s = [s.lstrip('*') for s in expr_s]
-        expr_s = [s.replace("^", "**") for s in expr_s]
-        if len(expr_s) == 1:
-            expr = sp.sympify(expr_s[0])
-        else:
-            expr = sp.sympify(expr_s[-1])
-            for s in expr_s[::-1][1:]:
-                expr = sp.diff(expr, x)
-                if s != "":
-                    expr = sp.sympify(s)*expr
-        expr = expr.subs({sL:self.L, sxi:self.xi})
-        logger.debug(f"operator expr: {expr}")
-        expr = sp.lambdify([x, sibas, sjbas], expr, "numpy")
-    
-        mat = np.zeros((self.nbas, self.nbas))
-        for ibas in range(self.nbas):
-            for jbas in range(self.nbas):
-                val, error = scipy.integrate.quad(lambda x: expr(x, ibas, jbas), 
-                        self.xi, self.xf)
-                logger.debug(f"quadrature value and error: {val}, {error}")
-                mat[ibas, jbas] = val
-        return mat
-
-    
     def _du(self):
         # int_0^L <j(u)|1*du|k(u)>  u=x-xi du=\frac{\partial}{\partial u}
         mat = np.zeros((self.nbas, self.nbas))
@@ -1028,3 +1139,4 @@ def x_power_k(k, m, n):
 def p_power_k(k,m,n):
 # <m|p^k|n>
     return x_power_k(k,m,n) * (1j)**(m-n)
+

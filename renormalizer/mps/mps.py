@@ -397,8 +397,10 @@ class Mps(MatrixProduct):
         # potential energy surface
         mps = cls()
         mps.model = mpo.model
+        mps.dtype = mpo.dtype
         for mo in mpo:
-            ms = np.zeros(tuple([mo.shape[0]] + [mo.shape[1]] + [mo.shape[3]]))
+            ms = np.zeros(tuple([mo.shape[0]] + [mo.shape[1]] + [mo.shape[3]]),
+                    dtype=mps.dtype)
             for iaxis in range(mo.shape[1]):
                 ms[:, iaxis, :] = mo[:, iaxis, iaxis, :].array
             mps.append(ms)

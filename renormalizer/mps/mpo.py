@@ -251,8 +251,10 @@ class Mpo(MatrixProduct):
     def from_mps(cls, mps):
         mpo = cls()
         mpo.model = mps.model
+        mpo.dtype = mps.dtype
         for ms in mps:
-            mo = np.zeros(tuple([ms.shape[0]] + [ms.shape[1]] * 2 + [ms.shape[2]]))
+            mo = np.zeros(tuple([ms.shape[0]] + [ms.shape[1]] * 2 +
+                [ms.shape[2]]), dtype=mps.dtype)
             for iaxis in range(ms.shape[1]):
                 mo[:, iaxis, iaxis, :] = ms[:, iaxis, :].array
             mpo.append(mo)
@@ -272,7 +274,8 @@ class Mpo(MatrixProduct):
         mpo.compress_config = mps.compress_config.copy()
         return mpo
 
-    def __init__(self, model: Model = None, terms: Union[Op, List[Op]] = None, offset: Quantity = Quantity(0), ):
+    def __init__(self, model: Model = None, terms: Union[Op, List[Op]] = None,
+            offset: Quantity = Quantity(0), dtype=None):
 
         """
         todo: document
@@ -297,8 +300,11 @@ class Mpo(MatrixProduct):
             raise ValueError("Terms all have factor 0.")
 
         table, factor = _terms_to_table(model, terms, -self.offset)
-
-        self.dtype = factor.dtype
+    
+        if dtype is None:
+            self.dtype = factor.dtype
+        else:
+            self.dtype = dtype
 
         mpo_symbol, self.qn, self.qntot, self.qnidx, self.symbolic_out_ops_list, self.primary_ops = construct_symbolic_mpo(table, factor)
         # print(_format_symbolic_mpo(mpo_symbol))

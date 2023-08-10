@@ -344,6 +344,7 @@ class MatrixProduct:
         """
         res = self.conj().dot(self).real
         if res < 0:
+            logger.info(f"mp_norm^2 < 0: {res}")
             assert np.abs(res) < 1e-8
             res = 0
         res = np.sqrt(res)
@@ -351,8 +352,6 @@ class MatrixProduct:
         return float(res)
     
     def add(self, others: List["MatrixProduct"]):
-        
-        logger.info(f"new_mps:{type(others)}")
         
         if not isinstance(others, list):
             others = [others]
@@ -602,7 +601,7 @@ class MatrixProduct:
             # check convergence
             if isweep > 0 and percent == 0:
                 error = mps.distance(mps_old) / np.sqrt(mps.dot(mps.conj()).real)
-                logger.info(f"Variation compress relative error: {error}")
+                logger.info(f"Variational compress relative error: {error}")
                 if error < mps.compress_config.vrtol:
                     logger.info("Variational compress is converged!")
                     break
