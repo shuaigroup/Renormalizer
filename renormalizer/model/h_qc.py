@@ -143,15 +143,16 @@ def qc_model(h1e, h2e, conserve_qn=True):
         return Op.product(new_ops)
 
     # 1-e terms
-    for p, q in itertools.product(range(norbs), repeat=2):
+    pairs = np.argwhere(h1e!=0)
+    for p, q in pairs:
         op = process_op(a_dag_ops[p] * a_ops[q])
         ham_terms.append(op * h1e[p, q])
 
     # 2-e terms.
-    for q,s in itertools.product(range(norbs),repeat = 2):
-        for p,r in itertools.product(range(q),range(s)):
-            op = process_op(Op.product([a_dag_ops[p], a_dag_ops[q], a_ops[r], a_ops[s]]))
-            ham_terms.append(op * h2e[p, q, r, s])
+    pairs = np.argwhere(h2e!=0)
+    for p, q, r, s in pairs:
+        op = process_op(Op.product([a_dag_ops[p], a_dag_ops[q], a_ops[r], a_ops[s]]))
+        ham_terms.append(op * h2e[p, q, r, s])
 
 
     basis = []
