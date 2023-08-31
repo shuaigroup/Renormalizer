@@ -13,7 +13,10 @@ from renormalizer.mps import Mpo, Mps, StackedMpo
 from renormalizer.tests.parameter import holstein_model
 from renormalizer.utils.configs import OFS
 from renormalizer.mps.tests import cur_dir
+import logging
 
+
+logger = logging.getLogger(__name__)
 
 nexciton = 1
 procedure = [[10, 0.4], [20, 0.2], [30, 0.1], [40, 0], [40, 0]]
@@ -57,6 +60,47 @@ def test_multistate(method, algo):
     expectation = [mp.expectation(mpo) for mp in mps]
     energy_std = np.array([0.08401412, 0.08449771, 0.08449801, 0.08449945]) + holstein_model.gs_zpe
     assert np.allclose(energy[-1], energy_std)
+    assert np.allclose(expectation, energy_std)
+
+@pytest.mark.parametrize("method", (
+        "1site",
+        "2site",
+))
+@pytest.mark.parametrize("algo", (
+        "davidson",
+        pytest.param("primme", marks=pytest.mark.skipif(primme is None, reason="primme not installed"))
+))
+def test_multistate_projector(method, algo):
+    model = holstein_model.switch_scheme(4)
+    mps, mpo = construct_mps_mpo(model, procedure[0][0], nexciton)
+    proj_mpss = []
+    nstates = 4
+    for istate in range(nstates):
+        mps = Mps.random(model, nexciton, procedure[0][0], percent=1.0)
+        mps.optimize_config.procedure = procedure
+        mps.optimize_config.nroots = 1
+        mps.optimize_config.method = method
+        mps.optimize_config.algo = algo
+        mps.optimize_config.e_atol = 1e-6
+        mps.optimize_config.e_rtol = 1e-6
+        energy, mps = optimize_mps(mps, mpo, proj_mpss=proj_mpss)
+        proj_mpss.append((mps, 0.005))
+
+    proj_mpss = [x[0] for x in proj_mpss]
+    # for debug
+    #ham_mat = np.zeros([nstates, nstates])
+    #for i in range(nstates):
+    #    for j in range(i+1):
+    #        logger.info(f"{i}, {j}, orth:{proj_mpss[i].conj().dot(proj_mpss[j])}")
+    #        ham_mat[i,j] = ham_mat[j,i] = proj_mpss[j].expectation(mpo, proj_mpss[i].conj())
+    #e, v = scipy.linalg.eigh(ham_mat)
+    #logger.info(f"{ham_mat}")
+    #logger.info(f"e={e}")
+    expectation = [mp.expectation(mpo) for mp in proj_mpss]
+    energy_std = np.array([0.08401412, 0.08449771, 0.08449801, 0.08449945]) + holstein_model.gs_zpe
+    logger.info(f"{expectation}")
+    logger.info(f"{energy_std}")
+    
     assert np.allclose(expectation, energy_std)
 
 

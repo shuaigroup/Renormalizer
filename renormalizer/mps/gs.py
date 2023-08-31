@@ -45,7 +45,8 @@ def construct_mps_mpo(model, mmax, nexciton, offset=Quantity(0)):
     return mps, mpo
 
 
-def optimize_mps(mps: Mps, mpo: Union[Mpo, StackedMpo], omega: float = None) -> Tuple[List, Mps]:
+def optimize_mps(mps: Mps, mpo: Union[Mpo, StackedMpo], omega: float = None,
+        proj_mpss: List = None) -> Tuple[List, Mps]:
     r"""DMRG ground state algorithm and state-averaged excited states algorithm
 
     Parameters
@@ -57,6 +58,11 @@ def optimize_mps(mps: Mps, mpo: Union[Mpo, StackedMpo], omega: float = None) -> 
     omega: float, optional
         target the eigenpair near omega with special variational function
         :math:(\hat{H}-\omega)^2. Default is `None`.
+    proj_mpss: list
+        the mps and coefficient ([(mps_1,alpha_1),...]) that is used to shift the original Hamiltonian 
+        :math:`H' = H_0 + \sum_j \alpha_j |mps_j> <mps_j|`, then the ground
+        state of the new shifted Hamiltonian is the excited state of the
+        original Hamiltonian
 
     Returns
     -------
@@ -108,6 +114,16 @@ def optimize_mps(mps: Mps, mpo: Union[Mpo, StackedMpo], omega: float = None) -> 
             environ = [Environ(mps, item, env) for item in mpo.mpos]
         else:
             environ = Environ(mps, mpo, env)
+    
+    if proj_mpss is not None:
+        proj_mpss = [proj_mps.scale(np.sqrt(alpha)) for proj_mps, alpha in proj_mpss]
+    
+    if proj_mpss is not None:
+        identity = Mpo.identity(mps.model)
+        proj_environ = [Environ(proj_mps, identity, env,
+            mps_conj=mps.conj()) for proj_mps in proj_mpss]
+    else:
+        proj_environ = None
 
     macro_iteration_result = []
     # Idx of the active site with lowest energy for each sweep
@@ -128,7 +144,8 @@ def optimize_mps(mps: Mps, mpo: Union[Mpo, StackedMpo], omega: float = None) -> 
 
         logger.debug(f"{mps}")
 
-        micro_iteration_result, res_mps, mpo = single_sweep(mps, mpo, environ, omega, percent, opt_e_idx)
+        micro_iteration_result, res_mps, mpo = single_sweep(mps, mpo, environ,
+                omega, percent, opt_e_idx, proj_mpss, proj_environ)
 
         opt_e = min(micro_iteration_result)
         macro_iteration_result.append(opt_e[0])
@@ -171,7 +188,9 @@ def single_sweep(
     environ: Environ,
     omega: float,
     percent: float,
-    last_opt_e_idx: int
+    last_opt_e_idx: int,
+    proj_mpss: List = None,
+    proj_environ: List = None,
 ):
 
     method = mps.optimize_config.method
@@ -235,10 +254,52 @@ def single_sweep(
             cmo = [[asxp(mpo_item[idx]) for idx in cidx] for mpo_item in mpo.mpos]
         else:
             cmo = [asxp(mpo[idx]) for idx in cidx]
+        
+        if proj_environ is not None:
+            identity = Mpo.identity(mps.model)
+            projectors = []
+            for idx in range(len(proj_environ)):
+                proj_ltensor = proj_environ[idx].GetLR("L", lidx,
+                        proj_mpss[idx], identity,
+                        itensor=None, method=lmethod, mps_conj=mps.conj())
+                proj_rtensor = proj_environ[idx].GetLR("R", ridx, 
+                        proj_mpss[idx], identity, 
+                        itensor=None, method=rmethod, mps_conj=mps.conj())
+                # remove the dummy axis as a result of identity MPO
+                proj_ltensor = proj_ltensor.reshape(proj_ltensor.shape[0],
+                        proj_ltensor.shape[-1])
+                proj_rtensor = proj_rtensor.reshape(proj_rtensor.shape[0],
+                        proj_rtensor.shape[-1])
+                if method == "1site":
+                    # a     c
+                    #    e  
+                    # b     d
+                    tmp = oe.contract(
+                        "ab,cd,bed->aec",
+                        asxp(proj_ltensor), asxp(proj_rtensor),
+                        asxp(proj_mpss[idx][cidx[0]]),
+                        backend=OE_BACKEND
+                    )
+                else:
+                    # a          c
+                    #    e    h  
+                    # b    g     d
+                    tmp = oe.contract(
+                        "ab,cd,beg,ghd->aehc",
+                        asxp(proj_ltensor), asxp(proj_rtensor),
+                        asxp(proj_mpss[idx][cidx[0]]),
+                        asxp(proj_mpss[idx][cidx[1]]),
+                        backend=OE_BACKEND
+                    )
+                projectors.append(tmp[qn_mask])
+                    
+        else:
+            projectors = None
 
         use_direct_eigh = np.prod(cshape) < 1000 or mps.optimize_config.algo == "direct"
         if use_direct_eigh:
-            e, c = eigh_direct(mps, qn_mask, ltensor, rtensor, cmo, omega)
+            e, c = eigh_direct(mps, qn_mask, ltensor, rtensor, cmo, omega,
+                    projectors)
         else:
             # the iterative approach
             # generate initial guess
@@ -268,7 +329,8 @@ def single_sweep(
             cguess.extend(
                 [np.random.rand(guess_dim) - 0.5 for i in range(len(cguess), nroots)]
             )
-            e, c = eigh_iterative(mps, qn_mask, ltensor, rtensor, cmo, omega, cguess)
+            e, c = eigh_iterative(mps, qn_mask, ltensor, rtensor, cmo, omega,
+                    cguess, projectors)
 
         # if multi roots, both davidson and primme return np.ndarray
         if nroots > 1:
@@ -370,6 +432,7 @@ def eigh_direct(
     rtensor: Union[xp.ndarray, List[xp.ndarray]],
     cmo: List[xp.ndarray],
     omega: float,
+    projectors: List[xp.ndarray] = None,
 ):
     if isinstance(ltensor, list):
         assert isinstance(rtensor, list)
@@ -377,8 +440,15 @@ def eigh_direct(
         ham = sum([get_ham_direct(mps, qn_mask, ltensor_item, rtensor_item, cmo_item, omega) for ltensor_item, rtensor_item, cmo_item in zip(ltensor, rtensor, cmo)])
     else:
         ham = get_ham_direct(mps, qn_mask, ltensor, rtensor, cmo, omega)
-    inverse = mps.optimize_config.inverse
-    w, v = scipy.linalg.eigh(asnumpy(ham) * inverse)
+    
+    ham *= mps.optimize_config.inverse
+        
+    if projectors is not None:
+        for proj in projectors:
+            proj_ham = tensordot(proj, proj.conj(), 0)
+            ham += proj_ham
+
+    w, v = scipy.linalg.eigh(asnumpy(ham))
 
     nroots = mps.optimize_config.nroots
     if nroots == 1:
@@ -388,7 +458,6 @@ def eigh_direct(
         e = w[:nroots]
         c = [v[:, iroot] for iroot in range(min(nroots, v.shape[1]))]
     return e, c
-
 
 def get_ham_iterative(
     mps: Mps,
@@ -407,12 +476,14 @@ def get_ham_iterative(
         tmp_ltensor = xp.einsum("aba -> ba", ltensor)
         tmp_cmo0 = xp.einsum("abbc -> abc", cmo[0])
         tmp_rtensor = xp.einsum("aba -> ba", rtensor)
+        
         if method == "1site":
             #   S-a c f-S
             #   O-b-O-g-O
             #   S-a c f-S
             path = [([0, 1], "ba, bcg -> acg"), ([1, 0], "acg, gf -> acf")]
             hdiag = multi_tensor_contract(path, tmp_ltensor, tmp_cmo0, tmp_rtensor)
+                
         else:
             #   S-a c   d f-S
             #   O-b-O-e-O-g-O
@@ -474,6 +545,7 @@ def eigh_iterative(
     cmo: List[xp.ndarray],
     omega: float,
     cguess: List[np.ndarray],
+    projectors: List[xp.ndarray] = None,
 ):
     # iterative algorithm
     inverse = mps.optimize_config.inverse
@@ -485,7 +557,14 @@ def eigh_iterative(
         expr = func_sum([expr_item for hdiag_item, expr_item in ham])
     else:
         hdiag, expr = get_ham_iterative(mps, qn_mask, ltensor, rtensor, cmo, omega)
-
+    
+    if projectors is not None:
+        proj_hdiag = xp.zeros(hdiag.shape)
+        for proj in projectors:
+            proj_hdiag += proj * proj.conj()
+        proj_hdiag = asnumpy(proj_hdiag)
+        hdiag += proj_hdiag
+        
     count = 0
 
     def hop(x):
@@ -502,8 +581,13 @@ def eigh_iterative(
             # convert c to initial structure according to qn pattern
             cstruct = asxp(cvec2cmat(c, qn_mask))
             cout = expr(cstruct) * inverse
+            cout = cout[qn_mask]
+            c = asxp(c)
+            if projectors is not None:
+                for proj in projectors:
+                    cout += proj.conj().dot(c) * proj
             # convert structure c to 1d according to qn
-            res.append(asnumpy(cout)[qn_mask])
+            res.append(asnumpy(cout))
 
         if len(res) == 1:
             return res[0]
