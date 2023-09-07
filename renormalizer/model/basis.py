@@ -391,10 +391,10 @@ class BasisHopsBoson(BasisSet):
 class BasisLangFirsov(BasisSHO):
     is_phonon = True
 
-    def __init__(self, dof, nbas, x0=0., dvr=False, general_xp_power=False):
-        self.x0 = x0  # origin = x0
+    def __init__(self, dof, f, nbas, x0=0., dvr=False, general_xp_power=False):
         omega = None
-        super().__init__(dof, omega, nbas, x0=0., dvr=False, general_xp_power=False)
+        super().__init__(dof, omega, nbas, x0=0., dvr=dvr, general_xp_power=general_xp_power)
+        self.f = f
 
     def op_mat(self, op: Union[Op, str]):
         if not isinstance(op, Op):
@@ -405,7 +405,10 @@ class BasisLangFirsov(BasisSHO):
 
         # second quantization formula
         if op_symbol == "X":
-            mat = super().op_mat(op)
+            mat = super().op_mat(r"b^\dagger-b") * (-self.f)
+            mat = scipy.linalg.expm(mat)
+        elif op_symbol == r"X^\dagger":
+            mat = self.op_mat("X").conjugate().T
         return mat * op_factor
 
 
