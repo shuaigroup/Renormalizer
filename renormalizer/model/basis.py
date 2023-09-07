@@ -388,6 +388,17 @@ class BasisHopsBoson(BasisSet):
         return self.__class__(new_dof, self.nbas)
 
 
+class BasisLangFirsov(BasisSHO):
+    is_phonon = True
+
+    def __init__(self, dof, nbas, x0=0., dvr=False, general_xp_power=False):
+        self.x0 = x0  # origin = x0
+        omega = None
+        super().__init__(dof, omega, nbas, x0=0., dvr=False, general_xp_power=False)
+
+
+
+
 class BasisSineDVR(BasisSet):
     r"""
     Sine DVR basis (particle-in-a-box) for vibrational, angular, and
