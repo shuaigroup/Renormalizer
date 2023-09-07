@@ -6,7 +6,8 @@ from typing import List, Union, Dict, Callable
 
 import numpy as np
 
-from renormalizer.model.basis import BasisSet, BasisSimpleElectron, BasisMultiElectronVac, BasisHalfSpin, BasisSHO
+from renormalizer.model.basis import BasisSet, BasisSimpleElectron, BasisMultiElectronVac, \
+    BasisHalfSpin, BasisSHO, BasisLangFirsov
 from renormalizer.model.mol import Mol, Phonon
 from renormalizer.model.op import Op
 from renormalizer.utils import Quantity, cached_property
@@ -389,6 +390,86 @@ class HolsteinModel(Model):
 
     def __len__(self):
         return len(self.mol_list)
+
+
+class HolsteinModelLangFirsov(HolsteinModel):
+    def __init__(self,  mol_list: List[Mol], f,
+                 j_matrix: Union[Quantity, np.ndarray],
+                 scheme: int = 2, periodic: bool = False):
+        # construct the electronic coupling matrix
+
+        mol_num = len(mol_list)
+        self.mol_list = mol_list
+
+        if isinstance(j_matrix, Quantity):
+            j_matrix = construct_j_matrix(mol_num, j_matrix, periodic)
+        else:
+            if periodic:
+                assert j_matrix[0][-1] != 0 and j_matrix[-1][0] != 0
+            assert j_matrix.shape[0] == mol_num
+
+        self.j_matrix = j_matrix
+        self.scheme = scheme
+
+        basis = []
+        ham = []
+
+        if scheme < 4:
+            for imol, mol in enumerate(mol_list):
+                basis.append(BasisSimpleElectron(imol))
+                for iph, ph in enumerate(mol.ph_list):
+                    basis.append(BasisLangFirsov((imol, iph), f, ph.n_phys_dim))
+                for iph, ph in enumerate(mol.ph_list):
+                    basis.append(BasisSHO((imol, iph+len(mol.ph_list)), ph.omega[0], ph.n_phys_dim))
+        elif scheme == 4:
+            raise NotImplementedError
+        else:
+            raise ValueError(f"invalid model.scheme: {scheme}")
+
+        # model
+        e_shift = 0
+        for iph, ph in enumerate(mol.ph_list):
+            e_shift -= ph.omega[0] * (2 * np.sqrt(ph.omega[0]/2)*ph.dis[1] * f - f**2)
+
+
+        # electronic term
+        for imol in range(mol_num):
+            for jmol in range(mol_num):
+                if imol == jmol:
+                    factor = mol_list[imol].elocalex + mol_list[imol].e0 - e_shift
+                else:
+                    factor = j_matrix[imol, jmol]
+                ham_term = Op(r"a^\dagger a", [imol, jmol], factor) * Op(r"X^\dagger X", [imol, jmol])
+                ham.append(ham_term)
+        # vibration part
+        for imol, mol in enumerate(mol_list):
+            for iph, ph in enumerate(mol.ph_list):
+
+                ham.extend([
+                    Op("p^2", (imol, iph+len(mol.ph_list)), 0.5),
+                    Op("x^2", (imol, iph+len(mol.ph_lists)), 0.5 * ph.omega[0] ** 2)
+                ])
+
+        # vibration potential part
+        for imol, mol in enumerate(mol_list):
+            for iph, ph in enumerate(mol.ph_list):
+                if np.allclose(ph.omega[0], ph.omega[1]):
+                    ham.append(
+                        Op(r"a^\dagger a", imol) *
+                        Op("x", (imol, iph+len(mol.ph_list))) * (-ph.omega[1] ** 2 * (ph.dis[1]-np.sqrt(2/ph.omega[0])*f))
+                    )
+                else:
+                    raise NotImplementedError
+
+
+        dipole = {}
+        for imol, mol in enumerate(mol_list):
+            dipole[imol] = mol.dipole
+
+        super().__init__(basis, ham, dipole=dipole)
+        self.mol_num = self.n_edofs
+
+
 
 
 class SpinBosonModel(Model):
