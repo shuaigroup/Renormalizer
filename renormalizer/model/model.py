@@ -5,7 +5,7 @@ import logging
 from typing import List, Union, Dict, Callable
 
 import numpy as np
-
+import scipy
 from renormalizer.model.basis import BasisSet, BasisSimpleElectron, BasisMultiElectronVac, \
     BasisHalfSpin, BasisSHO, BasisLangFirsov
 from renormalizer.model.mol import Mol, Phonon
@@ -393,7 +393,7 @@ class HolsteinModel(Model):
 
 
 class HolsteinModelLangFirsov(HolsteinModel):
-    def __init__(self,  mol_list: List[Mol], f,
+    def __init__(self,  mol_list: List[Mol],
                  j_matrix: Union[Quantity, np.ndarray],
                  scheme: int = 2, periodic: bool = False):
         # construct the electronic coupling matrix
@@ -414,6 +414,7 @@ class HolsteinModelLangFirsov(HolsteinModel):
         basis = []
         ham = []
 
+        f = self.find_f_optimal(mol_list, j_matrix)
         if scheme < 4:
             for imol, mol in enumerate(mol_list):
                 basis.append(BasisSimpleElectron(imol))
@@ -469,7 +470,18 @@ class HolsteinModelLangFirsov(HolsteinModel):
         super().__init__(basis, ham, dipole=dipole)
         self.mol_num = self.n_edofs
 
-
+    def find_f_optimal(self, mol_list, j_matrix, tol=1e-6):
+        # Yuan-chung CHENG's Thesis: Eq 3.22
+        def f_opt(x):
+            return g * w / (w + 2 * j * np.linalg.exp(-x**2))
+        if len(mol_list.ph_list) != 1:
+            raise NotImplementedError
+        w = mol_list.ph_list[0].omega[0]
+        j = j_matrix[0, 1]
+        g = (np.sqrt(w / 2) * mol_list.ph_list[0].dis[1])
+        f0 = 0.5 * g
+        root, iteration = scipy.optimize.root(f_opt, f0, tol)
+        return root
 
 
 class SpinBosonModel(Model):
