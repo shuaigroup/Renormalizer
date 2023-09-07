@@ -318,7 +318,7 @@ class HolsteinModel(Model):
             for iph, ph in enumerate(mol.ph_list):
                 if np.allclose(ph.omega[0], ph.omega[1]):
                     ham.append(
-                        Op(r"a^\dagger a", imol) * Op("x", (imol,iph)) * (-ph.omega[1] ** 2 * ph.dis[1])
+                        Op(r"a^\dagger a", imol) * Op("x", (imol, iph)) * (-ph.omega[1] ** 2 * ph.dis[1])
                     )
                 else:
                     ham.extend([
@@ -418,10 +418,10 @@ class HolsteinModelLangFirsov(HolsteinModel):
         if scheme < 4:
             for imol, mol in enumerate(mol_list):
                 basis.append(BasisSimpleElectron(imol))
+                n_phys_dim = mol.ph_list[0].n_phys_dim
+                basis.append(BasisLangFirsov(imol+len(mol_list), f, n_phys_dim))
                 for iph, ph in enumerate(mol.ph_list):
-                    basis.append(BasisLangFirsov((imol, iph), f, ph.n_phys_dim))
-                for iph, ph in enumerate(mol.ph_list):
-                    basis.append(BasisSHO((imol, iph+len(mol.ph_list)), ph.omega[0], ph.n_phys_dim))
+                    basis.append(BasisSHO((imol, iph), ph.omega[0], ph.n_phys_dim))
         elif scheme == 4:
             raise NotImplementedError
         else:
@@ -438,17 +438,19 @@ class HolsteinModelLangFirsov(HolsteinModel):
             for jmol in range(mol_num):
                 if imol == jmol:
                     factor = mol_list[imol].elocalex + mol_list[imol].e0 - e_shift
+                    ham_term = Op(r"a^\dagger a", [imol, jmol], factor)
                 else:
                     factor = j_matrix[imol, jmol]
-                ham_term = Op(r"a^\dagger a", [imol, jmol], factor) * Op(r"X^\dagger X", [imol, jmol])
+                    ham_term = Op(r"a^\dagger a", [imol, jmol], factor) * \
+                               Op(r"X^\dagger X", [imol+len(mol_list), jmol+len(mol_list)])
                 ham.append(ham_term)
         # vibration part
         for imol, mol in enumerate(mol_list):
             for iph, ph in enumerate(mol.ph_list):
 
                 ham.extend([
-                    Op("p^2", (imol, iph+len(mol.ph_list)), 0.5),
-                    Op("x^2", (imol, iph+len(mol.ph_lists)), 0.5 * ph.omega[0] ** 2)
+                    Op("p^2", (imol, iph), 0.5),
+                    Op("x^2", (imol, iph), 0.5 * ph.omega[0] ** 2)
                 ])
 
         # vibration potential part
@@ -457,31 +459,35 @@ class HolsteinModelLangFirsov(HolsteinModel):
                 if np.allclose(ph.omega[0], ph.omega[1]):
                     ham.append(
                         Op(r"a^\dagger a", imol) *
-                        Op("x", (imol, iph+len(mol.ph_list))) * (-ph.omega[1] ** 2 * (ph.dis[1]-np.sqrt(2/ph.omega[0])*f))
+                        Op("x", (imol, iph)) * (-ph.omega[1] ** 2 * (ph.dis[1]-np.sqrt(2/ph.omega[0])*f))
                     )
                 else:
                     raise NotImplementedError
-
 
         dipole = {}
         for imol, mol in enumerate(mol_list):
             dipole[imol] = mol.dipole
 
-        super().__init__(basis, ham, dipole=dipole)
+        super(HolsteinModel, self).__init__(basis, ham, dipole=dipole)
         self.mol_num = self.n_edofs
+
+    def copy(self):
+        model = HolsteinModelLangFirsov(self.mol_list, self.j_matrix, self.scheme)
+        model.mpos = self.mpos.copy()
+        return model
 
     def find_f_optimal(self, mol_list, j_matrix, tol=1e-6):
         # Yuan-chung CHENG's Thesis: Eq 3.22
         def f_opt(x):
-            return g * w / (w + 2 * j * np.linalg.exp(-x**2))
-        if len(mol_list.ph_list) != 1:
+            return g * w / (w + 2 * j * np.exp(-x**2))
+        if len(mol_list[0].ph_list) != 1:
             raise NotImplementedError
-        w = mol_list.ph_list[0].omega[0]
+        w = mol_list[0].ph_list[0].omega[0]
         j = j_matrix[0, 1]
-        g = (np.sqrt(w / 2) * mol_list.ph_list[0].dis[1])
+        g = (np.sqrt(w / 2) * mol_list[0].ph_list[0].dis[1])
         f0 = 0.5 * g
-        root, iteration = scipy.optimize.root(f_opt, f0, tol)
-        return root
+        root = scipy.optimize.root(f_opt, f0, tol=tol)
+        return root.x.item()
 
 
 class SpinBosonModel(Model):

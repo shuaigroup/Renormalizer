@@ -391,10 +391,16 @@ class BasisHopsBoson(BasisSet):
 class BasisLangFirsov(BasisSHO):
     is_phonon = True
 
-    def __init__(self, dof, f, nbas, x0=0., dvr=False, general_xp_power=False):
-        omega = None
-        super().__init__(dof, omega, nbas, x0=0., dvr=dvr, general_xp_power=general_xp_power)
+    def __init__(self, dof, f, nbas):
+        # super(BasisSHO, self).__init__(dof, nbas, [0] * nbas)
+        super().__init__(dof, None, nbas)
         self.f = f
+        self.x0 = 0
+        self.omega = None
+        self._recursion_flag = 0
+
+    def __str__(self):
+        return f"BasisLangFirsov(dof: {self.dof}, f:{self.f}, nbas: {self.nbas})"
 
     def op_mat(self, op: Union[Op, str]):
         if not isinstance(op, Op):
@@ -405,10 +411,16 @@ class BasisLangFirsov(BasisSHO):
 
         # second quantization formula
         if op_symbol == "X":
-            mat = super().op_mat(r"b^\dagger-b") * (-self.f)
+            mat = (super().op_mat(r"b^\dagger") - super().op_mat("b")) * (-self.f)
             mat = scipy.linalg.expm(mat)
         elif op_symbol == r"X^\dagger":
             mat = self.op_mat("X").conjugate().T
+        elif op_symbol == r"X^\dagger X":
+            mat = self.op_mat(r"X^\dagger") @ self.op_mat("X")
+        elif op_symbol == "I":
+            mat = super().op_mat("I")
+        else:
+            assert False
         return mat * op_factor
 
 
