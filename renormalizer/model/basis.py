@@ -396,7 +396,17 @@ class BasisLangFirsov(BasisSHO):
         omega = None
         super().__init__(dof, omega, nbas, x0=0., dvr=False, general_xp_power=False)
 
+    def op_mat(self, op: Union[Op, str]):
+        if not isinstance(op, Op):
+            op = Op(op, None)
+        op_symbol, op_factor = op.symbol, op.factor
 
+        self._recursion_flag += 1
+
+        # second quantization formula
+        if op_symbol == "X":
+            mat = super().op_mat(op)
+        return mat * op_factor
 
 
 class BasisSineDVR(BasisSet):
