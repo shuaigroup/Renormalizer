@@ -7,7 +7,7 @@ from typing import List, Union, Dict, Callable
 import numpy as np
 import scipy
 from renormalizer.model.basis import BasisSet, BasisSimpleElectron, BasisMultiElectronVac, \
-    BasisHalfSpin, BasisSHO, BasisLangFirsov
+    BasisHalfSpin, BasisSHO
 from renormalizer.model.mol import Mol, Phonon
 from renormalizer.model.op import Op
 from renormalizer.utils import Quantity, cached_property
@@ -391,7 +391,6 @@ class HolsteinModel(Model):
     def __len__(self):
         return len(self.mol_list)
 
-
 class HolsteinModelLangFirsov(HolsteinModel):
     def __init__(self,  mol_list: List[Mol],
                  j_matrix: Union[Quantity, np.ndarray],
@@ -418,10 +417,8 @@ class HolsteinModelLangFirsov(HolsteinModel):
         if scheme < 4:
             for imol, mol in enumerate(mol_list):
                 basis.append(BasisSimpleElectron(imol))
-                n_phys_dim = mol.ph_list[0].n_phys_dim
-                basis.append(BasisLangFirsov(imol+len(mol_list), f, n_phys_dim))
                 for iph, ph in enumerate(mol.ph_list):
-                    basis.append(BasisSHO((imol, iph), ph.omega[0], ph.n_phys_dim))
+                    basis.append(BasisSHO((imol, iph), ph.omega[0], ph.n_phys_dim, f=f),)
         elif scheme == 4:
             raise NotImplementedError
         else:
@@ -437,12 +434,12 @@ class HolsteinModelLangFirsov(HolsteinModel):
         for imol in range(mol_num):
             for jmol in range(mol_num):
                 if imol == jmol:
-                    factor = mol_list[imol].elocalex + mol_list[imol].e0 - e_shift
+                    factor = mol_list[imol].elocalex + mol_list[imol].e0 + e_shift
                     ham_term = Op(r"a^\dagger a", [imol, jmol], factor)
                 else:
                     factor = j_matrix[imol, jmol]
                     ham_term = Op(r"a^\dagger a", [imol, jmol], factor) * \
-                               Op(r"X^\dagger X", [imol+len(mol_list), jmol+len(mol_list)])
+                               Op(r"X^\dagger X", [(imol, 0), (jmol, 0)])
                 ham.append(ham_term)
         # vibration part
         for imol, mol in enumerate(mol_list):
@@ -476,7 +473,7 @@ class HolsteinModelLangFirsov(HolsteinModel):
         model.mpos = self.mpos.copy()
         return model
 
-    def find_f_optimal(self, mol_list, j_matrix, tol=1e-6):
+    def find_f_optimal(self, mol_list, j_matrix, tol=1e-10):
         # Yuan-chung CHENG's Thesis: Eq 3.22
         def f_opt(x):
             return g * w / (w + 2 * j * np.exp(-x**2))

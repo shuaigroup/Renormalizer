@@ -133,9 +133,10 @@ class BasisSHO(BasisSet):
 
     is_phonon = True
 
-    def __init__(self, dof, omega, nbas, x0=0., dvr=False, general_xp_power=False):
+    def __init__(self, dof, omega, nbas, x0=0., f=0, dvr=False, general_xp_power=False):
         self.omega = omega
         self.x0 = x0  # origin = x0
+        self.f = f
         super().__init__(dof, nbas, [0] * nbas)
 
         self.general_xp_power = general_xp_power
@@ -202,6 +203,16 @@ class BasisSHO(BasisSet):
 
         elif op_symbol == r"b b^\dagger":
             mat = np.diag(np.arange(self.nbas) + 1)
+
+        elif op_symbol == "X":
+            mat = (self.op_mat(r"b^\dagger") - self.op_mat("b")) * (self.f)
+            mat = scipy.linalg.expm(mat)
+        elif op_symbol == r"X^\dagger":
+            mat = self.op_mat("X").T
+            # mat = (self.op_mat(r"b^\dagger") - self.op_mat("b")) * (self.f)
+            # mat = scipy.linalg.expm(mat)
+        elif op_symbol == r"X^\dagger X":
+            mat = self.op_mat(r"X^\dagger") @ self.op_mat("X")
 
         elif op_symbol == "x" and (not self.general_xp_power):
             if not self.dvr:
@@ -386,43 +397,6 @@ class BasisHopsBoson(BasisSet):
 
     def copy(self, new_dof):
         return self.__class__(new_dof, self.nbas)
-
-
-class BasisLangFirsov(BasisSHO):
-    is_phonon = True
-
-    def __init__(self, dof, f, nbas):
-        # super(BasisSHO, self).__init__(dof, nbas, [0] * nbas)
-        super().__init__(dof, None, nbas)
-        self.f = f
-        self.x0 = 0
-        self.omega = None
-        self._recursion_flag = 0
-
-    def __str__(self):
-        return f"BasisLangFirsov(dof: {self.dof}, f:{self.f}, nbas: {self.nbas})"
-
-    def op_mat(self, op: Union[Op, str]):
-        if not isinstance(op, Op):
-            op = Op(op, None)
-        op_symbol, op_factor = op.symbol, op.factor
-
-        self._recursion_flag += 1
-
-        # second quantization formula
-        if op_symbol == "X":
-            mat = (super().op_mat(r"b^\dagger") - super().op_mat("b")) * (-self.f)
-            mat = scipy.linalg.expm(mat)
-        elif op_symbol == r"X^\dagger":
-            mat = self.op_mat("X").conjugate().T
-        elif op_symbol == r"X^\dagger X":
-            mat = self.op_mat(r"X^\dagger") @ self.op_mat("X")
-        elif op_symbol == "I":
-            mat = super().op_mat("I")
-        else:
-            assert False
-        return mat * op_factor
-
 
 class BasisSineDVR(BasisSet):
     r"""
