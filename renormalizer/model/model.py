@@ -391,6 +391,85 @@ class HolsteinModel(Model):
     def __len__(self):
         return len(self.mol_list)
 
+class HolsteinModelCoherent(HolsteinModel):
+    def __init__(self,  mol_list: List[Mol], phis,
+                 j_matrix: Union[Quantity, np.ndarray],
+                 scheme: int = 2, periodic: bool = False):
+        # construct the electronic coupling matrix
+
+        mol_num = len(mol_list)
+        self.mol_list = mol_list
+
+        if isinstance(j_matrix, Quantity):
+            j_matrix = construct_j_matrix(mol_num, j_matrix, periodic)
+        else:
+            if periodic:
+                assert j_matrix[0][-1] != 0 and j_matrix[-1][0] != 0
+            assert j_matrix.shape[0] == mol_num
+
+        self.j_matrix = j_matrix
+        self.scheme = scheme
+
+        basis = []
+        ham = []
+
+        if scheme < 4:
+            for imol, mol in enumerate(mol_list):
+                basis.append(BasisSimpleElectron(imol))
+                for iph, ph in enumerate(mol.ph_list):
+                    basis.append(BasisSHO((imol, iph), ph.omega[0], ph.n_phys_dims),)
+        elif scheme == 4:
+            raise NotImplementedError
+        else:
+            raise ValueError(f"invalid model.scheme: {scheme}")
+
+
+        # electronic term
+        g = np.sqrt(2/ph.omega[0]) * ph.dis[1]
+        for imol in range(mol_num):
+            for jmol in range(mol_num):
+                if imol == jmol:
+                    eshift = -2 * g * phis[imol]
+                    factor = mol_list[imol].elocalex + mol_list[imol].e0 + eshift
+                else:
+                    factor = j_matrix[imol, jmol]
+                ham_term = Op(r"a^\dagger a", [imol, jmol], factor)
+                ham.append(ham_term)
+        # vibration part
+        for imol, mol in enumerate(mol_list):
+            for iph, ph in enumerate(mol.ph_list):
+
+                ham.extend([
+                    Op("p^2", (imol, iph), 0.5),
+                    Op("x^2", (imol, iph), 0.5 * ph.omega[0] ** 2)
+                ])
+
+        # vibration potential part
+        for imol, mol in enumerate(mol_list):
+            for iph, ph in enumerate(mol.ph_list):
+                if np.allclose(ph.omega[0], ph.omega[1]):
+                    ham.append(
+                        Op(r"a^\dagger a", imol) *
+                        Op("x", (imol, iph)) * (-ph.omega[1] ** 2 * (ph.dis[1]))
+                    )
+                    ham.append(Op(r"b^\dagger+b", ph.omega[1]*phis[imol]))
+                else:
+                    raise NotImplementedError
+
+        dipole = {}
+        for imol, mol in enumerate(mol_list):
+            dipole[imol] = mol.dipole
+
+        super(HolsteinModel, self).__init__(basis, ham, dipole=dipole)
+        self.mol_num = self.n_edofs
+
+    def copy(self):
+        model = HolsteinModelCoherent(self.mol_list, self.j_matrix, self.scheme)
+        model.mpos = self.mpos.copy()
+        return model
+
+
+
 class HolsteinModelLangFirsov(HolsteinModel):
     def __init__(self,  mol_list: List[Mol],
                  j_matrix: Union[Quantity, np.ndarray],
