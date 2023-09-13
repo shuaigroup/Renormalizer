@@ -1,7 +1,7 @@
 # -*- coding: utf-8 -*-
 import logging
 import itertools
-from collections import namedtuple
+from collections import namedtuple, OrderedDict
 from typing import List, Set, Tuple, Dict
 
 import numpy as np
@@ -136,10 +136,11 @@ def construct_symbolic_mpo(table, factor, algo="Hopcroft-Karp"):
 
     # translate the symbolic operator table to an easy to manipulate numpy array
     table = np.array(table)
+
     # unique operators with DoF names taken into consideration
     # The inclusion of DoF names is necessary for multi-dof basis.
-    unique_op: Set[Op] = set(table.ravel())
-
+    unique_op = OrderedDict.fromkeys(table.ravel())
+    unique_op = list(unique_op.keys())
     # check the index of different operators could be represented with np.uint16
     assert len(unique_op) < max_uint16
 

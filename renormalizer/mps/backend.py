@@ -3,6 +3,7 @@
 import os
 import logging
 import random
+import subprocess
 
 import numpy as np
 
@@ -49,6 +50,13 @@ def try_import_cupy():
     logger.info(f"Using GPU: {GPU_ID}")
     return True, cp
 
+def get_git_commit_hash():
+    try:
+        commit_hash = subprocess.check_output(['git', 'rev-parse', 'HEAD']).strip().decode('utf-8')
+        return commit_hash
+    except subprocess.CalledProcessError:
+        return "Unknown"
+
 
 USE_GPU, xp = try_import_cupy()
 
@@ -56,17 +64,25 @@ USE_GPU, xp = try_import_cupy()
 #USE_GPU = False
 #xp = np
 
+xpseed = 2019
+npseed = 9012
+randomseed = 1092
+
+xp.random.seed(xpseed)
+np.random.seed(npseed)
+random.seed(randomseed)
+
+
 if not USE_GPU:
     logger.info("Use NumPy as backend")
+    logger.info(f"numpy random seed is {npseed}")
     OE_BACKEND = "numpy"
 else:
     logger.info("Use CuPy as backend")
+    logger.info(f"cupy random seed is {xpseed}")
     OE_BACKEND = "cupy"
-
-
-xp.random.seed(2019)
-np.random.seed(9012)
-random.seed(1092)
+logger.info(f"random seed is {randomseed}")
+logger.info("Git Commit Hash: %s", get_git_commit_hash())
 
 
 class Backend:
