@@ -49,7 +49,7 @@ class MatrixProduct:
 
         mp.qn = []
         for i in range(nsites+1):
-            subqn = npload[f"subqn_{i}"].astype(int).tolist()    
+            subqn = npload[f"subqn_{i}"].astype(int).tolist()
             mp.qn.append(subqn)
 
         mp.qnidx = int(npload["qnidx"])
@@ -1084,6 +1084,9 @@ class MatrixProduct:
         arr = np.empty(len(qn), object)
         arr[:] = qn
         data_dict['qn'] = arr
+
+        for i in range(self.site_num+1):
+            data_dict[f"subqn_{i}"] = qn[i]
         
         try:
             np.savez(fname, **data_dict)
