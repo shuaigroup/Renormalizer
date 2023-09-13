@@ -140,6 +140,7 @@ def construct_symbolic_mpo(table, factor, algo="Hopcroft-Karp"):
     # unique operators with DoF names taken into consideration
     # The inclusion of DoF names is necessary for multi-dof basis.
     unique_op = OrderedDict.fromkeys(table.ravel())
+    # Convert Set(table.ravel()) to List will change the Op order in list, OrderedDict made reproducible
     unique_op = list(unique_op.keys())
     # check the index of different operators could be represented with np.uint16
     assert len(unique_op) < max_uint16

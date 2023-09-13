@@ -363,6 +363,15 @@ def get_ham_direct(
     return ham
 
 
+def sign_fix(c, nroots):
+    if nroots > 1:
+        if isinstance(c, list):
+            return [ci / np.sign(np.max(np.abs(ci))) for ci in c]
+        else:
+            return c / np.sign(np.max(c, axis=0))
+    else:
+        return c / np.sign(np.max(c))
+
 def eigh_direct(
     mps: Mps,
     qn_mask: np.ndarray,
@@ -383,11 +392,11 @@ def eigh_direct(
     nroots = mps.optimize_config.nroots
     if nroots == 1:
         e = w[0]
-        c = v[:, 0] / np.sign(np.max(v[:, 0]))
+        c = v[:, 0]
     else:
         e = w[:nroots]
-        c = [v[:, iroot] / np.sign(np.max(v[:, iroot])) for iroot in range(min(nroots, v.shape[1]))]
-    return e, c
+        c = [v[:, iroot] for iroot in range(min(nroots, v.shape[1]))]
+    return e, sign_fix(c, nroots)
 
 
 def get_ham_iterative(
@@ -556,7 +565,4 @@ def eigh_iterative(
     else:
         assert False
     logger.debug(f"use {algo}, HC hops: {count}")
-    if nroots == 1:
-        return e, c/np.sign(np.max(c))
-    else:
-        return e, c/np.sign(np.max(c, axis=0))
+    return e, sign_fix(c, nroots)

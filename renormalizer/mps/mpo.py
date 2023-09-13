@@ -155,7 +155,7 @@ class Mpo(MatrixProduct):
 
     @classmethod
     def finiteT_cv(cls, model, nexciton, m_max, spectratype, percent=1.0):
-        np.random.seed(0)
+        # np.random.seed(0)
 
         X = cls()
         X.model = model
