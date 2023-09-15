@@ -366,11 +366,11 @@ def get_ham_direct(
 def sign_fix(c, nroots):
     if nroots > 1:
         if isinstance(c, list):
-            return [ci / np.sign(np.max(np.abs(ci))) for ci in c]
+            return [ci / np.sign(ci[np.abs(ci).argmax()]) for ci in c]
         else:
-            return c / np.sign(np.max(c, axis=0))
+            return c / np.sign(np.max(np.abs(c), axis=0))
     else:
-        return c / np.sign(np.max(c))
+        return c / np.sign(c[np.abs(c).argmax()])
 
 def eigh_direct(
     mps: Mps,
