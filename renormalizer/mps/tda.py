@@ -44,7 +44,8 @@ class TDA(object):
                
         self.model = model
         self.hmpo = hmpo
-        self.mps = mps  # mps will be overwritten inplace
+        self.psi0 = mps
+        self.mps = mps.copy()  # mps will be overwritten inplace
         self.nroots = nroots
         if algo is None:
             if primme is not None:
@@ -276,23 +277,30 @@ class TDA(object):
                     return np.stack([hop(x[:,i]) for i in range(x.shape[1])],axis=1)
                 else:
                     assert False
-    
+
+            e0 = self.psi0.expectation(self.hmpo)
+            tmp = hdiag-e0
+            tmp[np.where(np.abs(tmp)<1e-6)] = 1e-6
+
             def precond(x): 
                 if x.ndim == 1:
-                    return np.einsum("i, i -> i", 1/(hdiag+1e-4), x)
+                    return np.einsum("i, i -> i", 1/tmp, x)
                 elif x.ndim ==2:
-                    return np.einsum("i, ij -> ij", 1/(hdiag+1e-4), x)
+                    return np.einsum("i, ij -> ij", 1/tmp, x)
                 else:
                     assert False
             A = scipy.sparse.linalg.LinearOperator((xsize,xsize),
                     matvec=multi_hop, matmat=multi_hop)
             M = scipy.sparse.linalg.LinearOperator((xsize,xsize),
                     matvec=precond, matmat=precond)
-            e, c = primme.eigsh(A, k=min(nroots,xsize), which="SA", 
-                    v0=cguess,
-                    OPinv=M,
-                    method="PRIMME_DYNAMIC", 
-                    tol=1e-6)
+            e, c, stats = primme.eigsh(A, k=min(nroots,xsize), which="SA", 
+                            v0=cguess,
+                            OPinv=M,
+                            method="PRIMME_DYNAMIC", 
+                            tol=1e-6,
+                            return_stats=True,
+                            return_history=False)
+            logger.debug(f"primme statistics: {stats}")
         else:
             assert False
 
@@ -351,7 +359,33 @@ class TDA(object):
             tda_coeff_list.append(tda_coeff)
 
         self.wfn = [mps_l_cano, mps_r_cano, tangent_u, tda_coeff_list]
- 
+    
+    def trans_gs_ex(self, mpo, mps=None):
+        """
+        calculate transition matrix element between gs and tda_root
+        <gs|mpo|tda_root>
+        """
+        if mps is None:
+            mps = self.psi0
+        mps_conj = mps.conj()
+
+        mps_l_cano, mps_r_cano, tangent_u, tda_coeff_list = self.wfn
+        
+        trans_tot = []
+        for iroot in range(self.nroots):
+            tda_coeff = tda_coeff_list[iroot]
+            
+            trans = 0
+            for ims in range(mps_l_cano.site_num):
+                if tangent_u[ims] is None:
+                    assert tda_coeff[ims] is None
+                    continue
+                mps_tangent = merge(mps_l_cano, mps_r_cano, ims+1) 
+                mps_tangent[ims] = tensordot(tangent_u[ims], tda_coeff[ims],[-1,0]) 
+                trans += mps_tangent.expectation(mpo, mps_conj)
+            trans_tot.append(trans)
+        return trans_tot
+
 
     def analysis_1ordm(self):
         r""" calculate one-orbital reduced density matrix of each tda root

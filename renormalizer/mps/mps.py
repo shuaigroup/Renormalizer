@@ -613,6 +613,8 @@ class Mps(MatrixProduct):
         """
         # expander m target
         m_target = self.compress_config.bond_dim_max_value - self.bond_dims_mean
+        if m_target <= 0:
+            return self
         # will be restored at exit
         self.compress_config.bond_dim_max_value = m_target
         if self.compress_config.criteria is not CompressCriteria.fixed:
@@ -645,7 +647,7 @@ class Mps(MatrixProduct):
                 lastone = self + ex_state
 
             else:
-                lastone = self
+                lastone = self.copy().normalize("mps_and_coeff")
             expander_list: List["MatrixProduct"] = []
             cumulated_m = 0
             while True:

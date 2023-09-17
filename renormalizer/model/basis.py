@@ -352,6 +352,10 @@ class BasisSHO(BasisSet):
                 raise ValueError(f"op_symbol:{op_symbol} is not supported. Quadrature is not implemented yet!")
 
         self._recursion_flag -= 1
+        
+        if np.allclose(mat, mat.conj()):
+            mat = mat.real
+        
         return mat * op_factor
 
     def copy(self, new_dof):
@@ -520,6 +524,9 @@ class BasisExpDVR(BasisSet):
             else:
                 mat = self.quad(op_symbol, complex_func=True)
                 mat = self.dvr_v @ mat @ self.dvr_v.conj().T
+        
+        if np.allclose(mat, mat.conj()):
+            mat = mat.real
 
         return mat * op_factor
     
@@ -760,6 +767,9 @@ class BasisSineDVR(BasisSet):
 
         if self.dvr and self._recursion_flag == 0:
             mat = self.dvr_v.T @ mat @ self.dvr_v
+        
+        if np.allclose(mat, mat.conj()):
+            mat = mat.real
         
         return mat * op_factor
     

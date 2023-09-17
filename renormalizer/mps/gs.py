@@ -637,6 +637,8 @@ def eigh_iterative(
             method="PRIMME_DYNAMIC",
             tol=1e-6,
         )
+        if nroots == 1 and isinstance(e, np.ndarray):
+            e = e[0]
     else:
         assert False
     logger.debug(f"use {algo}, HC hops: {count}")

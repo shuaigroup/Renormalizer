@@ -66,6 +66,46 @@ class MpDm(Mps, Mpo):
         new_mpdm = self.apply(MPOprop, canonicalise=True)
         new_mpdm.coeff *= np.exp(-1.0j * h_mpo.offset * evolve_dt)
         return new_mpdm
+    
+    @classmethod
+    def max_entangled_mpdm(cls, model, qnblock, normalize=True):
+        r''' only for single multi_dof state or spin state
+        '''
+        if isinstance(qnblock, int):
+            qnblock = np.array([qnblock])
+
+        # todo add assert 
+        mpdm = cls()
+        mpdm.model = model
+        qn_size = model.qn_size
+        qntot = np.zeros(qn_size, dtype=int)
+        mpdmqn = [np.zeros((1, qn_size), dtype=int)]
+        for iba, ba in enumerate(model.basis):
+            pdim = ba.nbas
+            if ba.is_phonon:
+                ms = np.eye(pdim).reshape(1,pdim,pdim,1)
+                if normalize:
+                    ms /= np.sqrt(pdim)
+            elif ba.multi_dof or ba.is_spin:
+                ms = np.zeros(pdim)
+                ms[(np.array(ba.sigmaqn)==qnblock).all(axis=1)] = 1
+                ms = np.diag(ms).reshape(1,pdim,pdim,1) 
+                if normalize:
+                    nonzero = np.count_nonzero((np.array(ba.sigmaqn)==qnblock).all(axis=1))
+                    ms /= np.sqrt(nonzero)
+                qntot += qnblock
+            else:
+                assert False
+
+            mpdm.append(ms)
+            mpdmqn.append(qntot.reshape(1,-1))
+        mpdm.qn = mpdmqn
+        mpdm.qn[-1] = np.zeros((1, qn_size), dtype=int)
+        mpdm.qntot = qntot
+        mpdm.qnidx = mpdm.site_num-1
+        mpdm.to_right = False
+
+        return mpdm
 
     def todense(self):
         # explicitly call to MPO because MPS is firstly inherited
@@ -106,7 +146,7 @@ class MpDm(Mps, Mpo):
         return path
 
     def conj_trans(self):
-        raise NotImplementedError
+        #raise NotImplementedError
         logger.warning("using conj_trans on mpdm leads to dummy qn")
         new_mpdm: "MpDmBase" = super().conj_trans()
         new_mpdm.coeff = new_mpdm.coeff.conjugate()

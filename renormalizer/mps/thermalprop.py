@@ -45,11 +45,18 @@ class ThermalProp(TdMpsJob):
         job_name: str = None,
         properties: Property = None,
         auto_expand: bool = True,
+        include_ex: bool = True,
     ):
         self.init_mpdm: MpDm = init_mpdm.canonicalise()
         if h_mpo_model is None:
             h_mpo_model = self.init_mpdm.model
-        self.h_mpo = Mpo(h_mpo_model)
+        if isinstance(h_mpo_model, Mpo):
+            self.h_mpo = h_mpo_model
+        else:
+            if "h_mpo" in h_mpo_model.mpos.keys():
+                self.h_mpo = h_mpo_model.mpos["h_mpo"]
+            else:
+                self.h_mpo = Mpo(h_mpo_model)
         logger.info(f"Bond dim of h_mpo: {self.h_mpo.bond_dims}")
         self.exact = exact
         assert space in ["GS", "EX"]
@@ -60,6 +67,7 @@ class ThermalProp(TdMpsJob):
         self._vn_entropy_array = []
         self.properties = properties
         self.auto_expand = auto_expand
+        self.include_ex = include_ex
 
         super().__init__(evolve_config=evolve_config, dump_mps=dump_mps, dump_dir=dump_dir,
                 job_name=job_name)
@@ -67,7 +75,8 @@ class ThermalProp(TdMpsJob):
     def init_mps(self):
         self.init_mpdm.evolve_config = self.evolve_config
         if self.evolve_config.is_tdvp and self.auto_expand:
-            self.init_mpdm = self.init_mpdm.expand_bond_dimension(self.h_mpo)
+            self.init_mpdm = self.init_mpdm.expand_bond_dimension(self.h_mpo,
+                    include_ex=self.include_ex)
         return self.init_mpdm
 
     def process_mps(self, mps):
@@ -76,17 +85,18 @@ class ThermalProp(TdMpsJob):
         if self.exact:
             # skip the fuss for efficiency
             return
-        for attr_str in ["e_occupations", "ph_occupations"]:
-            attr = getattr(mps, attr_str)
-            logger.info(f"{attr_str}: {attr}")
-            self_array = getattr(self, f"_{attr_str}_array")
-            self_array.append(attr)
-        vn_entropy = mps.calc_bond_entropy()
-        self._vn_entropy_array.append(vn_entropy)
-        logger.info(f"vn entropy: {vn_entropy}")
-        logger.info(
-            f"Energy: {new_energy}, total electron: {self._e_occupations_array[-1].sum()}"
-        )
+        # this only works for e-ph problem
+        #for attr_str in ["e_occupations", "ph_occupations"]:
+        #    attr = getattr(mps, attr_str)
+        #    logger.info(f"{attr_str}: {attr}")
+        #    self_array = getattr(self, f"_{attr_str}_array")
+        #    self_array.append(attr)
+        #vn_entropy = mps.calc_bond_entropy()
+        #self._vn_entropy_array.append(vn_entropy)
+        #logger.info(f"vn entropy: {vn_entropy}")
+        #logger.info(
+        #    f"Energy: {new_energy}, total electron: {self._e_occupations_array[-1].sum()}"
+        #)
         
         # calculate other properties defined in Property
         if self.properties is not None:
@@ -103,8 +113,8 @@ class ThermalProp(TdMpsJob):
         return new_mpdm
 
     def evolve_prop(self, old_mpdm, evolve_dt):
-        h_mpo = Mpo(self.h_mpo.model, offset=Quantity(self.energies[-1]))
-        return old_mpdm.evolve(h_mpo, evolve_dt)
+        #h_mpo = Mpo(self.h_mpo.model, offset=Quantity(self.energies[-1]))
+        return old_mpdm.evolve(self.h_mpo, evolve_dt)
 
     def evolve_single_step(self, evolve_dt):
         old_mpdm = self.latest_mps

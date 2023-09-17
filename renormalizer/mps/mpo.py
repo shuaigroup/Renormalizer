@@ -506,6 +506,18 @@ class Mpo(MatrixProduct):
 
     def __matmul__(self, other):
         return self.apply(other)
+    
+    def __add__(self, other: Union["Mpo", float, complex]):
+        if isinstance(other, Mpo):
+            return self.add(other)
+        iden = self.identity(self.model).scale(other)
+        return self.add(iden)
+    
+    def __sub__(self, other: Union["Mpo", float, complex]):
+        if isinstance(other, Mpo):
+            return self.add(other.scale(-1))
+        iden = self.identity(self.model).scale(-other)
+        return self.add(iden)
 
 
 class StackedMpo:
