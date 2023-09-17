@@ -1966,6 +1966,10 @@ class BraKetPair:
             * self.ket_mps.coeff
         )
 
+    def dump(self, fname):
+        self.bra_mps.dump(fname.rstrip(".npz")+"_bra"+".npz")
+        self.ket_mps.dump(fname.rstrip(".npz")+"_ket"+".npz")
+
     def __str__(self):
         if np.iscomplexobj(self.ft):
             # if negative, sign is included in the imag part

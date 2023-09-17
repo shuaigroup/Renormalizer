@@ -146,6 +146,7 @@ class CorrFuncBase(TdMpsJob):
             model,
             imps_qntot,
             temperature,
+            imps = None,
             optimize_config=None,
             compress_config=None,
             evolve_config=None,
@@ -161,6 +162,7 @@ class CorrFuncBase(TdMpsJob):
         else:
             self.h_mpo = Mpo(model)
         self.temperature = temperature
+        self.imps = imps
         self.compress_config = compress_config
         if self.compress_config is None:
             self.compress_config = CompressConfig()
@@ -251,6 +253,7 @@ class FTCorrFuncBase(CorrFuncBase):
             imps_qntot,
             temperature,
             insteps,
+            imps = None,
             ievolve_config=None,
             icompress_config=None,
             compress_config=None,
@@ -272,6 +275,7 @@ class FTCorrFuncBase(CorrFuncBase):
                 model,
                 imps_qntot,
                 temperature,
+                imps=imps,
                 compress_config=compress_config,
                 evolve_config=evolve_config,
                 dump_mps=dump_mps,
@@ -288,6 +292,9 @@ class FTCorrFuncBase(CorrFuncBase):
         return self.pruner(BraKetPair(bra_mps, ket_mps, mpo=self.op_a.conj_trans()))
     
     def init_imps(self):
+        if self.imps is not None:
+            return self.imps
+
         mpdm = MpDm.max_entangled_mpdm(self.model, self.imps_qntot)
         mpdm.compress_config = self.icompress_config
         tp = ThermalProp(
@@ -339,8 +346,10 @@ class ZTCorrFuncBase(CorrFuncBase):
     '''
     
     def init_imps(self):
-        mmax = self.optimize_config.procedure[0][0]
-        imps = Mps.random(self.model, self.imps_qntot, mmax, percent=1)
+        if self.imps is not None:
+            return self.imps
+        m_init = 20
+        imps = Mps.random(self.model, self.imps_qntot, m_init, percent=1)
         imps.optimize_config = self.optimize_config
         energies, imps = gs.optimize_mps(imps, self.h_mpo)
         #e_rdm = imps.calc_reduced_density_matrix()
