@@ -572,6 +572,17 @@
     <span class="k">return</span> <span class="n">ham</span></div>
 
 
+<div class="viewcode-block" id="sign_fix"><a class="viewcode-back" href="../../../static.html#renormalizer.mps.gs.sign_fix">[docs]</a><span class="k">def</span> <span class="nf">sign_fix</span><span class="p">(</span><span class="n">c</span><span class="p">,</span> <span class="n">nroots</span><span class="p">):</span>
+    <span class="k">if</span> <span class="n">nroots</span> <span class="o">&gt;</span> <span class="mi">1</span><span class="p">:</span>
+        <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">c</span><span class="p">,</span> <span class="nb">list</span><span class="p">):</span>
+            <span class="k">return</span> <span class="p">[</span><span class="n">ci</span> <span class="o">/</span> <span class="n">np</span><span class="o">.</span><span class="n">sign</span><span class="p">(</span><span class="n">ci</span><span class="p">[</span><span class="n">np</span><span class="o">.</span><span class="n">abs</span><span class="p">(</span><span class="n">ci</span><span class="p">)</span><span class="o">.</span><span class="n">argmax</span><span class="p">()])</span> <span class="k">for</span> <span class="n">ci</span> <span class="ow">in</span> <span class="n">c</span><span class="p">]</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="n">idx</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">abs</span><span class="p">(</span><span class="n">c</span><span class="p">)</span><span class="o">.</span><span class="n">argmax</span><span class="p">(</span><span class="n">axis</span><span class="o">=</span><span class="mi">0</span><span class="p">)</span>
+            <span class="k">return</span> <span class="n">c</span> <span class="o">/</span> <span class="n">np</span><span class="o">.</span><span class="n">sign</span><span class="p">(</span><span class="n">c</span><span class="p">[</span><span class="n">idx</span><span class="p">,</span> <span class="nb">range</span><span class="p">(</span><span class="n">c</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="mi">1</span><span class="p">])])</span>
+    <span class="k">else</span><span class="p">:</span>
+        <span class="k">return</span> <span class="n">c</span> <span class="o">/</span> <span class="n">np</span><span class="o">.</span><span class="n">sign</span><span class="p">(</span><span class="n">c</span><span class="p">[</span><span class="n">np</span><span class="o">.</span><span class="n">abs</span><span class="p">(</span><span class="n">c</span><span class="p">)</span><span class="o">.</span><span class="n">argmax</span><span class="p">()])</span></div>
+
+
 <div class="viewcode-block" id="eigh_direct"><a class="viewcode-back" href="../../../static.html#renormalizer.mps.gs.eigh_direct">[docs]</a><span class="k">def</span> <span class="nf">eigh_direct</span><span class="p">(</span>
     <span class="n">mps</span><span class="p">:</span> <span class="n">Mps</span><span class="p">,</span>
     <span class="n">qn_mask</span><span class="p">:</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">,</span>
@@ -596,7 +607,7 @@
     <span class="k">else</span><span class="p">:</span>
         <span class="n">e</span> <span class="o">=</span> <span class="n">w</span><span class="p">[:</span><span class="n">nroots</span><span class="p">]</span>
         <span class="n">c</span> <span class="o">=</span> <span class="p">[</span><span class="n">v</span><span class="p">[:,</span> <span class="n">iroot</span><span class="p">]</span> <span class="k">for</span> <span class="n">iroot</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="nb">min</span><span class="p">(</span><span class="n">nroots</span><span class="p">,</span> <span class="n">v</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="mi">1</span><span class="p">]))]</span>
-    <span class="k">return</span> <span class="n">e</span><span class="p">,</span> <span class="n">c</span></div>
+    <span class="k">return</span> <span class="n">e</span><span class="p">,</span> <span class="n">sign_fix</span><span class="p">(</span><span class="n">c</span><span class="p">,</span> <span class="n">nroots</span><span class="p">)</span></div>
 
 
 <div class="viewcode-block" id="get_ham_iterative"><a class="viewcode-back" href="../../../static.html#renormalizer.mps.gs.get_ham_iterative">[docs]</a><span class="k">def</span> <span class="nf">get_ham_iterative</span><span class="p">(</span>
@@ -765,7 +776,7 @@
     <span class="k">else</span><span class="p">:</span>
         <span class="k">assert</span> <span class="kc">False</span>
     <span class="n">logger</span><span class="o">.</span><span class="n">debug</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;use </span><span class="si">{</span><span class="n">algo</span><span class="si">}</span><span class="s2">, HC hops: </span><span class="si">{</span><span class="n">count</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
-    <span class="k">return</span> <span class="n">e</span><span class="p">,</span> <span class="n">c</span></div>
+    <span class="k">return</span> <span class="n">e</span><span class="p">,</span> <span class="n">sign_fix</span><span class="p">(</span><span class="n">c</span><span class="p">,</span> <span class="n">nroots</span><span class="p">)</span></div>
 </pre></div>
         </article>
       </div>
