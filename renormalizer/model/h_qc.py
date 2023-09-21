@@ -67,7 +67,7 @@ def int_to_h(h, eri):
 
     return sh, aseri
 
-def qc_model(h1e, h2e, conserve_qn=True):
+def qc_model(h1e, h2e, stacked=False, conserve_qn=True):
     """
     Ab initio electronic Hamiltonian in spin-orbitals
     h1e: sh above
@@ -142,18 +142,35 @@ def qc_model(h1e, h2e, conserve_qn=True):
             new_ops.append(Op(" ".join(new_symbol), new_dof_name, (-1) ** n_permute, new_qn))
         return Op.product(new_ops)
 
-    # 1-e terms
-    pairs = np.argwhere(h1e!=0)
-    for p, q in pairs:
-        op = process_op(a_dag_ops[p] * a_ops[q])
-        ham_terms.append(op * h1e[p, q])
+    pairs1 = np.argwhere(h1e!=0)
+    pairs2 = np.argwhere(h2e!=0)
+    if stacked is False:
+        # 1-e terms
+        for p, q in pairs1:
+            op = process_op(a_dag_ops[p] * a_ops[q])
+            ham_terms.append(op * h1e[p, q])
 
-    # 2-e terms.
-    pairs = np.argwhere(h2e!=0)
-    for p, q, r, s in pairs:
-        op = process_op(Op.product([a_dag_ops[p], a_dag_ops[q], a_ops[r], a_ops[s]]))
-        ham_terms.append(op * h2e[p, q, r, s])
-
+        # 2-e terms.
+        for p, q, r, s in pairs2:
+            op = process_op(Op.product([a_dag_ops[p], a_dag_ops[q], a_ops[r], a_ops[s]]))
+            ham_terms.append(op * h2e[p, q, r, s])
+    else:
+        p_1e = np.unique(pairs1[:, 0])
+        p_2e = np.unique(pairs2[:, 0])
+        ps = set(p_1e).union(p_2e)
+        for p in ps:
+            local_ham_terms = []
+            q_values = pairs1[pairs1[:, 0] == p][:, 1]
+            qrs_values = pairs2[pairs2[:, 0] == p][:, 1:]
+            if q_values.size > 0:
+                for q in q_values:
+                    op = process_op(a_dag_ops[p] * a_ops[q])
+                    local_ham_terms.append(op * h1e[p, q])
+            if qrs_values.size > 0:
+                for q, r, s in qrs_values:
+                    op = process_op(Op.product([a_dag_ops[p], a_dag_ops[q], a_ops[r], a_ops[s]]))
+                    local_ham_terms.append(op * h2e[p, q, r, s])
+            ham_terms.append(local_ham_terms)
 
     basis = []
     for iorb in range(norbs):
@@ -166,5 +183,11 @@ def qc_model(h1e, h2e, conserve_qn=True):
             sigmaqn = [0, 0]
         b = BasisHalfSpin(iorb, sigmaqn=sigmaqn)
         basis.append(b)
-
     return basis, ham_terms
+
+
+
+
+
+
+

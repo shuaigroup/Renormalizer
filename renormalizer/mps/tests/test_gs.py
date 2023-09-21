@@ -101,7 +101,8 @@ def test_ofs():
 
 
 @pytest.mark.parametrize("with_ofs", (True, False))
-def test_qc(with_ofs):
+@pytest.mark.parametrize("stacked", (True, False))
+def test_qc(with_ofs, stacked):
     """
     m = M(atom=[["H", np.cos(theta), np.sin(theta), 0] for theta in 2*np.pi/6 * np.arange(6)], basis="STO-3G")
     hf = m.HF()
@@ -112,10 +113,18 @@ def test_qc(with_ofs):
     spatial_norbs = 6
     h1e, h2e, nuc = h_qc.read_fcidump(os.path.join(cur_dir, "H6.txt"), spatial_norbs)
 
-    basis, ham_terms = h_qc.qc_model(h1e, h2e)
+    basis, ham_terms = h_qc.qc_model(h1e, h2e, stacked=stacked)
 
-    model = Model(basis, ham_terms)
-    mpo = Mpo(model)
+    if stacked:
+        stacked_mpo = []
+        for i in range(len(ham_terms)):
+            model = Model(basis, ham_terms[i])
+            impo = Mpo(model)
+            stacked_mpo.append(impo)
+        mpo = StackedMpo(stacked_mpo)
+    else:
+        model = Model(basis, ham_terms)
+        mpo = Mpo(model)
 
     fci_e = -3.23747673055271 - nuc
 
