@@ -115,6 +115,7 @@ class BasisDummy(BasisSet):
         super().__init__(dof, nbas, [0] * nbas)
 
 
+
 class BasisSHO(BasisSet):
     """
     simple harmonic oscillator basis set
@@ -141,7 +142,7 @@ class BasisSHO(BasisSet):
         self.omega = omega
         self.x0 = x0  # origin = x0
         super().__init__(dof, nbas, [0] * nbas)
-
+        
         self.general_xp_power = general_xp_power
 
         # whether under recursion
@@ -1149,4 +1150,114 @@ def x_power_k(k, m, n):
 def p_power_k(k,m,n):
 # <m|p^k|n>
     return x_power_k(k,m,n) * (1j)**(m-n)
+
+
+class BasisSHODVR(BasisSet):
+    
+    is_phonon = True
+    
+    def __init__(self, dof, omega, nbas, x0=0., xi=None, xf=None,
+            force_quad=False):
+        
+        self.omega = omega
+        self.x0 = x0  # origin = x0
+        super().__init__(dof, nbas, [0] * nbas)
+        
+        self.dvr_x = None  # the expectation value of x on SHO_dvr
+        self.dvr_v = None  # the rotation matrix between SHO to SHO_dvr
+        self.dvr_x, self.dvr_v = scipy.linalg.eigh(self.mat_x())
+        
+        if xi is not None and xf is not None:
+            # support to define the initial and final grid
+            # scale omega
+            self.x0 = (xi+xf)/2
+            self.omega = self.omega * ((self.dvr_x[-1]-self.dvr_x[0]) / (xf-xi))**2
+            self.dvr_x, self.dvr_v = scipy.linalg.eigh(self.mat_x())
+            logger.info(f"scaled omega: {self.omega}")
+            assert np.allclose(self.dvr_x[-1], xf)
+            assert np.allclose(self.dvr_x[0], xi)
+        
+        self.xi = self.dvr_x[0]
+        self.xf = self.dvr_x[-1]
+        self.force_quad = force_quad
+
+    def mat_x(self):
+        mat = np.diag(np.sqrt(np.arange(1, self.nbas)), k=1)
+        mat += mat.T
+        mat = np.sqrt(0.5/self.omega) * mat + np.eye(self.nbas) * self.x0
+        return mat
+
+    def op_mat(self, op: Union[Op, str]):
+        if not isinstance(op, Op):
+            op = Op(op, None)
+        op_symbol, op_factor = op.symbol, op.factor
+        
+        op_symbol = "*".join(op_symbol.split())
+        
+        if op_symbol == "I":
+            mat = np.eye(self.nbas)
+        elif "dx" not in op_symbol and not self.force_quad:
+            op_symbol = op_symbol.replace("^", "**")
+            x = sp.symbols("x")
+            expr = sp.lambdify(x, op_symbol, "numpy")
+            mat = np.diag(expr(self.dvr_x))
+        else:
+            mat = self.quad(op_symbol, complex_func=True)
+            mat = self.dvr_v @ mat @ self.dvr_v.conj().T
+
+        if np.allclose(mat, mat.conj()):
+            mat = mat.real
+        
+        return mat * op_factor
+    
+    def quad(self, expr, complex_func=False):
+        
+        def tot_expression(bra, expr, ket):
+            x = sp.symbols("x")
+            expr = "*".join((bra,expr,ket))
+    
+            expr = expr.replace("dx^2", "dx*dx")
+            expr = expr.replace("dx**2", "dx*dx")
+            
+            expr_s = expr.split("dx")
+            expr_s = [s.rstrip('*') for s in expr_s]
+            expr_s = [s.lstrip('*') for s in expr_s]
+            expr_s = [s.replace("^", "**") for s in expr_s]
+            if len(expr_s) == 1:
+                expr = sp.sympify(expr_s[0])
+            else:
+                expr = sp.sympify(expr_s[-1])
+                for s in expr_s[::-1][1:]:
+                    expr = sp.diff(expr, x)
+                    if s != "":
+                        expr = sp.sympify(s)*expr
+            logger.debug(f"operator expr: {expr}")
+            expr = sp.lambdify([x], expr, "numpy")
+            return expr
+
+        if complex_func:
+            mat = np.zeros((self.nbas, self.nbas), dtype=np.complex128)
+        else:
+            mat = np.zeros((self.nbas, self.nbas), dtype=np.float64)
+        
+        for ibas in range(self.nbas):
+            bra = self.eigenfunc(ibas)
+            for jbas in range(self.nbas):
+                ket = self.eigenfunc(jbas)
+                tot_expr = tot_expression(bra, expr, ket)
+                val, error = scipy.integrate.quad(lambda x: tot_expr(x), 
+                        self.xi-(self.xf-self.xi)/2, self.xf+(self.xf-self.xi)/2, complex_func=complex_func)
+                        #-np.inf, np.inf, complex_func=complex_func)
+                logger.debug(f"ibas, jbas, quadrature value and error: {ibas},{jbas}, {val}, {error}")
+                mat[ibas, jbas] = val
+        print(mat)
+        return mat
+
+    def eigenfunc(self, ibas):
+        # in SHO, the wavefunction can not be expressed explicitly as exp or sine
+        expr = "(" + str(sp.hermite(ibas, f"{np.sqrt(self.omega)}*(x-{self.x0})")) +")"\
+            +f"*exp(-1/2*{self.omega}*(x-{self.x0})^2)" \
+            +f"*1/sqrt({sp.factorial(ibas)}*2^{ibas})*({self.omega}/pi)^0.25"
+        return expr
+
 

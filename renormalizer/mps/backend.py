@@ -27,6 +27,7 @@ GPU_ID = os.environ.get(GPU_KEY, None)
 
 def try_import_cupy():
     global GPU_ID
+    
 
     try:
         import cupy as cp
@@ -38,6 +39,9 @@ def try_import_cupy():
 
     if GPU_ID is None:
         GPU_ID = 0
+    else:
+        if int(GPU_ID) < 0:
+            return False, np
 
     try:
         cp.cuda.Device(GPU_ID).use()

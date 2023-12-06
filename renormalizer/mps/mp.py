@@ -902,6 +902,21 @@ class MatrixProduct:
         for idx, mt in enumerate(self):
             new_mp[idx] = mt.conj()
         return new_mp
+    
+    def toxp(self, inplace=False):
+        """
+        transfer the whole mps tensor to xp
+        """
+        if inplace:
+            for idx, mt in enumerate(self):
+                self[idx] = asxp(mt)
+            return self
+        else:
+            new_mp = self.metacopy()
+            for idx, mt in enumerate(self):
+                new_mp[idx] = asxp(mt)
+            return new_mp
+
 
     def dot(self, other: "MatrixProduct") -> complex:
         """
