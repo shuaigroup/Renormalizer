@@ -77,14 +77,21 @@ class BasisTree(Tree):
         return cls(node_list[0])
 
     @classmethod
-    def general_mctdh(cls, basis_list: List[BasisSet], tree_order:int):
+    def general_mctdh(cls, basis_list: List[BasisSet], tree_order:int, contract_primitive=False):
         assert len(basis_list) > 1
 
         elementary_nodes = []
-        while tree_order < len(basis_list):
-            elementary_nodes.append(TreeNodeBasis(basis_list[:tree_order]))
-            basis_list = basis_list[tree_order:]
-        elementary_nodes.append(TreeNodeBasis(basis_list))
+        if not contract_primitive:
+            while tree_order < len(basis_list):
+                node = TreeNodeBasis(basis_list[:tree_order])
+                elementary_nodes.append(node)
+                basis_list = basis_list[tree_order:]
+            elementary_nodes.append(TreeNodeBasis(basis_list))
+        else:
+            dummy_i = 0
+            for basis in basis_list:
+                node1 = TreeNodeBasis([basis])
+                elementary_nodes.append(node1)
 
         def recursion(elementary_nodes_: List[TreeNodeBasis]) -> TreeNodeBasis:
             nonlocal dummy_i
@@ -102,8 +109,12 @@ class BasisTree(Tree):
         return cls(root)
 
     @classmethod
-    def binary_mctdh(cls, basis_list: List[BasisSet]):
-        return cls.general_mctdh(basis_list, 2)
+    def binary_mctdh(cls, basis_list: List[BasisSet], contract_primitive=False):
+        return cls.general_mctdh(basis_list, 2, contract_primitive)
+
+    @classmethod
+    def ternary_mctdh(cls, basis_list: List[BasisSet], contract_primitive=False):
+        return cls.general_mctdh(basis_list, 3, contract_primitive)
 
     def __init__(self, root: TreeNodeBasis):
         super().__init__(root)
@@ -118,7 +129,7 @@ class BasisTree(Tree):
         # identity ttno
         self.identity_ttno = None
 
-    def print(self):
+    def print(self, print_function=None):
         class print_tn_basis(print_tree):
 
             def get_children(self, node):
@@ -127,7 +138,10 @@ class BasisTree(Tree):
             def get_node_str(self, node):
                 return str([b.dofs for b in node.basis_sets])
 
-        print_tn_basis(self.root)
+        tree = print_tn_basis(self.root)
+        if print_function is not None:
+            for row in tree.rows:
+                print_function(row)
 
     @property
     def basis_list(self) -> List[BasisSet]:
