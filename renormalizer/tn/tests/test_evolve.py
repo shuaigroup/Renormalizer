@@ -14,6 +14,7 @@ from renormalizer.utils import EvolveConfig, EvolveMethod, CompressConfig, Compr
 
 
 def add_tto_offset(tts: TTNS, tto: TTNO):
+    # todo: change tts/tto to ttns/ttno
     e = tts.expectation(tto)
     ham_terms = tto.ham_terms.copy()
     ham_terms.append(tts.basis.identity_op * (-e))
@@ -47,8 +48,18 @@ def construct_tts_and_tto_tree():
     return tts, tto, op_n_list
 
 
+def construct_tts_and_tto_tree_mctdh():
+    basis = BasisTree.binary_mctdh(model.basis)
+    op_n_list = [TTNO(basis, [Op(r"a^\dagger a", i)]) for i in range(3)]
+    ttns = TTNS(basis, {0: 1})
+    ttno = TTNO(basis, model.ham_terms)
+    ttno = add_tto_offset(ttns, ttno)
+    return ttns, ttno, op_n_list
+
+
 init_chain = construct_tts_and_tto_chain()
 init_tree = construct_tts_and_tto_tree()
+init_tree_mctdh = construct_tts_and_tto_tree_mctdh()
 
 
 def check_result(tts: TTNS, tto: TTNO, time_step: float, final_time: float, op_n_list: List, atol: float=1e-4):
@@ -67,7 +78,7 @@ def check_result(tts: TTNS, tto: TTNO, time_step: float, final_time: float, op_n
     return tts
 
 
-@pytest.mark.parametrize("ttns_and_ttno", [init_chain, init_tree])
+@pytest.mark.parametrize("ttns_and_ttno", [init_chain, init_tree, init_tree_mctdh])
 def test_tdvp_vmf(ttns_and_ttno):
     ttns, ttno, op_n_list = ttns_and_ttno
     # expand bond dimension
@@ -77,7 +88,7 @@ def test_tdvp_vmf(ttns_and_ttno):
     check_result(ttns, ttno, 0.5, 2, op_n_list)
 
 
-@pytest.mark.parametrize("tts_and_tto", [init_chain, init_tree])
+@pytest.mark.parametrize("tts_and_tto", [init_chain, init_tree, init_tree_mctdh])
 def test_pc(tts_and_tto):
     tts, tto, op_n_list = tts_and_tto
     tts = tts.copy()
@@ -86,7 +97,7 @@ def test_pc(tts_and_tto):
     check_result(tts, tto, 0.2, 5, op_n_list, 5e-4)
 
 
-@pytest.mark.parametrize("ttns_and_ttno", [init_chain, init_tree])
+@pytest.mark.parametrize("ttns_and_ttno", [init_chain, init_tree, init_tree_mctdh])
 def test_tdvp_ps(ttns_and_ttno):
     ttns, ttno, op_n_list = ttns_and_ttno
     if ttns_and_ttno is init_chain:
@@ -100,7 +111,7 @@ def test_tdvp_ps(ttns_and_ttno):
     check_result(ttns, ttno, 0.4, 5, op_n_list)
 
 
-@pytest.mark.parametrize("ttns_and_ttno", [init_chain, init_tree])
+@pytest.mark.parametrize("ttns_and_ttno", [init_chain, init_tree, init_tree_mctdh])
 def test_tdvp_ps2(ttns_and_ttno):
     ttns, ttno, op_n_list = ttns_and_ttno
     ttns = ttns.copy()

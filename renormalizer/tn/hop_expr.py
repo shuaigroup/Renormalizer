@@ -44,7 +44,7 @@ def hop_expr0(snode: TreeNodeTensor, ttns: TTNS, ttno: TTNO, ttne: TTNEnviron):
 
 
 
-def hop_expr1(snode: TreeNodeTensor, ttns: TTNS, ttno: TTNO, ttne: TTNEnviron):
+def hop_expr1(snode: TreeNodeTensor, ttns: TTNS, ttno: TTNO, ttne: TTNEnviron, return_hdiag=False):
     # one site
     enode = ttne.node_list[ttns.node_idx[snode]]
     onode = ttno.node_list[ttns.node_idx[snode]]
@@ -67,8 +67,11 @@ def hop_expr1(snode: TreeNodeTensor, ttns: TTNS, ttno: TTNO, ttne: TTNEnviron):
     shape = snode.shape
     # cache the contraction path
     expr = _contract_expression(args, shape, input_indices, output_indices)
-    hdiag = _get_hdiag(args, input_indices)
-    return expr, hdiag
+    if not return_hdiag:
+        return expr
+    else:
+        hdiag = _get_hdiag(args, input_indices)
+        return expr, hdiag
 
 
 def hop_expr2(snode: TreeNodeTensor, ttns: TTNS, ttno: TTNO, ttne: TTNEnviron):

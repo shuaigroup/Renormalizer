@@ -1,4 +1,4 @@
-from typing import List, Dict, Union
+from typing import List, Dict, Union, Sequence
 
 from renormalizer.mps.backend import np, backend
 from renormalizer.mps.matrix import asnumpy
@@ -10,10 +10,17 @@ class TreeNode:
         self.children: List[__class__] = []
         self.parent: TreeNode = None
 
-    def add_child(self, node: "TreeNode"):
-        assert node.parent is None
-        self.children.append(node)
-        node.parent = self
+    def add_child(self, node: Union["TreeNode", Sequence["TreeNode"]]):
+        if isinstance(node, TreeNode):
+            nodes = [node]
+        else:
+            nodes = node
+
+        for node in nodes:
+            if node.parent is not None:
+                raise ValueError("Node already has parent")
+            self.children.append(node)
+            node.parent = self
 
     @property
     def idx_as_child(self) -> int:
