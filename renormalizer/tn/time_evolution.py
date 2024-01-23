@@ -1,5 +1,5 @@
 from math import factorial
-from typing import Union, List
+from typing import Union, List, Tuple
 import logging
 
 import scipy
@@ -105,9 +105,11 @@ def evolve_tdvp_ps(ttns:TTNS, ttno:TTNO, coeff:Union[complex, float], tau:float)
     tte = TTNEnviron(ttns, ttno)
 
     # in MPS language: left to right sweep
-    local_steps1 = _tdvp_ps_recursion_forward(ttns.root, ttns, ttno, tte, coeff, tau / 2)
+    #local_steps1 = _tdvp_ps_recursion_forward(ttns.root, ttns, ttno, tte, coeff, tau / 2)
+    local_steps1 = _tdvp_ps_forward(ttns, ttno, tte, coeff, tau / 2)
     # in MPS language: right to left sweep
-    local_steps2 = _tdvp_ps_recursion_backward(ttns.root, ttns, ttno, tte, coeff, tau / 2)
+    #local_steps2 = _tdvp_ps_recursion_backward(ttns.root, ttns, ttno, tte, coeff, tau / 2)
+    local_steps2 = _tdvp_ps_backward(ttns, ttno, tte, coeff, tau / 2)
 
     # Used for consistency with MPS
     # # in MPS language: right to left sweep
@@ -154,6 +156,51 @@ def _tdvp_ps_recursion_forward(snode: TreeNodeTensor,
     return local_steps
 
 
+def _tdvp_ps_forward(ttns: TTNS,
+                     ttno: TTNO,
+                     ttne: TTNEnviron,
+                     coeff: Union[complex, float],
+                     tau: float) -> List[int]:
+    local_steps: List[int] = []
+    # current node and the child that has already been processed (once popped out)
+    stack: List[Tuple[TreeNodeTensor, int]] = [(ttns.root, -1)]
+    while stack:
+        snode, ichild = stack[-1]
+        # no children to evolve
+        if (not snode.children) or (ichild == len(snode.children) - 1):
+            ms, j = evolve_1site(snode, ttns, ttno, ttne, coeff, tau)
+            snode.tensor = ms.reshape(snode.shape)
+            local_steps.append(j)
+
+            if snode.parent is None:
+                assert len(stack) == 1
+                stack.pop()
+                continue
+            # decompose, the first index for parent, the second index for child
+            ms = ttns.decompose_to_parent(snode)
+            # update env
+            ttne.build_children_environ_node(snode, ttns, ttno)
+            # backward time evolution for snode
+            ms_t, j = evolve_0site(ms.T, snode, ttns, ttno, ttne, coeff, -tau)
+            ttns.merge_to_parent(snode, ms_t.reshape(ms.T.shape).T)
+            local_steps.append(j)
+
+            stack.pop()
+            continue
+
+        # there are children that has not been evolved
+        ichild += 1
+        child = snode.children[ichild]
+        # cano to child
+        ttns.push_cano_to_child(snode, ichild)
+        # update env
+        ttne.build_parent_environ_node(snode, ichild, ttns, ttno)
+        stack[-1] = (snode, ichild)
+        stack.append((child, -1))
+
+    return local_steps
+
+
 def _tdvp_ps_recursion_backward(snode: TreeNodeTensor,
                                 ttns: TTNS,
                                 ttno: TTNO,
@@ -188,6 +235,43 @@ def _tdvp_ps_recursion_backward(snode: TreeNodeTensor,
 
     return local_steps
 
+
+def _tdvp_ps_backward(ttns: TTNS,
+                     ttno: TTNO,
+                     ttne: TTNEnviron,
+                     coeff: Union[complex, float],
+                     tau: float) -> List[int]:
+    local_steps: List[int] = []
+    # current node and the child that has already been processed (once popped out)
+    stack: List[Tuple[TreeNodeTensor, int]] = [(ttns.root, -1)]
+    while stack:
+        snode, ichild = stack[-1]
+        if ichild == -1:
+            ms, j = evolve_1site(snode, ttns, ttno, ttne, coeff, tau)
+            snode.tensor = ms.reshape(snode.shape)
+            local_steps.append(j)
+        if ichild == len(snode.children) - 1:
+            if snode is not ttns.root:
+                ttns.push_cano_to_parent(snode)
+                # update env
+                ttne.build_children_environ_node(snode, ttns, ttno)
+            stack.pop()
+            continue
+        ichild += 1
+        child = snode.children[ichild]
+        # decompose, the first index for child, the second index for parent
+        ms = ttns.decompose_to_child(snode, ichild)
+        # update env
+        ttne.build_parent_environ_node(snode, ichild, ttns, ttno)
+        # backward time evolution for snode
+        shape = ms.shape
+        ms, j = evolve_0site(ms, child, ttns, ttno, ttne, coeff, -tau)
+        ttns.merge_to_child(snode, ichild, ms.reshape(shape))
+        local_steps.append(j)
+        stack[-1] = snode, ichild
+        stack.append((child, -1))
+
+    return local_steps
 
 def evolve_tdvp_ps2(ttns:TTNS, ttno:TTNO, coeff:Union[complex, float], tau:float):
     ttns.check_canonical()
