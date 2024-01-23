@@ -22,9 +22,11 @@ class TTNO(Tree):
             basis.identity_ttno = cls(basis, [basis.identity_op])
         return basis.identity_ttno
 
-    def __init__(self, basis: BasisTree, ham_terms: List[Op]):
+    def __init__(self, basis: BasisTree, ham_terms: Union[List[Op], Op]):
         self.basis: BasisTree = basis
-        self.ham_terms = ham_terms
+        if isinstance(ham_terms, Op):
+            ham_terms = [ham_terms]
+        self.ham_terms: List[Op] = ham_terms
 
         symbolic_mpo, mpoqn = construct_symbolic_mpo(basis, ham_terms)
         #from renormalizer.mps.symbolic_mpo import _format_symbolic_mpo
@@ -132,9 +134,23 @@ class TTNO(Tree):
         return indices
 
     @property
+    def bond_dims(self):
+        # duplicate with ttns
+        return [node.tensor.shape[-1] for node in self]
+
+    @property
+    def bond_dims_mean(self) -> int:
+        # duplicate with ttns and Mps
+        return int(round(np.mean(self.bond_dims)))
+
+    @property
     def qntot(self):
         # duplicate with ttns
         return self.root.qn[0]
+
+    def __matmul__(self, other):
+        # duplicate with Mpo
+        return self.apply(other)
 
 # values are set in time_evolution.py
 EVOLVE_METHODS = {}
@@ -266,6 +282,7 @@ class TTNS(Tree):
     def canonicalise(self):
         for node in self.postorder_list()[:-1]:
             self.push_cano_to_parent(node)
+        return self
 
     def compress(self, temp_m_trunc=None, ret_s=False):
         if self.compress_config.bonddim_should_set:
@@ -462,6 +479,7 @@ class TTNS(Tree):
 
     def decompose_to_child(self, node: TreeNodeTensor, ichild):
         qnbigl, qnbigr, tensor, shape = moveaxis(self, node, ichild)
+
         # u for node and v for child
         u, qnl, v, qnr = svd_qn(
             tensor,
@@ -472,6 +490,20 @@ class TTNS(Tree):
             system="L",
             full_matrices=False
         )
+        # XXX: temp debug code for consistency with MPS
+        """
+        # u for node and v for child
+        u, qnl, v, qnr = svd_qn(
+            tensor.T,
+            qnbigr,
+            qnbigl,
+            self.qntot,
+            QR=True,
+            system="R",
+            full_matrices=False
+        )
+        v, qnr, u, qnl = u, qnl, v, qnr
+        """
         shape[-1] = u.shape[-1]
         node.tensor = np.moveaxis(u.reshape(shape), -1, ichild)
         node.children[ichild].qn = qnr
@@ -618,6 +650,12 @@ class TTNS(Tree):
         return oe.contract(*asxp_oe_args(args))
 
     @property
+    def norm(self):
+        '''duplicate with Mps
+        '''
+        return np.linalg.norm(self.coeff) * self.ttns_norm
+
+    @property
     def qntot(self):
         # duplicate with ttno
         return self.root.qn[0]
@@ -636,8 +674,14 @@ class TTNS(Tree):
     def bond_dims(self):
         return [node.tensor.shape[-1] for node in self]
 
+    @property
+    def bond_dims_mean(self) -> int:
+        # duplicate with Mps
+        return int(round(np.mean(self.bond_dims)))
+
     def scale(self, val, inplace=False):
-        self.check_canonical()
+        # no need to be canonical
+        # self.check_canonical()
         if inplace:
             new_mp = self
         else:

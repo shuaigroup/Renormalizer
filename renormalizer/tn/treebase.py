@@ -4,7 +4,7 @@ from typing import List
 from print_tree import print_tree
 
 from renormalizer import Op
-from renormalizer.model.basis import BasisSet
+from renormalizer.model.basis import BasisSet, BasisDummy
 from renormalizer.tn.node import NodeUnion, TreeNodeBasis
 
 
@@ -43,6 +43,9 @@ class Tree:
     def size(self):
         return len(self.node_list)
 
+    def __len__(self):
+        return self.size
+
     def __iter__(self):
         return iter(self.node_list)
 
@@ -73,6 +76,34 @@ class BasisTree(Tree):
         binary_recursion(node_list[0], node_list[1:])
         return cls(node_list[0])
 
+    @classmethod
+    def general_mctdh(cls, basis_list: List[BasisSet], tree_order:int):
+        assert len(basis_list) > 1
+
+        elementary_nodes = []
+        while tree_order < len(basis_list):
+            elementary_nodes.append(TreeNodeBasis(basis_list[:tree_order]))
+            basis_list = basis_list[tree_order:]
+        elementary_nodes.append(TreeNodeBasis(basis_list))
+
+        def recursion(elementary_nodes_: List[TreeNodeBasis]) -> TreeNodeBasis:
+            nonlocal dummy_i
+            node = TreeNodeBasis([BasisDummy(("MCTDH virtual", dummy_i))])
+            dummy_i += 1
+            if len(elementary_nodes_) <= tree_order:
+                node.add_child(elementary_nodes_)
+                return node
+            for group in approximate_partition(elementary_nodes_, tree_order):
+                node.add_child(recursion(group))
+            return node
+
+        dummy_i = 0
+        root = recursion(elementary_nodes)
+        return cls(root)
+
+    @classmethod
+    def binary_mctdh(cls, basis_list: List[BasisSet]):
+        return cls.general_mctdh(basis_list, 2)
 
     def __init__(self, root: TreeNodeBasis):
         super().__init__(root)
@@ -105,3 +136,13 @@ class BasisTree(Tree):
     @property
     def basis_list_postorder(self) -> List[BasisSet]:
         return list(chain(*[n.basis_sets for n in self.postorder_list()]))
+
+
+def approximate_partition(sequence, ngroups):
+    size = (len(sequence) - 1) // ngroups + 1
+    ret = []
+    for i in range(ngroups):
+        start = i*size
+        end = min((i+1)*size, len(sequence))
+        ret.append(sequence[start:end])
+    return ret
