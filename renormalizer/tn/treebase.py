@@ -77,10 +77,10 @@ class BasisTree(Tree):
         return cls(node_list[0])
 
     @classmethod
-    def general_mctdh(cls, basis_list: List[BasisSet], tree_order:int, contract_primitive=False):
+    def general_mctdh(cls, basis_list: List[BasisSet], tree_order:int, contract_primitive=False, contract_label=None, mctdh_label="MCTDH virtual"):
         assert len(basis_list) > 1
 
-        elementary_nodes = []
+        elementary_nodes: List[TreeNodeBasis] = []
         if not contract_primitive:
             while tree_order < len(basis_list):
                 node = TreeNodeBasis(basis_list[:tree_order])
@@ -88,14 +88,27 @@ class BasisTree(Tree):
                 basis_list = basis_list[tree_order:]
             elementary_nodes.append(TreeNodeBasis(basis_list))
         else:
-            dummy_i = 0
-            for basis in basis_list:
-                node1 = TreeNodeBasis([basis])
-                elementary_nodes.append(node1)
+            if contract_label is None:
+                for basis in basis_list:
+                    node1 = TreeNodeBasis([basis])
+                    elementary_nodes.append(node1)
+            else:
+                assert len(contract_label) == len(basis_list)
+                i = 0
+                while i != len(basis_list):
+                    if contract_label[i]:
+                        elementary_nodes.append(TreeNodeBasis([basis_list[i]]))
+                        i += 1
+                    else:
+                        for j in range(1, tree_order + 1):
+                            if i+j == len(contract_label) or contract_label[i+j]:
+                                break
+                        elementary_nodes.append(TreeNodeBasis(basis_list[i:i+j]))
+                        i += j
 
         def recursion(elementary_nodes_: List[TreeNodeBasis]) -> TreeNodeBasis:
             nonlocal dummy_i
-            node = TreeNodeBasis([BasisDummy(("MCTDH virtual", dummy_i))])
+            node = TreeNodeBasis([BasisDummy((mctdh_label, dummy_i))])
             dummy_i += 1
             if len(elementary_nodes_) <= tree_order:
                 node.add_child(elementary_nodes_)
@@ -109,12 +122,42 @@ class BasisTree(Tree):
         return cls(root)
 
     @classmethod
-    def binary_mctdh(cls, basis_list: List[BasisSet], contract_primitive=False):
-        return cls.general_mctdh(basis_list, 2, contract_primitive)
+    def binary_mctdh(cls, basis_list: List[BasisSet], contract_primitive=False, contract_label=None, mctdh_label="MCTDH virtual"):
+        return cls.general_mctdh(basis_list, 2, contract_primitive, contract_label, mctdh_label)
 
     @classmethod
-    def ternary_mctdh(cls, basis_list: List[BasisSet], contract_primitive=False):
-        return cls.general_mctdh(basis_list, 3, contract_primitive)
+    def ternary_mctdh(cls, basis_list: List[BasisSet], contract_primitive=False, contract_label=None, mctdh_label="MCTDH virtual"):
+        return cls.general_mctdh(basis_list, 3, contract_primitive, contract_label, mctdh_label)
+
+    @classmethod
+    def t3ns(cls, basis_list: List[BasisSet], t3ns_label="T3NS virtual"):
+        def recursion(parent, basis_list_: List[BasisSet]):
+            nonlocal dummy_i
+            if len(basis_list_) == 0:
+                return
+            if len(basis_list_) == 1:
+                parent.add_child(TreeNodeBasis(basis_list_))
+                return
+            if len(basis_list_) == 2:
+                node1 = TreeNodeBasis(basis_list_[:1])
+                parent.add_child(node1)
+                node2 = TreeNodeBasis(basis_list_[1:])
+                node1.add_child(node2)
+                return
+            node1 = TreeNodeBasis(basis_list_[:1])
+            parent.add_child(node1)
+            node2 = TreeNodeBasis([BasisDummy((t3ns_label, dummy_i))])
+            dummy_i += 1
+            node1.add_child(node2)
+            for partition_ in approximate_partition(basis_list_[1:], 2):
+                recursion(node2, partition_)
+
+        dummy_i = 0
+        root = TreeNodeBasis([BasisDummy((t3ns_label, dummy_i))])
+        dummy_i += 1
+        for partition in approximate_partition(basis_list, 3):
+            recursion(root, partition)
+        return cls(root)
 
     def __init__(self, root: TreeNodeBasis):
         super().__init__(root)
@@ -150,6 +193,10 @@ class BasisTree(Tree):
     @property
     def basis_list_postorder(self) -> List[BasisSet]:
         return list(chain(*[n.basis_sets for n in self.postorder_list()]))
+
+    @property
+    def pbond_dims(self) -> List[List[int]]:
+        return [b.pbond_dims for b in self.node_list]
 
 
 def approximate_partition(sequence, ngroups):
