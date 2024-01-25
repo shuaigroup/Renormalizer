@@ -10,7 +10,7 @@ class TreeNode:
         self.children: List[__class__] = []
         self.parent: TreeNode = None
 
-    def add_child(self, node: Union["TreeNode", Sequence["TreeNode"]]):
+    def add_child(self, node: Union["TreeNode", Sequence["TreeNode"]]) -> "TreeNode":
         if isinstance(node, TreeNode):
             nodes = [node]
         else:
@@ -21,6 +21,8 @@ class TreeNode:
                 raise ValueError("Node already has parent")
             self.children.append(node)
             node.parent = self
+
+        return self
 
     @property
     def idx_as_child(self) -> int:
@@ -38,6 +40,7 @@ class TreeNodeBasis(TreeNode):
             raise ValueError(f"Inconsistent quantum number size: {set(qn_size_list)}")
         self.qn_size: int = qn_size_list[0]
         self.dofs = [b.dofs for b in basis_sets]
+        self.pbond_dims = [len(b.sigmaqn) for b in self.basis_sets]
 
 
 
