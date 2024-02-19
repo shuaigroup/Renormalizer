@@ -98,7 +98,8 @@ def test_pc(tts_and_tto):
 
 
 @pytest.mark.parametrize("ttns_and_ttno", [init_chain, init_tree, init_tree_mctdh])
-def test_tdvp_ps(ttns_and_ttno):
+@pytest.mark.parametrize("method", [EvolveMethod.tdvp_ps, EvolveMethod.tdvp_ps2])
+def test_tdvp_ps(ttns_and_ttno, method):
     ttns, ttno, op_n_list = ttns_and_ttno
     if ttns_and_ttno is init_chain:
         ttns = ttns.copy()
@@ -106,15 +107,10 @@ def test_tdvp_ps(ttns_and_ttno):
         # expand bond dimension
         ttns = ttns + ttns.random(ttns.basis, 1, 5).scale(1e-5, inplace=True)
         ttns.canonicalise()
-    ttns.evolve_config = EvolveConfig(EvolveMethod.tdvp_ps)
+    ttns.evolve_config = EvolveConfig(method)
     ttns.compress_config = CompressConfig(CompressCriteria.fixed)
-    check_result(ttns, ttno, 0.4, 5, op_n_list)
-
-
-@pytest.mark.parametrize("ttns_and_ttno", [init_chain, init_tree, init_tree_mctdh])
-def test_tdvp_ps2(ttns_and_ttno):
-    ttns, ttno, op_n_list = ttns_and_ttno
-    ttns = ttns.copy()
-    ttns.evolve_config = EvolveConfig(EvolveMethod.tdvp_ps2)
-    ttns.compress_config = CompressConfig(CompressCriteria.fixed)
-    check_result(ttns, ttno, 2, 10, op_n_list, 5e-4)
+    if method is EvolveMethod.tdvp_ps:
+        check_result(ttns, ttno, 0.4, 5, op_n_list)
+    else:
+        assert method is EvolveMethod.tdvp_ps2
+        check_result(ttns, ttno, 2, 10, op_n_list, 5e-4)
