@@ -15,7 +15,7 @@ from renormalizer.tn.hop_expr import hop_expr2
 logger = logging.getLogger(__name__)
 
 
-def optimize_tts(ttns: TTNS, ttno: TTNO, procedure=None):
+def optimize_ttns(ttns: TTNS, ttno: TTNO, procedure=None):
     if procedure is None:
         procedure = ttns.optimize_config.procedure
     tte = TTNEnviron(ttns, ttno)
@@ -56,12 +56,12 @@ def optimize_recursion(snode: TreeNodeTensor, ttns: TTNS, ttno: TTNO, ttne: TTNE
     return micro_e
 
 
-def optimize_2site(snode: TreeNodeTensor, tts: TTNS, tto: TTNO, tte: TTNEnviron):
+def optimize_2site(snode: TreeNodeTensor, ttns: TTNS, ttno: TTNO, ttne: TTNEnviron):
 
-    cguess = tts.merge_with_parent(snode)
-    qn_mask = tts.get_qnmask(snode, include_parent=True)
+    cguess = ttns.merge_with_parent(snode)
+    qn_mask = ttns.get_qnmask(snode, include_parent=True)
     cguess = cguess[qn_mask].ravel()
-    expr, hdiag = hop_expr2(snode, tts, tto, tte)
+    expr, hdiag = hop_expr2(snode, ttns, ttno, ttne)
     hdiag = hdiag[qn_mask].ravel()
 
     def hop(x):
@@ -69,8 +69,8 @@ def optimize_2site(snode: TreeNodeTensor, tts: TTNS, tto: TTNO, tte: TTNEnviron)
         ret = expr(asxp(cstruct))[qn_mask].ravel()
         return asnumpy(ret)
 
-    assert tts.optimize_config.nroots == 1
-    algo:str = tts.optimize_config.algo
+    assert ttns.optimize_config.nroots == 1
+    algo:str = ttns.optimize_config.algo
     e, c = eigh_iterative(hop, hdiag, cguess, algo)
     c = vec2tensor(c, qn_mask)
     return e, c

@@ -6,7 +6,7 @@ from renormalizer.model.model import heisenberg_ops
 from renormalizer.tn.node import TreeNodeBasis
 from renormalizer.tn.tree import TTNO, TTNS, TTNEnviron, from_mps
 from renormalizer.tn.treebase import BasisTree
-from renormalizer.tn.gs import optimize_tts
+from renormalizer.tn.gs import optimize_ttns
 from renormalizer.tests.parameter import holstein_model
 from renormalizer.tests.parameter_exact import model
 
@@ -47,29 +47,29 @@ def holstein_scheme3() -> BasisTree:
 
 
 @pytest.mark.parametrize("basis", [basis_binary, basis_multi_basis])
-def test_tto(basis):
+def test_ttno(basis):
     ham_terms = heisenberg_ops(nspin)
 
-    tto = TTNO(basis, ham_terms)
-    dense = tto.todense(basis_list)
+    ttno = TTNO(basis, ham_terms)
+    dense = ttno.todense(basis_list)
 
     dense2 = Mpo(Model(basis_list, ham_terms)).todense()
     np.testing.assert_allclose(dense, dense2)
 
 
 @pytest.mark.parametrize("basis", [basis_binary, basis_multi_basis])
-def test_tts(basis):
+def test_ttns(basis):
     ham_terms = heisenberg_ops(nspin)
     condition = {1:1, 3:1}
-    tts = TTNS(basis, condition)
-    tto = TTNO(basis, ham_terms)
-    e1 = tts.expectation(tto)
+    ttns = TTNS(basis, condition)
+    ttno = TTNO(basis, ham_terms)
+    e1 = ttns.expectation(ttno)
     model = Model([BasisHalfSpin(i) for i in range(nspin)], ham_terms)
     mps = Mps.hartree_product_state(model, condition)
     mpo = Mpo(model)
     e2 = mps.expectation(mpo)
     np.testing.assert_allclose(e1, e2)
-    env = TTNEnviron(tts, tto)
+    env = TTNEnviron(ttns, ttno)
     for node in env.node_list:
         for child, environ_child in zip(node.children, node.environ_children):
             e3 = environ_child.ravel() @ child.environ_parent.ravel()
@@ -78,13 +78,13 @@ def test_tts(basis):
 
 @pytest.mark.parametrize("basis", [basis_binary, basis_multi_basis])
 def test_push_cano(basis):
-    tts = TTNS.random(basis, 0, 5, 1)
-    s1 = tts.todense()
-    tts.push_cano_to_child(tts.root, 0)
-    s2 = tts.todense()
+    ttns = TTNS.random(basis, 0, 5, 1)
+    s1 = ttns.todense()
+    ttns.push_cano_to_child(ttns.root, 0)
+    s2 = ttns.todense()
     np.testing.assert_allclose(s2, s1)
-    tts.push_cano_to_parent(tts.root.children[0])
-    s3 = tts.todense()
+    ttns.push_cano_to_parent(ttns.root.children[0])
+    s3 = ttns.todense()
     np.testing.assert_allclose(s3, s1)
 
 
@@ -92,8 +92,8 @@ def test_from_mps():
     mps = Mps.random(model, 1, 10)
     mpo = Mpo(model)
     e_ref = mps.expectation(mpo)
-    basis, tts, tto = from_mps(mps)
-    e = tts.expectation(tto)
+    basis, ttns, ttno = from_mps(mps)
+    e = ttns.expectation(ttno)
     np.testing.assert_allclose(e, e_ref)
 
 
@@ -101,18 +101,18 @@ def test_from_mps():
 @pytest.mark.parametrize("ite", [False, True])
 def test_gs_heisenberg(basis_tree, ite):
     ham_terms = heisenberg_ops(4)
-    tts = TTNS.random(basis_tree, qntot=0, m_max=20)
-    tto = TTNO(basis_tree, ham_terms)
+    ttns = TTNS.random(basis_tree, qntot=0, m_max=20)
+    ttno = TTNO(basis_tree, ham_terms)
     if not ite:
-        e1 = optimize_tts(tts, tto)
+        e1 = optimize_ttns(ttns, ttno)
         e1 = min(e1)
     else:
         # imaginary time evolution for the ground state
         for i in range(10):
-            tts.check_canonical()
-            tts = tts.evolve(tto, -2j)
-        e1 = tts.expectation(tto)
-    h = tto.todense()
+            ttns.check_canonical()
+            ttns = ttns.evolve(ttno, -2j)
+        e1 = ttns.expectation(ttno)
+    h = ttno.todense()
     e2 = np.linalg.eigh(h)[0][0]
     np.testing.assert_allclose(e1, e2)
 
@@ -133,34 +133,34 @@ def test_gs_holstein(scheme):
             node_list[2*i].add_child(node_list[2*i+1])
         basis = BasisTree(root)
     m = 4
-    tts = TTNS.random(basis, qntot=1, m_max=m)
-    tto = TTNO(basis, model.ham_terms)
+    ttns = TTNS.random(basis, qntot=1, m_max=m)
+    ttno = TTNO(basis, model.ham_terms)
     procedure = [[m, 0.4], [m, 0.2], [m, 0.1], [m, 0], [m, 0]]
-    e1 = optimize_tts(tts, tto, procedure)
+    e1 = optimize_ttns(ttns, ttno, procedure)
     e2 = 0.08401412 + model.gs_zpe
     np.testing.assert_allclose(min(e1), e2)
 
 
 @pytest.mark.parametrize("basis_tree", [basis_binary, basis_multi_basis])
 def test_add(basis_tree):
-    tts1 = TTNS.random(basis_tree, qntot=0, m_max=4)
-    tts2 = TTNS.random(basis_tree, qntot=0, m_max=2).scale(1j)
-    tts3 = tts1.add(tts2)
-    s1 = tts1.todense()
-    s2 = tts2.todense()
+    ttns1 = TTNS.random(basis_tree, qntot=0, m_max=4)
+    ttns2 = TTNS.random(basis_tree, qntot=0, m_max=2).scale(1j)
+    ttns3 = ttns1.add(ttns2)
+    s1 = ttns1.todense()
+    s2 = ttns2.todense()
     assert np.iscomplexobj(s2)
-    s3 = tts3.todense()
+    s3 = ttns3.todense()
     np.testing.assert_allclose(s1 + s2, s3)
 
 
 @pytest.mark.parametrize("basis_tree", [basis_binary, basis_multi_basis])
 def test_apply(basis_tree):
-    tts1 = TTNS.random(basis_tree, qntot=0, m_max=4)
-    tto = TTNO(basis_tree, heisenberg_ops(nspin))
-    tts2 = tto.apply(tts1)
-    s1 = tts1.todense()
-    s2 = tts2.todense()
-    op = tto.todense()
+    ttns1 = TTNS.random(basis_tree, qntot=0, m_max=4)
+    ttno = TTNO(basis_tree, heisenberg_ops(nspin))
+    ttns2 = ttno.apply(ttns1)
+    s1 = ttns1.todense()
+    s2 = ttns2.todense()
+    op = ttno.todense()
     np.testing.assert_allclose(s2.ravel(), op @ s1.ravel())
 
 
@@ -168,13 +168,13 @@ def test_compress():
     m1 = 5
     m2 = 4
     basis = holstein_scheme3()
-    tto = TTNO(basis, holstein_model.ham_terms)
-    tts = TTNS.random(basis, 1, m1)
+    ttno = TTNO(basis, holstein_model.ham_terms)
+    ttns = TTNS.random(basis, 1, m1)
     procedure1, procedure2 = [[[m, 0.4], [m, 0.2], [m, 0.1], [m, 0], [m, 0]] for m in [m1, m2]]
-    optimize_tts(tts, tto, procedure1)
-    tts2 = tts.copy().compress(m2)
-    optimize_tts(tts, tto, procedure2)
-    s1 = tts.todense().ravel()
-    s2 = tts2.todense().ravel()
+    optimize_ttns(ttns, ttno, procedure1)
+    ttns2 = ttns.copy().compress(m2)
+    optimize_ttns(ttns, ttno, procedure2)
+    s1 = ttns.todense().ravel()
+    s2 = ttns2.todense().ravel()
 
     np.testing.assert_allclose(np.abs(s1 @ s2), 1, atol=1e-5)
