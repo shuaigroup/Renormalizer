@@ -251,7 +251,7 @@ class Mps(MatrixProduct):
         Obtain ground state at :math:`T = 0` or :math:`T = \infty` (maximum entangled).
         Electronic DOFs are always at ground state. and vibrational DOFs depend on ``max_entangled``.
         For Spin-Boson model the electronic DOF also depends on ``max_entangled``.
-        
+
 
         Parameters
         ----------
@@ -269,21 +269,21 @@ class Mps(MatrixProduct):
         Returns
         -------
             mps : renormalizer.mps.Mps
-        
+
         """
-        
+
         mps = cls()
         mps.model = model
         mps.qn = [np.zeros((1, model.qn_size), dtype=int)] * (model.nsite + 1)
         mps.qnidx = model.nsite - 1
         mps.to_right = False
         mps.qntot = np.zeros(model.qn_size, dtype=int)
-            
+
         mps.build_empty_mp(model.nsite)
-        
+
         if condition is not None:
             # check that the condition is not duplicated
-            # each site has at most 1 single key to assign the occupation  
+            # each site has at most 1 single key to assign the occupation
             index = [model.dof_to_siteidx[key] for key in condition.keys()]
             assert len(index) == len(set(index))
             # replace the dof_name key to site_index key

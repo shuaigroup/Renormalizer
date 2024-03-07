@@ -2,6 +2,7 @@ from typing import List, Dict, Tuple, Union
 
 import scipy
 import opt_einsum as oe
+from print_tree import print_tree
 
 from renormalizer import Op, Mps, Model
 from renormalizer.model.basis import BasisSet, BasisDummy
@@ -15,29 +16,50 @@ from renormalizer.tn.treebase import Tree, BasisTree
 from renormalizer.tn.symbolic_mpo import construct_symbolic_mpo, symbolic_mo_to_numeric_mo_general
 
 
-class TTNO(Tree):
+class TTNBase(Tree):
+    # A tree whose tree node is TreeNodeTensor
+    def print_shape(self, full=False, print_function=None):
+        class print_tn_basis(print_tree):
+
+            def get_children(self, node):
+                return node.children
+
+            def get_node_str(self, node: TreeNodeTensor):
+                if full:
+                    return str(node.tensor.shape)
+                else:
+                    return str(node.tensor.shape[-1])
+
+        tree = print_tn_basis(self.root)
+        if print_function is not None:
+            for row in tree.rows:
+                print_function(row)
+
+
+class TTNO(TTNBase):
     @classmethod
     def identity(cls, basis:BasisTree):
         if not basis.identity_ttno:
             basis.identity_ttno = cls(basis, [basis.identity_op])
         return basis.identity_ttno
 
-    def __init__(self, basis: BasisTree, ham_terms: Union[List[Op], Op]):
+    def __init__(self, basis: BasisTree, terms: Union[List[Op], Op], root: TreeNodeTensor=None):
         self.basis: BasisTree = basis
-        if isinstance(ham_terms, Op):
-            ham_terms = [ham_terms]
-        self.ham_terms: List[Op] = ham_terms
+        if isinstance(terms, Op):
+            terms = [terms]
+        self.terms: List[Op] = terms
 
-        symbolic_mpo, mpoqn = construct_symbolic_mpo(basis, ham_terms)
-        #from renormalizer.mps.symbolic_mpo import _format_symbolic_mpo
-        #print(_format_symbolic_mpo(symbolic_mpo))
-        node_list_basis = self.basis.postorder_list()
-        node_list_op = []
-        for impo, (mo, qn) in enumerate(zip(symbolic_mpo, mpoqn)):
-            node_basis: TreeNodeBasis = node_list_basis[impo]
-            mo_mat = symbolic_mo_to_numeric_mo_general(node_basis.basis_sets, mo, backend.real_dtype)
-            node_list_op.append(TreeNodeTensor(mo_mat, qn))
-        root = copy_connection(node_list_basis, node_list_op)
+        if not root:
+            symbolic_mpo, mpoqn = construct_symbolic_mpo(basis, terms)
+            #from renormalizer.mps.symbolic_mpo import _format_symbolic_mpo
+            #print(_format_symbolic_mpo(symbolic_mpo))
+            node_list_basis = self.basis.postorder_list()
+            node_list_op = []
+            for impo, (mo, qn) in enumerate(zip(symbolic_mpo, mpoqn)):
+                node_basis: TreeNodeBasis = node_list_basis[impo]
+                mo_mat = symbolic_mo_to_numeric_mo_general(node_basis.basis_sets, mo, backend.real_dtype)
+                node_list_op.append(TreeNodeTensor(mo_mat, qn))
+            root: TreeNodeTensor = copy_connection(node_list_basis, node_list_op)
         super().__init__(root)
         # tensor node to basis node
         self.tn2bn = {tn: bn for tn, bn in zip(self.node_list, self.basis.node_list)}
@@ -156,7 +178,7 @@ class TTNO(Tree):
 EVOLVE_METHODS = {}
 
 
-class TTNS(Tree):
+class TTNS(TTNBase):
 
     @classmethod
     def random(cls, basis: BasisTree, qntot, m_max, percent=1.0):
@@ -220,37 +242,41 @@ class TTNS(Tree):
         ttns.check_shape()
         return ttns
 
-    def __init__(self, basis: BasisTree, condition:Dict=None):
+    def __init__(self, basis: BasisTree, condition:Dict=None, root:TreeNodeTensor=None):
         self.basis = basis
-        if condition is None:
-            condition = {}
-        basis_list = basis.basis_list_postorder
-        mps = Mps.hartree_product_state(Model(basis_list, []), condition, len(basis_list))
-        # can't directly use MPS qn because the topology is different
-        site_qn = [mps.qn[i+1] - mps.qn[i] for i in range(len(mps))]
-        node_list_state = []
+        if not root:
+            if condition is None:
+                condition = {}
+            basis_list = basis.basis_list_postorder
+            mps = Mps.hartree_product_state(Model(basis_list, []), condition, len(basis_list))
+            # can't directly use MPS qn because the topology is different
+            site_qn = [mps.qn[i+1] - mps.qn[i] for i in range(len(mps))]
+            node_list_state = []
 
-        for node_basis in basis.node_list:
-            mps_indices = [basis_list.index(b) for b in node_basis.basis_sets]
-            assert mps_indices
-            tensor = np.eye(1)
-            # here only the site qn (rather than bond qn) is set
-            qn = 0
-            for i in mps_indices:
-                tensor = np.tensordot(tensor, mps[i].array, axes=1)
-                qn += site_qn[i]
-            tensor = tensor.reshape([1] * len(node_basis.children) + list(tensor.shape)[1:-1] + [1])
-            node_list_state.append(TreeNodeTensor(tensor, qn))
+            for node_basis in basis.node_list:
+                mps_indices = [basis_list.index(b) for b in node_basis.basis_sets]
+                assert mps_indices
+                tensor = np.eye(1)
+                # here only the site qn (rather than bond qn) is set
+                qn = 0
+                for i in mps_indices:
+                    tensor = np.tensordot(tensor, mps[i].array, axes=1)
+                    qn += site_qn[i]
+                tensor = tensor.reshape([1] * len(node_basis.children) + list(tensor.shape)[1:-1] + [1])
+                node_list_state.append(TreeNodeTensor(tensor, qn))
 
-        root = copy_connection(basis.node_list, node_list_state)
+            root: TreeNodeTensor = copy_connection(basis.node_list, node_list_state)
 
-        super().__init__(root)
+            super().__init__(root)
+
+            # summing up the site qn
+            for node in self.postorder_list():
+                for child in node.children:
+                    node.qn += child.qn
+        else:
+            super().__init__(root)
+
         self.coeff = 1
-
-        # summing up the site qn
-        for node in self.postorder_list():
-            for child in node.children:
-                node.qn += child.qn
         self.check_shape()
         # tensor node to basis node. make a property?
         self.tn2bn = {tn: bn for tn, bn in zip(self.node_list, self.basis.node_list)}
@@ -297,13 +323,37 @@ class TTNS(Tree):
             s_list = [s_dict[n] for n in self.node_list]
             return self, s_list
 
-    def expectation(self, ttno: TTNO, bra: "TTNS" =None):
+    def expectation1(self, ttno: TTNO, bra: "TTNS"=None):
         if bra is None:
             bra = self
         args = self.to_contract_args()
         args.extend(bra.to_contract_args(conj=True))
         args.extend(ttno.to_contract_args("up", "down"))
-        val = oe.contract(*asxp_oe_args(args)).ravel()[0]
+        val = oe.contract(*asxp_oe_args(args), optimize="greedy").ravel()[0]
+
+        if np.isclose(float(val.imag), 0):
+            return float(val.real)
+        else:
+            return complex(val)
+
+    def expectation(self, ttno: TTNO, bra: "TTNS"=None):
+        assert bra is None # not implemented yet
+        basis_node = TreeNodeBasis([BasisDummy("expectation dummy")])
+        basis_node.add_child(self.basis.root)
+        basis_tree = BasisTree(basis_node)
+        snode = TreeNodeTensor(np.ones((1, 1, 1)), qn=np.zeros((1, basis_tree.qn_size)))
+        snode.add_child(self.root)
+        onode = TreeNodeTensor(np.ones((1, 1, 1, 1)), qn=np.zeros((1, basis_tree.qn_size)))
+        onode.add_child(ttno.root)
+
+        ttns_extended = TTNS(basis_tree, root=snode)
+        ttno_extended = TTNO(basis_tree, [], root=onode)
+        environ = TTNEnviron(ttns_extended, ttno_extended, build_environ=False)
+        environ.build_children_environ(ttns_extended, ttno_extended)
+        val = environ.root.environ_children[0].ravel()[0]
+
+        for node in [self.basis.root, self.root, ttno.root]:
+            node.parent = None
 
         if np.isclose(float(val.imag), 0):
             return float(val.real)
@@ -699,7 +749,7 @@ class TTNS(Tree):
 
 
 class TTNEnviron(Tree):
-    def __init__(self, ttns:TTNS, ttno:TTNO):
+    def __init__(self, ttns:TTNS, ttno:TTNO, build_environ=True):
         self.basis =  ttns.basis
         enodes: List[TreeNodeEnviron] = [TreeNodeEnviron() for _ in range(ttns.size)]
         copy_connection(ttns.node_list, enodes)
@@ -709,9 +759,9 @@ class TTNEnviron(Tree):
         # tensor node to basis node. todo: remove duplication?
         self.tn2bn = {tn: bn for tn, bn in zip(self.node_list, self.basis.node_list)}
         self.tn2dofs = {tn: bn.dofs for tn, bn in self.tn2bn.items()}
-        self.build_children_environ(ttns, ttno)
-        self.build_parent_environ(ttns, ttno)
-
+        if build_environ:
+            self.build_children_environ(ttns, ttno)
+            self.build_parent_environ(ttns, ttno)
 
     def build_children_environ(self, ttns, ttno):
         # first run, children environment to the parent.

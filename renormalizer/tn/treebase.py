@@ -77,7 +77,7 @@ class BasisTree(Tree):
         return cls(node_list[0])
 
     @classmethod
-    def general_mctdh(cls, basis_list: List[BasisSet], tree_order:int, contract_primitive=False, contract_label=None, mctdh_label="MCTDH virtual"):
+    def general_mctdh(cls, basis_list: List[BasisSet], tree_order:int, contract_primitive=False, contract_label=None, dummy_label="MCTDH virtual"):
         assert len(basis_list) > 1
 
         elementary_nodes: List[TreeNodeBasis] = []
@@ -108,7 +108,7 @@ class BasisTree(Tree):
 
         def recursion(elementary_nodes_: List[TreeNodeBasis]) -> TreeNodeBasis:
             nonlocal dummy_i
-            node = TreeNodeBasis([BasisDummy((mctdh_label, dummy_i))])
+            node = TreeNodeBasis([BasisDummy((dummy_label, dummy_i))])
             dummy_i += 1
             if len(elementary_nodes_) <= tree_order:
                 node.add_child(elementary_nodes_)
@@ -122,12 +122,12 @@ class BasisTree(Tree):
         return cls(root)
 
     @classmethod
-    def binary_mctdh(cls, basis_list: List[BasisSet], contract_primitive=False, contract_label=None, mctdh_label="MCTDH virtual"):
-        return cls.general_mctdh(basis_list, 2, contract_primitive, contract_label, mctdh_label)
+    def binary_mctdh(cls, basis_list: List[BasisSet], contract_primitive=False, contract_label=None, dummy_label="MCTDH virtual"):
+        return cls.general_mctdh(basis_list, 2, contract_primitive, contract_label, dummy_label)
 
     @classmethod
-    def ternary_mctdh(cls, basis_list: List[BasisSet], contract_primitive=False, contract_label=None, mctdh_label="MCTDH virtual"):
-        return cls.general_mctdh(basis_list, 3, contract_primitive, contract_label, mctdh_label)
+    def ternary_mctdh(cls, basis_list: List[BasisSet], contract_primitive=False, contract_label=None, dummy_label="MCTDH virtual"):
+        return cls.general_mctdh(basis_list, 3, contract_primitive, contract_label, dummy_label)
 
     @classmethod
     def t3ns(cls, basis_list: List[BasisSet], t3ns_label="T3NS virtual"):
