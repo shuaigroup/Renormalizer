@@ -16,20 +16,20 @@ from renormalizer.utils import EvolveConfig, EvolveMethod, CompressConfig, Compr
 def add_tto_offset(tts: TTNS, tto: TTNO):
     # todo: change tts/tto to ttns/ttno
     e = tts.expectation(tto)
-    ham_terms = tto.ham_terms.copy()
+    ham_terms = tto.terms.copy()
     ham_terms.append(tts.basis.identity_op * (-e))
     return TTNO(tto.basis, ham_terms)
 
 
 
-def construct_tts_and_tto_chain():
-    basis, tts, tto = from_mps(init_mps)
+def construct_ttns_and_ttno_chain():
+    basis, ttns, ttno = from_mps(init_mps)
     op_n_list = [TTNO(basis, [Op(r"a^\dagger a", i)]) for i in range(3)]
-    tto = add_tto_offset(tts, tto)
-    return tts, tto, op_n_list
+    ttno = add_tto_offset(ttns, ttno)
+    return ttns, ttno, op_n_list
 
 
-def construct_tts_and_tto_tree():
+def construct_ttns_and_ttno_tree():
     node_list = [TreeNodeBasis([basis]) for basis in model.basis]
     # 0 - 2 - 4
     # |   |   |
@@ -41,11 +41,11 @@ def construct_tts_and_tto_tree():
     node_list[0].add_child(node_list[1])
     node_list[4].add_child(node_list[5])
     basis = BasisTree(root)
-    tto = TTNO(basis, model.ham_terms)
+    ttno = TTNO(basis, model.ham_terms)
     op_n_list = [TTNO(basis, [Op(r"a^\dagger a", i)]) for i in range(3)]
-    tts = TTNS(basis, {0: 1})
-    tto = add_tto_offset(tts, tto)
-    return tts, tto, op_n_list
+    ttns = TTNS(basis, {0: 1})
+    ttno = add_tto_offset(ttns, ttno)
+    return ttns, ttno, op_n_list
 
 
 def construct_tts_and_tto_tree_mctdh():
@@ -57,8 +57,8 @@ def construct_tts_and_tto_tree_mctdh():
     return ttns, ttno, op_n_list
 
 
-init_chain = construct_tts_and_tto_chain()
-init_tree = construct_tts_and_tto_tree()
+init_chain = construct_ttns_and_ttno_chain()
+init_tree = construct_ttns_and_ttno_tree()
 init_tree_mctdh = construct_tts_and_tto_tree_mctdh()
 
 
