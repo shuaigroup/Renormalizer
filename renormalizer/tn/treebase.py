@@ -1,5 +1,5 @@
 from itertools import chain
-from typing import List
+from typing import List, Sequence
 
 from print_tree import print_tree
 
@@ -77,11 +77,23 @@ class BasisTree(Tree):
         return cls(node_list[0])
 
     @classmethod
-    def general_mctdh(cls, basis_list: List[BasisSet], tree_order:int, contract_primitive=False, contract_label=None, dummy_label="MCTDH virtual"):
+    def general_mctdh(cls, basis_list: List[BasisSet], tree_order:int, contract_primitive:bool=False, contract_label:Sequence[bool]=None, dummy_label="MCTDH virtual"):
+        # `contract_primitive` means a 2-index tensor for each primitive basis
+        #       o
+        #      / \
+        #      o  o
+        # d -> |  | <- d
+        # not contract primitive
+        #        o
+        # d ->  / \ <- d
+        # d means physical bond
+        # `contract_label` decides whether we do contraction for a particular basis
         assert len(basis_list) > 1
 
+        # prepare elementary nodes
         elementary_nodes: List[TreeNodeBasis] = []
         if not contract_primitive:
+            assert contract_label is None, "providing label makes sense only when primitives are contracted"
             while tree_order < len(basis_list):
                 node = TreeNodeBasis(basis_list[:tree_order])
                 elementary_nodes.append(node)
@@ -106,6 +118,7 @@ class BasisTree(Tree):
                         elementary_nodes.append(TreeNodeBasis(basis_list[i:i+j]))
                         i += j
 
+        # recursive tree construction
         def recursion(elementary_nodes_: List[TreeNodeBasis]) -> TreeNodeBasis:
             nonlocal dummy_i
             node = TreeNodeBasis([BasisDummy((dummy_label, dummy_i))])

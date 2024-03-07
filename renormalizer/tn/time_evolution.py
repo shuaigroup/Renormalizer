@@ -75,19 +75,19 @@ def regularized_inversion(m, eps):
     return evecs @ np.diag(1 / evals) @ evecs.T.conj()
 
 
-def evolve_tdvp_vmf(tts:TTNS, tto:TTNO, coeff:Union[complex, float], tau:float, first_step=None):
+def evolve_tdvp_vmf(ttns:TTNS, ttno:TTNO, coeff:Union[complex, float], tau:float, first_step=None):
 
     def ivp_func(t, params):
-        tts_t = TTNS.from_tensors(tts, params)
-        return coeff * time_derivative_vmf(tts_t, tto)
-    init_y = np.concatenate([node.tensor[tts.get_qnmask(node)].ravel() for node in tts.node_list])
-    atol = tts.evolve_config.ivp_atol
-    rtol = tts.evolve_config.ivp_rtol
+        ttns_t = TTNS.from_tensors(ttns, params)
+        return coeff * time_derivative_vmf(ttns_t, ttno)
+    init_y = np.concatenate([node.tensor[ttns.get_qnmask(node)].ravel() for node in ttns.node_list])
+    atol = ttns.evolve_config.ivp_atol
+    rtol = ttns.evolve_config.ivp_rtol
     sol = solve_ivp(ivp_func, (0, tau), init_y, first_step=first_step, atol=atol, rtol=rtol)
     logger.info(f"VMF func called: {sol.nfev}. RKF steps: {len(sol.t)}")
-    new_tts = TTNS.from_tensors(tts, sol.y[:, -1])
-    new_tts.canonicalise()
-    return new_tts
+    new_ttns = TTNS.from_tensors(ttns, sol.y[:, -1])
+    new_ttns.canonicalise()
+    return new_ttns
 
 
 def evolve_prop_and_compress_tdrk4(ttns:TTNS, ttno:TTNO, coeff:Union[complex, float], tau:float):
@@ -294,7 +294,7 @@ def _tdvp_ps2_recursion_forward(snode: TreeNodeTensor,
                                 coeff:Union[complex, float],
                                 tau:float) -> List[int]:
     """time evolution all of snode's children (without evolve snode!).
-    The exception is when snode == tts.root, which is evolved.
+    The exception is when snode == ttns.root, which is evolved.
     Cano center at snode when entering and leaving"""
     assert snode.children  # 2 site can't do only one node
     # todo: update to more general cases like truncation based on singular values
@@ -336,7 +336,7 @@ def _tdvp_ps2_recursion_backward(snode: TreeNodeTensor,
                                  coeff:Union[complex, float],
                                  tau:float) -> List[int]:
     """time evolution all of snode's children (without evolve snode!).
-    The exception is when snode == tts.root, which is evolved.
+    The exception is when snode == ttns.root, which is evolved.
     Cano center at snode when entering and leaving"""
     assert snode.children  # 2 site can't do only one node
     # todo: update to more general cases like truncation based on singular values

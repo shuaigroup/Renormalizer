@@ -349,6 +349,7 @@ class Op:
         return str(self)
 
     def __add__(self, other):
+        # if want to add with a scalar, convert the scalar to identity operator first
         if isinstance(other, Op):
             return OpSum([self, other])
         elif isinstance(other, list):

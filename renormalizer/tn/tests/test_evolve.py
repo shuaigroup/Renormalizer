@@ -13,19 +13,18 @@ from renormalizer.tn.node import TreeNodeBasis
 from renormalizer.utils import EvolveConfig, EvolveMethod, CompressConfig, CompressCriteria
 
 
-def add_tto_offset(tts: TTNS, tto: TTNO):
-    # todo: change tts/tto to ttns/ttno
-    e = tts.expectation(tto)
-    ham_terms = tto.terms.copy()
-    ham_terms.append(tts.basis.identity_op * (-e))
-    return TTNO(tto.basis, ham_terms)
+def add_ttno_offset(ttns: TTNS, ttno: TTNO):
+    e = ttns.expectation(ttno)
+    ham_terms = ttno.terms.copy()
+    ham_terms.append(ttns.basis.identity_op * (-e))
+    return TTNO(ttno.basis, ham_terms)
 
 
 
 def construct_ttns_and_ttno_chain():
     basis, ttns, ttno = from_mps(init_mps)
     op_n_list = [TTNO(basis, [Op(r"a^\dagger a", i)]) for i in range(3)]
-    ttno = add_tto_offset(ttns, ttno)
+    ttno = add_ttno_offset(ttns, ttno)
     return ttns, ttno, op_n_list
 
 
@@ -44,29 +43,29 @@ def construct_ttns_and_ttno_tree():
     ttno = TTNO(basis, model.ham_terms)
     op_n_list = [TTNO(basis, [Op(r"a^\dagger a", i)]) for i in range(3)]
     ttns = TTNS(basis, {0: 1})
-    ttno = add_tto_offset(ttns, ttno)
+    ttno = add_ttno_offset(ttns, ttno)
     return ttns, ttno, op_n_list
 
 
-def construct_tts_and_tto_tree_mctdh():
+def construct_ttns_and_ttno_tree_mctdh():
     basis = BasisTree.binary_mctdh(model.basis)
     op_n_list = [TTNO(basis, [Op(r"a^\dagger a", i)]) for i in range(3)]
     ttns = TTNS(basis, {0: 1})
     ttno = TTNO(basis, model.ham_terms)
-    ttno = add_tto_offset(ttns, ttno)
+    ttno = add_ttno_offset(ttns, ttno)
     return ttns, ttno, op_n_list
 
 
 init_chain = construct_ttns_and_ttno_chain()
 init_tree = construct_ttns_and_ttno_tree()
-init_tree_mctdh = construct_tts_and_tto_tree_mctdh()
+init_tree_mctdh = construct_ttns_and_ttno_tree_mctdh()
 
 
-def check_result(tts: TTNS, tto: TTNO, time_step: float, final_time: float, op_n_list: List, atol: float=1e-4):
-    expectations = [[tts.expectation(o) for o in op_n_list]]
+def check_result(ttns: TTNS, ttno: TTNO, time_step: float, final_time: float, op_n_list: List, atol: float=1e-4):
+    expectations = [[ttns.expectation(o) for o in op_n_list]]
     for i in range(round(final_time / time_step)):
-        tts = tts.evolve(tto, time_step)
-        es = [tts.expectation(o) for o in op_n_list]
+        ttns = ttns.evolve(ttno, time_step)
+        es = [ttns.expectation(o) for o in op_n_list]
         expectations.append(es)
     expectations = np.array(expectations)
     qutip_end = round(final_time / QUTIP_STEP) + 1
@@ -75,7 +74,7 @@ def check_result(tts: TTNS, tto: TTNO, time_step: float, final_time: float, op_n
     np.testing.assert_allclose(expectations, qutip_expectations[:qutip_end:qutip_interval], atol=atol)
     diff = np.max(np.abs(expectations - qutip_expectations[:qutip_end:qutip_interval]), axis=0)
     print(diff)
-    return tts
+    return ttns
 
 
 @pytest.mark.parametrize("ttns_and_ttno", [init_chain, init_tree, init_tree_mctdh])
@@ -88,13 +87,13 @@ def test_tdvp_vmf(ttns_and_ttno):
     check_result(ttns, ttno, 0.5, 2, op_n_list)
 
 
-@pytest.mark.parametrize("tts_and_tto", [init_chain, init_tree, init_tree_mctdh])
-def test_pc(tts_and_tto):
-    tts, tto, op_n_list = tts_and_tto
-    tts = tts.copy()
-    tts.evolve_config = EvolveConfig(EvolveMethod.prop_and_compress_tdrk4)
-    tts.compress_config = CompressConfig(CompressCriteria.fixed)
-    check_result(tts, tto, 0.2, 5, op_n_list, 5e-4)
+@pytest.mark.parametrize("ttns_and_ttno", [init_chain, init_tree, init_tree_mctdh])
+def test_pc(ttns_and_ttno):
+    ttns, ttno, op_n_list = ttns_and_ttno
+    ttns = ttns.copy()
+    ttns.evolve_config = EvolveConfig(EvolveMethod.prop_and_compress_tdrk4)
+    ttns.compress_config = CompressConfig(CompressCriteria.fixed)
+    check_result(ttns, ttno, 0.2, 5, op_n_list, 5e-4)
 
 
 @pytest.mark.parametrize("ttns_and_ttno", [init_chain, init_tree, init_tree_mctdh])
