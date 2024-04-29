@@ -1,12 +1,11 @@
 # -*- coding: utf-8 -*-
 
 import logging
-from functools import partial
 
 from renormalizer.model import Model
 from renormalizer.mps import Mpo, Mps
-from renormalizer.utils import TdMpsJob, Quantity, CompressConfig
-import numpy as np
+from renormalizer.utils import TdMpsJob, CompressConfig
+
 
 logger = logging.getLogger(__name__)
 

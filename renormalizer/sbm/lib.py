@@ -1,5 +1,6 @@
 # -*- coding: utf-8 -*-
 
+import logging
 import numpy as np
 import numpy.polynomial.laguerre as la
 import numpy.polynomial.legendre as le
@@ -7,8 +8,11 @@ import scipy
 import scipy.special
 import scipy.optimize
 
-from renormalizer.model import Phonon, Mol, SpinBosonModel
+from renormalizer.model import Phonon, SpinBosonModel
 from renormalizer.utils import Quantity
+
+
+logger = logging.getLogger(__name__)
 
 
 class DebyeSpectralDensityFunction:
@@ -26,6 +30,9 @@ class DebyeSpectralDensityFunction:
         the function of the Debye-type spectral density function
         """
         return 2. * self.lamb * omega_value * self.omega_c / (omega_value ** 2 + self.omega_c ** 2)
+
+
+DebyeSDF = DebyeSpectralDensityFunction
 
 
 class SpectralDensityFunction:
@@ -152,6 +159,75 @@ class SpectralDensityFunction:
                         np.exp(-(np.subtract.outer(x, omega_value) / sigma) ** 2 / 2.))
 
         return x, y_c, y_d
+
+
+OhmicSDF = SpectralDensityFunction
+
+
+class ColeDavidsonSDF:
+    """
+    the ColeDavidson spectral density function
+    """
+
+    def __init__(self, ita, omega_c, beta, omega_limit):
+        self.ita = ita
+        self.omega_c = omega_c
+        self.beta = beta
+        self.omega_limit = omega_limit
+
+
+    def reno(self, omega_l):
+        def integrate_func(x):
+            return self.func(x) / x**2
+
+        res = scipy.integrate.quad(integrate_func, a=omega_l,
+                b=omega_l*1000)
+        logger.info(f"integrate: {res[0]}, {res[1]}")
+        re = np.exp(-res[0]*2/np.pi)
+
+        return re
+
+
+    def func(self, omega_value):
+        """
+        the function of the spectral density function
+        """
+        theta = np.arctan(omega_value/self.omega_c)
+        return self.ita * np.sin(self.beta * theta) / (1 + omega_value**2/self.omega_c**2) ** (self.beta / 2)
+
+
+    def _dos_Wang1(self, A, omega_value):
+        """
+        Wang's 1st scheme DOS \rho(\omega)
+        """
+
+        return A * self.func(omega_value) / omega_value
+
+    def Wang1(self, nb):
+        """
+        Wang's 1st scheme discretization
+        """
+        def integrate_func(x):
+            return self.func(x) / x
+        A = (nb + 1 ) / scipy.integrate.quad(integrate_func, a=0, b=self.omega_limit)[0]
+        logger.info(scipy.integrate.quad(integrate_func, a=0, b=self.omega_limit)[0] * 4 / np.pi)
+        logger.info(2*self.ita)
+        nsamples = int(1e7)
+        delta = self.omega_limit / nsamples
+        omega_value_big = np.linspace(delta, self.omega_limit, nsamples)
+        dos = self._dos_Wang1(A, omega_value_big)
+        rho_cumint = np.cumsum(dos) * delta
+        diff = (rho_cumint % 1)[1:] - (rho_cumint % 1)[:-1]
+        idx = np.where(diff < 0)[0]
+        omega_value = omega_value_big[idx]
+        logger.info(len(omega_value))
+        assert len(omega_value) == nb
+
+        # general form
+        c_j2 = 2./np.pi * omega_value * self.func(omega_value) / self._dos_Wang1(A, omega_value)
+
+
+        return omega_value, c_j2
 
 
 def param2mollist(alpha: float, raw_delta: Quantity, omega_c: Quantity, renormalization_p: float, n_phonons: int):

@@ -99,6 +99,21 @@ NodeUnion = Union[TreeNodeTensor, TreeNodeBasis, TreeNodeEnviron]
 
 
 def copy_connection(source_node_list: List[NodeUnion], target_node_list: List[NodeUnion]) -> NodeUnion:
+    """
+    Create a new tree with the same connection structure as the source tree in the target tree.
+
+    Parameters
+    ----------
+    source_node_list : List[NodeUnion]
+        The list of nodes in the source tree.
+    target_node_list : List[NodeUnion]
+        The list of nodes in the target tree.
+
+    Returns
+    -------
+    NodeUnion
+        The root node of the target tree.
+    """
     node2idx: Dict[NodeUnion, int] = {n:i for i, n in enumerate(source_node_list)}
     root = None
     for source_node, target_node in zip(source_node_list, target_node_list):

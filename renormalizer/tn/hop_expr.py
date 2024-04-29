@@ -1,6 +1,6 @@
 import opt_einsum as oe
 
-from renormalizer.mps.backend import np
+from renormalizer.mps.backend import np, backend
 from renormalizer.mps.matrix import asxp
 from renormalizer.tn.node import TreeNodeTensor
 from renormalizer.tn.tree import TTNS, TTNO, TTNEnviron
@@ -42,8 +42,6 @@ def hop_expr0(snode: TreeNodeTensor, ttns: TTNS, ttno: TTNO, ttne: TTNEnviron):
     return expr
 
 
-
-
 def hop_expr1(snode: TreeNodeTensor, ttns: TTNS, ttno: TTNO, ttne: TTNEnviron, return_hdiag=False):
     # one site
     enode = ttne.node_list[ttns.node_idx[snode]]
@@ -62,7 +60,7 @@ def hop_expr1(snode: TreeNodeTensor, ttns: TTNS, ttno: TTNO, ttne: TTNEnviron, r
 
     # input and output
     input_indices = ttns.get_node_indices(snode)
-    output_indices = ttns.get_node_indices(snode, True)
+    output_indices = ttns.get_node_indices(snode, conj=True)
 
     shape = snode.shape
     # cache the contraction path
@@ -105,7 +103,7 @@ def hop_expr2(snode: TreeNodeTensor, ttns: TTNS, ttno: TTNO, ttne: TTNEnviron):
 
     # input and output
     input_indices = ttns.get_node_indices(snode, include_parent=True)
-    output_indices = ttns.get_node_indices(snode, True, include_parent=True)
+    output_indices = ttns.get_node_indices(snode, conj=True, include_parent=True)
 
     # shape
     shape = list(snode.shape[:-1])

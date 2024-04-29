@@ -4,6 +4,7 @@
 
 from __future__ import division
 
+import math
 import logging
 
 from renormalizer.utils import constant
@@ -49,6 +50,8 @@ class Quantity:
 
     # kelvin to beta  au^-1
     def to_beta(self):
+        if self.value == 0:
+            return math.inf
         return 1.0 / self.as_au()
 
     # a simplified and incomplete model for + - * /

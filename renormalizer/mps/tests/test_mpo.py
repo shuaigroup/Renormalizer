@@ -129,6 +129,7 @@ def test_scheme4():
     mps3.append(np.array([0, 1]).reshape((1,2,1)))
     mps3.append(np.array([0.707, 0.707]).reshape((1,2,1)))
     mps3.append(np.array([1, 0]).reshape((1,2,1)))
+    mps3.build_empty_qn()
     e3 = mps3.expectation(mpo3)
     assert pytest.approx(e4) == e3
 
