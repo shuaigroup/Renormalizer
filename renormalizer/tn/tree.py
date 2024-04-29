@@ -11,6 +11,7 @@ from renormalizer.mps.matrix import asnumpy, asxp_oe_args, tensordot
 from renormalizer.mps.svd_qn import add_outer, svd_qn, blockrecover, get_qn_mask
 from renormalizer.mps.lib import select_basis
 from renormalizer.utils.configs import CompressConfig, OptimizeConfig, EvolveConfig, EvolveMethod
+from renormalizer.utils import calc_vn_entropy
 from renormalizer.tn.node import TreeNodeTensor, TreeNodeBasis, copy_connection, TreeNodeEnviron
 from renormalizer.tn.treebase import Tree, BasisTree
 from renormalizer.tn.symbolic_mpo import construct_symbolic_mpo, symbolic_mo_to_numeric_mo_general
@@ -19,7 +20,7 @@ from renormalizer.tn.symbolic_mpo import construct_symbolic_mpo, symbolic_mo_to_
 class TTNBase(Tree):
     # A tree whose tree node is TreeNodeTensor
     def print_shape(self, full=False, print_function=None):
-        class print_tn_basis(print_tree):
+        class _print_shape(print_tree):
 
             def get_children(self, node):
                 return node.children
@@ -30,11 +31,43 @@ class TTNBase(Tree):
                 else:
                     return str(node.tensor.shape[-1])
 
-        tree = print_tn_basis(self.root)
+        tree = _print_shape(self.root)
         if print_function is not None:
             for row in tree.rows:
                 print_function(row)
 
+    def print_vn_entropy(self, print_function=None):
+        # todo: move ttns.compress to here
+        _, s_list = self.compress(ret_s=True)
+        vn_entropy = [calc_vn_entropy(s ** 2) for s in s_list]
+        nodes = [TreeNodeTensor([entropy]) for entropy in vn_entropy]
+        copy_connection(self.node_list, nodes)
+
+        class print_data(print_tree):
+
+            def get_children(self, node):
+                return node.children
+
+            def get_node_str(self, node: TreeNodeTensor):
+                return str(node.tensor.shape[-1])
+
+        tree = print_data(nodes[0])
+        if print_function is not None:
+            for row in tree.rows:
+                print_function(row)
+
+    @property
+    def bond_dims(self):
+        return [node.tensor.shape[-1] for node in self]
+
+    @property
+    def bond_dims_mean(self) -> int:
+        # duplicate with Mps
+        return int(round(np.mean(self.bond_dims)))
+
+    @property
+    def qntot(self):
+        return self.root.qn[0]
 
 class TTNO(TTNBase):
     @classmethod
@@ -154,21 +187,6 @@ class TTNO(TTNBase):
             indices.append((_id, str(self.tn2dofs[node.parent]), str(all_dofs)))
         assert len(indices) == node.tensor.ndim
         return indices
-
-    @property
-    def bond_dims(self):
-        # duplicate with ttns
-        return [node.tensor.shape[-1] for node in self]
-
-    @property
-    def bond_dims_mean(self) -> int:
-        # duplicate with ttns and Mps
-        return int(round(np.mean(self.bond_dims)))
-
-    @property
-    def qntot(self):
-        # duplicate with ttns
-        return self.root.qn[0]
 
     def __matmul__(self, other):
         # duplicate with Mpo
@@ -706,28 +724,14 @@ class TTNS(TTNBase):
         return np.linalg.norm(self.coeff) * self.ttns_norm
 
     @property
-    def qntot(self):
-        # duplicate with ttno
-        return self.root.qn[0]
-
-    @property
     def ttns_norm(self):
-        res = self.expectation(TTNO.identity(self.basis))
+        res = self.expectation(TTNO.identity(self.basis)).real
 
         if res < 0:
             assert np.abs(res) < 1e-8
             res = 0
         res = np.sqrt(res)
         return float(res)
-
-    @property
-    def bond_dims(self):
-        return [node.tensor.shape[-1] for node in self]
-
-    @property
-    def bond_dims_mean(self) -> int:
-        # duplicate with Mps
-        return int(round(np.mean(self.bond_dims)))
 
     def scale(self, val, inplace=False):
         # no need to be canonical
@@ -755,7 +759,7 @@ class TTNEnviron(Tree):
         copy_connection(ttns.node_list, enodes)
         super().__init__(enodes[0])
         assert self.root.parent is None
-        self.root.environ_parent = np.array([1]).reshape([1, 1, 1])
+        self.root.environ_parent = np.array([1], dtype=backend.real_dtype).reshape([1, 1, 1])
         # tensor node to basis node. todo: remove duplication?
         self.tn2bn = {tn: bn for tn, bn in zip(self.node_list, self.basis.node_list)}
         self.tn2dofs = {tn: bn.dofs for tn, bn in self.tn2bn.items()}
@@ -799,7 +803,7 @@ class TTNEnviron(Tree):
             self.build_parent_environ_node(snode, ichild, ttns, ttno)
 
     def build_children_environ_node(self, snode:TreeNodeTensor, ttns: TTNS, ttno: TTNO):
-        # build the environment from snode to its parent
+        # build the environment from snode to its parent and store the environment in its parent
         if snode.parent is None:
             return
         enode = self.node_list[ttns.node_idx[snode]]
@@ -831,7 +835,7 @@ class TTNEnviron(Tree):
             enode.parent.environ_children[ichild] = asnumpy(res)
 
     def build_parent_environ_node(self, snode:TreeNodeTensor, ichild: int, ttns: TTNS, ttno: TTNO):
-        # build the environment from snode to the ith child of snode
+        # build the environment from snode to the ith child of snode and store the environment in the child
         enode = self.node_list[ttns.node_idx[snode]]
         onode = ttno.node_list[ttns.node_idx[snode]]
         args = []

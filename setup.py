@@ -6,7 +6,8 @@ with open("README.md", "rb") as fin:
 req = ["numpy",
        "scipy",
        "h5py",
-       "opt_einsum"
+       "opt_einsum",
+       "sympy"
        ]
 
 setuptools.setup(
