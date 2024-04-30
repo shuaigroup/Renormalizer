@@ -43,7 +43,7 @@ def hop_expr0(snode: TreeNodeTensor, ttns: TTNS, ttno: TTNO, ttne: TTNEnviron):
 
 
 def hop_expr1(snode: TreeNodeTensor, ttns: TTNS, ttno: TTNO, ttne: TTNEnviron, return_hdiag=False):
-    # one site
+    # build one site effective hamiltonian operator as an opt_einsum expression
     enode = ttne.node_list[ttns.node_idx[snode]]
     onode = ttno.node_list[ttns.node_idx[snode]]
 
@@ -73,7 +73,7 @@ def hop_expr1(snode: TreeNodeTensor, ttns: TTNS, ttno: TTNO, ttne: TTNEnviron, r
 
 
 def hop_expr2(snode: TreeNodeTensor, ttns: TTNS, ttno: TTNO, ttne: TTNEnviron):
-    # two sites
+    # build two-site effective hamiltonian operator as an opt_einsum expression
     sparent = snode.parent
     enode = ttne.node_list[ttns.node_idx[snode]]
     eparent = ttne.node_list[ttns.node_idx[sparent]]

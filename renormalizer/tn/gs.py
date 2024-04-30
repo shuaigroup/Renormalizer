@@ -18,11 +18,11 @@ logger = logging.getLogger(__name__)
 def optimize_ttns(ttns: TTNS, ttno: TTNO, procedure=None):
     if procedure is None:
         procedure = ttns.optimize_config.procedure
-    tte = TTNEnviron(ttns, ttno)
+    ttne = TTNEnviron(ttns, ttno)
     e_list = []
     for m, percent in procedure:
         # todo: better converge condition
-        micro_e = optimize_recursion(ttns.root, ttns, ttno, tte, m, percent)
+        micro_e = optimize_recursion(ttns.root, ttns, ttno, ttne, m, percent)
         logger.info(f"Micro e: {micro_e}")
         e_list.append(micro_e[-1])
     return e_list

@@ -1,4 +1,5 @@
-from typing import List, Dict, Tuple, Union
+from typing import List, Dict, Tuple, Union, Callable
+from numbers import Number
 
 import scipy
 import opt_einsum as oe
@@ -6,7 +7,7 @@ from print_tree import print_tree
 
 from renormalizer import Op, Mps, Model
 from renormalizer.model.basis import BasisSet, BasisDummy
-from renormalizer.mps.backend import np, backend
+from renormalizer.mps.backend import np, backend, xp
 from renormalizer.mps.matrix import asnumpy, asxp_oe_args, tensordot
 from renormalizer.mps.svd_qn import add_outer, svd_qn, blockrecover, get_qn_mask
 from renormalizer.mps.lib import select_basis
@@ -20,7 +21,18 @@ from renormalizer.tn.symbolic_mpo import construct_symbolic_mpo, symbolic_mo_to_
 
 class TTNBase(Tree):
     # A tree whose tree node is TreeNodeTensor
-    def print_shape(self, full=False, print_function=None):
+    def print_shape(self, full:bool=False, print_function:Callable=None):
+        """
+        Print the shape of the TTN tree
+
+        Parameters
+        ----------
+        full: bool
+            whether print the full shape or only the shape of the last bond
+        print_function
+            the function used for printing. If None, use ``print``.
+            Could use ``logger.info`` instead.
+        """
         class _print_shape(print_tree):
 
             def get_children(self, node):
@@ -101,6 +113,20 @@ class TTNO(TTNBase):
         self.tn2dofs = {tn: bn.dofs for tn, bn in self.tn2bn.items()}
 
     def apply(self, ttns: "TTNS", canonicalise: bool=False) -> "TTNS":
+        """
+        Apply the operator to the TTNS.
+
+        Parameters
+        ----------
+        ttns: TTNS
+            the TTNS to apply the operator to
+        canonicalise: bool
+            whether canonicalise the new TTNS
+
+        Returns
+        -------
+        The new TTNS
+        """
         new = ttns.metacopy()
 
         for snode1, snode2, onode in zip(ttns, new, self):
@@ -135,6 +161,19 @@ class TTNO(TTNBase):
         return new
 
     def contract(self, ttns: "TTNS", algo="svd") -> "TTNS":
+        """
+        Contract the operator to the TTNS.
+        Parameters
+        ----------
+        ttns: TTNS
+            the TTNS to contract the operator to
+        algo: str
+            the algorithm to use for the compression after applying the operator
+
+        Returns
+        -------
+        The new TTNS
+        """
         assert algo == "svd", "variational compress not supported yet"
         new_ttns = self.apply(ttns)
         new_ttns.canonicalise()
@@ -142,6 +181,18 @@ class TTNO(TTNBase):
         return new_ttns
 
     def todense(self, order:List[BasisSet]=None) -> np.ndarray:
+        """
+        Convert the TTNO operator to dense matrix.
+
+        Parameters
+        ----------
+        order: list
+            the order of the basis sets for the resulting tensor
+
+        Returns
+        -------
+        The dense matrix
+        """
         _id = str(id(self))
         args = self.to_contract_args("up", "down")
         if order is None:
@@ -161,7 +212,20 @@ class TTNO(TTNBase):
         dim = round(np.sqrt(np.prod(res.shape)))
         return res.reshape(dim, dim)
 
-    def to_contract_args(self, prefix_up, prefix_down):
+    def to_contract_args(self, prefix_up, prefix_down) -> List:
+        """
+        Get the arguments for contraction based on ``opt_einsum`` of the whole TTNO.
+
+        Parameters
+        ----------
+        prefix_up
+            the prefix for the indices of the up physical indices
+        prefix_down
+            the prefix for the indices of the down physical indices
+        Returns
+        -------
+        The arguments for contraction
+        """
         args = []
         for node in self.node_list:
             assert isinstance(node, TreeNodeTensor)
@@ -172,7 +236,23 @@ class TTNO(TTNBase):
             args.extend([tensor, indices])
         return args
 
-    def get_node_indices(self, node, prefix_up="up", prefix_down="down") -> List:
+    def get_node_indices(self, node: TreeNodeTensor, prefix_up="up", prefix_down="down") -> List:
+        """
+        Get the indices of the node for contraction based on ``opt_einsum``.
+
+        Parameters
+        ----------
+        node: TreeNodeTensor
+            The node to get the indices for contraction
+        prefix_up
+            the prefix for the indices of the up physical indices
+        prefix_down
+            the prefix for the indices of the down physical indices
+
+        Returns
+        -------
+        The indices for contraction
+        """
         _id = str(id(self))
         all_dofs = self.tn2dofs[node]
         indices = []
@@ -201,6 +281,24 @@ class TTNS(TTNBase):
 
     @classmethod
     def random(cls, basis: BasisTree, qntot, m_max, percent=1.0):
+        """
+        Construct a random TTNS.
+
+        Parameters
+        ----------
+        basis: BasisTree
+            the basis for the TTNS
+        qntot: int or np.ndarray
+            the total quantum number
+        m_max: int
+            the maximum bond dimension
+        percent: float
+            the percentage of the states to be randomly chosen
+
+        Returns
+        -------
+        The random TTNS
+        """
         ttns = cls(basis)
         if isinstance(qntot, int):
             qntot = np.array([qntot])
@@ -246,8 +344,22 @@ class TTNS(TTNBase):
         return ttns
 
     @classmethod
-    def from_tensors(cls, template: "TTNS", tensors):
-        """QN is taken into account"""
+    def from_tensors(cls, template: "TTNS", tensors: xp.ndarray):
+        """
+        Construct a TTNS from a list of tensors.
+        The list of tensors is concatenated to one-dimension.
+        Note that QN is taken into account
+
+        Parameters
+        ----------
+        template: TTNS
+            TTNS template providing the topology, shape and QN of the new TTNS
+        tensors: xp.ndarray
+            list of tensors concatenated as one dimensional array
+        Returns
+        -------
+        The new TTNS
+        """
         ttns = template.metacopy()
         cursor = 0
         for node, tnode in zip(ttns.node_list, template.node_list):
@@ -262,6 +374,24 @@ class TTNS(TTNBase):
         return ttns
 
     def __init__(self, basis: BasisTree, condition:Dict=None, root:TreeNodeTensor=None):
+        """
+        Construct a TTNS.
+
+        Parameters
+        ----------
+        basis: BasisTree
+            The basis for the TTNS
+        condition: Dict
+            The condition for the TTNS. If provided, construct a direct product TTNS with bond dimension 1
+            and the condition specifies the tensors of the TTNS.
+            See :meth:`renormalizer.Mps.hartree_product_state` for more details
+        root: TreeNodeTensor
+            The root node of the TTNS. Only one of ``condition`` or ``root`` should be provided.
+
+        Returns
+        -------
+        The new TTNS
+        """
         self.basis = basis
         if not root:
             if condition is None:
@@ -307,6 +437,9 @@ class TTNS(TTNBase):
         self.evolve_config = EvolveConfig(EvolveMethod.tdvp_vmf, force_ovlp=False)
 
     def check_shape(self):
+        """
+        Assert the shape of the TTNS is consistent with the basis.
+        """
         for snode, bnode in zip(self.node_list, self.basis.node_list):
             assert snode.tensor.ndim == len(snode.children) + bnode.n_sets + 1
             assert snode.qn.shape[0] == snode.tensor.shape[-1]
@@ -314,12 +447,12 @@ class TTNS(TTNBase):
             for i, b in enumerate(bnode.basis_sets):
                 assert snode.shape[len(snode.children) + i] == b.nbas
 
-    def check_canonical(self, atol=None):
+    def check_canonical(self, atol=None) -> bool:
         for node in self.node_list[1:]:
             node.check_canonical(atol)
         return True
 
-    def is_canonical(self, atol=None):
+    def is_canonical(self, atol=None) -> bool:
         for node in self.node_list[1:]:
             if not node.check_canonical(atol, assertion=False):
                 return False
@@ -358,7 +491,21 @@ class TTNS(TTNBase):
         else:
             return complex(val)
 
-    def expectation(self, ttno: TTNO, bra: "TTNS"=None):
+    def expectation(self, ttno: TTNO, bra: "TTNS"=None) -> Number:
+        """
+        Calculate the expectation value of <bra|TTNO|self>.
+
+        Parameters
+        ----------
+        ttno: TTNO
+            The operator for expectation
+        bra: TTNS
+            The bra state in TTNS format. Defaults to None and the bra is the same as self.
+
+        Returns
+        -------
+        The expectation value
+        """
         assert bra is None # not implemented yet
         basis_node = TreeNodeBasis([BasisDummy("expectation dummy")])
         basis_node_ttns = basis_node
@@ -387,6 +534,18 @@ class TTNS(TTNBase):
             return complex(val)
 
     def add(self, other: "TTNS") -> "TTNS":
+        """
+        Add two TTNSs.
+
+        Parameters
+        ----------
+        other: TTNS
+            The other TTNS to be added
+
+        Returns
+        -------
+        The new TTNS.
+        """
         new = self.metacopy()
         for new_node, node1, node2 in zip(new, self, other):
             new_shape = []
@@ -474,7 +633,18 @@ class TTNS(TTNBase):
             node1.qn = node2.qn.copy()
         return new
 
-    def to_complex(self, inplace=False):
+    def to_complex(self, inplace:bool=False) -> "TTNS":
+        """
+        Convert the data type from real to complex
+        .
+        Parameters
+        ----------
+        inplace: bool
+            whether convert in place
+        Returns
+        -------
+        The new TTNS
+        """
         if inplace:
             new = self
         else:
@@ -485,6 +655,18 @@ class TTNS(TTNBase):
         return new
 
     def todense(self, order:List[BasisSet]=None) -> np.ndarray:
+        """
+        Convert the TTNS to dense vector
+
+        Parameters
+        ----------
+        order: list
+            the order of the basis sets for the resulting tensor
+
+        Returns
+        -------
+        The dense vector
+        """
         _id = str(id(self))
         args = self.to_contract_args()
         if order is None:
@@ -499,7 +681,18 @@ class TTNS(TTNBase):
         res = asnumpy(res)
         return res
 
-    def to_contract_args(self, conj=False):
+    def to_contract_args(self, conj:bool=False):
+        """
+        Get the arguments for contraction based on ``opt_einsum`` of the whole TTNO.
+
+        Parameters
+        ----------
+        conj: bool
+            deprecated.
+        Returns
+        -------
+        The arguments for contraction
+        """
         args = []
         for node in self.node_list:
             assert isinstance(node, TreeNodeTensor)
@@ -514,6 +707,19 @@ class TTNS(TTNBase):
         return args
 
     def decompose_to_parent(self, node: TreeNodeTensor) -> np.ndarray:
+        """
+        QR decompose the node toward the parent direction.
+        Set the node to the orthogonal matrix Q
+        and return the triangular matrix R.
+
+        Parameters
+        ----------
+        node: TreeNodeTensor
+            The node to be decomposed
+        Returns
+        -------
+        The triangular matrix R
+        """
         assert node.parent
         qnbigl, qnbigr, _ = self.get_qnmat(node, include_parent=False)
         tensor = node.tensor.reshape(-1, node.shape[-1])
@@ -523,7 +729,17 @@ class TTNS(TTNBase):
         node.qn = np.array(qnlnew)
         return v
 
-    def merge_to_parent(self, node: TreeNodeTensor, v: np.ndarray) -> np.ndarray:
+    def merge_to_parent(self, node: TreeNodeTensor, v: np.ndarray):
+        """
+        Merge the coefficient tensor to the parent of the node.
+
+        Parameters
+        ----------
+        node: TreeNodeTensor
+            The node whose parent will be merged with ``v``
+        v: np.ndarray
+            The coefficient tensor to be merged
+        """
         # contract parent
         parent_indices = self.get_node_indices(node.parent)
         args = [node.parent.tensor, parent_indices]
@@ -536,13 +752,36 @@ class TTNS(TTNBase):
         node.parent.tensor = oe.contract(*asxp_oe_args(args))
 
     def push_cano_to_parent(self, node: TreeNodeTensor):
+        """
+        Push the canonical center to the parent of the node.
+
+        Parameters
+        ----------
+        node: TreeNodeTensor
+            The current canonical center node
+        """
         assert node.parent
         # move the cano center to parent
         v = self.decompose_to_parent(node)
         self.merge_to_parent(node, v)
 
 
-    def decompose_to_child(self, node: TreeNodeTensor, ichild):
+    def decompose_to_child(self, node: TreeNodeTensor, ichild: int) -> np.ndarray:
+        """
+        QR decompose the node towards the children direction.
+        Set the node to the orthogonal matrix Q
+        and return the triangular matrix R.
+
+        Parameters
+        ----------
+        node: TreeNodeTensor
+            The node to be decomposed
+        ichild: int
+            The index for the child
+        Returns
+        -------
+        The triangular matrix R
+        """
         qnbigl, qnbigr, tensor, shape = moveaxis(self, node, ichild)
 
         # u for node and v for child
@@ -574,16 +813,55 @@ class TTNS(TTNBase):
         node.children[ichild].qn = qnr
         return v
 
-    def merge_to_child(self, node:TreeNodeTensor, ichild, v: np.ndarray):
+    def merge_to_child(self, node:TreeNodeTensor, ichild: int, v: np.ndarray):
+        """
+        Merge the coefficient tensor to one of the children of the node.
+
+        Parameters
+        ----------
+        node: TreeNodeTensor
+            The node whose child will be merged with ``v``
+        ichild: int
+            The index for the child
+        v: np.ndarray
+            The coefficient tensor to be merged
+        """
         child = node.children[ichild]
         child.tensor = tensordot(child.tensor, v, axes=[-1, 0])
 
-    def push_cano_to_child(self, node:TreeNodeTensor, ichild):
+    def push_cano_to_child(self, node:TreeNodeTensor, ichild: int):
+        """
+        Push the canonical center to the child of the node.
+
+        Parameters
+        ----------
+        node: TreeNodeTensor
+            The current canonical center node
+        ichild: int
+            The index for the child
+        """
         v = self.decompose_to_child(node, ichild)
         self.merge_to_child(node, ichild, v)
 
     def compress_node(self, node:TreeNodeTensor, ichild:int, temp_m_trunc:int=None, cano_child:bool=True) -> np.ndarray:
-        """Compress the bond between node and ichild"""
+        """
+        Compress the bond between node and one of its child based on SVD
+
+        Parameters
+        ----------
+        node: TreeNodeTensor
+            The node to be compressed
+        ichild: int
+            The index for the child
+        temp_m_trunc: int
+            The truncation of the singular values
+        cano_child: bool
+            Whether the canonical center should be set to the child node
+
+        Returns
+        -------
+        The singular values before truncation
+        """
         qnbigl, qnbigr, tensor, shape = moveaxis(self, node, ichild)
         # u for node and v for child
         u, s, qnl, v, s, qnr = svd_qn(
