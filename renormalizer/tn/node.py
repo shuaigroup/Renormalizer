@@ -8,7 +8,7 @@ from renormalizer.model.basis import BasisSet
 class TreeNode:
     def __init__(self):
         self.children: List[__class__] = []
-        self.parent: TreeNode = None
+        self.parent: __class__ = None
 
     def add_child(self, node: Union["TreeNode", Sequence["TreeNode"]]) -> "TreeNode":
         if isinstance(node, TreeNode):
@@ -42,6 +42,12 @@ class TreeNodeBasis(TreeNode):
         self.dofs = [b.dofs for b in basis_sets]
         self.pbond_dims = [len(b.sigmaqn) for b in self.basis_sets]
 
+    def copy(self):
+        new = self.__class__(self.basis_sets)
+        if self.parent is not None:
+            new.parent = self.parent.copy()
+        new.children = self.children.copy()
+        return new
 
 
 class TreeNodeTensor(TreeNode):

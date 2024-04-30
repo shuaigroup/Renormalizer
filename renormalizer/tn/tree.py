@@ -69,6 +69,7 @@ class TTNBase(Tree):
     def qntot(self):
         return self.root.qn[0]
 
+
 class TTNO(TTNBase):
     @classmethod
     def identity(cls, basis:BasisTree):
@@ -99,34 +100,33 @@ class TTNO(TTNBase):
         self.tn2dofs = {tn: bn.dofs for tn, bn in self.tn2bn.items()}
 
     def apply(self, ttns: "TTNS", canonicalise: bool=False) -> "TTNS":
-        # todo: apply to mpdm. Allow partial apply and ignore some indices
         new = ttns.metacopy()
 
-        for snode1, snode2, onode in zip(new, ttns, self):
-            assert len(snode2.children) == len(onode.children)
+        for snode1, snode2, onode in zip(ttns, new, self):
+            assert len(snode1.children) == len(onode.children)
 
-            bnode = self.tn2bn[onode]
-            indices1 = ttns.get_node_indices(snode2)
-            indices2 = self.get_node_indices(onode, "up", "down")
+            indices1 = ttns.get_node_indices(snode1, ttno=self)
+            indices2 = self.get_node_indices(onode)
+            args = [snode1.tensor, indices1, onode.tensor, indices2]
             output_indices = []
             output_shape = []
             # children indices
-            for i in range(len(snode2.children)):
-                output_shape.append(snode2.shape[i] * onode.shape[i])
+            for i in range(len(snode1.children)):
+                output_shape.append(snode1.shape[i] * onode.shape[i])
                 output_indices.extend([indices1[i], indices2[i]])
             # physical indices
+            bnode = ttns.tn2bn[snode1]
             for i in range(bnode.n_sets):
-                j = len(snode2.children) + 2 * i
-                output_shape.append(onode.shape[j])
-                output_indices.append(indices2[j])
+                output_shape.append(snode1.shape[len(snode1.children) + i])
+                output_indices.append(("up", str(bnode.dofs[i])))
             # parent indices
-            output_shape.append(snode2.shape[-1] * onode.shape[-1])
+            output_shape.append(snode1.shape[-1] * onode.shape[-1])
             output_indices.extend([indices1[-1], indices2[-1]])
+            args.append(output_indices)
             # do contraction
-            args = [snode2.tensor, indices1, onode.tensor, indices2, output_indices]
             res = oe.contract(*(asxp_oe_args(args))).reshape(output_shape)
-            snode1.tensor = res
-            snode1.qn = add_outer(snode2.qn, onode.qn).reshape(output_shape[-1], ttns.basis.qn_size)
+            snode2.tensor = res
+            snode2.qn = add_outer(snode1.qn, onode.qn).reshape(output_shape[-1], ttns.basis.qn_size)
 
         new.check_shape()
         if canonicalise:
@@ -171,7 +171,7 @@ class TTNO(TTNBase):
             args.extend([tensor, indices])
         return args
 
-    def get_node_indices(self, node, prefix_up, prefix_down):
+    def get_node_indices(self, node, prefix_up="up", prefix_down="down") -> List:
         _id = str(id(self))
         all_dofs = self.tn2dofs[node]
         indices = []
@@ -297,7 +297,7 @@ class TTNS(TTNBase):
         self.coeff = 1
         self.check_shape()
         # tensor node to basis node. make a property?
-        self.tn2bn = {tn: bn for tn, bn in zip(self.node_list, self.basis.node_list)}
+        self.tn2bn: Dict[TreeNodeTensor, TreeNodeBasis] = {tn: bn for tn, bn in zip(self.node_list, self.basis.node_list)}
         self.tn2dofs = {tn: bn.dofs for tn, bn in self.tn2bn.items()}
 
         self.compress_config = CompressConfig()
@@ -342,6 +342,8 @@ class TTNS(TTNBase):
             return self, s_list
 
     def expectation1(self, ttno: TTNO, bra: "TTNS"=None):
+        # old implementation. When the network is large, opt_einsum sometimes takes a long time to
+        # find the contraction path and the resulting path is not optimal
         if bra is None:
             bra = self
         args = self.to_contract_args()
@@ -357,15 +359,19 @@ class TTNS(TTNBase):
     def expectation(self, ttno: TTNO, bra: "TTNS"=None):
         assert bra is None # not implemented yet
         basis_node = TreeNodeBasis([BasisDummy("expectation dummy")])
-        basis_node.add_child(self.basis.root)
-        basis_tree = BasisTree(basis_node)
-        snode = TreeNodeTensor(np.ones((1, 1, 1)), qn=np.zeros((1, basis_tree.qn_size)))
+        basis_node_ttns = basis_node
+        basis_node_ttno = basis_node.copy()
+        basis_node_ttns.add_child(self.basis.root.copy())
+        basis_node_ttno.add_child(ttno.basis.root.copy())
+        basis_tree_ttns = BasisTree(basis_node_ttns)
+        basis_tree_ttno = BasisTree(basis_node_ttno)
+        snode = TreeNodeTensor(np.ones((1, 1, 1)), qn=np.zeros((1, basis_tree_ttns.qn_size)))
         snode.add_child(self.root)
-        onode = TreeNodeTensor(np.ones((1, 1, 1, 1)), qn=np.zeros((1, basis_tree.qn_size)))
+        onode = TreeNodeTensor(np.ones((1, 1, 1, 1)), qn=np.zeros((1, basis_tree_ttno.qn_size)))
         onode.add_child(ttno.root)
 
-        ttns_extended = TTNS(basis_tree, root=snode)
-        ttno_extended = TTNO(basis_tree, [], root=onode)
+        ttns_extended = TTNS(basis_tree_ttns, root=snode)
+        ttno_extended = TTNO(basis_tree_ttno, [], root=onode)
         environ = TTNEnviron(ttns_extended, ttno_extended, build_environ=False)
         environ.build_children_environ(ttns_extended, ttno_extended)
         val = environ.root.environ_children[0].ravel()[0]
@@ -676,28 +682,32 @@ class TTNS(TTNBase):
         shape = [-1] + shape
         parent.tensor = np.moveaxis(m_parent.reshape(shape), 0, ichild)
 
-    def get_node_indices(self, node:TreeNodeTensor, conj:bool=False, include_parent:bool=False) -> List[Tuple[str]]:
+    def get_node_indices(self, node:TreeNodeTensor, conj:bool=False, include_parent:bool=False, ttno:TTNO=None) -> List[Tuple]:
         if include_parent:
-            snode_indices = self.get_node_indices(node, conj)
-            parent_indices = self.get_node_indices(node.parent, conj)
+            snode_indices = self.get_node_indices(node, conj, ttno=ttno)
+            parent_indices = self.get_node_indices(node.parent, conj, ttno=ttno)
             indices = snode_indices + parent_indices
             shared_bond = snode_indices[-1]
             for i in range(2):
                 indices.remove(shared_bond)
             return indices
 
+        # here up and down are defined based on TTNO convention
         if not conj:
-            ud = "down"
             _id = str(id(self))
         else:
-            ud = "up"
             _id = str(id(self)) + "_conj"
+        skip_pidx = get_skip_pidx(node, self, ttno)
 
         all_dofs = self.tn2dofs[node]
         indices = []
         for child in node.children:
             indices.append((_id, str(all_dofs), str(self.tn2dofs[child])))
-        for dofs in all_dofs:
+        for i, dofs in enumerate(all_dofs):
+            if not conj and i not in skip_pidx:
+                ud = "down"
+            else:
+                ud = "up"
             indices.append((ud, str(dofs)))
         if node.parent is None:
             indices.append((_id, "root", str(all_dofs)))
@@ -754,15 +764,16 @@ class TTNS(TTNBase):
 
 class TTNEnviron(Tree):
     def __init__(self, ttns:TTNS, ttno:TTNO, build_environ=True):
-        self.basis =  ttns.basis
+        self.basis_ttns =  ttns.basis
+        self.basis_ttno = ttno.basis
         enodes: List[TreeNodeEnviron] = [TreeNodeEnviron() for _ in range(ttns.size)]
         copy_connection(ttns.node_list, enodes)
         super().__init__(enodes[0])
         assert self.root.parent is None
         self.root.environ_parent = np.array([1], dtype=backend.real_dtype).reshape([1, 1, 1])
         # tensor node to basis node. todo: remove duplication?
-        self.tn2bn = {tn: bn for tn, bn in zip(self.node_list, self.basis.node_list)}
-        self.tn2dofs = {tn: bn.dofs for tn, bn in self.tn2bn.items()}
+        self.tn2dofs_ttns = {tn: bn.dofs for tn, bn in zip(self.node_list, self.basis_ttns.node_list)}
+        self.tn2dofs_ttno = {tn: bn.dofs for tn, bn in zip(self.node_list, self.basis_ttno.node_list)}
         if build_environ:
             self.build_children_environ(ttns, ttno)
             self.build_parent_environ(ttns, ttno)
@@ -817,10 +828,10 @@ class TTNEnviron(Tree):
         args.append(ttns.get_node_indices(snode, conj=True))
 
         args.append(onode.tensor)
-        args.append(ttno.get_node_indices(onode, "up", "down"))
+        args.append(ttno.get_node_indices(onode))
 
         args.append(snode.tensor)
-        args.append(ttns.get_node_indices(snode))
+        args.append(ttns.get_node_indices(snode, ttno=ttno))
 
         # indices for the resulting tensor
         indices = self.get_parent_indices(enode, ttns, ttno)
@@ -854,10 +865,10 @@ class TTNEnviron(Tree):
         args.append(ttns.get_node_indices(snode, conj=True))
 
         args.append(onode.tensor)
-        args.append(ttno.get_node_indices(onode, "up", "down"))
+        args.append(ttno.get_node_indices(onode))
 
         args.append(snode.tensor)
-        args.append(ttns.get_node_indices(snode))
+        args.append(ttns.get_node_indices(snode, ttno=ttno))
 
         # indices for the resulting tensor
         indices = self.get_child_indices(enode, ichild, ttns, ttno)
@@ -867,25 +878,29 @@ class TTNEnviron(Tree):
         enode.children[ichild].environ_parent = asnumpy(res)
 
     def get_child_indices(self, enode, i, ttns, ttno):
-        dofs = self.tn2dofs[enode]
-        dofs_child = self.tn2dofs[enode.children[i]]
+        dofs_ttns = self.tn2dofs_ttns[enode]
+        dofs_child_ttns = self.tn2dofs_ttns[enode.children[i]]
+        dofs_ttno = self.tn2dofs_ttno[enode]
+        dofs_child_ttno = self.tn2dofs_ttno[enode.children[i]]
         indices = [
-            (str(id(ttns)) + "_conj", str(dofs), str(dofs_child)),
-            (str(id(ttno)), str(dofs), str(dofs_child)),
-            (str(id(ttns)), str(dofs), str(dofs_child)),
+            (str(id(ttns)) + "_conj", str(dofs_ttns), str(dofs_child_ttns)),
+            (str(id(ttno)), str(dofs_ttno), str(dofs_child_ttno)),
+            (str(id(ttns)), str(dofs_ttns), str(dofs_child_ttns)),
         ]
         return indices
 
     def get_parent_indices(self, enode, ttns, ttno):
-        dofs = self.tn2dofs[enode]
+        dofs_ttns = self.tn2dofs_ttns[enode]
+        dofs_ttno = self.tn2dofs_ttno[enode]
         if enode.parent is not None:
-            dofs_parent = self.tn2dofs[enode.parent]
+            dofs_parent_ttns = self.tn2dofs_ttns[enode.parent]
+            dofs_parent_ttno = self.tn2dofs_ttno[enode.parent]
         else:
-            dofs_parent = "root"
+            dofs_parent_ttns = dofs_parent_ttno = "root"
         indices = [
-            (str(id(ttns)) + "_conj", str(dofs_parent), str(dofs)),
-            (str(id(ttno)), str(dofs_parent), str(dofs)),
-            (str(id(ttns)), str(dofs_parent), str(dofs)),
+            (str(id(ttns)) + "_conj", str(dofs_parent_ttns), str(dofs_ttns)),
+            (str(id(ttno)), str(dofs_parent_ttno), str(dofs_ttno)),
+            (str(id(ttns)), str(dofs_parent_ttns), str(dofs_ttns)),
         ]
         return indices
 
@@ -899,7 +914,7 @@ def from_mps(mps: Mps) -> Tuple[BasisTree, TTNS, TTNO]:
     # children + physical + parent
     # |    |    |     |
     # o -> o -> o -> root (canonical center)
-    basis = BasisTree.linear(mps.model.basis[::-1])
+    basis = BasisTree.linear(mps.model.basis_ttns[::-1])
     ttns = TTNS(basis)
     for i in range(len(mps)):
         node = ttns.node_list[::-1][i]
@@ -959,3 +974,47 @@ def moveaxis(ttns:TTNS, node:TreeNodeTensor, ichild:int):
     shape = list(tensor.shape)
     tensor = tensor.reshape(-1, node.shape[ichild])
     return qnbigl, qnbigr, tensor, shape
+
+
+def get_skip_pidx(snode: TreeNodeTensor, ttns: TTNS, ttno: TTNO) -> List[int]:
+    if ttno is None:
+        return []
+    idx = ttns.node_idx[snode]
+    basis_ttns: TreeNodeBasis = ttns.basis.node_list[idx]
+    basis_ttno: TreeNodeBasis = ttno.basis.node_list[idx]
+    if basis_ttns.dofs == basis_ttno.dofs:
+        return []
+    assert len(basis_ttno.dofs) < len(basis_ttns.dofs)
+    for dof in basis_ttno.dofs:
+        assert dof in basis_ttns.dofs
+    skip_pidx = []
+    for i, dof in enumerate(basis_ttns.dofs):
+        if dof not in basis_ttno.dofs:
+            skip_pidx.append(i)
+    return skip_pidx
+
+
+def get_missing_ttno_args(snode: TreeNodeTensor, ttns: TTNS, ttno: TTNO) -> List:
+    return []
+    # if a basis is in TTNS but not in TTNO, construct a dummy identity tensor and its indices
+    # as a dummy TTNO node
+    # Of course, the most efficient way is to directly connect two TTNS node indices
+    # The method here is not most efficient, but with moderate Ms and Mo the overhead should be small
+    idx = ttns.node_idx(snode)
+    basis_ttns: TreeNodeBasis = ttns.basis_ttns.node_list[idx]
+    basis_ttno: TreeNodeBasis = ttno.basis_ttns.node_list[idx]
+    if basis_ttns == basis_ttno:
+        return []
+    assert len(basis_ttno.dofs) < len(basis_ttns.dofs)
+    for dof in basis_ttno.dofs:
+        assert dof in basis_ttns.dofs
+    missing_dofs = []
+    for i, dof in enumerate(basis_ttns.dofs):
+        if dof not in basis_ttno.dofs:
+            missing_dofs.append(dof)
+    # see `TTNS.get_node_indices`
+    missing_ttno_args = []
+    for dof in missing_dofs:
+        ndim = basis_ttno.pbond_dims[basis_ttno.dofs.index(dof)]
+        missing_ttno_args.append([np.eye(ndim, ndim), [("up", str(dof)), ("down", str(dof))]])
+    return missing_ttno_args
