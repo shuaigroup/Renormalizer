@@ -102,14 +102,14 @@ def evolve_prop_and_compress_tdrk4(ttns:TTNS, ttno:TTNO, coeff:Union[complex, fl
 def evolve_tdvp_ps(ttns:TTNS, ttno:TTNO, coeff:Union[complex, float], tau:float):
     ttns.check_canonical()
     # second order 1-site projector splitting
-    tte = TTNEnviron(ttns, ttno)
+    ttne = TTNEnviron(ttns, ttno)
 
     # in MPS language: left to right sweep
     #local_steps1 = _tdvp_ps_recursion_forward(ttns.root, ttns, ttno, tte, coeff, tau / 2)
-    local_steps1 = _tdvp_ps_forward(ttns, ttno, tte, coeff, tau / 2)
+    local_steps1 = _tdvp_ps_forward(ttns, ttno, ttne, coeff, tau / 2)
     # in MPS language: right to left sweep
     #local_steps2 = _tdvp_ps_recursion_backward(ttns.root, ttns, ttno, tte, coeff, tau / 2)
-    local_steps2 = _tdvp_ps_backward(ttns, ttno, tte, coeff, tau / 2)
+    local_steps2 = _tdvp_ps_backward(ttns, ttno, ttne, coeff, tau / 2)
 
     # Used for consistency with MPS
     # # in MPS language: right to left sweep

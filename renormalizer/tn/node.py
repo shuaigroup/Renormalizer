@@ -31,6 +31,7 @@ class TreeNode:
 
 
 class TreeNodeBasis(TreeNode):
+    # tree node whose data is basis sets
     def __init__(self, basis_sets: List[BasisSet]):
         super().__init__()
         self.basis_sets: List[BasisSet] = basis_sets
@@ -51,6 +52,7 @@ class TreeNodeBasis(TreeNode):
 
 
 class TreeNodeTensor(TreeNode):
+    # tree node whose data is numerical tensors for each TTN node/site
     def __init__(self, tensor, qn=None):
         super().__init__()
         self._tensor: np.ndarray = np.array(tensor)
@@ -92,6 +94,7 @@ class TreeNodeTensor(TreeNode):
 
 
 class TreeNodeEnviron(TreeNode):
+    # tree node whose data is environmental tensors
     def __init__(self):
         super().__init__()
         self.parent: TreeNodeEnviron = None
