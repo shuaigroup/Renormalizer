@@ -572,18 +572,7 @@ class Mps(MatrixProduct):
         ``self`` is overwritten.
         '''
 
-        if kind == "mps_only":
-            new_coeff = self.coeff
-        elif kind == "mps_and_coeff":
-            new_coeff = self.coeff / np.linalg.norm(self.coeff)
-        elif kind == "mps_norm_to_coeff":
-            new_coeff = self.coeff * self.mp_norm
-        else:
-            raise ValueError(f"kind={kind} is not valid.")
-        new_mps = self.scale(1.0 / self.mp_norm, inplace=True)
-        new_mps.coeff = new_coeff
-
-        return new_mps
+        return normalize(self, kind)
 
 
     def expand_bond_dimension(self, hint_mpo=None, coef=1e-10, include_ex=True):
@@ -1943,6 +1932,42 @@ def expand_bond_dimension_general(mps, hint_mpo=None, coef=1e-10, ex_mps=None):
     return (mps + expander.scale(coef * mps.norm, inplace=True)).canonicalise().canonicalise().normalize(
         "mps_norm_to_coeff")
 
+
+def normalize(tn, kind):
+    r''' normalize the wavefunction
+
+    Parameters
+    ----------
+    kind: str
+        "mps_only": the mps part is normalized and coeff is not modified;
+        "mps_norm_to_coeff": the mps part is normalized and the norm is multiplied to coeff;
+        "mps_and_coeff": both mps and coeff is normalized
+
+    Returns
+    -------
+    ``self`` is overwritten.
+    '''
+
+    if hasattr(tn, "mp_norm"):
+        tn_norm = tn.mp_norm
+    elif hasattr(tn, "ttns_norm"):
+        tn_norm = tn.ttns_norm
+    else:
+        raise ValueError(f"{type(tn)} does not have norm attribute")
+
+    if kind in ["mps_only", "ttns_only"]:
+        new_coeff = tn.coeff
+    elif kind in ["mps_and_coeff", "ttns_and_coeff"]:
+        new_coeff = tn.coeff / np.linalg.norm(tn.coeff)
+    elif kind in ["mps_norm_to_coeff", "ttns_norm_to_coeff"]:
+        new_coeff = tn.coeff * tn_norm
+    else:
+        raise ValueError(f"kind={kind} is not valid.")
+
+    tn.scale(1.0 / tn_norm, inplace=True)
+    tn.coeff = new_coeff
+
+    return tn
 
 class BraKetPair:
     def __init__(self, bra_mps, ket_mps, mpo=None):

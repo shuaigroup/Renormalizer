@@ -1,11 +1,12 @@
 from itertools import chain
 from typing import List, Sequence
 
+import numpy as np
 from print_tree import print_tree
 
 from renormalizer import Op
 from renormalizer.model.basis import BasisSet, BasisDummy
-from renormalizer.tn.node import NodeUnion, TreeNodeBasis
+from renormalizer.tn.node import NodeUnion, TreeNodeBasis, copy_connection
 
 
 class Tree:
@@ -210,6 +211,25 @@ class BasisTree(Tree):
     @property
     def pbond_dims(self) -> List[List[int]]:
         return [b.pbond_dims for b in self.node_list]
+
+    def add_auxiliary_space(self, auxiliary_label="Q") -> "BasisTree":
+        # make a new basis tree with auxiliary basis
+        node2_list = []
+        for node in self:
+            basis_set2_list = []
+            for basis in node.basis_sets:
+                # the P space
+                basis_set2_list.append(basis)
+                if not isinstance(basis, BasisDummy):
+                    # the Q space
+                    basis_q: BasisSet = basis.copy((auxiliary_label, basis.dofs))
+                    # set to zero for know. could change to more complicated case in the future
+                    basis_q.sigmaqn = np.zeros_like(basis.sigmaqn)
+                    basis_set2_list.append(basis_q)
+            node2_list.append(TreeNodeBasis(basis_set2_list))
+        copy_connection(self.node_list, node2_list)
+        basis_tree2 = BasisTree(node2_list[0])
+        return basis_tree2
 
 
 def approximate_partition(sequence, ngroups):
