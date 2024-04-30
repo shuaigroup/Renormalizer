@@ -195,3 +195,11 @@ def test_partial_ttno(basis_tree):
     e = ttns.expectation(ttno)
     e2 = ttns.expectation(ttno2)
     np.testing.assert_allclose(e, e2)
+
+
+@pytest.mark.parametrize("basis", [basis_binary, basis_multi_basis])
+def test_print(basis):
+    basis.print()
+    ttns = TTNS.random(basis, 0, 5, 1)
+    ttns.print_shape()
+    ttns.print_vn_entropy()
