@@ -1,15 +1,17 @@
-import logging
-
-import pytest
 from  typing import List
 
-from renormalizer import Op
+import pytest
+
+from renormalizer import Op, Quantity
 from renormalizer.mps.backend import np
+from renormalizer.mps.mps import expand_bond_dimension_general
 from renormalizer.mps.tests.test_evolve import QUTIP_STEP, qutip_expectations, init_mps
 from renormalizer.tests.parameter_exact import model
+from renormalizer.tests import parameter
 from renormalizer.tn import BasisTree, TTNO, TTNS
 from renormalizer.tn.tree import from_mps
 from renormalizer.tn.node import TreeNodeBasis
+from renormalizer.tn.utils_eph import max_entangled_ex
 from renormalizer.utils import EvolveConfig, EvolveMethod, CompressConfig, CompressCriteria
 
 
@@ -113,3 +115,36 @@ def test_tdvp_ps(ttns_and_ttno, method):
     else:
         assert method is EvolveMethod.tdvp_ps2
         check_result(ttns, ttno, 2, 10, op_n_list, 5e-4)
+
+
+def test_thermalprop():
+    holstein_model = parameter.holstein_model
+
+    basis_tree = BasisTree.binary_mctdh(holstein_model.basis, contract_primitive=True)
+    basis_tree2 = basis_tree.add_auxiliary_space()
+
+    ttns = max_entangled_ex(basis_tree2)
+    ttns.compress_config.bond_dim_max_value = 12
+    ttno = TTNO(basis_tree, holstein_model.ham_terms)
+    ttns = expand_bond_dimension_general(ttns, hint_mpo=ttno)
+    ttns.evolve_config = EvolveConfig(EvolveMethod.tdvp_ps)
+
+
+    beta = Quantity(298, "K").to_beta()
+    evolve_time = beta / 2j
+    nsteps = 50
+    dbeta = evolve_time / nsteps
+    for i in range(nsteps):
+        ttns.evolve(ttno, dbeta)
+        e = ttns.expectation(ttno)
+
+    ne_ttno_list = [TTNO(basis_tree, Op(r"a^\dagger a", b.dof)) for b in holstein_model.basis if b.is_electron]
+    occ = [ttns.expectation(ttno) for ttno in ne_ttno_list]
+
+    etot_std = 0.0853388 + parameter.holstein_model.gs_zpe
+    occ_std = [0.20896541050347484, 0.35240029674394463, 0.4386342927525734]
+    # used small M and large dt
+    # as long as the result is not absurdly wrong, it's fine
+    rtol = 5e-3
+    assert np.allclose(occ, occ_std, rtol=rtol)
+    assert np.allclose(e, etot_std, rtol=rtol)

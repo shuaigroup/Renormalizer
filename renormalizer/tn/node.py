@@ -53,8 +53,8 @@ class TreeNodeBasis(TreeNode):
 class TreeNodeTensor(TreeNode):
     def __init__(self, tensor, qn=None):
         super().__init__()
-        self._tensor: np.ndarray = tensor
-        self._qn: np.ndarray = qn
+        self._tensor: np.ndarray = np.array(tensor)
+        self._qn: np.ndarray = np.array(qn)
 
     def check_canonical(self, atol=None, assertion=True):
         if atol is None:

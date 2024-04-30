@@ -4,7 +4,7 @@ from renormalizer import BasisHalfSpin, Model, Mpo, Mps
 from renormalizer.mps.backend import np
 from renormalizer.model.model import heisenberg_ops
 from renormalizer.tn.node import TreeNodeBasis
-from renormalizer.tn.tree import TTNO, TTNS, TTNEnviron, from_mps, copy_connection
+from renormalizer.tn.tree import TTNO, TTNS, TTNEnviron, from_mps
 from renormalizer.tn.treebase import BasisTree
 from renormalizer.tn.gs import optimize_ttns
 from renormalizer.tests.parameter import holstein_model
@@ -182,16 +182,8 @@ def test_compress():
 
 @pytest.mark.parametrize("basis_tree", [basis_binary, basis_multi_basis])
 def test_partial_ttno(basis_tree):
-    # make a new basis tree with redundant basis
-    node2_list = []
-    for node in basis_tree:
-        basis_set2_list = []
-        for basis in node.basis_sets:
-            basis_set2_list.append(basis)
-            basis_set2_list.append(basis.copy(("v", basis.dofs)))
-        node2_list.append(TreeNodeBasis(basis_set2_list))
-    copy_connection(basis_tree.node_list, node2_list)
-    basis_tree2 = BasisTree(node2_list[0])
+    # apply ttno on ttns when ttns has more dofs than ttno
+    basis_tree2 = basis_tree.add_auxiliary_space()
     ttns = TTNS.random(basis_tree2, qntot=0, m_max=4)
     ttno = TTNO(basis_tree, heisenberg_ops(nspin))
     ttno2 = TTNO(basis_tree2, heisenberg_ops(nspin))

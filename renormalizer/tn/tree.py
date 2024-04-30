@@ -10,6 +10,7 @@ from renormalizer.mps.backend import np, backend
 from renormalizer.mps.matrix import asnumpy, asxp_oe_args, tensordot
 from renormalizer.mps.svd_qn import add_outer, svd_qn, blockrecover, get_qn_mask
 from renormalizer.mps.lib import select_basis
+from renormalizer.mps.mps import normalize
 from renormalizer.utils.configs import CompressConfig, OptimizeConfig, EvolveConfig, EvolveMethod
 from renormalizer.utils import calc_vn_entropy
 from renormalizer.tn.node import TreeNodeTensor, TreeNodeBasis, copy_connection, TreeNodeEnviron
@@ -292,6 +293,7 @@ class TTNS(TTNBase):
                 for child in node.children:
                     node.qn += child.qn
         else:
+            assert condition is None
             super().__init__(root)
 
         self.coeff = 1
@@ -433,18 +435,7 @@ class TTNS(TTNBase):
         ``self`` is overwritten.
         '''
 
-        if kind == "mps_only":
-            new_coeff = self.coeff
-        elif kind == "mps_and_coeff":
-            new_coeff = self.coeff / np.linalg.norm(self.coeff)
-        elif kind == "mps_norm_to_coeff":
-            new_coeff = self.coeff * self.ttns_norm
-        else:
-            raise ValueError(f"kind={kind} is not valid.")
-        new_mps = self.scale(1.0 / self.ttns_norm, inplace=True)
-        new_mps.coeff = new_coeff
-
-        return new_mps
+        return normalize(self, kind)
 
     def evolve(self, ttno:TTNO, tau:Union[complex, float], normalize:bool=True):
         imag_time = np.iscomplex(tau)
@@ -914,7 +905,7 @@ def from_mps(mps: Mps) -> Tuple[BasisTree, TTNS, TTNO]:
     # children + physical + parent
     # |    |    |     |
     # o -> o -> o -> root (canonical center)
-    basis = BasisTree.linear(mps.model.basis_ttns[::-1])
+    basis = BasisTree.linear(mps.model.basis[::-1])
     ttns = TTNS(basis)
     for i in range(len(mps)):
         node = ttns.node_list[::-1][i]
@@ -977,6 +968,8 @@ def moveaxis(ttns:TTNS, node:TreeNodeTensor, ichild:int):
 
 
 def get_skip_pidx(snode: TreeNodeTensor, ttns: TTNS, ttno: TTNO) -> List[int]:
+    # get the indices of the physical bonds that should be skipped
+    # because of missing dofs in ttno
     if ttno is None:
         return []
     idx = ttns.node_idx[snode]
@@ -992,29 +985,3 @@ def get_skip_pidx(snode: TreeNodeTensor, ttns: TTNS, ttno: TTNO) -> List[int]:
         if dof not in basis_ttno.dofs:
             skip_pidx.append(i)
     return skip_pidx
-
-
-def get_missing_ttno_args(snode: TreeNodeTensor, ttns: TTNS, ttno: TTNO) -> List:
-    return []
-    # if a basis is in TTNS but not in TTNO, construct a dummy identity tensor and its indices
-    # as a dummy TTNO node
-    # Of course, the most efficient way is to directly connect two TTNS node indices
-    # The method here is not most efficient, but with moderate Ms and Mo the overhead should be small
-    idx = ttns.node_idx(snode)
-    basis_ttns: TreeNodeBasis = ttns.basis_ttns.node_list[idx]
-    basis_ttno: TreeNodeBasis = ttno.basis_ttns.node_list[idx]
-    if basis_ttns == basis_ttno:
-        return []
-    assert len(basis_ttno.dofs) < len(basis_ttns.dofs)
-    for dof in basis_ttno.dofs:
-        assert dof in basis_ttns.dofs
-    missing_dofs = []
-    for i, dof in enumerate(basis_ttns.dofs):
-        if dof not in basis_ttno.dofs:
-            missing_dofs.append(dof)
-    # see `TTNS.get_node_indices`
-    missing_ttno_args = []
-    for dof in missing_dofs:
-        ndim = basis_ttno.pbond_dims[basis_ttno.dofs.index(dof)]
-        missing_ttno_args.append([np.eye(ndim, ndim), [("up", str(dof)), ("down", str(dof))]])
-    return missing_ttno_args
