@@ -45,29 +45,6 @@ def time_derivative_vmf(ttns: TTNS, ttno: TTNO):
     return np.concatenate(deriv_list)
 
 
-def regularized_inversion_debug(m, eps):
-    # XXX: this is debug code
-    evals, evecs = scipy.linalg.eigh(m)
-    evals_i, evecs_i = scipy.linalg.eigh(m + np.eye(len(m)) * eps)
-    scipy.linalg.inv(m + np.eye(len(m)) * eps)
-    weight1 = 1
-    evals = np.where(evals>0, evals, 0)
-    weight2 = np.exp(-evals / eps)
-    weight3 = np.random.rand(len(evals)) * 2
-    evals1 = evals + eps * weight2
-    # np.testing.assert_allclose(evals_i, evals1)
-    evals2 = evals + eps * weight2
-    evals3 = evals + eps * weight3
-    new_evals = 1 / evals1
-    # print(new_evals)
-    return evecs @ np.diag(new_evals) @ evecs.T.conj()
-
-
-def regularized_inversion(m, eps):
-    m = m + np.eye(len(m)) * eps
-    return scipy.linalg.pinv(m)
-
-
 def regularized_inversion(m, eps):
     evals, evecs = scipy.linalg.eigh(m)
     weight = np.exp(-evals / eps)
@@ -105,55 +82,21 @@ def evolve_tdvp_ps(ttns:TTNS, ttno:TTNO, coeff:Union[complex, float], tau:float)
     ttne = TTNEnviron(ttns, ttno)
 
     # in MPS language: left to right sweep
-    #local_steps1 = _tdvp_ps_recursion_forward(ttns.root, ttns, ttno, tte, coeff, tau / 2)
     local_steps1 = _tdvp_ps_forward(ttns, ttno, ttne, coeff, tau / 2)
     # in MPS language: right to left sweep
-    #local_steps2 = _tdvp_ps_recursion_backward(ttns.root, ttns, ttno, tte, coeff, tau / 2)
     local_steps2 = _tdvp_ps_backward(ttns, ttno, ttne, coeff, tau / 2)
 
     # Used for consistency with MPS
     # # in MPS language: right to left sweep
-    # local_steps1 = _tdvp_ps_recursion_backward(ttns.root, ttns, ttno, tte, coeff, tau / 2)
+    # local_steps1 = _tdvp_ps_backward(ttns.root, ttns, ttno, tte, coeff, tau / 2)
     # # in MPS language: left to right sweep
-    # local_steps2 = _tdvp_ps_recursion_forward(ttns.root, ttns, ttno, tte, coeff, tau / 2)
+    # local_steps2 = _tdvp_ps_forward(ttns.root, ttns, ttno, tte, coeff, tau / 2)
 
     steps_stat = stats.describe(local_steps1 + local_steps2)
     # logger.debug(f"Local Krylov space forward: {local_steps1}")
     # logger.debug(f"Local Krylov space backward: {local_steps2}")
     logger.debug(f"TDVP-PS Krylov space: {steps_stat}")
     return ttns
-
-
-def _tdvp_ps_recursion_forward(snode: TreeNodeTensor,
-                                ttns: TTNS,
-                                ttno: TTNO,
-                                ttne: TTNEnviron,
-                                coeff:Union[complex, float],
-                                tau:float) -> List[int]:
-    """time evolution snode and all of its children.
-    Cano center at snode when entering and leaving"""
-    local_steps: List[int] = []
-    for ichild, child in enumerate(snode.children):
-        # cano to child
-        ttns.push_cano_to_child(snode, ichild)
-        # update env
-        ttne.build_parent_environ_node(snode, ichild, ttns, ttno)
-        # recursive time evolution
-        local_steps_child = _tdvp_ps_recursion_forward(child, ttns, ttno, ttne, coeff, tau)
-        local_steps.extend(local_steps_child)
-        # decompose, the first index for parent, the second index for child
-        ms = ttns.decompose_to_parent(child)
-        # update env
-        ttne.build_children_environ_node(child, ttns, ttno)
-        # backward time evolution for snode
-        ms_t, j = evolve_0site(ms.T, child, ttns, ttno, ttne, coeff, -tau)
-        ttns.merge_to_parent(child, ms_t.reshape(ms.T.shape).T)
-        local_steps.append(j)
-
-    ms, j = evolve_1site(snode, ttns, ttno, ttne, coeff, tau)
-    snode.tensor = ms.reshape(snode.shape)
-    local_steps.append(j)
-    return local_steps
 
 
 def _tdvp_ps_forward(ttns: TTNS,
@@ -197,41 +140,6 @@ def _tdvp_ps_forward(ttns: TTNS,
         ttne.build_parent_environ_node(snode, ichild, ttns, ttno)
         stack[-1] = (snode, ichild)
         stack.append((child, -1))
-
-    return local_steps
-
-
-def _tdvp_ps_recursion_backward(snode: TreeNodeTensor,
-                                ttns: TTNS,
-                                ttno: TTNO,
-                                ttne: TTNEnviron,
-                                coeff:Union[complex, float],
-                                tau:float) -> List[int]:
-    """time evolution snode and all of its children.
-    Cano center at snode when entering and leaving"""
-    local_steps: List[int] = []
-
-    ms, j = evolve_1site(snode, ttns, ttno, ttne, coeff, tau)
-    snode.tensor = ms.reshape(snode.shape)
-    local_steps.append(j)
-
-    for ichild, child in reversed(list(enumerate(snode.children))):
-        # decompose, the first index for child, the second index for parent
-        ms = ttns.decompose_to_child(snode, ichild)
-        # update env
-        ttne.build_parent_environ_node(snode, ichild, ttns, ttno)
-        # backward time evolution for snode
-        shape = ms.shape
-        ms, j = evolve_0site(ms, child, ttns, ttno, ttne, coeff, -tau)
-        ttns.merge_to_child(snode, ichild, ms.reshape(shape))
-        local_steps.append(j)
-        # recursive time evolution
-        local_steps_child = _tdvp_ps_recursion_backward(child, ttns, ttno, ttne, coeff, tau)
-        local_steps.extend(local_steps_child)
-        ttns.push_cano_to_parent(child)
-        # update env
-        ttne.build_children_environ_node(child, ttns, ttno)
-
 
     return local_steps
 
