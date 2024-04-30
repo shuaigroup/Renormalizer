@@ -1,6 +1,6 @@
 import opt_einsum as oe
 
-from renormalizer.mps.backend import np, backend
+from renormalizer.mps.backend import np
 from renormalizer.mps.matrix import asxp
 from renormalizer.tn.node import TreeNodeTensor
 from renormalizer.tn.tree import TTNS, TTNO, TTNEnviron
@@ -56,10 +56,10 @@ def hop_expr1(snode: TreeNodeTensor, ttns: TTNS, ttno: TTNO, ttne: TTNEnviron, r
     args.append(enode.environ_parent)
     args.append(ttne.get_parent_indices(enode, ttns, ttno))
     # operator
-    args.extend([onode.tensor, ttno.get_node_indices(onode, "up", "down")])
+    args.extend([onode.tensor, ttno.get_node_indices(onode)])
 
     # input and output
-    input_indices = ttns.get_node_indices(snode)
+    input_indices = ttns.get_node_indices(snode, ttno=ttno)
     output_indices = ttns.get_node_indices(snode, conj=True)
 
     shape = snode.shape
@@ -98,11 +98,11 @@ def hop_expr2(snode: TreeNodeTensor, ttns: TTNS, ttno: TTNO, ttne: TTNEnviron):
     args.append(ttne.get_parent_indices(eparent, ttns, ttno))
 
     # operator
-    args.extend([oparent.tensor, ttno.get_node_indices(oparent, "up", "down")])
-    args.extend([onode.tensor, ttno.get_node_indices(onode, "up", "down")])
+    args.extend([oparent.tensor, ttno.get_node_indices(oparent)])
+    args.extend([onode.tensor, ttno.get_node_indices(onode)])
 
     # input and output
-    input_indices = ttns.get_node_indices(snode, include_parent=True)
+    input_indices = ttns.get_node_indices(snode, include_parent=True, ttno=ttno)
     output_indices = ttns.get_node_indices(snode, conj=True, include_parent=True)
 
     # shape
