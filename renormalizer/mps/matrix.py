@@ -291,11 +291,13 @@ def pair_tensor_contract(
     return tensordot(view_left, view_right, axes=(left_pos, right_pos))
 
 
-def asnumpy(array: Union[np.ndarray, xp.ndarray, Matrix]) -> np.ndarray:
+def asnumpy(array: Union[np.ndarray, xp.ndarray, Matrix, List]) -> np.ndarray:
     if array is None:
         return None
     if isinstance(array, Matrix):
         return array.array
+    if isinstance(array, List):
+        return np.array(array)
     if not USE_GPU:
         assert isinstance(array, np.ndarray)
         return array
