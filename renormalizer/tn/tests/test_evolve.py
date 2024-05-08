@@ -23,7 +23,6 @@ def add_ttno_offset(ttns: TTNS, ttno: TTNO):
     return TTNO(ttno.basis, ham_terms)
 
 
-
 def construct_ttns_and_ttno_chain():
     basis, ttns, ttno = from_mps(init_mps)
     op_n_list = [TTNO(basis, [Op(r"a^\dagger a", i)]) for i in range(3)]
@@ -167,6 +166,7 @@ def test_save_load(ttns_and_ttno):
     ttns2.dump(fname)
     ttns2 = TTNS.load(ttns.basis, fname)
     ttns2 = ttns2.evolve(ttno, tau)
+    assert ttns2.coeff == ttns1.coeff
     exp2 = [ttns2.expectation(o) for o in op_n_list]
-    np.testing.assert_allclose(exp1, exp2)
+    np.testing.assert_allclose(exp2, exp1)
     os.remove(fname)

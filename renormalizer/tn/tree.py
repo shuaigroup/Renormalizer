@@ -27,7 +27,7 @@ class TTNBase(Tree):
     # A tree whose tree node is TreeNodeTensor
 
     @classmethod
-    def load(cls, basis: BasisTree, fname: str):
+    def load(cls, basis: BasisTree, fname: str, other_attrs=None):
         npload = np.load(fname, allow_pickle=True)
         assert npload["version"] == "0.1"
 
@@ -38,7 +38,10 @@ class TTNBase(Tree):
             qn = npload[f"qn_{i}"]
             nodes.append(TreeNodeTensor(tensor, qn))
         copy_connection(basis.node_list, nodes)
-        return cls(basis, root=nodes[0])
+        instance = cls(basis, root=nodes[0])
+        for attr in other_attrs:
+            setattr(instance, attr, npload[attr])
+        return instance
 
     def __init__(self, basis: BasisTree, root: TreeNodeTensor):
         self.basis = basis
@@ -47,13 +50,15 @@ class TTNBase(Tree):
     def dump(self, fname: str, other_attrs=None):
         if other_attrs is None:
             other_attrs = []
-        elif isinstance(other_attrs, str):
-            other_attrs = [other_attrs]
-        assert isinstance(other_attrs, list)
+
         data_dict = {
             "version": "0.1",
             "nsites": len(self),
         }
+
+        for attr in other_attrs:
+            data_dict[attr] = getattr(self, attr)
+
         for i, node in enumerate(self.node_list):
             data_dict[f"tensor_{i}"] = node.tensor
             data_dict[f"qn_{i}"] = node.qn
@@ -320,6 +325,13 @@ EVOLVE_METHODS = {}
 
 
 class TTNS(TTNBase):
+
+    @classmethod
+    def load(cls, basis: BasisTree, fname: str, other_attrs=None):
+        if other_attrs is None:
+            other_attrs = []
+        other_attrs = other_attrs + ["coeff"]
+        return super().load(basis, fname, other_attrs)
 
     @classmethod
     def random(cls, basis: BasisTree, qntot, m_max, percent=1.0):
@@ -1068,6 +1080,12 @@ class TTNS(TTNBase):
 
         new_mp.root.tensor *= val
         return new_mp
+
+    def dump(self, fname, other_attrs=None):
+        if other_attrs is None:
+            other_attrs = []
+        other_attrs = other_attrs + ["coeff"]
+        super().dump(fname, other_attrs)
 
     def __add__(self, other: "TTNS"):
         return self.add(other)
