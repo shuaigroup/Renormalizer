@@ -107,14 +107,6 @@ class BasisSet:
         raise NotImplementedError
 
 
-class BasisDummy(BasisSet):
-    """
-    Dummy basis set used in soft truncated TNPI
-    """
-    def  __init__(self, dof, nbas):
-        super().__init__(dof, nbas, [0] * nbas)
-
-
 class BasisSHO(BasisSet):
     """
     simple harmonic oscillator basis set
@@ -1001,10 +993,10 @@ class BasisHalfSpin(BasisSet):
 
 
 class BasisDummy(BasisSet):
-    def __init__(self, dof, sigmaqn:List=None):
+    def __init__(self, dof, nbas=1, sigmaqn:List=None):
         if sigmaqn is None:
-            sigmaqn = [0]
-        super().__init__(dof, 1, sigmaqn)
+            sigmaqn = [0] * nbas
+        super().__init__(dof, nbas, sigmaqn)
 
     def op_mat(self, op: Union[Op, str]):
         if not isinstance(op, Op):

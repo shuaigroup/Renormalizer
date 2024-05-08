@@ -1,5 +1,6 @@
 from typing import List, Dict, Tuple, Union, Callable
 from numbers import Number
+import logging
 
 import scipy
 import opt_einsum as oe
@@ -19,8 +20,49 @@ from renormalizer.tn.treebase import Tree, BasisTree
 from renormalizer.tn.symbolic_mpo import construct_symbolic_mpo, symbolic_mo_to_numeric_mo_general
 
 
+logger = logging.getLogger(__name__)
+
+
 class TTNBase(Tree):
     # A tree whose tree node is TreeNodeTensor
+
+    @classmethod
+    def load(cls, basis: BasisTree, fname: str):
+        npload = np.load(fname, allow_pickle=True)
+        assert npload["version"] == "0.1"
+
+        nsites = int(npload["nsites"])
+        nodes = []
+        for i in range(nsites):
+            tensor = npload[f"tensor_{i}"]
+            qn = npload[f"qn_{i}"]
+            nodes.append(TreeNodeTensor(tensor, qn))
+        copy_connection(basis.node_list, nodes)
+        return cls(basis, root=nodes[0])
+
+    def __init__(self, basis: BasisTree, root: TreeNodeTensor):
+        self.basis = basis
+        super().__init__(root)
+
+    def dump(self, fname: str, other_attrs=None):
+        if other_attrs is None:
+            other_attrs = []
+        elif isinstance(other_attrs, str):
+            other_attrs = [other_attrs]
+        assert isinstance(other_attrs, list)
+        data_dict = {
+            "version": "0.1",
+            "nsites": len(self),
+        }
+        for i, node in enumerate(self.node_list):
+            data_dict[f"tensor_{i}"] = node.tensor
+            data_dict[f"qn_{i}"] = node.qn
+
+        try:
+            np.savez(fname, **data_dict)
+        except Exception:
+            logger.exception(f"Dump MP failed.")
+
     def print_shape(self, full:bool=False, print_function:Callable=None):
         """
         Print the shape of the TTN tree
@@ -107,7 +149,7 @@ class TTNO(TTNBase):
                 mo_mat = symbolic_mo_to_numeric_mo_general(node_basis.basis_sets, mo, backend.real_dtype)
                 node_list_op.append(TreeNodeTensor(mo_mat, qn))
             root: TreeNodeTensor = copy_connection(node_list_basis, node_list_op)
-        super().__init__(root)
+        super().__init__(basis, root)
         # tensor node to basis node
         self.tn2bn = {tn: bn for tn, bn in zip(self.node_list, self.basis.node_list)}
         self.tn2dofs = {tn: bn.dofs for tn, bn in self.tn2bn.items()}
@@ -416,7 +458,7 @@ class TTNS(TTNBase):
 
             root: TreeNodeTensor = copy_connection(basis.node_list, node_list_state)
 
-            super().__init__(root)
+            super().__init__(basis, root)
 
             # summing up the site qn
             for node in self.postorder_list():
@@ -424,7 +466,7 @@ class TTNS(TTNBase):
                     node.qn += child.qn
         else:
             assert condition is None
-            super().__init__(root)
+            super().__init__(basis, root)
 
         self.coeff = 1
         self.check_shape()

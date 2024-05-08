@@ -1,3 +1,4 @@
+import os
 from  typing import List
 
 import pytest
@@ -118,6 +119,7 @@ def test_tdvp_ps(ttns_and_ttno, method):
 
 
 def test_thermalprop():
+    # imaginary time evolution on the P space. Q space untouched
     holstein_model = parameter.holstein_model
 
     basis_tree = BasisTree.binary_mctdh(holstein_model.basis, contract_primitive=True)
@@ -148,3 +150,23 @@ def test_thermalprop():
     rtol = 5e-3
     assert np.allclose(occ, occ_std, rtol=rtol)
     assert np.allclose(e, etot_std, rtol=rtol)
+
+
+@pytest.mark.parametrize("ttns_and_ttno", [init_chain, init_tree, init_tree_mctdh])
+def test_save_load(ttns_and_ttno):
+    ttns, ttno, op_n_list = ttns_and_ttno
+    ttns = ttns + ttns.random(ttns.basis, 1, 5).scale(1e-5, inplace=True)
+    ttns.canonicalise()
+    tau = 0.5
+    ttns1 = ttns.copy()
+    for i in range(2):
+        ttns1 = ttns1.evolve(ttno, tau)
+    exp1 = [ttns1.expectation(o) for o in op_n_list]
+    ttns2 = ttns.evolve(ttno, tau)
+    fname = "test.npz"
+    ttns2.dump(fname)
+    ttns2 = TTNS.load(ttns.basis, fname)
+    ttns2 = ttns2.evolve(ttno, tau)
+    exp2 = [ttns2.expectation(o) for o in op_n_list]
+    np.testing.assert_allclose(exp1, exp2)
+    os.remove(fname)
