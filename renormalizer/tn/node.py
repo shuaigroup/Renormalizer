@@ -55,8 +55,8 @@ class TreeNodeTensor(TreeNode):
     # tree node whose data is numerical tensors for each TTN node/site
     def __init__(self, tensor, qn=None):
         super().__init__()
-        self._tensor: np.ndarray = np.array(tensor)
-        self._qn: np.ndarray = np.array(qn)
+        self.tensor: np.ndarray = tensor
+        self.qn: np.ndarray = qn
 
     def check_canonical(self, atol=None, assertion=True):
         if atol is None:
