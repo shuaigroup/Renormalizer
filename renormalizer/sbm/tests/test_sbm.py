@@ -14,6 +14,7 @@ def test_sdf():
     omega_c = Quantity(5)
     sdf = SpectralDensityFunction(alpha, omega_c)
     omega_list, displacement_list = sdf.trapz(200, 0.0, 50)
+    omega_list, displacement_list = sdf.post_process(omega_list, displacement_list)
 
     ph_list = [Phonon.simplest_phonon(o, d) for o,d in zip(omega_list, displacement_list)]
     mol_reor = sum(ph.reorganization_energy.as_au() for ph in ph_list)
