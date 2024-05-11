@@ -49,10 +49,10 @@ def symbolic_mo_to_numeric_mo_general(basis_sets: List[BasisSet], mo, dtype):
             assert not np.iscomplexobj(mo_elem), "complex operator not supported yet"
             mo_tensor[i] += mo_elem[0, ..., 0]
 
-    return np.moveaxis(mo_tensor, mo.ndim-1, -1)
+    return np.moveaxis(mo_tensor, mo.ndim - 1, -1)
 
 
-def construct_symbolic_mpo(tn:BasisTree, terms: List[Op], const:float=0):
+def construct_symbolic_mpo(tn: BasisTree, terms: List[Op], const: float = 0):
     algo = "Hopcroft-Karp"
     nodes = tn.postorder_list()
     basis = list(chain(*[n.basis_sets for n in nodes]))
@@ -70,8 +70,8 @@ def construct_symbolic_mpo(tn:BasisTree, terms: List[Op], const:float=0):
         if not node.children:
             ta = np.zeros((table.shape[0], 1), dtype=np.uint16)
             table = np.concatenate((ta, table), axis=1)
-            table_row = table[:, :k+1]
-            table_col = table[:, k+1:]
+            table_row = table[:, : k + 1]
+            table_col = table[:, k + 1 :]
             in_ops_list = [dummy_in_ops]
         else:
             # the children must have been visited
@@ -81,10 +81,11 @@ def construct_symbolic_mpo(tn:BasisTree, terms: List[Op], const:float=0):
             m = len(node.children)
             # roll relevant columns to the front
             table = np.roll(table, m, axis=1)
-            table_row = table[:, :m+k]
-            table_col = table[:, m+k:]
-        out_ops, table, factor = \
-            _construct_symbolic_mpo_one_site(table_row, table_col, in_ops_list, factor, primary_ops, algo, k)
+            table_row = table[:, : m + k]
+            table_col = table[:, m + k :]
+        out_ops, table, factor = _construct_symbolic_mpo_one_site(
+            table_row, table_col, in_ops_list, factor, primary_ops, algo, k
+        )
         # move the new column at the first index to the last index
         table = np.roll(table, -1, axis=1)
         out_ops_list.append(out_ops)

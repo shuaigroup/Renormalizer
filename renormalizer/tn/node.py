@@ -123,7 +123,7 @@ def copy_connection(source_node_list: List[NodeUnion], target_node_list: List[No
     NodeUnion
         The root node of the target tree.
     """
-    node2idx: Dict[NodeUnion, int] = {n:i for i, n in enumerate(source_node_list)}
+    node2idx: Dict[NodeUnion, int] = {n: i for i, n in enumerate(source_node_list)}
     root = None
     for source_node, target_node in zip(source_node_list, target_node_list):
         for child in source_node.children:
@@ -133,5 +133,3 @@ def copy_connection(source_node_list: List[NodeUnion], target_node_list: List[No
             root = target_node
     assert root is not None
     return root
-
-

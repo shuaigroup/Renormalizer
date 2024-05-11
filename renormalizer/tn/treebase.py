@@ -14,7 +14,7 @@ class Tree:
         assert root.parent is None
         self.root = root
         self.node_list = self.preorder_list()
-        self.node_idx = {node:i for i, node in enumerate(self.node_list)}
+        self.node_idx = {node: i for i, node in enumerate(self.node_list)}
 
     def preorder_list(self, func=None) -> List[NodeUnion]:
         def recursion(node: NodeUnion):
@@ -27,6 +27,7 @@ class Tree:
             for child in node.children:
                 ret += recursion(child)
             return ret
+
         return recursion(self.root)
 
     def postorder_list(self) -> List[NodeUnion]:
@@ -38,6 +39,7 @@ class Tree:
                 ret += recursion(child)
             ret.append(node)
             return ret
+
         return recursion(self.root)
 
     @property
@@ -53,16 +55,18 @@ class Tree:
 
 class BasisTree(Tree):
     """Tree of basis sets."""
+
     @classmethod
     def linear(cls, basis_list: List[BasisSet]):
         node_list = [TreeNodeBasis([basis]) for basis in basis_list]
         for i in range(len(node_list) - 1):
-            node_list[i].add_child(node_list[i+1])
+            node_list[i].add_child(node_list[i + 1])
         return cls(node_list[0])
 
     @classmethod
     def binary(cls, basis_list: List[BasisSet]):
         node_list = [TreeNodeBasis([basis]) for basis in basis_list]
+
         def binary_recursion(node: TreeNodeBasis, offspring: List[TreeNodeBasis]):
             if len(offspring) == 0:
                 return
@@ -74,11 +78,19 @@ class BasisTree(Tree):
             mid_idx = len(new_offspring) // 2
             binary_recursion(offspring[0], new_offspring[:mid_idx])
             binary_recursion(offspring[1], new_offspring[mid_idx:])
+
         binary_recursion(node_list[0], node_list[1:])
         return cls(node_list[0])
 
     @classmethod
-    def general_mctdh(cls, basis_list: List[BasisSet], tree_order:int, contract_primitive:bool=False, contract_label:Sequence[bool]=None, dummy_label="MCTDH virtual"):
+    def general_mctdh(
+        cls,
+        basis_list: List[BasisSet],
+        tree_order: int,
+        contract_primitive: bool = False,
+        contract_label: Sequence[bool] = None,
+        dummy_label="MCTDH virtual",
+    ):
         # `contract_primitive` means a 2-index tensor for each primitive basis
         #       o
         #      / \
@@ -114,9 +126,9 @@ class BasisTree(Tree):
                         i += 1
                     else:
                         for j in range(1, tree_order + 1):
-                            if i+j == len(contract_label) or contract_label[i+j]:
+                            if i + j == len(contract_label) or contract_label[i + j]:
                                 break
-                        elementary_nodes.append(TreeNodeBasis(basis_list[i:i+j]))
+                        elementary_nodes.append(TreeNodeBasis(basis_list[i : i + j]))
                         i += j
 
         # recursive tree construction
@@ -136,11 +148,15 @@ class BasisTree(Tree):
         return cls(root)
 
     @classmethod
-    def binary_mctdh(cls, basis_list: List[BasisSet], contract_primitive=False, contract_label=None, dummy_label="MCTDH virtual"):
+    def binary_mctdh(
+        cls, basis_list: List[BasisSet], contract_primitive=False, contract_label=None, dummy_label="MCTDH virtual"
+    ):
         return cls.general_mctdh(basis_list, 2, contract_primitive, contract_label, dummy_label)
 
     @classmethod
-    def ternary_mctdh(cls, basis_list: List[BasisSet], contract_primitive=False, contract_label=None, dummy_label="MCTDH virtual"):
+    def ternary_mctdh(
+        cls, basis_list: List[BasisSet], contract_primitive=False, contract_label=None, dummy_label="MCTDH virtual"
+    ):
         return cls.general_mctdh(basis_list, 3, contract_primitive, contract_label, dummy_label)
 
     @classmethod
@@ -188,7 +204,6 @@ class BasisTree(Tree):
 
     def print(self, print_function=None):
         class print_tn_basis(print_tree):
-
             def get_children(self, node):
                 return node.children
 
@@ -236,7 +251,7 @@ def approximate_partition(sequence, ngroups):
     size = (len(sequence) - 1) // ngroups + 1
     ret = []
     for i in range(ngroups):
-        start = i*size
-        end = min((i+1)*size, len(sequence))
+        start = i * size
+        end = min((i + 1) * size, len(sequence))
         ret.append(sequence[start:end])
     return ret

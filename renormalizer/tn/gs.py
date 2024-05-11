@@ -28,12 +28,13 @@ def optimize_ttns(ttns: TTNS, ttno: TTNO, procedure=None):
     return e_list
 
 
-def optimize_recursion(snode: TreeNodeTensor, ttns: TTNS, ttno: TTNO, ttne: TTNEnviron, m:int, percent:float=0) -> List[float]:
+def optimize_recursion(
+    snode: TreeNodeTensor, ttns: TTNS, ttno: TTNO, ttne: TTNEnviron, m: int, percent: float = 0
+) -> List[float]:
     """Optimize snode and all of its children"""
     assert snode.children  # 2 site can't do only one node
     micro_e = []
     for ichild, child in enumerate(snode.children):
-
         if child.children:
             # optimize snode + child
             e, c = optimize_2site(child, ttns, ttno, ttne)
@@ -57,7 +58,6 @@ def optimize_recursion(snode: TreeNodeTensor, ttns: TTNS, ttno: TTNO, ttne: TTNE
 
 
 def optimize_2site(snode: TreeNodeTensor, ttns: TTNS, ttno: TTNO, ttne: TTNEnviron):
-
     cguess = ttns.merge_with_parent(snode)
     qn_mask = ttns.get_qnmask(snode, include_parent=True)
     cguess = cguess[qn_mask].ravel()
@@ -70,7 +70,7 @@ def optimize_2site(snode: TreeNodeTensor, ttns: TTNS, ttno: TTNO, ttne: TTNEnvir
         return asnumpy(ret)
 
     assert ttns.optimize_config.nroots == 1
-    algo:str = ttns.optimize_config.algo
+    algo: str = ttns.optimize_config.algo
     e, c = eigh_iterative(hop, hdiag, cguess, algo)
     c = vec2tensor(c, qn_mask)
     return e, c
@@ -84,9 +84,7 @@ def eigh_iterative(hop, hdiag, cguess, algo):
     if algo == "davidson":
         precond = lambda x, e, *args: x / (hdiag - e + 1e-4)
 
-        e, c = davidson(
-            hop, cguess, precond, max_cycle=100, nroots=1, max_memory=64000, verbose=0
-        )
+        e, c = davidson(hop, cguess, precond, max_cycle=100, nroots=1, max_memory=64000, verbose=0)
     elif algo == "primme":
         if primme is None:
             logger.error("can not import primme")
