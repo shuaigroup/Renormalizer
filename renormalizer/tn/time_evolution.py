@@ -52,11 +52,11 @@ def regularized_inversion(m, eps):
     return evecs @ np.diag(1 / evals) @ evecs.T.conj()
 
 
-def evolve_tdvp_vmf(ttns:TTNS, ttno:TTNO, coeff:Union[complex, float], tau:float, first_step=None):
-
+def evolve_tdvp_vmf(ttns: TTNS, ttno: TTNO, coeff: Union[complex, float], tau: float, first_step=None):
     def ivp_func(t, params):
         ttns_t = TTNS.from_tensors(ttns, params)
         return coeff * time_derivative_vmf(ttns_t, ttno)
+
     init_y = np.concatenate([node.tensor[ttns.get_qnmask(node)].ravel() for node in ttns.node_list])
     atol = ttns.evolve_config.ivp_atol
     rtol = ttns.evolve_config.ivp_rtol
@@ -67,7 +67,7 @@ def evolve_tdvp_vmf(ttns:TTNS, ttno:TTNO, coeff:Union[complex, float], tau:float
     return new_ttns
 
 
-def evolve_prop_and_compress_tdrk4(ttns:TTNS, ttno:TTNO, coeff:Union[complex, float], tau:float):
+def evolve_prop_and_compress_tdrk4(ttns: TTNS, ttno: TTNO, coeff: Union[complex, float], tau: float):
     termlist = [ttns]
     for i in range(4):
         termlist.append(ttno.contract(termlist[-1]))
@@ -76,7 +76,7 @@ def evolve_prop_and_compress_tdrk4(ttns:TTNS, ttno:TTNO, coeff:Union[complex, fl
     return compressed_sum(termlist)
 
 
-def evolve_tdvp_ps(ttns:TTNS, ttno:TTNO, coeff:Union[complex, float], tau:float):
+def evolve_tdvp_ps(ttns: TTNS, ttno: TTNO, coeff: Union[complex, float], tau: float):
     ttns.check_canonical()
     # second order 1-site projector splitting
     ttne = TTNEnviron(ttns, ttno)
@@ -99,11 +99,7 @@ def evolve_tdvp_ps(ttns:TTNS, ttno:TTNO, coeff:Union[complex, float], tau:float)
     return ttns
 
 
-def _tdvp_ps_forward(ttns: TTNS,
-                     ttno: TTNO,
-                     ttne: TTNEnviron,
-                     coeff: Union[complex, float],
-                     tau: float) -> List[int]:
+def _tdvp_ps_forward(ttns: TTNS, ttno: TTNO, ttne: TTNEnviron, coeff: Union[complex, float], tau: float) -> List[int]:
     local_steps: List[int] = []
     # current node and the child that has already been processed (once popped out)
     stack: List[Tuple[TreeNodeTensor, int]] = [(ttns.root, -1)]
@@ -144,11 +140,7 @@ def _tdvp_ps_forward(ttns: TTNS,
     return local_steps
 
 
-def _tdvp_ps_backward(ttns: TTNS,
-                     ttno: TTNO,
-                     ttne: TTNEnviron,
-                     coeff: Union[complex, float],
-                     tau: float) -> List[int]:
+def _tdvp_ps_backward(ttns: TTNS, ttno: TTNO, ttne: TTNEnviron, coeff: Union[complex, float], tau: float) -> List[int]:
     local_steps: List[int] = []
     # current node and the child that has already been processed (once popped out)
     stack: List[Tuple[TreeNodeTensor, int]] = [(ttns.root, -1)]
@@ -182,7 +174,7 @@ def _tdvp_ps_backward(ttns: TTNS,
     return local_steps
 
 
-def evolve_tdvp_ps2(ttns:TTNS, ttno:TTNO, coeff:Union[complex, float], tau:float):
+def evolve_tdvp_ps2(ttns: TTNS, ttno: TTNO, coeff: Union[complex, float], tau: float):
     ttns.check_canonical()
     # second order 2-site projector splitting
     tte = TTNEnviron(ttns, ttno)
@@ -195,12 +187,9 @@ def evolve_tdvp_ps2(ttns:TTNS, ttno:TTNO, coeff:Union[complex, float], tau:float
     return ttns
 
 
-def _tdvp_ps2_recursion_forward(snode: TreeNodeTensor,
-                                ttns: TTNS,
-                                ttno: TTNO,
-                                ttne: TTNEnviron,
-                                coeff:Union[complex, float],
-                                tau:float) -> List[int]:
+def _tdvp_ps2_recursion_forward(
+    snode: TreeNodeTensor, ttns: TTNS, ttno: TTNO, ttne: TTNEnviron, coeff: Union[complex, float], tau: float
+) -> List[int]:
     """time evolution all of snode's children (without evolve snode!).
     The exception is when snode == ttns.root, which is evolved.
     Cano center at snode when entering and leaving"""
@@ -209,7 +198,6 @@ def _tdvp_ps2_recursion_forward(snode: TreeNodeTensor,
     m = ttns.compress_config.bond_dim_max_value
     local_steps: List[int] = []
     for ichild, child in enumerate(snode.children):
-
         if child.children:
             # cano to child
             ttns.push_cano_to_child(snode, ichild)
@@ -237,12 +225,9 @@ def _tdvp_ps2_recursion_forward(snode: TreeNodeTensor,
     return local_steps
 
 
-def _tdvp_ps2_recursion_backward(snode: TreeNodeTensor,
-                                 ttns: TTNS,
-                                 ttno: TTNO,
-                                 ttne: TTNEnviron,
-                                 coeff:Union[complex, float],
-                                 tau:float) -> List[int]:
+def _tdvp_ps2_recursion_backward(
+    snode: TreeNodeTensor, ttns: TTNS, ttno: TTNO, ttne: TTNEnviron, coeff: Union[complex, float], tau: float
+) -> List[int]:
     """time evolution all of snode's children (without evolve snode!).
     The exception is when snode == ttns.root, which is evolved.
     Cano center at snode when entering and leaving"""
@@ -278,36 +263,36 @@ def _tdvp_ps2_recursion_backward(snode: TreeNodeTensor,
     return local_steps
 
 
-def evolve_2site(snode: TreeNodeTensor, ttns: TTNS, ttno: TTNO, ttne: TTNEnviron, coeff:Union[complex, float], tau:float):
+def evolve_2site(
+    snode: TreeNodeTensor, ttns: TTNS, ttno: TTNO, ttne: TTNEnviron, coeff: Union[complex, float], tau: float
+):
     # evolve snode and parent
     ms2 = ttns.merge_with_parent(snode)
     hop, _ = hop_expr2(snode, ttns, ttno, ttne)
-    ms2_t, j = expm_krylov(
-        lambda y: hop(y.reshape(ms2.shape)).ravel(),
-        coeff * tau,
-        ms2.ravel()
-    )
+    ms2_t, j = expm_krylov(lambda y: hop(y.reshape(ms2.shape)).ravel(), coeff * tau, ms2.ravel())
     return ms2_t, j
 
 
-def evolve_1site(snode: TreeNodeTensor, ttns: TTNS, ttno: TTNO, ttne: TTNEnviron, coeff:Union[complex, float], tau:float):
+def evolve_1site(
+    snode: TreeNodeTensor, ttns: TTNS, ttno: TTNO, ttne: TTNEnviron, coeff: Union[complex, float], tau: float
+):
     ms = snode.tensor
     hop = hop_expr1(snode, ttns, ttno, ttne)
-    ms_t, j = expm_krylov(
-        lambda y: hop(y.reshape(ms.shape)).ravel(),
-        coeff * tau,
-        ms.ravel()
-    )
+    ms_t, j = expm_krylov(lambda y: hop(y.reshape(ms.shape)).ravel(), coeff * tau, ms.ravel())
     return ms_t, j
 
 
-def evolve_0site(ms: np.ndarray, snode: TreeNodeTensor, ttns: TTNS, ttno: TTNO, ttne: TTNEnviron, coeff:Union[complex, float], tau:float):
+def evolve_0site(
+    ms: np.ndarray,
+    snode: TreeNodeTensor,
+    ttns: TTNS,
+    ttno: TTNO,
+    ttne: TTNEnviron,
+    coeff: Union[complex, float],
+    tau: float,
+):
     hop = hop_expr0(snode, ttns, ttno, ttne)
-    ms_t, j = expm_krylov(
-        lambda y: hop(y.reshape(ms.shape)).ravel(),
-        coeff * tau,
-        ms.ravel()
-    )
+    ms_t, j = expm_krylov(lambda y: hop(y.reshape(ms.shape)).ravel(), coeff * tau, ms.ravel())
     return ms_t, j
 
 

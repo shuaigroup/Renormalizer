@@ -162,7 +162,7 @@ def test_save_load(ttns_and_ttno):
         ttns1 = ttns1.evolve(ttno, tau)
     exp1 = [ttns1.expectation(o) for o in op_n_list]
     ttns2 = ttns.evolve(ttno, tau)
-    fname = "test.npz"
+    fname = f"{id(ttns2)}.npz"
     ttns2.dump(fname)
     ttns2 = TTNS.load(ttns.basis, fname)
     ttns2 = ttns2.evolve(ttno, tau)

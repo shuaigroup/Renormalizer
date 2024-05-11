@@ -68,7 +68,7 @@ class TTNBase(Tree):
         except Exception:
             logger.exception(f"Dump MP failed.")
 
-    def print_shape(self, full:bool=False, print_function:Callable=None):
+    def print_shape(self, full: bool = False, print_function: Callable = None):
         """
         Print the shape of the TTN tree
 
@@ -80,8 +80,8 @@ class TTNBase(Tree):
             the function used for printing. If None, use ``print``.
             Could use ``logger.info`` instead.
         """
-        class _print_shape(print_tree):
 
+        class _print_shape(print_tree):
             def get_children(self, node):
                 return node.children
 
@@ -99,12 +99,11 @@ class TTNBase(Tree):
     def print_vn_entropy(self, print_function=None):
         # todo: move ttns.compress to here
         _, s_list = self.compress(ret_s=True)
-        vn_entropy = [calc_vn_entropy(s ** 2) for s in s_list]
+        vn_entropy = [calc_vn_entropy(s**2) for s in s_list]
         nodes = [TreeNodeTensor([entropy]) for entropy in vn_entropy]
         copy_connection(self.node_list, nodes)
 
         class print_data(print_tree):
-
             def get_children(self, node):
                 return node.children
 
@@ -132,12 +131,12 @@ class TTNBase(Tree):
 
 class TTNO(TTNBase):
     @classmethod
-    def identity(cls, basis:BasisTree):
+    def identity(cls, basis: BasisTree):
         if not basis.identity_ttno:
             basis.identity_ttno = cls(basis, [basis.identity_op])
         return basis.identity_ttno
 
-    def __init__(self, basis: BasisTree, terms: Union[List[Op], Op], root: TreeNodeTensor=None):
+    def __init__(self, basis: BasisTree, terms: Union[List[Op], Op], root: TreeNodeTensor = None):
         self.basis: BasisTree = basis
         if isinstance(terms, Op):
             terms = [terms]
@@ -145,8 +144,8 @@ class TTNO(TTNBase):
 
         if not root:
             symbolic_mpo, mpoqn = construct_symbolic_mpo(basis, terms)
-            #from renormalizer.mps.symbolic_mpo import _format_symbolic_mpo
-            #print(_format_symbolic_mpo(symbolic_mpo))
+            # from renormalizer.mps.symbolic_mpo import _format_symbolic_mpo
+            # print(_format_symbolic_mpo(symbolic_mpo))
             node_list_basis = self.basis.postorder_list()
             node_list_op = []
             for impo, (mo, qn) in enumerate(zip(symbolic_mpo, mpoqn)):
@@ -159,7 +158,7 @@ class TTNO(TTNBase):
         self.tn2bn = {tn: bn for tn, bn in zip(self.node_list, self.basis.node_list)}
         self.tn2dofs = {tn: bn.dofs for tn, bn in self.tn2bn.items()}
 
-    def apply(self, ttns: "TTNS", canonicalise: bool=False) -> "TTNS":
+    def apply(self, ttns: "TTNS", canonicalise: bool = False) -> "TTNS":
         """
         Apply the operator to the TTNS.
 
@@ -227,7 +226,7 @@ class TTNO(TTNBase):
         new_ttns.compress()
         return new_ttns
 
-    def todense(self, order:List[BasisSet]=None) -> np.ndarray:
+    def todense(self, order: List[BasisSet] = None) -> np.ndarray:
         """
         Convert the TTNO operator to dense matrix.
 
@@ -320,12 +319,12 @@ class TTNO(TTNBase):
         # duplicate with Mpo
         return self.apply(other)
 
+
 # values are set in time_evolution.py
 EVOLVE_METHODS = {}
 
 
 class TTNS(TTNBase):
-
     @classmethod
     def load(cls, basis: BasisTree, fname: str, other_attrs=None):
         if other_attrs is None:
@@ -382,9 +381,7 @@ class TTNS(TTNBase):
 
             u = np.concatenate(u_list, axis=1)
             s = np.concatenate(s_list)
-            mt, mpsdim, mpsqn, nouse = select_basis(
-                u, s, qn_list, u, m_max, percent=percent
-            )
+            mt, mpsdim, mpsqn, nouse = select_basis(u, s, qn_list, u, m_max, percent=percent)
             node.tensor = mt.reshape(list(qnbigl_shape)[:-1] + [mpsdim])
             node.qn = mpsqn
         # deal with root
@@ -420,14 +417,14 @@ class TTNS(TTNBase):
             qnmask = template.get_qnmask(tnode)
             length = np.sum(qnmask)
             node.tensor = np.zeros(tnode.shape, dtype=tensors.dtype)
-            node.tensor[qnmask] = asnumpy(tensors[cursor:cursor+length])
+            node.tensor[qnmask] = asnumpy(tensors[cursor : cursor + length])
             node.qn = tnode.qn
             cursor += length
         assert len(tensors) == cursor
         ttns.check_shape()
         return ttns
 
-    def __init__(self, basis: BasisTree, condition:Dict=None, root:TreeNodeTensor=None):
+    def __init__(self, basis: BasisTree, condition: Dict = None, root: TreeNodeTensor = None):
         """
         Construct a TTNS.
 
@@ -453,7 +450,7 @@ class TTNS(TTNBase):
             basis_list = basis.basis_list_postorder
             mps = Mps.hartree_product_state(Model(basis_list, []), condition, len(basis_list))
             # can't directly use MPS qn because the topology is different
-            site_qn = [mps.qn[i+1] - mps.qn[i] for i in range(len(mps))]
+            site_qn = [mps.qn[i + 1] - mps.qn[i] for i in range(len(mps))]
             node_list_state = []
 
             for node_basis in basis.node_list:
@@ -483,7 +480,9 @@ class TTNS(TTNBase):
         self.coeff = 1
         self.check_shape()
         # tensor node to basis node. make a property?
-        self.tn2bn: Dict[TreeNodeTensor, TreeNodeBasis] = {tn: bn for tn, bn in zip(self.node_list, self.basis.node_list)}
+        self.tn2bn: Dict[TreeNodeTensor, TreeNodeBasis] = {
+            tn: bn for tn, bn in zip(self.node_list, self.basis.node_list)
+        }
         self.tn2dofs = {tn: bn.dofs for tn, bn in self.tn2bn.items()}
 
         self.compress_config = CompressConfig()
@@ -519,7 +518,7 @@ class TTNS(TTNBase):
 
     def compress(self, temp_m_trunc=None, ret_s=False):
         if self.compress_config.bonddim_should_set:
-            self.compress_config.set_bonddim(len(self.node_list)+1)
+            self.compress_config.set_bonddim(len(self.node_list) + 1)
         s_dict: Dict[TreeNodeTensor, np.ndarray] = {self.root: np.array([1])}
         compress_recursion(self.root, self, s_dict, temp_m_trunc)
         self.check_shape()
@@ -530,7 +529,7 @@ class TTNS(TTNBase):
             s_list = [s_dict[n] for n in self.node_list]
             return self, s_list
 
-    def expectation1(self, ttno: TTNO, bra: "TTNS"=None):
+    def expectation1(self, ttno: TTNO, bra: "TTNS" = None):
         # old implementation. When the network is large, opt_einsum sometimes takes a long time to
         # find the contraction path and the resulting path is not optimal
         if bra is None:
@@ -545,7 +544,7 @@ class TTNS(TTNBase):
         else:
             return complex(val)
 
-    def expectation(self, ttno: TTNO, bra: "TTNS"=None) -> Number:
+    def expectation(self, ttno: TTNO, bra: "TTNS" = None) -> Number:
         """
         Calculate the expectation value of <bra|TTNO|self>.
 
@@ -560,7 +559,7 @@ class TTNS(TTNBase):
         -------
         The expectation value
         """
-        assert bra is None # not implemented yet
+        assert bra is None  # not implemented yet
         basis_node = TreeNodeBasis([BasisDummy("expectation dummy")])
         basis_node_ttns = basis_node
         basis_node_ttno = basis_node.copy()
@@ -630,11 +629,11 @@ class TTNS(TTNBase):
             else:
                 new_node.qn = np.concatenate([node1.qn, node2.qn], axis=0)
         new.check_shape()
-        #assert new.check_canonical()
+        # assert new.check_canonical()
         return new
 
     def normalize(self, kind):
-        r''' normalize the wavefunction
+        r"""normalize the wavefunction
 
         Parameters
         ----------
@@ -646,11 +645,11 @@ class TTNS(TTNBase):
         Returns
         -------
         ``self`` is overwritten.
-        '''
+        """
 
         return normalize(self, kind)
 
-    def evolve(self, ttno:TTNO, tau:Union[complex, float], normalize:bool=True):
+    def evolve(self, ttno: TTNO, tau: Union[complex, float], normalize: bool = True):
         imag_time = np.iscomplex(tau)
         # trick to avoid complex algebra
         # exp{coeff * H * tau}
@@ -687,7 +686,7 @@ class TTNS(TTNBase):
             node1.qn = node2.qn.copy()
         return new
 
-    def to_complex(self, inplace:bool=False) -> "TTNS":
+    def to_complex(self, inplace: bool = False) -> "TTNS":
         """
         Convert the data type from real to complex
         .
@@ -708,7 +707,7 @@ class TTNS(TTNBase):
             node2.qn = node1.qn.copy()
         return new
 
-    def todense(self, order:List[BasisSet]=None) -> np.ndarray:
+    def todense(self, order: List[BasisSet] = None) -> np.ndarray:
         """
         Convert the TTNS to dense vector
 
@@ -735,7 +734,7 @@ class TTNS(TTNBase):
         res = asnumpy(res)
         return res
 
-    def to_contract_args(self, conj:bool=False):
+    def to_contract_args(self, conj: bool = False):
         """
         Get the arguments for contraction based on ``opt_einsum`` of the whole TTNO.
 
@@ -819,7 +818,6 @@ class TTNS(TTNBase):
         v = self.decompose_to_parent(node)
         self.merge_to_parent(node, v)
 
-
     def decompose_to_child(self, node: TreeNodeTensor, ichild: int) -> np.ndarray:
         """
         QR decompose the node towards the children direction.
@@ -839,15 +837,7 @@ class TTNS(TTNBase):
         qnbigl, qnbigr, tensor, shape = moveaxis(self, node, ichild)
 
         # u for node and v for child
-        u, qnl, v, qnr = svd_qn(
-            tensor,
-            qnbigl,
-            qnbigr,
-            self.qntot,
-            QR=True,
-            system="L",
-            full_matrices=False
-        )
+        u, qnl, v, qnr = svd_qn(tensor, qnbigl, qnbigr, self.qntot, QR=True, system="L", full_matrices=False)
         # XXX: temp debug code for consistency with MPS
         """
         # u for node and v for child
@@ -867,7 +857,7 @@ class TTNS(TTNBase):
         node.children[ichild].qn = qnr
         return v
 
-    def merge_to_child(self, node:TreeNodeTensor, ichild: int, v: np.ndarray):
+    def merge_to_child(self, node: TreeNodeTensor, ichild: int, v: np.ndarray):
         """
         Merge the coefficient tensor to one of the children of the node.
 
@@ -883,7 +873,7 @@ class TTNS(TTNBase):
         child = node.children[ichild]
         child.tensor = tensordot(child.tensor, v, axes=[-1, 0])
 
-    def push_cano_to_child(self, node:TreeNodeTensor, ichild: int):
+    def push_cano_to_child(self, node: TreeNodeTensor, ichild: int):
         """
         Push the canonical center to the child of the node.
 
@@ -897,7 +887,9 @@ class TTNS(TTNBase):
         v = self.decompose_to_child(node, ichild)
         self.merge_to_child(node, ichild, v)
 
-    def compress_node(self, node:TreeNodeTensor, ichild:int, temp_m_trunc:int=None, cano_child:bool=True) -> np.ndarray:
+    def compress_node(
+        self, node: TreeNodeTensor, ichild: int, temp_m_trunc: int = None, cano_child: bool = True
+    ) -> np.ndarray:
         """
         Compress the bond between node and one of its child based on SVD
 
@@ -945,8 +937,7 @@ class TTNS(TTNBase):
         child.qn = qnr
         return orig_s
 
-
-    def get_qnmat(self, node:TreeNodeTensor, include_parent:bool=False):
+    def get_qnmat(self, node: TreeNodeTensor, include_parent: bool = False):
         qnbigl = np.zeros(self.basis.qn_size, dtype=int)
         for child in node.children:
             qnbigl = add_outer(qnbigl, child.qn)
@@ -974,7 +965,7 @@ class TTNS(TTNBase):
         qnmat = self.get_qnmat(node, include_parent)[-1]
         return get_qn_mask(qnmat, self.qntot)
 
-    def update_2site(self, node, tensor, m:int, percent:float=0, cano_parent:bool=True):
+    def update_2site(self, node, tensor, m: int, percent: float = 0, cano_parent: bool = True):
         """cano_parent: set canonical center at parent. to_right = True"""
         parent = node.parent
         assert parent is not None
@@ -985,13 +976,9 @@ class TTNS(TTNBase):
         # duplicate with MatrixProduct._udpate_mps. Should consider merging when doing e.g. state averaged algorithm.
         u, su, qnlnew, v, sv, qnrnew = svd_qn(tensor, qnbigl, qnbigr, self.qntot)
         if cano_parent:
-            m_node, msdim, msqn, m_parent = select_basis(
-                u, su, qnlnew, v, m, percent=percent
-            )
+            m_node, msdim, msqn, m_parent = select_basis(u, su, qnlnew, v, m, percent=percent)
         else:
-            m_parent, msdim, msqn, m_node = select_basis(
-                v, sv, qnrnew, u, m, percent=percent
-            )
+            m_parent, msdim, msqn, m_node = select_basis(v, sv, qnrnew, u, m, percent=percent)
         m_parent = m_parent.T
         node.tensor = m_node.reshape(list(node.shape[:-1]) + [-1])
         if cano_parent:
@@ -1005,7 +992,9 @@ class TTNS(TTNBase):
         shape = [-1] + shape
         parent.tensor = np.moveaxis(m_parent.reshape(shape), 0, ichild)
 
-    def get_node_indices(self, node:TreeNodeTensor, conj:bool=False, include_parent:bool=False, ttno:TTNO=None) -> List[Tuple]:
+    def get_node_indices(
+        self, node: TreeNodeTensor, conj: bool = False, include_parent: bool = False, ttno: TTNO = None
+    ) -> List[Tuple]:
         if include_parent:
             snode_indices = self.get_node_indices(node, conj, ttno=ttno)
             parent_indices = self.get_node_indices(node.parent, conj, ttno=ttno)
@@ -1052,8 +1041,7 @@ class TTNS(TTNBase):
 
     @property
     def norm(self):
-        '''duplicate with Mps
-        '''
+        """duplicate with Mps"""
         return np.linalg.norm(self.coeff) * self.ttns_norm
 
     @property
@@ -1092,8 +1080,8 @@ class TTNS(TTNBase):
 
 
 class TTNEnviron(Tree):
-    def __init__(self, ttns:TTNS, ttno:TTNO, build_environ=True):
-        self.basis_ttns =  ttns.basis
+    def __init__(self, ttns: TTNS, ttno: TTNO, build_environ=True):
+        self.basis_ttns = ttns.basis
         self.basis_ttno = ttno.basis
         enodes: List[TreeNodeEnviron] = [TreeNodeEnviron() for _ in range(ttns.size)]
         copy_connection(ttns.node_list, enodes)
@@ -1142,7 +1130,7 @@ class TTNEnviron(Tree):
         for ichild in range(len(snode.children)):
             self.build_parent_environ_node(snode, ichild, ttns, ttno)
 
-    def build_children_environ_node(self, snode:TreeNodeTensor, ttns: TTNS, ttno: TTNO):
+    def build_children_environ_node(self, snode: TreeNodeTensor, ttns: TTNS, ttno: TTNO):
         # build the environment from snode to its parent and store the environment in its parent
         if snode.parent is None:
             return
@@ -1174,7 +1162,7 @@ class TTNEnviron(Tree):
             ichild = snode.parent.children.index(snode)
             enode.parent.environ_children[ichild] = asnumpy(res)
 
-    def build_parent_environ_node(self, snode:TreeNodeTensor, ichild: int, ttns: TTNS, ttno: TTNO):
+    def build_parent_environ_node(self, snode: TreeNodeTensor, ichild: int, ttns: TTNS, ttno: TTNO):
         # build the environment from snode to the ith child of snode and store the environment in the child
         enode = self.node_list[ttns.node_idx[snode]]
         onode = ttno.node_list[ttns.node_idx[snode]]
@@ -1258,7 +1246,7 @@ def from_mps(mps: Mps) -> Tuple[BasisTree, TTNS, TTNO]:
     return basis, ttns, ttno
 
 
-def compress_recursion(snode: TreeNodeTensor, ttns: TTNS, s_dict:Dict, temp_m_trunc: int = None):
+def compress_recursion(snode: TreeNodeTensor, ttns: TTNS, s_dict: Dict, temp_m_trunc: int = None):
     assert snode.children, "can't compress a single tree node"
     for ichild, child in enumerate(snode.children):
         cano_child = bool(child.children)
@@ -1281,7 +1269,7 @@ def truncate_tensors(u, s, v, qnl, qnr, m):
     return u, s, v, qnl, qnr
 
 
-def moveaxis(ttns:TTNS, node:TreeNodeTensor, ichild:int):
+def moveaxis(ttns: TTNS, node: TreeNodeTensor, ichild: int):
     # move one of the children indices to the end
 
     # left indices: other children + physical bonds + parent
