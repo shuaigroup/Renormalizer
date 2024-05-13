@@ -316,14 +316,6 @@
         <span class="k">raise</span> <span class="ne">NotImplementedError</span></div></div>
 
 
-<span class="k">class</span> <span class="nc">BasisDummy</span><span class="p">(</span><span class="n">BasisSet</span><span class="p">):</span>
-<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
-<span class="sd">    Dummy basis set used in soft truncated TNPI</span>
-<span class="sd">    &quot;&quot;&quot;</span>
-    <span class="k">def</span>  <span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">dof</span><span class="p">,</span> <span class="n">nbas</span><span class="p">):</span>
-        <span class="nb">super</span><span class="p">()</span><span class="o">.</span><span class="fm">__init__</span><span class="p">(</span><span class="n">dof</span><span class="p">,</span> <span class="n">nbas</span><span class="p">,</span> <span class="p">[</span><span class="mi">0</span><span class="p">]</span> <span class="o">*</span> <span class="n">nbas</span><span class="p">)</span>
-
-
 <div class="viewcode-block" id="BasisSHO"><a class="viewcode-back" href="../../../model.html#renormalizer.model.basis.BasisSHO">[docs]</a><span class="k">class</span> <span class="nc">BasisSHO</span><span class="p">(</span><span class="n">BasisSet</span><span class="p">):</span>
 <span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">    simple harmonic oscillator basis set</span>
@@ -1113,8 +1105,10 @@
 <span class="sd">    &quot;&quot;&quot;</span>
     <span class="n">is_electron</span> <span class="o">=</span> <span class="kc">True</span>
 
-    <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">dof</span><span class="p">):</span>
-        <span class="nb">super</span><span class="p">()</span><span class="o">.</span><span class="fm">__init__</span><span class="p">(</span><span class="n">dof</span><span class="p">,</span> <span class="mi">2</span><span class="p">,</span> <span class="p">[</span><span class="mi">0</span><span class="p">,</span> <span class="mi">1</span><span class="p">])</span>
+    <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">dof</span><span class="p">,</span> <span class="n">sigmaqn</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
+        <span class="k">if</span> <span class="n">sigmaqn</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="n">sigmaqn</span> <span class="o">=</span> <span class="p">[</span><span class="mi">0</span><span class="p">,</span> <span class="mi">1</span><span class="p">]</span>
+        <span class="nb">super</span><span class="p">()</span><span class="o">.</span><span class="fm">__init__</span><span class="p">(</span><span class="n">dof</span><span class="p">,</span> <span class="mi">2</span><span class="p">,</span> <span class="n">sigmaqn</span><span class="p">)</span>
 
 <div class="viewcode-block" id="BasisSimpleElectron.op_mat"><a class="viewcode-back" href="../../../model.html#renormalizer.model.basis.BasisSimpleElectron.op_mat">[docs]</a>    <span class="k">def</span> <span class="nf">op_mat</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">op</span><span class="p">):</span>
         <span class="k">if</span> <span class="ow">not</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">op</span><span class="p">,</span> <span class="n">Op</span><span class="p">):</span>
@@ -1206,6 +1200,27 @@
 <div class="viewcode-block" id="BasisHalfSpin.copy"><a class="viewcode-back" href="../../../model.html#renormalizer.model.basis.BasisHalfSpin.copy">[docs]</a>    <span class="k">def</span> <span class="nf">copy</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">new_dof</span><span class="p">):</span>
         <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="vm">__class__</span><span class="p">(</span><span class="n">new_dof</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">sigmaqn</span><span class="p">)</span></div></div>
 
+
+<span class="k">class</span> <span class="nc">BasisDummy</span><span class="p">(</span><span class="n">BasisSet</span><span class="p">):</span>
+    <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">dof</span><span class="p">,</span> <span class="n">nbas</span><span class="o">=</span><span class="mi">1</span><span class="p">,</span> <span class="n">sigmaqn</span><span class="p">:</span><span class="n">List</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
+        <span class="k">if</span> <span class="n">sigmaqn</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="n">sigmaqn</span> <span class="o">=</span> <span class="p">[</span><span class="mi">0</span><span class="p">]</span> <span class="o">*</span> <span class="n">nbas</span>
+        <span class="nb">super</span><span class="p">()</span><span class="o">.</span><span class="fm">__init__</span><span class="p">(</span><span class="n">dof</span><span class="p">,</span> <span class="n">nbas</span><span class="p">,</span> <span class="n">sigmaqn</span><span class="p">)</span>
+
+    <span class="k">def</span> <span class="nf">op_mat</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">op</span><span class="p">:</span> <span class="n">Union</span><span class="p">[</span><span class="n">Op</span><span class="p">,</span> <span class="nb">str</span><span class="p">]):</span>
+        <span class="k">if</span> <span class="ow">not</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">op</span><span class="p">,</span> <span class="n">Op</span><span class="p">):</span>
+            <span class="n">op</span> <span class="o">=</span> <span class="n">Op</span><span class="p">(</span><span class="n">op</span><span class="p">,</span> <span class="kc">None</span><span class="p">)</span>
+        <span class="n">op_symbol</span><span class="p">,</span> <span class="n">op_factor</span> <span class="o">=</span> <span class="n">op</span><span class="o">.</span><span class="n">split_symbol</span><span class="p">,</span> <span class="n">op</span><span class="o">.</span><span class="n">factor</span>
+
+        <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">op_symbol</span><span class="p">)</span> <span class="o">==</span> <span class="mi">1</span> <span class="ow">and</span> <span class="n">op_symbol</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span> <span class="o">==</span> <span class="s2">&quot;I&quot;</span><span class="p">:</span>
+            <span class="n">mat</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">eye</span><span class="p">(</span><span class="mi">1</span><span class="p">)</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;op_symbol:</span><span class="si">{</span><span class="n">op_symbol</span><span class="si">}</span><span class="s2"> is not supported&quot;</span><span class="p">)</span>
+
+        <span class="k">return</span> <span class="n">mat</span> <span class="o">*</span> <span class="n">op_factor</span>
+
+    <span class="k">def</span> <span class="nf">copy</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">new_dof</span><span class="p">):</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="vm">__class__</span><span class="p">(</span><span class="n">new_dof</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">sigmaqn</span><span class="p">)</span>
 
 <span class="k">def</span> <span class="nf">x_power_k</span><span class="p">(</span><span class="n">k</span><span class="p">,</span> <span class="n">m</span><span class="p">,</span> <span class="n">n</span><span class="p">):</span>
 <span class="c1"># &lt;m|x^k|n&gt;, origin is 0</span>

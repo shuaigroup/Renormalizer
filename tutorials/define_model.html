@@ -474,9 +474,9 @@ div.rendered_html tbody tr:hover {
 <div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[1]:
 </pre></div>
 </div>
-<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span># add renormalizer to path
-import sys
-sys.path.append(&quot;..&quot;)
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="c1"># add renormalizer to path</span>
+<span class="kn">import</span> <span class="nn">sys</span>
+<span class="n">sys</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="s2">&quot;..&quot;</span><span class="p">)</span>
 </pre></div>
 </div>
 </div>
@@ -488,7 +488,7 @@ sys.path.append(&quot;..&quot;)
 <div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[2]:
 </pre></div>
 </div>
-<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span>from renormalizer import Op
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="kn">from</span> <span class="nn">renormalizer</span> <span class="kn">import</span> <span class="n">Op</span>
 </pre></div>
 </div>
 </div>
@@ -515,7 +515,7 @@ sys.path.append(&quot;..&quot;)
 <div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[3]:
 </pre></div>
 </div>
-<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span>Op(&quot;X&quot;, 0, factor=0.5, qn=0)
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">Op</span><span class="p">(</span><span class="s2">&quot;X&quot;</span><span class="p">,</span> <span class="mi">0</span><span class="p">,</span> <span class="n">factor</span><span class="o">=</span><span class="mf">0.5</span><span class="p">,</span> <span class="n">qn</span><span class="o">=</span><span class="mi">0</span><span class="p">)</span>
 </pre></div>
 </div>
 </div>
@@ -533,7 +533,7 @@ Op(&#39;X&#39;, [0], 0.5, [0])
 <div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[4]:
 </pre></div>
 </div>
-<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span>Op(&quot;X&quot;, (&quot;spin 0&quot;, &quot;cool stuff&quot;, 2077))
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">Op</span><span class="p">(</span><span class="s2">&quot;X&quot;</span><span class="p">,</span> <span class="p">(</span><span class="s2">&quot;spin 0&quot;</span><span class="p">,</span> <span class="s2">&quot;cool stuff&quot;</span><span class="p">,</span> <span class="mi">2077</span><span class="p">))</span>
 </pre></div>
 </div>
 </div>
@@ -552,7 +552,7 @@ Op(&#39;X&#39;, [(&#39;spin 0&#39;, &#39;cool stuff&#39;, 2077)], 1.0)
 <div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[5]:
 </pre></div>
 </div>
-<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span>Op(r&quot;a^\dagger a&quot;, [0, 1])
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">Op</span><span class="p">(</span><span class="sa">r</span><span class="s2">&quot;a^\dagger a&quot;</span><span class="p">,</span> <span class="p">[</span><span class="mi">0</span><span class="p">,</span> <span class="mi">1</span><span class="p">])</span>
 </pre></div>
 </div>
 </div>
@@ -571,7 +571,7 @@ Op(&#39;a^\\dagger a&#39;, [0, 1], 1.0)
 <div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[6]:
 </pre></div>
 </div>
-<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span>Op(r&quot;a^\dagger a&quot;, (0, 1))
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">Op</span><span class="p">(</span><span class="sa">r</span><span class="s2">&quot;a^\dagger a&quot;</span><span class="p">,</span> <span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="mi">1</span><span class="p">))</span>
 </pre></div>
 </div>
 </div>
@@ -593,9 +593,9 @@ Op(&#39;a^\\dagger a&#39;, [(0, 1), (0, 1)], 1.0)
 <div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[7]:
 </pre></div>
 </div>
-<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span>op1 = Op(&quot;X&quot;, 0, 0.5)
-op2 = Op(&quot;Z&quot;, 1, 0.5)
-op1 * op2
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">op1</span> <span class="o">=</span> <span class="n">Op</span><span class="p">(</span><span class="s2">&quot;X&quot;</span><span class="p">,</span> <span class="mi">0</span><span class="p">,</span> <span class="mf">0.5</span><span class="p">)</span>
+<span class="n">op2</span> <span class="o">=</span> <span class="n">Op</span><span class="p">(</span><span class="s2">&quot;Z&quot;</span><span class="p">,</span> <span class="mi">1</span><span class="p">,</span> <span class="mf">0.5</span><span class="p">)</span>
+<span class="n">op1</span> <span class="o">*</span> <span class="n">op2</span>
 </pre></div>
 </div>
 </div>
@@ -613,7 +613,7 @@ Op(&#39;X Z&#39;, [0, 1], 0.25)
 <div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[8]:
 </pre></div>
 </div>
-<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span>op1 + op2, type(op1 + op2)
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">op1</span> <span class="o">+</span> <span class="n">op2</span><span class="p">,</span> <span class="nb">type</span><span class="p">(</span><span class="n">op1</span> <span class="o">+</span> <span class="n">op2</span><span class="p">)</span>
 </pre></div>
 </div>
 </div>
@@ -631,9 +631,9 @@ Op(&#39;X Z&#39;, [0, 1], 0.25)
 <div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[9]:
 </pre></div>
 </div>
-<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span># multiplication
-opsum = op1 + op2
-opsum * op1
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="c1"># multiplication</span>
+<span class="n">opsum</span> <span class="o">=</span> <span class="n">op1</span> <span class="o">+</span> <span class="n">op2</span>
+<span class="n">opsum</span> <span class="o">*</span> <span class="n">op1</span>
 </pre></div>
 </div>
 </div>
@@ -650,7 +650,7 @@ opsum * op1
 <div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[10]:
 </pre></div>
 </div>
-<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span>opsum * opsum
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">opsum</span> <span class="o">*</span> <span class="n">opsum</span>
 </pre></div>
 </div>
 </div>
@@ -670,9 +670,9 @@ opsum * op1
 <div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[11]:
 </pre></div>
 </div>
-<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span># addition/subtraction
-opsum -= op2
-opsum
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="c1"># addition/subtraction</span>
+<span class="n">opsum</span> <span class="o">-=</span> <span class="n">op2</span>
+<span class="n">opsum</span>
 </pre></div>
 </div>
 </div>
@@ -689,7 +689,7 @@ opsum
 <div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[12]:
 </pre></div>
 </div>
-<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span>opsum.simplify()
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">opsum</span><span class="o">.</span><span class="n">simplify</span><span class="p">()</span>
 </pre></div>
 </div>
 </div>
@@ -712,8 +712,8 @@ opsum
 <div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[13]:
 </pre></div>
 </div>
-<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span>import renormalizer
-[s for s in dir(renormalizer) if s.startswith(&quot;Basis&quot;)]
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="kn">import</span> <span class="nn">renormalizer</span>
+<span class="p">[</span><span class="n">s</span> <span class="k">for</span> <span class="n">s</span> <span class="ow">in</span> <span class="nb">dir</span><span class="p">(</span><span class="n">renormalizer</span><span class="p">)</span> <span class="k">if</span> <span class="n">s</span><span class="o">.</span><span class="n">startswith</span><span class="p">(</span><span class="s2">&quot;Basis&quot;</span><span class="p">)]</span>
 </pre></div>
 </div>
 </div>
@@ -737,9 +737,9 @@ opsum
 <div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[14]:
 </pre></div>
 </div>
-<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span>from renormalizer import BasisHalfSpin
-b = BasisHalfSpin((&quot;spin&quot;, 0))
-b
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="kn">from</span> <span class="nn">renormalizer</span> <span class="kn">import</span> <span class="n">BasisHalfSpin</span>
+<span class="n">b</span> <span class="o">=</span> <span class="n">BasisHalfSpin</span><span class="p">((</span><span class="s2">&quot;spin&quot;</span><span class="p">,</span> <span class="mi">0</span><span class="p">))</span>
+<span class="n">b</span>
 </pre></div>
 </div>
 </div>
@@ -757,7 +757,7 @@ b
 <div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[15]:
 </pre></div>
 </div>
-<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span>b.op_mat(&quot;X&quot;), b.op_mat(&quot;sigma_y&quot;)
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">b</span><span class="o">.</span><span class="n">op_mat</span><span class="p">(</span><span class="s2">&quot;X&quot;</span><span class="p">),</span> <span class="n">b</span><span class="o">.</span><span class="n">op_mat</span><span class="p">(</span><span class="s2">&quot;sigma_y&quot;</span><span class="p">)</span>
 </pre></div>
 </div>
 </div>
@@ -778,12 +778,12 @@ b
 <div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[16]:
 </pre></div>
 </div>
-<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span># SHO represent simple harmonic oscillator
-from renormalizer import BasisSHO
-# omega is the vibration frequency, nbas is the number of basis
-b = BasisSHO(dof=0, omega=50, nbas=4)
-# note the different value because of omega
-b.op_mat(&quot;b^\dagger+b&quot;), b.op_mat(&quot;x&quot;)
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="c1"># SHO represent simple harmonic oscillator</span>
+<span class="kn">from</span> <span class="nn">renormalizer</span> <span class="kn">import</span> <span class="n">BasisSHO</span>
+<span class="c1"># omega is the vibration frequency, nbas is the number of basis</span>
+<span class="n">b</span> <span class="o">=</span> <span class="n">BasisSHO</span><span class="p">(</span><span class="n">dof</span><span class="o">=</span><span class="mi">0</span><span class="p">,</span> <span class="n">omega</span><span class="o">=</span><span class="mi">50</span><span class="p">,</span> <span class="n">nbas</span><span class="o">=</span><span class="mi">4</span><span class="p">)</span>
+<span class="c1"># note the different value because of omega</span>
+<span class="n">b</span><span class="o">.</span><span class="n">op_mat</span><span class="p">(</span><span class="s2">&quot;b^\dagger+b&quot;</span><span class="p">),</span> <span class="n">b</span><span class="o">.</span><span class="n">op_mat</span><span class="p">(</span><span class="s2">&quot;x&quot;</span><span class="p">)</span>
 </pre></div>
 </div>
 </div>
@@ -818,8 +818,8 @@ b.op_mat(&quot;b^\dagger+b&quot;), b.op_mat(&quot;x&quot;)
 <div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[17]:
 </pre></div>
 </div>
-<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span>from renormalizer import Model
-model = Model([BasisHalfSpin(0)], [Op(&quot;X&quot;, 0)])
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="kn">from</span> <span class="nn">renormalizer</span> <span class="kn">import</span> <span class="n">Model</span>
+<span class="n">model</span> <span class="o">=</span> <span class="n">Model</span><span class="p">([</span><span class="n">BasisHalfSpin</span><span class="p">(</span><span class="mi">0</span><span class="p">)],</span> <span class="p">[</span><span class="n">Op</span><span class="p">(</span><span class="s2">&quot;X&quot;</span><span class="p">,</span> <span class="mi">0</span><span class="p">)])</span>
 </pre></div>
 </div>
 </div>
@@ -828,9 +828,9 @@ model = Model([BasisHalfSpin(0)], [Op(&quot;X&quot;, 0)])
 <div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[18]:
 </pre></div>
 </div>
-<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span>from renormalizer import Mpo
-mpo = Mpo(model)
-mpo
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="kn">from</span> <span class="nn">renormalizer</span> <span class="kn">import</span> <span class="n">Mpo</span>
+<span class="n">mpo</span> <span class="o">=</span> <span class="n">Mpo</span><span class="p">(</span><span class="n">model</span><span class="p">)</span>
+<span class="n">mpo</span>
 </pre></div>
 </div>
 </div>
@@ -855,7 +855,7 @@ mpo
 <div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[19]:
 </pre></div>
 </div>
-<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span>mpo.todense()
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">mpo</span><span class="o">.</span><span class="n">todense</span><span class="p">()</span>
 </pre></div>
 </div>
 </div>
@@ -888,8 +888,8 @@ array([[0., 1.],
 <div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[20]:
 </pre></div>
 </div>
-<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span>import renormalizer
-[s for s in dir(renormalizer) if s.endswith(&quot;Model&quot;)]
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="kn">import</span> <span class="nn">renormalizer</span>
+<span class="p">[</span><span class="n">s</span> <span class="k">for</span> <span class="n">s</span> <span class="ow">in</span> <span class="nb">dir</span><span class="p">(</span><span class="n">renormalizer</span><span class="p">)</span> <span class="k">if</span> <span class="n">s</span><span class="o">.</span><span class="n">endswith</span><span class="p">(</span><span class="s2">&quot;Model&quot;</span><span class="p">)]</span>
 </pre></div>
 </div>
 </div>

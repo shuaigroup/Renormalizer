@@ -508,9 +508,9 @@ div.rendered_html tbody tr:hover {
 <div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[1]:
 </pre></div>
 </div>
-<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span>import sys
-sys.path.append(&quot;..&quot;)
-from renormalizer import Model, Op, BasisHalfSpin,  Mps, Mpo, optimize_mps
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="kn">import</span> <span class="nn">sys</span>
+<span class="n">sys</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="s2">&quot;..&quot;</span><span class="p">)</span>
+<span class="kn">from</span> <span class="nn">renormalizer</span> <span class="kn">import</span> <span class="n">Model</span><span class="p">,</span> <span class="n">Op</span><span class="p">,</span> <span class="n">BasisHalfSpin</span><span class="p">,</span>  <span class="n">Mps</span><span class="p">,</span> <span class="n">Mpo</span><span class="p">,</span> <span class="n">optimize_mps</span>
 </pre></div>
 </div>
 </div>
@@ -544,24 +544,24 @@ from renormalizer import Model, Op, BasisHalfSpin,  Mps, Mpo, optimize_mps
 <div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[2]:
 </pre></div>
 </div>
-<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span># define the # of spins
-nspin = 32
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="c1"># define the # of spins</span>
+<span class="n">nspin</span> <span class="o">=</span> <span class="mi">32</span>
 
-# define the model
+<span class="c1"># define the model</span>
 
-ham_terms = []
-for ispin in range(nspin-1):
-    op1 = Op(&quot;sigma_z sigma_z&quot;, [ispin, ispin+1], 1.0/4)
-    op2 = Op(&quot;sigma_+ sigma_-&quot;, [ispin, ispin+1], 1.0/2)
-    op3 = Op(&quot;sigma_- sigma_+&quot;, [ispin, ispin+1], 1.0/2)
-    ham_terms.extend([op1, op2, op3])
+<span class="n">ham_terms</span> <span class="o">=</span> <span class="p">[]</span>
+<span class="k">for</span> <span class="n">ispin</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="n">nspin</span><span class="o">-</span><span class="mi">1</span><span class="p">):</span>
+    <span class="n">op1</span> <span class="o">=</span> <span class="n">Op</span><span class="p">(</span><span class="s2">&quot;sigma_z sigma_z&quot;</span><span class="p">,</span> <span class="p">[</span><span class="n">ispin</span><span class="p">,</span> <span class="n">ispin</span><span class="o">+</span><span class="mi">1</span><span class="p">],</span> <span class="mf">1.0</span><span class="o">/</span><span class="mi">4</span><span class="p">)</span>
+    <span class="n">op2</span> <span class="o">=</span> <span class="n">Op</span><span class="p">(</span><span class="s2">&quot;sigma_+ sigma_-&quot;</span><span class="p">,</span> <span class="p">[</span><span class="n">ispin</span><span class="p">,</span> <span class="n">ispin</span><span class="o">+</span><span class="mi">1</span><span class="p">],</span> <span class="mf">1.0</span><span class="o">/</span><span class="mi">2</span><span class="p">)</span>
+    <span class="n">op3</span> <span class="o">=</span> <span class="n">Op</span><span class="p">(</span><span class="s2">&quot;sigma_- sigma_+&quot;</span><span class="p">,</span> <span class="p">[</span><span class="n">ispin</span><span class="p">,</span> <span class="n">ispin</span><span class="o">+</span><span class="mi">1</span><span class="p">],</span> <span class="mf">1.0</span><span class="o">/</span><span class="mi">2</span><span class="p">)</span>
+    <span class="n">ham_terms</span><span class="o">.</span><span class="n">extend</span><span class="p">([</span><span class="n">op1</span><span class="p">,</span> <span class="n">op2</span><span class="p">,</span> <span class="n">op3</span><span class="p">])</span>
 
-# set the spin order and local basis
-basis = [BasisHalfSpin(i) for i in range(nspin)]
-# construct Hamiltonian MPO
-model = Model(basis, ham_terms)
-mpo = Mpo(model)
-print(f&quot;mpo_bond_dims:{mpo.bond_dims}&quot;)
+<span class="c1"># set the spin order and local basis</span>
+<span class="n">basis</span> <span class="o">=</span> <span class="p">[</span><span class="n">BasisHalfSpin</span><span class="p">(</span><span class="n">i</span><span class="p">)</span> <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="n">nspin</span><span class="p">)]</span>
+<span class="c1"># construct Hamiltonian MPO</span>
+<span class="n">model</span> <span class="o">=</span> <span class="n">Model</span><span class="p">(</span><span class="n">basis</span><span class="p">,</span> <span class="n">ham_terms</span><span class="p">)</span>
+<span class="n">mpo</span> <span class="o">=</span> <span class="n">Mpo</span><span class="p">(</span><span class="n">model</span><span class="p">)</span>
+<span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;mpo_bond_dims:</span><span class="si">{</span><span class="n">mpo</span><span class="o">.</span><span class="n">bond_dims</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
 </pre></div>
 </div>
 </div>
@@ -591,20 +591,20 @@ mpo_bond_dims:[1, 4, 5, 5, 5, 5, 5, 5, 5, 5, 5, 5, 5, 5, 5, 5, 5, 5, 5, 5, 5, 5,
 <div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[3]:
 </pre></div>
 </div>
-<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span># set the sweep paramter
-M = 30
-procedure = [[M, 0.2], [M, 0], [M, 0], [M,0], [M,0]]
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="c1"># set the sweep paramter</span>
+<span class="n">M</span> <span class="o">=</span> <span class="mi">30</span>
+<span class="n">procedure</span> <span class="o">=</span> <span class="p">[[</span><span class="n">M</span><span class="p">,</span> <span class="mf">0.2</span><span class="p">],</span> <span class="p">[</span><span class="n">M</span><span class="p">,</span> <span class="mi">0</span><span class="p">],</span> <span class="p">[</span><span class="n">M</span><span class="p">,</span> <span class="mi">0</span><span class="p">],</span> <span class="p">[</span><span class="n">M</span><span class="p">,</span><span class="mi">0</span><span class="p">],</span> <span class="p">[</span><span class="n">M</span><span class="p">,</span><span class="mi">0</span><span class="p">]]</span>
 
-# initialize a random MPS
-qntot = 0
-mps = Mps.random(model, qntot, M)
+<span class="c1"># initialize a random MPS</span>
+<span class="n">qntot</span> <span class="o">=</span> <span class="mi">0</span>
+<span class="n">mps</span> <span class="o">=</span> <span class="n">Mps</span><span class="o">.</span><span class="n">random</span><span class="p">(</span><span class="n">model</span><span class="p">,</span> <span class="n">qntot</span><span class="p">,</span> <span class="n">M</span><span class="p">)</span>
 
-mps.optimize_config.procedure = procedure
-mps.optimize_config.method = &quot;2site&quot;
+<span class="n">mps</span><span class="o">.</span><span class="n">optimize_config</span><span class="o">.</span><span class="n">procedure</span> <span class="o">=</span> <span class="n">procedure</span>
+<span class="n">mps</span><span class="o">.</span><span class="n">optimize_config</span><span class="o">.</span><span class="n">method</span> <span class="o">=</span> <span class="s2">&quot;2site&quot;</span>
 
-# optimize MPS
-energies, _ = optimize_mps(mps.copy(), mpo)
-print(&quot;gs energy:&quot;, min(energies))
+<span class="c1"># optimize MPS</span>
+<span class="n">energies</span><span class="p">,</span> <span class="n">_</span> <span class="o">=</span> <span class="n">optimize_mps</span><span class="p">(</span><span class="n">mps</span><span class="o">.</span><span class="n">copy</span><span class="p">(),</span> <span class="n">mpo</span><span class="p">)</span>
+<span class="nb">print</span><span class="p">(</span><span class="s2">&quot;gs energy:&quot;</span><span class="p">,</span> <span class="nb">min</span><span class="p">(</span><span class="n">energies</span><span class="p">))</span>
 </pre></div>
 </div>
 </div>

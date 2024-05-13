@@ -724,6 +724,16 @@
     <span class="n">j_constant</span> <span class="o">=</span> <span class="n">Quantity</span><span class="p">(</span><span class="o">*</span><span class="n">param</span><span class="p">[</span><span class="s2">&quot;j constant&quot;</span><span class="p">])</span>
     <span class="n">model</span> <span class="o">=</span> <span class="n">HolsteinModel</span><span class="p">([</span><span class="n">Mol</span><span class="p">(</span><span class="n">Quantity</span><span class="p">(</span><span class="mi">0</span><span class="p">),</span> <span class="n">ph_list</span><span class="p">)]</span> <span class="o">*</span> <span class="n">param</span><span class="p">[</span><span class="s2">&quot;mol num&quot;</span><span class="p">],</span> <span class="n">j_constant</span><span class="p">,</span> <span class="n">scheme</span><span class="p">)</span>
     <span class="k">return</span> <span class="n">model</span><span class="p">,</span> <span class="n">temperature</span>
+
+
+<span class="k">def</span> <span class="nf">heisenberg_ops</span><span class="p">(</span><span class="n">nspin</span><span class="p">):</span>
+    <span class="n">ham_terms</span> <span class="o">=</span> <span class="p">[]</span>
+    <span class="k">for</span> <span class="n">ispin</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="n">nspin</span> <span class="o">-</span> <span class="mi">1</span><span class="p">):</span>
+        <span class="n">op1</span> <span class="o">=</span> <span class="n">Op</span><span class="p">(</span><span class="s2">&quot;sigma_z sigma_z&quot;</span><span class="p">,</span> <span class="p">[</span><span class="n">ispin</span><span class="p">,</span> <span class="n">ispin</span> <span class="o">+</span> <span class="mi">1</span><span class="p">],</span> <span class="mf">1.0</span> <span class="o">/</span> <span class="mi">4</span><span class="p">)</span>
+        <span class="n">op2</span> <span class="o">=</span> <span class="n">Op</span><span class="p">(</span><span class="s2">&quot;sigma_+ sigma_-&quot;</span><span class="p">,</span> <span class="p">[</span><span class="n">ispin</span><span class="p">,</span> <span class="n">ispin</span> <span class="o">+</span> <span class="mi">1</span><span class="p">],</span> <span class="mf">1.0</span> <span class="o">/</span> <span class="mi">2</span><span class="p">)</span>
+        <span class="n">op3</span> <span class="o">=</span> <span class="n">Op</span><span class="p">(</span><span class="s2">&quot;sigma_- sigma_+&quot;</span><span class="p">,</span> <span class="p">[</span><span class="n">ispin</span><span class="p">,</span> <span class="n">ispin</span> <span class="o">+</span> <span class="mi">1</span><span class="p">],</span> <span class="mf">1.0</span> <span class="o">/</span> <span class="mi">2</span><span class="p">)</span>
+        <span class="n">ham_terms</span><span class="o">.</span><span class="n">extend</span><span class="p">([</span><span class="n">op1</span><span class="p">,</span> <span class="n">op2</span><span class="p">,</span> <span class="n">op3</span><span class="p">])</span>
+    <span class="k">return</span> <span class="n">ham_terms</span>
 </pre></div>
         </article>
       </div>

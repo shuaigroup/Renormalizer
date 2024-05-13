@@ -285,8 +285,6 @@
         <span class="c1"># if sweeping to right: True else False</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">to_right</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">None</span>
 
-        <span class="c1"># compress after add?</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">compress_add</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">False</span>
 
     <span class="nd">@property</span>
     <span class="k">def</span> <span class="nf">site_num</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
@@ -361,12 +359,12 @@
 <span class="sd">        and R system is tot.</span>
 <span class="sd">        &quot;&quot;&quot;</span>
         <span class="c1"># construct the L system qn</span>
-        <span class="k">for</span> <span class="n">idx</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">qnidx</span> <span class="o">+</span> <span class="mi">1</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">site_num</span><span class="p">):</span>
-            <span class="bp">self</span><span class="o">.</span><span class="n">qn</span><span class="p">[</span><span class="n">idx</span><span class="p">]</span> <span class="o">=</span> <span class="p">[</span><span class="bp">self</span><span class="o">.</span><span class="n">qntot</span> <span class="o">-</span> <span class="n">i</span> <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">qn</span><span class="p">[</span><span class="n">idx</span><span class="p">]]</span>
+        <span class="k">for</span> <span class="n">idx</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">qnidx</span> <span class="o">+</span> <span class="mi">1</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">site_num</span> <span class="o">+</span> <span class="mi">1</span><span class="p">):</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">qn</span><span class="p">[</span><span class="n">idx</span><span class="p">]</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">qntot</span> <span class="o">-</span> <span class="bp">self</span><span class="o">.</span><span class="n">qn</span><span class="p">[</span><span class="n">idx</span><span class="p">]</span>
 
         <span class="c1"># set boundary to fsite:</span>
-        <span class="k">for</span> <span class="n">idx</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">site_num</span> <span class="o">-</span> <span class="mi">1</span><span class="p">,</span> <span class="n">dstidx</span><span class="p">,</span> <span class="o">-</span><span class="mi">1</span><span class="p">):</span>
-            <span class="bp">self</span><span class="o">.</span><span class="n">qn</span><span class="p">[</span><span class="n">idx</span><span class="p">]</span> <span class="o">=</span> <span class="p">[</span><span class="bp">self</span><span class="o">.</span><span class="n">qntot</span> <span class="o">-</span> <span class="n">i</span> <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">qn</span><span class="p">[</span><span class="n">idx</span><span class="p">]]</span>
+        <span class="k">for</span> <span class="n">idx</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">site_num</span><span class="p">,</span> <span class="n">dstidx</span><span class="p">,</span> <span class="o">-</span><span class="mi">1</span><span class="p">):</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">qn</span><span class="p">[</span><span class="n">idx</span><span class="p">]</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">qntot</span> <span class="o">-</span> <span class="bp">self</span><span class="o">.</span><span class="n">qn</span><span class="p">[</span><span class="n">idx</span><span class="p">]</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">qnidx</span> <span class="o">=</span> <span class="n">dstidx</span></div>
 
 <div class="viewcode-block" id="MatrixProduct.check_left_canonical"><a class="viewcode-back" href="../../../mps.html#renormalizer.mps.mp.MatrixProduct.check_left_canonical">[docs]</a>    <span class="k">def</span> <span class="nf">check_left_canonical</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">atol</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
@@ -624,20 +622,11 @@
         <span class="c1"># qn at the boundary should have dimension 1</span>
         <span class="n">new_mps</span><span class="o">.</span><span class="n">qn</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">zeros</span><span class="p">((</span><span class="mi">1</span><span class="p">,</span> <span class="n">new_mps</span><span class="o">.</span><span class="n">qn</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="mi">1</span><span class="p">]),</span> <span class="n">dtype</span><span class="o">=</span><span class="nb">int</span><span class="p">)</span>
         <span class="n">new_mps</span><span class="o">.</span><span class="n">qn</span><span class="p">[</span><span class="o">-</span><span class="mi">1</span><span class="p">]</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">zeros</span><span class="p">((</span><span class="mi">1</span><span class="p">,</span> <span class="n">new_mps</span><span class="o">.</span><span class="n">qn</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="mi">1</span><span class="p">]),</span> <span class="n">dtype</span><span class="o">=</span><span class="nb">int</span><span class="p">)</span>
-        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">compress_add</span><span class="p">:</span>
-            <span class="n">new_mps</span><span class="o">.</span><span class="n">canonicalise</span><span class="p">()</span>
-            <span class="n">new_mps</span><span class="o">.</span><span class="n">compress</span><span class="p">()</span>
         <span class="k">return</span> <span class="n">new_mps</span></div>
 
 <div class="viewcode-block" id="MatrixProduct.compress"><a class="viewcode-back" href="../../../mps.html#renormalizer.mps.mp.MatrixProduct.compress">[docs]</a>    <span class="k">def</span> <span class="nf">compress</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">temp_m_trunc</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">ret_s</span><span class="o">=</span><span class="kc">False</span><span class="p">):</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">        inp: canonicalise MPS (or MPO)</span>
-
-<span class="sd">        side=&#39;l&#39;: compress LEFT-canonicalised MPS</span>
-<span class="sd">                  by sweeping from RIGHT to LEFT</span>
-<span class="sd">                  output MPS is right canonicalised i.e. CRRR</span>
-
-<span class="sd">        side=&#39;r&#39;: reverse of &#39;l&#39;</span>
 
 <span class="sd">        Returns</span>
 <span class="sd">        -------</span>
@@ -1229,9 +1218,8 @@
         <span class="n">new</span><span class="o">.</span><span class="n">compress_config</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">compress_config</span><span class="o">.</span><span class="n">copy</span><span class="p">()</span>
         <span class="n">new</span><span class="o">.</span><span class="n">qn</span> <span class="o">=</span> <span class="p">[</span><span class="n">qn</span><span class="o">.</span><span class="n">copy</span><span class="p">()</span> <span class="k">for</span> <span class="n">qn</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">qn</span><span class="p">]</span>
         <span class="n">new</span><span class="o">.</span><span class="n">qnidx</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">qnidx</span>
-        <span class="n">new</span><span class="o">.</span><span class="n">qntot</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">qntot</span>
+        <span class="n">new</span><span class="o">.</span><span class="n">qntot</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">qntot</span><span class="o">.</span><span class="n">copy</span><span class="p">()</span>
         <span class="n">new</span><span class="o">.</span><span class="n">to_right</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">to_right</span>
-        <span class="n">new</span><span class="o">.</span><span class="n">compress_add</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">compress_add</span>
         <span class="k">return</span> <span class="n">new</span></div>
 
 <div class="viewcode-block" id="MatrixProduct._array2mt"><a class="viewcode-back" href="../../../mps.html#renormalizer.mps.mp.MatrixProduct._array2mt">[docs]</a>    <span class="k">def</span> <span class="nf">_array2mt</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">array</span><span class="p">,</span> <span class="n">idx</span><span class="p">,</span> <span class="n">allow_dump</span><span class="o">=</span><span class="kc">True</span><span class="p">):</span>
