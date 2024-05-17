@@ -115,7 +115,6 @@ class MatrixProduct:
         # return a list so that the logging result is more pretty
         return bond_dims
 
-
     vbond_list = vbond_dims = bond_list = bond_dims
 
     @property
@@ -158,21 +157,21 @@ class MatrixProduct:
             self.qn[idx] = self.qntot - self.qn[idx]
         self.qnidx = dstidx
 
-    def check_left_canonical(self, atol=None):
+    def check_left_canonical(self, rtol: float = None, atol: float = None):
         """
         check L-canonical
         """
-        for i in range(len(self)-1):
-            if not self[i].check_lortho(atol):
+        for i in range(len(self) - 1):
+            if not self[i].check_lortho(rtol, atol):
                 return False
         return True
 
-    def check_right_canonical(self, atol=None):
+    def check_right_canonical(self, rtol: float = None, atol: float = None):
         """
         check R-canonical
         """
         for i in range(1, len(self)):
-            if not self[i].check_rortho(atol):
+            if not self[i].check_rortho(rtol, atol):
                 return False
         return True
 
@@ -190,18 +189,24 @@ class MatrixProduct:
         """
         return self.qnidx == 0
 
-    def ensure_left_canonical(self, atol=None):
-        if self.to_right or self.qnidx != self.site_num-1 or \
-                (not self.check_left_canonical(atol)):
+    def ensure_left_canonical(self, rtol: float = None, atol: float = None):
+        if (
+            self.to_right
+            or self.qnidx != self.site_num - 1
+            or (not self.check_left_canonical(rtol, atol))
+        ):
             self.move_qnidx(0)
             self.to_right = True
             return self.canonicalise()
         else:
             return self
 
-    def ensure_right_canonical(self, atol=None):
-        if (not self.to_right) or self.qnidx != 0 or \
-                (not self.check_right_canonical(atol)):
+    def ensure_right_canonical(self, rtol: float = None, atol: float = None):
+        if (
+            (not self.to_right)
+            or self.qnidx != 0
+            or (not self.check_right_canonical(rtol, atol))
+        ):
             self.move_qnidx(self.site_num - 1)
             self.to_right = False
             return self.canonicalise()
@@ -406,7 +411,7 @@ class MatrixProduct:
         else:
             assert False
 
-        #assert self.qnidx == other.qnidx
+        # assert self.qnidx == other.qnidx
         new_mps.move_qnidx(other.qnidx)
         new_mps.to_right = other.to_right
         new_mps.qn = [np.concatenate([qn1, qn2]) for qn1, qn2 in zip(self.qn, other.qn)]
@@ -602,7 +607,9 @@ class MatrixProduct:
 
             mps_old = mps.copy()
         else:
-            logger.warning("Variational compress is not converged! Please increase the procedure!")
+            logger.warning(
+                "Variational compress is not converged! Please increase the procedure!"
+            )
 
         # remove the redundant bond dimension near the boundary of the MPS
         mps.canonicalise()
@@ -643,7 +650,7 @@ class MatrixProduct:
         """
 
         system = "L" if self.to_right else "R"
-        
+
         if self.compress_config.bonddim_should_set:
             self.compress_config.set_bonddim(len(self)+1)
 
@@ -679,7 +686,7 @@ class MatrixProduct:
                 )
                 entropy1 = calc_vn_entropy(SUset1**2)
                 entropy2 = calc_vn_entropy(SUset2**2)
-                
+
                 # TODO: more general control according to
                 # CompressCriteria.thresh
                 assert self.compress_config.criteria == CompressCriteria.fixed
@@ -717,9 +724,6 @@ class MatrixProduct:
                     # Need some additional testing at production level calculation
                     self.model: Model = Model(new_basis, self.model.ham_terms, self.model.dipole, self.model.output_ordering)
                 logger.debug(f"DOF ordering: {[b.dof for b in self.model.basis]}")
-            
-
-
 
             if self.to_right:
                 m_trunc = self.compress_config.compute_m_trunc(
@@ -735,7 +739,7 @@ class MatrixProduct:
                 m_trunc = self.compress_config.compute_m_trunc(
                     SVset, cidx[-1], self.to_right
                 )
-                
+
                 ms, msdim, msqn, compms = select_basis(
                     Vset, SVset, qnrnew, Uset, m_trunc, percent=percent
                 )
@@ -765,8 +769,7 @@ class MatrixProduct:
             Uset, Sset, qnnew = svd_qn.eigh_qn(
                 asnumpy(ddm), qnbigl, qnbigr, self.qntot, system=system
             )
-            
-            
+
             if self.to_right:
                 m_trunc = self.compress_config.compute_m_trunc(
                     Sset, cidx[0], self.to_right
@@ -775,7 +778,7 @@ class MatrixProduct:
                 m_trunc = self.compress_config.compute_m_trunc(
                     Sset, cidx[-1], self.to_right
                 )
-            
+
             ms, msdim, msqn, compms = select_basis(
                 Uset, Sset, qnnew, None, m_trunc, percent=percent
             )
@@ -853,7 +856,6 @@ class MatrixProduct:
         else:
             return None
 
-
     def _push_cano(self, idx):
         # move the canonical center to the next site
         # idx is the current canonical center
@@ -882,7 +884,7 @@ class MatrixProduct:
             assert self.qnidx == self.site_num-1
 
         for idx in self.iter_idx_list(full=False, stop_idx=stop_idx):
-           self._push_cano(idx)
+            self._push_cano(idx)
         # can't iter to idx == 0 or idx == self.site_num - 1
         if (not self.to_right and idx == 1) or (self.to_right and idx == self.site_num - 2):
             self._switch_direction()
@@ -921,7 +923,7 @@ class MatrixProduct:
                 assert False
 
         return complex(e0[0, 0])
-    
+
     def dot_ob(self, other: "MatrixProduct") -> complex:
         """
         dot product of two mps / mpo with open boundary, but the boundary of mps/mpo is larger than
@@ -929,11 +931,11 @@ class MatrixProduct:
         """
 
         assert len(self) == len(other)
-        
+
         e0 = xp.eye(self[0].shape[0])
         tmp = xp.eye(other[0].shape[0])
         e0 = tensordot(e0, tmp, 0).transpose(0,2,1,3)
-        
+
         for mt1, mt2 in zip(self, other):
             e0 = tensordot(e0, mt2.array, 1)
             if mt1.ndim == 3:
@@ -944,8 +946,6 @@ class MatrixProduct:
                 assert False
 
         return e0
-
-
 
     def angle(self, other):
         return abs(self.conj().dot(other))
@@ -1075,7 +1075,7 @@ class MatrixProduct:
 
         for i in range(self.site_num+1):
             data_dict[f"subqn_{i}"] = qn[i]
-        
+
         try:
             np.savez(fname, **data_dict)
         except Exception:
@@ -1180,7 +1180,7 @@ class MatrixProduct:
                 shutil.rmtree(dir_with_id)
             except OSError:
                 logger.exception(f"Removing temperary dump dir {dir_with_id} failed")
-    
+
     @classmethod
     def from_mp(cls, model, mplist):
         # mps/mpo/mpdm from matrix product

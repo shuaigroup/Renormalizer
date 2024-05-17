@@ -90,25 +90,29 @@ class Matrix:
     def l_combine(self):
         return self.reshape(self.l_combine_shape)
 
-    def check_lortho(self, atol=None):
+    def check_lortho(self, rtol: float = None, atol: float = None):
         """
         check L-orthogonal
         """
         if atol is None:
             atol = backend.canonical_atol
+        if rtol is None:
+            rtol = backend.canonical_rtol
         tensm = asxp(self.array.reshape([np.prod(self.shape[:-1]), self.shape[-1]]))
         s = tensm.T.conj() @ tensm
-        return xp.allclose(s, xp.eye(s.shape[0]), atol=atol)
+        return xp.allclose(s, xp.eye(s.shape[0]), rtol=rtol, atol=atol)
 
-    def check_rortho(self, atol=None):
+    def check_rortho(self, rtol: float = None, atol: float = None):
         """
         check R-orthogonal
         """
         if atol is None:
             atol = backend.canonical_atol
+        if rtol is None:
+            rtol = backend.canonical_rtol
         tensm = asxp(self.array.reshape([self.shape[0], np.prod(self.shape[1:])]))
         s = tensm @ tensm.T.conj()
-        return xp.allclose(s, xp.eye(s.shape[0]), atol=atol)
+        return xp.allclose(s, xp.eye(s.shape[0]), rtol=rtol, atol=atol)
 
     def to_complex(self):
         # `xp.array` always creates new array, so to_complex means copy, which is
