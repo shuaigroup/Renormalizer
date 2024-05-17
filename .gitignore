@@ -8,6 +8,7 @@
 *.eps
 *.png
 *.lprof
+*.diff
 
 .idea/
 .cache/

@@ -61,8 +61,8 @@ def get_git_commit_hash():
 USE_GPU, xp = try_import_cupy()
 
 
-#USE_GPU = False
-#xp = np
+# USE_GPU = False
+# xp = np
 
 xpseed = 2019
 npseed = 9012
@@ -166,10 +166,42 @@ class Backend:
 
     @property
     def canonical_atol(self):
-        if self.is_32bits:
-            return 1e-4
-        else:
-            return 1e-5
+        '''
+        Absolute tolerence for use in matrix.check_lortho, 
+        mp.check_left_canonical, mp.ensure_left_canonical
+        and their right counterparts
+        '''
+        return (
+            self._canonical_atol
+            if hasattr(self, "_canonical_atol")
+            else (1e-4 if self.is_32bits else 1e-8)
+        )
+
+    @property
+    def canonical_rtol(self):
+        '''
+        Relative tolerence for use in matrix.check_lortho, 
+        mp.check_left_canonical, mp.ensure_left_canonical
+        and their right counterparts
+        '''
+        return (
+            self._canonical_rtol
+            if hasattr(self, "_canonical_rtol")
+            else (1e-2 if self.is_32bits else 1e-5)
+        )
+
+    @canonical_atol.setter
+    def canonical_atol(self, value):
+        self._canonical_atol = self._tol_checker(value)
+
+    @canonical_rtol.setter
+    def canonical_rtol(self, value):
+        self._canonical_rtol = self._tol_checker(value)
+
+    def _tol_checker(self, value):
+        if not isinstance(value, (int, float)) or value < 0:
+            raise ValueError("Tolerance must be a non-negative float number")
+        return value
 
 
 backend = Backend()
