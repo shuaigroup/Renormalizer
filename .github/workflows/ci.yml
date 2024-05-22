@@ -19,13 +19,16 @@ jobs:
         run: |
           python -m pip install --upgrade pip
           pip install --no-cache-dir -r requirements.txt
-      - name: test scripts
+      - name: run tests
         run: |
           pip install pytest-xdist pytest-cov
           export RENO_NUM_THREADS=1
           pytest -n 4 --durations=0 --cov=renormalizer renormalizer
-          pip install primme==3.2.*
+      - name: run optional tests
+        run: |
+          pip install primme==3.2.* pyscf==2.4.0
           pytest --durations=0 renormalizer/mps/tests/test_gs.py::test_multistate --cov=renormalizer --cov-append
+          pytest --durations=0 renormalizer/mps/tests/test_gs.py::test_pyscf_solver --cov=renormalizer --cov-append
       - name: run examples
         run: |
             cd example; bash run.sh

@@ -8,7 +8,7 @@ import pytest
 
 from renormalizer.model import Model, h_qc
 from renormalizer.mps.backend import primme
-from renormalizer.mps.gs import construct_mps_mpo, optimize_mps
+from renormalizer.mps.gs import construct_mps_mpo, optimize_mps, DmrgFCISolver
 from renormalizer.mps import Mpo, Mps, StackedMpo
 from renormalizer.tests.parameter import holstein_model
 from renormalizer.utils.configs import OFS
@@ -156,3 +156,40 @@ def test_stackedmpo():
     energies1, _ = optimize_mps(mps.copy(), mpo)
     energies2, _ = optimize_mps(mps.copy(), StackedMpo([mpo, mpo]))
     assert np.all(np.abs(np.array(energies2) - np.array(energies1) * 2) < 1e-8)
+
+
+def test_pyscf_solver():
+    try:
+        from pyscf import M, mcscf, fci
+    except ImportError:
+        pytest.skip("pyscf not installed")
+        return # make IDE happy
+
+    # the unused code is for debugging
+    # the test might not pass based on the unused code
+    if True:
+        mol = M(atom=[["N", 0, 0, 0], ["N", 0, 0, 1]], basis="sto3g")
+        active_space = (10, 8)
+        active_space = (6, 6)
+    else:
+        mol = M(atom=[["Li", 0, 0, 0], ["H", 0, 0, 1]], basis="sto3g")
+        active_space = (2, 5)
+    hf = mol.HF()
+    hf.kernel()
+
+    casci = mcscf.CASCI(hf, active_space[1], active_space[0])
+    casci.kernel()
+    e_ref = casci.e_tot
+    rdm1_ref = casci.make_rdm1()
+    rdm2_ref = fci.direct_spin1.make_rdm12(casci.ci, casci.ncas, casci.nelecas)[1]
+
+    casci = mcscf.CASCI(hf, active_space[1], active_space[0])
+    casci.fcisolver = DmrgFCISolver()
+    casci.kernel()
+    rdm1 = casci.make_rdm1()
+    rdm2 = casci.fcisolver.make_rdm2(casci.fcisolver.mps, casci.ncas, casci.nelecas)
+
+    # reasonable error since the bond dimension is only 32
+    assert casci.e_tot == pytest.approx(e_ref, abs=1e-2)
+    np.testing.assert_allclose(rdm1, rdm1_ref, atol=1e-2)
+    np.testing.assert_allclose(rdm2, rdm2_ref, atol=1e-2)

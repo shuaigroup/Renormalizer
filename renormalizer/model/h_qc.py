@@ -1,5 +1,6 @@
 # -*- coding: utf-8 -*-
 
+from functools import partial
 import itertools
 import logging
 
@@ -67,6 +68,62 @@ def int_to_h(h, eri):
 
     return sh, aseri
 
+
+def generate_ladder_operator(norbs):
+    # construct electronic creation/annihilation operators by Jordan-Wigner transformation
+    a_ops = []
+    a_dag_ops = []
+    for j in range(norbs):
+        # qn for each op will be processed in `process_op`
+        sigma_z_list = [Op("Z", l) for l in range(j)]
+        a_ops.append(Op.product(sigma_z_list + [Op("+", j)]))
+        a_dag_ops.append(Op.product(sigma_z_list + [Op("-", j)]))
+
+    return a_ops, a_dag_ops
+
+
+def simplify_op(old_op: Op, norbs: int, conserve_qn:bool=True):
+    # helper function to process operators.
+    # Remove "sigma_z sigma_z". Use {sigma_z, sigma_+} = 0
+    # and {sigma_z, sigma_-} = 0 to simplify operators,
+    # and set quantum number
+    dof_to_siteidx = dict(zip(range(norbs), range(norbs)))
+    if conserve_qn:
+        qn_dict0 = {"+": [-1, 0], "-": [1, 0], "Z": [0, 0]}
+        qn_dict1 = {"+": [0, -1], "-": [0, 1], "Z": [0, 0]}
+    else:
+        qn_dict0 = {"+": 0, "-": 0, "Z": 0}
+
+    old_ops, _ = old_op.split_elementary(dof_to_siteidx)
+    new_ops = []
+    for elem_op in old_ops:
+        # move all sigma_z to the start of the operator
+        # and cancel as many as possible
+        n_sigma_z = elem_op.split_symbol.count("Z")
+        n_non_sigma_z = 0
+        n_permute = 0
+        for simple_elem_op in elem_op.split_symbol:
+            if simple_elem_op != "Z":
+                n_non_sigma_z += 1
+            else:
+                n_permute += n_non_sigma_z
+        # remove as many "sigma_z" as possible
+        new_symbol = [s for s in elem_op.split_symbol if s != "Z"]
+        if n_sigma_z % 2 == 1:
+            new_symbol.insert(0, "Z")
+        # this op is identity, discard it
+        if not new_symbol:
+            continue
+        new_dof_name = elem_op.dofs[0]
+        if conserve_qn and new_dof_name % 2 == 1:
+            qn_dict = qn_dict1
+        else:
+            qn_dict = qn_dict0
+        new_qn = [qn_dict[s] for s in new_symbol]
+        new_ops.append(Op(" ".join(new_symbol), new_dof_name, (-1) ** n_permute, new_qn))
+    return Op.product(new_ops)
+
+
 def qc_model(h1e, h2e, stacked=False, conserve_qn=True):
     """
     Ab initio electronic Hamiltonian in spin-orbitals
@@ -91,59 +148,11 @@ def qc_model(h1e, h2e, stacked=False, conserve_qn=True):
     assert np.all(np.array(h1e.shape) == norbs)
     assert np.all(np.array(h2e.shape) == norbs)
 
-    # construct electronic creation/annihilation operators by Jordan-Wigner transformation
-    a_ops = []
-    a_dag_ops = []
-    for j in range(norbs):
-        # qn for each op will be processed in `process_op`
-        sigma_z_list = [Op("Z", l) for l in range(j)]
-        a_ops.append( Op.product(sigma_z_list + [Op("+", j)]) )
-        a_dag_ops.append( Op.product(sigma_z_list + [Op("-", j)]) )
-
     ham_terms = []
-
-    # helper function to process operators.
-    # Remove "sigma_z sigma_z". Use {sigma_z, sigma_+} = 0
-    # and {sigma_z, sigma_-} = 0 to simplify operators,
-    # and set quantum number
-    dof_to_siteidx = dict(zip(range(norbs), range(norbs)))
-    if conserve_qn:
-        qn_dict0 = {"+": [-1, 0], "-": [1, 0], "Z": [0, 0]}
-        qn_dict1 = {"+": [0, -1], "-": [0, 1], "Z": [0, 0]}
-    else:
-        qn_dict0 = {"+": 0, "-": 0, "Z": 0}
-    def process_op(old_op: Op):
-        old_ops, _ = old_op.split_elementary(dof_to_siteidx)
-        new_ops = []
-        for elem_op in old_ops:
-            # move all sigma_z to the start of the operator
-            # and cancel as many as possible
-            n_sigma_z = elem_op.split_symbol.count("Z")
-            n_non_sigma_z = 0
-            n_permute = 0
-            for simple_elem_op in elem_op.split_symbol:
-                if simple_elem_op != "Z":
-                    n_non_sigma_z += 1
-                else:
-                    n_permute += n_non_sigma_z
-            # remove as many "sigma_z" as possible
-            new_symbol = [s for s in elem_op.split_symbol if s != "Z"]
-            if n_sigma_z % 2 == 1:
-                new_symbol.insert(0, "Z")
-            # this op is identity, discard it
-            if not new_symbol:
-                continue
-            new_dof_name = elem_op.dofs[0]
-            if conserve_qn and new_dof_name % 2 == 1:
-                qn_dict = qn_dict1
-            else:
-                qn_dict = qn_dict0
-            new_qn = [qn_dict[s] for s in new_symbol]
-            new_ops.append(Op(" ".join(new_symbol), new_dof_name, (-1) ** n_permute, new_qn))
-        return Op.product(new_ops)
-
+    process_op = partial(simplify_op, norbs=norbs, conserve_qn=conserve_qn)
     pairs1 = np.argwhere(h1e!=0)
     pairs2 = np.argwhere(h2e!=0)
+    a_ops, a_dag_ops = generate_ladder_operator(norbs)
     if stacked is False:
         # 1-e terms
         for p, q in pairs1:
@@ -184,10 +193,4 @@ def qc_model(h1e, h2e, stacked=False, conserve_qn=True):
         b = BasisHalfSpin(iorb, sigmaqn=sigmaqn)
         basis.append(b)
     return basis, ham_terms
-
-
-
-
-
-
 
