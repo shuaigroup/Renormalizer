@@ -1599,6 +1599,9 @@ class Mps(MatrixProduct):
         r"""Calculate the reduced density matrix of electronic DoF
         
         :math:`\rho_{ij} = \langle \Psi | a_i^\dagger a_j | \Psi \rangle`
+
+        .. note::
+            This function is designed for single-electron system. Fermionic commutation relation is not considered.
         
         """
         

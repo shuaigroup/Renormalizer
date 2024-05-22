@@ -7,6 +7,9 @@ several lowest excited states with state-averaged algorithm.
 """
 
 from typing import Tuple, List, Union
+from functools import partial
+from itertools import product
+from collections import deque
 import logging
 
 import numpy as np
@@ -14,6 +17,8 @@ import scipy
 import opt_einsum as oe
 
 from renormalizer.lib import davidson
+from renormalizer.model.h_qc import qc_model, int_to_h, generate_ladder_operator, simplify_op
+from renormalizer.model import Model, Op
 from renormalizer.mps.backend import xp, OE_BACKEND, primme, IMPORT_PRIMME_EXCEPTION
 from renormalizer.mps.matrix import multi_tensor_contract, tensordot, asnumpy, asxp
 from renormalizer.mps.hop_expr import  hop_expr
@@ -21,6 +26,7 @@ from renormalizer.mps.svd_qn import get_qn_mask
 from renormalizer.mps import Mpo, Mps, StackedMpo
 from renormalizer.mps.lib import Environ, cvec2cmat
 from renormalizer.utils import Quantity, CompressConfig, CompressCriteria
+
 
 logger = logging.getLogger(__name__)
 
@@ -568,3 +574,168 @@ def eigh_iterative(
         assert False
     logger.debug(f"use {algo}, HC hops: {count}")
     return e, sign_fix(c, nroots)
+
+
+class DmrgFCISolver:
+    """
+    DMRG interface for PySCF FCI/CASCI/CASSCF
+    """
+    def __init__(self):
+        self.mps: Mps = None
+        self.nsorb: int = None
+        self.bond_dimension: int = 32
+        self.rdm1_mpos = []
+        self.rdm2_mpos = []
+
+    def kernel(self, h1, h2, norb, nelec, ci0=None, ecore=0, **kwargs):
+        if self.nsorb is None:
+            self.nsorb = norb * 2
+        else:
+            assert norb * 2 == self.nsorb
+
+        import pyscf
+        h2 = pyscf.ao2mo.restore(1, h2, norb)
+        # spatial orbital to spin orbital
+        h1, h2 = int_to_h(h1, h2)
+
+        basis, ham_terms = qc_model(h1, h2)
+
+
+        model = Model(basis, ham_terms)
+        mpo = Mpo(model)
+        logger.info(f"mpo_bond_dims:{mpo.bond_dims}")
+
+        if isinstance(nelec, (int, np.integer)):
+            nelec = [nelec - nelec//2, nelec//2]
+
+        M = self.bond_dimension
+        mps = Mps.random(model, nelec, M, percent=1.0)
+
+        mps.optimize_config.procedure = [[M, 0.4], [M, 0.2], [M, 0.1], [M, 0], [M, 0], [M, 0], [M, 0]]
+        mps.optimize_config.method = "2site"
+        energies, mps = optimize_mps(mps.copy(), mpo)
+        gs_e = min(energies) + ecore
+
+        self.mps = mps
+        return gs_e, mps
+
+    def _make_rdm1_mpos(self, model: Model, norb: int):
+        assert norb == self.nsorb // 2
+        assert not self.rdm1_mpos
+        a_ops, a_dag_ops = generate_ladder_operator(self.nsorb)
+        process_op = partial(simplify_op, norbs=self.nsorb, conserve_qn=True)
+        for i in range(norb):
+            for j in range(i + 1):
+                opaa = process_op(a_dag_ops[2*i] * a_ops[2*j])
+                opbb = process_op(a_dag_ops[2*i+1] * a_ops[2*j+1])
+                mpo = Mpo(model, terms=[opaa, opbb])
+                self.rdm1_mpos.append(mpo)
+
+    def make_rdm1(self, params, norb, nelec):
+        r"""
+        Evaluate the spin-traced one-body reduced density matrix (1RDM).
+
+        .. math::
+
+            \textrm{1RDM}[p,q] = \langle p_{\alpha}^\dagger q_{\alpha} \rangle
+                + \langle p_{\beta}^\dagger q_{\beta} \rangle
+
+        Returns
+        -------
+        rdm1: np.ndarray
+            The spin-traced one-body RDM.
+
+        See Also
+        --------
+        make_rdm2: Evaluate the spin-traced two-body reduced density matrix (2RDM).
+        """
+        if params is None:
+            mps = self.mps
+        else:
+            mps = params
+
+        if not self.rdm1_mpos:
+            self._make_rdm1_mpos(self.mps.model, norb)
+
+        expectations = deque(mps.expectations(self.rdm1_mpos))
+        rdm1 = np.zeros([norb] * 2)
+        for i in range(norb):
+            for j in range(i + 1):
+                rdm1[i, j] = rdm1[j, i] = expectations.popleft()
+        return rdm1
+
+    def _make_rdm2_mpos(self, model: Model, norb: int):
+        assert norb == self.nsorb // 2
+        assert not self.rdm2_mpos
+        a_ops, a_dag_ops = generate_ladder_operator(self.nsorb)
+        process_op = partial(simplify_op, norbs=self.nsorb, conserve_qn=True)
+        calculated_indices = set()
+        # a^\dagger_p a^\dagger_q a_r a_s
+        # possible spins: aaaa, abba, baab, bbbb
+        for p, q, r, s in product(range(norb), repeat=4):
+            if (p, q, r, s) in calculated_indices:
+                continue
+            opaaaa = process_op(a_dag_ops[2 * p] * a_dag_ops[2 * q] * a_ops[2 * r] * a_ops[2 * s])
+            opabba = process_op(a_dag_ops[2 * p] * a_dag_ops[2 * q + 1] * a_ops[2 * r + 1] * a_ops[2 * s])
+            opbaab = process_op(a_dag_ops[2 * p + 1] * a_dag_ops[2 * q] * a_ops[2 * r] * a_ops[2 * s + 1])
+            opbbbb = process_op(a_dag_ops[2 * p + 1] * a_dag_ops[2 * q + 1] * a_ops[2 * r + 1] * a_ops[2 * s + 1])
+            mpo = Mpo(model, terms=[opaaaa, opabba, opbaab, opbbbb])
+            self.rdm2_mpos.append(mpo)
+            indices = [(p, q, r, s), (s, r, q, p), (q, p, s, r), (r, s, p, q)]
+            for idx in indices:
+                calculated_indices.add(idx)
+
+    def make_rdm2(self, params, norb, nelec):
+        r"""
+        Evaluate the spin-traced two-body reduced density matrix (2RDM).
+
+        .. math::
+
+            \begin{aligned}
+                \textrm{2RDM}[p,q,r,s] & = \langle p_{\alpha}^\dagger r_{\alpha}^\dagger
+                s_{\alpha}  q_{\alpha} \rangle
+                   + \langle p_{\beta}^\dagger r_{\alpha}^\dagger s_{\alpha}  q_{\beta} \rangle \\
+                   & \quad + \langle p_{\alpha}^\dagger r_{\beta}^\dagger s_{\beta}  q_{\alpha} \rangle
+                   + \langle p_{\beta}^\dagger r_{\beta}^\dagger s_{\beta}  q_{\beta} \rangle
+            \end{aligned}
+
+        Returns
+        -------
+        rdm2: np.ndarray
+            The spin-traced two-body RDM.
+
+        See Also
+        --------
+        make_rdm1: Evaluate the spin-traced one-body reduced density matrix (1RDM).
+        """
+        if params is None:
+            mps = self.mps
+        else:
+            mps = params
+
+        if not self.rdm2_mpos:
+            self._make_rdm2_mpos(self.mps.model, norb)
+
+        expectations = deque(mps.expectations(self.rdm2_mpos))
+        rdm2 = np.zeros([norb] * 4)
+        calculated_indices = set()
+        for p, q, r, s in product(range(norb), repeat=4):
+            if (p, q, r, s) in calculated_indices:
+                continue
+            v = expectations.popleft()
+            indices = [(p, q, r, s), (s, r, q, p), (q, p, s, r), (r, s, p, q)]
+            for idx in indices:
+                calculated_indices.add(idx)
+                rdm2[idx] = v
+        # transpose to PySCF notation: rdm2[p,q,r,s] = <p^+ r^+ s q>
+        rdm2 = rdm2.transpose(0, 3, 1, 2)
+        return rdm2
+
+    def make_rdm12(self, params, norb, nelec):
+        rdm1 = self.make_rdm1(params, norb, nelec)
+        rdm2 = self.make_rdm2(params, norb, nelec)
+        return rdm1, rdm2
+
+    def spin_square(self, params, norb, nelec):
+        # S^2 = (S+ * S- + S- * S+)/2 + Sz * Sz
+        raise NotImplementedError

@@ -41,8 +41,12 @@ jobs:
               pip install pytest-xdist pytest-cov
               export RENO_NUM_THREADS=1
               pytest -n 4 --durations=0 --cov=renormalizer renormalizer
-              pip install primme==3.2.*
+      - run:
+          name: Run optional tests
+          command: |
+              pip install primme==3.2.* pyscf==2.4.0
               pytest --durations=0 renormalizer/mps/tests/test_gs.py::test_multistate --cov=renormalizer --cov-append
+              pytest --durations=0 renormalizer/mps/tests/test_gs.py::test_pyscf_solver --cov=renormalizer --cov-append
       - run:
           name: Run examples
           command: |
