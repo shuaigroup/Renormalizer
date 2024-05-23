@@ -584,6 +584,7 @@ class DmrgFCISolver:
         self.mps: Mps = None
         self.nsorb: int = None
         self.bond_dimension: int = 32
+        self.procedure = None
         self.rdm1_mpos = []
         self.rdm2_mpos = []
 
@@ -611,7 +612,10 @@ class DmrgFCISolver:
         M = self.bond_dimension
         mps = Mps.random(model, nelec, M, percent=1.0)
 
-        mps.optimize_config.procedure = [[M, 0.4], [M, 0.2], [M, 0.1], [M, 0], [M, 0], [M, 0], [M, 0]]
+        if self.procedure is None:
+            mps.optimize_config.procedure = [[M, 0.4], [M, 0.2], [M, 0.1], [M, 0], [M, 0], [M, 0], [M, 0]]
+        else:
+            mps.optimize_config.procedure = self.procedure
         mps.optimize_config.method = "2site"
         energies, mps = optimize_mps(mps.copy(), mpo)
         gs_e = min(energies) + ecore

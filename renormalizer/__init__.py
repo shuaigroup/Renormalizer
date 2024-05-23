@@ -38,5 +38,5 @@ del os, log_level, init_log
 from renormalizer.model import Model, HolsteinModel, SpinBosonModel, TI1DModel, Op, OpSum
 from renormalizer.model.basis import BasisSHO, BasisHopsBoson, BasisSineDVR, BasisMultiElectron, \
     BasisMultiElectronVac, BasisSimpleElectron, BasisHalfSpin, BasisDummy
-from renormalizer.mps import Mpo, Mps, optimize_mps
+from renormalizer.mps import Mpo, Mps, optimize_mps, DmrgFCISolver
 from renormalizer.utils import Quantity
