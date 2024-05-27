@@ -214,6 +214,84 @@
 <span id="ground-state-and-state-averaged-method"></span><h2><span class="section-number">6.1. </span>Ground state and state-averaged method<a class="headerlink" href="#module-renormalizer.mps.gs" title="Permalink to this heading">#</a></h2>
 <p>This module contains functions to optimize mps for a single ground state or
 several lowest excited states with state-averaged algorithm.</p>
+<dl class="py class">
+<dt class="sig sig-object py" id="renormalizer.mps.gs.DmrgFCISolver">
+<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">renormalizer.mps.gs.</span></span><span class="sig-name descname"><span class="pre">DmrgFCISolver</span></span><a class="reference internal" href="_modules/renormalizer/mps/gs.html#DmrgFCISolver"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#renormalizer.mps.gs.DmrgFCISolver" title="Permalink to this definition">#</a></dt>
+<dd><p>DMRG interface for PySCF FCI/CASCI/CASSCF</p>
+<dl class="py method">
+<dt class="sig sig-object py" id="renormalizer.mps.gs.DmrgFCISolver.kernel">
+<span class="sig-name descname"><span class="pre">kernel</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">h1</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">h2</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">norb</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">nelec</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">ci0</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">ecore</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">0</span></span></em>, <em class="sig-param"><span class="o"><span class="pre">**</span></span><span class="n"><span class="pre">kwargs</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/renormalizer/mps/gs.html#DmrgFCISolver.kernel"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#renormalizer.mps.gs.DmrgFCISolver.kernel" title="Permalink to this definition">#</a></dt>
+<dd></dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="renormalizer.mps.gs.DmrgFCISolver.make_rdm1">
+<span class="sig-name descname"><span class="pre">make_rdm1</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">params</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">norb</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">nelec</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/renormalizer/mps/gs.html#DmrgFCISolver.make_rdm1"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#renormalizer.mps.gs.DmrgFCISolver.make_rdm1" title="Permalink to this definition">#</a></dt>
+<dd><p>Evaluate the spin-traced one-body reduced density matrix (1RDM).</p>
+<div class="math-wrapper docutils container">
+<div class="math notranslate nohighlight">
+\[\textrm{1RDM}[p,q] = \langle p_{\alpha}^\dagger q_{\alpha} \rangle
+    + \langle p_{\beta}^\dagger q_{\beta} \rangle\]</div>
+</div>
+<dl class="field-list simple">
+<dt class="field-odd">Returns<span class="colon">:</span></dt>
+<dd class="field-odd"><p><strong>rdm1</strong> – The spin-traced one-body RDM.</p>
+</dd>
+<dt class="field-even">Return type<span class="colon">:</span></dt>
+<dd class="field-even"><p>np.ndarray</p>
+</dd>
+</dl>
+<div class="admonition seealso">
+<p class="admonition-title">See also</p>
+<dl class="simple">
+<dt><a class="reference internal" href="#renormalizer.mps.gs.DmrgFCISolver.make_rdm2" title="renormalizer.mps.gs.DmrgFCISolver.make_rdm2"><code class="xref py py-obj docutils literal notranslate"><span class="pre">make_rdm2</span></code></a></dt><dd><p>Evaluate the spin-traced two-body reduced density matrix (2RDM).</p>
+</dd>
+</dl>
+</div>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="renormalizer.mps.gs.DmrgFCISolver.make_rdm12">
+<span class="sig-name descname"><span class="pre">make_rdm12</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">params</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">norb</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">nelec</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/renormalizer/mps/gs.html#DmrgFCISolver.make_rdm12"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#renormalizer.mps.gs.DmrgFCISolver.make_rdm12" title="Permalink to this definition">#</a></dt>
+<dd></dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="renormalizer.mps.gs.DmrgFCISolver.make_rdm2">
+<span class="sig-name descname"><span class="pre">make_rdm2</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">params</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">norb</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">nelec</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/renormalizer/mps/gs.html#DmrgFCISolver.make_rdm2"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#renormalizer.mps.gs.DmrgFCISolver.make_rdm2" title="Permalink to this definition">#</a></dt>
+<dd><p>Evaluate the spin-traced two-body reduced density matrix (2RDM).</p>
+<div class="math-wrapper docutils container">
+<div class="math notranslate nohighlight">
+\[\begin{split}\begin{aligned}
+    \textrm{2RDM}[p,q,r,s] &amp; = \langle p_{\alpha}^\dagger r_{\alpha}^\dagger
+    s_{\alpha}  q_{\alpha} \rangle
+       + \langle p_{\beta}^\dagger r_{\alpha}^\dagger s_{\alpha}  q_{\beta} \rangle \\
+       &amp; \quad + \langle p_{\alpha}^\dagger r_{\beta}^\dagger s_{\beta}  q_{\alpha} \rangle
+       + \langle p_{\beta}^\dagger r_{\beta}^\dagger s_{\beta}  q_{\beta} \rangle
+\end{aligned}\end{split}\]</div>
+</div>
+<dl class="field-list simple">
+<dt class="field-odd">Returns<span class="colon">:</span></dt>
+<dd class="field-odd"><p><strong>rdm2</strong> – The spin-traced two-body RDM.</p>
+</dd>
+<dt class="field-even">Return type<span class="colon">:</span></dt>
+<dd class="field-even"><p>np.ndarray</p>
+</dd>
+</dl>
+<div class="admonition seealso">
+<p class="admonition-title">See also</p>
+<dl class="simple">
+<dt><a class="reference internal" href="#renormalizer.mps.gs.DmrgFCISolver.make_rdm1" title="renormalizer.mps.gs.DmrgFCISolver.make_rdm1"><code class="xref py py-obj docutils literal notranslate"><span class="pre">make_rdm1</span></code></a></dt><dd><p>Evaluate the spin-traced one-body reduced density matrix (1RDM).</p>
+</dd>
+</dl>
+</div>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="renormalizer.mps.gs.DmrgFCISolver.spin_square">
+<span class="sig-name descname"><span class="pre">spin_square</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">params</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">norb</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">nelec</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/renormalizer/mps/gs.html#DmrgFCISolver.spin_square"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#renormalizer.mps.gs.DmrgFCISolver.spin_square" title="Permalink to this definition">#</a></dt>
+<dd></dd></dl>
+
+</dd></dl>
+
 <dl class="py function">
 <dt class="sig sig-object py" id="renormalizer.mps.gs.construct_mps_mpo">
 <span class="sig-prename descclassname"><span class="pre">renormalizer.mps.gs.</span></span><span class="sig-name descname"><span class="pre">construct_mps_mpo</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">model</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">mmax</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">nexciton</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">offset=&lt;renormalizer.utils.quantity.Quantity</span> <span class="pre">object&gt;</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/renormalizer/mps/gs.html#construct_mps_mpo"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#renormalizer.mps.gs.construct_mps_mpo" title="Permalink to this definition">#</a></dt>
@@ -490,6 +568,14 @@ idx belongs mpsr, the other attributes are the same aas mpsl</p>
             <ul>
 <li><a class="reference internal" href="#">6. Static Eigenstate Method</a><ul>
 <li><a class="reference internal" href="#module-renormalizer.mps.gs">6.1. Ground state and state-averaged method</a><ul>
+<li><a class="reference internal" href="#renormalizer.mps.gs.DmrgFCISolver"><code class="docutils literal notranslate"><span class="pre">DmrgFCISolver</span></code></a><ul>
+<li><a class="reference internal" href="#renormalizer.mps.gs.DmrgFCISolver.kernel"><code class="docutils literal notranslate"><span class="pre">DmrgFCISolver.kernel()</span></code></a></li>
+<li><a class="reference internal" href="#renormalizer.mps.gs.DmrgFCISolver.make_rdm1"><code class="docutils literal notranslate"><span class="pre">DmrgFCISolver.make_rdm1()</span></code></a></li>
+<li><a class="reference internal" href="#renormalizer.mps.gs.DmrgFCISolver.make_rdm12"><code class="docutils literal notranslate"><span class="pre">DmrgFCISolver.make_rdm12()</span></code></a></li>
+<li><a class="reference internal" href="#renormalizer.mps.gs.DmrgFCISolver.make_rdm2"><code class="docutils literal notranslate"><span class="pre">DmrgFCISolver.make_rdm2()</span></code></a></li>
+<li><a class="reference internal" href="#renormalizer.mps.gs.DmrgFCISolver.spin_square"><code class="docutils literal notranslate"><span class="pre">DmrgFCISolver.spin_square()</span></code></a></li>
+</ul>
+</li>
 <li><a class="reference internal" href="#renormalizer.mps.gs.construct_mps_mpo"><code class="docutils literal notranslate"><span class="pre">construct_mps_mpo()</span></code></a></li>
 <li><a class="reference internal" href="#renormalizer.mps.gs.eigh_direct"><code class="docutils literal notranslate"><span class="pre">eigh_direct()</span></code></a></li>
 <li><a class="reference internal" href="#renormalizer.mps.gs.eigh_iterative"><code class="docutils literal notranslate"><span class="pre">eigh_iterative()</span></code></a></li>
