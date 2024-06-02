@@ -52,8 +52,8 @@ def try_import_cupy():
 
 def get_git_commit_hash():
     try:
-        commit_hash = subprocess.check_output(['git', 'rev-parse', 'HEAD']).strip().decode('utf-8')
-        return commit_hash
+        commit_hash = subprocess.check_output(['git', 'rev-parse', 'HEAD'], stderr=subprocess.PIPE)
+        return commit_hash.strip().decode('utf-8')
     except subprocess.CalledProcessError:
         return "Unknown"
 

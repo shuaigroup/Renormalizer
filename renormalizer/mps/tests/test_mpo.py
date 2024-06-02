@@ -21,7 +21,8 @@ from renormalizer.utils.qutip_utils import get_spin_hamiltonian
 # More sites make MPO representation not efficient
 # Not good for testing
 @pytest.mark.parametrize("nterms", [100, 1000])
-def test_symbolic_mpo(nsites, nterms):
+@pytest.mark.parametrize("algo", ["Hopcroft-Karp", "qr"])
+def test_symbolic_mpo(nsites, nterms, algo):
 
     possible_operators = [
         "sigma_+",
@@ -34,17 +35,23 @@ def test_symbolic_mpo(nsites, nterms):
         ham_terms.append(Op.product(op_list) * random.random())
     basis = [BasisHalfSpin(i) for i in range(nsites)]
     model = Model(basis, ham_terms)
-    mpo = Mpo(model)
+    mpo = Mpo(model, algo=algo)
     dense_mpo = mpo.todense()
     qutip_ham = get_spin_hamiltonian(ham_terms)
     assert np.allclose(dense_mpo, qutip_ham.data.todense())
 
 
-@pytest.mark.parametrize("nsites", [5, 10])
-# More sites make MPO representation not efficient
-# Not good for testing
-@pytest.mark.parametrize("nterms", [100, 1000])
-def test_swap_symbolic_mpo(nsites, nterms):
+@pytest.mark.parametrize("algo", ["qr", "Hopcroft-Karp"])
+def test_swap_symbolic_mpo(algo):
+    if algo == "qr":
+        # not efficient due to more terms in the table
+        # so use smaller system
+        nsites = 5
+        nterms = 100
+    else:
+        nsites = 10
+        nterms = 1000
+
     possible_operators = [
         "sigma_+",
         "sigma_-",
@@ -56,15 +63,15 @@ def test_swap_symbolic_mpo(nsites, nterms):
         ham_terms.append(Op.product(op_list) * random.random())
     basis = [BasisHalfSpin(i) for i in range(nsites)]
     model = Model(basis, ham_terms)
-    mpo = Mpo(model)
+    mpo = Mpo(model, algo=algo)
     for i in range(20):
         isite1 = max(int(random.random() * nsites) - 1, 0)
         isite2 = isite1 + 1
         basis = basis.copy()
         basis[isite1], basis[isite2] = basis[isite2], basis[isite1]
         new_model = Model(basis, ham_terms)
-        mpo.try_swap_site(new_model, False)
-        ref_mpo = Mpo(new_model)
+        mpo.try_swap_site(new_model, False, algo=algo)
+        ref_mpo = Mpo(new_model, algo=algo)
         mpo_dense = mpo.todense()
         ref_dense = ref_mpo.todense()
         assert np.allclose(mpo_dense, ref_dense)
