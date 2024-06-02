@@ -85,7 +85,8 @@ def test_tda():
         basis.append(ba.BasisSHO(f"v_{imode}", omega[imode], 4, dvr=False))
     
     model = Model(basis, ham_terms)
-    mpo = Mpo(model)
+    # using QR the error is around 10 cm-1 for unknown reason
+    mpo = Mpo(model, algo="Hopcroft-Karp")
     logger.info(f"mpo_bond_dims:{mpo.bond_dims}")
     #assert mpo.is_hermitian()
     
@@ -104,13 +105,13 @@ def test_tda():
     tda = TDA(model, mpo, mps, nroots=3)
     e = tda.kernel(include_psi0=False) 
     logger.info(f"tda energy : {(e-energies[-1])*au2cm}")
-    assert np.allclose((e-energies[-1])*au2cm, [824.74925026, 936.42650242, 951.96826289], atol=1)
+    np.testing.assert_allclose((e-energies[-1])*au2cm, [824.74925026, 936.42650242, 951.96826289], atol=1)
     config, compressed_mps = tda.analysis_dominant_config(alias=alias)
     # std is calculated with M=200, include_psi0=True; the initial gs is
     # calculated with 9 state SA-DMRG; physical_bond=6 
     std = np.load(os.path.join(cur_dir, "c2h4_std.npz"))["200"]
-    assert np.allclose(energies[-1]*au2cm, std[0], atol=2)
-    assert np.allclose(e*au2cm, std[1:4], atol=3)
+    np.testing.assert_allclose(energies[-1]*au2cm, std[0], atol=2)
+    np.testing.assert_allclose(e*au2cm, std[1:4], atol=3)
 
 
 

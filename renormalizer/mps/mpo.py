@@ -247,7 +247,7 @@ class Mpo(MatrixProduct):
         mpo.build_empty_qn()
         return mpo
 
-    def __init__(self, model: Model = None, terms: Union[Op, List[Op]] = None, offset: Quantity = Quantity(0), ):
+    def __init__(self, model: Model = None, terms: Union[Op, List[Op]] = None, offset: Quantity = Quantity(0), algo = "qr"):
 
         """
         todo: document
@@ -275,7 +275,9 @@ class Mpo(MatrixProduct):
 
         self.dtype = factor.dtype
 
-        mpo_symbol, self.qn, self.qntot, self.qnidx, self.symbolic_out_ops_list, self.primary_ops = construct_symbolic_mpo(table, factor)
+        mpo_symbol, self.qn, self.qntot, self.qnidx, self.symbolic_out_ops_list, self.primary_ops \
+            = construct_symbolic_mpo(table, factor, algo=algo)
+        # from renormalizer.mps.symbolic_mpo import _format_symbolic_mpo
         # print(_format_symbolic_mpo(mpo_symbol))
         self.model = model
         self.to_right = False
@@ -422,7 +424,7 @@ class Mpo(MatrixProduct):
 
         return new_mps
 
-    def try_swap_site(self, new_model: Model, swap_jw: bool):
+    def try_swap_site(self, new_model: Model, swap_jw: bool, algo="Hopcroft-Karp"):
         # in place swapping.
         # if swap_jw is set to True, then self.primary_ops is modified in place
         diffs = []
@@ -439,7 +441,8 @@ class Mpo(MatrixProduct):
         # although usually the `model` of MPO does not store `mpos`
         new_model.mpos.clear()
 
-        out_ops2, out_ops3, mo1, mo2, qn = swap_site(self.symbolic_out_ops_list[i:i+3], self.primary_ops, swap_jw)
+        out_ops2, out_ops3, mo1, mo2, qn = \
+            swap_site(self.symbolic_out_ops_list[i:i+3], self.primary_ops, swap_jw, algo=algo)
 
         self.symbolic_out_ops_list[i+1] = out_ops2
         self.symbolic_out_ops_list[i+2] = out_ops3
