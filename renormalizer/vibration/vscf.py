@@ -30,7 +30,7 @@ class Vscf():
             logger.info("load h_mpo form model.mpos")
             self.h_mpo = model.mpos["h_mpo"]
         else:
-            self.h_mpo = Mpo(model)
+            self.h_mpo = Mpo(model, algo="Hopcroft-Karp")
         if mps is None:
             self.mps = Mps.hartree_product_state(self.model, dict())
         else:
