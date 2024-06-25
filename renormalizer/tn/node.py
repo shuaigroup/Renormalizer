@@ -26,8 +26,15 @@ class TreeNode:
 
     @property
     def idx_as_child(self) -> int:
+        """
+        Returns the index of this node as a child of its parent
+        """
         assert self.parent
         return self.parent.children.index(self)
+
+    @property
+    def is_leaf(self) -> bool:
+        return len(self.children) == 0
 
 
 class TreeNodeBasis(TreeNode):
@@ -52,8 +59,17 @@ class TreeNodeBasis(TreeNode):
 
 
 class TreeNodeTensor(TreeNode):
-    # tree node whose data is numerical tensors for each TTN node/site
     def __init__(self, tensor, qn=None):
+        """
+        Tree node whose data is numerical tensors for each TTN node/site.
+        The indices of the tensor are ordered as follows:
+        [child1, child2, ..., childN, physical1, physical2, ..., physicalN, parent]
+
+        Parameters
+        ----------
+        tensor: The numerical tensor
+        qn: The quantum number from the tensor to its parent.
+        """
         super().__init__()
         self.tensor: np.ndarray = tensor
         self.qn: np.ndarray = qn

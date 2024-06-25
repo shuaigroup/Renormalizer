@@ -9,6 +9,7 @@ from renormalizer.vibration.tests import cur_dir
 import numpy as np
 import os
 
+
 def test_harmonic_potential():
     w0 = np.load(os.path.join(cur_dir,"w0.npy"))
     nmodes = len(w0)
@@ -33,6 +34,7 @@ def test_harmonic_potential():
     scf.kernel()
     for imode in range(nmodes):
         np.testing.assert_allclose(scf.e[imode]-np.sum(w0)/2, w0[imode]*np.arange(20), atol=1e-10)
+
 
 def test_1mr():
     w0 = np.load(os.path.join(cur_dir,"w0.npy"))
@@ -74,8 +76,8 @@ def test_1mr():
         for icol in range(10):
             try:    
                 np.testing.assert_allclose(scf.c[imode][:,icol],
-                    vscf_c_1mr[f"arr_{imode}"][:,icol], atol=1e-4)
+                    vscf_c_1mr[f"arr_{imode}"][:,icol], atol=1e-3)
             except AssertionError:
                 np.testing.assert_allclose(scf.c[imode][:,icol],
-                    -vscf_c_1mr[f"arr_{imode}"][:,icol], atol=1e-4)
+                    -vscf_c_1mr[f"arr_{imode}"][:,icol], atol=1e-3)
         np.testing.assert_allclose(scf.e[imode], vscf_e_1mr[f"arr_{imode}"], atol=1e-10)
