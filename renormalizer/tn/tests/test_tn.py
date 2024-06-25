@@ -196,6 +196,15 @@ def test_partial_ttno(basis_tree):
     e2 = ttns.expectation(ttno2)
     np.testing.assert_allclose(e, e2)
 
+@pytest.mark.parametrize("basis_tree", [basis_binary, basis_multi_basis])
+def test_site_entropy(basis_tree):
+    ttns = TTNS.random(basis_tree, 0, 5, 1)
+    bond_entropy = ttns.calc_bond_entropy()
+    site1_entropy = ttns.calc_1site_entropy()
+    for i, node in enumerate(ttns):
+        if node.is_leaf:
+            np.testing.assert_allclose(bond_entropy[i], site1_entropy[i], atol=1e-10)
+
 
 @pytest.mark.parametrize("basis", [basis_binary, basis_multi_basis])
 def test_print(basis):

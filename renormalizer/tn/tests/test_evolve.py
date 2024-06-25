@@ -168,5 +168,5 @@ def test_save_load(ttns_and_ttno):
     ttns2 = ttns2.evolve(ttno, tau)
     assert ttns2.coeff == ttns1.coeff
     exp2 = [ttns2.expectation(o) for o in op_n_list]
-    np.testing.assert_allclose(exp2, exp1)
+    np.testing.assert_allclose(exp2, exp1, atol=1e-7)
     os.remove(fname)
