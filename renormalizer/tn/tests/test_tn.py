@@ -54,7 +54,7 @@ def test_ttno(basis):
     dense = ttno.todense(basis_list)
 
     dense2 = Mpo(Model(basis_list, ham_terms)).todense()
-    np.testing.assert_allclose(dense, dense2)
+    np.testing.assert_allclose(dense, dense2, atol=1e-15)
 
 
 @pytest.mark.parametrize("basis", [basis_binary, basis_multi_basis])

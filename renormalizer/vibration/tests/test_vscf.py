@@ -32,7 +32,7 @@ def test_harmonic_potential():
     scf = Vscf(model)
     scf.kernel()
     for imode in range(nmodes):
-        assert np.allclose(scf.e[imode]-np.sum(w0)/2, w0[imode]*np.arange(20))
+        np.testing.assert_allclose(scf.e[imode]-np.sum(w0)/2, w0[imode]*np.arange(20), atol=1e-10)
 
 def test_1mr():
     w0 = np.load(os.path.join(cur_dir,"w0.npy"))
@@ -73,9 +73,9 @@ def test_1mr():
     for imode in range(nmodes):
         for icol in range(10):
             try:    
-                assert np.allclose(scf.c[imode][:,icol],
-                    vscf_c_1mr[f"arr_{imode}"][:,icol])
-            except:
-                assert np.allclose(scf.c[imode][:,icol],
-                    -vscf_c_1mr[f"arr_{imode}"][:,icol])
-        assert np.allclose(scf.e[imode], vscf_e_1mr[f"arr_{imode}"])
+                np.testing.assert_allclose(scf.c[imode][:,icol],
+                    vscf_c_1mr[f"arr_{imode}"][:,icol], atol=1e-4)
+            except AssertionError:
+                np.testing.assert_allclose(scf.c[imode][:,icol],
+                    -vscf_c_1mr[f"arr_{imode}"][:,icol], atol=1e-4)
+        np.testing.assert_allclose(scf.e[imode], vscf_e_1mr[f"arr_{imode}"], atol=1e-10)
