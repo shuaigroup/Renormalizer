@@ -22,7 +22,7 @@ logger = logging.getLogger(__name__)
 def time_derivative_vmf(ttns: TTNS, ttno: TTNO):
     # todo: benchmark and optimize
     # parallel over multiple processors?
-    environ_s = TTNEnviron(ttns, TTNO.identity(ttns.basis))
+    environ_s = TTNEnviron(ttns, TTNO.dummy(ttns.basis))
     environ_h = TTNEnviron(ttns, ttno)
 
     deriv_list = []

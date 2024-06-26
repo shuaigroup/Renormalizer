@@ -1,6 +1,7 @@
 import pytest
 
-from renormalizer import BasisHalfSpin, Model, Mpo, Mps
+from renormalizer import BasisHalfSpin, Model, Mpo, Mps, Op
+from renormalizer import optimize_mps
 from renormalizer.mps.backend import np
 from renormalizer.model.model import heisenberg_ops
 from renormalizer.tn.node import TreeNodeBasis
@@ -197,13 +198,77 @@ def test_partial_ttno(basis_tree):
     np.testing.assert_allclose(e, e2)
 
 @pytest.mark.parametrize("basis_tree", [basis_binary, basis_multi_basis])
-def test_site_entropy(basis_tree):
+def test_1site_entropy(basis_tree):
     ttns = TTNS.random(basis_tree, 0, 5, 1)
     bond_entropy = ttns.calc_bond_entropy()
     site1_entropy = ttns.calc_1site_entropy()
     for i, node in enumerate(ttns):
         if node.is_leaf:
             np.testing.assert_allclose(bond_entropy[i], site1_entropy[i], atol=1e-10)
+
+
+def test_rdm_entropy_holstein():
+    # the Heisenberg model seem to do not have well-defined single-body expectations and two-body RDMs
+    # so use Holstein model instead
+    model = holstein_model
+    basis = holstein_scheme3()
+    m = 16
+    ttns = TTNS.random(basis, qntot=1, m_max=m)
+    ttno = TTNO(basis, model.ham_terms)
+    mps = Mps.random(model, qntot=1, m_max=m)
+    mpo = Mpo(model)
+    procedure = [[m, 0.4], [m, 0.2], [m, 0.1], [m, 0], [m, 0]]
+    e1 = optimize_ttns(ttns, ttno, procedure)
+    e2 = 0.08401412 + model.gs_zpe
+    np.testing.assert_allclose(min(e1), e2)
+    optimize_mps(mps, mpo)
+
+    mps_rdm_dict = mps.calc_1site_rdm()
+    ttns_rdm_dict = ttns.calc_1dof_rdm()
+    for i in range(len(mps)):
+        dof = model.basis[i].dof
+        np.testing.assert_allclose(mps_rdm_dict[i], ttns_rdm_dict[dof], atol=1e-3)
+
+    mps_mutual_info = mps.calc_2site_mutual_entropy()
+    mps_idx1, mps_idx2 = 1, 3
+    dof1 = model.basis[mps_idx1].dof
+    dof2 = model.basis[mps_idx2].dof
+    ttns_mutual_info = ttns.calc_2dof_mutual_info(dof1, dof2)
+    np.testing.assert_allclose(ttns_mutual_info, mps_mutual_info[mps_idx1, mps_idx2], atol=1e-4)
+
+
+@pytest.mark.parametrize("basis_tree", [basis_binary, basis_multi_basis])
+@pytest.mark.parametrize("dofs", [(1, 5)])  # see `multi_basis_tree`
+def test_2dof_rdm(basis_tree, dofs):
+    m = 32
+    ham_terms = heisenberg_ops(nspin)
+
+    procedure = [[m, 0.4], [m, 0.2], [m, 0.1], [m, 0], [m, 0]]
+
+    ttns = TTNS.random(basis_tree, 0, m, 1)
+    ttno = TTNO(basis_tree, ham_terms)
+    e1 = optimize_ttns(ttns, ttno, procedure)
+
+    model = Model(basis_list, ham_terms)
+    mps = Mps.random(model, 0, m, 1)
+    mpo = Mpo(model)
+    e2 = optimize_mps(mps, mpo)[0]
+    np.testing.assert_allclose(min(e1), min(e2))
+
+    # test 2 dof rdm
+    dof1, dof2 = dofs
+
+    rdm1 = ttns.calc_2dof_rdm(dof1, dof2).reshape(4, 4)
+    rdm2 = mps.calc_2site_rdm()[(dof1, dof2)].reshape(4, 4)
+    #np.testing.assert_allclose(rdm1, rdm2, atol=1e-10)
+
+    # Z0Z1
+    op1 = np.diag([1, -1, -1, 1])
+    np.testing.assert_allclose(np.trace(rdm1 @ op1), np.trace(rdm2 @ op1), atol=1e-8)
+
+    # +0-1 + +1-0
+    op2 = np.array([[0, 0, 0, 0], [0, 1, 0, 0], [0, 0, 1, 0], [0, 0, 0, 0]])
+    np.testing.assert_allclose(np.trace(rdm1 @ op2), np.trace(rdm2 @ op2), atol=1e-8)
 
 
 @pytest.mark.parametrize("basis", [basis_binary, basis_multi_basis])

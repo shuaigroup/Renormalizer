@@ -4,8 +4,11 @@
 """
 useful utilities
 """
+from typing import List, Union
+
 
 import numpy as np
+import scipy
 
 
 # from https://stackoverflow.com/questions/1094841/reusable-library-to-get-human-readable-version-of-file-size
@@ -35,7 +38,7 @@ class cached_property():
         return value
 
 
-def calc_vn_entropy(p):
+def calc_vn_entropy(p: Union[np.ndarray, List[float]]) -> float:
     # calculate Von Neumann entropy from density matrix eigenvalues (not singular values!)
     p = np.array(p)
     assert np.allclose(p[p<0], 0)
@@ -43,3 +46,13 @@ def calc_vn_entropy(p):
     assert np.allclose(p.sum(), 1)
     p = p[0 < p]
     return - (p* np.log(p)).sum()
+
+
+def calc_vn_entropy_dm(dm: np.ndarray) -> float:
+    # calculate Von Neumann entropy from density matrix
+
+    # reshape dm to square matrix
+    dim = np.prod(dm.shape[:dm.ndim // 2])
+    dm = dm.reshape((dim, dim))
+    w, v = scipy.linalg.eigh(dm)
+    return calc_vn_entropy(w)

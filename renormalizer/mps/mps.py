@@ -38,7 +38,7 @@ from renormalizer.utils import (
     EvolveConfig,
     EvolveMethod
 )
-from renormalizer.utils.utils import calc_vn_entropy
+from renormalizer.utils.utils import calc_vn_entropy, calc_vn_entropy_dm
 
 logger = logging.getLogger(__name__)
 
@@ -1662,8 +1662,7 @@ class Mps(MatrixProduct):
             
             entropy = {}
             for key, dm in rdm.items():
-                w, v = scipy.linalg.eigh(dm)
-                entropy[key] = calc_vn_entropy(w)
+                entropy[key] = calc_vn_entropy_dm(dm)
 
         elif entropy_type == "mutual":
             entropy = self.calc_2site_mutual_entropy()
@@ -1673,9 +1672,9 @@ class Mps(MatrixProduct):
             raise ValueError(f"unsupported entropy type {entropy_type}")
         return entropy
     
-    def calc_2site_mutual_entropy(self):
+    def calc_2site_mutual_entropy(self) -> np.ndarray:
         r""" 
-        Calculate mutual entropy between two sites.
+        Calculate mutual entropy between two sites. Also known as mutual information
         
         :math:`m_{ij} = (s_i + s_j - s_{ij})/2`
             

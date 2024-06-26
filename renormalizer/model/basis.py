@@ -335,6 +335,7 @@ class BasisSHO(BasisSet):
                               nbas=self.nbas, x0=self.x0,
                               dvr=self.dvr, general_xp_power=self.general_xp_power)
 
+
 class BasisHopsBoson(BasisSet):
     r"""
     Bosonic like basis but with uncommon ladder operator, used in Hierarchy of Pure States method

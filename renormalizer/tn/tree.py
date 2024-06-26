@@ -1,5 +1,4 @@
-from typing import List, Dict, Tuple, Union, Callable
-from numbers import Number
+from typing import List, Dict, Tuple, Union, Callable, Any
 import logging
 
 import scipy
@@ -14,7 +13,7 @@ from renormalizer.mps.svd_qn import add_outer, svd_qn, blockrecover, get_qn_mask
 from renormalizer.mps.lib import select_basis
 from renormalizer.mps.mps import normalize
 from renormalizer.utils.configs import CompressConfig, OptimizeConfig, EvolveConfig, EvolveMethod
-from renormalizer.utils import calc_vn_entropy
+from renormalizer.utils import calc_vn_entropy, calc_vn_entropy_dm
 from renormalizer.tn.node import TreeNodeTensor, TreeNodeBasis, copy_connection, TreeNodeEnviron
 from renormalizer.tn.treebase import Tree, BasisTree
 from renormalizer.tn.symbolic_mpo import construct_symbolic_mpo, symbolic_mo_to_numeric_mo_general
@@ -126,6 +125,18 @@ class TTNO(TTNBase):
         if not basis.identity_ttno:
             basis.identity_ttno = cls(basis, [basis.identity_op])
         return basis.identity_ttno
+
+    @classmethod
+    def dummy(cls, basis: BasisTree):
+        if not basis.dummy_ttno:
+            dummy_nodes = []
+            for node in basis.node_list:
+                node = TreeNodeBasis([BasisDummy((id(node), "dummy"))])
+                dummy_nodes.append(node)
+            copy_connection(basis.node_list, dummy_nodes)
+            new_basis = BasisTree(dummy_nodes[0])
+            basis.dummy_ttno = cls(new_basis, [new_basis.identity_op])
+        return basis.dummy_ttno
 
     def __init__(self, basis: BasisTree, terms: Union[List[Op], Op], root: TreeNodeTensor = None):
         self.basis: BasisTree = basis
@@ -876,7 +887,7 @@ class TTNS(TTNBase):
         else:
             return complex(val)
 
-    def calc_1site_rdm(self, idx: Union[int, List]=None):
+    def calc_1site_rdm(self, idx: Union[int, List]=None) -> Dict[int, np.ndarray]:
         r""" Calculate 1-site reduced density matrix
 
             :math:`\rho_i = \textrm{Tr}_{j \neq i} | \Psi \rangle \langle \Psi|`
@@ -893,10 +904,14 @@ class TTNS(TTNBase):
             :math:`\{0:\rho_0, 1:\rho_1, \cdots\}`. The key is the index of the site in ``self.node_list``.
             If the node has multiple physical basis set, then :math:`\rho` is a high dimensional array
             and ket indices are followed by bra indices.
+
+        See Also
+        --------
+        calc_1dof_rdm
         """
 
-        identity = TTNO.identity(self.basis)
-        ttne = TTNEnviron(self, identity)
+        ttno_dummy = TTNO.dummy(self.basis)
+        ttne = TTNEnviron(self, ttno_dummy)
 
         if idx is None:
             idx = list(range(len(self)))
@@ -906,13 +921,14 @@ class TTNS(TTNBase):
             assert isinstance(idx, (list, tuple))
 
         rdm = {}
+        # calculate RDM for each site
         for node_i in idx:
             args = []
             enode = ttne.node_list[node_i]
             snode = self.node_list[node_i]
             # put all children environments in the arguments
             for i, child_tensor in enumerate(enode.environ_children):
-                indices = ttne.get_child_indices(enode, i, self, identity)
+                indices = ttne.get_child_indices(enode, i, self, ttno_dummy)
                 args.extend([child_tensor, indices])
 
             # put the node for RDM in the arguments
@@ -924,7 +940,7 @@ class TTNS(TTNBase):
 
             # put the parent environment in the arguments
             args.append(enode.environ_parent)
-            args.append(ttne.get_parent_indices(enode, self, identity))
+            args.append(ttne.get_parent_indices(enode, self, ttno_dummy))
 
             # the indices for the output tensor
             indices_ket = []
@@ -940,17 +956,204 @@ class TTNS(TTNBase):
 
         return rdm
 
-    def calc_1site_entropy(self, idx: Union[int, List]=None):
-        rdm = self.calc_1site_rdm(idx)
+    def calc_1site_entropy(self, idx: Union[int, List]=None) -> Dict[int, float]:
+        r""" Calculate 1-site von Neumann entropy, the entanglement between one site and the
+        rest of the whole system
 
-        entropy = {}
-        for key, dm in rdm.items():
-            # reshape dm to square matrix
-            dim = np.prod(dm.shape[:dm.ndim//2])
-            dm = dm.reshape((dim, dim))
-            w, v = scipy.linalg.eigh(dm)
-            entropy[key] = calc_vn_entropy(w)
+        Parameters
+        ----------
+        idx : int, list, tuple, optional
+            site index (in terms of ``self.node_list``) of the entropy.
+            Default is None, which mean entropies at all sites are calculated.
+
+        Returns
+        -------
+        rdm: Dict
+            The 1-site entanglement entropy. The key is the index of the site in ``self.node_list``.
+        """
+        rdm = self.calc_1site_rdm(idx)
+        entropy = {key: calc_vn_entropy_dm(dm) for key, dm in rdm.items()}
         return entropy
+
+    def calc_1dof_rdm(self, dof: Union[Any, List[Any]]=None) -> Dict[Any, np.ndarray]:
+        r""" Calculate the reduced density matrix of a single degree of freedom.
+
+        Parameters
+        ----------
+        dof : dof hashable of list of dof hashable.
+            The degrees of freedom to calculate RDMs
+            Default is None, which mean RDMs for all degrees of freedom are calculated.
+
+        Returns
+        -------
+        rdm: Dict
+            RDMs for the degrees of freedom specified. The key is the dof.
+        """
+        if dof is None:
+            dof_list = self.basis.dof_list
+        elif isinstance(dof, list):
+            dof_list = dof
+        else:
+            dof_list = [dof]
+
+        # corresponding sites
+        site_idx_list = []
+        for dof in dof_list:
+            site_idx_list.append(self.basis.dof2idx[dof])
+
+        # map from site RDM to dof RDM
+        rdm_site_dict = self.calc_1site_rdm(site_idx_list)
+        rdm_dof_dict = {}
+        for dof in dof_list:
+            rdm: np.ndarray = rdm_site_dict[self.basis.dof2idx[dof]]
+            basis_node: TreeNodeBasis = self.basis.node_list[self.basis.dof2idx[dof]]
+            assert list(rdm.shape) == basis_node.pbond_dims + basis_node.pbond_dims
+            # trace out other degrees of freedom if ``n_sets > 1``
+            basis_idx: int = basis_node.basis_sets.index(self.basis.dof2basis[dof])
+            indices = [(0, i) for i in range(basis_node.n_sets)] * 2
+            indices[basis_idx] = (1, 0)
+            indices[basis_idx + basis_node.n_sets] = (1, 1)
+            rdm_dof_dict[dof] = oe.contract(rdm, indices, ((1, 0), (1, 1)))
+        return rdm_dof_dict
+
+    def calc_1dof_entropy(self, dof: Union[Any, List[Any]]=None) -> Dict[Any, float]:
+        rdm = self.calc_1dof_rdm(dof)
+        return {key: calc_vn_entropy_dm(dm) for key, dm in rdm.items()}
+
+    def calc_2site_rdm(self, idx1, idx2) -> np.ndarray:
+        r""" Calculate 2-site reduced density matrix
+
+        :math:`\rho_{ij} = \textrm{Tr}_{k \neq i, k \neq j} | \Psi \rangle \langle \Psi |`.
+
+        Parameters
+        ----------
+        idx1: int
+            site index (in terms of ``self.node_list``) of the first site.
+        idx2: int
+            site index (in terms of ``self.node_list``) of the second site.
+
+        Returns
+        -------
+        rdm: np.ndarray
+            the 2-site reduced density matrix with ket indices followed by bra indices
+        """
+        ttno_dummy = TTNO.dummy(self.basis)
+        ttne = TTNEnviron(self, ttno_dummy)
+        path = self.find_path(self.node_list[idx1], self.node_list[idx2])
+        assert path[0] is self.node_list[idx1]
+        assert path[-1] is self.node_list[idx2]
+        args = []
+        # put the nodes for RDM in the arguments
+        for snode in [path[0], path[-1]]:
+            args.append(snode.tensor.conj())
+            args.append(self.get_node_indices(snode, conj=True))
+
+            args.append(snode.tensor)
+            args.append(self.get_node_indices(snode))
+
+        # put the nodes in the path in the arguments
+        for snode in path[1:-1]:
+            args.append(snode.tensor.conj())
+            args.append(self.get_node_indices(snode, conj=True))
+
+            args.append(snode.tensor)
+            # set ttno to ttno_dummy so that the physical indices are contracted directly
+            args.append(self.get_node_indices(snode, ttno=ttno_dummy))
+
+        # put all environment tensors in the arguments
+        for i, node in enumerate(path):
+            # skip some of the environments because they are included in the path
+
+            if i == 0:
+                neighbour_nodes = [path[i+1]]
+            elif i == len(path)-1:
+                neighbour_nodes = [path[i-1]]
+            else:
+                neighbour_nodes = [path[i-1], path[i+1]]
+
+            skip_child_idx_list: List[int] = []
+            skip_parent: bool = False
+            for neighbour_node in neighbour_nodes:
+                if neighbour_node.parent is node:
+                    skip_child_idx_list.append(neighbour_node.idx_as_child)
+                elif node.parent is neighbour_node:
+                    skip_parent = True
+
+            enode = ttne.node_list[self.node_idx[node]]
+            # put all children environments in the arguments
+            for j, child_tensor in enumerate(enode.environ_children):
+                if j in skip_child_idx_list:
+                    continue
+                indices = ttne.get_child_indices(enode, j, self, ttno_dummy)
+                args.extend([child_tensor, indices])
+            # put the parent environment in the arguments
+            if not skip_parent:
+                args.append(enode.environ_parent)
+                args.append(ttne.get_parent_indices(enode, self, ttno_dummy))
+
+        # the indices for the output tensor
+        indices_ket = []
+        indices_bra = []
+        for snode in [path[0], path[-1]]:
+            for dofs in self.tn2dofs[snode]:
+                indices_ket.append(("down", str(dofs)))
+                indices_bra.append(("up", str(dofs)))
+        args.append(indices_ket + indices_bra)
+
+        # perform the contraction
+        return oe.contract(*asxp_oe_args(args))
+
+    def calc_2site_entropy(self, idx1, idx2) -> float:
+        rdm = self.calc_2site_rdm(idx1, idx2)
+        return calc_vn_entropy_dm(rdm)
+
+    def calc_2dof_rdm(self, dof1, dof2) -> np.ndarray:
+        site_idx1 = self.basis.dof2idx[dof1]
+        site_idx2 = self.basis.dof2idx[dof2]
+        if site_idx1 == site_idx2:
+            # two dofs on the same site
+            rdm = self.calc_1site_rdm(site_idx1)[site_idx1]
+            basis_node: TreeNodeBasis = self.basis.node_list[site_idx1]
+            n_sets = basis_node.n_sets
+            basis_idx1 = basis_node.basis_sets.index(self.basis.dof2basis[dof1])
+            basis_idx2 = basis_node.basis_sets.index(self.basis.dof2basis[dof2])
+            assert basis_idx1 != basis_idx2
+        else:
+            # two dofs on different sites
+            rdm = self.calc_2site_rdm(site_idx1, site_idx2)
+            basis_node1: TreeNodeBasis = self.basis.node_list[site_idx1]
+            basis_node2: TreeNodeBasis = self.basis.node_list[site_idx2]
+            n_sets = basis_node1.n_sets + basis_node2.n_sets
+            basis_idx1 = basis_node1.basis_sets.index(self.basis.dof2basis[dof1])
+            basis_idx2 = basis_node1.n_sets + basis_node2.basis_sets.index(self.basis.dof2basis[dof2])
+
+        indices = [(0, i) for i in range(n_sets)] * 2
+        indices[basis_idx1] = (1, 0)
+        indices[basis_idx2] = (1, 1)
+        indices[n_sets + basis_idx1] = (1, 2)
+        indices[n_sets + basis_idx2] = (1, 3)
+        return oe.contract(rdm, indices, [(1, i) for i in range(4)])
+
+    def calc_2dof_entropy(self, dof1, dof2) -> float:
+        rdm = self.calc_2dof_rdm(dof1, dof2)
+        return calc_vn_entropy_dm(rdm)
+
+    def calc_2dof_mutual_info(self, dof1, dof2) -> float:
+        r"""
+        Calculate mutual information between two DOFs.
+
+        :math:`m_{ij} = (s_i + s_j - s_{ij})/2`
+
+        See Chemical Physics 323 (2006) 519–531
+
+        Returns
+        -------
+        mutual_info : float
+            mutual information between the two DOFs
+        """
+        entropy_1site = self.calc_1dof_entropy([dof1, dof2])
+        entropy_2site = self.calc_2dof_entropy(dof1, dof2)
+        return (entropy_1site[dof1] + entropy_1site[dof2] - entropy_2site) / 2
 
     def calc_bond_entropy(self) -> np.ndarray:
         r"""
@@ -1155,7 +1358,7 @@ class TTNS(TTNBase):
 
     @property
     def ttns_norm(self):
-        res = self.expectation(TTNO.identity(self.basis))
+        res = self.expectation(TTNO.dummy(self.basis))
 
         if res < 0:
             assert np.abs(res) < 1e-8
@@ -1433,9 +1636,7 @@ def get_skip_pidx(snode: TreeNodeTensor, ttns: TTNS, ttno: TTNO) -> List[int]:
     basis_ttno: TreeNodeBasis = ttno.basis.node_list[idx]
     if basis_ttns.dofs == basis_ttno.dofs:
         return []
-    assert len(basis_ttno.dofs) < len(basis_ttns.dofs)
-    for dof in basis_ttno.dofs:
-        assert dof in basis_ttns.dofs
+
     skip_pidx = []
     for i, dof in enumerate(basis_ttns.dofs):
         if dof not in basis_ttno.dofs:

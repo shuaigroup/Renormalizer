@@ -25,6 +25,18 @@ class TreeNode:
         return self
 
     @property
+    def ancestors(self) -> List:
+        """
+        Returns the list of ancestors of this node, including itself
+        """
+        ancestors = [self]
+        current = self
+        while current.parent is not None:
+            ancestors.append(current.parent)
+            current = current.parent
+        return ancestors
+
+    @property
     def idx_as_child(self) -> int:
         """
         Returns the index of this node as a child of its parent
