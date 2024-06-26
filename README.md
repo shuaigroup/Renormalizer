@@ -23,7 +23,7 @@ please check out the step-by-step [installation guide](https://shuaigroup.github
 - Out-of-box molecular spectra/carrier mobility/spin relaxation dynamics/ab initio calculation.
 - GPU acceleration via CuPy
 - Quantum number conservation
-- Purely Python based and eazy installation
+- Purely Python based and easy installation
 
 # Documentation
 Please check out the [official documentation](https://shuaigroup.github.io/Renormalizer/)
