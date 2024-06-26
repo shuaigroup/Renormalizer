@@ -9,8 +9,8 @@ In 2024 tree tensor network states (TTNS) and tree tensor network operators (TTN
 Renormalizer can routinely perform quantum dynamics calculation involving hundreds to thousands of degrees of freedom
 in a numerically exact manner, sometimes using only a single CPU core.
 
-Renormalizer is developed by [Prof. Zhigang Shuai's group](http://www.shuaigroup.net/index.php).
-Its source code is hosted on [GitHub](https://github.com/shuaigroup/Renormalizer)
+Renormalizer is developed by `Prof. Zhigang Shuai's group <http://www.shuaigroup.net/index.php>`_.
+Its source code is hosted on `GitHub <https://github.com/shuaigroup/Renormalizer>`_.
 
 
 Features
