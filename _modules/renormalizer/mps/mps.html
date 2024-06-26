@@ -247,7 +247,7 @@
     <span class="n">EvolveConfig</span><span class="p">,</span>
     <span class="n">EvolveMethod</span>
 <span class="p">)</span>
-<span class="kn">from</span> <span class="nn">renormalizer.utils.utils</span> <span class="kn">import</span> <span class="n">calc_vn_entropy</span>
+<span class="kn">from</span> <span class="nn">renormalizer.utils.utils</span> <span class="kn">import</span> <span class="n">calc_vn_entropy</span><span class="p">,</span> <span class="n">calc_vn_entropy_dm</span>
 
 <span class="n">logger</span> <span class="o">=</span> <span class="n">logging</span><span class="o">.</span><span class="n">getLogger</span><span class="p">(</span><span class="vm">__name__</span><span class="p">)</span>
 
@@ -1871,8 +1871,7 @@
             
             <span class="n">entropy</span> <span class="o">=</span> <span class="p">{}</span>
             <span class="k">for</span> <span class="n">key</span><span class="p">,</span> <span class="n">dm</span> <span class="ow">in</span> <span class="n">rdm</span><span class="o">.</span><span class="n">items</span><span class="p">():</span>
-                <span class="n">w</span><span class="p">,</span> <span class="n">v</span> <span class="o">=</span> <span class="n">scipy</span><span class="o">.</span><span class="n">linalg</span><span class="o">.</span><span class="n">eigh</span><span class="p">(</span><span class="n">dm</span><span class="p">)</span>
-                <span class="n">entropy</span><span class="p">[</span><span class="n">key</span><span class="p">]</span> <span class="o">=</span> <span class="n">calc_vn_entropy</span><span class="p">(</span><span class="n">w</span><span class="p">)</span>
+                <span class="n">entropy</span><span class="p">[</span><span class="n">key</span><span class="p">]</span> <span class="o">=</span> <span class="n">calc_vn_entropy_dm</span><span class="p">(</span><span class="n">dm</span><span class="p">)</span>
 
         <span class="k">elif</span> <span class="n">entropy_type</span> <span class="o">==</span> <span class="s2">&quot;mutual&quot;</span><span class="p">:</span>
             <span class="n">entropy</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">calc_2site_mutual_entropy</span><span class="p">()</span>
@@ -1882,9 +1881,9 @@
             <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;unsupported entropy type </span><span class="si">{</span><span class="n">entropy_type</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
         <span class="k">return</span> <span class="n">entropy</span></div>
     
-<div class="viewcode-block" id="Mps.calc_2site_mutual_entropy"><a class="viewcode-back" href="../../../mps.html#renormalizer.mps.Mps.calc_2site_mutual_entropy">[docs]</a>    <span class="k">def</span> <span class="nf">calc_2site_mutual_entropy</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+<div class="viewcode-block" id="Mps.calc_2site_mutual_entropy"><a class="viewcode-back" href="../../../mps.html#renormalizer.mps.Mps.calc_2site_mutual_entropy">[docs]</a>    <span class="k">def</span> <span class="nf">calc_2site_mutual_entropy</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">:</span>
 <span class="w">        </span><span class="sa">r</span><span class="sd">&quot;&quot;&quot; </span>
-<span class="sd">        Calculate mutual entropy between two sites.</span>
+<span class="sd">        Calculate mutual entropy between two sites. Also known as mutual information</span>
 <span class="sd">        </span>
 <span class="sd">        :math:`m_{ij} = (s_i + s_j - s_{ij})/2`</span>
 <span class="sd">            </span>
