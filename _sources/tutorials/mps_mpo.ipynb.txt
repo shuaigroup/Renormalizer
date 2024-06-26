@@ -1,0 +1,782 @@
+{
+ "cells": [
+  {
+   "cell_type": "markdown",
+   "id": "94f758b7-a33a-4e00-aee0-7ff1fa151691",
+   "metadata": {},
+   "source": [
+    "# MPS and MPO"
+   ]
+  },
+  {
+   "cell_type": "markdown",
+   "id": "2637f23a-4499-4cb2-bf3e-2dfeedd23a84",
+   "metadata": {},
+   "source": [
+    "## Overview\n",
+    "In this notebook we will introduce the construction and manipulation of MPS and MPO.\n",
+    "We will rely on ``Op``, ``BasisSet`` and ``Model`` from the previous tutorial."
+   ]
+  },
+  {
+   "cell_type": "code",
+   "execution_count": 1,
+   "id": "8c1c18c4-0b73-4253-add5-f1d555426795",
+   "metadata": {},
+   "outputs": [],
+   "source": [
+    "# add renormalizer to path\n",
+    "import sys\n",
+    "sys.path.append(\"..\")"
+   ]
+  },
+  {
+   "cell_type": "markdown",
+   "id": "efbf38f8-2c0c-4ba9-8014-eb2a90d8d106",
+   "metadata": {},
+   "source": [
+    "## The spin-boson model\n",
+    "\n",
+    "In this notebook we will consider the MPS and MPO based on a 1-mode spin-boson model.\n",
+    "\n",
+    "$$\n",
+    "    \\hat H = \\epsilon \\hat \\sigma_z + \\Delta \\hat \\sigma_x + \\omega \\hat b^\\dagger \\hat b\n",
+    "              + g \\sigma_z (\\hat b^\\dagger + \\hat b)\n",
+    "$$\n",
+    "\n",
+    "The spin degree of freedom is labeled as a str ``\"spin\"`` and the boson degree of freedom is labeled as a str ``\"boson\"``.\n",
+    "We consider $\\epsilon=0$, $\\Delta=1$, $\\omega=1$ and $g=0.5$"
+   ]
+  },
+  {
+   "cell_type": "code",
+   "execution_count": 2,
+   "id": "000f1769-9728-46fd-85d5-0faf2e6b558e",
+   "metadata": {},
+   "outputs": [
+    {
+     "name": "stderr",
+     "output_type": "stream",
+     "text": [
+      "2024-06-26 17:37:18,655[INFO] Use NumPy as backend\n",
+      "2024-06-26 17:37:18,656[INFO] numpy random seed is 9012\n",
+      "2024-06-26 17:37:18,657[INFO] random seed is 1092\n",
+      "fatal: not a git repository (or any parent up to mount point /)\n",
+      "Stopping at filesystem boundary (GIT_DISCOVERY_ACROSS_FILESYSTEM not set).\n",
+      "2024-06-26 17:37:18,661[INFO] Git Commit Hash: Unknown\n",
+      "2024-06-26 17:37:18,661[INFO] use 64 bits\n"
+     ]
+    }
+   ],
+   "source": [
+    "from renormalizer import Op, BasisHalfSpin, BasisSHO, Model\n",
+    "\n",
+    "epsilon = 0\n",
+    "delta = 1\n",
+    "omega = 1\n",
+    "g = 0.5"
+   ]
+  },
+  {
+   "cell_type": "markdown",
+   "id": "8d96cf62-388b-4207-bdc0-c93543fbc9a1",
+   "metadata": {},
+   "source": [
+    "First, construct all terms in the Hamiltonian in a ``list`` or ``OpSum``."
+   ]
+  },
+  {
+   "cell_type": "code",
+   "execution_count": 3,
+   "id": "e70d2ec4-097c-4c41-a2b3-6ccfeb151509",
+   "metadata": {},
+   "outputs": [
+    {
+     "data": {
+      "text/plain": [
+       "[Op('sigma_z', ['spin'], 0.0),\n",
+       " Op('sigma_x', ['spin'], 1.0),\n",
+       " Op('b^\\\\dagger b', ['boson', 'boson'], 1.0),\n",
+       " Op('sigma_z b^\\\\dagger+b', ['spin', 'boson'], 0.5)]"
+      ]
+     },
+     "execution_count": 3,
+     "metadata": {},
+     "output_type": "execute_result"
+    }
+   ],
+   "source": [
+    "ham_terms = [\n",
+    "    Op(\"sigma_z\", \"spin\", epsilon),\n",
+    "    Op(\"sigma_x\", \"spin\", delta),\n",
+    "    Op(r\"b^\\dagger b\", \"boson\", omega),\n",
+    "    Op(\"sigma_z\", \"spin\", g) * Op(r\"b^\\dagger+b\", \"boson\"),\n",
+    "]\n",
+    "ham_terms"
+   ]
+  },
+  {
+   "cell_type": "markdown",
+   "id": "107c01ee-4543-4fbf-8d63-f25551fbb77c",
+   "metadata": {},
+   "source": [
+    "Then, define the basis for the model. Note that the boson mode is described by simple harmonic oscillator eigenbasis (``BasisSHO``)\n",
+    "and the number of basis is truncated to 8.\n",
+    "This means that the maximum number of bosons for the mode is 8"
+   ]
+  },
+  {
+   "cell_type": "code",
+   "execution_count": 4,
+   "id": "d080f8e7-c745-42d3-93d9-3b471d066df4",
+   "metadata": {},
+   "outputs": [
+    {
+     "data": {
+      "text/plain": [
+       "[BasisHalfSpin(dof: spin, nbas: 2),\n",
+       " BasisSHO(dof: boson, x0: 0.0, omega: 1, nbas: 8)]"
+      ]
+     },
+     "execution_count": 4,
+     "metadata": {},
+     "output_type": "execute_result"
+    }
+   ],
+   "source": [
+    "basis = [BasisHalfSpin(\"spin\"), BasisSHO(\"boson\", omega=omega, nbas=8)]\n",
+    "basis"
+   ]
+  },
+  {
+   "cell_type": "markdown",
+   "id": "8f067a68-e719-4e75-959c-1c51d0059278",
+   "metadata": {},
+   "source": [
+    "Checkout some of the operators defined by the basis"
+   ]
+  },
+  {
+   "cell_type": "code",
+   "execution_count": 5,
+   "id": "8e9f83d8-f1eb-44d8-a203-2885776f98a7",
+   "metadata": {},
+   "outputs": [
+    {
+     "data": {
+      "text/plain": [
+       "array([[ 1.,  0.],\n",
+       "       [ 0., -1.]])"
+      ]
+     },
+     "execution_count": 5,
+     "metadata": {},
+     "output_type": "execute_result"
+    }
+   ],
+   "source": [
+    "basis[0].op_mat(\"Z\")"
+   ]
+  },
+  {
+   "cell_type": "code",
+   "execution_count": 6,
+   "id": "a35a1d74-9969-41d9-bc6e-90f2a5c49c3f",
+   "metadata": {},
+   "outputs": [
+    {
+     "data": {
+      "text/plain": [
+       "array([[0., 0., 0., 0., 0., 0., 0., 0.],\n",
+       "       [0., 1., 0., 0., 0., 0., 0., 0.],\n",
+       "       [0., 0., 2., 0., 0., 0., 0., 0.],\n",
+       "       [0., 0., 0., 3., 0., 0., 0., 0.],\n",
+       "       [0., 0., 0., 0., 4., 0., 0., 0.],\n",
+       "       [0., 0., 0., 0., 0., 5., 0., 0.],\n",
+       "       [0., 0., 0., 0., 0., 0., 6., 0.],\n",
+       "       [0., 0., 0., 0., 0., 0., 0., 7.]])"
+      ]
+     },
+     "execution_count": 6,
+     "metadata": {},
+     "output_type": "execute_result"
+    }
+   ],
+   "source": [
+    "basis[1].op_mat(r\"b^\\dagger b\")"
+   ]
+  },
+  {
+   "cell_type": "markdown",
+   "id": "209047b3-2989-4608-9b22-23a5ac712cac",
+   "metadata": {},
+   "source": [
+    "Lastly, build our model with ``Model``"
+   ]
+  },
+  {
+   "cell_type": "code",
+   "execution_count": 7,
+   "id": "4c37b017-d714-4577-91ac-6d703463dbde",
+   "metadata": {},
+   "outputs": [],
+   "source": [
+    "model = Model(basis, ham_terms)"
+   ]
+  },
+  {
+   "cell_type": "markdown",
+   "id": "520e2767-1425-4145-a569-11e43309a1ca",
+   "metadata": {},
+   "source": [
+    "## Construct MPS\n",
+    "\n",
+    "The matrix product state data structure is implemented in the `Mps` class"
+   ]
+  },
+  {
+   "cell_type": "code",
+   "execution_count": 8,
+   "id": "6129edcc-c743-4aec-9e5f-f6ad0542d5ed",
+   "metadata": {},
+   "outputs": [],
+   "source": [
+    "from renormalizer import Mps"
+   ]
+  },
+  {
+   "cell_type": "markdown",
+   "id": "7a95912b-1a1e-4e00-b896-7ba119c464d9",
+   "metadata": {},
+   "source": [
+    "Most commonly, MPS is initialized by two ways. The first is random initialization, which is usually followed by ground state/excited state search by the DMRG algorithm.\n",
+    "The second is Hartree product state, which is usually followed by time evolution."
+   ]
+  },
+  {
+   "cell_type": "markdown",
+   "id": "e5a70385-a8c0-4f99-8583-bc5bae1c7fc6",
+   "metadata": {},
+   "source": [
+    "### Random Initialization\n",
+    "\n",
+    "`Mps.random` requires the input of a `model`. Additionally, the user must also specify the targeted total quantum number `qntot` and the maximum bond dimension `m_max`.\n",
+    "\n",
+    "Since the spin-boson model does not conserve any quantum number, all states/operators are considered to have quantum number 0 in Renormalizer.\n",
+    "Thus, the total quantum number is set to 0.\n",
+    "\n",
+    "The maximum bond dimension is set to 2 since a Schmidt decomposition for the 1-mode spin-boson model yields only 2 singular values."
+   ]
+  },
+  {
+   "cell_type": "code",
+   "execution_count": 9,
+   "id": "7e3be2dd-0fa1-487f-b259-127570077707",
+   "metadata": {},
+   "outputs": [
+    {
+     "data": {
+      "text/plain": [
+       "<class 'renormalizer.mps.mps.Mps'> with 2 sites"
+      ]
+     },
+     "execution_count": 9,
+     "metadata": {},
+     "output_type": "execute_result"
+    }
+   ],
+   "source": [
+    "mps = Mps.random(model, qntot=0, m_max=2)\n",
+    "mps"
+   ]
+  },
+  {
+   "cell_type": "markdown",
+   "id": "0c54cb58-5973-4548-acfb-24b6d972706d",
+   "metadata": {},
+   "source": [
+    "The individual local matrices for the MPS can be accessed via simple indexing"
+   ]
+  },
+  {
+   "cell_type": "code",
+   "execution_count": 10,
+   "id": "2be63c8e-264a-4ab8-8ef6-29dcb73398f5",
+   "metadata": {},
+   "outputs": [
+    {
+     "data": {
+      "text/plain": [
+       "(<Matrix at 0x7f8a62cd8280 (1, 2, 2) float64>,\n",
+       " <Matrix at 0x7f8a62cd8160 (2, 8, 1) float64>)"
+      ]
+     },
+     "execution_count": 10,
+     "metadata": {},
+     "output_type": "execute_result"
+    }
+   ],
+   "source": [
+    "mps[0], mps[1]"
+   ]
+  },
+  {
+   "cell_type": "markdown",
+   "id": "66cc2b51-3977-47f1-abf0-8b971e118cb0",
+   "metadata": {},
+   "source": [
+    "``Matrix`` can be considered as a wrapper for `np.ndarray` with more metadata. The indices of the array are left virtual index, the physical index and the right virtual index. The underlaying matrix can be accessed via the `array` attribute."
+   ]
+  },
+  {
+   "cell_type": "code",
+   "execution_count": 11,
+   "id": "e490a69b-caeb-40ee-b39e-4fd85dd3d874",
+   "metadata": {},
+   "outputs": [
+    {
+     "data": {
+      "text/plain": [
+       "(array([[[-0.99496648, -0.10020826],\n",
+       "         [-0.10020826,  0.99496648]]]),\n",
+       " array([[[-0.43283409],\n",
+       "         [-0.01476036],\n",
+       "         [-0.21888015],\n",
+       "         [-0.16222924],\n",
+       "         [-0.19864132],\n",
+       "         [ 0.36843999],\n",
+       "         [-0.2858778 ],\n",
+       "         [ 0.31116499]],\n",
+       " \n",
+       "        [[ 0.17636599],\n",
+       "         [ 0.2216647 ],\n",
+       "         [ 0.45632911],\n",
+       "         [ 0.22315835],\n",
+       "         [-0.04071718],\n",
+       "         [-0.02460395],\n",
+       "         [ 0.19383492],\n",
+       "         [-0.07963948]]]))"
+      ]
+     },
+     "execution_count": 11,
+     "metadata": {},
+     "output_type": "execute_result"
+    }
+   ],
+   "source": [
+    "mps[0].array, mps[1].array"
+   ]
+  },
+  {
+   "cell_type": "markdown",
+   "id": "f6d6b6b0-fa3c-40c5-b4a6-34d60e992ad0",
+   "metadata": {},
+   "source": [
+    "Conceptually, `Mps` can be considered as a sparse representation for a wavefunction/vector"
+   ]
+  },
+  {
+   "cell_type": "code",
+   "execution_count": 12,
+   "id": "7f09a5f0-ad14-4c20-b1c2-a28d1408cb4c",
+   "metadata": {},
+   "outputs": [
+    {
+     "data": {
+      "text/plain": [
+       "array([ 0.41298208, -0.00752657,  0.17205047,  0.13905035,  0.20172165,\n",
+       "       -0.36411992,  0.26501497, -0.3016182 ,  0.2188518 ,  0.22202805,\n",
+       "        0.47596577,  0.23829179, -0.02060673, -0.06140084,  0.22150656,\n",
+       "       -0.11041992])"
+      ]
+     },
+     "execution_count": 12,
+     "metadata": {},
+     "output_type": "execute_result"
+    }
+   ],
+   "source": [
+    "mps.todense()"
+   ]
+  },
+  {
+   "cell_type": "markdown",
+   "id": "ccdf3d10-fae2-4fed-9612-cf6228fed87f",
+   "metadata": {},
+   "source": [
+    "`Mps` has a lot of utilities to calculate the properties of the wavefunction. For more of them, please refer to the API reference."
+   ]
+  },
+  {
+   "cell_type": "code",
+   "execution_count": 13,
+   "id": "1a3a9e52-2fd7-4300-ad6c-91e5616526dc",
+   "metadata": {},
+   "outputs": [
+    {
+     "data": {
+      "text/plain": [
+       "1.0"
+      ]
+     },
+     "execution_count": 13,
+     "metadata": {},
+     "output_type": "execute_result"
+    }
+   ],
+   "source": [
+    "mps.norm"
+   ]
+  },
+  {
+   "cell_type": "code",
+   "execution_count": 14,
+   "id": "66d833b6-867b-4d1e-9881-f99dc4e44a39",
+   "metadata": {},
+   "outputs": [
+    {
+     "data": {
+      "text/plain": [
+       "{0: array([[0.55402862, 0.31394311],\n",
+       "        [0.31394311, 0.44597138]]),\n",
+       " 1: array([[ 0.21845031,  0.0454829 ,  0.17521973,  0.10957589,  0.07879761,\n",
+       "         -0.16381269,  0.15792354, -0.14872851],\n",
+       "        [ 0.0454829 ,  0.04935311,  0.1043828 ,  0.05186089, -0.00609355,\n",
+       "         -0.01089213,  0.04718602, -0.02224617],\n",
+       "        [ 0.17521973,  0.1043828 ,  0.25614478,  0.13734241,  0.02489821,\n",
+       "         -0.0918717 ,  0.15102549, -0.10444965],\n",
+       "        [ 0.10957589,  0.05186089,  0.13734241,  0.07611798,  0.02313905,\n",
+       "         -0.06526232,  0.08963362, -0.06825227],\n",
+       "        [ 0.07879761, -0.00609355,  0.02489821,  0.02313905,  0.04111626,\n",
+       "         -0.0721856 ,  0.04889473, -0.05856753],\n",
+       "        [-0.16381269, -0.01089213, -0.0918717 , -0.06526232, -0.0721856 ,\n",
+       "          0.13635338, -0.11009792,  0.11660507],\n",
+       "        [ 0.15792354,  0.04718602,  0.15102549,  0.08963362,  0.04889473,\n",
+       "         -0.11009792,  0.11929809, -0.10439207],\n",
+       "        [-0.14872851, -0.02224617, -0.10444965, -0.06825227, -0.05856753,\n",
+       "          0.11660507, -0.10439207,  0.1031661 ]])}"
+      ]
+     },
+     "execution_count": 14,
+     "metadata": {},
+     "output_type": "execute_result"
+    }
+   ],
+   "source": [
+    "mps.calc_1site_rdm()"
+   ]
+  },
+  {
+   "cell_type": "markdown",
+   "id": "98da9efe-63f0-4f3d-b227-ae94ee279dde",
+   "metadata": {},
+   "source": [
+    "### Hartree product state\n",
+    "`Mps.hartree_product_state` also requires the input of a `model`. The state of each degrees of freedom can be specified through the `condition` argument.\n",
+    "The degrees of freedom that are not specified through `condition` will be set to the ground state, i.e., $[1, 0, 0, \\dots, 0]$."
+   ]
+  },
+  {
+   "cell_type": "code",
+   "execution_count": 15,
+   "id": "1b50631f-ea77-4e7b-b793-9cda4b69cf82",
+   "metadata": {},
+   "outputs": [
+    {
+     "data": {
+      "text/plain": [
+       "<class 'renormalizer.mps.mps.Mps'> with 2 sites"
+      ]
+     },
+     "execution_count": 15,
+     "metadata": {},
+     "output_type": "execute_result"
+    }
+   ],
+   "source": [
+    "import numpy as np\n",
+    "mps2 = Mps.hartree_product_state(model, condition={\"spin\":[1/np.sqrt(2), 1/np.sqrt(2)]})\n",
+    "mps2"
+   ]
+  },
+  {
+   "cell_type": "code",
+   "execution_count": 16,
+   "id": "e8ad3388-00cf-4bc8-a43e-42c1ce96dae0",
+   "metadata": {},
+   "outputs": [
+    {
+     "data": {
+      "text/plain": [
+       "(array([[[0.70710678],\n",
+       "         [0.70710678]]]),\n",
+       " array([[[1.],\n",
+       "         [0.],\n",
+       "         [0.],\n",
+       "         [0.],\n",
+       "         [0.],\n",
+       "         [0.],\n",
+       "         [0.],\n",
+       "         [0.]]]))"
+      ]
+     },
+     "execution_count": 16,
+     "metadata": {},
+     "output_type": "execute_result"
+    }
+   ],
+   "source": [
+    "mps2[0].array, mps2[1].array"
+   ]
+  },
+  {
+   "cell_type": "markdown",
+   "id": "18254a0d-fdcd-4e74-bd2b-0787a96de5ef",
+   "metadata": {},
+   "source": [
+    "## Construct MPO\n",
+    "As described in the previous section, Renormalizer is able to exactly construct the most compact MPO exactly. By feeding the model into `Mpo`, the Hamiltonian is constructed as MPO"
+   ]
+  },
+  {
+   "cell_type": "code",
+   "execution_count": 17,
+   "id": "5f3629dc-e1c1-4613-b40f-0fe977acfec6",
+   "metadata": {},
+   "outputs": [
+    {
+     "name": "stderr",
+     "output_type": "stream",
+     "text": [
+      "2024-06-26 17:37:18,798[DEBUG] # of operator terms: 3\n",
+      "2024-06-26 17:37:18,799[DEBUG] symbolic mpo algorithm: Hopcroft-Karp\n",
+      "2024-06-26 17:37:18,800[DEBUG] Input operator terms: 3\n",
+      "2024-06-26 17:37:18,802[DEBUG] After combination of the same terms: 3\n"
+     ]
+    },
+    {
+     "data": {
+      "text/plain": [
+       "(<Matrix at 0x7f8a62cd85b0 (1, 2, 2, 3) float64>,\n",
+       " <Matrix at 0x7f8a62cd9ab0 (3, 8, 8, 1) float64>)"
+      ]
+     },
+     "execution_count": 17,
+     "metadata": {},
+     "output_type": "execute_result"
+    }
+   ],
+   "source": [
+    "from renormalizer import Mpo\n",
+    "mpo = Mpo(model)\n",
+    "\n",
+    "mpo[0], mpo[1]"
+   ]
+  },
+  {
+   "cell_type": "markdown",
+   "id": "6299933b-309a-4fe6-b0bd-845a01c2ddaa",
+   "metadata": {},
+   "source": [
+    "Here the logging outputs that there are 3 terms in the Hamiltonian, since $\\hat \\sigma_z$ with coefficient 0 is dropped automatically.\n",
+    "\n",
+    "Similar to MPS, it is sometimes conceptionally convenient to consider MPO as a sparse representation of quantum operator/matrix.\n",
+    "\n",
+    "Operators other than the Hamiltonian can be constructed by providing the corresponding `Op` or `OpSum`.\n",
+    "Note that `model` still has to be provided, since it contains the basis set information."
+   ]
+  },
+  {
+   "cell_type": "code",
+   "execution_count": 18,
+   "id": "7a20aeeb-1ea0-4db6-bb49-19f03b653e42",
+   "metadata": {},
+   "outputs": [
+    {
+     "name": "stderr",
+     "output_type": "stream",
+     "text": [
+      "2024-06-26 17:37:18,813[DEBUG] # of operator terms: 1\n"
+     ]
+    }
+   ],
+   "source": [
+    "mpo2 = Mpo(model, Op(\"Z\", \"spin\"))"
+   ]
+  },
+  {
+   "cell_type": "markdown",
+   "id": "f2967ee3-4e89-420e-9628-9742279ff4c9",
+   "metadata": {},
+   "source": [
+    "## MPO/MPS manipulation"
+   ]
+  },
+  {
+   "cell_type": "markdown",
+   "id": "a790c093-b4d3-40b4-937b-f13eb888fc05",
+   "metadata": {},
+   "source": [
+    "Two MPSs can be added together, resulting in another MPS"
+   ]
+  },
+  {
+   "cell_type": "code",
+   "execution_count": 19,
+   "id": "82ce56dd-843a-46cb-a420-0c8a5012303f",
+   "metadata": {},
+   "outputs": [
+    {
+     "data": {
+      "text/plain": [
+       "<class 'renormalizer.mps.mps.Mps'> with 2 sites"
+      ]
+     },
+     "execution_count": 19,
+     "metadata": {},
+     "output_type": "execute_result"
+    }
+   ],
+   "source": [
+    "mps + mps2"
+   ]
+  },
+  {
+   "cell_type": "markdown",
+   "id": "c556e358-0921-42b0-bc75-7bc0a1427e9b",
+   "metadata": {},
+   "source": [
+    "MPO can apply on MPS, resulting in another MPS"
+   ]
+  },
+  {
+   "cell_type": "code",
+   "execution_count": 20,
+   "id": "792d6185-925d-44f7-8300-4dfdcef27805",
+   "metadata": {},
+   "outputs": [
+    {
+     "data": {
+      "text/plain": [
+       "<class 'renormalizer.mps.mps.Mps'> with 2 sites"
+      ]
+     },
+     "execution_count": 20,
+     "metadata": {},
+     "output_type": "execute_result"
+    }
+   ],
+   "source": [
+    "mpo @ mps"
+   ]
+  },
+  {
+   "cell_type": "markdown",
+   "id": "e34c5c43-4d8c-4610-99db-91b952f9e389",
+   "metadata": {},
+   "source": [
+    "This is equivalent to `mpo.apply(mps)`"
+   ]
+  },
+  {
+   "cell_type": "code",
+   "execution_count": 21,
+   "id": "52309466-fec2-4945-a249-c64244985461",
+   "metadata": {},
+   "outputs": [
+    {
+     "data": {
+      "text/plain": [
+       "0.0"
+      ]
+     },
+     "execution_count": 21,
+     "metadata": {},
+     "output_type": "execute_result"
+    }
+   ],
+   "source": [
+    "mpo.apply(mps).distance(mpo @ mps)"
+   ]
+  },
+  {
+   "cell_type": "markdown",
+   "id": "c117094a-ef9b-4b87-90a7-ac9fbc313e93",
+   "metadata": {},
+   "source": [
+    "Calculating expectation value between MPS and MPO $\\langle \\rm{MPS}|\\rm{MPO}|MPS\\rangle$ using the `expectation` function"
+   ]
+  },
+  {
+   "cell_type": "code",
+   "execution_count": 22,
+   "id": "8de0fdd0-a468-4566-bda8-810aa51b431a",
+   "metadata": {},
+   "outputs": [
+    {
+     "data": {
+      "text/plain": [
+       "2.89309731239322"
+      ]
+     },
+     "execution_count": 22,
+     "metadata": {},
+     "output_type": "execute_result"
+    }
+   ],
+   "source": [
+    "mps.expectation(mpo)"
+   ]
+  },
+  {
+   "cell_type": "markdown",
+   "id": "3925aaf8-63e9-471c-aa1d-de2b964b2ade",
+   "metadata": {},
+   "source": [
+    "Calculating transition amplitudes $\\langle \\rm{MPS2}|\\rm{MPO}|MPS\\rangle$ is also straight-forward"
+   ]
+  },
+  {
+   "cell_type": "code",
+   "execution_count": 23,
+   "id": "818eb440-a754-48dc-85c2-5d3b02846569",
+   "metadata": {},
+   "outputs": [
+    {
+     "data": {
+      "text/plain": [
+       "0.3656142066119614"
+      ]
+     },
+     "execution_count": 23,
+     "metadata": {},
+     "output_type": "execute_result"
+    }
+   ],
+   "source": [
+    "mps.expectation(mpo, self_conj=mps2)"
+   ]
+  }
+ ],
+ "metadata": {
+  "kernelspec": {
+   "display_name": "Python 3 (ipykernel)",
+   "language": "python",
+   "name": "python3"
+  },
+  "language_info": {
+   "codemirror_mode": {
+    "name": "ipython",
+    "version": 3
+   },
+   "file_extension": ".py",
+   "mimetype": "text/x-python",
+   "name": "python",
+   "nbconvert_exporter": "python",
+   "pygments_lexer": "ipython3",
+   "version": "3.10.13"
+  }
+ },
+ "nbformat": 4,
+ "nbformat_minor": 5
+}

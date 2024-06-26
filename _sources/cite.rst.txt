@@ -1,16 +1,3 @@
-An overview of Renormalizer
-*****************************
-
-Renormalizer is a quantum dynamics package based on density matrix
-renormalization group (DMRG) and its time dependent formulation written in
-Python. All (TD-)DMRG algorithms are implemented within the framework of matrix
-product states (MPS) and matrix product operators (MPO). The package aims to
-provide a powerful and efficient platform for quantum dynamics simulation
-and method development with (TD-)DMRG.  
-The package is still under heavy development. Please refer to our recent papers
-for the new developments.
-
-
 How to cite
 ===========
 If you use Renormalizer in your research, please cite
@@ -53,20 +40,3 @@ Bibtex entry::
       year={2020},
       publisher={ACS Publications}
     }
-
-
-Features
-===========
-
-* Pure matrix product states (MPS) and matrix product operators (MPO) structure.
-* Support any Hamiltonian (operator) with an sum-of-products form.
-* Static state calculation:
-    
-    - Ground state.
-    - State-averaged DMRG.
-    - Excited state with Tamm-Dancoff approximation (first order MPS tangent space).
-* Wavefuntion and density matrix time-dependent propagation.
-* Real-time and imaginary-time propagation.
-* Dynamical properties in the time domain and frequency domain.
-* Support GPU acceleration.
-

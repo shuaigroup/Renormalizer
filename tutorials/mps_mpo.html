@@ -3,10 +3,10 @@
   <head><meta charset="utf-8"/>
     <meta name="viewport" content="width=device-width,initial-scale=1"/>
     <meta name="color-scheme" content="light dark"><meta name="generator" content="Docutils 0.19: https://docutils.sourceforge.io/" />
-<link rel="index" title="Index" href="../genindex.html" /><link rel="search" title="Search" href="../search.html" /><link rel="next" title="2.3. MPS and MPO" href="mps_mpo.html" /><link rel="prev" title="2.1. Spin-1/2 1-D Heisenberg model" href="1D-Heisenberg.html" />
+<link rel="index" title="Index" href="../genindex.html" /><link rel="search" title="Search" href="../search.html" /><link rel="next" title="2.4. Time Evolution Algorithms" href="../time_evolution.html" /><link rel="prev" title="2.2. Define Your Model" href="define_model.html" />
 
     <meta name="generator" content="sphinx-5.3.0, furo 2022.09.29"/>
-        <title>2.2. Define Your Model - Renormalizer 0.1.0 documentation</title>
+        <title>2.3. MPS and MPO - Renormalizer 0.1.0 documentation</title>
       <link rel="stylesheet" type="text/css" href="../_static/pygments.css" />
     <link rel="stylesheet" type="text/css" href="../_static/styles/furo.css?digest=d81277517bee4d6b0349d71bb2661d4890b5617c" />
     <link rel="stylesheet" type="text/css" href="../_static/styles/furo-extensions.css?digest=30d1aed668e5c3a91c3e3bf6a60b675221979f0e" />
@@ -158,8 +158,8 @@
 <li class="toctree-l1"><a class="reference internal" href="../install.html">1. Installation guide</a></li>
 <li class="toctree-l1 current has-children"><a class="reference internal" href="../tutorial.html">2. Tutorial</a><input checked="" class="toctree-checkbox" id="toctree-checkbox-1" name="toctree-checkbox-1" role="switch" type="checkbox"/><label for="toctree-checkbox-1"><div class="visually-hidden">Toggle child pages in navigation</div><i class="icon"><svg><use href="#svg-arrow-right"></use></svg></i></label><ul class="current">
 <li class="toctree-l2"><a class="reference internal" href="1D-Heisenberg.html">2.1. Spin-1/2 1-D Heisenberg model</a></li>
-<li class="toctree-l2 current current-page"><a class="current reference internal" href="#">2.2. Define Your Model</a></li>
-<li class="toctree-l2"><a class="reference internal" href="mps_mpo.html">2.3. MPS and MPO</a></li>
+<li class="toctree-l2"><a class="reference internal" href="define_model.html">2.2. Define Your Model</a></li>
+<li class="toctree-l2 current current-page"><a class="current reference internal" href="#">2.3. MPS and MPO</a></li>
 <li class="toctree-l2"><a class="reference internal" href="../time_evolution.html">2.4. Time Evolution Algorithms</a></li>
 </ul>
 </li>
@@ -465,11 +465,11 @@ div.rendered_html tbody tr:hover {
   background: rgba(66, 165, 245, 0.2);
 }
 </style>
-<section id="Define-Your-Model">
-<h1><span class="section-number">2.2. </span>Define Your Model<a class="headerlink" href="#Define-Your-Model" title="Permalink to this heading">#</a></h1>
+<section id="MPS-and-MPO">
+<h1><span class="section-number">2.3. </span>MPS and MPO<a class="headerlink" href="#MPS-and-MPO" title="Permalink to this heading">#</a></h1>
 <section id="Overview">
-<h2><span class="section-number">2.2.1. </span>Overview<a class="headerlink" href="#Overview" title="Permalink to this heading">#</a></h2>
-<p>In this notebook we will introduce 3 basic components for Renormalizer: <code class="docutils literal notranslate"><span class="pre">Op</span></code>, <code class="docutils literal notranslate"><span class="pre">BasisSet</span></code> and <code class="docutils literal notranslate"><span class="pre">Model</span></code>. These components are essential for MPS/MPO construction/manipulation for a given physical model.</p>
+<h2><span class="section-number">2.3.1. </span>Overview<a class="headerlink" href="#Overview" title="Permalink to this heading">#</a></h2>
+<p>In this notebook we will introduce the construction and manipulation of MPS and MPO. We will rely on <code class="docutils literal notranslate"><span class="pre">Op</span></code>, <code class="docutils literal notranslate"><span class="pre">BasisSet</span></code> and <code class="docutils literal notranslate"><span class="pre">Model</span></code> from the previous tutorial.</p>
 <div class="nbinput nblast docutils container">
 <div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[1]:
 </pre></div>
@@ -481,14 +481,25 @@ div.rendered_html tbody tr:hover {
 </div>
 </div>
 </section>
-<section id="Op">
-<h2><span class="section-number">2.2.2. </span><code class="docutils literal notranslate"><span class="pre">Op</span></code><a class="headerlink" href="#Op" title="Permalink to this heading">#</a></h2>
-<p><code class="docutils literal notranslate"><span class="pre">Op</span></code> is the abbreviation for “operators”. It offers a convenient interface to represent operators of your interest. <code class="docutils literal notranslate"><span class="pre">Op</span></code> is the bridge between symbolic math equations and numerical tensors in MPS/MPO.</p>
+<section id="The-spin-boson-model">
+<h2><span class="section-number">2.3.2. </span>The spin-boson model<a class="headerlink" href="#The-spin-boson-model" title="Permalink to this heading">#</a></h2>
+<p>In this notebook we will consider the MPS and MPO based on a 1-mode spin-boson model.</p>
+<div class="math-wrapper docutils container">
+<div class="math notranslate nohighlight">
+\[\hat H = \epsilon \hat \sigma_z + \Delta \hat \sigma_x + \omega \hat b^\dagger \hat b
+          + g \sigma_z (\hat b^\dagger + \hat b)\]</div>
+</div>
+<p>The spin degree of freedom is labeled as a str <code class="docutils literal notranslate"><span class="pre">&quot;spin&quot;</span></code> and the boson degree of freedom is labeled as a str <code class="docutils literal notranslate"><span class="pre">&quot;boson&quot;</span></code>. We consider <span class="math notranslate nohighlight">\(\epsilon=0\)</span>, <span class="math notranslate nohighlight">\(\Delta=1\)</span>, <span class="math notranslate nohighlight">\(\omega=1\)</span> and <span class="math notranslate nohighlight">\(g=0.5\)</span></p>
 <div class="nbinput docutils container">
 <div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[2]:
 </pre></div>
 </div>
-<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="kn">from</span> <span class="nn">renormalizer</span> <span class="kn">import</span> <span class="n">Op</span>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="kn">from</span> <span class="nn">renormalizer</span> <span class="kn">import</span> <span class="n">Op</span><span class="p">,</span> <span class="n">BasisHalfSpin</span><span class="p">,</span> <span class="n">BasisSHO</span><span class="p">,</span> <span class="n">Model</span>
+
+<span class="n">epsilon</span> <span class="o">=</span> <span class="mi">0</span>
+<span class="n">delta</span> <span class="o">=</span> <span class="mi">1</span>
+<span class="n">omega</span> <span class="o">=</span> <span class="mi">1</span>
+<span class="n">g</span> <span class="o">=</span> <span class="mf">0.5</span>
 </pre></div>
 </div>
 </div>
@@ -497,25 +508,27 @@ div.rendered_html tbody tr:hover {
 </div>
 <div class="output_area stderr docutils container">
 <div class="highlight"><pre>
-2022-10-28 13:29:10,474[INFO] Use NumPy as backend
-2022-10-28 13:29:10,475[INFO] use 64 bits
+2024-06-26 17:37:18,655[INFO] Use NumPy as backend
+2024-06-26 17:37:18,656[INFO] numpy random seed is 9012
+2024-06-26 17:37:18,657[INFO] random seed is 1092
+fatal: not a git repository (or any parent up to mount point /)
+Stopping at filesystem boundary (GIT_DISCOVERY_ACROSS_FILESYSTEM not set).
+2024-06-26 17:37:18,661[INFO] Git Commit Hash: Unknown
+2024-06-26 17:37:18,661[INFO] use 64 bits
 </pre></div></div>
 </div>
-<section id="Basics">
-<h3><span class="section-number">2.2.2.1. </span>Basics<a class="headerlink" href="#Basics" title="Permalink to this heading">#</a></h3>
-<p>There are 3 basic attributes for an operator:</p>
-<ul class="simple">
-<li><p>The operation or its symbol, such as <span class="math notranslate nohighlight">\(\hat X\)</span>, <span class="math notranslate nohighlight">\(\hat a^\dagger\)</span>, <span class="math notranslate nohighlight">\(\hat p^2\)</span></p></li>
-<li><p>The DOF at wich the operation is operated on, such as “spin 0”, “exiton 1”. In mathematical expression this is usually the subscript for an operator, i.e., <span class="math notranslate nohighlight">\(\hat X_0\)</span> or <span class="math notranslate nohighlight">\(\hat a^\dagger_1\)</span></p></li>
-<li><p>The factor or coefficient for the operator.</p></li>
-</ul>
-<p>There is an additional useful attributes that is sometimes quite useful: the quantum number.</p>
-<p><code class="docutils literal notranslate"><span class="pre">Op</span></code> are constructed from the above 4 attributes. The first 2 are necessary and the last 2 are optional.</p>
+<p>First, construct all terms in the Hamiltonian in a <code class="docutils literal notranslate"><span class="pre">list</span></code> or <code class="docutils literal notranslate"><span class="pre">OpSum</span></code>.</p>
 <div class="nbinput docutils container">
 <div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[3]:
 </pre></div>
 </div>
-<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">Op</span><span class="p">(</span><span class="s2">&quot;X&quot;</span><span class="p">,</span> <span class="mi">0</span><span class="p">,</span> <span class="n">factor</span><span class="o">=</span><span class="mf">0.5</span><span class="p">,</span> <span class="n">qn</span><span class="o">=</span><span class="mi">0</span><span class="p">)</span>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">ham_terms</span> <span class="o">=</span> <span class="p">[</span>
+    <span class="n">Op</span><span class="p">(</span><span class="s2">&quot;sigma_z&quot;</span><span class="p">,</span> <span class="s2">&quot;spin&quot;</span><span class="p">,</span> <span class="n">epsilon</span><span class="p">),</span>
+    <span class="n">Op</span><span class="p">(</span><span class="s2">&quot;sigma_x&quot;</span><span class="p">,</span> <span class="s2">&quot;spin&quot;</span><span class="p">,</span> <span class="n">delta</span><span class="p">),</span>
+    <span class="n">Op</span><span class="p">(</span><span class="sa">r</span><span class="s2">&quot;b^\dagger b&quot;</span><span class="p">,</span> <span class="s2">&quot;boson&quot;</span><span class="p">,</span> <span class="n">omega</span><span class="p">),</span>
+    <span class="n">Op</span><span class="p">(</span><span class="s2">&quot;sigma_z&quot;</span><span class="p">,</span> <span class="s2">&quot;spin&quot;</span><span class="p">,</span> <span class="n">g</span><span class="p">)</span> <span class="o">*</span> <span class="n">Op</span><span class="p">(</span><span class="sa">r</span><span class="s2">&quot;b^\dagger+b&quot;</span><span class="p">,</span> <span class="s2">&quot;boson&quot;</span><span class="p">),</span>
+<span class="p">]</span>
+<span class="n">ham_terms</span>
 </pre></div>
 </div>
 </div>
@@ -525,15 +538,19 @@ div.rendered_html tbody tr:hover {
 </div>
 <div class="output_area docutils container">
 <div class="highlight"><pre>
-Op(&#39;X&#39;, [0], 0.5, [0])
+[Op(&#39;sigma_z&#39;, [&#39;spin&#39;], 0.0),
+ Op(&#39;sigma_x&#39;, [&#39;spin&#39;], 1.0),
+ Op(&#39;b^\\dagger b&#39;, [&#39;boson&#39;, &#39;boson&#39;], 1.0),
+ Op(&#39;sigma_z b^\\dagger+b&#39;, [&#39;spin&#39;, &#39;boson&#39;], 0.5)]
 </pre></div></div>
 </div>
-<p>In renormalizer, you may use anything that can be hashed and compared to denote a DOF. Common examples include <code class="docutils literal notranslate"><span class="pre">int</span></code>, <code class="docutils literal notranslate"><span class="pre">str</span></code>, and <code class="docutils literal notranslate"><span class="pre">tuple</span></code> of them.</p>
+<p>Then, define the basis for the model. Note that the boson mode is described by simple harmonic oscillator eigenbasis (<code class="docutils literal notranslate"><span class="pre">BasisSHO</span></code>) and the number of basis is truncated to 8. This means that the maximum number of bosons for the mode is 8</p>
 <div class="nbinput docutils container">
 <div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[4]:
 </pre></div>
 </div>
-<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">Op</span><span class="p">(</span><span class="s2">&quot;X&quot;</span><span class="p">,</span> <span class="p">(</span><span class="s2">&quot;spin 0&quot;</span><span class="p">,</span> <span class="s2">&quot;cool stuff&quot;</span><span class="p">,</span> <span class="mi">2077</span><span class="p">))</span>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">basis</span> <span class="o">=</span> <span class="p">[</span><span class="n">BasisHalfSpin</span><span class="p">(</span><span class="s2">&quot;spin&quot;</span><span class="p">),</span> <span class="n">BasisSHO</span><span class="p">(</span><span class="s2">&quot;boson&quot;</span><span class="p">,</span> <span class="n">omega</span><span class="o">=</span><span class="n">omega</span><span class="p">,</span> <span class="n">nbas</span><span class="o">=</span><span class="mi">8</span><span class="p">)]</span>
+<span class="n">basis</span>
 </pre></div>
 </div>
 </div>
@@ -543,16 +560,16 @@ Op(&#39;X&#39;, [0], 0.5, [0])
 </div>
 <div class="output_area docutils container">
 <div class="highlight"><pre>
-Op(&#39;X&#39;, [(&#39;spin 0&#39;, &#39;cool stuff&#39;, 2077)], 1.0)
+[BasisHalfSpin(dof: spin, nbas: 2),
+ BasisSHO(dof: boson, x0: 0.0, omega: 1, nbas: 8)]
 </pre></div></div>
 </div>
-<p>You may wonder what are the allowed symbols for operators. For that please refer to the <code class="docutils literal notranslate"><span class="pre">BasisSet</span></code> section.</p>
-<p>Products of operators can be constructed intuitively</p>
+<p>Checkout some of the operators defined by the basis</p>
 <div class="nbinput docutils container">
 <div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[5]:
 </pre></div>
 </div>
-<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">Op</span><span class="p">(</span><span class="sa">r</span><span class="s2">&quot;a^\dagger a&quot;</span><span class="p">,</span> <span class="p">[</span><span class="mi">0</span><span class="p">,</span> <span class="mi">1</span><span class="p">])</span>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">basis</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span><span class="o">.</span><span class="n">op_mat</span><span class="p">(</span><span class="s2">&quot;Z&quot;</span><span class="p">)</span>
 </pre></div>
 </div>
 </div>
@@ -562,16 +579,15 @@ Op(&#39;X&#39;, [(&#39;spin 0&#39;, &#39;cool stuff&#39;, 2077)], 1.0)
 </div>
 <div class="output_area docutils container">
 <div class="highlight"><pre>
-Op(&#39;a^\\dagger a&#39;, [0, 1], 1.0)
+array([[ 1.,  0.],
+       [ 0., -1.]])
 </pre></div></div>
 </div>
-<p>Here, DOFs for the operators are specified through a list, where the first element is the DOF for <span class="math notranslate nohighlight">\(a^\dagger\)</span> and the second element is the DOF for <span class="math notranslate nohighlight">\(a\)</span>.</p>
-<p>Note that using tuple to specify the DOF has a totally different meaning. Renormalizer will recognize the tuple as a single DOF and set all DOFs in the operator to that DOF.</p>
 <div class="nbinput docutils container">
 <div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[6]:
 </pre></div>
 </div>
-<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">Op</span><span class="p">(</span><span class="sa">r</span><span class="s2">&quot;a^\dagger a&quot;</span><span class="p">,</span> <span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="mi">1</span><span class="p">))</span>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">basis</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span><span class="o">.</span><span class="n">op_mat</span><span class="p">(</span><span class="sa">r</span><span class="s2">&quot;b^\dagger b&quot;</span><span class="p">)</span>
 </pre></div>
 </div>
 </div>
@@ -581,256 +597,251 @@ Op(&#39;a^\\dagger a&#39;, [0, 1], 1.0)
 </div>
 <div class="output_area docutils container">
 <div class="highlight"><pre>
-Op(&#39;a^\\dagger a&#39;, [(0, 1), (0, 1)], 1.0)
+array([[0., 0., 0., 0., 0., 0., 0., 0.],
+       [0., 1., 0., 0., 0., 0., 0., 0.],
+       [0., 0., 2., 0., 0., 0., 0., 0.],
+       [0., 0., 0., 3., 0., 0., 0., 0.],
+       [0., 0., 0., 0., 4., 0., 0., 0.],
+       [0., 0., 0., 0., 0., 5., 0., 0.],
+       [0., 0., 0., 0., 0., 0., 6., 0.],
+       [0., 0., 0., 0., 0., 0., 0., 7.]])
 </pre></div></div>
 </div>
-<p><code class="docutils literal notranslate"><span class="pre">Op</span></code> also has a lot of useful functions and attributes, please refer to the API document for more details.</p>
-</section>
-<section id="Operations-and-OpSum">
-<h3><span class="section-number">2.2.2.2. </span>Operations and <code class="docutils literal notranslate"><span class="pre">OpSum</span></code><a class="headerlink" href="#Operations-and-OpSum" title="Permalink to this heading">#</a></h3>
-<p>Common and simple operations between operators are supported</p>
-<div class="nbinput docutils container">
-<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[7]:
-</pre></div>
-</div>
-<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">op1</span> <span class="o">=</span> <span class="n">Op</span><span class="p">(</span><span class="s2">&quot;X&quot;</span><span class="p">,</span> <span class="mi">0</span><span class="p">,</span> <span class="mf">0.5</span><span class="p">)</span>
-<span class="n">op2</span> <span class="o">=</span> <span class="n">Op</span><span class="p">(</span><span class="s2">&quot;Z&quot;</span><span class="p">,</span> <span class="mi">1</span><span class="p">,</span> <span class="mf">0.5</span><span class="p">)</span>
-<span class="n">op1</span> <span class="o">*</span> <span class="n">op2</span>
-</pre></div>
-</div>
-</div>
-<div class="nboutput nblast docutils container">
-<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[7]:
-</pre></div>
-</div>
-<div class="output_area docutils container">
-<div class="highlight"><pre>
-Op(&#39;X Z&#39;, [0, 1], 0.25)
-</pre></div></div>
-</div>
-<p>Addition between <code class="docutils literal notranslate"><span class="pre">Op</span></code> will result in an <code class="docutils literal notranslate"><span class="pre">OpSum</span></code> instance that is a subclass of list.</p>
-<div class="nbinput docutils container">
-<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[8]:
-</pre></div>
-</div>
-<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">op1</span> <span class="o">+</span> <span class="n">op2</span><span class="p">,</span> <span class="nb">type</span><span class="p">(</span><span class="n">op1</span> <span class="o">+</span> <span class="n">op2</span><span class="p">)</span>
-</pre></div>
-</div>
-</div>
-<div class="nboutput nblast docutils container">
-<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[8]:
-</pre></div>
-</div>
-<div class="output_area docutils container">
-<div class="highlight"><pre>
-([Op(&#39;X&#39;, [0], 0.5), Op(&#39;Z&#39;, [1], 0.5)], renormalizer.model.op.OpSum)
-</pre></div></div>
-</div>
-<p><code class="docutils literal notranslate"><span class="pre">OpSum</span></code> supports simple operator algebra such as multiplication/addition, etc.</p>
-<div class="nbinput docutils container">
-<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[9]:
-</pre></div>
-</div>
-<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="c1"># multiplication</span>
-<span class="n">opsum</span> <span class="o">=</span> <span class="n">op1</span> <span class="o">+</span> <span class="n">op2</span>
-<span class="n">opsum</span> <span class="o">*</span> <span class="n">op1</span>
-</pre></div>
-</div>
-</div>
-<div class="nboutput nblast docutils container">
-<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[9]:
-</pre></div>
-</div>
-<div class="output_area docutils container">
-<div class="highlight"><pre>
-[Op(&#39;X X&#39;, [0, 0], 0.25), Op(&#39;Z X&#39;, [1, 0], 0.25)]
-</pre></div></div>
-</div>
-<div class="nbinput docutils container">
-<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[10]:
-</pre></div>
-</div>
-<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">opsum</span> <span class="o">*</span> <span class="n">opsum</span>
-</pre></div>
-</div>
-</div>
-<div class="nboutput nblast docutils container">
-<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[10]:
-</pre></div>
-</div>
-<div class="output_area docutils container">
-<div class="highlight"><pre>
-[Op(&#39;X X&#39;, [0, 0], 0.25),
- Op(&#39;X Z&#39;, [0, 1], 0.25),
- Op(&#39;Z X&#39;, [1, 0], 0.25),
- Op(&#39;Z Z&#39;, [1, 1], 0.25)]
-</pre></div></div>
-</div>
-<div class="nbinput docutils container">
-<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[11]:
-</pre></div>
-</div>
-<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="c1"># addition/subtraction</span>
-<span class="n">opsum</span> <span class="o">-=</span> <span class="n">op2</span>
-<span class="n">opsum</span>
-</pre></div>
-</div>
-</div>
-<div class="nboutput nblast docutils container">
-<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[11]:
-</pre></div>
-</div>
-<div class="output_area docutils container">
-<div class="highlight"><pre>
-[Op(&#39;X&#39;, [0], 0.5), Op(&#39;Z&#39;, [1], 0.5), Op(&#39;Z&#39;, [1], -0.5)]
-</pre></div></div>
-</div>
-<div class="nbinput docutils container">
-<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[12]:
-</pre></div>
-</div>
-<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">opsum</span><span class="o">.</span><span class="n">simplify</span><span class="p">()</span>
-</pre></div>
-</div>
-</div>
-<div class="nboutput nblast docutils container">
-<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[12]:
-</pre></div>
-</div>
-<div class="output_area docutils container">
-<div class="highlight"><pre>
-[Op(&#39;X&#39;, [0], 0.5)]
-</pre></div></div>
-</div>
-<p>However, in general the functionalities are limited and the performance is not optimized. We recommand using <a class="reference external" href="https://www.sympy.org/en/index.html">SymPy</a> for advanced symbolic mathematics and convert the final result to Renormalizer <code class="docutils literal notranslate"><span class="pre">Op</span></code>.</p>
-</section>
-</section>
-<section id="BasisSet">
-<h2><span class="section-number">2.2.3. </span><code class="docutils literal notranslate"><span class="pre">BasisSet</span></code><a class="headerlink" href="#BasisSet" title="Permalink to this heading">#</a></h2>
-<p>An essential step for converting symbolic operators into numeric tensors is to specify a set of basis. Renormalizer includes a zoo of basis set with an emphasis for electron-phonon or vibronic models.</p>
-<div class="nbinput docutils container">
-<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[13]:
-</pre></div>
-</div>
-<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="kn">import</span> <span class="nn">renormalizer</span>
-<span class="p">[</span><span class="n">s</span> <span class="k">for</span> <span class="n">s</span> <span class="ow">in</span> <span class="nb">dir</span><span class="p">(</span><span class="n">renormalizer</span><span class="p">)</span> <span class="k">if</span> <span class="n">s</span><span class="o">.</span><span class="n">startswith</span><span class="p">(</span><span class="s2">&quot;Basis&quot;</span><span class="p">)]</span>
-</pre></div>
-</div>
-</div>
-<div class="nboutput nblast docutils container">
-<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[13]:
-</pre></div>
-</div>
-<div class="output_area docutils container">
-<div class="highlight"><pre>
-[&#39;BasisHalfSpin&#39;,
- &#39;BasisHopsBoson&#39;,
- &#39;BasisMultiElectron&#39;,
- &#39;BasisMultiElectronVac&#39;,
- &#39;BasisSHO&#39;,
- &#39;BasisSimpleElectron&#39;,
- &#39;BasisSineDVR&#39;]
-</pre></div></div>
-</div>
-<p>Each BasisSet is associated with one or more DOFs. For example, we can setup the spin-1/2 basis set for a spin DOF denoted as <code class="docutils literal notranslate"><span class="pre">(&quot;spin&quot;,</span> <span class="pre">0)</span></code></p>
-<div class="nbinput docutils container">
-<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[14]:
-</pre></div>
-</div>
-<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="kn">from</span> <span class="nn">renormalizer</span> <span class="kn">import</span> <span class="n">BasisHalfSpin</span>
-<span class="n">b</span> <span class="o">=</span> <span class="n">BasisHalfSpin</span><span class="p">((</span><span class="s2">&quot;spin&quot;</span><span class="p">,</span> <span class="mi">0</span><span class="p">))</span>
-<span class="n">b</span>
-</pre></div>
-</div>
-</div>
-<div class="nboutput nblast docutils container">
-<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[14]:
-</pre></div>
-</div>
-<div class="output_area docutils container">
-<div class="highlight"><pre>
-(dof: (&#39;spin&#39;, 0), nbas: 2, qn: [0, 0])
-</pre></div></div>
-</div>
-<p>Each basis set supports a variety of operations. The spin-1/2 basis set naturally supports Pauli operators such as <code class="docutils literal notranslate"><span class="pre">&quot;X&quot;</span></code>, <code class="docutils literal notranslate"><span class="pre">&quot;sigma_y&quot;</span></code>.</p>
-<div class="nbinput docutils container">
-<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[15]:
-</pre></div>
-</div>
-<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">b</span><span class="o">.</span><span class="n">op_mat</span><span class="p">(</span><span class="s2">&quot;X&quot;</span><span class="p">),</span> <span class="n">b</span><span class="o">.</span><span class="n">op_mat</span><span class="p">(</span><span class="s2">&quot;sigma_y&quot;</span><span class="p">)</span>
-</pre></div>
-</div>
-</div>
-<div class="nboutput nblast docutils container">
-<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[15]:
-</pre></div>
-</div>
-<div class="output_area docutils container">
-<div class="highlight"><pre>
-(array([[0., 1.],
-        [1., 0.]]),
- array([[0.+0.j, 0.-1.j],
-        [0.+1.j, 0.+0.j]]))
-</pre></div></div>
-</div>
-<p>For phonon DOF, it is necessary to specify the quanta truncated in the basis set</p>
-<div class="nbinput docutils container">
-<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[16]:
-</pre></div>
-</div>
-<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="c1"># SHO represent simple harmonic oscillator</span>
-<span class="kn">from</span> <span class="nn">renormalizer</span> <span class="kn">import</span> <span class="n">BasisSHO</span>
-<span class="c1"># omega is the vibration frequency, nbas is the number of basis</span>
-<span class="n">b</span> <span class="o">=</span> <span class="n">BasisSHO</span><span class="p">(</span><span class="n">dof</span><span class="o">=</span><span class="mi">0</span><span class="p">,</span> <span class="n">omega</span><span class="o">=</span><span class="mi">50</span><span class="p">,</span> <span class="n">nbas</span><span class="o">=</span><span class="mi">4</span><span class="p">)</span>
-<span class="c1"># note the different value because of omega</span>
-<span class="n">b</span><span class="o">.</span><span class="n">op_mat</span><span class="p">(</span><span class="s2">&quot;b^\dagger+b&quot;</span><span class="p">),</span> <span class="n">b</span><span class="o">.</span><span class="n">op_mat</span><span class="p">(</span><span class="s2">&quot;x&quot;</span><span class="p">)</span>
-</pre></div>
-</div>
-</div>
-<div class="nboutput nblast docutils container">
-<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[16]:
-</pre></div>
-</div>
-<div class="output_area docutils container">
-<div class="highlight"><pre>
-(array([[0.        , 1.        , 0.        , 0.        ],
-        [1.        , 0.        , 1.41421356, 0.        ],
-        [0.        , 1.41421356, 0.        , 1.73205081],
-        [0.        , 0.        , 1.73205081, 0.        ]]),
- array([[0.        , 0.1       , 0.        , 0.        ],
-        [0.1       , 0.        , 0.14142136, 0.        ],
-        [0.        , 0.14142136, 0.        , 0.17320508],
-        [0.        , 0.        , 0.17320508, 0.        ]]))
-</pre></div></div>
-</div>
-<p>Note that <code class="docutils literal notranslate"><span class="pre">BasisSHO</span></code> supports both first and second-quantized operators such as</p>
-<div class="math-wrapper docutils container">
-<div class="math notranslate nohighlight">
-\[\hat x = \sqrt{\frac{1}{2\omega}} (b^\dagger + b)\]</div>
-</div>
-<p>here <span class="math notranslate nohighlight">\(x\)</span> is the mass-weighted coordinate.</p>
-<p>The number of possible basis sets is infinite and highly customized basis set for a particular problem is fairly common. You may subclass the <code class="docutils literal notranslate"><span class="pre">BasisSet</span></code> parent class in <code class="docutils literal notranslate"><span class="pre">renormalizer.model.basis.BasisSet</span></code> to customize the basis set and the numerical behavior of the operators.</p>
-</section>
-<section id="Model">
-<h2><span class="section-number">2.2.4. </span><code class="docutils literal notranslate"><span class="pre">Model</span></code><a class="headerlink" href="#Model" title="Permalink to this heading">#</a></h2>
-<p>A <code class="docutils literal notranslate"><span class="pre">Model</span></code> is basically made up with a list of <code class="docutils literal notranslate"><span class="pre">BasisSet</span></code> and the Hamiltonian in <code class="docutils literal notranslate"><span class="pre">OpSum</span></code>/<code class="docutils literal notranslate"><span class="pre">list</span></code> form. A <code class="docutils literal notranslate"><span class="pre">Model</span></code> instance is necessary for any MPS/MPO construction.</p>
+<p>Lastly, build our model with <code class="docutils literal notranslate"><span class="pre">Model</span></code></p>
 <div class="nbinput nblast docutils container">
-<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[17]:
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[7]:
 </pre></div>
 </div>
-<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="kn">from</span> <span class="nn">renormalizer</span> <span class="kn">import</span> <span class="n">Model</span>
-<span class="n">model</span> <span class="o">=</span> <span class="n">Model</span><span class="p">([</span><span class="n">BasisHalfSpin</span><span class="p">(</span><span class="mi">0</span><span class="p">)],</span> <span class="p">[</span><span class="n">Op</span><span class="p">(</span><span class="s2">&quot;X&quot;</span><span class="p">,</span> <span class="mi">0</span><span class="p">)])</span>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">model</span> <span class="o">=</span> <span class="n">Model</span><span class="p">(</span><span class="n">basis</span><span class="p">,</span> <span class="n">ham_terms</span><span class="p">)</span>
 </pre></div>
 </div>
 </div>
-<p>For example, the corresponding MPO can be constructed from the above model conveniently</p>
+</section>
+<section id="Construct-MPS">
+<h2><span class="section-number">2.3.3. </span>Construct MPS<a class="headerlink" href="#Construct-MPS" title="Permalink to this heading">#</a></h2>
+<p>The matrix product state data structure is implemented in the <code class="docutils literal notranslate"><span class="pre">Mps</span></code> class</p>
+<div class="nbinput nblast docutils container">
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[8]:
+</pre></div>
+</div>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="kn">from</span> <span class="nn">renormalizer</span> <span class="kn">import</span> <span class="n">Mps</span>
+</pre></div>
+</div>
+</div>
+<p>Most commonly, MPS is initialized by two ways. The first is random initialization, which is usually followed by ground state/excited state search by the DMRG algorithm. The second is Hartree product state, which is usually followed by time evolution.</p>
+<section id="Random-Initialization">
+<h3><span class="section-number">2.3.3.1. </span>Random Initialization<a class="headerlink" href="#Random-Initialization" title="Permalink to this heading">#</a></h3>
+<p><code class="docutils literal notranslate"><span class="pre">Mps.random</span></code> requires the input of a <code class="docutils literal notranslate"><span class="pre">model</span></code>. Additionally, the user must also specify the targeted total quantum number <code class="docutils literal notranslate"><span class="pre">qntot</span></code> and the maximum bond dimension <code class="docutils literal notranslate"><span class="pre">m_max</span></code>.</p>
+<p>Since the spin-boson model does not conserve any quantum number, all states/operators are considered to have quantum number 0 in Renormalizer. Thus, the total quantum number is set to 0.</p>
+<p>The maximum bond dimension is set to 2 since a Schmidt decomposition for the 1-mode spin-boson model yields only 2 singular values.</p>
 <div class="nbinput docutils container">
-<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[18]:
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[9]:
+</pre></div>
+</div>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">mps</span> <span class="o">=</span> <span class="n">Mps</span><span class="o">.</span><span class="n">random</span><span class="p">(</span><span class="n">model</span><span class="p">,</span> <span class="n">qntot</span><span class="o">=</span><span class="mi">0</span><span class="p">,</span> <span class="n">m_max</span><span class="o">=</span><span class="mi">2</span><span class="p">)</span>
+<span class="n">mps</span>
+</pre></div>
+</div>
+</div>
+<div class="nboutput nblast docutils container">
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[9]:
+</pre></div>
+</div>
+<div class="output_area docutils container">
+<div class="highlight"><pre>
+&lt;class &#39;renormalizer.mps.mps.Mps&#39;&gt; with 2 sites
+</pre></div></div>
+</div>
+<p>The individual local matrices for the MPS can be accessed via simple indexing</p>
+<div class="nbinput docutils container">
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[10]:
+</pre></div>
+</div>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">mps</span><span class="p">[</span><span class="mi">0</span><span class="p">],</span> <span class="n">mps</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span>
+</pre></div>
+</div>
+</div>
+<div class="nboutput nblast docutils container">
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[10]:
+</pre></div>
+</div>
+<div class="output_area docutils container">
+<div class="highlight"><pre>
+(&lt;Matrix at 0x7f8a62cd8280 (1, 2, 2) float64&gt;,
+ &lt;Matrix at 0x7f8a62cd8160 (2, 8, 1) float64&gt;)
+</pre></div></div>
+</div>
+<p><code class="docutils literal notranslate"><span class="pre">Matrix</span></code> can be considered as a wrapper for <code class="docutils literal notranslate"><span class="pre">np.ndarray</span></code> with more metadata. The indices of the array are left virtual index, the physical index and the right virtual index. The underlaying matrix can be accessed via the <code class="docutils literal notranslate"><span class="pre">array</span></code> attribute.</p>
+<div class="nbinput docutils container">
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[11]:
+</pre></div>
+</div>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">mps</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span><span class="o">.</span><span class="n">array</span><span class="p">,</span> <span class="n">mps</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span><span class="o">.</span><span class="n">array</span>
+</pre></div>
+</div>
+</div>
+<div class="nboutput nblast docutils container">
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[11]:
+</pre></div>
+</div>
+<div class="output_area docutils container">
+<div class="highlight"><pre>
+(array([[[-0.99496648, -0.10020826],
+         [-0.10020826,  0.99496648]]]),
+ array([[[-0.43283409],
+         [-0.01476036],
+         [-0.21888015],
+         [-0.16222924],
+         [-0.19864132],
+         [ 0.36843999],
+         [-0.2858778 ],
+         [ 0.31116499]],
+
+        [[ 0.17636599],
+         [ 0.2216647 ],
+         [ 0.45632911],
+         [ 0.22315835],
+         [-0.04071718],
+         [-0.02460395],
+         [ 0.19383492],
+         [-0.07963948]]]))
+</pre></div></div>
+</div>
+<p>Conceptually, <code class="docutils literal notranslate"><span class="pre">Mps</span></code> can be considered as a sparse representation for a wavefunction/vector</p>
+<div class="nbinput docutils container">
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[12]:
+</pre></div>
+</div>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">mps</span><span class="o">.</span><span class="n">todense</span><span class="p">()</span>
+</pre></div>
+</div>
+</div>
+<div class="nboutput nblast docutils container">
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[12]:
+</pre></div>
+</div>
+<div class="output_area docutils container">
+<div class="highlight"><pre>
+array([ 0.41298208, -0.00752657,  0.17205047,  0.13905035,  0.20172165,
+       -0.36411992,  0.26501497, -0.3016182 ,  0.2188518 ,  0.22202805,
+        0.47596577,  0.23829179, -0.02060673, -0.06140084,  0.22150656,
+       -0.11041992])
+</pre></div></div>
+</div>
+<p><code class="docutils literal notranslate"><span class="pre">Mps</span></code> has a lot of utilities to calculate the properties of the wavefunction. For more of them, please refer to the API reference.</p>
+<div class="nbinput docutils container">
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[13]:
+</pre></div>
+</div>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">mps</span><span class="o">.</span><span class="n">norm</span>
+</pre></div>
+</div>
+</div>
+<div class="nboutput nblast docutils container">
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[13]:
+</pre></div>
+</div>
+<div class="output_area docutils container">
+<div class="highlight"><pre>
+1.0
+</pre></div></div>
+</div>
+<div class="nbinput docutils container">
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[14]:
+</pre></div>
+</div>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">mps</span><span class="o">.</span><span class="n">calc_1site_rdm</span><span class="p">()</span>
+</pre></div>
+</div>
+</div>
+<div class="nboutput nblast docutils container">
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[14]:
+</pre></div>
+</div>
+<div class="output_area docutils container">
+<div class="highlight"><pre>
+{0: array([[0.55402862, 0.31394311],
+        [0.31394311, 0.44597138]]),
+ 1: array([[ 0.21845031,  0.0454829 ,  0.17521973,  0.10957589,  0.07879761,
+         -0.16381269,  0.15792354, -0.14872851],
+        [ 0.0454829 ,  0.04935311,  0.1043828 ,  0.05186089, -0.00609355,
+         -0.01089213,  0.04718602, -0.02224617],
+        [ 0.17521973,  0.1043828 ,  0.25614478,  0.13734241,  0.02489821,
+         -0.0918717 ,  0.15102549, -0.10444965],
+        [ 0.10957589,  0.05186089,  0.13734241,  0.07611798,  0.02313905,
+         -0.06526232,  0.08963362, -0.06825227],
+        [ 0.07879761, -0.00609355,  0.02489821,  0.02313905,  0.04111626,
+         -0.0721856 ,  0.04889473, -0.05856753],
+        [-0.16381269, -0.01089213, -0.0918717 , -0.06526232, -0.0721856 ,
+          0.13635338, -0.11009792,  0.11660507],
+        [ 0.15792354,  0.04718602,  0.15102549,  0.08963362,  0.04889473,
+         -0.11009792,  0.11929809, -0.10439207],
+        [-0.14872851, -0.02224617, -0.10444965, -0.06825227, -0.05856753,
+          0.11660507, -0.10439207,  0.1031661 ]])}
+</pre></div></div>
+</div>
+</section>
+<section id="Hartree-product-state">
+<h3><span class="section-number">2.3.3.2. </span>Hartree product state<a class="headerlink" href="#Hartree-product-state" title="Permalink to this heading">#</a></h3>
+<p><code class="docutils literal notranslate"><span class="pre">Mps.hartree_product_state</span></code> also requires the input of a <code class="docutils literal notranslate"><span class="pre">model</span></code>. The state of each degrees of freedom can be specified through the <code class="docutils literal notranslate"><span class="pre">condition</span></code> argument. The degrees of freedom that are not specified through <code class="docutils literal notranslate"><span class="pre">condition</span></code> will be set to the ground state, i.e., <span class="math notranslate nohighlight">\([1, 0, 0, \dots, 0]\)</span>.</p>
+<div class="nbinput docutils container">
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[15]:
+</pre></div>
+</div>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="kn">import</span> <span class="nn">numpy</span> <span class="k">as</span> <span class="nn">np</span>
+<span class="n">mps2</span> <span class="o">=</span> <span class="n">Mps</span><span class="o">.</span><span class="n">hartree_product_state</span><span class="p">(</span><span class="n">model</span><span class="p">,</span> <span class="n">condition</span><span class="o">=</span><span class="p">{</span><span class="s2">&quot;spin&quot;</span><span class="p">:[</span><span class="mi">1</span><span class="o">/</span><span class="n">np</span><span class="o">.</span><span class="n">sqrt</span><span class="p">(</span><span class="mi">2</span><span class="p">),</span> <span class="mi">1</span><span class="o">/</span><span class="n">np</span><span class="o">.</span><span class="n">sqrt</span><span class="p">(</span><span class="mi">2</span><span class="p">)]})</span>
+<span class="n">mps2</span>
+</pre></div>
+</div>
+</div>
+<div class="nboutput nblast docutils container">
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[15]:
+</pre></div>
+</div>
+<div class="output_area docutils container">
+<div class="highlight"><pre>
+&lt;class &#39;renormalizer.mps.mps.Mps&#39;&gt; with 2 sites
+</pre></div></div>
+</div>
+<div class="nbinput docutils container">
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[16]:
+</pre></div>
+</div>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">mps2</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span><span class="o">.</span><span class="n">array</span><span class="p">,</span> <span class="n">mps2</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span><span class="o">.</span><span class="n">array</span>
+</pre></div>
+</div>
+</div>
+<div class="nboutput nblast docutils container">
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[16]:
+</pre></div>
+</div>
+<div class="output_area docutils container">
+<div class="highlight"><pre>
+(array([[[0.70710678],
+         [0.70710678]]]),
+ array([[[1.],
+         [0.],
+         [0.],
+         [0.],
+         [0.],
+         [0.],
+         [0.],
+         [0.]]]))
+</pre></div></div>
+</div>
+</section>
+</section>
+<section id="Construct-MPO">
+<h2><span class="section-number">2.3.4. </span>Construct MPO<a class="headerlink" href="#Construct-MPO" title="Permalink to this heading">#</a></h2>
+<p>As described in the previous section, Renormalizer is able to exactly construct the most compact MPO exactly. By feeding the model into <code class="docutils literal notranslate"><span class="pre">Mpo</span></code>, the Hamiltonian is constructed as MPO</p>
+<div class="nbinput docutils container">
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[17]:
 </pre></div>
 </div>
 <div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="kn">from</span> <span class="nn">renormalizer</span> <span class="kn">import</span> <span class="n">Mpo</span>
 <span class="n">mpo</span> <span class="o">=</span> <span class="n">Mpo</span><span class="p">(</span><span class="n">model</span><span class="p">)</span>
-<span class="n">mpo</span>
+
+<span class="n">mpo</span><span class="p">[</span><span class="mi">0</span><span class="p">],</span> <span class="n">mpo</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span>
 </pre></div>
 </div>
 </div>
@@ -839,23 +850,50 @@ Op(&#39;X Z&#39;, [0, 1], 0.25)
 </div>
 <div class="output_area stderr docutils container">
 <div class="highlight"><pre>
-2022-10-28 13:29:10,610[DEBUG] # of operator terms: 1
+2024-06-26 17:37:18,798[DEBUG] # of operator terms: 3
+2024-06-26 17:37:18,799[DEBUG] symbolic mpo algorithm: Hopcroft-Karp
+2024-06-26 17:37:18,800[DEBUG] Input operator terms: 3
+2024-06-26 17:37:18,802[DEBUG] After combination of the same terms: 3
 </pre></div></div>
 </div>
 <div class="nboutput nblast docutils container">
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[17]:
+</pre></div>
+</div>
+<div class="output_area docutils container">
+<div class="highlight"><pre>
+(&lt;Matrix at 0x7f8a62cd85b0 (1, 2, 2, 3) float64&gt;,
+ &lt;Matrix at 0x7f8a62cd9ab0 (3, 8, 8, 1) float64&gt;)
+</pre></div></div>
+</div>
+<p>Here the logging outputs that there are 3 terms in the Hamiltonian, since <span class="math notranslate nohighlight">\(\hat \sigma_z\)</span> with coefficient 0 is dropped automatically.</p>
+<p>Similar to MPS, it is sometimes conceptionally convenient to consider MPO as a sparse representation of quantum operator/matrix.</p>
+<p>Operators other than the Hamiltonian can be constructed by providing the corresponding <code class="docutils literal notranslate"><span class="pre">Op</span></code> or <code class="docutils literal notranslate"><span class="pre">OpSum</span></code>. Note that <code class="docutils literal notranslate"><span class="pre">model</span></code> still has to be provided, since it contains the basis set information.</p>
+<div class="nbinput docutils container">
 <div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[18]:
 </pre></div>
 </div>
-<div class="output_area docutils container">
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">mpo2</span> <span class="o">=</span> <span class="n">Mpo</span><span class="p">(</span><span class="n">model</span><span class="p">,</span> <span class="n">Op</span><span class="p">(</span><span class="s2">&quot;Z&quot;</span><span class="p">,</span> <span class="s2">&quot;spin&quot;</span><span class="p">))</span>
+</pre></div>
+</div>
+</div>
+<div class="nboutput nblast docutils container">
+<div class="prompt empty docutils container">
+</div>
+<div class="output_area stderr docutils container">
 <div class="highlight"><pre>
-&lt;class &#39;renormalizer.mps.mpo.Mpo&#39;&gt; with 1 sites
+2024-06-26 17:37:18,813[DEBUG] # of operator terms: 1
 </pre></div></div>
 </div>
+</section>
+<section id="MPO/MPS-manipulation">
+<h2><span class="section-number">2.3.5. </span>MPO/MPS manipulation<a class="headerlink" href="#MPO/MPS-manipulation" title="Permalink to this heading">#</a></h2>
+<p>Two MPSs can be added together, resulting in another MPS</p>
 <div class="nbinput docutils container">
 <div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[19]:
 </pre></div>
 </div>
-<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">mpo</span><span class="o">.</span><span class="n">todense</span><span class="p">()</span>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">mps</span> <span class="o">+</span> <span class="n">mps2</span>
 </pre></div>
 </div>
 </div>
@@ -865,31 +903,15 @@ Op(&#39;X Z&#39;, [0, 1], 0.25)
 </div>
 <div class="output_area docutils container">
 <div class="highlight"><pre>
-array([[0., 1.],
-       [1., 0.]])
+&lt;class &#39;renormalizer.mps.mps.Mps&#39;&gt; with 2 sites
 </pre></div></div>
 </div>
-<p>You may wonder</p>
-<ul class="simple">
-<li><p>What are the limitations for the model, in particular the operator terms, to construct MPO? For example, is nearest-neighbour interaction or at most two-body operator enforced?</p></li>
-<li><p>If any numerical compression is involved in the construction. If so, how to control the accuracy?</p></li>
-<li><p>What are the time cost of constructing MPO for an arbitrary model?</p></li>
-</ul>
-<p>The answer is: renormalizer offers a unique algorithm for exact and efficient MPO construction of arbitrary operators. It means</p>
-<ul class="simple">
-<li><p>There’s <strong>NO limitation</strong> for the model. Long-range interaction, three-body operators, anything you like.</p></li>
-<li><p>Numerical compression is not involved and the construction is <strong>exact</strong>.</p></li>
-<li><p>The construction time cost is neglegible for most models</p></li>
-</ul>
-<p>Additionally, we also guarantee that the constructed MPO is <strong>optimal</strong> in terms of bond dimension.</p>
-<p>For details of our algorithm, see <a class="reference external" href="https://aip.scitation.org/doi/10.1063/5.0018149">A general automatic method for optimal construction of matrix product operators using bipartite graph theory</a>.</p>
-<p>Renormalizer also offers a set of built-in models for fast construction of common models. Please refer to the API document for more details.</p>
+<p>MPO can apply on MPS, resulting in another MPS</p>
 <div class="nbinput docutils container">
 <div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[20]:
 </pre></div>
 </div>
-<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="kn">import</span> <span class="nn">renormalizer</span>
-<span class="p">[</span><span class="n">s</span> <span class="k">for</span> <span class="n">s</span> <span class="ow">in</span> <span class="nb">dir</span><span class="p">(</span><span class="n">renormalizer</span><span class="p">)</span> <span class="k">if</span> <span class="n">s</span><span class="o">.</span><span class="n">endswith</span><span class="p">(</span><span class="s2">&quot;Model&quot;</span><span class="p">)]</span>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">mpo</span> <span class="o">@</span> <span class="n">mps</span>
 </pre></div>
 </div>
 </div>
@@ -899,16 +921,62 @@ array([[0., 1.],
 </div>
 <div class="output_area docutils container">
 <div class="highlight"><pre>
-[&#39;HolsteinModel&#39;, &#39;Model&#39;, &#39;SpinBosonModel&#39;, &#39;TI1DModel&#39;]
+&lt;class &#39;renormalizer.mps.mps.Mps&#39;&gt; with 2 sites
 </pre></div></div>
 </div>
-<div class="nbinput nblast docutils container">
-<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[ ]:
+<p>This is equivalent to <code class="docutils literal notranslate"><span class="pre">mpo.apply(mps)</span></code></p>
+<div class="nbinput docutils container">
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[21]:
 </pre></div>
 </div>
-<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">mpo</span><span class="o">.</span><span class="n">apply</span><span class="p">(</span><span class="n">mps</span><span class="p">)</span><span class="o">.</span><span class="n">distance</span><span class="p">(</span><span class="n">mpo</span> <span class="o">@</span> <span class="n">mps</span><span class="p">)</span>
 </pre></div>
 </div>
+</div>
+<div class="nboutput nblast docutils container">
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[21]:
+</pre></div>
+</div>
+<div class="output_area docutils container">
+<div class="highlight"><pre>
+0.0
+</pre></div></div>
+</div>
+<p>Calculating expectation value between MPS and MPO <span class="math notranslate nohighlight">\(\langle \rm{MPS}|\rm{MPO}|MPS\rangle\)</span> using the <code class="docutils literal notranslate"><span class="pre">expectation</span></code> function</p>
+<div class="nbinput docutils container">
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[22]:
+</pre></div>
+</div>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">mps</span><span class="o">.</span><span class="n">expectation</span><span class="p">(</span><span class="n">mpo</span><span class="p">)</span>
+</pre></div>
+</div>
+</div>
+<div class="nboutput nblast docutils container">
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[22]:
+</pre></div>
+</div>
+<div class="output_area docutils container">
+<div class="highlight"><pre>
+2.89309731239322
+</pre></div></div>
+</div>
+<p>Calculating transition amplitudes <span class="math notranslate nohighlight">\(\langle \rm{MPS2}|\rm{MPO}|MPS\rangle\)</span> is also straight-forward</p>
+<div class="nbinput docutils container">
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[23]:
+</pre></div>
+</div>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">mps</span><span class="o">.</span><span class="n">expectation</span><span class="p">(</span><span class="n">mpo</span><span class="p">,</span> <span class="n">self_conj</span><span class="o">=</span><span class="n">mps2</span><span class="p">)</span>
+</pre></div>
+</div>
+</div>
+<div class="nboutput nblast docutils container">
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[23]:
+</pre></div>
+</div>
+<div class="output_area docutils container">
+<div class="highlight"><pre>
+0.3656142066119614
+</pre></div></div>
 </div>
 </section>
 </section>
@@ -918,23 +986,23 @@ array([[0., 1.],
       <footer>
         
         <div class="related-pages">
-          <a class="next-page" href="mps_mpo.html">
+          <a class="next-page" href="../time_evolution.html">
               <div class="page-info">
                 <div class="context">
                   <span>Next</span>
                 </div>
-                <div class="title"><span class="section-number">2.3. </span>MPS and MPO</div>
+                <div class="title"><span class="section-number">2.4. </span>Time Evolution Algorithms</div>
               </div>
               <svg class="furo-related-icon"><use href="#svg-arrow-right"></use></svg>
             </a>
-          <a class="prev-page" href="1D-Heisenberg.html">
+          <a class="prev-page" href="define_model.html">
               <svg class="furo-related-icon"><use href="#svg-arrow-right"></use></svg>
               <div class="page-info">
                 <div class="context">
                   <span>Previous</span>
                 </div>
                 
-                <div class="title"><span class="section-number">2.1. </span>Spin-1/2 1-D Heisenberg model</div>
+                <div class="title"><span class="section-number">2.2. </span>Define Your Model</div>
                 
               </div>
             </a>
@@ -970,15 +1038,16 @@ array([[0., 1.],
         <div class="toc-tree-container">
           <div class="toc-tree">
             <ul>
-<li><a class="reference internal" href="#">2.2. Define Your Model</a><ul>
-<li><a class="reference internal" href="#Overview">2.2.1. Overview</a></li>
-<li><a class="reference internal" href="#Op">2.2.2. <code class="docutils literal notranslate"><span class="pre">Op</span></code></a><ul>
-<li><a class="reference internal" href="#Basics">2.2.2.1. Basics</a></li>
-<li><a class="reference internal" href="#Operations-and-OpSum">2.2.2.2. Operations and <code class="docutils literal notranslate"><span class="pre">OpSum</span></code></a></li>
+<li><a class="reference internal" href="#">2.3. MPS and MPO</a><ul>
+<li><a class="reference internal" href="#Overview">2.3.1. Overview</a></li>
+<li><a class="reference internal" href="#The-spin-boson-model">2.3.2. The spin-boson model</a></li>
+<li><a class="reference internal" href="#Construct-MPS">2.3.3. Construct MPS</a><ul>
+<li><a class="reference internal" href="#Random-Initialization">2.3.3.1. Random Initialization</a></li>
+<li><a class="reference internal" href="#Hartree-product-state">2.3.3.2. Hartree product state</a></li>
 </ul>
 </li>
-<li><a class="reference internal" href="#BasisSet">2.2.3. <code class="docutils literal notranslate"><span class="pre">BasisSet</span></code></a></li>
-<li><a class="reference internal" href="#Model">2.2.4. <code class="docutils literal notranslate"><span class="pre">Model</span></code></a></li>
+<li><a class="reference internal" href="#Construct-MPO">2.3.4. Construct MPO</a></li>
+<li><a class="reference internal" href="#MPO/MPS-manipulation">2.3.5. MPO/MPS manipulation</a></li>
 </ul>
 </li>
 </ul>
