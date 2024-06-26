@@ -1,5 +1,5 @@
 from itertools import chain
-from typing import List, Sequence
+from typing import List, Sequence, Dict, Any
 
 import numpy as np
 from print_tree import print_tree
@@ -41,6 +41,19 @@ class Tree:
             return ret
 
         return recursion(self.root)
+
+    @staticmethod
+    def find_path(node1: NodeUnion, node2: NodeUnion) -> List[NodeUnion]:
+        """Find the path from node1 to node2. Not most efficient but simple to implement"""
+        assert node1 != node2
+        ancestors1 = node1.ancestors
+        ancestors2 = node2.ancestors
+        ancestors2_set = set(ancestors2)
+        common_ancestors = [ancestor for ancestor in ancestors1 if ancestor in ancestors2_set]
+        common_ancestor = common_ancestors[0]
+        path1 = ancestors1[:ancestors1.index(common_ancestor) + 1]
+        path2 = ancestors2[:ancestors2.index(common_ancestor)]
+        return path1 + path2[::-1]
 
     @property
     def size(self):
@@ -197,10 +210,27 @@ class BasisTree(Tree):
         if len(set(qn_size_list)) != 1:
             raise ValueError(f"Inconsistent quantum number size: {set(qn_size_list)}")
         self.qn_size: int = qn_size_list[0]
+
+        # map basis to node index
+        self.basis2idx: Dict[BasisSet, int] = {}
+        # map dof to node index
+        self.dof2idx: Dict[Any, int] = {}
+        # map dof to basis
+        self.dof2basis: Dict[Any, BasisSet] = {}
+        for i, node in enumerate(self.node_list):
+            for b in node.basis_sets:
+                self.basis2idx[b] = i
+                for d in b.dofs:
+                    self.dof2idx[d] = i
+                    self.dof2basis[d] = b
+
         # identity operator
         self.identity_op: Op = Op("I", self.root.dofs[0][0])
         # identity ttno
         self.identity_ttno = None
+        # dummy ttno. Same tree topology but only has dummy basis
+        # used as a dummy operator for calculating norm, etc
+        self.dummy_ttno = None
 
     def print(self, print_function=None):
         class print_tn_basis(print_tree):
@@ -218,6 +248,10 @@ class BasisTree(Tree):
     @property
     def basis_list(self) -> List[BasisSet]:
         return list(chain(*[n.basis_sets for n in self.node_list]))
+
+    @property
+    def dof_list(self) -> List[Any]:
+        return list(chain(*[b.dofs for b in self.basis_list]))
 
     @property
     def basis_list_postorder(self) -> List[BasisSet]:
