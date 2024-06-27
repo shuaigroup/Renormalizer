@@ -1,23 +1,35 @@
 Tutorial
 ********
 
-The following tutorials will start from a sample calculation for the ground state
-of the Heisenberg model, and then introduce the basic components of Renormalizer.
-
-You can skip to later practical topics if you're not interested in the mechanisms of tensor networks
-and Renormalizer.
-
+Basics of Renormalizer
+======================
 .. toctree::
-    tutorials/1D-Heisenberg.ipynb
     tutorials/define_model.ipynb
     tutorials/mps_mpo.ipynb
+    tutorials/compress_mps.ipynb
 
 ..
-    compress mps
+    setting quantum number
+    compress mps (done)
+    finding the ground state
     time evolution by hand forward Euler
     time evolutions in production
 
-Here are some more details about how to use the package
 
+Applications
+============
+.. toctree::
+    tutorials/1D-Heisenberg.ipynb
+
+..
+    Marcus inverted region?
+    Spin boson model, charge transport, spectra.
+
+
+Advanced Topics
+===============
 .. toctree::
     time_evolution.rst
+
+..
+
