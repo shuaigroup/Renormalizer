@@ -3,10 +3,10 @@
   <head><meta charset="utf-8"/>
     <meta name="viewport" content="width=device-width,initial-scale=1"/>
     <meta name="color-scheme" content="light dark"><meta name="generator" content="Docutils 0.19: https://docutils.sourceforge.io/" />
-<link rel="index" title="Index" href="../genindex.html" /><link rel="search" title="Search" href="../search.html" /><link rel="next" title="2.4. Time Evolution Algorithms" href="../time_evolution.html" /><link rel="prev" title="2.2. Define Your Model" href="define_model.html" />
+<link rel="index" title="Index" href="../genindex.html" /><link rel="search" title="Search" href="../search.html" /><link rel="next" title="Compressing MPS" href="compress_mps.html" /><link rel="prev" title="Define Your Model" href="define_model.html" />
 
     <meta name="generator" content="sphinx-5.3.0, furo 2022.09.29"/>
-        <title>2.3. MPS and MPO - Renormalizer 0.1.0 documentation</title>
+        <title>MPS and MPO - Renormalizer 0.1.0 documentation</title>
       <link rel="stylesheet" type="text/css" href="../_static/pygments.css" />
     <link rel="stylesheet" type="text/css" href="../_static/styles/furo.css?digest=d81277517bee4d6b0349d71bb2661d4890b5617c" />
     <link rel="stylesheet" type="text/css" href="../_static/styles/furo-extensions.css?digest=30d1aed668e5c3a91c3e3bf6a60b675221979f0e" />
@@ -155,25 +155,31 @@
 </form>
 <div id="searchbox"></div><div class="sidebar-scroll"><div class="sidebar-tree">
   <ul class="current">
-<li class="toctree-l1"><a class="reference internal" href="../install.html">1. Installation guide</a></li>
-<li class="toctree-l1 current has-children"><a class="reference internal" href="../tutorial.html">2. Tutorial</a><input checked="" class="toctree-checkbox" id="toctree-checkbox-1" name="toctree-checkbox-1" role="switch" type="checkbox"/><label for="toctree-checkbox-1"><div class="visually-hidden">Toggle child pages in navigation</div><i class="icon"><svg><use href="#svg-arrow-right"></use></svg></i></label><ul class="current">
-<li class="toctree-l2"><a class="reference internal" href="1D-Heisenberg.html">2.1. Spin-1/2 1-D Heisenberg model</a></li>
-<li class="toctree-l2"><a class="reference internal" href="define_model.html">2.2. Define Your Model</a></li>
-<li class="toctree-l2 current current-page"><a class="current reference internal" href="#">2.3. MPS and MPO</a></li>
-<li class="toctree-l2"><a class="reference internal" href="../time_evolution.html">2.4. Time Evolution Algorithms</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../install.html">Installation guide</a></li>
+<li class="toctree-l1 current has-children"><a class="reference internal" href="../tutorial.html">Basic Tutorials</a><input checked="" class="toctree-checkbox" id="toctree-checkbox-1" name="toctree-checkbox-1" role="switch" type="checkbox"/><label for="toctree-checkbox-1"><div class="visually-hidden">Toggle child pages in navigation</div><i class="icon"><svg><use href="#svg-arrow-right"></use></svg></i></label><ul class="current">
+<li class="toctree-l2"><a class="reference internal" href="define_model.html">Define Your Model</a></li>
+<li class="toctree-l2 current current-page"><a class="current reference internal" href="#">MPS and MPO</a></li>
+<li class="toctree-l2"><a class="reference internal" href="compress_mps.html">Compressing MPS</a></li>
 </ul>
 </li>
-<li class="toctree-l1"><a class="reference internal" href="../model.html">3. Model</a></li>
-<li class="toctree-l1"><a class="reference internal" href="../mps.html">4. Low Level Data Structure and Algorithms</a></li>
-<li class="toctree-l1"><a class="reference internal" href="../static.html">5. Static Eigenstate Method</a></li>
-<li class="toctree-l1"><a class="reference internal" href="../spectrum.html">6. spectra: absorption/emission spectrum at zero/finite temperature</a></li>
-<li class="toctree-l1"><a class="reference internal" href="../ct.html">7. Charge Transport</a></li>
-<li class="toctree-l1"><a class="reference internal" href="../cv.html">8. Frequency domain DMRG</a></li>
-<li class="toctree-l1"><a class="reference internal" href="../configs.html">9. Calculation Configurations</a></li>
-<li class="toctree-l1"><a class="reference internal" href="../sbm.html">10. Spin-Boson Model</a></li>
-<li class="toctree-l1"><a class="reference internal" href="../faq.html">11. Frequently Asked Questions</a></li>
-<li class="toctree-l1"><a class="reference internal" href="../develop.html">12. How to develop Renormalizer</a></li>
-<li class="toctree-l1"><a class="reference internal" href="../cite.html">13. How to cite</a></li>
+<li class="toctree-l1 has-children"><a class="reference internal" href="../applications.html">Application Tutorials</a><input class="toctree-checkbox" id="toctree-checkbox-2" name="toctree-checkbox-2" role="switch" type="checkbox"/><label for="toctree-checkbox-2"><div class="visually-hidden">Toggle child pages in navigation</div><i class="icon"><svg><use href="#svg-arrow-right"></use></svg></i></label><ul>
+<li class="toctree-l2"><a class="reference internal" href="1D-Heisenberg.html">Ground state of the Heisenberg model</a></li>
+</ul>
+</li>
+<li class="toctree-l1 has-children"><a class="reference internal" href="../api.html">API Reference</a><input class="toctree-checkbox" id="toctree-checkbox-3" name="toctree-checkbox-3" role="switch" type="checkbox"/><label for="toctree-checkbox-3"><div class="visually-hidden">Toggle child pages in navigation</div><i class="icon"><svg><use href="#svg-arrow-right"></use></svg></i></label><ul>
+<li class="toctree-l2"><a class="reference internal" href="../model.html">Model</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../mps.html">Low Level Data Structure and Algorithms</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../static.html">Static Eigenstate Method</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../spectrum.html">spectra: absorption/emission spectrum at zero/finite temperature</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../ct.html">Charge Transport</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../cv.html">Frequency domain DMRG</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../sbm.html">Spin-Boson Model</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../configs.html">Calculation Configurations</a></li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="../faq.html">Frequently Asked Questions</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../develop.html">How to develop Renormalizer</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../cite.html">How to cite</a></li>
 </ul>
 
 </div>
@@ -466,23 +472,13 @@ div.rendered_html tbody tr:hover {
 }
 </style>
 <section id="MPS-and-MPO">
-<h1><span class="section-number">2.3. </span>MPS and MPO<a class="headerlink" href="#MPS-and-MPO" title="Permalink to this heading">#</a></h1>
+<h1>MPS and MPO<a class="headerlink" href="#MPS-and-MPO" title="Permalink to this heading">#</a></h1>
 <section id="Overview">
-<h2><span class="section-number">2.3.1. </span>Overview<a class="headerlink" href="#Overview" title="Permalink to this heading">#</a></h2>
+<h2>Overview<a class="headerlink" href="#Overview" title="Permalink to this heading">#</a></h2>
 <p>In this notebook we will introduce the construction and manipulation of MPS and MPO. We will rely on <code class="docutils literal notranslate"><span class="pre">Op</span></code>, <code class="docutils literal notranslate"><span class="pre">BasisSet</span></code> and <code class="docutils literal notranslate"><span class="pre">Model</span></code> from the previous tutorial.</p>
-<div class="nbinput nblast docutils container">
-<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[1]:
-</pre></div>
-</div>
-<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="c1"># add renormalizer to path</span>
-<span class="kn">import</span> <span class="nn">sys</span>
-<span class="n">sys</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="s2">&quot;..&quot;</span><span class="p">)</span>
-</pre></div>
-</div>
-</div>
 </section>
 <section id="The-spin-boson-model">
-<h2><span class="section-number">2.3.2. </span>The spin-boson model<a class="headerlink" href="#The-spin-boson-model" title="Permalink to this heading">#</a></h2>
+<h2>The spin-boson model<a class="headerlink" href="#The-spin-boson-model" title="Permalink to this heading">#</a></h2>
 <p>In this notebook we will consider the MPS and MPO based on a 1-mode spin-boson model.</p>
 <div class="math-wrapper docutils container">
 <div class="math notranslate nohighlight">
@@ -491,7 +487,7 @@ div.rendered_html tbody tr:hover {
 </div>
 <p>The spin degree of freedom is labeled as a str <code class="docutils literal notranslate"><span class="pre">&quot;spin&quot;</span></code> and the boson degree of freedom is labeled as a str <code class="docutils literal notranslate"><span class="pre">&quot;boson&quot;</span></code>. We consider <span class="math notranslate nohighlight">\(\epsilon=0\)</span>, <span class="math notranslate nohighlight">\(\Delta=1\)</span>, <span class="math notranslate nohighlight">\(\omega=1\)</span> and <span class="math notranslate nohighlight">\(g=0.5\)</span></p>
 <div class="nbinput docutils container">
-<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[2]:
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[1]:
 </pre></div>
 </div>
 <div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="kn">from</span> <span class="nn">renormalizer</span> <span class="kn">import</span> <span class="n">Op</span><span class="p">,</span> <span class="n">BasisHalfSpin</span><span class="p">,</span> <span class="n">BasisSHO</span><span class="p">,</span> <span class="n">Model</span>
@@ -508,18 +504,16 @@ div.rendered_html tbody tr:hover {
 </div>
 <div class="output_area stderr docutils container">
 <div class="highlight"><pre>
-2024-06-26 17:37:18,655[INFO] Use NumPy as backend
-2024-06-26 17:37:18,656[INFO] numpy random seed is 9012
-2024-06-26 17:37:18,657[INFO] random seed is 1092
-fatal: not a git repository (or any parent up to mount point /)
-Stopping at filesystem boundary (GIT_DISCOVERY_ACROSS_FILESYSTEM not set).
-2024-06-26 17:37:18,661[INFO] Git Commit Hash: Unknown
-2024-06-26 17:37:18,661[INFO] use 64 bits
+2024-06-27 08:31:04,654[INFO] Use NumPy as backend
+2024-06-27 08:31:04,655[INFO] numpy random seed is 9012
+2024-06-27 08:31:04,656[INFO] random seed is 1092
+2024-06-27 08:31:04,666[INFO] Git Commit Hash: 2411309fc2e974771bc000608628d8790dc54a36
+2024-06-27 08:31:04,667[INFO] use 64 bits
 </pre></div></div>
 </div>
 <p>First, construct all terms in the Hamiltonian in a <code class="docutils literal notranslate"><span class="pre">list</span></code> or <code class="docutils literal notranslate"><span class="pre">OpSum</span></code>.</p>
 <div class="nbinput docutils container">
-<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[3]:
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[2]:
 </pre></div>
 </div>
 <div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">ham_terms</span> <span class="o">=</span> <span class="p">[</span>
@@ -533,7 +527,7 @@ Stopping at filesystem boundary (GIT_DISCOVERY_ACROSS_FILESYSTEM not set).
 </div>
 </div>
 <div class="nboutput nblast docutils container">
-<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[3]:
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[2]:
 </pre></div>
 </div>
 <div class="output_area docutils container">
@@ -546,7 +540,7 @@ Stopping at filesystem boundary (GIT_DISCOVERY_ACROSS_FILESYSTEM not set).
 </div>
 <p>Then, define the basis for the model. Note that the boson mode is described by simple harmonic oscillator eigenbasis (<code class="docutils literal notranslate"><span class="pre">BasisSHO</span></code>) and the number of basis is truncated to 8. This means that the maximum number of bosons for the mode is 8</p>
 <div class="nbinput docutils container">
-<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[4]:
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[3]:
 </pre></div>
 </div>
 <div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">basis</span> <span class="o">=</span> <span class="p">[</span><span class="n">BasisHalfSpin</span><span class="p">(</span><span class="s2">&quot;spin&quot;</span><span class="p">),</span> <span class="n">BasisSHO</span><span class="p">(</span><span class="s2">&quot;boson&quot;</span><span class="p">,</span> <span class="n">omega</span><span class="o">=</span><span class="n">omega</span><span class="p">,</span> <span class="n">nbas</span><span class="o">=</span><span class="mi">8</span><span class="p">)]</span>
@@ -555,7 +549,7 @@ Stopping at filesystem boundary (GIT_DISCOVERY_ACROSS_FILESYSTEM not set).
 </div>
 </div>
 <div class="nboutput nblast docutils container">
-<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[4]:
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[3]:
 </pre></div>
 </div>
 <div class="output_area docutils container">
@@ -566,7 +560,7 @@ Stopping at filesystem boundary (GIT_DISCOVERY_ACROSS_FILESYSTEM not set).
 </div>
 <p>Checkout some of the operators defined by the basis</p>
 <div class="nbinput docutils container">
-<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[5]:
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[4]:
 </pre></div>
 </div>
 <div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">basis</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span><span class="o">.</span><span class="n">op_mat</span><span class="p">(</span><span class="s2">&quot;Z&quot;</span><span class="p">)</span>
@@ -574,7 +568,7 @@ Stopping at filesystem boundary (GIT_DISCOVERY_ACROSS_FILESYSTEM not set).
 </div>
 </div>
 <div class="nboutput nblast docutils container">
-<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[5]:
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[4]:
 </pre></div>
 </div>
 <div class="output_area docutils container">
@@ -584,7 +578,7 @@ array([[ 1.,  0.],
 </pre></div></div>
 </div>
 <div class="nbinput docutils container">
-<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[6]:
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[5]:
 </pre></div>
 </div>
 <div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">basis</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span><span class="o">.</span><span class="n">op_mat</span><span class="p">(</span><span class="sa">r</span><span class="s2">&quot;b^\dagger b&quot;</span><span class="p">)</span>
@@ -592,7 +586,7 @@ array([[ 1.,  0.],
 </div>
 </div>
 <div class="nboutput nblast docutils container">
-<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[6]:
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[5]:
 </pre></div>
 </div>
 <div class="output_area docutils container">
@@ -609,7 +603,7 @@ array([[0., 0., 0., 0., 0., 0., 0., 0.],
 </div>
 <p>Lastly, build our model with <code class="docutils literal notranslate"><span class="pre">Model</span></code></p>
 <div class="nbinput nblast docutils container">
-<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[7]:
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[6]:
 </pre></div>
 </div>
 <div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">model</span> <span class="o">=</span> <span class="n">Model</span><span class="p">(</span><span class="n">basis</span><span class="p">,</span> <span class="n">ham_terms</span><span class="p">)</span>
@@ -618,10 +612,10 @@ array([[0., 0., 0., 0., 0., 0., 0., 0.],
 </div>
 </section>
 <section id="Construct-MPS">
-<h2><span class="section-number">2.3.3. </span>Construct MPS<a class="headerlink" href="#Construct-MPS" title="Permalink to this heading">#</a></h2>
+<h2>Construct MPS<a class="headerlink" href="#Construct-MPS" title="Permalink to this heading">#</a></h2>
 <p>The matrix product state data structure is implemented in the <code class="docutils literal notranslate"><span class="pre">Mps</span></code> class</p>
 <div class="nbinput nblast docutils container">
-<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[8]:
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[7]:
 </pre></div>
 </div>
 <div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="kn">from</span> <span class="nn">renormalizer</span> <span class="kn">import</span> <span class="n">Mps</span>
@@ -630,12 +624,12 @@ array([[0., 0., 0., 0., 0., 0., 0., 0.],
 </div>
 <p>Most commonly, MPS is initialized by two ways. The first is random initialization, which is usually followed by ground state/excited state search by the DMRG algorithm. The second is Hartree product state, which is usually followed by time evolution.</p>
 <section id="Random-Initialization">
-<h3><span class="section-number">2.3.3.1. </span>Random Initialization<a class="headerlink" href="#Random-Initialization" title="Permalink to this heading">#</a></h3>
+<h3>Random Initialization<a class="headerlink" href="#Random-Initialization" title="Permalink to this heading">#</a></h3>
 <p><code class="docutils literal notranslate"><span class="pre">Mps.random</span></code> requires the input of a <code class="docutils literal notranslate"><span class="pre">model</span></code>. Additionally, the user must also specify the targeted total quantum number <code class="docutils literal notranslate"><span class="pre">qntot</span></code> and the maximum bond dimension <code class="docutils literal notranslate"><span class="pre">m_max</span></code>.</p>
 <p>Since the spin-boson model does not conserve any quantum number, all states/operators are considered to have quantum number 0 in Renormalizer. Thus, the total quantum number is set to 0.</p>
 <p>The maximum bond dimension is set to 2 since a Schmidt decomposition for the 1-mode spin-boson model yields only 2 singular values.</p>
 <div class="nbinput docutils container">
-<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[9]:
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[8]:
 </pre></div>
 </div>
 <div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">mps</span> <span class="o">=</span> <span class="n">Mps</span><span class="o">.</span><span class="n">random</span><span class="p">(</span><span class="n">model</span><span class="p">,</span> <span class="n">qntot</span><span class="o">=</span><span class="mi">0</span><span class="p">,</span> <span class="n">m_max</span><span class="o">=</span><span class="mi">2</span><span class="p">)</span>
@@ -644,7 +638,7 @@ array([[0., 0., 0., 0., 0., 0., 0., 0.],
 </div>
 </div>
 <div class="nboutput nblast docutils container">
-<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[9]:
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[8]:
 </pre></div>
 </div>
 <div class="output_area docutils container">
@@ -654,7 +648,7 @@ array([[0., 0., 0., 0., 0., 0., 0., 0.],
 </div>
 <p>The individual local matrices for the MPS can be accessed via simple indexing</p>
 <div class="nbinput docutils container">
-<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[10]:
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[9]:
 </pre></div>
 </div>
 <div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">mps</span><span class="p">[</span><span class="mi">0</span><span class="p">],</span> <span class="n">mps</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span>
@@ -662,18 +656,18 @@ array([[0., 0., 0., 0., 0., 0., 0., 0.],
 </div>
 </div>
 <div class="nboutput nblast docutils container">
-<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[10]:
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[9]:
 </pre></div>
 </div>
 <div class="output_area docutils container">
 <div class="highlight"><pre>
-(&lt;Matrix at 0x7f8a62cd8280 (1, 2, 2) float64&gt;,
- &lt;Matrix at 0x7f8a62cd8160 (2, 8, 1) float64&gt;)
+(&lt;Matrix at 0x7f4789e54af0 (1, 2, 2) float64&gt;,
+ &lt;Matrix at 0x7f4789e54a60 (2, 8, 1) float64&gt;)
 </pre></div></div>
 </div>
 <p><code class="docutils literal notranslate"><span class="pre">Matrix</span></code> can be considered as a wrapper for <code class="docutils literal notranslate"><span class="pre">np.ndarray</span></code> with more metadata. The indices of the array are left virtual index, the physical index and the right virtual index. The underlaying matrix can be accessed via the <code class="docutils literal notranslate"><span class="pre">array</span></code> attribute.</p>
 <div class="nbinput docutils container">
-<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[11]:
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[10]:
 </pre></div>
 </div>
 <div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">mps</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span><span class="o">.</span><span class="n">array</span><span class="p">,</span> <span class="n">mps</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span><span class="o">.</span><span class="n">array</span>
@@ -681,7 +675,7 @@ array([[0., 0., 0., 0., 0., 0., 0., 0.],
 </div>
 </div>
 <div class="nboutput nblast docutils container">
-<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[11]:
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[10]:
 </pre></div>
 </div>
 <div class="output_area docutils container">
@@ -709,7 +703,7 @@ array([[0., 0., 0., 0., 0., 0., 0., 0.],
 </div>
 <p>Conceptually, <code class="docutils literal notranslate"><span class="pre">Mps</span></code> can be considered as a sparse representation for a wavefunction/vector</p>
 <div class="nbinput docutils container">
-<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[12]:
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[11]:
 </pre></div>
 </div>
 <div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">mps</span><span class="o">.</span><span class="n">todense</span><span class="p">()</span>
@@ -717,7 +711,7 @@ array([[0., 0., 0., 0., 0., 0., 0., 0.],
 </div>
 </div>
 <div class="nboutput nblast docutils container">
-<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[12]:
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[11]:
 </pre></div>
 </div>
 <div class="output_area docutils container">
@@ -730,7 +724,7 @@ array([ 0.41298208, -0.00752657,  0.17205047,  0.13905035,  0.20172165,
 </div>
 <p><code class="docutils literal notranslate"><span class="pre">Mps</span></code> has a lot of utilities to calculate the properties of the wavefunction. For more of them, please refer to the API reference.</p>
 <div class="nbinput docutils container">
-<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[13]:
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[12]:
 </pre></div>
 </div>
 <div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">mps</span><span class="o">.</span><span class="n">norm</span>
@@ -738,7 +732,7 @@ array([ 0.41298208, -0.00752657,  0.17205047,  0.13905035,  0.20172165,
 </div>
 </div>
 <div class="nboutput nblast docutils container">
-<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[13]:
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[12]:
 </pre></div>
 </div>
 <div class="output_area docutils container">
@@ -747,7 +741,7 @@ array([ 0.41298208, -0.00752657,  0.17205047,  0.13905035,  0.20172165,
 </pre></div></div>
 </div>
 <div class="nbinput docutils container">
-<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[14]:
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[13]:
 </pre></div>
 </div>
 <div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">mps</span><span class="o">.</span><span class="n">calc_1site_rdm</span><span class="p">()</span>
@@ -755,7 +749,7 @@ array([ 0.41298208, -0.00752657,  0.17205047,  0.13905035,  0.20172165,
 </div>
 </div>
 <div class="nboutput nblast docutils container">
-<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[14]:
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[13]:
 </pre></div>
 </div>
 <div class="output_area docutils container">
@@ -780,17 +774,30 @@ array([ 0.41298208, -0.00752657,  0.17205047,  0.13905035,  0.20172165,
           0.11660507, -0.10439207,  0.1031661 ]])}
 </pre></div></div>
 </div>
-</section>
-<section id="Hartree-product-state">
-<h3><span class="section-number">2.3.3.2. </span>Hartree product state<a class="headerlink" href="#Hartree-product-state" title="Permalink to this heading">#</a></h3>
-<p><code class="docutils literal notranslate"><span class="pre">Mps.hartree_product_state</span></code> also requires the input of a <code class="docutils literal notranslate"><span class="pre">model</span></code>. The state of each degrees of freedom can be specified through the <code class="docutils literal notranslate"><span class="pre">condition</span></code> argument. The degrees of freedom that are not specified through <code class="docutils literal notranslate"><span class="pre">condition</span></code> will be set to the ground state, i.e., <span class="math notranslate nohighlight">\([1, 0, 0, \dots, 0]\)</span>.</p>
+<div class="nbinput docutils container">
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[14]:
+</pre></div>
+</div>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="c1"># virtual bond dimension</span>
+<span class="n">mps</span><span class="o">.</span><span class="n">bond_dims</span>
+</pre></div>
+</div>
+</div>
+<div class="nboutput nblast docutils container">
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[14]:
+</pre></div>
+</div>
+<div class="output_area docutils container">
+<div class="highlight"><pre>
+[1, 2, 1]
+</pre></div></div>
+</div>
 <div class="nbinput docutils container">
 <div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[15]:
 </pre></div>
 </div>
-<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="kn">import</span> <span class="nn">numpy</span> <span class="k">as</span> <span class="nn">np</span>
-<span class="n">mps2</span> <span class="o">=</span> <span class="n">Mps</span><span class="o">.</span><span class="n">hartree_product_state</span><span class="p">(</span><span class="n">model</span><span class="p">,</span> <span class="n">condition</span><span class="o">=</span><span class="p">{</span><span class="s2">&quot;spin&quot;</span><span class="p">:[</span><span class="mi">1</span><span class="o">/</span><span class="n">np</span><span class="o">.</span><span class="n">sqrt</span><span class="p">(</span><span class="mi">2</span><span class="p">),</span> <span class="mi">1</span><span class="o">/</span><span class="n">np</span><span class="o">.</span><span class="n">sqrt</span><span class="p">(</span><span class="mi">2</span><span class="p">)]})</span>
-<span class="n">mps2</span>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="c1"># physical bond dimension</span>
+<span class="n">mps</span><span class="o">.</span><span class="n">pbond_dims</span>
 </pre></div>
 </div>
 </div>
@@ -800,11 +807,34 @@ array([ 0.41298208, -0.00752657,  0.17205047,  0.13905035,  0.20172165,
 </div>
 <div class="output_area docutils container">
 <div class="highlight"><pre>
+[2, 8]
+</pre></div></div>
+</div>
+</section>
+<section id="Hartree-product-state">
+<h3>Hartree product state<a class="headerlink" href="#Hartree-product-state" title="Permalink to this heading">#</a></h3>
+<p><code class="docutils literal notranslate"><span class="pre">Mps.hartree_product_state</span></code> also requires the input of a <code class="docutils literal notranslate"><span class="pre">model</span></code>. The state of each degrees of freedom can be specified through the <code class="docutils literal notranslate"><span class="pre">condition</span></code> argument. The degrees of freedom that are not specified through <code class="docutils literal notranslate"><span class="pre">condition</span></code> will be set to the ground state, i.e., <span class="math notranslate nohighlight">\([1, 0, 0, \dots, 0]\)</span>.</p>
+<div class="nbinput docutils container">
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[16]:
+</pre></div>
+</div>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="kn">import</span> <span class="nn">numpy</span> <span class="k">as</span> <span class="nn">np</span>
+<span class="n">mps2</span> <span class="o">=</span> <span class="n">Mps</span><span class="o">.</span><span class="n">hartree_product_state</span><span class="p">(</span><span class="n">model</span><span class="p">,</span> <span class="n">condition</span><span class="o">=</span><span class="p">{</span><span class="s2">&quot;spin&quot;</span><span class="p">:[</span><span class="mi">1</span><span class="o">/</span><span class="n">np</span><span class="o">.</span><span class="n">sqrt</span><span class="p">(</span><span class="mi">2</span><span class="p">),</span> <span class="mi">1</span><span class="o">/</span><span class="n">np</span><span class="o">.</span><span class="n">sqrt</span><span class="p">(</span><span class="mi">2</span><span class="p">)]})</span>
+<span class="n">mps2</span>
+</pre></div>
+</div>
+</div>
+<div class="nboutput nblast docutils container">
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[16]:
+</pre></div>
+</div>
+<div class="output_area docutils container">
+<div class="highlight"><pre>
 &lt;class &#39;renormalizer.mps.mps.Mps&#39;&gt; with 2 sites
 </pre></div></div>
 </div>
 <div class="nbinput docutils container">
-<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[16]:
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[17]:
 </pre></div>
 </div>
 <div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">mps2</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span><span class="o">.</span><span class="n">array</span><span class="p">,</span> <span class="n">mps2</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span><span class="o">.</span><span class="n">array</span>
@@ -812,7 +842,7 @@ array([ 0.41298208, -0.00752657,  0.17205047,  0.13905035,  0.20172165,
 </div>
 </div>
 <div class="nboutput nblast docutils container">
-<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[16]:
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[17]:
 </pre></div>
 </div>
 <div class="output_area docutils container">
@@ -832,10 +862,10 @@ array([ 0.41298208, -0.00752657,  0.17205047,  0.13905035,  0.20172165,
 </section>
 </section>
 <section id="Construct-MPO">
-<h2><span class="section-number">2.3.4. </span>Construct MPO<a class="headerlink" href="#Construct-MPO" title="Permalink to this heading">#</a></h2>
+<h2>Construct MPO<a class="headerlink" href="#Construct-MPO" title="Permalink to this heading">#</a></h2>
 <p>As described in the previous section, Renormalizer is able to exactly construct the most compact MPO exactly. By feeding the model into <code class="docutils literal notranslate"><span class="pre">Mpo</span></code>, the Hamiltonian is constructed as MPO</p>
 <div class="nbinput docutils container">
-<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[17]:
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[18]:
 </pre></div>
 </div>
 <div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="kn">from</span> <span class="nn">renormalizer</span> <span class="kn">import</span> <span class="n">Mpo</span>
@@ -850,27 +880,63 @@ array([ 0.41298208, -0.00752657,  0.17205047,  0.13905035,  0.20172165,
 </div>
 <div class="output_area stderr docutils container">
 <div class="highlight"><pre>
-2024-06-26 17:37:18,798[DEBUG] # of operator terms: 3
-2024-06-26 17:37:18,799[DEBUG] symbolic mpo algorithm: Hopcroft-Karp
-2024-06-26 17:37:18,800[DEBUG] Input operator terms: 3
-2024-06-26 17:37:18,802[DEBUG] After combination of the same terms: 3
+2024-06-27 08:31:04,823[DEBUG] # of operator terms: 3
+2024-06-27 08:31:04,824[DEBUG] symbolic mpo algorithm: qr
+2024-06-27 08:31:04,825[DEBUG] Input operator terms: 3
+2024-06-27 08:31:04,827[DEBUG] After combination of the same terms: 3
 </pre></div></div>
 </div>
 <div class="nboutput nblast docutils container">
-<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[17]:
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[18]:
 </pre></div>
 </div>
 <div class="output_area docutils container">
 <div class="highlight"><pre>
-(&lt;Matrix at 0x7f8a62cd85b0 (1, 2, 2, 3) float64&gt;,
- &lt;Matrix at 0x7f8a62cd9ab0 (3, 8, 8, 1) float64&gt;)
+(&lt;Matrix at 0x7f47a8942610 (1, 2, 2, 3) float64&gt;,
+ &lt;Matrix at 0x7f4789e54460 (3, 8, 8, 1) float64&gt;)
 </pre></div></div>
 </div>
 <p>Here the logging outputs that there are 3 terms in the Hamiltonian, since <span class="math notranslate nohighlight">\(\hat \sigma_z\)</span> with coefficient 0 is dropped automatically.</p>
-<p>Similar to MPS, it is sometimes conceptionally convenient to consider MPO as a sparse representation of quantum operator/matrix.</p>
+<p>Similar to MPS, it is sometimes conceptionally convenient to consider MPO as a sparse representation of quantum operator/matrix. The interface of MPO is also similar to MPS.</p>
+<div class="nbinput docutils container">
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[19]:
+</pre></div>
+</div>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="c1"># converting to dense operator/matrix</span>
+<span class="n">mpo</span><span class="o">.</span><span class="n">todense</span><span class="p">()</span><span class="o">.</span><span class="n">shape</span>
+</pre></div>
+</div>
+</div>
+<div class="nboutput nblast docutils container">
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[19]:
+</pre></div>
+</div>
+<div class="output_area docutils container">
+<div class="highlight"><pre>
+(16, 16)
+</pre></div></div>
+</div>
+<div class="nbinput docutils container">
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[20]:
+</pre></div>
+</div>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="c1"># virtual bond dimension</span>
+<span class="n">mpo</span><span class="o">.</span><span class="n">bond_dims</span>
+</pre></div>
+</div>
+</div>
+<div class="nboutput nblast docutils container">
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[20]:
+</pre></div>
+</div>
+<div class="output_area docutils container">
+<div class="highlight"><pre>
+[1, 3, 1]
+</pre></div></div>
+</div>
 <p>Operators other than the Hamiltonian can be constructed by providing the corresponding <code class="docutils literal notranslate"><span class="pre">Op</span></code> or <code class="docutils literal notranslate"><span class="pre">OpSum</span></code>. Note that <code class="docutils literal notranslate"><span class="pre">model</span></code> still has to be provided, since it contains the basis set information.</p>
 <div class="nbinput docutils container">
-<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[18]:
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[21]:
 </pre></div>
 </div>
 <div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">mpo2</span> <span class="o">=</span> <span class="n">Mpo</span><span class="p">(</span><span class="n">model</span><span class="p">,</span> <span class="n">Op</span><span class="p">(</span><span class="s2">&quot;Z&quot;</span><span class="p">,</span> <span class="s2">&quot;spin&quot;</span><span class="p">))</span>
@@ -882,15 +948,15 @@ array([ 0.41298208, -0.00752657,  0.17205047,  0.13905035,  0.20172165,
 </div>
 <div class="output_area stderr docutils container">
 <div class="highlight"><pre>
-2024-06-26 17:37:18,813[DEBUG] # of operator terms: 1
+2024-06-27 08:31:04,850[DEBUG] # of operator terms: 1
 </pre></div></div>
 </div>
 </section>
 <section id="MPO/MPS-manipulation">
-<h2><span class="section-number">2.3.5. </span>MPO/MPS manipulation<a class="headerlink" href="#MPO/MPS-manipulation" title="Permalink to this heading">#</a></h2>
+<h2>MPO/MPS manipulation<a class="headerlink" href="#MPO/MPS-manipulation" title="Permalink to this heading">#</a></h2>
 <p>Two MPSs can be added together, resulting in another MPS</p>
 <div class="nbinput docutils container">
-<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[19]:
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[22]:
 </pre></div>
 </div>
 <div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">mps</span> <span class="o">+</span> <span class="n">mps2</span>
@@ -898,7 +964,7 @@ array([ 0.41298208, -0.00752657,  0.17205047,  0.13905035,  0.20172165,
 </div>
 </div>
 <div class="nboutput nblast docutils container">
-<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[19]:
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[22]:
 </pre></div>
 </div>
 <div class="output_area docutils container">
@@ -908,7 +974,7 @@ array([ 0.41298208, -0.00752657,  0.17205047,  0.13905035,  0.20172165,
 </div>
 <p>MPO can apply on MPS, resulting in another MPS</p>
 <div class="nbinput docutils container">
-<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[20]:
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[23]:
 </pre></div>
 </div>
 <div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">mpo</span> <span class="o">@</span> <span class="n">mps</span>
@@ -916,7 +982,7 @@ array([ 0.41298208, -0.00752657,  0.17205047,  0.13905035,  0.20172165,
 </div>
 </div>
 <div class="nboutput nblast docutils container">
-<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[20]:
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[23]:
 </pre></div>
 </div>
 <div class="output_area docutils container">
@@ -926,7 +992,7 @@ array([ 0.41298208, -0.00752657,  0.17205047,  0.13905035,  0.20172165,
 </div>
 <p>This is equivalent to <code class="docutils literal notranslate"><span class="pre">mpo.apply(mps)</span></code></p>
 <div class="nbinput docutils container">
-<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[21]:
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[24]:
 </pre></div>
 </div>
 <div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">mpo</span><span class="o">.</span><span class="n">apply</span><span class="p">(</span><span class="n">mps</span><span class="p">)</span><span class="o">.</span><span class="n">distance</span><span class="p">(</span><span class="n">mpo</span> <span class="o">@</span> <span class="n">mps</span><span class="p">)</span>
@@ -934,7 +1000,7 @@ array([ 0.41298208, -0.00752657,  0.17205047,  0.13905035,  0.20172165,
 </div>
 </div>
 <div class="nboutput nblast docutils container">
-<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[21]:
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[24]:
 </pre></div>
 </div>
 <div class="output_area docutils container">
@@ -944,7 +1010,7 @@ array([ 0.41298208, -0.00752657,  0.17205047,  0.13905035,  0.20172165,
 </div>
 <p>Calculating expectation value between MPS and MPO <span class="math notranslate nohighlight">\(\langle \rm{MPS}|\rm{MPO}|MPS\rangle\)</span> using the <code class="docutils literal notranslate"><span class="pre">expectation</span></code> function</p>
 <div class="nbinput docutils container">
-<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[22]:
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[25]:
 </pre></div>
 </div>
 <div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">mps</span><span class="o">.</span><span class="n">expectation</span><span class="p">(</span><span class="n">mpo</span><span class="p">)</span>
@@ -952,7 +1018,7 @@ array([ 0.41298208, -0.00752657,  0.17205047,  0.13905035,  0.20172165,
 </div>
 </div>
 <div class="nboutput nblast docutils container">
-<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[22]:
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[25]:
 </pre></div>
 </div>
 <div class="output_area docutils container">
@@ -962,7 +1028,7 @@ array([ 0.41298208, -0.00752657,  0.17205047,  0.13905035,  0.20172165,
 </div>
 <p>Calculating transition amplitudes <span class="math notranslate nohighlight">\(\langle \rm{MPS2}|\rm{MPO}|MPS\rangle\)</span> is also straight-forward</p>
 <div class="nbinput docutils container">
-<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[23]:
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[26]:
 </pre></div>
 </div>
 <div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">mps</span><span class="o">.</span><span class="n">expectation</span><span class="p">(</span><span class="n">mpo</span><span class="p">,</span> <span class="n">self_conj</span><span class="o">=</span><span class="n">mps2</span><span class="p">)</span>
@@ -970,7 +1036,7 @@ array([ 0.41298208, -0.00752657,  0.17205047,  0.13905035,  0.20172165,
 </div>
 </div>
 <div class="nboutput nblast docutils container">
-<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[23]:
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[26]:
 </pre></div>
 </div>
 <div class="output_area docutils container">
@@ -986,12 +1052,12 @@ array([ 0.41298208, -0.00752657,  0.17205047,  0.13905035,  0.20172165,
       <footer>
         
         <div class="related-pages">
-          <a class="next-page" href="../time_evolution.html">
+          <a class="next-page" href="compress_mps.html">
               <div class="page-info">
                 <div class="context">
                   <span>Next</span>
                 </div>
-                <div class="title"><span class="section-number">2.4. </span>Time Evolution Algorithms</div>
+                <div class="title">Compressing MPS</div>
               </div>
               <svg class="furo-related-icon"><use href="#svg-arrow-right"></use></svg>
             </a>
@@ -1002,7 +1068,7 @@ array([ 0.41298208, -0.00752657,  0.17205047,  0.13905035,  0.20172165,
                   <span>Previous</span>
                 </div>
                 
-                <div class="title"><span class="section-number">2.2. </span>Define Your Model</div>
+                <div class="title">Define Your Model</div>
                 
               </div>
             </a>
@@ -1038,16 +1104,16 @@ array([ 0.41298208, -0.00752657,  0.17205047,  0.13905035,  0.20172165,
         <div class="toc-tree-container">
           <div class="toc-tree">
             <ul>
-<li><a class="reference internal" href="#">2.3. MPS and MPO</a><ul>
-<li><a class="reference internal" href="#Overview">2.3.1. Overview</a></li>
-<li><a class="reference internal" href="#The-spin-boson-model">2.3.2. The spin-boson model</a></li>
-<li><a class="reference internal" href="#Construct-MPS">2.3.3. Construct MPS</a><ul>
-<li><a class="reference internal" href="#Random-Initialization">2.3.3.1. Random Initialization</a></li>
-<li><a class="reference internal" href="#Hartree-product-state">2.3.3.2. Hartree product state</a></li>
+<li><a class="reference internal" href="#">MPS and MPO</a><ul>
+<li><a class="reference internal" href="#Overview">Overview</a></li>
+<li><a class="reference internal" href="#The-spin-boson-model">The spin-boson model</a></li>
+<li><a class="reference internal" href="#Construct-MPS">Construct MPS</a><ul>
+<li><a class="reference internal" href="#Random-Initialization">Random Initialization</a></li>
+<li><a class="reference internal" href="#Hartree-product-state">Hartree product state</a></li>
 </ul>
 </li>
-<li><a class="reference internal" href="#Construct-MPO">2.3.4. Construct MPO</a></li>
-<li><a class="reference internal" href="#MPO/MPS-manipulation">2.3.5. MPO/MPS manipulation</a></li>
+<li><a class="reference internal" href="#Construct-MPO">Construct MPO</a></li>
+<li><a class="reference internal" href="#MPO/MPS-manipulation">MPO/MPS manipulation</a></li>
 </ul>
 </li>
 </ul>
