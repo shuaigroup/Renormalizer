@@ -1,0 +1,46 @@
+name: Build and Deploy Document
+on:
+  push:
+    branches:
+      - master
+permissions:
+  contents: write
+jobs:
+  build-and-deploy:
+    concurrency: ci-${{ github.ref }}
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout 🛎️
+        uses: actions/checkout@v4
+
+      - name: install openblas
+        run: |
+            sudo apt-get update
+            sudo apt-get -y install libblas-dev liblapack-dev
+      - name: Set up Python
+        uses: actions/setup-python@v4
+        with:
+          python-version: 3.8
+          cache: "pip"
+
+      - name: install dependencies
+        run: |
+          python -m pip install --upgrade pip
+          pip install --no-cache-dir -r requirements.txt
+          pip install nbconvert
+          pip install --upgrade pip ipython ipykernel
+          ipython kernel install --name "python3" --user
+          sudo apt-get install pandoc
+
+      - name: Build the document
+        run: |
+            cd doc/source/tutorials
+            bash build_tutorials.sh
+            cd ../..
+            make html
+            cd ..
+
+      - name: Deploy 🚀
+        uses: JamesIves/github-pages-deploy-action@v4
+        with:
+          folder: doc/html # The folder the action should deploy.

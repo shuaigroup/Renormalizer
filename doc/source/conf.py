@@ -184,12 +184,3 @@ default_role = 'any'
 autodoc_default_options = {
     'undoc-members': True,
 }
-
-# copy tutorial notebooks
-import glob
-import shutil
-
-for fname in glob.glob("../../example/*.ipynb"):
-    print(f"copying {fname}")
-    nbname = fname.split("/")[-1]
-    shutil.copy(fname, f"./tutorials")
