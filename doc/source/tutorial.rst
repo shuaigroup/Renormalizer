@@ -3,7 +3,7 @@ Basic Tutorials
 
 The tutorials below introduce the basic components and functions of Renormalizer.
 For tutorials on end-to-end applications such as charge transport and spectra,
-please refer to the :doc:`applications.rst`.
+please refer to the :doc:`applications`.
 
 .. toctree::
     tutorials/define_model.ipynb
