@@ -35,14 +35,8 @@ Contents
 
    install.md
    tutorial.rst
-   model.rst
-   mps.rst
-   static.rst
-   spectrum.rst
-   ct.rst
-   cv.rst
-   configs.rst
-   sbm.md
+   applications.rst
+   api.rst
    faq.rst
    develop.md
    cite.rst

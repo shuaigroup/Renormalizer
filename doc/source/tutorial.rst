@@ -1,8 +1,10 @@
-Tutorial
-********
+Basic Tutorials
+***************
 
-Basics of Renormalizer
-======================
+The tutorials below introduce the basic components and functions of Renormalizer.
+For tutorials on end-to-end applications such as charge transport and spectra,
+please refer to the :doc:`applications.rst`.
+
 .. toctree::
     tutorials/define_model.ipynb
     tutorials/mps_mpo.ipynb
@@ -14,22 +16,3 @@ Basics of Renormalizer
     finding the ground state
     time evolution by hand forward Euler
     time evolutions in production
-
-
-Applications
-============
-.. toctree::
-    tutorials/1D-Heisenberg.ipynb
-
-..
-    Marcus inverted region?
-    Spin boson model, charge transport, spectra.
-
-
-Advanced Topics
-===============
-.. toctree::
-    time_evolution.rst
-
-..
-
