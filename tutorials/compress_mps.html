@@ -3,7 +3,16 @@
   <head><meta charset="utf-8"/>
     <meta name="viewport" content="width=device-width,initial-scale=1"/>
     <meta name="color-scheme" content="light dark"><meta name="generator" content="Docutils 0.19: https://docutils.sourceforge.io/" />
-<link rel="index" title="Index" href="../genindex.html" /><link rel="search" title="Search" href="../search.html" /><link rel="next" title="Application Tutorials" href="../applications.html" /><link rel="prev" title="MPS and MPO" href="mps_mpo.html" />
+
+    <!-- Google tag (gtag.js) -->
+    <script async src="https://www.googletagmanager.com/gtag/js?id=G-VMR8V3W3BR"></script>
+    <script>
+        window.dataLayer = window.dataLayer || [];
+        function gtag(){dataLayer.push(arguments);}
+        gtag('js', new Date());
+        gtag('config', 'G-VMR8V3W3BR');
+    </script>
+    <link rel="index" title="Index" href="../genindex.html" /><link rel="search" title="Search" href="../search.html" /><link rel="next" title="Application Tutorials" href="../applications.html" /><link rel="prev" title="MPS and MPO" href="mps_mpo.html" />
 
     <meta name="generator" content="sphinx-5.3.0, furo 2022.09.29"/>
         <title>Compressing MPS - Renormalizer 0.1.0 documentation</title>
@@ -498,11 +507,11 @@ div.rendered_html tbody tr:hover {
 </div>
 <div class="output_area stderr docutils container">
 <div class="highlight"><pre>
-2024-06-27 08:54:32,070[INFO] Use NumPy as backend
-2024-06-27 08:54:32,071[INFO] numpy random seed is 9012
-2024-06-27 08:54:32,071[INFO] random seed is 1092
-2024-06-27 08:54:32,082[INFO] Git Commit Hash: 0c2f2b4063c2a6ace9250ec9de61a4c4f96cc508
-2024-06-27 08:54:32,083[INFO] use 64 bits
+2024-06-28 01:52:51,242[INFO] Use NumPy as backend
+2024-06-28 01:52:51,243[INFO] numpy random seed is 9012
+2024-06-28 01:52:51,244[INFO] random seed is 1092
+2024-06-28 01:52:51,254[INFO] Git Commit Hash: 94747e013f46048a35de60da868456c9caa301ef
+2024-06-28 01:52:51,255[INFO] use 64 bits
 </pre></div></div>
 </div>
 <div class="nbinput docutils container">
@@ -617,10 +626,10 @@ div.rendered_html tbody tr:hover {
 </div>
 <div class="output_area stderr docutils container">
 <div class="highlight"><pre>
-2024-06-27 08:54:32,161[DEBUG] # of operator terms: 27
-2024-06-27 08:54:32,163[DEBUG] symbolic mpo algorithm: qr
-2024-06-27 08:54:32,165[DEBUG] Input operator terms: 27
-2024-06-27 08:54:32,173[DEBUG] After combination of the same terms: 27
+2024-06-28 01:52:51,335[DEBUG] # of operator terms: 27
+2024-06-28 01:52:51,337[DEBUG] symbolic mpo algorithm: qr
+2024-06-28 01:52:51,338[DEBUG] Input operator terms: 27
+2024-06-28 01:52:51,346[DEBUG] After combination of the same terms: 27
 </pre></div></div>
 </div>
 <div class="nboutput nblast docutils container">
@@ -678,7 +687,7 @@ array([ 1,  8, 25, 20, 25, 25, 20, 15, 15,  1])
 </pre></div>
 </div>
 </div>
-<p>Then compress <code class="docutils literal notranslate"><span class="pre">mps2</span></code> by SVD truncation to a fixed bond dimension of <span class="math notranslate nohighlight">\(M=5\)</span>. Note that right now <code class="docutils literal notranslate"><span class="pre">mps2</span></code> is not canonicalised, so it has to be canonicalised before SVD compression.</p>
+<p>Then compress <code class="docutils literal notranslate"><span class="pre">mps2</span></code> by SVD truncation to a fixed bond dimension of <span class="math notranslate nohighlight">\(M=5\)</span>. Note that as the product of an MPO and an MPS, <code class="docutils literal notranslate"><span class="pre">mps2</span></code> is not canonicalised, so it has to be canonicalised before SVD compression.</p>
 <p>After the compression, the size of the matrices in <code class="docutils literal notranslate"><span class="pre">mps2</span></code> is greatly reduced.</p>
 <div class="nbinput docutils container">
 <div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[10]:
@@ -695,7 +704,7 @@ array([ 1,  8, 25, 20, 25, 25, 20, 15, 15,  1])
 </div>
 <div class="output_area stderr docutils container">
 <div class="highlight"><pre>
-2024-06-27 08:54:32,243[DEBUG] size before/after compress: 47.2KiB/4.2KiB, ratio: 11.177777777777777
+2024-06-28 01:52:51,415[DEBUG] size before/after compress: 47.2KiB/4.2KiB, ratio: 11.177777777777777
 </pre></div></div>
 </div>
 <div class="nboutput nblast docutils container">
@@ -707,7 +716,7 @@ array([ 1,  8, 25, 20, 25, 25, 20, 15, 15,  1])
 [1, 2, 5, 5, 5, 5, 5, 5, 4, 1]
 </pre></div></div>
 </div>
-<p>We next measure the information loss based on the difference of energy expectations, which is relatively small.</p>
+<p>We can see that the information loss, measured by the difference of energy expectations, is relatively small.</p>
 <div class="nbinput docutils container">
 <div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[11]:
 </pre></div>
@@ -724,11 +733,11 @@ array([ 1,  8, 25, 20, 25, 25, 20, 15, 15,  1])
 </div>
 <div class="output_area docutils container">
 <div class="highlight"><pre>
-(0.001946138226653953, 0.002014164788066271, 0.03377407936796855)
+(0.001946138226653953, 0.0020141647880662717, 0.033774079367968966)
 </pre></div></div>
 </div>
 <blockquote>
-<div><p>As a result of the random generation of the MPS, the compress accuracy is not very impressive. Much higher efficiency can be expected for the real wavefunction for a number of quantum models.</p>
+<div><p>As a result of the random generation of the MPS, the compress accuracy is not very impressive. Much higher efficiency can be expected for the real wavefunction of quantum systems.</p>
 </div></blockquote>
 </section>
 <section id="Compress-Configuration">
@@ -751,7 +760,7 @@ array([ 1,  8, 25, 20, 25, 25, 20, 15, 15,  1])
 </pre></div>
 </div>
 </div>
-<p>Here the compress criteria is set to the singular value threshold, which is set to 1e-5. In other words, all states with singular value small than 1e-3 is discarded.</p>
+<p>Here the compress criteria is set to the singular value threshold, which is set to 1e-5.</p>
 <p><code class="docutils literal notranslate"><span class="pre">CompressCriteria</span></code> is an <code class="docutils literal notranslate"><span class="pre">Enum</span></code> class for all possible compression strategies. Currently there’re three different strategies.</p>
 <div class="nbinput docutils container">
 <div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[14]:
@@ -771,7 +780,7 @@ array([ 1,  8, 25, 20, 25, 25, 20, 15, 15,  1])
 </pre></div></div>
 </div>
 <blockquote>
-<div><p>Using <code class="docutils literal notranslate"><span class="pre">CompressCriteria</span></code> might seem to be a overkill compared to an implementation using simple strings. However, when it comes to time evolution configurations, since there’re a lot of different algorithms and some of them have rather long names, the <code class="docutils literal notranslate"><span class="pre">Enum</span></code> class can help manage the different algorithms. So here compression uses the same implementation, also for forward compatibility.</p>
+<div><p>Using <code class="docutils literal notranslate"><span class="pre">CompressCriteria</span></code> might seem to be a overkill compared to an implementation using simple strings. However, when it comes to time evolution configurations, since there’re a lot of different algorithms and some of them have rather long names, the <code class="docutils literal notranslate"><span class="pre">Enum</span></code> class can help manage the different algorithms. So here the compression configuration uses the same implementation. This is also for forward compatibility.</p>
 </div></blockquote>
 <p>We next compress <code class="docutils literal notranslate"><span class="pre">mps3</span></code> using the compress configuration associated with the <code class="docutils literal notranslate"><span class="pre">mps3</span></code> object. <span class="math notranslate nohighlight">\(10^{-5}\)</span> is a relatively tight threshold, so the bond dimension is higher than 5.</p>
 <div class="nbinput docutils container">
@@ -788,7 +797,7 @@ array([ 1,  8, 25, 20, 25, 25, 20, 15, 15,  1])
 </div>
 <div class="output_area stderr docutils container">
 <div class="highlight"><pre>
-2024-06-27 08:54:32,313[DEBUG] size before/after compress: 47.2KiB/26.5KiB, ratio: 1.7784325279905715
+2024-06-28 01:52:51,486[DEBUG] size before/after compress: 47.2KiB/26.5KiB, ratio: 1.7784325279905715
 </pre></div></div>
 </div>
 <div class="nboutput nblast docutils container">
@@ -817,7 +826,7 @@ array([ 1,  8, 25, 20, 25, 25, 20, 15, 15,  1])
 </div>
 <div class="output_area docutils container">
 <div class="highlight"><pre>
-(0.0019730448062321155, 0.002014164788066271, 0.020415401002831114)
+(0.001973044806232115, 0.0020141647880662717, 0.020415401002831752)
 </pre></div></div>
 </div>
 </section>
@@ -852,7 +861,7 @@ array([ 1,  8, 25, 20, 25, 25, 20, 15, 15,  1])
         <div class="bottom-of-page">
           <div class="left-details">
             <div class="copyright">
-                Copyright &#169; 2022, Shuaigroup
+                Copyright &#169; 2024, Shuaigroup
             </div>
             Made with <a href="https://www.sphinx-doc.org/">Sphinx</a> and <a class="muted-link" href="https://pradyunsg.me">@pradyunsg</a>'s
             
