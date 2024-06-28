@@ -64,7 +64,7 @@ master_doc = 'index'
 
 # General information about the project.
 project = 'Renormalizer'
-copyright = '2022, Shuaigroup'
+copyright = '2024, Shuaigroup'
 author = 'Shuaigroup'
 
 # The version info for the project you're documenting, acts as replacement for
@@ -184,3 +184,9 @@ default_role = 'any'
 autodoc_default_options = {
     'undoc-members': True,
 }
+
+
+# -- Google Analytics -----------------------------------------------------
+if os.getenv("GITHUB_ACTIONS"):
+  extensions.append("sphinxcontrib.googleanalytics")
+  googleanalytics_id = "G-VMR8V3W3BR"

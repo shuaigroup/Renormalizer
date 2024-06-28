@@ -4,9 +4,10 @@ sympy==1.11.*
 pytest==6.2.*
 h5py==3.1.*
 PyYAML==5.4.*
-recommonmark==0.7.*
-furo==2022.9.*
-nbsphinx==0.8.*
 opt_einsum==3.3.*
 qutip==4.6.*
 print-tree2==0.9.10
+recommonmark==0.7.*
+furo==2022.9.*
+nbsphinx==0.8.*
+sphinxcontrib-googleanalytics==0.4
