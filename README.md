@@ -16,14 +16,14 @@ For users who are not familiar with python,
 please check out the step-by-step [installation guide](https://shuaigroup.github.io/Renormalizer/install.html).
 
 # Features
-- MPS/MPO based ground state search/excited state search/time evolution/dynamical properties
-- TTNS/TTNO based ground state search/time evolution
-- Custom Hamiltonian through automatic MPO/TTNO construction
-- Finite temperature time evolution through imaginary time evolution or thermofield transformation
-- Out-of-box molecular spectra/carrier mobility/spin relaxation dynamics/ab initio calculation.
-- GPU acceleration via CuPy
-- Quantum number conservation
-- Purely Python based and easy installation
+- 🚂 MPS/MPO based ground state search/excited state search/time evolution/dynamical properties. 
+- 🌲 TTNS/TTNO based ground state search/time evolution. 
+- ⚙️Custom Hamiltonian through automatic MPO/TTNO construction. 
+- 🌡️ Finite temperature time evolution through imaginary time evolution or thermofield transformation. 
+- 🧪 Out-of-box molecular spectra/carrier mobility/spin relaxation dynamics/ab initio calculation
+- 🏃 GPU acceleration via CuPy. 
+- ⚖️ Quantum number conservation
+- 🐍 Purely Python based and easy installation
 
 # Documentation
 Please check out the [official documentation](https://shuaigroup.github.io/Renormalizer/)

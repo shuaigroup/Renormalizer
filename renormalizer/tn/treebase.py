@@ -65,12 +65,34 @@ class Tree:
     def __iter__(self):
         return iter(self.node_list)
 
+    def __repr__(self):
+        return f"{self.__class__} with {len(self)} nodes"
+
 
 class BasisTree(Tree):
-    """Tree of basis sets."""
+    """
+    Tree of basis sets. The tree nodes are :class:`TreeNodeBasis`.
+
+    Parameters
+    ----------
+    root: :class:`TreeNodeBasis`
+        The root of the tree
+    """
 
     @classmethod
     def linear(cls, basis_list: List[BasisSet]):
+        """
+        Generate a linear tree, i.e, MPS.
+
+        Parameters
+        ----------
+        basis_list: list of ``BasisSet``
+            The basis set list.
+
+        Returns
+        -------
+        The constructed basis tree.
+        """
         node_list = [TreeNodeBasis([basis]) for basis in basis_list]
         for i in range(len(node_list) - 1):
             node_list[i].add_child(node_list[i + 1])
@@ -78,6 +100,18 @@ class BasisTree(Tree):
 
     @classmethod
     def binary(cls, basis_list: List[BasisSet]):
+        """
+        Generate a binary tree.
+
+        Parameters
+        ----------
+        basis_list: list of ``BasisSet``
+            The basis set list.
+
+        Returns
+        -------
+        The constructed basis tree.
+        """
         node_list = [TreeNodeBasis([basis]) for basis in basis_list]
 
         def binary_recursion(node: TreeNodeBasis, offspring: List[TreeNodeBasis]):
@@ -104,12 +138,56 @@ class BasisTree(Tree):
         contract_label: Sequence[bool] = None,
         dummy_label="MCTDH virtual",
     ):
-        # `contract_primitive` means a 2-index tensor for each primitive basis
-        #       o
-        #      / \
-        #      o  o
-        # d -> |  | <- d
-        # not contract primitive
+        r"""
+        MCTDH tree with the specified tree order.
+        The feature of this type of tree is that all physical degrees of freedom are attached to the leaf nodes.
+        Also, each leaf node typically has more than one physical degrees of freedom.
+
+
+        Parameters
+        ----------
+        basis_list: list of :class:`~renormalizer.model.basis.BasisSet`
+            The list of basis sets for the system.
+        tree_order: int
+            Tree order. For example, 2 means binary tree and 3 means ternary tree.
+        contract_primitive: bool
+            Whether contract the primitive basis. Defaults to False.
+            If set to True, each primitive basis in ``basis_list`` will be contracted before attached
+            to the tree. The following is a schematic view, where ``o`` represents a node
+            and ``d`` means the physical bond.
+
+            .. code-block::
+
+                # contract primitive
+                       o
+                      / \
+                      o  o
+                 d -> |  | <- d
+
+            If set to False, the following type of tree will be constructed.
+
+            .. code-block::
+
+                # not contract primitive
+                       o
+                d ->  / \ <- d
+                d means physical bond
+        contract_label: list of bool
+            If ``contract_primitive`` is set to True,
+            this list determines which primitive basis should be contracted.
+        dummy_label:
+            The label for the virtual nodes in MCTDH.
+
+        Returns
+        -------
+        The constructed basis tree.
+
+        See Also
+        --------
+        binary_mctdh: construct binary MCTDH tree (tree order is set to 2).
+        ternary_mctdh: construct ternary MCTDH tree (tree order is set to 3).
+        """
+
         #        o
         # d ->  / \ <- d
         # d means physical bond
@@ -164,12 +242,26 @@ class BasisTree(Tree):
     def binary_mctdh(
         cls, basis_list: List[BasisSet], contract_primitive=False, contract_label=None, dummy_label="MCTDH virtual"
     ):
+        """
+        Construct binary MCTDH tree.
+
+        See Also
+        --------
+        general_mctdh: construct MCTDH tree with any order.
+        """
         return cls.general_mctdh(basis_list, 2, contract_primitive, contract_label, dummy_label)
 
     @classmethod
     def ternary_mctdh(
         cls, basis_list: List[BasisSet], contract_primitive=False, contract_label=None, dummy_label="MCTDH virtual"
     ):
+        """
+        Construct ternary MCTDH tree.
+
+        See Also
+        --------
+        general_mctdh: construct MCTDH tree with any order.
+        """
         return cls.general_mctdh(basis_list, 3, contract_primitive, contract_label, dummy_label)
 
     @classmethod

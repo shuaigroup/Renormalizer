@@ -11,4 +11,5 @@ API Reference
    ct.rst
    cv.rst
    sbm.rst
+   ttn.rst
    configs.rst

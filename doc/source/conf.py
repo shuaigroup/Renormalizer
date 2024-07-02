@@ -189,4 +189,4 @@ autodoc_default_options = {
 # -- Google Analytics -----------------------------------------------------
 if os.getenv("GITHUB_ACTIONS"):
   extensions.append("sphinxcontrib.googleanalytics")
-  googleanalytics_id = "G-VMR8V3W3BR"
+  googleanalytics_id = "G-3HTENNM8CV"

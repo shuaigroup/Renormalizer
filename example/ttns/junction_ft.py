@@ -1,3 +1,5 @@
+# Reference: JCP2016, 145, 164105 and JCTC2023, 19, 6070
+
 import sys
 
 from renormalizer import BasisHalfSpin, Op, Quantity, BasisSHO, BasisDummy
@@ -62,6 +64,8 @@ mode_with_e = [(f"L{i}", e) for i, e in enumerate(e_k_l)] + [(f"R{i}", e) for i,
 mode_with_e.sort(key=lambda x: x[1])
 logger.info(mode_with_e)
 
+# subtree for the electrodes. Two subtrees depending on the energy level
+# (rather than which electrode)
 basis = []
 first_positive = True
 for mode, e in mode_with_e:
@@ -78,8 +82,11 @@ basis_tree_l = BasisTree.binary_mctdh(basis[:s_idx], dummy_label="EL-dummy")
 basis_tree_r = BasisTree.binary_mctdh(basis[s_idx + 1 :], dummy_label="ER-dummy")
 
 
+# the Hamiltonian
 ham_terms = []
+# current for the left electrode
 i_l_terms = []
+# current for the right electrode
 i_r_terms = []
 for mode, e in mode_with_e:
     if mode[0] == "L":
@@ -133,6 +140,7 @@ for mode, e in mode_with_e:
     # move 1j to expectation
     i_terms.extend(op2 - op1 + op4 - op3)
 
+# initial condition transformation
 initial_occupied = initial_str == "1"
 
 if initial_occupied:
@@ -161,6 +169,7 @@ for imode in range(n_ph_mode):
     op2 = sys_op * Op(r"x", f"v_{imode}_q", factor=2 * c[imode] * np.sinh(theta), qn=[0])
     ham_terms.extend(op1 + op2)
 
+# put subtrees together for the final tree
 nbas = np.max([16 * c2 / w**3 * np.cosh(theta_array) ** 2, np.ones(n_ph_mode) * 4], axis=0)
 nbas = np.round(nbas).astype(int)
 nbas = np.min([nbas, np.ones(n_ph_mode) * 512], axis=0)

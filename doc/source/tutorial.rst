@@ -9,6 +9,7 @@ please refer to the :doc:`applications`.
     tutorials/define_model.ipynb
     tutorials/mps_mpo.ipynb
     tutorials/compress_mps.ipynb
+    tutorials/ttn_basic.ipynb
 
 ..
     setting quantum number
