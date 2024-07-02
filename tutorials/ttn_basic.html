@@ -1,0 +1,1252 @@
+<!doctype html>
+<html class="no-js" lang="en">
+  <head><meta charset="utf-8"/>
+    <meta name="viewport" content="width=device-width,initial-scale=1"/>
+    <meta name="color-scheme" content="light dark"><meta name="generator" content="Docutils 0.19: https://docutils.sourceforge.io/" />
+
+    <!-- Google tag (gtag.js) -->
+    <script async src="https://www.googletagmanager.com/gtag/js?id=G-3HTENNM8CV"></script>
+    <script>
+        window.dataLayer = window.dataLayer || [];
+        function gtag(){dataLayer.push(arguments);}
+        gtag('js', new Date());
+        gtag('config', 'G-3HTENNM8CV');
+    </script>
+    <link rel="index" title="Index" href="../genindex.html" /><link rel="search" title="Search" href="../search.html" /><link rel="next" title="Application Tutorials" href="../applications.html" /><link rel="prev" title="Compressing MPS" href="compress_mps.html" />
+
+    <meta name="generator" content="sphinx-5.3.0, furo 2022.09.29"/>
+        <title>Basics of Tree Tensor Networks - Renormalizer 0.1.0 documentation</title>
+      <link rel="stylesheet" type="text/css" href="../_static/pygments.css" />
+    <link rel="stylesheet" type="text/css" href="../_static/styles/furo.css?digest=d81277517bee4d6b0349d71bb2661d4890b5617c" />
+    <link rel="stylesheet" type="text/css" href="../_static/styles/furo-extensions.css?digest=30d1aed668e5c3a91c3e3bf6a60b675221979f0e" />
+    
+    
+
+
+<style>
+  body {
+    --color-code-background: #eeffcc;
+  --color-code-foreground: black;
+  
+  }
+  @media not print {
+    body[data-theme="dark"] {
+      --color-code-background: #202020;
+  --color-code-foreground: #d0d0d0;
+  
+    }
+    @media (prefers-color-scheme: dark) {
+      body:not([data-theme="light"]) {
+        --color-code-background: #202020;
+  --color-code-foreground: #d0d0d0;
+  
+      }
+    }
+  }
+</style></head>
+  <body>
+    
+    <script>
+      document.body.dataset.theme = localStorage.getItem("theme") || "auto";
+    </script>
+    
+
+<svg xmlns="http://www.w3.org/2000/svg" style="display: none;">
+  <symbol id="svg-toc" viewBox="0 0 24 24">
+    <title>Contents</title>
+    <svg stroke="currentColor" fill="currentColor" stroke-width="0" viewBox="0 0 1024 1024">
+      <path d="M408 442h480c4.4 0 8-3.6 8-8v-56c0-4.4-3.6-8-8-8H408c-4.4 0-8 3.6-8 8v56c0 4.4 3.6 8 8 8zm-8 204c0 4.4 3.6 8 8 8h480c4.4 0 8-3.6 8-8v-56c0-4.4-3.6-8-8-8H408c-4.4 0-8 3.6-8 8v56zm504-486H120c-4.4 0-8 3.6-8 8v56c0 4.4 3.6 8 8 8h784c4.4 0 8-3.6 8-8v-56c0-4.4-3.6-8-8-8zm0 632H120c-4.4 0-8 3.6-8 8v56c0 4.4 3.6 8 8 8h784c4.4 0 8-3.6 8-8v-56c0-4.4-3.6-8-8-8zM115.4 518.9L271.7 642c5.8 4.6 14.4.5 14.4-6.9V388.9c0-7.4-8.5-11.5-14.4-6.9L115.4 505.1a8.74 8.74 0 0 0 0 13.8z"/>
+    </svg>
+  </symbol>
+  <symbol id="svg-menu" viewBox="0 0 24 24">
+    <title>Menu</title>
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+      stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="feather-menu">
+      <line x1="3" y1="12" x2="21" y2="12"></line>
+      <line x1="3" y1="6" x2="21" y2="6"></line>
+      <line x1="3" y1="18" x2="21" y2="18"></line>
+    </svg>
+  </symbol>
+  <symbol id="svg-arrow-right" viewBox="0 0 24 24">
+    <title>Expand</title>
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+      stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="feather-chevron-right">
+      <polyline points="9 18 15 12 9 6"></polyline>
+    </svg>
+  </symbol>
+  <symbol id="svg-sun" viewBox="0 0 24 24">
+    <title>Light mode</title>
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+      stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" class="feather-sun">
+      <circle cx="12" cy="12" r="5"></circle>
+      <line x1="12" y1="1" x2="12" y2="3"></line>
+      <line x1="12" y1="21" x2="12" y2="23"></line>
+      <line x1="4.22" y1="4.22" x2="5.64" y2="5.64"></line>
+      <line x1="18.36" y1="18.36" x2="19.78" y2="19.78"></line>
+      <line x1="1" y1="12" x2="3" y2="12"></line>
+      <line x1="21" y1="12" x2="23" y2="12"></line>
+      <line x1="4.22" y1="19.78" x2="5.64" y2="18.36"></line>
+      <line x1="18.36" y1="5.64" x2="19.78" y2="4.22"></line>
+    </svg>
+  </symbol>
+  <symbol id="svg-moon" viewBox="0 0 24 24">
+    <title>Dark mode</title>
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+      stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" class="icon-tabler-moon">
+      <path stroke="none" d="M0 0h24v24H0z" fill="none" />
+      <path d="M12 3c.132 0 .263 0 .393 0a7.5 7.5 0 0 0 7.92 12.446a9 9 0 1 1 -8.313 -12.454z" />
+    </svg>
+  </symbol>
+  <symbol id="svg-sun-half" viewBox="0 0 24 24">
+    <title>Auto light/dark mode</title>
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+      stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" class="icon-tabler-shadow">
+      <path stroke="none" d="M0 0h24v24H0z" fill="none"/>
+      <circle cx="12" cy="12" r="9" />
+      <path d="M13 12h5" />
+      <path d="M13 15h4" />
+      <path d="M13 18h1" />
+      <path d="M13 9h4" />
+      <path d="M13 6h1" />
+    </svg>
+  </symbol>
+</svg>
+
+<input type="checkbox" class="sidebar-toggle" name="__navigation" id="__navigation">
+<input type="checkbox" class="sidebar-toggle" name="__toc" id="__toc">
+<label class="overlay sidebar-overlay" for="__navigation">
+  <div class="visually-hidden">Hide navigation sidebar</div>
+</label>
+<label class="overlay toc-overlay" for="__toc">
+  <div class="visually-hidden">Hide table of contents sidebar</div>
+</label>
+
+
+
+<div class="page">
+  <header class="mobile-header">
+    <div class="header-left">
+      <label class="nav-overlay-icon" for="__navigation">
+        <div class="visually-hidden">Toggle site navigation sidebar</div>
+        <i class="icon"><svg><use href="#svg-menu"></use></svg></i>
+      </label>
+    </div>
+    <div class="header-center">
+      <a href="../index.html"><div class="brand">Renormalizer 0.1.0 documentation</div></a>
+    </div>
+    <div class="header-right">
+      <div class="theme-toggle-container theme-toggle-header">
+        <button class="theme-toggle">
+          <div class="visually-hidden">Toggle Light / Dark / Auto color theme</div>
+          <svg class="theme-icon-when-auto"><use href="#svg-sun-half"></use></svg>
+          <svg class="theme-icon-when-dark"><use href="#svg-moon"></use></svg>
+          <svg class="theme-icon-when-light"><use href="#svg-sun"></use></svg>
+        </button>
+      </div>
+      <label class="toc-overlay-icon toc-header-icon" for="__toc">
+        <div class="visually-hidden">Toggle table of contents sidebar</div>
+        <i class="icon"><svg><use href="#svg-toc"></use></svg></i>
+      </label>
+    </div>
+  </header>
+  <aside class="sidebar-drawer">
+    <div class="sidebar-container">
+      
+      <div class="sidebar-sticky"><a class="sidebar-brand" href="../index.html">
+  
+  
+  <span class="sidebar-brand-text">Renormalizer 0.1.0 documentation</span>
+  
+</a><form class="sidebar-search-container" method="get" action="../search.html" role="search">
+  <input class="sidebar-search" placeholder=Search name="q" aria-label="Search">
+  <input type="hidden" name="check_keywords" value="yes">
+  <input type="hidden" name="area" value="default">
+</form>
+<div id="searchbox"></div><div class="sidebar-scroll"><div class="sidebar-tree">
+  <ul class="current">
+<li class="toctree-l1"><a class="reference internal" href="../install.html">Installation guide</a></li>
+<li class="toctree-l1 current has-children"><a class="reference internal" href="../tutorial.html">Basic Tutorials</a><input checked="" class="toctree-checkbox" id="toctree-checkbox-1" name="toctree-checkbox-1" role="switch" type="checkbox"/><label for="toctree-checkbox-1"><div class="visually-hidden">Toggle child pages in navigation</div><i class="icon"><svg><use href="#svg-arrow-right"></use></svg></i></label><ul class="current">
+<li class="toctree-l2"><a class="reference internal" href="define_model.html">Define Your Model</a></li>
+<li class="toctree-l2"><a class="reference internal" href="mps_mpo.html">MPS and MPO</a></li>
+<li class="toctree-l2"><a class="reference internal" href="compress_mps.html">Compressing MPS</a></li>
+<li class="toctree-l2 current current-page"><a class="current reference internal" href="#">Basics of Tree Tensor Networks</a></li>
+</ul>
+</li>
+<li class="toctree-l1 has-children"><a class="reference internal" href="../applications.html">Application Tutorials</a><input class="toctree-checkbox" id="toctree-checkbox-2" name="toctree-checkbox-2" role="switch" type="checkbox"/><label for="toctree-checkbox-2"><div class="visually-hidden">Toggle child pages in navigation</div><i class="icon"><svg><use href="#svg-arrow-right"></use></svg></i></label><ul>
+<li class="toctree-l2"><a class="reference internal" href="1D-Heisenberg.html">Ground state of the Heisenberg model</a></li>
+</ul>
+</li>
+<li class="toctree-l1 has-children"><a class="reference internal" href="../api.html">API Reference</a><input class="toctree-checkbox" id="toctree-checkbox-3" name="toctree-checkbox-3" role="switch" type="checkbox"/><label for="toctree-checkbox-3"><div class="visually-hidden">Toggle child pages in navigation</div><i class="icon"><svg><use href="#svg-arrow-right"></use></svg></i></label><ul>
+<li class="toctree-l2"><a class="reference internal" href="../model.html">Model</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../mps.html">Low Level Data Structure and Algorithms</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../static.html">Static Eigenstate Method</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../spectrum.html">spectra: absorption/emission spectrum at zero/finite temperature</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../ct.html">Charge Transport</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../cv.html">Frequency domain DMRG</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../sbm.html">Spin-Boson Model</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../ttn.html">Tree Tensor Network Algorithms</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../configs.html">Calculation Configurations</a></li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="../faq.html">Frequently Asked Questions</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../develop.html">How to develop Renormalizer</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../cite.html">How to cite</a></li>
+</ul>
+
+</div>
+</div>
+
+      </div>
+      
+    </div>
+  </aside>
+  <div class="main">
+    <div class="content">
+      <div class="article-container">
+        <a href="#" class="back-to-top muted-link">
+          <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24">
+            <path d="M13 20h-2V8l-5.5 5.5-1.42-1.42L12 4.16l7.92 7.92-1.42 1.42L13 8v12z"></path>
+          </svg>
+          <span>Back to top</span>
+        </a>
+        <div class="content-icon-container">
+          
+<div class="theme-toggle-container theme-toggle-content">
+            <button class="theme-toggle">
+              <div class="visually-hidden">Toggle Light / Dark / Auto color theme</div>
+              <svg class="theme-icon-when-auto"><use href="#svg-sun-half"></use></svg>
+              <svg class="theme-icon-when-dark"><use href="#svg-moon"></use></svg>
+              <svg class="theme-icon-when-light"><use href="#svg-sun"></use></svg>
+            </button>
+          </div>
+          <label class="toc-overlay-icon toc-content-icon" for="__toc">
+            <div class="visually-hidden">Toggle table of contents sidebar</div>
+            <i class="icon"><svg><use href="#svg-toc"></use></svg></i>
+          </label>
+        </div>
+        <article role="main">
+          
+<style>
+/* CSS for nbsphinx extension */
+
+/* remove conflicting styling from Sphinx themes */
+div.nbinput.container div.prompt *,
+div.nboutput.container div.prompt *,
+div.nbinput.container div.input_area pre,
+div.nboutput.container div.output_area pre,
+div.nbinput.container div.input_area .highlight,
+div.nboutput.container div.output_area .highlight {
+    border: none;
+    padding: 0;
+    margin: 0;
+    box-shadow: none;
+}
+
+div.nbinput.container > div[class*=highlight],
+div.nboutput.container > div[class*=highlight] {
+    margin: 0;
+}
+
+div.nbinput.container div.prompt *,
+div.nboutput.container div.prompt * {
+    background: none;
+}
+
+div.nboutput.container div.output_area .highlight,
+div.nboutput.container div.output_area pre {
+    background: unset;
+}
+
+div.nboutput.container div.output_area div.highlight {
+    color: unset;  /* override Pygments text color */
+}
+
+/* avoid gaps between output lines */
+div.nboutput.container div[class*=highlight] pre {
+    line-height: normal;
+}
+
+/* input/output containers */
+div.nbinput.container,
+div.nboutput.container {
+    display: -webkit-flex;
+    display: flex;
+    align-items: flex-start;
+    margin: 0;
+    width: 100%;
+}
+@media (max-width: 540px) {
+    div.nbinput.container,
+    div.nboutput.container {
+        flex-direction: column;
+    }
+}
+
+/* input container */
+div.nbinput.container {
+    padding-top: 5px;
+}
+
+/* last container */
+div.nblast.container {
+    padding-bottom: 5px;
+}
+
+/* input prompt */
+div.nbinput.container div.prompt pre {
+    color: #307FC1;
+}
+
+/* output prompt */
+div.nboutput.container div.prompt pre {
+    color: #BF5B3D;
+}
+
+/* all prompts */
+div.nbinput.container div.prompt,
+div.nboutput.container div.prompt {
+    width: 4.5ex;
+    padding-top: 5px;
+    position: relative;
+    user-select: none;
+}
+
+div.nbinput.container div.prompt > div,
+div.nboutput.container div.prompt > div {
+    position: absolute;
+    right: 0;
+    margin-right: 0.3ex;
+}
+
+@media (max-width: 540px) {
+    div.nbinput.container div.prompt,
+    div.nboutput.container div.prompt {
+        width: unset;
+        text-align: left;
+        padding: 0.4em;
+    }
+    div.nboutput.container div.prompt.empty {
+        padding: 0;
+    }
+
+    div.nbinput.container div.prompt > div,
+    div.nboutput.container div.prompt > div {
+        position: unset;
+    }
+}
+
+/* disable scrollbars and line breaks on prompts */
+div.nbinput.container div.prompt pre,
+div.nboutput.container div.prompt pre {
+    overflow: hidden;
+    white-space: pre;
+}
+
+/* input/output area */
+div.nbinput.container div.input_area,
+div.nboutput.container div.output_area {
+    -webkit-flex: 1;
+    flex: 1;
+    overflow: auto;
+}
+@media (max-width: 540px) {
+    div.nbinput.container div.input_area,
+    div.nboutput.container div.output_area {
+        width: 100%;
+    }
+}
+
+/* input area */
+div.nbinput.container div.input_area {
+    border: 1px solid #e0e0e0;
+    border-radius: 2px;
+    /*background: #f5f5f5;*/
+}
+
+/* override MathJax center alignment in output cells */
+div.nboutput.container div[class*=MathJax] {
+    text-align: left !important;
+}
+
+/* override sphinx.ext.imgmath center alignment in output cells */
+div.nboutput.container div.math p {
+    text-align: left;
+}
+
+/* standard error */
+div.nboutput.container div.output_area.stderr {
+    background: #fdd;
+}
+
+/* ANSI colors */
+.ansi-black-fg { color: #3E424D; }
+.ansi-black-bg { background-color: #3E424D; }
+.ansi-black-intense-fg { color: #282C36; }
+.ansi-black-intense-bg { background-color: #282C36; }
+.ansi-red-fg { color: #E75C58; }
+.ansi-red-bg { background-color: #E75C58; }
+.ansi-red-intense-fg { color: #B22B31; }
+.ansi-red-intense-bg { background-color: #B22B31; }
+.ansi-green-fg { color: #00A250; }
+.ansi-green-bg { background-color: #00A250; }
+.ansi-green-intense-fg { color: #007427; }
+.ansi-green-intense-bg { background-color: #007427; }
+.ansi-yellow-fg { color: #DDB62B; }
+.ansi-yellow-bg { background-color: #DDB62B; }
+.ansi-yellow-intense-fg { color: #B27D12; }
+.ansi-yellow-intense-bg { background-color: #B27D12; }
+.ansi-blue-fg { color: #208FFB; }
+.ansi-blue-bg { background-color: #208FFB; }
+.ansi-blue-intense-fg { color: #0065CA; }
+.ansi-blue-intense-bg { background-color: #0065CA; }
+.ansi-magenta-fg { color: #D160C4; }
+.ansi-magenta-bg { background-color: #D160C4; }
+.ansi-magenta-intense-fg { color: #A03196; }
+.ansi-magenta-intense-bg { background-color: #A03196; }
+.ansi-cyan-fg { color: #60C6C8; }
+.ansi-cyan-bg { background-color: #60C6C8; }
+.ansi-cyan-intense-fg { color: #258F8F; }
+.ansi-cyan-intense-bg { background-color: #258F8F; }
+.ansi-white-fg { color: #C5C1B4; }
+.ansi-white-bg { background-color: #C5C1B4; }
+.ansi-white-intense-fg { color: #A1A6B2; }
+.ansi-white-intense-bg { background-color: #A1A6B2; }
+
+.ansi-default-inverse-fg { color: #FFFFFF; }
+.ansi-default-inverse-bg { background-color: #000000; }
+
+.ansi-bold { font-weight: bold; }
+.ansi-underline { text-decoration: underline; }
+
+
+div.nbinput.container div.input_area div[class*=highlight] > pre,
+div.nboutput.container div.output_area div[class*=highlight] > pre,
+div.nboutput.container div.output_area div[class*=highlight].math,
+div.nboutput.container div.output_area.rendered_html,
+div.nboutput.container div.output_area > div.output_javascript,
+div.nboutput.container div.output_area:not(.rendered_html) > img{
+    padding: 5px;
+    margin: 0;
+}
+
+/* fix copybtn overflow problem in chromium (needed for 'sphinx_copybutton') */
+div.nbinput.container div.input_area > div[class^='highlight'],
+div.nboutput.container div.output_area > div[class^='highlight']{
+    overflow-y: hidden;
+}
+
+/* hide copybtn icon on prompts (needed for 'sphinx_copybutton') */
+.prompt .copybtn {
+    display: none;
+}
+
+/* Some additional styling taken form the Jupyter notebook CSS */
+.jp-RenderedHTMLCommon table,
+div.rendered_html table {
+  border: none;
+  border-collapse: collapse;
+  border-spacing: 0;
+  color: black;
+  font-size: 12px;
+  table-layout: fixed;
+}
+.jp-RenderedHTMLCommon thead,
+div.rendered_html thead {
+  border-bottom: 1px solid black;
+  vertical-align: bottom;
+}
+.jp-RenderedHTMLCommon tr,
+.jp-RenderedHTMLCommon th,
+.jp-RenderedHTMLCommon td,
+div.rendered_html tr,
+div.rendered_html th,
+div.rendered_html td {
+  text-align: right;
+  vertical-align: middle;
+  padding: 0.5em 0.5em;
+  line-height: normal;
+  white-space: normal;
+  max-width: none;
+  border: none;
+}
+.jp-RenderedHTMLCommon th,
+div.rendered_html th {
+  font-weight: bold;
+}
+.jp-RenderedHTMLCommon tbody tr:nth-child(odd),
+div.rendered_html tbody tr:nth-child(odd) {
+  background: #f5f5f5;
+}
+.jp-RenderedHTMLCommon tbody tr:hover,
+div.rendered_html tbody tr:hover {
+  background: rgba(66, 165, 245, 0.2);
+}
+</style>
+<section id="Basics-of-Tree-Tensor-Networks">
+<h1>Basics of Tree Tensor Networks<a class="headerlink" href="#Basics-of-Tree-Tensor-Networks" title="Permalink to this heading">#</a></h1>
+<section id="Overview">
+<h2>Overview<a class="headerlink" href="#Overview" title="Permalink to this heading">#</a></h2>
+<p>Tree tensor network state (TTNS) and tree tensor network operator (TTNO) are generalizations of MPS and MPO. In this notebook, we will show how to define tree tensor network states in Renormalizer. Overall the interfaces for tree tensor networks are very similar to that of the matrix product states. The biggest difference is how we define the model (tree structure), which we will describe in detail in the following.</p>
+</section>
+<section id="Defining-a-Tree">
+<h2>Defining a Tree<a class="headerlink" href="#Defining-a-Tree" title="Permalink to this heading">#</a></h2>
+<p>The tree structure in Renormalizer is specified through <code class="docutils literal notranslate"><span class="pre">BasisTree</span></code>, i.e., a tree of basis sets. This is similar to the list of basis sets for the definition of MPS.</p>
+<p>The tree node of <code class="docutils literal notranslate"><span class="pre">BasisTree</span></code> is <code class="docutils literal notranslate"><span class="pre">TreeNodeBasis</span></code>. In the following we’ll construct a number of <code class="docutils literal notranslate"><span class="pre">TreeNodeBasis</span></code>s and connect them as a tree.</p>
+<div class="nbinput docutils container">
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[1]:
+</pre></div>
+</div>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="kn">from</span> <span class="nn">renormalizer</span> <span class="kn">import</span> <span class="n">BasisHalfSpin</span>
+<span class="kn">from</span> <span class="nn">renormalizer.tn</span> <span class="kn">import</span> <span class="n">TreeNodeBasis</span><span class="p">,</span> <span class="n">BasisTree</span>
+</pre></div>
+</div>
+</div>
+<div class="nboutput nblast docutils container">
+<div class="prompt empty docutils container">
+</div>
+<div class="output_area stderr docutils container">
+<div class="highlight"><pre>
+2024-07-02 04:07:44,151[INFO] Use NumPy as backend
+2024-07-02 04:07:44,152[INFO] numpy random seed is 9012
+2024-07-02 04:07:44,152[INFO] random seed is 1092
+2024-07-02 04:07:44,163[INFO] Git Commit Hash: ec0e361eea3b2b684c0ec4c885c71df138ff1d5d
+2024-07-02 04:07:44,164[INFO] use 64 bits
+</pre></div></div>
+</div>
+<div class="nbinput docutils container">
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[2]:
+</pre></div>
+</div>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="c1"># some spin DOF for future usage</span>
+<span class="n">spins</span> <span class="o">=</span> <span class="p">[</span><span class="n">BasisHalfSpin</span><span class="p">(</span><span class="n">i</span><span class="p">)</span> <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="mi">5</span><span class="p">)]</span>
+<span class="n">spins</span>
+</pre></div>
+</div>
+</div>
+<div class="nboutput nblast docutils container">
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[2]:
+</pre></div>
+</div>
+<div class="output_area docutils container">
+<div class="highlight"><pre>
+[BasisHalfSpin(dof: 0, nbas: 2),
+ BasisHalfSpin(dof: 1, nbas: 2),
+ BasisHalfSpin(dof: 2, nbas: 2),
+ BasisHalfSpin(dof: 3, nbas: 2),
+ BasisHalfSpin(dof: 4, nbas: 2)]
+</pre></div></div>
+</div>
+<div class="nbinput nblast docutils container">
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[3]:
+</pre></div>
+</div>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="c1"># construct tree nodes. One node for one basis set</span>
+<span class="n">nodes</span> <span class="o">=</span> <span class="p">[</span><span class="n">TreeNodeBasis</span><span class="p">(</span><span class="n">basis</span><span class="p">)</span> <span class="k">for</span> <span class="n">basis</span> <span class="ow">in</span> <span class="n">spins</span><span class="p">]</span>
+</pre></div>
+</div>
+</div>
+<p>Tree nodes are can connected together by the <code class="docutils literal notranslate"><span class="pre">add_child</span></code> function. We first pick a root and then add two children to the root</p>
+<div class="nbinput docutils container">
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[4]:
+</pre></div>
+</div>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">root</span> <span class="o">=</span> <span class="n">nodes</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span>
+<span class="n">root</span><span class="o">.</span><span class="n">add_child</span><span class="p">(</span><span class="n">nodes</span><span class="p">[</span><span class="mi">1</span><span class="p">:</span><span class="mi">3</span><span class="p">])</span>
+</pre></div>
+</div>
+</div>
+<div class="nboutput nblast docutils container">
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[4]:
+</pre></div>
+</div>
+<div class="output_area docutils container">
+<div class="highlight"><pre>
+TreeNodeBasis(BasisHalfSpin(dof: 0, nbas: 2))
+</pre></div></div>
+</div>
+<p>We can check they are already connected through <code class="docutils literal notranslate"><span class="pre">.children</span></code> and <code class="docutils literal notranslate"><span class="pre">.parent</span></code> attributes. Note that a node can have multiple children but can only have one parent.</p>
+<div class="nbinput docutils container">
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[5]:
+</pre></div>
+</div>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">root</span><span class="o">.</span><span class="n">children</span>
+</pre></div>
+</div>
+</div>
+<div class="nboutput nblast docutils container">
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[5]:
+</pre></div>
+</div>
+<div class="output_area docutils container">
+<div class="highlight"><pre>
+[TreeNodeBasis(BasisHalfSpin(dof: 1, nbas: 2)),
+ TreeNodeBasis(BasisHalfSpin(dof: 2, nbas: 2))]
+</pre></div></div>
+</div>
+<div class="nbinput docutils container">
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[6]:
+</pre></div>
+</div>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">nodes</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span><span class="o">.</span><span class="n">parent</span>
+</pre></div>
+</div>
+</div>
+<div class="nboutput nblast docutils container">
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[6]:
+</pre></div>
+</div>
+<div class="output_area docutils container">
+<div class="highlight"><pre>
+TreeNodeBasis(BasisHalfSpin(dof: 0, nbas: 2))
+</pre></div></div>
+</div>
+<p>We then connect the rest of the nodes to one of the children</p>
+<div class="nbinput docutils container">
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[7]:
+</pre></div>
+</div>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">root</span><span class="o">.</span><span class="n">children</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span><span class="o">.</span><span class="n">add_child</span><span class="p">(</span><span class="n">nodes</span><span class="p">[</span><span class="mi">3</span><span class="p">:])</span>
+</pre></div>
+</div>
+</div>
+<div class="nboutput nblast docutils container">
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[7]:
+</pre></div>
+</div>
+<div class="output_area docutils container">
+<div class="highlight"><pre>
+TreeNodeBasis(BasisHalfSpin(dof: 1, nbas: 2))
+</pre></div></div>
+</div>
+<p>Now all of the nodes are connected, we can construct the tree by feeding the root node to the <code class="docutils literal notranslate"><span class="pre">BasisTree</span></code> class.</p>
+<p>We can visualize the tree structure through the <code class="docutils literal notranslate"><span class="pre">print</span></code> function, which shows the degrees of freedom in the tree.</p>
+<div class="nbinput docutils container">
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[8]:
+</pre></div>
+</div>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">tree</span> <span class="o">=</span> <span class="n">BasisTree</span><span class="p">(</span><span class="n">root</span><span class="p">)</span>
+<span class="n">tree</span><span class="o">.</span><span class="n">print</span><span class="p">()</span>
+</pre></div>
+</div>
+</div>
+<div class="nboutput nblast docutils container">
+<div class="prompt empty docutils container">
+</div>
+<div class="output_area docutils container">
+<div class="highlight"><pre>
+
+             ┌[(3,)]
+      ┌[(1,)]┤
+      │      └[(4,)]
+[(0,)]┤
+      └[(2,)]
+</pre></div></div>
+</div>
+<p>All nodes in a tree, including <code class="docutils literal notranslate"><span class="pre">TTNS</span></code> and <code class="docutils literal notranslate"><span class="pre">TTNO</span></code>, can be accessed via a list, according to <a class="reference external" href="https://en.wikipedia.org/wiki/Tree_traversal#Pre-order,_NLR">pre-order traversal</a>.</p>
+<div class="nbinput docutils container">
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[9]:
+</pre></div>
+</div>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">tree</span><span class="o">.</span><span class="n">node_list</span>
+</pre></div>
+</div>
+</div>
+<div class="nboutput nblast docutils container">
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[9]:
+</pre></div>
+</div>
+<div class="output_area docutils container">
+<div class="highlight"><pre>
+[TreeNodeBasis(BasisHalfSpin(dof: 0, nbas: 2)),
+ TreeNodeBasis(BasisHalfSpin(dof: 1, nbas: 2)),
+ TreeNodeBasis(BasisHalfSpin(dof: 3, nbas: 2)),
+ TreeNodeBasis(BasisHalfSpin(dof: 4, nbas: 2)),
+ TreeNodeBasis(BasisHalfSpin(dof: 2, nbas: 2))]
+</pre></div></div>
+</div>
+<p>The <code class="docutils literal notranslate"><span class="pre">BasisTree</span></code> object can be considered as immutable. If a new tree is desired by modifying the existing tree, the <code class="docutils literal notranslate"><span class="pre">BasisTree</span></code> instance should be recreated with the corresponding root node.</p>
+</section>
+<section id="Advanced-Tree-Structure">
+<h2>Advanced Tree Structure<a class="headerlink" href="#Advanced-Tree-Structure" title="Permalink to this heading">#</a></h2>
+<p>In the example above, the number of <code class="docutils literal notranslate"><span class="pre">BasisSet</span></code>s in each node is one. Renormalizer permits any number of <code class="docutils literal notranslate"><span class="pre">BasisSet</span></code>s for each node.</p>
+<p>First of all, if no <code class="docutils literal notranslate"><span class="pre">BasisSet</span></code> is provided, the node will become purely virtual and will not associated with any physical degree of freedom. A dummy basis set is attached to the node for programming convenience. The dimension of the Hilbert space of this dummy degree of freedom is 1 and the only allowed operator is identity.</p>
+<div class="nbinput docutils container">
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[10]:
+</pre></div>
+</div>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">node1</span> <span class="o">=</span> <span class="n">TreeNodeBasis</span><span class="p">()</span>
+<span class="n">node1</span>
+</pre></div>
+</div>
+</div>
+<div class="nboutput nblast docutils container">
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[10]:
+</pre></div>
+</div>
+<div class="output_area docutils container">
+<div class="highlight"><pre>
+TreeNodeBasis(BasisDummy(dof: (&#39;Virtual DOF&#39;, 0), nbas: 1))
+</pre></div></div>
+</div>
+<p>In addition, each tree node can have multiple associated <code class="docutils literal notranslate"><span class="pre">BasisSet</span></code>.</p>
+<div class="nbinput docutils container">
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[11]:
+</pre></div>
+</div>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">node2</span> <span class="o">=</span> <span class="n">TreeNodeBasis</span><span class="p">([</span><span class="n">BasisHalfSpin</span><span class="p">(</span><span class="n">i</span><span class="p">)</span> <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="mi">3</span><span class="p">)])</span>
+<span class="n">node2</span>
+</pre></div>
+</div>
+</div>
+<div class="nboutput nblast docutils container">
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[11]:
+</pre></div>
+</div>
+<div class="output_area docutils container">
+<div class="highlight"><pre>
+TreeNodeBasis(BasisHalfSpin(dof: 0, nbas: 2), BasisHalfSpin(dof: 1, nbas: 2), BasisHalfSpin(dof: 2, nbas: 2))
+</pre></div></div>
+</div>
+<p>Since building the tree structure can be tedious, Rernomalizer has a number of builtin tree structure that can be used out of box. The most simple example is the MPS (linear) tree strucure.</p>
+<div class="nbinput docutils container">
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[12]:
+</pre></div>
+</div>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">BasisTree</span><span class="o">.</span><span class="n">linear</span><span class="p">([</span><span class="n">BasisHalfSpin</span><span class="p">(</span><span class="n">i</span><span class="p">)</span> <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="mi">5</span><span class="p">)])</span><span class="o">.</span><span class="n">print</span><span class="p">()</span>
+</pre></div>
+</div>
+</div>
+<div class="nboutput nblast docutils container">
+<div class="prompt empty docutils container">
+</div>
+<div class="output_area docutils container">
+<div class="highlight"><pre>
+
+[(0,)]─[(1,)]─[(2,)]─[(3,)]─[(4,)]
+</pre></div></div>
+</div>
+<p>Another example is simple binary tree</p>
+<div class="nbinput docutils container">
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[13]:
+</pre></div>
+</div>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">BasisTree</span><span class="o">.</span><span class="n">binary</span><span class="p">([</span><span class="n">BasisHalfSpin</span><span class="p">(</span><span class="n">i</span><span class="p">)</span> <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="mi">7</span><span class="p">)])</span><span class="o">.</span><span class="n">print</span><span class="p">()</span>
+</pre></div>
+</div>
+</div>
+<div class="nboutput nblast docutils container">
+<div class="prompt empty docutils container">
+</div>
+<div class="output_area docutils container">
+<div class="highlight"><pre>
+
+             ┌[(3,)]
+      ┌[(1,)]┤
+      │      └[(4,)]
+[(0,)]┤
+      │      ┌[(5,)]
+      └[(2,)]┤
+             └[(6,)]
+</pre></div></div>
+</div>
+<p>Another frequent tree structure is the “MCTDH-style” tree, or hierarchical Tucker format.</p>
+<p>The feature of this type of tree is that all physical degrees of freedom are attached to the leaf nodes. Also, each leaf node typically has more than one physical degrees of freedom.</p>
+<p>The following shows this type of tree with a binary structure and a ternary structure</p>
+<div class="nbinput docutils container">
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[14]:
+</pre></div>
+</div>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">BasisTree</span><span class="o">.</span><span class="n">binary_mctdh</span><span class="p">([</span><span class="n">BasisHalfSpin</span><span class="p">(</span><span class="n">i</span><span class="p">)</span> <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="mi">8</span><span class="p">)])</span><span class="o">.</span><span class="n">print</span><span class="p">()</span>
+</pre></div>
+</div>
+</div>
+<div class="nboutput nblast docutils container">
+<div class="prompt empty docutils container">
+</div>
+<div class="output_area docutils container">
+<div class="highlight"><pre>
+
+                                                   ┌[(0,), (1,)]
+                         ┌[((&#39;MCTDH virtual&#39;, 1),)]┤
+                         │                         └[(2,), (3,)]
+[((&#39;MCTDH virtual&#39;, 0),)]┤
+                         │                         ┌[(4,), (5,)]
+                         └[((&#39;MCTDH virtual&#39;, 2),)]┤
+                                                   └[(6,), (7,)]
+</pre></div></div>
+</div>
+<div class="nbinput docutils container">
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[15]:
+</pre></div>
+</div>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">BasisTree</span><span class="o">.</span><span class="n">ternary_mctdh</span><span class="p">([</span><span class="n">BasisHalfSpin</span><span class="p">(</span><span class="n">i</span><span class="p">)</span> <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="mi">9</span><span class="p">)])</span><span class="o">.</span><span class="n">print</span><span class="p">()</span>
+</pre></div>
+</div>
+</div>
+<div class="nboutput nblast docutils container">
+<div class="prompt empty docutils container">
+</div>
+<div class="output_area docutils container">
+<div class="highlight"><pre>
+
+                         ┌[(0,), (1,), (2,)]
+[((&#39;MCTDH virtual&#39;, 0),)]┼[(3,), (4,), (5,)]
+                         └[(6,), (7,), (8,)]
+</pre></div></div>
+</div>
+<p>Note that the internal nodes (non-leaf nodes) is not associated with any physical degree of freedom and a virtual degree of freedom is attached.</p>
+</section>
+<section id="TTNS-and-TTNO">
+<h2>TTNS and TTNO<a class="headerlink" href="#TTNS-and-TTNO" title="Permalink to this heading">#</a></h2>
+<p>Having defined the tree structure using <code class="docutils literal notranslate"><span class="pre">BasisTree</span></code>. We can now construct TTNS and TTNO accordingly. The interfaces are very similar to that of MPS, but <code class="docutils literal notranslate"><span class="pre">BasisTree</span></code> take over the roles of <code class="docutils literal notranslate"><span class="pre">Model</span></code>. With this modification it is more convenient to perform TTNO/TTNS algebra when the idea of the Hamiltonian is not well defined, such as in the case of quantum circuit simulation.</p>
+<p>We recommend reading previous tutorials if the following code seems to be too complicated.</p>
+<section id="TTNS">
+<h3>TTNS<a class="headerlink" href="#TTNS" title="Permalink to this heading">#</a></h3>
+<p>We first construct TTNS based on a complete binary spin tree with 7 sites in total.</p>
+<div class="nbinput nblast docutils container">
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[16]:
+</pre></div>
+</div>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="kn">from</span> <span class="nn">renormalizer.tn</span> <span class="kn">import</span> <span class="n">TTNS</span><span class="p">,</span> <span class="n">TTNO</span>
+<span class="n">basis</span> <span class="o">=</span> <span class="n">BasisTree</span><span class="o">.</span><span class="n">binary</span><span class="p">([</span><span class="n">BasisHalfSpin</span><span class="p">(</span><span class="n">i</span><span class="p">)</span> <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="mi">7</span><span class="p">)])</span>
+</pre></div>
+</div>
+</div>
+<div class="nbinput docutils container">
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[17]:
+</pre></div>
+</div>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">ttns</span> <span class="o">=</span> <span class="n">TTNS</span><span class="o">.</span><span class="n">random</span><span class="p">(</span><span class="n">basis</span><span class="p">,</span> <span class="n">qntot</span><span class="o">=</span><span class="mi">0</span><span class="p">,</span> <span class="n">m_max</span><span class="o">=</span><span class="mi">5</span><span class="p">)</span>
+<span class="n">ttns</span>
+</pre></div>
+</div>
+</div>
+<div class="nboutput nblast docutils container">
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[17]:
+</pre></div>
+</div>
+<div class="output_area docutils container">
+<div class="highlight"><pre>
+&lt;class &#39;renormalizer.tn.tree.TTNS&#39;&gt; with 7 nodes
+</pre></div></div>
+</div>
+<p>Each node in <code class="docutils literal notranslate"><span class="pre">TTNS</span></code> is a <code class="docutils literal notranslate"><span class="pre">TreeNodeTensor</span></code> whose core data is the numerical tensor. The tensor indices are arranged as follows: indices to the children, physical indices (if any) and the index to the parent.</p>
+<div class="nbinput docutils container">
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[18]:
+</pre></div>
+</div>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">ttns</span><span class="o">.</span><span class="n">node_list</span>
+</pre></div>
+</div>
+</div>
+<div class="nboutput nblast docutils container">
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[18]:
+</pre></div>
+</div>
+<div class="output_area docutils container">
+<div class="highlight"><pre>
+[TreeNodeTensor((5, 5, 2, 1),float64),
+ TreeNodeTensor((2, 2, 2, 5),float64),
+ TreeNodeTensor((2, 2),float64),
+ TreeNodeTensor((2, 2),float64),
+ TreeNodeTensor((2, 2, 2, 5),float64),
+ TreeNodeTensor((2, 2),float64),
+ TreeNodeTensor((2, 2),float64)]
+</pre></div></div>
+</div>
+<div class="nbinput docutils container">
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[19]:
+</pre></div>
+</div>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">ttns</span><span class="o">.</span><span class="n">node_list</span><span class="p">[</span><span class="mi">2</span><span class="p">]</span><span class="o">.</span><span class="n">tensor</span>
+</pre></div>
+</div>
+</div>
+<div class="nboutput nblast docutils container">
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[19]:
+</pre></div>
+</div>
+<div class="output_area docutils container">
+<div class="highlight"><pre>
+array([[-0.99496648, -0.10020826],
+       [-0.10020826,  0.99496648]])
+</pre></div></div>
+</div>
+<div class="nbinput docutils container">
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[20]:
+</pre></div>
+</div>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">ttns</span><span class="o">.</span><span class="n">calc_1site_rdm</span><span class="p">()</span>
+</pre></div>
+</div>
+</div>
+<div class="nboutput docutils container">
+<div class="prompt empty docutils container">
+</div>
+<div class="output_area stderr docutils container">
+<div class="highlight"><pre>
+2024-07-02 04:07:44,348[DEBUG] # of operator terms: 1
+</pre></div></div>
+</div>
+<div class="nboutput nblast docutils container">
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[20]:
+</pre></div>
+</div>
+<div class="output_area docutils container">
+<div class="highlight"><pre>
+{0: array([[ 0.36219816, -0.05108033],
+        [-0.05108033,  0.63780184]]),
+ 1: array([[0.52219779, 0.04792124],
+        [0.04792124, 0.47780221]]),
+ 2: array([[0.51527382, 0.01204695],
+        [0.01204695, 0.48472618]]),
+ 3: array([[ 0.45914641, -0.03186007],
+        [-0.03186007,  0.54085359]]),
+ 4: array([[0.53935311, 0.17021523],
+        [0.17021523, 0.46064689]]),
+ 5: array([[ 0.39225728, -0.05994727],
+        [-0.05994727,  0.60774272]]),
+ 6: array([[ 0.67911799, -0.05841049],
+        [-0.05841049,  0.32088201]])}
+</pre></div></div>
+</div>
+<p><code class="docutils literal notranslate"><span class="pre">TTNS</span></code> by default will construct a hartree product state given the basis tree</p>
+<div class="nbinput docutils container">
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[21]:
+</pre></div>
+</div>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">TTNS</span><span class="p">(</span><span class="n">basis</span><span class="p">)</span><span class="o">.</span><span class="n">bond_dims</span>
+</pre></div>
+</div>
+</div>
+<div class="nboutput nblast docutils container">
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[21]:
+</pre></div>
+</div>
+<div class="output_area docutils container">
+<div class="highlight"><pre>
+[1, 1, 1, 1, 1, 1, 1]
+</pre></div></div>
+</div>
+<p>The bond dimension is the dimension of the parent index for each node in pre-order traversal.</p>
+</section>
+<section id="TTNO">
+<h3>TTNO<a class="headerlink" href="#TTNO" title="Permalink to this heading">#</a></h3>
+<p>We next turn to TTNO. We will boroow the testing Holstein Hamiltonian for MPS to illustrate TTNO construction.</p>
+<div class="nbinput nblast docutils container">
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[22]:
+</pre></div>
+</div>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="kn">from</span> <span class="nn">renormalizer.tests.parameter</span> <span class="kn">import</span> <span class="n">holstein_model</span>
+</pre></div>
+</div>
+</div>
+<div class="nbinput docutils container">
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[23]:
+</pre></div>
+</div>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">holstein_model</span><span class="o">.</span><span class="n">basis</span>
+</pre></div>
+</div>
+</div>
+<div class="nboutput nblast docutils container">
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[23]:
+</pre></div>
+</div>
+<div class="output_area docutils container">
+<div class="highlight"><pre>
+[BasisSimpleElectron(dof: 0, nbas: 2, qn: [[0], [1]]),
+ BasisSHO(dof: (0, 0), x0: 0.0, omega: 0.0004852952677876329, nbas: 4),
+ BasisSHO(dof: (0, 1), x0: 0.0, omega: 0.007087607302666907, nbas: 4),
+ BasisSimpleElectron(dof: 1, nbas: 2, qn: [[0], [1]]),
+ BasisSHO(dof: (1, 0), x0: 0.0, omega: 0.0004852952677876329, nbas: 4),
+ BasisSHO(dof: (1, 1), x0: 0.0, omega: 0.007087607302666907, nbas: 4),
+ BasisSimpleElectron(dof: 2, nbas: 2, qn: [[0], [1]]),
+ BasisSHO(dof: (2, 0), x0: 0.0, omega: 0.0004852952677876329, nbas: 4),
+ BasisSHO(dof: (2, 1), x0: 0.0, omega: 0.007087607302666907, nbas: 4)]
+</pre></div></div>
+</div>
+<div class="nbinput docutils container">
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[24]:
+</pre></div>
+</div>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">holstein_model</span><span class="o">.</span><span class="n">ham_terms</span>
+</pre></div>
+</div>
+</div>
+<div class="nboutput nblast docutils container">
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[24]:
+</pre></div>
+</div>
+<div class="output_area docutils container">
+<div class="highlight"><pre>
+[Op(&#39;a^\\dagger a&#39;, [0, 0], 0.10016074648883302, [[1], [-1]]),
+ Op(&#39;a^\\dagger a&#39;, [0, 1], -0.003674932217565499, [[1], [-1]]),
+ Op(&#39;a^\\dagger a&#39;, [0, 2], -0.007349864435130998, [[1], [-1]]),
+ Op(&#39;a^\\dagger a&#39;, [1, 0], -0.003674932217565499, [[1], [-1]]),
+ Op(&#39;a^\\dagger a&#39;, [1, 1], 0.10016074648883302, [[1], [-1]]),
+ Op(&#39;a^\\dagger a&#39;, [1, 2], -0.011024796652696497, [[1], [-1]]),
+ Op(&#39;a^\\dagger a&#39;, [2, 0], -0.007349864435130998, [[1], [-1]]),
+ Op(&#39;a^\\dagger a&#39;, [2, 1], -0.011024796652696497, [[1], [-1]]),
+ Op(&#39;a^\\dagger a&#39;, [2, 2], 0.10016074648883302, [[1], [-1]]),
+ Op(&#39;p^2&#39;, [(0, 0)], 0.5),
+ Op(&#39;x^2&#39;, [(0, 0)], 1.1775574846853516e-07),
+ Op(&#39;p^2&#39;, [(0, 1)], 0.5),
+ Op(&#39;x^2&#39;, [(0, 1)], 2.5117088638408635e-05),
+ Op(&#39;p^2&#39;, [(1, 0)], 0.5),
+ Op(&#39;x^2&#39;, [(1, 0)], 1.1775574846853516e-07),
+ Op(&#39;p^2&#39;, [(1, 1)], 0.5),
+ Op(&#39;x^2&#39;, [(1, 1)], 2.5117088638408635e-05),
+ Op(&#39;p^2&#39;, [(2, 0)], 0.5),
+ Op(&#39;x^2&#39;, [(2, 0)], 1.1775574846853516e-07),
+ Op(&#39;p^2&#39;, [(2, 1)], 0.5),
+ Op(&#39;x^2&#39;, [(2, 1)], 2.5117088638408635e-05),
+ Op(&#39;a^\\dagger a x&#39;, [0, 0, (0, 0)], -7.097609983192488e-06, [[1], [-1], [0]]),
+ Op(&#39;a^\\dagger a x&#39;, [0, 0, (0, 1)], -0.00044069941383179025, [[1], [-1], [0]]),
+ Op(&#39;a^\\dagger a x&#39;, [1, 1, (1, 0)], -7.097609983192488e-06, [[1], [-1], [0]]),
+ Op(&#39;a^\\dagger a x&#39;, [1, 1, (1, 1)], -0.00044069941383179025, [[1], [-1], [0]]),
+ Op(&#39;a^\\dagger a x&#39;, [2, 2, (2, 0)], -7.097609983192488e-06, [[1], [-1], [0]]),
+ Op(&#39;a^\\dagger a x&#39;, [2, 2, (2, 1)], -0.00044069941383179025, [[1], [-1], [0]])]
+</pre></div></div>
+</div>
+<p>The basis tree is construct manually to reflect the interaction in the Hamiltonian</p>
+<div class="nbinput docutils container">
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[25]:
+</pre></div>
+</div>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">nodes</span> <span class="o">=</span> <span class="p">[]</span>
+<span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="mi">3</span><span class="p">):</span>
+    <span class="n">node1</span> <span class="o">=</span> <span class="n">TreeNodeBasis</span><span class="p">(</span><span class="n">holstein_model</span><span class="o">.</span><span class="n">basis</span><span class="p">[</span><span class="mi">3</span><span class="o">*</span><span class="n">i</span><span class="p">])</span>
+    <span class="n">node2</span> <span class="o">=</span> <span class="n">TreeNodeBasis</span><span class="p">(</span><span class="n">holstein_model</span><span class="o">.</span><span class="n">basis</span><span class="p">[</span><span class="mi">3</span><span class="o">*</span><span class="n">i</span><span class="o">+</span><span class="mi">1</span><span class="p">:</span><span class="mi">3</span><span class="o">*</span><span class="n">i</span><span class="o">+</span><span class="mi">3</span><span class="p">])</span>
+    <span class="n">node1</span><span class="o">.</span><span class="n">add_child</span><span class="p">(</span><span class="n">node2</span><span class="p">)</span>
+    <span class="n">nodes</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">node1</span><span class="p">)</span>
+<span class="n">nodes</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span><span class="o">.</span><span class="n">add_child</span><span class="p">([</span><span class="n">nodes</span><span class="p">[</span><span class="mi">0</span><span class="p">],</span> <span class="n">nodes</span><span class="p">[</span><span class="mi">2</span><span class="p">]])</span>
+
+<span class="n">basis</span> <span class="o">=</span> <span class="n">BasisTree</span><span class="p">(</span><span class="n">nodes</span><span class="p">[</span><span class="mi">1</span><span class="p">])</span>
+<span class="n">basis</span><span class="o">.</span><span class="n">print</span><span class="p">()</span>
+</pre></div>
+</div>
+</div>
+<div class="nboutput nblast docutils container">
+<div class="prompt empty docutils container">
+</div>
+<div class="output_area docutils container">
+<div class="highlight"><pre>
+
+      ┌[((1, 0),), ((1, 1),)]
+[(1,)]┼[(0,)]─[((0, 0),), ((0, 1),)]
+      └[(2,)]─[((2, 0),), ((2, 1),)]
+</pre></div></div>
+</div>
+<div class="nbinput docutils container">
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[26]:
+</pre></div>
+</div>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">ttno</span> <span class="o">=</span> <span class="n">TTNO</span><span class="p">(</span><span class="n">basis</span><span class="p">,</span> <span class="n">holstein_model</span><span class="o">.</span><span class="n">ham_terms</span><span class="p">)</span>
+</pre></div>
+</div>
+</div>
+<div class="nboutput nblast docutils container">
+<div class="prompt empty docutils container">
+</div>
+<div class="output_area stderr docutils container">
+<div class="highlight"><pre>
+2024-07-02 04:07:44,439[DEBUG] # of operator terms: 27
+</pre></div></div>
+</div>
+<div class="nbinput docutils container">
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[27]:
+</pre></div>
+</div>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">ttno</span><span class="o">.</span><span class="n">bond_dims</span>
+</pre></div>
+</div>
+</div>
+<div class="nboutput nblast docutils container">
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[27]:
+</pre></div>
+</div>
+<div class="output_area docutils container">
+<div class="highlight"><pre>
+[1, 3, 4, 3, 4, 3]
+</pre></div></div>
+</div>
+<div class="nbinput docutils container">
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[28]:
+</pre></div>
+</div>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">ttno</span><span class="o">.</span><span class="n">node_list</span>
+</pre></div>
+</div>
+</div>
+<div class="nboutput nblast docutils container">
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[28]:
+</pre></div>
+</div>
+<div class="output_area docutils container">
+<div class="highlight"><pre>
+[TreeNodeTensor((3, 4, 4, 2, 2, 1),float64),
+ TreeNodeTensor((4, 4, 4, 4, 3),float64),
+ TreeNodeTensor((3, 2, 2, 4),float64),
+ TreeNodeTensor((4, 4, 4, 4, 3),float64),
+ TreeNodeTensor((3, 2, 2, 4),float64),
+ TreeNodeTensor((4, 4, 4, 4, 3),float64)]
+</pre></div></div>
+</div>
+</section>
+<section id="TTNO/TTNS-manipulation">
+<h3>TTNO/TTNS manipulation<a class="headerlink" href="#TTNO/TTNS-manipulation" title="Permalink to this heading">#</a></h3>
+<p>We demonstrate TTNO/TTNS manipulation using the Holstein model</p>
+<div class="nbinput nblast docutils container">
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[29]:
+</pre></div>
+</div>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">ttns</span> <span class="o">=</span> <span class="n">TTNS</span><span class="p">(</span><span class="n">basis</span><span class="p">)</span>
+</pre></div>
+</div>
+</div>
+<div class="nbinput docutils container">
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[30]:
+</pre></div>
+</div>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">ttns</span> <span class="o">+</span> <span class="n">ttns</span>
+</pre></div>
+</div>
+</div>
+<div class="nboutput nblast docutils container">
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[30]:
+</pre></div>
+</div>
+<div class="output_area docutils container">
+<div class="highlight"><pre>
+&lt;class &#39;renormalizer.tn.tree.TTNS&#39;&gt; with 6 nodes
+</pre></div></div>
+</div>
+<div class="nbinput docutils container">
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[31]:
+</pre></div>
+</div>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">ttno</span> <span class="o">@</span> <span class="n">ttns</span>
+</pre></div>
+</div>
+</div>
+<div class="nboutput nblast docutils container">
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[31]:
+</pre></div>
+</div>
+<div class="output_area docutils container">
+<div class="highlight"><pre>
+&lt;class &#39;renormalizer.tn.tree.TTNS&#39;&gt; with 6 nodes
+</pre></div></div>
+</div>
+<div class="nbinput docutils container">
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[32]:
+</pre></div>
+</div>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">ttns</span><span class="o">.</span><span class="n">expectation</span><span class="p">(</span><span class="n">ttno</span><span class="p">)</span>
+</pre></div>
+</div>
+</div>
+<div class="nboutput nblast docutils container">
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[32]:
+</pre></div>
+</div>
+<div class="output_area docutils container">
+<div class="highlight"><pre>
+0.01135935385568181
+</pre></div></div>
+</div>
+</section>
+</section>
+</section>
+
+        </article>
+      </div>
+      <footer>
+        
+        <div class="related-pages">
+          <a class="next-page" href="../applications.html">
+              <div class="page-info">
+                <div class="context">
+                  <span>Next</span>
+                </div>
+                <div class="title">Application Tutorials</div>
+              </div>
+              <svg class="furo-related-icon"><use href="#svg-arrow-right"></use></svg>
+            </a>
+          <a class="prev-page" href="compress_mps.html">
+              <svg class="furo-related-icon"><use href="#svg-arrow-right"></use></svg>
+              <div class="page-info">
+                <div class="context">
+                  <span>Previous</span>
+                </div>
+                
+                <div class="title">Compressing MPS</div>
+                
+              </div>
+            </a>
+        </div>
+        <div class="bottom-of-page">
+          <div class="left-details">
+            <div class="copyright">
+                Copyright &#169; 2024, Shuaigroup
+            </div>
+            Made with <a href="https://www.sphinx-doc.org/">Sphinx</a> and <a class="muted-link" href="https://pradyunsg.me">@pradyunsg</a>'s
+            
+            <a href="https://github.com/pradyunsg/furo">Furo</a>
+            
+          </div>
+          <div class="right-details">
+            <div class="icons">
+              
+            </div>
+          </div>
+        </div>
+        
+      </footer>
+    </div>
+    <aside class="toc-drawer">
+      
+      
+      <div class="toc-sticky toc-scroll">
+        <div class="toc-title-container">
+          <span class="toc-title">
+            On this page
+          </span>
+        </div>
+        <div class="toc-tree-container">
+          <div class="toc-tree">
+            <ul>
+<li><a class="reference internal" href="#">Basics of Tree Tensor Networks</a><ul>
+<li><a class="reference internal" href="#Overview">Overview</a></li>
+<li><a class="reference internal" href="#Defining-a-Tree">Defining a Tree</a></li>
+<li><a class="reference internal" href="#Advanced-Tree-Structure">Advanced Tree Structure</a></li>
+<li><a class="reference internal" href="#TTNS-and-TTNO">TTNS and TTNO</a><ul>
+<li><a class="reference internal" href="#TTNS">TTNS</a></li>
+<li><a class="reference internal" href="#TTNO">TTNO</a></li>
+<li><a class="reference internal" href="#TTNO/TTNS-manipulation">TTNO/TTNS manipulation</a></li>
+</ul>
+</li>
+</ul>
+</li>
+</ul>
+
+          </div>
+        </div>
+      </div>
+      
+      
+    </aside>
+  </div>
+</div><script data-url_root="../" id="documentation_options" src="../_static/documentation_options.js"></script>
+    <script src="../_static/jquery.js"></script>
+    <script src="../_static/underscore.js"></script>
+    <script src="../_static/_sphinx_javascript_frameworks_compat.js"></script>
+    <script src="../_static/doctools.js"></script>
+    <script src="../_static/sphinx_highlight.js"></script>
+    <script src="../_static/scripts/furo.js"></script>
+    <script crossorigin="anonymous" integrity="sha256-Ae2Vz/4ePdIu6ZyI/5ZGsYnb+m0JlOmKPjt6XZ9JJkA=" src="https://cdnjs.cloudflare.com/ajax/libs/require.js/2.3.4/require.min.js"></script>
+    <script>window.MathJax = {"tex": {"inlineMath": [["$", "$"], ["\\(", "\\)"]], "processEscapes": true}, "options": {"ignoreHtmlClass": "tex2jax_ignore|mathjax_ignore|document", "processHtmlClass": "tex2jax_process|mathjax_process|math|output_area"}}</script>
+    <script defer="defer" src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-mml-chtml.js"></script>
+    </body>
+</html>

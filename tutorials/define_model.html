@@ -5,12 +5,12 @@
     <meta name="color-scheme" content="light dark"><meta name="generator" content="Docutils 0.19: https://docutils.sourceforge.io/" />
 
     <!-- Google tag (gtag.js) -->
-    <script async src="https://www.googletagmanager.com/gtag/js?id=G-VMR8V3W3BR"></script>
+    <script async src="https://www.googletagmanager.com/gtag/js?id=G-3HTENNM8CV"></script>
     <script>
         window.dataLayer = window.dataLayer || [];
         function gtag(){dataLayer.push(arguments);}
         gtag('js', new Date());
-        gtag('config', 'G-VMR8V3W3BR');
+        gtag('config', 'G-3HTENNM8CV');
     </script>
     <link rel="index" title="Index" href="../genindex.html" /><link rel="search" title="Search" href="../search.html" /><link rel="next" title="MPS and MPO" href="mps_mpo.html" /><link rel="prev" title="Basic Tutorials" href="../tutorial.html" />
 
@@ -169,6 +169,7 @@
 <li class="toctree-l2 current current-page"><a class="current reference internal" href="#">Define Your Model</a></li>
 <li class="toctree-l2"><a class="reference internal" href="mps_mpo.html">MPS and MPO</a></li>
 <li class="toctree-l2"><a class="reference internal" href="compress_mps.html">Compressing MPS</a></li>
+<li class="toctree-l2"><a class="reference internal" href="ttn_basic.html">Basics of Tree Tensor Networks</a></li>
 </ul>
 </li>
 <li class="toctree-l1 has-children"><a class="reference internal" href="../applications.html">Application Tutorials</a><input class="toctree-checkbox" id="toctree-checkbox-2" name="toctree-checkbox-2" role="switch" type="checkbox"/><label for="toctree-checkbox-2"><div class="visually-hidden">Toggle child pages in navigation</div><i class="icon"><svg><use href="#svg-arrow-right"></use></svg></i></label><ul>
@@ -183,6 +184,7 @@
 <li class="toctree-l2"><a class="reference internal" href="../ct.html">Charge Transport</a></li>
 <li class="toctree-l2"><a class="reference internal" href="../cv.html">Frequency domain DMRG</a></li>
 <li class="toctree-l2"><a class="reference internal" href="../sbm.html">Spin-Boson Model</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../ttn.html">Tree Tensor Network Algorithms</a></li>
 <li class="toctree-l2"><a class="reference internal" href="../configs.html">Calculation Configurations</a></li>
 </ul>
 </li>
@@ -502,11 +504,11 @@ div.rendered_html tbody tr:hover {
 </div>
 <div class="output_area stderr docutils container">
 <div class="highlight"><pre>
-2024-06-28 01:52:54,372[INFO] Use NumPy as backend
-2024-06-28 01:52:54,373[INFO] numpy random seed is 9012
-2024-06-28 01:52:54,374[INFO] random seed is 1092
-2024-06-28 01:52:54,384[INFO] Git Commit Hash: 94747e013f46048a35de60da868456c9caa301ef
-2024-06-28 01:52:54,386[INFO] use 64 bits
+2024-07-02 04:07:38,124[INFO] Use NumPy as backend
+2024-07-02 04:07:38,125[INFO] numpy random seed is 9012
+2024-07-02 04:07:38,125[INFO] random seed is 1092
+2024-07-02 04:07:38,136[INFO] Git Commit Hash: ec0e361eea3b2b684c0ec4c885c71df138ff1d5d
+2024-07-02 04:07:38,137[INFO] use 64 bits
 </pre></div></div>
 </div>
 <section id="Basics">
@@ -883,7 +885,7 @@ BasisHalfSpin(dof: (&#39;spin&#39;, 0), nbas: 2)
 </div>
 <div class="output_area stderr docutils container">
 <div class="highlight"><pre>
-2024-06-28 01:52:54,540[DEBUG] # of operator terms: 1
+2024-07-02 04:07:38,298[DEBUG] # of operator terms: 1
 </pre></div></div>
 </div>
 <div class="nboutput nblast docutils container">

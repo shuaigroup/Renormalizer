@@ -5,12 +5,12 @@
     <meta name="color-scheme" content="light dark"><meta name="generator" content="Docutils 0.19: https://docutils.sourceforge.io/" />
 
     <!-- Google tag (gtag.js) -->
-    <script async src="https://www.googletagmanager.com/gtag/js?id=G-VMR8V3W3BR"></script>
+    <script async src="https://www.googletagmanager.com/gtag/js?id=G-3HTENNM8CV"></script>
     <script>
         window.dataLayer = window.dataLayer || [];
         function gtag(){dataLayer.push(arguments);}
         gtag('js', new Date());
-        gtag('config', 'G-VMR8V3W3BR');
+        gtag('config', 'G-3HTENNM8CV');
     </script>
     <link rel="index" title="Index" href="../genindex.html" /><link rel="search" title="Search" href="../search.html" /><link rel="next" title="Compressing MPS" href="compress_mps.html" /><link rel="prev" title="Define Your Model" href="define_model.html" />
 
@@ -169,6 +169,7 @@
 <li class="toctree-l2"><a class="reference internal" href="define_model.html">Define Your Model</a></li>
 <li class="toctree-l2 current current-page"><a class="current reference internal" href="#">MPS and MPO</a></li>
 <li class="toctree-l2"><a class="reference internal" href="compress_mps.html">Compressing MPS</a></li>
+<li class="toctree-l2"><a class="reference internal" href="ttn_basic.html">Basics of Tree Tensor Networks</a></li>
 </ul>
 </li>
 <li class="toctree-l1 has-children"><a class="reference internal" href="../applications.html">Application Tutorials</a><input class="toctree-checkbox" id="toctree-checkbox-2" name="toctree-checkbox-2" role="switch" type="checkbox"/><label for="toctree-checkbox-2"><div class="visually-hidden">Toggle child pages in navigation</div><i class="icon"><svg><use href="#svg-arrow-right"></use></svg></i></label><ul>
@@ -183,6 +184,7 @@
 <li class="toctree-l2"><a class="reference internal" href="../ct.html">Charge Transport</a></li>
 <li class="toctree-l2"><a class="reference internal" href="../cv.html">Frequency domain DMRG</a></li>
 <li class="toctree-l2"><a class="reference internal" href="../sbm.html">Spin-Boson Model</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../ttn.html">Tree Tensor Network Algorithms</a></li>
 <li class="toctree-l2"><a class="reference internal" href="../configs.html">Calculation Configurations</a></li>
 </ul>
 </li>
@@ -513,11 +515,11 @@ div.rendered_html tbody tr:hover {
 </div>
 <div class="output_area stderr docutils container">
 <div class="highlight"><pre>
-2024-06-28 01:52:57,445[INFO] Use NumPy as backend
-2024-06-28 01:52:57,446[INFO] numpy random seed is 9012
-2024-06-28 01:52:57,447[INFO] random seed is 1092
-2024-06-28 01:52:57,458[INFO] Git Commit Hash: 94747e013f46048a35de60da868456c9caa301ef
-2024-06-28 01:52:57,459[INFO] use 64 bits
+2024-07-02 04:07:41,050[INFO] Use NumPy as backend
+2024-07-02 04:07:41,051[INFO] numpy random seed is 9012
+2024-07-02 04:07:41,051[INFO] random seed is 1092
+2024-07-02 04:07:41,061[INFO] Git Commit Hash: ec0e361eea3b2b684c0ec4c885c71df138ff1d5d
+2024-07-02 04:07:41,063[INFO] use 64 bits
 </pre></div></div>
 </div>
 <p>First, construct all terms in the Hamiltonian in a <code class="docutils literal notranslate"><span class="pre">list</span></code> or <code class="docutils literal notranslate"><span class="pre">OpSum</span></code>.</p>
@@ -670,8 +672,8 @@ array([[0., 0., 0., 0., 0., 0., 0., 0.],
 </div>
 <div class="output_area docutils container">
 <div class="highlight"><pre>
-(&lt;Matrix at 0x7f8370f0f580 (1, 2, 2) float64&gt;,
- &lt;Matrix at 0x7f8370f0f7f0 (2, 8, 1) float64&gt;)
+(&lt;Matrix at 0x7fa913bc6e20 (1, 2, 2) float64&gt;,
+ &lt;Matrix at 0x7fa913bc6e80 (2, 8, 1) float64&gt;)
 </pre></div></div>
 </div>
 <p><code class="docutils literal notranslate"><span class="pre">Matrix</span></code> can be considered as a wrapper for <code class="docutils literal notranslate"><span class="pre">np.ndarray</span></code> with more metadata. The indices of the array are left virtual index, the physical index and the right virtual index. The underlaying matrix can be accessed via the <code class="docutils literal notranslate"><span class="pre">array</span></code> attribute.</p>
@@ -889,10 +891,10 @@ array([ 0.41298208, -0.00752657,  0.17205047,  0.13905035,  0.20172165,
 </div>
 <div class="output_area stderr docutils container">
 <div class="highlight"><pre>
-2024-06-28 01:52:57,611[DEBUG] # of operator terms: 3
-2024-06-28 01:52:57,612[DEBUG] symbolic mpo algorithm: qr
-2024-06-28 01:52:57,612[DEBUG] Input operator terms: 3
-2024-06-28 01:52:57,615[DEBUG] After combination of the same terms: 3
+2024-07-02 04:07:41,212[DEBUG] # of operator terms: 3
+2024-07-02 04:07:41,212[DEBUG] symbolic mpo algorithm: qr
+2024-07-02 04:07:41,213[DEBUG] Input operator terms: 3
+2024-07-02 04:07:41,215[DEBUG] After combination of the same terms: 3
 </pre></div></div>
 </div>
 <div class="nboutput nblast docutils container">
@@ -901,8 +903,8 @@ array([ 0.41298208, -0.00752657,  0.17205047,  0.13905035,  0.20172165,
 </div>
 <div class="output_area docutils container">
 <div class="highlight"><pre>
-(&lt;Matrix at 0x7f8370f2a490 (1, 2, 2, 3) float64&gt;,
- &lt;Matrix at 0x7f8370f2a8e0 (3, 8, 8, 1) float64&gt;)
+(&lt;Matrix at 0x7fa938f0f700 (1, 2, 2, 3) float64&gt;,
+ &lt;Matrix at 0x7fa913bd4be0 (3, 8, 8, 1) float64&gt;)
 </pre></div></div>
 </div>
 <p>Here the logging outputs that there are 3 terms in the Hamiltonian, since <span class="math notranslate nohighlight">\(\hat \sigma_z\)</span> with coefficient 0 is dropped automatically.</p>
@@ -957,7 +959,7 @@ array([ 0.41298208, -0.00752657,  0.17205047,  0.13905035,  0.20172165,
 </div>
 <div class="output_area stderr docutils container">
 <div class="highlight"><pre>
-2024-06-28 01:52:57,636[DEBUG] # of operator terms: 1
+2024-07-02 04:07:41,238[DEBUG] # of operator terms: 1
 </pre></div></div>
 </div>
 </section>

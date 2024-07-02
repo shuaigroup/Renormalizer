@@ -4,12 +4,12 @@
     <meta name="viewport" content="width=device-width,initial-scale=1"/>
     <meta name="color-scheme" content="light dark">
     <!-- Google tag (gtag.js) -->
-    <script async src="https://www.googletagmanager.com/gtag/js?id=G-VMR8V3W3BR"></script>
+    <script async src="https://www.googletagmanager.com/gtag/js?id=G-3HTENNM8CV"></script>
     <script>
         window.dataLayer = window.dataLayer || [];
         function gtag(){dataLayer.push(arguments);}
         gtag('js', new Date());
-        gtag('config', 'G-VMR8V3W3BR');
+        gtag('config', 'G-3HTENNM8CV');
     </script>
     <link rel="index" title="Index" href="#" /><link rel="search" title="Search" href="search.html" />
 
@@ -167,6 +167,7 @@
 <li class="toctree-l2"><a class="reference internal" href="tutorials/define_model.html">Define Your Model</a></li>
 <li class="toctree-l2"><a class="reference internal" href="tutorials/mps_mpo.html">MPS and MPO</a></li>
 <li class="toctree-l2"><a class="reference internal" href="tutorials/compress_mps.html">Compressing MPS</a></li>
+<li class="toctree-l2"><a class="reference internal" href="tutorials/ttn_basic.html">Basics of Tree Tensor Networks</a></li>
 </ul>
 </li>
 <li class="toctree-l1 has-children"><a class="reference internal" href="applications.html">Application Tutorials</a><input class="toctree-checkbox" id="toctree-checkbox-2" name="toctree-checkbox-2" role="switch" type="checkbox"/><label for="toctree-checkbox-2"><div class="visually-hidden">Toggle child pages in navigation</div><i class="icon"><svg><use href="#svg-arrow-right"></use></svg></i></label><ul>
@@ -181,6 +182,7 @@
 <li class="toctree-l2"><a class="reference internal" href="ct.html">Charge Transport</a></li>
 <li class="toctree-l2"><a class="reference internal" href="cv.html">Frequency domain DMRG</a></li>
 <li class="toctree-l2"><a class="reference internal" href="sbm.html">Spin-Boson Model</a></li>
+<li class="toctree-l2"><a class="reference internal" href="ttn.html">Tree Tensor Network Algorithms</a></li>
 <li class="toctree-l2"><a class="reference internal" href="configs.html">Calculation Configurations</a></li>
 </ul>
 </li>
@@ -263,9 +265,17 @@
           <li><a href="mps.html#renormalizer.mps.Mps.add">(renormalizer.mps.Mps method)</a>
 </li>
         </ul></li>
+        <li><a href="ttn.html#renormalizer.tn.BasisTree.add_auxiliary_space">add_auxiliary_space() (renormalizer.tn.BasisTree method)</a>
+</li>
+        <li><a href="ttn.html#renormalizer.tn.TreeNodeBasis.add_child">add_child() (renormalizer.tn.TreeNodeBasis method)</a>
+</li>
+        <li><a href="ttn.html#renormalizer.tn.TreeNodeBasis.add_children">add_children() (renormalizer.tn.TreeNodeBasis method)</a>
+</li>
         <li><a href="static.html#renormalizer.mps.tda.TDA.analysis_1ordm">analysis_1ordm() (renormalizer.mps.tda.TDA method)</a>
 </li>
         <li><a href="static.html#renormalizer.mps.tda.TDA.analysis_dominant_config">analysis_dominant_config() (renormalizer.mps.tda.TDA method)</a>
+</li>
+        <li><a href="ttn.html#renormalizer.tn.TreeNodeBasis.ancestors">ancestors (renormalizer.tn.TreeNodeBasis property)</a>
 </li>
         <li><a href="mps.html#renormalizer.mps.mp.MatrixProduct.angle">angle() (renormalizer.mps.mp.MatrixProduct method)</a>
 
@@ -315,6 +325,12 @@
           <li><a href="model.html#renormalizer.model.TI1DModel.basis">(renormalizer.model.TI1DModel attribute)</a>
 </li>
         </ul></li>
+        <li><a href="ttn.html#renormalizer.tn.BasisTree.basis_list">basis_list (renormalizer.tn.BasisTree property)</a>
+</li>
+        <li><a href="ttn.html#renormalizer.tn.BasisTree.basis_list_postorder">basis_list_postorder (renormalizer.tn.BasisTree property)</a>
+</li>
+        <li><a href="ttn.html#renormalizer.tn.TreeNodeBasis.basis_set">basis_set (renormalizer.tn.TreeNodeBasis property)</a>
+</li>
         <li><a href="model.html#renormalizer.model.basis.BasisHalfSpin">BasisHalfSpin (class in renormalizer.model.basis)</a>
 </li>
         <li><a href="model.html#renormalizer.model.basis.BasisHopsBoson">BasisHopsBoson (class in renormalizer.model.basis)</a>
@@ -330,6 +346,12 @@
         <li><a href="model.html#renormalizer.model.basis.BasisSimpleElectron">BasisSimpleElectron (class in renormalizer.model.basis)</a>
 </li>
         <li><a href="model.html#renormalizer.model.basis.BasisSineDVR">BasisSineDVR (class in renormalizer.model.basis)</a>
+</li>
+        <li><a href="ttn.html#renormalizer.tn.BasisTree">BasisTree (class in renormalizer.tn)</a>
+</li>
+        <li><a href="ttn.html#renormalizer.tn.BasisTree.binary">binary() (renormalizer.tn.BasisTree class method)</a>
+</li>
+        <li><a href="ttn.html#renormalizer.tn.BasisTree.binary_mctdh">binary_mctdh() (renormalizer.tn.BasisTree class method)</a>
 </li>
         <li><a href="mps.html#renormalizer.mps.mp.MatrixProduct.bond_dims">bond_dims (renormalizer.mps.mp.MatrixProduct property)</a>
 
@@ -574,6 +596,8 @@
 </li>
           <li><a href="mps.html#renormalizer.mps.Mps.copy">(renormalizer.mps.Mps method)</a>
 </li>
+          <li><a href="ttn.html#renormalizer.tn.TreeNodeBasis.copy">(renormalizer.tn.TreeNodeBasis method)</a>
+</li>
           <li><a href="configs.html#renormalizer.utils.configs.CompressConfig.copy">(renormalizer.utils.configs.CompressConfig method)</a>
 </li>
           <li><a href="configs.html#renormalizer.utils.configs.EvolveConfig.copy">(renormalizer.utils.configs.EvolveConfig method)</a>
@@ -616,6 +640,8 @@
 </li>
         </ul></li>
         <li><a href="static.html#renormalizer.mps.gs.DmrgFCISolver">DmrgFCISolver (class in renormalizer.mps.gs)</a>
+</li>
+        <li><a href="ttn.html#renormalizer.tn.BasisTree.dof_list">dof_list (renormalizer.tn.BasisTree property)</a>
 </li>
         <li><a href="model.html#renormalizer.model.basis.BasisHalfSpin.dofs">dofs (renormalizer.model.basis.BasisHalfSpin property)</a>
 
@@ -821,6 +847,8 @@
 </li>
         <li><a href="ct.html#renormalizer.transport.dynamics.InitElectron.fc">fc (renormalizer.transport.dynamics.InitElectron attribute)</a>
 </li>
+        <li><a href="ttn.html#renormalizer.tn.BasisTree.find_path">find_path() (renormalizer.tn.BasisTree static method)</a>
+</li>
         <li><a href="mps.html#renormalizer.mps.MpDm.finiteT_cv">finiteT_cv() (renormalizer.mps.MpDm class method)</a>
 
         <ul>
@@ -861,6 +889,8 @@
     <td style="width: 33%; vertical-align: top;"><ul>
         <li><a href="ct.html#renormalizer.transport.spectral_function.SpectralFunctionZT.G_array">G_array (renormalizer.transport.spectral_function.SpectralFunctionZT property)</a>
 </li>
+        <li><a href="ttn.html#renormalizer.tn.BasisTree.general_mctdh">general_mctdh() (renormalizer.tn.BasisTree class method)</a>
+</li>
         <li><a href="mps.html#renormalizer.mps.thermalprop.ThermalProp.get_dump_dict">get_dump_dict() (renormalizer.mps.thermalprop.ThermalProp method)</a>
 
         <ul>
@@ -875,10 +905,10 @@
         </ul></li>
         <li><a href="static.html#renormalizer.mps.gs.get_ham_direct">get_ham_direct() (in module renormalizer.mps.gs)</a>
 </li>
-        <li><a href="static.html#renormalizer.mps.gs.get_ham_iterative">get_ham_iterative() (in module renormalizer.mps.gs)</a>
-</li>
     </ul></td>
     <td style="width: 33%; vertical-align: top;"><ul>
+        <li><a href="static.html#renormalizer.mps.gs.get_ham_iterative">get_ham_iterative() (in module renormalizer.mps.gs)</a>
+</li>
         <li><a href="spectrum.html#renormalizer.spectra.zerot.SpectraZeroT.get_imps">get_imps() (renormalizer.spectra.zerot.SpectraZeroT method)</a>
 </li>
         <li><a href="model.html#renormalizer.model.HolsteinModel.get_mpos">get_mpos() (renormalizer.model.HolsteinModel method)</a>
@@ -941,6 +971,8 @@
           <li><a href="mps.html#renormalizer.mps.Mpo.identity">(renormalizer.mps.Mpo class method)</a>
 </li>
         </ul></li>
+        <li><a href="ttn.html#renormalizer.tn.TreeNodeBasis.idx_as_child">idx_as_child (renormalizer.tn.TreeNodeBasis property)</a>
+</li>
         <li><a href="cv.html#renormalizer.cv.finitet.SpectraFtCV.init_b_mpo">init_b_mpo() (renormalizer.cv.finitet.SpectraFtCV method)</a>
 </li>
         <li><a href="cv.html#renormalizer.cv.finitet.SpectraFtCV.init_b_mps">init_b_mps() (renormalizer.cv.finitet.SpectraFtCV method)</a>
@@ -1020,6 +1052,8 @@
 </li>
         </ul></li>
         <li><a href="model.html#renormalizer.model.Op.is_identity">is_identity (renormalizer.model.Op property)</a>
+</li>
+        <li><a href="ttn.html#renormalizer.tn.TreeNodeBasis.is_leaf">is_leaf (renormalizer.tn.TreeNodeBasis property)</a>
 </li>
         <li><a href="mps.html#renormalizer.mps.mp.MatrixProduct.is_left_canonical">is_left_canonical (renormalizer.mps.mp.MatrixProduct property)</a>
 
@@ -1160,6 +1194,8 @@
   <table style="width: 100%" class="indextable genindextable"><tr>
     <td style="width: 33%; vertical-align: top;"><ul>
         <li><a href="mps.html#renormalizer.mps.thermalprop.ThermalProp.latest_evolve_time">latest_evolve_time (renormalizer.mps.thermalprop.ThermalProp property)</a>
+</li>
+        <li><a href="ttn.html#renormalizer.tn.BasisTree.linear">linear() (renormalizer.tn.BasisTree class method)</a>
 </li>
         <li><a href="mps.html#renormalizer.mps.mp.MatrixProduct.load">load() (renormalizer.mps.mp.MatrixProduct class method)</a>
 
@@ -1435,6 +1471,8 @@
 </li>
           <li><a href="mps.html#renormalizer.mps.Mps.pbond_dims">(renormalizer.mps.Mps property)</a>
 </li>
+          <li><a href="ttn.html#renormalizer.tn.BasisTree.pbond_dims">(renormalizer.tn.BasisTree property)</a>
+</li>
         </ul></li>
         <li><a href="mps.html#renormalizer.mps.mp.MatrixProduct.pbond_list">pbond_list (renormalizer.mps.mp.MatrixProduct property)</a>
 
@@ -1458,14 +1496,20 @@
           <li><a href="ct.html#renormalizer.transport.dynamics.ChargeDiffusionDynamics.ph_occupations_array">(renormalizer.transport.dynamics.ChargeDiffusionDynamics attribute)</a>
 </li>
         </ul></li>
-    </ul></td>
-    <td style="width: 33%; vertical-align: top;"><ul>
         <li><a href="mps.html#renormalizer.mps.MpDm.ph_onsite">ph_onsite() (renormalizer.mps.MpDm class method)</a>
 
         <ul>
           <li><a href="mps.html#renormalizer.mps.Mpo.ph_onsite">(renormalizer.mps.Mpo class method)</a>
 </li>
         </ul></li>
+    </ul></td>
+    <td style="width: 33%; vertical-align: top;"><ul>
+        <li><a href="ttn.html#renormalizer.tn.BasisTree.postorder_list">postorder_list() (renormalizer.tn.BasisTree method)</a>
+</li>
+        <li><a href="ttn.html#renormalizer.tn.BasisTree.preorder_list">preorder_list() (renormalizer.tn.BasisTree method)</a>
+</li>
+        <li><a href="ttn.html#renormalizer.tn.BasisTree.print">print() (renormalizer.tn.BasisTree method)</a>
+</li>
         <li><a href="mps.html#renormalizer.mps.thermalprop.ThermalProp.process_mps">process_mps() (renormalizer.mps.thermalprop.ThermalProp method)</a>
 
         <ul>
@@ -1673,6 +1717,8 @@
         </ul></li>
     </ul></td>
     <td style="width: 33%; vertical-align: top;"><ul>
+        <li><a href="ttn.html#renormalizer.tn.BasisTree.size">size (renormalizer.tn.BasisTree property)</a>
+</li>
         <li><a href="cv.html#renormalizer.cv.finitet.SpectraFtCV">SpectraFtCV (class in renormalizer.cv.finitet)</a>
 </li>
         <li><a href="ct.html#renormalizer.transport.spectral_function.SpectralFunctionZT">SpectralFunctionZT (class in renormalizer.transport.spectral_function)</a>
@@ -1715,6 +1761,8 @@
   <h2>T</h2>
   <table style="width: 100%" class="indextable genindextable"><tr>
     <td style="width: 33%; vertical-align: top;"><ul>
+        <li><a href="ttn.html#renormalizer.tn.BasisTree.t3ns">t3ns() (renormalizer.tn.BasisTree class method)</a>
+</li>
         <li><a href="static.html#renormalizer.mps.tda.TDA">TDA (class in renormalizer.mps.tda)</a>
 </li>
         <li><a href="configs.html#renormalizer.utils.configs.EvolveMethod.tdvp_mu_cmf">tdvp_mu_cmf (renormalizer.utils.configs.EvolveMethod attribute)</a>
@@ -1726,6 +1774,8 @@
         <li><a href="configs.html#renormalizer.utils.configs.EvolveMethod.tdvp_ps2">tdvp_ps2 (renormalizer.utils.configs.EvolveMethod attribute)</a>
 </li>
         <li><a href="configs.html#renormalizer.utils.configs.EvolveMethod.tdvp_vmf">tdvp_vmf (renormalizer.utils.configs.EvolveMethod attribute)</a>
+</li>
+        <li><a href="ttn.html#renormalizer.tn.BasisTree.ternary_mctdh">ternary_mctdh() (renormalizer.tn.BasisTree class method)</a>
 </li>
         <li><a href="mps.html#renormalizer.mps.thermalprop.ThermalProp">ThermalProp (class in renormalizer.mps.thermalprop)</a>
 </li>
@@ -1788,6 +1838,8 @@
 </li>
         </ul></li>
         <li><a href="ct.html#renormalizer.transport.kubo.TransportKubo">TransportKubo (class in renormalizer.transport.kubo)</a>
+</li>
+        <li><a href="ttn.html#renormalizer.tn.TreeNodeBasis">TreeNodeBasis (class in renormalizer.tn)</a>
 </li>
         <li><a href="mps.html#renormalizer.mps.MpDm.try_swap_site">try_swap_site() (renormalizer.mps.MpDm method)</a>
 
