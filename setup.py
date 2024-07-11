@@ -7,7 +7,8 @@ req = ["numpy",
        "scipy",
        "h5py",
        "opt_einsum",
-       "sympy"
+       "sympy",
+       "print-tree2"
        ]
 
 setuptools.setup(
