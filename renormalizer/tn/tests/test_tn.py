@@ -233,7 +233,7 @@ def test_rdm_entropy_holstein():
     mps_idx1, mps_idx2 = 1, 3
     dof1 = model.basis[mps_idx1].dof
     dof2 = model.basis[mps_idx2].dof
-    ttns_mutual_infos = ttns.calc_2dof_mutual_info((dof1, dof2))
+    ttns_mutual_infos,_ = ttns.calc_2dof_mutual_info((dof1, dof2))
     ttns_mutual_info = ttns_mutual_infos[(dof1, dof2)]
     np.testing.assert_allclose(ttns_mutual_info, mps_mutual_info[mps_idx1, mps_idx2], atol=1e-4)
 
