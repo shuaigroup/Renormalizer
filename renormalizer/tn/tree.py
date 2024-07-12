@@ -1185,12 +1185,14 @@ class TTNS(TTNBase):
             rdm_[dof_pair] = res
         return rdm_
 
-    def calc_2dof_entropy(self, dofs: Union[Tuple[Any, Any], List[Tuple[Any, Any]]]) -> Dict[Tuple[Any, Any], float]:
-        rdm = self.calc_2dof_rdm(dofs)
+    def calc_2dof_entropy(self, dofs: Union[Tuple[Any, Any], List[Tuple[Any, Any]]], rdm: Dict[Any, np.ndarray]=None) -> Dict[Tuple[Any, Any], float]:
+        if rdm is None:
+            rdm = self.calc_2dof_rdm(dofs)
+        
         entropy = {key: calc_vn_entropy_dm(dm) for key, dm in rdm.items()}
         return entropy
 
-    def calc_2dof_mutual_info(self, dofs: Union[Tuple[Any, Any], List[Tuple[Any, Any]]]) -> Dict[Tuple[Any, Any], float]:
+    def calc_2dof_mutual_info(self, dofs: Union[Tuple[Any, Any], List[Tuple[Any, Any]]], rdm_2dof: Dict[Any, np.ndarray]=None) -> Dict[Tuple[Any, Any], float]:
         r"""
         Calculate mutual information between two DOFs.
 
@@ -1214,14 +1216,16 @@ class TTNS(TTNBase):
         for dof_pair in dofs:
             dofs_lst.append(dof_pair[0])
             dofs_lst.append(dof_pair[1])
-        entropy_1site = self.calc_1dof_entropy(dofs_lst)
-        entropy_2site = self.calc_2dof_entropy(dofs)
+        entropy_1dof = self.calc_1dof_entropy(dofs_lst)
+        entropy_2dof = self.calc_2dof_entropy(dofs, rdm_2dof)
         for dof_pair in dofs:
             dof1 = dof_pair[0]
             dof2 = dof_pair[1]
-            mutual_info = (entropy_1site[dof1] + entropy_1site[dof2] - entropy_2site[dof_pair]) / 2
+            mutual_info = (entropy_1dof[dof1] + entropy_1dof[dof2] - entropy_2dof[dof_pair]) / 2
             mutual_infos[dof_pair] = mutual_info
-        return mutual_infos
+
+        entropy_tuple = (entropy_1dof, entropy_2dof)
+        return mutual_infos, entropy_tuple
 
     def calc_bond_entropy(self) -> np.ndarray:
         r"""
