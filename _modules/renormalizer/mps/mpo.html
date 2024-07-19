@@ -501,7 +501,7 @@
 
         <span class="bp">self</span><span class="o">.</span><span class="n">dtype</span> <span class="o">=</span> <span class="n">factor</span><span class="o">.</span><span class="n">dtype</span>
 
-        <span class="n">mpo_symbol</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">qn</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">qntot</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">qnidx</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">symbolic_out_ops_list</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">primary_ops</span> \
+        <span class="bp">self</span><span class="o">.</span><span class="n">symbolic_mpo</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">qn</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">qntot</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">qnidx</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">symbolic_out_ops_list</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">primary_ops</span> \
             <span class="o">=</span> <span class="n">construct_symbolic_mpo</span><span class="p">(</span><span class="n">table</span><span class="p">,</span> <span class="n">factor</span><span class="p">,</span> <span class="n">algo</span><span class="o">=</span><span class="n">algo</span><span class="p">)</span>
         <span class="c1"># from renormalizer.mps.symbolic_mpo import _format_symbolic_mpo</span>
         <span class="c1"># print(_format_symbolic_mpo(mpo_symbol))</span>
@@ -511,7 +511,7 @@
         <span class="c1"># evaluate the symbolic mpo</span>
         <span class="k">assert</span> <span class="n">model</span><span class="o">.</span><span class="n">basis</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span>
 
-        <span class="k">for</span> <span class="n">impo</span><span class="p">,</span> <span class="n">mo</span> <span class="ow">in</span> <span class="nb">enumerate</span><span class="p">(</span><span class="n">mpo_symbol</span><span class="p">):</span>
+        <span class="k">for</span> <span class="n">impo</span><span class="p">,</span> <span class="n">mo</span> <span class="ow">in</span> <span class="nb">enumerate</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">symbolic_mpo</span><span class="p">):</span>
             <span class="n">mo_mat</span> <span class="o">=</span> <span class="n">symbolic_mo_to_numeric_mo</span><span class="p">(</span><span class="n">model</span><span class="o">.</span><span class="n">basis</span><span class="p">[</span><span class="n">impo</span><span class="p">],</span> <span class="n">mo</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">dtype</span><span class="p">)</span>
             <span class="bp">self</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">mo_mat</span><span class="p">)</span>
 
