@@ -308,7 +308,7 @@ def _decompose_qr(term_row, term_col, non_red, in_ops_list, factor, primary_ops,
 
     """
     assert non_red.shape == (len(term_row), len(term_col))
-    assert k == 1
+
     non_red.data = factor[non_red.data - 1]
     gamma = non_red.todense()
 

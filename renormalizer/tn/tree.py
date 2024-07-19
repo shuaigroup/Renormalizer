@@ -16,7 +16,7 @@ from renormalizer.utils.configs import CompressConfig, OptimizeConfig, EvolveCon
 from renormalizer.utils import calc_vn_entropy, calc_vn_entropy_dm
 from renormalizer.tn.node import TreeNodeTensor, TreeNodeBasis, copy_connection, TreeNodeEnviron
 from renormalizer.tn.treebase import Tree, BasisTree
-from renormalizer.tn.symbolic_mpo import construct_symbolic_mpo, symbolic_mo_to_numeric_mo_general
+from renormalizer.tn.symbolic_ttno import construct_symbolic_ttno, symbolic_mo_to_numeric_mo_general
 
 
 logger = logging.getLogger(__name__)
@@ -138,19 +138,19 @@ class TTNO(TTNBase):
             basis.dummy_ttno = cls(new_basis, [new_basis.identity_op])
         return basis.dummy_ttno
 
-    def __init__(self, basis: BasisTree, terms: Union[List[Op], Op], root: TreeNodeTensor = None):
+    def __init__(self, basis: BasisTree, terms: Union[List[Op], Op], root: TreeNodeTensor = None, algo: str = "qr"):
         self.basis: BasisTree = basis
         if isinstance(terms, Op):
             terms = [terms]
         self.terms: List[Op] = terms
 
         if not root:
-            symbolic_mpo, mpoqn = construct_symbolic_mpo(basis, terms)
+            self.symbolic_ttno, mpoqn = construct_symbolic_ttno(basis, terms, algo=algo)
             # from renormalizer.mps.symbolic_mpo import _format_symbolic_mpo
             # print(_format_symbolic_mpo(symbolic_mpo))
             node_list_basis = self.basis.postorder_list()
             node_list_op = []
-            for impo, (mo, qn) in enumerate(zip(symbolic_mpo, mpoqn)):
+            for impo, (mo, qn) in enumerate(zip(self.symbolic_ttno, mpoqn)):
                 node_basis: TreeNodeBasis = node_list_basis[impo]
                 mo_mat = symbolic_mo_to_numeric_mo_general(node_basis.basis_sets, mo, backend.real_dtype)
                 node_list_op.append(TreeNodeTensor(mo_mat, qn))

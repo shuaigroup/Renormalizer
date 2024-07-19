@@ -52,8 +52,7 @@ def symbolic_mo_to_numeric_mo_general(basis_sets: List[BasisSet], mo, dtype):
     return np.moveaxis(mo_tensor, mo.ndim - 1, -1)
 
 
-def construct_symbolic_mpo(tn: BasisTree, terms: List[Op], const: float = 0):
-    algo = "Hopcroft-Karp"
+def construct_symbolic_ttno(tn: BasisTree, terms: List[Op], const: float = 0, algo: str = "qr"):
     nodes = tn.postorder_list()
     basis = list(chain(*[n.basis_sets for n in nodes]))
     model = Model(basis, [])
