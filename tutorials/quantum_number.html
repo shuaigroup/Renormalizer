@@ -12,7 +12,7 @@
         gtag('js', new Date());
         gtag('config', 'G-3HTENNM8CV');
     </script>
-    <link rel="index" title="Index" href="../genindex.html" /><link rel="search" title="Search" href="../search.html" /><link rel="next" title="Basics of Tree Tensor Networks" href="ttn_basic.html" /><link rel="prev" title="Compressing MPS" href="compress_mps.html" />
+    <link rel="index" title="Index" href="../genindex.html" /><link rel="search" title="Search" href="../search.html" /><link rel="next" title="Compressing MPS" href="compress_mps.html" /><link rel="prev" title="MPS and MPO" href="mps_mpo.html" />
 
     <meta name="generator" content="sphinx-5.3.0, furo 2022.09.29"/>
         <title>Quantum Numbers - Renormalizer 0.1.0 documentation</title>
@@ -168,8 +168,8 @@
 <li class="toctree-l1 current has-children"><a class="reference internal" href="../tutorial.html">Basic Tutorials</a><input checked="" class="toctree-checkbox" id="toctree-checkbox-1" name="toctree-checkbox-1" role="switch" type="checkbox"/><label for="toctree-checkbox-1"><div class="visually-hidden">Toggle child pages in navigation</div><i class="icon"><svg><use href="#svg-arrow-right"></use></svg></i></label><ul class="current">
 <li class="toctree-l2"><a class="reference internal" href="define_model.html">Define Your Model</a></li>
 <li class="toctree-l2"><a class="reference internal" href="mps_mpo.html">MPS and MPO</a></li>
-<li class="toctree-l2"><a class="reference internal" href="compress_mps.html">Compressing MPS</a></li>
 <li class="toctree-l2 current current-page"><a class="current reference internal" href="#">Quantum Numbers</a></li>
+<li class="toctree-l2"><a class="reference internal" href="compress_mps.html">Compressing MPS</a></li>
 <li class="toctree-l2"><a class="reference internal" href="ttn_basic.html">Basics of Tree Tensor Networks</a></li>
 </ul>
 </li>
@@ -532,11 +532,11 @@ calculation. By looking at quantum numbers we can assert some of the matrix/vect
 </div>
 <div class="output_area stderr docutils container">
 <div class="highlight"><pre>
-2024-07-26 04:21:07,009[INFO] Use NumPy as backend
-2024-07-26 04:21:07,010[INFO] numpy random seed is 9012
-2024-07-26 04:21:07,010[INFO] random seed is 1092
-2024-07-26 04:21:07,021[INFO] Git Commit Hash: 49a95b7b233b065dac03a2c29d0169c0bc967cfd
-2024-07-26 04:21:07,021[INFO] use 64 bits
+2024-07-26 09:15:31,656[INFO] Use NumPy as backend
+2024-07-26 09:15:31,657[INFO] numpy random seed is 9012
+2024-07-26 09:15:31,658[INFO] random seed is 1092
+2024-07-26 09:15:31,668[INFO] Git Commit Hash: b80d923ed1abfeb95f8f388104f734f6d22c6336
+2024-07-26 09:15:31,669[INFO] use 64 bits
 </pre></div></div>
 </div>
 <p>Here we set up two basis sets and sets the quantum number for <span class="math notranslate nohighlight">\(|0\rangle\)</span> to 0 and <span class="math notranslate nohighlight">\(|1\rangle\)</span> to 1.</p>
@@ -730,7 +730,7 @@ array([-0.18075719, -0.58568699, -0.63507609,  0.47008079])
 </div>
 <div class="output_area stderr docutils container">
 <div class="highlight"><pre>
-2024-07-26 04:21:07,136[DEBUG] # of operator terms: 1
+2024-07-26 09:15:31,782[DEBUG] # of operator terms: 1
 </pre></div></div>
 </div>
 <div class="nbinput docutils container">
@@ -778,13 +778,98 @@ array([ 0.       ,  0.       ,  0.       , -0.7089592])
 </div>
 <p>To summarize, three places are relevant to the setup of quantum number - The basis sets - The operators - Total quantum number in MPS</p>
 </section>
-<section id="Advanced-usage-(To-be-updated)">
-<h2>Advanced usage (To be updated)<a class="headerlink" href="#Advanced-usage-(To-be-updated)" title="Permalink to this heading">#</a></h2>
-<ul class="simple">
-<li><p>Setting quantum number is not necessary. When quantum number is not conserved or in other cases when quantum number is not desired, we can skip this by set all to 0.</p></li>
-<li><p>If quantum numbers are set incorrectly.</p></li>
-<li><p>U(1) quantum number and more than one quantum number</p></li>
-</ul>
+<section id="Notes">
+<h2>Notes<a class="headerlink" href="#Notes" title="Permalink to this heading">#</a></h2>
+<p>Setting quantum number is not necessary. When quantum number is not conserved or for some reason quantum number conservation is not desired, set all quantum numbers to 0.</p>
+<p>Renormalizer supports the conservation of multiple quantum numbers. For example, in <em>ab initio</em> electronic structure calculations, both the number of alpha spin electrons and the number of beta spin electrons are conserved. In such cases, quantum numbers should be set to a numpy array of integers.</p>
+<div class="nbinput nblast docutils container">
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[18]:
+</pre></div>
+</div>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="kn">import</span> <span class="nn">numpy</span> <span class="k">as</span> <span class="nn">np</span>
+</pre></div>
+</div>
+</div>
+<div class="nbinput docutils container">
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[19]:
+</pre></div>
+</div>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="c1"># spin up creation operator</span>
+<span class="n">Op</span><span class="p">(</span><span class="sa">r</span><span class="s2">&quot;a^\dagger&quot;</span><span class="p">,</span> <span class="s2">&quot;up&quot;</span><span class="p">,</span> <span class="n">qn</span><span class="o">=</span><span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">([</span><span class="mi">1</span><span class="p">,</span> <span class="mi">0</span><span class="p">]))</span>
+</pre></div>
+</div>
+</div>
+<div class="nboutput nblast docutils container">
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[19]:
+</pre></div>
+</div>
+<div class="output_area docutils container">
+<div class="highlight"><pre>
+Op(&#39;a^\\dagger&#39;, [&#39;up&#39;], 1.0, [[1, 0]])
+</pre></div></div>
+</div>
+<div class="nbinput docutils container">
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[20]:
+</pre></div>
+</div>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="c1"># spin up annihilation operator</span>
+<span class="n">Op</span><span class="p">(</span><span class="sa">r</span><span class="s2">&quot;a&quot;</span><span class="p">,</span> <span class="s2">&quot;up&quot;</span><span class="p">,</span> <span class="n">qn</span><span class="o">=</span><span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">([</span><span class="o">-</span><span class="mi">1</span><span class="p">,</span> <span class="mi">0</span><span class="p">]))</span>
+</pre></div>
+</div>
+</div>
+<div class="nboutput nblast docutils container">
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[20]:
+</pre></div>
+</div>
+<div class="output_area docutils container">
+<div class="highlight"><pre>
+Op(&#39;a&#39;, [&#39;up&#39;], 1.0, [[-1, 0]])
+</pre></div></div>
+</div>
+<div class="nbinput docutils container">
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[21]:
+</pre></div>
+</div>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="c1"># spin down creation operator</span>
+<span class="n">Op</span><span class="p">(</span><span class="sa">r</span><span class="s2">&quot;a^\dagger&quot;</span><span class="p">,</span> <span class="s2">&quot;down&quot;</span><span class="p">,</span> <span class="n">qn</span><span class="o">=</span><span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">([</span><span class="mi">0</span><span class="p">,</span> <span class="mi">1</span><span class="p">]))</span>
+</pre></div>
+</div>
+</div>
+<div class="nboutput nblast docutils container">
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[21]:
+</pre></div>
+</div>
+<div class="output_area docutils container">
+<div class="highlight"><pre>
+Op(&#39;a^\\dagger&#39;, [&#39;down&#39;], 1.0, [[0, 1]])
+</pre></div></div>
+</div>
+<div class="nbinput docutils container">
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[22]:
+</pre></div>
+</div>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="c1"># spin down annihilation operator</span>
+<span class="n">Op</span><span class="p">(</span><span class="sa">r</span><span class="s2">&quot;a^\dagger&quot;</span><span class="p">,</span> <span class="s2">&quot;down&quot;</span><span class="p">,</span> <span class="n">qn</span><span class="o">=</span><span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">([</span><span class="mi">0</span><span class="p">,</span> <span class="o">-</span><span class="mi">1</span><span class="p">]))</span>
+</pre></div>
+</div>
+</div>
+<div class="nboutput nblast docutils container">
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[22]:
+</pre></div>
+</div>
+<div class="output_area docutils container">
+<div class="highlight"><pre>
+Op(&#39;a^\\dagger&#39;, [&#39;down&#39;], 1.0, [[0, -1]])
+</pre></div></div>
+</div>
+<div class="nbinput nblast docutils container">
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[ ]:
+</pre></div>
+</div>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span>
+</pre></div>
+</div>
+</div>
 </section>
 </section>
 
@@ -793,23 +878,23 @@ array([ 0.       ,  0.       ,  0.       , -0.7089592])
       <footer>
         
         <div class="related-pages">
-          <a class="next-page" href="ttn_basic.html">
+          <a class="next-page" href="compress_mps.html">
               <div class="page-info">
                 <div class="context">
                   <span>Next</span>
                 </div>
-                <div class="title">Basics of Tree Tensor Networks</div>
+                <div class="title">Compressing MPS</div>
               </div>
               <svg class="furo-related-icon"><use href="#svg-arrow-right"></use></svg>
             </a>
-          <a class="prev-page" href="compress_mps.html">
+          <a class="prev-page" href="mps_mpo.html">
               <svg class="furo-related-icon"><use href="#svg-arrow-right"></use></svg>
               <div class="page-info">
                 <div class="context">
                   <span>Previous</span>
                 </div>
                 
-                <div class="title">Compressing MPS</div>
+                <div class="title">MPS and MPO</div>
                 
               </div>
             </a>
@@ -850,7 +935,7 @@ array([ 0.       ,  0.       ,  0.       , -0.7089592])
 <li><a class="reference internal" href="#Quantum-number-conservation">Quantum number conservation</a></li>
 <li><a class="reference internal" href="#Setting-quantum-number-for-states">Setting quantum number for states</a></li>
 <li><a class="reference internal" href="#Setting-quantum-number-for-operators">Setting quantum number for operators</a></li>
-<li><a class="reference internal" href="#Advanced-usage-(To-be-updated)">Advanced usage (To be updated)</a></li>
+<li><a class="reference internal" href="#Notes">Notes</a></li>
 </ul>
 </li>
 </ul>
