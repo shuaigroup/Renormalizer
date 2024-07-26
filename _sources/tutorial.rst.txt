@@ -9,11 +9,10 @@ please refer to the :doc:`applications`.
     tutorials/define_model.ipynb
     tutorials/mps_mpo.ipynb
     tutorials/compress_mps.ipynb
+    tutorials/quantum_number.ipynb
     tutorials/ttn_basic.ipynb
 
 ..
-    setting quantum number
-    compress mps (done)
     finding the ground state
     time evolution by hand forward Euler
     time evolutions in production

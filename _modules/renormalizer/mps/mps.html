@@ -168,6 +168,7 @@
 <li class="toctree-l2"><a class="reference internal" href="../../../tutorials/define_model.html">Define Your Model</a></li>
 <li class="toctree-l2"><a class="reference internal" href="../../../tutorials/mps_mpo.html">MPS and MPO</a></li>
 <li class="toctree-l2"><a class="reference internal" href="../../../tutorials/compress_mps.html">Compressing MPS</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../../tutorials/quantum_number.html">Quantum Numbers</a></li>
 <li class="toctree-l2"><a class="reference internal" href="../../../tutorials/ttn_basic.html">Basics of Tree Tensor Networks</a></li>
 </ul>
 </li>
@@ -392,6 +393,10 @@
         <span class="n">last_mt</span> <span class="o">=</span> <span class="p">(</span>
             <span class="n">xp</span><span class="o">.</span><span class="n">random</span><span class="o">.</span><span class="n">random</span><span class="p">([</span><span class="n">dim_list</span><span class="p">[</span><span class="o">-</span><span class="mi">2</span><span class="p">],</span> <span class="n">mps</span><span class="o">.</span><span class="n">pbond_list</span><span class="p">[</span><span class="o">-</span><span class="mi">1</span><span class="p">],</span> <span class="n">dim_list</span><span class="p">[</span><span class="o">-</span><span class="mi">1</span><span class="p">]])</span> <span class="o">-</span> <span class="mf">0.5</span>
         <span class="p">)</span>
+        <span class="c1"># set elements with wrong qn to zero</span>
+        <span class="n">qnmat</span> <span class="o">=</span> <span class="n">add_outer</span><span class="p">(</span><span class="n">mps</span><span class="o">.</span><span class="n">qn</span><span class="p">[</span><span class="o">-</span><span class="mi">2</span><span class="p">],</span> <span class="n">model</span><span class="o">.</span><span class="n">basis</span><span class="p">[</span><span class="o">-</span><span class="mi">1</span><span class="p">]</span><span class="o">.</span><span class="n">sigmaqn</span><span class="p">)</span>
+        <span class="n">qnmask</span> <span class="o">=</span> <span class="n">get_qn_mask</span><span class="p">(</span><span class="n">qnmat</span><span class="p">,</span> <span class="n">qntot</span><span class="p">)</span>
+        <span class="n">last_mt</span><span class="p">[</span><span class="o">~</span><span class="n">qnmask</span><span class="p">]</span> <span class="o">=</span> <span class="mi">0</span>
         <span class="c1"># normalize the mt so that the whole mps is normalized</span>
         <span class="n">last_mt</span> <span class="o">/=</span> <span class="n">xp</span><span class="o">.</span><span class="n">linalg</span><span class="o">.</span><span class="n">norm</span><span class="p">(</span><span class="n">last_mt</span><span class="o">.</span><span class="n">flatten</span><span class="p">())</span>
         <span class="n">mps</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">last_mt</span><span class="p">)</span>

@@ -12,10 +12,10 @@
         gtag('js', new Date());
         gtag('config', 'G-3HTENNM8CV');
     </script>
-    <link rel="index" title="Index" href="../genindex.html" /><link rel="search" title="Search" href="../search.html" /><link rel="next" title="Quantum Numbers" href="quantum_number.html" /><link rel="prev" title="MPS and MPO" href="mps_mpo.html" />
+    <link rel="index" title="Index" href="../genindex.html" /><link rel="search" title="Search" href="../search.html" /><link rel="next" title="Basics of Tree Tensor Networks" href="ttn_basic.html" /><link rel="prev" title="Compressing MPS" href="compress_mps.html" />
 
     <meta name="generator" content="sphinx-5.3.0, furo 2022.09.29"/>
-        <title>Compressing MPS - Renormalizer 0.1.0 documentation</title>
+        <title>Quantum Numbers - Renormalizer 0.1.0 documentation</title>
       <link rel="stylesheet" type="text/css" href="../_static/pygments.css" />
     <link rel="stylesheet" type="text/css" href="../_static/styles/furo.css?digest=d81277517bee4d6b0349d71bb2661d4890b5617c" />
     <link rel="stylesheet" type="text/css" href="../_static/styles/furo-extensions.css?digest=30d1aed668e5c3a91c3e3bf6a60b675221979f0e" />
@@ -168,8 +168,8 @@
 <li class="toctree-l1 current has-children"><a class="reference internal" href="../tutorial.html">Basic Tutorials</a><input checked="" class="toctree-checkbox" id="toctree-checkbox-1" name="toctree-checkbox-1" role="switch" type="checkbox"/><label for="toctree-checkbox-1"><div class="visually-hidden">Toggle child pages in navigation</div><i class="icon"><svg><use href="#svg-arrow-right"></use></svg></i></label><ul class="current">
 <li class="toctree-l2"><a class="reference internal" href="define_model.html">Define Your Model</a></li>
 <li class="toctree-l2"><a class="reference internal" href="mps_mpo.html">MPS and MPO</a></li>
-<li class="toctree-l2 current current-page"><a class="current reference internal" href="#">Compressing MPS</a></li>
-<li class="toctree-l2"><a class="reference internal" href="quantum_number.html">Quantum Numbers</a></li>
+<li class="toctree-l2"><a class="reference internal" href="compress_mps.html">Compressing MPS</a></li>
+<li class="toctree-l2 current current-page"><a class="current reference internal" href="#">Quantum Numbers</a></li>
 <li class="toctree-l2"><a class="reference internal" href="ttn_basic.html">Basics of Tree Tensor Networks</a></li>
 </ul>
 </li>
@@ -483,25 +483,47 @@ div.rendered_html tbody tr:hover {
   background: rgba(66, 165, 245, 0.2);
 }
 </style>
-<section id="Compressing-MPS">
-<h1>Compressing MPS<a class="headerlink" href="#Compressing-MPS" title="Permalink to this heading">#</a></h1>
+<section id="Quantum-Numbers">
+<h1>Quantum Numbers<a class="headerlink" href="#Quantum-Numbers" title="Permalink to this heading">#</a></h1>
 <section id="Overview">
 <h2>Overview<a class="headerlink" href="#Overview" title="Permalink to this heading">#</a></h2>
-<p>In this notebook we will show how to compress the wavefuntion stored in an MPS via singular value decomposition (SVD).</p>
+<p>In this notebook we will introduce the idea of quantum number conservation and how to enforce it in Renormalizer.</p>
 </section>
-<section id="The-model">
-<h2>The model<a class="headerlink" href="#The-model" title="Permalink to this heading">#</a></h2>
-<p>In this tutorial we will skip the process of building the model from scratch and use one of the pre-built models in Renormalizer that is frequently used for testing. The model we use is a Frenkel-Holstein model with 3 electronic sites and 2 vibration modes for each electronic site</p>
+<section id="Quantum-number-conservation">
+<h2>Quantum number conservation<a class="headerlink" href="#Quantum-number-conservation" title="Permalink to this heading">#</a></h2>
+<p>In the context of Shuai group’s research, the most common case of quantum number conservation is the conservation of electron/exciton in the Holstein model.</p>
 <div class="math-wrapper docutils container">
 <div class="math notranslate nohighlight">
-\[\hat H = \sum_{i=1}^3\sum_{j=1}^3 J_{ij} \hat a^\dagger_i \hat a_{i+1} + \sum_{i=1}^3\sum_{k=1,2}\frac{1}{2}  (\hat p_{ik}^2 + \omega_k^2 \hat x_{ik}^2) + \sum_{i=1}^3\sum_{k=1,2} \hat a^\dagger_i \hat a_i \hat x_{ik}\]</div>
+\[\hat H = \sum_{ij} J_{ij} \hat a^\dagger_i \hat a_{i+1} + \sum_{ik}\frac{1}{2}  (\hat p_{ik}^2 + \omega_k^2 \hat x_{ik}^2) + \sum_{ik} \hat a^\dagger_i \hat a_i \hat x_{ik}\]</div>
 </div>
-<p>Therefore, the model has 9 sites in total. 3 of them are electronic sites and the rest are vibrational sites.</p>
+<p>Here, each electronic degree of freedom, described by <span class="math notranslate nohighlight">\(\hat a^\dagger_i\)</span> and <span class="math notranslate nohighlight">\(\hat a\)</span>, is coupled with a set of harmonic oscillators indexed by <span class="math notranslate nohighlight">\(k\)</span>.</p>
+<p>For the demonstration purposes, we may neglect the vibrations and focus only on the electronic part, which leads us to the Hückel model (or tight binding model)</p>
+<div class="math-wrapper docutils container">
+<div class="math notranslate nohighlight">
+\[\hat H = \sum_{ij} J_{ij} \hat a^\dagger_i \hat a_{i+1}\]</div>
+</div>
+<p>This is a model that conserves the total particle number. Formally speaking, this means <span class="math notranslate nohighlight">\(\hat H\)</span> commutes with the total particle number operator <span class="math notranslate nohighlight">\(\hat N = \sum_i \hat a^\dagger_i \hat a_i\)</span>. More intuitively, for any state <span class="math notranslate nohighlight">\(|\psi\rangle\)</span> with a particular particle number, <span class="math notranslate nohighlight">\(\hat H |\psi\rangle\)</span> has the same particle number. For example, suppose there are only two sites, and</p>
+<div class="math-wrapper docutils container">
+<div class="math notranslate nohighlight">
+\[|\psi\rangle = |01\rangle+|10\rangle\]</div>
+</div>
+<p>Thus,</p>
+<div class="math-wrapper docutils container">
+<div class="math notranslate nohighlight">
+\[\hat H |\psi\rangle = J_{12}|10\rangle+J_{21}|01\rangle\]</div>
+</div>
+<p>The two states with different quantum numbers, <span class="math notranslate nohighlight">\(|00\rangle\)</span> and <span class="math notranslate nohighlight">\(|11\rangle\)</span>, will not present in <span class="math notranslate nohighlight">\(\hat H |\psi\rangle\)</span>. In this model, the total particle number, is called a (good) quantum number.</p>
+<p>There are two main reasons why we should care about quantum number - For many chemical applications the quantum number can be considered as an input to the model, just as the coefficients <span class="math notranslate nohighlight">\(J_{ij}\)</span>. For example, the total number of exciton in a excitonic coupling model should be 1. If the conservation of quantum number is not enforced, numerical error may eventually lead us to incorrect solution. - Another advantage of using quantum number is that it saves memory and accelerates
+calculation. By looking at quantum numbers we can assert some of the matrix/vector elements must be zero. The sparsity can then be exploited for more efficient tensor manipulation, such as SVD.</p>
+</section>
+<section id="Setting-quantum-number-for-states">
+<h2>Setting quantum number for states<a class="headerlink" href="#Setting-quantum-number-for-states" title="Permalink to this heading">#</a></h2>
+<p>In renormalizer, the first place to set the quantum number is basis sets. Most <code class="docutils literal notranslate"><span class="pre">BasisSet</span></code> classes have the <code class="docutils literal notranslate"><span class="pre">sigmaqn</span></code> argument that determines the quantum number of each basis.</p>
 <div class="nbinput docutils container">
 <div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[1]:
 </pre></div>
 </div>
-<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="kn">from</span> <span class="nn">renormalizer.tests.parameter</span> <span class="kn">import</span> <span class="n">holstein_model</span>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="kn">from</span> <span class="nn">renormalizer</span> <span class="kn">import</span> <span class="n">BasisSimpleElectron</span>
 </pre></div>
 </div>
 </div>
@@ -510,130 +532,56 @@ div.rendered_html tbody tr:hover {
 </div>
 <div class="output_area stderr docutils container">
 <div class="highlight"><pre>
-2024-07-26 04:20:58,113[INFO] Use NumPy as backend
-2024-07-26 04:20:58,114[INFO] numpy random seed is 9012
-2024-07-26 04:20:58,115[INFO] random seed is 1092
-2024-07-26 04:20:58,125[INFO] Git Commit Hash: 49a95b7b233b065dac03a2c29d0169c0bc967cfd
-2024-07-26 04:20:58,126[INFO] use 64 bits
+2024-07-26 04:21:07,009[INFO] Use NumPy as backend
+2024-07-26 04:21:07,010[INFO] numpy random seed is 9012
+2024-07-26 04:21:07,010[INFO] random seed is 1092
+2024-07-26 04:21:07,021[INFO] Git Commit Hash: 49a95b7b233b065dac03a2c29d0169c0bc967cfd
+2024-07-26 04:21:07,021[INFO] use 64 bits
 </pre></div></div>
 </div>
-<div class="nbinput docutils container">
+<p>Here we set up two basis sets and sets the quantum number for <span class="math notranslate nohighlight">\(|0\rangle\)</span> to 0 and <span class="math notranslate nohighlight">\(|1\rangle\)</span> to 1.</p>
+<div class="nbinput nblast docutils container">
 <div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[2]:
 </pre></div>
 </div>
-<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">holstein_model</span><span class="o">.</span><span class="n">basis</span>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">b1</span> <span class="o">=</span> <span class="n">BasisSimpleElectron</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="n">sigmaqn</span><span class="o">=</span><span class="p">[</span><span class="mi">0</span><span class="p">,</span> <span class="mi">1</span><span class="p">])</span>
+<span class="n">b2</span> <span class="o">=</span> <span class="n">BasisSimpleElectron</span><span class="p">(</span><span class="mi">1</span><span class="p">,</span> <span class="n">sigmaqn</span><span class="o">=</span><span class="p">[</span><span class="mi">0</span><span class="p">,</span> <span class="mi">1</span><span class="p">])</span>
+<span class="n">basis</span> <span class="o">=</span> <span class="p">[</span><span class="n">b1</span><span class="p">,</span> <span class="n">b2</span><span class="p">]</span>
 </pre></div>
 </div>
 </div>
-<div class="nboutput nblast docutils container">
-<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[2]:
-</pre></div>
-</div>
-<div class="output_area docutils container">
-<div class="highlight"><pre>
-[BasisSimpleElectron(dof: 0, nbas: 2, qn: [[0], [1]]),
- BasisSHO(dof: (0, 0), x0: 0.0, omega: 0.0004852952677876329, nbas: 4),
- BasisSHO(dof: (0, 1), x0: 0.0, omega: 0.007087607302666907, nbas: 4),
- BasisSimpleElectron(dof: 1, nbas: 2, qn: [[0], [1]]),
- BasisSHO(dof: (1, 0), x0: 0.0, omega: 0.0004852952677876329, nbas: 4),
- BasisSHO(dof: (1, 1), x0: 0.0, omega: 0.007087607302666907, nbas: 4),
- BasisSimpleElectron(dof: 2, nbas: 2, qn: [[0], [1]]),
- BasisSHO(dof: (2, 0), x0: 0.0, omega: 0.0004852952677876329, nbas: 4),
- BasisSHO(dof: (2, 1), x0: 0.0, omega: 0.007087607302666907, nbas: 4)]
-</pre></div></div>
-</div>
-<div class="nbinput docutils container">
+<p>We next build a random MPS based on the basis sets and see its effect</p>
+<div class="nbinput nblast docutils container">
 <div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[3]:
 </pre></div>
 </div>
-<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">holstein_model</span><span class="o">.</span><span class="n">ham_terms</span>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="kn">from</span> <span class="nn">renormalizer</span> <span class="kn">import</span> <span class="n">Mps</span><span class="p">,</span> <span class="n">Model</span>
 </pre></div>
 </div>
 </div>
-<div class="nboutput nblast docutils container">
-<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[3]:
-</pre></div>
-</div>
-<div class="output_area docutils container">
-<div class="highlight"><pre>
-[Op(&#39;a^\\dagger a&#39;, [0, 0], 0.10016074648883302, [[1], [-1]]),
- Op(&#39;a^\\dagger a&#39;, [0, 1], -0.003674932217565499, [[1], [-1]]),
- Op(&#39;a^\\dagger a&#39;, [0, 2], -0.007349864435130998, [[1], [-1]]),
- Op(&#39;a^\\dagger a&#39;, [1, 0], -0.003674932217565499, [[1], [-1]]),
- Op(&#39;a^\\dagger a&#39;, [1, 1], 0.10016074648883302, [[1], [-1]]),
- Op(&#39;a^\\dagger a&#39;, [1, 2], -0.011024796652696497, [[1], [-1]]),
- Op(&#39;a^\\dagger a&#39;, [2, 0], -0.007349864435130998, [[1], [-1]]),
- Op(&#39;a^\\dagger a&#39;, [2, 1], -0.011024796652696497, [[1], [-1]]),
- Op(&#39;a^\\dagger a&#39;, [2, 2], 0.10016074648883302, [[1], [-1]]),
- Op(&#39;p^2&#39;, [(0, 0)], 0.5),
- Op(&#39;x^2&#39;, [(0, 0)], 1.1775574846853516e-07),
- Op(&#39;p^2&#39;, [(0, 1)], 0.5),
- Op(&#39;x^2&#39;, [(0, 1)], 2.5117088638408635e-05),
- Op(&#39;p^2&#39;, [(1, 0)], 0.5),
- Op(&#39;x^2&#39;, [(1, 0)], 1.1775574846853516e-07),
- Op(&#39;p^2&#39;, [(1, 1)], 0.5),
- Op(&#39;x^2&#39;, [(1, 1)], 2.5117088638408635e-05),
- Op(&#39;p^2&#39;, [(2, 0)], 0.5),
- Op(&#39;x^2&#39;, [(2, 0)], 1.1775574846853516e-07),
- Op(&#39;p^2&#39;, [(2, 1)], 0.5),
- Op(&#39;x^2&#39;, [(2, 1)], 2.5117088638408635e-05),
- Op(&#39;a^\\dagger a x&#39;, [0, 0, (0, 0)], -7.097609983192488e-06, [[1], [-1], [0]]),
- Op(&#39;a^\\dagger a x&#39;, [0, 0, (0, 1)], -0.00044069941383179025, [[1], [-1], [0]]),
- Op(&#39;a^\\dagger a x&#39;, [1, 1, (1, 0)], -7.097609983192488e-06, [[1], [-1], [0]]),
- Op(&#39;a^\\dagger a x&#39;, [1, 1, (1, 1)], -0.00044069941383179025, [[1], [-1], [0]]),
- Op(&#39;a^\\dagger a x&#39;, [2, 2, (2, 0)], -7.097609983192488e-06, [[1], [-1], [0]]),
- Op(&#39;a^\\dagger a x&#39;, [2, 2, (2, 1)], -0.00044069941383179025, [[1], [-1], [0]])]
-</pre></div></div>
-</div>
-</section>
-<section id="id1">
-<h2>Compressing MPS<a class="headerlink" href="#id1" title="Permalink to this heading">#</a></h2>
-<p>Firstly construct a random MPS and the Hamiltonian MPO</p>
 <div class="nbinput nblast docutils container">
 <div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[4]:
 </pre></div>
 </div>
-<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="kn">from</span> <span class="nn">renormalizer</span> <span class="kn">import</span> <span class="n">Mps</span><span class="p">,</span> <span class="n">Mpo</span>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">model</span> <span class="o">=</span> <span class="n">Model</span><span class="p">(</span><span class="n">basis</span><span class="p">,</span> <span class="n">ham_terms</span><span class="o">=</span><span class="p">[])</span>
 </pre></div>
 </div>
 </div>
-<div class="nbinput docutils container">
+<div class="nbinput nblast docutils container">
 <div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[5]:
 </pre></div>
 </div>
-<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">mps</span> <span class="o">=</span> <span class="n">Mps</span><span class="o">.</span><span class="n">random</span><span class="p">(</span><span class="n">holstein_model</span><span class="p">,</span> <span class="n">qntot</span><span class="o">=</span><span class="mi">1</span><span class="p">,</span> <span class="n">m_max</span><span class="o">=</span><span class="mi">5</span><span class="p">)</span>
-<span class="n">mps</span><span class="o">.</span><span class="n">bond_dims</span>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">mps</span> <span class="o">=</span> <span class="n">Mps</span><span class="o">.</span><span class="n">random</span><span class="p">(</span><span class="n">model</span><span class="p">,</span> <span class="n">qntot</span><span class="o">=</span><span class="mi">1</span><span class="p">,</span> <span class="n">m_max</span><span class="o">=</span><span class="mi">2</span><span class="p">)</span>
 </pre></div>
 </div>
-</div>
-<div class="nboutput nblast docutils container">
-<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[5]:
-</pre></div>
-</div>
-<div class="output_area docutils container">
-<div class="highlight"><pre>
-[1, 2, 5, 5, 5, 5, 5, 5, 5, 1]
-</pre></div></div>
 </div>
 <div class="nbinput docutils container">
 <div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[6]:
 </pre></div>
 </div>
-<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">mpo</span> <span class="o">=</span> <span class="n">Mpo</span><span class="p">(</span><span class="n">holstein_model</span><span class="p">)</span>
-<span class="n">mpo</span><span class="o">.</span><span class="n">bond_dims</span>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">mps</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span><span class="o">.</span><span class="n">array</span>
 </pre></div>
 </div>
-</div>
-<div class="nboutput docutils container">
-<div class="prompt empty docutils container">
-</div>
-<div class="output_area stderr docutils container">
-<div class="highlight"><pre>
-2024-07-26 04:20:58,203[DEBUG] # of operator terms: 27
-2024-07-26 04:20:58,204[DEBUG] symbolic mpo algorithm: qr
-2024-07-26 04:20:58,205[DEBUG] Input operator terms: 27
-2024-07-26 04:20:58,212[DEBUG] After combination of the same terms: 27
-</pre></div></div>
 </div>
 <div class="nboutput nblast docutils container">
 <div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[6]:
@@ -641,16 +589,15 @@ div.rendered_html tbody tr:hover {
 </div>
 <div class="output_area docutils container">
 <div class="highlight"><pre>
-[1, 4, 5, 4, 5, 5, 4, 3, 3, 1]
+array([[[1., 0.],
+        [0., 1.]]])
 </pre></div></div>
 </div>
-<p>After applying the MPO on the MPS, the resulting MPS has a larger bond dimension. More specifically, the bond dimension is the product of the corresponding bond dimension of MPS and MPO</p>
 <div class="nbinput docutils container">
 <div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[7]:
 </pre></div>
 </div>
-<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">mps2</span> <span class="o">=</span> <span class="n">mpo</span> <span class="o">@</span> <span class="n">mps</span>
-<span class="n">mps2</span><span class="o">.</span><span class="n">bond_dims</span>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">mps</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span><span class="o">.</span><span class="n">array</span>
 </pre></div>
 </div>
 </div>
@@ -660,15 +607,18 @@ div.rendered_html tbody tr:hover {
 </div>
 <div class="output_area docutils container">
 <div class="highlight"><pre>
-[1, 8, 25, 20, 25, 25, 20, 15, 15, 1]
+array([[[ 0.        ],
+        [-0.7089592 ]],
+
+       [[-0.70524949],
+        [ 0.        ]]])
 </pre></div></div>
 </div>
 <div class="nbinput docutils container">
 <div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[8]:
 </pre></div>
 </div>
-<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="kn">import</span> <span class="nn">numpy</span> <span class="k">as</span> <span class="nn">np</span>
-<span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">(</span><span class="n">mps</span><span class="o">.</span><span class="n">bond_dims</span><span class="p">)</span> <span class="o">*</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">(</span><span class="n">mpo</span><span class="o">.</span><span class="n">bond_dims</span><span class="p">)</span>  <span class="c1"># the same as the bond dimension of `mps2`</span>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">mps</span><span class="o">.</span><span class="n">todense</span><span class="p">()</span>
 </pre></div>
 </div>
 </div>
@@ -678,37 +628,27 @@ div.rendered_html tbody tr:hover {
 </div>
 <div class="output_area docutils container">
 <div class="highlight"><pre>
-array([ 1,  8, 25, 20, 25, 25, 20, 15, 15,  1])
+array([ 0.        , -0.7089592 , -0.70524949,  0.        ])
 </pre></div></div>
 </div>
-<p>We then try to compress the MPS. We first make a copy for future reference since the compress is in place</p>
+<p>We can see that although the MPS is random, half of the matrix elements are zero, due to particle number conservation. As a result, the overall dense state vector has a well-defined particle number of 1.</p>
+<p>For comparison, in the following the MPS when quantum number is not activated is shown</p>
 <div class="nbinput nblast docutils container">
 <div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[9]:
 </pre></div>
 </div>
-<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">mps3</span> <span class="o">=</span> <span class="n">mps2</span><span class="o">.</span><span class="n">copy</span><span class="p">()</span>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">model2</span> <span class="o">=</span> <span class="n">Model</span><span class="p">([</span><span class="n">BasisSimpleElectron</span><span class="p">(</span><span class="n">i</span><span class="p">,</span> <span class="n">sigmaqn</span><span class="o">=</span><span class="p">[</span><span class="mi">0</span><span class="p">,</span> <span class="mi">0</span><span class="p">])</span> <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="mi">2</span><span class="p">)],</span> <span class="n">ham_terms</span><span class="o">=</span><span class="p">[])</span>
+<span class="n">mps2</span> <span class="o">=</span> <span class="n">Mps</span><span class="o">.</span><span class="n">random</span><span class="p">(</span><span class="n">model2</span><span class="p">,</span> <span class="n">qntot</span><span class="o">=</span><span class="mi">0</span><span class="p">,</span> <span class="n">m_max</span><span class="o">=</span><span class="mi">2</span><span class="p">)</span>
 </pre></div>
 </div>
 </div>
-<p>Then compress <code class="docutils literal notranslate"><span class="pre">mps2</span></code> by SVD truncation to a fixed bond dimension of <span class="math notranslate nohighlight">\(M=5\)</span>. Note that as the product of an MPO and an MPS, <code class="docutils literal notranslate"><span class="pre">mps2</span></code> is not canonicalised, so it has to be canonicalised before SVD compression.</p>
-<p>After the compression, the size of the matrices in <code class="docutils literal notranslate"><span class="pre">mps2</span></code> is greatly reduced.</p>
 <div class="nbinput docutils container">
 <div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[10]:
 </pre></div>
 </div>
-<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">m_trunc</span> <span class="o">=</span> <span class="mi">5</span>
-<span class="n">mps3</span><span class="o">.</span><span class="n">canonicalise</span><span class="p">()</span><span class="o">.</span><span class="n">compress</span><span class="p">(</span><span class="n">m_trunc</span><span class="p">)</span>
-<span class="n">mps3</span><span class="o">.</span><span class="n">bond_dims</span>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">mps2</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span><span class="o">.</span><span class="n">array</span>
 </pre></div>
 </div>
-</div>
-<div class="nboutput docutils container">
-<div class="prompt empty docutils container">
-</div>
-<div class="output_area stderr docutils container">
-<div class="highlight"><pre>
-2024-07-26 04:20:58,279[DEBUG] size before/after compress: 47.2KiB/4.2KiB, ratio: 11.177777777777777
-</pre></div></div>
 </div>
 <div class="nboutput nblast docutils container">
 <div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[10]:
@@ -716,17 +656,15 @@ array([ 1,  8, 25, 20, 25, 25, 20, 15, 15,  1])
 </div>
 <div class="output_area docutils container">
 <div class="highlight"><pre>
-[1, 2, 5, 5, 5, 5, 5, 5, 4, 1]
+array([[[-0.27201201, -0.96229386],
+        [ 0.96229386, -0.27201201]]])
 </pre></div></div>
 </div>
-<p>We can see that the information loss, measured by the difference of energy expectations, is relatively small.</p>
 <div class="nbinput docutils container">
 <div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[11]:
 </pre></div>
 </div>
-<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">e1</span> <span class="o">=</span> <span class="n">mps3</span><span class="o">.</span><span class="n">expectation</span><span class="p">(</span><span class="n">mpo</span><span class="p">)</span>
-<span class="n">e2</span> <span class="o">=</span> <span class="n">mps2</span><span class="o">.</span><span class="n">expectation</span><span class="p">(</span><span class="n">mpo</span><span class="p">)</span>
-<span class="n">e1</span><span class="p">,</span> <span class="n">e2</span><span class="p">,</span> <span class="nb">abs</span><span class="p">((</span><span class="n">e1</span> <span class="o">-</span> <span class="n">e2</span><span class="p">)</span> <span class="o">/</span> <span class="n">e2</span><span class="p">)</span>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">mps2</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span><span class="o">.</span><span class="n">array</span>
 </pre></div>
 </div>
 </div>
@@ -736,72 +674,72 @@ array([ 1,  8, 25, 20, 25, 25, 20, 15, 15,  1])
 </div>
 <div class="output_area docutils container">
 <div class="highlight"><pre>
-(0.0031058187888397606, 0.003148758678336175, 0.013637084922336527)
+array([[[-0.56196169],
+        [ 0.61166976]],
+
+       [[ 0.34668986],
+        [ 0.43573537]]])
 </pre></div></div>
 </div>
-<blockquote>
-<div><p>As a result of the random generation of the MPS, the compress accuracy is not very impressive. Much higher efficiency can be expected for the real wavefunction of quantum systems.</p>
-</div></blockquote>
-</section>
-<section id="Compress-Configuration">
-<h2>Compress Configuration<a class="headerlink" href="#Compress-Configuration" title="Permalink to this heading">#</a></h2>
-<p>It is sometimes desirable to perform truncation based on the magnitude of the singular values. Also, in production level calculations, MPSs are frequently compressed according to a fixed strategy. We can set the <code class="docutils literal notranslate"><span class="pre">compress_config</span></code> attribute for MPS to control the compression behavior</p>
-<div class="nbinput nblast docutils container">
+<div class="nbinput docutils container">
 <div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[12]:
 </pre></div>
 </div>
-<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="kn">from</span> <span class="nn">renormalizer.utils</span> <span class="kn">import</span> <span class="n">CompressConfig</span><span class="p">,</span> <span class="n">CompressCriteria</span>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">mps2</span><span class="o">.</span><span class="n">todense</span><span class="p">()</span>
 </pre></div>
 </div>
 </div>
+<div class="nboutput nblast docutils container">
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[12]:
+</pre></div>
+</div>
+<div class="output_area docutils container">
+<div class="highlight"><pre>
+array([-0.18075719, -0.58568699, -0.63507609,  0.47008079])
+</pre></div></div>
+</div>
+</section>
+<section id="Setting-quantum-number-for-operators">
+<h2>Setting quantum number for operators<a class="headerlink" href="#Setting-quantum-number-for-operators" title="Permalink to this heading">#</a></h2>
+<p>Just as states, operators are also associated with quantum number. The quantum number of an operator shows the change of quantum number if the operator is applied to a state. For example, the quantum number of <span class="math notranslate nohighlight">\(\hat a^\dagger\)</span> is 1, since</p>
+<div class="math-wrapper docutils container">
+<div class="math notranslate nohighlight">
+\[\hat a^\dagger |0\rangle = |1\rangle\]</div>
+</div>
+<p>Similarly, the quantum number of <span class="math notranslate nohighlight">\(\hat a\)</span> is -1.</p>
+<p>In Renormalizer, to fully take advantage of quatnum number conservation, we need to set the quantum number for the operators. The <code class="docutils literal notranslate"><span class="pre">Op</span></code> class accepts the <code class="docutils literal notranslate"><span class="pre">qn</span></code> argument for the quantum number of each elementary operator.</p>
 <div class="nbinput nblast docutils container">
 <div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[13]:
 </pre></div>
 </div>
-<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">mps3</span> <span class="o">=</span> <span class="n">mps2</span><span class="o">.</span><span class="n">copy</span><span class="p">()</span>
-<span class="n">mps3</span><span class="o">.</span><span class="n">compress_config</span> <span class="o">=</span> <span class="n">CompressConfig</span><span class="p">(</span><span class="n">CompressCriteria</span><span class="o">.</span><span class="n">threshold</span><span class="p">,</span> <span class="n">threshold</span><span class="o">=</span><span class="mf">1e-5</span><span class="p">)</span>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="kn">from</span> <span class="nn">renormalizer</span> <span class="kn">import</span> <span class="n">Op</span><span class="p">,</span> <span class="n">Mpo</span>
 </pre></div>
 </div>
 </div>
-<p>Here the compress criteria is set to the singular value threshold, which is set to 1e-5.</p>
-<p><code class="docutils literal notranslate"><span class="pre">CompressCriteria</span></code> is an <code class="docutils literal notranslate"><span class="pre">Enum</span></code> class for all possible compression strategies. Currently there’re three different strategies.</p>
+<p>Apply the creation operator to the MPS. The total quantum number of the MPS increases from 1 to 2, and the resulting state is <span class="math notranslate nohighlight">\(|11\rangle\)</span>.</p>
 <div class="nbinput docutils container">
 <div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[14]:
 </pre></div>
 </div>
-<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="p">[</span><span class="n">s</span> <span class="k">for</span> <span class="n">s</span> <span class="ow">in</span> <span class="nb">dir</span><span class="p">(</span><span class="n">CompressCriteria</span><span class="p">)</span> <span class="k">if</span> <span class="ow">not</span> <span class="n">s</span><span class="o">.</span><span class="n">startswith</span><span class="p">(</span><span class="s2">&quot;__&quot;</span><span class="p">)]</span>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">mps3</span> <span class="o">=</span> <span class="n">Mpo</span><span class="p">(</span><span class="n">model</span><span class="p">,</span> <span class="n">Op</span><span class="p">(</span><span class="sa">r</span><span class="s2">&quot;a^\dagger&quot;</span><span class="p">,</span> <span class="mi">0</span><span class="p">,</span> <span class="n">qn</span><span class="o">=</span><span class="mi">1</span><span class="p">))</span> <span class="o">@</span> <span class="n">mps</span>
 </pre></div>
 </div>
 </div>
 <div class="nboutput nblast docutils container">
-<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[14]:
-</pre></div>
-</div>
-<div class="output_area docutils container">
-<div class="highlight"><pre>
-[&#39;both&#39;, &#39;fixed&#39;, &#39;threshold&#39;]
-</pre></div></div>
-</div>
-<blockquote>
-<div><p>Using <code class="docutils literal notranslate"><span class="pre">CompressCriteria</span></code> might seem to be a overkill compared to an implementation using simple strings. However, when it comes to time evolution configurations, since there’re a lot of different algorithms and some of them have rather long names, the <code class="docutils literal notranslate"><span class="pre">Enum</span></code> class can help manage the different algorithms. So here the compression configuration uses the same implementation. This is also for forward compatibility.</p>
-</div></blockquote>
-<p>We next compress <code class="docutils literal notranslate"><span class="pre">mps3</span></code> using the compress configuration associated with the <code class="docutils literal notranslate"><span class="pre">mps3</span></code> object. <span class="math notranslate nohighlight">\(10^{-5}\)</span> is a relatively tight threshold, so the bond dimension is higher than 5.</p>
-<div class="nbinput docutils container">
-<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[15]:
-</pre></div>
-</div>
-<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">mps3</span><span class="o">.</span><span class="n">canonicalise</span><span class="p">()</span><span class="o">.</span><span class="n">compress</span><span class="p">()</span>
-<span class="n">mps3</span><span class="o">.</span><span class="n">bond_dims</span>
-</pre></div>
-</div>
-</div>
-<div class="nboutput docutils container">
 <div class="prompt empty docutils container">
 </div>
 <div class="output_area stderr docutils container">
 <div class="highlight"><pre>
-2024-07-26 04:20:58,355[DEBUG] size before/after compress: 47.2KiB/26.5KiB, ratio: 1.7784325279905715
+2024-07-26 04:21:07,136[DEBUG] # of operator terms: 1
 </pre></div></div>
+</div>
+<div class="nbinput docutils container">
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[15]:
+</pre></div>
+</div>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">mps3</span><span class="o">.</span><span class="n">qntot</span>
+</pre></div>
+</div>
 </div>
 <div class="nboutput nblast docutils container">
 <div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[15]:
@@ -809,17 +747,14 @@ array([ 1,  8, 25, 20, 25, 25, 20, 15, 15,  1])
 </div>
 <div class="output_area docutils container">
 <div class="highlight"><pre>
-[1, 2, 8, 15, 17, 18, 11, 8, 4, 1]
+array([2])
 </pre></div></div>
 </div>
-<p>We can expect that the accuracy is also higher</p>
 <div class="nbinput docutils container">
 <div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[16]:
 </pre></div>
 </div>
-<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">e1</span> <span class="o">=</span> <span class="n">mps3</span><span class="o">.</span><span class="n">expectation</span><span class="p">(</span><span class="n">mpo</span><span class="p">)</span>
-<span class="n">e2</span> <span class="o">=</span> <span class="n">mps2</span><span class="o">.</span><span class="n">expectation</span><span class="p">(</span><span class="n">mpo</span><span class="p">)</span>
-<span class="n">e1</span><span class="p">,</span> <span class="n">e2</span><span class="p">,</span> <span class="nb">abs</span><span class="p">((</span><span class="n">e1</span> <span class="o">-</span> <span class="n">e2</span><span class="p">)</span> <span class="o">/</span> <span class="n">e2</span><span class="p">)</span>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">mps3</span><span class="o">.</span><span class="n">todense</span><span class="p">()</span>
 </pre></div>
 </div>
 </div>
@@ -829,9 +764,27 @@ array([ 1,  8, 25, 20, 25, 25, 20, 15, 15,  1])
 </div>
 <div class="output_area docutils container">
 <div class="highlight"><pre>
-(0.003148758678336171, 0.003148758678336175, 1.377307419517337e-15)
+array([ 0.       ,  0.       ,  0.       , -0.7089592])
 </pre></div></div>
 </div>
+<p>For complex symbols the quantum number for each elementary symbol should be specified.</p>
+<div class="nbinput nblast docutils container">
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[17]:
+</pre></div>
+</div>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">ham_terms</span> <span class="o">=</span> <span class="n">Op</span><span class="p">(</span><span class="sa">r</span><span class="s2">&quot;a^\dagger a&quot;</span><span class="p">,</span> <span class="p">[</span><span class="mi">0</span><span class="p">,</span> <span class="mi">1</span><span class="p">],</span> <span class="n">qn</span><span class="o">=</span><span class="p">[</span><span class="mi">1</span><span class="p">,</span> <span class="o">-</span><span class="mi">1</span><span class="p">])</span> <span class="o">+</span> <span class="n">Op</span><span class="p">(</span><span class="sa">r</span><span class="s2">&quot;a^\dagger a&quot;</span><span class="p">,</span> <span class="p">[</span><span class="mi">1</span><span class="p">,</span> <span class="mi">0</span><span class="p">],</span> <span class="n">qn</span><span class="o">=</span><span class="p">[</span><span class="mi">1</span><span class="p">,</span> <span class="o">-</span><span class="mi">1</span><span class="p">])</span>
+</pre></div>
+</div>
+</div>
+<p>To summarize, three places are relevant to the setup of quantum number - The basis sets - The operators - Total quantum number in MPS</p>
+</section>
+<section id="Advanced-usage-(To-be-updated)">
+<h2>Advanced usage (To be updated)<a class="headerlink" href="#Advanced-usage-(To-be-updated)" title="Permalink to this heading">#</a></h2>
+<ul class="simple">
+<li><p>Setting quantum number is not necessary. When quantum number is not conserved or in other cases when quantum number is not desired, we can skip this by set all to 0.</p></li>
+<li><p>If quantum numbers are set incorrectly.</p></li>
+<li><p>U(1) quantum number and more than one quantum number</p></li>
+</ul>
 </section>
 </section>
 
@@ -840,23 +793,23 @@ array([ 1,  8, 25, 20, 25, 25, 20, 15, 15,  1])
       <footer>
         
         <div class="related-pages">
-          <a class="next-page" href="quantum_number.html">
+          <a class="next-page" href="ttn_basic.html">
               <div class="page-info">
                 <div class="context">
                   <span>Next</span>
                 </div>
-                <div class="title">Quantum Numbers</div>
+                <div class="title">Basics of Tree Tensor Networks</div>
               </div>
               <svg class="furo-related-icon"><use href="#svg-arrow-right"></use></svg>
             </a>
-          <a class="prev-page" href="mps_mpo.html">
+          <a class="prev-page" href="compress_mps.html">
               <svg class="furo-related-icon"><use href="#svg-arrow-right"></use></svg>
               <div class="page-info">
                 <div class="context">
                   <span>Previous</span>
                 </div>
                 
-                <div class="title">MPS and MPO</div>
+                <div class="title">Compressing MPS</div>
                 
               </div>
             </a>
@@ -892,11 +845,12 @@ array([ 1,  8, 25, 20, 25, 25, 20, 15, 15,  1])
         <div class="toc-tree-container">
           <div class="toc-tree">
             <ul>
-<li><a class="reference internal" href="#">Compressing MPS</a><ul>
+<li><a class="reference internal" href="#">Quantum Numbers</a><ul>
 <li><a class="reference internal" href="#Overview">Overview</a></li>
-<li><a class="reference internal" href="#The-model">The model</a></li>
-<li><a class="reference internal" href="#id1">Compressing MPS</a></li>
-<li><a class="reference internal" href="#Compress-Configuration">Compress Configuration</a></li>
+<li><a class="reference internal" href="#Quantum-number-conservation">Quantum number conservation</a></li>
+<li><a class="reference internal" href="#Setting-quantum-number-for-states">Setting quantum number for states</a></li>
+<li><a class="reference internal" href="#Setting-quantum-number-for-operators">Setting quantum number for operators</a></li>
+<li><a class="reference internal" href="#Advanced-usage-(To-be-updated)">Advanced usage (To be updated)</a></li>
 </ul>
 </li>
 </ul>
