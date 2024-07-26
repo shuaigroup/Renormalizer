@@ -166,6 +166,10 @@ class Mps(MatrixProduct):
         last_mt = (
             xp.random.random([dim_list[-2], mps.pbond_list[-1], dim_list[-1]]) - 0.5
         )
+        # set elements with wrong qn to zero
+        qnmat = add_outer(mps.qn[-2], model.basis[-1].sigmaqn)
+        qnmask = get_qn_mask(qnmat, qntot)
+        last_mt[~qnmask] = 0
         # normalize the mt so that the whole mps is normalized
         last_mt /= xp.linalg.norm(last_mt.flatten())
         mps.append(last_mt)

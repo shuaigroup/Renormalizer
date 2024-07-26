@@ -1430,7 +1430,8 @@ class TTNS(TTNBase):
 
     @property
     def ttns_norm(self):
-        res = self.expectation(TTNO.dummy(self.basis))
+        # take real otherwise comparison with float is ill-defined
+        res = self.expectation(TTNO.dummy(self.basis)).real
 
         if res < 0:
             assert np.abs(res) < 1e-8
