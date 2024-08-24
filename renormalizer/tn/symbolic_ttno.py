@@ -6,7 +6,7 @@ from renormalizer.mps.backend import np
 from renormalizer import Op, Model
 from renormalizer.model.basis import BasisSet
 from renormalizer.tn.treebase import BasisTree
-from renormalizer.mps.symbolic_mpo import _terms_to_table, _transform_table, _construct_symbolic_mpo_one_site, OpTuple
+from renormalizer.mps.symbolic_mpo import _terms_to_table, _construct_symbolic_mpo_one_site, OpTuple
 
 
 logger = logging.getLogger(__name__)
@@ -57,8 +57,7 @@ def construct_symbolic_ttno(tn: BasisTree, terms: List[Op], const: float = 0, al
     basis = list(chain(*[n.basis_sets for n in nodes]))
     model = Model(basis, [])
     qn_size = model.qn_size
-    table, factor = _terms_to_table(model, terms, const)
-    table, factor, primary_ops = _transform_table(table, factor)
+    table, primary_ops, factor = _terms_to_table(model, terms, const)
 
     dummy_in_ops = [[OpTuple([0], qn=np.zeros(qn_size, dtype=int), factor=1)]]
     out_ops: List[List[OpTuple]]

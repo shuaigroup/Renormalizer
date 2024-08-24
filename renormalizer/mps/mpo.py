@@ -271,12 +271,12 @@ class Mpo(MatrixProduct):
         if len(terms) == 0:
             raise ValueError("Terms all have factor 0.")
 
-        table, factor = _terms_to_table(model, terms, -self.offset)
+        table, primary_ops, factor = _terms_to_table(model, terms, -self.offset)
 
         self.dtype = factor.dtype
 
         self.symbolic_mpo, self.qn, self.qntot, self.qnidx, self.symbolic_out_ops_list, self.primary_ops \
-            = construct_symbolic_mpo(table, factor, algo=algo)
+            = construct_symbolic_mpo(table, primary_ops, factor, algo=algo)
         # from renormalizer.mps.symbolic_mpo import _format_symbolic_mpo
         # print(_format_symbolic_mpo(mpo_symbol))
         self.model = model

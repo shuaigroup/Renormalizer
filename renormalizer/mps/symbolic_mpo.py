@@ -19,7 +19,7 @@ logger = logging.getLogger(__name__)
 OpTuple = namedtuple("OpTuple", ["symbol", "qn", "factor"])
 
 
-def construct_symbolic_mpo(table, factor, algo="Hopcroft-Karp"):
+def construct_symbolic_mpo(table, primary_ops, factor, algo="Hopcroft-Karp"):
     r"""
     A General Compact (Symbolic) MPO Construction Routine
 
@@ -102,17 +102,18 @@ def construct_symbolic_mpo(table, factor, algo="Hopcroft-Karp"):
     The local mpo is the transformation matrix between 0'',1'' to 0'''
     """
 
-    qn_size = len(table[0][0].qn)
+    qn_size = len(primary_ops[0].qn)
+
     # Simplest case. Cut to the chase
-    if len(table) == 1:
+    if table.shape[0] == 1:
         # The first layer: number of sites. The middle array: in and out virtual bond
         # the 4th layer: operator sums
         mpo: List[np.ndarray[List[Op]]] = []
         mpoqn = [np.zeros((1, qn_size), dtype=int)]
-        primary_ops = list(set(table[0]))
         op2idx = dict(zip(primary_ops, range(len(primary_ops))))
         out_ops_list: List[List[OpTuple]] = [[OpTuple([0], qn=0, factor=1)]]
-        for op in table[0]:
+        for idx in table[0]:
+            op = primary_ops[idx]
             mo = np.full((1, 1), None)
             mo[0][0] = [op]
             mpo.append(mo)
@@ -130,14 +131,10 @@ def construct_symbolic_mpo(table, factor, algo="Hopcroft-Karp"):
         return mpo, mpoqn, qntot, qnidx, out_ops_list, primary_ops
 
     logger.debug(f"symbolic mpo algorithm: {algo}")
-    logger.debug(f"Input operator terms: {len(table)}")
-
-    table, factor, primary_ops = _transform_table(table, factor)
 
     # add the first and last column for convenience
     ta = np.zeros((table.shape[0], 1), dtype=np.uint16)
     table = np.concatenate((ta, table, ta), axis=1)
-    logger.debug(f"After combination of the same terms: {table.shape[0]}")
 
     # 0 represents the identity symbol. Identity might not present
     # in `primary_ops` but the algorithm still works.
@@ -364,7 +361,12 @@ def _terms_to_table(model: Model, terms: List[Op], const: float):
 
     table = []
     factor_list = []
-    
+
+    primary_ops_eachsite = []
+    primary_ops = []
+
+    index = 0
+
     dummy_table_entry = []
     for b in model.basis:
         if b.multi_dof:
@@ -372,14 +374,25 @@ def _terms_to_table(model: Model, terms: List[Op], const: float):
         else:
             dof = b.dof
         op = Op.identity(dof, qn_size=model.qn_size)
-        dummy_table_entry.append(op)
+
+        primary_ops_eachsite.append({op:index})
+        primary_ops.append(op)
+        dummy_table_entry.append(index)
+        index += 1
+
     for op in terms:
         elem_ops, factor = op.split_elementary(model.dof_to_siteidx)
         table_entry = dummy_table_entry.copy()
+        
         for elem_op in elem_ops:
             # it is ensured in `elem_op` every symbol is on the same site
             site_idx = model.dof_to_siteidx[elem_op.dofs[0]]
-            table_entry[site_idx] = elem_op
+            if elem_op not in primary_ops_eachsite[site_idx].keys():
+                primary_ops_eachsite[site_idx][elem_op] = index
+                primary_ops.append(elem_op)
+                index += 1
+            table_entry[site_idx] = primary_ops_eachsite[site_idx][elem_op]
+
         table.append(table_entry)
         factor_list.append(factor)
 
@@ -389,10 +402,19 @@ def _terms_to_table(model: Model, terms: List[Op], const: float):
         factor_list.append(const)
         table.append(table_entry)
 
-    factor_list = np.array(factor_list)
+    factor = np.array(factor_list)
     logger.debug(f"# of operator terms: {len(table)}")
+    
+    # use np.uint32, np.uint16 to save memory
+    max_uint16 = np.iinfo(np.uint16).max
+    assert len(primary_ops) < max_uint16
+    
+    table = np.array(table, dtype=np.uint16)
+    logger.debug(f"Input operator terms: {table.shape[0]}")
+    table, factor = _deduplicate_table(table, factor)
+    logger.debug(f"After combination of the same terms: {table.shape[0]}")
 
-    return table, factor_list
+    return table, primary_ops, factor
 
 
 def _deduplicate_table(table, factor):
@@ -415,48 +437,6 @@ def _deduplicate_table(table, factor):
 
     return new_table, factor
 
-
-def _transform_table(table, factor):
-    """Transforms the table to integer table and combine duplicate terms."""
-
-    # use np.uint32, np.uint16 to save memory
-    max_uint16 = np.iinfo(np.uint16).max
-
-    # translate the symbolic operator table to an easy to manipulate numpy array
-    table = np.array(table)
-    # unique operators with DoF names taken into consideration
-    # The inclusion of DoF names is necessary for multi-dof basis.
-    unique_op = OrderedDict.fromkeys(table.ravel())
-    # Convert Set(table.ravel()) to List will change the Op order in list, OrderedDict made reproducible
-    unique_op = list(unique_op.keys())
-
-    # check the index of different operators could be represented with np.uint16
-    assert len(unique_op) < max_uint16
-
-    # Construct mapping from easy-to-manipulate integer to actual Op
-    primary_ops = list(unique_op)
-
-    op2idx = dict(zip(unique_op, range(len(unique_op))))
-    new_table = np.vectorize(op2idx.get)(table).astype(np.uint16)
-
-    del unique_op
-
-    if __debug__:
-        qn_size = len(table[0][0].qn)
-        qn_table = np.array([[x.qn for x in ta] for ta in table])
-        factor_table = np.array([[x.factor for x in ta] for ta in table])
-        for idx in range(len(primary_ops)):
-            coord = np.nonzero(new_table == idx)
-            # check that op with the same symbol has the same factor and qn
-            for j in range(qn_size):
-                assert np.unique(qn_table[:, :, j][coord]).size == 1
-            assert np.all(factor_table[coord] == factor_table[coord][0])
-
-        del factor_table, qn_table
-
-    table, factor = _deduplicate_table(new_table, factor)
-
-    return table, factor, primary_ops
 
 
 # translate the numbers into symbolic Matrix Operator
