@@ -82,8 +82,19 @@ because Renormalizer is sometimes imported as a utility package.
 - [A detailed review of our method](http://www.shuaigroup.net/images/article/pubs/2022/08_shuai_WIRES_Comput_Mol_Sci_2022_e1614.pdf)
 
 # Papers published using Renormalizer
-
-1. Qi Sun, Jiajun Ren, Qian Peng, and Zhigang Shuai*, 
+1. Liqi Zhou, Xing Gao*, Zhigang Shuai*, 
+[A stochastic Schrödinger equation and matrix product state approach to carrier transport in organic semiconductors with nonlocal electron–phonon interaction](http://www.shuaigroup.net/images/article/pubs/2024/08_shuai_JCP_2024_161_084118.pdf)
+*J. Chem. Phys.*, **2024**, *161*, 084118.
+1. Weitang Li*, Jiajun Ren, Hengrui Yang,; Haobin Wang, Zhigang Shuai, 
+[Optimal tree tensor network operators for tensor network simulations: Applications to open quantum systems](http://www.shuaigroup.net/images/article/pubs/2024/07_shuai_JCP_2024_161_054116.pdf). 
+*J. Chem. Phys.*, **2024**, *161*, 054116.
+1. Zirui Sheng, Tong Jiang, Weitang Li*, and Zhigang Shuai*, 
+[TD-DMRG Study of Exciton Dynamics with both Thermal and Static Disorders for Fenna-Matthews-Olson Complex](http://www.shuaigroup.net/images/article/pubs/2024/05_shuai_JCTC_2024_20_6470.pdf). 
+*J. Chem. Theory Comput.*, **2024**, *20*, 6470−6484. 
+2. Yufei Ge, Weitang Li, Jiajun Ren, and Zhigang Shuai*, 
+[Roles of nonlocal electron-phonon coupling on the electrical conductivity and Seebeck coefficient: A time-dependent DMRG study](http://www.shuaigroup.net/images/article/pubs/2024/03_shuai_PRB_2024_035201.pdf). 
+*Phys. Rev. B*, **2024**, *110*, 035201. 
+2. Qi Sun, Jiajun Ren, Qian Peng, and Zhigang Shuai*, 
 [Heterofission Mechanism for Pure Organic Room Temperature Phosphorescence](http://www.shuaigroup.net/images/article/pubs/2023/09_shuai_Adv_Optical_Mater_2023_2301769.pdf). 
 *Adv. Optical Mater.*, **2023**, 2301769.
 2. Hengrui Yang, Weitang Li, Jiajun Ren, and Zhigang Shuai*, 

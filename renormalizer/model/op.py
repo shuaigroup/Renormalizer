@@ -92,7 +92,7 @@ class Op:
         """
         symbol = " ".join(op.symbol for op in op_list)
         dof_name = list(chain.from_iterable(op.dofs for op in op_list))
-        factor = np.product([op.factor for op in op_list])
+        factor = np.prod([op.factor for op in op_list])
         qn = list(chain.from_iterable(op.qn_list for op in op_list))
         return Op(symbol, dof_name, factor, qn)
 
