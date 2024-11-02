@@ -104,7 +104,8 @@ def svd_qn(
         QR: bool=False,
         system: str=None,
         full_matrices: bool=True,
-        opt_full_matrices: bool=True
+        opt_full_matrices: bool=True,
+        equal_distr: bool=False
 ):
     r""" Block decompose the coefficient array (l, sigmal, sigmar, r) or (l,sigma,r) by SVD/QR according to
     the quantum number.
@@ -137,6 +138,10 @@ def svd_qn(
         The optimized version does not calculate full matrices but adds a limited amount of
         additional orthonormal basis (in contrast to all of the basis when ``full_matrices=True``)
         to the decomposition.
+    equal_distr: bool:
+        For unnormalized mp, for example mpo, the canonicalisation will collect
+        the norm to the active site, which will lead to overflow problem. The
+        flag force to distribute the norm to each site with a constant.
 
     Returns
     -------
@@ -189,6 +194,14 @@ def svd_qn(
                 full_matrices=full_matrices,
                 opt_full_matrices=opt_full_matrices
             )
+            if equal_distr:
+                mean_norm = np.mean(block_s)
+                block_s /= mean_norm
+                if system == "R":
+                    block_vt *= mean_norm
+                elif system == "L":
+                    block_u *= mean_norm
+
             block_s_list.append(block_s)
         else:
             if full_matrices:
@@ -197,8 +210,18 @@ def svd_qn(
                 mode = "economic"
             if system == "R":
                 block_u, block_vt = scipy.linalg.rq(block, mode=mode)
+                if equal_distr:
+                    u_norm = np.linalg.norm(block_u, axis=0)
+                    mean_norm = u_norm.mean()
+                    block_vt *= mean_norm
+                    block_u /= mean_norm
             elif system == "L":
                 block_u, block_vt = scipy.linalg.qr(block, mode=mode)
+                if equal_distr:
+                    vt_norm = np.linalg.norm(block_vt, axis=1)
+                    mean_norm = vt_norm.mean()
+                    block_vt /= mean_norm
+                    block_u *= mean_norm
             else:
                 assert False
 

@@ -29,6 +29,8 @@ class TdMpsJob(object):
         self.evolve_times = [0]
         # output abstract of current mps every x steps
         self.info_interval = 1
+        self.process_interval = 1
+        self.process_times = [0]
         # dump mps, None: not dumped, "all": dump all according to interval,  
         # "one": dump only the latest mps according to interval
         if dump_mps in [None, "all", "one"]:
@@ -129,7 +131,9 @@ class TdMpsJob(object):
             
             # process
             self.evolve_times.append(self.latest_evolve_time + evolve_dt)
-            self.process_mps(new_mps)
+            if (i+1) % self.process_interval == 0:
+                self.process_mps(new_mps)
+                self.process_times.append(self.evolve_times[-1])
             self.latest_mps = new_mps
             
             # wall time
@@ -138,7 +142,7 @@ class TdMpsJob(object):
             wall_times.append(evolution_wall_time)
             
             # output information
-            if self.info_interval is not None and i % self.info_interval == 0:
+            if self.info_interval is not None and (i+1) % self.info_interval == 0:
                 mps_abstract = str(new_mps)
                 self._dump_mps = self.dump_mps
             else:

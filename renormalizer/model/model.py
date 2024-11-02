@@ -33,7 +33,8 @@ class Model:
     output_ordering : :class:`list` of :class:`~renormalizer.model.basis.BasisSet`
         The ordering of the local basis for output. Default is the same with ``basis``.
     """
-    def __init__(self, basis: List[BasisSet], ham_terms: List[Op], dipole: Dict = None, output_ordering: List[BasisSet]=None):
+    def __init__(self, basis: List[BasisSet], ham_terms: List[Op], dipole: Dict
+            = None, output_ordering: List[BasisSet]=None, para:Dict = None):
         if not isinstance(basis, list) or len(basis) == 0:
             raise TypeError("Basis should be a non-empty list")
         if not isinstance(basis[0], BasisSet):
@@ -64,6 +65,7 @@ class Model:
         self.ham_terms: List[Op] = self.check_operator_terms(ham_terms)
         # array(n_e, n_e)
         self.dipole = dipole
+        self.para = para
         # reusable mpos for the system
         self.mpos = dict()
         # physical bond dimension.

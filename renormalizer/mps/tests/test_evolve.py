@@ -6,6 +6,8 @@ import logging
 import qutip
 import pytest
 import numpy as np
+from pympler import asizeof
+
 
 from renormalizer.model import Model
 from renormalizer.mps.backend import backend
@@ -23,8 +25,8 @@ def f(model, run_qutip=True):
     init_mps = (Mpo.onsite(model, r"a^\dagger", dof_set={0}) @ Mps.ground_state(model, False)).expand_bond_dimension(hint_mpo=tentative_mpo)
     init_mpdm = MpDm.from_mps(init_mps).expand_bond_dimension(hint_mpo=tentative_mpo)
     e = init_mps.expectation(tentative_mpo)
-    mpo = Mpo(model, offset=Quantity(e))
-
+    mpo = Mpo(model, offset=Quantity(e), sparse_mo=True)
+    print("size", asizeof.asizeof(mpo))
     if run_qutip:
         # calculate result in ZT. FT result is exactly the same
         TIME_LIMIT = 10

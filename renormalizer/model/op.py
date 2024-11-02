@@ -92,7 +92,7 @@ class Op:
         """
         symbol = " ".join(op.symbol for op in op_list)
         dof_name = list(chain.from_iterable(op.dofs for op in op_list))
-        factor = np.product([op.factor for op in op_list])
+        factor = np.prod([op.factor for op in op_list])
         qn = list(chain.from_iterable(op.qn_list for op in op_list))
         return Op(symbol, dof_name, factor, qn)
 
@@ -337,6 +337,17 @@ class Op:
         # compare float point directly because generally a small epsilon
         # between floats can not be defined for all possible cases.
         return self.to_tuple() == other.to_tuple()
+        #if self.symbol != other.symbol:
+        #    return False
+        #if tuple(self.dofs) != tuple(other.dofs):
+        #    return False
+        #if self.factor != other.factor:
+        #    return False
+        #if tuple(tuple(t) for t in self.qn_list) != tuple(tuple(t) for t in other.qn_list):
+        #    return False
+        #
+        #return True
+
 
     def __str__(self):
         ret =  ", ".join([repr(self.symbol), str(self.dofs), str(self.factor)])

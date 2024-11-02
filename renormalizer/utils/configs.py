@@ -382,7 +382,8 @@ class EvolveConfig:
         ivp_rtol=1e-5,
         ivp_atol=1e-8,
         ivp_solver="krylov",
-        force_ovlp=True
+        force_ovlp=True,
+        normalize=None,
     ):
 
         self.method = method
@@ -411,6 +412,7 @@ class EvolveConfig:
         self.force_ovlp: bool = force_ovlp
         # auto switch between mu_vmf and vmf for a higher efficiency
         self.vmf_auto_switch: bool = True
+        self.normalize = normalize  # None or string "mps_only", "mps_and_coeff", "mps_norm_to_coeff"
 
     @property
     def is_tdvp(self):
@@ -427,7 +429,6 @@ class EvolveConfig:
         if (np.iscomplex(evolve_dt) and evolve_dt.imag * self.guess_dt.imag < 0) or \
                 (not np.iscomplex(evolve_dt) and evolve_dt * self.guess_dt < 0):
             raise ValueError("evolve into wrong direction. " + info_str)
-
 
     def copy(self):
         new = self.__class__.__new__(self.__class__)

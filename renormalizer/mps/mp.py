@@ -5,6 +5,7 @@ import logging
 import os
 import shutil
 from typing import List, Union
+import sparse
 
 from renormalizer.model import Model, HolsteinModel
 from renormalizer.mps.backend import np, xp
@@ -34,7 +35,7 @@ logger = logging.getLogger(__name__)
 class MatrixProduct:
 
     @classmethod
-    def load(cls, model: Model, fname: str):
+    def load(cls, model: Model, fname: str, sparse=False):
         npload = np.load(fname, allow_pickle=True)
         mp = cls()
         mp.model = model
@@ -156,21 +157,21 @@ class MatrixProduct:
             self.qn[idx] = [self.qntot - i for i in self.qn[idx]]
         self.qnidx = dstidx
 
-    def check_left_canonical(self, atol=None):
+    def check_left_canonical(self, atol=None, check_normalize=True):
         """
         check L-canonical
         """
         for i in range(len(self)-1):
-            if not self[i].check_lortho(atol):
+            if not self[i].check_lortho(atol, check_normalize=check_normalize):
                 return False
         return True
 
-    def check_right_canonical(self, atol=None):
+    def check_right_canonical(self, atol=None, check_normalize=True):
         """
         check R-canonical
         """
         for i in range(1, len(self)):
-            if not self[i].check_rortho(atol):
+            if not self[i].check_rortho(atol, check_normalize=check_normalize):
                 return False
         return True
 
@@ -415,7 +416,7 @@ class MatrixProduct:
             new_mps.compress()
         return new_mps
     
-    def compress(self, temp_m_trunc=None, ret_s=False):
+    def compress(self, temp_m_trunc=None, ret_s=False, check_normalize=True, equal_distr=False):
         """
         inp: canonicalise MPS (or MPO)
 
@@ -442,9 +443,9 @@ class MatrixProduct:
             # ensure mps is canonicalised. This is time consuming.
             # to disable this, run python as `python -O`
             if self.is_left_canonical:
-                assert self.check_left_canonical()
+                assert self.check_left_canonical(check_normalize=check_normalize)
             else:
-                assert self.check_right_canonical()
+                assert self.check_right_canonical(check_normalize=check_normalize)
         system = "L" if self.to_right else "R"
 
         s_list = []
@@ -458,6 +459,7 @@ class MatrixProduct:
                 self.qntot,
                 system=system,
                 full_matrices=False,
+                equal_distr=equal_distr,
             )
             vt = v.T
             s_list.append(sigma)
@@ -615,6 +617,23 @@ class MatrixProduct:
         logger.info(f"{mps}")
 
         return mps
+    
+    #def compress_unnormed(self):
+    #    """
+    #    for some mp structure, the norm is not 1, put the norm to the last site
+    #    will lead to overflow problem
+    #    """
+    #    norm = self.mp_norm
+    #    logger.info(f"norm: {norm}")
+    #    each_site_norm = np.log(norm) / np.log(self.site_num)
+    #    for isite in range(self.site_num):
+    #        self[isite] = self[isite] / each_site_norm
+
+    #    self.canonicalise().compress()
+
+    #    for isite in range(self.site_num):
+    #        self[isite] = self[isite] * each_site_norm
+    #    return self
 
     def _update_mps(self, cstruct, cidx, qnbigl, qnbigr, percent=0):
         r"""update mps with basis selection algorithm of J. Chem. Phys. 120,
@@ -860,11 +879,15 @@ class MatrixProduct:
             return None
 
 
-    def _push_cano(self, idx):
+    def _push_cano(self, idx, equal_distr=False):
         # move the canonical center to the next site
         # idx is the current canonical center
         mt: Matrix = self[idx]
-        assert mt.any()
+        try:
+            assert mt.any()
+        except:
+            raise ValueError(f"mt: {mt.array}, idx: {idx}")
+
         qnbigl, qnbigr, _ = self._get_big_qn([idx])
         system = "L" if self.to_right else "R"
         u, qnlset, v, qnrset = svd_qn.svd_qn(
@@ -875,12 +898,13 @@ class MatrixProduct:
             QR=True,
             system=system,
             full_matrices=False,
+            equal_distr=equal_distr,
         )
         self._update_ms(
             idx, u, v.T, sigma=None, qnlset=qnlset, qnrset=qnrset
         )
 
-    def canonicalise(self, stop_idx: int=None):
+    def canonicalise(self, stop_idx: int=None, equal_distr=False):
         # stop_idx: mix canonical site at `stop_idx`
         if self.to_right:
             assert self.qnidx == 0
@@ -888,7 +912,7 @@ class MatrixProduct:
             assert self.qnidx == self.site_num-1
 
         for idx in self.iter_idx_list(full=False, stop_idx=stop_idx):
-           self._push_cano(idx)
+           self._push_cano(idx, equal_distr=equal_distr)
         # can't iter to idx == 0 or idx == self.site_num - 1
         if (not self.to_right and idx == 1) or (self.to_right and idx == self.site_num - 2):
             self._switch_direction()
@@ -940,7 +964,7 @@ class MatrixProduct:
                 e0 = tensordot(e0, mt1.array, ([0, 1, 2], [0, 1, 2])).T
             else:
                 assert False
-
+            #logger.debug(f"e0: {e0}")
         return complex(e0[0, 0])
     
     def dot_ob(self, other: "MatrixProduct") -> complex:
@@ -971,7 +995,7 @@ class MatrixProduct:
     def angle(self, other):
         return abs(self.conj().dot(other))
 
-    def scale(self, val, inplace=False):
+    def scale(self, val, inplace=False, equal_distr=False):
         new_mp = self if inplace else self.copy()
         # np.iscomplex regards 1+0j as non complex while np.iscomplexobj
         # regards 1+0j as complex. The former is the desired behavior
@@ -980,7 +1004,12 @@ class MatrixProduct:
         else:
             val = val.real
         assert new_mp[self.qnidx].array.any()
-        new_mp[self.qnidx] = new_mp[self.qnidx] * val
+        if equal_distr:
+            val_each = np.log(val) / np.log(new_mp.site_num)
+            for isite in range(new_mp.site_num):
+                new_mp[isite] *= val_each
+        else:
+            new_mp[self.qnidx] = new_mp[self.qnidx] * val
         return new_mp
 
     def to_complex(self, inplace=False):
@@ -1030,7 +1059,7 @@ class MatrixProduct:
         new.compress_config = self.compress_config.copy()
         new.qn = [qn.copy() for qn in self.qn]
         new.qnidx = self.qnidx
-        new.qntot = self.qntot
+        new.qntot = self.qntot.copy()
         new.to_right = self.to_right
         new.compress_add = self.compress_add
         return new
@@ -1073,7 +1102,7 @@ class MatrixProduct:
     def build_empty_mp(self, num):
         self._mp = [[None]] * num
 
-    def dump(self, fname, other_attrs=None):
+    def dump(self, fname, other_attrs=None, save_sparse=False):
 
         if other_attrs is None:
             other_attrs = []
@@ -1085,8 +1114,10 @@ class MatrixProduct:
         # version of the protocol
         data_dict["version"] = "0.4"
         data_dict["nsites"] = self.site_num
-        for idx, mt in enumerate(self):
-            data_dict[f"mt_{idx}"] = mt.array
+
+        if not save_sparse:
+            for idx, mt in enumerate(self):
+                data_dict[f"mt_{idx}"] = mt.array
 
         for attr in ["qnidx", "qntot", "qn", "to_right"] + other_attrs:
             data_dict[attr] = getattr(self, attr)
@@ -1097,6 +1128,19 @@ class MatrixProduct:
         
         try:
             np.savez(fname, **data_dict)
+            if save_sparse:
+                path = f"{fname}_sparse_mp"
+                if not os.path.exists(path):
+                    os.makedirs(path)
+
+                for idx, mt in enumerate(self):
+                    if isinstance(mt._array, sparse.GCXS):
+                        array = mt._array
+                    else:
+                        assert isinstance(mt._array, np.ndarray)
+                        array = sparse.GCXS.from_numpy(mt._array)
+                    sparse.save_npz(f"{path}/{idx}", array)
+
         except Exception:
             logger.exception(f"Dump MP failed.")
 
@@ -1175,7 +1219,7 @@ class MatrixProduct:
 
     def append(self, array):
         new_mt = self._array2mt(array, len(self))
-        if len(self._mp) != 0:
+        if len(self._mp) != 0 and isinstance(new_mt, Matrix):
             assert new_mt.array.shape[0] == self._mp[-1].shape[-1]
         self._mp.append(new_mt)
 

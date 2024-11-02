@@ -70,29 +70,36 @@ nelec = [5, 5]
 M = 100
 procedure = [[M, 0.4], [M, 0.2], [M, 0.1], [M, 0], [M, 0], [M,0], [M,0]]
 mps = Mps.random(model, nelec, M, percent=1.0)
-logger.info(f"initial mps: {mps}")
+mps.canonicalise().normalize("mps_and_coeff").canonicalise()
+logger.info(f"initial mps: {mps}, {mps.mp_norm}")
 
-# algorithm 1:  DMRG sweep
-mps.optimize_config.procedure = procedure
-mps.optimize_config.method = "2site"
-energies, mps = optimize_mps(mps.copy(), mpo)
-gs_e = min(energies)
-logger.info(f"lowest energy: {gs_e}")
+## algorithm 1:  DMRG sweep
+#mps.optimize_config.procedure = procedure
+#mps.optimize_config.method = "2site"
+#energies, mps = optimize_mps(mps.copy(), mpo)
+#gs_e = min(energies)
+#logger.info(f"lowest energy: {gs_e}")
 
 # algorithm 2: imaginary time propagation
 evolve_config = EvolveConfig(EvolveMethod.tdvp_ps,
-        adaptive=True,
-        guess_dt=1e-3/1j,
-        adaptive_rtol=5e-4,
-        ivp_solver="RK45"
+        #adaptive=True,
+        #guess_dt=1e-3/1j,
+        #adaptive_rtol=5e-4,
+        #ivp_solver="RK45"
         )
 mps.evolve_config = evolve_config
-evolve_dt = 0.5/1j
+evolve_dt = 0.01/1j
 energy_old = 0
 istep = 0
+norm = 1
 while True:
-    mps = mps.evolve(mpo, evolve_dt)
-    energy = mps.expectation(mpo)
+    #energy = mps.expectation(mpo) / mps.mp_norm**2
+    #norm *= np.exp(-energy*0.01/2)
+    mps = mps.evolve(mpo, evolve_dt, normalize=False)
+    logger.info(f"norm: {mps.mp_norm}")
+    energy = mps.expectation(mpo) / mps.mp_norm**2
+    norm *= np.exp(-energy*0.01)
+    logger.info(f"norm: {norm}")
     logger.info(f"current mps: {mps}")
     logger.info(f"istep={istep}, energy={energy}")
     if np.abs(energy-energy_old) < 1e-5:

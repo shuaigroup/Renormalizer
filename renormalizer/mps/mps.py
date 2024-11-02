@@ -5,7 +5,7 @@ from collections import Counter, deque
 from functools import wraps, reduce
 from typing import Union, List, Dict
 import itertools
-
+import sparse
 
 import scipy
 from scipy import stats
@@ -14,7 +14,7 @@ from renormalizer.lib import solve_ivp, expm_krylov
 from renormalizer.model import Model, Op, basis as ba
 from renormalizer.mps import svd_qn
 from renormalizer.mps.svd_qn import add_outer, get_qn_mask
-from renormalizer.mps.backend import backend, np, xp
+from renormalizer.mps.backend import backend, np, xp, OE_BACKEND
 from renormalizer.mps.lib import (
     Environ,
     select_basis,
@@ -39,6 +39,8 @@ from renormalizer.utils import (
     EvolveMethod
 )
 from renormalizer.utils.utils import calc_vn_entropy
+
+import opt_einsum as oe
 
 logger = logging.getLogger(__name__)
 
@@ -101,7 +103,11 @@ def adaptive_tdvp(fun):
             if np.allclose(evolved_t, evolve_target_t):
                 # normal exit. Note that `dt` could be much less than actually tolerated for the last step
                 # so use `guess_dt` for the last step. Slight inaccuracy won't harm.
-                mps_half2.evolve_config.guess_dt = config.guess_dt
+                if p < 1:
+                    mps_half2.evolve_config.guess_dt = config.guess_dt * p
+                else:
+                    mps_half2.evolve_config.guess_dt = config.guess_dt
+
                 logger.debug(
                     f"evolution converged, new guess_dt: {mps_half2.evolve_config.guess_dt}"
                 )
@@ -336,13 +342,17 @@ class Mps(MatrixProduct):
         return mps
 
     @classmethod
-    def load(cls, model: Model, fname: str):
+    def load(cls, model: Model, fname: str, save_sparse=False):
         npload = np.load(fname, allow_pickle=True)
         mp = cls()
         mp.model = model
         nsites = int(npload["nsites"])
         for i in range(nsites):
-            mt = npload[f"mt_{i}"]
+            if save_sparse:
+                mt = sparse.load_npz(f"{fname[:-4]}_sparse_mp/{i}.npz").todense()
+            else:
+                mt = npload[f"mt_{i}"]
+                
             if np.iscomplexobj(mt):
                 mp.dtype = backend.complex_dtype
             else:
@@ -578,7 +588,7 @@ class Mps(MatrixProduct):
         new.evolve_config = self.evolve_config.copy()
         return new
 
-    def normalize(self, kind):
+    def normalize(self, kind, equal_distr=False):
         r''' normalize the wavefunction
 
         Parameters
@@ -601,7 +611,10 @@ class Mps(MatrixProduct):
             new_coeff = self.coeff * self.mp_norm
         else:
             raise ValueError(f"kind={kind} is not valid.")
-        new_mps = self.scale(1.0 / self.mp_norm, inplace=True)
+        try:
+            new_mps = self.scale(1.0 / self.mp_norm, inplace=True)
+        except:
+            raise ValueError(f"self.mp_norm: {self.mp_norm}")
         new_mps.coeff = new_coeff
 
         return new_mps
@@ -667,6 +680,11 @@ class Mps(MatrixProduct):
                     lastone = lastone.canonicalise().compress(
                         m_target // hint_mpo.bond_dims_mean + 1
                     )
+                #test_mps = hint_mpo @ lastone
+                #for ms in test_mps:
+                #    logger.info(f"hi: {np.any(ms.array)}")
+
+                #logger.debug(f"test_mps: {test_mps.conj().dot(test_mps)}")
                 lastone = (hint_mpo @ lastone).normalize("mps_and_coeff")
         logger.debug(f"expander bond dimension: {expander.bond_dims}")
         self.compress_config.bond_dim_max_value += self.bond_dims_mean
@@ -684,6 +702,14 @@ class Mps(MatrixProduct):
             EvolveMethod.tdvp_ps: self._evolve_tdvp_ps,
             EvolveMethod.tdvp_ps2: self._evolve_tdvp_ps2
         }[self.evolve_config.method]
+        # this check is necessary, but time consuming
+        #if self.evolve_config.method in [EvolveMethod.tdvp_ps,
+        #        EvolveMethod.tdvp_mu_cmf, EvolveMethod.tdvp_ps2]:
+        #    if not mpo.is_hermitian()
+        #        try:
+        #            assert self.evolve_config.ivp_solver != "krylov"
+        #        except:
+        #            raise ValueError("The current Krylov algorithm does not support non-Hermitian MPO, use RK45")
         new_mps = method(mpo, evolve_dt)
         if normalize:
             if np.iscomplex(evolve_dt):
@@ -727,6 +753,8 @@ class Mps(MatrixProduct):
             k4.scale(1/6*evolve_dt)])
         logger.info(f"new_mps:{new_mps}")  
         
+        if self.evolve_config.normalize is not None:
+            new_mps = new_mps.normalize(self.evolve_config.normalize)
         return new_mps
     
     def _evolve_prop_and_compress_tdrk(self, mpo, evolve_dt) -> "Mps":
@@ -819,6 +847,9 @@ class Mps(MatrixProduct):
                         logger.debug(f"sub-step {dt} further, remaining: {evolve_dt-evolved_dt}")
         else:
             new_mps, _ = sub_time_step_evolve(self, evolve_dt, 0)
+        
+        if self.evolve_config.normalize is not None:
+            new_mps = new_mps.normalize(self.evolve_config.normalize)
 
         return new_mps
 
@@ -889,6 +920,9 @@ class Mps(MatrixProduct):
                         logger.debug(
                             f"evolution converged, new guess_dt: {new_mps2.evolve_config.guess_dt}"
                         )
+
+                        if self.evolve_config.normalize is not None:
+                            new_mps2 = new_mps2.normalize(self.evolve_config.normalize)
                         return new_mps2
                 else:
                     # sub-steps
@@ -913,7 +947,10 @@ class Mps(MatrixProduct):
                 term.scale(
                     (-1.0j * evolve_dt) ** idx * propagation_c[idx], inplace=True
                 )
-            return compressed_sum(termlist)
+            new_mps = compressed_sum(termlist)
+            if self.evolve_config.normalize is not None:
+                new_mps = new_mps.normalize(self.evolve_config.normalize)
+            return new_mps
     
     def _evolve_tdvp_mu_vmf(self, mpo, evolve_dt) -> "Mps":
         """
@@ -1122,6 +1159,8 @@ class Mps(MatrixProduct):
                 mps.evolve_config.method =  EvolveMethod.tdvp_mu_vmf
 
         # The caller do not want to deal with an MPS that is not canonicalised
+        if self.evolve_config.normalize is not None:
+            mps = mps.normalize(self.evolve_config.normalize)
         return mps.canonicalise()
 
     @adaptive_tdvp
@@ -1293,6 +1332,8 @@ class Mps(MatrixProduct):
             loop -= 1
             # new_mps.evolve_config.stat = steps_stat
 
+        if self.evolve_config.normalize is not None:
+            mps = mps.normalize(self.evolve_config.normalize)
         return mps
 
     @adaptive_tdvp
@@ -1300,14 +1341,25 @@ class Mps(MatrixProduct):
         # PhysRevB.94.165116
         # TDVP projector splitting
         # one-site
+        
+        mps = self.copy()
+        if mps.to_right:
+            if not mps.check_right_canonical():
+                logger.debug("mps is not right-canonical, doing canonicalization")
+                mps = mps.ensure_right_canonical()
+        else:
+            if not mps.check_left_canonical():
+                logger.debug("mps is not left-canonical, doing canonicalization")
+                mps = mps.ensure_left_canonical()
+
+
         if np.iscomplex(evolve_dt):
-            mps = self.copy()
             if self.evolve_config.ivp_solver != "krylov":
                 evolve_dt = -evolve_dt.imag
                 # used in calculating derivatives
                 coef = -1
         else:
-            mps = self.to_complex()
+            mps = mps.to_complex()
             if self.evolve_config.ivp_solver != "krylov":
                 coef = 1j
 
@@ -1431,6 +1483,9 @@ class Mps(MatrixProduct):
         steps_stat = stats.describe(local_steps)
         logger.debug(f"TDVP-PS Krylov space: {steps_stat}")
         mps.evolve_config.stat = steps_stat
+        
+        if self.evolve_config.normalize is not None:
+            mps = mps.normalize(self.evolve_config.normalize)
 
         return mps
 
@@ -1439,14 +1494,23 @@ class Mps(MatrixProduct):
         # PhysRevB.94.165116
         # TDVP projector splitting
         # two-site
+        mps = self.copy()
+        if mps.to_right:
+            if not mps.check_right_canonical():
+                logger.debug("mps is not left-canonical, doing canonicalization")
+                mps = mps.ensure_right_canonical()
+        else:
+            if not mps.check_left_canonical():
+                logger.debug("mps is not right-canonical, doing canonicalization")
+                mps = mps.ensure_left_canonical()
+        
         if np.iscomplex(evolve_dt):
-            mps = self.copy()
             if self.evolve_config.ivp_solver != "krylov":
                 evolve_dt = -evolve_dt.imag
                 # used in calculating derivatives
                 coef = -1
         else:
-            mps = self.to_complex()
+            mps = mps.to_complex()
             if self.evolve_config.ivp_solver != "krylov":
                 coef = 1j
 
@@ -1545,6 +1609,10 @@ class Mps(MatrixProduct):
         logger.debug(f"TDVP-PS Krylov space: {steps_stat}")
         mps.evolve_config.stat = steps_stat
         #logger.debug(f"current mps: {mps}")
+        
+        if self.evolve_config.normalize is not None:
+            mps = mps.normalize(self.evolve_config.normalize)
+        
         return mps
 
     def evolve_exact(self, h_mpo, evolve_dt, space):
@@ -1755,7 +1823,7 @@ class Mps(MatrixProduct):
         elif entropy_type == "mutual":
             entropy = self.calc_2site_mutual_entropy()
         elif entropy_type == "bond":
-            entropy = self.calc_bond_entropy()
+            entropy, _ = self.calc_bond_entropy()
         else:
             raise ValueError(f"unsupported entropy type {entropy_type}")
         return entropy
@@ -1802,10 +1870,10 @@ class Mps(MatrixProduct):
         mps = self.copy()
         mps.ensure_right_canonical()
         _, s_list = mps.compress(temp_m_trunc=np.inf, ret_s=True)
-        return np.array([calc_vn_entropy(sigma ** 2) for sigma in s_list])
+        return np.array([calc_vn_entropy(sigma ** 2) for sigma in s_list]), s_list
 
-    def dump(self, fname):
-        super().dump(fname, other_attrs=["coeff"])
+    def dump(self, fname, save_sparse=False):
+        super().dump(fname, save_sparse=save_sparse, other_attrs=["coeff"])
 
     def __setitem__(self, key, value):
         return super().__setitem__(key, value)
@@ -1834,6 +1902,21 @@ class Mps(MatrixProduct):
             other.coeff = 1
         return super().distance(other)
 
+    def contract_self(self, mode):
+        """
+        contraction a single mps
+        """
+        res = xp.eye(1)
+        for ims, ms in enumerate(self):
+            if mode[ims] == "all":
+                tmp = oe.contract("ijk->ik", ms, backend=OE_BACKEND)
+            elif mode[ims] is None:
+                tmp = ms
+            else:
+                tmp = ms[:,mode[ims],:]
+    
+            res = xp.tensordot(res, tmp, axes=1)
+        return res
 
 def projector(
     ms: xp.ndarray, left: bool, Ovlp_inv1: xp.ndarray = None, Ovlp0: xp.ndarray = None

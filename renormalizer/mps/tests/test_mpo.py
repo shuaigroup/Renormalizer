@@ -34,7 +34,7 @@ def test_symbolic_mpo(nsites, nterms):
         ham_terms.append(Op.product(op_list) * random.random())
     basis = [BasisHalfSpin(i) for i in range(nsites)]
     model = Model(basis, ham_terms)
-    mpo = Mpo(model)
+    mpo = Mpo(model, sparse_mo=True)
     dense_mpo = mpo.todense()
     qutip_ham = get_spin_hamiltonian(ham_terms)
     assert np.allclose(dense_mpo, qutip_ham.data.todense())

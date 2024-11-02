@@ -3,7 +3,7 @@ from renormalizer.model import Op, Model
 from renormalizer.model import basis as ba
 from renormalizer.utils.constant import *
 from renormalizer.mps.tests import cur_dir
-
+import pytest
 import os
 import numpy as np
 import itertools
@@ -13,7 +13,8 @@ import logging
 
 logger = logging.getLogger(__name__)
 
-def test_tda():
+@pytest.mark.parametrize("algo", (None,"direct"))
+def test_tda(algo):
     from renormalizer.tests.c2h4_para import ff, omega_std, B, zeta
     # See  J. Chem. Phys. 153, 084118 (2020) for the details of the Hamiltonian
     # the order is according to the harmonic frequency from small to large.
@@ -101,16 +102,15 @@ def test_tda():
     mps.optimize_config.nroots = 1
     energies, mps = gs.optimize_mps(mps, mpo)
     logger.info(f"M: {M}, energy : {np.array(energies[-1])*au2cm}")
-    tda = TDA(model, mpo, mps, nroots=3)
-    e = tda.kernel(include_psi0=False) 
+    tda = TDA(model, mpo, mps, nroots=3, algo=algo)
+    e = tda.kernel(include_psi0=False)[:3]
     logger.info(f"tda energy : {(e-energies[-1])*au2cm}")
     assert np.allclose((e-energies[-1])*au2cm, [824.74925026, 936.42650242, 951.96826289], atol=1)
-    config, compressed_mps = tda.analysis_dominant_config(alias=alias)
+    config, compressed_mps = tda.analysis_dominant_config(alias=alias, nroots=3)
     # std is calculated with M=200, include_psi0=True; the initial gs is
     # calculated with 9 state SA-DMRG; physical_bond=6 
     std = np.load(os.path.join(cur_dir, "c2h4_std.npz"))["200"]
     assert np.allclose(energies[-1]*au2cm, std[0], atol=2)
     assert np.allclose(e*au2cm, std[1:4], atol=3)
-
 
 

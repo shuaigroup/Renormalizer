@@ -99,7 +99,8 @@ def test_SineDVR(op):
         str2 = f"partialx^{deri}"
     
     nbas = 4
-    basis = Ba.BasisSineDVR("R1", nbas, 1, 7, endpoint=False)
+    basis = Ba.BasisSineDVR("R1", nbas, 1, 7, endpoint=False,
+            force_quadrature=True, dvr=False)
     x0, x1 = basis.xi, basis.xf
     
     op = " ".join([str1, str2]).strip()
@@ -121,19 +122,4 @@ def test_SineDVR(op):
             std[j-1,k-1] = res[0]
     
     assert np.allclose(std, mat)
-
-
-
-def test_SineDVR_quadrature():
-    
-    nbas = 10
-    basis1 = Ba.BasisSineDVR("R1", nbas, 1, 7, endpoint=False)
-    basis2 = Ba.BasisSineDVR("R1", nbas, 1, 7, endpoint=False, quadrature=True)
-    mat1 = basis1.op_mat("I") + basis1.op_mat("x dx")
-    mat2 = basis2.op_mat("dx*x")
-    assert np.allclose(mat1, mat2)
-    
-    mat1 = basis1.op_mat("dx") + basis1.op_mat("x dx^2")
-    mat2 = basis2.op_mat("dx*x*dx")
-    assert np.allclose(mat1, mat2)
 

@@ -6,6 +6,7 @@ from typing import List, Union
 import numpy as np
 import scipy
 import scipy.sparse
+import sparse
 
 from renormalizer.model import Model, HolsteinModel
 from renormalizer.mps.backend import xp
@@ -275,12 +276,14 @@ class Mpo(MatrixProduct):
         return mpo
 
     def __init__(self, model: Model = None, terms: Union[Op, List[Op]] = None,
-            offset: Quantity = Quantity(0), dtype=None):
+            offset: Quantity = Quantity(0), dtype=None, sparse_mo=False,
+            dump_matrix_size=np.inf, diagonal=False):
 
         """
         todo: document
         """
         super(Mpo, self).__init__()
+        self.compress_config.dump_matrix_size = dump_matrix_size
         # leave the possibility to construct MPO by hand
         if model is None:
             return
@@ -299,14 +302,15 @@ class Mpo(MatrixProduct):
         if len(terms) == 0:
             raise ValueError("Terms all have factor 0.")
 
-        table, factor = _terms_to_table(model, terms, -self.offset)
+        table, primary_ops, factor = _terms_to_table(model, terms, -self.offset)
     
         if dtype is None:
             self.dtype = factor.dtype
         else:
             self.dtype = dtype
 
-        mpo_symbol, self.qn, self.qntot, self.qnidx, self.symbolic_out_ops_list, self.primary_ops = construct_symbolic_mpo(table, factor)
+        mpo_symbol, self.qn, self.qntot, self.qnidx, self.symbolic_out_ops_list, self.primary_ops \
+                = construct_symbolic_mpo(table, primary_ops, factor)
         # print(_format_symbolic_mpo(mpo_symbol))
         self.model = model
         self.to_right = False
@@ -316,7 +320,23 @@ class Mpo(MatrixProduct):
 
         for impo, mo in enumerate(mpo_symbol):
             mo_mat = symbolic_mo_to_numeric_mo(model.basis[impo], mo, self.dtype)
-            self.append(mo_mat)
+            if diagonal:
+                # some mpo are known to be diagonal, only keep the diagonal
+                # terms, which is an mps
+                tmp = np.zeros_like(mo_mat)
+                for i in range(mo_mat.shape[1]):
+                    tmp[:,i,i,:] = mo_mat[:,i,i,:]
+                assert np.allclose(mo_mat, tmp)
+                new_mo_mat = np.zeros((mo_mat.shape[0], mo_mat.shape[1],
+                    mo_mat.shape[3]),dtype=mo_mat.dtype)
+                for i in range(mo_mat.shape[1]):
+                    new_mo_mat[:,i,:] = mo_mat[:,i,i,:]
+                mo_mat = new_mo_mat
+
+            if sparse_mo:
+                self.append(sparse.GCXS.from_numpy(mo_mat))
+            else:
+                self.append(mo_mat)
 
 
     def _get_sigmaqn(self, idx):
@@ -486,6 +506,7 @@ class Mpo(MatrixProduct):
         for i in range(new_mpo.site_num):
             new_mpo[i] = moveaxis(self[i], (1, 2), (2, 1)).conj()
         new_mpo.qn = [np.array([-i for i in mt_qn]) for mt_qn in new_mpo.qn]
+        new_mpo.qntot = -self.qntot
         return new_mpo
 
     def todense(self):
@@ -501,8 +522,17 @@ class Mpo(MatrixProduct):
         return res[0, :, :, 0]
 
     def is_hermitian(self):
-        full = self.todense()
-        return np.allclose(full.conj().T, full, atol=1e-7)
+        if np.prod(self.pbond_list) < 20000:
+            full = self.todense()
+            res = np.allclose(full.conj().T, full, atol=1e-7)
+        else:
+            norm = np.sqrt((self.conj().dot(self)).real)
+            dis = self.distance(self.conj_trans()) / norm
+            if dis < 1e-5:
+                res = True
+            else:
+                res = False
+        return res
 
     def __matmul__(self, other):
         return self.apply(other)

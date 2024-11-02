@@ -60,3 +60,7 @@ au2debye = 1 / debye2au
 ################ length ####################
 au2m = c["atomic unit of length"][0]
 m2au = 1/au2m
+
+
+##### speed of light ############3
+speed_of_light = c["inverse fine-structure constant"][0]

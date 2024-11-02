@@ -4,19 +4,23 @@ only works for multi_electron state
 '''
 
 from renormalizer.utils import TdMpsJob
-from renormalizer.mps.backend import xp
-from renormalizer.mps.matrix import asxp
+from renormalizer.utils.constant import *
+from renormalizer.mps.backend import xp, np, OE_BACKEND
+from renormalizer.mps.matrix import asxp, asnumpy
 from renormalizer.mps import Mpo, Mps, MpDm, gs, ThermalProp
 from renormalizer.mps.mps import BraKetPair
+from renormalizer.mps.lieq import solve_mps
 from renormalizer.utils import OptimizeConfig, EvolveConfig, CompressConfig, constant, CompressCriteria
 from renormalizer.model import Op, Model
 #from renormalizer.transport.kubo import current_op
 from renormalizer.model import basis as ba
+from renormalizer.mps.lib import Environ
 
-import numpy as np
 import logging
 import itertools
 import os
+import opt_einsum as oe
+import scipy.linalg
 
 logger = logging.getLogger(__name__)
 
@@ -64,15 +68,17 @@ def single_mol_model(fdusin, fnac, projector=0):
                         s120.append(res)   
                     elif start_s021:
                         s021.append(res)   
+    
     nac = []
-    with open(fnac, "r") as f:
-        lines = f.readlines()
-        for iline, line in enumerate(lines):
-            split_line = line.split()
-            if len(split_line) > 0:
-                if split_line[0] == "m" and split_line[1] == "n":
-                    for subline in lines[iline+2:iline+2+nmodes]:
-                        nac.append(float(subline.split()[4]))
+    if fnac is not None:
+        with open(fnac, "r") as f:
+            lines = f.readlines()
+            for iline, line in enumerate(lines):
+                split_line = line.split()
+                if len(split_line) > 0:
+                    if split_line[0] == "m" and split_line[1] == "n":
+                        for subline in lines[iline+2:iline+2+nmodes]:
+                            nac.append(float(subline.split()[4]))
     
     s021 = np.stack(s021, axis=0)               
     s120 = np.stack(s120, axis=0)
@@ -101,10 +107,10 @@ def abs_dipole_op(model):
     assert "dipole" in model.para.keys()
     for key, value in model.para["dipole"].items():
         siteidx = model.dof_to_siteidx[key[0]]
-        ba = model.basis[siteidx]
-        idx0 = ba.dof.index(key[0])
-        idx1 = ba.dof.index(key[1])
-        if ba.sigmaqn[idx0] == 1 and ba.sigmaqn[idx1] == 0:
+        local_basis = model.basis[siteidx]
+        idx0 = local_basis.dof.index(key[0])
+        idx1 = local_basis.dof.index(key[1])
+        if local_basis.sigmaqn[idx0] == 1 and local_basis.sigmaqn[idx1] == 0:
             dof = list(key)
         else:
             dof = list(key[::-1])
@@ -126,7 +132,12 @@ def nac_op(model):
     else:
         nac_terms = []
         for key, value in model.para["nac"].items():
-            nac_terms.append(Op("a^\dagger a partialx", ["gs","ex", key],
+            siteidx = model.dof_to_siteidx[key[0]]
+            local_basis = model.basis[siteidx]
+            idx0 = local_basis.dof.index(key[0])
+            idx1 = local_basis.dof.index(key[1])
+            assert local_basis.sigmaqn[idx0] == 0 and local_basis.sigmaqn[idx1] == 1
+            nac_terms.append(Op("a^\dagger a partialx", list(key),
                 factor=-value, qn=[0,-1,0]))       
         return Mpo(model, terms=nac_terms)
 
@@ -205,7 +216,7 @@ class CorrFuncBase(TdMpsJob):
             logger.debug("expand bra mps.")
             bra_mps = bra_mps.expand_bond_dimension(self.h_mpo,
                     include_ex=False)
-        logger.debug("compress ket mps.")
+        logger.debug(f"compress ket mps.")
         ket_mps.canonicalise().compress().normalize("mps_only")
         logger.debug("compress bra mps.")
         bra_mps.canonicalise().compress().normalize("mps_only")
@@ -243,6 +254,7 @@ class CorrFuncBase(TdMpsJob):
         return dump_dict
 
 
+
 class FTCorrFuncBase(CorrFuncBase):
     r'''Abstract class 
     '''
@@ -261,6 +273,7 @@ class FTCorrFuncBase(CorrFuncBase):
             dump_mps=None,
             dump_dir=None,
             job_name=None,
+            optimize_config=None,
         ):
     
         self.insteps = insteps
@@ -280,6 +293,7 @@ class FTCorrFuncBase(CorrFuncBase):
                 evolve_config=evolve_config,
                 dump_mps=dump_mps,
                 dump_dir=dump_dir,
+                optimize_config=optimize_config,
                 job_name=job_name,
                 )
     
@@ -340,6 +354,297 @@ class FTCorrFuncBase(CorrFuncBase):
     def _thermal_dump_path(self):
         assert self._defined_output_path
         return os.path.join(self.dump_dir, self.job_name + "_impo.npz")
+
+class FTCorrFuncHolsteinStaticDisorder(FTCorrFuncBase):
+    def __init__(
+            self,
+            model,
+            imps_qntot,
+            temperature,
+            insteps,
+            nmols,
+            w_intra,
+            w_sd,
+            sd_algo,
+            nsamples = None,
+            optimize_config = None,
+            imps = None,
+            ievolve_config=None,
+            icompress_config=None,
+            evolve_config=None,
+            compress_config=None,
+            dump_mps=None,
+            dump_dir=None,
+            job_name=None,
+        ):
+
+        self.sd_algo = sd_algo
+        self.w_sd = w_sd
+        self.w_intra = w_intra
+        self.nmols = nmols
+        # check the sd site is on the left hand side of the chain
+        sd_idx = []
+        for ibas, bas in enumerate(model.basis):
+            if isinstance(bas, ba.BasisSHODVR) or isinstance(bas, ba.BasisSineDVR):
+                sd_idx.append(ibas)
+        self.nsites_sd = len(sd_idx)
+        assert np.allclose(sd_idx, np.arange(self.nsites_sd))
+        
+        
+        if isinstance(model.basis[0], ba.BasisSHODVR):
+            self.x = model.basis[0].dvr_x
+            self.v = model.basis[0].dvr_v[0,:]
+        elif isinstance(model.basis[0], ba.BasisSineDVR):
+            self.x = model.basis[0].dvr_x
+            self.v = self.wfn_sd(self.x)
+            self.v /= scipy.linalg.norm(self.v)
+        logger.info(f"self.x: {self.x*au2ev*1000} mev")
+        logger.info(f"self.v**2: {self.v**2}")
+        
+        self.imps_sd = None
+        if self.sd_algo in ["mps_sampling", "mps_sampling2"]:
+            assert nsamples is not None
+            self.nsamples = nsamples
+            #prob = self.wfn**2
+            #prob_sum = [0]
+            #for i in range(len(self.wfn)):
+            #    prob_sum.append(prob_sum[-1]+prob[i])
+            #del prob_sum[0]
+            #prob_sum = np.array(prob_sum)/prob_sum[-1]
+            #logger.debug(f"prob:{prob},{np.sum(prob)}")
+            #logger.debug(f"prob_sum: {prob_sum}")
+            rng = np.random.default_rng()
+            sample_index = rng.choice(len(self.x), size=(self.nsites_sd,
+                nsamples), p=self.v**2)
+            #sample = rng.uniform(size=(self.nsites_sd, nsamples))
+            #sample_index = np.searchsorted(prob_sum, sample)
+            self.unique_sample_index, self.counts = np.unique(sample_index,
+                    axis=1, return_counts=True)
+            logger.debug(f"unique_sample_index: {self.unique_sample_index}")
+            logger.debug(f"sample counts: {self.counts}")
+            #sigma = np.sqrt(1/2/self.w_sd)
+            #de = rng.normal(0, sigma, (self.nsites_sd, nsamples))
+            #diff = np.abs(de.reshape(1, self.nsites_sd, nsamples)-self.x.reshape(-1,1,1))
+            #self.sample_index = np.argmin(diff, axis=0)
+            self.imps_sample = None
+        
+        if self.sd_algo == "mps_sampling2" and imps is not None:
+            logger.info(f"analyze mpdm")
+            nmols = self.nmols
+            identity = Mpo.identity(model)
+            self.imps_sample = self._sample_mps_sd2(imps, identity, imps)
+            e_rdm = np.zeros((nmols, nmols), dtype=np.complex128)
+            for idx in range(nmols):
+                for jdx in range(idx, nmols):
+                    op = Op(r"a^\dagger a", [f"e_{idx}", f"e_{jdx}"])
+                    mpo = Mpo(model, terms=op)
+                    e_rdm_sample = self._sample_mps_sd2(imps, mpo, imps) 
+                    e_rdm[idx, jdx] = np.sum(e_rdm_sample / self.imps_sample * self.counts) / self.nsamples 
+                    e_rdm[jdx, idx] = np.conj(e_rdm[idx, jdx])
+            
+            # Jiang's JPCL paper
+            L1 = np.sum(np.abs(e_rdm))**2 /  np.sum(np.abs(e_rdm)**2) / nmols
+            L3 = np.trace(e_rdm @ e_rdm) * nmols
+            np.save("e_rdm", e_rdm)
+            logger.info(f"electronic coherence length: L1: {L1}, L3: {L3}")
+            
+            # calculate vibrational distortion field
+            logger.info("Calculate vibrational distortion field")
+            displacement = []
+            nmodes =  len(self.w_intra)
+            for imode in range(nmodes):
+                logger.debug(f"mode index: {imode}")
+                displacement.append([])
+                for dis in range(-nmols+1,nmols):
+                    ops = []
+                    for imol in range(nmols):
+                        if imol+dis >=0 and imol+dis<nmols:
+                            op = Op("a^\dagger a x", [f"e_{imol}", f"e_{imol}",
+                                f"v_{imol+dis}_{imode}"], factor=1, qn=[1,-1, 0])
+                            ops.append(op)
+                    mpo = Mpo(model, terms=ops)
+                    res_sample = self._sample_mps_sd2(imps, mpo, imps) 
+                    res = np.sum(res_sample / self.imps_sample * self.counts) / self.nsamples
+                    displacement[imode].append(res)
+            displacement = np.array(displacement).real
+            np.save("intra_displacement", displacement)
+            re_tot = 0.5*np.sum(self.w_intra**2*np.sum(displacement**2,axis=1))
+            logger.info(f"total effective intramolecular reorganization energy: {re_tot}")
+            
+            # calculate expectation value of each mode
+            logger.info("Calculate expectation value of each mode")
+            
+            q_mean = []
+            for imol in range(nmols):
+                for imode in range(nmodes):
+                    logger.debug(f"mode index: {imol}, {imode}")
+                    op = Op("x", [f"v_{imol}_{imode}"], factor=1, qn=[0])
+                    mpo = Mpo(model, terms=[op])
+                    res_sample = self._sample_mps_sd2(imps, mpo, imps) 
+                    res = np.sum(res_sample / self.imps_sample * self.counts) / self.nsamples
+                    q_mean.append(res)
+            q_mean = np.array(q_mean).reshape(nmols,-1)
+            np.save("intra_q_mean", q_mean)
+            re_tot = 0.5*np.einsum("ab,b->", q_mean**2, self.w_intra**2)
+            logger.info(f"total effective intramolecular reorganization energy by q_mean: {re_tot}")
+
+            assert False
+
+        super(FTCorrFuncHolsteinStaticDisorder, self).__init__(
+                model,
+                imps_qntot,
+                temperature,
+                insteps,
+                imps = imps,
+                ievolve_config=ievolve_config,
+                icompress_config=icompress_config,
+                compress_config=compress_config,
+                evolve_config=evolve_config,
+                optimize_config=optimize_config,
+                dump_mps=dump_mps,
+                dump_dir=dump_dir,
+                job_name=job_name,
+                )
+        
+
+    def wfn_sd(self, x):
+        return (self.w_sd/np.pi)**0.25 * np.exp(-0.5*self.w_sd*x**2)
+    
+    def init_imps(self):
+        if self.imps is not None:
+            return self.imps
+
+        mpdm = MpDm.max_entangled_mpdm(self.model, self.imps_qntot)
+        
+        # initialize the sd disorder site, it is not locally maximally-entangled
+        for isite in range(self.nsites_sd):
+            local_basis = self.model.basis[isite]
+            assert isinstance(local_basis, ba.BasisSHODVR) or isinstance(local_basis, ba.BasisSineDVR)
+            for i in range(local_basis.nbas):
+                mpdm[isite][:,i,i,:] *= self.v[i]
+
+        mpdm.compress_config = self.icompress_config
+
+        tp = ThermalProp(
+            mpdm, self.h_mpo, evolve_config=self.ievolve_config,
+            dump_dir=self.dump_dir, job_name=self.job_name, include_ex=False
+        )
+        if tp._defined_output_path:
+            try:
+                logger.info(
+                    f"load density matrix from {self._thermal_dump_path}"
+                )
+                mpdm = MpDm.load(self.model, self._thermal_dump_path)
+                logger.info(f"density matrix loaded:{mpdm}")                
+                return mpdm
+            except FileNotFoundError:
+                logger.debug(f"no file found in {self._thermal_dump_path}")
+                logger.info(f"calculate mpdm from scratch.")
+        
+        tp.evolve(None, self.insteps, self.temperature.to_beta() / 2j)
+        mpdm = tp.latest_mps
+        if tp._defined_output_path:
+            mpdm.dump(self._thermal_dump_path)
+        return mpdm
+    
+    def _construct_mps_sd(self, mpdm):
+        # constract site except the static disorder mode
+
+        res = xp.eye(1)
+        for ims in range(len(mpdm)-1, self.nsites_sd-1, -1):
+            res = oe.contract("abbc,cd->ad", mpdm[ims], res, backend=OE_BACKEND)
+        mpdm[self.nsites_sd-1] = oe.contract("abcd, de->abce",
+                mpdm[self.nsites_sd-1], res)
+        # extract the diagonal term
+        mps_sd = []
+        for ims in range(self.nsites_sd):
+            shape = mpdm[ims].shape
+            dtype = mpdm[ims].dtype
+            ms = np.zeros((shape[0], shape[1], shape[3]), dtype=dtype)
+            for i in range(shape[1]):
+                ms[:,i,:] = mpdm[ims][:,i,i,:]
+            mps_sd.append(ms)
+        return mps_sd
+
+    def _sample_mps_sd(self, mps_sd):
+        res_sample = np.zeros(self.unique_sample_index.shape[1],dtype=np.complex128)
+        for isample in range(self.unique_sample_index.shape[1]):
+            res = xp.ones((1,1))
+            for isite in range(self.nsites_sd):
+                res = res @ asxp(mps_sd[isite][:,self.unique_sample_index[isite,isample],:])
+            res_sample[isample] = res.item()
+        return asnumpy(res_sample)
+    
+    def _sample_mps_sd2(self, bra, mpo, ket):
+        res_sample = np.zeros(self.unique_sample_index.shape[1],dtype=np.complex128)
+        
+        environ = Environ(ket, mpo, "R", mps_conj=bra.conj())
+        rtensor = environ.read("R", self.nsites_sd)
+        for isample in range(self.unique_sample_index.shape[1]):
+            bra_samp = xp.ones((1))
+            ket_samp = xp.ones((1))
+            mpo_samp = xp.ones((1))
+            for ims in range(self.nsites_sd):
+                idx = self.unique_sample_index[ims, isample]
+                bra_samp = xp.tensordot(bra_samp, asxp(bra[ims][:,idx,idx,:]), axes=1)
+                ket_samp = xp.tensordot(ket_samp, asxp(ket[ims][:,idx,idx,:]), axes=1)
+                mpo_samp = xp.tensordot(mpo_samp, asxp(mpo[ims][:,idx,idx,:]), axes=1)  
+            res_sample[isample] = oe.contract("a,c,e,ace->", bra_samp.conj(),
+                    mpo_samp, ket_samp, rtensor, backend=OE_BACKEND).item()
+        return asnumpy(res_sample)
+
+    def process_mps(self, braket_pair):
+        t = self.evolve_times[-1]
+        self._autocorr_time.append(t)
+        
+        mpo, ket, bra = braket_pair.mpo, braket_pair.ket_mps, braket_pair.bra_mps
+        if self.sd_algo == "mps_sampling2":
+            if self.imps_sample is None:
+                identity = Mpo.identity(self.model)
+                self.imps_sample = self._sample_mps_sd2(self.imps, identity, self.imps)
+            ft_sample = self._sample_mps_sd2(bra, mpo, ket) * np.exp(1.0j*t*(self.e_bra -\
+                self.e_ket)) * np.conjugate(bra.coeff) * ket.coeff
+            ft = np.sum(ft_sample / self.imps_sample * self.counts) / self.nsamples 
+        else:
+            mpdm = mpo @ ket @ bra.conj_trans()
+            
+            if self.imps_sd is None:
+                local_basis = self.imps.model.basis[:self.nsites_sd]
+                model = Model(local_basis, [])
+                self.imps_sd = self._construct_mps_sd(self.imps @ self.imps.conj_trans())
+                self.imps_sd = Mps.from_mp(model, self.imps_sd).canonicalise().canonicalise()
+                if self.sd_algo == "mps_sampling":
+                    # the sampling for the thermal eq state
+                    self.imps_sample = self._sample_mps_sd(self.imps_sd)    
+                elif self.sd_algo == "linear_equation":
+                    self.imps_sd = Mpo.from_mps(self.imps_sd)
+                else:
+                    assert False
+
+            mpdm_sd = self._construct_mps_sd(mpdm)
+            mpdm_sd = Mps.from_mp(self.imps_sd.model, mpdm_sd).canonicalise().canonicalise()
+            
+            if self.sd_algo == "mps_sampling":
+                ft_sample = self._sample_mps_sd(mpdm_sd) * np.exp(1.0j*t*(self.e_bra -\
+                    self.e_ket)) * np.conjugate(bra.coeff) * ket.coeff
+                ft = np.sum(ft_sample / self.imps_sample * self.counts) / self.nsamples 
+            
+            elif self.sd_algo == "linear_equation":
+                ft_sd = Mps.random(self.imps_sd.model, 0, 10).to_complex()
+                ft_sd.optimize_config = self.optimize_config
+                _, ft_sd = solve_mps(ft_sd, mpdm_sd, self.imps_sd, mpo_kind="her")
+                for ms in ft_sd:
+                    for ibas in range(ms.shape[1]):
+                        ms[:,ibas,:] *= self.v[ibas]**2
+                mode = ["all"] * self.nsites_sd
+                ft = ft_sd.contract_self(mode).item()
+                ft *= np.exp(1.0j*t*(self.e_bra -\
+                    self.e_ket)) * np.conjugate(bra.coeff) * ket.coeff * ft_sd.coeff
+            else:
+                assert False
+
+        logger.info(f"ft with static disorder: {ft}")
+        self._autocorr.append(ft)
 
 class ZTCorrFuncBase(CorrFuncBase):
     r'''Abstract class 
@@ -693,9 +998,9 @@ class ZTabs_TFD(ZTAACorrFuncBase):
         e_dofs = self.model.e_dofs
         for dof in e_dofs:
             siteidx = self.model.dof_to_siteidx[dof]
-            ba = self.model.basis[siteidx]
-            idx = ba.dof_name_map[dof]
-            if ba.sigmaqn[idx] == 0:
+            local_basis = self.model.basis[siteidx]
+            idx = local_basis.dof_name_map[dof]
+            if local_basis.sigmaqn[idx] == 0:
                 init_condition = {dof:idx}
                 break
 
@@ -725,6 +1030,8 @@ class FTabs(FTCorrFuncBase):
         assert self.imps_qntot == 0
         return super().init_imps()
 
+class FTabs_sd(FTCorrFuncHolsteinStaticDisorder, FTabs):
+    pass
 
 class FTemi(FTCorrFuncBase):
 
@@ -737,6 +1044,9 @@ class FTemi(FTCorrFuncBase):
     def init_imps(self):
         assert self.imps_qntot == 1
         return super().init_imps()
+
+class FTemi_sd(FTCorrFuncHolsteinStaticDisorder, FTemi):
+    pass
 
 class ZTnr(ZTAACorrFuncBase):
 
@@ -767,6 +1077,9 @@ class FTnr(FTCorrFuncBase):
     def init_imps(self):
         assert self.imps_qntot == 1
         return super().init_imps()
+
+class FTnr_sd(FTCorrFuncHolsteinStaticDisorder, FTnr):
+    pass
     
 class FTnr_state_to_state(FTCorrFuncBase_state_to_state):
     
@@ -780,6 +1093,59 @@ class FTnr_state_to_state(FTCorrFuncBase_state_to_state):
         assert self.imps_qntot == 1
         return super().init_imps()
 
+###################################
+# ic + ct coupling Xiankai Chen
+class ZTic_ct(ZTAACorrFuncBase):
+    def init_op_b(self):
+        return ic_ct_op(self.model)
+
+    def init_imps(self):
+        assert self.imps_qntot == 1
+        return super().init_imps()
+
+class FTic_ct(FTCorrFuncBase):
+
+    def init_op_b(self):
+        return ic_ct_op(self.model)
+
+    def init_op_a(self):
+        return self.init_op_b()
+
+    def init_imps(self):
+        assert self.imps_qntot == 1
+        return super().init_imps()
+
+def ic_ct_op(model):
+    # the momentum operator coupling + ct coupling
+    # the quantum number is gs: 0 ex:1
+    if "ic_ct_mpo" in model.mpos.keys():
+        logger.info("load ic_ct_mpo form model.mpos")
+        return model.mpos["ic_ct_mpo"]
+    else:
+        h_prime_terms = []
+        for key, value in model.para["nac"].items():
+            siteidx = model.dof_to_siteidx[key[0]]
+            local_basis = model.basis[siteidx]
+            assert isinstance(local_basis,ba.BasisMultiElectron)
+            idx0 = local_basis.dof.index(key[0])
+            idx1 = local_basis.dof.index(key[1])
+            assert local_basis.sigmaqn[idx0] == 0 and local_basis.sigmaqn[idx1] == 1
+            h_prime_terms.append(Op("a^\dagger a partialx", list(key),
+                factor=-value, qn=[0,-1,0]))    
+        for key, value in model.para["t_ct_gs"].items():
+            siteidx = model.dof_to_siteidx[key[0]]
+            local_basis = model.basis[siteidx]
+            assert isinstance(local_basis,ba.BasisMultiElectron)
+            idx0 = local_basis.dof.index(key[0])
+            idx1 = local_basis.dof.index(key[1])
+            assert local_basis.sigmaqn[idx0] == 0 and local_basis.sigmaqn[idx1] == 1
+            h_prime_terms.append(Op("a^\dagger a", list(key),
+                factor=value, qn=[0,-1]))    
+
+        return Mpo(model, terms=h_prime_terms)
+
+
+
 class FTcurrent_current_Holstein(FTCorrFuncBase):
     def init_op_b(self):
         j_op, _ = current_op(self.model, None)
@@ -792,18 +1158,13 @@ class FTcurrent_current_Holstein(FTCorrFuncBase):
         assert self.imps_qntot == 1
         return super().init_imps()
 
-
-def nac_op_agg(model):
-    nac_terms = []
-    for key, value in model.para["nac"].items():
-        nac_terms.append(Op("a^\dagger a partialx", list(key),
-            factor=-value, qn=[0,-1,0]))       
-    return Mpo(model, terms=nac_terms)
-
-class ZTnr_agg(ZTAACorrFuncBase):
+class FTnr(FTCorrFuncBase):
 
     def init_op_b(self):
-        return nac_op_agg(self.model)
+        return nac_op(self.model)
+
+    def init_op_a(self):
+        return self.init_op_b()
 
     def init_imps(self):
         assert self.imps_qntot == 1

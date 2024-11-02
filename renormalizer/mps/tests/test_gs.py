@@ -9,6 +9,7 @@ import pytest
 from renormalizer.model import Model, h_qc
 from renormalizer.mps.backend import primme
 from renormalizer.mps.gs import construct_mps_mpo, optimize_mps
+from renormalizer.mps.lieq import solve_mps
 from renormalizer.mps import Mpo, Mps, StackedMpo
 from renormalizer.tests.parameter import holstein_model
 from renormalizer.utils.configs import OFS
@@ -191,3 +192,20 @@ def test_stackedmpo():
     energies1, _ = optimize_mps(mps.copy(), mpo)
     energies2, _ = optimize_mps(mps.copy(), StackedMpo([mpo, mpo]))
     assert np.all(np.abs(np.array(energies2) - np.array(energies1) * 2) < 1e-8)
+
+@pytest.mark.parametrize("method", (
+        #"1site",
+        "2site",
+))
+def test_solve(method):
+    procedure = [[10, 0.4], [20, 0.2], [30, 0.1], [40, 0]] + [[40, 0]]*10
+    mps = Mps.random(holstein_model, 1, 20)
+    logger.info(f"{mps}")
+    mpsb = Mps.random(holstein_model, 1, 10)
+    mpsb = mpsb.canonicalise().canonicalise().normalize("mps_and_coeff")
+    logger.info(f"{mpsb}")
+    mpo = Mpo(holstein_model)
+    mps.optimize_config.procedure = procedure
+    mps.optimize_config.method = method
+    mps.optimize_config.algo = "direct"
+    residue, mps_opt = solve_mps(mps.copy(), mpsb, mpo)

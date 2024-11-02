@@ -96,15 +96,14 @@ class MpDm(Mps, Mpo):
                 qntot += qnblock
             else:
                 assert False
-
+            
             mpdm.append(ms)
-            mpdmqn.append(qntot.reshape(1,-1))
+            mpdmqn.append(qntot.reshape(1,-1).copy())
         mpdm.qn = mpdmqn
         mpdm.qn[-1] = np.zeros((1, qn_size), dtype=int)
         mpdm.qntot = qntot
         mpdm.qnidx = mpdm.site_num-1
         mpdm.to_right = False
-
         return mpdm
 
     def todense(self):
@@ -178,7 +177,7 @@ class MpDm(Mps, Mpo):
             new_mpdm[i] = mt
         qn = mp.dummy_qn
         new_mpdm.qn = [
-            add_outer(np.array(qn_o), np.array(qn_m)).reshape(-1, qn_o.shape[1])
+            add_outer(np.array(qn_o), np.array(qn_m)).reshape(-1, np.array(qn_o).shape[1])
             for qn_o, qn_m in zip(self.qn, qn)
         ]
         if canonicalise:

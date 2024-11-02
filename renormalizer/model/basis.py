@@ -494,7 +494,13 @@ class BasisExpDVR(BasisSet):
         if op_symbol == "I":
             mat = np.eye(self.nbas)
 
-        elif op_symbol == "dx": # and not self.force_quadrature:
+        elif "dx" not in op_symbol:
+            op_symbol = op_symbol.replace("^", "**")
+            x = sp.symbols("x")
+            expr = sp.lambdify(x, op_symbol, "numpy")
+            mat = np.diag(expr(self.dvr_x))
+
+        elif op_symbol == "dx": 
             mat = np.zeros((self.nbas, self.nbas))
             for i in range(1, self.nbas+1):
                 for j in range(1, i):
@@ -502,7 +508,7 @@ class BasisExpDVR(BasisSet):
                     mat[i-1, j-1] = res
                     mat[j-1, i-1] = -res
         
-        elif op_symbol in ["dx^2", "dx dx"]: # and not self.force_quadrature:
+        elif op_symbol in ["dx^2", "dx dx"]: 
             mat = np.zeros((self.nbas, self.nbas))
             for i in range(1, self.nbas+1):
                 for j in range(1, i+1):
@@ -514,17 +520,18 @@ class BasisExpDVR(BasisSet):
                             np.cos(np.pi*(i-j)/self.nbas) / np.sin(np.pi*(i-j)/self.nbas)**2
                         mat[i-1, j-1] = res
                         mat[j-1, i-1] = res
-        else:
-            op_symbol = "*".join(op_symbol.split())
 
-            if "dx" not in op_symbol and not self.force_quadrature:
-                op_symbol = op_symbol.replace("^", "**")
-                x = sp.symbols("x")
-                expr = sp.lambdify(x, op_symbol, "numpy")
-                mat = np.diag(expr(self.dvr_x))
-            else:
-                mat = self.quad(op_symbol, complex_func=True)
-                mat = self.dvr_v @ mat @ self.dvr_v.conj().T
+        elif self.force_quadrature:
+            op_symbol = "*".join(op_symbol.split())
+            mat = self.quad(op_symbol, complex_func=True)
+            mat = self.dvr_v @ mat @ self.dvr_v.conj().T
+        else:
+            logger.info(f"op_symbol: {op_symbol}")
+            op_symbol_split = op_symbol.split("*")
+            mat = np.eye(self.nbas)
+            for op in op_symbol_split:
+                logger.info(f"sub_op: {op}")
+                mat = mat @ self.op_mat(op)
         
         if np.allclose(mat, mat.conj()):
             mat = mat.real
@@ -573,8 +580,8 @@ class BasisSineDVR(BasisSet):
     is_phonon = True
     quad = quad
     
-    def __init__(self, dof, nbas, xi, xf, endpoint=False, quadrature=False,
-            dvr=False):
+    def __init__(self, dof, nbas, xi, xf, endpoint=False, force_quadrature=False,
+            dvr=True):
 
         assert xi < xf
         if endpoint:
@@ -594,10 +601,10 @@ class BasisSineDVR(BasisSet):
         tmp = np.arange(1,nbas+1)
         self.dvr_x = xi + tmp * self.L / (nbas+1)
         self.dvr_v = np.sqrt(2/(nbas+1)) * \
-            np.sin(np.tensordot(tmp, tmp, axes=0)*np.pi/(nbas+1))
+            np.sin(np.tensordot(tmp, tmp, axes=0)*np.pi/(nbas+1)) #(basis, grid)
         assert np.allclose(self.dvr_v, self.dvr_v.T)
         assert np.allclose(self.dvr_v @ self.dvr_v, np.eye(nbas))
-        self.quadrature = quadrature
+        self.force_quadrature = force_quadrature
         self.dvr = dvr
 
     def __str__(self):
@@ -612,43 +619,10 @@ class BasisSineDVR(BasisSet):
         # partialx is deprecated
         op_symbol = op_symbol.replace("partialx", "dx")
         
-        self._recursion_flag += 1
-        
         # operators having analytical matrix elements
         if op_symbol == "I":
             mat = np.eye(self.nbas)
-
-        elif op_symbol == "x":
-            # legacy for check
-            mat1 = np.zeros((self.nbas, self.nbas))
-            for j in range(1,self.nbas+1,1):
-                for k in range(1,self.nbas+1,1):
-                    a1 = (j+k)*np.pi/self.L
-                    a2 = (j-k)*np.pi/self.L
-                    if (j+k)%2 == 1:
-                        res = -1/self.L*(-2/a1**2+2/a2**2)
-                    elif j-k == 0:
-                        res = self.xi + 0.5*self.L
-                    else:
-                        res = 0
-                    mat1[j-1,k-1] = res
-
-            mat = self._I()*self.xi+self._u()
-            assert np.allclose(mat, mat1)
-
-        elif op_symbol == "x^1":
-            mat = self.op_mat("x")
-
-        elif op_symbol == "x^2":
-             mat = self._I()*self.xi**2+self._u()*self.xi*2+self._uu()
         
-        elif op_symbol == "x^3":
-            mat = self._I()*self.xi**3 + 3*self._uu()*self.xi + 3*self._u()*self.xi**2 + self._uuu()
-        
-        elif set(op_symbol.split(" ")) == set("x"):
-            moment = len(op_symbol.split(" "))
-            mat = self.op_mat(f"x^{moment}")
-
         elif op_symbol == "dx":
             # legacy for check
             mat1 = np.zeros((self.nbas, self.nbas))
@@ -660,6 +634,9 @@ class BasisSineDVR(BasisSet):
 
             mat = self._du()
             assert np.allclose(mat, mat1)
+            
+            if self.dvr:
+                mat = self.dvr_v.T @ mat @ self.dvr_v
 
         elif op_symbol in ["dx^2", "dx dx"]:
             mat = self.op_mat("p^2") * -1
@@ -672,107 +649,129 @@ class BasisSineDVR(BasisSet):
             mat1 = np.diag(np.arange(1, self.nbas+1)*np.pi/self.L)**2
             mat = np.einsum("jk,k->jk",self._I(),self._eigene()*2)
             assert np.allclose(mat, mat1)
+            if self.dvr:
+                mat = self.dvr_v.T @ mat @ self.dvr_v
 
-        elif op_symbol == "x dx":
-            # legacy for check
-            mat1 = np.zeros((self.nbas, self.nbas))
-            for j in range(1,self.nbas+1,1):
-                for k in range(1,self.nbas+1,1):
-                    a1 = (j+k)*np.pi/self.L
-                    a2 = (j-k)*np.pi/self.L
-                    if (j+k)%2 == 1:
-                        res = k*np.pi/self.L**2*(self.xi*(1/a1+1/a2)*2 +
-                                self.L*(1/a1+1/a2))
-                    elif j-k == 0:
-                        res = -k*np.pi/self.L*(1/a1)
-                    else:
-                        res = -k*np.pi/self.L*(1/a1+1/a2)
-                    mat1[j-1,k-1] = res
-            mat = self._du()*self.xi + self._udu()
-            assert np.allclose(mat, mat1)
-
-        elif op_symbol == "x^2 p^2":
-
-            # legacy for check
-            mat1 = np.zeros((self.nbas, self.nbas))
-            # analytical integral
-            for j in range(1,self.nbas+1):
-                for k in range(1,self.nbas+1):
-
-                    a1 = (j-k)*np.pi/self.L
-                    a2 = (j+k)*np.pi/self.L
-
-                    if (j+k)%2 == 1:
-                        res = 2*self.xi/self.L*2*(1/a2**2-1/a1**2) + 2*(1/a2**2-1/a1**2)
-                    elif j-k == 0:
-                        res = self.xi**2 + self.xi*self.L + 1/3*self.L**2 - 2/a2**2
-                    else:
-                        res = 2*(1/a1**2-1/a2**2)
-                    mat1[j-1,k-1] = res * k**2*np.pi**2/self.L**2
-
-            tmp = self._I()*self.xi**2 + self._u()*2*self.xi + self._uu()
-            mat = np.einsum("jk,k->jk", tmp, self._eigene()*2)
-            assert np.allclose(mat, mat1)
-
-        elif op_symbol == "x^2 dx^2":
-            mat = self.op_mat("x^2 p^2") * -1
-
-        elif op_symbol == "x^2 dx":
-
-            mat = self._uudu() + 2*self.xi*self._udu() + self.xi**2*self._du()
-
-        elif op_symbol == "x p^2":
-            ## p^2 is 2H
-
-            mat = np.einsum("jk, k-> jk", self._I()*self.xi + self._u(), self._eigene()*2)
-
-        elif op_symbol == "x dx^2":
-            mat = self.op_mat("x p^2") * -1
-
-        elif op_symbol == "x^3 p^2":
-            tmp = self._I()*self.xi**3 + 3*self._uu()*self.xi + 3*self._u()*self.xi**2 + self._uuu()
-            mat = np.einsum("jk,k->jk", tmp, self._eigene()*2)
-
-        elif op_symbol == "x^3 dx^2":
-            mat = self.op_mat("x^3 p^2") * -1
-        
-        # operators currently not having analytical matrix elements
-        else:
-            logger.debug("Note that the quadrature part is not fully tested!")
+        elif self.dvr:
             op_symbol = "*".join(op_symbol.split())
             
             # potential operators
             if "dx" not in op_symbol:
-
-                # if dvr is True, potential term is calculated by dvr
-                if self.dvr:
-                    op_symbol = op_symbol.replace("^", "**")
-                    x = sp.symbols("x")
-                    expr = sp.lambdify(x, op_symbol, "numpy")
-                    mat = np.diag(expr(self.dvr_x))
-                    mat = self.dvr_v @ mat @ self.dvr_v.T
-                elif self.quadrature:
-                    mat = self.quad(op_symbol)
-                else:
-                    raise ValueError(f"op_symbol:{op_symbol} is not supported.You can try dvr or explicit quadrature")
-                # kinetic operators
+                op_symbol = op_symbol.replace("^", "**")
+                x = sp.symbols("x")
+                expr = sp.lambdify(x, op_symbol, "numpy")
+                mat = np.diag(expr(self.dvr_x))
             else:
-                # if dvr is false, both potential and kinetic terms are calculated by
-                # quadrature
-                if self.quadrature:
-                    mat = self.quad(op_symbol)
-                else:
-                    raise ValueError(f"op_symbol:{op_symbol} is not supported. You can try explicit quadrature")
-        
-        self._recursion_flag -= 1
+                logger.info(f"op_symbol: {op_symbol}")
+                op_symbol_split = op_symbol.split("*")
+                mat = np.eye(self.nbas)
+                for op in op_symbol_split:
+                    logger.info(f"sub_op: {op}")
+                    mat = mat @ self.op_mat(op)
 
-        if self.dvr and self._recursion_flag == 0:
-            mat = self.dvr_v.T @ mat @ self.dvr_v
-        
+        else: #FBR quadrature
+            if op_symbol in ["x", "x^1"]:
+                # legacy for check
+                mat1 = np.zeros((self.nbas, self.nbas))
+                for j in range(1,self.nbas+1,1):
+                    for k in range(1,self.nbas+1,1):
+                        a1 = (j+k)*np.pi/self.L
+                        a2 = (j-k)*np.pi/self.L
+                        if (j+k)%2 == 1:
+                            res = -1/self.L*(-2/a1**2+2/a2**2)
+                        elif j-k == 0:
+                            res = self.xi + 0.5*self.L
+                        else:
+                            res = 0
+                        mat1[j-1,k-1] = res
+
+                mat = self._I()*self.xi+self._u()
+                assert np.allclose(mat, mat1)
+
+            elif op_symbol == "x^2":
+                 mat = self._I()*self.xi**2+self._u()*self.xi*2+self._uu()
+            
+            elif op_symbol == "x^3":
+                mat = self._I()*self.xi**3 + 3*self._uu()*self.xi + 3*self._u()*self.xi**2 + self._uuu()
+            
+            elif set(op_symbol.split(" ")) == set("x"):
+                moment = len(op_symbol.split(" "))
+                mat = self.op_mat(f"x^{moment}")
+
+            elif op_symbol == "x dx":
+                # legacy for check
+                mat1 = np.zeros((self.nbas, self.nbas))
+                for j in range(1,self.nbas+1,1):
+                    for k in range(1,self.nbas+1,1):
+                        a1 = (j+k)*np.pi/self.L
+                        a2 = (j-k)*np.pi/self.L
+                        if (j+k)%2 == 1:
+                            res = k*np.pi/self.L**2*(self.xi*(1/a1+1/a2)*2 +
+                                    self.L*(1/a1+1/a2))
+                        elif j-k == 0:
+                            res = -k*np.pi/self.L*(1/a1)
+                        else:
+                            res = -k*np.pi/self.L*(1/a1+1/a2)
+                        mat1[j-1,k-1] = res
+                mat = self._du()*self.xi + self._udu()
+                assert np.allclose(mat, mat1)
+
+            elif op_symbol == "x^2 p^2":
+
+                # legacy for check
+                mat1 = np.zeros((self.nbas, self.nbas))
+                # analytical integral
+                for j in range(1,self.nbas+1):
+                    for k in range(1,self.nbas+1):
+
+                        a1 = (j-k)*np.pi/self.L
+                        a2 = (j+k)*np.pi/self.L
+
+                        if (j+k)%2 == 1:
+                            res = 2*self.xi/self.L*2*(1/a2**2-1/a1**2) + 2*(1/a2**2-1/a1**2)
+                        elif j-k == 0:
+                            res = self.xi**2 + self.xi*self.L + 1/3*self.L**2 - 2/a2**2
+                        else:
+                            res = 2*(1/a1**2-1/a2**2)
+                        mat1[j-1,k-1] = res * k**2*np.pi**2/self.L**2
+
+                tmp = self._I()*self.xi**2 + self._u()*2*self.xi + self._uu()
+                mat = np.einsum("jk,k->jk", tmp, self._eigene()*2)
+                assert np.allclose(mat, mat1)
+
+            elif op_symbol == "x^2 dx^2":
+                mat = self.op_mat("x^2 p^2") * -1
+
+            elif op_symbol == "x^2 dx":
+
+                mat = self._uudu() + 2*self.xi*self._udu() + self.xi**2*self._du()
+
+            elif op_symbol == "x p^2":
+                ## p^2 is 2H
+                mat = np.einsum("jk, k-> jk", self._I()*self.xi + self._u(), self._eigene()*2)
+
+            elif op_symbol == "x dx^2":
+                mat = self.op_mat("x p^2") * -1
+
+            elif op_symbol == "x^3 p^2":
+                tmp = self._I()*self.xi**3 + 3*self._uu()*self.xi + 3*self._u()*self.xi**2 + self._uuu()
+                mat = np.einsum("jk,k->jk", tmp, self._eigene()*2)
+
+            elif op_symbol == "x^3 dx^2":
+                mat = self.op_mat("x^3 p^2") * -1
+            else:
+                try:
+                    assert self.force_quadrature 
+                    op_symbol = "*".join(op_symbol.split())
+                    mat = self.quad(op_symbol)
+                except:
+                    raise ValueError(f"op_symbol:{op_symbol} is not supported. You can try dvr or explicit quadrature")
+
+        mat *= op_factor
         if np.allclose(mat, mat.conj()):
             mat = mat.real
         
-        return mat * op_factor
+        return mat 
     
     @property
     def eigenfunc(self):
@@ -908,6 +907,10 @@ class BasisMultiElectron(BasisSet):
         if len(op_symbol) == 1:
             if op_symbol[0] == "I":
                 mat = np.eye(self.nbas)
+            elif op_symbol[0] == "n":
+                op_symbol_idx = self.dof_name_map[op.dofs[0]]
+                mat = np.zeros((self.nbas, self.nbas))
+                mat[int(op_symbol_idx), int(op_symbol_idx)] = 1.
             elif op_symbol[0] == "a" or op_symbol[0] == r"a^\dagger":
                 raise ValueError(f"op_symbol:{op_symbol} is not supported. Try use BasisMultiElectronVac.")
             else:
@@ -926,6 +929,10 @@ class BasisMultiElectron(BasisSet):
                 mat[int(op_symbol1_idx), int(op_symbol2_idx)] = 1.
             elif op_symbol1 == r"a" and op_symbol2 == r"a^\dagger":
                 mat[int(op_symbol2_idx), int(op_symbol1_idx)] = 1.
+            elif op_symbol1 == r"n" and op_symbol2 == r"n":
+                # the occupation operator of same site
+                assert int(op_symbol2_idx) == int(op_symbol1_idx)
+                mat[int(op_symbol2_idx), int(op_symbol2_idx)] = 1.
             else:
                 raise ValueError(f"op_symbol:{op_symbol} is not supported")
         else:
@@ -1156,15 +1163,14 @@ class BasisSHODVR(BasisSet):
     
     is_phonon = True
     
-    def __init__(self, dof, omega, nbas, x0=0., xi=None, xf=None,
-            force_quad=False):
+    def __init__(self, dof, omega, nbas, x0=0., xi=None, xf=None):
         
         self.omega = omega
         self.x0 = x0  # origin = x0
         super().__init__(dof, nbas, [0] * nbas)
         
         self.dvr_x = None  # the expectation value of x on SHO_dvr
-        self.dvr_v = None  # the rotation matrix between SHO to SHO_dvr
+        self.dvr_v = None  # the rotation matrix between SHO to SHO_dvr (fbr, dvr)
         self.dvr_x, self.dvr_v = scipy.linalg.eigh(self.mat_x())
         
         if xi is not None and xf is not None:
@@ -1176,10 +1182,14 @@ class BasisSHODVR(BasisSet):
             logger.info(f"scaled omega: {self.omega}")
             assert np.allclose(self.dvr_x[-1], xf)
             assert np.allclose(self.dvr_x[0], xi)
-        
+        # p89, M.H. Beck et al. / Physics Reports 324 (2000)
+        # fix the arbitary phase of dvr_v
+        for i in range(self.dvr_v.shape[1]):
+            if self.dvr_v[0,i] < 0:
+                self.dvr_v[:,i] *= -1
+
         self.xi = self.dvr_x[0]
         self.xf = self.dvr_x[-1]
-        self.force_quad = force_quad
 
     def mat_x(self):
         mat = np.diag(np.sqrt(np.arange(1, self.nbas)), k=1)
@@ -1196,68 +1206,81 @@ class BasisSHODVR(BasisSet):
         
         if op_symbol == "I":
             mat = np.eye(self.nbas)
-        elif "dx" not in op_symbol and not self.force_quad:
+        elif "dx" not in op_symbol:
             op_symbol = op_symbol.replace("^", "**")
             x = sp.symbols("x")
             expr = sp.lambdify(x, op_symbol, "numpy")
             mat = np.diag(expr(self.dvr_x))
+        elif op_symbol == "dx":
+            mat = np.diag(np.sqrt(np.arange(1, self.nbas)), k=1)
+            mat -= mat.T
+            mat *= -np.sqrt(self.omega/2)
+            mat = self.dvr_v.T @ mat @ self.dvr_v
+        elif op_symbol == "dx^2":
+            mat = np.arange(self.nbas)+1/2
+            mat = self.dvr_v.T @ np.diag(mat) @ self.dvr_v * -2 * self.omega +\
+                np.diag((self.dvr_x -self.x0)**2*self.omega**2)
         else:
-            mat = self.quad(op_symbol, complex_func=True)
-            mat = self.dvr_v @ mat @ self.dvr_v.conj().T
+            logger.info(f"op_symbol: {op_symbol}")
+            op_symbol_split = op_symbol.split("*")
+            mat = np.eye(self.nbas)
+            for op in op_symbol_split:
+                logger.info(f"sub_op: {op}")
+                mat = mat @ self.op_mat(op)
 
         if np.allclose(mat, mat.conj()):
             mat = mat.real
         
         return mat * op_factor
     
-    def quad(self, expr, complex_func=False):
-        
-        def tot_expression(bra, expr, ket):
-            x = sp.symbols("x")
-            expr = "*".join((bra,expr,ket))
-    
-            expr = expr.replace("dx^2", "dx*dx")
-            expr = expr.replace("dx**2", "dx*dx")
-            
-            expr_s = expr.split("dx")
-            expr_s = [s.rstrip('*') for s in expr_s]
-            expr_s = [s.lstrip('*') for s in expr_s]
-            expr_s = [s.replace("^", "**") for s in expr_s]
-            if len(expr_s) == 1:
-                expr = sp.sympify(expr_s[0])
-            else:
-                expr = sp.sympify(expr_s[-1])
-                for s in expr_s[::-1][1:]:
-                    expr = sp.diff(expr, x)
-                    if s != "":
-                        expr = sp.sympify(s)*expr
-            logger.debug(f"operator expr: {expr}")
-            expr = sp.lambdify([x], expr, "numpy")
-            return expr
+    #def quad(self, expr, complex_func=False):
+    #    
+    #    def tot_expression(bra, expr, ket):
+    #        x = sp.symbols("x")
+    #        expr = "*".join((bra,expr,ket))
+    #
+    #        expr = expr.replace("dx^2", "dx*dx")
+    #        expr = expr.replace("dx**2", "dx*dx")
+    #        
+    #        expr_s = expr.split("dx")
+    #        expr_s = [s.rstrip('*') for s in expr_s]
+    #        expr_s = [s.lstrip('*') for s in expr_s]
+    #        expr_s = [s.replace("^", "**") for s in expr_s]
+    #        if len(expr_s) == 1:
+    #            expr = sp.sympify(expr_s[0])
+    #        else:
+    #            expr = sp.sympify(expr_s[-1])
+    #            for s in expr_s[::-1][1:]:
+    #                expr = sp.diff(expr, x)
+    #                if s != "":
+    #                    expr = sp.sympify(s)*expr
+    #        logger.debug(f"operator expr: {expr}")
+    #        expr = sp.lambdify([x], expr, "numpy")
+    #        return expr
 
-        if complex_func:
-            mat = np.zeros((self.nbas, self.nbas), dtype=np.complex128)
-        else:
-            mat = np.zeros((self.nbas, self.nbas), dtype=np.float64)
-        
-        for ibas in range(self.nbas):
-            bra = self.eigenfunc(ibas)
-            for jbas in range(self.nbas):
-                ket = self.eigenfunc(jbas)
-                tot_expr = tot_expression(bra, expr, ket)
-                val, error = scipy.integrate.quad(lambda x: tot_expr(x), 
-                        self.xi-(self.xf-self.xi)/2, self.xf+(self.xf-self.xi)/2, complex_func=complex_func)
-                        #-np.inf, np.inf, complex_func=complex_func)
-                logger.debug(f"ibas, jbas, quadrature value and error: {ibas},{jbas}, {val}, {error}")
-                mat[ibas, jbas] = val
-        print(mat)
-        return mat
+    #    if complex_func:
+    #        mat = np.zeros((self.nbas, self.nbas), dtype=np.complex128)
+    #    else:
+    #        mat = np.zeros((self.nbas, self.nbas), dtype=np.float64)
+    #    
+    #    for ibas in range(self.nbas):
+    #        bra = self.eigenfunc(ibas)
+    #        for jbas in range(self.nbas):
+    #            ket = self.eigenfunc(jbas)
+    #            tot_expr = tot_expression(bra, expr, ket)
+    #            val, error = scipy.integrate.quad(lambda x: tot_expr(x), 
+    #                    self.xi-(self.xf-self.xi)/2, self.xf+(self.xf-self.xi)/2, complex_func=complex_func)
+    #                    #-np.inf, np.inf, complex_func=complex_func)
+    #            logger.debug(f"ibas, jbas, quadrature value and error: {ibas},{jbas}, {val}, {error}")
+    #            mat[ibas, jbas] = val
+    #    print(mat)
+    #    return mat
 
-    def eigenfunc(self, ibas):
-        # in SHO, the wavefunction can not be expressed explicitly as exp or sine
-        expr = "(" + str(sp.hermite(ibas, f"{np.sqrt(self.omega)}*(x-{self.x0})")) +")"\
-            +f"*exp(-1/2*{self.omega}*(x-{self.x0})^2)" \
-            +f"*1/sqrt({sp.factorial(ibas)}*2^{ibas})*({self.omega}/pi)^0.25"
-        return expr
+    #def eigenfunc(self, ibas):
+    #    # in SHO, the wavefunction can not be expressed explicitly as exp or sine
+    #    expr = "(" + str(sp.hermite(ibas, f"{np.sqrt(self.omega)}*(x-{self.x0})")) +")"\
+    #        +f"*exp(-1/2*{self.omega}*(x-{self.x0})^2)" \
+    #        +f"*1/sqrt({sp.factorial(ibas)}*2^{ibas})*({self.omega}/pi)^0.25"
+    #    return expr
 
 

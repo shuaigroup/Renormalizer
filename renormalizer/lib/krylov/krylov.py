@@ -54,7 +54,12 @@ def expm_krylov(Afunc, dt, vstart: xp.ndarray, block_size=50):
     for j in range(len(vstart)):
         
         w = Afunc(V[j])
-        alpha[j] = xp.vdot(w, V[j]).real
+        alpha_tmp = xp.vdot(w, V[j])
+        try:
+            assert np.allclose(alpha_tmp, alpha_tmp.real)
+        except:
+            raise ValueError(f"alpha:{alpha_tmp}, The Hamiltonian must be hermitian when using Krylov, try RK45 as the solver.")
+        alpha[j] = alpha_tmp.real
 
         if j == len(vstart)-1:
             #logger.debug("the krylov subspace is equal to the full space")

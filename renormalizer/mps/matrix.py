@@ -1,9 +1,9 @@
 # -*- coding: utf-8 -*-
 # Author: Jiajun Ren <jiajunren0522@gmail.com>
 
-import weakref
 import logging
 from typing import List, Union
+import sparse
 
 from renormalizer.mps.backend import np, backend, xp, USE_GPU
 
@@ -14,19 +14,31 @@ class Matrix:
 
     def __init__(self, array, dtype=None):
         assert array is not None
-        array = asnumpy(array)
-        if dtype == backend.real_dtype:
-            # forbid unchecked casting
-            assert not np.iscomplexobj(array)
-        if dtype is None:
-            if np.iscomplexobj(array):
-                dtype = backend.complex_dtype
-            else:
-                dtype = backend.real_dtype
-        self.array: np.ndarray = np.asarray(array, dtype=dtype)
-        self.original_shape = self.array.shape
+        
+        if not isinstance(array, sparse.GCXS):
+            array = asnumpy(array)
+            if dtype == backend.real_dtype:
+                # forbid unchecked casting
+                assert not np.iscomplexobj(array)
+            if dtype is None:
+                if np.iscomplexobj(array):
+                    dtype = backend.complex_dtype
+                else:
+                    dtype = backend.real_dtype
+            self._array: np.ndarray = np.asarray(array, dtype=dtype)
+        else:
+            self._array = array  # for sparse storage
+        
+        self.original_shape = self._array.shape
         self.sigmaqn = None
         backend.running = True
+    
+    @property
+    def array(self):
+        if isinstance(self._array, sparse.GCXS):
+            return self._array.todense()
+        else:
+            return self._array
 
     def __getattr__(self, item):
         # use this way to obtain ``array`` to prevent infinite recursion during multi-processing
@@ -54,7 +66,7 @@ class Matrix:
 
     def astype(self, dtype):
         assert not (self.dtype == backend.complex_dtype and dtype == backend.real_dtype)
-        self.array = np.asarray(self.array, dtype=dtype)
+        self._array = self._array.astype(dtype)
         return self
 
     def abs(self):
@@ -90,7 +102,7 @@ class Matrix:
     def l_combine(self):
         return self.reshape(self.l_combine_shape)
 
-    def check_lortho(self, atol=None):
+    def check_lortho(self, atol=None, check_normalize=True):
         """
         check L-orthogonal
         """
@@ -98,9 +110,13 @@ class Matrix:
             atol = backend.canonical_atol
         tensm = asxp(self.array.reshape([np.prod(self.shape[:-1]), self.shape[-1]]))
         s = tensm.T.conj() @ tensm
-        return xp.allclose(s, xp.eye(s.shape[0]), atol=atol)
+        if check_normalize:
+            norm = 1
+        else:
+            norm = s[0,0]
+        return xp.allclose(s/norm, xp.eye(s.shape[0]), atol=atol)
 
-    def check_rortho(self, atol=None):
+    def check_rortho(self, atol=None, check_normalize=True):
         """
         check R-orthogonal
         """
@@ -108,7 +124,11 @@ class Matrix:
             atol = backend.canonical_atol
         tensm = asxp(self.array.reshape([self.shape[0], np.prod(self.shape[1:])]))
         s = tensm @ tensm.T.conj()
-        return xp.allclose(s, xp.eye(s.shape[0]), atol=atol)
+        if check_normalize:
+            norm = 1
+        else:
+            norm = s[0,0]
+        return xp.allclose(s/norm, xp.eye(s.shape[0]), atol=atol)
 
     def to_complex(self):
         # `xp.array` always creates new array, so to_complex means copy, which is
