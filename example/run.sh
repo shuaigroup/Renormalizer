@@ -8,14 +8,17 @@ for python_args in fmo.py \
                    ./ttns/junction_zt.py \
                    "./ttns/junction_ft.py 32 1 100" \
                    "./ttns/sbm_zt.py 050 001 050"\
-                   ./ttns/sbm_ft.py
+                   ./ttns/sbm_ft.py \
+                   ./ssh.py
 do
     echo ============================$python_args=============================
     timeout 20s python $python_args
     exit_code=$?
     echo ============================$python_args=============================
     # if not the time out exit code or normal exit code
-    if [ $exit_code -ne 124 ] && [ $exit_code -ne 0 ]; then
+    if [ $exit_code -ne 124 ]; then
+        echo "The script timed out" >&2
+    elif [ $exit_code -ne 0 ]; then
         echo "The script failed with exit code $exit_code" >&2
         code=1
     fi
