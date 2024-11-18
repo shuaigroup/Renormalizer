@@ -134,13 +134,13 @@ if __name__ == '__main__':
     import sys 
     # Model parameters
     params = {
-        "nsites": 32,
+        "nsites": 2,
         'g': 0.7,
         'w0': 0.5,
         't': -1.0,
-        'nboson_max': 40,
-        'bond_dim': 128,
-        'nsweeps': 20,
+        'nboson_max': 4,
+        'bond_dim': 16,
+        'nsweeps': 10,
         'periodic': True
     }
     
