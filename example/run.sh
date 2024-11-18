@@ -16,9 +16,7 @@ do
     exit_code=$?
     echo ============================$python_args=============================
     # if not the time out exit code or normal exit code
-    if [ $exit_code -ne 124 ]; then
-        echo "The script timed out" >&2
-    elif [ $exit_code -ne 0 ]; then
+    if [ $exit_code -ne 124 ] && [ $exit_code -ne 0 ]; then
         echo "The script failed with exit code $exit_code" >&2
         code=1
     fi
