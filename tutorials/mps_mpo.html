@@ -12,7 +12,7 @@
         gtag('js', new Date());
         gtag('config', 'G-3HTENNM8CV');
     </script>
-    <link rel="index" title="Index" href="../genindex.html" /><link rel="search" title="Search" href="../search.html" /><link rel="next" title="Quantum Numbers" href="quantum_number.html" /><link rel="prev" title="Define Your Model" href="define_model.html" />
+    <link rel="index" title="Index" href="../genindex.html" /><link rel="search" title="Search" href="../search.html" /><link rel="next" title="Nuclear Basis Set" href="nuclear_basis.html" /><link rel="prev" title="Define Your Model" href="define_model.html" />
 
     <meta name="generator" content="sphinx-5.3.0, furo 2022.09.29"/>
         <title>MPS and MPO - Renormalizer 0.1.0 documentation</title>
@@ -168,6 +168,7 @@
 <li class="toctree-l1 current has-children"><a class="reference internal" href="../tutorial.html">Basic Tutorials</a><input checked="" class="toctree-checkbox" id="toctree-checkbox-1" name="toctree-checkbox-1" role="switch" type="checkbox"/><label for="toctree-checkbox-1"><div class="visually-hidden">Toggle child pages in navigation</div><i class="icon"><svg><use href="#svg-arrow-right"></use></svg></i></label><ul class="current">
 <li class="toctree-l2"><a class="reference internal" href="define_model.html">Define Your Model</a></li>
 <li class="toctree-l2 current current-page"><a class="current reference internal" href="#">MPS and MPO</a></li>
+<li class="toctree-l2"><a class="reference internal" href="nuclear_basis.html">Nuclear Basis Set</a></li>
 <li class="toctree-l2"><a class="reference internal" href="quantum_number.html">Quantum Numbers</a></li>
 <li class="toctree-l2"><a class="reference internal" href="compress_mps.html">Compressing MPS</a></li>
 <li class="toctree-l2"><a class="reference internal" href="ttn_basic.html">Basics of Tree Tensor Networks</a></li>
@@ -516,11 +517,11 @@ div.rendered_html tbody tr:hover {
 </div>
 <div class="output_area stderr docutils container">
 <div class="highlight"><pre>
-2024-11-19 03:14:18,918[INFO] Use NumPy as backend
-2024-11-19 03:14:18,918[INFO] numpy random seed is 9012
-2024-11-19 03:14:18,919[INFO] random seed is 1092
-2024-11-19 03:14:18,929[INFO] Git Commit Hash: 5d9832501dbae153174503f00b3479337588b7f1
-2024-11-19 03:14:18,931[INFO] use 64 bits
+2024-12-04 10:30:29,306[INFO] Use NumPy as backend
+2024-12-04 10:30:29,307[INFO] numpy random seed is 9012
+2024-12-04 10:30:29,307[INFO] random seed is 1092
+2024-12-04 10:30:29,317[INFO] Git Commit Hash: b882466cb690e4399b35e0772555500df69bb298
+2024-12-04 10:30:29,319[INFO] use 64 bits
 </pre></div></div>
 </div>
 <p>First, construct all terms in the Hamiltonian in a <code class="docutils literal notranslate"><span class="pre">list</span></code> or <code class="docutils literal notranslate"><span class="pre">OpSum</span></code>.</p>
@@ -673,8 +674,8 @@ array([[0., 0., 0., 0., 0., 0., 0., 0.],
 </div>
 <div class="output_area docutils container">
 <div class="highlight"><pre>
-(&lt;Matrix at 0x7f88cbf8a280 (1, 2, 2) float64&gt;,
- &lt;Matrix at 0x7f88f02ff190 (2, 8, 1) float64&gt;)
+(&lt;Matrix at 0x7fa7b3e6a3a0 (1, 2, 2) float64&gt;,
+ &lt;Matrix at 0x7fa7b3e6a460 (2, 8, 1) float64&gt;)
 </pre></div></div>
 </div>
 <p><code class="docutils literal notranslate"><span class="pre">Matrix</span></code> can be considered as a wrapper for <code class="docutils literal notranslate"><span class="pre">np.ndarray</span></code> with more metadata. The indices of the array are left virtual index, the physical index and the right virtual index. The underlaying matrix can be accessed via the <code class="docutils literal notranslate"><span class="pre">array</span></code> attribute.</p>
@@ -892,10 +893,10 @@ array([ 0.41298208, -0.00752657,  0.17205047,  0.13905035,  0.20172165,
 </div>
 <div class="output_area stderr docutils container">
 <div class="highlight"><pre>
-2024-11-19 03:14:19,074[DEBUG] # of operator terms: 3
-2024-11-19 03:14:19,074[DEBUG] Input operator terms: 3
-2024-11-19 03:14:19,076[DEBUG] After combination of the same terms: 3
-2024-11-19 03:14:19,076[DEBUG] symbolic mpo algorithm: qr
+2024-12-04 10:30:29,458[DEBUG] # of operator terms: 3
+2024-12-04 10:30:29,459[DEBUG] Input operator terms: 3
+2024-12-04 10:30:29,460[DEBUG] After combination of the same terms: 3
+2024-12-04 10:30:29,460[DEBUG] symbolic mpo algorithm: qr
 </pre></div></div>
 </div>
 <div class="nboutput nblast docutils container">
@@ -904,8 +905,8 @@ array([ 0.41298208, -0.00752657,  0.17205047,  0.13905035,  0.20172165,
 </div>
 <div class="output_area docutils container">
 <div class="highlight"><pre>
-(&lt;Matrix at 0x7f88b01f2b50 (1, 2, 2, 3) float64&gt;,
- &lt;Matrix at 0x7f88f0304880 (3, 8, 8, 1) float64&gt;)
+(&lt;Matrix at 0x7fa7e00daca0 (1, 2, 2, 3) float64&gt;,
+ &lt;Matrix at 0x7fa7e010ca90 (3, 8, 8, 1) float64&gt;)
 </pre></div></div>
 </div>
 <p>Here the logging outputs that there are 3 terms in the Hamiltonian, since <span class="math notranslate nohighlight">\(\hat \sigma_z\)</span> with coefficient 0 is dropped automatically.</p>
@@ -960,9 +961,9 @@ array([ 0.41298208, -0.00752657,  0.17205047,  0.13905035,  0.20172165,
 </div>
 <div class="output_area stderr docutils container">
 <div class="highlight"><pre>
-2024-11-19 03:14:19,098[DEBUG] # of operator terms: 1
-2024-11-19 03:14:19,098[DEBUG] Input operator terms: 1
-2024-11-19 03:14:19,099[DEBUG] After combination of the same terms: 1
+2024-12-04 10:30:29,482[DEBUG] # of operator terms: 1
+2024-12-04 10:30:29,482[DEBUG] Input operator terms: 1
+2024-12-04 10:30:29,483[DEBUG] After combination of the same terms: 1
 </pre></div></div>
 </div>
 </section>
@@ -1066,12 +1067,12 @@ array([ 0.41298208, -0.00752657,  0.17205047,  0.13905035,  0.20172165,
       <footer>
         
         <div class="related-pages">
-          <a class="next-page" href="quantum_number.html">
+          <a class="next-page" href="nuclear_basis.html">
               <div class="page-info">
                 <div class="context">
                   <span>Next</span>
                 </div>
-                <div class="title">Quantum Numbers</div>
+                <div class="title">Nuclear Basis Set</div>
               </div>
               <svg class="furo-related-icon"><use href="#svg-arrow-right"></use></svg>
             </a>
