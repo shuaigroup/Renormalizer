@@ -7,6 +7,8 @@ from __future__ import division
 import math
 import logging
 
+from sympy.printing.numpy import const
+
 from renormalizer.utils import constant
 
 logger = logging.getLogger(__name__)
@@ -19,6 +21,7 @@ au_ratio_dict = {
     "K": constant.au2K,
     "a.u.": 1,
     "au": 1,
+    "fs": constant.au2fs,
 }
 
 au_ratio_dict.update({k.lower(): v for k, v in au_ratio_dict.items()})

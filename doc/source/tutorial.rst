@@ -8,6 +8,7 @@ please refer to the :doc:`applications`.
 .. toctree::
     tutorials/define_model.ipynb
     tutorials/mps_mpo.ipynb
+    tutorials/nuclear_basis.ipynb
     tutorials/quantum_number.ipynb
     tutorials/compress_mps.ipynb
     tutorials/ttn_basic.ipynb

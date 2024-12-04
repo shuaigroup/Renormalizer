@@ -1,0 +1,56 @@
+# Matplotlib style for scientific plotting
+# This is the base style for "SciencePlots"
+# see: https://github.com/garrettj403/SciencePlots
+
+# Set color cycle: blue, green, yellow, red, violet, gray
+axes.prop_cycle : cycler('color', ['0C5DA5', '00B945', 'FF9500', 'FF2C00', '845B97', '474747', '9e9e9e'])
+
+# Set default figure size
+figure.figsize : 4, 3
+
+# Set x axis
+xtick.direction : in
+xtick.major.size : 3
+xtick.major.width : 0.5
+xtick.minor.size : 1.5
+xtick.minor.width : 0.5
+xtick.minor.visible : True
+xtick.top : True
+xtick.labelsize : large
+
+# Set y axis
+ytick.direction : in
+ytick.major.size : 3
+ytick.major.width : 0.5
+ytick.minor.size : 1.5
+ytick.minor.width : 0.5
+ytick.minor.visible : True
+ytick.right : True
+ytick.labelsize : large
+
+# Axes
+axes.labelsize : "x-large"
+
+# Set line widths
+axes.linewidth : 0.5
+grid.linewidth : 0.5
+lines.linewidth : 1.5
+
+# Remove legend frame
+legend.frameon : False
+legend.fontsize : large
+
+# Always save as 'tight'
+savefig.bbox : tight
+savefig.pad_inches : 0.05
+
+# Use serif fonts
+# font.serif : Times
+font.family : serif
+mathtext.fontset : dejavuserif
+
+# Use LaTeX for math formatting
+# Run this first: apt install dvipng texlive-latex-extra texlive-fonts-recommended cm-super
+# See https://github.com/garrettj403/SciencePlots/wiki/FAQ#installing-latex
+text.usetex : True
+text.latex.preamble : \usepackage{amsmath} \usepackage{amssymb}
