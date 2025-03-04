@@ -816,6 +816,22 @@ class TTNS(TTNBase):
         return self
 
     def compress(self, temp_m_trunc=None, ret_s=False):
+        """
+        Compress the TTNS based on SVD
+
+        Parameters
+        ----------
+        temp_m_trunc : int
+            Temporary truncation bond dimension. Overwrites the compression
+            configuration in ``CompressConfig``.
+        ret_s: bool
+            Whether return the singular values at the bonds.
+            The singular values are padded to a rectangular array with zero values.
+
+        Returns
+        -------
+             truncated TTNS
+        """
         if self.compress_config.bonddim_should_set:
             self.compress_config.set_bonddim(len(self.node_list) + 1)
         s_dict: Dict[TreeNodeTensor, np.ndarray] = {self.root: np.array([1])}
@@ -826,7 +842,9 @@ class TTNS(TTNBase):
             return self
         else:
             s_list = [s_dict[n] for n in self.node_list]
-            return self, s_list
+            max_length = max(len(s) for s in s_list)
+            s_array = np.array([np.pad(arr, (0, max_length - len(arr))) for arr in s_list])
+            return self, s_array
 
     ###################################################################################
     # calculating properties
@@ -1227,10 +1245,31 @@ class TTNS(TTNBase):
         entropy_tuple = (entropy_1dof, entropy_2dof)
         return mutual_infos, entropy_tuple
 
-    def calc_bond_entropy(self) -> np.ndarray:
+    def calc_bond_singular_values(self) -> np.ndarray:
+        r"""
+        Calculate the singular values at each bond.
+
+        Returns
+        -------
+        Singular values: 2D array
+
+        """
+        # Make sure that the bond entropy is from the left to the right and not
+        # destroy the original mps
+        ttns = self.copy()
+        ttns.canonicalise()
+        _, s_array = ttns.compress(temp_m_trunc=np.inf, ret_s=True)
+        return s_array
+
+    def calc_bond_entropy(self, s_array :np.array=None) -> np.ndarray:
         r"""
         Calculate von Neumann entropy at each bond according to :math:`S = -\textrm{Tr}(\rho \ln \rho)`
         where :math:`\rho` is the reduced density matrix of either block.
+
+        Parameters
+        ----------
+        s_array : np.ndarray, optional
+            The singular values array. Calculated by :meth:`Mps.calc_bond_singular_values`.
 
         Returns
         -------
@@ -1239,11 +1278,9 @@ class TTNS(TTNBase):
             The order is the same as the node list.
         """
 
-        # don't want to destroy the original mps
-        ttns = self.copy()
-        ttns.canonicalise()
-        _, s_list = ttns.compress(temp_m_trunc=np.inf, ret_s=True)
-        return np.array([calc_vn_entropy(sigma ** 2) for sigma in s_list])
+        if s_array is None:
+            s_array = self.calc_bond_singular_values()
+        return np.array([calc_vn_entropy(sigma ** 2) for sigma in s_array])
 
     ###################################################################################
     # manipulations

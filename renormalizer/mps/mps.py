@@ -1701,10 +1701,31 @@ class Mps(MatrixProduct):
         mut_entropy += mut_entropy.T
         return mut_entropy
 
-    def calc_bond_entropy(self) -> np.ndarray:
+    def calc_bond_singular_values(self) -> np.ndarray:
+        r"""
+        Calculate the singular values at each bond.
+
+        Returns
+        -------
+        Singular values: 2D array
+
+        """
+        # Make sure that the bond entropy is from the left to the right and not
+        # destroy the original mps
+        mps = self.copy()
+        mps.ensure_right_canonical()
+        _, s_array = mps.compress(temp_m_trunc=np.inf, ret_s=True)
+        return s_array
+
+    def calc_bond_entropy(self, s_array :np.array=None) -> np.ndarray:
         r"""
         Calculate von Neumann entropy at each bond according to :math:`S = -\textrm{Tr}(\rho \ln \rho)`
         where :math:`\rho` is the reduced density matrix of either block.
+
+        Parameters
+        ----------
+        s_array : np.ndarray, optional
+            The singular values array. Calculated by :meth:`Mps.calc_bond_singular_values`.
 
         Returns
         -------
@@ -1712,13 +1733,9 @@ class Mps(MatrixProduct):
             a NumPy array containing the entropy values.
         
         """
-        
-        # Make sure that the bond entropy is from the left to the right and not
-        # destroy the original mps
-        mps = self.copy()
-        mps.ensure_right_canonical()
-        _, s_list = mps.compress(temp_m_trunc=np.inf, ret_s=True)
-        return np.array([calc_vn_entropy(sigma ** 2) for sigma in s_list])
+        if s_array is None:
+            s_array = self.calc_bond_singular_values()
+        return np.array([calc_vn_entropy(sigma ** 2) for sigma in s_array])
 
     def dump(self, fname):
         super().dump(fname, other_attrs=["coeff"])

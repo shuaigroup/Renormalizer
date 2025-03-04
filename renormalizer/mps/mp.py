@@ -424,6 +424,15 @@ class MatrixProduct:
         """
         inp: canonicalise MPS (or MPO)
 
+        Parameters
+        ----------
+        temp_m_trunc : int
+            Temporary truncation bond dimension. Overwrites the compression
+            configuration in ``CompressConfig``.
+        ret_s: bool
+            Whether return the singular values at the bonds.
+            The singular values are padded to a rectangular array with zero values.
+
         Returns
         -------
              truncated MPS
@@ -478,7 +487,11 @@ class MatrixProduct:
             return self
         else:
             # return singular value list
-            return self, s_list
+            # pad with zero
+            max_length = max(len(s) for s in s_list)
+            s_array = np.array([np.pad(arr, (0, max_length - len(arr))) for arr in s_list])
+            return self, s_array
+
 
     def variational_compress(self, mpo=None, guess=None):
         r"""Variational compress an mps/mpdm/mpo

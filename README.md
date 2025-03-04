@@ -68,6 +68,7 @@ To do this, set the environment variable before running Python
 export RENO_NUM_THREADS=1
 ```
 which sets all environment variables for underlying linear algebra libraries, such as `MKL_NUM_THREADS`.
+Alternatively, if you are submitting tasks via (a properly configured) slurm, set `--cpus-per-task` to limit CPU usage.
 
 > [!IMPORTANT]  
 > After importing NumPy or Renormalizer, setting the environment variables will have no effect.
@@ -78,6 +79,7 @@ because Renormalizer is sometimes imported as a utility package.
 
 # Useful links
 - [The Shuai group](http://www.shuaigroup.net/)
+- [The Weitang Li group](https://weitangligroup.com/)
 - [tensornetwork.org](https://tensornetwork.org/)
 - [A detailed review of our method](http://www.shuaigroup.net/images/article/pubs/2022/08_shuai_WIRES_Comput_Mol_Sci_2022_e1614.pdf)
 
