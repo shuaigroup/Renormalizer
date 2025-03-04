@@ -228,55 +228,55 @@
           <h1>Source code for renormalizer.mps.mps</h1><div class="highlight"><pre>
 <span></span><span class="c1"># -*- encoding: utf-8 -*-</span>
 
-<span class="kn">import</span> <span class="nn">logging</span>
-<span class="kn">from</span> <span class="nn">collections</span> <span class="kn">import</span> <span class="n">Counter</span><span class="p">,</span> <span class="n">deque</span>
-<span class="kn">from</span> <span class="nn">functools</span> <span class="kn">import</span> <span class="n">wraps</span><span class="p">,</span> <span class="n">reduce</span>
-<span class="kn">from</span> <span class="nn">typing</span> <span class="kn">import</span> <span class="n">Union</span><span class="p">,</span> <span class="n">List</span><span class="p">,</span> <span class="n">Dict</span>
-<span class="kn">import</span> <span class="nn">itertools</span>
+<span class="kn">import</span><span class="w"> </span><span class="nn">logging</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">collections</span><span class="w"> </span><span class="kn">import</span> <span class="n">Counter</span><span class="p">,</span> <span class="n">deque</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">functools</span><span class="w"> </span><span class="kn">import</span> <span class="n">wraps</span><span class="p">,</span> <span class="n">reduce</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">typing</span><span class="w"> </span><span class="kn">import</span> <span class="n">Union</span><span class="p">,</span> <span class="n">List</span><span class="p">,</span> <span class="n">Dict</span>
+<span class="kn">import</span><span class="w"> </span><span class="nn">itertools</span>
 
 
-<span class="kn">import</span> <span class="nn">scipy</span>
-<span class="kn">from</span> <span class="nn">scipy</span> <span class="kn">import</span> <span class="n">stats</span>
+<span class="kn">import</span><span class="w"> </span><span class="nn">scipy</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">scipy</span><span class="w"> </span><span class="kn">import</span> <span class="n">stats</span>
 
-<span class="kn">from</span> <span class="nn">renormalizer.lib</span> <span class="kn">import</span> <span class="n">solve_ivp</span><span class="p">,</span> <span class="n">expm_krylov</span>
-<span class="kn">from</span> <span class="nn">renormalizer.model</span> <span class="kn">import</span> <span class="n">Model</span><span class="p">,</span> <span class="n">Op</span><span class="p">,</span> <span class="n">basis</span> <span class="k">as</span> <span class="n">ba</span>
-<span class="kn">from</span> <span class="nn">renormalizer.mps</span> <span class="kn">import</span> <span class="n">svd_qn</span>
-<span class="kn">from</span> <span class="nn">renormalizer.mps.svd_qn</span> <span class="kn">import</span> <span class="n">add_outer</span><span class="p">,</span> <span class="n">get_qn_mask</span>
-<span class="kn">from</span> <span class="nn">renormalizer.mps.backend</span> <span class="kn">import</span> <span class="n">backend</span><span class="p">,</span> <span class="n">np</span><span class="p">,</span> <span class="n">xp</span>
-<span class="kn">from</span> <span class="nn">renormalizer.mps.lib</span> <span class="kn">import</span> <span class="p">(</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">renormalizer.lib</span><span class="w"> </span><span class="kn">import</span> <span class="n">solve_ivp</span><span class="p">,</span> <span class="n">expm_krylov</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">renormalizer.model</span><span class="w"> </span><span class="kn">import</span> <span class="n">Model</span><span class="p">,</span> <span class="n">Op</span><span class="p">,</span> <span class="n">basis</span> <span class="k">as</span> <span class="n">ba</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">renormalizer.mps</span><span class="w"> </span><span class="kn">import</span> <span class="n">svd_qn</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">renormalizer.mps.svd_qn</span><span class="w"> </span><span class="kn">import</span> <span class="n">add_outer</span><span class="p">,</span> <span class="n">get_qn_mask</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">renormalizer.mps.backend</span><span class="w"> </span><span class="kn">import</span> <span class="n">backend</span><span class="p">,</span> <span class="n">np</span><span class="p">,</span> <span class="n">xp</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">renormalizer.mps.lib</span><span class="w"> </span><span class="kn">import</span> <span class="p">(</span>
     <span class="n">Environ</span><span class="p">,</span>
     <span class="n">select_basis</span><span class="p">,</span>
     <span class="n">compressed_sum</span><span class="p">,</span>
     <span class="n">contract_one_site</span><span class="p">,</span>
     <span class="n">cvec2cmat</span>
 <span class="p">)</span>
-<span class="kn">from</span> <span class="nn">renormalizer.mps.matrix</span> <span class="kn">import</span> <span class="p">(</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">renormalizer.mps.matrix</span><span class="w"> </span><span class="kn">import</span> <span class="p">(</span>
     <span class="n">multi_tensor_contract</span><span class="p">,</span>
     <span class="n">ones</span><span class="p">,</span>
     <span class="n">tensordot</span><span class="p">,</span>
     <span class="n">Matrix</span><span class="p">,</span>
     <span class="n">asnumpy</span><span class="p">,</span>
     <span class="n">asxp</span><span class="p">)</span>
-<span class="kn">from</span> <span class="nn">renormalizer.mps.mp</span> <span class="kn">import</span> <span class="n">MatrixProduct</span>
-<span class="kn">from</span> <span class="nn">renormalizer.mps.hop_expr</span> <span class="kn">import</span> <span class="n">hop_expr</span>
-<span class="kn">from</span> <span class="nn">renormalizer.mps.mpo</span> <span class="kn">import</span> <span class="n">Mpo</span>
-<span class="kn">from</span> <span class="nn">renormalizer.utils</span> <span class="kn">import</span> <span class="p">(</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">renormalizer.mps.mp</span><span class="w"> </span><span class="kn">import</span> <span class="n">MatrixProduct</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">renormalizer.mps.hop_expr</span><span class="w"> </span><span class="kn">import</span> <span class="n">hop_expr</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">renormalizer.mps.mpo</span><span class="w"> </span><span class="kn">import</span> <span class="n">Mpo</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">renormalizer.utils</span><span class="w"> </span><span class="kn">import</span> <span class="p">(</span>
     <span class="n">OptimizeConfig</span><span class="p">,</span>
     <span class="n">CompressCriteria</span><span class="p">,</span>
     <span class="n">EvolveConfig</span><span class="p">,</span>
     <span class="n">EvolveMethod</span>
 <span class="p">)</span>
-<span class="kn">from</span> <span class="nn">renormalizer.utils.utils</span> <span class="kn">import</span> <span class="n">calc_vn_entropy</span><span class="p">,</span> <span class="n">calc_vn_entropy_dm</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">renormalizer.utils.utils</span><span class="w"> </span><span class="kn">import</span> <span class="n">calc_vn_entropy</span><span class="p">,</span> <span class="n">calc_vn_entropy_dm</span>
 
 <span class="n">logger</span> <span class="o">=</span> <span class="n">logging</span><span class="o">.</span><span class="n">getLogger</span><span class="p">(</span><span class="vm">__name__</span><span class="p">)</span>
 
 
-<span class="k">def</span> <span class="nf">adaptive_tdvp</span><span class="p">(</span><span class="n">fun</span><span class="p">):</span>
+<span class="k">def</span><span class="w"> </span><span class="nf">adaptive_tdvp</span><span class="p">(</span><span class="n">fun</span><span class="p">):</span>
     <span class="c1"># evolve t/2 (twice) and t to obtain the O(dt^3) error term in 2nd-order Trotter decomposition</span>
     <span class="c1"># J. Chem. Phys. 146, 174107 (2017)</span>
 
     <span class="nd">@wraps</span><span class="p">(</span><span class="n">fun</span><span class="p">)</span>
-    <span class="k">def</span> <span class="nf">adaptive_fun</span><span class="p">(</span><span class="bp">self</span><span class="p">:</span> <span class="s2">&quot;Mps&quot;</span><span class="p">,</span> <span class="n">mpo</span><span class="p">,</span> <span class="n">evolve_target_t</span><span class="p">):</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">adaptive_fun</span><span class="p">(</span><span class="bp">self</span><span class="p">:</span> <span class="s2">&quot;Mps&quot;</span><span class="p">,</span> <span class="n">mpo</span><span class="p">,</span> <span class="n">evolve_target_t</span><span class="p">):</span>
 
         <span class="k">if</span> <span class="ow">not</span> <span class="bp">self</span><span class="o">.</span><span class="n">evolve_config</span><span class="o">.</span><span class="n">adaptive</span><span class="p">:</span>
             <span class="k">return</span> <span class="n">fun</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">mpo</span><span class="p">,</span> <span class="n">evolve_target_t</span><span class="p">)</span>
@@ -343,9 +343,9 @@
     <span class="k">return</span> <span class="n">adaptive_fun</span>
 
 
-<div class="viewcode-block" id="Mps"><a class="viewcode-back" href="../../../mps.html#renormalizer.mps.Mps">[docs]</a><span class="k">class</span> <span class="nc">Mps</span><span class="p">(</span><span class="n">MatrixProduct</span><span class="p">):</span>
+<div class="viewcode-block" id="Mps"><a class="viewcode-back" href="../../../mps.html#renormalizer.mps.Mps">[docs]</a><span class="k">class</span><span class="w"> </span><span class="nc">Mps</span><span class="p">(</span><span class="n">MatrixProduct</span><span class="p">):</span>
 <div class="viewcode-block" id="Mps.random"><a class="viewcode-back" href="../../../mps.html#renormalizer.mps.Mps.random">[docs]</a>    <span class="nd">@classmethod</span>
-    <span class="k">def</span> <span class="nf">random</span><span class="p">(</span><span class="bp">cls</span><span class="p">,</span> <span class="n">model</span><span class="p">:</span> <span class="n">Model</span><span class="p">,</span> <span class="n">qntot</span><span class="p">,</span> <span class="n">m_max</span><span class="p">,</span> <span class="n">percent</span><span class="o">=</span><span class="mf">1.0</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="s2">&quot;Mps&quot;</span><span class="p">:</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">random</span><span class="p">(</span><span class="bp">cls</span><span class="p">,</span> <span class="n">model</span><span class="p">:</span> <span class="n">Model</span><span class="p">,</span> <span class="n">qntot</span><span class="p">,</span> <span class="n">m_max</span><span class="p">,</span> <span class="n">percent</span><span class="o">=</span><span class="mf">1.0</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="s2">&quot;Mps&quot;</span><span class="p">:</span>
         <span class="c1"># a high percent makes the result more random</span>
         <span class="c1"># sometimes critical for getting correct optimization result</span>
         <span class="n">mps</span> <span class="o">=</span> <span class="bp">cls</span><span class="p">()</span>
@@ -409,7 +409,7 @@
         <span class="k">return</span> <span class="n">mps</span></div>
 
 <div class="viewcode-block" id="Mps.hartree_product_state"><a class="viewcode-back" href="../../../mps.html#renormalizer.mps.Mps.hartree_product_state">[docs]</a>    <span class="nd">@classmethod</span>
-    <span class="k">def</span> <span class="nf">hartree_product_state</span><span class="p">(</span><span class="bp">cls</span><span class="p">,</span> <span class="n">model</span><span class="p">,</span> <span class="n">condition</span><span class="p">:</span> <span class="n">Dict</span><span class="p">,</span> <span class="n">qn_idx</span><span class="p">:</span><span class="nb">int</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">hartree_product_state</span><span class="p">(</span><span class="bp">cls</span><span class="p">,</span> <span class="n">model</span><span class="p">,</span> <span class="n">condition</span><span class="p">:</span> <span class="n">Dict</span><span class="p">,</span> <span class="n">qn_idx</span><span class="p">:</span><span class="nb">int</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
 <span class="w">        </span><span class="sa">r</span><span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">        Construct a Hartree product state</span>
 <span class="sd">        </span>
@@ -477,7 +477,7 @@
         <span class="k">return</span> <span class="n">mps</span></div>
 
 <div class="viewcode-block" id="Mps.ground_state"><a class="viewcode-back" href="../../../mps.html#renormalizer.mps.Mps.ground_state">[docs]</a>    <span class="nd">@classmethod</span>
-    <span class="k">def</span> <span class="nf">ground_state</span><span class="p">(</span><span class="bp">cls</span><span class="p">,</span> <span class="n">model</span><span class="p">:</span> <span class="n">Model</span><span class="p">,</span> <span class="n">max_entangled</span><span class="p">:</span> <span class="nb">bool</span><span class="p">,</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">ground_state</span><span class="p">(</span><span class="bp">cls</span><span class="p">,</span> <span class="n">model</span><span class="p">:</span> <span class="n">Model</span><span class="p">,</span> <span class="n">max_entangled</span><span class="p">:</span> <span class="nb">bool</span><span class="p">,</span>
             <span class="n">normalize</span><span class="p">:</span><span class="nb">bool</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span> <span class="n">condition</span><span class="p">:</span><span class="n">Dict</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
 <span class="w">        </span><span class="sa">r</span><span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">        Obtain ground state at :math:`T = 0` or :math:`T = \infty` (maximum entangled).</span>
@@ -571,7 +571,7 @@
         <span class="k">return</span> <span class="n">mps</span></div>
 
 <div class="viewcode-block" id="Mps.load"><a class="viewcode-back" href="../../../mps.html#renormalizer.mps.Mps.load">[docs]</a>    <span class="nd">@classmethod</span>
-    <span class="k">def</span> <span class="nf">load</span><span class="p">(</span><span class="bp">cls</span><span class="p">,</span> <span class="n">model</span><span class="p">:</span> <span class="n">Model</span><span class="p">,</span> <span class="n">fname</span><span class="p">:</span> <span class="nb">str</span><span class="p">):</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">load</span><span class="p">(</span><span class="bp">cls</span><span class="p">,</span> <span class="n">model</span><span class="p">:</span> <span class="n">Model</span><span class="p">,</span> <span class="n">fname</span><span class="p">:</span> <span class="nb">str</span><span class="p">):</span>
         <span class="n">npload</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">load</span><span class="p">(</span><span class="n">fname</span><span class="p">,</span> <span class="n">allow_pickle</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
         <span class="n">mp</span> <span class="o">=</span> <span class="bp">cls</span><span class="p">()</span>
         <span class="n">mp</span><span class="o">.</span><span class="n">model</span> <span class="o">=</span> <span class="n">model</span>
@@ -607,7 +607,7 @@
         <span class="k">return</span> <span class="n">mp</span></div>
 
 <div class="viewcode-block" id="Mps.from_dense"><a class="viewcode-back" href="../../../mps.html#renormalizer.mps.Mps.from_dense">[docs]</a>    <span class="nd">@classmethod</span>
-    <span class="k">def</span> <span class="nf">from_dense</span><span class="p">(</span><span class="bp">cls</span><span class="p">,</span> <span class="n">model</span><span class="p">,</span> <span class="n">wfn</span><span class="p">:</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">):</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">from_dense</span><span class="p">(</span><span class="bp">cls</span><span class="p">,</span> <span class="n">model</span><span class="p">,</span> <span class="n">wfn</span><span class="p">:</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">):</span>
         <span class="c1"># for debugging</span>
         <span class="n">mp</span> <span class="o">=</span> <span class="bp">cls</span><span class="p">()</span>
         <span class="n">mp</span><span class="o">.</span><span class="n">model</span> <span class="o">=</span> <span class="n">model</span>
@@ -626,49 +626,49 @@
         <span class="n">mp</span><span class="o">.</span><span class="n">build_empty_qn</span><span class="p">()</span>
         <span class="k">return</span> <span class="n">mp</span></div>
 
-    <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+    <span class="k">def</span><span class="w"> </span><span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
         <span class="nb">super</span><span class="p">()</span><span class="o">.</span><span class="fm">__init__</span><span class="p">()</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">coeff</span><span class="p">:</span> <span class="n">Union</span><span class="p">[</span><span class="nb">float</span><span class="p">,</span> <span class="nb">complex</span><span class="p">]</span> <span class="o">=</span> <span class="mi">1</span>
 
         <span class="bp">self</span><span class="o">.</span><span class="n">optimize_config</span><span class="p">:</span> <span class="n">OptimizeConfig</span> <span class="o">=</span> <span class="n">OptimizeConfig</span><span class="p">()</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">evolve_config</span><span class="p">:</span> <span class="n">EvolveConfig</span> <span class="o">=</span> <span class="n">EvolveConfig</span><span class="p">()</span>
 
-<div class="viewcode-block" id="Mps.conj"><a class="viewcode-back" href="../../../mps.html#renormalizer.mps.Mps.conj">[docs]</a>    <span class="k">def</span> <span class="nf">conj</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="s2">&quot;Mps&quot;</span><span class="p">:</span>
+<div class="viewcode-block" id="Mps.conj"><a class="viewcode-back" href="../../../mps.html#renormalizer.mps.Mps.conj">[docs]</a>    <span class="k">def</span><span class="w"> </span><span class="nf">conj</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="s2">&quot;Mps&quot;</span><span class="p">:</span>
         <span class="n">new_mps</span> <span class="o">=</span> <span class="nb">super</span><span class="p">()</span><span class="o">.</span><span class="n">conj</span><span class="p">()</span>
         <span class="n">new_mps</span><span class="o">.</span><span class="n">coeff</span> <span class="o">=</span> <span class="n">new_mps</span><span class="o">.</span><span class="n">coeff</span><span class="o">.</span><span class="n">conjugate</span><span class="p">()</span>
         <span class="k">return</span> <span class="n">new_mps</span></div>
 
-<div class="viewcode-block" id="Mps.to_complex"><a class="viewcode-back" href="../../../mps.html#renormalizer.mps.Mps.to_complex">[docs]</a>    <span class="k">def</span> <span class="nf">to_complex</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">inplace</span><span class="o">=</span><span class="kc">False</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="s2">&quot;Mps&quot;</span><span class="p">:</span>
+<div class="viewcode-block" id="Mps.to_complex"><a class="viewcode-back" href="../../../mps.html#renormalizer.mps.Mps.to_complex">[docs]</a>    <span class="k">def</span><span class="w"> </span><span class="nf">to_complex</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">inplace</span><span class="o">=</span><span class="kc">False</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="s2">&quot;Mps&quot;</span><span class="p">:</span>
         <span class="n">new_mp</span> <span class="o">=</span> <span class="nb">super</span><span class="p">(</span><span class="n">Mps</span><span class="p">,</span> <span class="bp">self</span><span class="p">)</span><span class="o">.</span><span class="n">to_complex</span><span class="p">(</span><span class="n">inplace</span><span class="o">=</span><span class="n">inplace</span><span class="p">)</span>
         <span class="n">new_mp</span><span class="o">.</span><span class="n">coeff</span> <span class="o">=</span> <span class="nb">complex</span><span class="p">(</span><span class="n">new_mp</span><span class="o">.</span><span class="n">coeff</span><span class="p">)</span>
         <span class="k">return</span> <span class="n">new_mp</span></div>
 
-    <span class="k">def</span> <span class="nf">_get_sigmaqn</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">idx</span><span class="p">):</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">_get_sigmaqn</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">idx</span><span class="p">):</span>
         <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">model</span><span class="o">.</span><span class="n">basis</span><span class="p">[</span><span class="n">idx</span><span class="p">]</span><span class="o">.</span><span class="n">sigmaqn</span>
 
     <span class="nd">@property</span>
-    <span class="k">def</span> <span class="nf">is_mps</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">is_mps</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
         <span class="k">return</span> <span class="kc">True</span>
 
     <span class="nd">@property</span>
-    <span class="k">def</span> <span class="nf">is_mpo</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">is_mpo</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
         <span class="k">return</span> <span class="kc">False</span>
 
     <span class="nd">@property</span>
-    <span class="k">def</span> <span class="nf">is_mpdm</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">is_mpdm</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
         <span class="k">return</span> <span class="kc">False</span>
 
     <span class="nd">@property</span>
-    <span class="k">def</span> <span class="nf">nexciton</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">nexciton</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
         <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">qntot</span>
 
     <span class="nd">@property</span>
-    <span class="k">def</span> <span class="nf">norm</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">norm</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
 <span class="w">        </span><span class="sd">&#39;&#39;&#39;the norm of the total wavefunction</span>
 <span class="sd">        &#39;&#39;&#39;</span>
         <span class="k">return</span> <span class="n">np</span><span class="o">.</span><span class="n">linalg</span><span class="o">.</span><span class="n">norm</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">coeff</span><span class="p">)</span> <span class="o">*</span> <span class="bp">self</span><span class="o">.</span><span class="n">mp_norm</span>
 
-    <span class="k">def</span> <span class="nf">_expectation_path</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">_expectation_path</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
         <span class="c1"># S--a--S--e--S</span>
         <span class="c1"># |     |     |</span>
         <span class="c1"># |     d     |</span>
@@ -686,10 +686,10 @@
         <span class="p">]</span>
         <span class="k">return</span> <span class="n">path</span>
 
-    <span class="k">def</span> <span class="nf">_expectation_conj</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">_expectation_conj</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
         <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">conj</span><span class="p">()</span>
 
-<div class="viewcode-block" id="Mps.expectation"><a class="viewcode-back" href="../../../mps.html#renormalizer.mps.Mps.expectation">[docs]</a>    <span class="k">def</span> <span class="nf">expectation</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">mpo</span><span class="p">,</span> <span class="n">self_conj</span><span class="o">=</span><span class="kc">None</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Union</span><span class="p">[</span><span class="nb">float</span><span class="p">,</span> <span class="nb">complex</span><span class="p">]:</span>
+<div class="viewcode-block" id="Mps.expectation"><a class="viewcode-back" href="../../../mps.html#renormalizer.mps.Mps.expectation">[docs]</a>    <span class="k">def</span><span class="w"> </span><span class="nf">expectation</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">mpo</span><span class="p">,</span> <span class="n">self_conj</span><span class="o">=</span><span class="kc">None</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Union</span><span class="p">[</span><span class="nb">float</span><span class="p">,</span> <span class="nb">complex</span><span class="p">]:</span>
         <span class="k">if</span> <span class="n">self_conj</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
             <span class="n">self_conj</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_expectation_conj</span><span class="p">()</span>
         <span class="n">environ</span> <span class="o">=</span> <span class="n">Environ</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">mpo</span><span class="p">,</span> <span class="s2">&quot;R&quot;</span><span class="p">,</span> <span class="n">mps_conj</span><span class="o">=</span><span class="n">self_conj</span><span class="p">)</span>
@@ -704,7 +704,7 @@
         <span class="c1"># This is time and memory consuming</span>
         <span class="c1"># return self_conj.dot(mpo.apply(self)).real</span>
 
-<div class="viewcode-block" id="Mps.expectations"><a class="viewcode-back" href="../../../mps.html#renormalizer.mps.Mps.expectations">[docs]</a>    <span class="k">def</span> <span class="nf">expectations</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">mpos</span><span class="p">,</span> <span class="n">self_conj</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">opt</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">:</span>
+<div class="viewcode-block" id="Mps.expectations"><a class="viewcode-back" href="../../../mps.html#renormalizer.mps.Mps.expectations">[docs]</a>    <span class="k">def</span><span class="w"> </span><span class="nf">expectations</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">mpos</span><span class="p">,</span> <span class="n">self_conj</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">opt</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">:</span>
 
         <span class="k">if</span> <span class="ow">not</span> <span class="n">opt</span><span class="p">:</span>
             <span class="c1"># the naive way, slow and time consuming. Yet predictable and reliable</span>
@@ -748,7 +748,7 @@
             <span class="k">return</span> <span class="n">results</span></div>
 
     <span class="nd">@property</span>
-    <span class="k">def</span> <span class="nf">ph_occupations</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">ph_occupations</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
 <span class="w">        </span><span class="sa">r</span><span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">        phonon occupations :math:`b^\dagger_i b_i` for each electronic DoF.</span>
 <span class="sd">        The order is defined by :attr:`~renormalizer.model.model.v_dofs`.</span>
@@ -766,7 +766,7 @@
         <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">expectations</span><span class="p">(</span><span class="n">mpos</span><span class="p">)</span>
 
     <span class="nd">@property</span>
-    <span class="k">def</span> <span class="nf">e_occupations</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">e_occupations</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
 <span class="w">        </span><span class="sa">r</span><span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">        Electronic occupations :math:`a^\dagger_i a_i` for each electronic DoF.</span>
 <span class="sd">        The order is defined by :attr:`~renormalizer.model.model.e_dofs`.</span>
@@ -781,7 +781,7 @@
             <span class="n">mpos</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">model</span><span class="o">.</span><span class="n">mpos</span><span class="p">[</span><span class="n">key</span><span class="p">]</span>
         <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">expectations</span><span class="p">(</span><span class="n">mpos</span><span class="p">)</span>
 
-<div class="viewcode-block" id="Mps.metacopy"><a class="viewcode-back" href="../../../mps.html#renormalizer.mps.Mps.metacopy">[docs]</a>    <span class="k">def</span> <span class="nf">metacopy</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="s2">&quot;Mps&quot;</span><span class="p">:</span>
+<div class="viewcode-block" id="Mps.metacopy"><a class="viewcode-back" href="../../../mps.html#renormalizer.mps.Mps.metacopy">[docs]</a>    <span class="k">def</span><span class="w"> </span><span class="nf">metacopy</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="s2">&quot;Mps&quot;</span><span class="p">:</span>
         <span class="n">new</span><span class="p">:</span> <span class="n">Mps</span> <span class="o">=</span> <span class="nb">super</span><span class="p">()</span><span class="o">.</span><span class="n">metacopy</span><span class="p">()</span>
         <span class="n">new</span><span class="o">.</span><span class="n">coeff</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">coeff</span>
         <span class="n">new</span><span class="o">.</span><span class="n">optimize_config</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">optimize_config</span><span class="o">.</span><span class="n">copy</span><span class="p">()</span>
@@ -789,7 +789,7 @@
         <span class="n">new</span><span class="o">.</span><span class="n">evolve_config</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">evolve_config</span><span class="o">.</span><span class="n">copy</span><span class="p">()</span>
         <span class="k">return</span> <span class="n">new</span></div>
 
-<div class="viewcode-block" id="Mps.normalize"><a class="viewcode-back" href="../../../mps.html#renormalizer.mps.Mps.normalize">[docs]</a>    <span class="k">def</span> <span class="nf">normalize</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">kind</span><span class="p">):</span>
+<div class="viewcode-block" id="Mps.normalize"><a class="viewcode-back" href="../../../mps.html#renormalizer.mps.Mps.normalize">[docs]</a>    <span class="k">def</span><span class="w"> </span><span class="nf">normalize</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">kind</span><span class="p">):</span>
 <span class="w">        </span><span class="sa">r</span><span class="sd">&#39;&#39;&#39; normalize the wavefunction</span>
 
 <span class="sd">        Parameters</span>
@@ -807,14 +807,14 @@
         <span class="k">return</span> <span class="n">normalize</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">kind</span><span class="p">)</span></div>
 
 
-<div class="viewcode-block" id="Mps.expand_bond_dimension"><a class="viewcode-back" href="../../../mps.html#renormalizer.mps.Mps.expand_bond_dimension">[docs]</a>    <span class="k">def</span> <span class="nf">expand_bond_dimension</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">hint_mpo</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">coef</span><span class="o">=</span><span class="mf">1e-10</span><span class="p">,</span> <span class="n">include_ex</span><span class="o">=</span><span class="kc">True</span><span class="p">):</span>
+<div class="viewcode-block" id="Mps.expand_bond_dimension"><a class="viewcode-back" href="../../../mps.html#renormalizer.mps.Mps.expand_bond_dimension">[docs]</a>    <span class="k">def</span><span class="w"> </span><span class="nf">expand_bond_dimension</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">hint_mpo</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">coef</span><span class="o">=</span><span class="mf">1e-10</span><span class="p">,</span> <span class="n">include_ex</span><span class="o">=</span><span class="kc">True</span><span class="p">):</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">        expand bond dimension as required in compress_config</span>
 <span class="sd">        &quot;&quot;&quot;</span>
         <span class="k">return</span> <span class="n">expand_bond_dimension</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">hint_mpo</span><span class="p">,</span> <span class="n">coef</span><span class="p">,</span> <span class="n">include_ex</span><span class="p">)</span></div>
 
 
-<div class="viewcode-block" id="Mps.evolve"><a class="viewcode-back" href="../../../mps.html#renormalizer.mps.Mps.evolve">[docs]</a>    <span class="k">def</span> <span class="nf">evolve</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">mpo</span><span class="p">,</span> <span class="n">evolve_dt</span><span class="p">,</span> <span class="n">normalize</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="s2">&quot;Mps&quot;</span><span class="p">:</span>
+<div class="viewcode-block" id="Mps.evolve"><a class="viewcode-back" href="../../../mps.html#renormalizer.mps.Mps.evolve">[docs]</a>    <span class="k">def</span><span class="w"> </span><span class="nf">evolve</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">mpo</span><span class="p">,</span> <span class="n">evolve_dt</span><span class="p">,</span> <span class="n">normalize</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="s2">&quot;Mps&quot;</span><span class="p">:</span>
 
         <span class="n">method</span> <span class="o">=</span> <span class="p">{</span>
             <span class="n">EvolveMethod</span><span class="o">.</span><span class="n">prop_and_compress</span><span class="p">:</span> <span class="bp">self</span><span class="o">.</span><span class="n">_evolve_prop_and_compress</span><span class="p">,</span>
@@ -834,13 +834,13 @@
                 <span class="n">new_mps</span><span class="o">.</span><span class="n">normalize</span><span class="p">(</span><span class="s2">&quot;mps_only&quot;</span><span class="p">)</span>
         <span class="k">return</span> <span class="n">new_mps</span></div>
     
-    <span class="k">def</span> <span class="nf">_evolve_prop_and_compress_tdrk4</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">mpo</span><span class="p">,</span> <span class="n">evolve_dt</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="s2">&quot;Mps&quot;</span><span class="p">:</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">_evolve_prop_and_compress_tdrk4</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">mpo</span><span class="p">,</span> <span class="n">evolve_dt</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="s2">&quot;Mps&quot;</span><span class="p">:</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">        classical 4th order Runge-Kutta solver for time-dependent Hamiltonian</span>
 <span class="sd">        &quot;&quot;&quot;</span>
         
         <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">mpo</span><span class="p">,</span> <span class="n">Mpo</span><span class="p">):</span> 
-            <span class="k">def</span> <span class="nf">mpo_t</span><span class="p">(</span><span class="n">t</span><span class="p">,</span> <span class="o">*</span><span class="n">args</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">):</span>
+            <span class="k">def</span><span class="w"> </span><span class="nf">mpo_t</span><span class="p">(</span><span class="n">t</span><span class="p">,</span> <span class="o">*</span><span class="n">args</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">):</span>
                 <span class="k">return</span> <span class="n">mpo</span>
         <span class="k">elif</span> <span class="nb">callable</span><span class="p">(</span><span class="n">mpo</span><span class="p">):</span>
             <span class="c1"># mpo can be a function of time, the range is 0 -&gt; evolve_dt</span>
@@ -871,14 +871,14 @@
         
         <span class="k">return</span> <span class="n">new_mps</span>
     
-    <span class="k">def</span> <span class="nf">_evolve_prop_and_compress_tdrk</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">mpo</span><span class="p">,</span> <span class="n">evolve_dt</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="s2">&quot;Mps&quot;</span><span class="p">:</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">_evolve_prop_and_compress_tdrk</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">mpo</span><span class="p">,</span> <span class="n">evolve_dt</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="s2">&quot;Mps&quot;</span><span class="p">:</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">            The most general Runge-Kutta solver for both time-dependent and</span>
 <span class="sd">            time-independnet Hamiltonian and adaptive or unadaptive time-step</span>
 <span class="sd">            size evolution</span>
 <span class="sd">        &quot;&quot;&quot;</span>
         <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">mpo</span><span class="p">,</span> <span class="n">Mpo</span><span class="p">):</span> 
-            <span class="k">def</span> <span class="nf">mpo_t</span><span class="p">(</span><span class="n">t</span><span class="p">,</span> <span class="o">*</span><span class="n">args</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">):</span>
+            <span class="k">def</span><span class="w"> </span><span class="nf">mpo_t</span><span class="p">(</span><span class="n">t</span><span class="p">,</span> <span class="o">*</span><span class="n">args</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">):</span>
                 <span class="k">return</span> <span class="n">mpo</span>
         <span class="k">elif</span> <span class="nb">callable</span><span class="p">(</span><span class="n">mpo</span><span class="p">):</span>
             <span class="n">mpo_t</span> <span class="o">=</span> <span class="n">mpo</span>
@@ -888,7 +888,7 @@
         <span class="n">rk_config</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">evolve_config</span><span class="o">.</span><span class="n">rk_config</span>
         <span class="n">a</span><span class="p">,</span><span class="n">b</span><span class="p">,</span><span class="n">c</span> <span class="o">=</span> <span class="n">rk_config</span><span class="o">.</span><span class="n">tableau</span>
         
-        <span class="k">def</span> <span class="nf">sub_time_step_evolve</span><span class="p">(</span><span class="n">y</span><span class="p">,</span><span class="n">tau</span><span class="p">,</span><span class="n">t0</span><span class="p">):</span>
+        <span class="k">def</span><span class="w"> </span><span class="nf">sub_time_step_evolve</span><span class="p">(</span><span class="n">y</span><span class="p">,</span><span class="n">tau</span><span class="p">,</span><span class="n">t0</span><span class="p">):</span>
             <span class="c1"># error is relative error</span>
             <span class="n">k_list</span> <span class="o">=</span> <span class="p">[]</span>
             <span class="k">for</span> <span class="n">istage</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="n">rk_config</span><span class="o">.</span><span class="n">stage</span><span class="p">):</span>
@@ -964,7 +964,7 @@
 
         <span class="k">return</span> <span class="n">new_mps</span>
 
-    <span class="k">def</span> <span class="nf">_evolve_prop_and_compress</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">mpo</span><span class="p">,</span> <span class="n">evolve_dt</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="s2">&quot;Mps&quot;</span><span class="p">:</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">_evolve_prop_and_compress</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">mpo</span><span class="p">,</span> <span class="n">evolve_dt</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="s2">&quot;Mps&quot;</span><span class="p">:</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">        The global propagation &amp; compression evolution scheme</span>
 <span class="sd">        only for time-independent Hamiltonian</span>
@@ -1057,7 +1057,7 @@
                 <span class="p">)</span>
             <span class="k">return</span> <span class="n">compressed_sum</span><span class="p">(</span><span class="n">termlist</span><span class="p">)</span>
     
-    <span class="k">def</span> <span class="nf">_evolve_tdvp_mu_vmf</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">mpo</span><span class="p">,</span> <span class="n">evolve_dt</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="s2">&quot;Mps&quot;</span><span class="p">:</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">_evolve_tdvp_mu_vmf</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">mpo</span><span class="p">,</span> <span class="n">evolve_dt</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="s2">&quot;Mps&quot;</span><span class="p">:</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">        variable mean field</span>
 <span class="sd">        see the difference between VMF and CMF, refer to Z. Phys. D 42, 113–129 (1997)</span>
@@ -1070,7 +1070,7 @@
 <span class="sd">        &quot;&quot;&quot;</span>
         
         <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">mpo</span><span class="p">,</span> <span class="n">Mpo</span><span class="p">):</span> 
-            <span class="k">def</span> <span class="nf">mpo_t</span><span class="p">(</span><span class="n">t</span><span class="p">,</span> <span class="o">*</span><span class="n">args</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">):</span>
+            <span class="k">def</span><span class="w"> </span><span class="nf">mpo_t</span><span class="p">(</span><span class="n">t</span><span class="p">,</span> <span class="o">*</span><span class="n">args</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">):</span>
                 <span class="k">return</span> <span class="n">mpo</span>
         <span class="k">elif</span> <span class="nb">callable</span><span class="p">(</span><span class="n">mpo</span><span class="p">):</span>
             <span class="n">mpo_t</span> <span class="o">=</span> <span class="n">mpo</span>
@@ -1109,7 +1109,7 @@
 
         <span class="n">sw_min_list</span> <span class="o">=</span> <span class="p">[]</span>
         
-        <span class="k">def</span> <span class="nf">func_vmf</span><span class="p">(</span><span class="n">t</span><span class="p">,</span><span class="n">y</span><span class="p">):</span>
+        <span class="k">def</span><span class="w"> </span><span class="nf">func_vmf</span><span class="p">(</span><span class="n">t</span><span class="p">,</span><span class="n">y</span><span class="p">):</span>
             
             <span class="n">sw_min_list</span><span class="o">.</span><span class="n">clear</span><span class="p">()</span>
 
@@ -1267,7 +1267,7 @@
         <span class="k">return</span> <span class="n">mps</span><span class="o">.</span><span class="n">canonicalise</span><span class="p">()</span>
 
     <span class="nd">@adaptive_tdvp</span>
-    <span class="k">def</span> <span class="nf">_evolve_tdvp_mu_cmf</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">mpo</span><span class="p">,</span> <span class="n">evolve_dt</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="s2">&quot;Mps&quot;</span><span class="p">:</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">_evolve_tdvp_mu_cmf</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">mpo</span><span class="p">,</span> <span class="n">evolve_dt</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="s2">&quot;Mps&quot;</span><span class="p">:</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">        evolution scheme: TDVP + constant mean field + matrix-unfolding</span>
 <span class="sd">        regularization</span>
@@ -1356,7 +1356,7 @@
                         <span class="n">hop</span> <span class="o">=</span> <span class="n">hop_expr</span><span class="p">(</span><span class="n">ltensor</span><span class="p">,</span> <span class="n">rtensor</span><span class="p">,</span> <span class="p">[</span><span class="n">mpo</span><span class="p">[</span><span class="n">imps</span><span class="p">]],</span> <span class="n">shape</span><span class="p">)</span>
 
                         <span class="n">S_inv</span> <span class="o">=</span> <span class="n">xp</span><span class="o">.</span><span class="n">diag</span><span class="p">(</span><span class="n">xp</span><span class="o">.</span><span class="n">ones</span><span class="p">(</span><span class="mi">1</span><span class="p">,</span><span class="n">dtype</span><span class="o">=</span><span class="n">mps</span><span class="o">.</span><span class="n">dtype</span><span class="p">))</span>
-                        <span class="k">def</span> <span class="nf">func1</span><span class="p">(</span><span class="n">y</span><span class="p">):</span>
+                        <span class="k">def</span><span class="w"> </span><span class="nf">func1</span><span class="p">(</span><span class="n">y</span><span class="p">):</span>
                             <span class="n">func</span> <span class="o">=</span> <span class="n">integrand_func_factory</span><span class="p">(</span><span class="n">shape</span><span class="p">,</span> <span class="n">hop</span><span class="p">,</span> <span class="kc">True</span><span class="p">,</span> <span class="n">S_inv</span><span class="p">,</span> <span class="kc">True</span><span class="p">,</span>
                                     <span class="n">coef</span><span class="p">,</span> <span class="n">ovlp_inv1</span><span class="o">=</span><span class="n">S_L_inv_list</span><span class="p">[</span><span class="n">imps</span><span class="o">+</span><span class="mi">1</span><span class="p">],</span>
                                     <span class="n">ovlp_inv0</span><span class="o">=</span><span class="n">S_L_inv_list</span><span class="p">[</span><span class="n">imps</span><span class="p">],</span> <span class="n">ovlp0</span><span class="o">=</span><span class="n">S_L_list</span><span class="p">[</span><span class="n">imps</span><span class="p">])</span>
@@ -1438,7 +1438,7 @@
         <span class="k">return</span> <span class="n">mps</span>
 
     <span class="nd">@adaptive_tdvp</span>
-    <span class="k">def</span> <span class="nf">_evolve_tdvp_ps</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">mpo</span><span class="p">,</span> <span class="n">evolve_dt</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="s2">&quot;Mps&quot;</span><span class="p">:</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">_evolve_tdvp_ps</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">mpo</span><span class="p">,</span> <span class="n">evolve_dt</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="s2">&quot;Mps&quot;</span><span class="p">:</span>
         <span class="c1"># PhysRevB.94.165116</span>
         <span class="c1"># TDVP projector splitting</span>
         <span class="c1"># one-site</span>
@@ -1577,7 +1577,7 @@
         <span class="k">return</span> <span class="n">mps</span>
 
     <span class="nd">@adaptive_tdvp</span>
-    <span class="k">def</span> <span class="nf">_evolve_tdvp_ps2</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">mpo</span><span class="p">,</span> <span class="n">evolve_dt</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="s2">&quot;Mps&quot;</span><span class="p">:</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">_evolve_tdvp_ps2</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">mpo</span><span class="p">,</span> <span class="n">evolve_dt</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="s2">&quot;Mps&quot;</span><span class="p">:</span>
         <span class="c1"># PhysRevB.94.165116</span>
         <span class="c1"># TDVP projector splitting</span>
         <span class="c1"># two-site</span>
@@ -1689,14 +1689,14 @@
         <span class="c1">#logger.debug(f&quot;current mps: {mps}&quot;)</span>
         <span class="k">return</span> <span class="n">mps</span>
 
-<div class="viewcode-block" id="Mps.evolve_exact"><a class="viewcode-back" href="../../../mps.html#renormalizer.mps.Mps.evolve_exact">[docs]</a>    <span class="k">def</span> <span class="nf">evolve_exact</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">h_mpo</span><span class="p">,</span> <span class="n">evolve_dt</span><span class="p">,</span> <span class="n">space</span><span class="p">):</span>
+<div class="viewcode-block" id="Mps.evolve_exact"><a class="viewcode-back" href="../../../mps.html#renormalizer.mps.Mps.evolve_exact">[docs]</a>    <span class="k">def</span><span class="w"> </span><span class="nf">evolve_exact</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">h_mpo</span><span class="p">,</span> <span class="n">evolve_dt</span><span class="p">,</span> <span class="n">space</span><span class="p">):</span>
         <span class="n">MPOprop</span> <span class="o">=</span> <span class="n">Mpo</span><span class="o">.</span><span class="n">exact_propagator</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">model</span><span class="p">,</span> <span class="o">-</span><span class="mi">1</span><span class="n">j</span> <span class="o">*</span> <span class="n">evolve_dt</span><span class="p">,</span> <span class="n">space</span><span class="p">,</span> <span class="o">-</span><span class="n">h_mpo</span><span class="o">.</span><span class="n">offset</span><span class="p">)</span>
         <span class="n">new_mps</span> <span class="o">=</span> <span class="n">MPOprop</span><span class="o">.</span><span class="n">apply</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">canonicalise</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">coeff</span> <span class="o">*=</span> <span class="n">np</span><span class="o">.</span><span class="n">exp</span><span class="p">(</span><span class="o">-</span><span class="mi">1</span><span class="n">j</span> <span class="o">*</span> <span class="n">h_mpo</span><span class="o">.</span><span class="n">offset</span> <span class="o">*</span> <span class="n">evolve_dt</span><span class="p">)</span>
         <span class="k">return</span> <span class="n">new_mps</span></div>
 
     <span class="nd">@property</span>
-    <span class="k">def</span> <span class="nf">digest</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">digest</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
         <span class="c1"># used for debugging. Mostly for quickly comparing how two MPSs differ.</span>
         <span class="k">if</span> <span class="mi">10</span> <span class="o">&lt;</span> <span class="bp">self</span><span class="o">.</span><span class="n">site_num</span> <span class="ow">or</span> <span class="bp">self</span><span class="o">.</span><span class="n">is_mpdm</span><span class="p">:</span>
             <span class="k">return</span> <span class="kc">None</span>
@@ -1706,7 +1706,7 @@
             <span class="n">prod</span> <span class="o">=</span> <span class="n">prod</span><span class="o">.</span><span class="n">reshape</span><span class="p">((</span><span class="n">prod</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="mi">0</span><span class="p">],</span> <span class="o">-</span><span class="mi">1</span><span class="p">,</span> <span class="n">prod</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="o">-</span><span class="mi">1</span><span class="p">]))</span>
         <span class="k">return</span> <span class="p">{</span><span class="s2">&quot;var&quot;</span><span class="p">:</span> <span class="n">prod</span><span class="o">.</span><span class="n">var</span><span class="p">(),</span> <span class="s2">&quot;mean&quot;</span><span class="p">:</span> <span class="n">prod</span><span class="o">.</span><span class="n">mean</span><span class="p">(),</span> <span class="s2">&quot;ptp&quot;</span><span class="p">:</span> <span class="n">prod</span><span class="o">.</span><span class="n">ptp</span><span class="p">()}</span>
 
-<div class="viewcode-block" id="Mps.todense"><a class="viewcode-back" href="../../../mps.html#renormalizer.mps.Mps.todense">[docs]</a>    <span class="k">def</span> <span class="nf">todense</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">:</span>
+<div class="viewcode-block" id="Mps.todense"><a class="viewcode-back" href="../../../mps.html#renormalizer.mps.Mps.todense">[docs]</a>    <span class="k">def</span><span class="w"> </span><span class="nf">todense</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">:</span>
         <span class="n">dim</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">prod</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">pbond_list</span><span class="p">)</span>
         <span class="k">if</span> <span class="mi">20000</span> <span class="o">&lt;</span> <span class="n">dim</span><span class="p">:</span>
             <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s2">&quot;wavefunction too large&quot;</span><span class="p">)</span>
@@ -1717,7 +1717,7 @@
             <span class="n">res</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">tensordot</span><span class="p">(</span><span class="n">res</span><span class="p">,</span> <span class="n">mt</span><span class="o">.</span><span class="n">array</span><span class="p">,</span> <span class="n">axes</span><span class="o">=</span><span class="mi">1</span><span class="p">)</span><span class="o">.</span><span class="n">reshape</span><span class="p">(</span><span class="mi">1</span><span class="p">,</span> <span class="n">dim1</span><span class="p">,</span> <span class="n">dim2</span><span class="p">)</span>
         <span class="k">return</span> <span class="n">res</span><span class="p">[</span><span class="mi">0</span><span class="p">,</span> <span class="p">:,</span> <span class="mi">0</span><span class="p">]</span></div>
     
-<div class="viewcode-block" id="Mps.calc_1site_rdm"><a class="viewcode-back" href="../../../mps.html#renormalizer.mps.Mps.calc_1site_rdm">[docs]</a>    <span class="k">def</span> <span class="nf">calc_1site_rdm</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">idx</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
+<div class="viewcode-block" id="Mps.calc_1site_rdm"><a class="viewcode-back" href="../../../mps.html#renormalizer.mps.Mps.calc_1site_rdm">[docs]</a>    <span class="k">def</span><span class="w"> </span><span class="nf">calc_1site_rdm</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">idx</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
 <span class="w">        </span><span class="sa">r</span><span class="sd">&quot;&quot;&quot; Calculate 1-site reduced density matrix</span>
 <span class="sd">        </span>
 <span class="sd">            :math:`\rho_i = \textrm{Tr}_{j \neq i} | \Psi \rangle \langle \Psi|`</span>
@@ -1770,7 +1770,7 @@
 
         <span class="k">return</span> <span class="n">rdm</span></div>
     
-<div class="viewcode-block" id="Mps.calc_2site_rdm"><a class="viewcode-back" href="../../../mps.html#renormalizer.mps.Mps.calc_2site_rdm">[docs]</a>    <span class="k">def</span> <span class="nf">calc_2site_rdm</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+<div class="viewcode-block" id="Mps.calc_2site_rdm"><a class="viewcode-back" href="../../../mps.html#renormalizer.mps.Mps.calc_2site_rdm">[docs]</a>    <span class="k">def</span><span class="w"> </span><span class="nf">calc_2site_rdm</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
 <span class="w">        </span><span class="sa">r</span><span class="sd">&quot;&quot;&quot; Calculate 2-site reduced density matrix</span>
 <span class="sd">        </span>
 <span class="sd">        :math:`\rho_{ij} = \textrm{Tr}_{k \neq i, k \neq j} | \Psi \rangle \langle \Psi |`.</span>
@@ -1827,7 +1827,7 @@
                 <span class="n">rdm</span><span class="p">[(</span><span class="n">ims</span><span class="p">,</span> <span class="n">jms</span><span class="p">)]</span> <span class="o">=</span> <span class="n">asnumpy</span><span class="p">(</span><span class="n">res</span><span class="o">.</span><span class="n">reshape</span><span class="p">(</span><span class="n">res</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span><span class="o">*</span><span class="n">res</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="mi">1</span><span class="p">],</span><span class="o">-</span><span class="mi">1</span><span class="p">))</span>
         <span class="k">return</span> <span class="n">rdm</span></div>
     
-<div class="viewcode-block" id="Mps.calc_edof_rdm"><a class="viewcode-back" href="../../../mps.html#renormalizer.mps.Mps.calc_edof_rdm">[docs]</a>    <span class="k">def</span> <span class="nf">calc_edof_rdm</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">:</span>
+<div class="viewcode-block" id="Mps.calc_edof_rdm"><a class="viewcode-back" href="../../../mps.html#renormalizer.mps.Mps.calc_edof_rdm">[docs]</a>    <span class="k">def</span><span class="w"> </span><span class="nf">calc_edof_rdm</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">:</span>
 <span class="w">        </span><span class="sa">r</span><span class="sd">&quot;&quot;&quot;Calculate the reduced density matrix of electronic DoF</span>
 <span class="sd">        </span>
 <span class="sd">        :math:`\rho_{ij} = \langle \Psi | a_i^\dagger a_j | \Psi \rangle`</span>
@@ -1859,7 +1859,7 @@
 
         <span class="k">return</span> <span class="n">reduced_density_matrix</span></div>
     
-<div class="viewcode-block" id="Mps.calc_entropy"><a class="viewcode-back" href="../../../mps.html#renormalizer.mps.Mps.calc_entropy">[docs]</a>    <span class="k">def</span> <span class="nf">calc_entropy</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">entropy_type</span><span class="p">):</span>
+<div class="viewcode-block" id="Mps.calc_entropy"><a class="viewcode-back" href="../../../mps.html#renormalizer.mps.Mps.calc_entropy">[docs]</a>    <span class="k">def</span><span class="w"> </span><span class="nf">calc_entropy</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">entropy_type</span><span class="p">):</span>
 <span class="w">        </span><span class="sa">r</span><span class="sd">&quot;&quot;&quot; Calculate 1site, 2site, mutual and bond Von Neumann entropy</span>
 
 <span class="sd">            :math:`\textrm{entropy} = -\textrm{Tr}(\rho \ln \rho)`</span>
@@ -1904,7 +1904,7 @@
             <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;unsupported entropy type </span><span class="si">{</span><span class="n">entropy_type</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
         <span class="k">return</span> <span class="n">entropy</span></div>
     
-<div class="viewcode-block" id="Mps.calc_2site_mutual_entropy"><a class="viewcode-back" href="../../../mps.html#renormalizer.mps.Mps.calc_2site_mutual_entropy">[docs]</a>    <span class="k">def</span> <span class="nf">calc_2site_mutual_entropy</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">:</span>
+<div class="viewcode-block" id="Mps.calc_2site_mutual_entropy"><a class="viewcode-back" href="../../../mps.html#renormalizer.mps.Mps.calc_2site_mutual_entropy">[docs]</a>    <span class="k">def</span><span class="w"> </span><span class="nf">calc_2site_mutual_entropy</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">:</span>
 <span class="w">        </span><span class="sa">r</span><span class="sd">&quot;&quot;&quot; </span>
 <span class="sd">        Calculate mutual entropy between two sites. Also known as mutual information</span>
 <span class="sd">        </span>
@@ -1929,10 +1929,31 @@
         <span class="n">mut_entropy</span> <span class="o">+=</span> <span class="n">mut_entropy</span><span class="o">.</span><span class="n">T</span>
         <span class="k">return</span> <span class="n">mut_entropy</span></div>
 
-<div class="viewcode-block" id="Mps.calc_bond_entropy"><a class="viewcode-back" href="../../../mps.html#renormalizer.mps.Mps.calc_bond_entropy">[docs]</a>    <span class="k">def</span> <span class="nf">calc_bond_entropy</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">:</span>
+<div class="viewcode-block" id="Mps.calc_bond_singular_values"><a class="viewcode-back" href="../../../mps.html#renormalizer.mps.Mps.calc_bond_singular_values">[docs]</a>    <span class="k">def</span><span class="w"> </span><span class="nf">calc_bond_singular_values</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">:</span>
+<span class="w">        </span><span class="sa">r</span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Calculate the singular values at each bond.</span>
+
+<span class="sd">        Returns</span>
+<span class="sd">        -------</span>
+<span class="sd">        Singular values: 2D array</span>
+
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="c1"># Make sure that the bond entropy is from the left to the right and not</span>
+        <span class="c1"># destroy the original mps</span>
+        <span class="n">mps</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">copy</span><span class="p">()</span>
+        <span class="n">mps</span><span class="o">.</span><span class="n">ensure_right_canonical</span><span class="p">()</span>
+        <span class="n">_</span><span class="p">,</span> <span class="n">s_array</span> <span class="o">=</span> <span class="n">mps</span><span class="o">.</span><span class="n">compress</span><span class="p">(</span><span class="n">temp_m_trunc</span><span class="o">=</span><span class="n">np</span><span class="o">.</span><span class="n">inf</span><span class="p">,</span> <span class="n">ret_s</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+        <span class="k">return</span> <span class="n">s_array</span></div>
+
+<div class="viewcode-block" id="Mps.calc_bond_entropy"><a class="viewcode-back" href="../../../mps.html#renormalizer.mps.Mps.calc_bond_entropy">[docs]</a>    <span class="k">def</span><span class="w"> </span><span class="nf">calc_bond_entropy</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">s_array</span> <span class="p">:</span><span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="o">=</span><span class="kc">None</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">:</span>
 <span class="w">        </span><span class="sa">r</span><span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">        Calculate von Neumann entropy at each bond according to :math:`S = -\textrm{Tr}(\rho \ln \rho)`</span>
 <span class="sd">        where :math:`\rho` is the reduced density matrix of either block.</span>
+
+<span class="sd">        Parameters</span>
+<span class="sd">        ----------</span>
+<span class="sd">        s_array : np.ndarray, optional</span>
+<span class="sd">            The singular values array. Calculated by :meth:`Mps.calc_bond_singular_values`.</span>
 
 <span class="sd">        Returns</span>
 <span class="sd">        -------</span>
@@ -1940,22 +1961,18 @@
 <span class="sd">            a NumPy array containing the entropy values.</span>
 <span class="sd">        </span>
 <span class="sd">        &quot;&quot;&quot;</span>
-        
-        <span class="c1"># Make sure that the bond entropy is from the left to the right and not</span>
-        <span class="c1"># destroy the original mps</span>
-        <span class="n">mps</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">copy</span><span class="p">()</span>
-        <span class="n">mps</span><span class="o">.</span><span class="n">ensure_right_canonical</span><span class="p">()</span>
-        <span class="n">_</span><span class="p">,</span> <span class="n">s_list</span> <span class="o">=</span> <span class="n">mps</span><span class="o">.</span><span class="n">compress</span><span class="p">(</span><span class="n">temp_m_trunc</span><span class="o">=</span><span class="n">np</span><span class="o">.</span><span class="n">inf</span><span class="p">,</span> <span class="n">ret_s</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
-        <span class="k">return</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">([</span><span class="n">calc_vn_entropy</span><span class="p">(</span><span class="n">sigma</span> <span class="o">**</span> <span class="mi">2</span><span class="p">)</span> <span class="k">for</span> <span class="n">sigma</span> <span class="ow">in</span> <span class="n">s_list</span><span class="p">])</span></div>
+        <span class="k">if</span> <span class="n">s_array</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="n">s_array</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">calc_bond_singular_values</span><span class="p">()</span>
+        <span class="k">return</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">([</span><span class="n">calc_vn_entropy</span><span class="p">(</span><span class="n">sigma</span> <span class="o">**</span> <span class="mi">2</span><span class="p">)</span> <span class="k">for</span> <span class="n">sigma</span> <span class="ow">in</span> <span class="n">s_array</span><span class="p">])</span></div>
 
-<div class="viewcode-block" id="Mps.dump"><a class="viewcode-back" href="../../../mps.html#renormalizer.mps.Mps.dump">[docs]</a>    <span class="k">def</span> <span class="nf">dump</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">fname</span><span class="p">):</span>
+<div class="viewcode-block" id="Mps.dump"><a class="viewcode-back" href="../../../mps.html#renormalizer.mps.Mps.dump">[docs]</a>    <span class="k">def</span><span class="w"> </span><span class="nf">dump</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">fname</span><span class="p">):</span>
         <span class="nb">super</span><span class="p">()</span><span class="o">.</span><span class="n">dump</span><span class="p">(</span><span class="n">fname</span><span class="p">,</span> <span class="n">other_attrs</span><span class="o">=</span><span class="p">[</span><span class="s2">&quot;coeff&quot;</span><span class="p">])</span></div>
 
-    <span class="k">def</span> <span class="fm">__setitem__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">key</span><span class="p">,</span> <span class="n">value</span><span class="p">):</span>
+    <span class="k">def</span><span class="w"> </span><span class="fm">__setitem__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">key</span><span class="p">,</span> <span class="n">value</span><span class="p">):</span>
         <span class="k">return</span> <span class="nb">super</span><span class="p">()</span><span class="o">.</span><span class="fm">__setitem__</span><span class="p">(</span><span class="n">key</span><span class="p">,</span> <span class="n">value</span><span class="p">)</span>
 
     
-<div class="viewcode-block" id="Mps.add"><a class="viewcode-back" href="../../../mps.html#renormalizer.mps.Mps.add">[docs]</a>    <span class="k">def</span> <span class="nf">add</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">other</span><span class="p">):</span>
+<div class="viewcode-block" id="Mps.add"><a class="viewcode-back" href="../../../mps.html#renormalizer.mps.Mps.add">[docs]</a>    <span class="k">def</span><span class="w"> </span><span class="nf">add</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">other</span><span class="p">):</span>
         <span class="k">if</span> <span class="ow">not</span> <span class="n">np</span><span class="o">.</span><span class="n">allclose</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">coeff</span><span class="p">,</span> <span class="n">other</span><span class="o">.</span><span class="n">coeff</span><span class="p">):</span>
             <span class="bp">self</span><span class="o">.</span><span class="n">scale</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">coeff</span><span class="p">,</span> <span class="n">inplace</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
             <span class="n">other</span><span class="o">.</span><span class="n">scale</span><span class="p">(</span><span class="n">other</span><span class="o">.</span><span class="n">coeff</span><span class="p">,</span> <span class="n">inplace</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
@@ -1963,7 +1980,7 @@
             <span class="n">other</span><span class="o">.</span><span class="n">coeff</span> <span class="o">=</span> <span class="mi">1</span>
         <span class="k">return</span> <span class="nb">super</span><span class="p">()</span><span class="o">.</span><span class="n">add</span><span class="p">(</span><span class="n">other</span><span class="p">)</span></div>
     
-<div class="viewcode-block" id="Mps.distance"><a class="viewcode-back" href="../../../mps.html#renormalizer.mps.Mps.distance">[docs]</a>    <span class="k">def</span> <span class="nf">distance</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">other</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">float</span><span class="p">:</span>
+<div class="viewcode-block" id="Mps.distance"><a class="viewcode-back" href="../../../mps.html#renormalizer.mps.Mps.distance">[docs]</a>    <span class="k">def</span><span class="w"> </span><span class="nf">distance</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">other</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">float</span><span class="p">:</span>
         <span class="k">if</span> <span class="ow">not</span> <span class="n">np</span><span class="o">.</span><span class="n">allclose</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">coeff</span><span class="p">,</span> <span class="n">other</span><span class="o">.</span><span class="n">coeff</span><span class="p">):</span>
             <span class="bp">self</span><span class="o">.</span><span class="n">scale</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">coeff</span><span class="p">,</span> <span class="n">inplace</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
             <span class="n">other</span><span class="o">.</span><span class="n">scale</span><span class="p">(</span><span class="n">other</span><span class="o">.</span><span class="n">coeff</span><span class="p">,</span> <span class="n">inplace</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
@@ -1972,7 +1989,7 @@
         <span class="k">return</span> <span class="nb">super</span><span class="p">()</span><span class="o">.</span><span class="n">distance</span><span class="p">(</span><span class="n">other</span><span class="p">)</span></div></div>
 
 
-<span class="k">def</span> <span class="nf">projector</span><span class="p">(</span>
+<span class="k">def</span><span class="w"> </span><span class="nf">projector</span><span class="p">(</span>
     <span class="n">ms</span><span class="p">:</span> <span class="n">xp</span><span class="o">.</span><span class="n">ndarray</span><span class="p">,</span> <span class="n">left</span><span class="p">:</span> <span class="nb">bool</span><span class="p">,</span> <span class="n">Ovlp_inv1</span><span class="p">:</span> <span class="n">xp</span><span class="o">.</span><span class="n">ndarray</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span> <span class="n">Ovlp0</span><span class="p">:</span> <span class="n">xp</span><span class="o">.</span><span class="n">ndarray</span> <span class="o">=</span> <span class="kc">None</span>
 <span class="p">)</span> <span class="o">-&gt;</span> <span class="n">xp</span><span class="o">.</span><span class="n">ndarray</span><span class="p">:</span>
     <span class="k">if</span> <span class="n">left</span><span class="p">:</span>
@@ -2002,7 +2019,7 @@
     <span class="k">return</span> <span class="n">proj</span>
 
 
-<span class="k">def</span> <span class="nf">integrand_func_factory</span><span class="p">(</span>
+<span class="k">def</span><span class="w"> </span><span class="nf">integrand_func_factory</span><span class="p">(</span>
     <span class="n">shape</span><span class="p">,</span>
     <span class="n">hop</span><span class="p">,</span>
     <span class="n">islast</span><span class="p">,</span>
@@ -2017,7 +2034,7 @@
     <span class="c1"># left == True: projector operate on the left side of the HC</span>
     <span class="c1"># Ovlp0 is (#.conj, #), Ovlp_inv0 = (#, #.conj), Ovlp_inv1 = (#, #.conj)</span>
     <span class="c1"># S_inv is (#.conj, #)</span>
-    <span class="k">def</span> <span class="nf">func</span><span class="p">(</span><span class="n">t</span><span class="p">,</span> <span class="n">y</span><span class="p">):</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">func</span><span class="p">(</span><span class="n">t</span><span class="p">,</span> <span class="n">y</span><span class="p">):</span>
         <span class="n">y0</span> <span class="o">=</span> <span class="n">asxp</span><span class="p">(</span><span class="n">y</span><span class="o">.</span><span class="n">reshape</span><span class="p">(</span><span class="n">shape</span><span class="p">))</span>
         <span class="n">HC</span> <span class="o">=</span> <span class="n">hop</span><span class="p">(</span><span class="n">y0</span><span class="p">)</span>
         <span class="k">if</span> <span class="ow">not</span> <span class="n">islast</span><span class="p">:</span>
@@ -2045,7 +2062,7 @@
     <span class="k">return</span> <span class="n">func</span>
 
 
-<span class="k">def</span> <span class="nf">transferMat</span><span class="p">(</span><span class="n">mps</span><span class="p">,</span> <span class="n">mpsconj</span><span class="p">,</span> <span class="n">domain</span><span class="p">,</span> <span class="n">imps</span><span class="p">,</span> <span class="n">val</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">:</span>
+<span class="k">def</span><span class="w"> </span><span class="nf">transferMat</span><span class="p">(</span><span class="n">mps</span><span class="p">,</span> <span class="n">mpsconj</span><span class="p">,</span> <span class="n">domain</span><span class="p">,</span> <span class="n">imps</span><span class="p">,</span> <span class="n">val</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">:</span>
 <span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">    calculate the transfer matrix from the left hand or the right hand</span>
 <span class="sd">    &quot;&quot;&quot;</span>
@@ -2079,7 +2096,7 @@
     <span class="k">return</span> <span class="n">asnumpy</span><span class="p">(</span><span class="n">val</span><span class="p">)</span>
 
 
-<span class="k">def</span> <span class="nf">_mu_regularize</span><span class="p">(</span><span class="n">s</span><span class="p">,</span> <span class="n">epsilon</span><span class="o">=</span><span class="mf">1e-10</span><span class="p">):</span>
+<span class="k">def</span><span class="w"> </span><span class="nf">_mu_regularize</span><span class="p">(</span><span class="n">s</span><span class="p">,</span> <span class="n">epsilon</span><span class="o">=</span><span class="mf">1e-10</span><span class="p">):</span>
 <span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">    regularization of the singular value of the reduced density matrix</span>
 <span class="sd">    &quot;&quot;&quot;</span>
@@ -2087,7 +2104,7 @@
     <span class="k">return</span> <span class="n">s</span> <span class="o">+</span> <span class="n">epsilon</span> <span class="o">*</span> <span class="n">np</span><span class="o">.</span><span class="n">exp</span><span class="p">(</span><span class="o">-</span><span class="n">s</span> <span class="o">/</span> <span class="n">epsilon</span><span class="p">)</span>
 
 
-<span class="k">def</span> <span class="nf">expand_bond_dimension</span><span class="p">(</span><span class="n">mps</span><span class="p">,</span> <span class="n">hint_mpo</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">coef</span><span class="o">=</span><span class="mf">1e-10</span><span class="p">,</span> <span class="n">include_ex</span><span class="o">=</span><span class="kc">True</span><span class="p">):</span>
+<span class="k">def</span><span class="w"> </span><span class="nf">expand_bond_dimension</span><span class="p">(</span><span class="n">mps</span><span class="p">,</span> <span class="n">hint_mpo</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">coef</span><span class="o">=</span><span class="mf">1e-10</span><span class="p">,</span> <span class="n">include_ex</span><span class="o">=</span><span class="kc">True</span><span class="p">):</span>
 <span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">    expand bond dimension as required in compress_config</span>
 <span class="sd">    &quot;&quot;&quot;</span>
@@ -2116,7 +2133,7 @@
     <span class="k">return</span> <span class="n">expand_bond_dimension_general</span><span class="p">(</span><span class="n">mps</span><span class="p">,</span> <span class="n">hint_mpo</span><span class="p">,</span> <span class="n">coef</span><span class="p">,</span> <span class="n">ex_state</span><span class="p">)</span>
 
 
-<span class="k">def</span> <span class="nf">expand_bond_dimension_general</span><span class="p">(</span><span class="n">mps</span><span class="p">,</span> <span class="n">hint_mpo</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">coef</span><span class="o">=</span><span class="mf">1e-10</span><span class="p">,</span> <span class="n">ex_mps</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
+<span class="k">def</span><span class="w"> </span><span class="nf">expand_bond_dimension_general</span><span class="p">(</span><span class="n">mps</span><span class="p">,</span> <span class="n">hint_mpo</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">coef</span><span class="o">=</span><span class="mf">1e-10</span><span class="p">,</span> <span class="n">ex_mps</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
 <span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">    expand bond dimension as required in compress_config. works for both mps and ttns</span>
 <span class="sd">    &quot;&quot;&quot;</span>
@@ -2167,7 +2184,7 @@
         <span class="s2">&quot;mps_norm_to_coeff&quot;</span><span class="p">)</span>
 
 
-<span class="k">def</span> <span class="nf">normalize</span><span class="p">(</span><span class="n">tn</span><span class="p">,</span> <span class="n">kind</span><span class="p">):</span>
+<span class="k">def</span><span class="w"> </span><span class="nf">normalize</span><span class="p">(</span><span class="n">tn</span><span class="p">,</span> <span class="n">kind</span><span class="p">):</span>
 <span class="w">    </span><span class="sa">r</span><span class="sd">&#39;&#39;&#39; normalize the wavefunction</span>
 
 <span class="sd">    Parameters</span>
@@ -2203,14 +2220,14 @@
 
     <span class="k">return</span> <span class="n">tn</span>
 
-<span class="k">class</span> <span class="nc">BraKetPair</span><span class="p">:</span>
-    <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">bra_mps</span><span class="p">,</span> <span class="n">ket_mps</span><span class="p">,</span> <span class="n">mpo</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
+<span class="k">class</span><span class="w"> </span><span class="nc">BraKetPair</span><span class="p">:</span>
+    <span class="k">def</span><span class="w"> </span><span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">bra_mps</span><span class="p">,</span> <span class="n">ket_mps</span><span class="p">,</span> <span class="n">mpo</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">bra_mps</span> <span class="o">=</span> <span class="n">bra_mps</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">ket_mps</span> <span class="o">=</span> <span class="n">ket_mps</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">mpo</span> <span class="o">=</span> <span class="n">mpo</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">ft</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">calc_ft</span><span class="p">()</span>
 
-    <span class="k">def</span> <span class="nf">calc_ft</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">calc_ft</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
         <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">mpo</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
             <span class="n">dot</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">bra_mps</span><span class="o">.</span><span class="n">conj</span><span class="p">()</span><span class="o">.</span><span class="n">dot</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">ket_mps</span><span class="p">)</span>
         <span class="k">else</span><span class="p">:</span>
@@ -2220,7 +2237,7 @@
             <span class="o">*</span> <span class="bp">self</span><span class="o">.</span><span class="n">ket_mps</span><span class="o">.</span><span class="n">coeff</span>
         <span class="p">)</span>
 
-    <span class="k">def</span> <span class="fm">__str__</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+    <span class="k">def</span><span class="w"> </span><span class="fm">__str__</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
         <span class="k">if</span> <span class="n">np</span><span class="o">.</span><span class="n">iscomplexobj</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">ft</span><span class="p">):</span>
             <span class="c1"># if negative, sign is included in the imag part</span>
             <span class="n">sign</span> <span class="o">=</span> <span class="s2">&quot;+&quot;</span> <span class="k">if</span> <span class="mi">0</span> <span class="o">&lt;=</span> <span class="bp">self</span><span class="o">.</span><span class="n">ft</span><span class="o">.</span><span class="n">imag</span> <span class="k">else</span> <span class="s2">&quot;&quot;</span>
@@ -2229,11 +2246,11 @@
             <span class="n">ft_str</span> <span class="o">=</span> <span class="s2">&quot;</span><span class="si">%g</span><span class="s2">&quot;</span> <span class="o">%</span> <span class="bp">self</span><span class="o">.</span><span class="n">ft</span>
         <span class="k">return</span> <span class="s2">&quot;bra: </span><span class="si">%s</span><span class="s2">, ket: </span><span class="si">%s</span><span class="s2">, ft: </span><span class="si">%s</span><span class="s2">&quot;</span> <span class="o">%</span> <span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">bra_mps</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">ket_mps</span><span class="p">,</span> <span class="n">ft_str</span><span class="p">)</span>
 
-    <span class="k">def</span> <span class="fm">__iter__</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+    <span class="k">def</span><span class="w"> </span><span class="fm">__iter__</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
         <span class="k">return</span> <span class="nb">iter</span><span class="p">((</span><span class="bp">self</span><span class="o">.</span><span class="n">bra_mps</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">ket_mps</span><span class="p">))</span>
 
 
-<span class="k">def</span> <span class="nf">min_abs</span><span class="p">(</span><span class="n">t1</span><span class="p">,</span> <span class="n">t2</span><span class="p">):</span>
+<span class="k">def</span><span class="w"> </span><span class="nf">min_abs</span><span class="p">(</span><span class="n">t1</span><span class="p">,</span> <span class="n">t2</span><span class="p">):</span>
     <span class="c1"># t1, t2 could be int, float, complex</span>
     <span class="c1"># return the number with smaller norm</span>
 
@@ -2245,7 +2262,7 @@
         <span class="k">return</span> <span class="n">t2</span>
 
 
-<span class="k">def</span> <span class="nf">_construct_freq_environ</span><span class="p">(</span><span class="n">mpos_hash</span><span class="p">:</span> <span class="n">List</span><span class="p">[</span><span class="n">List</span><span class="p">[</span><span class="nb">int</span><span class="p">]],</span> <span class="n">hash_to_obj</span><span class="p">:</span> <span class="n">Dict</span><span class="p">[</span><span class="nb">int</span><span class="p">,</span> <span class="n">Matrix</span><span class="p">],</span> <span class="n">mps</span><span class="p">:</span> <span class="n">Mps</span><span class="p">,</span> <span class="n">domain</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span> <span class="n">mps_conj</span><span class="p">):</span>
+<span class="k">def</span><span class="w"> </span><span class="nf">_construct_freq_environ</span><span class="p">(</span><span class="n">mpos_hash</span><span class="p">:</span> <span class="n">List</span><span class="p">[</span><span class="n">List</span><span class="p">[</span><span class="nb">int</span><span class="p">]],</span> <span class="n">hash_to_obj</span><span class="p">:</span> <span class="n">Dict</span><span class="p">[</span><span class="nb">int</span><span class="p">,</span> <span class="n">Matrix</span><span class="p">],</span> <span class="n">mps</span><span class="p">:</span> <span class="n">Mps</span><span class="p">,</span> <span class="n">domain</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span> <span class="n">mps_conj</span><span class="p">):</span>
 <span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">    Construct environment tensors that are most frequently shown in the group of MPOs</span>
 <span class="sd">    &quot;&quot;&quot;</span>
@@ -2291,7 +2308,7 @@
     <span class="k">return</span> <span class="n">result</span>
 
 
-<span class="k">def</span> <span class="nf">_get_freq_environ</span><span class="p">(</span><span class="n">environ_dict</span><span class="p">,</span> <span class="n">mpo</span><span class="p">,</span> <span class="n">domain</span><span class="p">,</span> <span class="n">max_length</span><span class="p">):</span>
+<span class="k">def</span><span class="w"> </span><span class="nf">_get_freq_environ</span><span class="p">(</span><span class="n">environ_dict</span><span class="p">,</span> <span class="n">mpo</span><span class="p">,</span> <span class="n">domain</span><span class="p">,</span> <span class="n">max_length</span><span class="p">):</span>
     <span class="k">assert</span> <span class="n">domain</span> <span class="ow">in</span> <span class="p">[</span><span class="s2">&quot;L&quot;</span><span class="p">,</span> <span class="s2">&quot;R&quot;</span><span class="p">]</span>
 
     <span class="k">if</span> <span class="n">domain</span> <span class="o">==</span> <span class="s2">&quot;L&quot;</span><span class="p">:</span>

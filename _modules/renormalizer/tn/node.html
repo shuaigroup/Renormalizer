@@ -226,19 +226,19 @@
         </div>
         <article role="main">
           <h1>Source code for renormalizer.tn.node</h1><div class="highlight"><pre>
-<span></span><span class="kn">from</span> <span class="nn">typing</span> <span class="kn">import</span> <span class="n">List</span><span class="p">,</span> <span class="n">Dict</span><span class="p">,</span> <span class="n">Union</span><span class="p">,</span> <span class="n">Sequence</span>
+<span></span><span class="kn">from</span><span class="w"> </span><span class="nn">typing</span><span class="w"> </span><span class="kn">import</span> <span class="n">List</span><span class="p">,</span> <span class="n">Dict</span><span class="p">,</span> <span class="n">Union</span><span class="p">,</span> <span class="n">Sequence</span>
 
-<span class="kn">from</span> <span class="nn">renormalizer.mps.backend</span> <span class="kn">import</span> <span class="n">np</span><span class="p">,</span> <span class="n">backend</span>
-<span class="kn">from</span> <span class="nn">renormalizer.mps.matrix</span> <span class="kn">import</span> <span class="n">asnumpy</span>
-<span class="kn">from</span> <span class="nn">renormalizer.model.basis</span> <span class="kn">import</span> <span class="n">BasisSet</span><span class="p">,</span> <span class="n">BasisDummy</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">renormalizer.mps.backend</span><span class="w"> </span><span class="kn">import</span> <span class="n">np</span><span class="p">,</span> <span class="n">backend</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">renormalizer.mps.matrix</span><span class="w"> </span><span class="kn">import</span> <span class="n">asnumpy</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">renormalizer.model.basis</span><span class="w"> </span><span class="kn">import</span> <span class="n">BasisSet</span><span class="p">,</span> <span class="n">BasisDummy</span>
 
 
-<span class="k">class</span> <span class="nc">TreeNode</span><span class="p">:</span>
-    <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+<span class="k">class</span><span class="w"> </span><span class="nc">TreeNode</span><span class="p">:</span>
+    <span class="k">def</span><span class="w"> </span><span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">children</span><span class="p">:</span> <span class="n">List</span><span class="p">[</span><span class="vm">__class__</span><span class="p">]</span> <span class="o">=</span> <span class="p">[]</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">parent</span><span class="p">:</span> <span class="vm">__class__</span> <span class="o">=</span> <span class="kc">None</span>
 
-    <span class="k">def</span> <span class="nf">add_child</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">node</span><span class="p">:</span> <span class="n">Union</span><span class="p">[</span><span class="s2">&quot;TreeNode&quot;</span><span class="p">,</span> <span class="n">Sequence</span><span class="p">[</span><span class="s2">&quot;TreeNode&quot;</span><span class="p">]])</span> <span class="o">-&gt;</span> <span class="s2">&quot;TreeNode&quot;</span><span class="p">:</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">add_child</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">node</span><span class="p">:</span> <span class="n">Union</span><span class="p">[</span><span class="s2">&quot;TreeNode&quot;</span><span class="p">,</span> <span class="n">Sequence</span><span class="p">[</span><span class="s2">&quot;TreeNode&quot;</span><span class="p">]])</span> <span class="o">-&gt;</span> <span class="s2">&quot;TreeNode&quot;</span><span class="p">:</span>
         <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">node</span><span class="p">,</span> <span class="n">TreeNode</span><span class="p">):</span>
             <span class="n">nodes</span> <span class="o">=</span> <span class="p">[</span><span class="n">node</span><span class="p">]</span>
         <span class="k">else</span><span class="p">:</span>
@@ -256,7 +256,7 @@
     <span class="n">add_children</span> <span class="o">=</span> <span class="n">add_child</span>
 
     <span class="nd">@property</span>
-    <span class="k">def</span> <span class="nf">ancestors</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">List</span><span class="p">:</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">ancestors</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">List</span><span class="p">:</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">        Returns the list of ancestors of this node, including itself</span>
 <span class="sd">        &quot;&quot;&quot;</span>
@@ -268,7 +268,7 @@
         <span class="k">return</span> <span class="n">ancestors</span>
 
     <span class="nd">@property</span>
-    <span class="k">def</span> <span class="nf">idx_as_child</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">int</span><span class="p">:</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">idx_as_child</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">int</span><span class="p">:</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">        Returns the index of this node as a child of its parent</span>
 <span class="sd">        &quot;&quot;&quot;</span>
@@ -276,7 +276,7 @@
         <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">parent</span><span class="o">.</span><span class="n">children</span><span class="o">.</span><span class="n">index</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span>
 
     <span class="nd">@property</span>
-    <span class="k">def</span> <span class="nf">is_leaf</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">bool</span><span class="p">:</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">is_leaf</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">bool</span><span class="p">:</span>
         <span class="k">return</span> <span class="nb">len</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">children</span><span class="p">)</span> <span class="o">==</span> <span class="mi">0</span>
 
 
@@ -284,9 +284,9 @@
 <span class="n">DUMMY_IDX</span> <span class="o">=</span> <span class="mi">0</span>
 
 
-<div class="viewcode-block" id="TreeNodeBasis"><a class="viewcode-back" href="../../../ttn.html#renormalizer.tn.TreeNodeBasis">[docs]</a><span class="k">class</span> <span class="nc">TreeNodeBasis</span><span class="p">(</span><span class="n">TreeNode</span><span class="p">):</span>
+<div class="viewcode-block" id="TreeNodeBasis"><a class="viewcode-back" href="../../../ttn.html#renormalizer.tn.TreeNodeBasis">[docs]</a><span class="k">class</span><span class="w"> </span><span class="nc">TreeNodeBasis</span><span class="p">(</span><span class="n">TreeNode</span><span class="p">):</span>
     <span class="c1"># tree node whose data is basis sets</span>
-    <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">basis_sets</span><span class="p">:</span> <span class="n">Union</span><span class="p">[</span><span class="n">BasisSet</span><span class="p">,</span> <span class="n">List</span><span class="p">[</span><span class="n">BasisSet</span><span class="p">]]</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
+    <span class="k">def</span><span class="w"> </span><span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">basis_sets</span><span class="p">:</span> <span class="n">Union</span><span class="p">[</span><span class="n">BasisSet</span><span class="p">,</span> <span class="n">List</span><span class="p">[</span><span class="n">BasisSet</span><span class="p">]]</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">        Tree node whose data is basis sets.</span>
 
@@ -334,7 +334,7 @@
         <span class="bp">self</span><span class="o">.</span><span class="n">dofs</span> <span class="o">=</span> <span class="p">[</span><span class="n">b</span><span class="o">.</span><span class="n">dofs</span> <span class="k">for</span> <span class="n">b</span> <span class="ow">in</span> <span class="n">basis_sets</span><span class="p">]</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">pbond_dims</span> <span class="o">=</span> <span class="p">[</span><span class="nb">len</span><span class="p">(</span><span class="n">b</span><span class="o">.</span><span class="n">sigmaqn</span><span class="p">)</span> <span class="k">for</span> <span class="n">b</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">basis_sets</span><span class="p">]</span>
 
-<div class="viewcode-block" id="TreeNodeBasis.copy"><a class="viewcode-back" href="../../../ttn.html#renormalizer.tn.TreeNodeBasis.copy">[docs]</a>    <span class="k">def</span> <span class="nf">copy</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+<div class="viewcode-block" id="TreeNodeBasis.copy"><a class="viewcode-back" href="../../../ttn.html#renormalizer.tn.TreeNodeBasis.copy">[docs]</a>    <span class="k">def</span><span class="w"> </span><span class="nf">copy</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
         <span class="n">new</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="vm">__class__</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">basis_sets</span><span class="p">)</span>
         <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">parent</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
             <span class="n">new</span><span class="o">.</span><span class="n">parent</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">parent</span><span class="o">.</span><span class="n">copy</span><span class="p">()</span>
@@ -342,23 +342,23 @@
         <span class="k">return</span> <span class="n">new</span></div>
 
     <span class="nd">@property</span>
-    <span class="k">def</span> <span class="nf">basis_set</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">basis_set</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
         <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">basis_sets</span><span class="p">)</span> <span class="o">!=</span> <span class="mi">1</span><span class="p">:</span>
             <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s2">&quot;This node has multiple basis sets. Use self.basis_sets[0] instead.&quot;</span><span class="p">)</span>
         <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">basis_sets</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span>
 
-    <span class="k">def</span> <span class="fm">__str__</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+    <span class="k">def</span><span class="w"> </span><span class="fm">__str__</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
         <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">basis_sets</span><span class="p">)</span> <span class="o">==</span> <span class="mi">1</span><span class="p">:</span>
             <span class="n">content</span> <span class="o">=</span> <span class="nb">str</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">basis_set</span><span class="p">)</span>
         <span class="k">else</span><span class="p">:</span>
             <span class="n">content</span> <span class="o">=</span> <span class="s2">&quot;, &quot;</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="nb">str</span><span class="p">(</span><span class="n">b</span><span class="p">)</span> <span class="k">for</span> <span class="n">b</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">basis_sets</span><span class="p">)</span>
         <span class="k">return</span> <span class="sa">f</span><span class="s2">&quot;</span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="vm">__class__</span><span class="o">.</span><span class="vm">__name__</span><span class="si">}</span><span class="s2">(</span><span class="si">{</span><span class="n">content</span><span class="si">}</span><span class="s2">)&quot;</span>
 
-    <span class="k">def</span> <span class="fm">__repr__</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+    <span class="k">def</span><span class="w"> </span><span class="fm">__repr__</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
         <span class="k">return</span> <span class="nb">str</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span></div>
 
-<span class="k">class</span> <span class="nc">TreeNodeTensor</span><span class="p">(</span><span class="n">TreeNode</span><span class="p">):</span>
-    <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">tensor</span><span class="p">,</span> <span class="n">qn</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
+<span class="k">class</span><span class="w"> </span><span class="nc">TreeNodeTensor</span><span class="p">(</span><span class="n">TreeNode</span><span class="p">):</span>
+    <span class="k">def</span><span class="w"> </span><span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">tensor</span><span class="p">,</span> <span class="n">qn</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">        Tree node whose data is numerical tensors for each TTN node/site.</span>
 <span class="sd">        The indices of the tensor are ordered as follows:</span>
@@ -373,7 +373,7 @@
         <span class="bp">self</span><span class="o">.</span><span class="n">tensor</span><span class="p">:</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span> <span class="o">=</span> <span class="n">tensor</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">qn</span><span class="p">:</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span> <span class="o">=</span> <span class="n">qn</span>
 
-    <span class="k">def</span> <span class="nf">check_canonical</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">atol</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">assertion</span><span class="o">=</span><span class="kc">True</span><span class="p">):</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">check_canonical</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">atol</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">assertion</span><span class="o">=</span><span class="kc">True</span><span class="p">):</span>
         <span class="k">if</span> <span class="n">atol</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
             <span class="n">atol</span> <span class="o">=</span> <span class="n">backend</span><span class="o">.</span><span class="n">canonical_atol</span>
         <span class="n">tensor</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">tensor</span><span class="o">.</span><span class="n">reshape</span><span class="p">(</span><span class="o">-</span><span class="mi">1</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">tensor</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="o">-</span><span class="mi">1</span><span class="p">])</span>
@@ -384,15 +384,15 @@
         <span class="k">return</span> <span class="n">res</span>
 
     <span class="nd">@property</span>
-    <span class="k">def</span> <span class="nf">shape</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">shape</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
         <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">tensor</span><span class="o">.</span><span class="n">shape</span>
 
     <span class="nd">@property</span>
-    <span class="k">def</span> <span class="nf">tensor</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">tensor</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
         <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_tensor</span>
 
     <span class="nd">@tensor</span><span class="o">.</span><span class="n">setter</span>
-    <span class="k">def</span> <span class="nf">tensor</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">tensor</span><span class="p">):</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">tensor</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">tensor</span><span class="p">):</span>
         <span class="k">if</span> <span class="n">np</span><span class="o">.</span><span class="n">iscomplexobj</span><span class="p">(</span><span class="n">tensor</span><span class="p">):</span>
             <span class="n">dtype</span> <span class="o">=</span> <span class="n">backend</span><span class="o">.</span><span class="n">complex_dtype</span>
         <span class="k">else</span><span class="p">:</span>
@@ -403,24 +403,24 @@
     <span class="n">array</span> <span class="o">=</span> <span class="n">tensor</span>
 
     <span class="nd">@property</span>
-    <span class="k">def</span> <span class="nf">qn</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">qn</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
         <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_qn</span>
 
     <span class="nd">@qn</span><span class="o">.</span><span class="n">setter</span>
-    <span class="k">def</span> <span class="nf">qn</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">qn</span><span class="p">):</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">qn</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">qn</span><span class="p">):</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">_qn</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">(</span><span class="n">qn</span><span class="p">)</span>
 
-    <span class="k">def</span> <span class="fm">__str__</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+    <span class="k">def</span><span class="w"> </span><span class="fm">__str__</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
         <span class="n">content</span> <span class="o">=</span> <span class="nb">str</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">shape</span><span class="p">)</span> <span class="o">+</span> <span class="s2">&quot;,&quot;</span> <span class="o">+</span> <span class="nb">str</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">tensor</span><span class="o">.</span><span class="n">dtype</span><span class="p">)</span>
         <span class="k">return</span> <span class="sa">f</span><span class="s2">&quot;</span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="vm">__class__</span><span class="o">.</span><span class="vm">__name__</span><span class="si">}</span><span class="s2">(</span><span class="si">{</span><span class="n">content</span><span class="si">}</span><span class="s2">)&quot;</span>
 
-    <span class="k">def</span> <span class="fm">__repr__</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+    <span class="k">def</span><span class="w"> </span><span class="fm">__repr__</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
         <span class="k">return</span> <span class="nb">str</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span>
 
 
-<span class="k">class</span> <span class="nc">TreeNodeEnviron</span><span class="p">(</span><span class="n">TreeNode</span><span class="p">):</span>
+<span class="k">class</span><span class="w"> </span><span class="nc">TreeNodeEnviron</span><span class="p">(</span><span class="n">TreeNode</span><span class="p">):</span>
     <span class="c1"># tree node whose data is environmental tensors</span>
-    <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+    <span class="k">def</span><span class="w"> </span><span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
         <span class="nb">super</span><span class="p">()</span><span class="o">.</span><span class="fm">__init__</span><span class="p">()</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">parent</span><span class="p">:</span> <span class="n">TreeNodeEnviron</span> <span class="o">=</span> <span class="kc">None</span>
         <span class="c1"># environ from parent</span>
@@ -432,7 +432,7 @@
 <span class="n">NodeUnion</span> <span class="o">=</span> <span class="n">Union</span><span class="p">[</span><span class="n">TreeNodeTensor</span><span class="p">,</span> <span class="n">TreeNodeBasis</span><span class="p">,</span> <span class="n">TreeNodeEnviron</span><span class="p">]</span>
 
 
-<span class="k">def</span> <span class="nf">copy_connection</span><span class="p">(</span><span class="n">source_node_list</span><span class="p">:</span> <span class="n">List</span><span class="p">[</span><span class="n">NodeUnion</span><span class="p">],</span> <span class="n">target_node_list</span><span class="p">:</span> <span class="n">List</span><span class="p">[</span><span class="n">NodeUnion</span><span class="p">])</span> <span class="o">-&gt;</span> <span class="n">NodeUnion</span><span class="p">:</span>
+<span class="k">def</span><span class="w"> </span><span class="nf">copy_connection</span><span class="p">(</span><span class="n">source_node_list</span><span class="p">:</span> <span class="n">List</span><span class="p">[</span><span class="n">NodeUnion</span><span class="p">],</span> <span class="n">target_node_list</span><span class="p">:</span> <span class="n">List</span><span class="p">[</span><span class="n">NodeUnion</span><span class="p">])</span> <span class="o">-&gt;</span> <span class="n">NodeUnion</span><span class="p">:</span>
 <span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">    Create a new tree with the same connection structure as the source tree in the target tree.</span>
 

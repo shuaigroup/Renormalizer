@@ -229,27 +229,27 @@
 <span></span><span class="c1"># -*- coding: utf-8 -*-</span>
 <span class="c1"># Author: Tong Jiang &lt;tongjiang1000@gmail.com&gt;</span>
 <span class="c1"># zero temperature absorption/emission spectrum based on DDMRG</span>
-<span class="kn">from</span> <span class="nn">renormalizer.cv.spectra_cv</span> <span class="kn">import</span> <span class="n">SpectraCv</span>
-<span class="kn">from</span> <span class="nn">renormalizer.mps.backend</span> <span class="kn">import</span> <span class="n">np</span><span class="p">,</span> <span class="n">xp</span><span class="p">,</span> <span class="n">USE_GPU</span>
-<span class="kn">from</span> <span class="nn">renormalizer.mps.lib</span> <span class="kn">import</span> <span class="n">cvec2cmat</span>
-<span class="kn">from</span> <span class="nn">renormalizer.mps</span> <span class="kn">import</span> <span class="n">Mpo</span><span class="p">,</span> <span class="n">Mps</span><span class="p">,</span> <span class="n">gs</span>
-<span class="kn">from</span> <span class="nn">renormalizer.mps.svd_qn</span> <span class="kn">import</span> <span class="n">get_qn_mask</span>
-<span class="kn">from</span> <span class="nn">renormalizer.mps.matrix</span> <span class="kn">import</span> <span class="p">(</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">renormalizer.cv.spectra_cv</span><span class="w"> </span><span class="kn">import</span> <span class="n">SpectraCv</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">renormalizer.mps.backend</span><span class="w"> </span><span class="kn">import</span> <span class="n">np</span><span class="p">,</span> <span class="n">xp</span><span class="p">,</span> <span class="n">USE_GPU</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">renormalizer.mps.lib</span><span class="w"> </span><span class="kn">import</span> <span class="n">cvec2cmat</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">renormalizer.mps</span><span class="w"> </span><span class="kn">import</span> <span class="n">Mpo</span><span class="p">,</span> <span class="n">Mps</span><span class="p">,</span> <span class="n">gs</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">renormalizer.mps.svd_qn</span><span class="w"> </span><span class="kn">import</span> <span class="n">get_qn_mask</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">renormalizer.mps.matrix</span><span class="w"> </span><span class="kn">import</span> <span class="p">(</span>
     <span class="n">asnumpy</span><span class="p">,</span>
     <span class="n">asxp</span><span class="p">,</span>
     <span class="n">tensordot</span><span class="p">,</span>
     <span class="n">multi_tensor_contract</span><span class="p">,</span>
 <span class="p">)</span>
-<span class="kn">from</span> <span class="nn">renormalizer.utils</span> <span class="kn">import</span> <span class="n">OptimizeConfig</span>
-<span class="kn">import</span> <span class="nn">logging</span>
-<span class="kn">import</span> <span class="nn">scipy</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">renormalizer.utils</span><span class="w"> </span><span class="kn">import</span> <span class="n">OptimizeConfig</span>
+<span class="kn">import</span><span class="w"> </span><span class="nn">logging</span>
+<span class="kn">import</span><span class="w"> </span><span class="nn">scipy</span>
 
-<span class="kn">import</span> <span class="nn">opt_einsum</span> <span class="k">as</span> <span class="nn">oe</span>
+<span class="kn">import</span><span class="w"> </span><span class="nn">opt_einsum</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="nn">oe</span>
 
 <span class="n">logger</span> <span class="o">=</span> <span class="n">logging</span><span class="o">.</span><span class="n">getLogger</span><span class="p">(</span><span class="vm">__name__</span><span class="p">)</span>
 
 
-<div class="viewcode-block" id="SpectraZtCV"><a class="viewcode-back" href="../../../cv.html#renormalizer.cv.zerot.SpectraZtCV">[docs]</a><span class="k">class</span> <span class="nc">SpectraZtCV</span><span class="p">(</span><span class="n">SpectraCv</span><span class="p">):</span>
+<div class="viewcode-block" id="SpectraZtCV"><a class="viewcode-back" href="../../../cv.html#renormalizer.cv.zerot.SpectraZtCV">[docs]</a><span class="k">class</span><span class="w"> </span><span class="nc">SpectraZtCV</span><span class="p">(</span><span class="n">SpectraCv</span><span class="p">):</span>
 <span class="w">    </span><span class="sa">r</span><span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">    Use DDMRG to calculate the zero temperature spectrum from frequency domain</span>
 
@@ -279,7 +279,7 @@
 <span class="sd">        see test/test_abs.py for example</span>
 
 <span class="sd">    &quot;&quot;&quot;</span>
-    <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span>
+    <span class="k">def</span><span class="w"> </span><span class="fm">__init__</span><span class="p">(</span>
         <span class="bp">self</span><span class="p">,</span>
         <span class="n">model</span><span class="p">,</span>
         <span class="n">spectratype</span><span class="p">,</span>
@@ -304,7 +304,7 @@
 
         <span class="bp">self</span><span class="o">.</span><span class="n">a_oper</span> <span class="o">=</span> <span class="kc">None</span>
 
-<div class="viewcode-block" id="SpectraZtCV.init_b_mps"><a class="viewcode-back" href="../../../cv.html#renormalizer.cv.zerot.SpectraZtCV.init_b_mps">[docs]</a>    <span class="k">def</span> <span class="nf">init_b_mps</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+<div class="viewcode-block" id="SpectraZtCV.init_b_mps"><a class="viewcode-back" href="../../../cv.html#renormalizer.cv.zerot.SpectraZtCV.init_b_mps">[docs]</a>    <span class="k">def</span><span class="w"> </span><span class="nf">init_b_mps</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
         <span class="c1"># get the right hand site vector b, Ax=b</span>
         <span class="c1"># b = -eta * dipole * \psi_0</span>
 
@@ -338,7 +338,7 @@
 
         <span class="k">return</span> <span class="n">b_mps</span><span class="p">,</span> <span class="n">e0</span></div>
 
-<div class="viewcode-block" id="SpectraZtCV.init_cv_mps"><a class="viewcode-back" href="../../../cv.html#renormalizer.cv.zerot.SpectraZtCV.init_cv_mps">[docs]</a>    <span class="k">def</span> <span class="nf">init_cv_mps</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+<div class="viewcode-block" id="SpectraZtCV.init_cv_mps"><a class="viewcode-back" href="../../../cv.html#renormalizer.cv.zerot.SpectraZtCV.init_cv_mps">[docs]</a>    <span class="k">def</span><span class="w"> </span><span class="nf">init_cv_mps</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
         <span class="c1"># random guess of cv_mps with same qn as b_mps</span>
         <span class="k">assert</span> <span class="bp">self</span><span class="o">.</span><span class="n">b_mps</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span>
         <span class="c1"># initialize guess of cv_mps</span>
@@ -348,12 +348,12 @@
 
         <span class="k">return</span> <span class="n">cv_mps</span></div>
 
-<div class="viewcode-block" id="SpectraZtCV.oper_prepare"><a class="viewcode-back" href="../../../cv.html#renormalizer.cv.zerot.SpectraZtCV.oper_prepare">[docs]</a>    <span class="k">def</span> <span class="nf">oper_prepare</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">omega</span><span class="p">):</span>
+<div class="viewcode-block" id="SpectraZtCV.oper_prepare"><a class="viewcode-back" href="../../../cv.html#renormalizer.cv.zerot.SpectraZtCV.oper_prepare">[docs]</a>    <span class="k">def</span><span class="w"> </span><span class="nf">oper_prepare</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">omega</span><span class="p">):</span>
         <span class="c1"># set up a_oper = (H_0 - e0 - omega)</span>
         <span class="n">identity</span> <span class="o">=</span> <span class="n">Mpo</span><span class="o">.</span><span class="n">identity</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">model</span><span class="p">)</span><span class="o">.</span><span class="n">scale</span><span class="p">(</span><span class="o">-</span><span class="bp">self</span><span class="o">.</span><span class="n">e0</span> <span class="o">-</span> <span class="n">omega</span><span class="p">)</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">a_oper</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">h_mpo</span><span class="o">.</span><span class="n">add</span><span class="p">(</span><span class="n">identity</span><span class="p">)</span></div>
     
-<div class="viewcode-block" id="SpectraZtCV.optimize_cv"><a class="viewcode-back" href="../../../cv.html#renormalizer.cv.zerot.SpectraZtCV.optimize_cv">[docs]</a>    <span class="k">def</span> <span class="nf">optimize_cv</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">lr_group</span><span class="p">,</span> <span class="n">isite</span><span class="p">,</span> <span class="n">percent</span><span class="o">=</span><span class="mf">0.0</span><span class="p">):</span>
+<div class="viewcode-block" id="SpectraZtCV.optimize_cv"><a class="viewcode-back" href="../../../cv.html#renormalizer.cv.zerot.SpectraZtCV.optimize_cv">[docs]</a>    <span class="k">def</span><span class="w"> </span><span class="nf">optimize_cv</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">lr_group</span><span class="p">,</span> <span class="n">isite</span><span class="p">,</span> <span class="n">percent</span><span class="o">=</span><span class="mf">0.0</span><span class="p">):</span>
         <span class="c1"># depending on the spectratype, to restrict the exction</span>
         <span class="n">first_LR</span> <span class="o">=</span> <span class="n">lr_group</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span>
         <span class="n">second_LR</span> <span class="o">=</span> <span class="n">lr_group</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span>
@@ -467,7 +467,7 @@
                 <span class="n">a_oper_isite1</span><span class="p">,</span> <span class="n">first_R</span><span class="p">,</span> <span class="n">xshape</span><span class="p">,</span>
                 <span class="n">constants</span><span class="o">=</span><span class="p">[</span><span class="mi">0</span><span class="p">,</span> <span class="mi">1</span><span class="p">,</span> <span class="mi">2</span><span class="p">,</span> <span class="mi">3</span><span class="p">,</span> <span class="mi">4</span><span class="p">,</span> <span class="mi">5</span><span class="p">])</span>
 
-        <span class="k">def</span> <span class="nf">hop</span><span class="p">(</span><span class="n">c</span><span class="p">):</span>
+        <span class="k">def</span><span class="w"> </span><span class="nf">hop</span><span class="p">(</span><span class="n">c</span><span class="p">):</span>
             <span class="k">nonlocal</span> <span class="n">count</span>
             <span class="n">count</span> <span class="o">+=</span> <span class="mi">1</span>
             <span class="n">xstruct</span> <span class="o">=</span> <span class="n">asxp</span><span class="p">(</span><span class="n">cvec2cmat</span><span class="p">(</span><span class="n">c</span><span class="p">,</span> <span class="n">qn_mask</span><span class="p">))</span>
@@ -531,7 +531,7 @@
     <span class="c1"># It is suggested the initial_LR and update_LR can make use of Environ</span>
     <span class="c1"># just as in mps.lib</span>
     <span class="c1"># I may go back to have a try once I add the finite temeprature code</span>
-<div class="viewcode-block" id="SpectraZtCV.initialize_LR"><a class="viewcode-back" href="../../../cv.html#renormalizer.cv.zerot.SpectraZtCV.initialize_LR">[docs]</a>    <span class="k">def</span> <span class="nf">initialize_LR</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+<div class="viewcode-block" id="SpectraZtCV.initialize_LR"><a class="viewcode-back" href="../../../cv.html#renormalizer.cv.zerot.SpectraZtCV.initialize_LR">[docs]</a>    <span class="k">def</span><span class="w"> </span><span class="nf">initialize_LR</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
         <span class="c1"># initialize the Lpart and Rpart</span>
         <span class="n">first_LR</span> <span class="o">=</span> <span class="p">[]</span>
         <span class="n">first_LR</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">ones</span><span class="p">((</span><span class="mi">1</span><span class="p">,</span> <span class="mi">1</span><span class="p">,</span> <span class="mi">1</span><span class="p">,</span> <span class="mi">1</span><span class="p">)))</span>
@@ -575,7 +575,7 @@
                     <span class="n">mps_isite</span><span class="p">))</span>
         <span class="k">return</span> <span class="p">[</span><span class="n">first_LR</span><span class="p">,</span> <span class="n">second_LR</span><span class="p">]</span></div>
 
-<div class="viewcode-block" id="SpectraZtCV.update_LR"><a class="viewcode-back" href="../../../cv.html#renormalizer.cv.zerot.SpectraZtCV.update_LR">[docs]</a>    <span class="k">def</span> <span class="nf">update_LR</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">lr_group</span><span class="p">,</span> <span class="n">isite</span><span class="p">):</span>
+<div class="viewcode-block" id="SpectraZtCV.update_LR"><a class="viewcode-back" href="../../../cv.html#renormalizer.cv.zerot.SpectraZtCV.update_LR">[docs]</a>    <span class="k">def</span><span class="w"> </span><span class="nf">update_LR</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">lr_group</span><span class="p">,</span> <span class="n">isite</span><span class="p">):</span>
         <span class="n">first_LR</span> <span class="o">=</span> <span class="n">lr_group</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span>
         <span class="n">second_LR</span> <span class="o">=</span> <span class="n">lr_group</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span>
         <span class="c1"># use the updated local site of cv_mps to update LR</span>

@@ -226,26 +226,26 @@
         </div>
         <article role="main">
           <h1>Source code for renormalizer.mps.mpo</h1><div class="highlight"><pre>
-<span></span><span class="kn">import</span> <span class="nn">logging</span>
-<span class="kn">import</span> <span class="nn">itertools</span>
-<span class="kn">from</span> <span class="nn">copy</span> <span class="kn">import</span> <span class="n">deepcopy</span>
-<span class="kn">from</span> <span class="nn">typing</span> <span class="kn">import</span> <span class="n">List</span><span class="p">,</span> <span class="n">Union</span>
+<span></span><span class="kn">import</span><span class="w"> </span><span class="nn">logging</span>
+<span class="kn">import</span><span class="w"> </span><span class="nn">itertools</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">copy</span><span class="w"> </span><span class="kn">import</span> <span class="n">deepcopy</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">typing</span><span class="w"> </span><span class="kn">import</span> <span class="n">List</span><span class="p">,</span> <span class="n">Union</span>
 
-<span class="kn">import</span> <span class="nn">numpy</span> <span class="k">as</span> <span class="nn">np</span>
-<span class="kn">import</span> <span class="nn">scipy</span>
-<span class="kn">import</span> <span class="nn">scipy.sparse</span>
+<span class="kn">import</span><span class="w"> </span><span class="nn">numpy</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="nn">np</span>
+<span class="kn">import</span><span class="w"> </span><span class="nn">scipy</span>
+<span class="kn">import</span><span class="w"> </span><span class="nn">scipy.sparse</span>
 
-<span class="kn">from</span> <span class="nn">renormalizer.model</span> <span class="kn">import</span> <span class="n">Model</span><span class="p">,</span> <span class="n">HolsteinModel</span>
-<span class="kn">from</span> <span class="nn">renormalizer.mps.backend</span> <span class="kn">import</span> <span class="n">xp</span>
-<span class="kn">from</span> <span class="nn">renormalizer.mps.matrix</span> <span class="kn">import</span> <span class="n">moveaxis</span><span class="p">,</span> <span class="n">tensordot</span>
-<span class="kn">from</span> <span class="nn">renormalizer.mps.mp</span> <span class="kn">import</span> <span class="n">MatrixProduct</span>
-<span class="kn">from</span> <span class="nn">renormalizer.mps.svd_qn</span> <span class="kn">import</span> <span class="n">add_outer</span>
-<span class="kn">from</span> <span class="nn">renormalizer.mps</span> <span class="kn">import</span> <span class="n">svd_qn</span>
-<span class="kn">from</span> <span class="nn">renormalizer.mps.lib</span> <span class="kn">import</span> <span class="n">update_cv</span>
-<span class="kn">from</span> <span class="nn">renormalizer.mps.symbolic_mpo</span> <span class="kn">import</span> <span class="n">construct_symbolic_mpo</span><span class="p">,</span> <span class="n">_terms_to_table</span><span class="p">,</span> <span class="n">symbolic_mo_to_numeric_mo</span><span class="p">,</span> <span class="n">swap_site</span>
-<span class="kn">from</span> <span class="nn">renormalizer.utils</span> <span class="kn">import</span> <span class="n">Quantity</span>
-<span class="kn">from</span> <span class="nn">renormalizer.model.op</span> <span class="kn">import</span> <span class="n">Op</span>
-<span class="kn">from</span> <span class="nn">renormalizer.utils.elementop</span> <span class="kn">import</span> <span class="p">(</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">renormalizer.model</span><span class="w"> </span><span class="kn">import</span> <span class="n">Model</span><span class="p">,</span> <span class="n">HolsteinModel</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">renormalizer.mps.backend</span><span class="w"> </span><span class="kn">import</span> <span class="n">xp</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">renormalizer.mps.matrix</span><span class="w"> </span><span class="kn">import</span> <span class="n">moveaxis</span><span class="p">,</span> <span class="n">tensordot</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">renormalizer.mps.mp</span><span class="w"> </span><span class="kn">import</span> <span class="n">MatrixProduct</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">renormalizer.mps.svd_qn</span><span class="w"> </span><span class="kn">import</span> <span class="n">add_outer</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">renormalizer.mps</span><span class="w"> </span><span class="kn">import</span> <span class="n">svd_qn</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">renormalizer.mps.lib</span><span class="w"> </span><span class="kn">import</span> <span class="n">update_cv</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">renormalizer.mps.symbolic_mpo</span><span class="w"> </span><span class="kn">import</span> <span class="n">construct_symbolic_mpo</span><span class="p">,</span> <span class="n">_terms_to_table</span><span class="p">,</span> <span class="n">symbolic_mo_to_numeric_mo</span><span class="p">,</span> <span class="n">swap_site</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">renormalizer.utils</span><span class="w"> </span><span class="kn">import</span> <span class="n">Quantity</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">renormalizer.model.op</span><span class="w"> </span><span class="kn">import</span> <span class="n">Op</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">renormalizer.utils.elementop</span><span class="w"> </span><span class="kn">import</span> <span class="p">(</span>
     <span class="n">construct_ph_op_dict</span><span class="p">,</span>
 <span class="p">)</span>
 
@@ -253,13 +253,13 @@
 <span class="n">logger</span> <span class="o">=</span> <span class="n">logging</span><span class="o">.</span><span class="n">getLogger</span><span class="p">(</span><span class="vm">__name__</span><span class="p">)</span>
 
 
-<div class="viewcode-block" id="Mpo"><a class="viewcode-back" href="../../../mps.html#renormalizer.mps.Mpo">[docs]</a><span class="k">class</span> <span class="nc">Mpo</span><span class="p">(</span><span class="n">MatrixProduct</span><span class="p">):</span>
+<div class="viewcode-block" id="Mpo"><a class="viewcode-back" href="../../../mps.html#renormalizer.mps.Mpo">[docs]</a><span class="k">class</span><span class="w"> </span><span class="nc">Mpo</span><span class="p">(</span><span class="n">MatrixProduct</span><span class="p">):</span>
 <span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">    Matrix product operator (MPO)</span>
 <span class="sd">    &quot;&quot;&quot;</span>
 
 <div class="viewcode-block" id="Mpo.exact_propagator"><a class="viewcode-back" href="../../../mps.html#renormalizer.mps.Mpo.exact_propagator">[docs]</a>    <span class="nd">@classmethod</span>
-    <span class="k">def</span> <span class="nf">exact_propagator</span><span class="p">(</span><span class="bp">cls</span><span class="p">,</span> <span class="n">model</span><span class="p">:</span> <span class="n">HolsteinModel</span><span class="p">,</span> <span class="n">x</span><span class="p">,</span> <span class="n">space</span><span class="o">=</span><span class="s2">&quot;GS&quot;</span><span class="p">,</span> <span class="n">shift</span><span class="o">=</span><span class="mf">0.0</span><span class="p">):</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">exact_propagator</span><span class="p">(</span><span class="bp">cls</span><span class="p">,</span> <span class="n">model</span><span class="p">:</span> <span class="n">HolsteinModel</span><span class="p">,</span> <span class="n">x</span><span class="p">,</span> <span class="n">space</span><span class="o">=</span><span class="s2">&quot;GS&quot;</span><span class="p">,</span> <span class="n">shift</span><span class="o">=</span><span class="mf">0.0</span><span class="p">):</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">        construct the GS space propagator e^{xH} exact MPO</span>
 <span class="sd">        H=\\sum_{in} \\omega_{in} b^\\dagger_{in} b_{in}</span>
@@ -329,7 +329,7 @@
         <span class="k">return</span> <span class="n">mpo</span></div>
 
 <div class="viewcode-block" id="Mpo.onsite"><a class="viewcode-back" href="../../../mps.html#renormalizer.mps.Mpo.onsite">[docs]</a>    <span class="nd">@classmethod</span>
-    <span class="k">def</span> <span class="nf">onsite</span><span class="p">(</span><span class="bp">cls</span><span class="p">,</span> <span class="n">model</span><span class="p">:</span> <span class="n">Model</span><span class="p">,</span> <span class="n">opera</span><span class="p">,</span> <span class="n">dipole</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span> <span class="n">dof_set</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">onsite</span><span class="p">(</span><span class="bp">cls</span><span class="p">,</span> <span class="n">model</span><span class="p">:</span> <span class="n">Model</span><span class="p">,</span> <span class="n">opera</span><span class="p">,</span> <span class="n">dipole</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span> <span class="n">dof_set</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
         <span class="k">if</span> <span class="n">dof_set</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
             <span class="k">if</span> <span class="n">model</span><span class="o">.</span><span class="n">n_edofs</span> <span class="o">==</span> <span class="mi">0</span><span class="p">:</span>
                 <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s2">&quot;No electronic DoF present in the model.&quot;</span><span class="p">)</span>
@@ -345,14 +345,14 @@
         <span class="k">return</span> <span class="bp">cls</span><span class="p">(</span><span class="n">model</span><span class="p">,</span> <span class="n">ops</span><span class="p">)</span></div>
 
 <div class="viewcode-block" id="Mpo.ph_onsite"><a class="viewcode-back" href="../../../mps.html#renormalizer.mps.Mpo.ph_onsite">[docs]</a>    <span class="nd">@classmethod</span>
-    <span class="k">def</span> <span class="nf">ph_onsite</span><span class="p">(</span><span class="bp">cls</span><span class="p">,</span> <span class="n">model</span><span class="p">:</span> <span class="n">HolsteinModel</span><span class="p">,</span> <span class="n">opera</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span> <span class="n">mol_idx</span><span class="p">:</span><span class="nb">int</span><span class="p">,</span> <span class="n">ph_idx</span><span class="o">=</span><span class="mi">0</span><span class="p">):</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">ph_onsite</span><span class="p">(</span><span class="bp">cls</span><span class="p">,</span> <span class="n">model</span><span class="p">:</span> <span class="n">HolsteinModel</span><span class="p">,</span> <span class="n">opera</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span> <span class="n">mol_idx</span><span class="p">:</span><span class="nb">int</span><span class="p">,</span> <span class="n">ph_idx</span><span class="o">=</span><span class="mi">0</span><span class="p">):</span>
         <span class="k">assert</span> <span class="n">opera</span> <span class="ow">in</span> <span class="p">[</span><span class="s2">&quot;b&quot;</span><span class="p">,</span> <span class="sa">r</span><span class="s2">&quot;b^\dagger&quot;</span><span class="p">,</span> <span class="sa">r</span><span class="s2">&quot;b^\dagger b&quot;</span><span class="p">]</span>
         <span class="k">if</span> <span class="ow">not</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">model</span><span class="p">,</span> <span class="n">HolsteinModel</span><span class="p">):</span>
             <span class="k">raise</span> <span class="ne">TypeError</span><span class="p">(</span><span class="s2">&quot;ph_onsite only supports HolsteinModel&quot;</span><span class="p">)</span>
         <span class="k">return</span> <span class="bp">cls</span><span class="p">(</span><span class="n">model</span><span class="p">,</span> <span class="n">Op</span><span class="p">(</span><span class="n">opera</span><span class="p">,</span> <span class="p">(</span><span class="n">mol_idx</span><span class="p">,</span> <span class="n">ph_idx</span><span class="p">)))</span></div>
 
 <div class="viewcode-block" id="Mpo.intersite"><a class="viewcode-back" href="../../../mps.html#renormalizer.mps.Mpo.intersite">[docs]</a>    <span class="nd">@classmethod</span>
-    <span class="k">def</span> <span class="nf">intersite</span><span class="p">(</span><span class="bp">cls</span><span class="p">,</span> <span class="n">model</span><span class="p">:</span> <span class="n">HolsteinModel</span><span class="p">,</span> <span class="n">e_opera</span><span class="p">:</span> <span class="nb">dict</span><span class="p">,</span> <span class="n">ph_opera</span><span class="p">:</span> <span class="nb">dict</span><span class="p">,</span> <span class="n">scale</span><span class="p">:</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">intersite</span><span class="p">(</span><span class="bp">cls</span><span class="p">,</span> <span class="n">model</span><span class="p">:</span> <span class="n">HolsteinModel</span><span class="p">,</span> <span class="n">e_opera</span><span class="p">:</span> <span class="nb">dict</span><span class="p">,</span> <span class="n">ph_opera</span><span class="p">:</span> <span class="nb">dict</span><span class="p">,</span> <span class="n">scale</span><span class="p">:</span>
             <span class="n">Quantity</span><span class="o">=</span><span class="n">Quantity</span><span class="p">(</span><span class="mf">1.</span><span class="p">)):</span>
 <span class="w">        </span><span class="sa">r</span><span class="sd">&quot;&quot;&quot; construct the inter site MPO</span>
 
@@ -382,7 +382,7 @@
         <span class="k">return</span> <span class="bp">cls</span><span class="p">(</span><span class="n">model</span><span class="p">,</span> <span class="n">op</span><span class="p">)</span></div>
 
 <div class="viewcode-block" id="Mpo.finiteT_cv"><a class="viewcode-back" href="../../../mps.html#renormalizer.mps.Mpo.finiteT_cv">[docs]</a>    <span class="nd">@classmethod</span>
-    <span class="k">def</span> <span class="nf">finiteT_cv</span><span class="p">(</span><span class="bp">cls</span><span class="p">,</span> <span class="n">model</span><span class="p">,</span> <span class="n">nexciton</span><span class="p">,</span> <span class="n">m_max</span><span class="p">,</span> <span class="n">spectratype</span><span class="p">,</span> <span class="n">percent</span><span class="o">=</span><span class="mf">1.0</span><span class="p">):</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">finiteT_cv</span><span class="p">(</span><span class="bp">cls</span><span class="p">,</span> <span class="n">model</span><span class="p">,</span> <span class="n">nexciton</span><span class="p">,</span> <span class="n">m_max</span><span class="p">,</span> <span class="n">spectratype</span><span class="p">,</span> <span class="n">percent</span><span class="o">=</span><span class="mf">1.0</span><span class="p">):</span>
         <span class="c1"># np.random.seed(0)</span>
 
         <span class="n">X</span> <span class="o">=</span> <span class="bp">cls</span><span class="p">()</span>
@@ -467,7 +467,7 @@
         <span class="k">return</span> <span class="n">X</span></div>
 
 <div class="viewcode-block" id="Mpo.identity"><a class="viewcode-back" href="../../../mps.html#renormalizer.mps.Mpo.identity">[docs]</a>    <span class="nd">@classmethod</span>
-    <span class="k">def</span> <span class="nf">identity</span><span class="p">(</span><span class="bp">cls</span><span class="p">,</span> <span class="n">model</span><span class="p">:</span> <span class="n">Model</span><span class="p">):</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">identity</span><span class="p">(</span><span class="bp">cls</span><span class="p">,</span> <span class="n">model</span><span class="p">:</span> <span class="n">Model</span><span class="p">):</span>
         <span class="n">mpo</span> <span class="o">=</span> <span class="bp">cls</span><span class="p">()</span>
         <span class="n">mpo</span><span class="o">.</span><span class="n">model</span> <span class="o">=</span> <span class="n">model</span>
         <span class="k">for</span> <span class="n">p</span> <span class="ow">in</span> <span class="n">model</span><span class="o">.</span><span class="n">pbond_list</span><span class="p">:</span>
@@ -475,7 +475,7 @@
         <span class="n">mpo</span><span class="o">.</span><span class="n">build_empty_qn</span><span class="p">()</span>
         <span class="k">return</span> <span class="n">mpo</span></div>
 
-    <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">model</span><span class="p">:</span> <span class="n">Model</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span> <span class="n">terms</span><span class="p">:</span> <span class="n">Union</span><span class="p">[</span><span class="n">Op</span><span class="p">,</span> <span class="n">List</span><span class="p">[</span><span class="n">Op</span><span class="p">]]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span> <span class="n">offset</span><span class="p">:</span> <span class="n">Quantity</span> <span class="o">=</span> <span class="n">Quantity</span><span class="p">(</span><span class="mi">0</span><span class="p">),</span> <span class="n">algo</span> <span class="o">=</span> <span class="s2">&quot;qr&quot;</span><span class="p">):</span>
+    <span class="k">def</span><span class="w"> </span><span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">model</span><span class="p">:</span> <span class="n">Model</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span> <span class="n">terms</span><span class="p">:</span> <span class="n">Union</span><span class="p">[</span><span class="n">Op</span><span class="p">,</span> <span class="n">List</span><span class="p">[</span><span class="n">Op</span><span class="p">]]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span> <span class="n">offset</span><span class="p">:</span> <span class="n">Quantity</span> <span class="o">=</span> <span class="n">Quantity</span><span class="p">(</span><span class="mi">0</span><span class="p">),</span> <span class="n">algo</span> <span class="o">=</span> <span class="s2">&quot;qr&quot;</span><span class="p">):</span>
 
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">        todo: document</span>
@@ -518,23 +518,23 @@
             <span class="bp">self</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">mo_mat</span><span class="p">)</span>
 
 
-    <span class="k">def</span> <span class="nf">_get_sigmaqn</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">idx</span><span class="p">):</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">_get_sigmaqn</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">idx</span><span class="p">):</span>
         <span class="n">array_up</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">model</span><span class="o">.</span><span class="n">basis</span><span class="p">[</span><span class="n">idx</span><span class="p">]</span><span class="o">.</span><span class="n">sigmaqn</span>
         <span class="k">return</span> <span class="n">add_outer</span><span class="p">(</span><span class="n">array_up</span><span class="p">,</span> <span class="o">-</span><span class="n">array_up</span><span class="p">)</span>
 
     <span class="nd">@property</span>
-    <span class="k">def</span> <span class="nf">is_mps</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">is_mps</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
         <span class="k">return</span> <span class="kc">False</span>
 
     <span class="nd">@property</span>
-    <span class="k">def</span> <span class="nf">is_mpo</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">is_mpo</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
         <span class="k">return</span> <span class="kc">True</span>
 
     <span class="nd">@property</span>
-    <span class="k">def</span> <span class="nf">is_mpdm</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">is_mpdm</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
         <span class="k">return</span> <span class="kc">False</span>
 
-<div class="viewcode-block" id="Mpo.metacopy"><a class="viewcode-back" href="../../../mps.html#renormalizer.mps.Mpo.metacopy">[docs]</a>    <span class="k">def</span> <span class="nf">metacopy</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+<div class="viewcode-block" id="Mpo.metacopy"><a class="viewcode-back" href="../../../mps.html#renormalizer.mps.Mpo.metacopy">[docs]</a>    <span class="k">def</span><span class="w"> </span><span class="nf">metacopy</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
         <span class="n">new</span> <span class="o">=</span> <span class="nb">super</span><span class="p">()</span><span class="o">.</span><span class="n">metacopy</span><span class="p">()</span>
         <span class="c1"># some mpo may not have these things</span>
         <span class="n">attrs</span> <span class="o">=</span> <span class="p">[</span><span class="s2">&quot;scheme&quot;</span><span class="p">,</span> <span class="s2">&quot;offset&quot;</span><span class="p">,</span> <span class="s2">&quot;symbolic_out_ops_list&quot;</span><span class="p">,</span> <span class="s2">&quot;primary_ops&quot;</span><span class="p">]</span>
@@ -544,19 +544,19 @@
         <span class="k">return</span> <span class="n">new</span></div>
 
     <span class="nd">@property</span>
-    <span class="k">def</span> <span class="nf">dummy_qn</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">dummy_qn</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
         <span class="k">return</span> <span class="p">[</span><span class="n">np</span><span class="o">.</span><span class="n">zeros</span><span class="p">((</span><span class="n">dim</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">model</span><span class="o">.</span><span class="n">qn_size</span><span class="p">),</span> <span class="n">dtype</span><span class="o">=</span><span class="nb">int</span><span class="p">)</span> <span class="k">for</span> <span class="n">dim</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">bond_dims</span><span class="p">]</span>
 
     <span class="nd">@property</span>
-    <span class="k">def</span> <span class="nf">digest</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">digest</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
         <span class="k">return</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">([</span><span class="n">mt</span><span class="o">.</span><span class="n">var</span><span class="p">()</span> <span class="k">for</span> <span class="n">mt</span> <span class="ow">in</span> <span class="bp">self</span><span class="p">])</span><span class="o">.</span><span class="n">var</span><span class="p">()</span>
 
-<div class="viewcode-block" id="Mpo.promote_mt_type"><a class="viewcode-back" href="../../../mps.html#renormalizer.mps.Mpo.promote_mt_type">[docs]</a>    <span class="k">def</span> <span class="nf">promote_mt_type</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">mp</span><span class="p">):</span>
+<div class="viewcode-block" id="Mpo.promote_mt_type"><a class="viewcode-back" href="../../../mps.html#renormalizer.mps.Mpo.promote_mt_type">[docs]</a>    <span class="k">def</span><span class="w"> </span><span class="nf">promote_mt_type</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">mp</span><span class="p">):</span>
         <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">is_complex</span> <span class="ow">and</span> <span class="ow">not</span> <span class="n">mp</span><span class="o">.</span><span class="n">is_complex</span><span class="p">:</span>
             <span class="n">mp</span><span class="o">.</span><span class="n">to_complex</span><span class="p">(</span><span class="n">inplace</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
         <span class="k">return</span> <span class="n">mp</span></div>
 
-<div class="viewcode-block" id="Mpo.apply"><a class="viewcode-back" href="../../../mps.html#renormalizer.mps.Mpo.apply">[docs]</a>    <span class="k">def</span> <span class="nf">apply</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">mp</span><span class="p">:</span> <span class="n">MatrixProduct</span><span class="p">,</span> <span class="n">canonicalise</span><span class="p">:</span> <span class="nb">bool</span><span class="o">=</span><span class="kc">False</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">MatrixProduct</span><span class="p">:</span>
+<div class="viewcode-block" id="Mpo.apply"><a class="viewcode-back" href="../../../mps.html#renormalizer.mps.Mpo.apply">[docs]</a>    <span class="k">def</span><span class="w"> </span><span class="nf">apply</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">mp</span><span class="p">:</span> <span class="n">MatrixProduct</span><span class="p">,</span> <span class="n">canonicalise</span><span class="p">:</span> <span class="nb">bool</span><span class="o">=</span><span class="kc">False</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">MatrixProduct</span><span class="p">:</span>
         <span class="c1"># todo: use meta copy to save time, could be subtle when complex type is involved</span>
         <span class="c1"># todo: inplace version (saved memory and can be used in `hybrid_exact_propagator`)</span>
         <span class="c1"># the model is the same as the mps.model</span>
@@ -616,7 +616,7 @@
             <span class="n">new_mps</span><span class="o">.</span><span class="n">canonicalise</span><span class="p">()</span>
         <span class="k">return</span> <span class="n">new_mps</span></div>
 
-<div class="viewcode-block" id="Mpo.contract"><a class="viewcode-back" href="../../../mps.html#renormalizer.mps.Mpo.contract">[docs]</a>    <span class="k">def</span> <span class="nf">contract</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">mps</span><span class="p">,</span> <span class="n">algo</span><span class="o">=</span><span class="s2">&quot;svd&quot;</span><span class="p">):</span>
+<div class="viewcode-block" id="Mpo.contract"><a class="viewcode-back" href="../../../mps.html#renormalizer.mps.Mpo.contract">[docs]</a>    <span class="k">def</span><span class="w"> </span><span class="nf">contract</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">mps</span><span class="p">,</span> <span class="n">algo</span><span class="o">=</span><span class="s2">&quot;svd&quot;</span><span class="p">):</span>
 <span class="w">        </span><span class="sa">r</span><span class="sd">&quot;&quot;&quot; an approximation of mpo @ mps/mpdm/mpo</span>
 
 <span class="sd">        Parameters</span>
@@ -652,7 +652,7 @@
 
         <span class="k">return</span> <span class="n">new_mps</span></div>
 
-<div class="viewcode-block" id="Mpo.try_swap_site"><a class="viewcode-back" href="../../../mps.html#renormalizer.mps.Mpo.try_swap_site">[docs]</a>    <span class="k">def</span> <span class="nf">try_swap_site</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">new_model</span><span class="p">:</span> <span class="n">Model</span><span class="p">,</span> <span class="n">swap_jw</span><span class="p">:</span> <span class="nb">bool</span><span class="p">,</span> <span class="n">algo</span><span class="o">=</span><span class="s2">&quot;Hopcroft-Karp&quot;</span><span class="p">):</span>
+<div class="viewcode-block" id="Mpo.try_swap_site"><a class="viewcode-back" href="../../../mps.html#renormalizer.mps.Mpo.try_swap_site">[docs]</a>    <span class="k">def</span><span class="w"> </span><span class="nf">try_swap_site</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">new_model</span><span class="p">:</span> <span class="n">Model</span><span class="p">,</span> <span class="n">swap_jw</span><span class="p">:</span> <span class="nb">bool</span><span class="p">,</span> <span class="n">algo</span><span class="o">=</span><span class="s2">&quot;Hopcroft-Karp&quot;</span><span class="p">):</span>
         <span class="c1"># in place swapping.</span>
         <span class="c1"># if swap_jw is set to True, then self.primary_ops is modified in place</span>
         <span class="n">diffs</span> <span class="o">=</span> <span class="p">[]</span>
@@ -681,14 +681,14 @@
             <span class="bp">self</span><span class="p">[</span><span class="n">impo</span><span class="p">]</span> <span class="o">=</span> <span class="n">symbolic_mo_to_numeric_mo</span><span class="p">(</span><span class="n">new_model</span><span class="o">.</span><span class="n">basis</span><span class="p">[</span><span class="n">impo</span><span class="p">],</span> <span class="n">mo</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">dtype</span><span class="p">)</span>
         <span class="n">logger</span><span class="o">.</span><span class="n">debug</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span></div>
 
-<div class="viewcode-block" id="Mpo.conj_trans"><a class="viewcode-back" href="../../../mps.html#renormalizer.mps.Mpo.conj_trans">[docs]</a>    <span class="k">def</span> <span class="nf">conj_trans</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+<div class="viewcode-block" id="Mpo.conj_trans"><a class="viewcode-back" href="../../../mps.html#renormalizer.mps.Mpo.conj_trans">[docs]</a>    <span class="k">def</span><span class="w"> </span><span class="nf">conj_trans</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
         <span class="n">new_mpo</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">metacopy</span><span class="p">()</span>
         <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="n">new_mpo</span><span class="o">.</span><span class="n">site_num</span><span class="p">):</span>
             <span class="n">new_mpo</span><span class="p">[</span><span class="n">i</span><span class="p">]</span> <span class="o">=</span> <span class="n">moveaxis</span><span class="p">(</span><span class="bp">self</span><span class="p">[</span><span class="n">i</span><span class="p">],</span> <span class="p">(</span><span class="mi">1</span><span class="p">,</span> <span class="mi">2</span><span class="p">),</span> <span class="p">(</span><span class="mi">2</span><span class="p">,</span> <span class="mi">1</span><span class="p">))</span><span class="o">.</span><span class="n">conj</span><span class="p">()</span>
         <span class="n">new_mpo</span><span class="o">.</span><span class="n">qn</span> <span class="o">=</span> <span class="p">[</span><span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">([</span><span class="o">-</span><span class="n">i</span> <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="n">mt_qn</span><span class="p">])</span> <span class="k">for</span> <span class="n">mt_qn</span> <span class="ow">in</span> <span class="n">new_mpo</span><span class="o">.</span><span class="n">qn</span><span class="p">]</span>
         <span class="k">return</span> <span class="n">new_mpo</span></div>
 
-<div class="viewcode-block" id="Mpo.todense"><a class="viewcode-back" href="../../../mps.html#renormalizer.mps.Mpo.todense">[docs]</a>    <span class="k">def</span> <span class="nf">todense</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+<div class="viewcode-block" id="Mpo.todense"><a class="viewcode-back" href="../../../mps.html#renormalizer.mps.Mpo.todense">[docs]</a>    <span class="k">def</span><span class="w"> </span><span class="nf">todense</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
         <span class="n">dim</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">prod</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">pbond_list</span><span class="p">)</span>
         <span class="k">if</span> <span class="mi">20000</span> <span class="o">&lt;</span> <span class="n">dim</span><span class="p">:</span>
             <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s2">&quot;operator too large&quot;</span><span class="p">)</span>
@@ -700,15 +700,15 @@
             <span class="n">res</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">tensordot</span><span class="p">(</span><span class="n">res</span><span class="p">,</span> <span class="n">mt</span><span class="o">.</span><span class="n">array</span><span class="p">,</span> <span class="n">axes</span><span class="o">=</span><span class="mi">1</span><span class="p">)</span><span class="o">.</span><span class="n">transpose</span><span class="p">((</span><span class="mi">0</span><span class="p">,</span> <span class="mi">1</span><span class="p">,</span> <span class="mi">3</span><span class="p">,</span> <span class="mi">2</span><span class="p">,</span> <span class="mi">4</span><span class="p">,</span> <span class="mi">5</span><span class="p">))</span><span class="o">.</span><span class="n">reshape</span><span class="p">(</span><span class="mi">1</span><span class="p">,</span> <span class="n">dim1</span><span class="p">,</span> <span class="n">dim2</span><span class="p">,</span> <span class="n">dim3</span><span class="p">)</span>
         <span class="k">return</span> <span class="n">res</span><span class="p">[</span><span class="mi">0</span><span class="p">,</span> <span class="p">:,</span> <span class="p">:,</span> <span class="mi">0</span><span class="p">]</span></div>
 
-<div class="viewcode-block" id="Mpo.is_hermitian"><a class="viewcode-back" href="../../../mps.html#renormalizer.mps.Mpo.is_hermitian">[docs]</a>    <span class="k">def</span> <span class="nf">is_hermitian</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+<div class="viewcode-block" id="Mpo.is_hermitian"><a class="viewcode-back" href="../../../mps.html#renormalizer.mps.Mpo.is_hermitian">[docs]</a>    <span class="k">def</span><span class="w"> </span><span class="nf">is_hermitian</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
         <span class="n">full</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">todense</span><span class="p">()</span>
         <span class="k">return</span> <span class="n">np</span><span class="o">.</span><span class="n">allclose</span><span class="p">(</span><span class="n">full</span><span class="o">.</span><span class="n">conj</span><span class="p">()</span><span class="o">.</span><span class="n">T</span><span class="p">,</span> <span class="n">full</span><span class="p">,</span> <span class="n">atol</span><span class="o">=</span><span class="mf">1e-7</span><span class="p">)</span></div>
 
-    <span class="k">def</span> <span class="fm">__matmul__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">other</span><span class="p">):</span>
+    <span class="k">def</span><span class="w"> </span><span class="fm">__matmul__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">other</span><span class="p">):</span>
         <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">apply</span><span class="p">(</span><span class="n">other</span><span class="p">)</span></div>
 
 
-<span class="k">class</span> <span class="nc">StackedMpo</span><span class="p">:</span>
+<span class="k">class</span><span class="w"> </span><span class="nc">StackedMpo</span><span class="p">:</span>
 <span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">    An effective sparse representation of MPO in the block diagonal form.</span>
 <span class="sd">    When it enters into the optimization, the Hamiltonian is calculated as</span>
@@ -718,7 +718,7 @@
 <span class="sd">    Usage:</span>
 <span class="sd">    optimize_mps(mps, StackedMpo([mpo1, mpo2, ...]))</span>
 <span class="sd">    &quot;&quot;&quot;</span>
-    <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">mpos</span><span class="p">:</span> <span class="n">List</span><span class="p">[</span><span class="n">Mpo</span><span class="p">]):</span>
+    <span class="k">def</span><span class="w"> </span><span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">mpos</span><span class="p">:</span> <span class="n">List</span><span class="p">[</span><span class="n">Mpo</span><span class="p">]):</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">mpos</span> <span class="o">=</span> <span class="n">mpos</span>
 </pre></div>
         </article>

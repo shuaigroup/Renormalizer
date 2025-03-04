@@ -228,22 +228,22 @@
           <h1>Source code for renormalizer.transport.kubo</h1><div class="highlight"><pre>
 <span></span><span class="c1"># -*- coding: utf-8 -*-</span>
 
-<span class="kn">import</span> <span class="nn">logging</span>
-<span class="kn">import</span> <span class="nn">os</span>
+<span class="kn">import</span><span class="w"> </span><span class="nn">logging</span>
+<span class="kn">import</span><span class="w"> </span><span class="nn">os</span>
 
-<span class="kn">import</span> <span class="nn">scipy.integrate</span>
+<span class="kn">import</span><span class="w"> </span><span class="nn">scipy.integrate</span>
 
-<span class="kn">from</span> <span class="nn">renormalizer.mps</span> <span class="kn">import</span> <span class="n">MpDm</span><span class="p">,</span> <span class="n">Mpo</span><span class="p">,</span> <span class="n">BraKetPair</span><span class="p">,</span> <span class="n">ThermalProp</span><span class="p">,</span> <span class="n">load_thermal_state</span>
-<span class="kn">from</span> <span class="nn">renormalizer.mps.backend</span> <span class="kn">import</span> <span class="n">np</span>
-<span class="kn">from</span> <span class="nn">renormalizer.utils.constant</span> <span class="kn">import</span> <span class="n">mobility2au</span>
-<span class="kn">from</span> <span class="nn">renormalizer.utils</span> <span class="kn">import</span> <span class="n">TdMpsJob</span><span class="p">,</span> <span class="n">Quantity</span><span class="p">,</span> <span class="n">EvolveConfig</span><span class="p">,</span> <span class="n">CompressConfig</span>
-<span class="kn">from</span> <span class="nn">renormalizer.model</span> <span class="kn">import</span> <span class="n">Model</span>
-<span class="kn">from</span> <span class="nn">renormalizer.property</span> <span class="kn">import</span> <span class="n">Property</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">renormalizer.mps</span><span class="w"> </span><span class="kn">import</span> <span class="n">MpDm</span><span class="p">,</span> <span class="n">Mpo</span><span class="p">,</span> <span class="n">BraKetPair</span><span class="p">,</span> <span class="n">ThermalProp</span><span class="p">,</span> <span class="n">load_thermal_state</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">renormalizer.mps.backend</span><span class="w"> </span><span class="kn">import</span> <span class="n">np</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">renormalizer.utils.constant</span><span class="w"> </span><span class="kn">import</span> <span class="n">mobility2au</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">renormalizer.utils</span><span class="w"> </span><span class="kn">import</span> <span class="n">TdMpsJob</span><span class="p">,</span> <span class="n">Quantity</span><span class="p">,</span> <span class="n">EvolveConfig</span><span class="p">,</span> <span class="n">CompressConfig</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">renormalizer.model</span><span class="w"> </span><span class="kn">import</span> <span class="n">Model</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">renormalizer.property</span><span class="w"> </span><span class="kn">import</span> <span class="n">Property</span>
 
 <span class="n">logger</span> <span class="o">=</span> <span class="n">logging</span><span class="o">.</span><span class="n">getLogger</span><span class="p">(</span><span class="vm">__name__</span><span class="p">)</span>
 
 
-<div class="viewcode-block" id="TransportKubo"><a class="viewcode-back" href="../../../ct.html#renormalizer.transport.kubo.TransportKubo">[docs]</a><span class="k">class</span> <span class="nc">TransportKubo</span><span class="p">(</span><span class="n">TdMpsJob</span><span class="p">):</span>
+<div class="viewcode-block" id="TransportKubo"><a class="viewcode-back" href="../../../ct.html#renormalizer.transport.kubo.TransportKubo">[docs]</a><span class="k">class</span><span class="w"> </span><span class="nc">TransportKubo</span><span class="p">(</span><span class="n">TdMpsJob</span><span class="p">):</span>
 <span class="w">    </span><span class="sa">r</span><span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">    Calculate mobility via Green-Kubo formula:</span>
 
@@ -321,7 +321,7 @@
 <span class="sd">        properties (:class:`~renormalizer.property.property.Property`): other properties to calculate during real time evolution.</span>
 <span class="sd">            Currently only supports Holstein model.</span>
 <span class="sd">    &quot;&quot;&quot;</span>
-    <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">model</span><span class="p">:</span> <span class="n">Model</span><span class="p">,</span> <span class="n">temperature</span><span class="p">:</span> <span class="n">Quantity</span><span class="p">,</span> <span class="n">distance_matrix</span><span class="p">:</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
+    <span class="k">def</span><span class="w"> </span><span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">model</span><span class="p">:</span> <span class="n">Model</span><span class="p">,</span> <span class="n">temperature</span><span class="p">:</span> <span class="n">Quantity</span><span class="p">,</span> <span class="n">distance_matrix</span><span class="p">:</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
                  <span class="n">insteps</span><span class="p">:</span> <span class="nb">int</span><span class="o">=</span><span class="mi">1</span><span class="p">,</span> <span class="n">ievolve_config</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">compress_config</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
                  <span class="n">evolve_config</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">dump_dir</span><span class="p">:</span> <span class="nb">str</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">job_name</span><span class="p">:</span> <span class="nb">str</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
                  <span class="n">thermal_dump_path</span><span class="p">:</span> <span class="nb">str</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">properties</span><span class="p">:</span> <span class="n">Property</span> <span class="o">=</span> <span class="kc">None</span><span class="p">):</span>
@@ -365,7 +365,7 @@
         <span class="nb">super</span><span class="p">()</span><span class="o">.</span><span class="fm">__init__</span><span class="p">(</span><span class="n">evolve_config</span><span class="o">=</span><span class="n">evolve_config</span><span class="p">,</span> <span class="n">dump_dir</span><span class="o">=</span><span class="n">dump_dir</span><span class="p">,</span>
                 <span class="n">job_name</span><span class="o">=</span><span class="n">job_name</span><span class="p">)</span>
 
-    <span class="k">def</span> <span class="nf">_construct_current_operator</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">_construct_current_operator</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
         <span class="c1"># Construct current operator. The operator is taken to be real as an optimization.</span>
         <span class="n">logger</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="s2">&quot;constructing current operator &quot;</span><span class="p">)</span>
 
@@ -443,7 +443,7 @@
         <span class="k">else</span><span class="p">:</span>
             <span class="bp">self</span><span class="o">.</span><span class="n">j_oper2</span> <span class="o">=</span> <span class="kc">None</span>
 
-<div class="viewcode-block" id="TransportKubo.init_mps"><a class="viewcode-back" href="../../../ct.html#renormalizer.transport.kubo.TransportKubo.init_mps">[docs]</a>    <span class="k">def</span> <span class="nf">init_mps</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+<div class="viewcode-block" id="TransportKubo.init_mps"><a class="viewcode-back" href="../../../ct.html#renormalizer.transport.kubo.TransportKubo.init_mps">[docs]</a>    <span class="k">def</span><span class="w"> </span><span class="nf">init_mps</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
         <span class="c1"># first try to load</span>
         <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">thermal_dump_path</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
             <span class="n">mpdm</span> <span class="o">=</span> <span class="n">load_thermal_state</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">model</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">thermal_dump_path</span><span class="p">)</span>
@@ -477,7 +477,7 @@
             <span class="n">ket_mpdm2</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">j_oper2</span><span class="o">.</span><span class="n">contract</span><span class="p">(</span><span class="n">mpdm</span><span class="p">)</span><span class="o">.</span><span class="n">normalize</span><span class="p">(</span><span class="s2">&quot;mps_norm_to_coeff&quot;</span><span class="p">)</span>
             <span class="k">return</span> <span class="n">BraKetPair</span><span class="p">(</span><span class="n">bra_mpdm</span><span class="p">,</span> <span class="n">ket_mpdm</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">j_oper</span><span class="p">),</span> <span class="n">BraKetPair</span><span class="p">(</span><span class="n">bra_mpdm</span><span class="p">,</span> <span class="n">ket_mpdm2</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">j_oper2</span><span class="p">)</span></div>
 
-<div class="viewcode-block" id="TransportKubo.process_mps"><a class="viewcode-back" href="../../../ct.html#renormalizer.transport.kubo.TransportKubo.process_mps">[docs]</a>    <span class="k">def</span> <span class="nf">process_mps</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">mps</span><span class="p">):</span>
+<div class="viewcode-block" id="TransportKubo.process_mps"><a class="viewcode-back" href="../../../ct.html#renormalizer.transport.kubo.TransportKubo.process_mps">[docs]</a>    <span class="k">def</span><span class="w"> </span><span class="nf">process_mps</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">mps</span><span class="p">):</span>
         <span class="c1"># add the negative sign because `self.j_oper` is taken to be real</span>
         <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">j_oper2</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
             <span class="bp">self</span><span class="o">.</span><span class="n">_auto_corr</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="o">-</span><span class="n">mps</span><span class="o">.</span><span class="n">ft</span><span class="p">)</span>
@@ -497,7 +497,7 @@
             <span class="bp">self</span><span class="o">.</span><span class="n">_auto_corr</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">ft1</span> <span class="o">+</span> <span class="n">ft2</span> <span class="o">+</span> <span class="n">ft3</span> <span class="o">+</span> <span class="n">ft4</span><span class="p">)</span>
             <span class="bp">self</span><span class="o">.</span><span class="n">_auto_corr_deomposition</span><span class="o">.</span><span class="n">append</span><span class="p">([</span><span class="n">ft1</span><span class="p">,</span> <span class="n">ft2</span><span class="p">,</span> <span class="n">ft3</span><span class="p">,</span> <span class="n">ft4</span><span class="p">])</span></div>
 
-<div class="viewcode-block" id="TransportKubo.evolve_single_step"><a class="viewcode-back" href="../../../ct.html#renormalizer.transport.kubo.TransportKubo.evolve_single_step">[docs]</a>    <span class="k">def</span> <span class="nf">evolve_single_step</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">evolve_dt</span><span class="p">):</span>
+<div class="viewcode-block" id="TransportKubo.evolve_single_step"><a class="viewcode-back" href="../../../ct.html#renormalizer.transport.kubo.TransportKubo.evolve_single_step">[docs]</a>    <span class="k">def</span><span class="w"> </span><span class="nf">evolve_single_step</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">evolve_dt</span><span class="p">):</span>
         <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">j_oper2</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
             <span class="n">prev_bra_mpdm</span><span class="p">,</span> <span class="n">prev_ket_mpdm</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">latest_mps</span>
             <span class="n">prev_ket_mpdm2</span> <span class="o">=</span> <span class="kc">None</span>
@@ -513,7 +513,7 @@
             <span class="k">return</span> <span class="n">BraKetPair</span><span class="p">(</span><span class="n">latest_bra_mpdm</span><span class="p">,</span> <span class="n">latest_ket_mpdm</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">j_oper</span><span class="p">),</span> \
                    <span class="n">BraKetPair</span><span class="p">(</span><span class="n">latest_bra_mpdm</span><span class="p">,</span> <span class="n">latest_ket_mpdm2</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">j_oper2</span><span class="p">)</span></div>
 
-<div class="viewcode-block" id="TransportKubo.stop_evolve_criteria"><a class="viewcode-back" href="../../../ct.html#renormalizer.transport.kubo.TransportKubo.stop_evolve_criteria">[docs]</a>    <span class="k">def</span> <span class="nf">stop_evolve_criteria</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+<div class="viewcode-block" id="TransportKubo.stop_evolve_criteria"><a class="viewcode-back" href="../../../ct.html#renormalizer.transport.kubo.TransportKubo.stop_evolve_criteria">[docs]</a>    <span class="k">def</span><span class="w"> </span><span class="nf">stop_evolve_criteria</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
         <span class="n">corr</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">auto_corr</span>
         <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">corr</span><span class="p">)</span> <span class="o">&lt;</span> <span class="mi">10</span><span class="p">:</span>
             <span class="k">return</span> <span class="kc">False</span>
@@ -522,7 +522,7 @@
         <span class="k">return</span> <span class="n">np</span><span class="o">.</span><span class="n">abs</span><span class="p">(</span><span class="n">last_corr</span><span class="o">.</span><span class="n">mean</span><span class="p">())</span> <span class="o">&lt;</span> <span class="mf">1e-5</span> <span class="o">*</span> <span class="n">np</span><span class="o">.</span><span class="n">abs</span><span class="p">(</span><span class="n">first_corr</span><span class="p">)</span> <span class="ow">and</span> <span class="n">last_corr</span><span class="o">.</span><span class="n">std</span><span class="p">()</span> <span class="o">&lt;</span> <span class="mf">1e-5</span> <span class="o">*</span> <span class="n">np</span><span class="o">.</span><span class="n">abs</span><span class="p">(</span><span class="n">first_corr</span><span class="p">)</span></div>
 
     <span class="nd">@property</span>
-    <span class="k">def</span> <span class="nf">auto_corr</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">:</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">auto_corr</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">:</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">        Correlation function :math:`C(t)`.</span>
 
@@ -531,7 +531,7 @@
         <span class="k">return</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_auto_corr</span><span class="p">)</span>
 
     <span class="nd">@property</span>
-    <span class="k">def</span> <span class="nf">auto_corr_decomposition</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">:</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">auto_corr_decomposition</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">:</span>
 <span class="w">        </span><span class="sa">r</span><span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">        Correlation function :math:`C(t)` decomposed into contributions from different parts</span>
 <span class="sd">        of the current operator. Generally, the current operator can be split into two parts:</span>
@@ -570,7 +570,7 @@
 <span class="sd">        &quot;&quot;&quot;</span>
         <span class="k">return</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_auto_corr_deomposition</span><span class="p">)</span>
 
-<div class="viewcode-block" id="TransportKubo.get_dump_dict"><a class="viewcode-back" href="../../../ct.html#renormalizer.transport.kubo.TransportKubo.get_dump_dict">[docs]</a>    <span class="k">def</span> <span class="nf">get_dump_dict</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+<div class="viewcode-block" id="TransportKubo.get_dump_dict"><a class="viewcode-back" href="../../../ct.html#renormalizer.transport.kubo.TransportKubo.get_dump_dict">[docs]</a>    <span class="k">def</span><span class="w"> </span><span class="nf">get_dump_dict</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
         <span class="n">dump_dict</span> <span class="o">=</span> <span class="nb">dict</span><span class="p">()</span>
         <span class="n">dump_dict</span><span class="p">[</span><span class="s2">&quot;mol list&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">model</span><span class="o">.</span><span class="n">to_dict</span><span class="p">()</span>
         <span class="n">dump_dict</span><span class="p">[</span><span class="s2">&quot;temperature&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">temperature</span><span class="o">.</span><span class="n">as_au</span><span class="p">()</span>
@@ -584,7 +584,7 @@
 
         <span class="k">return</span> <span class="n">dump_dict</span></div>
 
-<div class="viewcode-block" id="TransportKubo.calc_mobility"><a class="viewcode-back" href="../../../ct.html#renormalizer.transport.kubo.TransportKubo.calc_mobility">[docs]</a>    <span class="k">def</span> <span class="nf">calc_mobility</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+<div class="viewcode-block" id="TransportKubo.calc_mobility"><a class="viewcode-back" href="../../../ct.html#renormalizer.transport.kubo.TransportKubo.calc_mobility">[docs]</a>    <span class="k">def</span><span class="w"> </span><span class="nf">calc_mobility</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
         <span class="n">time_series</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">evolve_times</span>
         <span class="n">corr_real</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">auto_corr</span><span class="o">.</span><span class="n">real</span>
         <span class="n">inte</span> <span class="o">=</span> <span class="n">scipy</span><span class="o">.</span><span class="n">integrate</span><span class="o">.</span><span class="n">trapz</span><span class="p">(</span><span class="n">corr_real</span><span class="p">,</span> <span class="n">time_series</span><span class="p">)</span>

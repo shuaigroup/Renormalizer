@@ -363,7 +363,7 @@ your <code class="docutils literal notranslate"><span class="pre">~/.bashrc</spa
 </pre></div>
 </div>
 <p>To ensure the setting is successful, start a Python shell, and try:</p>
-<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="kn">import</span> <span class="nn">renormalizer</span>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="kn">import</span><span class="w"> </span><span class="nn">renormalizer</span>
 </pre></div>
 </div>
 </section>
@@ -420,7 +420,7 @@ $ pip install cupy-cuda100
 <section id="verify-cupy">
 <h4>Verify cupy<a class="headerlink" href="#verify-cupy" title="Permalink to this heading">#</a></h4>
 <p>Sometimes <code class="docutils literal notranslate"><span class="pre">CuPy</span></code> can be successfully installed but actually not working. Here is a sample script to test if it’s working or not:</p>
-<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="kn">import</span> <span class="nn">cupy</span> <span class="k">as</span> <span class="nn">cp</span>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="kn">import</span><span class="w"> </span><span class="nn">cupy</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="nn">cp</span>
 <span class="n">a</span> <span class="o">=</span> <span class="n">cp</span><span class="o">.</span><span class="n">random</span><span class="o">.</span><span class="n">rand</span><span class="p">(</span><span class="mi">100</span><span class="p">,</span> <span class="mi">100</span><span class="p">)</span>
 <span class="n">b</span> <span class="o">=</span> <span class="n">cp</span><span class="o">.</span><span class="n">dot</span><span class="p">(</span><span class="n">a</span><span class="p">,</span> <span class="n">a</span><span class="p">)</span>
 <span class="nb">print</span><span class="p">(</span><span class="n">b</span><span class="o">.</span><span class="n">sum</span><span class="p">())</span>

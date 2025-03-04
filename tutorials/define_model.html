@@ -497,7 +497,7 @@ div.rendered_html tbody tr:hover {
 <div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[1]:
 </pre></div>
 </div>
-<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="kn">from</span> <span class="nn">renormalizer</span> <span class="kn">import</span> <span class="n">Op</span>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="kn">from</span><span class="w"> </span><span class="nn">renormalizer</span><span class="w"> </span><span class="kn">import</span> <span class="n">Op</span>
 </pre></div>
 </div>
 </div>
@@ -506,11 +506,11 @@ div.rendered_html tbody tr:hover {
 </div>
 <div class="output_area stderr docutils container">
 <div class="highlight"><pre>
-2024-12-04 10:30:26,202[INFO] Use NumPy as backend
-2024-12-04 10:30:26,203[INFO] numpy random seed is 9012
-2024-12-04 10:30:26,204[INFO] random seed is 1092
-2024-12-04 10:30:26,214[INFO] Git Commit Hash: b882466cb690e4399b35e0772555500df69bb298
-2024-12-04 10:30:26,215[INFO] use 64 bits
+2025-03-04 06:46:25,617[INFO] Use NumPy as backend
+2025-03-04 06:46:25,618[INFO] numpy random seed is 9012
+2025-03-04 06:46:25,619[INFO] random seed is 1092
+2025-03-04 06:46:25,628[INFO] Git Commit Hash: 785189bf8584e6800eba66b19928d4e341058151
+2025-03-04 06:46:25,629[INFO] use 64 bits
 </pre></div></div>
 </div>
 <section id="Basics">
@@ -759,7 +759,7 @@ Op(&#39;X&#39;, [0], 5.0)
 <div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[14]:
 </pre></div>
 </div>
-<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="kn">import</span> <span class="nn">renormalizer</span>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="kn">import</span><span class="w"> </span><span class="nn">renormalizer</span>
 <span class="p">[</span><span class="n">s</span> <span class="k">for</span> <span class="n">s</span> <span class="ow">in</span> <span class="nb">dir</span><span class="p">(</span><span class="n">renormalizer</span><span class="p">)</span> <span class="k">if</span> <span class="n">s</span><span class="o">.</span><span class="n">startswith</span><span class="p">(</span><span class="s2">&quot;Basis&quot;</span><span class="p">)]</span>
 </pre></div>
 </div>
@@ -785,7 +785,7 @@ Op(&#39;X&#39;, [0], 5.0)
 <div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[15]:
 </pre></div>
 </div>
-<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="kn">from</span> <span class="nn">renormalizer</span> <span class="kn">import</span> <span class="n">BasisHalfSpin</span>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="kn">from</span><span class="w"> </span><span class="nn">renormalizer</span><span class="w"> </span><span class="kn">import</span> <span class="n">BasisHalfSpin</span>
 <span class="n">b</span> <span class="o">=</span> <span class="n">BasisHalfSpin</span><span class="p">((</span><span class="s2">&quot;spin&quot;</span><span class="p">,</span> <span class="mi">0</span><span class="p">))</span>
 <span class="n">b</span>
 </pre></div>
@@ -827,7 +827,7 @@ BasisHalfSpin(dof: (&#39;spin&#39;, 0), nbas: 2)
 </pre></div>
 </div>
 <div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="c1"># SHO represent simple harmonic oscillator</span>
-<span class="kn">from</span> <span class="nn">renormalizer</span> <span class="kn">import</span> <span class="n">BasisSHO</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">renormalizer</span><span class="w"> </span><span class="kn">import</span> <span class="n">BasisSHO</span>
 <span class="c1"># omega is the vibration frequency, nbas is the number of basis</span>
 <span class="n">b</span> <span class="o">=</span> <span class="n">BasisSHO</span><span class="p">(</span><span class="n">dof</span><span class="o">=</span><span class="mi">0</span><span class="p">,</span> <span class="n">omega</span><span class="o">=</span><span class="mi">50</span><span class="p">,</span> <span class="n">nbas</span><span class="o">=</span><span class="mi">4</span><span class="p">)</span>
 <span class="c1"># note the different value because of omega</span>
@@ -866,7 +866,7 @@ BasisHalfSpin(dof: (&#39;spin&#39;, 0), nbas: 2)
 <div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[18]:
 </pre></div>
 </div>
-<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="kn">from</span> <span class="nn">renormalizer</span> <span class="kn">import</span> <span class="n">Model</span>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="kn">from</span><span class="w"> </span><span class="nn">renormalizer</span><span class="w"> </span><span class="kn">import</span> <span class="n">Model</span>
 <span class="n">model</span> <span class="o">=</span> <span class="n">Model</span><span class="p">([</span><span class="n">BasisHalfSpin</span><span class="p">(</span><span class="mi">0</span><span class="p">)],</span> <span class="p">[</span><span class="n">Op</span><span class="p">(</span><span class="s2">&quot;X&quot;</span><span class="p">,</span> <span class="mi">0</span><span class="p">)])</span>
 </pre></div>
 </div>
@@ -876,7 +876,7 @@ BasisHalfSpin(dof: (&#39;spin&#39;, 0), nbas: 2)
 <div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[19]:
 </pre></div>
 </div>
-<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="kn">from</span> <span class="nn">renormalizer</span> <span class="kn">import</span> <span class="n">Mpo</span>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="kn">from</span><span class="w"> </span><span class="nn">renormalizer</span><span class="w"> </span><span class="kn">import</span> <span class="n">Mpo</span>
 <span class="n">mpo</span> <span class="o">=</span> <span class="n">Mpo</span><span class="p">(</span><span class="n">model</span><span class="p">)</span>
 <span class="n">mpo</span>
 </pre></div>
@@ -887,9 +887,9 @@ BasisHalfSpin(dof: (&#39;spin&#39;, 0), nbas: 2)
 </div>
 <div class="output_area stderr docutils container">
 <div class="highlight"><pre>
-2024-12-04 10:30:26,364[DEBUG] # of operator terms: 1
-2024-12-04 10:30:26,365[DEBUG] Input operator terms: 1
-2024-12-04 10:30:26,367[DEBUG] After combination of the same terms: 1
+2025-03-04 06:46:25,773[DEBUG] # of operator terms: 1
+2025-03-04 06:46:25,774[DEBUG] Input operator terms: 1
+2025-03-04 06:46:25,775[DEBUG] After combination of the same terms: 1
 </pre></div></div>
 </div>
 <div class="nboutput nblast docutils container">
@@ -938,7 +938,7 @@ array([[0., 1.],
 <div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[21]:
 </pre></div>
 </div>
-<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="kn">import</span> <span class="nn">renormalizer</span>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="kn">import</span><span class="w"> </span><span class="nn">renormalizer</span>
 <span class="p">[</span><span class="n">s</span> <span class="k">for</span> <span class="n">s</span> <span class="ow">in</span> <span class="nb">dir</span><span class="p">(</span><span class="n">renormalizer</span><span class="p">)</span> <span class="k">if</span> <span class="n">s</span><span class="o">.</span><span class="n">endswith</span><span class="p">(</span><span class="s2">&quot;Model&quot;</span><span class="p">)]</span>
 </pre></div>
 </div>

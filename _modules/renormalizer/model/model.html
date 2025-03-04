@@ -229,20 +229,20 @@
 <span></span><span class="c1"># -*- coding: utf-8 -*-</span>
 <span class="c1"># Author: Jiajun Ren &lt;jiajunren0522@gmail.com&gt;</span>
 
-<span class="kn">import</span> <span class="nn">logging</span>
-<span class="kn">from</span> <span class="nn">typing</span> <span class="kn">import</span> <span class="n">List</span><span class="p">,</span> <span class="n">Union</span><span class="p">,</span> <span class="n">Dict</span><span class="p">,</span> <span class="n">Callable</span>
+<span class="kn">import</span><span class="w"> </span><span class="nn">logging</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">typing</span><span class="w"> </span><span class="kn">import</span> <span class="n">List</span><span class="p">,</span> <span class="n">Union</span><span class="p">,</span> <span class="n">Dict</span><span class="p">,</span> <span class="n">Callable</span>
 
-<span class="kn">import</span> <span class="nn">numpy</span> <span class="k">as</span> <span class="nn">np</span>
+<span class="kn">import</span><span class="w"> </span><span class="nn">numpy</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="nn">np</span>
 
-<span class="kn">from</span> <span class="nn">renormalizer.model.basis</span> <span class="kn">import</span> <span class="n">BasisSet</span><span class="p">,</span> <span class="n">BasisSimpleElectron</span><span class="p">,</span> <span class="n">BasisMultiElectronVac</span><span class="p">,</span> <span class="n">BasisHalfSpin</span><span class="p">,</span> <span class="n">BasisSHO</span>
-<span class="kn">from</span> <span class="nn">renormalizer.model.mol</span> <span class="kn">import</span> <span class="n">Mol</span><span class="p">,</span> <span class="n">Phonon</span>
-<span class="kn">from</span> <span class="nn">renormalizer.model.op</span> <span class="kn">import</span> <span class="n">Op</span>
-<span class="kn">from</span> <span class="nn">renormalizer.utils</span> <span class="kn">import</span> <span class="n">Quantity</span><span class="p">,</span> <span class="n">cached_property</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">renormalizer.model.basis</span><span class="w"> </span><span class="kn">import</span> <span class="n">BasisSet</span><span class="p">,</span> <span class="n">BasisSimpleElectron</span><span class="p">,</span> <span class="n">BasisMultiElectronVac</span><span class="p">,</span> <span class="n">BasisHalfSpin</span><span class="p">,</span> <span class="n">BasisSHO</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">renormalizer.model.mol</span><span class="w"> </span><span class="kn">import</span> <span class="n">Mol</span><span class="p">,</span> <span class="n">Phonon</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">renormalizer.model.op</span><span class="w"> </span><span class="kn">import</span> <span class="n">Op</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">renormalizer.utils</span><span class="w"> </span><span class="kn">import</span> <span class="n">Quantity</span><span class="p">,</span> <span class="n">cached_property</span>
 
 
 <span class="n">logger</span> <span class="o">=</span> <span class="n">logging</span><span class="o">.</span><span class="n">getLogger</span><span class="p">(</span><span class="vm">__name__</span><span class="p">)</span>
 
-<div class="viewcode-block" id="Model"><a class="viewcode-back" href="../../../model.html#renormalizer.model.Model">[docs]</a><span class="k">class</span> <span class="nc">Model</span><span class="p">:</span>
+<div class="viewcode-block" id="Model"><a class="viewcode-back" href="../../../model.html#renormalizer.model.Model">[docs]</a><span class="k">class</span><span class="w"> </span><span class="nc">Model</span><span class="p">:</span>
 <span class="w">    </span><span class="sa">r</span><span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">    The most general model that supports any Hamiltonian in sum-of-product form.</span>
 <span class="sd">    Base class for :class:`HolsteinModel` and :class:`SpinBosonModel`.</span>
@@ -261,7 +261,7 @@
 <span class="sd">    output_ordering : :class:`list` of :class:`~renormalizer.model.basis.BasisSet`</span>
 <span class="sd">        The ordering of the local basis for output. Default is the same with ``basis``.</span>
 <span class="sd">    &quot;&quot;&quot;</span>
-    <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">basis</span><span class="p">:</span> <span class="n">List</span><span class="p">[</span><span class="n">BasisSet</span><span class="p">],</span> <span class="n">ham_terms</span><span class="p">:</span> <span class="n">List</span><span class="p">[</span><span class="n">Op</span><span class="p">],</span> <span class="n">dipole</span><span class="p">:</span> <span class="n">Dict</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span> <span class="n">output_ordering</span><span class="p">:</span> <span class="n">List</span><span class="p">[</span><span class="n">BasisSet</span><span class="p">]</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
+    <span class="k">def</span><span class="w"> </span><span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">basis</span><span class="p">:</span> <span class="n">List</span><span class="p">[</span><span class="n">BasisSet</span><span class="p">],</span> <span class="n">ham_terms</span><span class="p">:</span> <span class="n">List</span><span class="p">[</span><span class="n">Op</span><span class="p">],</span> <span class="n">dipole</span><span class="p">:</span> <span class="n">Dict</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span> <span class="n">output_ordering</span><span class="p">:</span> <span class="n">List</span><span class="p">[</span><span class="n">BasisSet</span><span class="p">]</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
         <span class="k">if</span> <span class="ow">not</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">basis</span><span class="p">,</span> <span class="nb">list</span><span class="p">)</span> <span class="ow">or</span> <span class="nb">len</span><span class="p">(</span><span class="n">basis</span><span class="p">)</span> <span class="o">==</span> <span class="mi">0</span><span class="p">:</span>
             <span class="k">raise</span> <span class="ne">TypeError</span><span class="p">(</span><span class="s2">&quot;Basis should be a non-empty list&quot;</span><span class="p">)</span>
         <span class="k">if</span> <span class="ow">not</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">basis</span><span class="p">[</span><span class="mi">0</span><span class="p">],</span> <span class="n">BasisSet</span><span class="p">):</span>
@@ -297,7 +297,7 @@
         <span class="c1"># physical bond dimension.</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">pbond_list</span> <span class="o">=</span> <span class="p">[</span><span class="n">local_basis</span><span class="o">.</span><span class="n">nbas</span> <span class="k">for</span> <span class="n">local_basis</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">basis</span><span class="p">]</span>
 
-<div class="viewcode-block" id="Model.check_operator_terms"><a class="viewcode-back" href="../../../model.html#renormalizer.model.Model.check_operator_terms">[docs]</a>    <span class="k">def</span> <span class="nf">check_operator_terms</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">terms</span><span class="p">:</span> <span class="n">List</span><span class="p">[</span><span class="n">Op</span><span class="p">]):</span>
+<div class="viewcode-block" id="Model.check_operator_terms"><a class="viewcode-back" href="../../../model.html#renormalizer.model.Model.check_operator_terms">[docs]</a>    <span class="k">def</span><span class="w"> </span><span class="nf">check_operator_terms</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">terms</span><span class="p">:</span> <span class="n">List</span><span class="p">[</span><span class="n">Op</span><span class="p">]):</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">        Check and clean operator terms in the input ``terms``.</span>
 <span class="sd">        Errors will be raised if the type of operator is not :class:`Op`</span>
@@ -329,7 +329,7 @@
             <span class="n">new_terms</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">term_op</span><span class="p">)</span>
         <span class="k">return</span> <span class="n">new_terms</span></div>
 
-    <span class="k">def</span> <span class="nf">_enumerate_dof</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">criteria</span><span class="o">=</span><span class="k">lambda</span> <span class="n">x</span><span class="p">:</span> <span class="kc">True</span><span class="p">):</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">_enumerate_dof</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">criteria</span><span class="o">=</span><span class="k">lambda</span> <span class="n">x</span><span class="p">:</span> <span class="kc">True</span><span class="p">):</span>
         <span class="c1"># enumerate DoFs and filter according to criteria.</span>
         <span class="n">dofs</span> <span class="o">=</span> <span class="p">[]</span>
         <span class="k">for</span> <span class="n">local_basis</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">output_ordering</span><span class="p">:</span>
@@ -338,14 +338,14 @@
         <span class="k">return</span> <span class="n">dofs</span>
 
     <span class="nd">@cached_property</span>
-    <span class="k">def</span> <span class="nf">dofs</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">List</span><span class="p">:</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">dofs</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">List</span><span class="p">:</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">        :class:`list` of DoF names.</span>
 <span class="sd">        &quot;&quot;&quot;</span>
         <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_enumerate_dof</span><span class="p">()</span>
     
     <span class="nd">@cached_property</span>
-    <span class="k">def</span> <span class="nf">nsite</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">int</span><span class="p">:</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">nsite</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">int</span><span class="p">:</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">        Number of sites in the MPS/MPO to be constructed.</span>
 <span class="sd">        Length of ``self.basis``.</span>
@@ -353,41 +353,41 @@
         <span class="k">return</span> <span class="nb">len</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">basis</span><span class="p">)</span>
 
     <span class="nd">@cached_property</span>
-    <span class="k">def</span> <span class="nf">e_dofs</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">List</span><span class="p">:</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">e_dofs</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">List</span><span class="p">:</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">        :class:`list` of electronic DoF names.</span>
 <span class="sd">        &quot;&quot;&quot;</span>
         <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_enumerate_dof</span><span class="p">(</span><span class="k">lambda</span> <span class="n">basis</span><span class="p">:</span> <span class="n">basis</span><span class="o">.</span><span class="n">is_electron</span><span class="p">)</span>
     
     <span class="nd">@cached_property</span>
-    <span class="k">def</span> <span class="nf">v_dofs</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">List</span><span class="p">:</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">v_dofs</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">List</span><span class="p">:</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">        :class:`list` of vibrational DoF names.</span>
 <span class="sd">        &quot;&quot;&quot;</span>
         <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_enumerate_dof</span><span class="p">(</span><span class="k">lambda</span> <span class="n">basis</span><span class="p">:</span> <span class="n">basis</span><span class="o">.</span><span class="n">is_phonon</span><span class="p">)</span>
 
     <span class="nd">@cached_property</span>
-    <span class="k">def</span> <span class="nf">n_dofs</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">int</span><span class="p">:</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">n_dofs</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">int</span><span class="p">:</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">        Number of total DoFs.</span>
 <span class="sd">        &quot;&quot;&quot;</span>
         <span class="k">return</span> <span class="nb">len</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">dofs</span><span class="p">)</span>
 
     <span class="nd">@cached_property</span>
-    <span class="k">def</span> <span class="nf">n_edofs</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">int</span><span class="p">:</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">n_edofs</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">int</span><span class="p">:</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">        Number of total electronic DoFs.</span>
 <span class="sd">        &quot;&quot;&quot;</span>
         <span class="k">return</span> <span class="nb">len</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">e_dofs</span><span class="p">)</span>
     
     <span class="nd">@cached_property</span>
-    <span class="k">def</span> <span class="nf">n_vdofs</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">int</span><span class="p">:</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">n_vdofs</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">int</span><span class="p">:</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">        Number of total vibrational DoFs.</span>
 <span class="sd">        &quot;&quot;&quot;</span>
         <span class="k">return</span> <span class="nb">len</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">v_dofs</span><span class="p">)</span>
 
-<div class="viewcode-block" id="Model.get_mpos"><a class="viewcode-back" href="../../../model.html#renormalizer.model.Model.get_mpos">[docs]</a>    <span class="k">def</span> <span class="nf">get_mpos</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">key</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span> <span class="n">fun</span><span class="p">:</span> <span class="n">Callable</span><span class="p">):</span>
+<div class="viewcode-block" id="Model.get_mpos"><a class="viewcode-back" href="../../../model.html#renormalizer.model.Model.get_mpos">[docs]</a>    <span class="k">def</span><span class="w"> </span><span class="nf">get_mpos</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">key</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span> <span class="n">fun</span><span class="p">:</span> <span class="n">Callable</span><span class="p">):</span>
 <span class="w">        </span><span class="sa">r</span><span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">        Get MPOs related to the model, such as MPOs to calculate</span>
 <span class="sd">        electronic occupations :math:`{a^\dagger_i a_i}`.</span>
@@ -415,14 +415,14 @@
             <span class="n">mpos</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">mpos</span><span class="p">[</span><span class="n">key</span><span class="p">]</span>
         <span class="k">return</span> <span class="n">mpos</span></div>
 
-<div class="viewcode-block" id="Model.copy"><a class="viewcode-back" href="../../../model.html#renormalizer.model.Model.copy">[docs]</a>    <span class="k">def</span> <span class="nf">copy</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+<div class="viewcode-block" id="Model.copy"><a class="viewcode-back" href="../../../model.html#renormalizer.model.Model.copy">[docs]</a>    <span class="k">def</span><span class="w"> </span><span class="nf">copy</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
         <span class="c1"># copy basis because it is mutable with OFS</span>
         <span class="n">model</span> <span class="o">=</span>  <span class="n">Model</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">basis</span><span class="o">.</span><span class="n">copy</span><span class="p">(),</span> <span class="bp">self</span><span class="o">.</span><span class="n">ham_terms</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">dipole</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">output_ordering</span><span class="p">)</span>
         <span class="c1"># this is a shallow copy, in order to avoid infinite recursion</span>
         <span class="n">model</span><span class="o">.</span><span class="n">mpos</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">mpos</span><span class="o">.</span><span class="n">copy</span><span class="p">()</span>
         <span class="k">return</span> <span class="n">model</span></div>
 
-<div class="viewcode-block" id="Model.to_dict"><a class="viewcode-back" href="../../../model.html#renormalizer.model.Model.to_dict">[docs]</a>    <span class="k">def</span> <span class="nf">to_dict</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Dict</span><span class="p">:</span>
+<div class="viewcode-block" id="Model.to_dict"><a class="viewcode-back" href="../../../model.html#renormalizer.model.Model.to_dict">[docs]</a>    <span class="k">def</span><span class="w"> </span><span class="nf">to_dict</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Dict</span><span class="p">:</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">        Convert the object into a dict that contains only objects of</span>
 <span class="sd">        Python primitive types or NumPy types.</span>
@@ -440,7 +440,7 @@
         <span class="k">return</span> <span class="n">info_dict</span></div></div>
 
 
-<div class="viewcode-block" id="HolsteinModel"><a class="viewcode-back" href="../../../model.html#renormalizer.model.HolsteinModel">[docs]</a><span class="k">class</span> <span class="nc">HolsteinModel</span><span class="p">(</span><span class="n">Model</span><span class="p">):</span>
+<div class="viewcode-block" id="HolsteinModel"><a class="viewcode-back" href="../../../model.html#renormalizer.model.HolsteinModel">[docs]</a><span class="k">class</span><span class="w"> </span><span class="nc">HolsteinModel</span><span class="p">(</span><span class="n">Model</span><span class="p">):</span>
 <span class="w">    </span><span class="sa">r</span><span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">    Interface for convenient Holstein model construction.</span>
 <span class="sd">    The Hamiltonian of the Holstein model:</span>
@@ -479,7 +479,7 @@
 <span class="sd">        from :class:`~renormalizer.utils.Quantity`. Default is ``False``.</span>
 <span class="sd">    &quot;&quot;&quot;</span>
 
-    <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span>  <span class="n">mol_list</span><span class="p">:</span> <span class="n">List</span><span class="p">[</span><span class="n">Mol</span><span class="p">],</span> <span class="n">j_matrix</span><span class="p">:</span> <span class="n">Union</span><span class="p">[</span><span class="n">Quantity</span><span class="p">,</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">],</span> <span class="n">scheme</span><span class="p">:</span> <span class="nb">int</span> <span class="o">=</span> <span class="mi">2</span><span class="p">,</span> <span class="n">periodic</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">False</span><span class="p">):</span>
+    <span class="k">def</span><span class="w"> </span><span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span>  <span class="n">mol_list</span><span class="p">:</span> <span class="n">List</span><span class="p">[</span><span class="n">Mol</span><span class="p">],</span> <span class="n">j_matrix</span><span class="p">:</span> <span class="n">Union</span><span class="p">[</span><span class="n">Quantity</span><span class="p">,</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">],</span> <span class="n">scheme</span><span class="p">:</span> <span class="nb">int</span> <span class="o">=</span> <span class="mi">2</span><span class="p">,</span> <span class="n">periodic</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">False</span><span class="p">):</span>
         <span class="c1"># construct the electronic coupling matrix</span>
 
         <span class="n">mol_num</span> <span class="o">=</span> <span class="nb">len</span><span class="p">(</span><span class="n">mol_list</span><span class="p">)</span>
@@ -561,7 +561,7 @@
         <span class="nb">super</span><span class="p">()</span><span class="o">.</span><span class="fm">__init__</span><span class="p">(</span><span class="n">basis</span><span class="p">,</span> <span class="n">ham</span><span class="p">,</span> <span class="n">dipole</span><span class="o">=</span><span class="n">dipole</span><span class="p">)</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">mol_num</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">n_edofs</span>
 
-<div class="viewcode-block" id="HolsteinModel.switch_scheme"><a class="viewcode-back" href="../../../model.html#renormalizer.model.HolsteinModel.switch_scheme">[docs]</a>    <span class="k">def</span> <span class="nf">switch_scheme</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">scheme</span><span class="p">:</span> <span class="nb">int</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="s2">&quot;HolsteinModel&quot;</span><span class="p">:</span>
+<div class="viewcode-block" id="HolsteinModel.switch_scheme"><a class="viewcode-back" href="../../../model.html#renormalizer.model.HolsteinModel.switch_scheme">[docs]</a>    <span class="k">def</span><span class="w"> </span><span class="nf">switch_scheme</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">scheme</span><span class="p">:</span> <span class="nb">int</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="s2">&quot;HolsteinModel&quot;</span><span class="p">:</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">        Switch the scheme of the current model.</span>
 
@@ -578,14 +578,14 @@
         <span class="k">return</span> <span class="n">HolsteinModel</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">mol_list</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">j_matrix</span><span class="p">,</span> <span class="n">scheme</span><span class="p">)</span></div>
 
     <span class="nd">@property</span>
-    <span class="k">def</span> <span class="nf">gs_zpe</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">float</span><span class="p">:</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">gs_zpe</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">float</span><span class="p">:</span>
 <span class="w">        </span><span class="sa">r</span><span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">        Ground state zero-point energy :math:`\sum_{i, j} \frac{1}{2}\omega_{i, j}`.</span>
 <span class="sd">        &quot;&quot;&quot;</span>
         <span class="k">return</span> <span class="nb">sum</span><span class="p">([</span><span class="n">mol</span><span class="o">.</span><span class="n">gs_zpe</span> <span class="k">for</span> <span class="n">mol</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">mol_list</span><span class="p">])</span>
 
     <span class="nd">@property</span>
-    <span class="k">def</span> <span class="nf">j_constant</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">j_constant</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;Extract electronic coupling constant from ``self.j_matrix``.</span>
 <span class="sd">        Useful in transport model when :math:`J` is a constant..</span>
 <span class="sd">        If J is actually not a constant, a value error will be raised.</span>
@@ -604,22 +604,22 @@
         <span class="k">else</span><span class="p">:</span>
             <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s2">&quot;J is not constant&quot;</span><span class="p">)</span>
 
-<div class="viewcode-block" id="HolsteinModel.copy"><a class="viewcode-back" href="../../../model.html#renormalizer.model.HolsteinModel.copy">[docs]</a>    <span class="k">def</span> <span class="nf">copy</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+<div class="viewcode-block" id="HolsteinModel.copy"><a class="viewcode-back" href="../../../model.html#renormalizer.model.HolsteinModel.copy">[docs]</a>    <span class="k">def</span><span class="w"> </span><span class="nf">copy</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
         <span class="n">model</span> <span class="o">=</span> <span class="n">HolsteinModel</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">mol_list</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">j_matrix</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">scheme</span><span class="p">)</span>
         <span class="n">model</span><span class="o">.</span><span class="n">mpos</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">mpos</span><span class="o">.</span><span class="n">copy</span><span class="p">()</span>
         <span class="k">return</span> <span class="n">model</span></div>
 
-    <span class="k">def</span> <span class="fm">__getitem__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">item</span><span class="p">):</span>
+    <span class="k">def</span><span class="w"> </span><span class="fm">__getitem__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">item</span><span class="p">):</span>
         <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">mol_list</span><span class="p">[</span><span class="n">item</span><span class="p">]</span>
 
-    <span class="k">def</span> <span class="fm">__iter__</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+    <span class="k">def</span><span class="w"> </span><span class="fm">__iter__</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
         <span class="k">return</span> <span class="nb">iter</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">mol_list</span><span class="p">)</span>
 
-    <span class="k">def</span> <span class="fm">__len__</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+    <span class="k">def</span><span class="w"> </span><span class="fm">__len__</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
         <span class="k">return</span> <span class="nb">len</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">mol_list</span><span class="p">)</span></div>
 
 
-<div class="viewcode-block" id="SpinBosonModel"><a class="viewcode-back" href="../../../model.html#renormalizer.model.SpinBosonModel">[docs]</a><span class="k">class</span> <span class="nc">SpinBosonModel</span><span class="p">(</span><span class="n">Model</span><span class="p">):</span>
+<div class="viewcode-block" id="SpinBosonModel"><a class="viewcode-back" href="../../../model.html#renormalizer.model.SpinBosonModel">[docs]</a><span class="k">class</span><span class="w"> </span><span class="nc">SpinBosonModel</span><span class="p">(</span><span class="n">Model</span><span class="p">):</span>
 <span class="w">    </span><span class="sa">r</span><span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">    Spin-Boson model</span>
 
@@ -629,7 +629,7 @@
 <span class="sd">                + \sigma_z \sum_i c_i q_i</span>
 
 <span class="sd">    &quot;&quot;&quot;</span>
-    <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">epsilon</span><span class="p">:</span> <span class="n">Quantity</span><span class="p">,</span> <span class="n">delta</span><span class="p">:</span> <span class="n">Quantity</span><span class="p">,</span> <span class="n">ph_list</span><span class="p">:</span> <span class="n">List</span><span class="p">[</span><span class="n">Phonon</span><span class="p">],</span> <span class="n">dipole</span><span class="p">:</span> <span class="nb">float</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
+    <span class="k">def</span><span class="w"> </span><span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">epsilon</span><span class="p">:</span> <span class="n">Quantity</span><span class="p">,</span> <span class="n">delta</span><span class="p">:</span> <span class="n">Quantity</span><span class="p">,</span> <span class="n">ph_list</span><span class="p">:</span> <span class="n">List</span><span class="p">[</span><span class="n">Phonon</span><span class="p">],</span> <span class="n">dipole</span><span class="p">:</span> <span class="nb">float</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
 
         <span class="bp">self</span><span class="o">.</span><span class="n">epsilon</span> <span class="o">=</span> <span class="n">epsilon</span><span class="o">.</span><span class="n">as_au</span><span class="p">()</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">delta</span> <span class="o">=</span> <span class="n">delta</span><span class="o">.</span><span class="n">as_au</span><span class="p">()</span>
@@ -651,7 +651,7 @@
         <span class="nb">super</span><span class="p">()</span><span class="o">.</span><span class="fm">__init__</span><span class="p">(</span><span class="n">basis</span><span class="p">,</span> <span class="n">ham</span><span class="p">,</span> <span class="n">dipole</span><span class="o">=</span><span class="p">{</span><span class="s2">&quot;spin&quot;</span><span class="p">:</span> <span class="n">dipole</span><span class="p">})</span></div>
 
 
-<div class="viewcode-block" id="TI1DModel"><a class="viewcode-back" href="../../../model.html#renormalizer.model.TI1DModel">[docs]</a><span class="k">class</span> <span class="nc">TI1DModel</span><span class="p">(</span><span class="n">Model</span><span class="p">):</span>
+<div class="viewcode-block" id="TI1DModel"><a class="viewcode-back" href="../../../model.html#renormalizer.model.TI1DModel">[docs]</a><span class="k">class</span><span class="w"> </span><span class="nc">TI1DModel</span><span class="p">(</span><span class="n">Model</span><span class="p">):</span>
 <span class="w">    </span><span class="sa">r</span><span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">    Translational invariant one dimensional model with periodic boundary condition.</span>
 <span class="sd">    The Hamiltonian should take the form:</span>
@@ -692,7 +692,7 @@
 <span class="sd">    ncell : int</span>
 <span class="sd">        Number of unit cells in the system.</span>
 <span class="sd">    &quot;&quot;&quot;</span>
-    <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">basis</span><span class="p">:</span> <span class="n">List</span><span class="p">[</span><span class="n">BasisSet</span><span class="p">],</span> <span class="n">local_ham_terms</span><span class="p">:</span> <span class="n">List</span><span class="p">[</span><span class="n">Op</span><span class="p">],</span> <span class="n">nonlocal_ham_terms</span><span class="p">:</span> <span class="n">List</span><span class="p">[</span><span class="n">Op</span><span class="p">],</span> <span class="n">ncell</span><span class="p">:</span> <span class="nb">int</span><span class="p">):</span>
+    <span class="k">def</span><span class="w"> </span><span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">basis</span><span class="p">:</span> <span class="n">List</span><span class="p">[</span><span class="n">BasisSet</span><span class="p">],</span> <span class="n">local_ham_terms</span><span class="p">:</span> <span class="n">List</span><span class="p">[</span><span class="n">Op</span><span class="p">],</span> <span class="n">nonlocal_ham_terms</span><span class="p">:</span> <span class="n">List</span><span class="p">[</span><span class="n">Op</span><span class="p">],</span> <span class="n">ncell</span><span class="p">:</span> <span class="nb">int</span><span class="p">):</span>
         <span class="c1"># construct basis for the full model</span>
         <span class="n">full_basis</span> <span class="o">=</span> <span class="p">[]</span>
         <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="n">ncell</span><span class="p">):</span>
@@ -722,7 +722,7 @@
         <span class="nb">super</span><span class="p">()</span><span class="o">.</span><span class="fm">__init__</span><span class="p">(</span><span class="n">full_basis</span><span class="p">,</span> <span class="n">full_ham_terms</span><span class="p">)</span></div>
 
 
-<span class="k">def</span> <span class="nf">construct_j_matrix</span><span class="p">(</span><span class="n">mol_num</span><span class="p">,</span> <span class="n">j_constant</span><span class="p">,</span> <span class="n">periodic</span><span class="p">):</span>
+<span class="k">def</span><span class="w"> </span><span class="nf">construct_j_matrix</span><span class="p">(</span><span class="n">mol_num</span><span class="p">,</span> <span class="n">j_constant</span><span class="p">,</span> <span class="n">periodic</span><span class="p">):</span>
     <span class="c1"># nearest neighbour interaction</span>
     <span class="n">j_constant_au</span> <span class="o">=</span> <span class="n">j_constant</span><span class="o">.</span><span class="n">as_au</span><span class="p">()</span>
     <span class="n">j_list</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">ones</span><span class="p">(</span><span class="n">mol_num</span> <span class="o">-</span> <span class="mi">1</span><span class="p">)</span> <span class="o">*</span> <span class="n">j_constant_au</span>
@@ -732,7 +732,7 @@
     <span class="k">return</span> <span class="n">j_matrix</span>
 
 
-<span class="k">def</span> <span class="nf">load_from_dict</span><span class="p">(</span><span class="n">param</span><span class="p">,</span> <span class="n">scheme</span><span class="p">,</span> <span class="n">lam</span><span class="p">:</span> <span class="nb">bool</span><span class="p">):</span>
+<span class="k">def</span><span class="w"> </span><span class="nf">load_from_dict</span><span class="p">(</span><span class="n">param</span><span class="p">,</span> <span class="n">scheme</span><span class="p">,</span> <span class="n">lam</span><span class="p">:</span> <span class="nb">bool</span><span class="p">):</span>
     <span class="n">temperature</span> <span class="o">=</span> <span class="n">Quantity</span><span class="p">(</span><span class="o">*</span><span class="n">param</span><span class="p">[</span><span class="s2">&quot;temperature&quot;</span><span class="p">])</span>
     <span class="n">ph_list</span> <span class="o">=</span> <span class="p">[</span>
         <span class="n">Phonon</span><span class="o">.</span><span class="n">simplest_phonon</span><span class="p">(</span>
@@ -745,7 +745,7 @@
     <span class="k">return</span> <span class="n">model</span><span class="p">,</span> <span class="n">temperature</span>
 
 
-<span class="k">def</span> <span class="nf">heisenberg_ops</span><span class="p">(</span><span class="n">nspin</span><span class="p">):</span>
+<span class="k">def</span><span class="w"> </span><span class="nf">heisenberg_ops</span><span class="p">(</span><span class="n">nspin</span><span class="p">):</span>
     <span class="n">ham_terms</span> <span class="o">=</span> <span class="p">[]</span>
     <span class="k">for</span> <span class="n">ispin</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="n">nspin</span> <span class="o">-</span> <span class="mi">1</span><span class="p">):</span>
         <span class="n">op1</span> <span class="o">=</span> <span class="n">Op</span><span class="p">(</span><span class="s2">&quot;sigma_z sigma_z&quot;</span><span class="p">,</span> <span class="p">[</span><span class="n">ispin</span><span class="p">,</span> <span class="n">ispin</span> <span class="o">+</span> <span class="mi">1</span><span class="p">],</span> <span class="mf">1.0</span> <span class="o">/</span> <span class="mi">4</span><span class="p">)</span>

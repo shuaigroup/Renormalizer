@@ -228,22 +228,22 @@
           <h1>Source code for renormalizer.mps.tda</h1><div class="highlight"><pre>
 <span></span><span class="c1"># -*- coding: utf-8 -*-</span>
 
-<span class="kn">import</span> <span class="nn">logging</span>
-<span class="kn">from</span> <span class="nn">collections</span> <span class="kn">import</span> <span class="n">defaultdict</span>
+<span class="kn">import</span><span class="w"> </span><span class="nn">logging</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">collections</span><span class="w"> </span><span class="kn">import</span> <span class="n">defaultdict</span>
 
-<span class="kn">import</span> <span class="nn">numpy</span> <span class="k">as</span> <span class="nn">np</span>
-<span class="kn">import</span> <span class="nn">scipy</span>
-<span class="kn">import</span> <span class="nn">opt_einsum</span> <span class="k">as</span> <span class="nn">oe</span>
+<span class="kn">import</span><span class="w"> </span><span class="nn">numpy</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="nn">np</span>
+<span class="kn">import</span><span class="w"> </span><span class="nn">scipy</span>
+<span class="kn">import</span><span class="w"> </span><span class="nn">opt_einsum</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="nn">oe</span>
 
-<span class="kn">from</span> <span class="nn">renormalizer.mps.matrix</span> <span class="kn">import</span> <span class="n">tensordot</span><span class="p">,</span> <span class="n">multi_tensor_contract</span><span class="p">,</span> <span class="n">asnumpy</span><span class="p">,</span> <span class="n">asxp</span>
-<span class="kn">from</span> <span class="nn">renormalizer.mps.backend</span> <span class="kn">import</span> <span class="n">xp</span><span class="p">,</span> <span class="n">USE_GPU</span><span class="p">,</span> <span class="n">primme</span><span class="p">,</span> <span class="n">IMPORT_PRIMME_EXCEPTION</span>
-<span class="kn">from</span> <span class="nn">renormalizer.mps</span> <span class="kn">import</span> <span class="n">Mps</span>
-<span class="kn">from</span> <span class="nn">renormalizer.mps.lib</span> <span class="kn">import</span> <span class="n">Environ</span><span class="p">,</span> <span class="n">compressed_sum</span>
-<span class="kn">from</span> <span class="nn">renormalizer.lib</span> <span class="kn">import</span> <span class="n">davidson</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">renormalizer.mps.matrix</span><span class="w"> </span><span class="kn">import</span> <span class="n">tensordot</span><span class="p">,</span> <span class="n">multi_tensor_contract</span><span class="p">,</span> <span class="n">asnumpy</span><span class="p">,</span> <span class="n">asxp</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">renormalizer.mps.backend</span><span class="w"> </span><span class="kn">import</span> <span class="n">xp</span><span class="p">,</span> <span class="n">USE_GPU</span><span class="p">,</span> <span class="n">primme</span><span class="p">,</span> <span class="n">IMPORT_PRIMME_EXCEPTION</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">renormalizer.mps</span><span class="w"> </span><span class="kn">import</span> <span class="n">Mps</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">renormalizer.mps.lib</span><span class="w"> </span><span class="kn">import</span> <span class="n">Environ</span><span class="p">,</span> <span class="n">compressed_sum</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">renormalizer.lib</span><span class="w"> </span><span class="kn">import</span> <span class="n">davidson</span>
 
 <span class="n">logger</span> <span class="o">=</span> <span class="n">logging</span><span class="o">.</span><span class="n">getLogger</span><span class="p">(</span><span class="vm">__name__</span><span class="p">)</span>
 
-<div class="viewcode-block" id="TDA"><a class="viewcode-back" href="../../../static.html#renormalizer.mps.tda.TDA">[docs]</a><span class="k">class</span> <span class="nc">TDA</span><span class="p">(</span><span class="nb">object</span><span class="p">):</span>
+<div class="viewcode-block" id="TDA"><a class="viewcode-back" href="../../../static.html#renormalizer.mps.tda.TDA">[docs]</a><span class="k">class</span><span class="w"> </span><span class="nc">TDA</span><span class="p">(</span><span class="nb">object</span><span class="p">):</span>
 <span class="w">    </span><span class="sa">r</span><span class="sd">&quot;&quot;&quot; Tamm–Dancoff approximation (or called CIS) to calculate the excited</span>
 <span class="sd">    states based on MPS. TDA use the first order tangent space to do excitation.</span>
 <span class="sd">    The implementation is similar to J. Chem. Phys. 140, 024108 (2014).</span>
@@ -268,7 +268,7 @@
 
 <span class="sd">    &quot;&quot;&quot;</span>
 
-    <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">model</span><span class="p">,</span> <span class="n">hmpo</span><span class="p">,</span> <span class="n">mps</span><span class="p">,</span> <span class="n">nroots</span><span class="o">=</span><span class="mi">1</span><span class="p">,</span> <span class="n">algo</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
+    <span class="k">def</span><span class="w"> </span><span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">model</span><span class="p">,</span> <span class="n">hmpo</span><span class="p">,</span> <span class="n">mps</span><span class="p">,</span> <span class="n">nroots</span><span class="o">=</span><span class="mi">1</span><span class="p">,</span> <span class="n">algo</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
                
         <span class="bp">self</span><span class="o">.</span><span class="n">model</span> <span class="o">=</span> <span class="n">model</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">hmpo</span> <span class="o">=</span> <span class="n">hmpo</span>
@@ -287,7 +287,7 @@
         <span class="bp">self</span><span class="o">.</span><span class="n">wfn</span> <span class="o">=</span> <span class="kc">None</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">configs</span> <span class="o">=</span> <span class="n">defaultdict</span><span class="p">(</span><span class="nb">list</span><span class="p">)</span>
 
-<div class="viewcode-block" id="TDA.kernel"><a class="viewcode-back" href="../../../static.html#renormalizer.mps.tda.TDA.kernel">[docs]</a>    <span class="k">def</span> <span class="nf">kernel</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">restart</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span> <span class="n">include_psi0</span><span class="o">=</span><span class="kc">False</span><span class="p">):</span>
+<div class="viewcode-block" id="TDA.kernel"><a class="viewcode-back" href="../../../static.html#renormalizer.mps.tda.TDA.kernel">[docs]</a>    <span class="k">def</span><span class="w"> </span><span class="nf">kernel</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">restart</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span> <span class="n">include_psi0</span><span class="o">=</span><span class="kc">False</span><span class="p">):</span>
 <span class="w">        </span><span class="sa">r</span><span class="sd">&quot;&quot;&quot;calculate the roots</span>
 
 <span class="sd">        Parameters</span>
@@ -400,7 +400,7 @@
         <span class="n">count</span> <span class="o">=</span> <span class="mi">0</span>
         
         <span class="c1"># recover the vector-like x back to the ndarray tda_coeff</span>
-        <span class="k">def</span> <span class="nf">reshape_x</span><span class="p">(</span><span class="n">x</span><span class="p">):</span>
+        <span class="k">def</span><span class="w"> </span><span class="nf">reshape_x</span><span class="p">(</span><span class="n">x</span><span class="p">):</span>
             <span class="n">tda_coeff</span> <span class="o">=</span> <span class="p">[]</span>
             <span class="n">offset</span> <span class="o">=</span> <span class="mi">0</span>
             <span class="k">for</span> <span class="n">shape</span> <span class="ow">in</span> <span class="n">xshape</span><span class="p">:</span>
@@ -414,7 +414,7 @@
             <span class="k">assert</span> <span class="n">offset</span> <span class="o">==</span> <span class="n">xsize</span>
             <span class="k">return</span> <span class="n">tda_coeff</span>
             
-        <span class="k">def</span> <span class="nf">hop</span><span class="p">(</span><span class="n">x</span><span class="p">):</span>
+        <span class="k">def</span><span class="w"> </span><span class="nf">hop</span><span class="p">(</span><span class="n">x</span><span class="p">):</span>
             <span class="c1"># H*X</span>
             <span class="k">nonlocal</span> <span class="n">count</span>
             <span class="n">count</span> <span class="o">+=</span> <span class="mi">1</span>
@@ -497,7 +497,7 @@
             <span class="k">if</span> <span class="ow">not</span> <span class="n">restart</span><span class="p">:</span>
                 <span class="n">cguess</span> <span class="o">=</span> <span class="kc">None</span>
 
-            <span class="k">def</span> <span class="nf">multi_hop</span><span class="p">(</span><span class="n">x</span><span class="p">):</span>
+            <span class="k">def</span><span class="w"> </span><span class="nf">multi_hop</span><span class="p">(</span><span class="n">x</span><span class="p">):</span>
                 <span class="k">if</span> <span class="n">x</span><span class="o">.</span><span class="n">ndim</span> <span class="o">==</span> <span class="mi">1</span><span class="p">:</span>
                     <span class="k">return</span> <span class="n">hop</span><span class="p">(</span><span class="n">x</span><span class="p">)</span>
                 <span class="k">elif</span> <span class="n">x</span><span class="o">.</span><span class="n">ndim</span> <span class="o">==</span> <span class="mi">2</span><span class="p">:</span>
@@ -505,7 +505,7 @@
                 <span class="k">else</span><span class="p">:</span>
                     <span class="k">assert</span> <span class="kc">False</span>
     
-            <span class="k">def</span> <span class="nf">precond</span><span class="p">(</span><span class="n">x</span><span class="p">):</span> 
+            <span class="k">def</span><span class="w"> </span><span class="nf">precond</span><span class="p">(</span><span class="n">x</span><span class="p">):</span> 
                 <span class="k">if</span> <span class="n">x</span><span class="o">.</span><span class="n">ndim</span> <span class="o">==</span> <span class="mi">1</span><span class="p">:</span>
                     <span class="k">return</span> <span class="n">np</span><span class="o">.</span><span class="n">einsum</span><span class="p">(</span><span class="s2">&quot;i, i -&gt; i&quot;</span><span class="p">,</span> <span class="mi">1</span><span class="o">/</span><span class="p">(</span><span class="n">hdiag</span><span class="o">+</span><span class="mf">1e-4</span><span class="p">),</span> <span class="n">x</span><span class="p">)</span>
                 <span class="k">elif</span> <span class="n">x</span><span class="o">.</span><span class="n">ndim</span> <span class="o">==</span><span class="mi">2</span><span class="p">:</span>
@@ -534,7 +534,7 @@
         <span class="bp">self</span><span class="o">.</span><span class="n">wfn</span> <span class="o">=</span> <span class="p">[</span><span class="n">mps_l_cano</span><span class="p">,</span> <span class="n">mps_r_cano</span><span class="p">,</span> <span class="n">tangent_u</span><span class="p">,</span> <span class="n">tda_coeff_list</span><span class="p">]</span>
         <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">e</span></div>
 
-<div class="viewcode-block" id="TDA.dump_wfn"><a class="viewcode-back" href="../../../static.html#renormalizer.mps.tda.TDA.dump_wfn">[docs]</a>    <span class="k">def</span> <span class="nf">dump_wfn</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+<div class="viewcode-block" id="TDA.dump_wfn"><a class="viewcode-back" href="../../../static.html#renormalizer.mps.tda.TDA.dump_wfn">[docs]</a>    <span class="k">def</span><span class="w"> </span><span class="nf">dump_wfn</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
 <span class="w">        </span><span class="sa">r</span><span class="sd">&quot;&quot;&quot; Dump wavefunction for restart and analysis</span>
 <span class="sd">        </span>
 <span class="sd">        Note</span>
@@ -563,7 +563,7 @@
             <span class="n">np</span><span class="o">.</span><span class="n">savez</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;tda_coeff_</span><span class="si">{</span><span class="n">iroot</span><span class="si">}</span><span class="s2">.npz&quot;</span><span class="p">,</span> <span class="o">**</span><span class="n">tda_coeff_dict</span><span class="p">)</span></div>
  
 
-<div class="viewcode-block" id="TDA.load_wfn"><a class="viewcode-back" href="../../../static.html#renormalizer.mps.tda.TDA.load_wfn">[docs]</a>    <span class="k">def</span> <span class="nf">load_wfn</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">model</span><span class="p">):</span>
+<div class="viewcode-block" id="TDA.load_wfn"><a class="viewcode-back" href="../../../static.html#renormalizer.mps.tda.TDA.load_wfn">[docs]</a>    <span class="k">def</span><span class="w"> </span><span class="nf">load_wfn</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">model</span><span class="p">):</span>
 <span class="w">        </span><span class="sa">r</span><span class="sd">&quot;&quot;&quot;Load tda wavefunction</span>
 <span class="sd">        &quot;&quot;&quot;</span>
         <span class="n">mps_l_cano</span> <span class="o">=</span> <span class="n">Mps</span><span class="o">.</span><span class="n">load</span><span class="p">(</span><span class="n">model</span><span class="p">,</span> <span class="s2">&quot;mps_l_cano.npz&quot;</span><span class="p">)</span>
@@ -581,7 +581,7 @@
         <span class="bp">self</span><span class="o">.</span><span class="n">wfn</span> <span class="o">=</span> <span class="p">[</span><span class="n">mps_l_cano</span><span class="p">,</span> <span class="n">mps_r_cano</span><span class="p">,</span> <span class="n">tangent_u</span><span class="p">,</span> <span class="n">tda_coeff_list</span><span class="p">]</span></div>
  
 
-<div class="viewcode-block" id="TDA.analysis_1ordm"><a class="viewcode-back" href="../../../static.html#renormalizer.mps.tda.TDA.analysis_1ordm">[docs]</a>    <span class="k">def</span> <span class="nf">analysis_1ordm</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+<div class="viewcode-block" id="TDA.analysis_1ordm"><a class="viewcode-back" href="../../../static.html#renormalizer.mps.tda.TDA.analysis_1ordm">[docs]</a>    <span class="k">def</span><span class="w"> </span><span class="nf">analysis_1ordm</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
 <span class="w">        </span><span class="sa">r</span><span class="sd">&quot;&quot;&quot; calculate one-orbital reduced density matrix of each tda root</span>
 <span class="sd">        &quot;&quot;&quot;</span>
         
@@ -609,7 +609,7 @@
             <span class="n">logger</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;root: </span><span class="si">{</span><span class="n">iroot</span><span class="si">}</span><span class="s2">, config: </span><span class="si">{</span><span class="n">dominant_config</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span></div>
             
     
-<div class="viewcode-block" id="TDA.analysis_dominant_config"><a class="viewcode-back" href="../../../static.html#renormalizer.mps.tda.TDA.analysis_dominant_config">[docs]</a>    <span class="k">def</span> <span class="nf">analysis_dominant_config</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">thresh</span><span class="o">=</span><span class="mf">0.8</span><span class="p">,</span> <span class="n">alias</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">tda_m_trunc</span><span class="o">=</span><span class="mi">20</span><span class="p">,</span>
+<div class="viewcode-block" id="TDA.analysis_dominant_config"><a class="viewcode-back" href="../../../static.html#renormalizer.mps.tda.TDA.analysis_dominant_config">[docs]</a>    <span class="k">def</span><span class="w"> </span><span class="nf">analysis_dominant_config</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">thresh</span><span class="o">=</span><span class="mf">0.8</span><span class="p">,</span> <span class="n">alias</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">tda_m_trunc</span><span class="o">=</span><span class="mi">20</span><span class="p">,</span>
             <span class="n">return_compressed_mps</span><span class="o">=</span><span class="kc">False</span><span class="p">):</span>
 <span class="w">        </span><span class="sa">r</span><span class="sd">&quot;&quot;&quot; analyze the dominant configuration of each tda root.</span>
 <span class="sd">            The algorithm is to compress the tda wavefunction to a rank-1 Hartree</span>
@@ -734,7 +734,7 @@
         
         <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">configs</span><span class="p">,</span> <span class="n">compressed_mps</span></div></div>
         
-<div class="viewcode-block" id="merge"><a class="viewcode-back" href="../../../static.html#renormalizer.mps.tda.merge">[docs]</a><span class="k">def</span> <span class="nf">merge</span><span class="p">(</span><span class="n">mpsl</span><span class="p">,</span> <span class="n">mpsr</span><span class="p">,</span> <span class="n">idx</span><span class="p">):</span>
+<div class="viewcode-block" id="merge"><a class="viewcode-back" href="../../../static.html#renormalizer.mps.tda.merge">[docs]</a><span class="k">def</span><span class="w"> </span><span class="nf">merge</span><span class="p">(</span><span class="n">mpsl</span><span class="p">,</span> <span class="n">mpsr</span><span class="p">,</span> <span class="n">idx</span><span class="p">):</span>
 <span class="w">    </span><span class="sd">&quot;&quot;&quot; merge two mps (mpsl, mpsr) at dix</span>
 <span class="sd">        idx belongs mpsr, the other attributes are the same aas mpsl</span>
 <span class="sd">    &quot;&quot;&quot;</span> 

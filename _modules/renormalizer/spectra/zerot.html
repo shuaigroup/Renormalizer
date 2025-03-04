@@ -230,17 +230,17 @@
 <span class="c1"># Author: Jiajun Ren &lt;jiajunren0522@gmail.com&gt;</span>
 <span class="c1">#         Weitang Li &lt;liwt31@163.com&gt;</span>
 
-<span class="kn">import</span> <span class="nn">logging</span>
+<span class="kn">import</span><span class="w"> </span><span class="nn">logging</span>
 
-<span class="kn">from</span> <span class="nn">renormalizer.mps</span> <span class="kn">import</span> <span class="n">Mpo</span><span class="p">,</span> <span class="n">Mps</span><span class="p">,</span> <span class="n">gs</span>
-<span class="kn">from</span> <span class="nn">renormalizer.spectra.base</span> <span class="kn">import</span> <span class="n">SpectraTdMpsJobBase</span>
-<span class="kn">from</span> <span class="nn">renormalizer.mps.mps</span> <span class="kn">import</span> <span class="n">BraKetPair</span>
-<span class="kn">from</span> <span class="nn">renormalizer.utils</span> <span class="kn">import</span> <span class="n">Quantity</span><span class="p">,</span> <span class="n">OptimizeConfig</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">renormalizer.mps</span><span class="w"> </span><span class="kn">import</span> <span class="n">Mpo</span><span class="p">,</span> <span class="n">Mps</span><span class="p">,</span> <span class="n">gs</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">renormalizer.spectra.base</span><span class="w"> </span><span class="kn">import</span> <span class="n">SpectraTdMpsJobBase</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">renormalizer.mps.mps</span><span class="w"> </span><span class="kn">import</span> <span class="n">BraKetPair</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">renormalizer.utils</span><span class="w"> </span><span class="kn">import</span> <span class="n">Quantity</span><span class="p">,</span> <span class="n">OptimizeConfig</span>
 
 <span class="n">logger</span> <span class="o">=</span> <span class="n">logging</span><span class="o">.</span><span class="n">getLogger</span><span class="p">(</span><span class="vm">__name__</span><span class="p">)</span>
 
 
-<div class="viewcode-block" id="SpectraZeroT"><a class="viewcode-back" href="../../../spectrum.html#renormalizer.spectra.zerot.SpectraZeroT">[docs]</a><span class="k">class</span> <span class="nc">SpectraZeroT</span><span class="p">(</span><span class="n">SpectraTdMpsJobBase</span><span class="p">):</span>
+<div class="viewcode-block" id="SpectraZeroT"><a class="viewcode-back" href="../../../spectrum.html#renormalizer.spectra.zerot.SpectraZeroT">[docs]</a><span class="k">class</span><span class="w"> </span><span class="nc">SpectraZeroT</span><span class="p">(</span><span class="n">SpectraTdMpsJobBase</span><span class="p">):</span>
 <span class="w">    </span><span class="sd">&#39;&#39;&#39;Calculate the zero temprature absorption &amp; emission spectrum using TD-DMRG</span>
 
 <span class="sd">    Parameters:</span>
@@ -253,7 +253,7 @@
 <span class="sd">        evolve_config :</span>
 <span class="sd">            time evolution</span>
 <span class="sd">    &#39;&#39;&#39;</span>
-    <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span>
+    <span class="k">def</span><span class="w"> </span><span class="fm">__init__</span><span class="p">(</span>
         <span class="bp">self</span><span class="p">,</span>
         <span class="n">model</span><span class="p">,</span>
         <span class="n">spectratype</span><span class="p">,</span>
@@ -271,7 +271,7 @@
             <span class="n">model</span><span class="p">,</span> <span class="n">spectratype</span><span class="p">,</span> <span class="n">Quantity</span><span class="p">(</span><span class="mi">0</span><span class="p">),</span> <span class="n">evolve_config</span><span class="p">,</span> <span class="n">compress_config</span><span class="p">,</span> <span class="n">offset</span>
         <span class="p">)</span>
 
-<div class="viewcode-block" id="SpectraZeroT.init_mps"><a class="viewcode-back" href="../../../spectrum.html#renormalizer.spectra.zerot.SpectraZeroT.init_mps">[docs]</a>    <span class="k">def</span> <span class="nf">init_mps</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+<div class="viewcode-block" id="SpectraZeroT.init_mps"><a class="viewcode-back" href="../../../spectrum.html#renormalizer.spectra.zerot.SpectraZeroT.init_mps">[docs]</a>    <span class="k">def</span><span class="w"> </span><span class="nf">init_mps</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
         <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">spectratype</span> <span class="o">==</span> <span class="s2">&quot;emi&quot;</span><span class="p">:</span>
             <span class="n">operator</span> <span class="o">=</span> <span class="s2">&quot;a&quot;</span>
         <span class="k">else</span><span class="p">:</span>
@@ -285,7 +285,7 @@
         <span class="n">a_ket_mps</span><span class="o">.</span><span class="n">compress_config</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">compress_config</span>
         <span class="k">return</span> <span class="n">BraKetPair</span><span class="p">(</span><span class="n">a_bra_mps</span><span class="p">,</span> <span class="n">a_ket_mps</span><span class="p">)</span></div>
 
-<div class="viewcode-block" id="SpectraZeroT.get_imps"><a class="viewcode-back" href="../../../spectrum.html#renormalizer.spectra.zerot.SpectraZeroT.get_imps">[docs]</a>    <span class="k">def</span> <span class="nf">get_imps</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+<div class="viewcode-block" id="SpectraZeroT.get_imps"><a class="viewcode-back" href="../../../spectrum.html#renormalizer.spectra.zerot.SpectraZeroT.get_imps">[docs]</a>    <span class="k">def</span><span class="w"> </span><span class="nf">get_imps</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
         <span class="n">mmax</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">optimize_config</span><span class="o">.</span><span class="n">procedure</span><span class="p">[</span><span class="mi">0</span><span class="p">][</span><span class="mi">0</span><span class="p">]</span>
         <span class="n">i_mps</span> <span class="o">=</span> <span class="n">Mps</span><span class="o">.</span><span class="n">random</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">h_mpo</span><span class="o">.</span><span class="n">model</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">nexciton</span><span class="p">,</span> <span class="n">mmax</span><span class="p">,</span> <span class="mi">1</span><span class="p">)</span>
         <span class="n">i_mps</span><span class="o">.</span><span class="n">optimize_config</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">optimize_config</span>
@@ -293,15 +293,15 @@
         <span class="k">return</span> <span class="n">i_mps</span></div></div>
 
 
-<div class="viewcode-block" id="SpectraOneWayPropZeroT"><a class="viewcode-back" href="../../../spectrum.html#renormalizer.spectra.zerot.SpectraOneWayPropZeroT">[docs]</a><span class="k">class</span> <span class="nc">SpectraOneWayPropZeroT</span><span class="p">(</span><span class="n">SpectraZeroT</span><span class="p">):</span>
-<div class="viewcode-block" id="SpectraOneWayPropZeroT.evolve_single_step"><a class="viewcode-back" href="../../../spectrum.html#renormalizer.spectra.zerot.SpectraOneWayPropZeroT.evolve_single_step">[docs]</a>    <span class="k">def</span> <span class="nf">evolve_single_step</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">evolve_dt</span><span class="p">):</span>
+<div class="viewcode-block" id="SpectraOneWayPropZeroT"><a class="viewcode-back" href="../../../spectrum.html#renormalizer.spectra.zerot.SpectraOneWayPropZeroT">[docs]</a><span class="k">class</span><span class="w"> </span><span class="nc">SpectraOneWayPropZeroT</span><span class="p">(</span><span class="n">SpectraZeroT</span><span class="p">):</span>
+<div class="viewcode-block" id="SpectraOneWayPropZeroT.evolve_single_step"><a class="viewcode-back" href="../../../spectrum.html#renormalizer.spectra.zerot.SpectraOneWayPropZeroT.evolve_single_step">[docs]</a>    <span class="k">def</span><span class="w"> </span><span class="nf">evolve_single_step</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">evolve_dt</span><span class="p">):</span>
         <span class="n">latest_bra_mps</span><span class="p">,</span> <span class="n">latest_ket_mps</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">latest_mps</span>
         <span class="n">latest_ket_mps</span> <span class="o">=</span> <span class="n">latest_ket_mps</span><span class="o">.</span><span class="n">evolve</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">h_mpo</span><span class="p">,</span> <span class="n">evolve_dt</span><span class="p">)</span>
         <span class="k">return</span> <span class="n">BraKetPair</span><span class="p">(</span><span class="n">latest_bra_mps</span><span class="p">,</span> <span class="n">latest_ket_mps</span><span class="p">)</span></div></div>
 
 
-<div class="viewcode-block" id="SpectraTwoWayPropZeroT"><a class="viewcode-back" href="../../../spectrum.html#renormalizer.spectra.zerot.SpectraTwoWayPropZeroT">[docs]</a><span class="k">class</span> <span class="nc">SpectraTwoWayPropZeroT</span><span class="p">(</span><span class="n">SpectraZeroT</span><span class="p">):</span>
-<div class="viewcode-block" id="SpectraTwoWayPropZeroT.evolve_single_step"><a class="viewcode-back" href="../../../spectrum.html#renormalizer.spectra.zerot.SpectraTwoWayPropZeroT.evolve_single_step">[docs]</a>    <span class="k">def</span> <span class="nf">evolve_single_step</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">evolve_dt</span><span class="p">):</span>
+<div class="viewcode-block" id="SpectraTwoWayPropZeroT"><a class="viewcode-back" href="../../../spectrum.html#renormalizer.spectra.zerot.SpectraTwoWayPropZeroT">[docs]</a><span class="k">class</span><span class="w"> </span><span class="nc">SpectraTwoWayPropZeroT</span><span class="p">(</span><span class="n">SpectraZeroT</span><span class="p">):</span>
+<div class="viewcode-block" id="SpectraTwoWayPropZeroT.evolve_single_step"><a class="viewcode-back" href="../../../spectrum.html#renormalizer.spectra.zerot.SpectraTwoWayPropZeroT.evolve_single_step">[docs]</a>    <span class="k">def</span><span class="w"> </span><span class="nf">evolve_single_step</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">evolve_dt</span><span class="p">):</span>
         <span class="n">latest_bra_mps</span><span class="p">,</span> <span class="n">latest_ket_mps</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">latest_mps</span>
         <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">evolve_times</span><span class="p">)</span> <span class="o">%</span> <span class="mi">2</span> <span class="o">==</span> <span class="mi">1</span><span class="p">:</span>
             <span class="n">latest_ket_mps</span> <span class="o">=</span> <span class="n">latest_ket_mps</span><span class="o">.</span><span class="n">evolve</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">h_mpo</span><span class="p">,</span> <span class="n">evolve_dt</span><span class="p">)</span>

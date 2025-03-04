@@ -527,7 +527,7 @@ div.rendered_html tbody tr:hover {
 <div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[1]:
 </pre></div>
 </div>
-<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="kn">from</span> <span class="nn">renormalizer</span> <span class="kn">import</span> <span class="n">Model</span><span class="p">,</span> <span class="n">Op</span><span class="p">,</span> <span class="n">BasisHalfSpin</span><span class="p">,</span>  <span class="n">Mps</span><span class="p">,</span> <span class="n">Mpo</span><span class="p">,</span> <span class="n">optimize_mps</span>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="kn">from</span><span class="w"> </span><span class="nn">renormalizer</span><span class="w"> </span><span class="kn">import</span> <span class="n">Model</span><span class="p">,</span> <span class="n">Op</span><span class="p">,</span> <span class="n">BasisHalfSpin</span><span class="p">,</span>  <span class="n">Mps</span><span class="p">,</span> <span class="n">Mpo</span><span class="p">,</span> <span class="n">optimize_mps</span>
 </pre></div>
 </div>
 </div>
@@ -536,11 +536,11 @@ div.rendered_html tbody tr:hover {
 </div>
 <div class="output_area stderr docutils container">
 <div class="highlight"><pre>
-2024-12-04 10:30:14,233[INFO] Use NumPy as backend
-2024-12-04 10:30:14,234[INFO] numpy random seed is 9012
-2024-12-04 10:30:14,235[INFO] random seed is 1092
-2024-12-04 10:30:14,246[INFO] Git Commit Hash: b882466cb690e4399b35e0772555500df69bb298
-2024-12-04 10:30:14,248[INFO] use 64 bits
+2025-03-04 06:46:10,860[INFO] Use NumPy as backend
+2025-03-04 06:46:10,861[INFO] numpy random seed is 9012
+2025-03-04 06:46:10,862[INFO] random seed is 1092
+2025-03-04 06:46:10,872[INFO] Git Commit Hash: 785189bf8584e6800eba66b19928d4e341058151
+2025-03-04 06:46:10,873[INFO] use 64 bits
 </pre></div></div>
 </div>
 </section>
@@ -590,10 +590,10 @@ div.rendered_html tbody tr:hover {
 </div>
 <div class="output_area stderr docutils container">
 <div class="highlight"><pre>
-2024-12-04 10:30:14,346[DEBUG] # of operator terms: 93
-2024-12-04 10:30:14,347[DEBUG] Input operator terms: 93
-2024-12-04 10:30:14,349[DEBUG] After combination of the same terms: 93
-2024-12-04 10:30:14,350[DEBUG] symbolic mpo algorithm: qr
+2025-03-04 06:46:10,973[DEBUG] # of operator terms: 93
+2025-03-04 06:46:10,973[DEBUG] Input operator terms: 93
+2025-03-04 06:46:10,975[DEBUG] After combination of the same terms: 93
+2025-03-04 06:46:10,976[DEBUG] symbolic mpo algorithm: qr
 </pre></div></div>
 </div>
 <div class="nboutput nblast docutils container">
@@ -633,303 +633,303 @@ mpo_bond_dims:[1, 4, 5, 5, 5, 5, 5, 5, 5, 5, 5, 5, 5, 5, 5, 5, 5, 5, 5, 5, 5, 5,
 </div>
 <div class="output_area stderr docutils container">
 <div class="highlight"><pre>
-2024-12-04 10:30:14,422[INFO] optimization method: 2site
-2024-12-04 10:30:14,425[INFO] e_rtol: 1e-06
-2024-12-04 10:30:14,426[INFO] e_atol: 1e-08
-2024-12-04 10:30:14,428[INFO] procedure: [[30, 0.2], [30, 0], [30, 0], [30, 0], [30, 0]]
-2024-12-04 10:30:14,460[DEBUG] isweep: 0
-2024-12-04 10:30:14,463[DEBUG] compress config in current loop: 30, percent: 0.2
-2024-12-04 10:30:14,465[DEBUG] mps current size: 329.7KiB, Matrix product bond dim:[1, 2, 4, 8, 16, 30, 30, 30, 30, 30, 30, 30, 30, 30, 30, 30, 30, 30, 30, 30, 30, 30, 30, 30, 30, 30, 30, 30, 16, 8, 4, 2, 1]
-2024-12-04 10:30:14,467[DEBUG] optimize site: [0, 1]
-2024-12-04 10:30:14,469[DEBUG] use direct eigensolver
-2024-12-04 10:30:14,473[DEBUG] energy: -0.9279990226898324
-2024-12-04 10:30:14,476[DEBUG] optimize site: [1, 2]
-2024-12-04 10:30:14,479[DEBUG] use direct eigensolver
-2024-12-04 10:30:14,484[DEBUG] energy: -1.2840895734105349
-2024-12-04 10:30:14,488[DEBUG] optimize site: [2, 3]
-2024-12-04 10:30:14,490[DEBUG] use direct eigensolver
-2024-12-04 10:30:14,515[DEBUG] energy: -2.0857452647499213
-2024-12-04 10:30:14,519[DEBUG] optimize site: [3, 4]
-2024-12-04 10:30:14,523[DEBUG] use direct eigensolver
-2024-12-04 10:30:14,746[DEBUG] energy: -2.8158895272374123
-2024-12-04 10:30:14,749[DEBUG] optimize site: [4, 5]
-2024-12-04 10:30:14,777[DEBUG] use davidson, HC hops: 34
-2024-12-04 10:30:14,779[DEBUG] energy: -3.2933673155858028
-2024-12-04 10:30:14,782[DEBUG] optimize site: [5, 6]
-2024-12-04 10:30:14,823[DEBUG] use davidson, HC hops: 42
-2024-12-04 10:30:14,825[DEBUG] energy: -3.7449867503071994
-2024-12-04 10:30:14,829[DEBUG] optimize site: [6, 7]
-2024-12-04 10:30:14,888[DEBUG] use davidson, HC hops: 42
-2024-12-04 10:30:14,891[DEBUG] energy: -4.176385575496492
-2024-12-04 10:30:14,895[DEBUG] optimize site: [7, 8]
-2024-12-04 10:30:14,939[DEBUG] use davidson, HC hops: 44
-2024-12-04 10:30:14,942[DEBUG] energy: -4.583593477927389
-2024-12-04 10:30:14,945[DEBUG] optimize site: [8, 9]
-2024-12-04 10:30:15,023[DEBUG] use davidson, HC hops: 55
-2024-12-04 10:30:15,026[DEBUG] energy: -4.968031845671205
-2024-12-04 10:30:15,031[DEBUG] optimize site: [9, 10]
-2024-12-04 10:30:15,148[DEBUG] use davidson, HC hops: 68
-2024-12-04 10:30:15,151[DEBUG] energy: -5.414706360833982
-2024-12-04 10:30:15,156[DEBUG] optimize site: [10, 11]
-2024-12-04 10:30:15,281[DEBUG] use davidson, HC hops: 72
-2024-12-04 10:30:15,281[DEBUG] energy: -5.856529754520465
-2024-12-04 10:30:15,286[DEBUG] optimize site: [11, 12]
-2024-12-04 10:30:15,432[DEBUG] use davidson, HC hops: 100
-2024-12-04 10:30:15,433[DEBUG] energy: -6.279022467295804
-2024-12-04 10:30:15,437[DEBUG] optimize site: [12, 13]
-2024-12-04 10:30:15,502[DEBUG] use davidson, HC hops: 52
-2024-12-04 10:30:15,504[DEBUG] energy: -6.85738901220476
-2024-12-04 10:30:15,508[DEBUG] optimize site: [13, 14]
-2024-12-04 10:30:15,606[DEBUG] use davidson, HC hops: 100
-2024-12-04 10:30:15,609[DEBUG] energy: -7.114588022005781
-2024-12-04 10:30:15,612[DEBUG] optimize site: [14, 15]
-2024-12-04 10:30:15,667[DEBUG] use davidson, HC hops: 47
-2024-12-04 10:30:15,670[DEBUG] energy: -7.6416317838354235
-2024-12-04 10:30:15,673[DEBUG] optimize site: [15, 16]
-2024-12-04 10:30:15,731[DEBUG] use davidson, HC hops: 51
-2024-12-04 10:30:15,734[DEBUG] energy: -8.118395338420058
-2024-12-04 10:30:15,739[DEBUG] optimize site: [16, 17]
-2024-12-04 10:30:15,836[DEBUG] use davidson, HC hops: 57
-2024-12-04 10:30:15,838[DEBUG] energy: -8.579533430762854
-2024-12-04 10:30:15,842[DEBUG] optimize site: [17, 18]
-2024-12-04 10:30:15,908[DEBUG] use davidson, HC hops: 66
-2024-12-04 10:30:15,911[DEBUG] energy: -8.983113190158448
-2024-12-04 10:30:15,914[DEBUG] optimize site: [18, 19]
-2024-12-04 10:30:15,996[DEBUG] use davidson, HC hops: 62
-2024-12-04 10:30:15,999[DEBUG] energy: -9.422205404607668
-2024-12-04 10:30:16,004[DEBUG] optimize site: [19, 20]
-2024-12-04 10:30:16,098[DEBUG] use davidson, HC hops: 62
-2024-12-04 10:30:16,101[DEBUG] energy: -9.903693680914383
-2024-12-04 10:30:16,104[DEBUG] optimize site: [20, 21]
-2024-12-04 10:30:16,185[DEBUG] use davidson, HC hops: 81
-2024-12-04 10:30:16,188[DEBUG] energy: -10.398530611697964
-2024-12-04 10:30:16,191[DEBUG] optimize site: [21, 22]
-2024-12-04 10:30:16,281[DEBUG] use davidson, HC hops: 76
-2024-12-04 10:30:16,284[DEBUG] energy: -10.834489434421666
-2024-12-04 10:30:16,289[DEBUG] optimize site: [22, 23]
-2024-12-04 10:30:16,389[DEBUG] use davidson, HC hops: 58
-2024-12-04 10:30:16,390[DEBUG] energy: -11.41512870712682
-2024-12-04 10:30:16,394[DEBUG] optimize site: [23, 24]
-2024-12-04 10:30:16,482[DEBUG] use davidson, HC hops: 52
-2024-12-04 10:30:16,483[DEBUG] energy: -12.122795879745059
-2024-12-04 10:30:16,487[DEBUG] optimize site: [24, 25]
-2024-12-04 10:30:16,608[DEBUG] use davidson, HC hops: 71
-2024-12-04 10:30:16,611[DEBUG] energy: -12.812234874023488
-2024-12-04 10:30:16,616[DEBUG] optimize site: [25, 26]
-2024-12-04 10:30:16,721[DEBUG] use davidson, HC hops: 58
-2024-12-04 10:30:16,722[DEBUG] energy: -13.77458280412668
-2024-12-04 10:30:16,725[DEBUG] optimize site: [26, 27]
-2024-12-04 10:30:16,798[DEBUG] use davidson, HC hops: 47
-2024-12-04 10:30:16,801[DEBUG] energy: -13.996832655813105
-2024-12-04 10:30:16,804[DEBUG] optimize site: [27, 28]
-2024-12-04 10:30:16,808[DEBUG] use direct eigensolver
-2024-12-04 10:30:17,068[DEBUG] energy: -13.996832655534023
-2024-12-04 10:30:17,070[DEBUG] optimize site: [28, 29]
-2024-12-04 10:30:17,072[DEBUG] use direct eigensolver
-2024-12-04 10:30:17,117[DEBUG] energy: -13.99683265553401
-2024-12-04 10:30:17,119[DEBUG] optimize site: [29, 30]
-2024-12-04 10:30:17,121[DEBUG] use direct eigensolver
-2024-12-04 10:30:17,126[DEBUG] energy: -13.996832655534012
-2024-12-04 10:30:17,127[DEBUG] optimize site: [30, 31]
-2024-12-04 10:30:17,129[DEBUG] use direct eigensolver
-2024-12-04 10:30:17,131[DEBUG] energy: -13.996832655533995
-2024-12-04 10:30:17,133[DEBUG] 1 sweeps are finished, lowest energy = -13.996832655813105
-2024-12-04 10:30:17,133[DEBUG] isweep: 1
-2024-12-04 10:30:17,134[DEBUG] compress config in current loop: 30, percent: 0
-2024-12-04 10:30:17,135[DEBUG] mps current size: 343.7KiB, Matrix product bond dim:[1, 2, 4, 8, 16, 30, 30, 30, 30, 30, 30, 30, 30, 30, 30, 30, 30, 30, 30, 30, 30, 30, 30, 30, 30, 30, 30, 30, 30, 16, 8, 4, 1]
-2024-12-04 10:30:17,136[DEBUG] optimize site: [30, 31]
-2024-12-04 10:30:17,137[DEBUG] use direct eigensolver
-2024-12-04 10:30:17,139[DEBUG] energy: -13.996832655533995
-2024-12-04 10:30:17,141[DEBUG] optimize site: [29, 30]
-2024-12-04 10:30:17,142[DEBUG] use direct eigensolver
-2024-12-04 10:30:17,147[DEBUG] energy: -13.996832655534021
-2024-12-04 10:30:17,149[DEBUG] optimize site: [28, 29]
-2024-12-04 10:30:17,150[DEBUG] use direct eigensolver
-2024-12-04 10:30:17,218[DEBUG] energy: -13.996832655534014
-2024-12-04 10:30:17,222[DEBUG] optimize site: [27, 28]
-2024-12-04 10:30:17,224[DEBUG] use direct eigensolver
-2024-12-04 10:30:17,468[DEBUG] energy: -13.99683265553401
-2024-12-04 10:30:17,471[DEBUG] optimize site: [26, 27]
-2024-12-04 10:30:17,477[DEBUG] use davidson, HC hops: 4
-2024-12-04 10:30:17,479[DEBUG] energy: -13.996832655813652
-2024-12-04 10:30:17,484[DEBUG] optimize site: [25, 26]
-2024-12-04 10:30:17,506[DEBUG] use davidson, HC hops: 22
-2024-12-04 10:30:17,509[DEBUG] energy: -13.996844945038399
-2024-12-04 10:30:17,513[DEBUG] optimize site: [24, 25]
-2024-12-04 10:30:17,541[DEBUG] use davidson, HC hops: 28
-2024-12-04 10:30:17,543[DEBUG] energy: -13.9970671016588
-2024-12-04 10:30:17,547[DEBUG] optimize site: [23, 24]
-2024-12-04 10:30:17,573[DEBUG] use davidson, HC hops: 25
-2024-12-04 10:30:17,575[DEBUG] energy: -13.99710168471755
-2024-12-04 10:30:17,579[DEBUG] optimize site: [22, 23]
-2024-12-04 10:30:17,616[DEBUG] use davidson, HC hops: 23
-2024-12-04 10:30:17,619[DEBUG] energy: -13.997106608213755
-2024-12-04 10:30:17,624[DEBUG] optimize site: [21, 22]
-2024-12-04 10:30:17,669[DEBUG] use davidson, HC hops: 23
-2024-12-04 10:30:17,672[DEBUG] energy: -13.997113698271178
-2024-12-04 10:30:17,677[DEBUG] optimize site: [20, 21]
-2024-12-04 10:30:17,717[DEBUG] use davidson, HC hops: 26
-2024-12-04 10:30:17,719[DEBUG] energy: -13.997162638323594
-2024-12-04 10:30:17,723[DEBUG] optimize site: [19, 20]
-2024-12-04 10:30:17,749[DEBUG] use davidson, HC hops: 23
-2024-12-04 10:30:17,751[DEBUG] energy: -13.99717014496559
-2024-12-04 10:30:17,755[DEBUG] optimize site: [18, 19]
-2024-12-04 10:30:17,798[DEBUG] use davidson, HC hops: 26
-2024-12-04 10:30:17,800[DEBUG] energy: -13.997199975427481
-2024-12-04 10:30:17,804[DEBUG] optimize site: [17, 18]
-2024-12-04 10:30:17,844[DEBUG] use davidson, HC hops: 22
-2024-12-04 10:30:17,846[DEBUG] energy: -13.997204392621665
-2024-12-04 10:30:17,850[DEBUG] optimize site: [16, 17]
-2024-12-04 10:30:17,896[DEBUG] use davidson, HC hops: 25
-2024-12-04 10:30:17,897[DEBUG] energy: -13.997225037523867
-2024-12-04 10:30:17,901[DEBUG] optimize site: [15, 16]
-2024-12-04 10:30:17,944[DEBUG] use davidson, HC hops: 26
-2024-12-04 10:30:17,947[DEBUG] energy: -13.997284918121238
-2024-12-04 10:30:17,951[DEBUG] optimize site: [14, 15]
-2024-12-04 10:30:17,974[DEBUG] use davidson, HC hops: 22
-2024-12-04 10:30:17,977[DEBUG] energy: -13.997290859971317
-2024-12-04 10:30:17,980[DEBUG] optimize site: [13, 14]
-2024-12-04 10:30:18,008[DEBUG] use davidson, HC hops: 20
-2024-12-04 10:30:18,010[DEBUG] energy: -13.99729325765385
-2024-12-04 10:30:18,014[DEBUG] optimize site: [12, 13]
-2024-12-04 10:30:18,048[DEBUG] use davidson, HC hops: 23
-2024-12-04 10:30:18,051[DEBUG] energy: -13.997306225086716
-2024-12-04 10:30:18,056[DEBUG] optimize site: [11, 12]
-2024-12-04 10:30:18,097[DEBUG] use davidson, HC hops: 21
-2024-12-04 10:30:18,100[DEBUG] energy: -13.997311145595647
-2024-12-04 10:30:18,105[DEBUG] optimize site: [10, 11]
-2024-12-04 10:30:18,144[DEBUG] use davidson, HC hops: 20
-2024-12-04 10:30:18,148[DEBUG] energy: -13.997313132707516
-2024-12-04 10:30:18,153[DEBUG] optimize site: [9, 10]
-2024-12-04 10:30:18,190[DEBUG] use davidson, HC hops: 17
-2024-12-04 10:30:18,193[DEBUG] energy: -13.997314428626407
-2024-12-04 10:30:18,200[DEBUG] optimize site: [8, 9]
-2024-12-04 10:30:18,225[DEBUG] use davidson, HC hops: 11
-2024-12-04 10:30:18,228[DEBUG] energy: -13.997314715468722
-2024-12-04 10:30:18,232[DEBUG] optimize site: [7, 8]
-2024-12-04 10:30:18,249[DEBUG] use davidson, HC hops: 7
-2024-12-04 10:30:18,251[DEBUG] energy: -13.997314712669825
-2024-12-04 10:30:18,256[DEBUG] optimize site: [6, 7]
-2024-12-04 10:30:18,282[DEBUG] use davidson, HC hops: 12
-2024-12-04 10:30:18,285[DEBUG] energy: -13.99731499975007
-2024-12-04 10:30:18,290[DEBUG] optimize site: [5, 6]
-2024-12-04 10:30:18,307[DEBUG] use davidson, HC hops: 7
-2024-12-04 10:30:18,309[DEBUG] energy: -13.997315003811492
-2024-12-04 10:30:18,314[DEBUG] optimize site: [4, 5]
-2024-12-04 10:30:18,326[DEBUG] use davidson, HC hops: 5
-2024-12-04 10:30:18,329[DEBUG] energy: -13.997315004767831
-2024-12-04 10:30:18,332[DEBUG] optimize site: [3, 4]
-2024-12-04 10:30:18,336[DEBUG] use direct eigensolver
-2024-12-04 10:30:18,607[DEBUG] energy: -13.997315004467152
-2024-12-04 10:30:18,611[DEBUG] optimize site: [2, 3]
-2024-12-04 10:30:18,619[DEBUG] use direct eigensolver
-2024-12-04 10:30:18,698[DEBUG] energy: -13.997315004467152
-2024-12-04 10:30:18,702[DEBUG] optimize site: [1, 2]
-2024-12-04 10:30:18,706[DEBUG] use direct eigensolver
-2024-12-04 10:30:18,716[DEBUG] energy: -13.99731500446714
-2024-12-04 10:30:18,719[DEBUG] optimize site: [0, 1]
-2024-12-04 10:30:18,722[DEBUG] use direct eigensolver
-2024-12-04 10:30:18,727[DEBUG] energy: -13.99731500446715
-2024-12-04 10:30:18,730[DEBUG] 2 sweeps are finished, lowest energy = -13.997315004767831
-2024-12-04 10:30:18,733[DEBUG] isweep: 2
-2024-12-04 10:30:18,734[DEBUG] compress config in current loop: 30, percent: 0
-2024-12-04 10:30:18,736[DEBUG] mps current size: 343.7KiB, Matrix product bond dim:[1, 4, 8, 16, 30, 30, 30, 30, 30, 30, 30, 30, 30, 30, 30, 30, 30, 30, 30, 30, 30, 30, 30, 30, 30, 30, 30, 30, 16, 8, 4, 2, 1]
-2024-12-04 10:30:18,738[DEBUG] optimize site: [0, 1]
-2024-12-04 10:30:18,740[DEBUG] use direct eigensolver
-2024-12-04 10:30:18,742[DEBUG] energy: -13.99731500446715
-2024-12-04 10:30:18,744[DEBUG] optimize site: [1, 2]
-2024-12-04 10:30:18,746[DEBUG] use direct eigensolver
-2024-12-04 10:30:18,752[DEBUG] energy: -13.997315004467143
-2024-12-04 10:30:18,754[DEBUG] optimize site: [2, 3]
-2024-12-04 10:30:18,756[DEBUG] use direct eigensolver
-2024-12-04 10:30:18,834[DEBUG] energy: -13.99731500446716
-2024-12-04 10:30:18,837[DEBUG] optimize site: [3, 4]
-2024-12-04 10:30:18,840[DEBUG] use direct eigensolver
-2024-12-04 10:30:19,104[DEBUG] energy: -13.997315004467152
-2024-12-04 10:30:19,107[DEBUG] optimize site: [4, 5]
-2024-12-04 10:30:19,112[DEBUG] use davidson, HC hops: 4
-2024-12-04 10:30:19,112[DEBUG] energy: -13.9973150047679
-2024-12-04 10:30:19,116[DEBUG] optimize site: [5, 6]
-2024-12-04 10:30:19,122[DEBUG] use davidson, HC hops: 4
-2024-12-04 10:30:19,123[DEBUG] energy: -13.99731500466779
-2024-12-04 10:30:19,128[DEBUG] optimize site: [6, 7]
-2024-12-04 10:30:19,136[DEBUG] use davidson, HC hops: 6
-2024-12-04 10:30:19,137[DEBUG] energy: -13.997315012470686
-2024-12-04 10:30:19,140[DEBUG] optimize site: [7, 8]
-2024-12-04 10:30:19,147[DEBUG] use davidson, HC hops: 5
-2024-12-04 10:30:19,148[DEBUG] energy: -13.997315006066664
-2024-12-04 10:30:19,150[DEBUG] optimize site: [8, 9]
-2024-12-04 10:30:19,159[DEBUG] use davidson, HC hops: 7
-2024-12-04 10:30:19,160[DEBUG] energy: -13.997315033374544
-2024-12-04 10:30:19,162[DEBUG] optimize site: [9, 10]
-2024-12-04 10:30:19,171[DEBUG] use davidson, HC hops: 6
-2024-12-04 10:30:19,172[DEBUG] energy: -13.99731501012197
-2024-12-04 10:30:19,174[DEBUG] optimize site: [10, 11]
-2024-12-04 10:30:19,184[DEBUG] use davidson, HC hops: 8
-2024-12-04 10:30:19,185[DEBUG] energy: -13.997315055776909
-2024-12-04 10:30:19,188[DEBUG] optimize site: [11, 12]
-2024-12-04 10:30:19,199[DEBUG] use davidson, HC hops: 7
-2024-12-04 10:30:19,200[DEBUG] energy: -13.997315015890493
-2024-12-04 10:30:19,204[DEBUG] optimize site: [12, 13]
-2024-12-04 10:30:19,220[DEBUG] use davidson, HC hops: 8
-2024-12-04 10:30:19,222[DEBUG] energy: -13.997315076759437
-2024-12-04 10:30:19,227[DEBUG] optimize site: [13, 14]
-2024-12-04 10:30:19,239[DEBUG] use davidson, HC hops: 7
-2024-12-04 10:30:19,241[DEBUG] energy: -13.997315021063809
-2024-12-04 10:30:19,244[DEBUG] optimize site: [14, 15]
-2024-12-04 10:30:19,255[DEBUG] use davidson, HC hops: 8
-2024-12-04 10:30:19,256[DEBUG] energy: -13.997315089163534
-2024-12-04 10:30:19,260[DEBUG] optimize site: [15, 16]
-2024-12-04 10:30:19,271[DEBUG] use davidson, HC hops: 8
-2024-12-04 10:30:19,273[DEBUG] energy: -13.997315023237771
-2024-12-04 10:30:19,276[DEBUG] optimize site: [16, 17]
-2024-12-04 10:30:19,288[DEBUG] use davidson, HC hops: 9
-2024-12-04 10:30:19,290[DEBUG] energy: -13.997315090211664
-2024-12-04 10:30:19,293[DEBUG] optimize site: [17, 18]
-2024-12-04 10:30:19,304[DEBUG] use davidson, HC hops: 8
-2024-12-04 10:30:19,306[DEBUG] energy: -13.997315022014291
-2024-12-04 10:30:19,310[DEBUG] optimize site: [18, 19]
-2024-12-04 10:30:19,327[DEBUG] use davidson, HC hops: 8
-2024-12-04 10:30:19,329[DEBUG] energy: -13.997315079212598
-2024-12-04 10:30:19,334[DEBUG] optimize site: [19, 20]
-2024-12-04 10:30:19,351[DEBUG] use davidson, HC hops: 7
-2024-12-04 10:30:19,354[DEBUG] energy: -13.997315018389699
-2024-12-04 10:30:19,360[DEBUG] optimize site: [20, 21]
-2024-12-04 10:30:19,385[DEBUG] use davidson, HC hops: 8
-2024-12-04 10:30:19,387[DEBUG] energy: -13.997315060471607
-2024-12-04 10:30:19,391[DEBUG] optimize site: [21, 22]
-2024-12-04 10:30:19,405[DEBUG] use davidson, HC hops: 6
-2024-12-04 10:30:19,408[DEBUG] energy: -13.997315014223005
-2024-12-04 10:30:19,413[DEBUG] optimize site: [22, 23]
-2024-12-04 10:30:19,432[DEBUG] use davidson, HC hops: 8
-2024-12-04 10:30:19,435[DEBUG] energy: -13.997315036380773
-2024-12-04 10:30:19,439[DEBUG] optimize site: [23, 24]
-2024-12-04 10:30:19,454[DEBUG] use davidson, HC hops: 6
-2024-12-04 10:30:19,457[DEBUG] energy: -13.997315009063376
-2024-12-04 10:30:19,462[DEBUG] optimize site: [24, 25]
-2024-12-04 10:30:19,477[DEBUG] use davidson, HC hops: 6
-2024-12-04 10:30:19,479[DEBUG] energy: -13.99731501543185
-2024-12-04 10:30:19,484[DEBUG] optimize site: [25, 26]
-2024-12-04 10:30:19,497[DEBUG] use davidson, HC hops: 5
-2024-12-04 10:30:19,500[DEBUG] energy: -13.99731500763053
-2024-12-04 10:30:19,505[DEBUG] optimize site: [26, 27]
-2024-12-04 10:30:19,516[DEBUG] use davidson, HC hops: 4
-2024-12-04 10:30:19,519[DEBUG] energy: -13.997315007727487
-2024-12-04 10:30:19,522[DEBUG] optimize site: [27, 28]
-2024-12-04 10:30:19,525[DEBUG] use direct eigensolver
-2024-12-04 10:30:19,786[DEBUG] energy: -13.997315007427472
-2024-12-04 10:30:19,790[DEBUG] optimize site: [28, 29]
-2024-12-04 10:30:19,792[DEBUG] use direct eigensolver
-2024-12-04 10:30:19,854[DEBUG] energy: -13.997315007427481
-2024-12-04 10:30:19,858[DEBUG] optimize site: [29, 30]
-2024-12-04 10:30:19,861[DEBUG] use direct eigensolver
-2024-12-04 10:30:19,867[DEBUG] energy: -13.997315007427488
-2024-12-04 10:30:19,871[DEBUG] optimize site: [30, 31]
-2024-12-04 10:30:19,873[DEBUG] use direct eigensolver
-2024-12-04 10:30:19,876[DEBUG] energy: -13.997315007427485
-2024-12-04 10:30:19,878[DEBUG] 3 sweeps are finished, lowest energy = -13.997315090211664
-2024-12-04 10:30:19,880[INFO] DMRG has converged!
-2024-12-04 10:30:19,917[INFO] mps current size: 329.7KiB, Matrix product bond dim:[1, 2, 4, 8, 16, 30, 30, 30, 30, 30, 30, 30, 30, 30, 30, 30, 30, 30, 30, 30, 30, 30, 30, 30, 30, 30, 30, 30, 16, 8, 4, 2, 1]
+2025-03-04 06:46:11,045[INFO] optimization method: 2site
+2025-03-04 06:46:11,046[INFO] e_rtol: 1e-06
+2025-03-04 06:46:11,046[INFO] e_atol: 1e-08
+2025-03-04 06:46:11,048[INFO] procedure: [[30, 0.2], [30, 0], [30, 0], [30, 0], [30, 0]]
+2025-03-04 06:46:11,075[DEBUG] isweep: 0
+2025-03-04 06:46:11,077[DEBUG] compress config in current loop: 30, percent: 0.2
+2025-03-04 06:46:11,078[DEBUG] mps current size: 329.7KiB, Matrix product bond dim:[1, 2, 4, 8, 16, 30, 30, 30, 30, 30, 30, 30, 30, 30, 30, 30, 30, 30, 30, 30, 30, 30, 30, 30, 30, 30, 30, 30, 16, 8, 4, 2, 1]
+2025-03-04 06:46:11,079[DEBUG] optimize site: [0, 1]
+2025-03-04 06:46:11,081[DEBUG] use direct eigensolver
+2025-03-04 06:46:11,085[DEBUG] energy: -0.9279990226898324
+2025-03-04 06:46:11,086[DEBUG] optimize site: [1, 2]
+2025-03-04 06:46:11,089[DEBUG] use direct eigensolver
+2025-03-04 06:46:11,092[DEBUG] energy: -1.2840895734105349
+2025-03-04 06:46:11,094[DEBUG] optimize site: [2, 3]
+2025-03-04 06:46:11,097[DEBUG] use direct eigensolver
+2025-03-04 06:46:11,111[DEBUG] energy: -2.0857452647499213
+2025-03-04 06:46:11,113[DEBUG] optimize site: [3, 4]
+2025-03-04 06:46:11,115[DEBUG] use direct eigensolver
+2025-03-04 06:46:11,362[DEBUG] energy: -2.8158895272374123
+2025-03-04 06:46:11,364[DEBUG] optimize site: [4, 5]
+2025-03-04 06:46:11,414[DEBUG] use davidson, HC hops: 34
+2025-03-04 06:46:11,416[DEBUG] energy: -3.293367315585802
+2025-03-04 06:46:11,418[DEBUG] optimize site: [5, 6]
+2025-03-04 06:46:11,464[DEBUG] use davidson, HC hops: 42
+2025-03-04 06:46:11,464[DEBUG] energy: -3.744986750307196
+2025-03-04 06:46:11,469[DEBUG] optimize site: [6, 7]
+2025-03-04 06:46:11,513[DEBUG] use davidson, HC hops: 42
+2025-03-04 06:46:11,514[DEBUG] energy: -4.176385575496495
+2025-03-04 06:46:11,519[DEBUG] optimize site: [7, 8]
+2025-03-04 06:46:11,583[DEBUG] use davidson, HC hops: 44
+2025-03-04 06:46:11,585[DEBUG] energy: -4.583593477927389
+2025-03-04 06:46:11,589[DEBUG] optimize site: [8, 9]
+2025-03-04 06:46:11,681[DEBUG] use davidson, HC hops: 55
+2025-03-04 06:46:11,683[DEBUG] energy: -4.968031845671201
+2025-03-04 06:46:11,687[DEBUG] optimize site: [9, 10]
+2025-03-04 06:46:11,776[DEBUG] use davidson, HC hops: 68
+2025-03-04 06:46:11,779[DEBUG] energy: -5.414706360833982
+2025-03-04 06:46:11,783[DEBUG] optimize site: [10, 11]
+2025-03-04 06:46:11,909[DEBUG] use davidson, HC hops: 72
+2025-03-04 06:46:11,910[DEBUG] energy: -5.85652975452047
+2025-03-04 06:46:11,914[DEBUG] optimize site: [11, 12]
+2025-03-04 06:46:12,088[DEBUG] use davidson, HC hops: 100
+2025-03-04 06:46:12,091[DEBUG] energy: -6.279022467295801
+2025-03-04 06:46:12,097[DEBUG] optimize site: [12, 13]
+2025-03-04 06:46:12,157[DEBUG] use davidson, HC hops: 52
+2025-03-04 06:46:12,160[DEBUG] energy: -6.857389012204752
+2025-03-04 06:46:12,163[DEBUG] optimize site: [13, 14]
+2025-03-04 06:46:12,319[DEBUG] use davidson, HC hops: 100
+2025-03-04 06:46:12,322[DEBUG] energy: -7.114588022005769
+2025-03-04 06:46:12,326[DEBUG] optimize site: [14, 15]
+2025-03-04 06:46:12,391[DEBUG] use davidson, HC hops: 47
+2025-03-04 06:46:12,394[DEBUG] energy: -7.6416317838354
+2025-03-04 06:46:12,400[DEBUG] optimize site: [15, 16]
+2025-03-04 06:46:12,488[DEBUG] use davidson, HC hops: 51
+2025-03-04 06:46:12,489[DEBUG] energy: -8.118395338420024
+2025-03-04 06:46:12,494[DEBUG] optimize site: [16, 17]
+2025-03-04 06:46:12,562[DEBUG] use davidson, HC hops: 57
+2025-03-04 06:46:12,565[DEBUG] energy: -8.579533430762833
+2025-03-04 06:46:12,571[DEBUG] optimize site: [17, 18]
+2025-03-04 06:46:12,682[DEBUG] use davidson, HC hops: 66
+2025-03-04 06:46:12,683[DEBUG] energy: -8.983113190158452
+2025-03-04 06:46:12,688[DEBUG] optimize site: [18, 19]
+2025-03-04 06:46:12,769[DEBUG] use davidson, HC hops: 62
+2025-03-04 06:46:12,771[DEBUG] energy: -9.422205404607647
+2025-03-04 06:46:12,777[DEBUG] optimize site: [19, 20]
+2025-03-04 06:46:12,884[DEBUG] use davidson, HC hops: 62
+2025-03-04 06:46:12,885[DEBUG] energy: -9.903693680914373
+2025-03-04 06:46:12,891[DEBUG] optimize site: [20, 21]
+2025-03-04 06:46:13,010[DEBUG] use davidson, HC hops: 81
+2025-03-04 06:46:13,011[DEBUG] energy: -10.398530611697955
+2025-03-04 06:46:13,014[DEBUG] optimize site: [21, 22]
+2025-03-04 06:46:13,119[DEBUG] use davidson, HC hops: 76
+2025-03-04 06:46:13,121[DEBUG] energy: -10.834489434421666
+2025-03-04 06:46:13,126[DEBUG] optimize site: [22, 23]
+2025-03-04 06:46:13,229[DEBUG] use davidson, HC hops: 58
+2025-03-04 06:46:13,231[DEBUG] energy: -11.415128707126774
+2025-03-04 06:46:13,237[DEBUG] optimize site: [23, 24]
+2025-03-04 06:46:13,316[DEBUG] use davidson, HC hops: 52
+2025-03-04 06:46:13,317[DEBUG] energy: -12.122795879745023
+2025-03-04 06:46:13,322[DEBUG] optimize site: [24, 25]
+2025-03-04 06:46:13,422[DEBUG] use davidson, HC hops: 71
+2025-03-04 06:46:13,423[DEBUG] energy: -12.812234874023462
+2025-03-04 06:46:13,430[DEBUG] optimize site: [25, 26]
+2025-03-04 06:46:13,513[DEBUG] use davidson, HC hops: 58
+2025-03-04 06:46:13,514[DEBUG] energy: -13.774582804126624
+2025-03-04 06:46:13,518[DEBUG] optimize site: [26, 27]
+2025-03-04 06:46:13,559[DEBUG] use davidson, HC hops: 47
+2025-03-04 06:46:13,559[DEBUG] energy: -13.99683265581305
+2025-03-04 06:46:13,563[DEBUG] optimize site: [27, 28]
+2025-03-04 06:46:13,565[DEBUG] use direct eigensolver
+2025-03-04 06:46:13,817[DEBUG] energy: -13.996832655533971
+2025-03-04 06:46:13,821[DEBUG] optimize site: [28, 29]
+2025-03-04 06:46:13,823[DEBUG] use direct eigensolver
+2025-03-04 06:46:13,870[DEBUG] energy: -13.99683265553399
+2025-03-04 06:46:13,872[DEBUG] optimize site: [29, 30]
+2025-03-04 06:46:13,873[DEBUG] use direct eigensolver
+2025-03-04 06:46:13,880[DEBUG] energy: -13.996832655533986
+2025-03-04 06:46:13,882[DEBUG] optimize site: [30, 31]
+2025-03-04 06:46:13,884[DEBUG] use direct eigensolver
+2025-03-04 06:46:13,887[DEBUG] energy: -13.99683265553398
+2025-03-04 06:46:13,889[DEBUG] 1 sweeps are finished, lowest energy = -13.99683265581305
+2025-03-04 06:46:13,890[DEBUG] isweep: 1
+2025-03-04 06:46:13,892[DEBUG] compress config in current loop: 30, percent: 0
+2025-03-04 06:46:13,893[DEBUG] mps current size: 343.7KiB, Matrix product bond dim:[1, 2, 4, 8, 16, 30, 30, 30, 30, 30, 30, 30, 30, 30, 30, 30, 30, 30, 30, 30, 30, 30, 30, 30, 30, 30, 30, 30, 30, 16, 8, 4, 1]
+2025-03-04 06:46:13,895[DEBUG] optimize site: [30, 31]
+2025-03-04 06:46:13,896[DEBUG] use direct eigensolver
+2025-03-04 06:46:13,900[DEBUG] energy: -13.99683265553398
+2025-03-04 06:46:13,901[DEBUG] optimize site: [29, 30]
+2025-03-04 06:46:13,904[DEBUG] use direct eigensolver
+2025-03-04 06:46:13,910[DEBUG] energy: -13.996832655533979
+2025-03-04 06:46:13,912[DEBUG] optimize site: [28, 29]
+2025-03-04 06:46:13,914[DEBUG] use direct eigensolver
+2025-03-04 06:46:13,958[DEBUG] energy: -13.996832655533979
+2025-03-04 06:46:13,960[DEBUG] optimize site: [27, 28]
+2025-03-04 06:46:13,962[DEBUG] use direct eigensolver
+2025-03-04 06:46:14,210[DEBUG] energy: -13.99683265553399
+2025-03-04 06:46:14,214[DEBUG] optimize site: [26, 27]
+2025-03-04 06:46:14,224[DEBUG] use davidson, HC hops: 4
+2025-03-04 06:46:14,227[DEBUG] energy: -13.996832655813613
+2025-03-04 06:46:14,231[DEBUG] optimize site: [25, 26]
+2025-03-04 06:46:14,275[DEBUG] use davidson, HC hops: 22
+2025-03-04 06:46:14,278[DEBUG] energy: -13.996844945038324
+2025-03-04 06:46:14,281[DEBUG] optimize site: [24, 25]
+2025-03-04 06:46:14,331[DEBUG] use davidson, HC hops: 28
+2025-03-04 06:46:14,332[DEBUG] energy: -13.997067101658732
+2025-03-04 06:46:14,336[DEBUG] optimize site: [23, 24]
+2025-03-04 06:46:14,378[DEBUG] use davidson, HC hops: 25
+2025-03-04 06:46:14,380[DEBUG] energy: -13.997101684717506
+2025-03-04 06:46:14,383[DEBUG] optimize site: [22, 23]
+2025-03-04 06:46:14,409[DEBUG] use davidson, HC hops: 23
+2025-03-04 06:46:14,410[DEBUG] energy: -13.997106608213713
+2025-03-04 06:46:14,414[DEBUG] optimize site: [21, 22]
+2025-03-04 06:46:14,439[DEBUG] use davidson, HC hops: 23
+2025-03-04 06:46:14,441[DEBUG] energy: -13.997113698271155
+2025-03-04 06:46:14,445[DEBUG] optimize site: [20, 21]
+2025-03-04 06:46:14,473[DEBUG] use davidson, HC hops: 26
+2025-03-04 06:46:14,474[DEBUG] energy: -13.997162638323585
+2025-03-04 06:46:14,478[DEBUG] optimize site: [19, 20]
+2025-03-04 06:46:14,515[DEBUG] use davidson, HC hops: 23
+2025-03-04 06:46:14,517[DEBUG] energy: -13.997170144965587
+2025-03-04 06:46:14,522[DEBUG] optimize site: [18, 19]
+2025-03-04 06:46:14,570[DEBUG] use davidson, HC hops: 26
+2025-03-04 06:46:14,571[DEBUG] energy: -13.997199975427455
+2025-03-04 06:46:14,576[DEBUG] optimize site: [17, 18]
+2025-03-04 06:46:14,615[DEBUG] use davidson, HC hops: 22
+2025-03-04 06:46:14,615[DEBUG] energy: -13.997204392621677
+2025-03-04 06:46:14,620[DEBUG] optimize site: [16, 17]
+2025-03-04 06:46:14,647[DEBUG] use davidson, HC hops: 25
+2025-03-04 06:46:14,649[DEBUG] energy: -13.997225037523863
+2025-03-04 06:46:14,652[DEBUG] optimize site: [15, 16]
+2025-03-04 06:46:14,681[DEBUG] use davidson, HC hops: 26
+2025-03-04 06:46:14,683[DEBUG] energy: -13.997284918121249
+2025-03-04 06:46:14,686[DEBUG] optimize site: [14, 15]
+2025-03-04 06:46:14,710[DEBUG] use davidson, HC hops: 22
+2025-03-04 06:46:14,711[DEBUG] energy: -13.99729085997133
+2025-03-04 06:46:14,715[DEBUG] optimize site: [13, 14]
+2025-03-04 06:46:14,738[DEBUG] use davidson, HC hops: 20
+2025-03-04 06:46:14,739[DEBUG] energy: -13.99729325765389
+2025-03-04 06:46:14,743[DEBUG] optimize site: [12, 13]
+2025-03-04 06:46:14,769[DEBUG] use davidson, HC hops: 23
+2025-03-04 06:46:14,769[DEBUG] energy: -13.997306225086763
+2025-03-04 06:46:14,774[DEBUG] optimize site: [11, 12]
+2025-03-04 06:46:14,797[DEBUG] use davidson, HC hops: 21
+2025-03-04 06:46:14,799[DEBUG] energy: -13.997311145595702
+2025-03-04 06:46:14,802[DEBUG] optimize site: [10, 11]
+2025-03-04 06:46:14,835[DEBUG] use davidson, HC hops: 20
+2025-03-04 06:46:14,837[DEBUG] energy: -13.997313132707575
+2025-03-04 06:46:14,842[DEBUG] optimize site: [9, 10]
+2025-03-04 06:46:14,874[DEBUG] use davidson, HC hops: 17
+2025-03-04 06:46:14,875[DEBUG] energy: -13.997314428626446
+2025-03-04 06:46:14,879[DEBUG] optimize site: [8, 9]
+2025-03-04 06:46:14,903[DEBUG] use davidson, HC hops: 11
+2025-03-04 06:46:14,904[DEBUG] energy: -13.997314715468786
+2025-03-04 06:46:14,908[DEBUG] optimize site: [7, 8]
+2025-03-04 06:46:14,925[DEBUG] use davidson, HC hops: 7
+2025-03-04 06:46:14,926[DEBUG] energy: -13.997314712669898
+2025-03-04 06:46:14,930[DEBUG] optimize site: [6, 7]
+2025-03-04 06:46:14,956[DEBUG] use davidson, HC hops: 12
+2025-03-04 06:46:14,957[DEBUG] energy: -13.997314999750145
+2025-03-04 06:46:14,961[DEBUG] optimize site: [5, 6]
+2025-03-04 06:46:14,977[DEBUG] use davidson, HC hops: 7
+2025-03-04 06:46:14,978[DEBUG] energy: -13.997315003811568
+2025-03-04 06:46:14,983[DEBUG] optimize site: [4, 5]
+2025-03-04 06:46:14,993[DEBUG] use davidson, HC hops: 5
+2025-03-04 06:46:14,995[DEBUG] energy: -13.997315004767888
+2025-03-04 06:46:14,997[DEBUG] optimize site: [3, 4]
+2025-03-04 06:46:15,000[DEBUG] use direct eigensolver
+2025-03-04 06:46:15,261[DEBUG] energy: -13.997315004467207
+2025-03-04 06:46:15,263[DEBUG] optimize site: [2, 3]
+2025-03-04 06:46:15,264[DEBUG] use direct eigensolver
+2025-03-04 06:46:15,342[DEBUG] energy: -13.997315004467204
+2025-03-04 06:46:15,345[DEBUG] optimize site: [1, 2]
+2025-03-04 06:46:15,347[DEBUG] use direct eigensolver
+2025-03-04 06:46:15,356[DEBUG] energy: -13.9973150044672
+2025-03-04 06:46:15,358[DEBUG] optimize site: [0, 1]
+2025-03-04 06:46:15,360[DEBUG] use direct eigensolver
+2025-03-04 06:46:15,364[DEBUG] energy: -13.9973150044672
+2025-03-04 06:46:15,365[DEBUG] 2 sweeps are finished, lowest energy = -13.997315004767888
+2025-03-04 06:46:15,367[DEBUG] isweep: 2
+2025-03-04 06:46:15,368[DEBUG] compress config in current loop: 30, percent: 0
+2025-03-04 06:46:15,370[DEBUG] mps current size: 343.7KiB, Matrix product bond dim:[1, 4, 8, 16, 30, 30, 30, 30, 30, 30, 30, 30, 30, 30, 30, 30, 30, 30, 30, 30, 30, 30, 30, 30, 30, 30, 30, 30, 16, 8, 4, 2, 1]
+2025-03-04 06:46:15,371[DEBUG] optimize site: [0, 1]
+2025-03-04 06:46:15,373[DEBUG] use direct eigensolver
+2025-03-04 06:46:15,377[DEBUG] energy: -13.9973150044672
+2025-03-04 06:46:15,378[DEBUG] optimize site: [1, 2]
+2025-03-04 06:46:15,380[DEBUG] use direct eigensolver
+2025-03-04 06:46:15,386[DEBUG] energy: -13.997315004467193
+2025-03-04 06:46:15,387[DEBUG] optimize site: [2, 3]
+2025-03-04 06:46:15,389[DEBUG] use direct eigensolver
+2025-03-04 06:46:15,435[DEBUG] energy: -13.9973150044672
+2025-03-04 06:46:15,437[DEBUG] optimize site: [3, 4]
+2025-03-04 06:46:15,439[DEBUG] use direct eigensolver
+2025-03-04 06:46:15,672[DEBUG] energy: -13.997315004467213
+2025-03-04 06:46:15,675[DEBUG] optimize site: [4, 5]
+2025-03-04 06:46:15,681[DEBUG] use davidson, HC hops: 4
+2025-03-04 06:46:15,682[DEBUG] energy: -13.997315004767977
+2025-03-04 06:46:15,687[DEBUG] optimize site: [5, 6]
+2025-03-04 06:46:15,694[DEBUG] use davidson, HC hops: 4
+2025-03-04 06:46:15,695[DEBUG] energy: -13.99731500466789
+2025-03-04 06:46:15,699[DEBUG] optimize site: [6, 7]
+2025-03-04 06:46:15,707[DEBUG] use davidson, HC hops: 6
+2025-03-04 06:46:15,709[DEBUG] energy: -13.997315012470757
+2025-03-04 06:46:15,712[DEBUG] optimize site: [7, 8]
+2025-03-04 06:46:15,720[DEBUG] use davidson, HC hops: 5
+2025-03-04 06:46:15,721[DEBUG] energy: -13.997315006066746
+2025-03-04 06:46:15,725[DEBUG] optimize site: [8, 9]
+2025-03-04 06:46:15,734[DEBUG] use davidson, HC hops: 7
+2025-03-04 06:46:15,736[DEBUG] energy: -13.997315033374624
+2025-03-04 06:46:15,739[DEBUG] optimize site: [9, 10]
+2025-03-04 06:46:15,748[DEBUG] use davidson, HC hops: 6
+2025-03-04 06:46:15,749[DEBUG] energy: -13.997315010122048
+2025-03-04 06:46:15,753[DEBUG] optimize site: [10, 11]
+2025-03-04 06:46:15,764[DEBUG] use davidson, HC hops: 8
+2025-03-04 06:46:15,765[DEBUG] energy: -13.99731505577698
+2025-03-04 06:46:15,769[DEBUG] optimize site: [11, 12]
+2025-03-04 06:46:15,778[DEBUG] use davidson, HC hops: 7
+2025-03-04 06:46:15,779[DEBUG] energy: -13.997315015890592
+2025-03-04 06:46:15,783[DEBUG] optimize site: [12, 13]
+2025-03-04 06:46:15,794[DEBUG] use davidson, HC hops: 8
+2025-03-04 06:46:15,796[DEBUG] energy: -13.997315076759524
+2025-03-04 06:46:15,799[DEBUG] optimize site: [13, 14]
+2025-03-04 06:46:15,808[DEBUG] use davidson, HC hops: 7
+2025-03-04 06:46:15,810[DEBUG] energy: -13.997315021063878
+2025-03-04 06:46:15,813[DEBUG] optimize site: [14, 15]
+2025-03-04 06:46:15,824[DEBUG] use davidson, HC hops: 8
+2025-03-04 06:46:15,824[DEBUG] energy: -13.997315089163585
+2025-03-04 06:46:15,829[DEBUG] optimize site: [15, 16]
+2025-03-04 06:46:15,840[DEBUG] use davidson, HC hops: 8
+2025-03-04 06:46:15,841[DEBUG] energy: -13.997315023237828
+2025-03-04 06:46:15,845[DEBUG] optimize site: [16, 17]
+2025-03-04 06:46:15,856[DEBUG] use davidson, HC hops: 9
+2025-03-04 06:46:15,858[DEBUG] energy: -13.997315090211742
+2025-03-04 06:46:15,861[DEBUG] optimize site: [17, 18]
+2025-03-04 06:46:15,872[DEBUG] use davidson, HC hops: 8
+2025-03-04 06:46:15,872[DEBUG] energy: -13.997315022014352
+2025-03-04 06:46:15,876[DEBUG] optimize site: [18, 19]
+2025-03-04 06:46:15,887[DEBUG] use davidson, HC hops: 8
+2025-03-04 06:46:15,889[DEBUG] energy: -13.997315079212644
+2025-03-04 06:46:15,892[DEBUG] optimize site: [19, 20]
+2025-03-04 06:46:15,902[DEBUG] use davidson, HC hops: 7
+2025-03-04 06:46:15,904[DEBUG] energy: -13.99731501838977
+2025-03-04 06:46:15,907[DEBUG] optimize site: [20, 21]
+2025-03-04 06:46:15,918[DEBUG] use davidson, HC hops: 8
+2025-03-04 06:46:15,919[DEBUG] energy: -13.997315060471658
+2025-03-04 06:46:15,923[DEBUG] optimize site: [21, 22]
+2025-03-04 06:46:15,931[DEBUG] use davidson, HC hops: 6
+2025-03-04 06:46:15,933[DEBUG] energy: -13.997315014223059
+2025-03-04 06:46:15,936[DEBUG] optimize site: [22, 23]
+2025-03-04 06:46:15,947[DEBUG] use davidson, HC hops: 8
+2025-03-04 06:46:15,949[DEBUG] energy: -13.997315036380833
+2025-03-04 06:46:15,952[DEBUG] optimize site: [23, 24]
+2025-03-04 06:46:15,961[DEBUG] use davidson, HC hops: 6
+2025-03-04 06:46:15,961[DEBUG] energy: -13.997315009063415
+2025-03-04 06:46:15,966[DEBUG] optimize site: [24, 25]
+2025-03-04 06:46:15,974[DEBUG] use davidson, HC hops: 6
+2025-03-04 06:46:15,975[DEBUG] energy: -13.997315015431901
+2025-03-04 06:46:15,979[DEBUG] optimize site: [25, 26]
+2025-03-04 06:46:15,987[DEBUG] use davidson, HC hops: 5
+2025-03-04 06:46:15,988[DEBUG] energy: -13.997315007630576
+2025-03-04 06:46:15,992[DEBUG] optimize site: [26, 27]
+2025-03-04 06:46:15,998[DEBUG] use davidson, HC hops: 4
+2025-03-04 06:46:16,000[DEBUG] energy: -13.997315007727543
+2025-03-04 06:46:16,002[DEBUG] optimize site: [27, 28]
+2025-03-04 06:46:16,004[DEBUG] use direct eigensolver
+2025-03-04 06:46:16,269[DEBUG] energy: -13.997315007427513
+2025-03-04 06:46:16,272[DEBUG] optimize site: [28, 29]
+2025-03-04 06:46:16,275[DEBUG] use direct eigensolver
+2025-03-04 06:46:16,323[DEBUG] energy: -13.99731500742751
+2025-03-04 06:46:16,324[DEBUG] optimize site: [29, 30]
+2025-03-04 06:46:16,327[DEBUG] use direct eigensolver
+2025-03-04 06:46:16,333[DEBUG] energy: -13.997315007427527
+2025-03-04 06:46:16,334[DEBUG] optimize site: [30, 31]
+2025-03-04 06:46:16,337[DEBUG] use direct eigensolver
+2025-03-04 06:46:16,340[DEBUG] energy: -13.997315007427527
+2025-03-04 06:46:16,343[DEBUG] 3 sweeps are finished, lowest energy = -13.997315090211742
+2025-03-04 06:46:16,344[INFO] DMRG has converged!
+2025-03-04 06:46:16,380[INFO] mps current size: 329.7KiB, Matrix product bond dim:[1, 2, 4, 8, 16, 30, 30, 30, 30, 30, 30, 30, 30, 30, 30, 30, 30, 30, 30, 30, 30, 30, 30, 30, 30, 30, 30, 30, 16, 8, 4, 2, 1]
 </pre></div></div>
 </div>
 <div class="nboutput nblast docutils container">
@@ -937,7 +937,7 @@ mpo_bond_dims:[1, 4, 5, 5, 5, 5, 5, 5, 5, 5, 5, 5, 5, 5, 5, 5, 5, 5, 5, 5, 5, 5,
 </div>
 <div class="output_area docutils container">
 <div class="highlight"><pre>
-gs energy: -13.997315090211664
+gs energy: -13.997315090211742
 </pre></div></div>
 </div>
 <div class="nbinput nblast docutils container">

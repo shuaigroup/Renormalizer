@@ -382,8 +382,16 @@ used for better initial guess in SA-DMRG algorithm. Otherwise,
 <span class="sig-name descname"><span class="pre">compress</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">temp_m_trunc</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">ret_s</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">False</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/renormalizer/mps/mp.html#MatrixProduct.compress"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#renormalizer.mps.mp.MatrixProduct.compress" title="Permalink to this definition">#</a></dt>
 <dd><p>inp: canonicalise MPS (or MPO)</p>
 <dl class="field-list simple">
-<dt class="field-odd">Return type<span class="colon">:</span></dt>
-<dd class="field-odd"><p>truncated MPS</p>
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>temp_m_trunc</strong> (<a class="reference external" href="https://docs.python.org/3/library/functions.html#int" title="(in Python v3.13)"><em>int</em></a>) – Temporary truncation bond dimension. Overwrites the compression
+configuration in <code class="docutils literal notranslate"><span class="pre">CompressConfig</span></code>.</p></li>
+<li><p><strong>ret_s</strong> (<a class="reference external" href="https://docs.python.org/3/library/functions.html#bool" title="(in Python v3.13)"><em>bool</em></a>) – Whether return the singular values at the bonds.
+The singular values are padded to a rectangular array with zero values.</p></li>
+</ul>
+</dd>
+<dt class="field-even">Return type<span class="colon">:</span></dt>
+<dd class="field-even"><p>truncated MPS</p>
 </dd>
 </dl>
 </dd></dl>
@@ -686,15 +694,32 @@ are calculated.</p>
 
 <dl class="py method">
 <dt class="sig sig-object py" id="renormalizer.mps.Mps.calc_bond_entropy">
-<span class="sig-name descname"><span class="pre">calc_bond_entropy</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">ndarray</span></span></span><a class="reference internal" href="_modules/renormalizer/mps/mps.html#Mps.calc_bond_entropy"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#renormalizer.mps.Mps.calc_bond_entropy" title="Permalink to this definition">#</a></dt>
+<span class="sig-name descname"><span class="pre">calc_bond_entropy</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">s_array</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference external" href="https://docs.python.org/3/library/typing.html#typing.Optional" title="(in Python v3.13)"><span class="pre">Optional</span></a><span class="p"><span class="pre">[</span></span><span class="pre">array</span><span class="p"><span class="pre">]</span></span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">ndarray</span></span></span><a class="reference internal" href="_modules/renormalizer/mps/mps.html#Mps.calc_bond_entropy"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#renormalizer.mps.Mps.calc_bond_entropy" title="Permalink to this definition">#</a></dt>
 <dd><p>Calculate von Neumann entropy at each bond according to <span class="math notranslate nohighlight">\(S = -\textrm{Tr}(\rho \ln \rho)\)</span>
 where <span class="math notranslate nohighlight">\(\rho\)</span> is the reduced density matrix of either block.</p>
 <dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><p><strong>s_array</strong> (<em>np.ndarray</em><em>, </em><em>optional</em>) – The singular values array. Calculated by <a class="reference internal" href="#renormalizer.mps.Mps.calc_bond_singular_values" title="renormalizer.mps.Mps.calc_bond_singular_values"><code class="xref py py-meth docutils literal notranslate"><span class="pre">Mps.calc_bond_singular_values()</span></code></a>.</p>
+</dd>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
+<dd class="field-even"><p><strong>S</strong> – a NumPy array containing the entropy values.</p>
+</dd>
+<dt class="field-odd">Return type<span class="colon">:</span></dt>
+<dd class="field-odd"><p>1D array</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="renormalizer.mps.Mps.calc_bond_singular_values">
+<span class="sig-name descname"><span class="pre">calc_bond_singular_values</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">ndarray</span></span></span><a class="reference internal" href="_modules/renormalizer/mps/mps.html#Mps.calc_bond_singular_values"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#renormalizer.mps.Mps.calc_bond_singular_values" title="Permalink to this definition">#</a></dt>
+<dd><p>Calculate the singular values at each bond.</p>
+<dl class="field-list simple">
 <dt class="field-odd">Returns<span class="colon">:</span></dt>
-<dd class="field-odd"><p><strong>S</strong> – a NumPy array containing the entropy values.</p>
+<dd class="field-odd"><p><strong>Singular values</strong></p>
 </dd>
 <dt class="field-even">Return type<span class="colon">:</span></dt>
-<dd class="field-even"><p>1D array</p>
+<dd class="field-even"><p>2D array</p>
 </dd>
 </dl>
 </dd></dl>
@@ -761,8 +786,16 @@ an ndarray is returned.</p>
 <span class="sig-name descname"><span class="pre">compress</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">temp_m_trunc</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">ret_s</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">False</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#renormalizer.mps.Mps.compress" title="Permalink to this definition">#</a></dt>
 <dd><p>inp: canonicalise MPS (or MPO)</p>
 <dl class="field-list simple">
-<dt class="field-odd">Return type<span class="colon">:</span></dt>
-<dd class="field-odd"><p>truncated MPS</p>
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>temp_m_trunc</strong> (<a class="reference external" href="https://docs.python.org/3/library/functions.html#int" title="(in Python v3.13)"><em>int</em></a>) – Temporary truncation bond dimension. Overwrites the compression
+configuration in <code class="docutils literal notranslate"><span class="pre">CompressConfig</span></code>.</p></li>
+<li><p><strong>ret_s</strong> (<a class="reference external" href="https://docs.python.org/3/library/functions.html#bool" title="(in Python v3.13)"><em>bool</em></a>) – Whether return the singular values at the bonds.
+The singular values are padded to a rectangular array with zero values.</p></li>
+</ul>
+</dd>
+<dt class="field-even">Return type<span class="colon">:</span></dt>
+<dd class="field-even"><p>truncated MPS</p>
 </dd>
 </dl>
 </dd></dl>
@@ -1184,8 +1217,16 @@ an approximation of <code class="docutils literal notranslate"><span class="pre"
 <span class="sig-name descname"><span class="pre">compress</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">temp_m_trunc</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">ret_s</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">False</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#renormalizer.mps.Mpo.compress" title="Permalink to this definition">#</a></dt>
 <dd><p>inp: canonicalise MPS (or MPO)</p>
 <dl class="field-list simple">
-<dt class="field-odd">Return type<span class="colon">:</span></dt>
-<dd class="field-odd"><p>truncated MPS</p>
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>temp_m_trunc</strong> (<a class="reference external" href="https://docs.python.org/3/library/functions.html#int" title="(in Python v3.13)"><em>int</em></a>) – Temporary truncation bond dimension. Overwrites the compression
+configuration in <code class="docutils literal notranslate"><span class="pre">CompressConfig</span></code>.</p></li>
+<li><p><strong>ret_s</strong> (<a class="reference external" href="https://docs.python.org/3/library/functions.html#bool" title="(in Python v3.13)"><em>bool</em></a>) – Whether return the singular values at the bonds.
+The singular values are padded to a rectangular array with zero values.</p></li>
+</ul>
+</dd>
+<dt class="field-even">Return type<span class="colon">:</span></dt>
+<dd class="field-even"><p>truncated MPS</p>
 </dd>
 </dl>
 </dd></dl>
@@ -1609,15 +1650,32 @@ are calculated.</p>
 
 <dl class="py method">
 <dt class="sig sig-object py" id="renormalizer.mps.MpDm.calc_bond_entropy">
-<span class="sig-name descname"><span class="pre">calc_bond_entropy</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">ndarray</span></span></span><a class="headerlink" href="#renormalizer.mps.MpDm.calc_bond_entropy" title="Permalink to this definition">#</a></dt>
+<span class="sig-name descname"><span class="pre">calc_bond_entropy</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">s_array</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference external" href="https://docs.python.org/3/library/typing.html#typing.Optional" title="(in Python v3.13)"><span class="pre">Optional</span></a><span class="p"><span class="pre">[</span></span><span class="pre">array</span><span class="p"><span class="pre">]</span></span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">ndarray</span></span></span><a class="headerlink" href="#renormalizer.mps.MpDm.calc_bond_entropy" title="Permalink to this definition">#</a></dt>
 <dd><p>Calculate von Neumann entropy at each bond according to <span class="math notranslate nohighlight">\(S = -\textrm{Tr}(\rho \ln \rho)\)</span>
 where <span class="math notranslate nohighlight">\(\rho\)</span> is the reduced density matrix of either block.</p>
 <dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><p><strong>s_array</strong> (<em>np.ndarray</em><em>, </em><em>optional</em>) – The singular values array. Calculated by <a class="reference internal" href="#renormalizer.mps.Mps.calc_bond_singular_values" title="renormalizer.mps.Mps.calc_bond_singular_values"><code class="xref py py-meth docutils literal notranslate"><span class="pre">Mps.calc_bond_singular_values()</span></code></a>.</p>
+</dd>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
+<dd class="field-even"><p><strong>S</strong> – a NumPy array containing the entropy values.</p>
+</dd>
+<dt class="field-odd">Return type<span class="colon">:</span></dt>
+<dd class="field-odd"><p>1D array</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="renormalizer.mps.MpDm.calc_bond_singular_values">
+<span class="sig-name descname"><span class="pre">calc_bond_singular_values</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">ndarray</span></span></span><a class="headerlink" href="#renormalizer.mps.MpDm.calc_bond_singular_values" title="Permalink to this definition">#</a></dt>
+<dd><p>Calculate the singular values at each bond.</p>
+<dl class="field-list simple">
 <dt class="field-odd">Returns<span class="colon">:</span></dt>
-<dd class="field-odd"><p><strong>S</strong> – a NumPy array containing the entropy values.</p>
+<dd class="field-odd"><p><strong>Singular values</strong></p>
 </dd>
 <dt class="field-even">Return type<span class="colon">:</span></dt>
-<dd class="field-even"><p>1D array</p>
+<dd class="field-even"><p>2D array</p>
 </dd>
 </dl>
 </dd></dl>
@@ -1684,8 +1742,16 @@ an ndarray is returned.</p>
 <span class="sig-name descname"><span class="pre">compress</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">temp_m_trunc</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">ret_s</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">False</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#renormalizer.mps.MpDm.compress" title="Permalink to this definition">#</a></dt>
 <dd><p>inp: canonicalise MPS (or MPO)</p>
 <dl class="field-list simple">
-<dt class="field-odd">Return type<span class="colon">:</span></dt>
-<dd class="field-odd"><p>truncated MPS</p>
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>temp_m_trunc</strong> (<a class="reference external" href="https://docs.python.org/3/library/functions.html#int" title="(in Python v3.13)"><em>int</em></a>) – Temporary truncation bond dimension. Overwrites the compression
+configuration in <code class="docutils literal notranslate"><span class="pre">CompressConfig</span></code>.</p></li>
+<li><p><strong>ret_s</strong> (<a class="reference external" href="https://docs.python.org/3/library/functions.html#bool" title="(in Python v3.13)"><em>bool</em></a>) – Whether return the singular values at the bonds.
+The singular values are padded to a rectangular array with zero values.</p></li>
+</ul>
+</dd>
+<dt class="field-even">Return type<span class="colon">:</span></dt>
+<dd class="field-even"><p>truncated MPS</p>
 </dd>
 </dl>
 </dd></dl>
@@ -2437,6 +2503,7 @@ Note that currently <code class="docutils literal notranslate"><span class="pre"
 <li><a class="reference internal" href="#renormalizer.mps.Mps.calc_2site_mutual_entropy"><code class="docutils literal notranslate"><span class="pre">Mps.calc_2site_mutual_entropy()</span></code></a></li>
 <li><a class="reference internal" href="#renormalizer.mps.Mps.calc_2site_rdm"><code class="docutils literal notranslate"><span class="pre">Mps.calc_2site_rdm()</span></code></a></li>
 <li><a class="reference internal" href="#renormalizer.mps.Mps.calc_bond_entropy"><code class="docutils literal notranslate"><span class="pre">Mps.calc_bond_entropy()</span></code></a></li>
+<li><a class="reference internal" href="#renormalizer.mps.Mps.calc_bond_singular_values"><code class="docutils literal notranslate"><span class="pre">Mps.calc_bond_singular_values()</span></code></a></li>
 <li><a class="reference internal" href="#renormalizer.mps.Mps.calc_edof_rdm"><code class="docutils literal notranslate"><span class="pre">Mps.calc_edof_rdm()</span></code></a></li>
 <li><a class="reference internal" href="#renormalizer.mps.Mps.calc_entropy"><code class="docutils literal notranslate"><span class="pre">Mps.calc_entropy()</span></code></a></li>
 <li><a class="reference internal" href="#renormalizer.mps.Mps.canonicalise"><code class="docutils literal notranslate"><span class="pre">Mps.canonicalise()</span></code></a></li>
@@ -2573,6 +2640,7 @@ Note that currently <code class="docutils literal notranslate"><span class="pre"
 <li><a class="reference internal" href="#renormalizer.mps.MpDm.calc_2site_mutual_entropy"><code class="docutils literal notranslate"><span class="pre">MpDm.calc_2site_mutual_entropy()</span></code></a></li>
 <li><a class="reference internal" href="#renormalizer.mps.MpDm.calc_2site_rdm"><code class="docutils literal notranslate"><span class="pre">MpDm.calc_2site_rdm()</span></code></a></li>
 <li><a class="reference internal" href="#renormalizer.mps.MpDm.calc_bond_entropy"><code class="docutils literal notranslate"><span class="pre">MpDm.calc_bond_entropy()</span></code></a></li>
+<li><a class="reference internal" href="#renormalizer.mps.MpDm.calc_bond_singular_values"><code class="docutils literal notranslate"><span class="pre">MpDm.calc_bond_singular_values()</span></code></a></li>
 <li><a class="reference internal" href="#renormalizer.mps.MpDm.calc_edof_rdm"><code class="docutils literal notranslate"><span class="pre">MpDm.calc_edof_rdm()</span></code></a></li>
 <li><a class="reference internal" href="#renormalizer.mps.MpDm.calc_entropy"><code class="docutils literal notranslate"><span class="pre">MpDm.calc_entropy()</span></code></a></li>
 <li><a class="reference internal" href="#renormalizer.mps.MpDm.canonicalise"><code class="docutils literal notranslate"><span class="pre">MpDm.canonicalise()</span></code></a></li>

@@ -502,7 +502,7 @@ div.rendered_html tbody tr:hover {
 <div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[1]:
 </pre></div>
 </div>
-<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="kn">from</span> <span class="nn">renormalizer.tests.parameter</span> <span class="kn">import</span> <span class="n">holstein_model</span>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="kn">from</span><span class="w"> </span><span class="nn">renormalizer.tests.parameter</span><span class="w"> </span><span class="kn">import</span> <span class="n">holstein_model</span>
 </pre></div>
 </div>
 </div>
@@ -511,11 +511,11 @@ div.rendered_html tbody tr:hover {
 </div>
 <div class="output_area stderr docutils container">
 <div class="highlight"><pre>
-2024-12-04 10:30:22,970[INFO] Use NumPy as backend
-2024-12-04 10:30:22,971[INFO] numpy random seed is 9012
-2024-12-04 10:30:22,972[INFO] random seed is 1092
-2024-12-04 10:30:22,983[INFO] Git Commit Hash: b882466cb690e4399b35e0772555500df69bb298
-2024-12-04 10:30:22,985[INFO] use 64 bits
+2025-03-04 06:46:19,267[INFO] Use NumPy as backend
+2025-03-04 06:46:19,267[INFO] numpy random seed is 9012
+2025-03-04 06:46:19,268[INFO] random seed is 1092
+2025-03-04 06:46:19,278[INFO] Git Commit Hash: 785189bf8584e6800eba66b19928d4e341058151
+2025-03-04 06:46:19,279[INFO] use 64 bits
 </pre></div></div>
 </div>
 <div class="nbinput docutils container">
@@ -594,7 +594,7 @@ div.rendered_html tbody tr:hover {
 <div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[4]:
 </pre></div>
 </div>
-<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="kn">from</span> <span class="nn">renormalizer</span> <span class="kn">import</span> <span class="n">Mps</span><span class="p">,</span> <span class="n">Mpo</span>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="kn">from</span><span class="w"> </span><span class="nn">renormalizer</span><span class="w"> </span><span class="kn">import</span> <span class="n">Mps</span><span class="p">,</span> <span class="n">Mpo</span>
 </pre></div>
 </div>
 </div>
@@ -630,10 +630,10 @@ div.rendered_html tbody tr:hover {
 </div>
 <div class="output_area stderr docutils container">
 <div class="highlight"><pre>
-2024-12-04 10:30:23,067[DEBUG] # of operator terms: 27
-2024-12-04 10:30:23,068[DEBUG] Input operator terms: 27
-2024-12-04 10:30:23,070[DEBUG] After combination of the same terms: 27
-2024-12-04 10:30:23,071[DEBUG] symbolic mpo algorithm: qr
+2025-03-04 06:46:19,354[DEBUG] # of operator terms: 27
+2025-03-04 06:46:19,356[DEBUG] Input operator terms: 27
+2025-03-04 06:46:19,358[DEBUG] After combination of the same terms: 27
+2025-03-04 06:46:19,359[DEBUG] symbolic mpo algorithm: qr
 </pre></div></div>
 </div>
 <div class="nboutput nblast docutils container">
@@ -668,7 +668,7 @@ div.rendered_html tbody tr:hover {
 <div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[8]:
 </pre></div>
 </div>
-<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="kn">import</span> <span class="nn">numpy</span> <span class="k">as</span> <span class="nn">np</span>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="kn">import</span><span class="w"> </span><span class="nn">numpy</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="nn">np</span>
 <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">(</span><span class="n">mps</span><span class="o">.</span><span class="n">bond_dims</span><span class="p">)</span> <span class="o">*</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">(</span><span class="n">mpo</span><span class="o">.</span><span class="n">bond_dims</span><span class="p">)</span>  <span class="c1"># the same as the bond dimension of `mps2`</span>
 </pre></div>
 </div>
@@ -708,7 +708,7 @@ array([ 1,  8, 25, 20, 25, 25, 20, 15, 15,  1])
 </div>
 <div class="output_area stderr docutils container">
 <div class="highlight"><pre>
-2024-12-04 10:30:23,138[DEBUG] size before/after compress: 47.2KiB/4.2KiB, ratio: 11.177777777777777
+2025-03-04 06:46:19,424[DEBUG] size before/after compress: 47.2KiB/4.2KiB, ratio: 11.177777777777777
 </pre></div></div>
 </div>
 <div class="nboutput nblast docutils container">
@@ -737,7 +737,7 @@ array([ 1,  8, 25, 20, 25, 25, 20, 15, 15,  1])
 </div>
 <div class="output_area docutils container">
 <div class="highlight"><pre>
-(0.0031058187888397598, 0.003148758678336175, 0.013637084922336801)
+(0.0031058187888397606, 0.0031487586783361748, 0.01363708492233639)
 </pre></div></div>
 </div>
 <blockquote>
@@ -751,7 +751,7 @@ array([ 1,  8, 25, 20, 25, 25, 20, 15, 15,  1])
 <div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[12]:
 </pre></div>
 </div>
-<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="kn">from</span> <span class="nn">renormalizer.utils</span> <span class="kn">import</span> <span class="n">CompressConfig</span><span class="p">,</span> <span class="n">CompressCriteria</span>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="kn">from</span><span class="w"> </span><span class="nn">renormalizer.utils</span><span class="w"> </span><span class="kn">import</span> <span class="n">CompressConfig</span><span class="p">,</span> <span class="n">CompressCriteria</span>
 </pre></div>
 </div>
 </div>
@@ -801,7 +801,7 @@ array([ 1,  8, 25, 20, 25, 25, 20, 15, 15,  1])
 </div>
 <div class="output_area stderr docutils container">
 <div class="highlight"><pre>
-2024-12-04 10:30:23,214[DEBUG] size before/after compress: 47.2KiB/26.5KiB, ratio: 1.7784325279905715
+2025-03-04 06:46:19,488[DEBUG] size before/after compress: 47.2KiB/26.5KiB, ratio: 1.7784325279905715
 </pre></div></div>
 </div>
 <div class="nboutput nblast docutils container">
@@ -830,7 +830,7 @@ array([ 1,  8, 25, 20, 25, 25, 20, 15, 15,  1])
 </div>
 <div class="output_area docutils container">
 <div class="highlight"><pre>
-(0.0031487586783361704, 0.003148758678336175, 1.5150381614690706e-15)
+(0.003148758678336171, 0.0031487586783361748, 1.2395766775656034e-15)
 </pre></div></div>
 </div>
 </section>

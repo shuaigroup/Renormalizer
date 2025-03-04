@@ -230,24 +230,24 @@
 <span class="c1"># Author: Tong Jiang &lt;tongjiang1000@gmail.com&gt;</span>
 <span class="c1"># finite temperature absorption/emission spectrum based on Correction vector</span>
 
-<span class="kn">import</span> <span class="nn">copy</span>
-<span class="kn">import</span> <span class="nn">os</span>
-<span class="kn">import</span> <span class="nn">logging</span>
-<span class="kn">import</span> <span class="nn">scipy</span>
-<span class="kn">from</span> <span class="nn">itertools</span> <span class="kn">import</span> <span class="n">product</span>
+<span class="kn">import</span><span class="w"> </span><span class="nn">copy</span>
+<span class="kn">import</span><span class="w"> </span><span class="nn">os</span>
+<span class="kn">import</span><span class="w"> </span><span class="nn">logging</span>
+<span class="kn">import</span><span class="w"> </span><span class="nn">scipy</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">itertools</span><span class="w"> </span><span class="kn">import</span> <span class="n">product</span>
 
-<span class="kn">from</span> <span class="nn">renormalizer.mps.matrix</span> <span class="kn">import</span> <span class="p">(</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">renormalizer.mps.matrix</span><span class="w"> </span><span class="kn">import</span> <span class="p">(</span>
     <span class="n">multi_tensor_contract</span><span class="p">,</span>
     <span class="n">tensordot</span><span class="p">,</span>
     <span class="n">moveaxis</span>
 <span class="p">)</span>
-<span class="kn">from</span> <span class="nn">renormalizer.cv.spectra_cv</span> <span class="kn">import</span> <span class="n">SpectraCv</span>
-<span class="kn">from</span> <span class="nn">renormalizer.mps.backend</span> <span class="kn">import</span> <span class="n">np</span><span class="p">,</span> <span class="n">xp</span>
-<span class="kn">from</span> <span class="nn">renormalizer.mps.matrix</span> <span class="kn">import</span> <span class="n">asxp</span><span class="p">,</span> <span class="n">asnumpy</span>
-<span class="kn">from</span> <span class="nn">renormalizer.mps</span> <span class="kn">import</span> <span class="p">(</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">renormalizer.cv.spectra_cv</span><span class="w"> </span><span class="kn">import</span> <span class="n">SpectraCv</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">renormalizer.mps.backend</span><span class="w"> </span><span class="kn">import</span> <span class="n">np</span><span class="p">,</span> <span class="n">xp</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">renormalizer.mps.matrix</span><span class="w"> </span><span class="kn">import</span> <span class="n">asxp</span><span class="p">,</span> <span class="n">asnumpy</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">renormalizer.mps</span><span class="w"> </span><span class="kn">import</span> <span class="p">(</span>
     <span class="n">Mpo</span><span class="p">,</span> <span class="n">svd_qn</span><span class="p">,</span> <span class="n">MpDm</span><span class="p">,</span> <span class="n">ThermalProp</span><span class="p">,</span> <span class="n">load_thermal_state</span><span class="p">)</span>
-<span class="kn">from</span> <span class="nn">renormalizer.mps.lib</span> <span class="kn">import</span> <span class="n">update_cv</span>
-<span class="kn">from</span> <span class="nn">renormalizer.utils</span> <span class="kn">import</span> <span class="p">(</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">renormalizer.mps.lib</span><span class="w"> </span><span class="kn">import</span> <span class="n">update_cv</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">renormalizer.utils</span><span class="w"> </span><span class="kn">import</span> <span class="p">(</span>
     <span class="n">CompressConfig</span><span class="p">,</span> <span class="n">EvolveConfig</span><span class="p">,</span>
     <span class="n">CompressCriteria</span>
 <span class="p">)</span>
@@ -255,7 +255,7 @@
 <span class="n">logger</span> <span class="o">=</span> <span class="n">logging</span><span class="o">.</span><span class="n">getLogger</span><span class="p">(</span><span class="vm">__name__</span><span class="p">)</span>
 
 
-<div class="viewcode-block" id="SpectraFtCV"><a class="viewcode-back" href="../../../cv.html#renormalizer.cv.finitet.SpectraFtCV">[docs]</a><span class="k">class</span> <span class="nc">SpectraFtCV</span><span class="p">(</span><span class="n">SpectraCv</span><span class="p">):</span>
+<div class="viewcode-block" id="SpectraFtCV"><a class="viewcode-back" href="../../../cv.html#renormalizer.cv.finitet.SpectraFtCV">[docs]</a><span class="k">class</span><span class="w"> </span><span class="nc">SpectraFtCV</span><span class="p">(</span><span class="n">SpectraCv</span><span class="p">):</span>
 <span class="w">    </span><span class="sa">r</span><span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">    Use DDMRG to calculate the finite temperature spectrum from frequency domain</span>
 
@@ -283,7 +283,7 @@
 <span class="sd">        see test/test_abs.py for example</span>
 
 <span class="sd">    &quot;&quot;&quot;</span>
-    <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span>
+    <span class="k">def</span><span class="w"> </span><span class="fm">__init__</span><span class="p">(</span>
         <span class="bp">self</span><span class="p">,</span>
         <span class="n">model</span><span class="p">,</span>
         <span class="n">spectratype</span><span class="p">,</span>
@@ -329,14 +329,14 @@
 
         <span class="bp">self</span><span class="o">.</span><span class="n">a_oper</span> <span class="o">=</span> <span class="kc">None</span>
 
-<div class="viewcode-block" id="SpectraFtCV.init_cv_mpo"><a class="viewcode-back" href="../../../cv.html#renormalizer.cv.finitet.SpectraFtCV.init_cv_mpo">[docs]</a>    <span class="k">def</span> <span class="nf">init_cv_mpo</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+<div class="viewcode-block" id="SpectraFtCV.init_cv_mpo"><a class="viewcode-back" href="../../../cv.html#renormalizer.cv.finitet.SpectraFtCV.init_cv_mpo">[docs]</a>    <span class="k">def</span><span class="w"> </span><span class="nf">init_cv_mpo</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
         <span class="n">cv_mpo</span> <span class="o">=</span> <span class="n">Mpo</span><span class="o">.</span><span class="n">finiteT_cv</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">model</span><span class="p">,</span> <span class="mi">1</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">m_max</span><span class="p">,</span>
                                 <span class="bp">self</span><span class="o">.</span><span class="n">spectratype</span><span class="p">,</span> <span class="n">percent</span><span class="o">=</span><span class="mf">1.0</span><span class="p">)</span>
         <span class="k">return</span> <span class="n">cv_mpo</span></div>
 
     <span class="n">init_cv_mps</span> <span class="o">=</span> <span class="n">init_cv_mpo</span>
 
-<div class="viewcode-block" id="SpectraFtCV.init_b_mpo"><a class="viewcode-back" href="../../../cv.html#renormalizer.cv.finitet.SpectraFtCV.init_b_mpo">[docs]</a>    <span class="k">def</span> <span class="nf">init_b_mpo</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+<div class="viewcode-block" id="SpectraFtCV.init_b_mpo"><a class="viewcode-back" href="../../../cv.html#renormalizer.cv.finitet.SpectraFtCV.init_b_mpo">[docs]</a>    <span class="k">def</span><span class="w"> </span><span class="nf">init_b_mpo</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
         <span class="c1"># get the right hand site vector b, Ax=b</span>
         <span class="c1"># b = -eta * dipole * \psi_0</span>
 
@@ -378,19 +378,19 @@
     <span class="n">init_b_mps</span> <span class="o">=</span> <span class="n">init_b_mpo</span>
 
     <span class="nd">@property</span>
-    <span class="k">def</span> <span class="nf">_thermal_dump_path</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">_thermal_dump_path</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
         <span class="k">assert</span> <span class="bp">self</span><span class="o">.</span><span class="n">_defined_output_path</span>
         <span class="k">return</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">dump_dir</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">job_name</span> <span class="o">+</span> <span class="s2">&quot;_impo.npz&quot;</span><span class="p">)</span>
 
     <span class="nd">@property</span>
-    <span class="k">def</span> <span class="nf">_defined_output_path</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">_defined_output_path</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
         <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">dump_dir</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span> <span class="ow">and</span> <span class="bp">self</span><span class="o">.</span><span class="n">job_name</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span>
 
-<div class="viewcode-block" id="SpectraFtCV.oper_prepare"><a class="viewcode-back" href="../../../cv.html#renormalizer.cv.finitet.SpectraFtCV.oper_prepare">[docs]</a>    <span class="k">def</span> <span class="nf">oper_prepare</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">omega</span><span class="p">):</span>
+<div class="viewcode-block" id="SpectraFtCV.oper_prepare"><a class="viewcode-back" href="../../../cv.html#renormalizer.cv.finitet.SpectraFtCV.oper_prepare">[docs]</a>    <span class="k">def</span><span class="w"> </span><span class="nf">oper_prepare</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">omega</span><span class="p">):</span>
         <span class="n">identity</span> <span class="o">=</span> <span class="n">Mpo</span><span class="o">.</span><span class="n">identity</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">model</span><span class="p">)</span><span class="o">.</span><span class="n">scale</span><span class="p">(</span><span class="n">omega</span><span class="p">)</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">a_oper</span> <span class="o">=</span> <span class="n">identity</span><span class="o">.</span><span class="n">add</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">h_mpo</span><span class="o">.</span><span class="n">scale</span><span class="p">(</span><span class="o">-</span><span class="mi">1</span><span class="p">,</span> <span class="n">inplace</span><span class="o">=</span><span class="kc">False</span><span class="p">))</span></div>
 
-<div class="viewcode-block" id="SpectraFtCV.optimize_cv"><a class="viewcode-back" href="../../../cv.html#renormalizer.cv.finitet.SpectraFtCV.optimize_cv">[docs]</a>    <span class="k">def</span> <span class="nf">optimize_cv</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">lr_group</span><span class="p">,</span> <span class="n">isite</span><span class="p">,</span> <span class="n">percent</span><span class="o">=</span><span class="mi">0</span><span class="p">):</span>
+<div class="viewcode-block" id="SpectraFtCV.optimize_cv"><a class="viewcode-back" href="../../../cv.html#renormalizer.cv.finitet.SpectraFtCV.optimize_cv">[docs]</a>    <span class="k">def</span><span class="w"> </span><span class="nf">optimize_cv</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">lr_group</span><span class="p">,</span> <span class="n">isite</span><span class="p">,</span> <span class="n">percent</span><span class="o">=</span><span class="mi">0</span><span class="p">):</span>
         <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">spectratype</span> <span class="o">==</span> <span class="s2">&quot;abs&quot;</span><span class="p">:</span>
             <span class="c1"># quantum number restriction, |1&gt;&lt;0|</span>
             <span class="n">up_exciton</span><span class="p">,</span> <span class="n">down_exciton</span> <span class="o">=</span> <span class="mi">1</span><span class="p">,</span> <span class="mi">0</span>
@@ -505,7 +505,7 @@
 
         <span class="n">count</span> <span class="o">=</span> <span class="mi">0</span>
 
-        <span class="k">def</span> <span class="nf">hop</span><span class="p">(</span><span class="n">x</span><span class="p">):</span>
+        <span class="k">def</span><span class="w"> </span><span class="nf">hop</span><span class="p">(</span><span class="n">x</span><span class="p">):</span>
             <span class="k">nonlocal</span> <span class="n">count</span>
             <span class="n">count</span> <span class="o">+=</span> <span class="mi">1</span>
             <span class="n">dag_struct</span> <span class="o">=</span> <span class="n">asxp</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">dag2mat</span><span class="p">(</span>
@@ -587,7 +587,7 @@
 
         <span class="k">return</span> <span class="nb">float</span><span class="p">(</span><span class="n">l_value</span><span class="p">)</span></div>
 
-<div class="viewcode-block" id="SpectraFtCV.construct_X_qnmat"><a class="viewcode-back" href="../../../cv.html#renormalizer.cv.finitet.SpectraFtCV.construct_X_qnmat">[docs]</a>    <span class="k">def</span> <span class="nf">construct_X_qnmat</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">addlist</span><span class="p">):</span>
+<div class="viewcode-block" id="SpectraFtCV.construct_X_qnmat"><a class="viewcode-back" href="../../../cv.html#renormalizer.cv.finitet.SpectraFtCV.construct_X_qnmat">[docs]</a>    <span class="k">def</span><span class="w"> </span><span class="nf">construct_X_qnmat</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">addlist</span><span class="p">):</span>
 
         <span class="n">pbond</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">model</span><span class="o">.</span><span class="n">pbond_list</span>
         <span class="n">xqnl</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">cv_mpo</span><span class="o">.</span><span class="n">qn</span><span class="p">[</span><span class="n">addlist</span><span class="p">[</span><span class="mi">0</span><span class="p">]])</span>
@@ -645,9 +645,9 @@
                 <span class="n">xshape</span> <span class="o">=</span> <span class="p">[</span><span class="mi">1</span><span class="p">]</span> <span class="o">+</span> <span class="n">xshape</span>
         <span class="k">return</span> <span class="n">xqnmat</span><span class="p">,</span> <span class="n">xqnbigl</span><span class="p">,</span> <span class="n">xqnbigr</span><span class="p">,</span> <span class="n">xshape</span></div>
 
-<div class="viewcode-block" id="SpectraFtCV.swap"><a class="viewcode-back" href="../../../cv.html#renormalizer.cv.finitet.SpectraFtCV.swap">[docs]</a>    <span class="k">def</span> <span class="nf">swap</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">mat</span><span class="p">,</span> <span class="n">qnbigl</span><span class="p">,</span> <span class="n">qnbigr</span><span class="p">):</span>
+<div class="viewcode-block" id="SpectraFtCV.swap"><a class="viewcode-back" href="../../../cv.html#renormalizer.cv.finitet.SpectraFtCV.swap">[docs]</a>    <span class="k">def</span><span class="w"> </span><span class="nf">swap</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">mat</span><span class="p">,</span> <span class="n">qnbigl</span><span class="p">,</span> <span class="n">qnbigr</span><span class="p">):</span>
 
-        <span class="k">def</span> <span class="nf">inter_change</span><span class="p">(</span><span class="n">ori_mat</span><span class="p">):</span>
+        <span class="k">def</span><span class="w"> </span><span class="nf">inter_change</span><span class="p">(</span><span class="n">ori_mat</span><span class="p">):</span>
             <span class="n">matshape</span> <span class="o">=</span> <span class="n">ori_mat</span><span class="o">.</span><span class="n">shape</span>
             <span class="n">len_mat</span> <span class="o">=</span> <span class="nb">int</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">prod</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">(</span><span class="n">matshape</span><span class="p">[:</span><span class="o">-</span><span class="mi">1</span><span class="p">])))</span>
             <span class="n">ori_mat</span> <span class="o">=</span> <span class="n">ori_mat</span><span class="o">.</span><span class="n">reshape</span><span class="p">(</span><span class="n">len_mat</span><span class="p">,</span> <span class="mi">2</span><span class="p">)</span>
@@ -670,7 +670,7 @@
 
         <span class="k">return</span> <span class="n">dag_qnmat</span><span class="p">,</span> <span class="n">dag_qnbigl</span><span class="p">,</span> <span class="n">dag_qnbigr</span></div>
 
-<div class="viewcode-block" id="SpectraFtCV.condition"><a class="viewcode-back" href="../../../cv.html#renormalizer.cv.finitet.SpectraFtCV.condition">[docs]</a>    <span class="k">def</span> <span class="nf">condition</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">mat</span><span class="p">,</span> <span class="n">qn</span><span class="p">):</span>
+<div class="viewcode-block" id="SpectraFtCV.condition"><a class="viewcode-back" href="../../../cv.html#renormalizer.cv.finitet.SpectraFtCV.condition">[docs]</a>    <span class="k">def</span><span class="w"> </span><span class="nf">condition</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">mat</span><span class="p">,</span> <span class="n">qn</span><span class="p">):</span>
         <span class="n">condition</span> <span class="o">=</span> <span class="p">(</span><span class="n">mat</span> <span class="o">==</span> <span class="n">qn</span><span class="p">)</span>
         <span class="n">mat_shape</span> <span class="o">=</span> <span class="nb">list</span><span class="p">(</span><span class="n">condition</span><span class="o">.</span><span class="n">shape</span><span class="p">)</span>
         <span class="k">del</span> <span class="n">mat_shape</span><span class="p">[</span><span class="o">-</span><span class="mi">1</span><span class="p">]</span>
@@ -678,7 +678,7 @@
         <span class="n">condition</span> <span class="o">=</span> <span class="n">condition</span><span class="o">.</span><span class="n">reshape</span><span class="p">(</span><span class="n">mat_shape</span><span class="p">)</span>
         <span class="k">return</span> <span class="n">condition</span></div>
 
-<div class="viewcode-block" id="SpectraFtCV.qnmat_add"><a class="viewcode-back" href="../../../cv.html#renormalizer.cv.finitet.SpectraFtCV.qnmat_add">[docs]</a>    <span class="k">def</span> <span class="nf">qnmat_add</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">mat_l</span><span class="p">,</span> <span class="n">mat_r</span><span class="p">):</span>
+<div class="viewcode-block" id="SpectraFtCV.qnmat_add"><a class="viewcode-back" href="../../../cv.html#renormalizer.cv.finitet.SpectraFtCV.qnmat_add">[docs]</a>    <span class="k">def</span><span class="w"> </span><span class="nf">qnmat_add</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">mat_l</span><span class="p">,</span> <span class="n">mat_r</span><span class="p">):</span>
         <span class="n">lshape</span><span class="p">,</span> <span class="n">rshape</span> <span class="o">=</span> <span class="n">mat_l</span><span class="o">.</span><span class="n">shape</span><span class="p">,</span> <span class="n">mat_r</span><span class="o">.</span><span class="n">shape</span>
         <span class="n">lena</span> <span class="o">=</span> <span class="nb">int</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">prod</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">(</span><span class="n">lshape</span><span class="p">))</span> <span class="o">/</span> <span class="mi">2</span><span class="p">)</span>
         <span class="n">lenb</span> <span class="o">=</span> <span class="nb">int</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">prod</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">(</span><span class="n">rshape</span><span class="p">))</span> <span class="o">/</span> <span class="mi">2</span><span class="p">)</span>
@@ -696,7 +696,7 @@
         <span class="n">lr</span> <span class="o">=</span> <span class="n">lr</span><span class="o">.</span><span class="n">reshape</span><span class="p">(</span><span class="n">shapel</span> <span class="o">+</span> <span class="n">shaper</span> <span class="o">+</span> <span class="p">[</span><span class="mi">2</span><span class="p">])</span>
         <span class="k">return</span> <span class="n">lr</span></div>
 
-<div class="viewcode-block" id="SpectraFtCV.dag2mat"><a class="viewcode-back" href="../../../cv.html#renormalizer.cv.finitet.SpectraFtCV.dag2mat">[docs]</a>    <span class="k">def</span> <span class="nf">dag2mat</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">xshape</span><span class="p">,</span> <span class="n">x</span><span class="p">,</span> <span class="n">dag_qnmat</span><span class="p">):</span>
+<div class="viewcode-block" id="SpectraFtCV.dag2mat"><a class="viewcode-back" href="../../../cv.html#renormalizer.cv.finitet.SpectraFtCV.dag2mat">[docs]</a>    <span class="k">def</span><span class="w"> </span><span class="nf">dag2mat</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">xshape</span><span class="p">,</span> <span class="n">x</span><span class="p">,</span> <span class="n">dag_qnmat</span><span class="p">):</span>
         <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">spectratype</span> <span class="o">==</span> <span class="s2">&quot;abs&quot;</span><span class="p">:</span>
             <span class="n">up_exciton</span><span class="p">,</span> <span class="n">down_exciton</span> <span class="o">=</span> <span class="mi">1</span><span class="p">,</span> <span class="mi">0</span>
         <span class="k">else</span><span class="p">:</span>
@@ -712,7 +712,7 @@
                 <span class="n">xdag</span> <span class="o">=</span> <span class="n">xdag</span><span class="o">.</span><span class="n">reshape</span><span class="p">([</span><span class="mi">1</span><span class="p">]</span> <span class="o">+</span> <span class="n">shape</span><span class="p">)</span>
         <span class="k">return</span> <span class="n">xdag</span></div>
 
-<div class="viewcode-block" id="SpectraFtCV.x_svd"><a class="viewcode-back" href="../../../cv.html#renormalizer.cv.finitet.SpectraFtCV.x_svd">[docs]</a>    <span class="k">def</span> <span class="nf">x_svd</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">xstruct</span><span class="p">,</span> <span class="n">xqnbigl</span><span class="p">,</span> <span class="n">xqnbigr</span><span class="p">,</span> <span class="n">nexciton</span><span class="p">,</span> <span class="n">percent</span><span class="o">=</span><span class="mi">0</span><span class="p">):</span>
+<div class="viewcode-block" id="SpectraFtCV.x_svd"><a class="viewcode-back" href="../../../cv.html#renormalizer.cv.finitet.SpectraFtCV.x_svd">[docs]</a>    <span class="k">def</span><span class="w"> </span><span class="nf">x_svd</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">xstruct</span><span class="p">,</span> <span class="n">xqnbigl</span><span class="p">,</span> <span class="n">xqnbigr</span><span class="p">,</span> <span class="n">nexciton</span><span class="p">,</span> <span class="n">percent</span><span class="o">=</span><span class="mi">0</span><span class="p">):</span>
         <span class="n">Gamma</span> <span class="o">=</span> <span class="n">xstruct</span><span class="o">.</span><span class="n">reshape</span><span class="p">(</span>
             <span class="n">np</span><span class="o">.</span><span class="n">prod</span><span class="p">(</span><span class="n">xqnbigl</span><span class="o">.</span><span class="n">shape</span><span class="p">)</span> <span class="o">//</span> <span class="mi">2</span><span class="p">,</span> <span class="n">np</span><span class="o">.</span><span class="n">prod</span><span class="p">(</span><span class="n">xqnbigr</span><span class="o">.</span><span class="n">shape</span><span class="p">)</span> <span class="o">//</span> <span class="mi">2</span><span class="p">)</span>
 
@@ -810,7 +810,7 @@
                 <span class="k">return</span> <span class="n">x</span><span class="o">.</span><span class="n">reshape</span><span class="p">(</span><span class="n">bigl_shape</span> <span class="o">+</span> <span class="p">[</span><span class="n">xdim</span><span class="p">]),</span> <span class="n">xdim</span><span class="p">,</span> <span class="n">xqn</span><span class="p">,</span> \
                     <span class="n">np</span><span class="o">.</span><span class="n">moveaxis</span><span class="p">(</span><span class="n">compx</span><span class="o">.</span><span class="n">reshape</span><span class="p">(</span><span class="n">bigr_shape</span> <span class="o">+</span> <span class="p">[</span><span class="n">xdim</span><span class="p">]),</span> <span class="o">-</span><span class="mi">1</span><span class="p">,</span> <span class="mi">0</span><span class="p">)</span></div>
 
-<div class="viewcode-block" id="SpectraFtCV.initialize_LR"><a class="viewcode-back" href="../../../cv.html#renormalizer.cv.finitet.SpectraFtCV.initialize_LR">[docs]</a>    <span class="k">def</span> <span class="nf">initialize_LR</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+<div class="viewcode-block" id="SpectraFtCV.initialize_LR"><a class="viewcode-back" href="../../../cv.html#renormalizer.cv.finitet.SpectraFtCV.initialize_LR">[docs]</a>    <span class="k">def</span><span class="w"> </span><span class="nf">initialize_LR</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
 
         <span class="n">first_LR</span> <span class="o">=</span> <span class="p">[</span><span class="n">np</span><span class="o">.</span><span class="n">ones</span><span class="p">((</span><span class="mi">1</span><span class="p">,</span> <span class="mi">1</span><span class="p">,</span> <span class="mi">1</span><span class="p">,</span> <span class="mi">1</span><span class="p">))]</span>
         <span class="n">forth_LR</span> <span class="o">=</span> <span class="p">[</span><span class="n">np</span><span class="o">.</span><span class="n">ones</span><span class="p">((</span><span class="mi">1</span><span class="p">,</span> <span class="mi">1</span><span class="p">))]</span>
@@ -880,7 +880,7 @@
                     <span class="n">cv_isite</span><span class="p">))</span>
         <span class="k">return</span> <span class="p">[</span><span class="n">first_LR</span><span class="p">,</span> <span class="n">second_LR</span><span class="p">,</span> <span class="n">third_LR</span><span class="p">,</span> <span class="n">forth_LR</span><span class="p">]</span></div>
 
-<div class="viewcode-block" id="SpectraFtCV.update_LR"><a class="viewcode-back" href="../../../cv.html#renormalizer.cv.finitet.SpectraFtCV.update_LR">[docs]</a>    <span class="k">def</span> <span class="nf">update_LR</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">lr_group</span><span class="p">,</span> <span class="n">isite</span><span class="p">):</span>
+<div class="viewcode-block" id="SpectraFtCV.update_LR"><a class="viewcode-back" href="../../../cv.html#renormalizer.cv.finitet.SpectraFtCV.update_LR">[docs]</a>    <span class="k">def</span><span class="w"> </span><span class="nf">update_LR</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">lr_group</span><span class="p">,</span> <span class="n">isite</span><span class="p">):</span>
         <span class="n">first_LR</span><span class="p">,</span> <span class="n">second_LR</span><span class="p">,</span> <span class="n">third_LR</span><span class="p">,</span> <span class="n">forth_LR</span> <span class="o">=</span> <span class="n">lr_group</span>
         <span class="n">cv_isite</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">cv_mpo</span><span class="p">[</span><span class="n">isite</span><span class="o">-</span><span class="mi">1</span><span class="p">]</span>
         <span class="n">dag_cv_isite</span> <span class="o">=</span> <span class="n">moveaxis</span><span class="p">(</span><span class="n">cv_isite</span><span class="p">,</span> <span class="p">(</span><span class="mi">1</span><span class="p">,</span> <span class="mi">2</span><span class="p">),</span> <span class="p">(</span><span class="mi">2</span><span class="p">,</span> <span class="mi">1</span><span class="p">))</span>
