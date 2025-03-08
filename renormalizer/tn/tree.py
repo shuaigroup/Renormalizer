@@ -15,7 +15,7 @@ from renormalizer.mps.oe_contract_wrap import oe_contract
 from renormalizer.utils.configs import CompressConfig, OptimizeConfig, EvolveConfig, EvolveMethod
 from renormalizer.utils import calc_vn_entropy, calc_vn_entropy_dm
 from renormalizer.tn.node import TreeNodeTensor, TreeNodeBasis, copy_connection, TreeNodeEnviron
-from renormalizer.tn.treebase import Tree, BasisTree
+from renormalizer.tn.treebase import Tree, BasisTree, print_as_tree
 from renormalizer.tn.symbolic_ttno import construct_symbolic_ttno, symbolic_mo_to_numeric_mo_general
 
 
@@ -89,21 +89,12 @@ class TTNBase(Tree):
             the function used for printing. If None, use ``print``.
             Could use ``logger.info`` instead.
         """
+        if full:
+            text_list = [str(node.tensor.shape) for node in self.node_list]
+        else:
+            text_list = [str(node.tensor.shape[-1]) for node in self.node_list]
 
-        class _print_shape(print_tree):
-            def get_children(self, node):
-                return node.children
-
-            def get_node_str(self, node: TreeNodeTensor):
-                if full:
-                    return str(node.tensor.shape)
-                else:
-                    return str(node.tensor.shape[-1])
-
-        tree = _print_shape(self.root)
-        if print_function is not None:
-            for row in tree.rows:
-                print_function(row)
+        print_as_tree(text_list, self.adj_matrix, print_function)
 
     @property
     def bond_dims(self):
@@ -1493,21 +1484,7 @@ class TTNS(TTNBase):
 
     def print_vn_entropy(self, print_function=None):
         vn_entropy: np.ndarray = self.calc_bond_entropy()
-        nodes = [TreeNodeTensor([entropy]) for entropy in vn_entropy]
-        copy_connection(self.node_list, nodes)
-
-        class print_data(print_tree):
-            def get_children(self, node):
-                return node.children
-
-            def get_node_str(self, node: TreeNodeTensor):
-                return str(node.tensor.shape[-1])
-
-        tree = print_data(nodes[0])
-        if print_function is not None:
-            for row in tree.rows:
-                print_function(row)
-
+        print_as_tree(vn_entropy, self.adj_matrix, print_function)
 
     def dump(self, fname, other_attrs=None):
         if other_attrs is None:

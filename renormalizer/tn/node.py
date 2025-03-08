@@ -201,7 +201,14 @@ class TreeNodeEnviron(TreeNode):
         self.environ_children: List[np.ndarray] = []
 
 
-NodeUnion = Union[TreeNodeTensor, TreeNodeBasis, TreeNodeEnviron]
+class TreeNodeText(TreeNode):
+    # tree node whose data is environmental tensors
+    def __init__(self, text):
+        super().__init__()
+        self.text: str = str(text)
+
+
+NodeUnion = Union[TreeNodeTensor, TreeNodeBasis, TreeNodeEnviron, TreeNodeText]
 
 
 def copy_connection(source_node_list: List[NodeUnion], target_node_list: List[NodeUnion]) -> NodeUnion:
@@ -228,5 +235,19 @@ def copy_connection(source_node_list: List[NodeUnion], target_node_list: List[No
             target_node.add_child(target_node_list[idx])
         if source_node.parent is None:
             root = target_node
+    assert root is not None
+    return root
+
+
+def build_connection_adj_mat(nodes: List[NodeUnion], adj_matrix: np.ndarray) -> NodeUnion:
+    # build connection based on adjacent matrix
+    for i, row in enumerate(adj_matrix):
+        children_idx = np.nonzero(row)[0]
+        nodes[i].add_children([nodes[j] for j in children_idx])
+
+    root = None
+    for node in nodes:
+        if node.parent is None:
+            root = node
     assert root is not None
     return root

@@ -3,6 +3,7 @@
 
 import logging
 from typing import List, Union, Dict, Callable
+from collections import Counter
 
 import numpy as np
 
@@ -42,7 +43,12 @@ class Model:
         for local_basis in basis:
                 all_dof_list.extend(local_basis.dofs)
         if len(all_dof_list) != len(set(all_dof_list)):
-            raise ValueError("Duplicate DoF definition found in the basis list.")
+            counter = Counter(all_dof_list)
+            duplicates = []
+            for k, v in counter.items():
+                if v > 1:
+                    duplicates.append(k)
+            raise ValueError(f"Duplicate DoF definition found in the basis list: {duplicates}")
         self.basis: List[BasisSet] = basis
         qn_size_list = [b.sigmaqn.shape[1] for b in basis]
         if len(set(qn_size_list)) != 1:

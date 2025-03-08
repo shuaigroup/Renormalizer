@@ -6,7 +6,7 @@ from print_tree import print_tree
 
 from renormalizer import Op
 from renormalizer.model.basis import BasisSet, BasisDummy
-from renormalizer.tn.node import NodeUnion, TreeNodeBasis, copy_connection
+from renormalizer.tn.node import NodeUnion, TreeNodeBasis, copy_connection, build_connection_adj_mat, TreeNodeText
 
 
 class Tree:
@@ -54,6 +54,16 @@ class Tree:
         path1 = ancestors1[:ancestors1.index(common_ancestor) + 1]
         path2 = ancestors2[:ancestors2.index(common_ancestor)]
         return path1 + path2[::-1]
+
+    @property
+    def adj_matrix(self):
+        # adjacent matrix
+        mat = np.zeros((len(self.node_list), len(self.node_list)), dtype=np.uint8)
+        for i, node in enumerate(self.node_list):
+            for child in node.children:
+                j = self.node_idx[child]
+                mat[i, j] = 1
+        return mat
 
     @property
     def size(self):
@@ -326,17 +336,8 @@ class BasisTree(Tree):
         self.dummy_ttno = None
 
     def print(self, print_function=None):
-        class print_tn_basis(print_tree):
-            def get_children(self, node):
-                return node.children
-
-            def get_node_str(self, node):
-                return str([b.dofs for b in node.basis_sets])
-
-        tree = print_tn_basis(self.root)
-        if print_function is not None:
-            for row in tree.rows:
-                print_function(row)
+        text_list = [str([b.dofs for b in node.basis_sets]) for node in self.node_list]
+        print_as_tree(text_list, self.adj_matrix, print_function)
 
     @property
     def basis_list(self) -> List[BasisSet]:
@@ -382,3 +383,20 @@ def approximate_partition(sequence, ngroups):
         end = min((i + 1) * size, len(sequence))
         ret.append(sequence[start:end])
     return ret
+
+
+def print_as_tree(text_list, adj_matrix, print_function):
+    nodes = [TreeNodeText(text) for text in text_list]
+    root = build_connection_adj_mat(nodes, adj_matrix)
+
+    class print_text(print_tree):
+        def get_children(self, node):
+            return node.children
+
+        def get_node_str(self, node):
+            return node.text
+
+    tree = print_text(root)
+    if print_function is not None:
+        for row in tree.rows:
+            print_function(row)
