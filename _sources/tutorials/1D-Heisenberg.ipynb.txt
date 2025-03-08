@@ -47,10 +47,10 @@
    "execution_count": 1,
    "metadata": {
     "execution": {
-     "iopub.execute_input": "2025-03-04T06:46:10.218964Z",
-     "iopub.status.busy": "2025-03-04T06:46:10.218768Z",
-     "iopub.status.idle": "2025-03-04T06:46:10.961091Z",
-     "shell.execute_reply": "2025-03-04T06:46:10.960448Z"
+     "iopub.execute_input": "2025-03-08T11:09:42.034498Z",
+     "iopub.status.busy": "2025-03-08T11:09:42.034275Z",
+     "iopub.status.idle": "2025-03-08T11:09:42.766859Z",
+     "shell.execute_reply": "2025-03-08T11:09:42.766178Z"
     }
    },
    "outputs": [
@@ -58,35 +58,35 @@
      "name": "stderr",
      "output_type": "stream",
      "text": [
-      "2025-03-04 06:46:10,860[INFO] Use NumPy as backend\n"
+      "2025-03-08 11:09:42,675[INFO] Use NumPy as backend\n"
      ]
     },
     {
      "name": "stderr",
      "output_type": "stream",
      "text": [
-      "2025-03-04 06:46:10,861[INFO] numpy random seed is 9012\n"
+      "2025-03-08 11:09:42,676[INFO] numpy random seed is 9012\n"
      ]
     },
     {
      "name": "stderr",
      "output_type": "stream",
      "text": [
-      "2025-03-04 06:46:10,862[INFO] random seed is 1092\n"
+      "2025-03-08 11:09:42,676[INFO] random seed is 1092\n"
      ]
     },
     {
      "name": "stderr",
      "output_type": "stream",
      "text": [
-      "2025-03-04 06:46:10,872[INFO] Git Commit Hash: 785189bf8584e6800eba66b19928d4e341058151\n"
+      "2025-03-08 11:09:42,686[INFO] Git Commit Hash: d553391e2b487be8866afade06e47c2377a27a9b\n"
      ]
     },
     {
      "name": "stderr",
      "output_type": "stream",
      "text": [
-      "2025-03-04 06:46:10,873[INFO] use 64 bits\n"
+      "2025-03-08 11:09:42,687[INFO] use 64 bits\n"
      ]
     }
    ],
@@ -118,10 +118,10 @@
    "execution_count": 2,
    "metadata": {
     "execution": {
-     "iopub.execute_input": "2025-03-04T06:46:10.963601Z",
-     "iopub.status.busy": "2025-03-04T06:46:10.963384Z",
-     "iopub.status.idle": "2025-03-04T06:46:11.002920Z",
-     "shell.execute_reply": "2025-03-04T06:46:11.002358Z"
+     "iopub.execute_input": "2025-03-08T11:09:42.769368Z",
+     "iopub.status.busy": "2025-03-08T11:09:42.769099Z",
+     "iopub.status.idle": "2025-03-08T11:09:42.809341Z",
+     "shell.execute_reply": "2025-03-08T11:09:42.808703Z"
     }
    },
    "outputs": [
@@ -129,28 +129,28 @@
      "name": "stderr",
      "output_type": "stream",
      "text": [
-      "2025-03-04 06:46:10,973[DEBUG] # of operator terms: 93\n"
+      "2025-03-08 11:09:42,779[DEBUG] # of operator terms: 93\n"
      ]
     },
     {
      "name": "stderr",
      "output_type": "stream",
      "text": [
-      "2025-03-04 06:46:10,973[DEBUG] Input operator terms: 93\n"
+      "2025-03-08 11:09:42,779[DEBUG] Input operator terms: 93\n"
      ]
     },
     {
      "name": "stderr",
      "output_type": "stream",
      "text": [
-      "2025-03-04 06:46:10,975[DEBUG] After combination of the same terms: 93\n"
+      "2025-03-08 11:09:42,781[DEBUG] After combination of the same terms: 93\n"
      ]
     },
     {
      "name": "stderr",
      "output_type": "stream",
      "text": [
-      "2025-03-04 06:46:10,976[DEBUG] symbolic mpo algorithm: qr\n"
+      "2025-03-08 11:09:42,782[DEBUG] symbolic mpo algorithm: qr\n"
      ]
     },
     {
@@ -194,10 +194,10 @@
    "execution_count": 3,
    "metadata": {
     "execution": {
-     "iopub.execute_input": "2025-03-04T06:46:11.005064Z",
-     "iopub.status.busy": "2025-03-04T06:46:11.004674Z",
-     "iopub.status.idle": "2025-03-04T06:46:16.385929Z",
-     "shell.execute_reply": "2025-03-04T06:46:16.384830Z"
+     "iopub.execute_input": "2025-03-08T11:09:42.811822Z",
+     "iopub.status.busy": "2025-03-08T11:09:42.811191Z",
+     "iopub.status.idle": "2025-03-08T11:09:48.467272Z",
+     "shell.execute_reply": "2025-03-08T11:09:48.466746Z"
     }
    },
    "outputs": [
@@ -205,2086 +205,2086 @@
      "name": "stderr",
      "output_type": "stream",
      "text": [
-      "2025-03-04 06:46:11,045[INFO] optimization method: 2site\n"
+      "2025-03-08 11:09:42,851[INFO] optimization method: 2site\n"
      ]
     },
     {
      "name": "stderr",
      "output_type": "stream",
      "text": [
-      "2025-03-04 06:46:11,046[INFO] e_rtol: 1e-06\n"
+      "2025-03-08 11:09:42,851[INFO] e_rtol: 1e-06\n"
      ]
     },
     {
      "name": "stderr",
      "output_type": "stream",
      "text": [
-      "2025-03-04 06:46:11,046[INFO] e_atol: 1e-08\n"
+      "2025-03-08 11:09:42,852[INFO] e_atol: 1e-08\n"
      ]
     },
     {
      "name": "stderr",
      "output_type": "stream",
      "text": [
-      "2025-03-04 06:46:11,048[INFO] procedure: [[30, 0.2], [30, 0], [30, 0], [30, 0], [30, 0]]\n"
+      "2025-03-08 11:09:42,852[INFO] procedure: [[30, 0.2], [30, 0], [30, 0], [30, 0], [30, 0]]\n"
      ]
     },
     {
      "name": "stderr",
      "output_type": "stream",
      "text": [
-      "2025-03-04 06:46:11,075[DEBUG] isweep: 0\n"
+      "2025-03-08 11:09:42,884[DEBUG] isweep: 0\n"
      ]
     },
     {
      "name": "stderr",
      "output_type": "stream",
      "text": [
-      "2025-03-04 06:46:11,077[DEBUG] compress config in current loop: 30, percent: 0.2\n"
+      "2025-03-08 11:09:42,886[DEBUG] compress config in current loop: 30, percent: 0.2\n"
      ]
     },
     {
      "name": "stderr",
      "output_type": "stream",
      "text": [
-      "2025-03-04 06:46:11,078[DEBUG] mps current size: 329.7KiB, Matrix product bond dim:[1, 2, 4, 8, 16, 30, 30, 30, 30, 30, 30, 30, 30, 30, 30, 30, 30, 30, 30, 30, 30, 30, 30, 30, 30, 30, 30, 30, 16, 8, 4, 2, 1]\n"
+      "2025-03-08 11:09:42,887[DEBUG] mps current size: 329.7KiB, Matrix product bond dim:[1, 2, 4, 8, 16, 30, 30, 30, 30, 30, 30, 30, 30, 30, 30, 30, 30, 30, 30, 30, 30, 30, 30, 30, 30, 30, 30, 30, 16, 8, 4, 2, 1]\n"
      ]
     },
     {
      "name": "stderr",
      "output_type": "stream",
      "text": [
-      "2025-03-04 06:46:11,079[DEBUG] optimize site: [0, 1]\n"
+      "2025-03-08 11:09:42,888[DEBUG] optimize site: [0, 1]\n"
      ]
     },
     {
      "name": "stderr",
      "output_type": "stream",
      "text": [
-      "2025-03-04 06:46:11,081[DEBUG] use direct eigensolver\n"
+      "2025-03-08 11:09:42,889[DEBUG] use direct eigensolver\n"
      ]
     },
     {
      "name": "stderr",
      "output_type": "stream",
      "text": [
-      "2025-03-04 06:46:11,085[DEBUG] energy: -0.9279990226898324\n"
+      "2025-03-08 11:09:42,892[DEBUG] energy: -0.9279990226898331\n"
      ]
     },
     {
      "name": "stderr",
      "output_type": "stream",
      "text": [
-      "2025-03-04 06:46:11,086[DEBUG] optimize site: [1, 2]\n"
+      "2025-03-08 11:09:42,894[DEBUG] optimize site: [1, 2]\n"
      ]
     },
     {
      "name": "stderr",
      "output_type": "stream",
      "text": [
-      "2025-03-04 06:46:11,089[DEBUG] use direct eigensolver\n"
+      "2025-03-08 11:09:42,896[DEBUG] use direct eigensolver\n"
      ]
     },
     {
      "name": "stderr",
      "output_type": "stream",
      "text": [
-      "2025-03-04 06:46:11,092[DEBUG] energy: -1.2840895734105349\n"
+      "2025-03-08 11:09:42,901[DEBUG] energy: -1.284089573410534\n"
      ]
     },
     {
      "name": "stderr",
      "output_type": "stream",
      "text": [
-      "2025-03-04 06:46:11,094[DEBUG] optimize site: [2, 3]\n"
+      "2025-03-08 11:09:42,903[DEBUG] optimize site: [2, 3]\n"
      ]
     },
     {
      "name": "stderr",
      "output_type": "stream",
      "text": [
-      "2025-03-04 06:46:11,097[DEBUG] use direct eigensolver\n"
+      "2025-03-08 11:09:42,905[DEBUG] use direct eigensolver\n"
      ]
     },
     {
      "name": "stderr",
      "output_type": "stream",
      "text": [
-      "2025-03-04 06:46:11,111[DEBUG] energy: -2.0857452647499213\n"
+      "2025-03-08 11:09:42,928[DEBUG] energy: -2.0857452647499213\n"
      ]
     },
     {
      "name": "stderr",
      "output_type": "stream",
      "text": [
-      "2025-03-04 06:46:11,113[DEBUG] optimize site: [3, 4]\n"
+      "2025-03-08 11:09:42,930[DEBUG] optimize site: [3, 4]\n"
      ]
     },
     {
      "name": "stderr",
      "output_type": "stream",
      "text": [
-      "2025-03-04 06:46:11,115[DEBUG] use direct eigensolver\n"
+      "2025-03-08 11:09:42,933[DEBUG] use direct eigensolver\n"
      ]
     },
     {
      "name": "stderr",
      "output_type": "stream",
      "text": [
-      "2025-03-04 06:46:11,362[DEBUG] energy: -2.8158895272374123\n"
+      "2025-03-08 11:09:43,189[DEBUG] energy: -2.8158895272374123\n"
      ]
     },
     {
      "name": "stderr",
      "output_type": "stream",
      "text": [
-      "2025-03-04 06:46:11,364[DEBUG] optimize site: [4, 5]\n"
+      "2025-03-08 11:09:43,191[DEBUG] optimize site: [4, 5]\n"
      ]
     },
     {
      "name": "stderr",
      "output_type": "stream",
      "text": [
-      "2025-03-04 06:46:11,414[DEBUG] use davidson, HC hops: 34\n"
+      "2025-03-08 11:09:43,241[DEBUG] use davidson, HC hops: 34\n"
      ]
     },
     {
      "name": "stderr",
      "output_type": "stream",
      "text": [
-      "2025-03-04 06:46:11,416[DEBUG] energy: -3.293367315585802\n"
+      "2025-03-08 11:09:43,242[DEBUG] energy: -3.293367315585801\n"
      ]
     },
     {
      "name": "stderr",
      "output_type": "stream",
      "text": [
-      "2025-03-04 06:46:11,418[DEBUG] optimize site: [5, 6]\n"
+      "2025-03-08 11:09:43,244[DEBUG] optimize site: [5, 6]\n"
      ]
     },
     {
      "name": "stderr",
      "output_type": "stream",
      "text": [
-      "2025-03-04 06:46:11,464[DEBUG] use davidson, HC hops: 42\n"
+      "2025-03-08 11:09:43,319[DEBUG] use davidson, HC hops: 42\n"
      ]
     },
     {
      "name": "stderr",
      "output_type": "stream",
      "text": [
-      "2025-03-04 06:46:11,464[DEBUG] energy: -3.744986750307196\n"
+      "2025-03-08 11:09:43,320[DEBUG] energy: -3.7449867503071976\n"
      ]
     },
     {
      "name": "stderr",
      "output_type": "stream",
      "text": [
-      "2025-03-04 06:46:11,469[DEBUG] optimize site: [6, 7]\n"
+      "2025-03-08 11:09:43,325[DEBUG] optimize site: [6, 7]\n"
      ]
     },
     {
      "name": "stderr",
      "output_type": "stream",
      "text": [
-      "2025-03-04 06:46:11,513[DEBUG] use davidson, HC hops: 42\n"
+      "2025-03-08 11:09:43,398[DEBUG] use davidson, HC hops: 42\n"
      ]
     },
     {
      "name": "stderr",
      "output_type": "stream",
      "text": [
-      "2025-03-04 06:46:11,514[DEBUG] energy: -4.176385575496495\n"
+      "2025-03-08 11:09:43,400[DEBUG] energy: -4.176385575496491\n"
      ]
     },
     {
      "name": "stderr",
      "output_type": "stream",
      "text": [
-      "2025-03-04 06:46:11,519[DEBUG] optimize site: [7, 8]\n"
+      "2025-03-08 11:09:43,404[DEBUG] optimize site: [7, 8]\n"
      ]
     },
     {
      "name": "stderr",
      "output_type": "stream",
      "text": [
-      "2025-03-04 06:46:11,583[DEBUG] use davidson, HC hops: 44\n"
+      "2025-03-08 11:09:43,483[DEBUG] use davidson, HC hops: 44\n"
      ]
     },
     {
      "name": "stderr",
      "output_type": "stream",
      "text": [
-      "2025-03-04 06:46:11,585[DEBUG] energy: -4.583593477927389\n"
+      "2025-03-08 11:09:43,484[DEBUG] energy: -4.583593477927387\n"
      ]
     },
     {
      "name": "stderr",
      "output_type": "stream",
      "text": [
-      "2025-03-04 06:46:11,589[DEBUG] optimize site: [8, 9]\n"
+      "2025-03-08 11:09:43,488[DEBUG] optimize site: [8, 9]\n"
      ]
     },
     {
      "name": "stderr",
      "output_type": "stream",
      "text": [
-      "2025-03-04 06:46:11,681[DEBUG] use davidson, HC hops: 55\n"
+      "2025-03-08 11:09:43,585[DEBUG] use davidson, HC hops: 55\n"
      ]
     },
     {
      "name": "stderr",
      "output_type": "stream",
      "text": [
-      "2025-03-04 06:46:11,683[DEBUG] energy: -4.968031845671201\n"
+      "2025-03-08 11:09:43,587[DEBUG] energy: -4.968031845671204\n"
      ]
     },
     {
      "name": "stderr",
      "output_type": "stream",
      "text": [
-      "2025-03-04 06:46:11,687[DEBUG] optimize site: [9, 10]\n"
+      "2025-03-08 11:09:43,590[DEBUG] optimize site: [9, 10]\n"
      ]
     },
     {
      "name": "stderr",
      "output_type": "stream",
      "text": [
-      "2025-03-04 06:46:11,776[DEBUG] use davidson, HC hops: 68\n"
+      "2025-03-08 11:09:43,710[DEBUG] use davidson, HC hops: 68\n"
      ]
     },
     {
      "name": "stderr",
      "output_type": "stream",
      "text": [
-      "2025-03-04 06:46:11,779[DEBUG] energy: -5.414706360833982\n"
+      "2025-03-08 11:09:43,712[DEBUG] energy: -5.414706360833986\n"
      ]
     },
     {
      "name": "stderr",
      "output_type": "stream",
      "text": [
-      "2025-03-04 06:46:11,783[DEBUG] optimize site: [10, 11]\n"
+      "2025-03-08 11:09:43,716[DEBUG] optimize site: [10, 11]\n"
      ]
     },
     {
      "name": "stderr",
      "output_type": "stream",
      "text": [
-      "2025-03-04 06:46:11,909[DEBUG] use davidson, HC hops: 72\n"
+      "2025-03-08 11:09:43,842[DEBUG] use davidson, HC hops: 72\n"
      ]
     },
     {
      "name": "stderr",
      "output_type": "stream",
      "text": [
-      "2025-03-04 06:46:11,910[DEBUG] energy: -5.85652975452047\n"
+      "2025-03-08 11:09:43,844[DEBUG] energy: -5.856529754520472\n"
      ]
     },
     {
      "name": "stderr",
      "output_type": "stream",
      "text": [
-      "2025-03-04 06:46:11,914[DEBUG] optimize site: [11, 12]\n"
+      "2025-03-08 11:09:43,847[DEBUG] optimize site: [11, 12]\n"
      ]
     },
     {
      "name": "stderr",
      "output_type": "stream",
      "text": [
-      "2025-03-04 06:46:12,088[DEBUG] use davidson, HC hops: 100\n"
+      "2025-03-08 11:09:44,017[DEBUG] use davidson, HC hops: 100\n"
      ]
     },
     {
      "name": "stderr",
      "output_type": "stream",
      "text": [
-      "2025-03-04 06:46:12,091[DEBUG] energy: -6.279022467295801\n"
+      "2025-03-08 11:09:44,017[DEBUG] energy: -6.279022467295808\n"
      ]
     },
     {
      "name": "stderr",
      "output_type": "stream",
      "text": [
-      "2025-03-04 06:46:12,097[DEBUG] optimize site: [12, 13]\n"
+      "2025-03-08 11:09:44,020[DEBUG] optimize site: [12, 13]\n"
      ]
     },
     {
      "name": "stderr",
      "output_type": "stream",
      "text": [
-      "2025-03-04 06:46:12,157[DEBUG] use davidson, HC hops: 52\n"
+      "2025-03-08 11:09:44,071[DEBUG] use davidson, HC hops: 52\n"
      ]
     },
     {
      "name": "stderr",
      "output_type": "stream",
      "text": [
-      "2025-03-04 06:46:12,160[DEBUG] energy: -6.857389012204752\n"
+      "2025-03-08 11:09:44,072[DEBUG] energy: -6.857389012204745\n"
      ]
     },
     {
      "name": "stderr",
      "output_type": "stream",
      "text": [
-      "2025-03-04 06:46:12,163[DEBUG] optimize site: [13, 14]\n"
+      "2025-03-08 11:09:44,076[DEBUG] optimize site: [13, 14]\n"
      ]
     },
     {
      "name": "stderr",
      "output_type": "stream",
      "text": [
-      "2025-03-04 06:46:12,319[DEBUG] use davidson, HC hops: 100\n"
+      "2025-03-08 11:09:44,201[DEBUG] use davidson, HC hops: 100\n"
      ]
     },
     {
      "name": "stderr",
      "output_type": "stream",
      "text": [
-      "2025-03-04 06:46:12,322[DEBUG] energy: -7.114588022005769\n"
+      "2025-03-08 11:09:44,203[DEBUG] energy: -7.114588022005752\n"
      ]
     },
     {
      "name": "stderr",
      "output_type": "stream",
      "text": [
-      "2025-03-04 06:46:12,326[DEBUG] optimize site: [14, 15]\n"
+      "2025-03-08 11:09:44,208[DEBUG] optimize site: [14, 15]\n"
      ]
     },
     {
      "name": "stderr",
      "output_type": "stream",
      "text": [
-      "2025-03-04 06:46:12,391[DEBUG] use davidson, HC hops: 47\n"
+      "2025-03-08 11:09:44,278[DEBUG] use davidson, HC hops: 47\n"
      ]
     },
     {
      "name": "stderr",
      "output_type": "stream",
      "text": [
-      "2025-03-04 06:46:12,394[DEBUG] energy: -7.6416317838354\n"
+      "2025-03-08 11:09:44,279[DEBUG] energy: -7.641631783835396\n"
      ]
     },
     {
      "name": "stderr",
      "output_type": "stream",
      "text": [
-      "2025-03-04 06:46:12,400[DEBUG] optimize site: [15, 16]\n"
+      "2025-03-08 11:09:44,283[DEBUG] optimize site: [15, 16]\n"
      ]
     },
     {
      "name": "stderr",
      "output_type": "stream",
      "text": [
-      "2025-03-04 06:46:12,488[DEBUG] use davidson, HC hops: 51\n"
+      "2025-03-08 11:09:44,342[DEBUG] use davidson, HC hops: 51\n"
      ]
     },
     {
      "name": "stderr",
      "output_type": "stream",
      "text": [
-      "2025-03-04 06:46:12,489[DEBUG] energy: -8.118395338420024\n"
+      "2025-03-08 11:09:44,343[DEBUG] energy: -8.118395338420026\n"
      ]
     },
     {
      "name": "stderr",
      "output_type": "stream",
      "text": [
-      "2025-03-04 06:46:12,494[DEBUG] optimize site: [16, 17]\n"
+      "2025-03-08 11:09:44,349[DEBUG] optimize site: [16, 17]\n"
      ]
     },
     {
      "name": "stderr",
      "output_type": "stream",
      "text": [
-      "2025-03-04 06:46:12,562[DEBUG] use davidson, HC hops: 57\n"
+      "2025-03-08 11:09:44,444[DEBUG] use davidson, HC hops: 57\n"
      ]
     },
     {
      "name": "stderr",
      "output_type": "stream",
      "text": [
-      "2025-03-04 06:46:12,565[DEBUG] energy: -8.579533430762833\n"
+      "2025-03-08 11:09:44,445[DEBUG] energy: -8.579533430762845\n"
      ]
     },
     {
      "name": "stderr",
      "output_type": "stream",
      "text": [
-      "2025-03-04 06:46:12,571[DEBUG] optimize site: [17, 18]\n"
+      "2025-03-08 11:09:44,449[DEBUG] optimize site: [17, 18]\n"
      ]
     },
     {
      "name": "stderr",
      "output_type": "stream",
      "text": [
-      "2025-03-04 06:46:12,682[DEBUG] use davidson, HC hops: 66\n"
+      "2025-03-08 11:09:44,559[DEBUG] use davidson, HC hops: 66\n"
      ]
     },
     {
      "name": "stderr",
      "output_type": "stream",
      "text": [
-      "2025-03-04 06:46:12,683[DEBUG] energy: -8.983113190158452\n"
+      "2025-03-08 11:09:44,560[DEBUG] energy: -8.983113190158456\n"
      ]
     },
     {
      "name": "stderr",
      "output_type": "stream",
      "text": [
-      "2025-03-04 06:46:12,688[DEBUG] optimize site: [18, 19]\n"
+      "2025-03-08 11:09:44,564[DEBUG] optimize site: [18, 19]\n"
      ]
     },
     {
      "name": "stderr",
      "output_type": "stream",
      "text": [
-      "2025-03-04 06:46:12,769[DEBUG] use davidson, HC hops: 62\n"
+      "2025-03-08 11:09:44,669[DEBUG] use davidson, HC hops: 62\n"
      ]
     },
     {
      "name": "stderr",
      "output_type": "stream",
      "text": [
-      "2025-03-04 06:46:12,771[DEBUG] energy: -9.422205404607647\n"
+      "2025-03-08 11:09:44,669[DEBUG] energy: -9.42220540460764\n"
      ]
     },
     {
      "name": "stderr",
      "output_type": "stream",
      "text": [
-      "2025-03-04 06:46:12,777[DEBUG] optimize site: [19, 20]\n"
+      "2025-03-08 11:09:44,673[DEBUG] optimize site: [19, 20]\n"
      ]
     },
     {
      "name": "stderr",
      "output_type": "stream",
      "text": [
-      "2025-03-04 06:46:12,884[DEBUG] use davidson, HC hops: 62\n"
+      "2025-03-08 11:09:44,772[DEBUG] use davidson, HC hops: 62\n"
      ]
     },
     {
      "name": "stderr",
      "output_type": "stream",
      "text": [
-      "2025-03-04 06:46:12,885[DEBUG] energy: -9.903693680914373\n"
+      "2025-03-08 11:09:44,773[DEBUG] energy: -9.90369368091438\n"
      ]
     },
     {
      "name": "stderr",
      "output_type": "stream",
      "text": [
-      "2025-03-04 06:46:12,891[DEBUG] optimize site: [20, 21]\n"
+      "2025-03-08 11:09:44,776[DEBUG] optimize site: [20, 21]\n"
      ]
     },
     {
      "name": "stderr",
      "output_type": "stream",
      "text": [
-      "2025-03-04 06:46:13,010[DEBUG] use davidson, HC hops: 81\n"
+      "2025-03-08 11:09:44,858[DEBUG] use davidson, HC hops: 81\n"
      ]
     },
     {
      "name": "stderr",
      "output_type": "stream",
      "text": [
-      "2025-03-04 06:46:13,011[DEBUG] energy: -10.398530611697955\n"
+      "2025-03-08 11:09:44,859[DEBUG] energy: -10.398530611697952\n"
      ]
     },
     {
      "name": "stderr",
      "output_type": "stream",
      "text": [
-      "2025-03-04 06:46:13,014[DEBUG] optimize site: [21, 22]\n"
+      "2025-03-08 11:09:44,863[DEBUG] optimize site: [21, 22]\n"
      ]
     },
     {
      "name": "stderr",
      "output_type": "stream",
      "text": [
-      "2025-03-04 06:46:13,119[DEBUG] use davidson, HC hops: 76\n"
+      "2025-03-08 11:09:44,989[DEBUG] use davidson, HC hops: 76\n"
      ]
     },
     {
      "name": "stderr",
      "output_type": "stream",
      "text": [
-      "2025-03-04 06:46:13,121[DEBUG] energy: -10.834489434421666\n"
+      "2025-03-08 11:09:44,990[DEBUG] energy: -10.834489434421672\n"
      ]
     },
     {
      "name": "stderr",
      "output_type": "stream",
      "text": [
-      "2025-03-04 06:46:13,126[DEBUG] optimize site: [22, 23]\n"
+      "2025-03-08 11:09:44,995[DEBUG] optimize site: [22, 23]\n"
      ]
     },
     {
      "name": "stderr",
      "output_type": "stream",
      "text": [
-      "2025-03-04 06:46:13,229[DEBUG] use davidson, HC hops: 58\n"
+      "2025-03-08 11:09:45,092[DEBUG] use davidson, HC hops: 58\n"
      ]
     },
     {
      "name": "stderr",
      "output_type": "stream",
      "text": [
-      "2025-03-04 06:46:13,231[DEBUG] energy: -11.415128707126774\n"
+      "2025-03-08 11:09:45,094[DEBUG] energy: -11.415128707126794\n"
      ]
     },
     {
      "name": "stderr",
      "output_type": "stream",
      "text": [
-      "2025-03-04 06:46:13,237[DEBUG] optimize site: [23, 24]\n"
+      "2025-03-08 11:09:45,098[DEBUG] optimize site: [23, 24]\n"
      ]
     },
     {
      "name": "stderr",
      "output_type": "stream",
      "text": [
-      "2025-03-04 06:46:13,316[DEBUG] use davidson, HC hops: 52\n"
+      "2025-03-08 11:09:45,186[DEBUG] use davidson, HC hops: 52\n"
      ]
     },
     {
      "name": "stderr",
      "output_type": "stream",
      "text": [
-      "2025-03-04 06:46:13,317[DEBUG] energy: -12.122795879745023\n"
+      "2025-03-08 11:09:45,188[DEBUG] energy: -12.122795879745034\n"
      ]
     },
     {
      "name": "stderr",
      "output_type": "stream",
      "text": [
-      "2025-03-04 06:46:13,322[DEBUG] optimize site: [24, 25]\n"
+      "2025-03-08 11:09:45,193[DEBUG] optimize site: [24, 25]\n"
      ]
     },
     {
      "name": "stderr",
      "output_type": "stream",
      "text": [
-      "2025-03-04 06:46:13,422[DEBUG] use davidson, HC hops: 71\n"
+      "2025-03-08 11:09:45,270[DEBUG] use davidson, HC hops: 71\n"
      ]
     },
     {
      "name": "stderr",
      "output_type": "stream",
      "text": [
-      "2025-03-04 06:46:13,423[DEBUG] energy: -12.812234874023462\n"
+      "2025-03-08 11:09:45,272[DEBUG] energy: -12.812234874023474\n"
      ]
     },
     {
      "name": "stderr",
      "output_type": "stream",
      "text": [
-      "2025-03-04 06:46:13,430[DEBUG] optimize site: [25, 26]\n"
+      "2025-03-08 11:09:45,276[DEBUG] optimize site: [25, 26]\n"
      ]
     },
     {
      "name": "stderr",
      "output_type": "stream",
      "text": [
-      "2025-03-04 06:46:13,513[DEBUG] use davidson, HC hops: 58\n"
+      "2025-03-08 11:09:45,373[DEBUG] use davidson, HC hops: 58\n"
      ]
     },
     {
      "name": "stderr",
      "output_type": "stream",
      "text": [
-      "2025-03-04 06:46:13,514[DEBUG] energy: -13.774582804126624\n"
+      "2025-03-08 11:09:45,374[DEBUG] energy: -13.774582804126663\n"
      ]
     },
     {
      "name": "stderr",
      "output_type": "stream",
      "text": [
-      "2025-03-04 06:46:13,518[DEBUG] optimize site: [26, 27]\n"
+      "2025-03-08 11:09:45,379[DEBUG] optimize site: [26, 27]\n"
      ]
     },
     {
      "name": "stderr",
      "output_type": "stream",
      "text": [
-      "2025-03-04 06:46:13,559[DEBUG] use davidson, HC hops: 47\n"
+      "2025-03-08 11:09:45,452[DEBUG] use davidson, HC hops: 47\n"
      ]
     },
     {
      "name": "stderr",
      "output_type": "stream",
      "text": [
-      "2025-03-04 06:46:13,559[DEBUG] energy: -13.99683265581305\n"
+      "2025-03-08 11:09:45,454[DEBUG] energy: -13.996832655813071\n"
      ]
     },
     {
      "name": "stderr",
      "output_type": "stream",
      "text": [
-      "2025-03-04 06:46:13,563[DEBUG] optimize site: [27, 28]\n"
+      "2025-03-08 11:09:45,456[DEBUG] optimize site: [27, 28]\n"
      ]
     },
     {
      "name": "stderr",
      "output_type": "stream",
      "text": [
-      "2025-03-04 06:46:13,565[DEBUG] use direct eigensolver\n"
+      "2025-03-08 11:09:45,459[DEBUG] use direct eigensolver\n"
      ]
     },
     {
      "name": "stderr",
      "output_type": "stream",
      "text": [
-      "2025-03-04 06:46:13,817[DEBUG] energy: -13.996832655533971\n"
+      "2025-03-08 11:09:45,724[DEBUG] energy: -13.99683265553401\n"
      ]
     },
     {
      "name": "stderr",
      "output_type": "stream",
      "text": [
-      "2025-03-04 06:46:13,821[DEBUG] optimize site: [28, 29]\n"
+      "2025-03-08 11:09:45,727[DEBUG] optimize site: [28, 29]\n"
      ]
     },
     {
      "name": "stderr",
      "output_type": "stream",
      "text": [
-      "2025-03-04 06:46:13,823[DEBUG] use direct eigensolver\n"
+      "2025-03-08 11:09:45,729[DEBUG] use direct eigensolver\n"
      ]
     },
     {
      "name": "stderr",
      "output_type": "stream",
      "text": [
-      "2025-03-04 06:46:13,870[DEBUG] energy: -13.99683265553399\n"
+      "2025-03-08 11:09:45,801[DEBUG] energy: -13.99683265553399\n"
      ]
     },
     {
      "name": "stderr",
      "output_type": "stream",
      "text": [
-      "2025-03-04 06:46:13,872[DEBUG] optimize site: [29, 30]\n"
+      "2025-03-08 11:09:45,804[DEBUG] optimize site: [29, 30]\n"
      ]
     },
     {
      "name": "stderr",
      "output_type": "stream",
      "text": [
-      "2025-03-04 06:46:13,873[DEBUG] use direct eigensolver\n"
+      "2025-03-08 11:09:45,806[DEBUG] use direct eigensolver\n"
      ]
     },
     {
      "name": "stderr",
      "output_type": "stream",
      "text": [
-      "2025-03-04 06:46:13,880[DEBUG] energy: -13.996832655533986\n"
+      "2025-03-08 11:09:45,815[DEBUG] energy: -13.99683265553399\n"
      ]
     },
     {
      "name": "stderr",
      "output_type": "stream",
      "text": [
-      "2025-03-04 06:46:13,882[DEBUG] optimize site: [30, 31]\n"
+      "2025-03-08 11:09:45,816[DEBUG] optimize site: [30, 31]\n"
      ]
     },
     {
      "name": "stderr",
      "output_type": "stream",
      "text": [
-      "2025-03-04 06:46:13,884[DEBUG] use direct eigensolver\n"
+      "2025-03-08 11:09:45,819[DEBUG] use direct eigensolver\n"
      ]
     },
     {
      "name": "stderr",
      "output_type": "stream",
      "text": [
-      "2025-03-04 06:46:13,887[DEBUG] energy: -13.99683265553398\n"
+      "2025-03-08 11:09:45,822[DEBUG] energy: -13.996832655534\n"
      ]
     },
     {
      "name": "stderr",
      "output_type": "stream",
      "text": [
-      "2025-03-04 06:46:13,889[DEBUG] 1 sweeps are finished, lowest energy = -13.99683265581305\n"
+      "2025-03-08 11:09:45,825[DEBUG] 1 sweeps are finished, lowest energy = -13.996832655813071\n"
      ]
     },
     {
      "name": "stderr",
      "output_type": "stream",
      "text": [
-      "2025-03-04 06:46:13,890[DEBUG] isweep: 1\n"
+      "2025-03-08 11:09:45,827[DEBUG] isweep: 1\n"
      ]
     },
     {
      "name": "stderr",
      "output_type": "stream",
      "text": [
-      "2025-03-04 06:46:13,892[DEBUG] compress config in current loop: 30, percent: 0\n"
+      "2025-03-08 11:09:45,828[DEBUG] compress config in current loop: 30, percent: 0\n"
      ]
     },
     {
      "name": "stderr",
      "output_type": "stream",
      "text": [
-      "2025-03-04 06:46:13,893[DEBUG] mps current size: 343.7KiB, Matrix product bond dim:[1, 2, 4, 8, 16, 30, 30, 30, 30, 30, 30, 30, 30, 30, 30, 30, 30, 30, 30, 30, 30, 30, 30, 30, 30, 30, 30, 30, 30, 16, 8, 4, 1]\n"
+      "2025-03-08 11:09:45,829[DEBUG] mps current size: 343.7KiB, Matrix product bond dim:[1, 2, 4, 8, 16, 30, 30, 30, 30, 30, 30, 30, 30, 30, 30, 30, 30, 30, 30, 30, 30, 30, 30, 30, 30, 30, 30, 30, 30, 16, 8, 4, 1]\n"
      ]
     },
     {
      "name": "stderr",
      "output_type": "stream",
      "text": [
-      "2025-03-04 06:46:13,895[DEBUG] optimize site: [30, 31]\n"
+      "2025-03-08 11:09:45,831[DEBUG] optimize site: [30, 31]\n"
      ]
     },
     {
      "name": "stderr",
      "output_type": "stream",
      "text": [
-      "2025-03-04 06:46:13,896[DEBUG] use direct eigensolver\n"
+      "2025-03-08 11:09:45,832[DEBUG] use direct eigensolver\n"
      ]
     },
     {
      "name": "stderr",
      "output_type": "stream",
      "text": [
-      "2025-03-04 06:46:13,900[DEBUG] energy: -13.99683265553398\n"
+      "2025-03-08 11:09:45,836[DEBUG] energy: -13.996832655534\n"
      ]
     },
     {
      "name": "stderr",
      "output_type": "stream",
      "text": [
-      "2025-03-04 06:46:13,901[DEBUG] optimize site: [29, 30]\n"
+      "2025-03-08 11:09:45,838[DEBUG] optimize site: [29, 30]\n"
      ]
     },
     {
      "name": "stderr",
      "output_type": "stream",
      "text": [
-      "2025-03-04 06:46:13,904[DEBUG] use direct eigensolver\n"
+      "2025-03-08 11:09:45,840[DEBUG] use direct eigensolver\n"
      ]
     },
     {
      "name": "stderr",
      "output_type": "stream",
      "text": [
-      "2025-03-04 06:46:13,910[DEBUG] energy: -13.996832655533979\n"
+      "2025-03-08 11:09:45,845[DEBUG] energy: -13.996832655533996\n"
      ]
     },
     {
      "name": "stderr",
      "output_type": "stream",
      "text": [
-      "2025-03-04 06:46:13,912[DEBUG] optimize site: [28, 29]\n"
+      "2025-03-08 11:09:45,846[DEBUG] optimize site: [28, 29]\n"
      ]
     },
     {
      "name": "stderr",
      "output_type": "stream",
      "text": [
-      "2025-03-04 06:46:13,914[DEBUG] use direct eigensolver\n"
+      "2025-03-08 11:09:45,847[DEBUG] use direct eigensolver\n"
      ]
     },
     {
      "name": "stderr",
      "output_type": "stream",
      "text": [
-      "2025-03-04 06:46:13,958[DEBUG] energy: -13.996832655533979\n"
+      "2025-03-08 11:09:45,917[DEBUG] energy: -13.996832655533998\n"
      ]
     },
     {
      "name": "stderr",
      "output_type": "stream",
      "text": [
-      "2025-03-04 06:46:13,960[DEBUG] optimize site: [27, 28]\n"
+      "2025-03-08 11:09:45,920[DEBUG] optimize site: [27, 28]\n"
      ]
     },
     {
      "name": "stderr",
      "output_type": "stream",
      "text": [
-      "2025-03-04 06:46:13,962[DEBUG] use direct eigensolver\n"
+      "2025-03-08 11:09:45,922[DEBUG] use direct eigensolver\n"
      ]
     },
     {
      "name": "stderr",
      "output_type": "stream",
      "text": [
-      "2025-03-04 06:46:14,210[DEBUG] energy: -13.99683265553399\n"
+      "2025-03-08 11:09:46,178[DEBUG] energy: -13.996832655534005\n"
      ]
     },
     {
      "name": "stderr",
      "output_type": "stream",
      "text": [
-      "2025-03-04 06:46:14,214[DEBUG] optimize site: [26, 27]\n"
+      "2025-03-08 11:09:46,181[DEBUG] optimize site: [26, 27]\n"
      ]
     },
     {
      "name": "stderr",
      "output_type": "stream",
      "text": [
-      "2025-03-04 06:46:14,224[DEBUG] use davidson, HC hops: 4\n"
+      "2025-03-08 11:09:46,190[DEBUG] use davidson, HC hops: 4\n"
      ]
     },
     {
      "name": "stderr",
      "output_type": "stream",
      "text": [
-      "2025-03-04 06:46:14,227[DEBUG] energy: -13.996832655813613\n"
+      "2025-03-08 11:09:46,192[DEBUG] energy: -13.996832655813622\n"
      ]
     },
     {
      "name": "stderr",
      "output_type": "stream",
      "text": [
-      "2025-03-04 06:46:14,231[DEBUG] optimize site: [25, 26]\n"
+      "2025-03-08 11:09:46,199[DEBUG] optimize site: [25, 26]\n"
      ]
     },
     {
      "name": "stderr",
      "output_type": "stream",
      "text": [
-      "2025-03-04 06:46:14,275[DEBUG] use davidson, HC hops: 22\n"
+      "2025-03-08 11:09:46,239[DEBUG] use davidson, HC hops: 22\n"
      ]
     },
     {
      "name": "stderr",
      "output_type": "stream",
      "text": [
-      "2025-03-04 06:46:14,278[DEBUG] energy: -13.996844945038324\n"
+      "2025-03-08 11:09:46,240[DEBUG] energy: -13.996844945038365\n"
      ]
     },
     {
      "name": "stderr",
      "output_type": "stream",
      "text": [
-      "2025-03-04 06:46:14,281[DEBUG] optimize site: [24, 25]\n"
+      "2025-03-08 11:09:46,244[DEBUG] optimize site: [24, 25]\n"
      ]
     },
     {
      "name": "stderr",
      "output_type": "stream",
      "text": [
-      "2025-03-04 06:46:14,331[DEBUG] use davidson, HC hops: 28\n"
+      "2025-03-08 11:09:46,291[DEBUG] use davidson, HC hops: 28\n"
      ]
     },
     {
      "name": "stderr",
      "output_type": "stream",
      "text": [
-      "2025-03-04 06:46:14,332[DEBUG] energy: -13.997067101658732\n"
+      "2025-03-08 11:09:46,291[DEBUG] energy: -13.997067101658736\n"
      ]
     },
     {
      "name": "stderr",
      "output_type": "stream",
      "text": [
-      "2025-03-04 06:46:14,336[DEBUG] optimize site: [23, 24]\n"
+      "2025-03-08 11:09:46,296[DEBUG] optimize site: [23, 24]\n"
      ]
     },
     {
      "name": "stderr",
      "output_type": "stream",
      "text": [
-      "2025-03-04 06:46:14,378[DEBUG] use davidson, HC hops: 25\n"
+      "2025-03-08 11:09:46,322[DEBUG] use davidson, HC hops: 25\n"
      ]
     },
     {
      "name": "stderr",
      "output_type": "stream",
      "text": [
-      "2025-03-04 06:46:14,380[DEBUG] energy: -13.997101684717506\n"
+      "2025-03-08 11:09:46,323[DEBUG] energy: -13.99710168471751\n"
      ]
     },
     {
      "name": "stderr",
      "output_type": "stream",
      "text": [
-      "2025-03-04 06:46:14,383[DEBUG] optimize site: [22, 23]\n"
+      "2025-03-08 11:09:46,327[DEBUG] optimize site: [22, 23]\n"
      ]
     },
     {
      "name": "stderr",
      "output_type": "stream",
      "text": [
-      "2025-03-04 06:46:14,409[DEBUG] use davidson, HC hops: 23\n"
+      "2025-03-08 11:09:46,352[DEBUG] use davidson, HC hops: 23\n"
      ]
     },
     {
      "name": "stderr",
      "output_type": "stream",
      "text": [
-      "2025-03-04 06:46:14,410[DEBUG] energy: -13.997106608213713\n"
+      "2025-03-08 11:09:46,353[DEBUG] energy: -13.99710660821372\n"
      ]
     },
     {
      "name": "stderr",
      "output_type": "stream",
      "text": [
-      "2025-03-04 06:46:14,414[DEBUG] optimize site: [21, 22]\n"
+      "2025-03-08 11:09:46,357[DEBUG] optimize site: [21, 22]\n"
      ]
     },
     {
      "name": "stderr",
      "output_type": "stream",
      "text": [
-      "2025-03-04 06:46:14,439[DEBUG] use davidson, HC hops: 23\n"
+      "2025-03-08 11:09:46,382[DEBUG] use davidson, HC hops: 23\n"
      ]
     },
     {
      "name": "stderr",
      "output_type": "stream",
      "text": [
-      "2025-03-04 06:46:14,441[DEBUG] energy: -13.997113698271155\n"
+      "2025-03-08 11:09:46,384[DEBUG] energy: -13.997113698271148\n"
      ]
     },
     {
      "name": "stderr",
      "output_type": "stream",
      "text": [
-      "2025-03-04 06:46:14,445[DEBUG] optimize site: [20, 21]\n"
+      "2025-03-08 11:09:46,387[DEBUG] optimize site: [20, 21]\n"
      ]
     },
     {
      "name": "stderr",
      "output_type": "stream",
      "text": [
-      "2025-03-04 06:46:14,473[DEBUG] use davidson, HC hops: 26\n"
+      "2025-03-08 11:09:46,428[DEBUG] use davidson, HC hops: 26\n"
      ]
     },
     {
      "name": "stderr",
      "output_type": "stream",
      "text": [
-      "2025-03-04 06:46:14,474[DEBUG] energy: -13.997162638323585\n"
+      "2025-03-08 11:09:46,430[DEBUG] energy: -13.997162638323573\n"
      ]
     },
     {
      "name": "stderr",
      "output_type": "stream",
      "text": [
-      "2025-03-04 06:46:14,478[DEBUG] optimize site: [19, 20]\n"
+      "2025-03-08 11:09:46,434[DEBUG] optimize site: [19, 20]\n"
      ]
     },
     {
      "name": "stderr",
      "output_type": "stream",
      "text": [
-      "2025-03-04 06:46:14,515[DEBUG] use davidson, HC hops: 23\n"
+      "2025-03-08 11:09:46,476[DEBUG] use davidson, HC hops: 23\n"
      ]
     },
     {
      "name": "stderr",
      "output_type": "stream",
      "text": [
-      "2025-03-04 06:46:14,517[DEBUG] energy: -13.997170144965587\n"
+      "2025-03-08 11:09:46,477[DEBUG] energy: -13.997170144965569\n"
      ]
     },
     {
      "name": "stderr",
      "output_type": "stream",
      "text": [
-      "2025-03-04 06:46:14,522[DEBUG] optimize site: [18, 19]\n"
+      "2025-03-08 11:09:46,482[DEBUG] optimize site: [18, 19]\n"
      ]
     },
     {
      "name": "stderr",
      "output_type": "stream",
      "text": [
-      "2025-03-04 06:46:14,570[DEBUG] use davidson, HC hops: 26\n"
+      "2025-03-08 11:09:46,524[DEBUG] use davidson, HC hops: 26\n"
      ]
     },
     {
      "name": "stderr",
      "output_type": "stream",
      "text": [
-      "2025-03-04 06:46:14,571[DEBUG] energy: -13.997199975427455\n"
+      "2025-03-08 11:09:46,526[DEBUG] energy: -13.997199975427426\n"
      ]
     },
     {
      "name": "stderr",
      "output_type": "stream",
      "text": [
-      "2025-03-04 06:46:14,576[DEBUG] optimize site: [17, 18]\n"
+      "2025-03-08 11:09:46,529[DEBUG] optimize site: [17, 18]\n"
      ]
     },
     {
      "name": "stderr",
      "output_type": "stream",
      "text": [
-      "2025-03-04 06:46:14,615[DEBUG] use davidson, HC hops: 22\n"
+      "2025-03-08 11:09:46,553[DEBUG] use davidson, HC hops: 22\n"
      ]
     },
     {
      "name": "stderr",
      "output_type": "stream",
      "text": [
-      "2025-03-04 06:46:14,615[DEBUG] energy: -13.997204392621677\n"
+      "2025-03-08 11:09:46,554[DEBUG] energy: -13.997204392621637\n"
      ]
     },
     {
      "name": "stderr",
      "output_type": "stream",
      "text": [
-      "2025-03-04 06:46:14,620[DEBUG] optimize site: [16, 17]\n"
+      "2025-03-08 11:09:46,558[DEBUG] optimize site: [16, 17]\n"
      ]
     },
     {
      "name": "stderr",
      "output_type": "stream",
      "text": [
-      "2025-03-04 06:46:14,647[DEBUG] use davidson, HC hops: 25\n"
+      "2025-03-08 11:09:46,586[DEBUG] use davidson, HC hops: 25\n"
      ]
     },
     {
      "name": "stderr",
      "output_type": "stream",
      "text": [
-      "2025-03-04 06:46:14,649[DEBUG] energy: -13.997225037523863\n"
+      "2025-03-08 11:09:46,586[DEBUG] energy: -13.997225037523819\n"
      ]
     },
     {
      "name": "stderr",
      "output_type": "stream",
      "text": [
-      "2025-03-04 06:46:14,652[DEBUG] optimize site: [15, 16]\n"
+      "2025-03-08 11:09:46,590[DEBUG] optimize site: [15, 16]\n"
      ]
     },
     {
      "name": "stderr",
      "output_type": "stream",
      "text": [
-      "2025-03-04 06:46:14,681[DEBUG] use davidson, HC hops: 26\n"
+      "2025-03-08 11:09:46,618[DEBUG] use davidson, HC hops: 26\n"
      ]
     },
     {
      "name": "stderr",
      "output_type": "stream",
      "text": [
-      "2025-03-04 06:46:14,683[DEBUG] energy: -13.997284918121249\n"
+      "2025-03-08 11:09:46,619[DEBUG] energy: -13.997284918121172\n"
      ]
     },
     {
      "name": "stderr",
      "output_type": "stream",
      "text": [
-      "2025-03-04 06:46:14,686[DEBUG] optimize site: [14, 15]\n"
+      "2025-03-08 11:09:46,623[DEBUG] optimize site: [14, 15]\n"
      ]
     },
     {
      "name": "stderr",
      "output_type": "stream",
      "text": [
-      "2025-03-04 06:46:14,710[DEBUG] use davidson, HC hops: 22\n"
+      "2025-03-08 11:09:46,658[DEBUG] use davidson, HC hops: 22\n"
      ]
     },
     {
      "name": "stderr",
      "output_type": "stream",
      "text": [
-      "2025-03-04 06:46:14,711[DEBUG] energy: -13.99729085997133\n"
+      "2025-03-08 11:09:46,660[DEBUG] energy: -13.997290859971237\n"
      ]
     },
     {
      "name": "stderr",
      "output_type": "stream",
      "text": [
-      "2025-03-04 06:46:14,715[DEBUG] optimize site: [13, 14]\n"
+      "2025-03-08 11:09:46,665[DEBUG] optimize site: [13, 14]\n"
      ]
     },
     {
      "name": "stderr",
      "output_type": "stream",
      "text": [
-      "2025-03-04 06:46:14,738[DEBUG] use davidson, HC hops: 20\n"
+      "2025-03-08 11:09:46,703[DEBUG] use davidson, HC hops: 20\n"
      ]
     },
     {
      "name": "stderr",
      "output_type": "stream",
      "text": [
-      "2025-03-04 06:46:14,739[DEBUG] energy: -13.99729325765389\n"
+      "2025-03-08 11:09:46,705[DEBUG] energy: -13.997293257653768\n"
      ]
     },
     {
      "name": "stderr",
      "output_type": "stream",
      "text": [
-      "2025-03-04 06:46:14,743[DEBUG] optimize site: [12, 13]\n"
+      "2025-03-08 11:09:46,709[DEBUG] optimize site: [12, 13]\n"
      ]
     },
     {
      "name": "stderr",
      "output_type": "stream",
      "text": [
-      "2025-03-04 06:46:14,769[DEBUG] use davidson, HC hops: 23\n"
+      "2025-03-08 11:09:46,751[DEBUG] use davidson, HC hops: 23\n"
      ]
     },
     {
      "name": "stderr",
      "output_type": "stream",
      "text": [
-      "2025-03-04 06:46:14,769[DEBUG] energy: -13.997306225086763\n"
+      "2025-03-08 11:09:46,753[DEBUG] energy: -13.997306225086662\n"
      ]
     },
     {
      "name": "stderr",
      "output_type": "stream",
      "text": [
-      "2025-03-04 06:46:14,774[DEBUG] optimize site: [11, 12]\n"
+      "2025-03-08 11:09:46,758[DEBUG] optimize site: [11, 12]\n"
      ]
     },
     {
      "name": "stderr",
      "output_type": "stream",
      "text": [
-      "2025-03-04 06:46:14,797[DEBUG] use davidson, HC hops: 21\n"
+      "2025-03-08 11:09:46,796[DEBUG] use davidson, HC hops: 21\n"
      ]
     },
     {
      "name": "stderr",
      "output_type": "stream",
      "text": [
-      "2025-03-04 06:46:14,799[DEBUG] energy: -13.997311145595702\n"
+      "2025-03-08 11:09:46,797[DEBUG] energy: -13.99731114559561\n"
      ]
     },
     {
      "name": "stderr",
      "output_type": "stream",
      "text": [
-      "2025-03-04 06:46:14,802[DEBUG] optimize site: [10, 11]\n"
+      "2025-03-08 11:09:46,802[DEBUG] optimize site: [10, 11]\n"
      ]
     },
     {
      "name": "stderr",
      "output_type": "stream",
      "text": [
-      "2025-03-04 06:46:14,835[DEBUG] use davidson, HC hops: 20\n"
+      "2025-03-08 11:09:46,838[DEBUG] use davidson, HC hops: 20\n"
      ]
     },
     {
      "name": "stderr",
      "output_type": "stream",
      "text": [
-      "2025-03-04 06:46:14,837[DEBUG] energy: -13.997313132707575\n"
+      "2025-03-08 11:09:46,839[DEBUG] energy: -13.99731313270749\n"
      ]
     },
     {
      "name": "stderr",
      "output_type": "stream",
      "text": [
-      "2025-03-04 06:46:14,842[DEBUG] optimize site: [9, 10]\n"
+      "2025-03-08 11:09:46,843[DEBUG] optimize site: [9, 10]\n"
      ]
     },
     {
      "name": "stderr",
      "output_type": "stream",
      "text": [
-      "2025-03-04 06:46:14,874[DEBUG] use davidson, HC hops: 17\n"
+      "2025-03-08 11:09:46,868[DEBUG] use davidson, HC hops: 17\n"
      ]
     },
     {
      "name": "stderr",
      "output_type": "stream",
      "text": [
-      "2025-03-04 06:46:14,875[DEBUG] energy: -13.997314428626446\n"
+      "2025-03-08 11:09:46,869[DEBUG] energy: -13.997314428626357\n"
      ]
     },
     {
      "name": "stderr",
      "output_type": "stream",
      "text": [
-      "2025-03-04 06:46:14,879[DEBUG] optimize site: [8, 9]\n"
+      "2025-03-08 11:09:46,873[DEBUG] optimize site: [8, 9]\n"
      ]
     },
     {
      "name": "stderr",
      "output_type": "stream",
      "text": [
-      "2025-03-04 06:46:14,903[DEBUG] use davidson, HC hops: 11\n"
+      "2025-03-08 11:09:46,895[DEBUG] use davidson, HC hops: 11\n"
      ]
     },
     {
      "name": "stderr",
      "output_type": "stream",
      "text": [
-      "2025-03-04 06:46:14,904[DEBUG] energy: -13.997314715468786\n"
+      "2025-03-08 11:09:46,897[DEBUG] energy: -13.997314715468697\n"
      ]
     },
     {
      "name": "stderr",
      "output_type": "stream",
      "text": [
-      "2025-03-04 06:46:14,908[DEBUG] optimize site: [7, 8]\n"
+      "2025-03-08 11:09:46,902[DEBUG] optimize site: [7, 8]\n"
      ]
     },
     {
      "name": "stderr",
      "output_type": "stream",
      "text": [
-      "2025-03-04 06:46:14,925[DEBUG] use davidson, HC hops: 7\n"
+      "2025-03-08 11:09:46,916[DEBUG] use davidson, HC hops: 7\n"
      ]
     },
     {
      "name": "stderr",
      "output_type": "stream",
      "text": [
-      "2025-03-04 06:46:14,926[DEBUG] energy: -13.997314712669898\n"
+      "2025-03-08 11:09:46,917[DEBUG] energy: -13.997314712669803\n"
      ]
     },
     {
      "name": "stderr",
      "output_type": "stream",
      "text": [
-      "2025-03-04 06:46:14,930[DEBUG] optimize site: [6, 7]\n"
+      "2025-03-08 11:09:46,922[DEBUG] optimize site: [6, 7]\n"
      ]
     },
     {
      "name": "stderr",
      "output_type": "stream",
      "text": [
-      "2025-03-04 06:46:14,956[DEBUG] use davidson, HC hops: 12\n"
+      "2025-03-08 11:09:46,946[DEBUG] use davidson, HC hops: 12\n"
      ]
     },
     {
      "name": "stderr",
      "output_type": "stream",
      "text": [
-      "2025-03-04 06:46:14,957[DEBUG] energy: -13.997314999750145\n"
+      "2025-03-08 11:09:46,947[DEBUG] energy: -13.997314999750055\n"
      ]
     },
     {
      "name": "stderr",
      "output_type": "stream",
      "text": [
-      "2025-03-04 06:46:14,961[DEBUG] optimize site: [5, 6]\n"
+      "2025-03-08 11:09:46,953[DEBUG] optimize site: [5, 6]\n"
      ]
     },
     {
      "name": "stderr",
      "output_type": "stream",
      "text": [
-      "2025-03-04 06:46:14,977[DEBUG] use davidson, HC hops: 7\n"
+      "2025-03-08 11:09:46,971[DEBUG] use davidson, HC hops: 7\n"
      ]
     },
     {
      "name": "stderr",
      "output_type": "stream",
      "text": [
-      "2025-03-04 06:46:14,978[DEBUG] energy: -13.997315003811568\n"
+      "2025-03-08 11:09:46,973[DEBUG] energy: -13.99731500381148\n"
      ]
     },
     {
      "name": "stderr",
      "output_type": "stream",
      "text": [
-      "2025-03-04 06:46:14,983[DEBUG] optimize site: [4, 5]\n"
+      "2025-03-08 11:09:46,978[DEBUG] optimize site: [4, 5]\n"
      ]
     },
     {
      "name": "stderr",
      "output_type": "stream",
      "text": [
-      "2025-03-04 06:46:14,993[DEBUG] use davidson, HC hops: 5\n"
+      "2025-03-08 11:09:46,990[DEBUG] use davidson, HC hops: 5\n"
      ]
     },
     {
      "name": "stderr",
      "output_type": "stream",
      "text": [
-      "2025-03-04 06:46:14,995[DEBUG] energy: -13.997315004767888\n"
+      "2025-03-08 11:09:46,992[DEBUG] energy: -13.997315004767804\n"
      ]
     },
     {
      "name": "stderr",
      "output_type": "stream",
      "text": [
-      "2025-03-04 06:46:14,997[DEBUG] optimize site: [3, 4]\n"
+      "2025-03-08 11:09:46,994[DEBUG] optimize site: [3, 4]\n"
      ]
     },
     {
      "name": "stderr",
      "output_type": "stream",
      "text": [
-      "2025-03-04 06:46:15,000[DEBUG] use direct eigensolver\n"
+      "2025-03-08 11:09:46,999[DEBUG] use direct eigensolver\n"
      ]
     },
     {
      "name": "stderr",
      "output_type": "stream",
      "text": [
-      "2025-03-04 06:46:15,261[DEBUG] energy: -13.997315004467207\n"
+      "2025-03-08 11:09:47,264[DEBUG] energy: -13.997315004467124\n"
      ]
     },
     {
      "name": "stderr",
      "output_type": "stream",
      "text": [
-      "2025-03-04 06:46:15,263[DEBUG] optimize site: [2, 3]\n"
+      "2025-03-08 11:09:47,267[DEBUG] optimize site: [2, 3]\n"
      ]
     },
     {
      "name": "stderr",
      "output_type": "stream",
      "text": [
-      "2025-03-04 06:46:15,264[DEBUG] use direct eigensolver\n"
+      "2025-03-08 11:09:47,270[DEBUG] use direct eigensolver\n"
      ]
     },
     {
      "name": "stderr",
      "output_type": "stream",
      "text": [
-      "2025-03-04 06:46:15,342[DEBUG] energy: -13.997315004467204\n"
+      "2025-03-08 11:09:47,318[DEBUG] energy: -13.997315004467112\n"
      ]
     },
     {
      "name": "stderr",
      "output_type": "stream",
      "text": [
-      "2025-03-04 06:46:15,345[DEBUG] optimize site: [1, 2]\n"
+      "2025-03-08 11:09:47,319[DEBUG] optimize site: [1, 2]\n"
      ]
     },
     {
      "name": "stderr",
      "output_type": "stream",
      "text": [
-      "2025-03-04 06:46:15,347[DEBUG] use direct eigensolver\n"
+      "2025-03-08 11:09:47,323[DEBUG] use direct eigensolver\n"
      ]
     },
     {
      "name": "stderr",
      "output_type": "stream",
      "text": [
-      "2025-03-04 06:46:15,356[DEBUG] energy: -13.9973150044672\n"
+      "2025-03-08 11:09:47,328[DEBUG] energy: -13.9973150044671\n"
      ]
     },
     {
      "name": "stderr",
      "output_type": "stream",
      "text": [
-      "2025-03-04 06:46:15,358[DEBUG] optimize site: [0, 1]\n"
+      "2025-03-08 11:09:47,329[DEBUG] optimize site: [0, 1]\n"
      ]
     },
     {
      "name": "stderr",
      "output_type": "stream",
      "text": [
-      "2025-03-04 06:46:15,360[DEBUG] use direct eigensolver\n"
+      "2025-03-08 11:09:47,332[DEBUG] use direct eigensolver\n"
      ]
     },
     {
      "name": "stderr",
      "output_type": "stream",
      "text": [
-      "2025-03-04 06:46:15,364[DEBUG] energy: -13.9973150044672\n"
+      "2025-03-08 11:09:47,335[DEBUG] energy: -13.997315004467104\n"
      ]
     },
     {
      "name": "stderr",
      "output_type": "stream",
      "text": [
-      "2025-03-04 06:46:15,365[DEBUG] 2 sweeps are finished, lowest energy = -13.997315004767888\n"
+      "2025-03-08 11:09:47,336[DEBUG] 2 sweeps are finished, lowest energy = -13.997315004767804\n"
      ]
     },
     {
      "name": "stderr",
      "output_type": "stream",
      "text": [
-      "2025-03-04 06:46:15,367[DEBUG] isweep: 2\n"
+      "2025-03-08 11:09:47,339[DEBUG] isweep: 2\n"
      ]
     },
     {
      "name": "stderr",
      "output_type": "stream",
      "text": [
-      "2025-03-04 06:46:15,368[DEBUG] compress config in current loop: 30, percent: 0\n"
+      "2025-03-08 11:09:47,339[DEBUG] compress config in current loop: 30, percent: 0\n"
      ]
     },
     {
      "name": "stderr",
      "output_type": "stream",
      "text": [
-      "2025-03-04 06:46:15,370[DEBUG] mps current size: 343.7KiB, Matrix product bond dim:[1, 4, 8, 16, 30, 30, 30, 30, 30, 30, 30, 30, 30, 30, 30, 30, 30, 30, 30, 30, 30, 30, 30, 30, 30, 30, 30, 30, 16, 8, 4, 2, 1]\n"
+      "2025-03-08 11:09:47,342[DEBUG] mps current size: 343.7KiB, Matrix product bond dim:[1, 4, 8, 16, 30, 30, 30, 30, 30, 30, 30, 30, 30, 30, 30, 30, 30, 30, 30, 30, 30, 30, 30, 30, 30, 30, 30, 30, 16, 8, 4, 2, 1]\n"
      ]
     },
     {
      "name": "stderr",
      "output_type": "stream",
      "text": [
-      "2025-03-04 06:46:15,371[DEBUG] optimize site: [0, 1]\n"
+      "2025-03-08 11:09:47,344[DEBUG] optimize site: [0, 1]\n"
      ]
     },
     {
      "name": "stderr",
      "output_type": "stream",
      "text": [
-      "2025-03-04 06:46:15,373[DEBUG] use direct eigensolver\n"
+      "2025-03-08 11:09:47,344[DEBUG] use direct eigensolver\n"
      ]
     },
     {
      "name": "stderr",
      "output_type": "stream",
      "text": [
-      "2025-03-04 06:46:15,377[DEBUG] energy: -13.9973150044672\n"
+      "2025-03-08 11:09:47,348[DEBUG] energy: -13.997315004467104\n"
      ]
     },
     {
      "name": "stderr",
      "output_type": "stream",
      "text": [
-      "2025-03-04 06:46:15,378[DEBUG] optimize site: [1, 2]\n"
+      "2025-03-08 11:09:47,349[DEBUG] optimize site: [1, 2]\n"
      ]
     },
     {
      "name": "stderr",
      "output_type": "stream",
      "text": [
-      "2025-03-04 06:46:15,380[DEBUG] use direct eigensolver\n"
+      "2025-03-08 11:09:47,352[DEBUG] use direct eigensolver\n"
      ]
     },
     {
      "name": "stderr",
      "output_type": "stream",
      "text": [
-      "2025-03-04 06:46:15,386[DEBUG] energy: -13.997315004467193\n"
+      "2025-03-08 11:09:47,358[DEBUG] energy: -13.997315004467097\n"
      ]
     },
     {
      "name": "stderr",
      "output_type": "stream",
      "text": [
-      "2025-03-04 06:46:15,387[DEBUG] optimize site: [2, 3]\n"
+      "2025-03-08 11:09:47,360[DEBUG] optimize site: [2, 3]\n"
      ]
     },
     {
      "name": "stderr",
      "output_type": "stream",
      "text": [
-      "2025-03-04 06:46:15,389[DEBUG] use direct eigensolver\n"
+      "2025-03-08 11:09:47,361[DEBUG] use direct eigensolver\n"
      ]
     },
     {
      "name": "stderr",
      "output_type": "stream",
      "text": [
-      "2025-03-04 06:46:15,435[DEBUG] energy: -13.9973150044672\n"
+      "2025-03-08 11:09:47,406[DEBUG] energy: -13.997315004467092\n"
      ]
     },
     {
      "name": "stderr",
      "output_type": "stream",
      "text": [
-      "2025-03-04 06:46:15,437[DEBUG] optimize site: [3, 4]\n"
+      "2025-03-08 11:09:47,407[DEBUG] optimize site: [3, 4]\n"
      ]
     },
     {
      "name": "stderr",
      "output_type": "stream",
      "text": [
-      "2025-03-04 06:46:15,439[DEBUG] use direct eigensolver\n"
+      "2025-03-08 11:09:47,410[DEBUG] use direct eigensolver\n"
      ]
     },
     {
      "name": "stderr",
      "output_type": "stream",
      "text": [
-      "2025-03-04 06:46:15,672[DEBUG] energy: -13.997315004467213\n"
+      "2025-03-08 11:09:47,663[DEBUG] energy: -13.997315004467117\n"
      ]
     },
     {
      "name": "stderr",
      "output_type": "stream",
      "text": [
-      "2025-03-04 06:46:15,675[DEBUG] optimize site: [4, 5]\n"
+      "2025-03-08 11:09:47,667[DEBUG] optimize site: [4, 5]\n"
      ]
     },
     {
      "name": "stderr",
      "output_type": "stream",
      "text": [
-      "2025-03-04 06:46:15,681[DEBUG] use davidson, HC hops: 4\n"
+      "2025-03-08 11:09:47,673[DEBUG] use davidson, HC hops: 4\n"
      ]
     },
     {
      "name": "stderr",
      "output_type": "stream",
      "text": [
-      "2025-03-04 06:46:15,682[DEBUG] energy: -13.997315004767977\n"
+      "2025-03-08 11:09:47,675[DEBUG] energy: -13.997315004767874\n"
      ]
     },
     {
      "name": "stderr",
      "output_type": "stream",
      "text": [
-      "2025-03-04 06:46:15,687[DEBUG] optimize site: [5, 6]\n"
+      "2025-03-08 11:09:47,679[DEBUG] optimize site: [5, 6]\n"
      ]
     },
     {
      "name": "stderr",
      "output_type": "stream",
      "text": [
-      "2025-03-04 06:46:15,694[DEBUG] use davidson, HC hops: 4\n"
+      "2025-03-08 11:09:47,686[DEBUG] use davidson, HC hops: 4\n"
      ]
     },
     {
      "name": "stderr",
      "output_type": "stream",
      "text": [
-      "2025-03-04 06:46:15,695[DEBUG] energy: -13.99731500466789\n"
+      "2025-03-08 11:09:47,688[DEBUG] energy: -13.99731500466776\n"
      ]
     },
     {
      "name": "stderr",
      "output_type": "stream",
      "text": [
-      "2025-03-04 06:46:15,699[DEBUG] optimize site: [6, 7]\n"
+      "2025-03-08 11:09:47,691[DEBUG] optimize site: [6, 7]\n"
      ]
     },
     {
      "name": "stderr",
      "output_type": "stream",
      "text": [
-      "2025-03-04 06:46:15,707[DEBUG] use davidson, HC hops: 6\n"
+      "2025-03-08 11:09:47,699[DEBUG] use davidson, HC hops: 6\n"
      ]
     },
     {
      "name": "stderr",
      "output_type": "stream",
      "text": [
-      "2025-03-04 06:46:15,709[DEBUG] energy: -13.997315012470757\n"
+      "2025-03-08 11:09:47,700[DEBUG] energy: -13.997315012470631\n"
      ]
     },
     {
      "name": "stderr",
      "output_type": "stream",
      "text": [
-      "2025-03-04 06:46:15,712[DEBUG] optimize site: [7, 8]\n"
+      "2025-03-08 11:09:47,704[DEBUG] optimize site: [7, 8]\n"
      ]
     },
     {
      "name": "stderr",
      "output_type": "stream",
      "text": [
-      "2025-03-04 06:46:15,720[DEBUG] use davidson, HC hops: 5\n"
+      "2025-03-08 11:09:47,712[DEBUG] use davidson, HC hops: 5\n"
      ]
     },
     {
      "name": "stderr",
      "output_type": "stream",
      "text": [
-      "2025-03-04 06:46:15,721[DEBUG] energy: -13.997315006066746\n"
+      "2025-03-08 11:09:47,712[DEBUG] energy: -13.997315006066628\n"
      ]
     },
     {
      "name": "stderr",
      "output_type": "stream",
      "text": [
-      "2025-03-04 06:46:15,725[DEBUG] optimize site: [8, 9]\n"
+      "2025-03-08 11:09:47,717[DEBUG] optimize site: [8, 9]\n"
      ]
     },
     {
      "name": "stderr",
      "output_type": "stream",
      "text": [
-      "2025-03-04 06:46:15,734[DEBUG] use davidson, HC hops: 7\n"
+      "2025-03-08 11:09:47,726[DEBUG] use davidson, HC hops: 7\n"
      ]
     },
     {
      "name": "stderr",
      "output_type": "stream",
      "text": [
-      "2025-03-04 06:46:15,736[DEBUG] energy: -13.997315033374624\n"
+      "2025-03-08 11:09:47,727[DEBUG] energy: -13.997315033374505\n"
      ]
     },
     {
      "name": "stderr",
      "output_type": "stream",
      "text": [
-      "2025-03-04 06:46:15,739[DEBUG] optimize site: [9, 10]\n"
+      "2025-03-08 11:09:47,731[DEBUG] optimize site: [9, 10]\n"
      ]
     },
     {
      "name": "stderr",
      "output_type": "stream",
      "text": [
-      "2025-03-04 06:46:15,748[DEBUG] use davidson, HC hops: 6\n"
+      "2025-03-08 11:09:47,740[DEBUG] use davidson, HC hops: 6\n"
      ]
     },
     {
      "name": "stderr",
      "output_type": "stream",
      "text": [
-      "2025-03-04 06:46:15,749[DEBUG] energy: -13.997315010122048\n"
+      "2025-03-08 11:09:47,740[DEBUG] energy: -13.997315010121918\n"
      ]
     },
     {
      "name": "stderr",
      "output_type": "stream",
      "text": [
-      "2025-03-04 06:46:15,753[DEBUG] optimize site: [10, 11]\n"
+      "2025-03-08 11:09:47,745[DEBUG] optimize site: [10, 11]\n"
      ]
     },
     {
      "name": "stderr",
      "output_type": "stream",
      "text": [
-      "2025-03-04 06:46:15,764[DEBUG] use davidson, HC hops: 8\n"
+      "2025-03-08 11:09:47,755[DEBUG] use davidson, HC hops: 8\n"
      ]
     },
     {
      "name": "stderr",
      "output_type": "stream",
      "text": [
-      "2025-03-04 06:46:15,765[DEBUG] energy: -13.99731505577698\n"
+      "2025-03-08 11:09:47,757[DEBUG] energy: -13.997315055776836\n"
      ]
     },
     {
      "name": "stderr",
      "output_type": "stream",
      "text": [
-      "2025-03-04 06:46:15,769[DEBUG] optimize site: [11, 12]\n"
+      "2025-03-08 11:09:47,760[DEBUG] optimize site: [11, 12]\n"
      ]
     },
     {
      "name": "stderr",
      "output_type": "stream",
      "text": [
-      "2025-03-04 06:46:15,778[DEBUG] use davidson, HC hops: 7\n"
+      "2025-03-08 11:09:47,769[DEBUG] use davidson, HC hops: 7\n"
      ]
     },
     {
      "name": "stderr",
      "output_type": "stream",
      "text": [
-      "2025-03-04 06:46:15,779[DEBUG] energy: -13.997315015890592\n"
+      "2025-03-08 11:09:47,770[DEBUG] energy: -13.997315015890429\n"
      ]
     },
     {
      "name": "stderr",
      "output_type": "stream",
      "text": [
-      "2025-03-04 06:46:15,783[DEBUG] optimize site: [12, 13]\n"
+      "2025-03-08 11:09:47,774[DEBUG] optimize site: [12, 13]\n"
      ]
     },
     {
      "name": "stderr",
      "output_type": "stream",
      "text": [
-      "2025-03-04 06:46:15,794[DEBUG] use davidson, HC hops: 8\n"
+      "2025-03-08 11:09:47,785[DEBUG] use davidson, HC hops: 8\n"
      ]
     },
     {
      "name": "stderr",
      "output_type": "stream",
      "text": [
-      "2025-03-04 06:46:15,796[DEBUG] energy: -13.997315076759524\n"
+      "2025-03-08 11:09:47,785[DEBUG] energy: -13.997315076759346\n"
      ]
     },
     {
      "name": "stderr",
      "output_type": "stream",
      "text": [
-      "2025-03-04 06:46:15,799[DEBUG] optimize site: [13, 14]\n"
+      "2025-03-08 11:09:47,789[DEBUG] optimize site: [13, 14]\n"
      ]
     },
     {
      "name": "stderr",
      "output_type": "stream",
      "text": [
-      "2025-03-04 06:46:15,808[DEBUG] use davidson, HC hops: 7\n"
+      "2025-03-08 11:09:47,799[DEBUG] use davidson, HC hops: 7\n"
      ]
     },
     {
      "name": "stderr",
      "output_type": "stream",
      "text": [
-      "2025-03-04 06:46:15,810[DEBUG] energy: -13.997315021063878\n"
+      "2025-03-08 11:09:47,799[DEBUG] energy: -13.997315021063715\n"
      ]
     },
     {
      "name": "stderr",
      "output_type": "stream",
      "text": [
-      "2025-03-04 06:46:15,813[DEBUG] optimize site: [14, 15]\n"
+      "2025-03-08 11:09:47,804[DEBUG] optimize site: [14, 15]\n"
      ]
     },
     {
      "name": "stderr",
      "output_type": "stream",
      "text": [
-      "2025-03-04 06:46:15,824[DEBUG] use davidson, HC hops: 8\n"
+      "2025-03-08 11:09:47,814[DEBUG] use davidson, HC hops: 8\n"
      ]
     },
     {
      "name": "stderr",
      "output_type": "stream",
      "text": [
-      "2025-03-04 06:46:15,824[DEBUG] energy: -13.997315089163585\n"
+      "2025-03-08 11:09:47,815[DEBUG] energy: -13.997315089163413\n"
      ]
     },
     {
      "name": "stderr",
      "output_type": "stream",
      "text": [
-      "2025-03-04 06:46:15,829[DEBUG] optimize site: [15, 16]\n"
+      "2025-03-08 11:09:47,819[DEBUG] optimize site: [15, 16]\n"
      ]
     },
     {
      "name": "stderr",
      "output_type": "stream",
      "text": [
-      "2025-03-04 06:46:15,840[DEBUG] use davidson, HC hops: 8\n"
+      "2025-03-08 11:09:47,830[DEBUG] use davidson, HC hops: 8\n"
      ]
     },
     {
      "name": "stderr",
      "output_type": "stream",
      "text": [
-      "2025-03-04 06:46:15,841[DEBUG] energy: -13.997315023237828\n"
+      "2025-03-08 11:09:47,832[DEBUG] energy: -13.997315023237665\n"
      ]
     },
     {
      "name": "stderr",
      "output_type": "stream",
      "text": [
-      "2025-03-04 06:46:15,845[DEBUG] optimize site: [16, 17]\n"
+      "2025-03-08 11:09:47,835[DEBUG] optimize site: [16, 17]\n"
      ]
     },
     {
      "name": "stderr",
      "output_type": "stream",
      "text": [
-      "2025-03-04 06:46:15,856[DEBUG] use davidson, HC hops: 9\n"
+      "2025-03-08 11:09:47,847[DEBUG] use davidson, HC hops: 9\n"
      ]
     },
     {
      "name": "stderr",
      "output_type": "stream",
      "text": [
-      "2025-03-04 06:46:15,858[DEBUG] energy: -13.997315090211742\n"
+      "2025-03-08 11:09:47,848[DEBUG] energy: -13.997315090211583\n"
      ]
     },
     {
      "name": "stderr",
      "output_type": "stream",
      "text": [
-      "2025-03-04 06:46:15,861[DEBUG] optimize site: [17, 18]\n"
+      "2025-03-08 11:09:47,851[DEBUG] optimize site: [17, 18]\n"
      ]
     },
     {
      "name": "stderr",
      "output_type": "stream",
      "text": [
-      "2025-03-04 06:46:15,872[DEBUG] use davidson, HC hops: 8\n"
+      "2025-03-08 11:09:47,863[DEBUG] use davidson, HC hops: 8\n"
      ]
     },
     {
      "name": "stderr",
      "output_type": "stream",
      "text": [
-      "2025-03-04 06:46:15,872[DEBUG] energy: -13.997315022014352\n"
+      "2025-03-08 11:09:47,865[DEBUG] energy: -13.997315022014197\n"
      ]
     },
     {
      "name": "stderr",
      "output_type": "stream",
      "text": [
-      "2025-03-04 06:46:15,876[DEBUG] optimize site: [18, 19]\n"
+      "2025-03-08 11:09:47,868[DEBUG] optimize site: [18, 19]\n"
      ]
     },
     {
      "name": "stderr",
      "output_type": "stream",
      "text": [
-      "2025-03-04 06:46:15,887[DEBUG] use davidson, HC hops: 8\n"
+      "2025-03-08 11:09:47,885[DEBUG] use davidson, HC hops: 8\n"
      ]
     },
     {
      "name": "stderr",
      "output_type": "stream",
      "text": [
-      "2025-03-04 06:46:15,889[DEBUG] energy: -13.997315079212644\n"
+      "2025-03-08 11:09:47,886[DEBUG] energy: -13.997315079212502\n"
      ]
     },
     {
      "name": "stderr",
      "output_type": "stream",
      "text": [
-      "2025-03-04 06:46:15,892[DEBUG] optimize site: [19, 20]\n"
+      "2025-03-08 11:09:47,891[DEBUG] optimize site: [19, 20]\n"
      ]
     },
     {
      "name": "stderr",
      "output_type": "stream",
      "text": [
-      "2025-03-04 06:46:15,902[DEBUG] use davidson, HC hops: 7\n"
+      "2025-03-08 11:09:47,906[DEBUG] use davidson, HC hops: 7\n"
      ]
     },
     {
      "name": "stderr",
      "output_type": "stream",
      "text": [
-      "2025-03-04 06:46:15,904[DEBUG] energy: -13.99731501838977\n"
+      "2025-03-08 11:09:47,907[DEBUG] energy: -13.997315018389624\n"
      ]
     },
     {
      "name": "stderr",
      "output_type": "stream",
      "text": [
-      "2025-03-04 06:46:15,907[DEBUG] optimize site: [20, 21]\n"
+      "2025-03-08 11:09:47,912[DEBUG] optimize site: [20, 21]\n"
      ]
     },
     {
      "name": "stderr",
      "output_type": "stream",
      "text": [
-      "2025-03-04 06:46:15,918[DEBUG] use davidson, HC hops: 8\n"
+      "2025-03-08 11:09:47,928[DEBUG] use davidson, HC hops: 8\n"
      ]
     },
     {
      "name": "stderr",
      "output_type": "stream",
      "text": [
-      "2025-03-04 06:46:15,919[DEBUG] energy: -13.997315060471658\n"
+      "2025-03-08 11:09:47,929[DEBUG] energy: -13.997315060471507\n"
      ]
     },
     {
      "name": "stderr",
      "output_type": "stream",
      "text": [
-      "2025-03-04 06:46:15,923[DEBUG] optimize site: [21, 22]\n"
+      "2025-03-08 11:09:47,934[DEBUG] optimize site: [21, 22]\n"
      ]
     },
     {
      "name": "stderr",
      "output_type": "stream",
      "text": [
-      "2025-03-04 06:46:15,931[DEBUG] use davidson, HC hops: 6\n"
+      "2025-03-08 11:09:47,947[DEBUG] use davidson, HC hops: 6\n"
      ]
     },
     {
      "name": "stderr",
      "output_type": "stream",
      "text": [
-      "2025-03-04 06:46:15,933[DEBUG] energy: -13.997315014223059\n"
+      "2025-03-08 11:09:47,948[DEBUG] energy: -13.997315014222917\n"
      ]
     },
     {
      "name": "stderr",
      "output_type": "stream",
      "text": [
-      "2025-03-04 06:46:15,936[DEBUG] optimize site: [22, 23]\n"
+      "2025-03-08 11:09:47,953[DEBUG] optimize site: [22, 23]\n"
      ]
     },
     {
      "name": "stderr",
      "output_type": "stream",
      "text": [
-      "2025-03-04 06:46:15,947[DEBUG] use davidson, HC hops: 8\n"
+      "2025-03-08 11:09:47,970[DEBUG] use davidson, HC hops: 8\n"
      ]
     },
     {
      "name": "stderr",
      "output_type": "stream",
      "text": [
-      "2025-03-04 06:46:15,949[DEBUG] energy: -13.997315036380833\n"
+      "2025-03-08 11:09:47,972[DEBUG] energy: -13.99731503638068\n"
      ]
     },
     {
      "name": "stderr",
      "output_type": "stream",
      "text": [
-      "2025-03-04 06:46:15,952[DEBUG] optimize site: [23, 24]\n"
+      "2025-03-08 11:09:47,976[DEBUG] optimize site: [23, 24]\n"
      ]
     },
     {
      "name": "stderr",
      "output_type": "stream",
      "text": [
-      "2025-03-04 06:46:15,961[DEBUG] use davidson, HC hops: 6\n"
+      "2025-03-08 11:09:47,989[DEBUG] use davidson, HC hops: 6\n"
      ]
     },
     {
      "name": "stderr",
      "output_type": "stream",
      "text": [
-      "2025-03-04 06:46:15,961[DEBUG] energy: -13.997315009063415\n"
+      "2025-03-08 11:09:47,990[DEBUG] energy: -13.997315009063263\n"
      ]
     },
     {
      "name": "stderr",
      "output_type": "stream",
      "text": [
-      "2025-03-04 06:46:15,966[DEBUG] optimize site: [24, 25]\n"
+      "2025-03-08 11:09:47,995[DEBUG] optimize site: [24, 25]\n"
      ]
     },
     {
      "name": "stderr",
      "output_type": "stream",
      "text": [
-      "2025-03-04 06:46:15,974[DEBUG] use davidson, HC hops: 6\n"
+      "2025-03-08 11:09:48,008[DEBUG] use davidson, HC hops: 6\n"
      ]
     },
     {
      "name": "stderr",
      "output_type": "stream",
      "text": [
-      "2025-03-04 06:46:15,975[DEBUG] energy: -13.997315015431901\n"
+      "2025-03-08 11:09:48,009[DEBUG] energy: -13.997315015431745\n"
      ]
     },
     {
      "name": "stderr",
      "output_type": "stream",
      "text": [
-      "2025-03-04 06:46:15,979[DEBUG] optimize site: [25, 26]\n"
+      "2025-03-08 11:09:48,014[DEBUG] optimize site: [25, 26]\n"
      ]
     },
     {
      "name": "stderr",
      "output_type": "stream",
      "text": [
-      "2025-03-04 06:46:15,987[DEBUG] use davidson, HC hops: 5\n"
+      "2025-03-08 11:09:48,026[DEBUG] use davidson, HC hops: 5\n"
      ]
     },
     {
      "name": "stderr",
      "output_type": "stream",
      "text": [
-      "2025-03-04 06:46:15,988[DEBUG] energy: -13.997315007630576\n"
+      "2025-03-08 11:09:48,026[DEBUG] energy: -13.99731500763044\n"
      ]
     },
     {
      "name": "stderr",
      "output_type": "stream",
      "text": [
-      "2025-03-04 06:46:15,992[DEBUG] optimize site: [26, 27]\n"
+      "2025-03-08 11:09:48,031[DEBUG] optimize site: [26, 27]\n"
      ]
     },
     {
      "name": "stderr",
      "output_type": "stream",
      "text": [
-      "2025-03-04 06:46:15,998[DEBUG] use davidson, HC hops: 4\n"
+      "2025-03-08 11:09:48,041[DEBUG] use davidson, HC hops: 4\n"
      ]
     },
     {
      "name": "stderr",
      "output_type": "stream",
      "text": [
-      "2025-03-04 06:46:16,000[DEBUG] energy: -13.997315007727543\n"
+      "2025-03-08 11:09:48,042[DEBUG] energy: -13.997315007727408\n"
      ]
     },
     {
      "name": "stderr",
      "output_type": "stream",
      "text": [
-      "2025-03-04 06:46:16,002[DEBUG] optimize site: [27, 28]\n"
+      "2025-03-08 11:09:48,044[DEBUG] optimize site: [27, 28]\n"
      ]
     },
     {
      "name": "stderr",
      "output_type": "stream",
      "text": [
-      "2025-03-04 06:46:16,004[DEBUG] use direct eigensolver\n"
+      "2025-03-08 11:09:48,047[DEBUG] use direct eigensolver\n"
      ]
     },
     {
      "name": "stderr",
      "output_type": "stream",
      "text": [
-      "2025-03-04 06:46:16,269[DEBUG] energy: -13.997315007427513\n"
+      "2025-03-08 11:09:48,320[DEBUG] energy: -13.997315007427375\n"
      ]
     },
     {
      "name": "stderr",
      "output_type": "stream",
      "text": [
-      "2025-03-04 06:46:16,272[DEBUG] optimize site: [28, 29]\n"
+      "2025-03-08 11:09:48,323[DEBUG] optimize site: [28, 29]\n"
      ]
     },
     {
      "name": "stderr",
      "output_type": "stream",
      "text": [
-      "2025-03-04 06:46:16,275[DEBUG] use direct eigensolver\n"
+      "2025-03-08 11:09:48,329[DEBUG] use direct eigensolver\n"
      ]
     },
     {
      "name": "stderr",
      "output_type": "stream",
      "text": [
-      "2025-03-04 06:46:16,323[DEBUG] energy: -13.99731500742751\n"
+      "2025-03-08 11:09:48,407[DEBUG] energy: -13.997315007427375\n"
      ]
     },
     {
      "name": "stderr",
      "output_type": "stream",
      "text": [
-      "2025-03-04 06:46:16,324[DEBUG] optimize site: [29, 30]\n"
+      "2025-03-08 11:09:48,410[DEBUG] optimize site: [29, 30]\n"
      ]
     },
     {
      "name": "stderr",
      "output_type": "stream",
      "text": [
-      "2025-03-04 06:46:16,327[DEBUG] use direct eigensolver\n"
+      "2025-03-08 11:09:48,411[DEBUG] use direct eigensolver\n"
      ]
     },
     {
      "name": "stderr",
      "output_type": "stream",
      "text": [
-      "2025-03-04 06:46:16,333[DEBUG] energy: -13.997315007427527\n"
+      "2025-03-08 11:09:48,417[DEBUG] energy: -13.997315007427359\n"
      ]
     },
     {
      "name": "stderr",
      "output_type": "stream",
      "text": [
-      "2025-03-04 06:46:16,334[DEBUG] optimize site: [30, 31]\n"
+      "2025-03-08 11:09:48,418[DEBUG] optimize site: [30, 31]\n"
      ]
     },
     {
      "name": "stderr",
      "output_type": "stream",
      "text": [
-      "2025-03-04 06:46:16,337[DEBUG] use direct eigensolver\n"
+      "2025-03-08 11:09:48,421[DEBUG] use direct eigensolver\n"
      ]
     },
     {
      "name": "stderr",
      "output_type": "stream",
      "text": [
-      "2025-03-04 06:46:16,340[DEBUG] energy: -13.997315007427527\n"
+      "2025-03-08 11:09:48,424[DEBUG] energy: -13.997315007427373\n"
      ]
     },
     {
      "name": "stderr",
      "output_type": "stream",
      "text": [
-      "2025-03-04 06:46:16,343[DEBUG] 3 sweeps are finished, lowest energy = -13.997315090211742\n"
+      "2025-03-08 11:09:48,426[DEBUG] 3 sweeps are finished, lowest energy = -13.997315090211583\n"
      ]
     },
     {
      "name": "stderr",
      "output_type": "stream",
      "text": [
-      "2025-03-04 06:46:16,344[INFO] DMRG has converged!\n"
+      "2025-03-08 11:09:48,427[INFO] DMRG has converged!\n"
      ]
     },
     {
      "name": "stderr",
      "output_type": "stream",
      "text": [
-      "2025-03-04 06:46:16,380[INFO] mps current size: 329.7KiB, Matrix product bond dim:[1, 2, 4, 8, 16, 30, 30, 30, 30, 30, 30, 30, 30, 30, 30, 30, 30, 30, 30, 30, 30, 30, 30, 30, 30, 30, 30, 30, 16, 8, 4, 2, 1]\n"
+      "2025-03-08 11:09:48,462[INFO] mps current size: 329.7KiB, Matrix product bond dim:[1, 2, 4, 8, 16, 30, 30, 30, 30, 30, 30, 30, 30, 30, 30, 30, 30, 30, 30, 30, 30, 30, 30, 30, 30, 30, 30, 30, 16, 8, 4, 2, 1]\n"
      ]
     },
     {
      "name": "stdout",
      "output_type": "stream",
      "text": [
-      "gs energy: -13.997315090211742\n"
+      "gs energy: -13.997315090211583\n"
      ]
     }
    ],

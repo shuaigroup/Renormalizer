@@ -242,7 +242,6 @@
 
 <span class="kn">import</span><span class="w"> </span><span class="nn">numpy</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="nn">np</span>
 <span class="kn">import</span><span class="w"> </span><span class="nn">scipy</span>
-<span class="kn">import</span><span class="w"> </span><span class="nn">opt_einsum</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="nn">oe</span>
 
 <span class="kn">from</span><span class="w"> </span><span class="nn">renormalizer.lib</span><span class="w"> </span><span class="kn">import</span> <span class="n">davidson</span>
 <span class="kn">from</span><span class="w"> </span><span class="nn">renormalizer.model.h_qc</span><span class="w"> </span><span class="kn">import</span> <span class="n">qc_model</span><span class="p">,</span> <span class="n">int_to_h</span><span class="p">,</span> <span class="n">generate_ladder_operator</span><span class="p">,</span> <span class="n">simplify_op</span>
@@ -253,6 +252,7 @@
 <span class="kn">from</span><span class="w"> </span><span class="nn">renormalizer.mps.svd_qn</span><span class="w"> </span><span class="kn">import</span> <span class="n">get_qn_mask</span>
 <span class="kn">from</span><span class="w"> </span><span class="nn">renormalizer.mps</span><span class="w"> </span><span class="kn">import</span> <span class="n">Mpo</span><span class="p">,</span> <span class="n">Mps</span><span class="p">,</span> <span class="n">StackedMpo</span>
 <span class="kn">from</span><span class="w"> </span><span class="nn">renormalizer.mps.lib</span><span class="w"> </span><span class="kn">import</span> <span class="n">Environ</span><span class="p">,</span> <span class="n">cvec2cmat</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">renormalizer.mps.oe_contract_wrap</span><span class="w"> </span><span class="kn">import</span> <span class="n">oe_contract</span>
 <span class="kn">from</span><span class="w"> </span><span class="nn">renormalizer.utils</span><span class="w"> </span><span class="kn">import</span> <span class="n">Quantity</span><span class="p">,</span> <span class="n">CompressConfig</span><span class="p">,</span> <span class="n">CompressCriteria</span>
 
 
@@ -550,7 +550,7 @@
             <span class="c1"># O-b-O-f-O</span>
             <span class="c1">#     e</span>
             <span class="c1"># S-c   k-S</span>
-            <span class="n">ham</span> <span class="o">=</span> <span class="n">oe</span><span class="o">.</span><span class="n">contract</span><span class="p">(</span>
+            <span class="n">ham</span> <span class="o">=</span> <span class="n">oe_contract</span><span class="p">(</span>
                 <span class="s2">&quot;abc,bdef,lfk-&gt;adlcek&quot;</span><span class="p">,</span>
                 <span class="n">ltensor</span><span class="p">,</span> <span class="n">cmo</span><span class="p">[</span><span class="mi">0</span><span class="p">],</span> <span class="n">rtensor</span><span class="p">,</span>
                 <span class="n">backend</span><span class="o">=</span><span class="n">OE_BACKEND</span>
@@ -562,7 +562,7 @@
             <span class="c1"># O-b-O-f-O-j-O</span>
             <span class="c1">#     e   h</span>
             <span class="c1"># S-c       k-S</span>
-            <span class="n">ham</span> <span class="o">=</span> <span class="n">oe</span><span class="o">.</span><span class="n">contract</span><span class="p">(</span>
+            <span class="n">ham</span> <span class="o">=</span> <span class="n">oe_contract</span><span class="p">(</span>
                 <span class="s2">&quot;abc,bdef,fghj,ljk-&gt;adglcehk&quot;</span><span class="p">,</span>
                 <span class="n">ltensor</span><span class="p">,</span> <span class="n">cmo</span><span class="p">[</span><span class="mi">0</span><span class="p">],</span> <span class="n">cmo</span><span class="p">[</span><span class="mi">1</span><span class="p">],</span> <span class="n">rtensor</span><span class="p">,</span>
                 <span class="n">backend</span><span class="o">=</span><span class="n">OE_BACKEND</span><span class="p">,</span>
@@ -575,7 +575,7 @@
             <span class="c1">#   |   f   |</span>
             <span class="c1">#   O-c-O-i-O</span>
             <span class="c1">#   S-d h k-S</span>
-            <span class="n">ham</span> <span class="o">=</span> <span class="n">oe</span><span class="o">.</span><span class="n">contract</span><span class="p">(</span>
+            <span class="n">ham</span> <span class="o">=</span> <span class="n">oe_contract</span><span class="p">(</span>
                 <span class="s2">&quot;abcd, befg, cfhi, jgik -&gt; aejdhk&quot;</span><span class="p">,</span>
                 <span class="n">ltensor</span><span class="p">,</span> <span class="n">cmo</span><span class="p">[</span><span class="mi">0</span><span class="p">],</span> <span class="n">cmo</span><span class="p">[</span><span class="mi">0</span><span class="p">],</span> <span class="n">rtensor</span><span class="p">,</span>
                 <span class="n">backend</span><span class="o">=</span><span class="n">OE_BACKEND</span><span class="p">,</span>
@@ -587,7 +587,7 @@
             <span class="c1">#   |   f   k   |</span>
             <span class="c1">#   O-c-O-i-O-n-O</span>
             <span class="c1">#   S-d h   m p-S</span>
-            <span class="n">ham</span> <span class="o">=</span> <span class="n">oe</span><span class="o">.</span><span class="n">contract</span><span class="p">(</span>
+            <span class="n">ham</span> <span class="o">=</span> <span class="n">oe_contract</span><span class="p">(</span>
                 <span class="s2">&quot;abcd, befg, cfhi, gjkl, ikmn, olnp -&gt; aejodhmp&quot;</span><span class="p">,</span>
                 <span class="n">ltensor</span><span class="p">,</span> <span class="n">cmo</span><span class="p">[</span><span class="mi">0</span><span class="p">],</span> <span class="n">cmo</span><span class="p">[</span><span class="mi">0</span><span class="p">],</span> <span class="n">cmo</span><span class="p">[</span><span class="mi">1</span><span class="p">],</span> <span class="n">cmo</span><span class="p">[</span><span class="mi">1</span><span class="p">],</span> <span class="n">rtensor</span><span class="p">,</span>
                 <span class="n">backend</span><span class="o">=</span><span class="n">OE_BACKEND</span><span class="p">,</span>
@@ -678,7 +678,7 @@
             <span class="c1">#   |   e   |</span>
             <span class="c1">#   O-c-O-g-O</span>
             <span class="c1">#   S-a d h-S</span>
-            <span class="n">hdiag</span> <span class="o">=</span> <span class="n">oe</span><span class="o">.</span><span class="n">contract</span><span class="p">(</span>
+            <span class="n">hdiag</span> <span class="o">=</span> <span class="n">oe_contract</span><span class="p">(</span>
                 <span class="s2">&quot;abca, bdef, cedg, hfgh -&gt; adh&quot;</span><span class="p">,</span>
                 <span class="n">ltensor</span><span class="p">,</span> <span class="n">cmo</span><span class="p">[</span><span class="mi">0</span><span class="p">],</span> <span class="n">cmo</span><span class="p">[</span><span class="mi">0</span><span class="p">],</span> <span class="n">rtensor</span><span class="p">,</span>
                 <span class="n">backend</span><span class="o">=</span><span class="n">OE_BACKEND</span><span class="p">,</span>
@@ -689,7 +689,7 @@
             <span class="c1">#   |   e   i   |</span>
             <span class="c1">#   O-c-O-g-O-k-O</span>
             <span class="c1">#   S-a d   h l-S</span>
-            <span class="n">hdiag</span> <span class="o">=</span> <span class="n">oe</span><span class="o">.</span><span class="n">contract</span><span class="p">(</span>
+            <span class="n">hdiag</span> <span class="o">=</span> <span class="n">oe_contract</span><span class="p">(</span>
                 <span class="s2">&quot;abca, bdef, cedg, fhij, gihk, ljkl -&gt; adhl&quot;</span><span class="p">,</span>
                 <span class="n">ltensor</span><span class="p">,</span> <span class="n">cmo</span><span class="p">[</span><span class="mi">0</span><span class="p">],</span> <span class="n">cmo</span><span class="p">[</span><span class="mi">0</span><span class="p">],</span> <span class="n">cmo</span><span class="p">[</span><span class="mi">1</span><span class="p">],</span> <span class="n">cmo</span><span class="p">[</span><span class="mi">1</span><span class="p">],</span> <span class="n">rtensor</span><span class="p">,</span>
                 <span class="n">backend</span><span class="o">=</span><span class="n">OE_BACKEND</span><span class="p">,</span>

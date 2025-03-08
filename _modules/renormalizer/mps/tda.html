@@ -233,12 +233,12 @@
 
 <span class="kn">import</span><span class="w"> </span><span class="nn">numpy</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="nn">np</span>
 <span class="kn">import</span><span class="w"> </span><span class="nn">scipy</span>
-<span class="kn">import</span><span class="w"> </span><span class="nn">opt_einsum</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="nn">oe</span>
 
 <span class="kn">from</span><span class="w"> </span><span class="nn">renormalizer.mps.matrix</span><span class="w"> </span><span class="kn">import</span> <span class="n">tensordot</span><span class="p">,</span> <span class="n">multi_tensor_contract</span><span class="p">,</span> <span class="n">asnumpy</span><span class="p">,</span> <span class="n">asxp</span>
 <span class="kn">from</span><span class="w"> </span><span class="nn">renormalizer.mps.backend</span><span class="w"> </span><span class="kn">import</span> <span class="n">xp</span><span class="p">,</span> <span class="n">USE_GPU</span><span class="p">,</span> <span class="n">primme</span><span class="p">,</span> <span class="n">IMPORT_PRIMME_EXCEPTION</span>
 <span class="kn">from</span><span class="w"> </span><span class="nn">renormalizer.mps</span><span class="w"> </span><span class="kn">import</span> <span class="n">Mps</span>
 <span class="kn">from</span><span class="w"> </span><span class="nn">renormalizer.mps.lib</span><span class="w"> </span><span class="kn">import</span> <span class="n">Environ</span><span class="p">,</span> <span class="n">compressed_sum</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">renormalizer.mps.oe_contract_wrap</span><span class="w"> </span><span class="kn">import</span> <span class="n">oe_contract</span>
 <span class="kn">from</span><span class="w"> </span><span class="nn">renormalizer.lib</span><span class="w"> </span><span class="kn">import</span> <span class="n">davidson</span>
 
 <span class="n">logger</span> <span class="o">=</span> <span class="n">logging</span><span class="o">.</span><span class="n">getLogger</span><span class="p">(</span><span class="vm">__name__</span><span class="p">)</span>
@@ -391,7 +391,7 @@
             <span class="p">)</span>
             <span class="k">if</span> <span class="n">tangent_u</span><span class="p">[</span><span class="n">ims</span><span class="p">]</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
                 <span class="n">u</span> <span class="o">=</span> <span class="n">asxp</span><span class="p">(</span><span class="n">tangent_u</span><span class="p">[</span><span class="n">ims</span><span class="p">])</span>
-                <span class="n">tmp</span> <span class="o">=</span> <span class="n">oe</span><span class="o">.</span><span class="n">contract</span><span class="p">(</span><span class="s2">&quot;abc, ded, bghe, agl, chl -&gt; ld&quot;</span><span class="p">,</span> <span class="n">ltensor</span><span class="p">,</span> <span class="n">rtensor</span><span class="p">,</span>
+                <span class="n">tmp</span> <span class="o">=</span> <span class="n">oe_contract</span><span class="p">(</span><span class="s2">&quot;abc, ded, bghe, agl, chl -&gt; ld&quot;</span><span class="p">,</span> <span class="n">ltensor</span><span class="p">,</span> <span class="n">rtensor</span><span class="p">,</span>
                         <span class="n">asxp</span><span class="p">(</span><span class="n">mpo</span><span class="p">[</span><span class="n">ims</span><span class="p">]),</span> <span class="n">u</span><span class="p">,</span> <span class="n">u</span><span class="p">,</span> <span class="n">backend</span><span class="o">=</span><span class="n">oe_backend</span><span class="p">)</span>   
                 <span class="n">hdiag</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">asnumpy</span><span class="p">(</span><span class="n">tmp</span><span class="p">))</span>
             <span class="n">mps_tangent</span><span class="p">[</span><span class="n">ims</span><span class="p">]</span> <span class="o">=</span> <span class="n">mps_l_cano</span><span class="p">[</span><span class="n">ims</span><span class="p">]</span>
