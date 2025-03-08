@@ -14,7 +14,6 @@ import logging
 
 import numpy as np
 import scipy
-import opt_einsum as oe
 
 from renormalizer.lib import davidson
 from renormalizer.model.h_qc import qc_model, int_to_h, generate_ladder_operator, simplify_op
@@ -25,6 +24,7 @@ from renormalizer.mps.hop_expr import  hop_expr
 from renormalizer.mps.svd_qn import get_qn_mask
 from renormalizer.mps import Mpo, Mps, StackedMpo
 from renormalizer.mps.lib import Environ, cvec2cmat
+from renormalizer.mps.oe_contract_wrap import oe_contract
 from renormalizer.utils import Quantity, CompressConfig, CompressCriteria
 
 
@@ -322,7 +322,7 @@ def get_ham_direct(
             # O-b-O-f-O
             #     e
             # S-c   k-S
-            ham = oe.contract(
+            ham = oe_contract(
                 "abc,bdef,lfk->adlcek",
                 ltensor, cmo[0], rtensor,
                 backend=OE_BACKEND
@@ -334,7 +334,7 @@ def get_ham_direct(
             # O-b-O-f-O-j-O
             #     e   h
             # S-c       k-S
-            ham = oe.contract(
+            ham = oe_contract(
                 "abc,bdef,fghj,ljk->adglcehk",
                 ltensor, cmo[0], cmo[1], rtensor,
                 backend=OE_BACKEND,
@@ -347,7 +347,7 @@ def get_ham_direct(
             #   |   f   |
             #   O-c-O-i-O
             #   S-d h k-S
-            ham = oe.contract(
+            ham = oe_contract(
                 "abcd, befg, cfhi, jgik -> aejdhk",
                 ltensor, cmo[0], cmo[0], rtensor,
                 backend=OE_BACKEND,
@@ -359,7 +359,7 @@ def get_ham_direct(
             #   |   f   k   |
             #   O-c-O-i-O-n-O
             #   S-d h   m p-S
-            ham = oe.contract(
+            ham = oe_contract(
                 "abcd, befg, cfhi, gjkl, ikmn, olnp -> aejodhmp",
                 ltensor, cmo[0], cmo[0], cmo[1], cmo[1], rtensor,
                 backend=OE_BACKEND,
@@ -450,7 +450,7 @@ def get_ham_iterative(
             #   |   e   |
             #   O-c-O-g-O
             #   S-a d h-S
-            hdiag = oe.contract(
+            hdiag = oe_contract(
                 "abca, bdef, cedg, hfgh -> adh",
                 ltensor, cmo[0], cmo[0], rtensor,
                 backend=OE_BACKEND,
@@ -461,7 +461,7 @@ def get_ham_iterative(
             #   |   e   i   |
             #   O-c-O-g-O-k-O
             #   S-a d   h l-S
-            hdiag = oe.contract(
+            hdiag = oe_contract(
                 "abca, bdef, cedg, fhij, gihk, ljkl -> adhl",
                 ltensor, cmo[0], cmo[0], cmo[1], cmo[1], rtensor,
                 backend=OE_BACKEND,

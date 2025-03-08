@@ -86,6 +86,14 @@ logger.info(f"random seed is {randomseed}")
 logger.info("Git Commit Hash: %s", get_git_commit_hash())
 
 
+if USE_GPU:
+    MEMORY_ERRORS = MemoryError, xp.cuda.memory.OutOfMemoryError
+    ARRAY_TYPES = np.ndarray, xp.ndarray
+else:
+    MEMORY_ERRORS = (MemoryError, )
+    ARRAY_TYPES = (np.ndarray, )
+
+
 class Backend:
 
     _init_once_flag = False

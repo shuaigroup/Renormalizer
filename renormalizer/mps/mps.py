@@ -1489,7 +1489,7 @@ class Mps(MatrixProduct):
             res = np.tensordot(res, mt.array, axes=1).reshape(1, dim1, dim2)
         return res[0, :, 0]
     
-    def calc_1site_rdm(self, idx=None):
+    def calc_1site_rdm(self, idx=None) -> Dict[int, np.ndarray]:
         r""" Calculate 1-site reduced density matrix
         
             :math:`\rho_i = \textrm{Tr}_{j \neq i} | \Psi \rangle \langle \Psi|`

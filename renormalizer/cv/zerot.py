@@ -12,6 +12,7 @@ from renormalizer.mps.matrix import (
     tensordot,
     multi_tensor_contract,
 )
+from renormalizer.mps.oe_contract_wrap import oe_contract_expression
 from renormalizer.utils import OptimizeConfig
 import logging
 import scipy
@@ -233,7 +234,7 @@ class SpectraZtCV(SpectraCv):
 
         # cache oe path
         if self.method == "2site":
-            expr = oe.contract_expression(
+            expr = oe_contract_expression(
                 "abcd, befh, cfgi, hjkn, iklo, mnop, dglp -> aejm",
                 first_L, a_oper_isite2, a_oper_isite2, a_oper_isite1,
                 a_oper_isite1, first_R, xshape,
@@ -255,7 +256,7 @@ class SpectraZtCV(SpectraCv):
                 # contraction path for this complicated cases and consumes a little bit less memory
                 # this is the only place in renormalizer we use opt_einsum now.
                 # we keep it here just for a demo.
-                # ax1 = oe.contract("abcd, befh, cfgi, hjkn, iklo, mnop, dglp -> aejm",
+                # ax1 = oe_contract("abcd, befh, cfgi, hjkn, iklo, mnop, dglp -> aejm",
                 #        first_L, a_oper_isite2, a_oper_isite2, a_oper_isite1,
                 #        a_oper_isite1, first_R, xstruct)
                 if USE_GPU:
@@ -263,7 +264,7 @@ class SpectraZtCV(SpectraCv):
                 else:
                     oe_backend = "numpy"
                 ax1 = expr(xstruct, backend=oe_backend)   
-                #print(oe.contract_path("abcd, befh, cfgi, hjkn, iklo, mnop, dglp -> aejm",
+                #print(oe_contract_path("abcd, befh, cfgi, hjkn, iklo, mnop, dglp -> aejm",
                 #        first_L, a_oper_isite2, a_oper_isite2, a_oper_isite1,
                 #        a_oper_isite1, first_R, xstruct))
 

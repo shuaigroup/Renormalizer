@@ -5,12 +5,12 @@ from collections import defaultdict
 
 import numpy as np
 import scipy
-import opt_einsum as oe
 
 from renormalizer.mps.matrix import tensordot, multi_tensor_contract, asnumpy, asxp
 from renormalizer.mps.backend import xp, USE_GPU, primme, IMPORT_PRIMME_EXCEPTION
 from renormalizer.mps import Mps
 from renormalizer.mps.lib import Environ, compressed_sum
+from renormalizer.mps.oe_contract_wrap import oe_contract
 from renormalizer.lib import davidson
 
 logger = logging.getLogger(__name__)
@@ -163,7 +163,7 @@ class TDA(object):
             )
             if tangent_u[ims] is not None:
                 u = asxp(tangent_u[ims])
-                tmp = oe.contract("abc, ded, bghe, agl, chl -> ld", ltensor, rtensor,
+                tmp = oe_contract("abc, ded, bghe, agl, chl -> ld", ltensor, rtensor,
                         asxp(mpo[ims]), u, u, backend=oe_backend)   
                 hdiag.append(asnumpy(tmp))
             mps_tangent[ims] = mps_l_cano[ims]

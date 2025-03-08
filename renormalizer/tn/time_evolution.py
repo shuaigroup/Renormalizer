@@ -4,11 +4,11 @@ import logging
 
 import scipy
 from scipy import stats
-import opt_einsum as oe
 
 from renormalizer.mps.lib import compressed_sum
 from renormalizer.mps.backend import np, xp
 from renormalizer.mps.matrix import asxp
+from renormalizer.mps.oe_contract_wrap import oe_contract
 from renormalizer.lib import solve_ivp, expm_krylov
 from renormalizer.utils.configs import EvolveMethod
 from renormalizer.tn.node import TreeNodeTensor
@@ -39,7 +39,7 @@ def time_derivative_vmf(ttns: TTNS, ttno: TTNO):
             proj = tensor.conj() @ tensor.T
             ovlp = environ_s.node_list[inode].environ_parent.reshape(dim_parent, dim_parent)
             ovlp_inv = regularized_inversion(ovlp, ttns.evolve_config.reg_epsilon)
-            deriv = oe.contract("bf, bg, fh -> gh", deriv, xp.eye(proj.shape[0]) - proj, asxp(ovlp_inv.T))
+            deriv = oe_contract("bf, bg, fh -> gh", deriv, xp.eye(proj.shape[0]) - proj, asxp(ovlp_inv.T))
         qnmask = ttns.get_qnmask(node).reshape(deriv.shape)
         deriv_list.append(deriv[qnmask].ravel())
     return np.concatenate(deriv_list)

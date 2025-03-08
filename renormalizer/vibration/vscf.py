@@ -1,7 +1,6 @@
 
 import numpy as np
 import scipy
-import opt_einsum as oe
 import logging
 
 from renormalizer.mps.backend import xp, OE_BACKEND
@@ -9,6 +8,7 @@ from renormalizer.mps.lib import Environ, cvec2cmat
 from renormalizer.mps import Mpo, Mps
 from renormalizer.mps.svd_qn import get_qn_mask
 from renormalizer.mps.matrix import asnumpy, asxp
+from renormalizer.mps.oe_contract_wrap import oe_contract
 from renormalizer.utils import CompressConfig, CompressCriteria
 
 logger = logging.getLogger(__name__)
@@ -84,7 +84,7 @@ class Vscf():
                 # O-b-O-f-O
                 #     e
                 # S-c   k-S
-                ham = oe.contract(
+                ham = oe_contract(
                     "abc,bdef,lfk->adlcek",
                     ltensor, cmo[0], rtensor,
                     backend=OE_BACKEND

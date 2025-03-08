@@ -2,6 +2,7 @@ import opt_einsum as oe
 
 from renormalizer.mps.backend import np
 from renormalizer.mps.matrix import asxp
+from renormalizer.mps.oe_contract_wrap import oe_contract, oe_contract_expression
 from renormalizer.tn.node import TreeNodeTensor
 from renormalizer.tn.tree import TTNS, TTNO, TTNEnviron
 
@@ -123,7 +124,7 @@ def _contract_expression(args, x_shape, x_indices, y_indices):
     args_fake.append(y_indices)
     indices, tensors = oe.parser.convert_interleaved_input(args_fake)
     args = [asxp(t) for t in tensors[:-1]] + [x_shape]
-    expr = oe.contract_expression(
+    expr = oe_contract_expression(
         indices,
         *args,
         constants=list(range(len(tensors)))[:-1],
@@ -150,4 +151,4 @@ def _get_hdiag(args, input_indices):
             pass
         new_args.append(tuple(arg))
     new_args.append(input_indices)
-    return oe.contract(*new_args)
+    return oe_contract(*new_args)

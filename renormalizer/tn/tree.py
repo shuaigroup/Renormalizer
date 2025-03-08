@@ -2,7 +2,6 @@ from typing import List, Dict, Tuple, Union, Callable, Any
 import logging
 
 import scipy
-import opt_einsum as oe
 from print_tree import print_tree
 
 from renormalizer import Op, Mps, Model
@@ -12,6 +11,7 @@ from renormalizer.mps.matrix import asnumpy, asxp_oe_args, tensordot
 from renormalizer.mps.svd_qn import add_outer, svd_qn, blockrecover, get_qn_mask
 from renormalizer.mps.lib import select_basis
 from renormalizer.mps.mps import normalize
+from renormalizer.mps.oe_contract_wrap import oe_contract
 from renormalizer.utils.configs import CompressConfig, OptimizeConfig, EvolveConfig, EvolveMethod
 from renormalizer.utils import calc_vn_entropy, calc_vn_entropy_dm
 from renormalizer.tn.node import TreeNodeTensor, TreeNodeBasis, copy_connection, TreeNodeEnviron
@@ -196,7 +196,7 @@ class TTNO(TTNBase):
             output_indices.extend([indices1[-1], indices2[-1]])
             args.append(output_indices)
             # do contraction
-            res = oe.contract(*(asxp_oe_args(args))).reshape(output_shape)
+            res = oe_contract(*(asxp_oe_args(args))).reshape(output_shape)
             snode2.tensor = res
             snode2.qn = add_outer(snode1.qn, onode.qn).reshape(output_shape[-1], ttns.basis.qn_size)
 
@@ -251,7 +251,7 @@ class TTNO(TTNBase):
             indices_down.append(("down", str(basis.dofs)))
         output_indices = indices_up + indices_down
         args.append(output_indices)
-        res = oe.contract(*asxp_oe_args(args))
+        res = oe_contract(*asxp_oe_args(args))
         # to be consistent with the behavior of MPS/MPO
         res = asnumpy(res)
         dim = round(np.sqrt(np.prod(res.shape)))
@@ -602,7 +602,7 @@ class TTNS(TTNBase):
         args.extend([node.parent.tensor, parent_indices])
         output_indices = self.get_node_indices(node, include_parent=True)
         args.append(output_indices)
-        return oe.contract(*asxp_oe_args(args))
+        return oe_contract(*asxp_oe_args(args))
 
     def decompose_to_parent(self, node: TreeNodeTensor) -> np.ndarray:
         """
@@ -647,7 +647,7 @@ class TTNS(TTNBase):
         output_indices = parent_indices.copy()
         output_indices[node.idx_as_child] = child_idx2
         args.append(output_indices)
-        node.parent.tensor = oe.contract(*asxp_oe_args(args))
+        node.parent.tensor = oe_contract(*asxp_oe_args(args))
 
     def push_cano_to_parent(self, node: TreeNodeTensor):
         """
@@ -856,7 +856,7 @@ class TTNS(TTNBase):
         args = self.to_contract_args()
         args.extend(bra.to_contract_args(conj=True))
         args.extend(ttno.to_contract_args("up", "down"))
-        val = oe.contract(*asxp_oe_args(args), optimize="greedy").ravel()[0]
+        val = oe_contract(*asxp_oe_args(args), optimize="greedy").ravel()[0]
 
         if np.isclose(float(val.imag), 0):
             return float(val.real)
@@ -969,8 +969,8 @@ class TTNS(TTNBase):
             args.append(indices_ket + indices_bra)
 
             # perform the contraction
-            res = oe.contract(*asxp_oe_args(args))
-            rdm[node_i] = res
+            res = oe_contract(*asxp_oe_args(args))
+            rdm[node_i] = asnumpy(res)
 
         return rdm
 
@@ -1031,7 +1031,7 @@ class TTNS(TTNBase):
             indices = [(0, i) for i in range(basis_node.n_sets)] * 2
             indices[basis_idx] = (1, 0)
             indices[basis_idx + basis_node.n_sets] = (1, 1)
-            rdm_dof_dict[dof] = oe.contract(rdm, indices, ((1, 0), (1, 1)))
+            rdm_dof_dict[dof] = oe_contract(rdm, indices, ((1, 0), (1, 1)))
         return rdm_dof_dict
 
     def calc_1dof_entropy(self, dof: Union[Any, List[Any]]=None) -> Dict[Any, float]:
@@ -1129,7 +1129,7 @@ class TTNS(TTNBase):
                     indices_ket.append(("down", str(dofs)))
                     indices_bra.append(("up", str(dofs)))
             args.append(indices_ket + indices_bra)
-            res = oe.contract(*asxp_oe_args(args))
+            res = oe_contract(*asxp_oe_args(args))
             rdm[idx_pair] = res
             # perform the contraction
         return rdm
@@ -1199,7 +1199,7 @@ class TTNS(TTNBase):
             indices[basis_idx2] = (1, 1)
             indices[n_sets + basis_idx1] = (1, 2)
             indices[n_sets + basis_idx2] = (1, 3)
-            res = oe.contract(rdm, indices, [(1, i) for i in range(4)])
+            res = oe_contract(rdm, indices, [(1, i) for i in range(4)])
             rdm_[dof_pair] = res
         return rdm_
 
@@ -1428,7 +1428,7 @@ class TTNS(TTNBase):
             indices_up.append(("down", str(basis.dofs)))
         output_indices = indices_up
         args.append(output_indices)
-        res = oe.contract(*asxp_oe_args(args))
+        res = oe_contract(*asxp_oe_args(args))
         # to be consistent with the behavior of MPS/MPO
         res = asnumpy(res)
         return res
@@ -1596,7 +1596,7 @@ class TTNEnviron(Tree):
         # indices for the resulting tensor
         indices = self.get_parent_indices(enode, ttns, ttno)
         args.append(indices)
-        res = oe.contract(*asxp_oe_args(args))
+        res = oe_contract(*asxp_oe_args(args))
         if len(enode.parent.environ_children) != len(enode.parent.children):
             # first run
             enode.parent.environ_children.append(asnumpy(res))
@@ -1634,7 +1634,7 @@ class TTNEnviron(Tree):
         indices = self.get_child_indices(enode, ichild, ttns, ttno)
 
         args.append(indices)
-        res = oe.contract(*asxp_oe_args(args))
+        res = oe_contract(*asxp_oe_args(args))
         enode.children[ichild].environ_parent = asnumpy(res)
 
     def get_child_indices(self, enode, i, ttns, ttno):

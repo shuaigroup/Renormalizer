@@ -175,6 +175,7 @@ class BasisTree(Tree):
         contract_label: list of bool
             If ``contract_primitive`` is set to True,
             this list determines which primitive basis should be contracted.
+            If not provided, all basis sets will be contracted.
         dummy_label:
             The label for the virtual nodes in MCTDH.
 
