@@ -234,7 +234,7 @@
 
 <span class="kn">from</span><span class="w"> </span><span class="nn">renormalizer</span><span class="w"> </span><span class="kn">import</span> <span class="n">Op</span>
 <span class="kn">from</span><span class="w"> </span><span class="nn">renormalizer.model.basis</span><span class="w"> </span><span class="kn">import</span> <span class="n">BasisSet</span><span class="p">,</span> <span class="n">BasisDummy</span>
-<span class="kn">from</span><span class="w"> </span><span class="nn">renormalizer.tn.node</span><span class="w"> </span><span class="kn">import</span> <span class="n">NodeUnion</span><span class="p">,</span> <span class="n">TreeNodeBasis</span><span class="p">,</span> <span class="n">copy_connection</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">renormalizer.tn.node</span><span class="w"> </span><span class="kn">import</span> <span class="n">NodeUnion</span><span class="p">,</span> <span class="n">TreeNodeBasis</span><span class="p">,</span> <span class="n">copy_connection</span><span class="p">,</span> <span class="n">build_connection_adj_mat</span><span class="p">,</span> <span class="n">TreeNodeText</span>
 
 
 <span class="k">class</span><span class="w"> </span><span class="nc">Tree</span><span class="p">:</span>
@@ -242,7 +242,7 @@
         <span class="k">assert</span> <span class="n">root</span><span class="o">.</span><span class="n">parent</span> <span class="ow">is</span> <span class="kc">None</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">root</span> <span class="o">=</span> <span class="n">root</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">node_list</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">preorder_list</span><span class="p">()</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">node_idx</span> <span class="o">=</span> <span class="p">{</span><span class="n">node</span><span class="p">:</span> <span class="n">i</span> <span class="k">for</span> <span class="n">i</span><span class="p">,</span> <span class="n">node</span> <span class="ow">in</span> <span class="nb">enumerate</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">node_list</span><span class="p">)}</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">node_idx</span><span class="p">:</span> <span class="n">Dict</span><span class="p">[</span><span class="n">NodeUnion</span><span class="p">,</span> <span class="nb">int</span><span class="p">]</span> <span class="o">=</span> <span class="p">{</span><span class="n">node</span><span class="p">:</span> <span class="n">i</span> <span class="k">for</span> <span class="n">i</span><span class="p">,</span> <span class="n">node</span> <span class="ow">in</span> <span class="nb">enumerate</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">node_list</span><span class="p">)}</span>
 
     <span class="k">def</span><span class="w"> </span><span class="nf">preorder_list</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">func</span><span class="o">=</span><span class="kc">None</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">List</span><span class="p">[</span><span class="n">NodeUnion</span><span class="p">]:</span>
         <span class="k">def</span><span class="w"> </span><span class="nf">recursion</span><span class="p">(</span><span class="n">node</span><span class="p">:</span> <span class="n">NodeUnion</span><span class="p">):</span>
@@ -282,6 +282,16 @@
         <span class="n">path1</span> <span class="o">=</span> <span class="n">ancestors1</span><span class="p">[:</span><span class="n">ancestors1</span><span class="o">.</span><span class="n">index</span><span class="p">(</span><span class="n">common_ancestor</span><span class="p">)</span> <span class="o">+</span> <span class="mi">1</span><span class="p">]</span>
         <span class="n">path2</span> <span class="o">=</span> <span class="n">ancestors2</span><span class="p">[:</span><span class="n">ancestors2</span><span class="o">.</span><span class="n">index</span><span class="p">(</span><span class="n">common_ancestor</span><span class="p">)]</span>
         <span class="k">return</span> <span class="n">path1</span> <span class="o">+</span> <span class="n">path2</span><span class="p">[::</span><span class="o">-</span><span class="mi">1</span><span class="p">]</span>
+
+    <span class="nd">@property</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">adj_matrix</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="c1"># adjacent matrix</span>
+        <span class="n">mat</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">zeros</span><span class="p">((</span><span class="nb">len</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">node_list</span><span class="p">),</span> <span class="nb">len</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">node_list</span><span class="p">)),</span> <span class="n">dtype</span><span class="o">=</span><span class="n">np</span><span class="o">.</span><span class="n">uint8</span><span class="p">)</span>
+        <span class="k">for</span> <span class="n">i</span><span class="p">,</span> <span class="n">node</span> <span class="ow">in</span> <span class="nb">enumerate</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">node_list</span><span class="p">):</span>
+            <span class="k">for</span> <span class="n">child</span> <span class="ow">in</span> <span class="n">node</span><span class="o">.</span><span class="n">children</span><span class="p">:</span>
+                <span class="n">j</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">node_idx</span><span class="p">[</span><span class="n">child</span><span class="p">]</span>
+                <span class="n">mat</span><span class="p">[</span><span class="n">i</span><span class="p">,</span> <span class="n">j</span><span class="p">]</span> <span class="o">=</span> <span class="mi">1</span>
+        <span class="k">return</span> <span class="n">mat</span>
 
     <span class="nd">@property</span>
     <span class="k">def</span><span class="w"> </span><span class="nf">size</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
@@ -554,17 +564,8 @@
         <span class="bp">self</span><span class="o">.</span><span class="n">dummy_ttno</span> <span class="o">=</span> <span class="kc">None</span>
 
 <div class="viewcode-block" id="BasisTree.print"><a class="viewcode-back" href="../../../ttn.html#renormalizer.tn.BasisTree.print">[docs]</a>    <span class="k">def</span><span class="w"> </span><span class="nf">print</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">print_function</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
-        <span class="k">class</span><span class="w"> </span><span class="nc">print_tn_basis</span><span class="p">(</span><span class="n">print_tree</span><span class="p">):</span>
-            <span class="k">def</span><span class="w"> </span><span class="nf">get_children</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">node</span><span class="p">):</span>
-                <span class="k">return</span> <span class="n">node</span><span class="o">.</span><span class="n">children</span>
-
-            <span class="k">def</span><span class="w"> </span><span class="nf">get_node_str</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">node</span><span class="p">):</span>
-                <span class="k">return</span> <span class="nb">str</span><span class="p">([</span><span class="n">b</span><span class="o">.</span><span class="n">dofs</span> <span class="k">for</span> <span class="n">b</span> <span class="ow">in</span> <span class="n">node</span><span class="o">.</span><span class="n">basis_sets</span><span class="p">])</span>
-
-        <span class="n">tree</span> <span class="o">=</span> <span class="n">print_tn_basis</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">root</span><span class="p">)</span>
-        <span class="k">if</span> <span class="n">print_function</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
-            <span class="k">for</span> <span class="n">row</span> <span class="ow">in</span> <span class="n">tree</span><span class="o">.</span><span class="n">rows</span><span class="p">:</span>
-                <span class="n">print_function</span><span class="p">(</span><span class="n">row</span><span class="p">)</span></div>
+        <span class="n">text_list</span> <span class="o">=</span> <span class="p">[</span><span class="nb">str</span><span class="p">([</span><span class="n">b</span><span class="o">.</span><span class="n">dofs</span> <span class="k">for</span> <span class="n">b</span> <span class="ow">in</span> <span class="n">node</span><span class="o">.</span><span class="n">basis_sets</span><span class="p">])</span> <span class="k">for</span> <span class="n">node</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">node_list</span><span class="p">]</span>
+        <span class="n">print_as_tree</span><span class="p">(</span><span class="n">text_list</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">adj_matrix</span><span class="p">,</span> <span class="n">print_function</span><span class="p">)</span></div>
 
     <span class="nd">@property</span>
     <span class="k">def</span><span class="w"> </span><span class="nf">basis_list</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">List</span><span class="p">[</span><span class="n">BasisSet</span><span class="p">]:</span>
@@ -610,6 +611,23 @@
         <span class="n">end</span> <span class="o">=</span> <span class="nb">min</span><span class="p">((</span><span class="n">i</span> <span class="o">+</span> <span class="mi">1</span><span class="p">)</span> <span class="o">*</span> <span class="n">size</span><span class="p">,</span> <span class="nb">len</span><span class="p">(</span><span class="n">sequence</span><span class="p">))</span>
         <span class="n">ret</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">sequence</span><span class="p">[</span><span class="n">start</span><span class="p">:</span><span class="n">end</span><span class="p">])</span>
     <span class="k">return</span> <span class="n">ret</span>
+
+
+<span class="k">def</span><span class="w"> </span><span class="nf">print_as_tree</span><span class="p">(</span><span class="n">text_list</span><span class="p">,</span> <span class="n">adj_matrix</span><span class="p">,</span> <span class="n">print_function</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
+    <span class="n">nodes</span> <span class="o">=</span> <span class="p">[</span><span class="n">TreeNodeText</span><span class="p">(</span><span class="n">text</span><span class="p">)</span> <span class="k">for</span> <span class="n">text</span> <span class="ow">in</span> <span class="n">text_list</span><span class="p">]</span>
+    <span class="n">root</span> <span class="o">=</span> <span class="n">build_connection_adj_mat</span><span class="p">(</span><span class="n">nodes</span><span class="p">,</span> <span class="n">adj_matrix</span><span class="p">)</span>
+
+    <span class="k">class</span><span class="w"> </span><span class="nc">print_text</span><span class="p">(</span><span class="n">print_tree</span><span class="p">):</span>
+        <span class="k">def</span><span class="w"> </span><span class="nf">get_children</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">node</span><span class="p">):</span>
+            <span class="k">return</span> <span class="n">node</span><span class="o">.</span><span class="n">children</span>
+
+        <span class="k">def</span><span class="w"> </span><span class="nf">get_node_str</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">node</span><span class="p">):</span>
+            <span class="k">return</span> <span class="n">node</span><span class="o">.</span><span class="n">text</span>
+
+    <span class="n">tree</span> <span class="o">=</span> <span class="n">print_text</span><span class="p">(</span><span class="n">root</span><span class="p">)</span>
+    <span class="k">if</span> <span class="n">print_function</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+        <span class="k">for</span> <span class="n">row</span> <span class="ow">in</span> <span class="n">tree</span><span class="o">.</span><span class="n">rows</span><span class="p">:</span>
+            <span class="n">print_function</span><span class="p">(</span><span class="n">row</span><span class="p">)</span>
 </pre></div>
         </article>
       </div>

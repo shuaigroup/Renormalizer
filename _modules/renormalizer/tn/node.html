@@ -429,7 +429,14 @@
         <span class="bp">self</span><span class="o">.</span><span class="n">environ_children</span><span class="p">:</span> <span class="n">List</span><span class="p">[</span><span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">]</span> <span class="o">=</span> <span class="p">[]</span>
 
 
-<span class="n">NodeUnion</span> <span class="o">=</span> <span class="n">Union</span><span class="p">[</span><span class="n">TreeNodeTensor</span><span class="p">,</span> <span class="n">TreeNodeBasis</span><span class="p">,</span> <span class="n">TreeNodeEnviron</span><span class="p">]</span>
+<span class="k">class</span><span class="w"> </span><span class="nc">TreeNodeText</span><span class="p">(</span><span class="n">TreeNode</span><span class="p">):</span>
+    <span class="c1"># tree node whose data is environmental tensors</span>
+    <span class="k">def</span><span class="w"> </span><span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">text</span><span class="p">):</span>
+        <span class="nb">super</span><span class="p">()</span><span class="o">.</span><span class="fm">__init__</span><span class="p">()</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">text</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="nb">str</span><span class="p">(</span><span class="n">text</span><span class="p">)</span>
+
+
+<span class="n">NodeUnion</span> <span class="o">=</span> <span class="n">Union</span><span class="p">[</span><span class="n">TreeNodeTensor</span><span class="p">,</span> <span class="n">TreeNodeBasis</span><span class="p">,</span> <span class="n">TreeNodeEnviron</span><span class="p">,</span> <span class="n">TreeNodeText</span><span class="p">]</span>
 
 
 <span class="k">def</span><span class="w"> </span><span class="nf">copy_connection</span><span class="p">(</span><span class="n">source_node_list</span><span class="p">:</span> <span class="n">List</span><span class="p">[</span><span class="n">NodeUnion</span><span class="p">],</span> <span class="n">target_node_list</span><span class="p">:</span> <span class="n">List</span><span class="p">[</span><span class="n">NodeUnion</span><span class="p">])</span> <span class="o">-&gt;</span> <span class="n">NodeUnion</span><span class="p">:</span>
@@ -456,6 +463,20 @@
             <span class="n">target_node</span><span class="o">.</span><span class="n">add_child</span><span class="p">(</span><span class="n">target_node_list</span><span class="p">[</span><span class="n">idx</span><span class="p">])</span>
         <span class="k">if</span> <span class="n">source_node</span><span class="o">.</span><span class="n">parent</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
             <span class="n">root</span> <span class="o">=</span> <span class="n">target_node</span>
+    <span class="k">assert</span> <span class="n">root</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span>
+    <span class="k">return</span> <span class="n">root</span>
+
+
+<span class="k">def</span><span class="w"> </span><span class="nf">build_connection_adj_mat</span><span class="p">(</span><span class="n">nodes</span><span class="p">:</span> <span class="n">List</span><span class="p">[</span><span class="n">NodeUnion</span><span class="p">],</span> <span class="n">adj_matrix</span><span class="p">:</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">NodeUnion</span><span class="p">:</span>
+    <span class="c1"># build connection based on adjacent matrix</span>
+    <span class="k">for</span> <span class="n">i</span><span class="p">,</span> <span class="n">row</span> <span class="ow">in</span> <span class="nb">enumerate</span><span class="p">(</span><span class="n">adj_matrix</span><span class="p">):</span>
+        <span class="n">children_idx</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">nonzero</span><span class="p">(</span><span class="n">row</span><span class="p">)[</span><span class="mi">0</span><span class="p">]</span>
+        <span class="n">nodes</span><span class="p">[</span><span class="n">i</span><span class="p">]</span><span class="o">.</span><span class="n">add_children</span><span class="p">([</span><span class="n">nodes</span><span class="p">[</span><span class="n">j</span><span class="p">]</span> <span class="k">for</span> <span class="n">j</span> <span class="ow">in</span> <span class="n">children_idx</span><span class="p">])</span>
+
+    <span class="n">root</span> <span class="o">=</span> <span class="kc">None</span>
+    <span class="k">for</span> <span class="n">node</span> <span class="ow">in</span> <span class="n">nodes</span><span class="p">:</span>
+        <span class="k">if</span> <span class="n">node</span><span class="o">.</span><span class="n">parent</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="n">root</span> <span class="o">=</span> <span class="n">node</span>
     <span class="k">assert</span> <span class="n">root</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span>
     <span class="k">return</span> <span class="n">root</span>
 </pre></div>

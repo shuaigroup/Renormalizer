@@ -2138,51 +2138,47 @@
 <span class="sd">    expand bond dimension as required in compress_config. works for both mps and ttns</span>
 <span class="sd">    &quot;&quot;&quot;</span>
     <span class="c1"># expander m target</span>
-    <span class="n">m_target</span> <span class="o">=</span> <span class="n">mps</span><span class="o">.</span><span class="n">compress_config</span><span class="o">.</span><span class="n">bond_dim_max_value</span> <span class="o">-</span> <span class="n">mps</span><span class="o">.</span><span class="n">bond_dims_mean</span>
-    <span class="c1"># will be restored at exit</span>
-    <span class="n">mps</span><span class="o">.</span><span class="n">compress_config</span><span class="o">.</span><span class="n">bond_dim_max_value</span> <span class="o">=</span> <span class="n">m_target</span>
-    <span class="k">if</span> <span class="n">mps</span><span class="o">.</span><span class="n">compress_config</span><span class="o">.</span><span class="n">criteria</span> <span class="ow">is</span> <span class="ow">not</span> <span class="n">CompressCriteria</span><span class="o">.</span><span class="n">fixed</span><span class="p">:</span>
-        <span class="n">logger</span><span class="o">.</span><span class="n">warning</span><span class="p">(</span><span class="s2">&quot;Setting compress criteria to fixed&quot;</span><span class="p">)</span>
-        <span class="n">mps</span><span class="o">.</span><span class="n">compress_config</span><span class="o">.</span><span class="n">criteria</span> <span class="o">=</span> <span class="n">CompressCriteria</span><span class="o">.</span><span class="n">fixed</span>
-    <span class="n">logger</span><span class="o">.</span><span class="n">debug</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;target for expander: </span><span class="si">{</span><span class="n">m_target</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+    <span class="n">m_target</span><span class="p">:</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">minimum</span><span class="p">(</span><span class="n">mps</span><span class="o">.</span><span class="n">compress_config</span><span class="o">.</span><span class="n">bond_dim_max_value</span><span class="p">,</span> <span class="n">mps</span><span class="o">.</span><span class="n">bond_dims_exact</span><span class="p">)</span> <span class="o">-</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">(</span><span class="n">mps</span><span class="o">.</span><span class="n">bond_dims</span><span class="p">)</span>
+    <span class="n">m_target</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">(</span><span class="n">m_target</span><span class="p">,</span> <span class="n">dtype</span><span class="o">=</span><span class="nb">int</span><span class="p">)</span> <span class="c1"># original dtype is float</span>
+    <span class="n">logger</span><span class="o">.</span><span class="n">debug</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;target for expander: </span><span class="si">{</span><span class="n">m_target</span><span class="o">.</span><span class="n">tolist</span><span class="p">()</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+
     <span class="k">if</span> <span class="n">hint_mpo</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
-        <span class="n">expander</span> <span class="o">=</span> <span class="n">mps</span><span class="o">.</span><span class="vm">__class__</span><span class="o">.</span><span class="n">random</span><span class="p">(</span><span class="n">mps</span><span class="o">.</span><span class="n">model</span><span class="p">,</span> <span class="mi">1</span><span class="p">,</span> <span class="n">m_target</span><span class="p">)</span>
+        <span class="n">expander</span> <span class="o">=</span> <span class="n">mps</span><span class="o">.</span><span class="vm">__class__</span><span class="o">.</span><span class="n">random</span><span class="p">(</span><span class="n">mps</span><span class="o">.</span><span class="n">model</span><span class="p">,</span> <span class="mi">1</span><span class="p">,</span> <span class="n">np</span><span class="o">.</span><span class="n">max</span><span class="p">(</span><span class="n">m_target</span><span class="p">))</span>
     <span class="k">else</span><span class="p">:</span>
         <span class="c1"># fill states related to `hint_mpo`</span>
-        <span class="n">logger</span><span class="o">.</span><span class="n">debug</span><span class="p">(</span>
-            <span class="sa">f</span><span class="s2">&quot;average bond dimension of hint mpo: </span><span class="si">{</span><span class="n">hint_mpo</span><span class="o">.</span><span class="n">bond_dims_mean</span><span class="si">}</span><span class="s2">&quot;</span>
-        <span class="p">)</span>
-        <span class="c1"># in case of localized `self`</span>
-        <span class="k">if</span> <span class="n">ex_mps</span><span class="p">:</span>
-            <span class="n">lastone</span> <span class="o">=</span> <span class="n">mps</span> <span class="o">+</span> <span class="n">ex_mps</span>
-
-        <span class="k">else</span><span class="p">:</span>
+        <span class="n">logger</span><span class="o">.</span><span class="n">debug</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;bond dimension of hint mpo: </span><span class="si">{</span><span class="n">hint_mpo</span><span class="o">.</span><span class="n">bond_dims</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+        <span class="n">logger</span><span class="o">.</span><span class="n">debug</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Mean value: </span><span class="si">{</span><span class="n">hint_mpo</span><span class="o">.</span><span class="n">bond_dims_mean</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+        <span class="k">if</span> <span class="n">ex_mps</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
             <span class="n">lastone</span> <span class="o">=</span> <span class="n">mps</span>
-        <span class="n">expander_list</span><span class="p">:</span> <span class="n">List</span><span class="p">[</span><span class="s2">&quot;MatrixProduct&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="p">[]</span>
-        <span class="n">cumulated_m</span> <span class="o">=</span> <span class="mi">0</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="c1"># in case of localized `self`</span>
+            <span class="n">lastone</span> <span class="o">=</span> <span class="n">mps</span> <span class="o">+</span> <span class="n">ex_mps</span>
+        <span class="n">expander_list</span> <span class="o">=</span> <span class="p">[]</span>
+        <span class="n">expander_dims</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">zeros_like</span><span class="p">(</span><span class="n">m_target</span><span class="p">)</span>
+
         <span class="k">while</span> <span class="kc">True</span><span class="p">:</span>
-            <span class="n">lastone</span><span class="o">.</span><span class="n">compress_config</span><span class="o">.</span><span class="n">criteria</span> <span class="o">=</span> <span class="n">CompressCriteria</span><span class="o">.</span><span class="n">fixed</span>
-            <span class="n">expander_list</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">lastone</span><span class="p">)</span>
-            <span class="n">expander</span> <span class="o">=</span> <span class="n">compressed_sum</span><span class="p">(</span><span class="n">expander_list</span><span class="p">)</span>
-            <span class="k">if</span> <span class="n">cumulated_m</span> <span class="o">==</span> <span class="n">expander</span><span class="o">.</span><span class="n">bond_dims_mean</span><span class="p">:</span>
-                <span class="c1"># probably a small system, the required bond dimension can&#39;t be reached</span>
-                <span class="k">break</span>
-            <span class="n">cumulated_m</span> <span class="o">=</span> <span class="n">expander</span><span class="o">.</span><span class="n">bond_dims_mean</span>
-            <span class="n">logger</span><span class="o">.</span><span class="n">debug</span><span class="p">(</span>
-                <span class="sa">f</span><span class="s2">&quot;cumulated bond dimension: </span><span class="si">{</span><span class="n">cumulated_m</span><span class="si">}</span><span class="s2">. lastone bond dimension: </span><span class="si">{</span><span class="n">lastone</span><span class="o">.</span><span class="n">bond_dims</span><span class="si">}</span><span class="s2">&quot;</span>
-            <span class="p">)</span>
-            <span class="k">if</span> <span class="n">m_target</span> <span class="o">&lt;</span> <span class="n">cumulated_m</span><span class="p">:</span>
-                <span class="k">break</span>
-            <span class="k">if</span> <span class="n">m_target</span> <span class="o">&lt;</span> <span class="mf">0.8</span> <span class="o">*</span> <span class="p">(</span><span class="n">lastone</span><span class="o">.</span><span class="n">bond_dims_mean</span> <span class="o">*</span> <span class="n">hint_mpo</span><span class="o">.</span><span class="n">bond_dims_mean</span><span class="p">):</span>
-                <span class="n">lastone</span> <span class="o">=</span> <span class="n">lastone</span><span class="o">.</span><span class="n">canonicalise</span><span class="p">()</span><span class="o">.</span><span class="n">compress</span><span class="p">(</span>
-                    <span class="n">m_target</span> <span class="o">//</span> <span class="n">hint_mpo</span><span class="o">.</span><span class="n">bond_dims_mean</span> <span class="o">+</span> <span class="mi">1</span>
-                <span class="p">)</span>
             <span class="n">lastone</span> <span class="o">=</span> <span class="p">(</span><span class="n">hint_mpo</span> <span class="o">@</span> <span class="n">lastone</span><span class="p">)</span><span class="o">.</span><span class="n">normalize</span><span class="p">(</span><span class="s2">&quot;mps_and_coeff&quot;</span><span class="p">)</span>
-    <span class="n">logger</span><span class="o">.</span><span class="n">debug</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;expander bond dimension: </span><span class="si">{</span><span class="n">expander</span><span class="o">.</span><span class="n">bond_dims</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
-    <span class="n">mps</span><span class="o">.</span><span class="n">compress_config</span><span class="o">.</span><span class="n">bond_dim_max_value</span> <span class="o">+=</span> <span class="n">mps</span><span class="o">.</span><span class="n">bond_dims_mean</span>
+            <span class="n">lastone</span> <span class="o">=</span> <span class="n">lastone</span><span class="o">.</span><span class="n">canonicalise</span><span class="p">()</span><span class="o">.</span><span class="n">compress</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">max</span><span class="p">(</span><span class="n">m_target</span><span class="p">))</span>
+            <span class="n">logger</span><span class="o">.</span><span class="n">debug</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;lastone bond dimension: </span><span class="si">{</span><span class="n">lastone</span><span class="o">.</span><span class="n">bond_dims</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+            <span class="n">expander_list</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">lastone</span><span class="p">)</span>
+            <span class="n">expander</span> <span class="o">=</span> <span class="n">compressed_sum</span><span class="p">(</span><span class="n">expander_list</span><span class="p">,</span> <span class="n">temp_m_trunc</span><span class="o">=</span><span class="n">np</span><span class="o">.</span><span class="n">max</span><span class="p">(</span><span class="n">m_target</span><span class="p">))</span>
+
+            <span class="n">logger</span><span class="o">.</span><span class="n">debug</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;expander bond dimension: </span><span class="si">{</span><span class="n">expander</span><span class="o">.</span><span class="n">bond_dims</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+            <span class="k">if</span> <span class="n">np</span><span class="o">.</span><span class="n">all</span><span class="p">(</span><span class="n">expander</span><span class="o">.</span><span class="n">bond_dims</span> <span class="o">&gt;=</span> <span class="n">m_target</span><span class="p">):</span>
+                <span class="k">break</span>
+
+            <span class="k">if</span> <span class="n">np</span><span class="o">.</span><span class="n">all</span><span class="p">(</span><span class="n">expander</span><span class="o">.</span><span class="n">bond_dims</span> <span class="o">==</span> <span class="n">expander_dims</span><span class="p">):</span>
+                <span class="n">logger</span><span class="o">.</span><span class="n">warning</span><span class="p">(</span><span class="s2">&quot;Expander does not increase anymore. The expand target is too high&quot;</span><span class="p">)</span>
+                <span class="k">break</span>
+
+            <span class="n">expander_dims</span> <span class="o">=</span> <span class="n">expander</span><span class="o">.</span><span class="n">bond_dims</span>
+
+            <span class="n">temp_m_trunc</span> <span class="o">=</span> <span class="nb">int</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">max</span><span class="p">(</span><span class="n">m_target</span><span class="p">)</span> <span class="o">/</span> <span class="n">np</span><span class="o">.</span><span class="n">max</span><span class="p">(</span><span class="n">hint_mpo</span><span class="o">.</span><span class="n">bond_dims</span><span class="p">))</span> <span class="o">+</span> <span class="mi">1</span>
+            <span class="n">lastone</span> <span class="o">=</span> <span class="n">lastone</span><span class="o">.</span><span class="n">canonicalise</span><span class="p">()</span><span class="o">.</span><span class="n">compress</span><span class="p">(</span><span class="n">temp_m_trunc</span><span class="p">)</span>
+            <span class="n">logger</span><span class="o">.</span><span class="n">debug</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;lastone bond dimension after compression: </span><span class="si">{</span><span class="n">lastone</span><span class="o">.</span><span class="n">bond_dims</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+
     <span class="k">return</span> <span class="p">(</span><span class="n">mps</span> <span class="o">+</span> <span class="n">expander</span><span class="o">.</span><span class="n">scale</span><span class="p">(</span><span class="n">coef</span> <span class="o">*</span> <span class="n">mps</span><span class="o">.</span><span class="n">norm</span><span class="p">,</span> <span class="n">inplace</span><span class="o">=</span><span class="kc">True</span><span class="p">))</span><span class="o">.</span><span class="n">canonicalise</span><span class="p">()</span><span class="o">.</span><span class="n">canonicalise</span><span class="p">()</span><span class="o">.</span><span class="n">normalize</span><span class="p">(</span>
         <span class="s2">&quot;mps_norm_to_coeff&quot;</span><span class="p">)</span>
-
 
 <span class="k">def</span><span class="w"> </span><span class="nf">normalize</span><span class="p">(</span><span class="n">tn</span><span class="p">,</span> <span class="n">kind</span><span class="p">):</span>
 <span class="w">    </span><span class="sa">r</span><span class="sd">&#39;&#39;&#39; normalize the wavefunction</span>
