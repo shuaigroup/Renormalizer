@@ -1910,51 +1910,47 @@ def expand_bond_dimension_general(mps, hint_mpo=None, coef=1e-10, ex_mps=None):
     expand bond dimension as required in compress_config. works for both mps and ttns
     """
     # expander m target
-    m_target = mps.compress_config.bond_dim_max_value - mps.bond_dims_mean
-    # will be restored at exit
-    mps.compress_config.bond_dim_max_value = m_target
-    if mps.compress_config.criteria is not CompressCriteria.fixed:
-        logger.warning("Setting compress criteria to fixed")
-        mps.compress_config.criteria = CompressCriteria.fixed
-    logger.debug(f"target for expander: {m_target}")
+    m_target: np.ndarray = np.minimum(mps.compress_config.bond_dim_max_value, mps.bond_dims_exact) - np.array(mps.bond_dims)
+    m_target = np.array(m_target, dtype=int) # original dtype is float
+    logger.debug(f"target for expander: {m_target.tolist()}")
+
     if hint_mpo is None:
-        expander = mps.__class__.random(mps.model, 1, m_target)
+        expander = mps.__class__.random(mps.model, 1, np.max(m_target))
     else:
         # fill states related to `hint_mpo`
-        logger.debug(
-            f"average bond dimension of hint mpo: {hint_mpo.bond_dims_mean}"
-        )
-        # in case of localized `self`
-        if ex_mps:
-            lastone = mps + ex_mps
-
-        else:
+        logger.debug(f"bond dimension of hint mpo: {hint_mpo.bond_dims}")
+        logger.debug(f"Mean value: {hint_mpo.bond_dims_mean}")
+        if ex_mps is None:
             lastone = mps
-        expander_list: List["MatrixProduct"] = []
-        cumulated_m = 0
+        else:
+            # in case of localized `self`
+            lastone = mps + ex_mps
+        expander_list = []
+        expander_dims = np.zeros_like(m_target)
+
         while True:
-            lastone.compress_config.criteria = CompressCriteria.fixed
-            expander_list.append(lastone)
-            expander = compressed_sum(expander_list)
-            if cumulated_m == expander.bond_dims_mean:
-                # probably a small system, the required bond dimension can't be reached
-                break
-            cumulated_m = expander.bond_dims_mean
-            logger.debug(
-                f"cumulated bond dimension: {cumulated_m}. lastone bond dimension: {lastone.bond_dims}"
-            )
-            if m_target < cumulated_m:
-                break
-            if m_target < 0.8 * (lastone.bond_dims_mean * hint_mpo.bond_dims_mean):
-                lastone = lastone.canonicalise().compress(
-                    m_target // hint_mpo.bond_dims_mean + 1
-                )
             lastone = (hint_mpo @ lastone).normalize("mps_and_coeff")
-    logger.debug(f"expander bond dimension: {expander.bond_dims}")
-    mps.compress_config.bond_dim_max_value += mps.bond_dims_mean
+            lastone = lastone.canonicalise().compress(np.max(m_target))
+            logger.debug(f"lastone bond dimension: {lastone.bond_dims}")
+            expander_list.append(lastone)
+            expander = compressed_sum(expander_list, temp_m_trunc=np.max(m_target))
+
+            logger.debug(f"expander bond dimension: {expander.bond_dims}")
+            if np.all(expander.bond_dims >= m_target):
+                break
+
+            if np.all(expander.bond_dims == expander_dims):
+                logger.warning("Expander does not increase anymore. The expand target is too high")
+                break
+
+            expander_dims = expander.bond_dims
+
+            temp_m_trunc = int(np.max(m_target) / np.max(hint_mpo.bond_dims)) + 1
+            lastone = lastone.canonicalise().compress(temp_m_trunc)
+            logger.debug(f"lastone bond dimension after compression: {lastone.bond_dims}")
+
     return (mps + expander.scale(coef * mps.norm, inplace=True)).canonicalise().canonicalise().normalize(
         "mps_norm_to_coeff")
-
 
 def normalize(tn, kind):
     r''' normalize the wavefunction

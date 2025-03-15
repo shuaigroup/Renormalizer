@@ -7,8 +7,6 @@ from __future__ import division
 import math
 import logging
 
-from sympy.printing.numpy import const
-
 from renormalizer.utils import constant
 
 logger = logging.getLogger(__name__)

@@ -21,7 +21,21 @@ def log_error(e, args, kwargs):
         logger.fatal(f"{k}: {v}")
 
 
+def update_kwargs(args, kwargs):
+    # in Reno, the expressions are usually simple (at most 10 tensors involved)
+    # Yet the performance requirement is critical - we frequently hit the memory limit
+    if "optimize" not in kwargs:
+        if len(args) <= 15:
+            algo = "optimal"
+        elif len(args) <= 25:
+            algo = "dp"
+        else:
+            algo = "auto-hq"
+        # modify in-place
+        kwargs["optimize"] = algo
+
 def oe_contract(*args, **kwargs):
+    update_kwargs(args, kwargs)
     try:
         return oe.contract(*args, **kwargs)
     except MEMORY_ERRORS as e:
@@ -31,6 +45,7 @@ def oe_contract(*args, **kwargs):
 
 
 def oe_contract_expression(*args, **kwargs):
+    update_kwargs(args, kwargs)
     expr = oe.contract_expression(*args, **kwargs)
     def expr_wrapped(matrix: xp.ndarray, *args2, **kwargs2):
         try:

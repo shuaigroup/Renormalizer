@@ -127,6 +127,20 @@ class MatrixProduct:
 
     pbond_list = pbond_dims
 
+    @property
+    def bond_dims_exact(self) -> np.ndarray:
+        # bond dimensions for exact tensor factorization
+        pbond_dims = np.array(self.pbond_dims, dtype=float)
+        if self.is_mpo or self.is_mpdm:
+            pbond_dims = pbond_dims ** 2
+        else:
+            assert self.is_mps
+        # overflow is expected
+        with np.errstate(over="ignore"):
+            dims1 = [1] + list(np.cumprod(pbond_dims))
+            dims2 = ([1] + list(np.cumprod(pbond_dims[::-1])))[::-1]
+        return np.minimum(dims1, dims2)
+
     def build_empty_qn(self):
         self.qntot = np.array([0] * self.model.qn_size)
         # set qnidx to the right to be consistent with most MPS/MPO setups

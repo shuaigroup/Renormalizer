@@ -14,7 +14,7 @@ class Tree:
         assert root.parent is None
         self.root = root
         self.node_list = self.preorder_list()
-        self.node_idx = {node: i for i, node in enumerate(self.node_list)}
+        self.node_idx: Dict[NodeUnion, int] = {node: i for i, node in enumerate(self.node_list)}
 
     def preorder_list(self, func=None) -> List[NodeUnion]:
         def recursion(node: NodeUnion):
@@ -385,7 +385,7 @@ def approximate_partition(sequence, ngroups):
     return ret
 
 
-def print_as_tree(text_list, adj_matrix, print_function):
+def print_as_tree(text_list, adj_matrix, print_function=None):
     nodes = [TreeNodeText(text) for text in text_list]
     root = build_connection_adj_mat(nodes, adj_matrix)
 

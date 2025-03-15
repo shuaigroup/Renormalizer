@@ -1,5 +1,6 @@
 from typing import List, Dict, Tuple, Union, Callable, Any
 import logging
+from xml.sax.handler import property_dom_node
 
 import scipy
 from print_tree import print_tree
@@ -106,7 +107,11 @@ class TTNBase(Tree):
         return int(round(np.mean(self.bond_dims)))
 
     @property
-    def qntot(self):
+    def pbond_dims(self) -> List[List[int]]:
+        return self.basis.pbond_dims
+
+    @property
+    def qntot(self) -> np.ndarray:
         return self.root.qn[0]
 
 
@@ -129,7 +134,7 @@ class TTNO(TTNBase):
             basis.dummy_ttno = cls(new_basis, [new_basis.identity_op])
         return basis.dummy_ttno
 
-    def __init__(self, basis: BasisTree, terms: Union[List[Op], Op], root: TreeNodeTensor = None, algo: str = "qr"):
+    def __init__(self, basis: BasisTree, terms: Union[List[Op], Op], root: TreeNodeTensor = None, algo: str = "Hopcroft-Karp"):
         self.basis: BasisTree = basis
         if isinstance(terms, Op):
             terms = [terms]
@@ -1491,6 +1496,22 @@ class TTNS(TTNBase):
             other_attrs = []
         other_attrs = other_attrs + ["coeff"]
         super().dump(fname, other_attrs)
+
+    @property
+    def bond_dims_exact(self) -> np.ndarray:
+        # overflow is expected
+        with np.errstate(over="ignore"):
+            bond_dims_exact = [None] * len(self)
+            for node in self.postorder_list():
+                node_idx: int = self.node_idx[node]
+                local_dim = float(np.prod(self.pbond_dims[node_idx]))
+                for child in node.children:
+                    child_idx: int = self.node_idx[child]
+                    local_dim *= bond_dims_exact[child_idx]
+                bond_dims_exact[node_idx] = local_dim
+            # since the bond dim for root is virtual
+            bond_dims_exact[self.node_idx[self.root]] = 1
+            return bond_dims_exact
 
     def __add__(self, other: "TTNS"):
         return self.add(other)
