@@ -306,6 +306,14 @@ class BasisTree(Tree):
         return cls(root)
 
     def __init__(self, root: TreeNodeBasis):
+        """
+        Construct basis tree.
+
+        Parameters
+        ----------
+        root: TreeNodeBasis
+            the tree root
+        """
         super().__init__(root)
         for node in self.node_list:
             assert isinstance(node, TreeNodeBasis)
@@ -336,7 +344,12 @@ class BasisTree(Tree):
         self.dummy_ttno = None
 
     def print(self, print_function=None):
-        text_list = [str([b.dofs for b in node.basis_sets]) for node in self.node_list]
+        text_list = []
+        for node in self.node_list:
+            text = str([b.dofs for b in node.basis_sets])
+            if node.bond_dim is not None:
+                text += f" {node.bond_dim}"
+            text_list.append(text)
         print_as_tree(text_list, self.adj_matrix, print_function)
 
     @property
@@ -352,8 +365,15 @@ class BasisTree(Tree):
         return list(chain(*[n.basis_sets for n in self.postorder_list()]))
 
     @property
+    def bond_dims(self) -> List[int]:
+        for n in self.node_list:
+            if n.bond_dim is None:
+                raise ValueError(f"One of the bond dimensions is None: {n}")
+        return [n.bond_dim for n in self.node_list]
+
+    @property
     def pbond_dims(self) -> List[List[int]]:
-        return [b.pbond_dims for b in self.node_list]
+        return [n.pbond_dims for n in self.node_list]
 
     def add_auxiliary_space(self, auxiliary_label="Q") -> "BasisTree":
         # make a new basis tree with auxiliary basis

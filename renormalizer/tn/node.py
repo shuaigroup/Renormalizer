@@ -58,7 +58,7 @@ DUMMY_IDX = 0
 
 class TreeNodeBasis(TreeNode):
     # tree node whose data is basis sets
-    def __init__(self, basis_sets: Union[BasisSet, List[BasisSet]]=None):
+    def __init__(self, basis_sets: Union[BasisSet, List[BasisSet]]=None, bond_dim: int=None):
         """
         Tree node whose data is basis sets.
 
@@ -105,6 +105,10 @@ class TreeNodeBasis(TreeNode):
         self.qn_size: int = qn_size_list[0]
         self.dofs = [b.dofs for b in basis_sets]
         self.pbond_dims = [len(b.sigmaqn) for b in self.basis_sets]
+
+        # record virtual bond dimension
+        # useful when compressing using customized bond dimension for each node
+        self.bond_dim = bond_dim
 
     def copy(self):
         new = self.__class__(self.basis_sets)

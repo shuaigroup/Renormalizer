@@ -10,6 +10,7 @@ from renormalizer.tn.treebase import BasisTree
 from renormalizer.tn.gs import optimize_ttns
 from renormalizer.tests.parameter import holstein_model
 from renormalizer.tests.parameter_exact import model
+from renormalizer.utils import CompressConfig, CompressCriteria
 
 
 def multi_basis_tree(basis_list):
@@ -179,6 +180,14 @@ def test_compress():
     s2 = ttns2.todense().ravel()
 
     np.testing.assert_allclose(np.abs(s1 @ s2), 1, atol=1e-5)
+
+    ttns3 = ttns.copy()
+    ttns3.compress_config = CompressConfig(CompressCriteria.fixed)
+    ttns3.compress_config.max_dims = [1, 4, 4, 2, 4, 2, 4, 4, 2]
+    ttns3.compress()
+    assert ttns3.bond_dims == ttns3.compress_config.max_dims
+    s3 = ttns3.todense().ravel()
+    np.testing.assert_allclose(np.abs(s3 @ s1), 1, atol=1e-5)
 
 
 @pytest.mark.parametrize("basis_tree", [basis_binary, basis_multi_basis])

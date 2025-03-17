@@ -9,17 +9,6 @@ import numpy as np
 logger = logging.getLogger(__name__)
 
 
-class BondDimDistri(Enum):
-    """
-    Bond dimension distribution
-    """
-    # here the `#:` syntax is for sphinx documentation.
-    #: uniform distribution.
-    uniform = "uniform"
-    #: Guassian distribution which peaks at the center.
-    center_gauss = "center gaussian"
-
-
 class CompressCriteria(Enum):
     """
     Criteria for compression.
@@ -60,10 +49,6 @@ class CompressConfig:
         The threshold to keep states if ``criteria`` is set to
         `CompressCriteria.threshold` or `CompressCriteria.both`.
         Default is :math:`10^{-3}`.
-    bonddim_distri : `BondDimDistri`, optional
-        Bond dimension distribution if ``criteria`` is set to
-        `CompressCriteria.fixed` or `CompressCriteria.both`.
-        Default is `BondDimDistri.uniform`.
     max_bonddim : int, optional
         Maximum bond dimension ``M`` under various bond dimension distributions.
         Default is 32.
@@ -143,7 +128,6 @@ class CompressConfig:
         self,
         criteria: CompressCriteria = CompressCriteria.threshold,
         threshold: float = 1e-3,
-        bonddim_distri: BondDimDistri = BondDimDistri.uniform,
         max_bonddim: int = 32,
         vmethod: str = "2site",
         vprocedure = None,
@@ -159,13 +143,11 @@ class CompressConfig:
         self.criteria: CompressCriteria = criteria
         self._threshold = None
         self.threshold = threshold
-        self.bond_dim_distribution: BondDimDistri = bonddim_distri
         self.bond_dim_max_value = max_bonddim
-        # not in arg list, but still useful in some cases
-        self.bond_dim_min_value = 1
         # the length should be len(mps) + 1, the terminals are also counted. This is for accordance with mps.bond_dims
         self.max_dims: np.ndarray = None
-        self.min_dims: np.ndarray = None
+        if self.max_dims is not None:
+            self.bond_dim_max_value = np.max(self.max_dims)
 
         # variational compression parameters
         self.vmethod = vmethod
@@ -201,26 +183,10 @@ class CompressConfig:
             raise ValueError("Can't set threshold to be larger than 1")
         self._threshold = v
 
-    def set_bonddim(self, length, max_value=None):
-        if self.criteria is CompressCriteria.threshold:
-            raise ValueError("compress config is using threshold criteria")
-        if max_value is None:
-            assert self.bond_dim_max_value is not None
-            max_value = self.bond_dim_max_value
-        else:
-            self.bond_dim_max_value = max_value
-        if max_value is None:
-            raise ValueError("max value is not set")
-        if self.bond_dim_distribution is BondDimDistri.uniform:
-            self.max_dims = np.full(length, max_value, dtype=int)
-        else:
-            half_length = length // 2
-            x = np.arange(- half_length, - half_length + length)
-            sigma = half_length / np.sqrt(np.log(max_value / 3))
-            seq = list(max_value * np.exp(-(x / sigma) ** 2))
-            self.max_dims = np.int64(seq)
-            assert not (self.max_dims == 0).any()
-        self.min_dims = np.full(length, self.bond_dim_min_value, dtype=int)
+    def set_bonddim(self, length):
+        if self.max_dims is None:
+            self.max_dims = np.full(length, self.bond_dim_max_value, dtype=int)
+
 
     def _threshold_m_trunc(self, sigma: np.ndarray) -> int:
         assert 0 < self.threshold < 1
@@ -245,10 +211,6 @@ class CompressConfig:
             )
         else:
             assert False
-        if self.min_dims is not None:
-            bond_idx = idx if left else idx + 1
-            min_trunc = min(self.min_dims[bond_idx], len(sigma))
-            trunc = max(trunc, min_trunc)
         return trunc
 
     def update(self, other: "CompressConfig"):
@@ -282,8 +244,6 @@ class CompressConfig:
         # deep copies
         if self.max_dims is not None:
             new.max_dims = self.max_dims.copy()
-        if self.min_dims is not None:
-            new.min_dims = self.min_dims.copy()
         return new
 
     @property

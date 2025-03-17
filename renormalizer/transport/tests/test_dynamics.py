@@ -7,14 +7,9 @@ import os
 import pytest
 
 from renormalizer.model import Phonon, Mol, HolsteinModel
-from renormalizer.mps import Mps, Mpo, ThermalProp, MpDm
-from renormalizer.mps.gs import optimize_mps
 from renormalizer.transport import ChargeDiffusionDynamics
 from renormalizer.utils import Quantity
 from renormalizer.utils import (
-    BondDimDistri,
-    CompressCriteria,
-    CompressConfig,
     EvolveMethod,
     EvolveConfig,
 )
@@ -58,23 +53,6 @@ def test_adaptive_zero_t(method):
     assert_band_limit(ct, 1e-2)
 
 
-def test_gaussian_bond_dim():
-    compress_config = CompressConfig(
-        criteria=CompressCriteria.fixed,
-        bonddim_distri=BondDimDistri.center_gauss,
-        max_bonddim=10,
-    )
-    evolve_config = EvolveConfig(guess_dt=0.1, adaptive=True)
-    ct = ChargeDiffusionDynamics(
-        band_limit_model,
-        compress_config=compress_config,
-        evolve_config=evolve_config,
-    )
-    ct.stop_at_edge = True
-    ct.evolve(evolve_dt=2.)
-    assert_band_limit(ct, 1e-2)
-
-
 def assert_iterable_equal(i1, i2):
     if isinstance(i1, str):
         assert i1 == i2
@@ -87,7 +65,6 @@ def assert_iterable_equal(i1, i2):
         return
     for ii1, ii2 in zip(i1, i2):
         assert_iterable_equal(ii1, ii2)
-
 
 
 @pytest.mark.parametrize(

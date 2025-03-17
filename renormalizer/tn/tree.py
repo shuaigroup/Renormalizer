@@ -1,9 +1,7 @@
 from typing import List, Dict, Tuple, Union, Callable, Any
 import logging
-from xml.sax.handler import property_dom_node
 
 import scipy
-from print_tree import print_tree
 
 from renormalizer import Op, Mps, Model
 from renormalizer.model.basis import BasisSet, BasisDummy
@@ -729,7 +727,7 @@ class TTNS(TTNBase):
         self.merge_to_child(node, ichild, v)
 
     def compress_node(
-        self, node: TreeNodeTensor, ichild: int, temp_m_trunc: int = None, cano_child: bool = True
+        self, node: TreeNodeTensor, ichild: int, temp_m_trunc: Union[int, List[int]] = None, cano_child: bool = True
     ) -> np.ndarray:
         """
         Compress the bond between node and one of its child based on SVD
@@ -740,7 +738,7 @@ class TTNS(TTNBase):
             The node to be compressed
         ichild: int
             The index for the child
-        temp_m_trunc: int
+        temp_m_trunc: int or list of int
             The truncation of the singular values
         cano_child: bool
             Whether the canonical center should be set to the child node
@@ -758,11 +756,15 @@ class TTNS(TTNBase):
             self.qntot,
             full_matrices=False,
         )
+        idx = self.node_idx[node.children[ichild]]
         if temp_m_trunc is None:
-            idx = self.node_idx[node.children[ichild]]
             m_trunc = self.compress_config.compute_m_trunc(s, idx, left=False)
         else:
-            m_trunc = min(temp_m_trunc, len(s))
+            if isinstance(temp_m_trunc, (list, tuple, np.ndarray)):
+                m_trunc = temp_m_trunc[idx]
+            else:
+                m_trunc = temp_m_trunc
+            m_trunc = min(m_trunc, len(s))
         orig_s = s.copy()
         u, s, v, qnl, qnr = truncate_tensors(u, s, v, qnl, qnr, m_trunc)
 
@@ -817,7 +819,7 @@ class TTNS(TTNBase):
 
         Parameters
         ----------
-        temp_m_trunc : int
+        temp_m_trunc : int or list of int
             Temporary truncation bond dimension. Overwrites the compression
             configuration in ``CompressConfig``.
         ret_s: bool

@@ -440,7 +440,7 @@ class MatrixProduct:
 
         Parameters
         ----------
-        temp_m_trunc : int
+        temp_m_trunc : int or list of int
             Temporary truncation bond dimension. Overwrites the compression
             configuration in ``CompressConfig``.
         ret_s: bool
@@ -488,7 +488,11 @@ class MatrixProduct:
                     sigma, idx, self.to_right
                 )
             else:
-                m_trunc = min(temp_m_trunc, len(sigma))
+                if isinstance(temp_m_trunc, (list, tuple, np.ndarray)):
+                    m_trunc = temp_m_trunc[idx + 1 if self.to_right else idx]
+                else:
+                    m_trunc = temp_m_trunc
+                m_trunc = min(m_trunc, len(sigma))
             self._update_ms(
                 idx, u, vt, sigma, qnlset, qnrset, m_trunc
             )
