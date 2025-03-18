@@ -237,17 +237,6 @@
 <span class="n">logger</span> <span class="o">=</span> <span class="n">logging</span><span class="o">.</span><span class="n">getLogger</span><span class="p">(</span><span class="vm">__name__</span><span class="p">)</span>
 
 
-<div class="viewcode-block" id="BondDimDistri"><a class="viewcode-back" href="../../../configs.html#renormalizer.utils.configs.BondDimDistri">[docs]</a><span class="k">class</span><span class="w"> </span><span class="nc">BondDimDistri</span><span class="p">(</span><span class="n">Enum</span><span class="p">):</span>
-<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
-<span class="sd">    Bond dimension distribution</span>
-<span class="sd">    &quot;&quot;&quot;</span>
-    <span class="c1"># here the `#:` syntax is for sphinx documentation.</span>
-    <span class="c1">#: uniform distribution.</span>
-    <span class="n">uniform</span> <span class="o">=</span> <span class="s2">&quot;uniform&quot;</span>
-    <span class="c1">#: Guassian distribution which peaks at the center.</span>
-    <span class="n">center_gauss</span> <span class="o">=</span> <span class="s2">&quot;center gaussian&quot;</span></div>
-
-
 <div class="viewcode-block" id="CompressCriteria"><a class="viewcode-back" href="../../../configs.html#renormalizer.utils.configs.CompressCriteria">[docs]</a><span class="k">class</span><span class="w"> </span><span class="nc">CompressCriteria</span><span class="p">(</span><span class="n">Enum</span><span class="p">):</span>
 <span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">    Criteria for compression.</span>
@@ -288,10 +277,6 @@
 <span class="sd">        The threshold to keep states if ``criteria`` is set to</span>
 <span class="sd">        `CompressCriteria.threshold` or `CompressCriteria.both`.</span>
 <span class="sd">        Default is :math:`10^{-3}`.</span>
-<span class="sd">    bonddim_distri : `BondDimDistri`, optional</span>
-<span class="sd">        Bond dimension distribution if ``criteria`` is set to</span>
-<span class="sd">        `CompressCriteria.fixed` or `CompressCriteria.both`.</span>
-<span class="sd">        Default is `BondDimDistri.uniform`.</span>
 <span class="sd">    max_bonddim : int, optional</span>
 <span class="sd">        Maximum bond dimension ``M`` under various bond dimension distributions.</span>
 <span class="sd">        Default is 32.</span>
@@ -371,7 +356,6 @@
         <span class="bp">self</span><span class="p">,</span>
         <span class="n">criteria</span><span class="p">:</span> <span class="n">CompressCriteria</span> <span class="o">=</span> <span class="n">CompressCriteria</span><span class="o">.</span><span class="n">threshold</span><span class="p">,</span>
         <span class="n">threshold</span><span class="p">:</span> <span class="nb">float</span> <span class="o">=</span> <span class="mf">1e-3</span><span class="p">,</span>
-        <span class="n">bonddim_distri</span><span class="p">:</span> <span class="n">BondDimDistri</span> <span class="o">=</span> <span class="n">BondDimDistri</span><span class="o">.</span><span class="n">uniform</span><span class="p">,</span>
         <span class="n">max_bonddim</span><span class="p">:</span> <span class="nb">int</span> <span class="o">=</span> <span class="mi">32</span><span class="p">,</span>
         <span class="n">vmethod</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="s2">&quot;2site&quot;</span><span class="p">,</span>
         <span class="n">vprocedure</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
@@ -387,13 +371,11 @@
         <span class="bp">self</span><span class="o">.</span><span class="n">criteria</span><span class="p">:</span> <span class="n">CompressCriteria</span> <span class="o">=</span> <span class="n">criteria</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">_threshold</span> <span class="o">=</span> <span class="kc">None</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">threshold</span> <span class="o">=</span> <span class="n">threshold</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">bond_dim_distribution</span><span class="p">:</span> <span class="n">BondDimDistri</span> <span class="o">=</span> <span class="n">bonddim_distri</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">bond_dim_max_value</span> <span class="o">=</span> <span class="n">max_bonddim</span>
-        <span class="c1"># not in arg list, but still useful in some cases</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">bond_dim_min_value</span> <span class="o">=</span> <span class="mi">1</span>
         <span class="c1"># the length should be len(mps) + 1, the terminals are also counted. This is for accordance with mps.bond_dims</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">max_dims</span><span class="p">:</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span> <span class="o">=</span> <span class="kc">None</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">min_dims</span><span class="p">:</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span> <span class="o">=</span> <span class="kc">None</span>
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">max_dims</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">bond_dim_max_value</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">max</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">max_dims</span><span class="p">)</span>
 
         <span class="c1"># variational compression parameters</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">vmethod</span> <span class="o">=</span> <span class="n">vmethod</span>
@@ -429,26 +411,10 @@
             <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s2">&quot;Can&#39;t set threshold to be larger than 1&quot;</span><span class="p">)</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">_threshold</span> <span class="o">=</span> <span class="n">v</span>
 
-<div class="viewcode-block" id="CompressConfig.set_bonddim"><a class="viewcode-back" href="../../../configs.html#renormalizer.utils.configs.CompressConfig.set_bonddim">[docs]</a>    <span class="k">def</span><span class="w"> </span><span class="nf">set_bonddim</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">length</span><span class="p">,</span> <span class="n">max_value</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
-        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">criteria</span> <span class="ow">is</span> <span class="n">CompressCriteria</span><span class="o">.</span><span class="n">threshold</span><span class="p">:</span>
-            <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s2">&quot;compress config is using threshold criteria&quot;</span><span class="p">)</span>
-        <span class="k">if</span> <span class="n">max_value</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
-            <span class="k">assert</span> <span class="bp">self</span><span class="o">.</span><span class="n">bond_dim_max_value</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span>
-            <span class="n">max_value</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">bond_dim_max_value</span>
-        <span class="k">else</span><span class="p">:</span>
-            <span class="bp">self</span><span class="o">.</span><span class="n">bond_dim_max_value</span> <span class="o">=</span> <span class="n">max_value</span>
-        <span class="k">if</span> <span class="n">max_value</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
-            <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s2">&quot;max value is not set&quot;</span><span class="p">)</span>
-        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">bond_dim_distribution</span> <span class="ow">is</span> <span class="n">BondDimDistri</span><span class="o">.</span><span class="n">uniform</span><span class="p">:</span>
-            <span class="bp">self</span><span class="o">.</span><span class="n">max_dims</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">full</span><span class="p">(</span><span class="n">length</span><span class="p">,</span> <span class="n">max_value</span><span class="p">,</span> <span class="n">dtype</span><span class="o">=</span><span class="nb">int</span><span class="p">)</span>
-        <span class="k">else</span><span class="p">:</span>
-            <span class="n">half_length</span> <span class="o">=</span> <span class="n">length</span> <span class="o">//</span> <span class="mi">2</span>
-            <span class="n">x</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">arange</span><span class="p">(</span><span class="o">-</span> <span class="n">half_length</span><span class="p">,</span> <span class="o">-</span> <span class="n">half_length</span> <span class="o">+</span> <span class="n">length</span><span class="p">)</span>
-            <span class="n">sigma</span> <span class="o">=</span> <span class="n">half_length</span> <span class="o">/</span> <span class="n">np</span><span class="o">.</span><span class="n">sqrt</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">log</span><span class="p">(</span><span class="n">max_value</span> <span class="o">/</span> <span class="mi">3</span><span class="p">))</span>
-            <span class="n">seq</span> <span class="o">=</span> <span class="nb">list</span><span class="p">(</span><span class="n">max_value</span> <span class="o">*</span> <span class="n">np</span><span class="o">.</span><span class="n">exp</span><span class="p">(</span><span class="o">-</span><span class="p">(</span><span class="n">x</span> <span class="o">/</span> <span class="n">sigma</span><span class="p">)</span> <span class="o">**</span> <span class="mi">2</span><span class="p">))</span>
-            <span class="bp">self</span><span class="o">.</span><span class="n">max_dims</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">int64</span><span class="p">(</span><span class="n">seq</span><span class="p">)</span>
-            <span class="k">assert</span> <span class="ow">not</span> <span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">max_dims</span> <span class="o">==</span> <span class="mi">0</span><span class="p">)</span><span class="o">.</span><span class="n">any</span><span class="p">()</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">min_dims</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">full</span><span class="p">(</span><span class="n">length</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">bond_dim_min_value</span><span class="p">,</span> <span class="n">dtype</span><span class="o">=</span><span class="nb">int</span><span class="p">)</span></div>
+<div class="viewcode-block" id="CompressConfig.set_bonddim"><a class="viewcode-back" href="../../../configs.html#renormalizer.utils.configs.CompressConfig.set_bonddim">[docs]</a>    <span class="k">def</span><span class="w"> </span><span class="nf">set_bonddim</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">length</span><span class="p">):</span>
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">max_dims</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">max_dims</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">full</span><span class="p">(</span><span class="n">length</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">bond_dim_max_value</span><span class="p">,</span> <span class="n">dtype</span><span class="o">=</span><span class="nb">int</span><span class="p">)</span></div>
+
 
     <span class="k">def</span><span class="w"> </span><span class="nf">_threshold_m_trunc</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">sigma</span><span class="p">:</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">int</span><span class="p">:</span>
         <span class="k">assert</span> <span class="mi">0</span> <span class="o">&lt;</span> <span class="bp">self</span><span class="o">.</span><span class="n">threshold</span> <span class="o">&lt;</span> <span class="mi">1</span>
@@ -473,10 +439,6 @@
             <span class="p">)</span>
         <span class="k">else</span><span class="p">:</span>
             <span class="k">assert</span> <span class="kc">False</span>
-        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">min_dims</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
-            <span class="n">bond_idx</span> <span class="o">=</span> <span class="n">idx</span> <span class="k">if</span> <span class="n">left</span> <span class="k">else</span> <span class="n">idx</span> <span class="o">+</span> <span class="mi">1</span>
-            <span class="n">min_trunc</span> <span class="o">=</span> <span class="nb">min</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">min_dims</span><span class="p">[</span><span class="n">bond_idx</span><span class="p">],</span> <span class="nb">len</span><span class="p">(</span><span class="n">sigma</span><span class="p">))</span>
-            <span class="n">trunc</span> <span class="o">=</span> <span class="nb">max</span><span class="p">(</span><span class="n">trunc</span><span class="p">,</span> <span class="n">min_trunc</span><span class="p">)</span>
         <span class="k">return</span> <span class="n">trunc</span></div>
 
 <div class="viewcode-block" id="CompressConfig.update"><a class="viewcode-back" href="../../../configs.html#renormalizer.utils.configs.CompressConfig.update">[docs]</a>    <span class="k">def</span><span class="w"> </span><span class="nf">update</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">other</span><span class="p">:</span> <span class="s2">&quot;CompressConfig&quot;</span><span class="p">):</span>
@@ -510,8 +472,6 @@
         <span class="c1"># deep copies</span>
         <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">max_dims</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
             <span class="n">new</span><span class="o">.</span><span class="n">max_dims</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">max_dims</span><span class="o">.</span><span class="n">copy</span><span class="p">()</span>
-        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">min_dims</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
-            <span class="n">new</span><span class="o">.</span><span class="n">min_dims</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">min_dims</span><span class="o">.</span><span class="n">copy</span><span class="p">()</span>
         <span class="k">return</span> <span class="n">new</span></div>
 
     <span class="nd">@property</span>

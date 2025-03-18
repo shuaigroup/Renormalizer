@@ -286,7 +286,7 @@
 
 <div class="viewcode-block" id="TreeNodeBasis"><a class="viewcode-back" href="../../../ttn.html#renormalizer.tn.TreeNodeBasis">[docs]</a><span class="k">class</span><span class="w"> </span><span class="nc">TreeNodeBasis</span><span class="p">(</span><span class="n">TreeNode</span><span class="p">):</span>
     <span class="c1"># tree node whose data is basis sets</span>
-    <span class="k">def</span><span class="w"> </span><span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">basis_sets</span><span class="p">:</span> <span class="n">Union</span><span class="p">[</span><span class="n">BasisSet</span><span class="p">,</span> <span class="n">List</span><span class="p">[</span><span class="n">BasisSet</span><span class="p">]]</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
+    <span class="k">def</span><span class="w"> </span><span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">basis_sets</span><span class="p">:</span> <span class="n">Union</span><span class="p">[</span><span class="n">BasisSet</span><span class="p">,</span> <span class="n">List</span><span class="p">[</span><span class="n">BasisSet</span><span class="p">]]</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">bond_dim</span><span class="p">:</span> <span class="nb">int</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">        Tree node whose data is basis sets.</span>
 
@@ -333,6 +333,10 @@
         <span class="bp">self</span><span class="o">.</span><span class="n">qn_size</span><span class="p">:</span> <span class="nb">int</span> <span class="o">=</span> <span class="n">qn_size_list</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">dofs</span> <span class="o">=</span> <span class="p">[</span><span class="n">b</span><span class="o">.</span><span class="n">dofs</span> <span class="k">for</span> <span class="n">b</span> <span class="ow">in</span> <span class="n">basis_sets</span><span class="p">]</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">pbond_dims</span> <span class="o">=</span> <span class="p">[</span><span class="nb">len</span><span class="p">(</span><span class="n">b</span><span class="o">.</span><span class="n">sigmaqn</span><span class="p">)</span> <span class="k">for</span> <span class="n">b</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">basis_sets</span><span class="p">]</span>
+
+        <span class="c1"># record virtual bond dimension</span>
+        <span class="c1"># useful when compressing using customized bond dimension for each node</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">bond_dim</span> <span class="o">=</span> <span class="n">bond_dim</span>
 
 <div class="viewcode-block" id="TreeNodeBasis.copy"><a class="viewcode-back" href="../../../ttn.html#renormalizer.tn.TreeNodeBasis.copy">[docs]</a>    <span class="k">def</span><span class="w"> </span><span class="nf">copy</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
         <span class="n">new</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="vm">__class__</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">basis_sets</span><span class="p">)</span>
