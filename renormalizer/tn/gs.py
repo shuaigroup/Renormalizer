@@ -1,5 +1,5 @@
 import logging
-from typing import List
+from typing import List, Union
 
 
 import scipy
@@ -29,7 +29,7 @@ def optimize_ttns(ttns: TTNS, ttno: TTNO, procedure=None):
 
 
 def optimize_recursion(
-    snode: TreeNodeTensor, ttns: TTNS, ttno: TTNO, ttne: TTNEnviron, m: int, percent: float = 0
+    snode: TreeNodeTensor, ttns: TTNS, ttno: TTNO, ttne: TTNEnviron, m: Union[int, List[int]], percent: float = 0
 ) -> List[float]:
     """Optimize snode and all of its children"""
     assert snode.children  # 2 site can't do only one node

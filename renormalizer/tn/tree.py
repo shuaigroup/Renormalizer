@@ -336,7 +336,7 @@ class TTNS(TTNBase):
             the basis for the TTNS
         qntot: int or np.ndarray
             the total quantum number
-        m_max: int
+        m_max: int or list of int
             the maximum bond dimension
         percent: float
             the percentage of the states to be randomly chosen
@@ -365,16 +365,22 @@ class TTNS(TTNBase):
                 # find the quantum number index
                 indices = [i for i, x in enumerate(qnbigl) if tuple(x) == iblock]
                 assert len(indices) != 0
-                a = np.random.random([len(indices), len(indices)]) - 0.5
-                a = a + a.T
-                s, u = scipy.linalg.eigh(a=a)
+                if len(indices) == 1:
+                    u = np.array([[1]])
+                else:
+                    u = scipy.stats.ortho_group.rvs(len(indices))
+                s = np.random.rand(len(indices))
                 u_list.append(blockrecover(indices, u, len(qnbigl)))
                 s_list.append(s)
                 qn_list += [iblock] * len(indices)
 
             u = np.concatenate(u_list, axis=1)
             s = np.concatenate(s_list)
-            mt, mpsdim, mpsqn, nouse = select_basis(u, s, qn_list, u, m_max, percent=percent)
+            if isinstance(m_max, (list, tuple, np.ndarray)):
+                m_max2 = m_max[ttns.node_idx[node]]
+            else:
+                m_max2 = m_max
+            mt, mpsdim, mpsqn, nouse = select_basis(u, s, qn_list, u, m_max2, percent=percent)
             node.tensor = mt.reshape(list(qnbigl_shape)[:-1] + [mpsdim])
             node.qn = mpsqn
         # deal with root
@@ -1431,8 +1437,12 @@ class TTNS(TTNBase):
         res = asnumpy(res)
         return res
 
-    def update_2site(self, node, tensor, m: int, percent: float = 0, cano_parent: bool = True):
+    def update_2site(self, node, tensor, m: Union[int, List[int]] = None, percent: float = 0, cano_parent: bool = True):
         """cano_parent: set canonical center at parent. to_right = True"""
+
+        if self.compress_config.bonddim_should_set:
+            self.compress_config.set_bonddim(len(self.node_list) + 1)
+
         parent = node.parent
         assert parent is not None
         qnbigl, qnbigr, _ = self.get_qnmat(node, include_parent=True)
@@ -1441,10 +1451,25 @@ class TTNS(TTNBase):
         # u for snode and v for parent
         # duplicate with MatrixProduct._udpate_mps. Should consider merging when doing e.g. state averaged algorithm.
         u, su, qnlnew, v, sv, qnrnew = svd_qn(tensor, qnbigl, qnbigr, self.qntot)
+
         if cano_parent:
-            m_node, msdim, msqn, m_parent = select_basis(u, su, qnlnew, v, m, percent=percent)
+            s = su
         else:
-            m_parent, msdim, msqn, m_node = select_basis(v, sv, qnrnew, u, m, percent=percent)
+            s = sv
+        # reference: compress_node function
+        if m is None:
+            m_trunc = self.compress_config.compute_m_trunc(s, self.node_idx[node], left=False)
+        else:
+            if isinstance(m, (list, tuple, np.ndarray)):
+                m_trunc = m[self.node_idx[node]]
+            else:
+                m_trunc = m
+            m_trunc = min(m_trunc, len(s))
+
+        if cano_parent:
+            m_node, msdim, msqn, m_parent = select_basis(u, su, qnlnew, v, m_trunc, percent=percent)
+        else:
+            m_parent, msdim, msqn, m_node = select_basis(v, sv, qnrnew, u, m_trunc, percent=percent)
         m_parent = m_parent.T
         node.tensor = m_node.reshape(list(node.shape[:-1]) + [-1])
         if cano_parent:

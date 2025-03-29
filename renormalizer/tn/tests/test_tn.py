@@ -120,7 +120,8 @@ def test_gs_heisenberg(basis_tree, ite):
 
 
 @pytest.mark.parametrize("scheme", [3, 4])
-def test_gs_holstein(scheme):
+@pytest.mark.parametrize("m_type", [int, list])
+def test_gs_holstein(scheme, m_type):
     if scheme == 3:
         model = holstein_model
         basis = holstein_scheme3()
@@ -137,6 +138,8 @@ def test_gs_holstein(scheme):
     m = 4
     ttns = TTNS.random(basis, qntot=1, m_max=m)
     ttno = TTNO(basis, model.ham_terms)
+    if m_type == list:
+        m = ttns.bond_dims
     procedure = [[m, 0.4], [m, 0.2], [m, 0.1], [m, 0], [m, 0]]
     e1 = optimize_ttns(ttns, ttno, procedure)
     e2 = 0.08401412 + model.gs_zpe

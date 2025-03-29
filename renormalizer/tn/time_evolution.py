@@ -194,8 +194,6 @@ def _tdvp_ps2_recursion_forward(
     The exception is when snode == ttns.root, which is evolved.
     Cano center at snode when entering and leaving"""
     assert snode.children  # 2 site can't do only one node
-    # todo: update to more general cases like truncation based on singular values
-    m = ttns.compress_config.bond_dim_max_value
     local_steps: List[int] = []
     for ichild, child in enumerate(snode.children):
         if child.children:
@@ -211,7 +209,7 @@ def _tdvp_ps2_recursion_forward(
         ms2, j = evolve_2site(child, ttns, ttno, ttne, coeff, tau)
         local_steps.append(j)
         # cano to snode
-        ttns.update_2site(child, ms2, m, cano_parent=True)
+        ttns.update_2site(child, ms2, cano_parent=True)
         # update env
         ttne.update_2site(child, ttns, ttno)
         # backward time evolution for snode
@@ -232,8 +230,6 @@ def _tdvp_ps2_recursion_backward(
     The exception is when snode == ttns.root, which is evolved.
     Cano center at snode when entering and leaving"""
     assert snode.children  # 2 site can't do only one node
-    # todo: update to more general cases like truncation based on singular values
-    m = ttns.compress_config.bond_dim_max_value
     local_steps: List[int] = []
     for ichild, child in reversed(list(enumerate(snode.children))):
         # backward time evolution for snode
@@ -248,7 +244,7 @@ def _tdvp_ps2_recursion_backward(
         ms2, j = evolve_2site(child, ttns, ttno, ttne, coeff, tau)
         local_steps.append(j)
         # cano to snode
-        ttns.update_2site(child, ms2, m, cano_parent=not child.children)
+        ttns.update_2site(child, ms2, cano_parent=not child.children)
         # update env
         ttne.update_2site(child, ttns, ttno)
 
