@@ -83,11 +83,19 @@ because Renormalizer is sometimes imported as a utility package.
 - [tensornetwork.org](https://tensornetwork.org/)
 - [A detailed review of our method](http://www.shuaigroup.net/images/article/pubs/2022/08_shuai_WIRES_Comput_Mol_Sci_2022_e1614.pdf)
 
+# Contributors
+- [@liwt31](https://github.com/liwt31)
+- [@jjren](https://github.com/jjren)
+- [@jiangtong1000](https://github.com/jiangtong1000)
+- [@atxy-blip](https://github.com/atxy-blip)
+- [@ansatzX](https://github.com/ansatzX)
+- [@SUSYUSTC](https://github.com/SUSYUSTC)
+
 # Papers published using Renormalizer
 1. Liqi Zhou, Xing Gao*, Zhigang Shuai*, 
 [A stochastic Schrödinger equation and matrix product state approach to carrier transport in organic semiconductors with nonlocal electron–phonon interaction](http://www.shuaigroup.net/images/article/pubs/2024/08_shuai_JCP_2024_161_084118.pdf)
 *J. Chem. Phys.*, **2024**, *161*, 084118.
-1. Weitang Li*, Jiajun Ren, Hengrui Yang,; Haobin Wang, Zhigang Shuai, 
+1. Weitang Li*, Jiajun Ren, Hengrui Yang, Haobin Wang, Zhigang Shuai, 
 [Optimal tree tensor network operators for tensor network simulations: Applications to open quantum systems](http://www.shuaigroup.net/images/article/pubs/2024/07_shuai_JCP_2024_161_054116.pdf). 
 *J. Chem. Phys.*, **2024**, *161*, 054116.
 1. Zirui Sheng, Tong Jiang, Weitang Li*, and Zhigang Shuai*, 
