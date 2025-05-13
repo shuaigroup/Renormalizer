@@ -1,0 +1,50 @@
+[project]
+name = "renormalizer"
+version = "0.0.11"
+# dynamic = ["version"]
+description = "Renormalizer is a Python based tensor network package with a special focus on electron-phonon quantum dynamics."
+
+authors = [
+    { name = "Weitang Li",     email = "liwt31@gmail.com"                 },
+    { name = "Jiajun Ren",     email = "jjren@bnu.edu.cn"                 },
+    { name = "Tong Jiang",     email = "tj.theochem@gmail.com"            },
+    { name = "Yuanheng Wang",  email = "yuanhwangtheo@gmail.com"          },
+    { name = "Yu Xiong",       email = "y-xiong22@mails.tsinghua.edu.cn"  },
+    { name = "Cunxi Gong",     email = "ansatzMe@outlook.com"             },
+    { name = "Jiace Sun",      email = "jsun3@caltech.edu"                }
+]
+maintainers = [{ name = "Weitang Li", email = "liwt31@gmail.com" }]
+
+license = "Apache-2.0" 
+readme = "README.md"
+requires-python = ">=3.6"
+
+dependencies = [
+    "numpy==1.24.*",
+    "scipy==1.10.*",
+    "h5py==3.1.*",
+    "opt_einsum==3.3.*",
+    "sympy==1.11.*",
+    "print-tree2==0.9.10",
+    "PyYAML==5.4.*",
+    "qutip==4.6.*"
+]
+
+[project.optional-dependencies]
+dev = [
+    "pytest==6.2.*",
+    "black>=23.0,<24.0",
+    "flake8>=6.0,<7.0",
+    "recommonmark==0.7.*",
+    "furo==2022.9.*",
+    "nbsphinx==0.8.*",
+    "sphinxcontrib-googleanalytics==0.4"
+]
+
+[project.urls]
+homepage = "https://github.com/shuaigroup/Renormalizer"
+documentation = "https://shuaigroup.github.io/Renormalizer/"
+
+[build-system]
+requires = ["setuptools>=77.0.0", "wheel", "build"]
+build-backend = "setuptools.build_meta"
