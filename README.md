@@ -123,7 +123,7 @@ because Renormalizer is sometimes imported as a utility package.
 9. Weitang Li, Jiajun Ren, Hengrui Yang and Zhigang Shuai*,
 [On the fly swapping algorithm for ordering of degrees of freedom in density matrix renormalization group](http://www.shuaigroup.net/images/article/pubs/2022/10_shuai_JPhysCondensMatter_2022_34_254003.pdf). 
 *J. Phys.: Condens. Matter.*, **2022**, *34*, 254003. 
-10. Xing Gao*, Jiajun Ren, Alexander Eisfeld, and Zhigang Shuai, 
+10. Xing Gao*, Jiajun Ren*, Alexander Eisfeld, and Zhigang Shuai, 
 [Non-Markovian stochastic Schrödinger equation: Matrix-product-state approach to the hierarchy of pure states](http://www.shuaigroup.net/images/article/pubs/2022/09_shuai_PhysRevA_2022_105_L030202.pdf). 
 *PHYSICAL REVIEW A*, **2022**, *105*, L030202. 
 11. Jiajun Ren*, Weitang Li, Tong Jiang, Yuanheng Wang, Zhigang Shuai*, 
