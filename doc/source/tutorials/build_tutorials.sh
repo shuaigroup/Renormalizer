@@ -1,5 +1,7 @@
 export PYTHONPATH=../../../:PYTHONPATH
 
+python clean_ipynb.py
+
 # the exit code. set to 1 if one of the conversion fails
 code=0
 for python_args in `ls *.ipynb`
