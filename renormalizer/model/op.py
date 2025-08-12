@@ -349,13 +349,27 @@ class Op:
         return str(self)
 
     def __add__(self, other):
-        # if want to add with a scalar, convert the scalar to identity operator first
-        if isinstance(other, Op):
+        # If adding with a scalar or 0, 0.0, or np.array(0), return OpSum[self]
+        if isinstance(other, (int, float)) and other == 0:
+            return OpSum([self])
+        elif isinstance(other, np.ndarray) and np.array_equal(other, np.array(0)):
+            return OpSum([self])
+        elif isinstance(other, Op):
             return OpSum([self, other])
         elif isinstance(other, list):
             return OpSum([self] + other)
         else:
             raise TypeError(f"Unknown operand type {type(other)}")
+
+    def __radd__(self, other):
+        # If adding with a scalar or 0, 0.0, or np.array(0), return OpSum[self]
+        if isinstance(other, (int, float)) and other == 0:
+            return OpSum([self])
+        elif isinstance(other, np.ndarray) and np.array_equal(other, np.array(0)):
+            return OpSum([self])
+        else:
+            raise TypeError(f"Unknown operand type {type(other)}")
+
 
     def __neg__(self):
         return Op(self.symbol, self.dofs, -self.factor, self.qn_list)

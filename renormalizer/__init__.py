@@ -39,4 +39,13 @@ from renormalizer.model import Model, HolsteinModel, SpinBosonModel, TI1DModel, 
 from renormalizer.model.basis import BasisSHO, BasisHopsBoson, BasisSineDVR, BasisMultiElectron, \
     BasisMultiElectronVac, BasisSimpleElectron, BasisHalfSpin, BasisDummy
 from renormalizer.mps import Mpo, Mps, optimize_mps, DmrgFCISolver
-from renormalizer.utils import Quantity
+
+from renormalizer.utils.quantity import Quantity
+from renormalizer.utils.configs import (
+    CompressCriteria,
+    CompressConfig,
+    OptimizeConfig,
+    EvolveConfig,
+    EvolveMethod,
+)
+
