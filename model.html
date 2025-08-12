@@ -171,6 +171,7 @@
 <li class="toctree-l2"><a class="reference internal" href="tutorials/nuclear_basis.html">Nuclear Basis Set</a></li>
 <li class="toctree-l2"><a class="reference internal" href="tutorials/quantum_number.html">Quantum Numbers</a></li>
 <li class="toctree-l2"><a class="reference internal" href="tutorials/compress_mps.html">Compressing MPS</a></li>
+<li class="toctree-l2"><a class="reference internal" href="tutorials/time_evolution.html">Time Evolution using Renormalizer</a></li>
 <li class="toctree-l2"><a class="reference internal" href="tutorials/ttn_basic.html">Basics of Tree Tensor Networks</a></li>
 </ul>
 </li>
@@ -260,6 +261,7 @@ All terms must be included, without assuming Hermitian or something else.</p></l
 <dt class="sig sig-object py" id="renormalizer.model.Model.check_operator_terms">
 <span class="sig-name descname"><span class="pre">check_operator_terms</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">terms</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference external" href="https://docs.python.org/3/library/typing.html#typing.List" title="(in Python v3.13)"><span class="pre">List</span></a><span class="p"><span class="pre">[</span></span><a class="reference internal" href="#renormalizer.model.Op" title="renormalizer.model.op.Op"><span class="pre">Op</span></a><span class="p"><span class="pre">]</span></span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/renormalizer/model/model.html#Model.check_operator_terms"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#renormalizer.model.Model.check_operator_terms" title="Permalink to this definition">#</a></dt>
 <dd><p>Check and clean operator terms in the input <code class="docutils literal notranslate"><span class="pre">terms</span></code>.
+Ravels <code class="docutils literal notranslate"><span class="pre">OpSum</span></code> into <code class="docutils literal notranslate"><span class="pre">terms</span></code>.
 Errors will be raised if the type of operator is not <a class="reference internal" href="#renormalizer.model.Op" title="renormalizer.model.Op"><code class="xref py py-class docutils literal notranslate"><span class="pre">Op</span></code></a>
 or the operator contains DoF not defined in <code class="docutils literal notranslate"><span class="pre">self.basis</span></code>.
 Operators with factor = 0 are discarded.</p>
@@ -415,6 +417,7 @@ from <code class="xref py py-class docutils literal notranslate"><span class="pr
 <dt class="sig sig-object py" id="renormalizer.model.HolsteinModel.check_operator_terms">
 <span class="sig-name descname"><span class="pre">check_operator_terms</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">terms</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference external" href="https://docs.python.org/3/library/typing.html#typing.List" title="(in Python v3.13)"><span class="pre">List</span></a><span class="p"><span class="pre">[</span></span><a class="reference internal" href="#renormalizer.model.Op" title="renormalizer.model.op.Op"><span class="pre">Op</span></a><span class="p"><span class="pre">]</span></span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#renormalizer.model.HolsteinModel.check_operator_terms" title="Permalink to this definition">#</a></dt>
 <dd><p>Check and clean operator terms in the input <code class="docutils literal notranslate"><span class="pre">terms</span></code>.
+Ravels <code class="docutils literal notranslate"><span class="pre">OpSum</span></code> into <code class="docutils literal notranslate"><span class="pre">terms</span></code>.
 Errors will be raised if the type of operator is not <a class="reference internal" href="#renormalizer.model.Op" title="renormalizer.model.Op"><code class="xref py py-class docutils literal notranslate"><span class="pre">Op</span></code></a>
 or the operator contains DoF not defined in <code class="docutils literal notranslate"><span class="pre">self.basis</span></code>.
 Operators with factor = 0 are discarded.</p>
@@ -592,6 +595,7 @@ This is primarily for dump purposes.</p>
 <dt class="sig sig-object py" id="renormalizer.model.SpinBosonModel.check_operator_terms">
 <span class="sig-name descname"><span class="pre">check_operator_terms</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">terms</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference external" href="https://docs.python.org/3/library/typing.html#typing.List" title="(in Python v3.13)"><span class="pre">List</span></a><span class="p"><span class="pre">[</span></span><a class="reference internal" href="#renormalizer.model.Op" title="renormalizer.model.op.Op"><span class="pre">Op</span></a><span class="p"><span class="pre">]</span></span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#renormalizer.model.SpinBosonModel.check_operator_terms" title="Permalink to this definition">#</a></dt>
 <dd><p>Check and clean operator terms in the input <code class="docutils literal notranslate"><span class="pre">terms</span></code>.
+Ravels <code class="docutils literal notranslate"><span class="pre">OpSum</span></code> into <code class="docutils literal notranslate"><span class="pre">terms</span></code>.
 Errors will be raised if the type of operator is not <a class="reference internal" href="#renormalizer.model.Op" title="renormalizer.model.Op"><code class="xref py py-class docutils literal notranslate"><span class="pre">Op</span></code></a>
 or the operator contains DoF not defined in <code class="docutils literal notranslate"><span class="pre">self.basis</span></code>.
 Operators with factor = 0 are discarded.</p>
@@ -757,6 +761,7 @@ produces equivalent output.</p></li>
 <dt class="sig sig-object py" id="renormalizer.model.TI1DModel.check_operator_terms">
 <span class="sig-name descname"><span class="pre">check_operator_terms</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">terms</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference external" href="https://docs.python.org/3/library/typing.html#typing.List" title="(in Python v3.13)"><span class="pre">List</span></a><span class="p"><span class="pre">[</span></span><a class="reference internal" href="#renormalizer.model.Op" title="renormalizer.model.op.Op"><span class="pre">Op</span></a><span class="p"><span class="pre">]</span></span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#renormalizer.model.TI1DModel.check_operator_terms" title="Permalink to this definition">#</a></dt>
 <dd><p>Check and clean operator terms in the input <code class="docutils literal notranslate"><span class="pre">terms</span></code>.
+Ravels <code class="docutils literal notranslate"><span class="pre">OpSum</span></code> into <code class="docutils literal notranslate"><span class="pre">terms</span></code>.
 Errors will be raised if the type of operator is not <a class="reference internal" href="#renormalizer.model.Op" title="renormalizer.model.Op"><code class="xref py py-class docutils literal notranslate"><span class="pre">Op</span></code></a>
 or the operator contains DoF not defined in <code class="docutils literal notranslate"><span class="pre">self.basis</span></code>.
 Operators with factor = 0 are discarded.</p>

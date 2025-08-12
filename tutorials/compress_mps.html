@@ -12,7 +12,7 @@
         gtag('js', new Date());
         gtag('config', 'G-3HTENNM8CV');
     </script>
-    <link rel="index" title="Index" href="../genindex.html" /><link rel="search" title="Search" href="../search.html" /><link rel="next" title="Basics of Tree Tensor Networks" href="ttn_basic.html" /><link rel="prev" title="Quantum Numbers" href="quantum_number.html" />
+    <link rel="index" title="Index" href="../genindex.html" /><link rel="search" title="Search" href="../search.html" /><link rel="next" title="Time Evolution using Renormalizer" href="time_evolution.html" /><link rel="prev" title="Quantum Numbers" href="quantum_number.html" />
 
     <meta name="generator" content="sphinx-5.3.0, furo 2022.09.29"/>
         <title>Compressing MPS - Renormalizer 0.1.0 documentation</title>
@@ -171,6 +171,7 @@
 <li class="toctree-l2"><a class="reference internal" href="nuclear_basis.html">Nuclear Basis Set</a></li>
 <li class="toctree-l2"><a class="reference internal" href="quantum_number.html">Quantum Numbers</a></li>
 <li class="toctree-l2 current current-page"><a class="current reference internal" href="#">Compressing MPS</a></li>
+<li class="toctree-l2"><a class="reference internal" href="time_evolution.html">Time Evolution using Renormalizer</a></li>
 <li class="toctree-l2"><a class="reference internal" href="ttn_basic.html">Basics of Tree Tensor Networks</a></li>
 </ul>
 </li>
@@ -511,11 +512,11 @@ div.rendered_html tbody tr:hover {
 </div>
 <div class="output_area stderr docutils container">
 <div class="highlight"><pre>
-2025-08-12 05:18:15,287[INFO] Use NumPy as backend
-2025-08-12 05:18:15,288[INFO] numpy random seed is 9012
-2025-08-12 05:18:15,289[INFO] random seed is 1092
-2025-08-12 05:18:15,299[INFO] Git Commit Hash: e3fb0eb307176523fbd961a4a67abe202d498e91
-2025-08-12 05:18:15,300[INFO] use 64 bits
+2025-08-12 09:12:59,011[INFO] Use NumPy as backend
+2025-08-12 09:12:59,012[INFO] numpy random seed is 9012
+2025-08-12 09:12:59,012[INFO] random seed is 1092
+2025-08-12 09:12:59,021[INFO] Git Commit Hash: 17d8634f55d07699b9771eb4183b519874cb7d31
+2025-08-12 09:12:59,022[INFO] use 64 bits
 </pre></div></div>
 </div>
 <div class="nbinput docutils container">
@@ -630,10 +631,10 @@ div.rendered_html tbody tr:hover {
 </div>
 <div class="output_area stderr docutils container">
 <div class="highlight"><pre>
-2025-08-12 05:18:15,378[DEBUG] # of operator terms: 27
-2025-08-12 05:18:15,379[DEBUG] Input operator terms: 27
-2025-08-12 05:18:15,382[DEBUG] After combination of the same terms: 27
-2025-08-12 05:18:15,383[DEBUG] symbolic mpo algorithm: qr
+2025-08-12 09:12:59,099[DEBUG] # of operator terms: 27
+2025-08-12 09:12:59,100[DEBUG] Input operator terms: 27
+2025-08-12 09:12:59,103[DEBUG] After combination of the same terms: 27
+2025-08-12 09:12:59,103[DEBUG] symbolic mpo algorithm: qr
 </pre></div></div>
 </div>
 <div class="nboutput nblast docutils container">
@@ -708,7 +709,7 @@ array([ 1,  8, 25, 20, 25, 25, 20, 15, 15,  1])
 </div>
 <div class="output_area stderr docutils container">
 <div class="highlight"><pre>
-2025-08-12 05:18:15,447[DEBUG] size before/after compress: 47.2KiB/4.2KiB, ratio: 11.177777777777777
+2025-08-12 09:12:59,170[DEBUG] size before/after compress: 47.2KiB/4.2KiB, ratio: 11.177777777777777
 </pre></div></div>
 </div>
 <div class="nboutput nblast docutils container">
@@ -737,18 +738,66 @@ array([ 1,  8, 25, 20, 25, 25, 20, 15, 15,  1])
 </div>
 <div class="output_area docutils container">
 <div class="highlight"><pre>
-(0.0031058187888397598, 0.003148758678336175, 0.013637084922336801)
+(0.00310581878883976, 0.0031487586783361743, 0.013637084922336392)
 </pre></div></div>
 </div>
 <blockquote>
 <div><p>As a result of the random generation of the MPS, the compress accuracy is not very impressive. Much higher efficiency can be expected for the real wavefunction of quantum systems.</p>
 </div></blockquote>
+<p>To estimate the `<code class="docutils literal notranslate"><span class="pre">truncation</span> <span class="pre">error'',</span> <span class="pre">firstly</span> <span class="pre">obtain</span> <span class="pre">all</span> <span class="pre">singular</span> <span class="pre">values</span> <span class="pre">before</span> <span class="pre">compression</span> <span class="pre">in</span></code>s_list<code class="docutils literal notranslate"><span class="pre">by</span> <span class="pre">setting</span></code>ret_s=True`.</p>
+<div class="nbinput docutils container">
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[12]:
+</pre></div>
+</div>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">mps3</span> <span class="o">=</span> <span class="n">mps2</span><span class="o">.</span><span class="n">copy</span><span class="p">()</span>
+<span class="n">mps3</span><span class="p">,</span> <span class="n">s_list</span> <span class="o">=</span> <span class="n">mps3</span><span class="o">.</span><span class="n">canonicalise</span><span class="p">()</span><span class="o">.</span><span class="n">compress</span><span class="p">(</span><span class="n">m_trunc</span><span class="p">,</span> <span class="n">ret_s</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+</pre></div>
+</div>
+</div>
+<div class="nboutput nblast docutils container">
+<div class="prompt empty docutils container">
+</div>
+<div class="output_area stderr docutils container">
+<div class="highlight"><pre>
+2025-08-12 09:12:59,208[DEBUG] size before/after compress: 47.2KiB/4.2KiB, ratio: 11.177777777777777
+</pre></div></div>
+</div>
+<p>Then compute the largest truncation error, which corresponds to the most significant discarded singular value from all tensor slices.</p>
+<div class="nbinput docutils container">
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[13]:
+</pre></div>
+</div>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">truncation_error</span> <span class="o">=</span> <span class="mf">0.0</span>
+
+<span class="c1"># Iterate over each singular value list in s_list</span>
+<span class="k">for</span> <span class="n">s</span> <span class="ow">in</span> <span class="n">s_list</span><span class="p">:</span>
+    <span class="c1"># Sort the singular values in descending order</span>
+    <span class="n">sorted_s</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">sort</span><span class="p">(</span><span class="n">s</span><span class="p">)[::</span><span class="o">-</span><span class="mi">1</span><span class="p">]</span>
+
+    <span class="c1"># If there are more than m_trunc singular values, calculate the largest discarded singular value</span>
+    <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">sorted_s</span><span class="p">)</span> <span class="o">&gt;</span> <span class="n">m_trunc</span><span class="p">:</span>
+        <span class="n">discarded_singular_value</span> <span class="o">=</span> <span class="n">sorted_s</span><span class="p">[</span><span class="n">m_trunc</span><span class="p">]</span>
+        <span class="n">truncation_error</span> <span class="o">=</span> <span class="nb">max</span><span class="p">(</span><span class="n">truncation_error</span><span class="p">,</span> <span class="n">discarded_singular_value</span><span class="p">)</span>
+
+<span class="n">truncation_error</span>
+</pre></div>
+</div>
+</div>
+<div class="nboutput nblast docutils container">
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[13]:
+</pre></div>
+</div>
+<div class="output_area docutils container">
+<div class="highlight"><pre>
+0.005418923170129935
+</pre></div></div>
+</div>
 </section>
 <section id="Compress-Configuration">
 <h2>Compress Configuration<a class="headerlink" href="#Compress-Configuration" title="Permalink to this heading">#</a></h2>
 <p>It is sometimes desirable to perform truncation based on the magnitude of the singular values. Also, in production level calculations, MPSs are frequently compressed according to a fixed strategy. We can set the <code class="docutils literal notranslate"><span class="pre">compress_config</span></code> attribute for MPS to control the compression behavior</p>
 <div class="nbinput nblast docutils container">
-<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[12]:
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[14]:
 </pre></div>
 </div>
 <div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="kn">from</span><span class="w"> </span><span class="nn">renormalizer.utils</span><span class="w"> </span><span class="kn">import</span> <span class="n">CompressConfig</span><span class="p">,</span> <span class="n">CompressCriteria</span>
@@ -756,7 +805,7 @@ array([ 1,  8, 25, 20, 25, 25, 20, 15, 15,  1])
 </div>
 </div>
 <div class="nbinput nblast docutils container">
-<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[13]:
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[15]:
 </pre></div>
 </div>
 <div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">mps3</span> <span class="o">=</span> <span class="n">mps2</span><span class="o">.</span><span class="n">copy</span><span class="p">()</span>
@@ -767,7 +816,7 @@ array([ 1,  8, 25, 20, 25, 25, 20, 15, 15,  1])
 <p>Here the compress criteria is set to the singular value threshold, which is set to 1e-5.</p>
 <p><code class="docutils literal notranslate"><span class="pre">CompressCriteria</span></code> is an <code class="docutils literal notranslate"><span class="pre">Enum</span></code> class for all possible compression strategies. Currently there’re three different strategies.</p>
 <div class="nbinput docutils container">
-<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[14]:
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[16]:
 </pre></div>
 </div>
 <div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="p">[</span><span class="n">s</span> <span class="k">for</span> <span class="n">s</span> <span class="ow">in</span> <span class="nb">dir</span><span class="p">(</span><span class="n">CompressCriteria</span><span class="p">)</span> <span class="k">if</span> <span class="ow">not</span> <span class="n">s</span><span class="o">.</span><span class="n">startswith</span><span class="p">(</span><span class="s2">&quot;__&quot;</span><span class="p">)]</span>
@@ -775,7 +824,7 @@ array([ 1,  8, 25, 20, 25, 25, 20, 15, 15,  1])
 </div>
 </div>
 <div class="nboutput nblast docutils container">
-<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[14]:
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[16]:
 </pre></div>
 </div>
 <div class="output_area docutils container">
@@ -788,7 +837,7 @@ array([ 1,  8, 25, 20, 25, 25, 20, 15, 15,  1])
 </div></blockquote>
 <p>We next compress <code class="docutils literal notranslate"><span class="pre">mps3</span></code> using the compress configuration associated with the <code class="docutils literal notranslate"><span class="pre">mps3</span></code> object. <span class="math notranslate nohighlight">\(10^{-5}\)</span> is a relatively tight threshold, so the bond dimension is higher than 5.</p>
 <div class="nbinput docutils container">
-<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[15]:
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[17]:
 </pre></div>
 </div>
 <div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">mps3</span><span class="o">.</span><span class="n">canonicalise</span><span class="p">()</span><span class="o">.</span><span class="n">compress</span><span class="p">()</span>
@@ -801,11 +850,11 @@ array([ 1,  8, 25, 20, 25, 25, 20, 15, 15,  1])
 </div>
 <div class="output_area stderr docutils container">
 <div class="highlight"><pre>
-2025-08-12 05:18:15,511[DEBUG] size before/after compress: 47.2KiB/26.5KiB, ratio: 1.7784325279905715
+2025-08-12 09:12:59,262[DEBUG] size before/after compress: 47.2KiB/26.5KiB, ratio: 1.7784325279905715
 </pre></div></div>
 </div>
 <div class="nboutput nblast docutils container">
-<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[15]:
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[17]:
 </pre></div>
 </div>
 <div class="output_area docutils container">
@@ -815,7 +864,7 @@ array([ 1,  8, 25, 20, 25, 25, 20, 15, 15,  1])
 </div>
 <p>We can expect that the accuracy is also higher</p>
 <div class="nbinput docutils container">
-<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[16]:
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[18]:
 </pre></div>
 </div>
 <div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">e1</span> <span class="o">=</span> <span class="n">mps3</span><span class="o">.</span><span class="n">expectation</span><span class="p">(</span><span class="n">mpo</span><span class="p">)</span>
@@ -825,12 +874,12 @@ array([ 1,  8, 25, 20, 25, 25, 20, 15, 15,  1])
 </div>
 </div>
 <div class="nboutput nblast docutils container">
-<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[16]:
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[18]:
 </pre></div>
 </div>
 <div class="output_area docutils container">
 <div class="highlight"><pre>
-(0.0031487586783361704, 0.003148758678336175, 1.5150381614690706e-15)
+(0.003148758678336171, 0.0031487586783361743, 1.1018459356138698e-15)
 </pre></div></div>
 </div>
 </section>
@@ -841,12 +890,12 @@ array([ 1,  8, 25, 20, 25, 25, 20, 15, 15,  1])
       <footer>
         
         <div class="related-pages">
-          <a class="next-page" href="ttn_basic.html">
+          <a class="next-page" href="time_evolution.html">
               <div class="page-info">
                 <div class="context">
                   <span>Next</span>
                 </div>
-                <div class="title">Basics of Tree Tensor Networks</div>
+                <div class="title">Time Evolution using Renormalizer</div>
               </div>
               <svg class="furo-related-icon"><use href="#svg-arrow-right"></use></svg>
             </a>

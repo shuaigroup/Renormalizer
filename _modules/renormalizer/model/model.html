@@ -170,6 +170,7 @@
 <li class="toctree-l2"><a class="reference internal" href="../../../tutorials/nuclear_basis.html">Nuclear Basis Set</a></li>
 <li class="toctree-l2"><a class="reference internal" href="../../../tutorials/quantum_number.html">Quantum Numbers</a></li>
 <li class="toctree-l2"><a class="reference internal" href="../../../tutorials/compress_mps.html">Compressing MPS</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../../tutorials/time_evolution.html">Time Evolution using Renormalizer</a></li>
 <li class="toctree-l2"><a class="reference internal" href="../../../tutorials/ttn_basic.html">Basics of Tree Tensor Networks</a></li>
 </ul>
 </li>
@@ -237,7 +238,7 @@
 
 <span class="kn">from</span><span class="w"> </span><span class="nn">renormalizer.model.basis</span><span class="w"> </span><span class="kn">import</span> <span class="n">BasisSet</span><span class="p">,</span> <span class="n">BasisSimpleElectron</span><span class="p">,</span> <span class="n">BasisMultiElectronVac</span><span class="p">,</span> <span class="n">BasisHalfSpin</span><span class="p">,</span> <span class="n">BasisSHO</span>
 <span class="kn">from</span><span class="w"> </span><span class="nn">renormalizer.model.mol</span><span class="w"> </span><span class="kn">import</span> <span class="n">Mol</span><span class="p">,</span> <span class="n">Phonon</span>
-<span class="kn">from</span><span class="w"> </span><span class="nn">renormalizer.model.op</span><span class="w"> </span><span class="kn">import</span> <span class="n">Op</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">renormalizer.model.op</span><span class="w"> </span><span class="kn">import</span> <span class="n">Op</span><span class="p">,</span> <span class="n">OpSum</span>
 <span class="kn">from</span><span class="w"> </span><span class="nn">renormalizer.utils</span><span class="w"> </span><span class="kn">import</span> <span class="n">Quantity</span><span class="p">,</span> <span class="n">cached_property</span>
 
 
@@ -306,6 +307,7 @@
 <div class="viewcode-block" id="Model.check_operator_terms"><a class="viewcode-back" href="../../../model.html#renormalizer.model.Model.check_operator_terms">[docs]</a>    <span class="k">def</span><span class="w"> </span><span class="nf">check_operator_terms</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">terms</span><span class="p">:</span> <span class="n">List</span><span class="p">[</span><span class="n">Op</span><span class="p">]):</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">        Check and clean operator terms in the input ``terms``.</span>
+<span class="sd">        Ravels ``OpSum`` into ``terms``.</span>
 <span class="sd">        Errors will be raised if the type of operator is not :class:`Op`</span>
 <span class="sd">        or the operator contains DoF not defined in ``self.basis``.</span>
 <span class="sd">        Operators with factor = 0 are discarded.</span>
@@ -320,12 +322,21 @@
 <span class="sd">        new_terms: :class:`list` of :class:`Op`</span>
 <span class="sd">            Operator list with 0-factor terms discarded.</span>
 <span class="sd">        &quot;&quot;&quot;</span>
-        <span class="c1"># terms to return</span>
+        <span class="c1"># ravels OpSum</span>
+        <span class="n">new_terms</span> <span class="o">=</span> <span class="p">[]</span>
+        <span class="k">for</span> <span class="n">term_op</span> <span class="ow">in</span> <span class="n">terms</span><span class="p">:</span>
+            <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">term_op</span><span class="p">,</span> <span class="n">Op</span><span class="p">):</span>
+                <span class="n">new_terms</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">term_op</span><span class="p">)</span>
+            <span class="k">elif</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">term_op</span><span class="p">,</span> <span class="n">OpSum</span><span class="p">):</span>
+                <span class="n">new_terms</span><span class="o">.</span><span class="n">extend</span><span class="p">(</span><span class="n">term_op</span><span class="p">)</span>
+            <span class="k">else</span><span class="p">:</span>
+                <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Expected Op in terms. Got </span><span class="si">{</span><span class="nb">type</span><span class="p">(</span><span class="n">term_op</span><span class="p">)</span><span class="si">}</span><span class="s2">. Str representation: </span><span class="si">{</span><span class="n">term_op</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+
+        <span class="c1"># check and filter</span>
+        <span class="n">terms</span> <span class="o">=</span> <span class="n">new_terms</span>
         <span class="n">new_terms</span> <span class="o">=</span> <span class="p">[]</span>
         <span class="n">dofs</span> <span class="o">=</span> <span class="nb">set</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">dofs</span><span class="p">)</span>
         <span class="k">for</span> <span class="n">term_op</span> <span class="ow">in</span> <span class="n">terms</span><span class="p">:</span>
-            <span class="k">if</span> <span class="ow">not</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">term_op</span><span class="p">,</span> <span class="n">Op</span><span class="p">):</span>
-                <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Expected Op in terms. Got </span><span class="si">{</span><span class="n">term_op</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
             <span class="k">for</span> <span class="n">name</span> <span class="ow">in</span> <span class="n">term_op</span><span class="o">.</span><span class="n">dofs</span><span class="p">:</span>
                 <span class="k">if</span> <span class="n">name</span> <span class="ow">not</span> <span class="ow">in</span> <span class="n">dofs</span><span class="p">:</span>
                     <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;</span><span class="si">{</span><span class="n">term_op</span><span class="si">}</span><span class="s2"> contains DoF not in the basis.&quot;</span><span class="p">)</span>
