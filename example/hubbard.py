@@ -3,9 +3,7 @@ from renormalizer.model.op import Op
 from renormalizer.model.basis import BasisHalfSpin
 from renormalizer import Model, Mps, Mpo, optimize_mps
 from renormalizer.utils import EvolveConfig, EvolveMethod
-import logging
-
-logger = logging.getLogger("renormalizer")
+from renormalizer.utils.log import package_logger as logger
 
 """
 one dimensional Hubbard model with open boundary condition

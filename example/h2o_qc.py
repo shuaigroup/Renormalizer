@@ -6,6 +6,7 @@ import numpy as np
 from renormalizer import Model, Mps, Mpo, optimize_mps
 from renormalizer.model import h_qc
 from renormalizer.utils import log
+from renormalizer.utils.log import package_logger as logger
 
 '''
 water sto-3g (10e,7o)
@@ -22,7 +23,6 @@ if __name__ == "__main__":
     job_name = "qc"  #########
     log.set_stream_level(logging.DEBUG)
     log.register_file_output(dump_dir+job_name+".log", mode="w")
-    logger = logging.getLogger("renormalizer")
 
     spatial_norbs = 7
     spin_norbs = spatial_norbs * 2

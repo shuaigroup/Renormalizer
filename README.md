@@ -68,6 +68,7 @@ To do this, set the environment variable before running Python
 export RENO_NUM_THREADS=1
 ```
 which sets all environment variables for underlying linear algebra libraries, such as `MKL_NUM_THREADS`.
+Note that this is only effective if you import Renomalizer before import NumPy
 Alternatively, if you are submitting tasks via (a properly configured) slurm, set `--cpus-per-task` to limit CPU usage.
 
 > [!IMPORTANT]  

@@ -12,7 +12,6 @@ from renormalizer.model import load_from_dict
 from renormalizer.transport import TransportKubo
 from renormalizer.utils import log, EvolveConfig, CompressConfig
 
-logger = logging.getLogger(__name__)
 
 if __name__ == "__main__":
     if len(sys.argv) != 2:
