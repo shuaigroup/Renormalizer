@@ -11,6 +11,7 @@ please refer to the :doc:`applications`.
     tutorials/nuclear_basis.ipynb
     tutorials/quantum_number.ipynb
     tutorials/compress_mps.ipynb
+    tutorials/time_evolution.ipynb
     tutorials/ttn_basic.ipynb
 
 ..

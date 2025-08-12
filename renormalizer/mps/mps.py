@@ -11,7 +11,7 @@ import scipy
 from scipy import stats
 
 from renormalizer.lib import solve_ivp, expm_krylov
-from renormalizer.model import Model, Op, basis as ba
+from renormalizer.model import Model, Op, OpSum, basis as ba
 from renormalizer.mps import svd_qn
 from renormalizer.mps.svd_qn import add_outer, get_qn_mask
 from renormalizer.mps.backend import backend, np, xp
@@ -185,7 +185,7 @@ class Mps(MatrixProduct):
         return mps
 
     @classmethod
-    def hartree_product_state(cls, model, condition: Dict, qn_idx:int=None):
+    def hartree_product_state(cls, model, condition:Dict = None, qn_idx:int = None):
         r"""
         Construct a Hartree product state
         
@@ -208,7 +208,10 @@ class Mps(MatrixProduct):
         Returns:
             Constructed mps (:class:`Mps`)
         """
-        
+
+        if condition is None:
+            condition = {}
+
         mps = cls()
         mps.model = model
         mps.build_empty_mp(model.nsite)
@@ -465,7 +468,48 @@ class Mps(MatrixProduct):
     def _expectation_conj(self):
         return self.conj()
 
-    def expectation(self, mpo, self_conj=None) -> Union[float, complex]:
+    def expectation(self, mpo: Union[Mpo, Op, OpSum], self_conj: "Mps"=None) -> Union[float, complex]:
+        r"""
+        Calculate the expectation value of the operator ``mpo`` with respect to the MPS.
+
+        For the expectation value :math:`\langle \psi | \hat O | \psi \rangle`, ``self`` is :math:`|\psi\rangle`
+        and ``mpo`` is :math:`\hat O`.
+        For the transition amplitude :math:`\langle \phi | \hat O | \psi \rangle`,
+        ``self_conj`` should be set to :math:`|\phi\rangle`.
+
+        Parameters
+        ----------
+        mpo : Union[MPO, Op, OpSum]
+            The operator. Can be provided as:
+            - MPO: Matrix Product Operator
+            - Op: Single symbolic operator
+            - OpSum: Sum of symbolic operators
+        self_conj : :class:`~renormalizer.mps.Mps`, optional
+            The MPS for the bra vector. If not provided, uses the conjugate of ``self``.
+
+        Returns
+        -------
+        expectation: Union[float, complex]
+            The expectation value or transition amplitude. Returns a float if the imaginary part is negligible.
+
+        Examples
+        --------
+        >>> from renormalizer import Mps, Mpo, Model, Op, BasisHalfSpin
+        >>> model = Model([BasisHalfSpin(0)], [])
+        >>> mps = Mps.hartree_product_state(model, condition={})
+        >>> mpo = Mpo(model, Op("X", 0))
+        >>> mps.expectation(mpo)
+        0.0
+        >>> mps.expectation(Op("X", 0))  # direct Op input
+        0.0
+
+        >>> mps2 = Mps.hartree_product_state(model, condition={0: [0,1]})
+        >>> mps.expectation(mpo, self_conj=mps2)
+        1.0
+        """
+        # Convert Op/OpSum to MPO if needed
+        if isinstance(mpo, (Op, OpSum)):
+            mpo = Mpo(self.model, mpo)
         if self_conj is None:
             self_conj = self._expectation_conj()
         environ = Environ(self, mpo, "R", mps_conj=self_conj)
@@ -480,7 +524,14 @@ class Mps(MatrixProduct):
         # This is time and memory consuming
         # return self_conj.dot(mpo.apply(self)).real
 
-    def expectations(self, mpos, self_conj=None, opt=True) -> np.ndarray:
+    def expectations(self, mpos: Union[List[Union[Mpo, Op, OpSum]]], self_conj:"Mps"=None, opt:bool=True) -> np.ndarray:
+        new_mpos = []
+        for mpo in mpos:
+            # Convert Op/OpSum to MPO if needed
+            if isinstance(mpo, (Op, OpSum)):
+                mpo = Mpo(self.model, mpo)
+            new_mpos.append(mpo)
+        mpos = new_mpos
 
         if not opt:
             # the naive way, slow and time consuming. Yet predictable and reliable

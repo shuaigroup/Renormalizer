@@ -9,7 +9,7 @@ import numpy as np
 
 from renormalizer.model.basis import BasisSet, BasisSimpleElectron, BasisMultiElectronVac, BasisHalfSpin, BasisSHO
 from renormalizer.model.mol import Mol, Phonon
-from renormalizer.model.op import Op
+from renormalizer.model.op import Op, OpSum
 from renormalizer.utils import Quantity, cached_property
 
 
@@ -78,6 +78,7 @@ class Model:
     def check_operator_terms(self, terms: List[Op]):
         """
         Check and clean operator terms in the input ``terms``.
+        Ravels ``OpSum`` into ``terms``.
         Errors will be raised if the type of operator is not :class:`Op`
         or the operator contains DoF not defined in ``self.basis``.
         Operators with factor = 0 are discarded.
@@ -92,12 +93,21 @@ class Model:
         new_terms: :class:`list` of :class:`Op`
             Operator list with 0-factor terms discarded.
         """
-        # terms to return
+        # ravels OpSum
+        new_terms = []
+        for term_op in terms:
+            if isinstance(term_op, Op):
+                new_terms.append(term_op)
+            elif isinstance(term_op, OpSum):
+                new_terms.extend(term_op)
+            else:
+                raise ValueError(f"Expected Op in terms. Got {type(term_op)}. Str representation: {term_op}")
+
+        # check and filter
+        terms = new_terms
         new_terms = []
         dofs = set(self.dofs)
         for term_op in terms:
-            if not isinstance(term_op, Op):
-                raise ValueError(f"Expected Op in terms. Got {term_op}")
             for name in term_op.dofs:
                 if name not in dofs:
                     raise ValueError(f"{term_op} contains DoF not in the basis.")

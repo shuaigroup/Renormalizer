@@ -3,7 +3,7 @@ import logging
 
 import scipy
 
-from renormalizer import Op, Mps, Model
+from renormalizer import Op, Mps, Model, OpSum
 from renormalizer.model.basis import BasisSet, BasisDummy
 from renormalizer.mps.backend import np, backend, xp
 from renormalizer.mps.matrix import asnumpy, asxp_oe_args, tensordot
@@ -867,21 +867,51 @@ class TTNS(TTNBase):
         else:
             return complex(val)
 
-    def expectation(self, ttno: TTNO, bra: "TTNS" = None) -> Union[float, complex]:
-        """
-        Calculate the expectation value of <bra|TTNO|self>.
+    def expectation(self, ttno: Union[TTNO, Op, OpSum], bra: "TTNS" = None) -> Union[float, complex]:
+        r"""
+        Compute the expectation value of an operator with respect to the tree tensor network state (TTNS).
+
+        The operator can be provided as:
+        - A tree tensor network operator (TTNO)
+        - A single symbolic operator (:class:`~renormalizer.model.Op`)
+        - A sum of operators (:class:`~renormalizer.model.OpSum`)
+
+        .. math::
+            \langle \psi | \hat{O} | \psi \rangle
+
+        where :math:`|\psi\rangle` is the current TTNS (ket). The `bra` vector is currently not supported.
 
         Parameters
         ----------
-        ttno: TTNO
-            The operator for expectation
-        bra: TTNS
-            The bra state in TTNS format. Defaults to None and the bra is the same as self.
+        ttno : :class:`~renormalizer.tn.TTNO`, :class:`~renormalizer.model.Op`, or :class:`~renormalizer.model.OpSum`
+            The operator to compute the expectation value of. If an `Op` or `OpSum` is provided,
+            it is automatically converted to a TTNO using the basis tree of the current TTNS.
+        bra : :class:`~renormalizer.tn.TTNS`, optional
+            The bra vector (currently not implemented). Defaults to None.
 
         Returns
         -------
-        The expectation value
+        float or complex
+            The expectation value. Returns a float if the imaginary part is negligible; otherwise returns complex.
+
+        Examples
+        --------
+        >>> from renormalizer import Op, BasisHalfSpin
+        >>> from renormalizer.tn import TTNS, BasisTree
+
+        # Build a TTNS and operator
+        >>> basis_tree = BasisTree.binary([BasisHalfSpin(0), BasisHalfSpin(1)])
+        >>> ttns = TTNS(basis_tree)
+        >>> op = Op("sigma_z", 0)
+
+        # Compute expectation value
+        >>> ttns.expectation(op)
+        1.0
         """
+        # Convert Op/OpSum to MPO if needed
+        if isinstance(ttno, (Op, OpSum)):
+            ttno = TTNO(self.basis, ttno)
+
         assert bra is None  # not implemented yet
         basis_node = TreeNodeBasis([BasisDummy("expectation dummy")])
         basis_node_ttns = basis_node
