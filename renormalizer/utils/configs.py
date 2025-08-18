@@ -1,5 +1,6 @@
 # -*- coding: utf-8 -*-
 from enum import Enum
+from typing import Union
 import logging
 
 from renormalizer.utils.rk import RungeKutta, TaylorExpansion
@@ -126,7 +127,7 @@ class CompressConfig:
     """
     def __init__(
         self,
-        criteria: CompressCriteria = CompressCriteria.threshold,
+        criteria: Union[CompressCriteria, str] = CompressCriteria.threshold,
         threshold: float = 1e-3,
         max_bonddim: int = 32,
         vmethod: str = "2site",
@@ -140,6 +141,10 @@ class CompressConfig:
     ):
         # two sets of criteria here: threshold and max_bonddimension
         # `criteria` is to determine which to use
+        if isinstance(criteria, str):
+            criteria = getattr(CompressCriteria, criteria)
+            if criteria is None:
+                raise ValueError(f"Unknown compress criteria {criteria}")
         self.criteria: CompressCriteria = criteria
         self._threshold = None
         self.threshold = threshold
@@ -337,7 +342,7 @@ def parse_memory_limit(x) -> float:
 class EvolveConfig:
     def __init__(
         self,
-        method: EvolveMethod = EvolveMethod.prop_and_compress,
+        method: Union[EvolveMethod, str] = EvolveMethod.prop_and_compress,
         adaptive=False,
         guess_dt=1e-1,
         adaptive_rtol=5e-4,
@@ -349,7 +354,10 @@ class EvolveConfig:
         ivp_solver="krylov",
         force_ovlp=True
     ):
-
+        if isinstance(method, str):
+            method = getattr(EvolveMethod, method)
+            if method is None:
+                raise ValueError(f"Unknown time evolution method: {method}")
         self.method = method
         self.adaptive = adaptive
         self.rk_config = RungeKutta(rk_solver)

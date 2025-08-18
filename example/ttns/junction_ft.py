@@ -216,6 +216,7 @@ else:
 
 ttns = TTNS(basis_tree, condition=condition)
 ttns.compress_config = CompressConfig(CompressCriteria.fixed, max_bonddim=Ms)
+# must expand bond dimension to target value first since TDVP-PS can not increase bond dimension
 ttns = expand_bond_dimension_general(ttns, ttno, ex_mps=None)
 ttns.evolve_config = EvolveConfig(EvolveMethod.tdvp_ps)
 ttns.print_shape(print_function=logger.info, full=False)

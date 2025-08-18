@@ -122,6 +122,7 @@ for imode in range(n_ph_mode):
     ham_terms.extend(op)
 
 # put subtrees together for the final tree
+# an empirical function to compute the basis required for each mode at zero temperature
 nbas = np.max([16 * c2 / w**3, np.ones(n_ph_mode) * 4], axis=0)
 nbas = np.round(nbas).astype(int)
 logger.info(nbas)
@@ -160,6 +161,7 @@ else:
 
 ttns = TTNS(basis_tree, condition=condition)
 ttns.compress_config = CompressConfig(CompressCriteria.fixed, max_bonddim=32)
+# must expand bond dimension to target value first since TDVP-PS can not increase bond dimension
 ttns = expand_bond_dimension_general(ttns, ttno, ex_mps=None)
 ttns.evolve_config = EvolveConfig(EvolveMethod.tdvp_ps)
 ttns.print_shape(print_function=logger.info, full=False)

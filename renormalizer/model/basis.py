@@ -158,6 +158,9 @@ class BasisSHO(BasisSet):
 
         self._recursion_flag += 1
 
+        # prevent side effect of split(" ")
+        op_symbol = op_symbol.replace(r"b^\dagger + b", r"b^\dagger+b")
+
         # so many if-else might be a potential performance problem in the future
         # changing to lazy-evaluation dict should be better
 

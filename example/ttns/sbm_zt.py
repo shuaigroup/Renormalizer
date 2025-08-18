@@ -64,6 +64,7 @@ for imode in range(nmodes):
             factor=c[imode], qn=[0,0])
     ham_terms.append(op)
 
+# an empirical function to compute the basis required for each mode at zero temperature
 nbas = np.max([16 * c2/w**3, np.ones(nmodes)*4], axis=0)
 nbas = np.round(nbas).astype(int)
 logger.info(nbas)
@@ -90,6 +91,7 @@ exp_z = TTNO(basis_tree, Op("sigma_z", "spin"))
 exp_x = TTNO(basis_tree, Op("sigma_x", "spin"))
 ttns = TTNS(basis_tree)
 ttns.compress_config = CompressConfig(CompressCriteria.fixed, max_bonddim=Ms)
+# must expand bond dimension to target value first since TDVP-PS can not increase bond dimension
 ttns = expand_bond_dimension_general(ttns, ttno, ex_mps=None)
 logger.info(ttns.bond_dims)
 logger.info(ttno.bond_dims)
