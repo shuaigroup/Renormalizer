@@ -28,10 +28,10 @@
    "id": "a3c7be6c-e2d3-4a67-aeb1-e390f9a50361",
    "metadata": {
     "execution": {
-     "iopub.execute_input": "2025-08-12T09:13:07.675205Z",
-     "iopub.status.busy": "2025-08-12T09:13:07.674970Z",
-     "iopub.status.idle": "2025-08-12T09:13:11.460227Z",
-     "shell.execute_reply": "2025-08-12T09:13:11.459475Z"
+     "iopub.execute_input": "2025-08-18T06:50:36.805585Z",
+     "iopub.status.busy": "2025-08-18T06:50:36.805011Z",
+     "iopub.status.idle": "2025-08-18T06:50:40.148715Z",
+     "shell.execute_reply": "2025-08-18T06:50:40.147942Z"
     }
    },
    "outputs": [
@@ -39,35 +39,35 @@
      "name": "stderr",
      "output_type": "stream",
      "text": [
-      "2025-08-12 09:13:08,318[INFO] Use NumPy as backend\n"
+      "2025-08-18 06:50:37,441[INFO] Use NumPy as backend\n"
      ]
     },
     {
      "name": "stderr",
      "output_type": "stream",
      "text": [
-      "2025-08-12 09:13:08,319[INFO] numpy random seed is 9012\n"
+      "2025-08-18 06:50:37,442[INFO] numpy random seed is 9012\n"
      ]
     },
     {
      "name": "stderr",
      "output_type": "stream",
      "text": [
-      "2025-08-12 09:13:08,320[INFO] random seed is 1092\n"
+      "2025-08-18 06:50:37,443[INFO] random seed is 1092\n"
      ]
     },
     {
      "name": "stderr",
      "output_type": "stream",
      "text": [
-      "2025-08-12 09:13:08,329[INFO] Git Commit Hash: 17d8634f55d07699b9771eb4183b519874cb7d31\n"
+      "2025-08-18 06:50:37,452[INFO] Git Commit Hash: c080e702a6ee0a055fc180ecc6ad885b0368b1c1\n"
      ]
     },
     {
      "name": "stderr",
      "output_type": "stream",
      "text": [
-      "2025-08-12 09:13:08,330[INFO] use 64 bits\n"
+      "2025-08-18 06:50:37,454[INFO] use 64 bits\n"
      ]
     }
    ],
@@ -90,10 +90,10 @@
    "id": "43e06282-3791-4bd6-938f-90aa18a04352",
    "metadata": {
     "execution": {
-     "iopub.execute_input": "2025-08-12T09:13:11.463033Z",
-     "iopub.status.busy": "2025-08-12T09:13:11.462452Z",
-     "iopub.status.idle": "2025-08-12T09:13:11.465847Z",
-     "shell.execute_reply": "2025-08-12T09:13:11.465189Z"
+     "iopub.execute_input": "2025-08-18T06:50:40.151696Z",
+     "iopub.status.busy": "2025-08-18T06:50:40.151243Z",
+     "iopub.status.idle": "2025-08-18T06:50:40.155065Z",
+     "shell.execute_reply": "2025-08-18T06:50:40.154333Z"
     }
    },
    "outputs": [],
@@ -107,10 +107,10 @@
    "id": "c41a8dc5-28a3-403c-bcfd-39087875764e",
    "metadata": {
     "execution": {
-     "iopub.execute_input": "2025-08-12T09:13:11.467902Z",
-     "iopub.status.busy": "2025-08-12T09:13:11.467434Z",
-     "iopub.status.idle": "2025-08-12T09:13:11.477393Z",
-     "shell.execute_reply": "2025-08-12T09:13:11.476732Z"
+     "iopub.execute_input": "2025-08-18T06:50:40.157507Z",
+     "iopub.status.busy": "2025-08-18T06:50:40.157076Z",
+     "iopub.status.idle": "2025-08-18T06:50:40.167385Z",
+     "shell.execute_reply": "2025-08-18T06:50:40.166776Z"
     }
    },
    "outputs": [],
@@ -140,10 +140,10 @@
    "id": "4b21a5f9-39b1-4f3e-98e6-8dea0b810526",
    "metadata": {
     "execution": {
-     "iopub.execute_input": "2025-08-12T09:13:11.479618Z",
-     "iopub.status.busy": "2025-08-12T09:13:11.479158Z",
-     "iopub.status.idle": "2025-08-12T09:13:17.501313Z",
-     "shell.execute_reply": "2025-08-12T09:13:17.500543Z"
+     "iopub.execute_input": "2025-08-18T06:50:40.169875Z",
+     "iopub.status.busy": "2025-08-18T06:50:40.169647Z",
+     "iopub.status.idle": "2025-08-18T06:50:46.329188Z",
+     "shell.execute_reply": "2025-08-18T06:50:46.328358Z"
     }
    },
    "outputs": [
@@ -223,10 +223,10 @@
    "id": "9dce33c0-e5d1-4232-b2fc-993d30528a2a",
    "metadata": {
     "execution": {
-     "iopub.execute_input": "2025-08-12T09:13:17.503781Z",
-     "iopub.status.busy": "2025-08-12T09:13:17.503281Z",
-     "iopub.status.idle": "2025-08-12T09:13:17.555896Z",
-     "shell.execute_reply": "2025-08-12T09:13:17.555321Z"
+     "iopub.execute_input": "2025-08-18T06:50:46.331851Z",
+     "iopub.status.busy": "2025-08-18T06:50:46.331402Z",
+     "iopub.status.idle": "2025-08-18T06:50:46.382737Z",
+     "shell.execute_reply": "2025-08-18T06:50:46.382136Z"
     }
    },
    "outputs": [],
@@ -270,10 +270,10 @@
    "id": "fab4d11e-80b7-4eac-b240-69c5a300a7d4",
    "metadata": {
     "execution": {
-     "iopub.execute_input": "2025-08-12T09:13:17.558006Z",
-     "iopub.status.busy": "2025-08-12T09:13:17.557818Z",
-     "iopub.status.idle": "2025-08-12T09:13:22.712145Z",
-     "shell.execute_reply": "2025-08-12T09:13:22.711451Z"
+     "iopub.execute_input": "2025-08-18T06:50:46.385723Z",
+     "iopub.status.busy": "2025-08-18T06:50:46.385263Z",
+     "iopub.status.idle": "2025-08-18T06:50:51.651775Z",
+     "shell.execute_reply": "2025-08-18T06:50:51.650977Z"
     }
    },
    "outputs": [
@@ -319,6 +319,29 @@
     "plt.savefig(\"sho_variational.pdf\")\n",
     "plt.show()"
    ]
+  },
+  {
+   "cell_type": "markdown",
+   "id": "d792525f-6215-436e-a923-fbaa4ffa2c29",
+   "metadata": {},
+   "source": [
+    "## Final Remarks\n",
+    "In tensor network calculations, the number of basis functions for each phonon mode is another parameter that must be checked for convergence manually. A common starting point is to set this number to 16.\n",
+    "\n",
+    "At zero temperature, the required number of basis functions is primarily determined by the coupling strength. An empirical and usually safe estimate is given by\n",
+    "$$\\rm{max}(16c^2/\\omega^3, 4)$$\n",
+    "where $c$ is the coupling strength constant in coupling terms such as $cx\\sigma_z$. Note that $c^2/2\\omega^3$ is the Huang–Rhys factor.\n",
+    "\n",
+    "At finite temperature, temperature also influences the required basis size: higher temperatures generally require more basis functions.\n"
+   ]
+  },
+  {
+   "cell_type": "code",
+   "execution_count": null,
+   "id": "eea8d09c-e3df-4e35-8ee5-a01567454e8c",
+   "metadata": {},
+   "outputs": [],
+   "source": []
   }
  ],
  "metadata": {

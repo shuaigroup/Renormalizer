@@ -521,11 +521,11 @@ div.rendered_html tbody tr:hover {
 </div>
 <div class="output_area stderr docutils container">
 <div class="highlight"><pre>
-2025-08-12 09:13:08,318[INFO] Use NumPy as backend
-2025-08-12 09:13:08,319[INFO] numpy random seed is 9012
-2025-08-12 09:13:08,320[INFO] random seed is 1092
-2025-08-12 09:13:08,329[INFO] Git Commit Hash: 17d8634f55d07699b9771eb4183b519874cb7d31
-2025-08-12 09:13:08,330[INFO] use 64 bits
+2025-08-18 06:50:37,441[INFO] Use NumPy as backend
+2025-08-18 06:50:37,442[INFO] numpy random seed is 9012
+2025-08-18 06:50:37,443[INFO] random seed is 1092
+2025-08-18 06:50:37,452[INFO] Git Commit Hash: c080e702a6ee0a055fc180ecc6ad885b0368b1c1
+2025-08-18 06:50:37,454[INFO] use 64 bits
 </pre></div></div>
 </div>
 <div class="nbinput nblast docutils container">
@@ -683,6 +683,25 @@ div.rendered_html tbody tr:hover {
 </div>
 </div>
 </section>
+<section id="Final-Remarks">
+<h2>Final Remarks<a class="headerlink" href="#Final-Remarks" title="Permalink to this heading">#</a></h2>
+<p>In tensor network calculations, the number of basis functions for each phonon mode is another parameter that must be checked for convergence manually. A common starting point is to set this number to 16.</p>
+<p>At zero temperature, the required number of basis functions is primarily determined by the coupling strength. An empirical and usually safe estimate is given by</p>
+<div class="math-wrapper docutils container">
+<div class="math notranslate nohighlight">
+\[\rm{max}(16c^2/\omega^3, 4)\]</div>
+</div>
+<p>where <span class="math notranslate nohighlight">\(c\)</span> is the coupling strength constant in coupling terms such as <span class="math notranslate nohighlight">\(cx\sigma_z\)</span>. Note that <span class="math notranslate nohighlight">\(c^2/2\omega^3\)</span> is the Huang–Rhys factor.</p>
+<p>At finite temperature, temperature also influences the required basis size: higher temperatures generally require more basis functions.</p>
+<div class="nbinput nblast docutils container">
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[ ]:
+</pre></div>
+</div>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span>
+</pre></div>
+</div>
+</div>
+</section>
 </section>
 
         </article>
@@ -746,6 +765,7 @@ div.rendered_html tbody tr:hover {
 <li><a class="reference internal" href="#Overview">Overview</a></li>
 <li><a class="reference internal" href="#The-basis-sets">The basis sets</a></li>
 <li><a class="reference internal" href="#Variational-calculation">Variational calculation</a></li>
+<li><a class="reference internal" href="#Final-Remarks">Final Remarks</a></li>
 </ul>
 </li>
 </ul>

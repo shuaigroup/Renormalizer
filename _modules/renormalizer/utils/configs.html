@@ -229,6 +229,7 @@
           <h1>Source code for renormalizer.utils.configs</h1><div class="highlight"><pre>
 <span></span><span class="c1"># -*- coding: utf-8 -*-</span>
 <span class="kn">from</span><span class="w"> </span><span class="nn">enum</span><span class="w"> </span><span class="kn">import</span> <span class="n">Enum</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">typing</span><span class="w"> </span><span class="kn">import</span> <span class="n">Union</span>
 <span class="kn">import</span><span class="w"> </span><span class="nn">logging</span>
 
 <span class="kn">from</span><span class="w"> </span><span class="nn">renormalizer.utils.rk</span><span class="w"> </span><span class="kn">import</span> <span class="n">RungeKutta</span><span class="p">,</span> <span class="n">TaylorExpansion</span>
@@ -355,7 +356,7 @@
 <span class="sd">    &quot;&quot;&quot;</span>
     <span class="k">def</span><span class="w"> </span><span class="fm">__init__</span><span class="p">(</span>
         <span class="bp">self</span><span class="p">,</span>
-        <span class="n">criteria</span><span class="p">:</span> <span class="n">CompressCriteria</span> <span class="o">=</span> <span class="n">CompressCriteria</span><span class="o">.</span><span class="n">threshold</span><span class="p">,</span>
+        <span class="n">criteria</span><span class="p">:</span> <span class="n">Union</span><span class="p">[</span><span class="n">CompressCriteria</span><span class="p">,</span> <span class="nb">str</span><span class="p">]</span> <span class="o">=</span> <span class="n">CompressCriteria</span><span class="o">.</span><span class="n">threshold</span><span class="p">,</span>
         <span class="n">threshold</span><span class="p">:</span> <span class="nb">float</span> <span class="o">=</span> <span class="mf">1e-3</span><span class="p">,</span>
         <span class="n">max_bonddim</span><span class="p">:</span> <span class="nb">int</span> <span class="o">=</span> <span class="mi">32</span><span class="p">,</span>
         <span class="n">vmethod</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="s2">&quot;2site&quot;</span><span class="p">,</span>
@@ -369,6 +370,10 @@
     <span class="p">):</span>
         <span class="c1"># two sets of criteria here: threshold and max_bonddimension</span>
         <span class="c1"># `criteria` is to determine which to use</span>
+        <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">criteria</span><span class="p">,</span> <span class="nb">str</span><span class="p">):</span>
+            <span class="n">criteria</span> <span class="o">=</span> <span class="nb">getattr</span><span class="p">(</span><span class="n">CompressCriteria</span><span class="p">,</span> <span class="n">criteria</span><span class="p">)</span>
+            <span class="k">if</span> <span class="n">criteria</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+                <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Unknown compress criteria </span><span class="si">{</span><span class="n">criteria</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">criteria</span><span class="p">:</span> <span class="n">CompressCriteria</span> <span class="o">=</span> <span class="n">criteria</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">_threshold</span> <span class="o">=</span> <span class="kc">None</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">threshold</span> <span class="o">=</span> <span class="n">threshold</span>
@@ -566,7 +571,7 @@
 <div class="viewcode-block" id="EvolveConfig"><a class="viewcode-back" href="../../../configs.html#renormalizer.utils.configs.EvolveConfig">[docs]</a><span class="k">class</span><span class="w"> </span><span class="nc">EvolveConfig</span><span class="p">:</span>
     <span class="k">def</span><span class="w"> </span><span class="fm">__init__</span><span class="p">(</span>
         <span class="bp">self</span><span class="p">,</span>
-        <span class="n">method</span><span class="p">:</span> <span class="n">EvolveMethod</span> <span class="o">=</span> <span class="n">EvolveMethod</span><span class="o">.</span><span class="n">prop_and_compress</span><span class="p">,</span>
+        <span class="n">method</span><span class="p">:</span> <span class="n">Union</span><span class="p">[</span><span class="n">EvolveMethod</span><span class="p">,</span> <span class="nb">str</span><span class="p">]</span> <span class="o">=</span> <span class="n">EvolveMethod</span><span class="o">.</span><span class="n">prop_and_compress</span><span class="p">,</span>
         <span class="n">adaptive</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span>
         <span class="n">guess_dt</span><span class="o">=</span><span class="mf">1e-1</span><span class="p">,</span>
         <span class="n">adaptive_rtol</span><span class="o">=</span><span class="mf">5e-4</span><span class="p">,</span>
@@ -578,7 +583,10 @@
         <span class="n">ivp_solver</span><span class="o">=</span><span class="s2">&quot;krylov&quot;</span><span class="p">,</span>
         <span class="n">force_ovlp</span><span class="o">=</span><span class="kc">True</span>
     <span class="p">):</span>
-
+        <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">method</span><span class="p">,</span> <span class="nb">str</span><span class="p">):</span>
+            <span class="n">method</span> <span class="o">=</span> <span class="nb">getattr</span><span class="p">(</span><span class="n">EvolveMethod</span><span class="p">,</span> <span class="n">method</span><span class="p">)</span>
+            <span class="k">if</span> <span class="n">method</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+                <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Unknown time evolution method: </span><span class="si">{</span><span class="n">method</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">method</span> <span class="o">=</span> <span class="n">method</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">adaptive</span> <span class="o">=</span> <span class="n">adaptive</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">rk_config</span> <span class="o">=</span> <span class="n">RungeKutta</span><span class="p">(</span><span class="n">rk_solver</span><span class="p">)</span>

@@ -507,11 +507,11 @@ div.rendered_html tbody tr:hover {
 </div>
 <div class="output_area stderr docutils container">
 <div class="highlight"><pre>
-2025-08-12 09:13:02,108[INFO] Use NumPy as backend
-2025-08-12 09:13:02,109[INFO] numpy random seed is 9012
-2025-08-12 09:13:02,110[INFO] random seed is 1092
-2025-08-12 09:13:02,118[INFO] Git Commit Hash: 17d8634f55d07699b9771eb4183b519874cb7d31
-2025-08-12 09:13:02,120[INFO] use 64 bits
+2025-08-18 06:50:31,013[INFO] Use NumPy as backend
+2025-08-18 06:50:31,014[INFO] numpy random seed is 9012
+2025-08-18 06:50:31,015[INFO] random seed is 1092
+2025-08-18 06:50:31,024[INFO] Git Commit Hash: c080e702a6ee0a055fc180ecc6ad885b0368b1c1
+2025-08-18 06:50:31,025[INFO] use 64 bits
 </pre></div></div>
 </div>
 <section id="Basics">
@@ -801,12 +801,12 @@ Op(&#39;X&#39;, [0], 5.0)
 BasisHalfSpin(dof: (&#39;spin&#39;, 0), nbas: 2)
 </pre></div></div>
 </div>
-<p>Each basis set supports a variety of operations. The spin-1/2 basis set naturally supports Pauli operators such as <code class="docutils literal notranslate"><span class="pre">&quot;X&quot;</span></code>, <code class="docutils literal notranslate"><span class="pre">&quot;sigma_y&quot;</span></code>.</p>
+<p>Each basis set supports a variety of operations. The spin-1/2 basis set naturally supports Pauli operators such as <code class="docutils literal notranslate"><span class="pre">&quot;Y&quot;</span></code>, <code class="docutils literal notranslate"><span class="pre">&quot;sigma_z&quot;</span></code>.</p>
 <div class="nbinput docutils container">
 <div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[16]:
 </pre></div>
 </div>
-<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">b</span><span class="o">.</span><span class="n">op_mat</span><span class="p">(</span><span class="s2">&quot;X&quot;</span><span class="p">),</span> <span class="n">b</span><span class="o">.</span><span class="n">op_mat</span><span class="p">(</span><span class="s2">&quot;sigma_y&quot;</span><span class="p">)</span>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">b</span><span class="o">.</span><span class="n">op_mat</span><span class="p">(</span><span class="s2">&quot;Y&quot;</span><span class="p">),</span> <span class="n">b</span><span class="o">.</span><span class="n">op_mat</span><span class="p">(</span><span class="s2">&quot;sigma_z&quot;</span><span class="p">)</span>
 </pre></div>
 </div>
 </div>
@@ -816,12 +816,15 @@ BasisHalfSpin(dof: (&#39;spin&#39;, 0), nbas: 2)
 </div>
 <div class="output_area docutils container">
 <div class="highlight"><pre>
-(array([[0., 1.],
-        [1., 0.]]),
- array([[0.+0.j, 0.-1.j],
-        [0.+1.j, 0.+0.j]]))
+(array([[0.+0.j, 0.-1.j],
+        [0.+1.j, 0.+0.j]]),
+ array([[ 1.,  0.],
+        [ 0., -1.]]))
 </pre></div></div>
 </div>
+<blockquote>
+<div><p>In Renormalizer, we use <code class="docutils literal notranslate"><span class="pre">[1,</span> <span class="pre">0]</span></code> for spin up and <code class="docutils literal notranslate"><span class="pre">[0,</span> <span class="pre">1]</span></code> for spin down.</p>
+</div></blockquote>
 <p>For phonon DOF, it is necessary to specify the quanta truncated in the basis set</p>
 <div class="nbinput docutils container">
 <div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[17]:
@@ -832,7 +835,7 @@ BasisHalfSpin(dof: (&#39;spin&#39;, 0), nbas: 2)
 <span class="c1"># omega is the vibration frequency, nbas is the number of basis</span>
 <span class="n">b</span> <span class="o">=</span> <span class="n">BasisSHO</span><span class="p">(</span><span class="n">dof</span><span class="o">=</span><span class="mi">0</span><span class="p">,</span> <span class="n">omega</span><span class="o">=</span><span class="mi">50</span><span class="p">,</span> <span class="n">nbas</span><span class="o">=</span><span class="mi">4</span><span class="p">)</span>
 <span class="c1"># note the different value because of omega</span>
-<span class="n">b</span><span class="o">.</span><span class="n">op_mat</span><span class="p">(</span><span class="s2">&quot;b^\dagger+b&quot;</span><span class="p">),</span> <span class="n">b</span><span class="o">.</span><span class="n">op_mat</span><span class="p">(</span><span class="s2">&quot;x&quot;</span><span class="p">)</span>
+<span class="n">b</span><span class="o">.</span><span class="n">op_mat</span><span class="p">(</span><span class="sa">r</span><span class="s2">&quot;b^\dagger+b&quot;</span><span class="p">),</span> <span class="n">b</span><span class="o">.</span><span class="n">op_mat</span><span class="p">(</span><span class="s2">&quot;x&quot;</span><span class="p">)</span>
 </pre></div>
 </div>
 </div>
@@ -888,9 +891,9 @@ BasisHalfSpin(dof: (&#39;spin&#39;, 0), nbas: 2)
 </div>
 <div class="output_area stderr docutils container">
 <div class="highlight"><pre>
-2025-08-12 09:13:02,265[DEBUG] # of operator terms: 1
-2025-08-12 09:13:02,266[DEBUG] Input operator terms: 1
-2025-08-12 09:13:02,268[DEBUG] After combination of the same terms: 1
+2025-08-18 06:50:31,175[DEBUG] # of operator terms: 1
+2025-08-18 06:50:31,176[DEBUG] Input operator terms: 1
+2025-08-18 06:50:31,177[DEBUG] After combination of the same terms: 1
 </pre></div></div>
 </div>
 <div class="nboutput nblast docutils container">
@@ -953,6 +956,38 @@ array([[0., 1.],
 [&#39;HolsteinModel&#39;, &#39;Model&#39;, &#39;SpinBosonModel&#39;, &#39;TI1DModel&#39;]
 </pre></div></div>
 </div>
+</section>
+<section id="Units-in-Renormalizer">
+<h2>Units in Renormalizer<a class="headerlink" href="#Units-in-Renormalizer" title="Permalink to this heading">#</a></h2>
+<p>All internal numbers in renormalizer are assumed to have the unit of atomic unit (a.u.). Consequently, all external interfaces such as <code class="docutils literal notranslate"><span class="pre">factor</span></code> in <code class="docutils literal notranslate"><span class="pre">Op</span></code> is assumed to have the unit of atomic unit.</p>
+<p>To facilitate unit conversion, You may use the <code class="docutils literal notranslate"><span class="pre">Quantity</span></code> class in Renormalizer to convert the values in other units to atomic units.</p>
+<div class="nbinput nblast docutils container">
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[22]:
+</pre></div>
+</div>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="kn">from</span><span class="w"> </span><span class="nn">renormalizer</span><span class="w"> </span><span class="kn">import</span> <span class="n">Quantity</span>
+</pre></div>
+</div>
+</div>
+<div class="nbinput docutils container">
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[23]:
+</pre></div>
+</div>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">v</span> <span class="o">=</span> <span class="n">Quantity</span><span class="p">(</span><span class="mi">27212</span><span class="p">,</span> <span class="s2">&quot;mev&quot;</span><span class="p">)</span>
+<span class="n">v</span><span class="o">.</span><span class="n">as_au</span><span class="p">()</span>
+</pre></div>
+</div>
+</div>
+<div class="nboutput nblast docutils container">
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[23]:
+</pre></div>
+</div>
+<div class="output_area docutils container">
+<div class="highlight"><pre>
+1.0000225550439237
+</pre></div></div>
+</div>
+<p>Note that directly using a <code class="docutils literal notranslate"><span class="pre">Quantity</span></code> instance for numerical arguments of model construction will result in errors. For example, you should write <code class="docutils literal notranslate"><span class="pre">BasisSHO(dof=0,</span> <span class="pre">omega=Quantity(50).as_au(),</span> <span class="pre">nbas=4)</span></code> instead of <code class="docutils literal notranslate"><span class="pre">BasisSHO(dof=0,</span> <span class="pre">omega=Quantity(50),</span> <span class="pre">nbas=4)</span></code>.</p>
 <div class="nbinput nblast docutils container">
 <div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[ ]:
 </pre></div>
@@ -1030,6 +1065,7 @@ array([[0., 1.],
 </li>
 <li><a class="reference internal" href="#BasisSet"><code class="docutils literal notranslate"><span class="pre">BasisSet</span></code></a></li>
 <li><a class="reference internal" href="#Model"><code class="docutils literal notranslate"><span class="pre">Model</span></code></a></li>
+<li><a class="reference internal" href="#Units-in-Renormalizer">Units in Renormalizer</a></li>
 </ul>
 </li>
 </ul>

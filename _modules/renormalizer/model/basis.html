@@ -387,6 +387,9 @@
 
         <span class="bp">self</span><span class="o">.</span><span class="n">_recursion_flag</span> <span class="o">+=</span> <span class="mi">1</span>
 
+        <span class="c1"># prevent side effect of split(&quot; &quot;)</span>
+        <span class="n">op_symbol</span> <span class="o">=</span> <span class="n">op_symbol</span><span class="o">.</span><span class="n">replace</span><span class="p">(</span><span class="sa">r</span><span class="s2">&quot;b^\dagger + b&quot;</span><span class="p">,</span> <span class="sa">r</span><span class="s2">&quot;b^\dagger+b&quot;</span><span class="p">)</span>
+
         <span class="c1"># so many if-else might be a potential performance problem in the future</span>
         <span class="c1"># changing to lazy-evaluation dict should be better</span>
 
