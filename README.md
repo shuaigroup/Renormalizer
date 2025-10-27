@@ -81,11 +81,24 @@ because Renormalizer is sometimes imported as a utility package.
 # Useful links
 - [The Shuai group](http://www.shuaigroup.net/)
 - [The Weitang Li group](https://weitangligroup.com/)
+- [The Jiajun Ren group](https://jjrengroup.com/)
 - [tensornetwork.org](https://tensornetwork.org/)
 - [A detailed review of our method](http://www.shuaigroup.net/images/article/pubs/2022/08_shuai_WIRES_Comput_Mol_Sci_2022_e1614.pdf)
 
 # Papers published using Renormalizer
-1. Liqi Zhou, Xing Gao*, Zhigang Shuai*, 
+1. Zhao Zhang, Jiajun Ren*, Wei-Hai Fang,
+[One-shot simulation of static disorder in quantum dynamics with equilibrium initial state via matrix product state sampling.](https://jjrengroup.com/publication/zhang2025one/zhang2025one.pdf)
+*Chinese J. Chem. Phys.*, **2025**, *38*, 382-390.
+2. Zhao Zhang, Yijia Wang, Xiaoyan Zheng, Jiajun Ren*, Zhigang Shuai, Wei-Hai Fang,
+[Effect of excitonic coupling and disorder on nonradiative decay of molecular aggregates: a TD-DMRG study.](https://jjrengroup.com/publication/zhang2025effect/zhang2025effect.pdf)
+*J. Phys. Chem. C*, **2025**, *129*, 12520-12530.
+3. Bing Gu*, Jiajun Ren, Junzhe Zhang,
+[Quantum chemistry density matrix renormalization group in the discrete variable representation.](https://jjrengroup.com/publication/gu2025quantum/gu2025quantum.pdf)
+*J. Chem. Theory Comput.*, **2025**, *21*, 6793-6800.
+4. Baihua Wu†, Bingqi Li†, Xin He†, Xiangsong Cheng, Jiajun Ren, Jian Liu*,
+[Nonadiabatic field: a conceptually novel approach for nonadiabatic quantum molecular dynamics.](https://jjrengroup.com/publication/wu2025nonadiabatic/wu2025nonadiabatic.pdf)
+*J. Chem. Theory Comput.*, **2025**, *21*, 3775-3813.
+6. Liqi Zhou, Xing Gao*, Zhigang Shuai*, 
 [A stochastic Schrödinger equation and matrix product state approach to carrier transport in organic semiconductors with nonlocal electron–phonon interaction](http://www.shuaigroup.net/images/article/pubs/2024/08_shuai_JCP_2024_161_084118.pdf)
 *J. Chem. Phys.*, **2024**, *161*, 084118.
 1. Weitang Li*, Jiajun Ren, Hengrui Yang,; Haobin Wang, Zhigang Shuai, 
