@@ -41,10 +41,10 @@
    "id": "56f1fde2-97fb-43f7-b7fa-a2fa0fb38497",
    "metadata": {
     "execution": {
-     "iopub.execute_input": "2025-12-20T10:28:43.370731Z",
-     "iopub.status.busy": "2025-12-20T10:28:43.370106Z",
-     "iopub.status.idle": "2025-12-20T10:28:44.076954Z",
-     "shell.execute_reply": "2025-12-20T10:28:44.076260Z"
+     "iopub.execute_input": "2025-12-20T11:02:59.022487Z",
+     "iopub.status.busy": "2025-12-20T11:02:59.022290Z",
+     "iopub.status.idle": "2025-12-20T11:02:59.665548Z",
+     "shell.execute_reply": "2025-12-20T11:02:59.664811Z"
     }
    },
    "outputs": [
@@ -52,35 +52,35 @@
      "name": "stderr",
      "output_type": "stream",
      "text": [
-      "2025-12-20 10:28:44,027[INFO] Use NumPy as backend\n"
+      "2025-12-20 11:02:59,619[INFO] Use NumPy as backend\n"
      ]
     },
     {
      "name": "stderr",
      "output_type": "stream",
      "text": [
-      "2025-12-20 10:28:44,028[INFO] numpy random seed is 9012\n"
+      "2025-12-20 11:02:59,620[INFO] numpy random seed is 9012\n"
      ]
     },
     {
      "name": "stderr",
      "output_type": "stream",
      "text": [
-      "2025-12-20 10:28:44,029[INFO] random seed is 1092\n"
+      "2025-12-20 11:02:59,621[INFO] random seed is 1092\n"
      ]
     },
     {
      "name": "stderr",
      "output_type": "stream",
      "text": [
-      "2025-12-20 10:28:44,039[INFO] Git Commit Hash: 8843b08007f92c985e412fa39ccb812c6c05306e\n"
+      "2025-12-20 11:02:59,631[INFO] Git Commit Hash: 06430a9cbb7af930317f368a36eff512a8d5ce70\n"
      ]
     },
     {
      "name": "stderr",
      "output_type": "stream",
      "text": [
-      "2025-12-20 10:28:44,040[INFO] use 64 bits\n"
+      "2025-12-20 11:02:59,632[INFO] use 64 bits\n"
      ]
     }
    ],
@@ -94,10 +94,10 @@
    "id": "873c875c-669a-4b88-9158-098713f07bd4",
    "metadata": {
     "execution": {
-     "iopub.execute_input": "2025-12-20T10:28:44.079815Z",
-     "iopub.status.busy": "2025-12-20T10:28:44.079337Z",
-     "iopub.status.idle": "2025-12-20T10:28:44.083386Z",
-     "shell.execute_reply": "2025-12-20T10:28:44.082769Z"
+     "iopub.execute_input": "2025-12-20T11:02:59.668212Z",
+     "iopub.status.busy": "2025-12-20T11:02:59.667753Z",
+     "iopub.status.idle": "2025-12-20T11:02:59.671592Z",
+     "shell.execute_reply": "2025-12-20T11:02:59.671037Z"
     }
    },
    "outputs": [
@@ -105,7 +105,7 @@
      "name": "stderr",
      "output_type": "stream",
      "text": [
-      "2025-12-20 10:28:44,080[DEBUG] logger output\n"
+      "2025-12-20 11:02:59,669[DEBUG] logger output\n"
      ]
     }
    ],
@@ -119,10 +119,10 @@
    "id": "319fd86f-834f-4c7f-89d8-d5d914321f63",
    "metadata": {
     "execution": {
-     "iopub.execute_input": "2025-12-20T10:28:44.085592Z",
-     "iopub.status.busy": "2025-12-20T10:28:44.085204Z",
-     "iopub.status.idle": "2025-12-20T10:28:44.088181Z",
-     "shell.execute_reply": "2025-12-20T10:28:44.087641Z"
+     "iopub.execute_input": "2025-12-20T11:02:59.673564Z",
+     "iopub.status.busy": "2025-12-20T11:02:59.673202Z",
+     "iopub.status.idle": "2025-12-20T11:02:59.676311Z",
+     "shell.execute_reply": "2025-12-20T11:02:59.675642Z"
     }
    },
    "outputs": [],
@@ -136,10 +136,10 @@
    "id": "8d8232f3-dba4-4783-9a42-5df16dbd31ec",
    "metadata": {
     "execution": {
-     "iopub.execute_input": "2025-12-20T10:28:44.090371Z",
-     "iopub.status.busy": "2025-12-20T10:28:44.089960Z",
-     "iopub.status.idle": "2025-12-20T10:28:44.093144Z",
-     "shell.execute_reply": "2025-12-20T10:28:44.092450Z"
+     "iopub.execute_input": "2025-12-20T11:02:59.678107Z",
+     "iopub.status.busy": "2025-12-20T11:02:59.677923Z",
+     "iopub.status.idle": "2025-12-20T11:02:59.680970Z",
+     "shell.execute_reply": "2025-12-20T11:02:59.680302Z"
     }
    },
    "outputs": [],
@@ -154,10 +154,10 @@
    "id": "30e8e422-0a2e-42e3-92d9-6689cc87d64f",
    "metadata": {
     "execution": {
-     "iopub.execute_input": "2025-12-20T10:28:44.095338Z",
-     "iopub.status.busy": "2025-12-20T10:28:44.094804Z",
-     "iopub.status.idle": "2025-12-20T10:28:44.098206Z",
-     "shell.execute_reply": "2025-12-20T10:28:44.097524Z"
+     "iopub.execute_input": "2025-12-20T11:02:59.683160Z",
+     "iopub.status.busy": "2025-12-20T11:02:59.682898Z",
+     "iopub.status.idle": "2025-12-20T11:02:59.685978Z",
+     "shell.execute_reply": "2025-12-20T11:02:59.685319Z"
     }
    },
    "outputs": [],
@@ -171,10 +171,10 @@
    "id": "25cf11f4-9538-4f85-aaba-ed5cdc7f611c",
    "metadata": {
     "execution": {
-     "iopub.execute_input": "2025-12-20T10:28:44.100506Z",
-     "iopub.status.busy": "2025-12-20T10:28:44.100024Z",
-     "iopub.status.idle": "2025-12-20T10:28:44.104077Z",
-     "shell.execute_reply": "2025-12-20T10:28:44.103402Z"
+     "iopub.execute_input": "2025-12-20T11:02:59.688188Z",
+     "iopub.status.busy": "2025-12-20T11:02:59.687808Z",
+     "iopub.status.idle": "2025-12-20T11:02:59.691493Z",
+     "shell.execute_reply": "2025-12-20T11:02:59.690835Z"
     }
    },
    "outputs": [
@@ -182,7 +182,7 @@
      "name": "stderr",
      "output_type": "stream",
      "text": [
-      "2025-12-20 10:28:44,101[INFO] Logger output\n"
+      "2025-12-20 11:02:59,688[INFO] Logger output\n"
      ]
     }
    ],
@@ -204,10 +204,10 @@
    "id": "f0e54566-edab-423e-81d6-e9d9365e331c",
    "metadata": {
     "execution": {
-     "iopub.execute_input": "2025-12-20T10:28:44.106560Z",
-     "iopub.status.busy": "2025-12-20T10:28:44.106179Z",
-     "iopub.status.idle": "2025-12-20T10:28:44.109122Z",
-     "shell.execute_reply": "2025-12-20T10:28:44.108567Z"
+     "iopub.execute_input": "2025-12-20T11:02:59.693543Z",
+     "iopub.status.busy": "2025-12-20T11:02:59.693188Z",
+     "iopub.status.idle": "2025-12-20T11:02:59.696221Z",
+     "shell.execute_reply": "2025-12-20T11:02:59.695576Z"
     }
    },
    "outputs": [],
@@ -222,10 +222,10 @@
    "id": "35139f14-b5f6-4720-96b2-100c57106271",
    "metadata": {
     "execution": {
-     "iopub.execute_input": "2025-12-20T10:28:44.110940Z",
-     "iopub.status.busy": "2025-12-20T10:28:44.110742Z",
-     "iopub.status.idle": "2025-12-20T10:28:44.113752Z",
-     "shell.execute_reply": "2025-12-20T10:28:44.113233Z"
+     "iopub.execute_input": "2025-12-20T11:02:59.698239Z",
+     "iopub.status.busy": "2025-12-20T11:02:59.697866Z",
+     "iopub.status.idle": "2025-12-20T11:02:59.700736Z",
+     "shell.execute_reply": "2025-12-20T11:02:59.700208Z"
     }
    },
    "outputs": [],
@@ -242,10 +242,10 @@
    "id": "8dadf496-f732-4442-9c4e-71417950924f",
    "metadata": {
     "execution": {
-     "iopub.execute_input": "2025-12-20T10:28:44.115787Z",
-     "iopub.status.busy": "2025-12-20T10:28:44.115400Z",
-     "iopub.status.idle": "2025-12-20T10:28:44.119996Z",
-     "shell.execute_reply": "2025-12-20T10:28:44.119474Z"
+     "iopub.execute_input": "2025-12-20T11:02:59.702696Z",
+     "iopub.status.busy": "2025-12-20T11:02:59.702499Z",
+     "iopub.status.idle": "2025-12-20T11:02:59.707230Z",
+     "shell.execute_reply": "2025-12-20T11:02:59.706538Z"
     }
    },
    "outputs": [],
@@ -266,10 +266,10 @@
    "id": "c847063d-c59e-4e71-931e-a69064a61a24",
    "metadata": {
     "execution": {
-     "iopub.execute_input": "2025-12-20T10:28:44.122078Z",
-     "iopub.status.busy": "2025-12-20T10:28:44.121690Z",
-     "iopub.status.idle": "2025-12-20T10:28:44.126123Z",
-     "shell.execute_reply": "2025-12-20T10:28:44.125549Z"
+     "iopub.execute_input": "2025-12-20T11:02:59.709404Z",
+     "iopub.status.busy": "2025-12-20T11:02:59.708918Z",
+     "iopub.status.idle": "2025-12-20T11:02:59.713367Z",
+     "shell.execute_reply": "2025-12-20T11:02:59.712790Z"
     }
    },
    "outputs": [],
@@ -297,10 +297,10 @@
    "id": "bd6aea7e-a63d-4a3f-b140-81f67c887bda",
    "metadata": {
     "execution": {
-     "iopub.execute_input": "2025-12-20T10:28:44.128062Z",
-     "iopub.status.busy": "2025-12-20T10:28:44.127876Z",
-     "iopub.status.idle": "2025-12-20T10:28:44.131403Z",
-     "shell.execute_reply": "2025-12-20T10:28:44.130816Z"
+     "iopub.execute_input": "2025-12-20T11:02:59.715353Z",
+     "iopub.status.busy": "2025-12-20T11:02:59.715161Z",
+     "iopub.status.idle": "2025-12-20T11:02:59.718854Z",
+     "shell.execute_reply": "2025-12-20T11:02:59.718209Z"
     }
    },
    "outputs": [],
@@ -315,10 +315,10 @@
    "id": "2ed5d9b2-f6c2-498d-b4a0-efb2c19baefc",
    "metadata": {
     "execution": {
-     "iopub.execute_input": "2025-12-20T10:28:44.133312Z",
-     "iopub.status.busy": "2025-12-20T10:28:44.133082Z",
-     "iopub.status.idle": "2025-12-20T10:28:44.135987Z",
-     "shell.execute_reply": "2025-12-20T10:28:44.135422Z"
+     "iopub.execute_input": "2025-12-20T11:02:59.720869Z",
+     "iopub.status.busy": "2025-12-20T11:02:59.720521Z",
+     "iopub.status.idle": "2025-12-20T11:02:59.723552Z",
+     "shell.execute_reply": "2025-12-20T11:02:59.722870Z"
     }
    },
    "outputs": [],
@@ -332,10 +332,10 @@
    "id": "a94d9e55-b1b2-4668-a47b-571f5fb74320",
    "metadata": {
     "execution": {
-     "iopub.execute_input": "2025-12-20T10:28:44.138198Z",
-     "iopub.status.busy": "2025-12-20T10:28:44.137972Z",
-     "iopub.status.idle": "2025-12-20T10:28:44.147338Z",
-     "shell.execute_reply": "2025-12-20T10:28:44.146617Z"
+     "iopub.execute_input": "2025-12-20T11:02:59.725507Z",
+     "iopub.status.busy": "2025-12-20T11:02:59.725310Z",
+     "iopub.status.idle": "2025-12-20T11:02:59.734229Z",
+     "shell.execute_reply": "2025-12-20T11:02:59.733559Z"
     }
    },
    "outputs": [],
@@ -352,10 +352,10 @@
    "id": "0779c802-815b-4c7a-8c17-163bbd3437ee",
    "metadata": {
     "execution": {
-     "iopub.execute_input": "2025-12-20T10:28:44.149553Z",
-     "iopub.status.busy": "2025-12-20T10:28:44.149352Z",
-     "iopub.status.idle": "2025-12-20T10:28:45.001070Z",
-     "shell.execute_reply": "2025-12-20T10:28:45.000403Z"
+     "iopub.execute_input": "2025-12-20T11:02:59.736413Z",
+     "iopub.status.busy": "2025-12-20T11:02:59.736031Z",
+     "iopub.status.idle": "2025-12-20T11:03:00.542059Z",
+     "shell.execute_reply": "2025-12-20T11:03:00.541422Z"
     }
    },
    "outputs": [
@@ -363,350 +363,350 @@
      "name": "stderr",
      "output_type": "stream",
      "text": [
-      "2025-12-20 10:28:44,152[INFO] Step 0. Time 0.00. $n$ 0.9999999999999998\n"
+      "2025-12-20 11:02:59,739[INFO] Step 0. Time 0.00. $n$ 0.9999999999999998\n"
      ]
     },
     {
      "name": "stderr",
      "output_type": "stream",
      "text": [
-      "2025-12-20 10:28:44,166[INFO] Step 1. Time 0.20. $n$ 0.9996030537865594\n"
+      "2025-12-20 11:02:59,752[INFO] Step 1. Time 0.20. $n$ 0.9996030537865594\n"
      ]
     },
     {
      "name": "stderr",
      "output_type": "stream",
      "text": [
-      "2025-12-20 10:28:44,179[INFO] Step 2. Time 0.40. $n$ 0.9984313966561619\n"
+      "2025-12-20 11:02:59,764[INFO] Step 2. Time 0.40. $n$ 0.998431396656162\n"
      ]
     },
     {
      "name": "stderr",
      "output_type": "stream",
      "text": [
-      "2025-12-20 10:28:44,193[INFO] Step 3. Time 0.60. $n$ 0.9965532876450579\n"
+      "2025-12-20 11:02:59,778[INFO] Step 3. Time 0.60. $n$ 0.9965532876450579\n"
      ]
     },
     {
      "name": "stderr",
      "output_type": "stream",
      "text": [
-      "2025-12-20 10:28:44,210[INFO] Step 4. Time 0.80. $n$ 0.9940731362639054\n"
+      "2025-12-20 11:02:59,793[INFO] Step 4. Time 0.80. $n$ 0.9940731362639054\n"
      ]
     },
     {
      "name": "stderr",
      "output_type": "stream",
      "text": [
-      "2025-12-20 10:28:44,226[INFO] Step 5. Time 1.00. $n$ 0.991116186884249\n"
+      "2025-12-20 11:02:59,809[INFO] Step 5. Time 1.00. $n$ 0.9911161868842491\n"
      ]
     },
     {
      "name": "stderr",
      "output_type": "stream",
      "text": [
-      "2025-12-20 10:28:44,243[INFO] Step 6. Time 1.20. $n$ 0.9878132450238745\n"
+      "2025-12-20 11:02:59,825[INFO] Step 6. Time 1.20. $n$ 0.9878132450238745\n"
      ]
     },
     {
      "name": "stderr",
      "output_type": "stream",
      "text": [
-      "2025-12-20 10:28:44,260[INFO] Step 7. Time 1.40. $n$ 0.9842873078294339\n"
+      "2025-12-20 11:02:59,841[INFO] Step 7. Time 1.40. $n$ 0.9842873078294337\n"
      ]
     },
     {
      "name": "stderr",
      "output_type": "stream",
      "text": [
-      "2025-12-20 10:28:44,277[INFO] Step 8. Time 1.60. $n$ 0.9806441927926954\n"
+      "2025-12-20 11:02:59,856[INFO] Step 8. Time 1.60. $n$ 0.9806441927926955\n"
      ]
     },
     {
      "name": "stderr",
      "output_type": "stream",
      "text": [
-      "2025-12-20 10:28:44,295[INFO] Step 9. Time 1.80. $n$ 0.976967746624379\n"
+      "2025-12-20 11:02:59,872[INFO] Step 9. Time 1.80. $n$ 0.976967746624379\n"
      ]
     },
     {
      "name": "stderr",
      "output_type": "stream",
      "text": [
-      "2025-12-20 10:28:44,312[INFO] Step 10. Time 2.00. $n$ 0.9733182226560808\n"
+      "2025-12-20 11:02:59,888[INFO] Step 10. Time 2.00. $n$ 0.9733182226560808\n"
      ]
     },
     {
      "name": "stderr",
      "output_type": "stream",
      "text": [
-      "2025-12-20 10:28:44,329[INFO] Step 11. Time 2.20. $n$ 0.9697373081106376\n"
+      "2025-12-20 11:02:59,904[INFO] Step 11. Time 2.20. $n$ 0.9697373081106376\n"
      ]
     },
     {
      "name": "stderr",
      "output_type": "stream",
      "text": [
-      "2025-12-20 10:28:44,346[INFO] Step 12. Time 2.40. $n$ 0.9662497016753405\n"
+      "2025-12-20 11:02:59,920[INFO] Step 12. Time 2.40. $n$ 0.9662497016753406\n"
      ]
     },
     {
      "name": "stderr",
      "output_type": "stream",
      "text": [
-      "2025-12-20 10:28:44,363[INFO] Step 13. Time 2.60. $n$ 0.962867160945706\n"
+      "2025-12-20 11:02:59,936[INFO] Step 13. Time 2.60. $n$ 0.962867160945706\n"
      ]
     },
     {
      "name": "stderr",
      "output_type": "stream",
      "text": [
-      "2025-12-20 10:28:44,379[INFO] Step 14. Time 2.80. $n$ 0.9595919026133962\n"
+      "2025-12-20 11:02:59,951[INFO] Step 14. Time 2.80. $n$ 0.9595919026133962\n"
      ]
     },
     {
      "name": "stderr",
      "output_type": "stream",
      "text": [
-      "2025-12-20 10:28:44,396[INFO] Step 15. Time 3.00. $n$ 0.9564197521679629\n"
+      "2025-12-20 11:02:59,968[INFO] Step 15. Time 3.00. $n$ 0.9564197521679629\n"
      ]
     },
     {
      "name": "stderr",
      "output_type": "stream",
      "text": [
-      "2025-12-20 10:28:44,413[INFO] Step 16. Time 3.20. $n$ 0.9533423734970324\n"
+      "2025-12-20 11:02:59,984[INFO] Step 16. Time 3.20. $n$ 0.9533423734970323\n"
      ]
     },
     {
      "name": "stderr",
      "output_type": "stream",
      "text": [
-      "2025-12-20 10:28:44,430[INFO] Step 17. Time 3.40. $n$ 0.9503492089387038\n"
+      "2025-12-20 11:03:00,000[INFO] Step 17. Time 3.40. $n$ 0.9503492089387037\n"
      ]
     },
     {
      "name": "stderr",
      "output_type": "stream",
      "text": [
-      "2025-12-20 10:28:44,447[INFO] Step 18. Time 3.60. $n$ 0.9474287391824951\n"
+      "2025-12-20 11:03:00,016[INFO] Step 18. Time 3.60. $n$ 0.9474287391824951\n"
      ]
     },
     {
      "name": "stderr",
      "output_type": "stream",
      "text": [
-      "2025-12-20 10:28:44,464[INFO] Step 19. Time 3.80. $n$ 0.9445692798814911\n"
+      "2025-12-20 11:03:00,032[INFO] Step 19. Time 3.80. $n$ 0.9445692798814913\n"
      ]
     },
     {
      "name": "stderr",
      "output_type": "stream",
      "text": [
-      "2025-12-20 10:28:44,481[INFO] Step 20. Time 4.00. $n$ 0.9417594196434944\n"
+      "2025-12-20 11:03:00,048[INFO] Step 20. Time 4.00. $n$ 0.9417594196434944\n"
      ]
     },
     {
      "name": "stderr",
      "output_type": "stream",
      "text": [
-      "2025-12-20 10:28:44,498[INFO] Step 21. Time 4.20. $n$ 0.938988314016884\n"
+      "2025-12-20 11:03:00,064[INFO] Step 21. Time 4.20. $n$ 0.9389883140168839\n"
      ]
     },
     {
      "name": "stderr",
      "output_type": "stream",
      "text": [
-      "2025-12-20 10:28:44,515[INFO] Step 22. Time 4.40. $n$ 0.9362456942950407\n"
+      "2025-12-20 11:03:00,081[INFO] Step 22. Time 4.40. $n$ 0.9362456942950406\n"
      ]
     },
     {
      "name": "stderr",
      "output_type": "stream",
      "text": [
-      "2025-12-20 10:28:44,533[INFO] Step 23. Time 4.60. $n$ 0.9335221984937243\n"
+      "2025-12-20 11:03:00,097[INFO] Step 23. Time 4.60. $n$ 0.9335221984937244\n"
      ]
     },
     {
      "name": "stderr",
      "output_type": "stream",
      "text": [
-      "2025-12-20 10:28:44,550[INFO] Step 24. Time 4.80. $n$ 0.9308095732941701\n"
+      "2025-12-20 11:03:00,113[INFO] Step 24. Time 4.80. $n$ 0.9308095732941701\n"
      ]
     },
     {
      "name": "stderr",
      "output_type": "stream",
      "text": [
-      "2025-12-20 10:28:44,567[INFO] Step 25. Time 5.00. $n$ 0.9281008849250422\n"
+      "2025-12-20 11:03:00,129[INFO] Step 25. Time 5.00. $n$ 0.9281008849250423\n"
      ]
     },
     {
      "name": "stderr",
      "output_type": "stream",
      "text": [
-      "2025-12-20 10:28:44,584[INFO] Step 26. Time 5.20. $n$ 0.9253906107085342\n"
+      "2025-12-20 11:03:00,146[INFO] Step 26. Time 5.20. $n$ 0.9253906107085343\n"
      ]
     },
     {
      "name": "stderr",
      "output_type": "stream",
      "text": [
-      "2025-12-20 10:28:44,601[INFO] Step 27. Time 5.40. $n$ 0.9226738471654728\n"
+      "2025-12-20 11:03:00,162[INFO] Step 27. Time 5.40. $n$ 0.9226738471654728\n"
      ]
     },
     {
      "name": "stderr",
      "output_type": "stream",
      "text": [
-      "2025-12-20 10:28:44,619[INFO] Step 28. Time 5.60. $n$ 0.9199478805518423\n"
+      "2025-12-20 11:03:00,178[INFO] Step 28. Time 5.60. $n$ 0.9199478805518423\n"
      ]
     },
     {
      "name": "stderr",
      "output_type": "stream",
      "text": [
-      "2025-12-20 10:28:44,636[INFO] Step 29. Time 5.80. $n$ 0.9172094618331406\n"
+      "2025-12-20 11:03:00,194[INFO] Step 29. Time 5.80. $n$ 0.9172094618331406\n"
      ]
     },
     {
      "name": "stderr",
      "output_type": "stream",
      "text": [
-      "2025-12-20 10:28:44,654[INFO] Step 30. Time 6.00. $n$ 0.9144551950424458\n"
+      "2025-12-20 11:03:00,211[INFO] Step 30. Time 6.00. $n$ 0.9144551950424458\n"
      ]
     },
     {
      "name": "stderr",
      "output_type": "stream",
      "text": [
-      "2025-12-20 10:28:44,671[INFO] Step 31. Time 6.20. $n$ 0.9116816732036942\n"
+      "2025-12-20 11:03:00,227[INFO] Step 31. Time 6.20. $n$ 0.9116816732036944\n"
      ]
     },
     {
      "name": "stderr",
      "output_type": "stream",
      "text": [
-      "2025-12-20 10:28:44,689[INFO] Step 32. Time 6.40. $n$ 0.9088859026726781\n"
+      "2025-12-20 11:03:00,243[INFO] Step 32. Time 6.40. $n$ 0.9088859026726781\n"
      ]
     },
     {
      "name": "stderr",
      "output_type": "stream",
      "text": [
-      "2025-12-20 10:28:44,706[INFO] Step 33. Time 6.60. $n$ 0.9060659656334908\n"
+      "2025-12-20 11:03:00,260[INFO] Step 33. Time 6.60. $n$ 0.9060659656334908\n"
      ]
     },
     {
      "name": "stderr",
      "output_type": "stream",
      "text": [
-      "2025-12-20 10:28:44,724[INFO] Step 34. Time 6.80. $n$ 0.90322101218372\n"
+      "2025-12-20 11:03:00,276[INFO] Step 34. Time 6.80. $n$ 0.9032210121837198\n"
      ]
     },
     {
      "name": "stderr",
      "output_type": "stream",
      "text": [
-      "2025-12-20 10:28:44,741[INFO] Step 35. Time 7.00. $n$ 0.9003515623906606\n"
+      "2025-12-20 11:03:00,293[INFO] Step 35. Time 7.00. $n$ 0.9003515623906606\n"
      ]
     },
     {
      "name": "stderr",
      "output_type": "stream",
      "text": [
-      "2025-12-20 10:28:44,758[INFO] Step 36. Time 7.20. $n$ 0.8974590790192766\n"
+      "2025-12-20 11:03:00,309[INFO] Step 36. Time 7.20. $n$ 0.8974590790192766\n"
      ]
     },
     {
      "name": "stderr",
      "output_type": "stream",
      "text": [
-      "2025-12-20 10:28:44,776[INFO] Step 37. Time 7.40. $n$ 0.8945453849965326\n"
+      "2025-12-20 11:03:00,326[INFO] Step 37. Time 7.40. $n$ 0.8945453849965326\n"
      ]
     },
     {
      "name": "stderr",
      "output_type": "stream",
      "text": [
-      "2025-12-20 10:28:44,793[INFO] Step 38. Time 7.60. $n$ 0.8916120979060871\n"
+      "2025-12-20 11:03:00,342[INFO] Step 38. Time 7.60. $n$ 0.8916120979060871\n"
      ]
     },
     {
      "name": "stderr",
      "output_type": "stream",
      "text": [
-      "2025-12-20 10:28:44,810[INFO] Step 39. Time 7.80. $n$ 0.8886602437062094\n"
+      "2025-12-20 11:03:00,359[INFO] Step 39. Time 7.80. $n$ 0.8886602437062094\n"
      ]
     },
     {
      "name": "stderr",
      "output_type": "stream",
      "text": [
-      "2025-12-20 10:28:44,827[INFO] Step 40. Time 8.00. $n$ 0.8856902107426247\n"
+      "2025-12-20 11:03:00,376[INFO] Step 40. Time 8.00. $n$ 0.8856902107426247\n"
      ]
     },
     {
      "name": "stderr",
      "output_type": "stream",
      "text": [
-      "2025-12-20 10:28:44,844[INFO] Step 41. Time 8.20. $n$ 0.8827020259679245\n"
+      "2025-12-20 11:03:00,393[INFO] Step 41. Time 8.20. $n$ 0.8827020259679245\n"
      ]
     },
     {
      "name": "stderr",
      "output_type": "stream",
      "text": [
-      "2025-12-20 10:28:44,862[INFO] Step 42. Time 8.40. $n$ 0.8796958667524065\n"
+      "2025-12-20 11:03:00,409[INFO] Step 42. Time 8.40. $n$ 0.8796958667524066\n"
      ]
     },
     {
      "name": "stderr",
      "output_type": "stream",
      "text": [
-      "2025-12-20 10:28:44,879[INFO] Step 43. Time 8.60. $n$ 0.876672673739856\n"
+      "2025-12-20 11:03:00,426[INFO] Step 43. Time 8.60. $n$ 0.8766726737398559\n"
      ]
     },
     {
      "name": "stderr",
      "output_type": "stream",
      "text": [
-      "2025-12-20 10:28:44,896[INFO] Step 44. Time 8.80. $n$ 0.8736347299848458\n"
+      "2025-12-20 11:03:00,442[INFO] Step 44. Time 8.80. $n$ 0.8736347299848458\n"
      ]
     },
     {
      "name": "stderr",
      "output_type": "stream",
      "text": [
-      "2025-12-20 10:28:44,914[INFO] Step 45. Time 9.00. $n$ 0.8705861034366976\n"
+      "2025-12-20 11:03:00,458[INFO] Step 45. Time 9.00. $n$ 0.8705861034366976\n"
      ]
     },
     {
      "name": "stderr",
      "output_type": "stream",
      "text": [
-      "2025-12-20 10:28:44,931[INFO] Step 46. Time 9.20. $n$ 0.8675328737556515\n"
+      "2025-12-20 11:03:00,475[INFO] Step 46. Time 9.20. $n$ 0.8675328737556515\n"
      ]
     },
     {
      "name": "stderr",
      "output_type": "stream",
      "text": [
-      "2025-12-20 10:28:44,948[INFO] Step 47. Time 9.40. $n$ 0.8644830817098144\n"
+      "2025-12-20 11:03:00,491[INFO] Step 47. Time 9.40. $n$ 0.8644830817098144\n"
      ]
     },
     {
      "name": "stderr",
      "output_type": "stream",
      "text": [
-      "2025-12-20 10:28:44,965[INFO] Step 48. Time 9.60. $n$ 0.8614463370235248\n"
+      "2025-12-20 11:03:00,508[INFO] Step 48. Time 9.60. $n$ 0.8614463370235249\n"
      ]
     },
     {
      "name": "stderr",
      "output_type": "stream",
      "text": [
-      "2025-12-20 10:28:44,982[INFO] Step 49. Time 9.80. $n$ 0.8584330043902285\n"
+      "2025-12-20 11:03:00,524[INFO] Step 49. Time 9.80. $n$ 0.8584330043902285\n"
      ]
     }
    ],
@@ -731,10 +731,10 @@
    "id": "273abac9-cdd0-451f-adaf-54aa4318dacb",
    "metadata": {
     "execution": {
-     "iopub.execute_input": "2025-12-20T10:28:45.003663Z",
-     "iopub.status.busy": "2025-12-20T10:28:45.003416Z",
-     "iopub.status.idle": "2025-12-20T10:28:47.395785Z",
-     "shell.execute_reply": "2025-12-20T10:28:47.395041Z"
+     "iopub.execute_input": "2025-12-20T11:03:00.544730Z",
+     "iopub.status.busy": "2025-12-20T11:03:00.544204Z",
+     "iopub.status.idle": "2025-12-20T11:03:02.867367Z",
+     "shell.execute_reply": "2025-12-20T11:03:02.866683Z"
     }
    },
    "outputs": [
@@ -780,10 +780,10 @@
    "id": "68b39110-309b-4f10-87bd-2fbfe0244d8e",
    "metadata": {
     "execution": {
-     "iopub.execute_input": "2025-12-20T10:28:47.398489Z",
-     "iopub.status.busy": "2025-12-20T10:28:47.398101Z",
-     "iopub.status.idle": "2025-12-20T10:28:47.402887Z",
-     "shell.execute_reply": "2025-12-20T10:28:47.402345Z"
+     "iopub.execute_input": "2025-12-20T11:03:02.870070Z",
+     "iopub.status.busy": "2025-12-20T11:03:02.869473Z",
+     "iopub.status.idle": "2025-12-20T11:03:02.874414Z",
+     "shell.execute_reply": "2025-12-20T11:03:02.873853Z"
     }
    },
    "outputs": [
@@ -816,10 +816,10 @@
    "id": "4a87c29d-66c4-4980-a68d-f6f9b54ec97c",
    "metadata": {
     "execution": {
-     "iopub.execute_input": "2025-12-20T10:28:47.405120Z",
-     "iopub.status.busy": "2025-12-20T10:28:47.404706Z",
-     "iopub.status.idle": "2025-12-20T10:28:47.409112Z",
-     "shell.execute_reply": "2025-12-20T10:28:47.408439Z"
+     "iopub.execute_input": "2025-12-20T11:03:02.876452Z",
+     "iopub.status.busy": "2025-12-20T11:03:02.876260Z",
+     "iopub.status.idle": "2025-12-20T11:03:02.880434Z",
+     "shell.execute_reply": "2025-12-20T11:03:02.879883Z"
     }
    },
    "outputs": [
@@ -852,10 +852,10 @@
    "id": "695d929a-e9ac-40a0-ab81-ed5132754aa6",
    "metadata": {
     "execution": {
-     "iopub.execute_input": "2025-12-20T10:28:47.411201Z",
-     "iopub.status.busy": "2025-12-20T10:28:47.410815Z",
-     "iopub.status.idle": "2025-12-20T10:28:47.415034Z",
-     "shell.execute_reply": "2025-12-20T10:28:47.414368Z"
+     "iopub.execute_input": "2025-12-20T11:03:02.882494Z",
+     "iopub.status.busy": "2025-12-20T11:03:02.882109Z",
+     "iopub.status.idle": "2025-12-20T11:03:02.886184Z",
+     "shell.execute_reply": "2025-12-20T11:03:02.885629Z"
     }
    },
    "outputs": [
@@ -891,10 +891,10 @@
    "id": "3a2bde08-4e11-4300-a5c7-22599d161bdd",
    "metadata": {
     "execution": {
-     "iopub.execute_input": "2025-12-20T10:28:47.417246Z",
-     "iopub.status.busy": "2025-12-20T10:28:47.417033Z",
-     "iopub.status.idle": "2025-12-20T10:28:47.420075Z",
-     "shell.execute_reply": "2025-12-20T10:28:47.419531Z"
+     "iopub.execute_input": "2025-12-20T11:03:02.888339Z",
+     "iopub.status.busy": "2025-12-20T11:03:02.887947Z",
+     "iopub.status.idle": "2025-12-20T11:03:02.891085Z",
+     "shell.execute_reply": "2025-12-20T11:03:02.890440Z"
     }
    },
    "outputs": [],
@@ -908,10 +908,10 @@
    "id": "43784000-c652-41c1-9045-3cc8d462ad64",
    "metadata": {
     "execution": {
-     "iopub.execute_input": "2025-12-20T10:28:47.421903Z",
-     "iopub.status.busy": "2025-12-20T10:28:47.421722Z",
-     "iopub.status.idle": "2025-12-20T10:28:47.424786Z",
-     "shell.execute_reply": "2025-12-20T10:28:47.424239Z"
+     "iopub.execute_input": "2025-12-20T11:03:02.893213Z",
+     "iopub.status.busy": "2025-12-20T11:03:02.892818Z",
+     "iopub.status.idle": "2025-12-20T11:03:02.896009Z",
+     "shell.execute_reply": "2025-12-20T11:03:02.895364Z"
     }
    },
    "outputs": [],
@@ -934,10 +934,10 @@
    "id": "69af3e7f-0f3c-4d3f-9ee8-1dcc7fa85861",
    "metadata": {
     "execution": {
-     "iopub.execute_input": "2025-12-20T10:28:47.426691Z",
-     "iopub.status.busy": "2025-12-20T10:28:47.426511Z",
-     "iopub.status.idle": "2025-12-20T10:28:47.447222Z",
-     "shell.execute_reply": "2025-12-20T10:28:47.446277Z"
+     "iopub.execute_input": "2025-12-20T11:03:02.898295Z",
+     "iopub.status.busy": "2025-12-20T11:03:02.897919Z",
+     "iopub.status.idle": "2025-12-20T11:03:02.918585Z",
+     "shell.execute_reply": "2025-12-20T11:03:02.918030Z"
     }
    },
    "outputs": [
@@ -974,10 +974,10 @@
    "id": "e62d1b1d-bfad-40e0-8df5-21023c822510",
    "metadata": {
     "execution": {
-     "iopub.execute_input": "2025-12-20T10:28:47.449767Z",
-     "iopub.status.busy": "2025-12-20T10:28:47.449531Z",
-     "iopub.status.idle": "2025-12-20T10:28:47.453879Z",
-     "shell.execute_reply": "2025-12-20T10:28:47.453264Z"
+     "iopub.execute_input": "2025-12-20T11:03:02.921410Z",
+     "iopub.status.busy": "2025-12-20T11:03:02.921172Z",
+     "iopub.status.idle": "2025-12-20T11:03:02.925410Z",
+     "shell.execute_reply": "2025-12-20T11:03:02.924765Z"
     }
    },
    "outputs": [],
@@ -991,10 +991,10 @@
    "id": "9bff686c-aeb0-463b-8208-d810c9a8f027",
    "metadata": {
     "execution": {
-     "iopub.execute_input": "2025-12-20T10:28:47.456800Z",
-     "iopub.status.busy": "2025-12-20T10:28:47.456567Z",
-     "iopub.status.idle": "2025-12-20T10:28:47.460040Z",
-     "shell.execute_reply": "2025-12-20T10:28:47.459096Z"
+     "iopub.execute_input": "2025-12-20T11:03:02.928317Z",
+     "iopub.status.busy": "2025-12-20T11:03:02.928060Z",
+     "iopub.status.idle": "2025-12-20T11:03:02.932378Z",
+     "shell.execute_reply": "2025-12-20T11:03:02.931779Z"
     }
    },
    "outputs": [],
@@ -1021,10 +1021,10 @@
    "id": "a41f442d-56ca-4979-8c1d-886339f22c96",
    "metadata": {
     "execution": {
-     "iopub.execute_input": "2025-12-20T10:28:47.462745Z",
-     "iopub.status.busy": "2025-12-20T10:28:47.462448Z",
-     "iopub.status.idle": "2025-12-20T10:28:47.490068Z",
-     "shell.execute_reply": "2025-12-20T10:28:47.489504Z"
+     "iopub.execute_input": "2025-12-20T11:03:02.935320Z",
+     "iopub.status.busy": "2025-12-20T11:03:02.935065Z",
+     "iopub.status.idle": "2025-12-20T11:03:02.962301Z",
+     "shell.execute_reply": "2025-12-20T11:03:02.961656Z"
     },
     "scrolled": true
    },
@@ -1065,10 +1065,10 @@
    "id": "5f2a1509-ab7c-4e70-9d4c-5d26bb2e8502",
    "metadata": {
     "execution": {
-     "iopub.execute_input": "2025-12-20T10:28:47.493793Z",
-     "iopub.status.busy": "2025-12-20T10:28:47.492660Z",
-     "iopub.status.idle": "2025-12-20T10:28:47.508715Z",
-     "shell.execute_reply": "2025-12-20T10:28:47.508138Z"
+     "iopub.execute_input": "2025-12-20T11:03:02.965934Z",
+     "iopub.status.busy": "2025-12-20T11:03:02.964690Z",
+     "iopub.status.idle": "2025-12-20T11:03:02.980654Z",
+     "shell.execute_reply": "2025-12-20T11:03:02.980017Z"
     }
    },
    "outputs": [
@@ -1111,10 +1111,10 @@
    "id": "0dde7c58-04dc-478e-813d-8402ddfc929e",
    "metadata": {
     "execution": {
-     "iopub.execute_input": "2025-12-20T10:28:47.512692Z",
-     "iopub.status.busy": "2025-12-20T10:28:47.511707Z",
-     "iopub.status.idle": "2025-12-20T10:28:50.111828Z",
-     "shell.execute_reply": "2025-12-20T10:28:50.111166Z"
+     "iopub.execute_input": "2025-12-20T11:03:02.983415Z",
+     "iopub.status.busy": "2025-12-20T11:03:02.983183Z",
+     "iopub.status.idle": "2025-12-20T11:03:05.579757Z",
+     "shell.execute_reply": "2025-12-20T11:03:05.579103Z"
     }
    },
    "outputs": [
@@ -1122,742 +1122,742 @@
      "name": "stderr",
      "output_type": "stream",
      "text": [
-      "2025-12-20 10:28:47,518[INFO] Initial MPS bond dimension: [1, 1, 1, 1]\n"
+      "2025-12-20 11:03:02,989[INFO] Initial MPS bond dimension: [1, 1, 1, 1]\n"
      ]
     },
     {
      "name": "stderr",
      "output_type": "stream",
      "text": [
-      "2025-12-20 10:28:47,540[INFO] MPS bond dimension after expanding: [1, 2, 8, 1]\n"
+      "2025-12-20 11:03:03,011[INFO] MPS bond dimension after expanding: [1, 2, 8, 1]\n"
      ]
     },
     {
      "name": "stderr",
      "output_type": "stream",
      "text": [
-      "2025-12-20 10:28:47,542[INFO] Step 0. Time 0.00. $n$ 1.0\n"
+      "2025-12-20 11:03:03,013[INFO] Step 0. Time 0.00. $n$ 1.0\n"
      ]
     },
     {
      "name": "stderr",
      "output_type": "stream",
      "text": [
-      "2025-12-20 10:28:47,569[INFO] Step 1. Time 0.50. $n$ 0.9975776788496066\n"
+      "2025-12-20 11:03:03,039[INFO] Step 1. Time 0.50. $n$ 0.9975776788496084\n"
      ]
     },
     {
      "name": "stderr",
      "output_type": "stream",
      "text": [
-      "2025-12-20 10:28:47,595[INFO] Step 2. Time 1.00. $n$ 0.9911341778211978\n"
+      "2025-12-20 11:03:03,064[INFO] Step 2. Time 1.00. $n$ 0.9911341778211974\n"
      ]
     },
     {
      "name": "stderr",
      "output_type": "stream",
      "text": [
-      "2025-12-20 10:28:47,620[INFO] Step 3. Time 1.50. $n$ 0.9824981838275655\n"
+      "2025-12-20 11:03:03,089[INFO] Step 3. Time 1.50. $n$ 0.9824981838275654\n"
      ]
     },
     {
      "name": "stderr",
      "output_type": "stream",
      "text": [
-      "2025-12-20 10:28:47,646[INFO] Step 4. Time 2.00. $n$ 0.9733283418283666\n"
+      "2025-12-20 11:03:03,114[INFO] Step 4. Time 2.00. $n$ 0.9733283418283671\n"
      ]
     },
     {
      "name": "stderr",
      "output_type": "stream",
      "text": [
-      "2025-12-20 10:28:47,670[INFO] Step 5. Time 2.50. $n$ 0.9645218516469745\n"
+      "2025-12-20 11:03:03,140[INFO] Step 5. Time 2.50. $n$ 0.9645218516469742\n"
      ]
     },
     {
      "name": "stderr",
      "output_type": "stream",
      "text": [
-      "2025-12-20 10:28:47,697[INFO] Step 6. Time 3.00. $n$ 0.9563382368492206\n"
+      "2025-12-20 11:03:03,164[INFO] Step 6. Time 3.00. $n$ 0.956338236849222\n"
      ]
     },
     {
      "name": "stderr",
      "output_type": "stream",
      "text": [
-      "2025-12-20 10:28:47,722[INFO] Step 7. Time 3.50. $n$ 0.9487304333892198\n"
+      "2025-12-20 11:03:03,190[INFO] Step 7. Time 3.50. $n$ 0.948730433389221\n"
      ]
     },
     {
      "name": "stderr",
      "output_type": "stream",
      "text": [
-      "2025-12-20 10:28:47,747[INFO] Step 8. Time 4.00. $n$ 0.9415533981894385\n"
+      "2025-12-20 11:03:03,215[INFO] Step 8. Time 4.00. $n$ 0.9415533981894391\n"
      ]
     },
     {
      "name": "stderr",
      "output_type": "stream",
      "text": [
-      "2025-12-20 10:28:47,772[INFO] Step 9. Time 4.50. $n$ 0.9346400325046192\n"
+      "2025-12-20 11:03:03,240[INFO] Step 9. Time 4.50. $n$ 0.9346400325046197\n"
      ]
     },
     {
      "name": "stderr",
      "output_type": "stream",
      "text": [
-      "2025-12-20 10:28:47,797[INFO] Step 10. Time 5.00. $n$ 0.9278351842220703\n"
+      "2025-12-20 11:03:03,265[INFO] Step 10. Time 5.00. $n$ 0.9278351842220703\n"
      ]
     },
     {
      "name": "stderr",
      "output_type": "stream",
      "text": [
-      "2025-12-20 10:28:47,822[INFO] Step 11. Time 5.50. $n$ 0.9210298996164089\n"
+      "2025-12-20 11:03:03,290[INFO] Step 11. Time 5.50. $n$ 0.9210298996164082\n"
      ]
     },
     {
      "name": "stderr",
      "output_type": "stream",
      "text": [
-      "2025-12-20 10:28:47,846[INFO] Step 12. Time 6.00. $n$ 0.9141749831330704\n"
+      "2025-12-20 11:03:03,315[INFO] Step 12. Time 6.00. $n$ 0.91417498313307\n"
      ]
     },
     {
      "name": "stderr",
      "output_type": "stream",
      "text": [
-      "2025-12-20 10:28:47,870[INFO] Step 13. Time 6.50. $n$ 0.9072563582422928\n"
+      "2025-12-20 11:03:03,340[INFO] Step 13. Time 6.50. $n$ 0.9072563582422929\n"
      ]
     },
     {
      "name": "stderr",
      "output_type": "stream",
      "text": [
-      "2025-12-20 10:28:47,895[INFO] Step 14. Time 7.00. $n$ 0.9002591286104629\n"
+      "2025-12-20 11:03:03,365[INFO] Step 14. Time 7.00. $n$ 0.9002591286104608\n"
      ]
     },
     {
      "name": "stderr",
      "output_type": "stream",
      "text": [
-      "2025-12-20 10:28:47,920[INFO] Step 15. Time 7.50. $n$ 0.8931521085342434\n"
+      "2025-12-20 11:03:03,390[INFO] Step 15. Time 7.50. $n$ 0.8931521085342404\n"
      ]
     },
     {
      "name": "stderr",
      "output_type": "stream",
      "text": [
-      "2025-12-20 10:28:47,945[INFO] Step 16. Time 8.00. $n$ 0.885894387857515\n"
+      "2025-12-20 11:03:03,415[INFO] Step 16. Time 8.00. $n$ 0.8858943878575142\n"
      ]
     },
     {
      "name": "stderr",
      "output_type": "stream",
      "text": [
-      "2025-12-20 10:28:47,969[INFO] Step 17. Time 8.50. $n$ 0.8784553598367519\n"
+      "2025-12-20 11:03:03,440[INFO] Step 17. Time 8.50. $n$ 0.8784553598367526\n"
      ]
     },
     {
      "name": "stderr",
      "output_type": "stream",
      "text": [
-      "2025-12-20 10:28:47,994[INFO] Step 18. Time 9.00. $n$ 0.8708472420517186\n"
+      "2025-12-20 11:03:03,465[INFO] Step 18. Time 9.00. $n$ 0.8708472420517188\n"
      ]
     },
     {
      "name": "stderr",
      "output_type": "stream",
      "text": [
-      "2025-12-20 10:28:48,018[INFO] Step 19. Time 9.50. $n$ 0.863161654941094\n"
+      "2025-12-20 11:03:03,490[INFO] Step 19. Time 9.50. $n$ 0.8631616549410932\n"
      ]
     },
     {
      "name": "stderr",
      "output_type": "stream",
      "text": [
-      "2025-12-20 10:28:48,063[INFO] MPS bond dimension after expanding: [1, 2, 8, 1]\n"
+      "2025-12-20 11:03:03,534[INFO] MPS bond dimension after expanding: [1, 2, 8, 1]\n"
      ]
     },
     {
      "name": "stderr",
      "output_type": "stream",
      "text": [
-      "2025-12-20 10:28:48,065[INFO] Step 0. Time 0.00. $n$ 1.0000000000000002\n"
+      "2025-12-20 11:03:03,537[INFO] Step 0. Time 0.00. $n$ 1.0000000000000002\n"
      ]
     },
     {
      "name": "stderr",
      "output_type": "stream",
      "text": [
-      "2025-12-20 10:28:48,090[INFO] Step 1. Time 0.50. $n$ 0.9975401925879046\n"
+      "2025-12-20 11:03:03,562[INFO] Step 1. Time 0.50. $n$ 0.997540192587904\n"
      ]
     },
     {
      "name": "stderr",
      "output_type": "stream",
      "text": [
-      "2025-12-20 10:28:48,114[INFO] Step 2. Time 1.00. $n$ 0.9906013628490231\n"
+      "2025-12-20 11:03:03,587[INFO] Step 2. Time 1.00. $n$ 0.9906013628490229\n"
      ]
     },
     {
      "name": "stderr",
      "output_type": "stream",
      "text": [
-      "2025-12-20 10:28:48,139[INFO] Step 3. Time 1.50. $n$ 0.9802488858640304\n"
+      "2025-12-20 11:03:03,612[INFO] Step 3. Time 1.50. $n$ 0.9802488858640298\n"
      ]
     },
     {
      "name": "stderr",
      "output_type": "stream",
      "text": [
-      "2025-12-20 10:28:48,164[INFO] Step 4. Time 2.00. $n$ 0.967659360810459\n"
+      "2025-12-20 11:03:03,637[INFO] Step 4. Time 2.00. $n$ 0.967659360810458\n"
      ]
     },
     {
      "name": "stderr",
      "output_type": "stream",
      "text": [
-      "2025-12-20 10:28:48,189[INFO] Step 5. Time 2.50. $n$ 0.9537696503060075\n"
+      "2025-12-20 11:03:03,663[INFO] Step 5. Time 2.50. $n$ 0.9537696503060081\n"
      ]
     },
     {
      "name": "stderr",
      "output_type": "stream",
      "text": [
-      "2025-12-20 10:28:48,214[INFO] Step 6. Time 3.00. $n$ 0.9392072948520966\n"
+      "2025-12-20 11:03:03,688[INFO] Step 6. Time 3.00. $n$ 0.939207294852096\n"
      ]
     },
     {
      "name": "stderr",
      "output_type": "stream",
      "text": [
-      "2025-12-20 10:28:48,239[INFO] Step 7. Time 3.50. $n$ 0.9243586104260206\n"
+      "2025-12-20 11:03:03,713[INFO] Step 7. Time 3.50. $n$ 0.9243586104260206\n"
      ]
     },
     {
      "name": "stderr",
      "output_type": "stream",
      "text": [
-      "2025-12-20 10:28:48,264[INFO] Step 8. Time 4.00. $n$ 0.9094397848359159\n"
+      "2025-12-20 11:03:03,738[INFO] Step 8. Time 4.00. $n$ 0.9094397848359155\n"
      ]
     },
     {
      "name": "stderr",
      "output_type": "stream",
      "text": [
-      "2025-12-20 10:28:48,289[INFO] Step 9. Time 4.50. $n$ 0.8945511232283819\n"
+      "2025-12-20 11:03:03,763[INFO] Step 9. Time 4.50. $n$ 0.8945511232283805\n"
      ]
     },
     {
      "name": "stderr",
      "output_type": "stream",
      "text": [
-      "2025-12-20 10:28:48,315[INFO] Step 10. Time 5.00. $n$ 0.8797430038665837\n"
+      "2025-12-20 11:03:03,788[INFO] Step 10. Time 5.00. $n$ 0.8797430038665824\n"
      ]
     },
     {
      "name": "stderr",
      "output_type": "stream",
      "text": [
-      "2025-12-20 10:28:48,341[INFO] Step 11. Time 5.50. $n$ 0.8650797798247608\n"
+      "2025-12-20 11:03:03,813[INFO] Step 11. Time 5.50. $n$ 0.8650797798247599\n"
      ]
     },
     {
      "name": "stderr",
      "output_type": "stream",
      "text": [
-      "2025-12-20 10:28:48,366[INFO] Step 12. Time 6.00. $n$ 0.8506519218071085\n"
+      "2025-12-20 11:03:03,838[INFO] Step 12. Time 6.00. $n$ 0.8506519218071079\n"
      ]
     },
     {
      "name": "stderr",
      "output_type": "stream",
      "text": [
-      "2025-12-20 10:28:48,390[INFO] Step 13. Time 6.50. $n$ 0.8365374567180589\n"
+      "2025-12-20 11:03:03,863[INFO] Step 13. Time 6.50. $n$ 0.8365374567180585\n"
      ]
     },
     {
      "name": "stderr",
      "output_type": "stream",
      "text": [
-      "2025-12-20 10:28:48,415[INFO] Step 14. Time 7.00. $n$ 0.8227688239625948\n"
+      "2025-12-20 11:03:03,888[INFO] Step 14. Time 7.00. $n$ 0.8227688239625945\n"
      ]
     },
     {
      "name": "stderr",
      "output_type": "stream",
      "text": [
-      "2025-12-20 10:28:48,440[INFO] Step 15. Time 7.50. $n$ 0.8093300617593491\n"
+      "2025-12-20 11:03:03,913[INFO] Step 15. Time 7.50. $n$ 0.8093300617593501\n"
      ]
     },
     {
      "name": "stderr",
      "output_type": "stream",
      "text": [
-      "2025-12-20 10:28:48,466[INFO] Step 16. Time 8.00. $n$ 0.7961632960693836\n"
+      "2025-12-20 11:03:03,938[INFO] Step 16. Time 8.00. $n$ 0.7961632960693849\n"
      ]
     },
     {
      "name": "stderr",
      "output_type": "stream",
      "text": [
-      "2025-12-20 10:28:48,491[INFO] Step 17. Time 8.50. $n$ 0.7831685752085098\n"
+      "2025-12-20 11:03:03,963[INFO] Step 17. Time 8.50. $n$ 0.7831685752085118\n"
      ]
     },
     {
      "name": "stderr",
      "output_type": "stream",
      "text": [
-      "2025-12-20 10:28:48,516[INFO] Step 18. Time 9.00. $n$ 0.7702000677823138\n"
+      "2025-12-20 11:03:03,988[INFO] Step 18. Time 9.00. $n$ 0.7702000677823142\n"
      ]
     },
     {
      "name": "stderr",
      "output_type": "stream",
      "text": [
-      "2025-12-20 10:28:48,540[INFO] Step 19. Time 9.50. $n$ 0.757064685098761\n"
+      "2025-12-20 11:03:04,013[INFO] Step 19. Time 9.50. $n$ 0.7570646850987617\n"
      ]
     },
     {
      "name": "stderr",
      "output_type": "stream",
      "text": [
-      "2025-12-20 10:28:48,584[INFO] MPS bond dimension after expanding: [1, 2, 8, 1]\n"
+      "2025-12-20 11:03:04,058[INFO] MPS bond dimension after expanding: [1, 2, 8, 1]\n"
      ]
     },
     {
      "name": "stderr",
      "output_type": "stream",
      "text": [
-      "2025-12-20 10:28:48,585[INFO] Step 0. Time 0.00. $n$ 1.0\n"
+      "2025-12-20 11:03:04,060[INFO] Step 0. Time 0.00. $n$ 1.0\n"
      ]
     },
     {
      "name": "stderr",
      "output_type": "stream",
      "text": [
-      "2025-12-20 10:28:48,610[INFO] Step 1. Time 0.50. $n$ 0.9975277339592452\n"
+      "2025-12-20 11:03:04,085[INFO] Step 1. Time 0.50. $n$ 0.9975277339592451\n"
      ]
     },
     {
      "name": "stderr",
      "output_type": "stream",
      "text": [
-      "2025-12-20 10:28:48,634[INFO] Step 2. Time 1.00. $n$ 0.9904261839751383\n"
+      "2025-12-20 11:03:04,111[INFO] Step 2. Time 1.00. $n$ 0.9904261839751383\n"
      ]
     },
     {
      "name": "stderr",
      "output_type": "stream",
      "text": [
-      "2025-12-20 10:28:48,659[INFO] Step 3. Time 1.50. $n$ 0.9795268047068671\n"
+      "2025-12-20 11:03:04,136[INFO] Step 3. Time 1.50. $n$ 0.9795268047068668\n"
      ]
     },
     {
      "name": "stderr",
      "output_type": "stream",
      "text": [
-      "2025-12-20 10:28:48,684[INFO] Step 4. Time 2.00. $n$ 0.9659170449060827\n"
+      "2025-12-20 11:03:04,161[INFO] Step 4. Time 2.00. $n$ 0.9659170449060821\n"
      ]
     },
     {
      "name": "stderr",
      "output_type": "stream",
      "text": [
-      "2025-12-20 10:28:48,708[INFO] Step 5. Time 2.50. $n$ 0.9506850089406202\n"
+      "2025-12-20 11:03:04,186[INFO] Step 5. Time 2.50. $n$ 0.9506850089406199\n"
      ]
     },
     {
      "name": "stderr",
      "output_type": "stream",
      "text": [
-      "2025-12-20 10:28:48,733[INFO] Step 6. Time 3.00. $n$ 0.9347455146607806\n"
+      "2025-12-20 11:03:04,211[INFO] Step 6. Time 3.00. $n$ 0.9347455146607817\n"
      ]
     },
     {
      "name": "stderr",
      "output_type": "stream",
      "text": [
-      "2025-12-20 10:28:48,758[INFO] Step 7. Time 3.50. $n$ 0.9187422726641752\n"
+      "2025-12-20 11:03:04,236[INFO] Step 7. Time 3.50. $n$ 0.9187422726641743\n"
      ]
     },
     {
      "name": "stderr",
      "output_type": "stream",
      "text": [
-      "2025-12-20 10:28:48,783[INFO] Step 8. Time 4.00. $n$ 0.9030158921696076\n"
+      "2025-12-20 11:03:04,262[INFO] Step 8. Time 4.00. $n$ 0.9030158921696063\n"
      ]
     },
     {
      "name": "stderr",
      "output_type": "stream",
      "text": [
-      "2025-12-20 10:28:48,808[INFO] Step 9. Time 4.50. $n$ 0.8876520609099685\n"
+      "2025-12-20 11:03:04,287[INFO] Step 9. Time 4.50. $n$ 0.8876520609099677\n"
      ]
     },
     {
      "name": "stderr",
      "output_type": "stream",
      "text": [
-      "2025-12-20 10:28:48,833[INFO] Step 10. Time 5.00. $n$ 0.872598279802041\n"
+      "2025-12-20 11:03:04,312[INFO] Step 10. Time 5.00. $n$ 0.872598279802041\n"
      ]
     },
     {
      "name": "stderr",
      "output_type": "stream",
      "text": [
-      "2025-12-20 10:28:48,857[INFO] Step 11. Time 5.50. $n$ 0.8577742342547117\n"
+      "2025-12-20 11:03:04,337[INFO] Step 11. Time 5.50. $n$ 0.857774234254712\n"
      ]
     },
     {
      "name": "stderr",
      "output_type": "stream",
      "text": [
-      "2025-12-20 10:28:48,883[INFO] Step 12. Time 6.00. $n$ 0.8431151893156006\n"
+      "2025-12-20 11:03:04,362[INFO] Step 12. Time 6.00. $n$ 0.8431151893156008\n"
      ]
     },
     {
      "name": "stderr",
      "output_type": "stream",
      "text": [
-      "2025-12-20 10:28:48,907[INFO] Step 13. Time 6.50. $n$ 0.828580988689203\n"
+      "2025-12-20 11:03:04,387[INFO] Step 13. Time 6.50. $n$ 0.8285809886892022\n"
      ]
     },
     {
      "name": "stderr",
      "output_type": "stream",
      "text": [
-      "2025-12-20 10:28:48,932[INFO] Step 14. Time 7.00. $n$ 0.8141772509631215\n"
+      "2025-12-20 11:03:04,411[INFO] Step 14. Time 7.00. $n$ 0.8141772509631204\n"
      ]
     },
     {
      "name": "stderr",
      "output_type": "stream",
      "text": [
-      "2025-12-20 10:28:48,957[INFO] Step 15. Time 7.50. $n$ 0.7999687732355268\n"
+      "2025-12-20 11:03:04,436[INFO] Step 15. Time 7.50. $n$ 0.7999687732355265\n"
      ]
     },
     {
      "name": "stderr",
      "output_type": "stream",
      "text": [
-      "2025-12-20 10:28:48,982[INFO] Step 16. Time 8.00. $n$ 0.7860556760297773\n"
+      "2025-12-20 11:03:04,461[INFO] Step 16. Time 8.00. $n$ 0.7860556760297769\n"
      ]
     },
     {
      "name": "stderr",
      "output_type": "stream",
      "text": [
-      "2025-12-20 10:28:49,006[INFO] Step 17. Time 8.50. $n$ 0.7725203376680734\n"
+      "2025-12-20 11:03:04,486[INFO] Step 17. Time 8.50. $n$ 0.7725203376680733\n"
      ]
     },
     {
      "name": "stderr",
      "output_type": "stream",
      "text": [
-      "2025-12-20 10:28:49,030[INFO] Step 18. Time 9.00. $n$ 0.7593659426880239\n"
+      "2025-12-20 11:03:04,511[INFO] Step 18. Time 9.00. $n$ 0.7593659426880244\n"
      ]
     },
     {
      "name": "stderr",
      "output_type": "stream",
      "text": [
-      "2025-12-20 10:28:49,055[INFO] Step 19. Time 9.50. $n$ 0.7464615604976074\n"
+      "2025-12-20 11:03:04,535[INFO] Step 19. Time 9.50. $n$ 0.7464615604976077\n"
      ]
     },
     {
      "name": "stderr",
      "output_type": "stream",
      "text": [
-      "2025-12-20 10:28:49,099[INFO] MPS bond dimension after expanding: [1, 2, 8, 1]\n"
+      "2025-12-20 11:03:04,579[INFO] MPS bond dimension after expanding: [1, 2, 8, 1]\n"
      ]
     },
     {
      "name": "stderr",
      "output_type": "stream",
      "text": [
-      "2025-12-20 10:28:49,100[INFO] Step 0. Time 0.00. $n$ 1.0\n"
+      "2025-12-20 11:03:04,580[INFO] Step 0. Time 0.00. $n$ 1.0\n"
      ]
     },
     {
      "name": "stderr",
      "output_type": "stream",
      "text": [
-      "2025-12-20 10:28:49,127[INFO] Step 1. Time 0.50. $n$ 0.997540609010596\n"
+      "2025-12-20 11:03:04,605[INFO] Step 1. Time 0.50. $n$ 0.9975406090105954\n"
      ]
     },
     {
      "name": "stderr",
      "output_type": "stream",
      "text": [
-      "2025-12-20 10:28:49,151[INFO] Step 2. Time 1.00. $n$ 0.9906249611406748\n"
+      "2025-12-20 11:03:04,630[INFO] Step 2. Time 1.00. $n$ 0.9906249611406741\n"
      ]
     },
     {
      "name": "stderr",
      "output_type": "stream",
      "text": [
-      "2025-12-20 10:28:49,176[INFO] Step 3. Time 1.50. $n$ 0.9804700824710458\n"
+      "2025-12-20 11:03:04,655[INFO] Step 3. Time 1.50. $n$ 0.9804700824710458\n"
      ]
     },
     {
      "name": "stderr",
      "output_type": "stream",
      "text": [
-      "2025-12-20 10:28:49,200[INFO] Step 4. Time 2.00. $n$ 0.968619088235722\n"
+      "2025-12-20 11:03:04,679[INFO] Step 4. Time 2.00. $n$ 0.9686190882357237\n"
      ]
     },
     {
      "name": "stderr",
      "output_type": "stream",
      "text": [
-      "2025-12-20 10:28:49,225[INFO] Step 5. Time 2.50. $n$ 0.9564506630039293\n"
+      "2025-12-20 11:03:04,703[INFO] Step 5. Time 2.50. $n$ 0.95645066300393\n"
      ]
     },
     {
      "name": "stderr",
      "output_type": "stream",
      "text": [
-      "2025-12-20 10:28:49,249[INFO] Step 6. Time 3.00. $n$ 0.944824401740505\n"
+      "2025-12-20 11:03:04,728[INFO] Step 6. Time 3.00. $n$ 0.9448244017405037\n"
      ]
     },
     {
      "name": "stderr",
      "output_type": "stream",
      "text": [
-      "2025-12-20 10:28:49,274[INFO] Step 7. Time 3.50. $n$ 0.9339798618065529\n"
+      "2025-12-20 11:03:04,752[INFO] Step 7. Time 3.50. $n$ 0.9339798618065533\n"
      ]
     },
     {
      "name": "stderr",
      "output_type": "stream",
      "text": [
-      "2025-12-20 10:28:49,298[INFO] Step 8. Time 4.00. $n$ 0.9236970054402203\n"
+      "2025-12-20 11:03:04,776[INFO] Step 8. Time 4.00. $n$ 0.9236970054402212\n"
      ]
     },
     {
      "name": "stderr",
      "output_type": "stream",
      "text": [
-      "2025-12-20 10:28:49,323[INFO] Step 9. Time 4.50. $n$ 0.913611841996374\n"
+      "2025-12-20 11:03:04,802[INFO] Step 9. Time 4.50. $n$ 0.9136118419963748\n"
      ]
     },
     {
      "name": "stderr",
      "output_type": "stream",
      "text": [
-      "2025-12-20 10:28:49,348[INFO] Step 10. Time 5.00. $n$ 0.9034945341198818\n"
+      "2025-12-20 11:03:04,826[INFO] Step 10. Time 5.00. $n$ 0.9034945341198819\n"
      ]
     },
     {
      "name": "stderr",
      "output_type": "stream",
      "text": [
-      "2025-12-20 10:28:49,372[INFO] Step 11. Time 5.50. $n$ 0.8933290940558754\n"
+      "2025-12-20 11:03:04,850[INFO] Step 11. Time 5.50. $n$ 0.893329094055876\n"
      ]
     },
     {
      "name": "stderr",
      "output_type": "stream",
      "text": [
-      "2025-12-20 10:28:49,397[INFO] Step 12. Time 6.00. $n$ 0.8832123669566789\n"
+      "2025-12-20 11:03:04,875[INFO] Step 12. Time 6.00. $n$ 0.8832123669566796\n"
      ]
     },
     {
      "name": "stderr",
      "output_type": "stream",
      "text": [
-      "2025-12-20 10:28:49,421[INFO] Step 13. Time 6.50. $n$ 0.873220664079113\n"
+      "2025-12-20 11:03:04,899[INFO] Step 13. Time 6.50. $n$ 0.8732206640791196\n"
      ]
     },
     {
      "name": "stderr",
      "output_type": "stream",
      "text": [
-      "2025-12-20 10:28:49,446[INFO] Step 14. Time 7.00. $n$ 0.8633414313596142\n"
+      "2025-12-20 11:03:04,923[INFO] Step 14. Time 7.00. $n$ 0.863341431359629\n"
      ]
     },
     {
      "name": "stderr",
      "output_type": "stream",
      "text": [
-      "2025-12-20 10:28:49,470[INFO] Step 15. Time 7.50. $n$ 0.8534881635602567\n"
+      "2025-12-20 11:03:04,948[INFO] Step 15. Time 7.50. $n$ 0.8534881635602944\n"
      ]
     },
     {
      "name": "stderr",
      "output_type": "stream",
      "text": [
-      "2025-12-20 10:28:49,495[INFO] Step 16. Time 8.00. $n$ 0.843588921579701\n"
+      "2025-12-20 11:03:04,972[INFO] Step 16. Time 8.00. $n$ 0.8435889215797663\n"
      ]
     },
     {
      "name": "stderr",
      "output_type": "stream",
      "text": [
-      "2025-12-20 10:28:49,519[INFO] Step 17. Time 8.50. $n$ 0.8336922458093534\n"
+      "2025-12-20 11:03:04,997[INFO] Step 17. Time 8.50. $n$ 0.8336922458094265\n"
      ]
     },
     {
      "name": "stderr",
      "output_type": "stream",
      "text": [
-      "2025-12-20 10:28:49,545[INFO] Step 18. Time 9.00. $n$ 0.8239993933201613\n"
+      "2025-12-20 11:03:05,021[INFO] Step 18. Time 9.00. $n$ 0.8239993933202376\n"
      ]
     },
     {
      "name": "stderr",
      "output_type": "stream",
      "text": [
-      "2025-12-20 10:28:49,569[INFO] Step 19. Time 9.50. $n$ 0.8147658344265969\n"
+      "2025-12-20 11:03:05,046[INFO] Step 19. Time 9.50. $n$ 0.8147658344266686\n"
      ]
     },
     {
      "name": "stderr",
      "output_type": "stream",
      "text": [
-      "2025-12-20 10:28:49,613[INFO] MPS bond dimension after expanding: [1, 2, 8, 1]\n"
+      "2025-12-20 11:03:05,089[INFO] MPS bond dimension after expanding: [1, 2, 8, 1]\n"
      ]
     },
     {
      "name": "stderr",
      "output_type": "stream",
      "text": [
-      "2025-12-20 10:28:49,615[INFO] Step 0. Time 0.00. $n$ 1.0000000000000002\n"
+      "2025-12-20 11:03:05,091[INFO] Step 0. Time 0.00. $n$ 1.0000000000000002\n"
      ]
     },
     {
      "name": "stderr",
      "output_type": "stream",
      "text": [
-      "2025-12-20 10:28:49,640[INFO] Step 1. Time 0.50. $n$ 0.9975784978846656\n"
+      "2025-12-20 11:03:05,115[INFO] Step 1. Time 0.50. $n$ 0.9975784978846656\n"
      ]
     },
     {
      "name": "stderr",
      "output_type": "stream",
      "text": [
-      "2025-12-20 10:28:49,664[INFO] Step 2. Time 1.00. $n$ 0.9911783314788769\n"
+      "2025-12-20 11:03:05,139[INFO] Step 2. Time 1.00. $n$ 0.9911783314788777\n"
      ]
     },
     {
      "name": "stderr",
      "output_type": "stream",
      "text": [
-      "2025-12-20 10:28:49,689[INFO] Step 3. Time 1.50. $n$ 0.9828793267407632\n"
+      "2025-12-20 11:03:05,164[INFO] Step 3. Time 1.50. $n$ 0.9828793267407636\n"
      ]
     },
     {
      "name": "stderr",
      "output_type": "stream",
      "text": [
-      "2025-12-20 10:28:49,713[INFO] Step 4. Time 2.00. $n$ 0.9748047375106152\n"
+      "2025-12-20 11:03:05,188[INFO] Step 4. Time 2.00. $n$ 0.974804737510616\n"
      ]
     },
     {
      "name": "stderr",
      "output_type": "stream",
      "text": [
-      "2025-12-20 10:28:49,738[INFO] Step 5. Time 2.50. $n$ 0.9681008008243925\n"
+      "2025-12-20 11:03:05,212[INFO] Step 5. Time 2.50. $n$ 0.968100800824393\n"
      ]
     },
     {
      "name": "stderr",
      "output_type": "stream",
      "text": [
-      "2025-12-20 10:28:49,763[INFO] Step 6. Time 3.00. $n$ 0.9626946118364353\n"
+      "2025-12-20 11:03:05,237[INFO] Step 6. Time 3.00. $n$ 0.9626946118364352\n"
      ]
     },
     {
      "name": "stderr",
      "output_type": "stream",
      "text": [
-      "2025-12-20 10:28:49,788[INFO] Step 7. Time 3.50. $n$ 0.9578334887382831\n"
+      "2025-12-20 11:03:05,262[INFO] Step 7. Time 3.50. $n$ 0.9578334887382836\n"
      ]
     },
     {
      "name": "stderr",
      "output_type": "stream",
      "text": [
-      "2025-12-20 10:28:49,812[INFO] Step 8. Time 4.00. $n$ 0.9528636883612422\n"
+      "2025-12-20 11:03:05,286[INFO] Step 8. Time 4.00. $n$ 0.9528636883612422\n"
      ]
     },
     {
      "name": "stderr",
      "output_type": "stream",
      "text": [
-      "2025-12-20 10:28:49,837[INFO] Step 9. Time 4.50. $n$ 0.9476402488995236\n"
+      "2025-12-20 11:03:05,310[INFO] Step 9. Time 4.50. $n$ 0.9476402488995235\n"
      ]
     },
     {
      "name": "stderr",
      "output_type": "stream",
      "text": [
-      "2025-12-20 10:28:49,862[INFO] Step 10. Time 5.00. $n$ 0.9423714783197246\n"
+      "2025-12-20 11:03:05,334[INFO] Step 10. Time 5.00. $n$ 0.942371478319726\n"
      ]
     },
     {
      "name": "stderr",
      "output_type": "stream",
      "text": [
-      "2025-12-20 10:28:49,886[INFO] Step 11. Time 5.50. $n$ 0.9372226613912156\n"
+      "2025-12-20 11:03:05,358[INFO] Step 11. Time 5.50. $n$ 0.9372226613912163\n"
      ]
     },
     {
      "name": "stderr",
      "output_type": "stream",
      "text": [
-      "2025-12-20 10:28:49,911[INFO] Step 12. Time 6.00. $n$ 0.9321434873912731\n"
+      "2025-12-20 11:03:05,383[INFO] Step 12. Time 6.00. $n$ 0.9321434873912746\n"
      ]
     },
     {
      "name": "stderr",
      "output_type": "stream",
      "text": [
-      "2025-12-20 10:28:49,936[INFO] Step 13. Time 6.50. $n$ 0.9270168710222633\n"
+      "2025-12-20 11:03:05,407[INFO] Step 13. Time 6.50. $n$ 0.9270168710222653\n"
      ]
     },
     {
      "name": "stderr",
      "output_type": "stream",
      "text": [
-      "2025-12-20 10:28:49,960[INFO] Step 14. Time 7.00. $n$ 0.9218472771188875\n"
+      "2025-12-20 11:03:05,431[INFO] Step 14. Time 7.00. $n$ 0.9218472771188885\n"
      ]
     },
     {
      "name": "stderr",
      "output_type": "stream",
      "text": [
-      "2025-12-20 10:28:49,985[INFO] Step 15. Time 7.50. $n$ 0.9167421622570107\n"
+      "2025-12-20 11:03:05,456[INFO] Step 15. Time 7.50. $n$ 0.9167421622570109\n"
      ]
     },
     {
      "name": "stderr",
      "output_type": "stream",
      "text": [
-      "2025-12-20 10:28:50,010[INFO] Step 16. Time 8.00. $n$ 0.9117276598161905\n"
+      "2025-12-20 11:03:05,480[INFO] Step 16. Time 8.00. $n$ 0.9117276598161927\n"
      ]
     },
     {
      "name": "stderr",
      "output_type": "stream",
      "text": [
-      "2025-12-20 10:28:50,035[INFO] Step 17. Time 8.50. $n$ 0.9066479717963587\n"
+      "2025-12-20 11:03:05,505[INFO] Step 17. Time 8.50. $n$ 0.9066479717963627\n"
      ]
     },
     {
      "name": "stderr",
      "output_type": "stream",
      "text": [
-      "2025-12-20 10:28:50,059[INFO] Step 18. Time 9.00. $n$ 0.9013355144433688\n"
+      "2025-12-20 11:03:05,529[INFO] Step 18. Time 9.00. $n$ 0.901335514443374\n"
      ]
     },
     {
      "name": "stderr",
      "output_type": "stream",
      "text": [
-      "2025-12-20 10:28:50,085[INFO] Step 19. Time 9.50. $n$ 0.8959335401185703\n"
+      "2025-12-20 11:03:05,553[INFO] Step 19. Time 9.50. $n$ 0.8959335401185742\n"
      ]
     }
    ],
@@ -1910,17 +1910,17 @@
    "id": "60df9730-334d-4fe7-af4f-a237afedd7d7",
    "metadata": {
     "execution": {
-     "iopub.execute_input": "2025-12-20T10:28:50.115336Z",
-     "iopub.status.busy": "2025-12-20T10:28:50.115056Z",
-     "iopub.status.idle": "2025-12-20T10:28:51.711797Z",
-     "shell.execute_reply": "2025-12-20T10:28:51.710965Z"
+     "iopub.execute_input": "2025-12-20T11:03:05.582280Z",
+     "iopub.status.busy": "2025-12-20T11:03:05.582018Z",
+     "iopub.status.idle": "2025-12-20T11:03:07.164316Z",
+     "shell.execute_reply": "2025-12-20T11:03:07.163519Z"
     }
    },
    "outputs": [
     {
      "data": {
       "text/plain": [
-       "<matplotlib.legend.Legend at 0x7f2459d010a0>"
+       "<matplotlib.legend.Legend at 0x7fc079dc6fd0>"
       ]
      },
      "execution_count": 27,
