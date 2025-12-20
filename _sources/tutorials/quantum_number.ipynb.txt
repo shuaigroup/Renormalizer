@@ -70,10 +70,10 @@
    "id": "38d22aea-d558-4050-ba09-5ee910022a6e",
    "metadata": {
     "execution": {
-     "iopub.execute_input": "2025-11-11T02:47:46.483575Z",
-     "iopub.status.busy": "2025-11-11T02:47:46.483338Z",
-     "iopub.status.idle": "2025-11-11T02:47:47.204351Z",
-     "shell.execute_reply": "2025-11-11T02:47:47.203531Z"
+     "iopub.execute_input": "2025-12-20T10:28:40.144050Z",
+     "iopub.status.busy": "2025-12-20T10:28:40.143438Z",
+     "iopub.status.idle": "2025-12-20T10:28:40.812311Z",
+     "shell.execute_reply": "2025-12-20T10:28:40.811526Z"
     }
    },
    "outputs": [
@@ -81,40 +81,59 @@
      "name": "stderr",
      "output_type": "stream",
      "text": [
-      "2025-11-11 02:47:47,152[INFO] Use NumPy as backend\n"
+      "2025-12-20 10:28:40,766[INFO] Use NumPy as backend\n"
      ]
     },
     {
      "name": "stderr",
      "output_type": "stream",
      "text": [
-      "2025-11-11 02:47:47,153[INFO] numpy random seed is 9012\n"
+      "2025-12-20 10:28:40,767[INFO] numpy random seed is 9012\n"
      ]
     },
     {
      "name": "stderr",
      "output_type": "stream",
      "text": [
-      "2025-11-11 02:47:47,154[INFO] random seed is 1092\n"
+      "2025-12-20 10:28:40,767[INFO] random seed is 1092\n"
      ]
     },
     {
      "name": "stderr",
      "output_type": "stream",
      "text": [
-      "2025-11-11 02:47:47,165[INFO] Git Commit Hash: 940abbe8e26a22e9345f941947c6944ed81a5f06\n"
+      "2025-12-20 10:28:40,776[INFO] Git Commit Hash: 8843b08007f92c985e412fa39ccb812c6c05306e\n"
      ]
     },
     {
      "name": "stderr",
      "output_type": "stream",
      "text": [
-      "2025-11-11 02:47:47,167[INFO] use 64 bits\n"
+      "2025-12-20 10:28:40,777[INFO] use 64 bits\n"
      ]
     }
    ],
    "source": [
     "from renormalizer import BasisSimpleElectron"
+   ]
+  },
+  {
+   "cell_type": "code",
+   "execution_count": 2,
+   "id": "4ed9f0f6-9b89-4310-b98a-e01e7532e940",
+   "metadata": {
+    "execution": {
+     "iopub.execute_input": "2025-12-20T10:28:40.815026Z",
+     "iopub.status.busy": "2025-12-20T10:28:40.814560Z",
+     "iopub.status.idle": "2025-12-20T10:28:40.818052Z",
+     "shell.execute_reply": "2025-12-20T10:28:40.817515Z"
+    }
+   },
+   "outputs": [],
+   "source": [
+    "from renormalizer.utils.log import init_log, INFO\n",
+    "# set log level to INFO\n",
+    "init_log(INFO)"
    ]
   },
   {
@@ -127,14 +146,14 @@
   },
   {
    "cell_type": "code",
-   "execution_count": 2,
+   "execution_count": 3,
    "id": "4069da65-755f-4fce-8a83-48a498dfabda",
    "metadata": {
     "execution": {
-     "iopub.execute_input": "2025-11-11T02:47:47.207387Z",
-     "iopub.status.busy": "2025-11-11T02:47:47.206942Z",
-     "iopub.status.idle": "2025-11-11T02:47:47.211058Z",
-     "shell.execute_reply": "2025-11-11T02:47:47.210321Z"
+     "iopub.execute_input": "2025-12-20T10:28:40.820283Z",
+     "iopub.status.busy": "2025-12-20T10:28:40.819873Z",
+     "iopub.status.idle": "2025-12-20T10:28:40.823445Z",
+     "shell.execute_reply": "2025-12-20T10:28:40.822861Z"
     }
    },
    "outputs": [],
@@ -154,14 +173,14 @@
   },
   {
    "cell_type": "code",
-   "execution_count": 3,
+   "execution_count": 4,
    "id": "9d3b7ff7-ac29-4a33-8ed8-98dca88d1c37",
    "metadata": {
     "execution": {
-     "iopub.execute_input": "2025-11-11T02:47:47.213233Z",
-     "iopub.status.busy": "2025-11-11T02:47:47.213015Z",
-     "iopub.status.idle": "2025-11-11T02:47:47.216243Z",
-     "shell.execute_reply": "2025-11-11T02:47:47.215688Z"
+     "iopub.execute_input": "2025-12-20T10:28:40.825424Z",
+     "iopub.status.busy": "2025-12-20T10:28:40.825227Z",
+     "iopub.status.idle": "2025-12-20T10:28:40.828279Z",
+     "shell.execute_reply": "2025-12-20T10:28:40.827720Z"
     }
    },
    "outputs": [],
@@ -171,14 +190,14 @@
   },
   {
    "cell_type": "code",
-   "execution_count": 4,
+   "execution_count": 5,
    "id": "e9358f1f-f98e-4581-b6e0-54308966f74f",
    "metadata": {
     "execution": {
-     "iopub.execute_input": "2025-11-11T02:47:47.218228Z",
-     "iopub.status.busy": "2025-11-11T02:47:47.218020Z",
-     "iopub.status.idle": "2025-11-11T02:47:47.221195Z",
-     "shell.execute_reply": "2025-11-11T02:47:47.220643Z"
+     "iopub.execute_input": "2025-12-20T10:28:40.830070Z",
+     "iopub.status.busy": "2025-12-20T10:28:40.829889Z",
+     "iopub.status.idle": "2025-12-20T10:28:40.832910Z",
+     "shell.execute_reply": "2025-12-20T10:28:40.832362Z"
     }
    },
    "outputs": [],
@@ -188,14 +207,14 @@
   },
   {
    "cell_type": "code",
-   "execution_count": 5,
+   "execution_count": 6,
    "id": "f86cea1c-916f-47c0-bced-a8dc7c2f7055",
    "metadata": {
     "execution": {
-     "iopub.execute_input": "2025-11-11T02:47:47.223217Z",
-     "iopub.status.busy": "2025-11-11T02:47:47.223013Z",
-     "iopub.status.idle": "2025-11-11T02:47:47.227721Z",
-     "shell.execute_reply": "2025-11-11T02:47:47.227110Z"
+     "iopub.execute_input": "2025-12-20T10:28:40.834905Z",
+     "iopub.status.busy": "2025-12-20T10:28:40.834551Z",
+     "iopub.status.idle": "2025-12-20T10:28:40.838769Z",
+     "shell.execute_reply": "2025-12-20T10:28:40.838068Z"
     }
    },
    "outputs": [],
@@ -205,14 +224,14 @@
   },
   {
    "cell_type": "code",
-   "execution_count": 6,
+   "execution_count": 7,
    "id": "ff4c6277-31bb-4010-aca8-c637e3e0fa0c",
    "metadata": {
     "execution": {
-     "iopub.execute_input": "2025-11-11T02:47:47.229713Z",
-     "iopub.status.busy": "2025-11-11T02:47:47.229506Z",
-     "iopub.status.idle": "2025-11-11T02:47:47.236693Z",
-     "shell.execute_reply": "2025-11-11T02:47:47.235973Z"
+     "iopub.execute_input": "2025-12-20T10:28:40.841036Z",
+     "iopub.status.busy": "2025-12-20T10:28:40.840671Z",
+     "iopub.status.idle": "2025-12-20T10:28:40.847375Z",
+     "shell.execute_reply": "2025-12-20T10:28:40.846732Z"
     }
    },
    "outputs": [
@@ -223,7 +242,7 @@
        "        [0., 1.]]])"
       ]
      },
-     "execution_count": 6,
+     "execution_count": 7,
      "metadata": {},
      "output_type": "execute_result"
     }
@@ -234,14 +253,14 @@
   },
   {
    "cell_type": "code",
-   "execution_count": 7,
+   "execution_count": 8,
    "id": "ee83a807-0962-4889-b895-63067c898497",
    "metadata": {
     "execution": {
-     "iopub.execute_input": "2025-11-11T02:47:47.238720Z",
-     "iopub.status.busy": "2025-11-11T02:47:47.238525Z",
-     "iopub.status.idle": "2025-11-11T02:47:47.243155Z",
-     "shell.execute_reply": "2025-11-11T02:47:47.242598Z"
+     "iopub.execute_input": "2025-12-20T10:28:40.849238Z",
+     "iopub.status.busy": "2025-12-20T10:28:40.849029Z",
+     "iopub.status.idle": "2025-12-20T10:28:40.853148Z",
+     "shell.execute_reply": "2025-12-20T10:28:40.852605Z"
     }
    },
    "outputs": [
@@ -255,7 +274,7 @@
        "        [ 0.        ]]])"
       ]
      },
-     "execution_count": 7,
+     "execution_count": 8,
      "metadata": {},
      "output_type": "execute_result"
     }
@@ -266,14 +285,14 @@
   },
   {
    "cell_type": "code",
-   "execution_count": 8,
+   "execution_count": 9,
    "id": "faac1b86-603c-4c1e-8924-b21216d6949e",
    "metadata": {
     "execution": {
-     "iopub.execute_input": "2025-11-11T02:47:47.245339Z",
-     "iopub.status.busy": "2025-11-11T02:47:47.244873Z",
-     "iopub.status.idle": "2025-11-11T02:47:47.249820Z",
-     "shell.execute_reply": "2025-11-11T02:47:47.249132Z"
+     "iopub.execute_input": "2025-12-20T10:28:40.855233Z",
+     "iopub.status.busy": "2025-12-20T10:28:40.854836Z",
+     "iopub.status.idle": "2025-12-20T10:28:40.859431Z",
+     "shell.execute_reply": "2025-12-20T10:28:40.858749Z"
     }
    },
    "outputs": [
@@ -283,7 +302,7 @@
        "array([ 0.        , -0.7089592 , -0.70524949,  0.        ])"
       ]
      },
-     "execution_count": 8,
+     "execution_count": 9,
      "metadata": {},
      "output_type": "execute_result"
     }
@@ -304,14 +323,14 @@
   },
   {
    "cell_type": "code",
-   "execution_count": 9,
+   "execution_count": 10,
    "id": "ee62750a-8bc3-40ed-b7fa-d983942f8f19",
    "metadata": {
     "execution": {
-     "iopub.execute_input": "2025-11-11T02:47:47.252244Z",
-     "iopub.status.busy": "2025-11-11T02:47:47.251760Z",
-     "iopub.status.idle": "2025-11-11T02:47:47.256167Z",
-     "shell.execute_reply": "2025-11-11T02:47:47.255604Z"
+     "iopub.execute_input": "2025-12-20T10:28:40.861707Z",
+     "iopub.status.busy": "2025-12-20T10:28:40.861335Z",
+     "iopub.status.idle": "2025-12-20T10:28:40.865802Z",
+     "shell.execute_reply": "2025-12-20T10:28:40.865104Z"
     }
    },
    "outputs": [],
@@ -322,14 +341,14 @@
   },
   {
    "cell_type": "code",
-   "execution_count": 10,
+   "execution_count": 11,
    "id": "aab1e5dd-2aef-45a4-a7e2-11b31d9bdd53",
    "metadata": {
     "execution": {
-     "iopub.execute_input": "2025-11-11T02:47:47.258289Z",
-     "iopub.status.busy": "2025-11-11T02:47:47.258073Z",
-     "iopub.status.idle": "2025-11-11T02:47:47.262557Z",
-     "shell.execute_reply": "2025-11-11T02:47:47.261992Z"
+     "iopub.execute_input": "2025-12-20T10:28:40.867788Z",
+     "iopub.status.busy": "2025-12-20T10:28:40.867398Z",
+     "iopub.status.idle": "2025-12-20T10:28:40.871842Z",
+     "shell.execute_reply": "2025-12-20T10:28:40.871204Z"
     }
    },
    "outputs": [
@@ -340,7 +359,7 @@
        "        [ 0.96229386, -0.27201201]]])"
       ]
      },
-     "execution_count": 10,
+     "execution_count": 11,
      "metadata": {},
      "output_type": "execute_result"
     }
@@ -351,14 +370,14 @@
   },
   {
    "cell_type": "code",
-   "execution_count": 11,
+   "execution_count": 12,
    "id": "099493a0-f1bc-4eaf-ad21-a9faee50ad2d",
    "metadata": {
     "execution": {
-     "iopub.execute_input": "2025-11-11T02:47:47.264660Z",
-     "iopub.status.busy": "2025-11-11T02:47:47.264424Z",
-     "iopub.status.idle": "2025-11-11T02:47:47.268931Z",
-     "shell.execute_reply": "2025-11-11T02:47:47.268372Z"
+     "iopub.execute_input": "2025-12-20T10:28:40.874062Z",
+     "iopub.status.busy": "2025-12-20T10:28:40.873608Z",
+     "iopub.status.idle": "2025-12-20T10:28:40.877803Z",
+     "shell.execute_reply": "2025-12-20T10:28:40.877285Z"
     }
    },
    "outputs": [
@@ -372,7 +391,7 @@
        "        [ 0.43573537]]])"
       ]
      },
-     "execution_count": 11,
+     "execution_count": 12,
      "metadata": {},
      "output_type": "execute_result"
     }
@@ -383,14 +402,14 @@
   },
   {
    "cell_type": "code",
-   "execution_count": 12,
+   "execution_count": 13,
    "id": "33c1f28a-4847-4918-b25e-def309491a06",
    "metadata": {
     "execution": {
-     "iopub.execute_input": "2025-11-11T02:47:47.270871Z",
-     "iopub.status.busy": "2025-11-11T02:47:47.270664Z",
-     "iopub.status.idle": "2025-11-11T02:47:47.275359Z",
-     "shell.execute_reply": "2025-11-11T02:47:47.274803Z"
+     "iopub.execute_input": "2025-12-20T10:28:40.879973Z",
+     "iopub.status.busy": "2025-12-20T10:28:40.879449Z",
+     "iopub.status.idle": "2025-12-20T10:28:40.883888Z",
+     "shell.execute_reply": "2025-12-20T10:28:40.883346Z"
     }
    },
    "outputs": [
@@ -400,7 +419,7 @@
        "array([-0.18075719, -0.58568699, -0.63507609,  0.47008079])"
       ]
      },
-     "execution_count": 12,
+     "execution_count": 13,
      "metadata": {},
      "output_type": "execute_result"
     }
@@ -429,14 +448,14 @@
   },
   {
    "cell_type": "code",
-   "execution_count": 13,
+   "execution_count": 14,
    "id": "eb7f7ba4-5228-41bc-bf6d-ee41211e5f81",
    "metadata": {
     "execution": {
-     "iopub.execute_input": "2025-11-11T02:47:47.277546Z",
-     "iopub.status.busy": "2025-11-11T02:47:47.277318Z",
-     "iopub.status.idle": "2025-11-11T02:47:47.280235Z",
-     "shell.execute_reply": "2025-11-11T02:47:47.279675Z"
+     "iopub.execute_input": "2025-12-20T10:28:40.886053Z",
+     "iopub.status.busy": "2025-12-20T10:28:40.885553Z",
+     "iopub.status.idle": "2025-12-20T10:28:40.888715Z",
+     "shell.execute_reply": "2025-12-20T10:28:40.888041Z"
     }
    },
    "outputs": [],
@@ -454,53 +473,31 @@
   },
   {
    "cell_type": "code",
-   "execution_count": 14,
+   "execution_count": 15,
    "id": "86bfaee4-bbe1-43d5-98a6-0e1116131083",
    "metadata": {
     "execution": {
-     "iopub.execute_input": "2025-11-11T02:47:47.282212Z",
-     "iopub.status.busy": "2025-11-11T02:47:47.282007Z",
-     "iopub.status.idle": "2025-11-11T02:47:47.289667Z",
-     "shell.execute_reply": "2025-11-11T02:47:47.289081Z"
+     "iopub.execute_input": "2025-12-20T10:28:40.890742Z",
+     "iopub.status.busy": "2025-12-20T10:28:40.890393Z",
+     "iopub.status.idle": "2025-12-20T10:28:40.895604Z",
+     "shell.execute_reply": "2025-12-20T10:28:40.894930Z"
     }
    },
-   "outputs": [
-    {
-     "name": "stderr",
-     "output_type": "stream",
-     "text": [
-      "2025-11-11 02:47:47,283[DEBUG] # of operator terms: 1\n"
-     ]
-    },
-    {
-     "name": "stderr",
-     "output_type": "stream",
-     "text": [
-      "2025-11-11 02:47:47,284[DEBUG] Input operator terms: 1\n"
-     ]
-    },
-    {
-     "name": "stderr",
-     "output_type": "stream",
-     "text": [
-      "2025-11-11 02:47:47,286[DEBUG] After combination of the same terms: 1\n"
-     ]
-    }
-   ],
+   "outputs": [],
    "source": [
     "mps3 = Mpo(model, Op(r\"a^\\dagger\", 0, qn=1)) @ mps"
    ]
   },
   {
    "cell_type": "code",
-   "execution_count": 15,
+   "execution_count": 16,
    "id": "48c0d99b-a6c2-4656-b78d-9762d7cba665",
    "metadata": {
     "execution": {
-     "iopub.execute_input": "2025-11-11T02:47:47.291660Z",
-     "iopub.status.busy": "2025-11-11T02:47:47.291429Z",
-     "iopub.status.idle": "2025-11-11T02:47:47.295974Z",
-     "shell.execute_reply": "2025-11-11T02:47:47.295390Z"
+     "iopub.execute_input": "2025-12-20T10:28:40.897696Z",
+     "iopub.status.busy": "2025-12-20T10:28:40.897338Z",
+     "iopub.status.idle": "2025-12-20T10:28:40.901578Z",
+     "shell.execute_reply": "2025-12-20T10:28:40.900910Z"
     }
    },
    "outputs": [
@@ -510,7 +507,7 @@
        "array([2])"
       ]
      },
-     "execution_count": 15,
+     "execution_count": 16,
      "metadata": {},
      "output_type": "execute_result"
     }
@@ -521,14 +518,14 @@
   },
   {
    "cell_type": "code",
-   "execution_count": 16,
+   "execution_count": 17,
    "id": "0cad769d-b8e1-43b4-8c95-08e45dbf7cc6",
    "metadata": {
     "execution": {
-     "iopub.execute_input": "2025-11-11T02:47:47.298079Z",
-     "iopub.status.busy": "2025-11-11T02:47:47.297861Z",
-     "iopub.status.idle": "2025-11-11T02:47:47.302726Z",
-     "shell.execute_reply": "2025-11-11T02:47:47.302127Z"
+     "iopub.execute_input": "2025-12-20T10:28:40.903374Z",
+     "iopub.status.busy": "2025-12-20T10:28:40.903194Z",
+     "iopub.status.idle": "2025-12-20T10:28:40.907651Z",
+     "shell.execute_reply": "2025-12-20T10:28:40.907082Z"
     }
    },
    "outputs": [
@@ -538,7 +535,7 @@
        "array([ 0.       ,  0.       ,  0.       , -0.7089592])"
       ]
      },
-     "execution_count": 16,
+     "execution_count": 17,
      "metadata": {},
      "output_type": "execute_result"
     }
@@ -557,14 +554,14 @@
   },
   {
    "cell_type": "code",
-   "execution_count": 17,
+   "execution_count": 18,
    "id": "7110a397-e270-4083-b064-aded86675163",
    "metadata": {
     "execution": {
-     "iopub.execute_input": "2025-11-11T02:47:47.304856Z",
-     "iopub.status.busy": "2025-11-11T02:47:47.304651Z",
-     "iopub.status.idle": "2025-11-11T02:47:47.308489Z",
-     "shell.execute_reply": "2025-11-11T02:47:47.307883Z"
+     "iopub.execute_input": "2025-12-20T10:28:40.909770Z",
+     "iopub.status.busy": "2025-12-20T10:28:40.909389Z",
+     "iopub.status.idle": "2025-12-20T10:28:40.912547Z",
+     "shell.execute_reply": "2025-12-20T10:28:40.912016Z"
     }
    },
    "outputs": [],
@@ -588,24 +585,36 @@
    "id": "2dd4d74c-386a-4244-8422-5d022842d07f",
    "metadata": {},
    "source": [
-    "## Notes\n",
-    "\n",
-    "Setting quantum number is not necessary. When quantum number is not conserved or for some reason quantum number conservation is not desired, set all quantum numbers to 0.\n",
+    "## Multiple Quantum Numbers\n",
     "\n",
     "Renormalizer supports the conservation of multiple quantum numbers. For example, in *ab initio* electronic structure calculations, both the number of alpha spin electrons and the number of beta spin electrons are conserved.\n",
     "In such cases, quantum numbers should be set to a numpy array of integers."
    ]
   },
   {
+   "cell_type": "markdown",
+   "id": "811d5316-4f40-4937-9fb0-121d6b54ebe2",
+   "metadata": {},
+   "source": [
+    "In the following, we assume there are two basis sets `\"up\"` and `\"down\"` for spin-up electron and spin-down electron, respectively. Each basis set is a `BasisHalfSpin` instance.\n",
+    "\n",
+    "We assign the quantum number 0 to the spin up state `[1, 0]` and the quantum number 1 to the spin down state `[0, 1]`.\n",
+    "\n",
+    "The creation operator $a^\\dagger_{\\rm{up}}$ creates a spin-up electron and does not affect spin-down electron, and thus its quantum number of `[1, 0]`. \n",
+    "\n",
+    "> Note that the quantum number of `[1, 0]` is not directly related to the quantum state `[1, 0]`."
+   ]
+  },
+  {
    "cell_type": "code",
-   "execution_count": 18,
+   "execution_count": 19,
    "id": "9d3c8a36-25e8-46e6-91cd-4d520238f0df",
    "metadata": {
     "execution": {
-     "iopub.execute_input": "2025-11-11T02:47:47.310657Z",
-     "iopub.status.busy": "2025-11-11T02:47:47.310419Z",
-     "iopub.status.idle": "2025-11-11T02:47:47.313535Z",
-     "shell.execute_reply": "2025-11-11T02:47:47.312955Z"
+     "iopub.execute_input": "2025-12-20T10:28:40.914869Z",
+     "iopub.status.busy": "2025-12-20T10:28:40.914454Z",
+     "iopub.status.idle": "2025-12-20T10:28:40.917448Z",
+     "shell.execute_reply": "2025-12-20T10:28:40.916881Z"
     }
    },
    "outputs": [],
@@ -615,14 +624,14 @@
   },
   {
    "cell_type": "code",
-   "execution_count": 19,
+   "execution_count": 20,
    "id": "9f5fa2cf-e6e5-430a-9dc2-176237d82e5a",
    "metadata": {
     "execution": {
-     "iopub.execute_input": "2025-11-11T02:47:47.315678Z",
-     "iopub.status.busy": "2025-11-11T02:47:47.315441Z",
-     "iopub.status.idle": "2025-11-11T02:47:47.320018Z",
-     "shell.execute_reply": "2025-11-11T02:47:47.319455Z"
+     "iopub.execute_input": "2025-12-20T10:28:40.919317Z",
+     "iopub.status.busy": "2025-12-20T10:28:40.919134Z",
+     "iopub.status.idle": "2025-12-20T10:28:40.923631Z",
+     "shell.execute_reply": "2025-12-20T10:28:40.923052Z"
     }
    },
    "outputs": [
@@ -632,7 +641,7 @@
        "Op('a^\\\\dagger', ['up'], 1.0, [[1, 0]])"
       ]
      },
-     "execution_count": 19,
+     "execution_count": 20,
      "metadata": {},
      "output_type": "execute_result"
     }
@@ -643,15 +652,23 @@
    ]
   },
   {
+   "cell_type": "markdown",
+   "id": "2d05eead-1a5a-4404-9514-40c3b1d808bf",
+   "metadata": {},
+   "source": [
+    "Similarly $a_{\\rm{up}}$ annihilates a spin-up electron and does not affect spin-down electron, and thus its quantum number of `[-1, 0]`."
+   ]
+  },
+  {
    "cell_type": "code",
-   "execution_count": 20,
+   "execution_count": 21,
    "id": "9166c78b-15d3-4c64-a42d-5a3c37ecc4aa",
    "metadata": {
     "execution": {
-     "iopub.execute_input": "2025-11-11T02:47:47.322061Z",
-     "iopub.status.busy": "2025-11-11T02:47:47.321842Z",
-     "iopub.status.idle": "2025-11-11T02:47:47.326772Z",
-     "shell.execute_reply": "2025-11-11T02:47:47.326049Z"
+     "iopub.execute_input": "2025-12-20T10:28:40.925844Z",
+     "iopub.status.busy": "2025-12-20T10:28:40.925466Z",
+     "iopub.status.idle": "2025-12-20T10:28:40.930216Z",
+     "shell.execute_reply": "2025-12-20T10:28:40.929634Z"
     }
    },
    "outputs": [
@@ -661,7 +678,7 @@
        "Op('a', ['up'], 1.0, [[-1, 0]])"
       ]
      },
-     "execution_count": 20,
+     "execution_count": 21,
      "metadata": {},
      "output_type": "execute_result"
     }
@@ -672,15 +689,23 @@
    ]
   },
   {
+   "cell_type": "markdown",
+   "id": "73665b51-d152-4bad-a08e-8d39c7e2a873",
+   "metadata": {},
+   "source": [
+    "The creation and annihilation operators for the spin-down electron have the quantum number of `[0, 1]` and `[0, -1]` respectively."
+   ]
+  },
+  {
    "cell_type": "code",
-   "execution_count": 21,
+   "execution_count": 22,
    "id": "f789d3b7-46e2-4a23-b9a0-e72ed323c0e3",
    "metadata": {
     "execution": {
-     "iopub.execute_input": "2025-11-11T02:47:47.328888Z",
-     "iopub.status.busy": "2025-11-11T02:47:47.328665Z",
-     "iopub.status.idle": "2025-11-11T02:47:47.333405Z",
-     "shell.execute_reply": "2025-11-11T02:47:47.332714Z"
+     "iopub.execute_input": "2025-12-20T10:28:40.932266Z",
+     "iopub.status.busy": "2025-12-20T10:28:40.932053Z",
+     "iopub.status.idle": "2025-12-20T10:28:40.936720Z",
+     "shell.execute_reply": "2025-12-20T10:28:40.936154Z"
     }
    },
    "outputs": [
@@ -690,7 +715,7 @@
        "Op('a^\\\\dagger', ['down'], 1.0, [[0, 1]])"
       ]
      },
-     "execution_count": 21,
+     "execution_count": 22,
      "metadata": {},
      "output_type": "execute_result"
     }
@@ -702,37 +727,354 @@
   },
   {
    "cell_type": "code",
-   "execution_count": 22,
+   "execution_count": 23,
    "id": "4f023161-daa1-42f2-84ba-4d4528dd4461",
    "metadata": {
     "execution": {
-     "iopub.execute_input": "2025-11-11T02:47:47.335770Z",
-     "iopub.status.busy": "2025-11-11T02:47:47.335361Z",
-     "iopub.status.idle": "2025-11-11T02:47:47.340125Z",
-     "shell.execute_reply": "2025-11-11T02:47:47.339443Z"
+     "iopub.execute_input": "2025-12-20T10:28:40.938649Z",
+     "iopub.status.busy": "2025-12-20T10:28:40.938461Z",
+     "iopub.status.idle": "2025-12-20T10:28:40.942761Z",
+     "shell.execute_reply": "2025-12-20T10:28:40.942223Z"
     }
    },
    "outputs": [
     {
      "data": {
       "text/plain": [
-       "Op('a^\\\\dagger', ['down'], 1.0, [[0, -1]])"
+       "Op('a', ['down'], 1.0, [[0, -1]])"
       ]
      },
-     "execution_count": 22,
+     "execution_count": 23,
      "metadata": {},
      "output_type": "execute_result"
     }
    ],
    "source": [
     "# spin down annihilation operator\n",
-    "Op(r\"a^\\dagger\", \"down\", qn=np.array([0, -1]))"
+    "Op(r\"a\", \"down\", qn=np.array([0, -1]))"
+   ]
+  },
+  {
+   "cell_type": "markdown",
+   "id": "4b4b7478-b758-4fa1-8450-383315581f43",
+   "metadata": {},
+   "source": [
+    "## Disable Quantum Numbers\n",
+    "Setting quantum numbers is not necessary. Usually, quantum number conservation is important for lattice models.\n",
+    "However, there are also numerous cases where quantum number is not conserved. \n",
+    "Examples include the spin-boson model and many excited state dynamics models.\n",
+    "In these cases quantum numbers should be disabled, otherwise the result could be catastropic.\n",
+    "\n",
+    "Consider a toy model $H=t|0\\rangle\\langle1| + t|1\\rangle\\langle0| + g|1\\rangle\\langle1|$. Quantum number is not conserved. If we set the quantum number incorrectly, we may get into trouble."
+   ]
+  },
+  {
+   "cell_type": "code",
+   "execution_count": 24,
+   "id": "2ed69cff-d3cb-4620-a962-4aa4f08312e8",
+   "metadata": {
+    "execution": {
+     "iopub.execute_input": "2025-12-20T10:28:40.944914Z",
+     "iopub.status.busy": "2025-12-20T10:28:40.944521Z",
+     "iopub.status.idle": "2025-12-20T10:28:40.948372Z",
+     "shell.execute_reply": "2025-12-20T10:28:40.947786Z"
+    }
+   },
+   "outputs": [],
+   "source": [
+    "from renormalizer import BasisMultiElectron, optimize_mps\n",
+    "\n",
+    "# Parameters\n",
+    "t = 1.0\n",
+    "g = 0.5\n",
+    "\n",
+    "# Hamiltonian terms\n",
+    "# by default quantum numbers for \"a^\\dagger\" and \"a\" are set to 1 and -1 respectively.\n",
+    "ham_terms = [\n",
+    "    Op(r\"a^\\dagger a\", [0, 1], t),  # Hopping\n",
+    "    Op(r\"a^\\dagger a\", [1, 0], t),  # Hopping\n",
+    "    Op(r\"a^\\dagger a\", [1, 1], g),  # Site energy\n",
+    "]"
+   ]
+  },
+  {
+   "cell_type": "code",
+   "execution_count": 25,
+   "id": "0e963129-e764-449c-a181-8fe37af12e97",
+   "metadata": {
+    "execution": {
+     "iopub.execute_input": "2025-12-20T10:28:40.950212Z",
+     "iopub.status.busy": "2025-12-20T10:28:40.950015Z",
+     "iopub.status.idle": "2025-12-20T10:28:40.955355Z",
+     "shell.execute_reply": "2025-12-20T10:28:40.954769Z"
+    }
+   },
+   "outputs": [],
+   "source": [
+    "# Define basis with quantum number conservation (WRONG for this system)\n",
+    "# |0> has quantum number 0, |1> has quantum number 1\n",
+    "basis_wrong = [\n",
+    "    BasisMultiElectron([0, 1], sigmaqn=[0, 1]),\n",
+    "]\n",
+    "\n",
+    "model_wrong = Model(basis_wrong, ham_terms)\n",
+    "mpo_wrong = Mpo(model_wrong)"
+   ]
+  },
+  {
+   "cell_type": "code",
+   "execution_count": 26,
+   "id": "e6482b92-481f-4fe7-b00a-b9aee6d65f60",
+   "metadata": {
+    "execution": {
+     "iopub.execute_input": "2025-12-20T10:28:40.957349Z",
+     "iopub.status.busy": "2025-12-20T10:28:40.956939Z",
+     "iopub.status.idle": "2025-12-20T10:28:40.970249Z",
+     "shell.execute_reply": "2025-12-20T10:28:40.969572Z"
+    },
+    "scrolled": true
+   },
+   "outputs": [
+    {
+     "name": "stderr",
+     "output_type": "stream",
+     "text": [
+      "2025-12-20 10:28:40,958[INFO] optimization method: 1site\n"
+     ]
+    },
+    {
+     "name": "stderr",
+     "output_type": "stream",
+     "text": [
+      "2025-12-20 10:28:40,959[INFO] e_rtol: 1e-06\n"
+     ]
+    },
+    {
+     "name": "stderr",
+     "output_type": "stream",
+     "text": [
+      "2025-12-20 10:28:40,959[INFO] e_atol: 1e-08\n"
+     ]
+    },
+    {
+     "name": "stderr",
+     "output_type": "stream",
+     "text": [
+      "2025-12-20 10:28:40,960[INFO] procedure: [[10, 0.4], [20, 0.2], [30, 0.1], [40, 0], [40, 0]]\n"
+     ]
+    },
+    {
+     "name": "stderr",
+     "output_type": "stream",
+     "text": [
+      "2025-12-20 10:28:40,966[INFO] DMRG has converged!\n"
+     ]
+    },
+    {
+     "name": "stderr",
+     "output_type": "stream",
+     "text": [
+      "2025-12-20 10:28:40,967[INFO] mps current size: 16.0B, Matrix product bond dim:[1, 1]\n"
+     ]
+    }
+   ],
+   "source": [
+    "# DMRG optimization in the qn=0 quantum space\n",
+    "mps_wrong = Mps.random(model_wrong, qntot=0, m_max=10)\n",
+    "mps_wrong.optimize_config.method = \"1site\"\n",
+    "energies_wrong, _ = optimize_mps(mps_wrong, mpo_wrong)"
+   ]
+  },
+  {
+   "cell_type": "markdown",
+   "id": "226d02cb-6837-4ebc-b11d-8e7bf937a8d5",
+   "metadata": {},
+   "source": [
+    "The solution is limited to the state `[1, 0]` because of quantum number enforcement."
+   ]
+  },
+  {
+   "cell_type": "code",
+   "execution_count": 27,
+   "id": "bf741887-be46-44ed-b9a7-059616f32d25",
+   "metadata": {
+    "execution": {
+     "iopub.execute_input": "2025-12-20T10:28:40.972498Z",
+     "iopub.status.busy": "2025-12-20T10:28:40.972288Z",
+     "iopub.status.idle": "2025-12-20T10:28:40.976361Z",
+     "shell.execute_reply": "2025-12-20T10:28:40.975779Z"
+    }
+   },
+   "outputs": [
+    {
+     "name": "stdout",
+     "output_type": "stream",
+     "text": [
+      "0.0\n",
+      "[1. 0.]\n"
+     ]
+    }
+   ],
+   "source": [
+    "print(energies_wrong[-1])\n",
+    "print(mps_wrong.todense())"
+   ]
+  },
+  {
+   "cell_type": "markdown",
+   "id": "4bdfa3a4-a5c2-406f-bcef-9c865f756569",
+   "metadata": {},
+   "source": [
+    "Next, we disable quantum number and perform the optimization.\n",
+    "\n",
+    "In Renormalizer, quantum numbers for \"a^\\dagger\" and \"a\" are set to 1 and -1 respectively when initializing the `Op` instance.\n",
+    "They must be explicitly set to 0 or set to None to disable their quantum numbers."
+   ]
+  },
+  {
+   "cell_type": "code",
+   "execution_count": 28,
+   "id": "013322c6-df0a-4409-a891-6a086d6ce30c",
+   "metadata": {
+    "execution": {
+     "iopub.execute_input": "2025-12-20T10:28:40.978383Z",
+     "iopub.status.busy": "2025-12-20T10:28:40.978182Z",
+     "iopub.status.idle": "2025-12-20T10:28:40.994811Z",
+     "shell.execute_reply": "2025-12-20T10:28:40.994222Z"
+    }
+   },
+   "outputs": [
+    {
+     "name": "stderr",
+     "output_type": "stream",
+     "text": [
+      "2025-12-20 10:28:40,983[INFO] optimization method: 1site\n"
+     ]
+    },
+    {
+     "name": "stderr",
+     "output_type": "stream",
+     "text": [
+      "2025-12-20 10:28:40,983[INFO] e_rtol: 1e-06\n"
+     ]
+    },
+    {
+     "name": "stderr",
+     "output_type": "stream",
+     "text": [
+      "2025-12-20 10:28:40,984[INFO] e_atol: 1e-08\n"
+     ]
+    },
+    {
+     "name": "stderr",
+     "output_type": "stream",
+     "text": [
+      "2025-12-20 10:28:40,984[INFO] procedure: [[10, 0.4], [20, 0.2], [30, 0.1], [40, 0], [40, 0]]\n"
+     ]
+    },
+    {
+     "name": "stderr",
+     "output_type": "stream",
+     "text": [
+      "2025-12-20 10:28:40,990[INFO] DMRG has converged!\n"
+     ]
+    },
+    {
+     "name": "stderr",
+     "output_type": "stream",
+     "text": [
+      "2025-12-20 10:28:40,991[INFO] mps current size: 16.0B, Matrix product bond dim:[1, 1]\n"
+     ]
+    }
+   ],
+   "source": [
+    "# disable quantum number\n",
+    "ham_terms = [\n",
+    "    Op(r\"a^\\dagger a\", [0, 1], t, qn=[0, 0]),  # Hopping\n",
+    "    Op(r\"a^\\dagger a\", [1, 0], t, qn=None),  # Hopping, equivalent\n",
+    "    Op(r\"a^\\dagger a\", [1, 1], g, qn=[0, 0]),  # Site energy\n",
+    "]\n",
+    "# disable quantum number\n",
+    "basis_correct = [\n",
+    "    BasisMultiElectron([0, 1], sigmaqn=[0, 0]),\n",
+    "]\n",
+    "\n",
+    "# perform the optimization as usual\n",
+    "model_correct = Model(basis_correct, ham_terms)\n",
+    "mpo_correct = Mpo(model_correct)\n",
+    "mps_correct = Mps.random(model_correct, qntot=0, m_max=10)\n",
+    "mps_correct.optimize_config.method = \"1site\"\n",
+    "energies_correct, _ = optimize_mps(mps_correct, mpo_correct)"
+   ]
+  },
+  {
+   "cell_type": "markdown",
+   "id": "25304871-5ae9-4578-a3f1-611413a4fe8c",
+   "metadata": {},
+   "source": [
+    "We can obtain the correct solution in the full Hilbert space"
+   ]
+  },
+  {
+   "cell_type": "code",
+   "execution_count": 29,
+   "id": "ba2a4590-cae6-476d-a818-3526ce70c199",
+   "metadata": {
+    "execution": {
+     "iopub.execute_input": "2025-12-20T10:28:40.997176Z",
+     "iopub.status.busy": "2025-12-20T10:28:40.996762Z",
+     "iopub.status.idle": "2025-12-20T10:28:41.000891Z",
+     "shell.execute_reply": "2025-12-20T10:28:41.000193Z"
+    }
+   },
+   "outputs": [
+    {
+     "name": "stdout",
+     "output_type": "stream",
+     "text": [
+      "-0.7807764064044151\n",
+      "[ 0.78820544 -0.61541221]\n"
+     ]
+    }
+   ],
+   "source": [
+    "print(energies_correct[-1])\n",
+    "print(mps_correct.todense())"
+   ]
+  },
+  {
+   "cell_type": "code",
+   "execution_count": 30,
+   "id": "5d7699e0-8f32-4e6b-ab64-9a53461d0a14",
+   "metadata": {
+    "execution": {
+     "iopub.execute_input": "2025-12-20T10:28:41.002996Z",
+     "iopub.status.busy": "2025-12-20T10:28:41.002790Z",
+     "iopub.status.idle": "2025-12-20T10:28:41.007291Z",
+     "shell.execute_reply": "2025-12-20T10:28:41.006757Z"
+    }
+   },
+   "outputs": [
+    {
+     "data": {
+      "text/plain": [
+       "array([-0.78077641,  1.28077641])"
+      ]
+     },
+     "execution_count": 30,
+     "metadata": {},
+     "output_type": "execute_result"
+    }
+   ],
+   "source": [
+    "# reference value by exact diagonolization\n",
+    "np.linalg.eigvals(mpo_wrong.todense())"
    ]
   },
   {
    "cell_type": "code",
    "execution_count": null,
-   "id": "78557796-060c-42ce-94ab-6981c862c870",
+   "id": "63287258-8630-48ad-9376-1df54aa7c75c",
    "metadata": {},
    "outputs": [],
    "source": []

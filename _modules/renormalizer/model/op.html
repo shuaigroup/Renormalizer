@@ -285,8 +285,6 @@
 <span class="sd">    Examples</span>
 <span class="sd">    --------</span>
 <span class="sd">    &gt;&gt;&gt; from renormalizer.model import Op</span>
-<span class="sd">    &gt;&gt;&gt; Op(r&quot;a^\dagger a&quot;, [&#39;site0&#39;, &quot;site1&quot;], 2., qn=[1, -1])</span>
-<span class="sd">    Op(&#39;a^\\dagger a&#39;, [&#39;site0&#39;, &#39;site1&#39;], 2.0, [[1], [-1]])</span>
 <span class="sd">    &gt;&gt;&gt; x = Op(&quot;X&quot;, 0, 0.5)</span>
 <span class="sd">    &gt;&gt;&gt; 3 * x</span>
 <span class="sd">    Op(&#39;X&#39;, [0], 1.5)</span>
@@ -303,6 +301,10 @@
 <span class="sd">    [Op(&#39;Y X&#39;, [1, 0], 0.1), Op(&#39;X X&#39;, [0, 0], 0.25)]</span>
 <span class="sd">    &gt;&gt;&gt; (y + x) * (x + y)</span>
 <span class="sd">    [Op(&#39;Y X&#39;, [1, 0], 0.1), Op(&#39;Y Y&#39;, [1, 1], 0.04000000000000001), Op(&#39;X X&#39;, [0, 0], 0.25), Op(&#39;X Y&#39;, [0, 1], 0.1)]</span>
+<span class="sd">    &gt;&gt;&gt; Op(r&quot;a^\dagger a&quot;, [&#39;site0&#39;, &quot;site1&quot;], 2., qn=[1, -1])  # off-diagonal hopping operator</span>
+<span class="sd">    Op(&#39;a^\\dagger a&#39;, [&#39;site0&#39;, &#39;site1&#39;], 2.0, [[1], [-1]])</span>
+<span class="sd">    &gt;&gt;&gt; Op(r&quot;a^\dagger a&quot;, &#39;site0&#39;, 2., qn=[1, -1])  # diagonal occupation operator</span>
+<span class="sd">    Op(&#39;a^\\dagger a&#39;, [&#39;site0&#39;, &#39;site0&#39;], 2.0, [[1], [-1]])</span>
 <span class="sd">    &quot;&quot;&quot;</span>
 
 <div class="viewcode-block" id="Op.product"><a class="viewcode-back" href="../../../model.html#renormalizer.model.Op.product">[docs]</a>    <span class="nd">@classmethod</span>
@@ -629,8 +631,10 @@
         <span class="k">elif</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">other</span><span class="p">,</span> <span class="nb">list</span><span class="p">):</span>
             <span class="k">return</span> <span class="n">OpSum</span><span class="p">(</span><span class="n">other</span><span class="p">)</span> <span class="o">*</span> <span class="bp">self</span>
         <span class="k">else</span><span class="p">:</span>
-            <span class="k">raise</span> <span class="ne">TypeError</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Unknwon type </span><span class="si">{</span><span class="nb">type</span><span class="p">(</span><span class="n">other</span><span class="p">)</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span></div>
+            <span class="k">raise</span> <span class="ne">TypeError</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Unknwon type </span><span class="si">{</span><span class="nb">type</span><span class="p">(</span><span class="n">other</span><span class="p">)</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
 
+    <span class="k">def</span><span class="w"> </span><span class="fm">__truediv__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">other</span><span class="p">):</span>
+        <span class="k">return</span> <span class="bp">self</span> <span class="o">*</span> <span class="p">(</span><span class="mi">1</span><span class="o">/</span><span class="n">other</span><span class="p">)</span></div>
 
 <span class="k">class</span><span class="w"> </span><span class="nc">OpSum</span><span class="p">(</span><span class="nb">list</span><span class="p">):</span>
 <span class="w">    </span><span class="sa">r</span><span class="sd">&quot;&quot;&quot;</span>

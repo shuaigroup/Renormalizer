@@ -36,10 +36,10 @@
    "id": "4bc1aac4-9fec-48f2-a801-abd479d1adc7",
    "metadata": {
     "execution": {
-     "iopub.execute_input": "2025-11-11T02:47:18.485364Z",
-     "iopub.status.busy": "2025-11-11T02:47:18.484667Z",
-     "iopub.status.idle": "2025-11-11T02:47:19.225213Z",
-     "shell.execute_reply": "2025-11-11T02:47:19.224528Z"
+     "iopub.execute_input": "2025-12-20T10:28:14.475312Z",
+     "iopub.status.busy": "2025-12-20T10:28:14.474809Z",
+     "iopub.status.idle": "2025-12-20T10:28:15.149058Z",
+     "shell.execute_reply": "2025-12-20T10:28:15.148295Z"
     }
    },
    "outputs": [
@@ -47,35 +47,35 @@
      "name": "stderr",
      "output_type": "stream",
      "text": [
-      "2025-11-11 02:47:19,173[INFO] Use NumPy as backend\n"
+      "2025-12-20 10:28:15,102[INFO] Use NumPy as backend\n"
      ]
     },
     {
      "name": "stderr",
      "output_type": "stream",
      "text": [
-      "2025-11-11 02:47:19,174[INFO] numpy random seed is 9012\n"
+      "2025-12-20 10:28:15,103[INFO] numpy random seed is 9012\n"
      ]
     },
     {
      "name": "stderr",
      "output_type": "stream",
      "text": [
-      "2025-11-11 02:47:19,175[INFO] random seed is 1092\n"
+      "2025-12-20 10:28:15,104[INFO] random seed is 1092\n"
      ]
     },
     {
      "name": "stderr",
      "output_type": "stream",
      "text": [
-      "2025-11-11 02:47:19,185[INFO] Git Commit Hash: 940abbe8e26a22e9345f941947c6944ed81a5f06\n"
+      "2025-12-20 10:28:15,113[INFO] Git Commit Hash: 8843b08007f92c985e412fa39ccb812c6c05306e\n"
      ]
     },
     {
      "name": "stderr",
      "output_type": "stream",
      "text": [
-      "2025-11-11 02:47:19,186[INFO] use 64 bits\n"
+      "2025-12-20 10:28:15,114[INFO] use 64 bits\n"
      ]
     }
    ],
@@ -107,10 +107,10 @@
    "id": "47aa28d6-2bb6-4a19-8244-d80a99fca2f9",
    "metadata": {
     "execution": {
-     "iopub.execute_input": "2025-11-11T02:47:19.228459Z",
-     "iopub.status.busy": "2025-11-11T02:47:19.227902Z",
-     "iopub.status.idle": "2025-11-11T02:47:19.235887Z",
-     "shell.execute_reply": "2025-11-11T02:47:19.235225Z"
+     "iopub.execute_input": "2025-12-20T10:28:15.151763Z",
+     "iopub.status.busy": "2025-12-20T10:28:15.151521Z",
+     "iopub.status.idle": "2025-12-20T10:28:15.158901Z",
+     "shell.execute_reply": "2025-12-20T10:28:15.158314Z"
     }
    },
    "outputs": [
@@ -144,10 +144,10 @@
    "id": "303d5892-1992-4e4f-ac56-e3257bf237b4",
    "metadata": {
     "execution": {
-     "iopub.execute_input": "2025-11-11T02:47:19.238360Z",
-     "iopub.status.busy": "2025-11-11T02:47:19.238124Z",
-     "iopub.status.idle": "2025-11-11T02:47:19.242862Z",
-     "shell.execute_reply": "2025-11-11T02:47:19.242270Z"
+     "iopub.execute_input": "2025-12-20T10:28:15.160962Z",
+     "iopub.status.busy": "2025-12-20T10:28:15.160758Z",
+     "iopub.status.idle": "2025-12-20T10:28:15.165315Z",
+     "shell.execute_reply": "2025-12-20T10:28:15.164654Z"
     }
    },
    "outputs": [
@@ -188,10 +188,10 @@
    "id": "8fe6c36d-0179-480e-84ec-f23c32af61d6",
    "metadata": {
     "execution": {
-     "iopub.execute_input": "2025-11-11T02:47:19.245236Z",
-     "iopub.status.busy": "2025-11-11T02:47:19.244826Z",
-     "iopub.status.idle": "2025-11-11T02:47:19.249758Z",
-     "shell.execute_reply": "2025-11-11T02:47:19.249103Z"
+     "iopub.execute_input": "2025-12-20T10:28:15.167440Z",
+     "iopub.status.busy": "2025-12-20T10:28:15.167232Z",
+     "iopub.status.idle": "2025-12-20T10:28:15.171454Z",
+     "shell.execute_reply": "2025-12-20T10:28:15.170886Z"
     }
    },
    "outputs": [
@@ -226,10 +226,10 @@
    "id": "d900115e-4775-4b84-90fa-0b3339d90cc7",
    "metadata": {
     "execution": {
-     "iopub.execute_input": "2025-11-11T02:47:19.252137Z",
-     "iopub.status.busy": "2025-11-11T02:47:19.251868Z",
-     "iopub.status.idle": "2025-11-11T02:47:19.256990Z",
-     "shell.execute_reply": "2025-11-11T02:47:19.256355Z"
+     "iopub.execute_input": "2025-12-20T10:28:15.173471Z",
+     "iopub.status.busy": "2025-12-20T10:28:15.173259Z",
+     "iopub.status.idle": "2025-12-20T10:28:15.177853Z",
+     "shell.execute_reply": "2025-12-20T10:28:15.177293Z"
     }
    },
    "outputs": [
@@ -262,10 +262,10 @@
    "id": "81054bdb-48e9-4191-8500-c645deea060a",
    "metadata": {
     "execution": {
-     "iopub.execute_input": "2025-11-11T02:47:19.259466Z",
-     "iopub.status.busy": "2025-11-11T02:47:19.259049Z",
-     "iopub.status.idle": "2025-11-11T02:47:19.264057Z",
-     "shell.execute_reply": "2025-11-11T02:47:19.263427Z"
+     "iopub.execute_input": "2025-12-20T10:28:15.179889Z",
+     "iopub.status.busy": "2025-12-20T10:28:15.179675Z",
+     "iopub.status.idle": "2025-12-20T10:28:15.184392Z",
+     "shell.execute_reply": "2025-12-20T10:28:15.183688Z"
     }
    },
    "outputs": [
@@ -314,10 +314,10 @@
    "id": "7e00cea9-1bfc-4c58-bcee-38b885ec7d9d",
    "metadata": {
     "execution": {
-     "iopub.execute_input": "2025-11-11T02:47:19.266470Z",
-     "iopub.status.busy": "2025-11-11T02:47:19.266236Z",
-     "iopub.status.idle": "2025-11-11T02:47:19.271877Z",
-     "shell.execute_reply": "2025-11-11T02:47:19.271157Z"
+     "iopub.execute_input": "2025-12-20T10:28:15.186550Z",
+     "iopub.status.busy": "2025-12-20T10:28:15.186347Z",
+     "iopub.status.idle": "2025-12-20T10:28:15.191505Z",
+     "shell.execute_reply": "2025-12-20T10:28:15.190898Z"
     }
    },
    "outputs": [
@@ -352,10 +352,10 @@
    "id": "84b34017-8b9b-4288-8730-e1f12de2806b",
    "metadata": {
     "execution": {
-     "iopub.execute_input": "2025-11-11T02:47:19.274515Z",
-     "iopub.status.busy": "2025-11-11T02:47:19.273945Z",
-     "iopub.status.idle": "2025-11-11T02:47:19.279033Z",
-     "shell.execute_reply": "2025-11-11T02:47:19.278330Z"
+     "iopub.execute_input": "2025-12-20T10:28:15.193503Z",
+     "iopub.status.busy": "2025-12-20T10:28:15.193289Z",
+     "iopub.status.idle": "2025-12-20T10:28:15.197868Z",
+     "shell.execute_reply": "2025-12-20T10:28:15.197303Z"
     }
    },
    "outputs": [
@@ -388,10 +388,10 @@
    "id": "c1cf78f8-ed8a-4bf5-a629-b786f43210b2",
    "metadata": {
     "execution": {
-     "iopub.execute_input": "2025-11-11T02:47:19.281530Z",
-     "iopub.status.busy": "2025-11-11T02:47:19.281093Z",
-     "iopub.status.idle": "2025-11-11T02:47:19.286002Z",
-     "shell.execute_reply": "2025-11-11T02:47:19.285294Z"
+     "iopub.execute_input": "2025-12-20T10:28:15.199886Z",
+     "iopub.status.busy": "2025-12-20T10:28:15.199685Z",
+     "iopub.status.idle": "2025-12-20T10:28:15.204444Z",
+     "shell.execute_reply": "2025-12-20T10:28:15.203860Z"
     }
    },
    "outputs": [
@@ -418,10 +418,10 @@
    "id": "04747001-e2fb-442a-a32c-267b8e531aa4",
    "metadata": {
     "execution": {
-     "iopub.execute_input": "2025-11-11T02:47:19.288310Z",
-     "iopub.status.busy": "2025-11-11T02:47:19.287823Z",
-     "iopub.status.idle": "2025-11-11T02:47:19.292354Z",
-     "shell.execute_reply": "2025-11-11T02:47:19.291807Z"
+     "iopub.execute_input": "2025-12-20T10:28:15.206711Z",
+     "iopub.status.busy": "2025-12-20T10:28:15.206231Z",
+     "iopub.status.idle": "2025-12-20T10:28:15.210681Z",
+     "shell.execute_reply": "2025-12-20T10:28:15.210121Z"
     }
    },
    "outputs": [
@@ -446,10 +446,10 @@
    "id": "26cf73a7-ef15-41ab-9f1e-96ce3d9612d8",
    "metadata": {
     "execution": {
-     "iopub.execute_input": "2025-11-11T02:47:19.294494Z",
-     "iopub.status.busy": "2025-11-11T02:47:19.294258Z",
-     "iopub.status.idle": "2025-11-11T02:47:19.299273Z",
-     "shell.execute_reply": "2025-11-11T02:47:19.298659Z"
+     "iopub.execute_input": "2025-12-20T10:28:15.212673Z",
+     "iopub.status.busy": "2025-12-20T10:28:15.212466Z",
+     "iopub.status.idle": "2025-12-20T10:28:15.217080Z",
+     "shell.execute_reply": "2025-12-20T10:28:15.216475Z"
     }
    },
    "outputs": [
@@ -477,10 +477,10 @@
    "id": "fa103eaa-78ba-482d-a796-808fe67c5cc0",
    "metadata": {
     "execution": {
-     "iopub.execute_input": "2025-11-11T02:47:19.301516Z",
-     "iopub.status.busy": "2025-11-11T02:47:19.301272Z",
-     "iopub.status.idle": "2025-11-11T02:47:19.306264Z",
-     "shell.execute_reply": "2025-11-11T02:47:19.305551Z"
+     "iopub.execute_input": "2025-12-20T10:28:15.219153Z",
+     "iopub.status.busy": "2025-12-20T10:28:15.218919Z",
+     "iopub.status.idle": "2025-12-20T10:28:15.223512Z",
+     "shell.execute_reply": "2025-12-20T10:28:15.222933Z"
     }
    },
    "outputs": [
@@ -507,10 +507,10 @@
    "id": "cb924ed7-6a00-4cb5-8339-a5d468e72d06",
    "metadata": {
     "execution": {
-     "iopub.execute_input": "2025-11-11T02:47:19.308892Z",
-     "iopub.status.busy": "2025-11-11T02:47:19.308446Z",
-     "iopub.status.idle": "2025-11-11T02:47:19.313498Z",
-     "shell.execute_reply": "2025-11-11T02:47:19.312791Z"
+     "iopub.execute_input": "2025-12-20T10:28:15.225541Z",
+     "iopub.status.busy": "2025-12-20T10:28:15.225338Z",
+     "iopub.status.idle": "2025-12-20T10:28:15.229515Z",
+     "shell.execute_reply": "2025-12-20T10:28:15.228974Z"
     }
    },
    "outputs": [
@@ -554,10 +554,10 @@
    "id": "24f5feb6-94ec-4f8f-a655-c23782ad3457",
    "metadata": {
     "execution": {
-     "iopub.execute_input": "2025-11-11T02:47:19.315930Z",
-     "iopub.status.busy": "2025-11-11T02:47:19.315588Z",
-     "iopub.status.idle": "2025-11-11T02:47:19.320376Z",
-     "shell.execute_reply": "2025-11-11T02:47:19.319798Z"
+     "iopub.execute_input": "2025-12-20T10:28:15.231563Z",
+     "iopub.status.busy": "2025-12-20T10:28:15.231364Z",
+     "iopub.status.idle": "2025-12-20T10:28:15.236015Z",
+     "shell.execute_reply": "2025-12-20T10:28:15.235458Z"
     }
    },
    "outputs": [
@@ -598,10 +598,10 @@
    "id": "66b6d810-e472-426a-a222-b47de5df86d7",
    "metadata": {
     "execution": {
-     "iopub.execute_input": "2025-11-11T02:47:19.322586Z",
-     "iopub.status.busy": "2025-11-11T02:47:19.322355Z",
-     "iopub.status.idle": "2025-11-11T02:47:19.327036Z",
-     "shell.execute_reply": "2025-11-11T02:47:19.326458Z"
+     "iopub.execute_input": "2025-12-20T10:28:15.238169Z",
+     "iopub.status.busy": "2025-12-20T10:28:15.237768Z",
+     "iopub.status.idle": "2025-12-20T10:28:15.241980Z",
+     "shell.execute_reply": "2025-12-20T10:28:15.241459Z"
     }
    },
    "outputs": [
@@ -636,10 +636,10 @@
    "id": "04cbaf61-3d57-4ebb-b270-0882a7675e60",
    "metadata": {
     "execution": {
-     "iopub.execute_input": "2025-11-11T02:47:19.329217Z",
-     "iopub.status.busy": "2025-11-11T02:47:19.329002Z",
-     "iopub.status.idle": "2025-11-11T02:47:19.334186Z",
-     "shell.execute_reply": "2025-11-11T02:47:19.333621Z"
+     "iopub.execute_input": "2025-12-20T10:28:15.244028Z",
+     "iopub.status.busy": "2025-12-20T10:28:15.243656Z",
+     "iopub.status.idle": "2025-12-20T10:28:15.248429Z",
+     "shell.execute_reply": "2025-12-20T10:28:15.247876Z"
     }
    },
    "outputs": [
@@ -683,10 +683,10 @@
    "id": "f563057c-1ffd-4312-b207-0629e57b5fc8",
    "metadata": {
     "execution": {
-     "iopub.execute_input": "2025-11-11T02:47:19.336603Z",
-     "iopub.status.busy": "2025-11-11T02:47:19.336167Z",
-     "iopub.status.idle": "2025-11-11T02:47:19.342050Z",
-     "shell.execute_reply": "2025-11-11T02:47:19.341423Z"
+     "iopub.execute_input": "2025-12-20T10:28:15.250503Z",
+     "iopub.status.busy": "2025-12-20T10:28:15.250300Z",
+     "iopub.status.idle": "2025-12-20T10:28:15.255590Z",
+     "shell.execute_reply": "2025-12-20T10:28:15.255038Z"
     }
    },
    "outputs": [
@@ -741,7 +741,16 @@
   },
   {
    "cell_type": "markdown",
-   "id": "a6f14db1-0938-4c84-a44e-7467cddd5def",
+   "id": "f9756ed3caa90b1f",
+   "metadata": {},
+   "source": [
+    "Renormalizer supports DVR basis (a.k.a. grid basis) where the basis functions are eigenfunctions of the position operator.\n",
+    "Use the `BasisSineDVR` class or set `dvr=True` in BasisSHO for DVR basis set."
+   ]
+  },
+  {
+   "cell_type": "markdown",
+   "id": "f7e9ae8d481f0ad3",
    "metadata": {},
    "source": [
     "## `Model`\n",
@@ -753,13 +762,13 @@
   {
    "cell_type": "code",
    "execution_count": 18,
-   "id": "e67e21ac-a3c5-4b56-abd6-c4a40960e503",
+   "id": "aaa37708aa385324",
    "metadata": {
     "execution": {
-     "iopub.execute_input": "2025-11-11T02:47:19.344560Z",
-     "iopub.status.busy": "2025-11-11T02:47:19.344113Z",
-     "iopub.status.idle": "2025-11-11T02:47:19.347401Z",
-     "shell.execute_reply": "2025-11-11T02:47:19.346821Z"
+     "iopub.execute_input": "2025-12-20T10:28:15.257637Z",
+     "iopub.status.busy": "2025-12-20T10:28:15.257432Z",
+     "iopub.status.idle": "2025-12-20T10:28:15.260733Z",
+     "shell.execute_reply": "2025-12-20T10:28:15.260172Z"
     }
    },
    "outputs": [],
@@ -770,7 +779,7 @@
   },
   {
    "cell_type": "markdown",
-   "id": "d20b8956-06bb-456a-af54-ed6815ad0d4c",
+   "id": "ba12128c9b37c659",
    "metadata": {},
    "source": [
     "For example, the corresponding MPO can be constructed from the above model conveniently"
@@ -779,13 +788,13 @@
   {
    "cell_type": "code",
    "execution_count": 19,
-   "id": "0b0d473e-00e2-4f1b-901e-afa39e2a46bc",
+   "id": "3a855d43f514b415",
    "metadata": {
     "execution": {
-     "iopub.execute_input": "2025-11-11T02:47:19.349763Z",
-     "iopub.status.busy": "2025-11-11T02:47:19.349349Z",
-     "iopub.status.idle": "2025-11-11T02:47:19.357499Z",
-     "shell.execute_reply": "2025-11-11T02:47:19.356925Z"
+     "iopub.execute_input": "2025-12-20T10:28:15.262767Z",
+     "iopub.status.busy": "2025-12-20T10:28:15.262377Z",
+     "iopub.status.idle": "2025-12-20T10:28:15.270287Z",
+     "shell.execute_reply": "2025-12-20T10:28:15.269711Z"
     }
    },
    "outputs": [
@@ -793,21 +802,21 @@
      "name": "stderr",
      "output_type": "stream",
      "text": [
-      "2025-11-11 02:47:19,350[DEBUG] # of operator terms: 1\n"
+      "2025-12-20 10:28:15,263[DEBUG] # of operator terms: 1\n"
      ]
     },
     {
      "name": "stderr",
      "output_type": "stream",
      "text": [
-      "2025-11-11 02:47:19,351[DEBUG] Input operator terms: 1\n"
+      "2025-12-20 10:28:15,264[DEBUG] Input operator terms: 1\n"
      ]
     },
     {
      "name": "stderr",
      "output_type": "stream",
      "text": [
-      "2025-11-11 02:47:19,353[DEBUG] After combination of the same terms: 1\n"
+      "2025-12-20 10:28:15,266[DEBUG] After combination of the same terms: 1\n"
      ]
     },
     {
@@ -830,13 +839,13 @@
   {
    "cell_type": "code",
    "execution_count": 20,
-   "id": "390b4aa0-91fe-472b-b9fb-21571659da66",
+   "id": "2ef138d923a695f2",
    "metadata": {
     "execution": {
-     "iopub.execute_input": "2025-11-11T02:47:19.359812Z",
-     "iopub.status.busy": "2025-11-11T02:47:19.359401Z",
-     "iopub.status.idle": "2025-11-11T02:47:19.364012Z",
-     "shell.execute_reply": "2025-11-11T02:47:19.363332Z"
+     "iopub.execute_input": "2025-12-20T10:28:15.272140Z",
+     "iopub.status.busy": "2025-12-20T10:28:15.271925Z",
+     "iopub.status.idle": "2025-12-20T10:28:15.276494Z",
+     "shell.execute_reply": "2025-12-20T10:28:15.275904Z"
     }
    },
    "outputs": [
@@ -858,7 +867,7 @@
   },
   {
    "cell_type": "markdown",
-   "id": "3e6296f7-a532-4386-bda3-65204b19d86e",
+   "id": "dc3188e865d526d",
    "metadata": {},
    "source": [
     "You may wonder \n",
@@ -881,7 +890,7 @@
   },
   {
    "cell_type": "markdown",
-   "id": "f80d95e0-0ae6-41f6-a23e-52f04295bade",
+   "id": "128300605664a169",
    "metadata": {},
    "source": [
     "Renormalizer also offers a set of built-in models for fast construction of common models. Please refer to the API document for more details."
@@ -890,13 +899,13 @@
   {
    "cell_type": "code",
    "execution_count": 21,
-   "id": "cf659b50-c31c-4fe3-a4bf-ee671a901d5c",
+   "id": "9c0d0e5332078a5d",
    "metadata": {
     "execution": {
-     "iopub.execute_input": "2025-11-11T02:47:19.366207Z",
-     "iopub.status.busy": "2025-11-11T02:47:19.366015Z",
-     "iopub.status.idle": "2025-11-11T02:47:19.370817Z",
-     "shell.execute_reply": "2025-11-11T02:47:19.370125Z"
+     "iopub.execute_input": "2025-12-20T10:28:15.278462Z",
+     "iopub.status.busy": "2025-12-20T10:28:15.278276Z",
+     "iopub.status.idle": "2025-12-20T10:28:15.282631Z",
+     "shell.execute_reply": "2025-12-20T10:28:15.282044Z"
     }
    },
    "outputs": [
@@ -918,26 +927,195 @@
   },
   {
    "cell_type": "markdown",
-   "id": "c700b8b0-b2e1-43f3-8cf0-051fddfc4416",
+   "id": "45ca92c93869529e",
+   "metadata": {},
+   "source": [
+    "## Define Custom `BasisSet`\n",
+    "It is quite common to require specific basis set for the problem at hand. The following is an example of defining a custom basis set.\n",
+    "\n",
+    "The key to the implementation is to implement the `op_mat` method, which outputs the matrix representation of a local operator.\n",
+    "You should implement the necessary operators here for your model definition.\n",
+    "The input to the function could be either `str` or `Op`. Use `op.symbol` to access the symbol string."
+   ]
+  },
+  {
+   "cell_type": "code",
+   "execution_count": 22,
+   "id": "bcf33ab118902659",
+   "metadata": {
+    "execution": {
+     "iopub.execute_input": "2025-12-20T10:28:15.284845Z",
+     "iopub.status.busy": "2025-12-20T10:28:15.284425Z",
+     "iopub.status.idle": "2025-12-20T10:28:15.292799Z",
+     "shell.execute_reply": "2025-12-20T10:28:15.292071Z"
+    }
+   },
+   "outputs": [],
+   "source": [
+    "from typing import Union, List\n",
+    "import numpy as np\n",
+    "from renormalizer.model.basis import BasisSet\n",
+    "\n",
+    "class CustomTwoLevelSystem(BasisSet):\n",
+    "    \"\"\"\n",
+    "    A custom two-level system basis set example.\n",
+    "    Implements a simple two-level system with custom operators.\n",
+    "    \"\"\"\n",
+    "    \n",
+    "    def __init__(self, dof, energy_splitting=1.0, sigmaqn: List[int] = None):\n",
+    "        # Define the basis states and their quantum numbers\n",
+    "        # For a two-level system, we have two states: ground and excited\n",
+    "        if sigmaqn is None:\n",
+    "            sigmaqn = [0, 1]  # Quantum numbers for each state\n",
+    "        \n",
+    "        # Initialize the BasisSet class with the number of states and quantum numbers\n",
+    "        # Must provide `sigma_qn` even if it's all zero.\n",
+    "        super().__init__(dof, nbas=2, sigmaqn=sigmaqn)\n",
+    "        self.energy_splitting = energy_splitting\n",
+    "        \n",
+    "    def op_mat(self, op: Union[Op, str]):\n",
+    "        \"\"\"\n",
+    "        Define operator matrices for supported symbols:\n",
+    "        - 'sigma_z': Pauli Z matrix\n",
+    "        - 'sigma_x': Pauli X matrix\n",
+    "        - 'n': number operator (|1><1|)\n",
+    "        - 'H_sys': system Hamiltonian (energy_splitting * sigma_z)\n",
+    "        \"\"\"\n",
+    "        # Convert symbol to string if necessary\n",
+    "        if not isinstance(op, Op):\n",
+    "            op = Op(op, None)\n",
+    "        \n",
+    "        op_symbol, op_factor = op.symbol, op.factor\n",
+    "        if op_symbol == \"sigma_z\":\n",
+    "            mat = np.array([[1, 0], [0, -1]])\n",
+    "        elif op_symbol == \"sigma_x\":\n",
+    "            mat = np.array([[0, 1], [1, 0]])\n",
+    "        elif op_symbol == \"n\":\n",
+    "            mat = np.array([[0, 0], [0, 1]])  # |1><1|\n",
+    "        elif op_symbol == \"H_sys\":\n",
+    "            # System Hamiltonian: energy_splitting * sigma_z\n",
+    "            mat = self.energy_splitting * np.array([[1, 0], [0, -1]])\n",
+    "        elif op_symbol == \"I\":\n",
+    "            # always define the identity operator\n",
+    "            mat = np.eye(self.nbas)\n",
+    "        else:\n",
+    "            raise ValueError(f\"Unknown operator symbol: {op_symbol}\")\n",
+    "        \n",
+    "        return mat * op_factor\n",
+    "\n",
+    "    def copy(self, new_dof):\n",
+    "        \"\"\"Create a copy with a new DOF label\"\"\"\n",
+    "        return self.__class__(new_dof, self.energy_splitting, self.sigmaqn)"
+   ]
+  },
+  {
+   "cell_type": "code",
+   "execution_count": 23,
+   "id": "172e3692822dc131",
+   "metadata": {
+    "execution": {
+     "iopub.execute_input": "2025-12-20T10:28:15.295070Z",
+     "iopub.status.busy": "2025-12-20T10:28:15.294698Z",
+     "iopub.status.idle": "2025-12-20T10:28:15.305238Z",
+     "shell.execute_reply": "2025-12-20T10:28:15.304565Z"
+    }
+   },
+   "outputs": [
+    {
+     "name": "stderr",
+     "output_type": "stream",
+     "text": [
+      "2025-12-20 10:28:15,296[DEBUG] # of operator terms: 1\n"
+     ]
+    },
+    {
+     "name": "stderr",
+     "output_type": "stream",
+     "text": [
+      "2025-12-20 10:28:15,297[DEBUG] Input operator terms: 1\n"
+     ]
+    },
+    {
+     "name": "stderr",
+     "output_type": "stream",
+     "text": [
+      "2025-12-20 10:28:15,298[DEBUG] After combination of the same terms: 1\n"
+     ]
+    },
+    {
+     "name": "stderr",
+     "output_type": "stream",
+     "text": [
+      "2025-12-20 10:28:15,299[DEBUG] # of operator terms: 1\n"
+     ]
+    },
+    {
+     "name": "stderr",
+     "output_type": "stream",
+     "text": [
+      "2025-12-20 10:28:15,300[DEBUG] Input operator terms: 1\n"
+     ]
+    },
+    {
+     "name": "stderr",
+     "output_type": "stream",
+     "text": [
+      "2025-12-20 10:28:15,300[DEBUG] After combination of the same terms: 1\n"
+     ]
+    },
+    {
+     "name": "stdout",
+     "output_type": "stream",
+     "text": [
+      "[[ 1.  0.]\n",
+      " [ 0. -1.]]\n",
+      "[[0. 1.]\n",
+      " [1. 0.]]\n"
+     ]
+    }
+   ],
+   "source": [
+    "# Create a model with our custom basis\n",
+    "custom_basis = CustomTwoLevelSystem(\"qubit\", energy_splitting=2.0)\n",
+    "model = Model([custom_basis], [Op(\"H_sys\", \"qubit\")])\n",
+    "\n",
+    "# Create MPOs using our custom symbols\n",
+    "sigma_z_mpo = Mpo(model, Op(\"sigma_z\", \"qubit\"))\n",
+    "print(sigma_z_mpo.todense())\n",
+    "sigma_x_mpo = Mpo(model, Op(\"sigma_x\", \"qubit\"))\n",
+    "print(sigma_x_mpo.todense())"
+   ]
+  },
+  {
+   "cell_type": "markdown",
+   "id": "746e44e4509387e2",
+   "metadata": {},
+   "source": [
+    "> To improve computational efficiency, when defining the basis set, float numbers are preferred over complex numbers. Complex operators wil usually be finally converted to real operators, such as $H=YY$ or $H=-iY$."
+   ]
+  },
+  {
+   "cell_type": "markdown",
+   "id": "e11f301f1000d93c",
    "metadata": {},
    "source": [
     "## Units in Renormalizer\n",
     "All internal numbers in renormalizer are assumed to have the unit of atomic unit (a.u.).\n",
-    "Consequently, all external interfaces such as `factor` in `Op` is assumed to have the unit of atomic unit.\n",
+    "Consequently, all external interfaces such as `factor` in `Op` are assumed to have the unit of atomic unit.\n",
     "\n",
     "To facilitate unit conversion, You may use the `Quantity` class in Renormalizer to convert the values in other units to atomic units."
    ]
   },
   {
    "cell_type": "code",
-   "execution_count": 22,
-   "id": "435ce029-59cd-47d4-8b2e-6b53b954f71d",
+   "execution_count": 24,
+   "id": "cf3184f5e36d069e",
    "metadata": {
     "execution": {
-     "iopub.execute_input": "2025-11-11T02:47:19.373207Z",
-     "iopub.status.busy": "2025-11-11T02:47:19.372812Z",
-     "iopub.status.idle": "2025-11-11T02:47:19.375999Z",
-     "shell.execute_reply": "2025-11-11T02:47:19.375389Z"
+     "iopub.execute_input": "2025-12-20T10:28:15.307675Z",
+     "iopub.status.busy": "2025-12-20T10:28:15.307302Z",
+     "iopub.status.idle": "2025-12-20T10:28:15.310372Z",
+     "shell.execute_reply": "2025-12-20T10:28:15.309695Z"
     }
    },
    "outputs": [],
@@ -947,14 +1125,14 @@
   },
   {
    "cell_type": "code",
-   "execution_count": 23,
-   "id": "b1d9def5-5cb8-459d-8f07-b53a5614afc8",
+   "execution_count": 25,
+   "id": "163dbd3cfbf45d90",
    "metadata": {
     "execution": {
-     "iopub.execute_input": "2025-11-11T02:47:19.377911Z",
-     "iopub.status.busy": "2025-11-11T02:47:19.377724Z",
-     "iopub.status.idle": "2025-11-11T02:47:19.382182Z",
-     "shell.execute_reply": "2025-11-11T02:47:19.381624Z"
+     "iopub.execute_input": "2025-12-20T10:28:15.312306Z",
+     "iopub.status.busy": "2025-12-20T10:28:15.312122Z",
+     "iopub.status.idle": "2025-12-20T10:28:15.316596Z",
+     "shell.execute_reply": "2025-12-20T10:28:15.315994Z"
     }
    },
    "outputs": [
@@ -964,7 +1142,7 @@
        "1.0000225550439237"
       ]
      },
-     "execution_count": 23,
+     "execution_count": 25,
      "metadata": {},
      "output_type": "execute_result"
     }
@@ -976,20 +1154,49 @@
   },
   {
    "cell_type": "markdown",
-   "id": "d268e038-8ba3-481c-abf3-ceaa1c78af2c",
+   "id": "d7a201e76e22e9e8",
    "metadata": {},
    "source": [
     "Note that directly using a `Quantity` instance for numerical arguments of model construction will result in errors. \n",
-    "For example, you should write `BasisSHO(dof=0, omega=Quantity(50).as_au(), nbas=4)` instead of `BasisSHO(dof=0, omega=Quantity(50), nbas=4)`."
+    "For example, you should write `BasisSHO(dof=0, omega=Quantity(50).as_au(), nbas=4)` instead of `BasisSHO(dof=0, omega=Quantity(50), nbas=4)`.\n",
+    "The design enforces the user to pay special attention to the units as well as the value of the parameters, which helps to prevent unit/parameter typo."
+   ]
+  },
+  {
+   "cell_type": "markdown",
+   "id": "54ff0251185fef1c",
+   "metadata": {},
+   "source": [
+    "To convert the unit from a.u. to other supported units, use `as_unit` to convert to the desired unit, and then access the `value` attribute for the value."
    ]
   },
   {
    "cell_type": "code",
-   "execution_count": null,
-   "id": "d4dda1c5-75b9-4b6f-ad69-a6a7ab5ab44a",
-   "metadata": {},
-   "outputs": [],
-   "source": []
+   "execution_count": 26,
+   "id": "7e1a58a8c0824f8d",
+   "metadata": {
+    "execution": {
+     "iopub.execute_input": "2025-12-20T10:28:15.318833Z",
+     "iopub.status.busy": "2025-12-20T10:28:15.318463Z",
+     "iopub.status.idle": "2025-12-20T10:28:15.322728Z",
+     "shell.execute_reply": "2025-12-20T10:28:15.322189Z"
+    }
+   },
+   "outputs": [
+    {
+     "data": {
+      "text/plain": [
+       "27211.386245988"
+      ]
+     },
+     "execution_count": 26,
+     "metadata": {},
+     "output_type": "execute_result"
+    }
+   ],
+   "source": [
+    "Quantity(1, \"au\").as_unit(\"mev\").value"
+   ]
   }
  ],
  "metadata": {

@@ -250,7 +250,8 @@
 <span class="sd">            For basis containing multiple DoFs, the type should be a ``list`` or ``tuple``</span>
 <span class="sd">            of anything that can be hashed.</span>
 <span class="sd">        nbas (int): number of dimension of the basis set</span>
-<span class="sd">        sigmaqn (List): the quantum number of each basis. Could be an integer or tuple of integers</span>
+<span class="sd">        sigmaqn (List): the quantum number of each basis. The length of the list should be the same as ``nbas``.</span>
+<span class="sd">            Each element of the list should be an integer or a tuple of integers</span>
 
 <span class="sd">    &quot;&quot;&quot;</span>
 
@@ -312,6 +313,41 @@
 <span class="sd">        -------</span>
 <span class="sd">        dof names : tuple</span>
 <span class="sd">            A tuple of DoF names.</span>
+
+<span class="sd">        Examples</span>
+<span class="sd">        --------</span>
+<span class="sd">        &gt;&gt;&gt; # Single DoF basis</span>
+<span class="sd">        &gt;&gt;&gt; basis_sho = BasisSHO(&quot;v&quot;, 1.0, 10)</span>
+<span class="sd">        &gt;&gt;&gt; basis_sho.dofs</span>
+<span class="sd">        (&#39;v&#39;,)</span>
+
+<span class="sd">        &gt;&gt;&gt; # Multi-electron basis</span>
+<span class="sd">        &gt;&gt;&gt; basis_me = BasisMultiElectron([&quot;S0&quot;, &quot;S1&quot;, &quot;S2&quot;], sigmaqn=[0, 0, 0])</span>
+<span class="sd">        &gt;&gt;&gt; basis_me.dofs</span>
+<span class="sd">        (&#39;S0&#39;, &#39;S1&#39;, &#39;S2&#39;)</span>
+
+<span class="sd">        &gt;&gt;&gt; # Multi-electron vacuum basis</span>
+<span class="sd">        &gt;&gt;&gt; basis_me_vac = BasisMultiElectronVac([&quot;S0&quot;, &quot;S1&quot;])</span>
+<span class="sd">        &gt;&gt;&gt; basis_me_vac.dofs</span>
+<span class="sd">        (&#39;S0&#39;, &#39;S1&#39;)</span>
+
+<span class="sd">        &gt;&gt;&gt; # Simple electron basis</span>
+<span class="sd">        &gt;&gt;&gt; basis_se = BasisSimpleElectron(&quot;e&quot;)</span>
+<span class="sd">        &gt;&gt;&gt; basis_se.dofs</span>
+<span class="sd">        (&#39;e&#39;,)</span>
+
+<span class="sd">        &gt;&gt;&gt; # Half-spin basis</span>
+<span class="sd">        &gt;&gt;&gt; basis_spin = BasisHalfSpin(&quot;spin&quot;)</span>
+<span class="sd">        &gt;&gt;&gt; basis_spin.dofs</span>
+<span class="sd">        (&#39;spin&#39;,)</span>
+
+<span class="sd">        Notes</span>
+<span class="sd">        -----</span>
+<span class="sd">        - For single DoF bases (BasisSHO, BasisSineDVR, BasisSimpleElectron, BasisHalfSpin),</span>
+<span class="sd">          this returns a 1-element tuple containing the DoF name</span>
+<span class="sd">        - For multi-DoF bases (BasisMultiElectron, BasisMultiElectronVac), this returns a tuple</span>
+<span class="sd">          of all electronic state names</span>
+<span class="sd">        - The returned tuple can be used as keys in condition dictionaries for Mps.hartree_product_state</span>
 <span class="sd">        &quot;&quot;&quot;</span>
         <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">multi_dof</span><span class="p">:</span>
             <span class="k">return</span> <span class="nb">tuple</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">dof</span><span class="p">)</span>
@@ -337,8 +373,8 @@
 
 
 <div class="viewcode-block" id="BasisSHO"><a class="viewcode-back" href="../../../model.html#renormalizer.model.basis.BasisSHO">[docs]</a><span class="k">class</span><span class="w"> </span><span class="nc">BasisSHO</span><span class="p">(</span><span class="n">BasisSet</span><span class="p">):</span>
-<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
-<span class="sd">    simple harmonic oscillator basis set</span>
+<span class="w">    </span><span class="sa">r</span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Simple harmonic oscillator basis set</span>
 
 <span class="sd">    Args:</span>
 <span class="sd">        dof: The name of the DoF contained in the basis set. The type could be anything that can be hashed.</span>
@@ -350,26 +386,39 @@
 <span class="sd">            through general expression for :math:`x`power or :math:`p` power. This is not efficient because</span>
 <span class="sd">            :math:`x` and :math:`x^2` (or :math:`p` and :math:`p^2`) have been hard-coded already.</span>
 <span class="sd">            The option is only used for testing.</span>
+<span class="sd">        scale_omega (bool): whether scale the frequency into :math:`x` and :math:`p`.</span>
+<span class="sd">            If not scaled, the SHO Hamiltonian is written as :math:`p^2/2 + 1/2\omega^2 x^2`.</span>
+<span class="sd">            If scaled, :math:`x` and :math:`p` become dimensionless,</span>
+<span class="sd">            and the SHO Hamiltonian becomes :math:`\omega/2(p^2 + x^2)`.</span>
 <span class="sd">    &quot;&quot;&quot;</span>
 
     <span class="n">is_phonon</span> <span class="o">=</span> <span class="kc">True</span>
 
-    <span class="k">def</span><span class="w"> </span><span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">dof</span><span class="p">,</span> <span class="n">omega</span><span class="p">,</span> <span class="n">nbas</span><span class="p">,</span> <span class="n">x0</span><span class="o">=</span><span class="mf">0.</span><span class="p">,</span> <span class="n">dvr</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span> <span class="n">general_xp_power</span><span class="o">=</span><span class="kc">False</span><span class="p">):</span>
+    <span class="k">def</span><span class="w"> </span><span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">dof</span><span class="p">,</span> <span class="n">omega</span><span class="p">,</span> <span class="n">nbas</span><span class="p">,</span> <span class="n">x0</span><span class="o">=</span><span class="mf">0.</span><span class="p">,</span> <span class="n">dvr</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span> <span class="n">general_xp_power</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span> <span class="n">scale_omega</span><span class="p">:</span> <span class="nb">bool</span><span class="o">=</span><span class="kc">False</span><span class="p">):</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">omega</span> <span class="o">=</span> <span class="n">omega</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">x0</span> <span class="o">=</span> <span class="n">x0</span>  <span class="c1"># origin = x0</span>
         <span class="nb">super</span><span class="p">()</span><span class="o">.</span><span class="fm">__init__</span><span class="p">(</span><span class="n">dof</span><span class="p">,</span> <span class="n">nbas</span><span class="p">,</span> <span class="p">[</span><span class="mi">0</span><span class="p">]</span> <span class="o">*</span> <span class="n">nbas</span><span class="p">)</span>
 
+        <span class="bp">self</span><span class="o">.</span><span class="n">dvr</span> <span class="o">=</span> <span class="n">dvr</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">general_xp_power</span> <span class="o">=</span> <span class="n">general_xp_power</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">scale_omega</span> <span class="o">=</span> <span class="n">scale_omega</span>
 
         <span class="c1"># whether under recursion</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">_recursion_flag</span> <span class="o">=</span> <span class="mi">0</span>
 
-        <span class="bp">self</span><span class="o">.</span><span class="n">dvr</span> <span class="o">=</span> <span class="kc">False</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">dvr_x</span> <span class="o">=</span> <span class="kc">None</span>  <span class="c1"># the expectation value of x on SHO_dvr</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">dvr_v</span> <span class="o">=</span> <span class="kc">None</span>  <span class="c1"># the rotation matrix between SHO to SHO_dvr</span>
-        <span class="k">if</span> <span class="n">dvr</span><span class="p">:</span>
-            <span class="bp">self</span><span class="o">.</span><span class="n">dvr_x</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">dvr_v</span> <span class="o">=</span> <span class="n">scipy</span><span class="o">.</span><span class="n">linalg</span><span class="o">.</span><span class="n">eigh</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">op_mat</span><span class="p">(</span><span class="s2">&quot;x&quot;</span><span class="p">))</span>
-            <span class="bp">self</span><span class="o">.</span><span class="n">dvr</span> <span class="o">=</span> <span class="kc">True</span>
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">dvr</span><span class="p">:</span>
+            <span class="n">b</span> <span class="o">=</span> <span class="n">BasisSHO</span><span class="p">(</span><span class="s2">&quot;dvr&quot;</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">omega</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">nbas</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">x0</span><span class="p">)</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">dvr_x</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">dvr_v</span> <span class="o">=</span> <span class="n">scipy</span><span class="o">.</span><span class="n">linalg</span><span class="o">.</span><span class="n">eigh</span><span class="p">(</span><span class="n">b</span><span class="o">.</span><span class="n">op_mat</span><span class="p">(</span><span class="s2">&quot;x&quot;</span><span class="p">))</span>
+            <span class="c1"># make sure dvr_v has the correct phase</span>
+            <span class="n">evals</span><span class="p">,</span> <span class="n">evecs</span> <span class="o">=</span> <span class="n">scipy</span><span class="o">.</span><span class="n">linalg</span><span class="o">.</span><span class="n">eigh</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">op_mat</span><span class="p">(</span><span class="s2">&quot;H&quot;</span><span class="p">))</span>
+            <span class="n">phase</span> <span class="o">=</span> <span class="p">(</span><span class="n">evecs</span><span class="p">[:,</span> <span class="mi">0</span><span class="p">]</span> <span class="o">&gt;</span> <span class="mi">0</span><span class="p">)</span> <span class="o">*</span> <span class="mi">2</span> <span class="o">-</span> <span class="mi">1</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">dvr_v</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">dvr_v</span> <span class="o">*</span> <span class="n">phase</span><span class="o">.</span><span class="n">reshape</span><span class="p">(</span><span class="mi">1</span><span class="p">,</span> <span class="o">-</span><span class="mi">1</span><span class="p">)</span>
+            <span class="c1"># this is the purpose: the ground state wavefunction amplitudes are all positive or negative</span>
+            <span class="n">evals</span><span class="p">,</span> <span class="n">evecs</span> <span class="o">=</span> <span class="n">scipy</span><span class="o">.</span><span class="n">linalg</span><span class="o">.</span><span class="n">eigh</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">op_mat</span><span class="p">(</span><span class="s2">&quot;H&quot;</span><span class="p">))</span>
+            <span class="k">assert</span> <span class="n">np</span><span class="o">.</span><span class="n">all</span><span class="p">(</span><span class="n">evecs</span><span class="p">[:,</span> <span class="mi">0</span><span class="p">]</span> <span class="o">&gt;</span> <span class="o">-</span><span class="mf">1e-7</span><span class="p">)</span> <span class="ow">or</span> <span class="n">np</span><span class="o">.</span><span class="n">all</span><span class="p">(</span><span class="n">evecs</span><span class="p">[:,</span> <span class="mi">0</span><span class="p">]</span> <span class="o">&lt;</span> <span class="mf">1e-7</span><span class="p">)</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">dvr_x</span> <span class="o">=</span> <span class="kc">None</span>  <span class="c1"># the expectation value of x on SHO_dvr</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">dvr_v</span> <span class="o">=</span> <span class="kc">None</span>  <span class="c1"># the rotation matrix between SHO to SHO_dvr</span>
 
     <span class="k">def</span><span class="w"> </span><span class="fm">__str__</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
         <span class="k">return</span> <span class="sa">f</span><span class="s2">&quot;BasisSHO(dof: </span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">dof</span><span class="si">}</span><span class="s2">, x0: </span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">x0</span><span class="si">}</span><span class="s2">, omega: </span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">omega</span><span class="si">}</span><span class="s2">, nbas: </span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">nbas</span><span class="si">}</span><span class="s2">)&quot;</span>
@@ -556,10 +605,21 @@
             <span class="c1"># since b^\dagger b is not allowed to shift the origin,</span>
             <span class="c1"># n is designed for occupation number of the SHO basis</span>
             <span class="n">mat</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">diag</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">arange</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">nbas</span><span class="p">))</span>
+        <span class="k">elif</span> <span class="n">op_symbol</span> <span class="ow">in</span> <span class="p">[</span><span class="s2">&quot;H&quot;</span><span class="p">,</span> <span class="s2">&quot;h&quot;</span><span class="p">]:</span>
+            <span class="c1"># harmonic oscillator Hamiltonian</span>
+            <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">dvr</span><span class="p">:</span>
+                <span class="n">mat</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">op_mat</span><span class="p">(</span><span class="s2">&quot;p^2&quot;</span><span class="p">)</span> <span class="o">/</span> <span class="mi">2</span> <span class="o">+</span> <span class="bp">self</span><span class="o">.</span><span class="n">op_mat</span><span class="p">(</span><span class="s2">&quot;x&quot;</span><span class="p">)</span> <span class="o">**</span> <span class="mi">2</span> <span class="o">*</span> <span class="mi">1</span> <span class="o">/</span> <span class="mi">2</span> <span class="o">*</span> <span class="bp">self</span><span class="o">.</span><span class="n">omega</span> <span class="o">**</span> <span class="mi">2</span>
+                <span class="c1"># don&#39;t have to care about self.scale_omega, because the option is ignored under recursion</span>
+            <span class="k">else</span><span class="p">:</span>
+                <span class="n">mat</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">omega</span> <span class="o">*</span> <span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">op_mat</span><span class="p">(</span><span class="sa">r</span><span class="s2">&quot;b^\dagger b&quot;</span><span class="p">)</span> <span class="o">+</span> <span class="bp">self</span><span class="o">.</span><span class="n">op_mat</span><span class="p">(</span><span class="s2">&quot;I&quot;</span><span class="p">)</span> <span class="o">*</span> <span class="mf">0.5</span><span class="p">)</span>
         <span class="k">else</span><span class="p">:</span>
             <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;op_symbol:</span><span class="si">{</span><span class="n">op_symbol</span><span class="si">}</span><span class="s2"> is not supported. &quot;</span><span class="p">)</span>
 
         <span class="bp">self</span><span class="o">.</span><span class="n">_recursion_flag</span> <span class="o">-=</span> <span class="mi">1</span>
+
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">scale_omega</span> <span class="ow">and</span> <span class="bp">self</span><span class="o">.</span><span class="n">_recursion_flag</span> <span class="o">==</span> <span class="mi">0</span><span class="p">:</span>
+            <span class="n">x_power</span><span class="p">,</span> <span class="n">p_power</span> <span class="o">=</span> <span class="n">count_powers</span><span class="p">(</span><span class="n">op_symbol</span><span class="p">)</span>
+            <span class="n">mat</span> <span class="o">=</span> <span class="n">mat</span> <span class="o">*</span> <span class="n">np</span><span class="o">.</span><span class="n">sqrt</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">omega</span><span class="p">)</span> <span class="o">**</span> <span class="p">(</span><span class="n">x_power</span> <span class="o">-</span> <span class="n">p_power</span><span class="p">)</span>
         <span class="k">return</span> <span class="n">mat</span> <span class="o">*</span> <span class="n">op_factor</span></div>
 
 <div class="viewcode-block" id="BasisSHO.copy"><a class="viewcode-back" href="../../../model.html#renormalizer.model.basis.BasisSHO.copy">[docs]</a>    <span class="k">def</span><span class="w"> </span><span class="nf">copy</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">new_dof</span><span class="p">):</span>
@@ -615,8 +675,13 @@
 
 <div class="viewcode-block" id="BasisSineDVR"><a class="viewcode-back" href="../../../model.html#renormalizer.model.basis.BasisSineDVR">[docs]</a><span class="k">class</span><span class="w"> </span><span class="nc">BasisSineDVR</span><span class="p">(</span><span class="n">BasisSet</span><span class="p">):</span>
 <span class="w">    </span><span class="sa">r</span><span class="sd">&quot;&quot;&quot;</span>
-<span class="sd">    Sine DVR basis (particle-in-a-box) for vibrational, angular, and</span>
-<span class="sd">    dissociative modes.</span>
+<span class="sd">    Sine DVR basis (particle-in-a-box) for vibrational and dissociative modes with fixed boundary conditions.</span>
+<span class="sd">    The wavefunction is zero at the boundaries, making it suitable for systems where the particle is confined</span>
+<span class="sd">    to a finite region. For torsional modes or angular motion with periodic boundary conditions, use exponential DVR.</span>
+
+<span class="sd">    Important: This basis uses fixed boundary conditions (wavefunction goes to zero at boundaries) and is NOT</span>
+<span class="sd">    suitable for periodic systems like torsional modes. For periodic boundary conditions, use a different basis.</span>
+
 <span class="sd">    See Phys. Rep. 324, 1–105 (2000).</span>
 
 <span class="sd">        .. math::</span>
@@ -633,6 +698,8 @@
 <span class="sd">            I, x, x^1, x^2, x^\textrm{moment}, dx, dx^2, p, p^2,</span>
 <span class="sd">            x dx, x^2 p^2, x^2 dx, x p^2, x^3 p^2</span>
 
+<span class="sd">    Useful attributes include ``self.L`` (the box length), ``self.dvr_x`` (the grid points).</span>
+
 <span class="sd">    Parameters</span>
 <span class="sd">    ----------</span>
 <span class="sd">    dof: str, int</span>
@@ -646,12 +713,14 @@
 <span class="sd">    endpoint: bool, optional</span>
 <span class="sd">        If ``endpoint=False``, :math:`x_0=x_i, x_{N+1}=x_f`; otherwise</span>
 <span class="sd">        :math:`x_1=x_i, x_{N}=x_f`.</span>
-
+<span class="sd">    quadrature: bool, optional.</span>
+<span class="sd">        Whether calculate unimplemented operators numerically. Experimental. Defaults to False.</span>
+<span class="sd">    dvr: bool, optional.</span>
+<span class="sd">        Whether enable DVR (:math:`x` eigenbasis). Defaults to False.</span>
 <span class="sd">    &quot;&quot;&quot;</span>
     <span class="n">is_phonon</span> <span class="o">=</span> <span class="kc">True</span>
     
-    <span class="k">def</span><span class="w"> </span><span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">dof</span><span class="p">,</span> <span class="n">nbas</span><span class="p">,</span> <span class="n">xi</span><span class="p">,</span> <span class="n">xf</span><span class="p">,</span> <span class="n">endpoint</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span> <span class="n">quadrature</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span>
-            <span class="n">dvr</span><span class="o">=</span><span class="kc">False</span><span class="p">):</span>
+    <span class="k">def</span><span class="w"> </span><span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">dof</span><span class="p">,</span> <span class="n">nbas</span><span class="p">,</span> <span class="n">xi</span><span class="p">,</span> <span class="n">xf</span><span class="p">,</span> <span class="n">endpoint</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span> <span class="n">quadrature</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span> <span class="n">dvr</span><span class="o">=</span><span class="kc">False</span><span class="p">):</span>
 
         <span class="k">assert</span> <span class="n">xi</span> <span class="o">&lt;</span> <span class="n">xf</span>
         <span class="k">if</span> <span class="n">endpoint</span><span class="p">:</span>
@@ -838,12 +907,12 @@
                     <span class="n">mat</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">quad</span><span class="p">(</span><span class="n">op_symbol</span><span class="p">)</span>
                 <span class="k">else</span><span class="p">:</span>
                     <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;op_symbol:</span><span class="si">{</span><span class="n">op_symbol</span><span class="si">}</span><span class="s2"> is not supported. You can try explicit quadrature&quot;</span><span class="p">)</span>
-        
+
         <span class="bp">self</span><span class="o">.</span><span class="n">_recursion_flag</span> <span class="o">-=</span> <span class="mi">1</span>
 
-        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">dvr</span> <span class="ow">and</span> <span class="bp">self</span><span class="o">.</span><span class="n">_recursion_flag</span> <span class="o">==</span> <span class="mi">0</span><span class="p">:</span>
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">_recursion_flag</span> <span class="o">==</span> <span class="mi">0</span> <span class="ow">and</span> <span class="bp">self</span><span class="o">.</span><span class="n">dvr</span><span class="p">:</span>
             <span class="n">mat</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">dvr_v</span><span class="o">.</span><span class="n">T</span> <span class="o">@</span> <span class="n">mat</span> <span class="o">@</span> <span class="bp">self</span><span class="o">.</span><span class="n">dvr_v</span>
-        
+
         <span class="k">return</span> <span class="n">mat</span> <span class="o">*</span> <span class="n">op_factor</span></div>
     
     <span class="nd">@property</span>
@@ -982,16 +1051,52 @@
 
 
 <div class="viewcode-block" id="BasisMultiElectron"><a class="viewcode-back" href="../../../model.html#renormalizer.model.basis.BasisMultiElectron">[docs]</a><span class="k">class</span><span class="w"> </span><span class="nc">BasisMultiElectron</span><span class="p">(</span><span class="n">BasisSet</span><span class="p">):</span>
-<span class="w">    </span><span class="sa">r</span><span class="sd">&quot;&quot;&quot;</span>
-<span class="sd">    The basis set for multi electronic state on one single site,</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    The basis set for multiple electronic states on a single site.</span>
 <span class="sd">    The basis order is [dof_names[0], dof_names[1], dof_names[2], ...].</span>
 
 <span class="sd">    Parameters</span>
 <span class="sd">    ----------</span>
-<span class="sd">    dof : a :class:`list` or :class:`tuple` of hashable objects.</span>
-<span class="sd">        The names of the DoFs contained in the basis set.</span>
-<span class="sd">    sigmaqn : :class:`list` of :class:`int` or :class:`list` of containers of :class:`int`</span>
-<span class="sd">        The quantum number of each basis</span>
+<span class="sd">    dof : list or tuple of hashable objects</span>
+<span class="sd">        The names of the electronic states. Each element represents a different electronic state</span>
+<span class="sd">        (e.g., ground state, first excited state, etc.) on the same site.</span>
+<span class="sd">    sigmaqn : list of int or list of containers of int</span>
+<span class="sd">        The quantum number(s) for each basis state. The length must match the number of electronic states.</span>
+<span class="sd">        Each element can be an integer or a tuple of integers representing the quantum numbers.</span>
+<span class="sd">        Set all to 0 if quantum numbers are not needed.</span>
+
+<span class="sd">    Notes</span>
+<span class="sd">    -----</span>
+<span class="sd">    The parameter name ``dof`` can be misleading. In this context, it refers to different electronic</span>
+<span class="sd">    states within the same physical degree of freedom (site), not different physical degrees of freedom.</span>
+
+<span class="sd">    Important: When using with :meth:`~renormalizer.mps.Mps.hartree_product_state`, the condition</span>
+<span class="sd">    dictionary should use ANY ONE of the DoF names as the key to specify the state of the entire basis.</span>
+<span class="sd">    For example, for a basis with dof_names = [&quot;S0&quot;, &quot;S1&quot;, &quot;S2&quot;], you can use:</span>
+<span class="sd">    - ``{&quot;S0&quot;: 0}`` to put the system in the S0 state</span>
+<span class="sd">    - ``{&quot;S1&quot;: 1}`` to put the system in the S1 state</span>
+<span class="sd">    - ``{&quot;S2&quot;: 2}`` to put the system in the S2 state</span>
+<span class="sd">    The key can be ANY of the DoF names: &quot;S0&quot;, &quot;S1&quot;, or &quot;S2&quot; - they all refer to the same basis</span>
+
+<span class="sd">    Examples</span>
+<span class="sd">    --------</span>
+<span class="sd">    &gt;&gt;&gt; # Create a basis with three electronic states (S0, S1, S2) with quantum numbers disabled</span>
+<span class="sd">    &gt;&gt;&gt; b = BasisMultiElectron([&quot;S0&quot;, &quot;S1&quot;, &quot;S2&quot;], sigmaqn=[0, 0, 0])</span>
+<span class="sd">    &gt;&gt;&gt; b</span>
+<span class="sd">    BasisMultiElectron(dof: [&#39;S0&#39;, &#39;S1&#39;, &#39;S2&#39;], nbas: 3)</span>
+<span class="sd">    &gt;&gt;&gt; b.dofs</span>
+<span class="sd">    (&#39;S0&#39;, &#39;S1&#39;, &#39;S2&#39;)</span>
+<span class="sd">    &gt;&gt;&gt; from renormalizer import Op</span>
+<span class="sd">    &gt;&gt;&gt; # Create an operator that transfers from S0 to S1</span>
+<span class="sd">    &gt;&gt;&gt; b.op_mat(Op(&quot;a^\\dagger a&quot;, [&quot;S0&quot;, &quot;S1&quot;]))</span>
+<span class="sd">    array([[0., 1., 0.],</span>
+<span class="sd">           [0., 0., 0.],</span>
+<span class="sd">           [0., 0., 0.]])</span>
+<span class="sd">    &gt;&gt;&gt; # Create an operator for the number operator on S2</span>
+<span class="sd">    &gt;&gt;&gt; b.op_mat(Op(&quot;a^\\dagger a&quot;, &quot;S2&quot;))</span>
+<span class="sd">    array([[0., 0., 0.],</span>
+<span class="sd">           [0., 0., 0.],</span>
+<span class="sd">           [0., 0., 1.]])</span>
 <span class="sd">    &quot;&quot;&quot;</span>
 
     <span class="n">is_electron</span> <span class="o">=</span> <span class="kc">True</span>
@@ -1050,6 +1155,16 @@
 <span class="sd">    ----------</span>
 <span class="sd">    dof : a :class:`list` or :class:`tuple` of hashable objects.</span>
 <span class="sd">        The names of the DoFs contained in the basis set.</span>
+
+<span class="sd">    Notes</span>
+<span class="sd">    -----</span>
+<span class="sd">    Important: When using with :meth:`~renormalizer.mps.Mps.hartree_product_state`, the condition</span>
+<span class="sd">    dictionary should use ANY ONE of the DoF names as the key to specify the state of the entire basis.</span>
+<span class="sd">    For example, for a basis with dof_names = [&quot;S0&quot;, &quot;S1&quot;], you can use:</span>
+<span class="sd">    - ``{&quot;S0&quot;: 0}`` to put the system in the vacuum state</span>
+<span class="sd">    - ``{&quot;S1&quot;: 1}`` to put the system in the S0 state</span>
+<span class="sd">    - ``{&quot;S0&quot;: 2}`` to put the system in the S1 state</span>
+<span class="sd">    The key can be ANY of the DoF names: &quot;S0&quot;, &quot;S1&quot;, or &quot;S2&quot; - they all refer to the same basis.</span>
 <span class="sd">    &quot;&quot;&quot;</span>
 
     <span class="n">is_electron</span> <span class="o">=</span> <span class="kc">True</span>
@@ -1275,6 +1390,63 @@
 <span class="k">def</span><span class="w"> </span><span class="nf">p_power_k</span><span class="p">(</span><span class="n">k</span><span class="p">,</span><span class="n">m</span><span class="p">,</span><span class="n">n</span><span class="p">):</span>
 <span class="c1"># &lt;m|p^k|n&gt;</span>
     <span class="k">return</span> <span class="n">x_power_k</span><span class="p">(</span><span class="n">k</span><span class="p">,</span><span class="n">m</span><span class="p">,</span><span class="n">n</span><span class="p">)</span> <span class="o">*</span> <span class="p">(</span><span class="mi">1</span><span class="n">j</span><span class="p">)</span><span class="o">**</span><span class="p">(</span><span class="n">m</span><span class="o">-</span><span class="n">n</span><span class="p">)</span>
+
+
+<span class="k">def</span><span class="w"> </span><span class="nf">count_powers</span><span class="p">(</span><span class="n">expr</span><span class="p">:</span> <span class="nb">str</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Count powers of x and p in a given string expression.</span>
+<span class="sd">    - &#39;dx&#39; is treated as &#39;p&#39;</span>
+<span class="sd">    - Terms are separated by spaces</span>
+<span class="sd">    - &#39;^n&#39; means raised to power n</span>
+<span class="sd">    - Implicit power is 1 if no exponent is given</span>
+<span class="sd">    - Invalid tokens raise ValueError</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="c1"># Normalize string</span>
+    <span class="n">expr</span> <span class="o">=</span> <span class="n">expr</span><span class="o">.</span><span class="n">strip</span><span class="p">()</span><span class="o">.</span><span class="n">lower</span><span class="p">()</span>
+
+    <span class="c1"># Map tokens</span>
+    <span class="n">tokens</span> <span class="o">=</span> <span class="n">expr</span><span class="o">.</span><span class="n">split</span><span class="p">()</span>
+    <span class="n">x_power</span> <span class="o">=</span> <span class="mi">0</span>
+    <span class="n">p_power</span> <span class="o">=</span> <span class="mi">0</span>
+
+    <span class="k">for</span> <span class="n">token</span> <span class="ow">in</span> <span class="n">tokens</span><span class="p">:</span>
+        <span class="c1"># Normalize dx -&gt; p</span>
+        <span class="k">if</span> <span class="n">token</span><span class="o">.</span><span class="n">startswith</span><span class="p">(</span><span class="s2">&quot;dx&quot;</span><span class="p">):</span>
+            <span class="n">token</span> <span class="o">=</span> <span class="n">token</span><span class="o">.</span><span class="n">replace</span><span class="p">(</span><span class="s2">&quot;dx&quot;</span><span class="p">,</span> <span class="s2">&quot;p&quot;</span><span class="p">,</span> <span class="mi">1</span><span class="p">)</span>
+
+        <span class="c1"># Parse variable and power</span>
+        <span class="k">if</span> <span class="n">token</span><span class="o">.</span><span class="n">startswith</span><span class="p">(</span><span class="s2">&quot;x&quot;</span><span class="p">):</span>
+            <span class="n">var</span> <span class="o">=</span> <span class="s2">&quot;x&quot;</span>
+            <span class="n">rest</span> <span class="o">=</span> <span class="n">token</span><span class="p">[</span><span class="mi">1</span><span class="p">:]</span>
+        <span class="k">elif</span> <span class="n">token</span><span class="o">.</span><span class="n">startswith</span><span class="p">(</span><span class="s2">&quot;p&quot;</span><span class="p">):</span>
+            <span class="n">var</span> <span class="o">=</span> <span class="s2">&quot;p&quot;</span>
+            <span class="n">rest</span> <span class="o">=</span> <span class="n">token</span><span class="p">[</span><span class="mi">1</span><span class="p">:]</span>
+        <span class="k">elif</span> <span class="n">token</span><span class="o">.</span><span class="n">startswith</span><span class="p">(</span><span class="s2">&quot;h&quot;</span><span class="p">)</span> <span class="ow">or</span> <span class="n">token</span><span class="o">.</span><span class="n">startswith</span><span class="p">(</span><span class="s2">&quot;b&quot;</span><span class="p">)</span> <span class="ow">or</span> <span class="n">token</span> <span class="o">==</span> <span class="s2">&quot;i&quot;</span><span class="p">:</span>
+            <span class="c1"># h, b^\dagger, b, and i should be ignored</span>
+            <span class="k">continue</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Invalid expr: &#39;</span><span class="si">{</span><span class="n">expr</span><span class="si">}</span><span class="s2">&#39;&quot;</span><span class="p">)</span>
+
+        <span class="c1"># Handle power</span>
+        <span class="k">if</span> <span class="n">rest</span> <span class="o">==</span> <span class="s2">&quot;&quot;</span><span class="p">:</span>
+            <span class="n">power</span> <span class="o">=</span> <span class="mi">1</span>
+        <span class="k">elif</span> <span class="n">rest</span><span class="o">.</span><span class="n">startswith</span><span class="p">(</span><span class="s2">&quot;^&quot;</span><span class="p">):</span>
+            <span class="k">try</span><span class="p">:</span>
+                <span class="n">power</span> <span class="o">=</span> <span class="nb">int</span><span class="p">(</span><span class="n">rest</span><span class="p">[</span><span class="mi">1</span><span class="p">:])</span>
+            <span class="k">except</span> <span class="ne">ValueError</span><span class="p">:</span>
+                <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Invalid power in expr: &#39;</span><span class="si">{</span><span class="n">expr</span><span class="si">}</span><span class="s2">&#39;&quot;</span><span class="p">)</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Invalid format in expr: &#39;</span><span class="si">{</span><span class="n">expr</span><span class="si">}</span><span class="s2">&#39;&quot;</span><span class="p">)</span>
+
+        <span class="c1"># Add to total</span>
+        <span class="k">if</span> <span class="n">var</span> <span class="o">==</span> <span class="s2">&quot;x&quot;</span><span class="p">:</span>
+            <span class="n">x_power</span> <span class="o">+=</span> <span class="n">power</span>
+        <span class="k">elif</span> <span class="n">var</span> <span class="o">==</span> <span class="s2">&quot;p&quot;</span><span class="p">:</span>
+            <span class="n">p_power</span> <span class="o">+=</span> <span class="n">power</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="k">assert</span> <span class="kc">False</span>
+
+    <span class="k">return</span> <span class="n">x_power</span><span class="p">,</span> <span class="n">p_power</span>
 </pre></div>
         </article>
       </div>

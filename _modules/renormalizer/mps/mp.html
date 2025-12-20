@@ -278,7 +278,7 @@
 
         <span class="n">mp</span><span class="o">.</span><span class="n">qn</span> <span class="o">=</span> <span class="p">[]</span>
         <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="n">nsites</span><span class="o">+</span><span class="mi">1</span><span class="p">):</span>
-            <span class="n">subqn</span> <span class="o">=</span> <span class="n">npload</span><span class="p">[</span><span class="sa">f</span><span class="s2">&quot;subqn_</span><span class="si">{</span><span class="n">i</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">]</span><span class="o">.</span><span class="n">astype</span><span class="p">(</span><span class="nb">int</span><span class="p">)</span><span class="o">.</span><span class="n">tolist</span><span class="p">()</span>
+            <span class="n">subqn</span> <span class="o">=</span> <span class="n">npload</span><span class="p">[</span><span class="sa">f</span><span class="s2">&quot;subqn_</span><span class="si">{</span><span class="n">i</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">]</span><span class="o">.</span><span class="n">astype</span><span class="p">(</span><span class="nb">int</span><span class="p">)</span>
             <span class="n">mp</span><span class="o">.</span><span class="n">qn</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">subqn</span><span class="p">)</span>
 
         <span class="n">mp</span><span class="o">.</span><span class="n">qnidx</span> <span class="o">=</span> <span class="nb">int</span><span class="p">(</span><span class="n">npload</span><span class="p">[</span><span class="s2">&quot;qnidx&quot;</span><span class="p">])</span>
@@ -287,7 +287,7 @@
         <span class="k">return</span> <span class="n">mp</span></div>
 
     <span class="k">def</span><span class="w"> </span><span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
-        <span class="c1"># XXX: when modify theses codes, keep in mind to update `metacopy` method</span>
+        <span class="c1"># XXX: when modify these codes, keep in mind to update `metacopy` method</span>
         <span class="c1"># set to a list of None upon metacopy. String is used when the matrix is</span>
         <span class="c1"># stored in disks</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">_mp</span><span class="p">:</span> <span class="n">List</span><span class="p">[</span><span class="n">Union</span><span class="p">[</span><span class="n">Matrix</span><span class="p">,</span> <span class="kc">None</span><span class="p">,</span> <span class="nb">str</span><span class="p">]]</span> <span class="o">=</span> <span class="p">[]</span>
@@ -1145,6 +1145,8 @@
 
         <span class="k">for</span> <span class="n">idx</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">iter_idx_list</span><span class="p">(</span><span class="n">full</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span> <span class="n">stop_idx</span><span class="o">=</span><span class="n">stop_idx</span><span class="p">):</span>
             <span class="bp">self</span><span class="o">.</span><span class="n">_push_cano</span><span class="p">(</span><span class="n">idx</span><span class="p">)</span>
+        <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">==</span> <span class="mi">1</span><span class="p">:</span>
+            <span class="k">return</span> <span class="bp">self</span>
         <span class="c1"># can&#39;t iter to idx == 0 or idx == self.site_num - 1</span>
         <span class="k">if</span> <span class="p">(</span><span class="ow">not</span> <span class="bp">self</span><span class="o">.</span><span class="n">to_right</span> <span class="ow">and</span> <span class="n">idx</span> <span class="o">==</span> <span class="mi">1</span><span class="p">)</span> <span class="ow">or</span> <span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">to_right</span> <span class="ow">and</span> <span class="n">idx</span> <span class="o">==</span> <span class="bp">self</span><span class="o">.</span><span class="n">site_num</span> <span class="o">-</span> <span class="mi">2</span><span class="p">):</span>
             <span class="bp">self</span><span class="o">.</span><span class="n">_switch_direction</span><span class="p">()</span>

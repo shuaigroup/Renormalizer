@@ -421,17 +421,29 @@
 <span class="sd">        Args:</span>
 <span class="sd">            model (:class:`~renormalizer.model.Model`): Model information.</span>
 <span class="sd">            condition (Dict): Dict with format ``{dof:local_state}``.</span>
-<span class="sd">                The default local state for dofs not specified is the &quot;0&quot; state.</span>
+<span class="sd">                The default local state for dofs not contained in the condition dict is the &quot;0&quot; state.</span>
 <span class="sd">                An example is ``{&quot;e_1&quot;:1, &quot;v_0&quot;:2, &quot;v_3&quot;:[0, 0.707, 0.707]}``.</span>
 
-<span class="sd">                Note:</span>
-<span class="sd">                    If there are bases that contain multiple dofs in the model, the value of the dict</span>
-<span class="sd">                    is the state of all dofs of the basis. For example,</span>
-<span class="sd">                    if a basis contains ``&quot;e_1&quot;``, ``&quot;e_2&quot;`` and ``&quot;e_3&quot;``,</span>
-<span class="sd">                    ``{&quot;e_1&quot;: 2}`` (``{&quot;e_1&quot;: [0, 0, 1]}``) means ``&quot;e_3&quot;`` is occupied and</span>
-<span class="sd">                    ``{&quot;e_1&quot;: 1}`` (``{&quot;e_1&quot;: [0, 1, 0]}``) means ``&quot;e_2&quot;`` is occupied.</span>
-<span class="sd">                    Be aware that in :class:`renormalizer.BasisMultiElectronVac` the vacuum state</span>
-<span class="sd">                    is added to the ``0`` index.</span>
+<span class="sd">            Note:</span>
+<span class="sd">                For basis sets containing multiple DoFs (like :class:`~renormalizer.model.BasisMultiElectron`</span>
+<span class="sd">                and :class:`~renormalizer.model.BasisMultiElectronVac`), the key in the condition dict must be</span>
+<span class="sd">                ONE OF THE ACTUAL DOF NAMES or ALL OF THE ACTUAL DOF NAMES from the basis set.</span>
+<span class="sd">                In both cases, the value specifies the state for ALL DoFs in that basis.</span>
+
+<span class="sd">                For :class:`~renormalizer.model.BasisMultiElectron` with dof_names = [&quot;S0&quot;, &quot;S1&quot;, &quot;S2&quot;]:</span>
+<span class="sd">                - The basis order is [S0, S1, S2]</span>
+<span class="sd">                - ``{&quot;S0&quot;: 0}`` or ``{&quot;S0&quot;: [1, 0, 0]}`` means S0 is occupied</span>
+<span class="sd">                - ``{&quot;S1&quot;: 1}`` or ``{&quot;S1&quot;: [0, 1, 0]}`` means S1 is occupied</span>
+<span class="sd">                - ``{&quot;S2&quot;: 2}`` or ``{&quot;S2&quot;: [0, 0, 1]}`` means S2 is occupied</span>
+<span class="sd">                - The key can be ANY of the DoF names: &quot;S0&quot;, &quot;S1&quot;, or &quot;S2&quot; - they all refer to the same basis</span>
+<span class="sd">                - Alternatively, ``{(&quot;S0&quot;, &quot;S1&quot;, &quot;S2&quot;): 1}`` means S1 is occupied.</span>
+
+<span class="sd">                For :class:`~renormalizer.model.BasisMultiElectronVac` with dof_names = [&quot;S0&quot;, &quot;S1&quot;]:</span>
+<span class="sd">                - The basis order is [vacuum, S0, S1]</span>
+<span class="sd">                - ``{&quot;S0&quot;: 0}`` or ``{&quot;S0&quot;: [1, 0, 0]}`` means vacuum state</span>
+<span class="sd">                - ``{&quot;S1&quot;: 1}`` or ``{&quot;S1&quot;: [0, 1, 0]}`` means S0 is occupied</span>
+<span class="sd">                - ``{&quot;S0&quot;: 2}`` or ``{&quot;S0&quot;: [0, 0, 1]}`` means S1 is occupied</span>
+
 <span class="sd">            qn_idx (int): the site index of the quantum number center.</span>
 
 <span class="sd">        Returns:</span>
@@ -450,7 +462,8 @@
         <span class="c1"># check that the condition is not duplicated</span>
         <span class="c1"># each site has at most 1 single key to assign the occupation  </span>
         <span class="n">index</span> <span class="o">=</span> <span class="p">[</span><span class="n">model</span><span class="o">.</span><span class="n">dof_to_siteidx</span><span class="p">[</span><span class="n">key</span><span class="p">]</span> <span class="k">for</span> <span class="n">key</span> <span class="ow">in</span> <span class="n">condition</span><span class="o">.</span><span class="n">keys</span><span class="p">()]</span>
-        <span class="k">assert</span> <span class="nb">len</span><span class="p">(</span><span class="n">index</span><span class="p">)</span> <span class="o">==</span> <span class="nb">len</span><span class="p">(</span><span class="nb">set</span><span class="p">(</span><span class="n">index</span><span class="p">))</span>
+        <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">index</span><span class="p">)</span> <span class="o">!=</span> <span class="nb">len</span><span class="p">(</span><span class="nb">set</span><span class="p">(</span><span class="n">index</span><span class="p">)):</span>
+            <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s2">&quot;Each site has at most 1 single key to assign the occupation&quot;</span><span class="p">)</span>
         <span class="c1"># replace the dof_name key to site_index key</span>
         <span class="n">condition</span> <span class="o">=</span> <span class="p">{</span><span class="n">model</span><span class="o">.</span><span class="n">dof_to_siteidx</span><span class="p">[</span><span class="n">key</span><span class="p">]:</span><span class="n">value</span> <span class="k">for</span> <span class="n">key</span><span class="p">,</span> <span class="n">value</span> <span class="ow">in</span>
                 <span class="n">condition</span><span class="o">.</span><span class="n">items</span><span class="p">()}</span>

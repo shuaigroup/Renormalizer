@@ -507,11 +507,11 @@ div.rendered_html tbody tr:hover {
 </div>
 <div class="output_area stderr docutils container">
 <div class="highlight"><pre>
-2025-11-11 02:47:19,173[INFO] Use NumPy as backend
-2025-11-11 02:47:19,174[INFO] numpy random seed is 9012
-2025-11-11 02:47:19,175[INFO] random seed is 1092
-2025-11-11 02:47:19,185[INFO] Git Commit Hash: 940abbe8e26a22e9345f941947c6944ed81a5f06
-2025-11-11 02:47:19,186[INFO] use 64 bits
+2025-12-20 10:28:15,102[INFO] Use NumPy as backend
+2025-12-20 10:28:15,103[INFO] numpy random seed is 9012
+2025-12-20 10:28:15,104[INFO] random seed is 1092
+2025-12-20 10:28:15,113[INFO] Git Commit Hash: 8843b08007f92c985e412fa39ccb812c6c05306e
+2025-12-20 10:28:15,114[INFO] use 64 bits
 </pre></div></div>
 </div>
 <section id="Basics">
@@ -862,6 +862,7 @@ BasisHalfSpin(dof: (&#39;spin&#39;, 0), nbas: 2)
 </div>
 <p>here <span class="math notranslate nohighlight">\(x\)</span> is the mass-weighted coordinate.</p>
 <p>The number of possible basis sets is infinite and highly customized basis set for a particular problem is rairly common. You may subclass the <code class="docutils literal notranslate"><span class="pre">BasisSet</span></code> parent class in <code class="docutils literal notranslate"><span class="pre">renormalizer.model.basis.BasisSet</span></code> to customize the basis set and the numerical behavior of the operators.</p>
+<p>Renormalizer supports DVR basis (a.k.a. grid basis) where the basis functions are eigenfunctions of the position operator. Use the <code class="docutils literal notranslate"><span class="pre">BasisSineDVR</span></code> class or set <code class="docutils literal notranslate"><span class="pre">dvr=True</span></code> in BasisSHO for DVR basis set.</p>
 </section>
 <section id="Model">
 <h2><code class="docutils literal notranslate"><span class="pre">Model</span></code><a class="headerlink" href="#Model" title="Permalink to this heading">#</a></h2>
@@ -891,9 +892,9 @@ BasisHalfSpin(dof: (&#39;spin&#39;, 0), nbas: 2)
 </div>
 <div class="output_area stderr docutils container">
 <div class="highlight"><pre>
-2025-11-11 02:47:19,350[DEBUG] # of operator terms: 1
-2025-11-11 02:47:19,351[DEBUG] Input operator terms: 1
-2025-11-11 02:47:19,353[DEBUG] After combination of the same terms: 1
+2025-12-20 10:28:15,263[DEBUG] # of operator terms: 1
+2025-12-20 10:28:15,264[DEBUG] Input operator terms: 1
+2025-12-20 10:28:15,266[DEBUG] After combination of the same terms: 1
 </pre></div></div>
 </div>
 <div class="nboutput nblast docutils container">
@@ -957,12 +958,121 @@ array([[0., 1.],
 </pre></div></div>
 </div>
 </section>
-<section id="Units-in-Renormalizer">
-<h2>Units in Renormalizer<a class="headerlink" href="#Units-in-Renormalizer" title="Permalink to this heading">#</a></h2>
-<p>All internal numbers in renormalizer are assumed to have the unit of atomic unit (a.u.). Consequently, all external interfaces such as <code class="docutils literal notranslate"><span class="pre">factor</span></code> in <code class="docutils literal notranslate"><span class="pre">Op</span></code> is assumed to have the unit of atomic unit.</p>
-<p>To facilitate unit conversion, You may use the <code class="docutils literal notranslate"><span class="pre">Quantity</span></code> class in Renormalizer to convert the values in other units to atomic units.</p>
+<section id="Define-Custom-BasisSet">
+<h2>Define Custom <code class="docutils literal notranslate"><span class="pre">BasisSet</span></code><a class="headerlink" href="#Define-Custom-BasisSet" title="Permalink to this heading">#</a></h2>
+<p>It is quite common to require specific basis set for the problem at hand. The following is an example of defining a custom basis set.</p>
+<p>The key to the implementation is to implement the <code class="docutils literal notranslate"><span class="pre">op_mat</span></code> method, which outputs the matrix representation of a local operator. You should implement the necessary operators here for your model definition. The input to the function could be either <code class="docutils literal notranslate"><span class="pre">str</span></code> or <code class="docutils literal notranslate"><span class="pre">Op</span></code>. Use <code class="docutils literal notranslate"><span class="pre">op.symbol</span></code> to access the symbol string.</p>
 <div class="nbinput nblast docutils container">
 <div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[22]:
+</pre></div>
+</div>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="kn">from</span><span class="w"> </span><span class="nn">typing</span><span class="w"> </span><span class="kn">import</span> <span class="n">Union</span><span class="p">,</span> <span class="n">List</span>
+<span class="kn">import</span><span class="w"> </span><span class="nn">numpy</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="nn">np</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">renormalizer.model.basis</span><span class="w"> </span><span class="kn">import</span> <span class="n">BasisSet</span>
+
+<span class="k">class</span><span class="w"> </span><span class="nc">CustomTwoLevelSystem</span><span class="p">(</span><span class="n">BasisSet</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    A custom two-level system basis set example.</span>
+<span class="sd">    Implements a simple two-level system with custom operators.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+
+    <span class="k">def</span><span class="w"> </span><span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">dof</span><span class="p">,</span> <span class="n">energy_splitting</span><span class="o">=</span><span class="mf">1.0</span><span class="p">,</span> <span class="n">sigmaqn</span><span class="p">:</span> <span class="n">List</span><span class="p">[</span><span class="nb">int</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">):</span>
+        <span class="c1"># Define the basis states and their quantum numbers</span>
+        <span class="c1"># For a two-level system, we have two states: ground and excited</span>
+        <span class="k">if</span> <span class="n">sigmaqn</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="n">sigmaqn</span> <span class="o">=</span> <span class="p">[</span><span class="mi">0</span><span class="p">,</span> <span class="mi">1</span><span class="p">]</span>  <span class="c1"># Quantum numbers for each state</span>
+
+        <span class="c1"># Initialize the BasisSet class with the number of states and quantum numbers</span>
+        <span class="c1"># Must provide `sigma_qn` even if it&#39;s all zero.</span>
+        <span class="nb">super</span><span class="p">()</span><span class="o">.</span><span class="fm">__init__</span><span class="p">(</span><span class="n">dof</span><span class="p">,</span> <span class="n">nbas</span><span class="o">=</span><span class="mi">2</span><span class="p">,</span> <span class="n">sigmaqn</span><span class="o">=</span><span class="n">sigmaqn</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">energy_splitting</span> <span class="o">=</span> <span class="n">energy_splitting</span>
+
+    <span class="k">def</span><span class="w"> </span><span class="nf">op_mat</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">op</span><span class="p">:</span> <span class="n">Union</span><span class="p">[</span><span class="n">Op</span><span class="p">,</span> <span class="nb">str</span><span class="p">]):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Define operator matrices for supported symbols:</span>
+<span class="sd">        - &#39;sigma_z&#39;: Pauli Z matrix</span>
+<span class="sd">        - &#39;sigma_x&#39;: Pauli X matrix</span>
+<span class="sd">        - &#39;n&#39;: number operator (|1&gt;&lt;1|)</span>
+<span class="sd">        - &#39;H_sys&#39;: system Hamiltonian (energy_splitting * sigma_z)</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="c1"># Convert symbol to string if necessary</span>
+        <span class="k">if</span> <span class="ow">not</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">op</span><span class="p">,</span> <span class="n">Op</span><span class="p">):</span>
+            <span class="n">op</span> <span class="o">=</span> <span class="n">Op</span><span class="p">(</span><span class="n">op</span><span class="p">,</span> <span class="kc">None</span><span class="p">)</span>
+
+        <span class="n">op_symbol</span><span class="p">,</span> <span class="n">op_factor</span> <span class="o">=</span> <span class="n">op</span><span class="o">.</span><span class="n">symbol</span><span class="p">,</span> <span class="n">op</span><span class="o">.</span><span class="n">factor</span>
+        <span class="k">if</span> <span class="n">op_symbol</span> <span class="o">==</span> <span class="s2">&quot;sigma_z&quot;</span><span class="p">:</span>
+            <span class="n">mat</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">([[</span><span class="mi">1</span><span class="p">,</span> <span class="mi">0</span><span class="p">],</span> <span class="p">[</span><span class="mi">0</span><span class="p">,</span> <span class="o">-</span><span class="mi">1</span><span class="p">]])</span>
+        <span class="k">elif</span> <span class="n">op_symbol</span> <span class="o">==</span> <span class="s2">&quot;sigma_x&quot;</span><span class="p">:</span>
+            <span class="n">mat</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">([[</span><span class="mi">0</span><span class="p">,</span> <span class="mi">1</span><span class="p">],</span> <span class="p">[</span><span class="mi">1</span><span class="p">,</span> <span class="mi">0</span><span class="p">]])</span>
+        <span class="k">elif</span> <span class="n">op_symbol</span> <span class="o">==</span> <span class="s2">&quot;n&quot;</span><span class="p">:</span>
+            <span class="n">mat</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">([[</span><span class="mi">0</span><span class="p">,</span> <span class="mi">0</span><span class="p">],</span> <span class="p">[</span><span class="mi">0</span><span class="p">,</span> <span class="mi">1</span><span class="p">]])</span>  <span class="c1"># |1&gt;&lt;1|</span>
+        <span class="k">elif</span> <span class="n">op_symbol</span> <span class="o">==</span> <span class="s2">&quot;H_sys&quot;</span><span class="p">:</span>
+            <span class="c1"># System Hamiltonian: energy_splitting * sigma_z</span>
+            <span class="n">mat</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">energy_splitting</span> <span class="o">*</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">([[</span><span class="mi">1</span><span class="p">,</span> <span class="mi">0</span><span class="p">],</span> <span class="p">[</span><span class="mi">0</span><span class="p">,</span> <span class="o">-</span><span class="mi">1</span><span class="p">]])</span>
+        <span class="k">elif</span> <span class="n">op_symbol</span> <span class="o">==</span> <span class="s2">&quot;I&quot;</span><span class="p">:</span>
+            <span class="c1"># always define the identity operator</span>
+            <span class="n">mat</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">eye</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">nbas</span><span class="p">)</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Unknown operator symbol: </span><span class="si">{</span><span class="n">op_symbol</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+
+        <span class="k">return</span> <span class="n">mat</span> <span class="o">*</span> <span class="n">op_factor</span>
+
+    <span class="k">def</span><span class="w"> </span><span class="nf">copy</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">new_dof</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Create a copy with a new DOF label&quot;&quot;&quot;</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="vm">__class__</span><span class="p">(</span><span class="n">new_dof</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">energy_splitting</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">sigmaqn</span><span class="p">)</span>
+</pre></div>
+</div>
+</div>
+<div class="nbinput docutils container">
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[23]:
+</pre></div>
+</div>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="c1"># Create a model with our custom basis</span>
+<span class="n">custom_basis</span> <span class="o">=</span> <span class="n">CustomTwoLevelSystem</span><span class="p">(</span><span class="s2">&quot;qubit&quot;</span><span class="p">,</span> <span class="n">energy_splitting</span><span class="o">=</span><span class="mf">2.0</span><span class="p">)</span>
+<span class="n">model</span> <span class="o">=</span> <span class="n">Model</span><span class="p">([</span><span class="n">custom_basis</span><span class="p">],</span> <span class="p">[</span><span class="n">Op</span><span class="p">(</span><span class="s2">&quot;H_sys&quot;</span><span class="p">,</span> <span class="s2">&quot;qubit&quot;</span><span class="p">)])</span>
+
+<span class="c1"># Create MPOs using our custom symbols</span>
+<span class="n">sigma_z_mpo</span> <span class="o">=</span> <span class="n">Mpo</span><span class="p">(</span><span class="n">model</span><span class="p">,</span> <span class="n">Op</span><span class="p">(</span><span class="s2">&quot;sigma_z&quot;</span><span class="p">,</span> <span class="s2">&quot;qubit&quot;</span><span class="p">))</span>
+<span class="nb">print</span><span class="p">(</span><span class="n">sigma_z_mpo</span><span class="o">.</span><span class="n">todense</span><span class="p">())</span>
+<span class="n">sigma_x_mpo</span> <span class="o">=</span> <span class="n">Mpo</span><span class="p">(</span><span class="n">model</span><span class="p">,</span> <span class="n">Op</span><span class="p">(</span><span class="s2">&quot;sigma_x&quot;</span><span class="p">,</span> <span class="s2">&quot;qubit&quot;</span><span class="p">))</span>
+<span class="nb">print</span><span class="p">(</span><span class="n">sigma_x_mpo</span><span class="o">.</span><span class="n">todense</span><span class="p">())</span>
+</pre></div>
+</div>
+</div>
+<div class="nboutput docutils container">
+<div class="prompt empty docutils container">
+</div>
+<div class="output_area stderr docutils container">
+<div class="highlight"><pre>
+2025-12-20 10:28:15,296[DEBUG] # of operator terms: 1
+2025-12-20 10:28:15,297[DEBUG] Input operator terms: 1
+2025-12-20 10:28:15,298[DEBUG] After combination of the same terms: 1
+2025-12-20 10:28:15,299[DEBUG] # of operator terms: 1
+2025-12-20 10:28:15,300[DEBUG] Input operator terms: 1
+2025-12-20 10:28:15,300[DEBUG] After combination of the same terms: 1
+</pre></div></div>
+</div>
+<div class="nboutput nblast docutils container">
+<div class="prompt empty docutils container">
+</div>
+<div class="output_area docutils container">
+<div class="highlight"><pre>
+[[ 1.  0.]
+ [ 0. -1.]]
+[[0. 1.]
+ [1. 0.]]
+</pre></div></div>
+</div>
+<blockquote>
+<div><p>To improve computational efficiency, when defining the basis set, float numbers are preferred over complex numbers. Complex operators wil usually be finally converted to real operators, such as <span class="math notranslate nohighlight">\(H=YY\)</span> or <span class="math notranslate nohighlight">\(H=-iY\)</span>.</p>
+</div></blockquote>
+</section>
+<section id="Units-in-Renormalizer">
+<h2>Units in Renormalizer<a class="headerlink" href="#Units-in-Renormalizer" title="Permalink to this heading">#</a></h2>
+<p>All internal numbers in renormalizer are assumed to have the unit of atomic unit (a.u.). Consequently, all external interfaces such as <code class="docutils literal notranslate"><span class="pre">factor</span></code> in <code class="docutils literal notranslate"><span class="pre">Op</span></code> are assumed to have the unit of atomic unit.</p>
+<p>To facilitate unit conversion, You may use the <code class="docutils literal notranslate"><span class="pre">Quantity</span></code> class in Renormalizer to convert the values in other units to atomic units.</p>
+<div class="nbinput nblast docutils container">
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[24]:
 </pre></div>
 </div>
 <div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="kn">from</span><span class="w"> </span><span class="nn">renormalizer</span><span class="w"> </span><span class="kn">import</span> <span class="n">Quantity</span>
@@ -970,7 +1080,7 @@ array([[0., 1.],
 </div>
 </div>
 <div class="nbinput docutils container">
-<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[23]:
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[25]:
 </pre></div>
 </div>
 <div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">v</span> <span class="o">=</span> <span class="n">Quantity</span><span class="p">(</span><span class="mi">27212</span><span class="p">,</span> <span class="s2">&quot;mev&quot;</span><span class="p">)</span>
@@ -979,7 +1089,7 @@ array([[0., 1.],
 </div>
 </div>
 <div class="nboutput nblast docutils container">
-<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[23]:
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[25]:
 </pre></div>
 </div>
 <div class="output_area docutils container">
@@ -987,14 +1097,24 @@ array([[0., 1.],
 1.0000225550439237
 </pre></div></div>
 </div>
-<p>Note that directly using a <code class="docutils literal notranslate"><span class="pre">Quantity</span></code> instance for numerical arguments of model construction will result in errors. For example, you should write <code class="docutils literal notranslate"><span class="pre">BasisSHO(dof=0,</span> <span class="pre">omega=Quantity(50).as_au(),</span> <span class="pre">nbas=4)</span></code> instead of <code class="docutils literal notranslate"><span class="pre">BasisSHO(dof=0,</span> <span class="pre">omega=Quantity(50),</span> <span class="pre">nbas=4)</span></code>.</p>
-<div class="nbinput nblast docutils container">
-<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[ ]:
+<p>Note that directly using a <code class="docutils literal notranslate"><span class="pre">Quantity</span></code> instance for numerical arguments of model construction will result in errors. For example, you should write <code class="docutils literal notranslate"><span class="pre">BasisSHO(dof=0,</span> <span class="pre">omega=Quantity(50).as_au(),</span> <span class="pre">nbas=4)</span></code> instead of <code class="docutils literal notranslate"><span class="pre">BasisSHO(dof=0,</span> <span class="pre">omega=Quantity(50),</span> <span class="pre">nbas=4)</span></code>. The design enforces the user to pay special attention to the units as well as the value of the parameters, which helps to prevent unit/parameter typo.</p>
+<p>To convert the unit from a.u. to other supported units, use <code class="docutils literal notranslate"><span class="pre">as_unit</span></code> to convert to the desired unit, and then access the <code class="docutils literal notranslate"><span class="pre">value</span></code> attribute for the value.</p>
+<div class="nbinput docutils container">
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[26]:
 </pre></div>
 </div>
-<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">Quantity</span><span class="p">(</span><span class="mi">1</span><span class="p">,</span> <span class="s2">&quot;au&quot;</span><span class="p">)</span><span class="o">.</span><span class="n">as_unit</span><span class="p">(</span><span class="s2">&quot;mev&quot;</span><span class="p">)</span><span class="o">.</span><span class="n">value</span>
 </pre></div>
 </div>
+</div>
+<div class="nboutput nblast docutils container">
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[26]:
+</pre></div>
+</div>
+<div class="output_area docutils container">
+<div class="highlight"><pre>
+27211.386245988
+</pre></div></div>
 </div>
 </section>
 </section>
@@ -1065,6 +1185,7 @@ array([[0., 1.],
 </li>
 <li><a class="reference internal" href="#BasisSet"><code class="docutils literal notranslate"><span class="pre">BasisSet</span></code></a></li>
 <li><a class="reference internal" href="#Model"><code class="docutils literal notranslate"><span class="pre">Model</span></code></a></li>
+<li><a class="reference internal" href="#Define-Custom-BasisSet">Define Custom <code class="docutils literal notranslate"><span class="pre">BasisSet</span></code></a></li>
 <li><a class="reference internal" href="#Units-in-Renormalizer">Units in Renormalizer</a></li>
 </ul>
 </li>

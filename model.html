@@ -894,7 +894,8 @@ For basis containing only one DoF, the type could be anything that can be hashed
 For basis containing multiple DoFs, the type should be a <code class="docutils literal notranslate"><span class="pre">list</span></code> or <code class="docutils literal notranslate"><span class="pre">tuple</span></code>
 of anything that can be hashed.</p></li>
 <li><p><strong>nbas</strong> (<a class="reference external" href="https://docs.python.org/3/library/functions.html#int" title="(in Python v3.14)"><em>int</em></a>) – number of dimension of the basis set</p></li>
-<li><p><strong>sigmaqn</strong> (<em>List</em>) – the quantum number of each basis. Could be an integer or tuple of integers</p></li>
+<li><p><strong>sigmaqn</strong> (<em>List</em>) – the quantum number of each basis. The length of the list should be the same as <code class="docutils literal notranslate"><span class="pre">nbas</span></code>.
+Each element of the list should be an integer or a tuple of integers</p></li>
 </ul>
 </dd>
 </dl>
@@ -928,6 +929,45 @@ Returns a tuple even if the basis contains only one DoF.</p>
 <dd class="field-even"><p><a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#tuple" title="(in Python v3.14)">tuple</a></p>
 </dd>
 </dl>
+<p class="rubric">Examples</p>
+<div class="doctest highlight-default notranslate"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="c1"># Single DoF basis</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">basis_sho</span> <span class="o">=</span> <span class="n">BasisSHO</span><span class="p">(</span><span class="s2">&quot;v&quot;</span><span class="p">,</span> <span class="mf">1.0</span><span class="p">,</span> <span class="mi">10</span><span class="p">)</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">basis_sho</span><span class="o">.</span><span class="n">dofs</span>
+<span class="go">(&#39;v&#39;,)</span>
+</pre></div>
+</div>
+<div class="doctest highlight-default notranslate"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="c1"># Multi-electron basis</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">basis_me</span> <span class="o">=</span> <span class="n">BasisMultiElectron</span><span class="p">([</span><span class="s2">&quot;S0&quot;</span><span class="p">,</span> <span class="s2">&quot;S1&quot;</span><span class="p">,</span> <span class="s2">&quot;S2&quot;</span><span class="p">],</span> <span class="n">sigmaqn</span><span class="o">=</span><span class="p">[</span><span class="mi">0</span><span class="p">,</span> <span class="mi">0</span><span class="p">,</span> <span class="mi">0</span><span class="p">])</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">basis_me</span><span class="o">.</span><span class="n">dofs</span>
+<span class="go">(&#39;S0&#39;, &#39;S1&#39;, &#39;S2&#39;)</span>
+</pre></div>
+</div>
+<div class="doctest highlight-default notranslate"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="c1"># Multi-electron vacuum basis</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">basis_me_vac</span> <span class="o">=</span> <span class="n">BasisMultiElectronVac</span><span class="p">([</span><span class="s2">&quot;S0&quot;</span><span class="p">,</span> <span class="s2">&quot;S1&quot;</span><span class="p">])</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">basis_me_vac</span><span class="o">.</span><span class="n">dofs</span>
+<span class="go">(&#39;S0&#39;, &#39;S1&#39;)</span>
+</pre></div>
+</div>
+<div class="doctest highlight-default notranslate"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="c1"># Simple electron basis</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">basis_se</span> <span class="o">=</span> <span class="n">BasisSimpleElectron</span><span class="p">(</span><span class="s2">&quot;e&quot;</span><span class="p">)</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">basis_se</span><span class="o">.</span><span class="n">dofs</span>
+<span class="go">(&#39;e&#39;,)</span>
+</pre></div>
+</div>
+<div class="doctest highlight-default notranslate"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="c1"># Half-spin basis</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">basis_spin</span> <span class="o">=</span> <span class="n">BasisHalfSpin</span><span class="p">(</span><span class="s2">&quot;spin&quot;</span><span class="p">)</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">basis_spin</span><span class="o">.</span><span class="n">dofs</span>
+<span class="go">(&#39;spin&#39;,)</span>
+</pre></div>
+</div>
+<p class="rubric">Notes</p>
+<ul class="simple">
+<li><p>For single DoF bases (BasisSHO, BasisSineDVR, BasisSimpleElectron, BasisHalfSpin),
+this returns a 1-element tuple containing the DoF name</p></li>
+<li><p>For multi-DoF bases (BasisMultiElectron, BasisMultiElectronVac), this returns a tuple
+of all electronic state names</p></li>
+<li><p>The returned tuple can be used as keys in condition dictionaries for Mps.hartree_product_state</p></li>
+</ul>
 </dd></dl>
 
 <dl class="py attribute">
@@ -976,8 +1016,8 @@ The factor is included.</p>
 
 <dl class="py class">
 <dt class="sig sig-object py" id="renormalizer.model.basis.BasisSHO">
-<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">renormalizer.model.basis.</span></span><span class="sig-name descname"><span class="pre">BasisSHO</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">dof</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">omega</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">nbas</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">x0</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">0.0</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">dvr</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">False</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">general_xp_power</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">False</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/renormalizer/model/basis.html#BasisSHO"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#renormalizer.model.basis.BasisSHO" title="Permalink to this definition">#</a></dt>
-<dd><p>simple harmonic oscillator basis set</p>
+<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">renormalizer.model.basis.</span></span><span class="sig-name descname"><span class="pre">BasisSHO</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">dof</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">omega</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">nbas</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">x0</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">0.0</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">dvr</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">False</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">general_xp_power</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">False</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">scale_omega</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference external" href="https://docs.python.org/3/library/functions.html#bool" title="(in Python v3.14)"><span class="pre">bool</span></a></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">False</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/renormalizer/model/basis.html#BasisSHO"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#renormalizer.model.basis.BasisSHO" title="Permalink to this definition">#</a></dt>
+<dd><p>Simple harmonic oscillator basis set</p>
 <dl class="field-list simple">
 <dt class="field-odd">Parameters<span class="colon">:</span></dt>
 <dd class="field-odd"><ul class="simple">
@@ -990,6 +1030,10 @@ The factor is included.</p>
 through general expression for <span class="math notranslate nohighlight">\(x`power or :math:`p\)</span> power. This is not efficient because
 <span class="math notranslate nohighlight">\(x\)</span> and <span class="math notranslate nohighlight">\(x^2\)</span> (or <span class="math notranslate nohighlight">\(p\)</span> and <span class="math notranslate nohighlight">\(p^2\)</span>) have been hard-coded already.
 The option is only used for testing.</p></li>
+<li><p><strong>scale_omega</strong> (<a class="reference external" href="https://docs.python.org/3/library/functions.html#bool" title="(in Python v3.14)"><em>bool</em></a>) – whether scale the frequency into <span class="math notranslate nohighlight">\(x\)</span> and <span class="math notranslate nohighlight">\(p\)</span>.
+If not scaled, the SHO Hamiltonian is written as <span class="math notranslate nohighlight">\(p^2/2 + 1/2\omega^2 x^2\)</span>.
+If scaled, <span class="math notranslate nohighlight">\(x\)</span> and <span class="math notranslate nohighlight">\(p\)</span> become dimensionless,
+and the SHO Hamiltonian becomes <span class="math notranslate nohighlight">\(\omega/2(p^2 + x^2)\)</span>.</p></li>
 </ul>
 </dd>
 </dl>
@@ -1023,6 +1067,45 @@ Returns a tuple even if the basis contains only one DoF.</p>
 <dd class="field-even"><p><a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#tuple" title="(in Python v3.14)">tuple</a></p>
 </dd>
 </dl>
+<p class="rubric">Examples</p>
+<div class="doctest highlight-default notranslate"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="c1"># Single DoF basis</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">basis_sho</span> <span class="o">=</span> <span class="n">BasisSHO</span><span class="p">(</span><span class="s2">&quot;v&quot;</span><span class="p">,</span> <span class="mf">1.0</span><span class="p">,</span> <span class="mi">10</span><span class="p">)</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">basis_sho</span><span class="o">.</span><span class="n">dofs</span>
+<span class="go">(&#39;v&#39;,)</span>
+</pre></div>
+</div>
+<div class="doctest highlight-default notranslate"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="c1"># Multi-electron basis</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">basis_me</span> <span class="o">=</span> <span class="n">BasisMultiElectron</span><span class="p">([</span><span class="s2">&quot;S0&quot;</span><span class="p">,</span> <span class="s2">&quot;S1&quot;</span><span class="p">,</span> <span class="s2">&quot;S2&quot;</span><span class="p">],</span> <span class="n">sigmaqn</span><span class="o">=</span><span class="p">[</span><span class="mi">0</span><span class="p">,</span> <span class="mi">0</span><span class="p">,</span> <span class="mi">0</span><span class="p">])</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">basis_me</span><span class="o">.</span><span class="n">dofs</span>
+<span class="go">(&#39;S0&#39;, &#39;S1&#39;, &#39;S2&#39;)</span>
+</pre></div>
+</div>
+<div class="doctest highlight-default notranslate"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="c1"># Multi-electron vacuum basis</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">basis_me_vac</span> <span class="o">=</span> <span class="n">BasisMultiElectronVac</span><span class="p">([</span><span class="s2">&quot;S0&quot;</span><span class="p">,</span> <span class="s2">&quot;S1&quot;</span><span class="p">])</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">basis_me_vac</span><span class="o">.</span><span class="n">dofs</span>
+<span class="go">(&#39;S0&#39;, &#39;S1&#39;)</span>
+</pre></div>
+</div>
+<div class="doctest highlight-default notranslate"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="c1"># Simple electron basis</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">basis_se</span> <span class="o">=</span> <span class="n">BasisSimpleElectron</span><span class="p">(</span><span class="s2">&quot;e&quot;</span><span class="p">)</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">basis_se</span><span class="o">.</span><span class="n">dofs</span>
+<span class="go">(&#39;e&#39;,)</span>
+</pre></div>
+</div>
+<div class="doctest highlight-default notranslate"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="c1"># Half-spin basis</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">basis_spin</span> <span class="o">=</span> <span class="n">BasisHalfSpin</span><span class="p">(</span><span class="s2">&quot;spin&quot;</span><span class="p">)</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">basis_spin</span><span class="o">.</span><span class="n">dofs</span>
+<span class="go">(&#39;spin&#39;,)</span>
+</pre></div>
+</div>
+<p class="rubric">Notes</p>
+<ul class="simple">
+<li><p>For single DoF bases (BasisSHO, BasisSineDVR, BasisSimpleElectron, BasisHalfSpin),
+this returns a 1-element tuple containing the DoF name</p></li>
+<li><p>For multi-DoF bases (BasisMultiElectron, BasisMultiElectronVac), this returns a tuple
+of all electronic state names</p></li>
+<li><p>The returned tuple can be used as keys in condition dictionaries for Mps.hartree_product_state</p></li>
+</ul>
 </dd></dl>
 
 <dl class="py attribute">
@@ -1121,6 +1204,45 @@ Returns a tuple even if the basis contains only one DoF.</p>
 <dd class="field-even"><p><a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#tuple" title="(in Python v3.14)">tuple</a></p>
 </dd>
 </dl>
+<p class="rubric">Examples</p>
+<div class="doctest highlight-default notranslate"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="c1"># Single DoF basis</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">basis_sho</span> <span class="o">=</span> <span class="n">BasisSHO</span><span class="p">(</span><span class="s2">&quot;v&quot;</span><span class="p">,</span> <span class="mf">1.0</span><span class="p">,</span> <span class="mi">10</span><span class="p">)</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">basis_sho</span><span class="o">.</span><span class="n">dofs</span>
+<span class="go">(&#39;v&#39;,)</span>
+</pre></div>
+</div>
+<div class="doctest highlight-default notranslate"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="c1"># Multi-electron basis</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">basis_me</span> <span class="o">=</span> <span class="n">BasisMultiElectron</span><span class="p">([</span><span class="s2">&quot;S0&quot;</span><span class="p">,</span> <span class="s2">&quot;S1&quot;</span><span class="p">,</span> <span class="s2">&quot;S2&quot;</span><span class="p">],</span> <span class="n">sigmaqn</span><span class="o">=</span><span class="p">[</span><span class="mi">0</span><span class="p">,</span> <span class="mi">0</span><span class="p">,</span> <span class="mi">0</span><span class="p">])</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">basis_me</span><span class="o">.</span><span class="n">dofs</span>
+<span class="go">(&#39;S0&#39;, &#39;S1&#39;, &#39;S2&#39;)</span>
+</pre></div>
+</div>
+<div class="doctest highlight-default notranslate"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="c1"># Multi-electron vacuum basis</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">basis_me_vac</span> <span class="o">=</span> <span class="n">BasisMultiElectronVac</span><span class="p">([</span><span class="s2">&quot;S0&quot;</span><span class="p">,</span> <span class="s2">&quot;S1&quot;</span><span class="p">])</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">basis_me_vac</span><span class="o">.</span><span class="n">dofs</span>
+<span class="go">(&#39;S0&#39;, &#39;S1&#39;)</span>
+</pre></div>
+</div>
+<div class="doctest highlight-default notranslate"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="c1"># Simple electron basis</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">basis_se</span> <span class="o">=</span> <span class="n">BasisSimpleElectron</span><span class="p">(</span><span class="s2">&quot;e&quot;</span><span class="p">)</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">basis_se</span><span class="o">.</span><span class="n">dofs</span>
+<span class="go">(&#39;e&#39;,)</span>
+</pre></div>
+</div>
+<div class="doctest highlight-default notranslate"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="c1"># Half-spin basis</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">basis_spin</span> <span class="o">=</span> <span class="n">BasisHalfSpin</span><span class="p">(</span><span class="s2">&quot;spin&quot;</span><span class="p">)</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">basis_spin</span><span class="o">.</span><span class="n">dofs</span>
+<span class="go">(&#39;spin&#39;,)</span>
+</pre></div>
+</div>
+<p class="rubric">Notes</p>
+<ul class="simple">
+<li><p>For single DoF bases (BasisSHO, BasisSineDVR, BasisSimpleElectron, BasisHalfSpin),
+this returns a 1-element tuple containing the DoF name</p></li>
+<li><p>For multi-DoF bases (BasisMultiElectron, BasisMultiElectronVac), this returns a tuple
+of all electronic state names</p></li>
+<li><p>The returned tuple can be used as keys in condition dictionaries for Mps.hartree_product_state</p></li>
+</ul>
 </dd></dl>
 
 <dl class="py attribute">
@@ -1175,9 +1297,12 @@ The factor is included.</p>
 <dl class="py class">
 <dt class="sig sig-object py" id="renormalizer.model.basis.BasisSineDVR">
 <em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">renormalizer.model.basis.</span></span><span class="sig-name descname"><span class="pre">BasisSineDVR</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">dof</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">nbas</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">xi</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">xf</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">endpoint</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">False</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">quadrature</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">False</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">dvr</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">False</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/renormalizer/model/basis.html#BasisSineDVR"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#renormalizer.model.basis.BasisSineDVR" title="Permalink to this definition">#</a></dt>
-<dd><p>Sine DVR basis (particle-in-a-box) for vibrational, angular, and
-dissociative modes.
-See Phys. Rep. 324, 1–105 (2000).</p>
+<dd><p>Sine DVR basis (particle-in-a-box) for vibrational and dissociative modes with fixed boundary conditions.
+The wavefunction is zero at the boundaries, making it suitable for systems where the particle is confined
+to a finite region. For torsional modes or angular motion with periodic boundary conditions, use exponential DVR.</p>
+<p>Important: This basis uses fixed boundary conditions (wavefunction goes to zero at boundaries) and is NOT
+suitable for periodic systems like torsional modes. For periodic boundary conditions, use a different basis.</p>
+<p>See Phys. Rep. 324, 1–105 (2000).</p>
 <blockquote>
 <div><div class="math-wrapper docutils container">
 <div class="math notranslate nohighlight">
@@ -1200,6 +1325,7 @@ x dx, x^2 p^2, x^2 dx, x p^2, x^3 p^2\]</div>
 </div>
 </dd>
 </dl>
+<p>Useful attributes include <code class="docutils literal notranslate"><span class="pre">self.L</span></code> (the box length), <code class="docutils literal notranslate"><span class="pre">self.dvr_x</span></code> (the grid points).</p>
 <dl class="field-list simple">
 <dt class="field-odd">Parameters<span class="colon">:</span></dt>
 <dd class="field-odd"><ul class="simple">
@@ -1209,6 +1335,8 @@ x dx, x^2 p^2, x^2 dx, x p^2, x^3 p^2\]</div>
 <li><p><strong>xf</strong> (<a class="reference external" href="https://docs.python.org/3/library/functions.html#float" title="(in Python v3.14)"><em>float</em></a>) – The rightmost grid point of the coordinate.</p></li>
 <li><p><strong>endpoint</strong> (<a class="reference external" href="https://docs.python.org/3/library/functions.html#bool" title="(in Python v3.14)"><em>bool</em></a><em>, </em><em>optional</em>) – If <code class="docutils literal notranslate"><span class="pre">endpoint=False</span></code>, <span class="math notranslate nohighlight">\(x_0=x_i, x_{N+1}=x_f\)</span>; otherwise
 <span class="math notranslate nohighlight">\(x_1=x_i, x_{N}=x_f\)</span>.</p></li>
+<li><p><strong>quadrature</strong> (<a class="reference external" href="https://docs.python.org/3/library/functions.html#bool" title="(in Python v3.14)"><em>bool</em></a><em>, </em><em>optional.</em>) – Whether calculate unimplemented operators numerically. Experimental. Defaults to False.</p></li>
+<li><p><strong>dvr</strong> (<a class="reference external" href="https://docs.python.org/3/library/functions.html#bool" title="(in Python v3.14)"><em>bool</em></a><em>, </em><em>optional.</em>) – Whether enable DVR (<span class="math notranslate nohighlight">\(x\)</span> eigenbasis). Defaults to False.</p></li>
 </ul>
 </dd>
 </dl>
@@ -1242,6 +1370,45 @@ Returns a tuple even if the basis contains only one DoF.</p>
 <dd class="field-even"><p><a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#tuple" title="(in Python v3.14)">tuple</a></p>
 </dd>
 </dl>
+<p class="rubric">Examples</p>
+<div class="doctest highlight-default notranslate"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="c1"># Single DoF basis</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">basis_sho</span> <span class="o">=</span> <span class="n">BasisSHO</span><span class="p">(</span><span class="s2">&quot;v&quot;</span><span class="p">,</span> <span class="mf">1.0</span><span class="p">,</span> <span class="mi">10</span><span class="p">)</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">basis_sho</span><span class="o">.</span><span class="n">dofs</span>
+<span class="go">(&#39;v&#39;,)</span>
+</pre></div>
+</div>
+<div class="doctest highlight-default notranslate"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="c1"># Multi-electron basis</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">basis_me</span> <span class="o">=</span> <span class="n">BasisMultiElectron</span><span class="p">([</span><span class="s2">&quot;S0&quot;</span><span class="p">,</span> <span class="s2">&quot;S1&quot;</span><span class="p">,</span> <span class="s2">&quot;S2&quot;</span><span class="p">],</span> <span class="n">sigmaqn</span><span class="o">=</span><span class="p">[</span><span class="mi">0</span><span class="p">,</span> <span class="mi">0</span><span class="p">,</span> <span class="mi">0</span><span class="p">])</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">basis_me</span><span class="o">.</span><span class="n">dofs</span>
+<span class="go">(&#39;S0&#39;, &#39;S1&#39;, &#39;S2&#39;)</span>
+</pre></div>
+</div>
+<div class="doctest highlight-default notranslate"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="c1"># Multi-electron vacuum basis</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">basis_me_vac</span> <span class="o">=</span> <span class="n">BasisMultiElectronVac</span><span class="p">([</span><span class="s2">&quot;S0&quot;</span><span class="p">,</span> <span class="s2">&quot;S1&quot;</span><span class="p">])</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">basis_me_vac</span><span class="o">.</span><span class="n">dofs</span>
+<span class="go">(&#39;S0&#39;, &#39;S1&#39;)</span>
+</pre></div>
+</div>
+<div class="doctest highlight-default notranslate"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="c1"># Simple electron basis</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">basis_se</span> <span class="o">=</span> <span class="n">BasisSimpleElectron</span><span class="p">(</span><span class="s2">&quot;e&quot;</span><span class="p">)</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">basis_se</span><span class="o">.</span><span class="n">dofs</span>
+<span class="go">(&#39;e&#39;,)</span>
+</pre></div>
+</div>
+<div class="doctest highlight-default notranslate"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="c1"># Half-spin basis</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">basis_spin</span> <span class="o">=</span> <span class="n">BasisHalfSpin</span><span class="p">(</span><span class="s2">&quot;spin&quot;</span><span class="p">)</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">basis_spin</span><span class="o">.</span><span class="n">dofs</span>
+<span class="go">(&#39;spin&#39;,)</span>
+</pre></div>
+</div>
+<p class="rubric">Notes</p>
+<ul class="simple">
+<li><p>For single DoF bases (BasisSHO, BasisSineDVR, BasisSimpleElectron, BasisHalfSpin),
+this returns a 1-element tuple containing the DoF name</p></li>
+<li><p>For multi-DoF bases (BasisMultiElectron, BasisMultiElectronVac), this returns a tuple
+of all electronic state names</p></li>
+<li><p>The returned tuple can be used as keys in condition dictionaries for Mps.hartree_product_state</p></li>
+</ul>
 </dd></dl>
 
 <dl class="py property">
@@ -1351,6 +1518,45 @@ Returns a tuple even if the basis contains only one DoF.</p>
 <dd class="field-even"><p><a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#tuple" title="(in Python v3.14)">tuple</a></p>
 </dd>
 </dl>
+<p class="rubric">Examples</p>
+<div class="doctest highlight-default notranslate"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="c1"># Single DoF basis</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">basis_sho</span> <span class="o">=</span> <span class="n">BasisSHO</span><span class="p">(</span><span class="s2">&quot;v&quot;</span><span class="p">,</span> <span class="mf">1.0</span><span class="p">,</span> <span class="mi">10</span><span class="p">)</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">basis_sho</span><span class="o">.</span><span class="n">dofs</span>
+<span class="go">(&#39;v&#39;,)</span>
+</pre></div>
+</div>
+<div class="doctest highlight-default notranslate"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="c1"># Multi-electron basis</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">basis_me</span> <span class="o">=</span> <span class="n">BasisMultiElectron</span><span class="p">([</span><span class="s2">&quot;S0&quot;</span><span class="p">,</span> <span class="s2">&quot;S1&quot;</span><span class="p">,</span> <span class="s2">&quot;S2&quot;</span><span class="p">],</span> <span class="n">sigmaqn</span><span class="o">=</span><span class="p">[</span><span class="mi">0</span><span class="p">,</span> <span class="mi">0</span><span class="p">,</span> <span class="mi">0</span><span class="p">])</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">basis_me</span><span class="o">.</span><span class="n">dofs</span>
+<span class="go">(&#39;S0&#39;, &#39;S1&#39;, &#39;S2&#39;)</span>
+</pre></div>
+</div>
+<div class="doctest highlight-default notranslate"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="c1"># Multi-electron vacuum basis</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">basis_me_vac</span> <span class="o">=</span> <span class="n">BasisMultiElectronVac</span><span class="p">([</span><span class="s2">&quot;S0&quot;</span><span class="p">,</span> <span class="s2">&quot;S1&quot;</span><span class="p">])</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">basis_me_vac</span><span class="o">.</span><span class="n">dofs</span>
+<span class="go">(&#39;S0&#39;, &#39;S1&#39;)</span>
+</pre></div>
+</div>
+<div class="doctest highlight-default notranslate"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="c1"># Simple electron basis</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">basis_se</span> <span class="o">=</span> <span class="n">BasisSimpleElectron</span><span class="p">(</span><span class="s2">&quot;e&quot;</span><span class="p">)</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">basis_se</span><span class="o">.</span><span class="n">dofs</span>
+<span class="go">(&#39;e&#39;,)</span>
+</pre></div>
+</div>
+<div class="doctest highlight-default notranslate"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="c1"># Half-spin basis</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">basis_spin</span> <span class="o">=</span> <span class="n">BasisHalfSpin</span><span class="p">(</span><span class="s2">&quot;spin&quot;</span><span class="p">)</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">basis_spin</span><span class="o">.</span><span class="n">dofs</span>
+<span class="go">(&#39;spin&#39;,)</span>
+</pre></div>
+</div>
+<p class="rubric">Notes</p>
+<ul class="simple">
+<li><p>For single DoF bases (BasisSHO, BasisSineDVR, BasisSimpleElectron, BasisHalfSpin),
+this returns a 1-element tuple containing the DoF name</p></li>
+<li><p>For multi-DoF bases (BasisMultiElectron, BasisMultiElectronVac), this returns a tuple
+of all electronic state names</p></li>
+<li><p>The returned tuple can be used as keys in condition dictionaries for Mps.hartree_product_state</p></li>
+</ul>
 </dd></dl>
 
 <dl class="py attribute">
@@ -1405,16 +1611,49 @@ The factor is included.</p>
 <dl class="py class">
 <dt class="sig sig-object py" id="renormalizer.model.basis.BasisMultiElectron">
 <em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">renormalizer.model.basis.</span></span><span class="sig-name descname"><span class="pre">BasisMultiElectron</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">dof</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">sigmaqn</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference external" href="https://docs.python.org/3/library/typing.html#typing.List" title="(in Python v3.14)"><span class="pre">List</span></a></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/renormalizer/model/basis.html#BasisMultiElectron"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#renormalizer.model.basis.BasisMultiElectron" title="Permalink to this definition">#</a></dt>
-<dd><p>The basis set for multi electronic state on one single site,
+<dd><p>The basis set for multiple electronic states on a single site.
 The basis order is [dof_names[0], dof_names[1], dof_names[2], …].</p>
 <dl class="field-list simple">
 <dt class="field-odd">Parameters<span class="colon">:</span></dt>
 <dd class="field-odd"><ul class="simple">
-<li><p><strong>dof</strong> (a <a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#list" title="(in Python v3.14)"><code class="xref py py-class docutils literal notranslate"><span class="pre">list</span></code></a> or <a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#tuple" title="(in Python v3.14)"><code class="xref py py-class docutils literal notranslate"><span class="pre">tuple</span></code></a> of hashable objects.) – The names of the DoFs contained in the basis set.</p></li>
-<li><p><strong>sigmaqn</strong> (<a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#list" title="(in Python v3.14)"><code class="xref py py-class docutils literal notranslate"><span class="pre">list</span></code></a> of <a class="reference external" href="https://docs.python.org/3/library/functions.html#int" title="(in Python v3.14)"><code class="xref py py-class docutils literal notranslate"><span class="pre">int</span></code></a> or <a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#list" title="(in Python v3.14)"><code class="xref py py-class docutils literal notranslate"><span class="pre">list</span></code></a> of containers of <a class="reference external" href="https://docs.python.org/3/library/functions.html#int" title="(in Python v3.14)"><code class="xref py py-class docutils literal notranslate"><span class="pre">int</span></code></a>) – The quantum number of each basis</p></li>
+<li><p><strong>dof</strong> (<a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#list" title="(in Python v3.14)"><em>list</em></a><em> or </em><a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#tuple" title="(in Python v3.14)"><em>tuple</em></a><em> of </em><em>hashable objects</em>) – The names of the electronic states. Each element represents a different electronic state
+(e.g., ground state, first excited state, etc.) on the same site.</p></li>
+<li><p><strong>sigmaqn</strong> (<a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#list" title="(in Python v3.14)"><em>list</em></a><em> of </em><a class="reference external" href="https://docs.python.org/3/library/functions.html#int" title="(in Python v3.14)"><em>int</em></a><em> or </em><a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#list" title="(in Python v3.14)"><em>list</em></a><em> of </em><em>containers</em><em> of </em><a class="reference external" href="https://docs.python.org/3/library/functions.html#int" title="(in Python v3.14)"><em>int</em></a>) – The quantum number(s) for each basis state. The length must match the number of electronic states.
+Each element can be an integer or a tuple of integers representing the quantum numbers.
+Set all to 0 if quantum numbers are not needed.</p></li>
 </ul>
 </dd>
 </dl>
+<p class="rubric">Notes</p>
+<p>The parameter name <code class="docutils literal notranslate"><span class="pre">dof</span></code> can be misleading. In this context, it refers to different electronic
+states within the same physical degree of freedom (site), not different physical degrees of freedom.</p>
+<p>Important: When using with <a class="reference internal" href="mps.html#renormalizer.mps.Mps.hartree_product_state" title="renormalizer.mps.Mps.hartree_product_state"><code class="xref py py-meth docutils literal notranslate"><span class="pre">hartree_product_state()</span></code></a>, the condition
+dictionary should use ANY ONE of the DoF names as the key to specify the state of the entire basis.
+For example, for a basis with dof_names = [“S0”, “S1”, “S2”], you can use:
+- <code class="docutils literal notranslate"><span class="pre">{&quot;S0&quot;:</span> <span class="pre">0}</span></code> to put the system in the S0 state
+- <code class="docutils literal notranslate"><span class="pre">{&quot;S1&quot;:</span> <span class="pre">1}</span></code> to put the system in the S1 state
+- <code class="docutils literal notranslate"><span class="pre">{&quot;S2&quot;:</span> <span class="pre">2}</span></code> to put the system in the S2 state
+The key can be ANY of the DoF names: “S0”, “S1”, or “S2” - they all refer to the same basis</p>
+<p class="rubric">Examples</p>
+<div class="doctest highlight-default notranslate"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="c1"># Create a basis with three electronic states (S0, S1, S2) with quantum numbers disabled</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">b</span> <span class="o">=</span> <span class="n">BasisMultiElectron</span><span class="p">([</span><span class="s2">&quot;S0&quot;</span><span class="p">,</span> <span class="s2">&quot;S1&quot;</span><span class="p">,</span> <span class="s2">&quot;S2&quot;</span><span class="p">],</span> <span class="n">sigmaqn</span><span class="o">=</span><span class="p">[</span><span class="mi">0</span><span class="p">,</span> <span class="mi">0</span><span class="p">,</span> <span class="mi">0</span><span class="p">])</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">b</span>
+<span class="go">BasisMultiElectron(dof: [&#39;S0&#39;, &#39;S1&#39;, &#39;S2&#39;], nbas: 3)</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">b</span><span class="o">.</span><span class="n">dofs</span>
+<span class="go">(&#39;S0&#39;, &#39;S1&#39;, &#39;S2&#39;)</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="kn">from</span><span class="w"> </span><span class="nn">renormalizer</span><span class="w"> </span><span class="kn">import</span> <span class="n">Op</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="c1"># Create an operator that transfers from S0 to S1</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">b</span><span class="o">.</span><span class="n">op_mat</span><span class="p">(</span><span class="n">Op</span><span class="p">(</span><span class="s2">&quot;a^\dagger a&quot;</span><span class="p">,</span> <span class="p">[</span><span class="s2">&quot;S0&quot;</span><span class="p">,</span> <span class="s2">&quot;S1&quot;</span><span class="p">]))</span>
+<span class="go">array([[0., 1., 0.],</span>
+<span class="go">       [0., 0., 0.],</span>
+<span class="go">       [0., 0., 0.]])</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="c1"># Create an operator for the number operator on S2</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">b</span><span class="o">.</span><span class="n">op_mat</span><span class="p">(</span><span class="n">Op</span><span class="p">(</span><span class="s2">&quot;a^\dagger a&quot;</span><span class="p">,</span> <span class="s2">&quot;S2&quot;</span><span class="p">))</span>
+<span class="go">array([[0., 0., 0.],</span>
+<span class="go">       [0., 0., 0.],</span>
+<span class="go">       [0., 0., 1.]])</span>
+</pre></div>
+</div>
 <dl class="py method">
 <dt class="sig sig-object py" id="renormalizer.model.basis.BasisMultiElectron.copy">
 <span class="sig-name descname"><span class="pre">copy</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">new_dof</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/renormalizer/model/basis.html#BasisMultiElectron.copy"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#renormalizer.model.basis.BasisMultiElectron.copy" title="Permalink to this definition">#</a></dt>
@@ -1445,6 +1684,45 @@ Returns a tuple even if the basis contains only one DoF.</p>
 <dd class="field-even"><p><a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#tuple" title="(in Python v3.14)">tuple</a></p>
 </dd>
 </dl>
+<p class="rubric">Examples</p>
+<div class="doctest highlight-default notranslate"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="c1"># Single DoF basis</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">basis_sho</span> <span class="o">=</span> <span class="n">BasisSHO</span><span class="p">(</span><span class="s2">&quot;v&quot;</span><span class="p">,</span> <span class="mf">1.0</span><span class="p">,</span> <span class="mi">10</span><span class="p">)</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">basis_sho</span><span class="o">.</span><span class="n">dofs</span>
+<span class="go">(&#39;v&#39;,)</span>
+</pre></div>
+</div>
+<div class="doctest highlight-default notranslate"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="c1"># Multi-electron basis</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">basis_me</span> <span class="o">=</span> <span class="n">BasisMultiElectron</span><span class="p">([</span><span class="s2">&quot;S0&quot;</span><span class="p">,</span> <span class="s2">&quot;S1&quot;</span><span class="p">,</span> <span class="s2">&quot;S2&quot;</span><span class="p">],</span> <span class="n">sigmaqn</span><span class="o">=</span><span class="p">[</span><span class="mi">0</span><span class="p">,</span> <span class="mi">0</span><span class="p">,</span> <span class="mi">0</span><span class="p">])</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">basis_me</span><span class="o">.</span><span class="n">dofs</span>
+<span class="go">(&#39;S0&#39;, &#39;S1&#39;, &#39;S2&#39;)</span>
+</pre></div>
+</div>
+<div class="doctest highlight-default notranslate"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="c1"># Multi-electron vacuum basis</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">basis_me_vac</span> <span class="o">=</span> <span class="n">BasisMultiElectronVac</span><span class="p">([</span><span class="s2">&quot;S0&quot;</span><span class="p">,</span> <span class="s2">&quot;S1&quot;</span><span class="p">])</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">basis_me_vac</span><span class="o">.</span><span class="n">dofs</span>
+<span class="go">(&#39;S0&#39;, &#39;S1&#39;)</span>
+</pre></div>
+</div>
+<div class="doctest highlight-default notranslate"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="c1"># Simple electron basis</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">basis_se</span> <span class="o">=</span> <span class="n">BasisSimpleElectron</span><span class="p">(</span><span class="s2">&quot;e&quot;</span><span class="p">)</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">basis_se</span><span class="o">.</span><span class="n">dofs</span>
+<span class="go">(&#39;e&#39;,)</span>
+</pre></div>
+</div>
+<div class="doctest highlight-default notranslate"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="c1"># Half-spin basis</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">basis_spin</span> <span class="o">=</span> <span class="n">BasisHalfSpin</span><span class="p">(</span><span class="s2">&quot;spin&quot;</span><span class="p">)</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">basis_spin</span><span class="o">.</span><span class="n">dofs</span>
+<span class="go">(&#39;spin&#39;,)</span>
+</pre></div>
+</div>
+<p class="rubric">Notes</p>
+<ul class="simple">
+<li><p>For single DoF bases (BasisSHO, BasisSineDVR, BasisSimpleElectron, BasisHalfSpin),
+this returns a 1-element tuple containing the DoF name</p></li>
+<li><p>For multi-DoF bases (BasisMultiElectron, BasisMultiElectronVac), this returns a tuple
+of all electronic state names</p></li>
+<li><p>The returned tuple can be used as keys in condition dictionaries for Mps.hartree_product_state</p></li>
+</ul>
 </dd></dl>
 
 <dl class="py attribute">
@@ -1508,6 +1786,14 @@ sigma qn is [0, 1, 1, 1, …]</p>
 <dd class="field-odd"><p><strong>dof</strong> (a <a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#list" title="(in Python v3.14)"><code class="xref py py-class docutils literal notranslate"><span class="pre">list</span></code></a> or <a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#tuple" title="(in Python v3.14)"><code class="xref py py-class docutils literal notranslate"><span class="pre">tuple</span></code></a> of hashable objects.) – The names of the DoFs contained in the basis set.</p>
 </dd>
 </dl>
+<p class="rubric">Notes</p>
+<p>Important: When using with <a class="reference internal" href="mps.html#renormalizer.mps.Mps.hartree_product_state" title="renormalizer.mps.Mps.hartree_product_state"><code class="xref py py-meth docutils literal notranslate"><span class="pre">hartree_product_state()</span></code></a>, the condition
+dictionary should use ANY ONE of the DoF names as the key to specify the state of the entire basis.
+For example, for a basis with dof_names = [“S0”, “S1”], you can use:
+- <code class="docutils literal notranslate"><span class="pre">{&quot;S0&quot;:</span> <span class="pre">0}</span></code> to put the system in the vacuum state
+- <code class="docutils literal notranslate"><span class="pre">{&quot;S1&quot;:</span> <span class="pre">1}</span></code> to put the system in the S0 state
+- <code class="docutils literal notranslate"><span class="pre">{&quot;S0&quot;:</span> <span class="pre">2}</span></code> to put the system in the S1 state
+The key can be ANY of the DoF names: “S0”, “S1”, or “S2” - they all refer to the same basis.</p>
 <dl class="py method">
 <dt class="sig sig-object py" id="renormalizer.model.basis.BasisMultiElectronVac.copy">
 <span class="sig-name descname"><span class="pre">copy</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">new_dof</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/renormalizer/model/basis.html#BasisMultiElectronVac.copy"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#renormalizer.model.basis.BasisMultiElectronVac.copy" title="Permalink to this definition">#</a></dt>
@@ -1538,6 +1824,45 @@ Returns a tuple even if the basis contains only one DoF.</p>
 <dd class="field-even"><p><a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#tuple" title="(in Python v3.14)">tuple</a></p>
 </dd>
 </dl>
+<p class="rubric">Examples</p>
+<div class="doctest highlight-default notranslate"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="c1"># Single DoF basis</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">basis_sho</span> <span class="o">=</span> <span class="n">BasisSHO</span><span class="p">(</span><span class="s2">&quot;v&quot;</span><span class="p">,</span> <span class="mf">1.0</span><span class="p">,</span> <span class="mi">10</span><span class="p">)</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">basis_sho</span><span class="o">.</span><span class="n">dofs</span>
+<span class="go">(&#39;v&#39;,)</span>
+</pre></div>
+</div>
+<div class="doctest highlight-default notranslate"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="c1"># Multi-electron basis</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">basis_me</span> <span class="o">=</span> <span class="n">BasisMultiElectron</span><span class="p">([</span><span class="s2">&quot;S0&quot;</span><span class="p">,</span> <span class="s2">&quot;S1&quot;</span><span class="p">,</span> <span class="s2">&quot;S2&quot;</span><span class="p">],</span> <span class="n">sigmaqn</span><span class="o">=</span><span class="p">[</span><span class="mi">0</span><span class="p">,</span> <span class="mi">0</span><span class="p">,</span> <span class="mi">0</span><span class="p">])</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">basis_me</span><span class="o">.</span><span class="n">dofs</span>
+<span class="go">(&#39;S0&#39;, &#39;S1&#39;, &#39;S2&#39;)</span>
+</pre></div>
+</div>
+<div class="doctest highlight-default notranslate"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="c1"># Multi-electron vacuum basis</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">basis_me_vac</span> <span class="o">=</span> <span class="n">BasisMultiElectronVac</span><span class="p">([</span><span class="s2">&quot;S0&quot;</span><span class="p">,</span> <span class="s2">&quot;S1&quot;</span><span class="p">])</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">basis_me_vac</span><span class="o">.</span><span class="n">dofs</span>
+<span class="go">(&#39;S0&#39;, &#39;S1&#39;)</span>
+</pre></div>
+</div>
+<div class="doctest highlight-default notranslate"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="c1"># Simple electron basis</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">basis_se</span> <span class="o">=</span> <span class="n">BasisSimpleElectron</span><span class="p">(</span><span class="s2">&quot;e&quot;</span><span class="p">)</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">basis_se</span><span class="o">.</span><span class="n">dofs</span>
+<span class="go">(&#39;e&#39;,)</span>
+</pre></div>
+</div>
+<div class="doctest highlight-default notranslate"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="c1"># Half-spin basis</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">basis_spin</span> <span class="o">=</span> <span class="n">BasisHalfSpin</span><span class="p">(</span><span class="s2">&quot;spin&quot;</span><span class="p">)</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">basis_spin</span><span class="o">.</span><span class="n">dofs</span>
+<span class="go">(&#39;spin&#39;,)</span>
+</pre></div>
+</div>
+<p class="rubric">Notes</p>
+<ul class="simple">
+<li><p>For single DoF bases (BasisSHO, BasisSineDVR, BasisSimpleElectron, BasisHalfSpin),
+this returns a 1-element tuple containing the DoF name</p></li>
+<li><p>For multi-DoF bases (BasisMultiElectron, BasisMultiElectronVac), this returns a tuple
+of all electronic state names</p></li>
+<li><p>The returned tuple can be used as keys in condition dictionaries for Mps.hartree_product_state</p></li>
+</ul>
 </dd></dl>
 
 <dl class="py attribute">
@@ -1643,6 +1968,45 @@ Returns a tuple even if the basis contains only one DoF.</p>
 <dd class="field-even"><p><a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#tuple" title="(in Python v3.14)">tuple</a></p>
 </dd>
 </dl>
+<p class="rubric">Examples</p>
+<div class="doctest highlight-default notranslate"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="c1"># Single DoF basis</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">basis_sho</span> <span class="o">=</span> <span class="n">BasisSHO</span><span class="p">(</span><span class="s2">&quot;v&quot;</span><span class="p">,</span> <span class="mf">1.0</span><span class="p">,</span> <span class="mi">10</span><span class="p">)</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">basis_sho</span><span class="o">.</span><span class="n">dofs</span>
+<span class="go">(&#39;v&#39;,)</span>
+</pre></div>
+</div>
+<div class="doctest highlight-default notranslate"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="c1"># Multi-electron basis</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">basis_me</span> <span class="o">=</span> <span class="n">BasisMultiElectron</span><span class="p">([</span><span class="s2">&quot;S0&quot;</span><span class="p">,</span> <span class="s2">&quot;S1&quot;</span><span class="p">,</span> <span class="s2">&quot;S2&quot;</span><span class="p">],</span> <span class="n">sigmaqn</span><span class="o">=</span><span class="p">[</span><span class="mi">0</span><span class="p">,</span> <span class="mi">0</span><span class="p">,</span> <span class="mi">0</span><span class="p">])</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">basis_me</span><span class="o">.</span><span class="n">dofs</span>
+<span class="go">(&#39;S0&#39;, &#39;S1&#39;, &#39;S2&#39;)</span>
+</pre></div>
+</div>
+<div class="doctest highlight-default notranslate"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="c1"># Multi-electron vacuum basis</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">basis_me_vac</span> <span class="o">=</span> <span class="n">BasisMultiElectronVac</span><span class="p">([</span><span class="s2">&quot;S0&quot;</span><span class="p">,</span> <span class="s2">&quot;S1&quot;</span><span class="p">])</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">basis_me_vac</span><span class="o">.</span><span class="n">dofs</span>
+<span class="go">(&#39;S0&#39;, &#39;S1&#39;)</span>
+</pre></div>
+</div>
+<div class="doctest highlight-default notranslate"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="c1"># Simple electron basis</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">basis_se</span> <span class="o">=</span> <span class="n">BasisSimpleElectron</span><span class="p">(</span><span class="s2">&quot;e&quot;</span><span class="p">)</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">basis_se</span><span class="o">.</span><span class="n">dofs</span>
+<span class="go">(&#39;e&#39;,)</span>
+</pre></div>
+</div>
+<div class="doctest highlight-default notranslate"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="c1"># Half-spin basis</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">basis_spin</span> <span class="o">=</span> <span class="n">BasisHalfSpin</span><span class="p">(</span><span class="s2">&quot;spin&quot;</span><span class="p">)</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">basis_spin</span><span class="o">.</span><span class="n">dofs</span>
+<span class="go">(&#39;spin&#39;,)</span>
+</pre></div>
+</div>
+<p class="rubric">Notes</p>
+<ul class="simple">
+<li><p>For single DoF bases (BasisSHO, BasisSineDVR, BasisSimpleElectron, BasisHalfSpin),
+this returns a 1-element tuple containing the DoF name</p></li>
+<li><p>For multi-DoF bases (BasisMultiElectron, BasisMultiElectronVac), this returns a tuple
+of all electronic state names</p></li>
+<li><p>The returned tuple can be used as keys in condition dictionaries for Mps.hartree_product_state</p></li>
+</ul>
 </dd></dl>
 
 <dl class="py attribute">
@@ -1741,8 +2105,6 @@ and the DoFs of all simple symbols are set to the <a class="reference external" 
 </div>
 <p class="rubric">Examples</p>
 <div class="doctest highlight-default notranslate"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="kn">from</span><span class="w"> </span><span class="nn">renormalizer.model</span><span class="w"> </span><span class="kn">import</span> <span class="n">Op</span>
-<span class="gp">&gt;&gt;&gt; </span><span class="n">Op</span><span class="p">(</span><span class="sa">r</span><span class="s2">&quot;a^\dagger a&quot;</span><span class="p">,</span> <span class="p">[</span><span class="s1">&#39;site0&#39;</span><span class="p">,</span> <span class="s2">&quot;site1&quot;</span><span class="p">],</span> <span class="mf">2.</span><span class="p">,</span> <span class="n">qn</span><span class="o">=</span><span class="p">[</span><span class="mi">1</span><span class="p">,</span> <span class="o">-</span><span class="mi">1</span><span class="p">])</span>
-<span class="go">Op(&#39;a^\\dagger a&#39;, [&#39;site0&#39;, &#39;site1&#39;], 2.0, [[1], [-1]])</span>
 <span class="gp">&gt;&gt;&gt; </span><span class="n">x</span> <span class="o">=</span> <span class="n">Op</span><span class="p">(</span><span class="s2">&quot;X&quot;</span><span class="p">,</span> <span class="mi">0</span><span class="p">,</span> <span class="mf">0.5</span><span class="p">)</span>
 <span class="gp">&gt;&gt;&gt; </span><span class="mi">3</span> <span class="o">*</span> <span class="n">x</span>
 <span class="go">Op(&#39;X&#39;, [0], 1.5)</span>
@@ -1759,6 +2121,10 @@ and the DoFs of all simple symbols are set to the <a class="reference external" 
 <span class="go">[Op(&#39;Y X&#39;, [1, 0], 0.1), Op(&#39;X X&#39;, [0, 0], 0.25)]</span>
 <span class="gp">&gt;&gt;&gt; </span><span class="p">(</span><span class="n">y</span> <span class="o">+</span> <span class="n">x</span><span class="p">)</span> <span class="o">*</span> <span class="p">(</span><span class="n">x</span> <span class="o">+</span> <span class="n">y</span><span class="p">)</span>
 <span class="go">[Op(&#39;Y X&#39;, [1, 0], 0.1), Op(&#39;Y Y&#39;, [1, 1], 0.04000000000000001), Op(&#39;X X&#39;, [0, 0], 0.25), Op(&#39;X Y&#39;, [0, 1], 0.1)]</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">Op</span><span class="p">(</span><span class="sa">r</span><span class="s2">&quot;a^\dagger a&quot;</span><span class="p">,</span> <span class="p">[</span><span class="s1">&#39;site0&#39;</span><span class="p">,</span> <span class="s2">&quot;site1&quot;</span><span class="p">],</span> <span class="mf">2.</span><span class="p">,</span> <span class="n">qn</span><span class="o">=</span><span class="p">[</span><span class="mi">1</span><span class="p">,</span> <span class="o">-</span><span class="mi">1</span><span class="p">])</span>  <span class="c1"># off-diagonal hopping operator</span>
+<span class="go">Op(&#39;a^\\dagger a&#39;, [&#39;site0&#39;, &#39;site1&#39;], 2.0, [[1], [-1]])</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">Op</span><span class="p">(</span><span class="sa">r</span><span class="s2">&quot;a^\dagger a&quot;</span><span class="p">,</span> <span class="s1">&#39;site0&#39;</span><span class="p">,</span> <span class="mf">2.</span><span class="p">,</span> <span class="n">qn</span><span class="o">=</span><span class="p">[</span><span class="mi">1</span><span class="p">,</span> <span class="o">-</span><span class="mi">1</span><span class="p">])</span>  <span class="c1"># diagonal occupation operator</span>
+<span class="go">Op(&#39;a^\\dagger a&#39;, [&#39;site0&#39;, &#39;site0&#39;], 2.0, [[1], [-1]])</span>
 </pre></div>
 </div>
 <dl class="py property">

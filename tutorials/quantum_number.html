@@ -534,16 +534,26 @@ calculation. By looking at quantum numbers we can assert some of the matrix/vect
 </div>
 <div class="output_area stderr docutils container">
 <div class="highlight"><pre>
-2025-11-11 02:47:47,152[INFO] Use NumPy as backend
-2025-11-11 02:47:47,153[INFO] numpy random seed is 9012
-2025-11-11 02:47:47,154[INFO] random seed is 1092
-2025-11-11 02:47:47,165[INFO] Git Commit Hash: 940abbe8e26a22e9345f941947c6944ed81a5f06
-2025-11-11 02:47:47,167[INFO] use 64 bits
+2025-12-20 10:28:40,766[INFO] Use NumPy as backend
+2025-12-20 10:28:40,767[INFO] numpy random seed is 9012
+2025-12-20 10:28:40,767[INFO] random seed is 1092
+2025-12-20 10:28:40,776[INFO] Git Commit Hash: 8843b08007f92c985e412fa39ccb812c6c05306e
+2025-12-20 10:28:40,777[INFO] use 64 bits
 </pre></div></div>
+</div>
+<div class="nbinput nblast docutils container">
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[2]:
+</pre></div>
+</div>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="kn">from</span><span class="w"> </span><span class="nn">renormalizer.utils.log</span><span class="w"> </span><span class="kn">import</span> <span class="n">init_log</span><span class="p">,</span> <span class="n">INFO</span>
+<span class="c1"># set log level to INFO</span>
+<span class="n">init_log</span><span class="p">(</span><span class="n">INFO</span><span class="p">)</span>
+</pre></div>
+</div>
 </div>
 <p>Here we set up two basis sets and sets the quantum number for <span class="math notranslate nohighlight">\(|0\rangle\)</span> to 0 and <span class="math notranslate nohighlight">\(|1\rangle\)</span> to 1.</p>
 <div class="nbinput nblast docutils container">
-<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[2]:
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[3]:
 </pre></div>
 </div>
 <div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">b1</span> <span class="o">=</span> <span class="n">BasisSimpleElectron</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="n">sigmaqn</span><span class="o">=</span><span class="p">[</span><span class="mi">0</span><span class="p">,</span> <span class="mi">1</span><span class="p">])</span>
@@ -554,7 +564,7 @@ calculation. By looking at quantum numbers we can assert some of the matrix/vect
 </div>
 <p>We next build a random MPS based on the basis sets and see its effect</p>
 <div class="nbinput nblast docutils container">
-<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[3]:
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[4]:
 </pre></div>
 </div>
 <div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="kn">from</span><span class="w"> </span><span class="nn">renormalizer</span><span class="w"> </span><span class="kn">import</span> <span class="n">Mps</span><span class="p">,</span> <span class="n">Model</span>
@@ -562,7 +572,7 @@ calculation. By looking at quantum numbers we can assert some of the matrix/vect
 </div>
 </div>
 <div class="nbinput nblast docutils container">
-<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[4]:
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[5]:
 </pre></div>
 </div>
 <div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">model</span> <span class="o">=</span> <span class="n">Model</span><span class="p">(</span><span class="n">basis</span><span class="p">,</span> <span class="n">ham_terms</span><span class="o">=</span><span class="p">[])</span>
@@ -570,7 +580,7 @@ calculation. By looking at quantum numbers we can assert some of the matrix/vect
 </div>
 </div>
 <div class="nbinput nblast docutils container">
-<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[5]:
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[6]:
 </pre></div>
 </div>
 <div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">mps</span> <span class="o">=</span> <span class="n">Mps</span><span class="o">.</span><span class="n">random</span><span class="p">(</span><span class="n">model</span><span class="p">,</span> <span class="n">qntot</span><span class="o">=</span><span class="mi">1</span><span class="p">,</span> <span class="n">m_max</span><span class="o">=</span><span class="mi">2</span><span class="p">)</span>
@@ -578,7 +588,7 @@ calculation. By looking at quantum numbers we can assert some of the matrix/vect
 </div>
 </div>
 <div class="nbinput docutils container">
-<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[6]:
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[7]:
 </pre></div>
 </div>
 <div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">mps</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span><span class="o">.</span><span class="n">array</span>
@@ -586,7 +596,7 @@ calculation. By looking at quantum numbers we can assert some of the matrix/vect
 </div>
 </div>
 <div class="nboutput nblast docutils container">
-<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[6]:
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[7]:
 </pre></div>
 </div>
 <div class="output_area docutils container">
@@ -596,7 +606,7 @@ array([[[1., 0.],
 </pre></div></div>
 </div>
 <div class="nbinput docutils container">
-<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[7]:
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[8]:
 </pre></div>
 </div>
 <div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">mps</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span><span class="o">.</span><span class="n">array</span>
@@ -604,7 +614,7 @@ array([[[1., 0.],
 </div>
 </div>
 <div class="nboutput nblast docutils container">
-<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[7]:
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[8]:
 </pre></div>
 </div>
 <div class="output_area docutils container">
@@ -617,7 +627,7 @@ array([[[ 0.        ],
 </pre></div></div>
 </div>
 <div class="nbinput docutils container">
-<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[8]:
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[9]:
 </pre></div>
 </div>
 <div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">mps</span><span class="o">.</span><span class="n">todense</span><span class="p">()</span>
@@ -625,7 +635,7 @@ array([[[ 0.        ],
 </div>
 </div>
 <div class="nboutput nblast docutils container">
-<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[8]:
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[9]:
 </pre></div>
 </div>
 <div class="output_area docutils container">
@@ -636,7 +646,7 @@ array([ 0.        , -0.7089592 , -0.70524949,  0.        ])
 <p>We can see that although the MPS is random, half of the matrix elements are zero, due to particle number conservation. As a result, the overall dense state vector has a well-defined particle number of 1.</p>
 <p>For comparison, in the following the MPS when quantum number is not activated is shown</p>
 <div class="nbinput nblast docutils container">
-<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[9]:
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[10]:
 </pre></div>
 </div>
 <div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">model2</span> <span class="o">=</span> <span class="n">Model</span><span class="p">([</span><span class="n">BasisSimpleElectron</span><span class="p">(</span><span class="n">i</span><span class="p">,</span> <span class="n">sigmaqn</span><span class="o">=</span><span class="p">[</span><span class="mi">0</span><span class="p">,</span> <span class="mi">0</span><span class="p">])</span> <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="mi">2</span><span class="p">)],</span> <span class="n">ham_terms</span><span class="o">=</span><span class="p">[])</span>
@@ -645,7 +655,7 @@ array([ 0.        , -0.7089592 , -0.70524949,  0.        ])
 </div>
 </div>
 <div class="nbinput docutils container">
-<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[10]:
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[11]:
 </pre></div>
 </div>
 <div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">mps2</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span><span class="o">.</span><span class="n">array</span>
@@ -653,7 +663,7 @@ array([ 0.        , -0.7089592 , -0.70524949,  0.        ])
 </div>
 </div>
 <div class="nboutput nblast docutils container">
-<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[10]:
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[11]:
 </pre></div>
 </div>
 <div class="output_area docutils container">
@@ -663,7 +673,7 @@ array([[[-0.27201201, -0.96229386],
 </pre></div></div>
 </div>
 <div class="nbinput docutils container">
-<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[11]:
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[12]:
 </pre></div>
 </div>
 <div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">mps2</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span><span class="o">.</span><span class="n">array</span>
@@ -671,7 +681,7 @@ array([[[-0.27201201, -0.96229386],
 </div>
 </div>
 <div class="nboutput nblast docutils container">
-<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[11]:
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[12]:
 </pre></div>
 </div>
 <div class="output_area docutils container">
@@ -684,7 +694,7 @@ array([[[-0.56196169],
 </pre></div></div>
 </div>
 <div class="nbinput docutils container">
-<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[12]:
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[13]:
 </pre></div>
 </div>
 <div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">mps2</span><span class="o">.</span><span class="n">todense</span><span class="p">()</span>
@@ -692,7 +702,7 @@ array([[[-0.56196169],
 </div>
 </div>
 <div class="nboutput nblast docutils container">
-<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[12]:
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[13]:
 </pre></div>
 </div>
 <div class="output_area docutils container">
@@ -711,7 +721,7 @@ array([-0.18075719, -0.58568699, -0.63507609,  0.47008079])
 <p>Similarly, the quantum number of <span class="math notranslate nohighlight">\(\hat a\)</span> is -1.</p>
 <p>In Renormalizer, to fully take advantage of quatnum number conservation, we need to set the quantum number for the operators. The <code class="docutils literal notranslate"><span class="pre">Op</span></code> class accepts the <code class="docutils literal notranslate"><span class="pre">qn</span></code> argument for the quantum number of each elementary operator.</p>
 <div class="nbinput nblast docutils container">
-<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[13]:
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[14]:
 </pre></div>
 </div>
 <div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="kn">from</span><span class="w"> </span><span class="nn">renormalizer</span><span class="w"> </span><span class="kn">import</span> <span class="n">Op</span><span class="p">,</span> <span class="n">Mpo</span>
@@ -719,26 +729,16 @@ array([-0.18075719, -0.58568699, -0.63507609,  0.47008079])
 </div>
 </div>
 <p>Apply the creation operator to the MPS. The total quantum number of the MPS increases from 1 to 2, and the resulting state is <span class="math notranslate nohighlight">\(|11\rangle\)</span>.</p>
-<div class="nbinput docutils container">
-<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[14]:
+<div class="nbinput nblast docutils container">
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[15]:
 </pre></div>
 </div>
 <div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">mps3</span> <span class="o">=</span> <span class="n">Mpo</span><span class="p">(</span><span class="n">model</span><span class="p">,</span> <span class="n">Op</span><span class="p">(</span><span class="sa">r</span><span class="s2">&quot;a^\dagger&quot;</span><span class="p">,</span> <span class="mi">0</span><span class="p">,</span> <span class="n">qn</span><span class="o">=</span><span class="mi">1</span><span class="p">))</span> <span class="o">@</span> <span class="n">mps</span>
 </pre></div>
 </div>
 </div>
-<div class="nboutput nblast docutils container">
-<div class="prompt empty docutils container">
-</div>
-<div class="output_area stderr docutils container">
-<div class="highlight"><pre>
-2025-11-11 02:47:47,283[DEBUG] # of operator terms: 1
-2025-11-11 02:47:47,284[DEBUG] Input operator terms: 1
-2025-11-11 02:47:47,286[DEBUG] After combination of the same terms: 1
-</pre></div></div>
-</div>
 <div class="nbinput docutils container">
-<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[15]:
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[16]:
 </pre></div>
 </div>
 <div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">mps3</span><span class="o">.</span><span class="n">qntot</span>
@@ -746,7 +746,7 @@ array([-0.18075719, -0.58568699, -0.63507609,  0.47008079])
 </div>
 </div>
 <div class="nboutput nblast docutils container">
-<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[15]:
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[16]:
 </pre></div>
 </div>
 <div class="output_area docutils container">
@@ -755,7 +755,7 @@ array([2])
 </pre></div></div>
 </div>
 <div class="nbinput docutils container">
-<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[16]:
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[17]:
 </pre></div>
 </div>
 <div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">mps3</span><span class="o">.</span><span class="n">todense</span><span class="p">()</span>
@@ -763,7 +763,7 @@ array([2])
 </div>
 </div>
 <div class="nboutput nblast docutils container">
-<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[16]:
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[17]:
 </pre></div>
 </div>
 <div class="output_area docutils container">
@@ -773,7 +773,7 @@ array([ 0.       ,  0.       ,  0.       , -0.7089592])
 </div>
 <p>For complex symbols the quantum number for each elementary symbol should be specified.</p>
 <div class="nbinput nblast docutils container">
-<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[17]:
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[18]:
 </pre></div>
 </div>
 <div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">ham_terms</span> <span class="o">=</span> <span class="n">Op</span><span class="p">(</span><span class="sa">r</span><span class="s2">&quot;a^\dagger a&quot;</span><span class="p">,</span> <span class="p">[</span><span class="mi">0</span><span class="p">,</span> <span class="mi">1</span><span class="p">],</span> <span class="n">qn</span><span class="o">=</span><span class="p">[</span><span class="mi">1</span><span class="p">,</span> <span class="o">-</span><span class="mi">1</span><span class="p">])</span> <span class="o">+</span> <span class="n">Op</span><span class="p">(</span><span class="sa">r</span><span class="s2">&quot;a^\dagger a&quot;</span><span class="p">,</span> <span class="p">[</span><span class="mi">1</span><span class="p">,</span> <span class="mi">0</span><span class="p">],</span> <span class="n">qn</span><span class="o">=</span><span class="p">[</span><span class="mi">1</span><span class="p">,</span> <span class="o">-</span><span class="mi">1</span><span class="p">])</span>
@@ -782,12 +782,17 @@ array([ 0.       ,  0.       ,  0.       , -0.7089592])
 </div>
 <p>To summarize, three places are relevant to the setup of quantum number - The basis sets - The operators - Total quantum number in MPS</p>
 </section>
-<section id="Notes">
-<h2>Notes<a class="headerlink" href="#Notes" title="Permalink to this heading">#</a></h2>
-<p>Setting quantum number is not necessary. When quantum number is not conserved or for some reason quantum number conservation is not desired, set all quantum numbers to 0.</p>
+<section id="Multiple-Quantum-Numbers">
+<h2>Multiple Quantum Numbers<a class="headerlink" href="#Multiple-Quantum-Numbers" title="Permalink to this heading">#</a></h2>
 <p>Renormalizer supports the conservation of multiple quantum numbers. For example, in <em>ab initio</em> electronic structure calculations, both the number of alpha spin electrons and the number of beta spin electrons are conserved. In such cases, quantum numbers should be set to a numpy array of integers.</p>
+<p>In the following, we assume there are two basis sets <code class="docutils literal notranslate"><span class="pre">&quot;up&quot;</span></code> and <code class="docutils literal notranslate"><span class="pre">&quot;down&quot;</span></code> for spin-up electron and spin-down electron, respectively. Each basis set is a <code class="docutils literal notranslate"><span class="pre">BasisHalfSpin</span></code> instance.</p>
+<p>We assign the quantum number 0 to the spin up state <code class="docutils literal notranslate"><span class="pre">[1,</span> <span class="pre">0]</span></code> and the quantum number 1 to the spin down state <code class="docutils literal notranslate"><span class="pre">[0,</span> <span class="pre">1]</span></code>.</p>
+<p>The creation operator <span class="math notranslate nohighlight">\(a^\dagger_{\rm{up}}\)</span> creates a spin-up electron and does not affect spin-down electron, and thus its quantum number of <code class="docutils literal notranslate"><span class="pre">[1,</span> <span class="pre">0]</span></code>.</p>
+<blockquote>
+<div><p>Note that the quantum number of <code class="docutils literal notranslate"><span class="pre">[1,</span> <span class="pre">0]</span></code> is not directly related to the quantum state <code class="docutils literal notranslate"><span class="pre">[1,</span> <span class="pre">0]</span></code>.</p>
+</div></blockquote>
 <div class="nbinput nblast docutils container">
-<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[18]:
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[19]:
 </pre></div>
 </div>
 <div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="kn">import</span><span class="w"> </span><span class="nn">numpy</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="nn">np</span>
@@ -795,7 +800,7 @@ array([ 0.       ,  0.       ,  0.       , -0.7089592])
 </div>
 </div>
 <div class="nbinput docutils container">
-<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[19]:
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[20]:
 </pre></div>
 </div>
 <div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="c1"># spin up creation operator</span>
@@ -804,7 +809,7 @@ array([ 0.       ,  0.       ,  0.       , -0.7089592])
 </div>
 </div>
 <div class="nboutput nblast docutils container">
-<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[19]:
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[20]:
 </pre></div>
 </div>
 <div class="output_area docutils container">
@@ -812,8 +817,9 @@ array([ 0.       ,  0.       ,  0.       , -0.7089592])
 Op(&#39;a^\\dagger&#39;, [&#39;up&#39;], 1.0, [[1, 0]])
 </pre></div></div>
 </div>
+<p>Similarly <span class="math notranslate nohighlight">\(a_{\rm{up}}\)</span> annihilates a spin-up electron and does not affect spin-down electron, and thus its quantum number of <code class="docutils literal notranslate"><span class="pre">[-1,</span> <span class="pre">0]</span></code>.</p>
 <div class="nbinput docutils container">
-<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[20]:
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[21]:
 </pre></div>
 </div>
 <div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="c1"># spin up annihilation operator</span>
@@ -822,7 +828,7 @@ Op(&#39;a^\\dagger&#39;, [&#39;up&#39;], 1.0, [[1, 0]])
 </div>
 </div>
 <div class="nboutput nblast docutils container">
-<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[20]:
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[21]:
 </pre></div>
 </div>
 <div class="output_area docutils container">
@@ -830,8 +836,9 @@ Op(&#39;a^\\dagger&#39;, [&#39;up&#39;], 1.0, [[1, 0]])
 Op(&#39;a&#39;, [&#39;up&#39;], 1.0, [[-1, 0]])
 </pre></div></div>
 </div>
+<p>The creation and annihilation operators for the spin-down electron have the quantum number of <code class="docutils literal notranslate"><span class="pre">[0,</span> <span class="pre">1]</span></code> and <code class="docutils literal notranslate"><span class="pre">[0,</span> <span class="pre">-1]</span></code> respectively.</p>
 <div class="nbinput docutils container">
-<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[21]:
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[22]:
 </pre></div>
 </div>
 <div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="c1"># spin down creation operator</span>
@@ -840,7 +847,7 @@ Op(&#39;a&#39;, [&#39;up&#39;], 1.0, [[-1, 0]])
 </div>
 </div>
 <div class="nboutput nblast docutils container">
-<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[21]:
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[22]:
 </pre></div>
 </div>
 <div class="output_area docutils container">
@@ -849,21 +856,180 @@ Op(&#39;a^\\dagger&#39;, [&#39;down&#39;], 1.0, [[0, 1]])
 </pre></div></div>
 </div>
 <div class="nbinput docutils container">
-<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[22]:
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[23]:
 </pre></div>
 </div>
 <div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="c1"># spin down annihilation operator</span>
-<span class="n">Op</span><span class="p">(</span><span class="sa">r</span><span class="s2">&quot;a^\dagger&quot;</span><span class="p">,</span> <span class="s2">&quot;down&quot;</span><span class="p">,</span> <span class="n">qn</span><span class="o">=</span><span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">([</span><span class="mi">0</span><span class="p">,</span> <span class="o">-</span><span class="mi">1</span><span class="p">]))</span>
+<span class="n">Op</span><span class="p">(</span><span class="sa">r</span><span class="s2">&quot;a&quot;</span><span class="p">,</span> <span class="s2">&quot;down&quot;</span><span class="p">,</span> <span class="n">qn</span><span class="o">=</span><span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">([</span><span class="mi">0</span><span class="p">,</span> <span class="o">-</span><span class="mi">1</span><span class="p">]))</span>
 </pre></div>
 </div>
 </div>
 <div class="nboutput nblast docutils container">
-<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[22]:
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[23]:
 </pre></div>
 </div>
 <div class="output_area docutils container">
 <div class="highlight"><pre>
-Op(&#39;a^\\dagger&#39;, [&#39;down&#39;], 1.0, [[0, -1]])
+Op(&#39;a&#39;, [&#39;down&#39;], 1.0, [[0, -1]])
+</pre></div></div>
+</div>
+</section>
+<section id="Disable-Quantum-Numbers">
+<h2>Disable Quantum Numbers<a class="headerlink" href="#Disable-Quantum-Numbers" title="Permalink to this heading">#</a></h2>
+<p>Setting quantum numbers is not necessary. Usually, quantum number conservation is important for lattice models. However, there are also numerous cases where quantum number is not conserved. Examples include the spin-boson model and many excited state dynamics models. In these cases quantum numbers should be disabled, otherwise the result could be catastropic.</p>
+<p>Consider a toy model <span class="math notranslate nohighlight">\(H=t|0\rangle\langle1| + t|1\rangle\langle0| + g|1\rangle\langle1|\)</span>. Quantum number is not conserved. If we set the quantum number incorrectly, we may get into trouble.</p>
+<div class="nbinput nblast docutils container">
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[24]:
+</pre></div>
+</div>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="kn">from</span><span class="w"> </span><span class="nn">renormalizer</span><span class="w"> </span><span class="kn">import</span> <span class="n">BasisMultiElectron</span><span class="p">,</span> <span class="n">optimize_mps</span>
+
+<span class="c1"># Parameters</span>
+<span class="n">t</span> <span class="o">=</span> <span class="mf">1.0</span>
+<span class="n">g</span> <span class="o">=</span> <span class="mf">0.5</span>
+
+<span class="c1"># Hamiltonian terms</span>
+<span class="c1"># by default quantum numbers for &quot;a^\dagger&quot; and &quot;a&quot; are set to 1 and -1 respectively.</span>
+<span class="n">ham_terms</span> <span class="o">=</span> <span class="p">[</span>
+    <span class="n">Op</span><span class="p">(</span><span class="sa">r</span><span class="s2">&quot;a^\dagger a&quot;</span><span class="p">,</span> <span class="p">[</span><span class="mi">0</span><span class="p">,</span> <span class="mi">1</span><span class="p">],</span> <span class="n">t</span><span class="p">),</span>  <span class="c1"># Hopping</span>
+    <span class="n">Op</span><span class="p">(</span><span class="sa">r</span><span class="s2">&quot;a^\dagger a&quot;</span><span class="p">,</span> <span class="p">[</span><span class="mi">1</span><span class="p">,</span> <span class="mi">0</span><span class="p">],</span> <span class="n">t</span><span class="p">),</span>  <span class="c1"># Hopping</span>
+    <span class="n">Op</span><span class="p">(</span><span class="sa">r</span><span class="s2">&quot;a^\dagger a&quot;</span><span class="p">,</span> <span class="p">[</span><span class="mi">1</span><span class="p">,</span> <span class="mi">1</span><span class="p">],</span> <span class="n">g</span><span class="p">),</span>  <span class="c1"># Site energy</span>
+<span class="p">]</span>
+</pre></div>
+</div>
+</div>
+<div class="nbinput nblast docutils container">
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[25]:
+</pre></div>
+</div>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="c1"># Define basis with quantum number conservation (WRONG for this system)</span>
+<span class="c1"># |0&gt; has quantum number 0, |1&gt; has quantum number 1</span>
+<span class="n">basis_wrong</span> <span class="o">=</span> <span class="p">[</span>
+    <span class="n">BasisMultiElectron</span><span class="p">([</span><span class="mi">0</span><span class="p">,</span> <span class="mi">1</span><span class="p">],</span> <span class="n">sigmaqn</span><span class="o">=</span><span class="p">[</span><span class="mi">0</span><span class="p">,</span> <span class="mi">1</span><span class="p">]),</span>
+<span class="p">]</span>
+
+<span class="n">model_wrong</span> <span class="o">=</span> <span class="n">Model</span><span class="p">(</span><span class="n">basis_wrong</span><span class="p">,</span> <span class="n">ham_terms</span><span class="p">)</span>
+<span class="n">mpo_wrong</span> <span class="o">=</span> <span class="n">Mpo</span><span class="p">(</span><span class="n">model_wrong</span><span class="p">)</span>
+</pre></div>
+</div>
+</div>
+<div class="nbinput docutils container">
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[26]:
+</pre></div>
+</div>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="c1"># DMRG optimization in the qn=0 quantum space</span>
+<span class="n">mps_wrong</span> <span class="o">=</span> <span class="n">Mps</span><span class="o">.</span><span class="n">random</span><span class="p">(</span><span class="n">model_wrong</span><span class="p">,</span> <span class="n">qntot</span><span class="o">=</span><span class="mi">0</span><span class="p">,</span> <span class="n">m_max</span><span class="o">=</span><span class="mi">10</span><span class="p">)</span>
+<span class="n">mps_wrong</span><span class="o">.</span><span class="n">optimize_config</span><span class="o">.</span><span class="n">method</span> <span class="o">=</span> <span class="s2">&quot;1site&quot;</span>
+<span class="n">energies_wrong</span><span class="p">,</span> <span class="n">_</span> <span class="o">=</span> <span class="n">optimize_mps</span><span class="p">(</span><span class="n">mps_wrong</span><span class="p">,</span> <span class="n">mpo_wrong</span><span class="p">)</span>
+</pre></div>
+</div>
+</div>
+<div class="nboutput nblast docutils container">
+<div class="prompt empty docutils container">
+</div>
+<div class="output_area stderr docutils container">
+<div class="highlight"><pre>
+2025-12-20 10:28:40,958[INFO] optimization method: 1site
+2025-12-20 10:28:40,959[INFO] e_rtol: 1e-06
+2025-12-20 10:28:40,959[INFO] e_atol: 1e-08
+2025-12-20 10:28:40,960[INFO] procedure: [[10, 0.4], [20, 0.2], [30, 0.1], [40, 0], [40, 0]]
+2025-12-20 10:28:40,966[INFO] DMRG has converged!
+2025-12-20 10:28:40,967[INFO] mps current size: 16.0B, Matrix product bond dim:[1, 1]
+</pre></div></div>
+</div>
+<p>The solution is limited to the state <code class="docutils literal notranslate"><span class="pre">[1,</span> <span class="pre">0]</span></code> because of quantum number enforcement.</p>
+<div class="nbinput docutils container">
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[27]:
+</pre></div>
+</div>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="nb">print</span><span class="p">(</span><span class="n">energies_wrong</span><span class="p">[</span><span class="o">-</span><span class="mi">1</span><span class="p">])</span>
+<span class="nb">print</span><span class="p">(</span><span class="n">mps_wrong</span><span class="o">.</span><span class="n">todense</span><span class="p">())</span>
+</pre></div>
+</div>
+</div>
+<div class="nboutput nblast docutils container">
+<div class="prompt empty docutils container">
+</div>
+<div class="output_area docutils container">
+<div class="highlight"><pre>
+0.0
+[1. 0.]
+</pre></div></div>
+</div>
+<p>Next, we disable quantum number and perform the optimization.</p>
+<p>In Renormalizer, quantum numbers for “a^:nbsphinx-math:<cite>dagger</cite>” and “a” are set to 1 and -1 respectively when initializing the <code class="docutils literal notranslate"><span class="pre">Op</span></code> instance. They must be explicitly set to 0 or set to None to disable their quantum numbers.</p>
+<div class="nbinput docutils container">
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[28]:
+</pre></div>
+</div>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="c1"># disable quantum number</span>
+<span class="n">ham_terms</span> <span class="o">=</span> <span class="p">[</span>
+    <span class="n">Op</span><span class="p">(</span><span class="sa">r</span><span class="s2">&quot;a^\dagger a&quot;</span><span class="p">,</span> <span class="p">[</span><span class="mi">0</span><span class="p">,</span> <span class="mi">1</span><span class="p">],</span> <span class="n">t</span><span class="p">,</span> <span class="n">qn</span><span class="o">=</span><span class="p">[</span><span class="mi">0</span><span class="p">,</span> <span class="mi">0</span><span class="p">]),</span>  <span class="c1"># Hopping</span>
+    <span class="n">Op</span><span class="p">(</span><span class="sa">r</span><span class="s2">&quot;a^\dagger a&quot;</span><span class="p">,</span> <span class="p">[</span><span class="mi">1</span><span class="p">,</span> <span class="mi">0</span><span class="p">],</span> <span class="n">t</span><span class="p">,</span> <span class="n">qn</span><span class="o">=</span><span class="kc">None</span><span class="p">),</span>  <span class="c1"># Hopping, equivalent</span>
+    <span class="n">Op</span><span class="p">(</span><span class="sa">r</span><span class="s2">&quot;a^\dagger a&quot;</span><span class="p">,</span> <span class="p">[</span><span class="mi">1</span><span class="p">,</span> <span class="mi">1</span><span class="p">],</span> <span class="n">g</span><span class="p">,</span> <span class="n">qn</span><span class="o">=</span><span class="p">[</span><span class="mi">0</span><span class="p">,</span> <span class="mi">0</span><span class="p">]),</span>  <span class="c1"># Site energy</span>
+<span class="p">]</span>
+<span class="c1"># disable quantum number</span>
+<span class="n">basis_correct</span> <span class="o">=</span> <span class="p">[</span>
+    <span class="n">BasisMultiElectron</span><span class="p">([</span><span class="mi">0</span><span class="p">,</span> <span class="mi">1</span><span class="p">],</span> <span class="n">sigmaqn</span><span class="o">=</span><span class="p">[</span><span class="mi">0</span><span class="p">,</span> <span class="mi">0</span><span class="p">]),</span>
+<span class="p">]</span>
+
+<span class="c1"># perform the optimization as usual</span>
+<span class="n">model_correct</span> <span class="o">=</span> <span class="n">Model</span><span class="p">(</span><span class="n">basis_correct</span><span class="p">,</span> <span class="n">ham_terms</span><span class="p">)</span>
+<span class="n">mpo_correct</span> <span class="o">=</span> <span class="n">Mpo</span><span class="p">(</span><span class="n">model_correct</span><span class="p">)</span>
+<span class="n">mps_correct</span> <span class="o">=</span> <span class="n">Mps</span><span class="o">.</span><span class="n">random</span><span class="p">(</span><span class="n">model_correct</span><span class="p">,</span> <span class="n">qntot</span><span class="o">=</span><span class="mi">0</span><span class="p">,</span> <span class="n">m_max</span><span class="o">=</span><span class="mi">10</span><span class="p">)</span>
+<span class="n">mps_correct</span><span class="o">.</span><span class="n">optimize_config</span><span class="o">.</span><span class="n">method</span> <span class="o">=</span> <span class="s2">&quot;1site&quot;</span>
+<span class="n">energies_correct</span><span class="p">,</span> <span class="n">_</span> <span class="o">=</span> <span class="n">optimize_mps</span><span class="p">(</span><span class="n">mps_correct</span><span class="p">,</span> <span class="n">mpo_correct</span><span class="p">)</span>
+</pre></div>
+</div>
+</div>
+<div class="nboutput nblast docutils container">
+<div class="prompt empty docutils container">
+</div>
+<div class="output_area stderr docutils container">
+<div class="highlight"><pre>
+2025-12-20 10:28:40,983[INFO] optimization method: 1site
+2025-12-20 10:28:40,983[INFO] e_rtol: 1e-06
+2025-12-20 10:28:40,984[INFO] e_atol: 1e-08
+2025-12-20 10:28:40,984[INFO] procedure: [[10, 0.4], [20, 0.2], [30, 0.1], [40, 0], [40, 0]]
+2025-12-20 10:28:40,990[INFO] DMRG has converged!
+2025-12-20 10:28:40,991[INFO] mps current size: 16.0B, Matrix product bond dim:[1, 1]
+</pre></div></div>
+</div>
+<p>We can obtain the correct solution in the full Hilbert space</p>
+<div class="nbinput docutils container">
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[29]:
+</pre></div>
+</div>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="nb">print</span><span class="p">(</span><span class="n">energies_correct</span><span class="p">[</span><span class="o">-</span><span class="mi">1</span><span class="p">])</span>
+<span class="nb">print</span><span class="p">(</span><span class="n">mps_correct</span><span class="o">.</span><span class="n">todense</span><span class="p">())</span>
+</pre></div>
+</div>
+</div>
+<div class="nboutput nblast docutils container">
+<div class="prompt empty docutils container">
+</div>
+<div class="output_area docutils container">
+<div class="highlight"><pre>
+-0.7807764064044151
+[ 0.78820544 -0.61541221]
+</pre></div></div>
+</div>
+<div class="nbinput docutils container">
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[30]:
+</pre></div>
+</div>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="c1"># reference value by exact diagonolization</span>
+<span class="n">np</span><span class="o">.</span><span class="n">linalg</span><span class="o">.</span><span class="n">eigvals</span><span class="p">(</span><span class="n">mpo_wrong</span><span class="o">.</span><span class="n">todense</span><span class="p">())</span>
+</pre></div>
+</div>
+</div>
+<div class="nboutput nblast docutils container">
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[30]:
+</pre></div>
+</div>
+<div class="output_area docutils container">
+<div class="highlight"><pre>
+array([-0.78077641,  1.28077641])
 </pre></div></div>
 </div>
 <div class="nbinput nblast docutils container">
@@ -939,7 +1105,8 @@ Op(&#39;a^\\dagger&#39;, [&#39;down&#39;], 1.0, [[0, -1]])
 <li><a class="reference internal" href="#Quantum-number-conservation">Quantum number conservation</a></li>
 <li><a class="reference internal" href="#Setting-quantum-number-for-states">Setting quantum number for states</a></li>
 <li><a class="reference internal" href="#Setting-quantum-number-for-operators">Setting quantum number for operators</a></li>
-<li><a class="reference internal" href="#Notes">Notes</a></li>
+<li><a class="reference internal" href="#Multiple-Quantum-Numbers">Multiple Quantum Numbers</a></li>
+<li><a class="reference internal" href="#Disable-Quantum-Numbers">Disable Quantum Numbers</a></li>
 </ul>
 </li>
 </ul>

@@ -518,11 +518,11 @@ div.rendered_html tbody tr:hover {
 </div>
 <div class="output_area stderr docutils container">
 <div class="highlight"><pre>
-2025-11-11 02:47:22,572[INFO] Use NumPy as backend
-2025-11-11 02:47:22,573[INFO] numpy random seed is 9012
-2025-11-11 02:47:22,573[INFO] random seed is 1092
-2025-11-11 02:47:22,584[INFO] Git Commit Hash: 940abbe8e26a22e9345f941947c6944ed81a5f06
-2025-11-11 02:47:22,585[INFO] use 64 bits
+2025-12-20 10:28:18,271[INFO] Use NumPy as backend
+2025-12-20 10:28:18,272[INFO] numpy random seed is 9012
+2025-12-20 10:28:18,272[INFO] random seed is 1092
+2025-12-20 10:28:18,282[INFO] Git Commit Hash: 8843b08007f92c985e412fa39ccb812c6c05306e
+2025-12-20 10:28:18,283[INFO] use 64 bits
 </pre></div></div>
 </div>
 <p>First, construct all terms in the Hamiltonian in a <code class="docutils literal notranslate"><span class="pre">list</span></code> or <code class="docutils literal notranslate"><span class="pre">OpSum</span></code>.</p>
@@ -675,8 +675,8 @@ array([[0., 0., 0., 0., 0., 0., 0., 0.],
 </div>
 <div class="output_area docutils container">
 <div class="highlight"><pre>
-(&lt;Matrix at 0x7f60cde74eb0 (1, 2, 2) float64&gt;,
- &lt;Matrix at 0x7f60cde74310 (2, 8, 1) float64&gt;)
+(&lt;Matrix at 0x7ff7f5e73250 (1, 2, 2) float64&gt;,
+ &lt;Matrix at 0x7ff7f5e738e0 (2, 8, 1) float64&gt;)
 </pre></div></div>
 </div>
 <p><code class="docutils literal notranslate"><span class="pre">Matrix</span></code> can be considered as a wrapper for <code class="docutils literal notranslate"><span class="pre">np.ndarray</span></code> with more metadata. The indices of the array are left virtual index, the physical index and the right virtual index. The underlaying matrix can be accessed via the <code class="docutils literal notranslate"><span class="pre">array</span></code> attribute.</p>
@@ -873,6 +873,7 @@ array([ 0.41298208, -0.00752657,  0.17205047,  0.13905035,  0.20172165,
          [0.]]]))
 </pre></div></div>
 </div>
+<p>If there are grid nuclear bases in the model, you should explicitly provide the ground state wavefunction, instead of using the default <span class="math notranslate nohighlight">\([1, 0, 0, \dots, 0]\)</span> wavefunction.</p>
 </section>
 </section>
 <section id="Construct-MPO">
@@ -894,10 +895,10 @@ array([ 0.41298208, -0.00752657,  0.17205047,  0.13905035,  0.20172165,
 </div>
 <div class="output_area stderr docutils container">
 <div class="highlight"><pre>
-2025-11-11 02:47:22,742[DEBUG] # of operator terms: 3
-2025-11-11 02:47:22,743[DEBUG] Input operator terms: 3
-2025-11-11 02:47:22,745[DEBUG] After combination of the same terms: 3
-2025-11-11 02:47:22,745[DEBUG] symbolic mpo algorithm: qr
+2025-12-20 10:28:18,423[DEBUG] # of operator terms: 3
+2025-12-20 10:28:18,424[DEBUG] Input operator terms: 3
+2025-12-20 10:28:18,425[DEBUG] After combination of the same terms: 3
+2025-12-20 10:28:18,426[DEBUG] symbolic mpo algorithm: qr
 </pre></div></div>
 </div>
 <div class="nboutput nblast docutils container">
@@ -906,8 +907,8 @@ array([ 0.41298208, -0.00752657,  0.17205047,  0.13905035,  0.20172165,
 </div>
 <div class="output_area docutils container">
 <div class="highlight"><pre>
-(&lt;Matrix at 0x7f60e8c781c0 (1, 2, 2, 3) float64&gt;,
- &lt;Matrix at 0x7f60cde74970 (3, 8, 8, 1) float64&gt;)
+(&lt;Matrix at 0x7ff8186e5460 (1, 2, 2, 3) float64&gt;,
+ &lt;Matrix at 0x7ff8186e5c70 (3, 8, 8, 1) float64&gt;)
 </pre></div></div>
 </div>
 <p>Here the logging outputs that there are 3 terms in the Hamiltonian, since <span class="math notranslate nohighlight">\(\hat \sigma_z\)</span> with coefficient 0 is dropped automatically.</p>
@@ -962,9 +963,37 @@ array([ 0.41298208, -0.00752657,  0.17205047,  0.13905035,  0.20172165,
 </div>
 <div class="output_area stderr docutils container">
 <div class="highlight"><pre>
-2025-11-11 02:47:22,768[DEBUG] # of operator terms: 1
-2025-11-11 02:47:22,769[DEBUG] Input operator terms: 1
-2025-11-11 02:47:22,771[DEBUG] After combination of the same terms: 1
+2025-12-20 10:28:18,447[DEBUG] # of operator terms: 1
+2025-12-20 10:28:18,448[DEBUG] Input operator terms: 1
+2025-12-20 10:28:18,449[DEBUG] After combination of the same terms: 1
+</pre></div></div>
+</div>
+<div class="nbinput docutils container">
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[22]:
+</pre></div>
+</div>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">Mpo</span><span class="p">(</span><span class="n">model</span><span class="p">,</span> <span class="n">Op</span><span class="p">(</span><span class="s2">&quot;Z&quot;</span><span class="p">,</span> <span class="s2">&quot;spin&quot;</span><span class="p">)</span> <span class="o">+</span> <span class="n">Op</span><span class="p">(</span><span class="sa">r</span><span class="s2">&quot;b^\dagger b&quot;</span><span class="p">,</span> <span class="s2">&quot;boson&quot;</span><span class="p">))</span>
+</pre></div>
+</div>
+</div>
+<div class="nboutput docutils container">
+<div class="prompt empty docutils container">
+</div>
+<div class="output_area stderr docutils container">
+<div class="highlight"><pre>
+2025-12-20 10:28:18,455[DEBUG] # of operator terms: 2
+2025-12-20 10:28:18,456[DEBUG] Input operator terms: 2
+2025-12-20 10:28:18,457[DEBUG] After combination of the same terms: 2
+2025-12-20 10:28:18,458[DEBUG] symbolic mpo algorithm: qr
+</pre></div></div>
+</div>
+<div class="nboutput nblast docutils container">
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[22]:
+</pre></div>
+</div>
+<div class="output_area docutils container">
+<div class="highlight"><pre>
+&lt;class &#39;renormalizer.mps.mpo.Mpo&#39;&gt; with 2 sites
 </pre></div></div>
 </div>
 </section>
@@ -972,7 +1001,7 @@ array([ 0.41298208, -0.00752657,  0.17205047,  0.13905035,  0.20172165,
 <h2>MPO/MPS manipulation<a class="headerlink" href="#MPO/MPS-manipulation" title="Permalink to this heading">#</a></h2>
 <p>Two MPSs can be added together, resulting in another MPS</p>
 <div class="nbinput docutils container">
-<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[22]:
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[23]:
 </pre></div>
 </div>
 <div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">mps</span> <span class="o">+</span> <span class="n">mps2</span>
@@ -980,7 +1009,7 @@ array([ 0.41298208, -0.00752657,  0.17205047,  0.13905035,  0.20172165,
 </div>
 </div>
 <div class="nboutput nblast docutils container">
-<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[22]:
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[23]:
 </pre></div>
 </div>
 <div class="output_area docutils container">
@@ -990,7 +1019,7 @@ array([ 0.41298208, -0.00752657,  0.17205047,  0.13905035,  0.20172165,
 </div>
 <p>MPO can apply on MPS, resulting in another MPS</p>
 <div class="nbinput docutils container">
-<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[23]:
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[24]:
 </pre></div>
 </div>
 <div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">mpo</span> <span class="o">@</span> <span class="n">mps</span>
@@ -998,7 +1027,7 @@ array([ 0.41298208, -0.00752657,  0.17205047,  0.13905035,  0.20172165,
 </div>
 </div>
 <div class="nboutput nblast docutils container">
-<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[23]:
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[24]:
 </pre></div>
 </div>
 <div class="output_area docutils container">
@@ -1008,7 +1037,7 @@ array([ 0.41298208, -0.00752657,  0.17205047,  0.13905035,  0.20172165,
 </div>
 <p>This is equivalent to <code class="docutils literal notranslate"><span class="pre">mpo.apply(mps)</span></code></p>
 <div class="nbinput docutils container">
-<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[24]:
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[25]:
 </pre></div>
 </div>
 <div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">mpo</span><span class="o">.</span><span class="n">apply</span><span class="p">(</span><span class="n">mps</span><span class="p">)</span><span class="o">.</span><span class="n">distance</span><span class="p">(</span><span class="n">mpo</span> <span class="o">@</span> <span class="n">mps</span><span class="p">)</span>
@@ -1016,7 +1045,7 @@ array([ 0.41298208, -0.00752657,  0.17205047,  0.13905035,  0.20172165,
 </div>
 </div>
 <div class="nboutput nblast docutils container">
-<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[24]:
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[25]:
 </pre></div>
 </div>
 <div class="output_area docutils container">
@@ -1026,7 +1055,7 @@ array([ 0.41298208, -0.00752657,  0.17205047,  0.13905035,  0.20172165,
 </div>
 <p>Calculating expectation value between MPS and MPO <span class="math notranslate nohighlight">\(\langle \rm{MPS}|\rm{MPO}|MPS\rangle\)</span> using the <code class="docutils literal notranslate"><span class="pre">expectation</span></code> function</p>
 <div class="nbinput docutils container">
-<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[25]:
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[26]:
 </pre></div>
 </div>
 <div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">mps</span><span class="o">.</span><span class="n">expectation</span><span class="p">(</span><span class="n">mpo</span><span class="p">)</span>
@@ -1034,7 +1063,7 @@ array([ 0.41298208, -0.00752657,  0.17205047,  0.13905035,  0.20172165,
 </div>
 </div>
 <div class="nboutput nblast docutils container">
-<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[25]:
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[26]:
 </pre></div>
 </div>
 <div class="output_area docutils container">
@@ -1044,7 +1073,7 @@ array([ 0.41298208, -0.00752657,  0.17205047,  0.13905035,  0.20172165,
 </div>
 <p>Calculating transition amplitudes <span class="math notranslate nohighlight">\(\langle \rm{MPS2}|\rm{MPO}|MPS\rangle\)</span> is also straight-forward</p>
 <div class="nbinput docutils container">
-<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[26]:
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[27]:
 </pre></div>
 </div>
 <div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">mps</span><span class="o">.</span><span class="n">expectation</span><span class="p">(</span><span class="n">mpo</span><span class="p">,</span> <span class="n">self_conj</span><span class="o">=</span><span class="n">mps2</span><span class="p">)</span>
@@ -1052,12 +1081,100 @@ array([ 0.41298208, -0.00752657,  0.17205047,  0.13905035,  0.20172165,
 </div>
 </div>
 <div class="nboutput nblast docutils container">
-<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[26]:
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[27]:
 </pre></div>
 </div>
 <div class="output_area docutils container">
 <div class="highlight"><pre>
 0.3656142066119614
+</pre></div></div>
+</div>
+<p>Note that when calculating the expectation value of a sum of operators, the best practice is to first construct a single summation MPO and then compute the expectation value. This is preferable to evaluating each term separately and summing the results, because: - Constructing an MPO has a cost. While not large for a single operator, it can become a significant overhead when summing over thousands of operators. - Computing the expectation value using a single MPO is generally more
+computationally efficient.</p>
+<p>There are two recommended ways to calculate the expectation of a custom operator.</p>
+<ol class="arabic simple">
+<li><p>Define a new custom symbol in the <code class="docutils literal notranslate"><span class="pre">BasisSet</span></code>, implement the operator matrix, and then construct the corresponding MPO. You may have to modify the basis set implementation source code, or inherent from the basis set class and implement the new operator.</p></li>
+</ol>
+<p>For example, you can inherent from the <code class="docutils literal notranslate"><span class="pre">BasisHalfSpin</span></code> basis set for some custom quantum gates</p>
+<div class="nbinput nblast docutils container">
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[28]:
+</pre></div>
+</div>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="kn">from</span><span class="w"> </span><span class="nn">renormalizer</span><span class="w"> </span><span class="kn">import</span> <span class="n">BasisHalfSpin</span>
+
+<span class="k">class</span><span class="w"> </span><span class="nc">Qubit</span><span class="p">(</span><span class="n">BasisHalfSpin</span><span class="p">):</span>
+
+    <span class="k">def</span><span class="w"> </span><span class="nf">op_mat</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">op</span><span class="p">):</span>
+        <span class="k">if</span> <span class="ow">not</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">op</span><span class="p">,</span> <span class="n">Op</span><span class="p">):</span>
+            <span class="n">op</span> <span class="o">=</span> <span class="n">Op</span><span class="p">(</span><span class="n">op</span><span class="p">,</span> <span class="kc">None</span><span class="p">)</span>
+
+        <span class="n">op_symbol</span><span class="p">,</span> <span class="n">op_factor</span> <span class="o">=</span> <span class="n">op</span><span class="o">.</span><span class="n">symbol</span><span class="p">,</span> <span class="n">op</span><span class="o">.</span><span class="n">factor</span>
+        <span class="k">if</span> <span class="n">op_symbol</span><span class="o">.</span><span class="n">lower</span><span class="p">()</span> <span class="o">==</span> <span class="s2">&quot;hadamard&quot;</span><span class="p">:</span>
+            <span class="k">return</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">([[</span><span class="mi">1</span><span class="p">,</span> <span class="mi">1</span><span class="p">],</span> <span class="p">[</span><span class="mi">1</span><span class="p">,</span> <span class="o">-</span><span class="mi">1</span><span class="p">]])</span> <span class="o">/</span> <span class="n">np</span><span class="o">.</span><span class="n">sqrt</span><span class="p">(</span><span class="mi">2</span><span class="p">)</span> <span class="o">*</span> <span class="n">op_factor</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="k">return</span> <span class="nb">super</span><span class="p">()</span><span class="o">.</span><span class="n">op_mat</span><span class="p">(</span><span class="n">op</span><span class="p">)</span>
+
+        <span class="k">return</span> <span class="n">mat</span> <span class="o">*</span> <span class="n">op_factor</span>
+</pre></div>
+</div>
+</div>
+<div class="nbinput docutils container">
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[29]:
+</pre></div>
+</div>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">b</span> <span class="o">=</span> <span class="n">Qubit</span><span class="p">(</span><span class="mi">0</span><span class="p">)</span>
+<span class="n">b</span><span class="o">.</span><span class="n">op_mat</span><span class="p">(</span><span class="s2">&quot;x&quot;</span><span class="p">)</span>
+</pre></div>
+</div>
+</div>
+<div class="nboutput nblast docutils container">
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[29]:
+</pre></div>
+</div>
+<div class="output_area docutils container">
+<div class="highlight"><pre>
+array([[0., 1.],
+       [1., 0.]])
+</pre></div></div>
+</div>
+<div class="nbinput docutils container">
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[30]:
+</pre></div>
+</div>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">b</span><span class="o">.</span><span class="n">op_mat</span><span class="p">(</span><span class="s2">&quot;Hadamard&quot;</span><span class="p">)</span>
+</pre></div>
+</div>
+</div>
+<div class="nboutput nblast docutils container">
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[30]:
+</pre></div>
+</div>
+<div class="output_area docutils container">
+<div class="highlight"><pre>
+array([[ 0.70710678,  0.70710678],
+       [ 0.70710678, -0.70710678]])
+</pre></div></div>
+</div>
+<ol class="arabic simple" start="2">
+<li><p>Obtain the reduced density matrix <span class="math notranslate nohighlight">\(\rho\)</span> of the degree of freedom, and then calculate the expectation of <span class="math notranslate nohighlight">\(O\)</span> via <span class="math notranslate nohighlight">\(\textrm{Tr}[ \rho O]\)</span></p></li>
+</ol>
+<div class="nbinput docutils container">
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[31]:
+</pre></div>
+</div>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="c1"># spin rdm</span>
+<span class="n">mps</span><span class="o">.</span><span class="n">calc_1site_rdm</span><span class="p">(</span><span class="mi">0</span><span class="p">)</span>
+</pre></div>
+</div>
+</div>
+<div class="nboutput nblast docutils container">
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[31]:
+</pre></div>
+</div>
+<div class="output_area docutils container">
+<div class="highlight"><pre>
+{0: array([[0.55402862, 0.31394311],
+        [0.31394311, 0.44597138]])}
 </pre></div></div>
 </div>
 </section>
