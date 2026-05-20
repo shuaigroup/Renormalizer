@@ -235,7 +235,14 @@
 
 <span class="kn">from</span><span class="w"> </span><span class="nn">renormalizer</span><span class="w"> </span><span class="kn">import</span> <span class="n">Op</span>
 <span class="kn">from</span><span class="w"> </span><span class="nn">renormalizer.model.basis</span><span class="w"> </span><span class="kn">import</span> <span class="n">BasisSet</span><span class="p">,</span> <span class="n">BasisDummy</span>
-<span class="kn">from</span><span class="w"> </span><span class="nn">renormalizer.tn.node</span><span class="w"> </span><span class="kn">import</span> <span class="n">NodeUnion</span><span class="p">,</span> <span class="n">TreeNodeBasis</span><span class="p">,</span> <span class="n">copy_connection</span><span class="p">,</span> <span class="n">build_connection_adj_mat</span><span class="p">,</span> <span class="n">TreeNodeText</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">renormalizer.tn.node</span><span class="w"> </span><span class="kn">import</span> <span class="p">(</span>
+    <span class="n">NodeUnion</span><span class="p">,</span>
+    <span class="n">TreeNodeBasis</span><span class="p">,</span>
+    <span class="n">copy_connection</span><span class="p">,</span>
+    <span class="n">build_connection_adj_mat</span><span class="p">,</span>
+    <span class="n">TreeNodeText</span><span class="p">,</span>
+    <span class="n">_expand_zero_qn_basis</span><span class="p">,</span>
+<span class="p">)</span>
 
 
 <span class="k">class</span><span class="w"> </span><span class="nc">Tree</span><span class="p">:</span>
@@ -547,9 +554,12 @@
         <span class="k">for</span> <span class="n">node</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">node_list</span><span class="p">:</span>
             <span class="k">assert</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">node</span><span class="p">,</span> <span class="n">TreeNodeBasis</span><span class="p">)</span>
         <span class="n">qn_size_list</span> <span class="o">=</span> <span class="p">[</span><span class="n">n</span><span class="o">.</span><span class="n">qn_size</span> <span class="k">for</span> <span class="n">n</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">node_list</span><span class="p">]</span>
-        <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="nb">set</span><span class="p">(</span><span class="n">qn_size_list</span><span class="p">))</span> <span class="o">!=</span> <span class="mi">1</span><span class="p">:</span>
-            <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Inconsistent quantum number size: </span><span class="si">{</span><span class="nb">set</span><span class="p">(</span><span class="n">qn_size_list</span><span class="p">)</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">qn_size</span><span class="p">:</span> <span class="nb">int</span> <span class="o">=</span> <span class="n">qn_size_list</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span>
+        <span class="n">qn_size</span> <span class="o">=</span> <span class="nb">max</span><span class="p">(</span><span class="n">qn_size_list</span><span class="p">)</span>
+        <span class="k">for</span> <span class="n">node</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">node_list</span><span class="p">:</span>
+            <span class="k">for</span> <span class="n">basis</span> <span class="ow">in</span> <span class="n">node</span><span class="o">.</span><span class="n">basis_sets</span><span class="p">:</span>
+                <span class="n">_expand_zero_qn_basis</span><span class="p">(</span><span class="n">basis</span><span class="p">,</span> <span class="n">qn_size</span><span class="p">)</span>
+            <span class="n">node</span><span class="o">.</span><span class="n">qn_size</span> <span class="o">=</span> <span class="n">qn_size</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">qn_size</span><span class="p">:</span> <span class="nb">int</span> <span class="o">=</span> <span class="n">qn_size</span>
 
         <span class="c1"># map basis to node index</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">basis2idx</span><span class="p">:</span> <span class="n">Dict</span><span class="p">[</span><span class="n">BasisSet</span><span class="p">,</span> <span class="nb">int</span><span class="p">]</span> <span class="o">=</span> <span class="p">{}</span>

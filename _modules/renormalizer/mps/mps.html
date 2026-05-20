@@ -710,14 +710,16 @@
     <span class="k">def</span><span class="w"> </span><span class="nf">_expectation_conj</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
         <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">conj</span><span class="p">()</span>
 
-<div class="viewcode-block" id="Mps.expectation"><a class="viewcode-back" href="../../../mps.html#renormalizer.mps.Mps.expectation">[docs]</a>    <span class="k">def</span><span class="w"> </span><span class="nf">expectation</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">mpo</span><span class="p">:</span> <span class="n">Union</span><span class="p">[</span><span class="n">Mpo</span><span class="p">,</span> <span class="n">Op</span><span class="p">,</span> <span class="n">OpSum</span><span class="p">],</span> <span class="n">self_conj</span><span class="p">:</span> <span class="s2">&quot;Mps&quot;</span><span class="o">=</span><span class="kc">None</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Union</span><span class="p">[</span><span class="nb">float</span><span class="p">,</span> <span class="nb">complex</span><span class="p">]:</span>
+<div class="viewcode-block" id="Mps.expectation"><a class="viewcode-back" href="../../../mps.html#renormalizer.mps.Mps.expectation">[docs]</a>    <span class="k">def</span><span class="w"> </span><span class="nf">expectation</span><span class="p">(</span>
+            <span class="bp">self</span><span class="p">,</span> <span class="n">mpo</span><span class="p">:</span> <span class="n">Union</span><span class="p">[</span><span class="n">Mpo</span><span class="p">,</span> <span class="n">Op</span><span class="p">,</span> <span class="n">OpSum</span><span class="p">],</span> <span class="n">self_conj</span><span class="p">:</span> <span class="s2">&quot;Mps&quot;</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="o">*</span><span class="p">,</span> <span class="n">bra</span><span class="p">:</span> <span class="s2">&quot;Mps&quot;</span><span class="o">=</span><span class="kc">None</span>
+    <span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Union</span><span class="p">[</span><span class="nb">float</span><span class="p">,</span> <span class="nb">complex</span><span class="p">]:</span>
 <span class="w">        </span><span class="sa">r</span><span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">        Calculate the expectation value of the operator ``mpo`` with respect to the MPS.</span>
 
 <span class="sd">        For the expectation value :math:`\langle \psi | \hat O | \psi \rangle`, ``self`` is :math:`|\psi\rangle`</span>
 <span class="sd">        and ``mpo`` is :math:`\hat O`.</span>
 <span class="sd">        For the transition amplitude :math:`\langle \phi | \hat O | \psi \rangle`,</span>
-<span class="sd">        ``self_conj`` should be set to :math:`|\phi\rangle`.</span>
+<span class="sd">        ``bra`` should be set to :math:`|\phi\rangle`.</span>
 
 <span class="sd">        Parameters</span>
 <span class="sd">        ----------</span>
@@ -727,7 +729,9 @@
 <span class="sd">            - Op: Single symbolic operator</span>
 <span class="sd">            - OpSum: Sum of symbolic operators</span>
 <span class="sd">        self_conj : :class:`~renormalizer.mps.Mps`, optional</span>
-<span class="sd">            The MPS for the bra vector. If not provided, uses the conjugate of ``self``.</span>
+<span class="sd">            Legacy alias for ``bra``. If not provided, uses the conjugate of ``self``.</span>
+<span class="sd">        bra : :class:`~renormalizer.mps.Mps`, optional</span>
+<span class="sd">            The MPS for the bra vector. ``bra`` and ``self_conj`` cannot both be provided.</span>
 
 <span class="sd">        Returns</span>
 <span class="sd">        -------</span>
@@ -746,9 +750,13 @@
 <span class="sd">        0.0</span>
 
 <span class="sd">        &gt;&gt;&gt; mps2 = Mps.hartree_product_state(model, condition={0: [0,1]})</span>
-<span class="sd">        &gt;&gt;&gt; mps.expectation(mpo, self_conj=mps2)</span>
+<span class="sd">        &gt;&gt;&gt; mps.expectation(mpo, bra=mps2)</span>
 <span class="sd">        1.0</span>
 <span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">if</span> <span class="n">bra</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="k">if</span> <span class="n">self_conj</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+                <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s2">&quot;Provide only one of `bra` or legacy `self_conj`.&quot;</span><span class="p">)</span>
+            <span class="n">self_conj</span> <span class="o">=</span> <span class="n">bra</span>
         <span class="c1"># Convert Op/OpSum to MPO if needed</span>
         <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">mpo</span><span class="p">,</span> <span class="p">(</span><span class="n">Op</span><span class="p">,</span> <span class="n">OpSum</span><span class="p">)):</span>
             <span class="n">mpo</span> <span class="o">=</span> <span class="n">Mpo</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">model</span><span class="p">,</span> <span class="n">mpo</span><span class="p">)</span>
@@ -766,7 +774,15 @@
         <span class="c1"># This is time and memory consuming</span>
         <span class="c1"># return self_conj.dot(mpo.apply(self)).real</span>
 
-<div class="viewcode-block" id="Mps.expectations"><a class="viewcode-back" href="../../../mps.html#renormalizer.mps.Mps.expectations">[docs]</a>    <span class="k">def</span><span class="w"> </span><span class="nf">expectations</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">mpos</span><span class="p">:</span> <span class="n">Union</span><span class="p">[</span><span class="n">List</span><span class="p">[</span><span class="n">Union</span><span class="p">[</span><span class="n">Mpo</span><span class="p">,</span> <span class="n">Op</span><span class="p">,</span> <span class="n">OpSum</span><span class="p">]]],</span> <span class="n">self_conj</span><span class="p">:</span><span class="s2">&quot;Mps&quot;</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">opt</span><span class="p">:</span><span class="nb">bool</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">:</span>
+<div class="viewcode-block" id="Mps.expectations"><a class="viewcode-back" href="../../../mps.html#renormalizer.mps.Mps.expectations">[docs]</a>    <span class="k">def</span><span class="w"> </span><span class="nf">expectations</span><span class="p">(</span>
+            <span class="bp">self</span><span class="p">,</span> <span class="n">mpos</span><span class="p">:</span> <span class="n">Union</span><span class="p">[</span><span class="n">List</span><span class="p">[</span><span class="n">Union</span><span class="p">[</span><span class="n">Mpo</span><span class="p">,</span> <span class="n">Op</span><span class="p">,</span> <span class="n">OpSum</span><span class="p">]]],</span> <span class="n">self_conj</span><span class="p">:</span><span class="s2">&quot;Mps&quot;</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">opt</span><span class="p">:</span><span class="nb">bool</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span> <span class="o">*</span><span class="p">,</span>
+            <span class="n">bra</span><span class="p">:</span> <span class="s2">&quot;Mps&quot;</span><span class="o">=</span><span class="kc">None</span>
+    <span class="p">)</span> <span class="o">-&gt;</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">:</span>
+        <span class="k">if</span> <span class="n">bra</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="k">if</span> <span class="n">self_conj</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+                <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s2">&quot;Provide only one of `bra` or legacy `self_conj`.&quot;</span><span class="p">)</span>
+            <span class="n">self_conj</span> <span class="o">=</span> <span class="n">bra</span>
+
         <span class="n">new_mpos</span> <span class="o">=</span> <span class="p">[]</span>
         <span class="k">for</span> <span class="n">mpo</span> <span class="ow">in</span> <span class="n">mpos</span><span class="p">:</span>
             <span class="c1"># Convert Op/OpSum to MPO if needed</span>
@@ -777,7 +793,7 @@
 
         <span class="k">if</span> <span class="ow">not</span> <span class="n">opt</span><span class="p">:</span>
             <span class="c1"># the naive way, slow and time consuming. Yet predictable and reliable</span>
-            <span class="k">return</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">([</span><span class="bp">self</span><span class="o">.</span><span class="n">expectation</span><span class="p">(</span><span class="n">mpo</span><span class="p">,</span> <span class="n">self_conj</span><span class="p">)</span> <span class="k">for</span> <span class="n">mpo</span> <span class="ow">in</span> <span class="n">mpos</span><span class="p">])</span>
+            <span class="k">return</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">([</span><span class="bp">self</span><span class="o">.</span><span class="n">expectation</span><span class="p">(</span><span class="n">mpo</span><span class="p">,</span> <span class="n">bra</span><span class="o">=</span><span class="n">self_conj</span><span class="p">)</span> <span class="k">for</span> <span class="n">mpo</span> <span class="ow">in</span> <span class="n">mpos</span><span class="p">])</span>
 
         <span class="c1"># optimized way, cache for intermediates</span>
         <span class="c1"># hash is used as indices of the matrices.</span>

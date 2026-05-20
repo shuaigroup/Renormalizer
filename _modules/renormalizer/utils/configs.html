@@ -515,6 +515,11 @@
         <span class="c1">#       primme (if installed)</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">algo</span> <span class="o">=</span> <span class="s2">&quot;davidson&quot;</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">nroots</span> <span class="o">=</span> <span class="mi">1</span>
+        <span class="c1"># Experimental: use QN-block sparse environment contractions for</span>
+        <span class="c1"># ordinary single-MPO MPS ground-state optimization.</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">use_block_env</span> <span class="o">=</span> <span class="kc">False</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">block_env_threshold</span> <span class="o">=</span> <span class="mf">1e-14</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">block_env_min_bond_dim</span> <span class="o">=</span> <span class="mi">64</span>
         <span class="c1"># the ground state energy convergence tolerance</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">e_rtol</span> <span class="o">=</span> <span class="mf">1e-6</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">e_atol</span> <span class="o">=</span> <span class="mf">1e-8</span>
