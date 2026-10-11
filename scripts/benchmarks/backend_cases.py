@@ -13,12 +13,13 @@ when it must remain read-only. Select a source tree with PYTHONPATH.
 import json, logging, os, sys, time
 
 logging.disable(logging.CRITICAL)
-import numpy as np
-
+# renormalizer first, as in user code: it applies RENO_NUM_THREADS before NumPy loads BLAS.
 import renormalizer
 backend_name = os.environ.get("BENCH_BACKEND", "numpy")
 if backend_name != "numpy":
     renormalizer.set_backend(backend_name)
+
+import numpy as np
 
 from renormalizer.model import Model, Op
 from renormalizer.model.basis import BasisHalfSpin
