@@ -284,10 +284,13 @@ class TDA(object):
                     return np.einsum("i, ij -> ij", 1/(hdiag+1e-4), x)
                 else:
                     assert False
+            # dtype given (that of H applied to the state, as hdiag): without it
+            # scipy probes hop with an int8 vector, and hop accumulates floats
+            # into zeros_like(int8) and fails.
             A = scipy.sparse.linalg.LinearOperator((xsize,xsize),
-                    matvec=multi_hop, matmat=multi_hop)
+                    matvec=multi_hop, matmat=multi_hop, dtype=hdiag.dtype)
             M = scipy.sparse.linalg.LinearOperator((xsize,xsize),
-                    matvec=precond, matmat=precond)
+                    matvec=precond, matmat=precond, dtype=hdiag.dtype)
             e, c = primme.eigsh(A, k=min(nroots,xsize), which="SA", 
                     v0=cguess,
                     OPinv=M,

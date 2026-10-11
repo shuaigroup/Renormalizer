@@ -20,14 +20,14 @@ jobs:
           # pixi.lock is not committed; solve from pyproject.toml.
           locked: false
           cache: false
-      - name: install optional solvers
-        run: |
-          pixi run -e ci python -m pip install primme==3.2.* pyscf==2.4.0
       - name: run tests
         run: |
           pixi run -e ci pytest -n 4 --durations=0 --cov=renormalizer renormalizer tools/backend_validation/tests
+      # Installed after the main run, as before: the main run keeps skipping the
+      # primme/pyscf tests, which then run on their own below.
       - name: run optional tests
         run: |
+          pixi run -e ci python -m pip install primme==3.2.* pyscf==2.4.0
           pixi run -e ci pytest --durations=0 renormalizer/mps/tests/test_gs.py::test_multistate --cov=renormalizer --cov-append
           pixi run -e ci pytest --durations=0 renormalizer/mps/tests/test_gs.py::test_pyscf_solver --cov=renormalizer --cov-append
       - name: run examples

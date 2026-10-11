@@ -123,8 +123,8 @@ def write_json(path, data):
 
 
 def provenance(source, gpu=False):
-    import numpy as np
     import renormalizer
+    import numpy as np
     from renormalizer.mps.backend import USE_GPU
     actual = Path(renormalizer.__file__).resolve()
     if Path(source).resolve() not in actual.parents:

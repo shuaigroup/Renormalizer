@@ -19,6 +19,7 @@ prove equivalence for all inputs or all backend features.
 
 | Script | What it shows | Main output |
 | --- | --- | --- |
+| `backend_cases.py` | Ground-state/TDVP backend cases; configured through `BENCH_BACKEND`, `BENCH_CASES`, `BENCH_REPEAT`, and optional `BENCH_INIT_DIR` | JSON lines with all timings and final-repeat energies/observables; see [JAX measurements](results/2026-10-pr/JAX.md) |
 | `run_examples.py` | Same-batch example scheduling across source trees, interpreters and thread counts; separate cProfile jobs | `summary.csv`, `summary.json`, `medians.json`, per-job logs, GNU time, environment metadata and profiles |
 | `topo_alloc.py` | Physical-core/L3/NUMA layout and allocation policy | Printed topology; also imported by the scheduler |
 | `compare_outputs.py` | Same-batch baseline/current NPZ byte equality, normalized log equality and TTN matched-step throughput | `comparison.json`, normalized logs, scheduler outputs |
@@ -32,7 +33,7 @@ prove equivalence for all inputs or all backend features.
 `_common.py` contains shared process/environment/timing utilities.
 `_example_worker.py` validates source/backend provenance before launching an
 example and optionally profiles it. They are helpers, not additional workloads.
-Every Python file has argparse help. Worker-only imports happen after parsing.
+Drivers have argparse help; `backend_cases.py` uses the environment variables in its docstring. Worker-only imports happen after parsing.
 
 ## Prerequisites and source trees
 

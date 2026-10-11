@@ -6,6 +6,7 @@ A nonzero exit means mismatch, failed/capped jobs, unsupported object arrays,
 or missing comparable output. Capped prefixes never count as full parity.
 """
 import datetime
+import ast
 import difflib
 import hashlib
 import re
@@ -17,7 +18,8 @@ STAMP = re.compile(r'^\d{4}-\d\d-\d\d[ T]\d\d:\d\d:\d\d[,\.]\d+')
 ADDRESS = re.compile(r'0x[0-9a-fA-F]+')
 NOISE = re.compile(r'wall.?time|elapsed|time (?:cost|used|taken)|(?:cost|took).*\b(?:s|sec|seconds)\b|'
                    r'\b(?:[KMG]iB|bytes|memory|pid)\b|Git Commit|(?:numpy|cupy|python) version|'
-                   r'use (?:numpy|cupy) as backend|using (?:numpy|cupy)|backend.*(?:dtype|device)|random seed', re.I)
+                   r'use (?:numpy|cupy) as backend|using (?:numpy|cupy)|backend.*(?:dtype|device)|'
+                   r'\[INFO\]\s+use (?:32|64) bits\s*$|random seed', re.I)
 
 
 def normalized(path):
@@ -54,8 +56,18 @@ def steps(path):
     for line in path.read_text(errors='replace').splitlines():
         match = STAMP.match(line)
         if match and '[INFO] (' in line:
+            result = line[line.index('[INFO] ('):]
+            # Junction also logs parameter tuples and (step, bond_dims).
+            # Count only flat numeric observable tuples as evolution results.
+            try:
+                fields = ast.literal_eval(result[len('[INFO] '):])
+            except (ValueError, SyntaxError):
+                continue
+            if (not isinstance(fields, tuple) or len(fields) < 2
+                    or not all(type(value) in (int, float, complex) for value in fields)):
+                continue
             stamp = datetime.datetime.fromisoformat(match.group().replace(',', '.'))
-            values.append((stamp, line[line.index('[INFO] ('):]))
+            values.append((stamp, result))
     return values
 
 
