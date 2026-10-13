@@ -9,6 +9,7 @@ import pytest
 from tools.backend_validation.policy import ExecutionPolicy
 from tools.backend_validation.protocol import freeze_manifest
 from tools.backend_validation.runner import run_candidate
+from tools.backend_validation import scoring
 
 
 pytestmark = pytest.mark.skipif(sys.platform != "linux", reason="RLIMIT_AS worker limits are only supported on Linux")
@@ -39,7 +40,7 @@ def test_actual_isolated_numeric_and_hidden_reference(isolated):
     result=run(f'''from pathlib import Path
 def candidate(a,b):
  assert not Path({str(refs)!r}).exists()
- assert not Path('/tmp/reno-m3-stage/tools/backend_validation/scoring.py').exists()
+ assert not Path({str(Path(scoring.__file__).resolve())!r}).exists()
  for name in ['/tmp/forbidden-file','/forbidden-file','output/extra.npy']:
   try:
    Path(name).write_text('forbidden')

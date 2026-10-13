@@ -55,5 +55,8 @@ def run_reviewed_gpu(a,b,reference,*,tolerances):
             raise ValueError('baseline correctness failed')
         return dict(status=final['status'],correctness=final,negative_controls=controls,
                     device_witness=witness,t_cold=cold,t_cold_boundary='process/import/compile/transfer/result completion',
-                    timing_process_seconds=total,timings=measurements,
+                    timing_process_seconds=total,
+                    timings={**measurements, 't_cold': cold,
+                             't_kernel': measurements['candidate']['summary']['t_kernel']['median'],
+                             't_e2e': measurements['candidate']['summary']['t_e2e']['median']},
                     resource_coverage='reviewed owned subprocess; pool endpoint samples; no physical GPU cap')

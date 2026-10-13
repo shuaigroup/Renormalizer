@@ -8,9 +8,12 @@ TOLERANCE_KEYS = frozenset(('atol_F', 'rtol_F', 'atol_max', 'rtol_max'))
 def validate_tolerances(tolerances):
     if not isinstance(tolerances, dict) or set(tolerances) != TOLERANCE_KEYS:
         raise ValueError('exact four frozen tolerances required')
-    if any(type(x) not in (int, float) or not math.isfinite(x) or x < 0
-           for x in tolerances.values()):
-        raise ValueError('tolerances must be finite nonnegative numbers')
+    try:
+        if any(type(x) not in (int, float) or not math.isfinite(x) or x < 0
+               for x in tolerances.values()):
+            raise ValueError('tolerances must be finite nonnegative numbers')
+    except OverflowError as error:
+        raise ValueError('tolerances must be finite nonnegative numbers') from error
 
 
 def relative_diagnostic(error, scale):

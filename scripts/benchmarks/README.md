@@ -9,9 +9,8 @@ scaling. The numerical target is outputs bitwise identical to the baseline.
 On CuPy, the target is numerical identity in float64 and float32 for the tested
 paths, with no slowdown.
 
-These are goals to measure, not results asserted by this directory. No benchmark,
-example or test was run while preparing this collection. Only syntax compilation
-and static inspection were performed. Measurements apply to the selected
+These are goals to measure, not results asserted by the scripts themselves; the
+measured results for the PR are under `results/`. Measurements apply to the selected
 workloads, source revisions, dependency environments and hardware; they do not
 prove equivalence for all inputs or all backend features.
 
@@ -20,12 +19,13 @@ prove equivalence for all inputs or all backend features.
 | Script | What it shows | Main output |
 | --- | --- | --- |
 | `backend_cases.py` | Ground-state/TDVP backend cases; configured through `BENCH_BACKEND`, `BENCH_CASES`, `BENCH_REPEAT`, and optional `BENCH_INIT_DIR` | JSON lines with all timings and final-repeat energies/observables; see [JAX measurements](results/2026-10-pr/JAX.md) |
+| `hop_backends.py` | H-v per backend (default NumPy vs JAX), built with `hop_expr` and applied as TDVP-PS applies it, one pinned interpreter per backend | Per-backend `results.json` (build/apply medians), `values.npz`, and `comparison.json` with time ratios and max differences |
 | `run_examples.py` | Same-batch example scheduling across source trees, interpreters and thread counts; separate cProfile jobs | `summary.csv`, `summary.json`, `medians.json`, per-job logs, GNU time, environment metadata and profiles |
 | `topo_alloc.py` | Physical-core/L3/NUMA layout and allocation policy | Printed topology; also imported by the scheduler |
 | `compare_outputs.py` | Same-batch baseline/current NPZ byte equality, normalized log equality and TTN matched-step throughput | `comparison.json`, normalized logs, scheduler outputs |
 | `micro_dispatch.py` | Per-call proxy/adapter attributes, canonical tolerance, backend resolution, transfers, Matrix construction and small tensordot | Per-version `results.json` with raw samples and medians |
 | `tensordot_plan.py` | Actual current-tree cached tensordot versus NumPy, including complex and strided inputs | `results.json` with bytes, timings and plan-cache statistics |
-| `contraction_cost.py` | Environment update and H-v compute versus wrapper cost across bond dimensions | `results.json` with medians and estimated dispatch/lookup shares |
+| `contraction_cost.py` | Per-call cost of the package's environment update (`contract_one_site`) and H-v (`hop_expr`) across bond dimensions | `results.json` with medians and one `current_backend()` lookup for reference |
 | `trace_example.py` | `hv`: expression evaluation latency; `caches`: path/expression/label/plan hit rates; `tensordot`: NumPy call sites | `trace.json`, `meta.json`, log and environment metadata |
 | `cupy_parity.py` | CuPy Krylov/RK45 TDVP, complex expectations, Davidson ground state, and scalar/vector RK45 dense output | Shared fixtures, per-worker NPZ/timings/metadata, `comparison.json`, `summary.json` |
 | `sbm_short.py` | Short spin-boson workload, default 300 modes and evolution time 2 | SpinBosonDynamics output files |
@@ -166,6 +166,9 @@ python scripts/benchmarks/tensordot_plan.py --current . \
 python scripts/benchmarks/contraction_cost.py --current . \
   --python .pixi/envs/default/bin/python --bonds 1,2,4,8,16,32,64,128 \
   --number 1000 --cores 0 --out benchmark-results/contractions
+python scripts/benchmarks/hop_backends.py --current . \
+  --python JAX_ENV/bin/python --backends numpy,jax \
+  --bonds 8,16,32,64,128,256 --cores 0 --out benchmark-results/hop
 python scripts/benchmarks/trace_example.py caches --current . \
   --python .pixi/envs/default/bin/python --example ttns/sbm_zt.py \
   --cores 0 --cap 240 --out benchmark-results/cache-trace -- 050 001 050
@@ -182,9 +185,9 @@ block on ordinary exceptions and graceful SIGTERM; SIGKILL cannot guarantee it.
 
 Micro and contraction probes exclude explicit warmup calls and report every
 sample plus the median seconds per call. They do not use best-of-run minima.
-`contraction_cost.py` holds the backend fixed in its prebuilt compute reference;
-wrapper-minus-compute and backend-lookup shares are estimates. Noise can produce
-negative differences. Tensordot plan parity covers the listed representative
+`contraction_cost.py` and `hop_backends.py` call only the package's own functions
+(`contract_one_site`, `hop_expr`, `asworkspace`, `asxp`), with operands handed over
+as TDVP-PS hands them; they re-implement no contraction. Tensordot plan parity covers the listed representative
 cases, not exhaustive axes validation or all shapes/dtypes.
 
 ## GPU parity and performance

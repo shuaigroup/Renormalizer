@@ -46,3 +46,10 @@ def test_shared_arithmetic_does_not_expand_candidate_domain(dtype):
 def test_candidate_tolerances_remain_frozen_builtin_numbers():
     with pytest.raises(ValueError):
         score_array(np.ones(1),np.ones(1),tolerances={**TOL,'atol_F':np.float64(1e-12)})
+
+
+@pytest.mark.parametrize('key', list(TOL))
+@pytest.mark.parametrize('value', [10**400, -(10**400)], ids=['positive_overflow', 'negative_overflow'])
+def test_out_of_range_integer_tolerances_rejected(key, value):
+    with pytest.raises(ValueError, match='finite nonnegative numbers'):
+        score_array(np.ones(1), np.ones(1), tolerances={**TOL, key: value})

@@ -34,7 +34,7 @@ dependencies = [
 # One developer environment includes tests, formatting and documentation.
 # Keep backend runtimes optional: building docs must not require a GPU wheel.
 dev = [
-    "pytest>=6.2",
+    "pytest>=7",  # collection_path in pytest_ignore_collect requires pytest 7.
     "black>=23.0,<24.0",
     "flake8>=6.0,<7.0",
     "recommonmark",

@@ -152,3 +152,14 @@ def test_runtime_mount_cannot_expose_reference_or_scorer(tmp_path):
     result=run_candidate(manifest,candidate,policy)
     assert result['status']=='blocked'
     assert result['reason']=='runtime_mount_exposes_protected_files'
+
+
+def test_out_of_range_manifest_tolerance_fails_before_launch(tmp_path, monkeypatch):
+    import subprocess
+    manifest, candidate, policy = setup_run(tmp_path, 'def candidate(a,b): return a@b\n')
+    manifest['tolerances']['atol_F'] = 10**400
+    monkeypatch.setattr(subprocess, 'Popen', lambda *a, **k: pytest.fail('must not launch'))
+    result = run_candidate(manifest, candidate, policy)
+    assert result['status'] == 'fail'
+    assert result['stage'] == 'manifest'
+    assert 'finite nonnegative numbers' in result['reason']
