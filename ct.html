@@ -1,8 +1,8 @@
 <!doctype html>
-<html class="no-js" lang="en">
-  <head><meta charset="utf-8"/>
-    <meta name="viewport" content="width=device-width,initial-scale=1"/>
-    <meta name="color-scheme" content="light dark"><meta name="generator" content="Docutils 0.19: https://docutils.sourceforge.io/" />
+<html class="no-js" lang="en" data-content_root="./">
+  <head><meta charset="utf-8">
+    <meta name="viewport" content="width=device-width,initial-scale=1">
+    <meta name="color-scheme" content="light dark"><meta name="viewport" content="width=device-width, initial-scale=1" />
 
     <!-- Google tag (gtag.js) -->
     <script async src="https://www.googletagmanager.com/gtag/js?id=G-3HTENNM8CV"></script>
@@ -12,13 +12,13 @@
         gtag('js', new Date());
         gtag('config', 'G-3HTENNM8CV');
     </script>
-    <link rel="index" title="Index" href="genindex.html" /><link rel="search" title="Search" href="search.html" /><link rel="next" title="Frequency domain DMRG" href="cv.html" /><link rel="prev" title="spectra: absorption/emission spectrum at zero/finite temperature" href="spectrum.html" />
+    <link rel="index" title="Index" href="genindex.html"><link rel="search" title="Search" href="search.html"><link rel="next" title="Frequency domain DMRG" href="cv.html"><link rel="prev" title="spectra: absorption/emission spectrum at zero/finite temperature" href="spectrum.html">
 
-    <meta name="generator" content="sphinx-5.3.0, furo 2022.09.29"/>
+    <!-- Generated with Sphinx 9.0.4 and Furo 2025.12.19 -->
         <title>Charge Transport - Renormalizer 0.1.0 documentation</title>
-      <link rel="stylesheet" type="text/css" href="_static/pygments.css" />
-    <link rel="stylesheet" type="text/css" href="_static/styles/furo.css?digest=d81277517bee4d6b0349d71bb2661d4890b5617c" />
-    <link rel="stylesheet" type="text/css" href="_static/styles/furo-extensions.css?digest=30d1aed668e5c3a91c3e3bf6a60b675221979f0e" />
+      <link rel="stylesheet" type="text/css" href="_static/pygments.css?v=03e43079" />
+    <link rel="stylesheet" type="text/css" href="_static/styles/furo.css?v=7bdb33bb" />
+    <link rel="stylesheet" type="text/css" href="_static/styles/furo-extensions.css?v=8dab3a3b" />
     
     
 
@@ -77,7 +77,7 @@
   <symbol id="svg-sun" viewBox="0 0 24 24">
     <title>Light mode</title>
     <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor"
-      stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" class="feather-sun">
+      stroke-width="1" stroke-linecap="round" stroke-linejoin="round" class="feather-sun">
       <circle cx="12" cy="12" r="5"></circle>
       <line x1="12" y1="1" x2="12" y2="3"></line>
       <line x1="12" y1="21" x2="12" y2="23"></line>
@@ -92,34 +92,73 @@
   <symbol id="svg-moon" viewBox="0 0 24 24">
     <title>Dark mode</title>
     <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor"
-      stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" class="icon-tabler-moon">
+      stroke-width="1" stroke-linecap="round" stroke-linejoin="round" class="icon-tabler-moon">
       <path stroke="none" d="M0 0h24v24H0z" fill="none" />
       <path d="M12 3c.132 0 .263 0 .393 0a7.5 7.5 0 0 0 7.92 12.446a9 9 0 1 1 -8.313 -12.454z" />
     </svg>
   </symbol>
-  <symbol id="svg-sun-half" viewBox="0 0 24 24">
-    <title>Auto light/dark mode</title>
+  <symbol id="svg-sun-with-moon" viewBox="0 0 24 24">
+    <title>Auto light/dark, in light mode</title>
     <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor"
-      stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" class="icon-tabler-shadow">
-      <path stroke="none" d="M0 0h24v24H0z" fill="none"/>
-      <circle cx="12" cy="12" r="9" />
-      <path d="M13 12h5" />
-      <path d="M13 15h4" />
-      <path d="M13 18h1" />
-      <path d="M13 9h4" />
-      <path d="M13 6h1" />
+      stroke-width="1" stroke-linecap="round" stroke-linejoin="round"
+      class="icon-custom-derived-from-feather-sun-and-tabler-moon">
+      <path style="opacity: 50%" d="M 5.411 14.504 C 5.471 14.504 5.532 14.504 5.591 14.504 C 3.639 16.319 4.383 19.569 6.931 20.352 C 7.693 20.586 8.512 20.551 9.25 20.252 C 8.023 23.207 4.056 23.725 2.11 21.184 C 0.166 18.642 1.702 14.949 4.874 14.536 C 5.051 14.512 5.231 14.5 5.411 14.5 L 5.411 14.504 Z"/>
+      <line x1="14.5" y1="3.25" x2="14.5" y2="1.25"/>
+      <line x1="14.5" y1="15.85" x2="14.5" y2="17.85"/>
+      <line x1="10.044" y1="5.094" x2="8.63" y2="3.68"/>
+      <line x1="19" y1="14.05" x2="20.414" y2="15.464"/>
+      <line x1="8.2" y1="9.55" x2="6.2" y2="9.55"/>
+      <line x1="20.8" y1="9.55" x2="22.8" y2="9.55"/>
+      <line x1="10.044" y1="14.006" x2="8.63" y2="15.42"/>
+      <line x1="19" y1="5.05" x2="20.414" y2="3.636"/>
+      <circle cx="14.5" cy="9.55" r="3.6"/>
+    </svg>
+  </symbol>
+  <symbol id="svg-moon-with-sun" viewBox="0 0 24 24">
+    <title>Auto light/dark, in dark mode</title>
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+      stroke-width="1" stroke-linecap="round" stroke-linejoin="round"
+      class="icon-custom-derived-from-feather-sun-and-tabler-moon">
+      <path d="M 8.282 7.007 C 8.385 7.007 8.494 7.007 8.595 7.007 C 5.18 10.184 6.481 15.869 10.942 17.24 C 12.275 17.648 13.706 17.589 15 17.066 C 12.851 22.236 5.91 23.143 2.505 18.696 C -0.897 14.249 1.791 7.786 7.342 7.063 C 7.652 7.021 7.965 7 8.282 7 L 8.282 7.007 Z"/>
+      <line style="opacity: 50%" x1="18" y1="3.705" x2="18" y2="2.5"/>
+      <line style="opacity: 50%" x1="18" y1="11.295" x2="18" y2="12.5"/>
+      <line style="opacity: 50%" x1="15.316" y1="4.816" x2="14.464" y2="3.964"/>
+      <line style="opacity: 50%" x1="20.711" y1="10.212" x2="21.563" y2="11.063"/>
+      <line style="opacity: 50%" x1="14.205" y1="7.5" x2="13.001" y2="7.5"/>
+      <line style="opacity: 50%" x1="21.795" y1="7.5" x2="23" y2="7.5"/>
+      <line style="opacity: 50%" x1="15.316" y1="10.184" x2="14.464" y2="11.036"/>
+      <line style="opacity: 50%" x1="20.711" y1="4.789" x2="21.563" y2="3.937"/>
+      <circle style="opacity: 50%" cx="18" cy="7.5" r="2.169"/>
+    </svg>
+  </symbol>
+  <symbol id="svg-pencil" viewBox="0 0 24 24">
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+      stroke-width="1" stroke-linecap="round" stroke-linejoin="round" class="icon-tabler-pencil-code">
+      <path d="M4 20h4l10.5 -10.5a2.828 2.828 0 1 0 -4 -4l-10.5 10.5v4" />
+      <path d="M13.5 6.5l4 4" />
+      <path d="M20 21l2 -2l-2 -2" />
+      <path d="M17 17l-2 2l2 2" />
+    </svg>
+  </symbol>
+  <symbol id="svg-eye" viewBox="0 0 24 24">
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+      stroke-width="1" stroke-linecap="round" stroke-linejoin="round" class="icon-tabler-eye-code">
+      <path stroke="none" d="M0 0h24v24H0z" fill="none" />
+      <path d="M10 12a2 2 0 1 0 4 0a2 2 0 0 0 -4 0" />
+      <path
+        d="M11.11 17.958c-3.209 -.307 -5.91 -2.293 -8.11 -5.958c2.4 -4 5.4 -6 9 -6c3.6 0 6.6 2 9 6c-.21 .352 -.427 .688 -.647 1.008" />
+      <path d="M20 21l2 -2l-2 -2" />
+      <path d="M17 17l-2 2l2 2" />
     </svg>
   </symbol>
 </svg>
 
-<input type="checkbox" class="sidebar-toggle" name="__navigation" id="__navigation">
-<input type="checkbox" class="sidebar-toggle" name="__toc" id="__toc">
-<label class="overlay sidebar-overlay" for="__navigation">
-  <div class="visually-hidden">Hide navigation sidebar</div>
-</label>
-<label class="overlay toc-overlay" for="__toc">
-  <div class="visually-hidden">Hide table of contents sidebar</div>
-</label>
+<input type="checkbox" class="sidebar-toggle" name="__navigation" id="__navigation" aria-label="Toggle site navigation sidebar">
+<input type="checkbox" class="sidebar-toggle" name="__toc" id="__toc" aria-label="Toggle table of contents sidebar">
+<label class="overlay sidebar-overlay" for="__navigation"></label>
+<label class="overlay toc-overlay" for="__toc"></label>
+
+<a class="skip-to-content muted-link" href="#furo-main-content">Skip to content</a>
 
 
 
@@ -127,8 +166,7 @@
   <header class="mobile-header">
     <div class="header-left">
       <label class="nav-overlay-icon" for="__navigation">
-        <div class="visually-hidden">Toggle site navigation sidebar</div>
-        <i class="icon"><svg><use href="#svg-menu"></use></svg></i>
+        <span class="icon"><svg><use href="#svg-menu"></use></svg></span>
       </label>
     </div>
     <div class="header-center">
@@ -136,16 +174,15 @@
     </div>
     <div class="header-right">
       <div class="theme-toggle-container theme-toggle-header">
-        <button class="theme-toggle">
-          <div class="visually-hidden">Toggle Light / Dark / Auto color theme</div>
-          <svg class="theme-icon-when-auto"><use href="#svg-sun-half"></use></svg>
+        <button class="theme-toggle" aria-label="Toggle Light / Dark / Auto color theme">
+          <svg class="theme-icon-when-auto-light"><use href="#svg-sun-with-moon"></use></svg>
+          <svg class="theme-icon-when-auto-dark"><use href="#svg-moon-with-sun"></use></svg>
           <svg class="theme-icon-when-dark"><use href="#svg-moon"></use></svg>
           <svg class="theme-icon-when-light"><use href="#svg-sun"></use></svg>
         </button>
       </div>
       <label class="toc-overlay-icon toc-header-icon" for="__toc">
-        <div class="visually-hidden">Toggle table of contents sidebar</div>
-        <i class="icon"><svg><use href="#svg-toc"></use></svg></i>
+        <span class="icon"><svg><use href="#svg-toc"></use></svg></span>
       </label>
     </div>
   </header>
@@ -154,18 +191,17 @@
       
       <div class="sidebar-sticky"><a class="sidebar-brand" href="index.html">
   
-  
   <span class="sidebar-brand-text">Renormalizer 0.1.0 documentation</span>
   
 </a><form class="sidebar-search-container" method="get" action="search.html" role="search">
-  <input class="sidebar-search" placeholder=Search name="q" aria-label="Search">
+  <input class="sidebar-search" placeholder="Search" name="q" aria-label="Search">
   <input type="hidden" name="check_keywords" value="yes">
   <input type="hidden" name="area" value="default">
 </form>
 <div id="searchbox"></div><div class="sidebar-scroll"><div class="sidebar-tree">
   <ul class="current">
 <li class="toctree-l1"><a class="reference internal" href="install.html">Installation guide</a></li>
-<li class="toctree-l1 has-children"><a class="reference internal" href="tutorial.html">Basic Tutorials</a><input class="toctree-checkbox" id="toctree-checkbox-1" name="toctree-checkbox-1" role="switch" type="checkbox"/><label for="toctree-checkbox-1"><div class="visually-hidden">Toggle child pages in navigation</div><i class="icon"><svg><use href="#svg-arrow-right"></use></svg></i></label><ul>
+<li class="toctree-l1 has-children"><a class="reference internal" href="tutorial.html">Basic Tutorials</a><input aria-label="Toggle navigation of Basic Tutorials" class="toctree-checkbox" id="toctree-checkbox-1" name="toctree-checkbox-1" role="switch" type="checkbox"/><label for="toctree-checkbox-1"><span class="icon"><svg><use href="#svg-arrow-right"></use></svg></span></label><ul>
 <li class="toctree-l2"><a class="reference internal" href="tutorials/define_model.html">Define Your Model</a></li>
 <li class="toctree-l2"><a class="reference internal" href="tutorials/mps_mpo.html">MPS and MPO</a></li>
 <li class="toctree-l2"><a class="reference internal" href="tutorials/nuclear_basis.html">Nuclear Basis Set</a></li>
@@ -175,11 +211,11 @@
 <li class="toctree-l2"><a class="reference internal" href="tutorials/ttn_basic.html">Basics of Tree Tensor Networks</a></li>
 </ul>
 </li>
-<li class="toctree-l1 has-children"><a class="reference internal" href="applications.html">Application Tutorials</a><input class="toctree-checkbox" id="toctree-checkbox-2" name="toctree-checkbox-2" role="switch" type="checkbox"/><label for="toctree-checkbox-2"><div class="visually-hidden">Toggle child pages in navigation</div><i class="icon"><svg><use href="#svg-arrow-right"></use></svg></i></label><ul>
+<li class="toctree-l1 has-children"><a class="reference internal" href="applications.html">Application Tutorials</a><input aria-label="Toggle navigation of Application Tutorials" class="toctree-checkbox" id="toctree-checkbox-2" name="toctree-checkbox-2" role="switch" type="checkbox"/><label for="toctree-checkbox-2"><span class="icon"><svg><use href="#svg-arrow-right"></use></svg></span></label><ul>
 <li class="toctree-l2"><a class="reference internal" href="tutorials/1D-Heisenberg.html">Ground state of the Heisenberg model</a></li>
 </ul>
 </li>
-<li class="toctree-l1 current has-children"><a class="reference internal" href="api.html">API Reference</a><input checked="" class="toctree-checkbox" id="toctree-checkbox-3" name="toctree-checkbox-3" role="switch" type="checkbox"/><label for="toctree-checkbox-3"><div class="visually-hidden">Toggle child pages in navigation</div><i class="icon"><svg><use href="#svg-arrow-right"></use></svg></i></label><ul class="current">
+<li class="toctree-l1 current has-children"><a class="reference internal" href="api.html">API Reference</a><input aria-label="Toggle navigation of API Reference" checked="" class="toctree-checkbox" id="toctree-checkbox-3" name="toctree-checkbox-3" role="switch" type="checkbox"/><label for="toctree-checkbox-3"><span class="icon"><svg><use href="#svg-arrow-right"></use></svg></span></label><ul class="current">
 <li class="toctree-l2"><a class="reference internal" href="model.html">Model</a></li>
 <li class="toctree-l2"><a class="reference internal" href="mps.html">Low Level Data Structure and Algorithms</a></li>
 <li class="toctree-l2"><a class="reference internal" href="static.html">Static Eigenstate Method</a></li>
@@ -213,28 +249,32 @@
           <span>Back to top</span>
         </a>
         <div class="content-icon-container">
-          
+          <div class="view-this-page">
+  <a class="muted-link" href="_sources/ct.rst.txt" title="View this page">
+    <svg><use href="#svg-eye"></use></svg>
+    <span class="visually-hidden">View this page</span>
+  </a>
+</div>
 <div class="theme-toggle-container theme-toggle-content">
-            <button class="theme-toggle">
-              <div class="visually-hidden">Toggle Light / Dark / Auto color theme</div>
-              <svg class="theme-icon-when-auto"><use href="#svg-sun-half"></use></svg>
+            <button class="theme-toggle" aria-label="Toggle Light / Dark / Auto color theme">
+              <svg class="theme-icon-when-auto-light"><use href="#svg-sun-with-moon"></use></svg>
+              <svg class="theme-icon-when-auto-dark"><use href="#svg-moon-with-sun"></use></svg>
               <svg class="theme-icon-when-dark"><use href="#svg-moon"></use></svg>
               <svg class="theme-icon-when-light"><use href="#svg-sun"></use></svg>
             </button>
           </div>
           <label class="toc-overlay-icon toc-content-icon" for="__toc">
-            <div class="visually-hidden">Toggle table of contents sidebar</div>
-            <i class="icon"><svg><use href="#svg-toc"></use></svg></i>
+            <span class="icon"><svg><use href="#svg-toc"></use></svg></span>
           </label>
         </div>
-        <article role="main">
+        <article role="main" id="furo-main-content">
           <section id="charge-transport">
-<h1>Charge Transport<a class="headerlink" href="#charge-transport" title="Permalink to this heading">#</a></h1>
+<h1>Charge Transport<a class="headerlink" href="#charge-transport" title="Link to this heading">¶</a></h1>
 <section id="module-renormalizer.transport.kubo">
-<span id="obtain-mobility-by-green-kubo-formula"></span><h2>Obtain Mobility by Green-Kubo Formula<a class="headerlink" href="#module-renormalizer.transport.kubo" title="Permalink to this heading">#</a></h2>
+<span id="obtain-mobility-by-green-kubo-formula"></span><h2>Obtain Mobility by Green-Kubo Formula<a class="headerlink" href="#module-renormalizer.transport.kubo" title="Link to this heading">¶</a></h2>
 <dl class="py class">
 <dt class="sig sig-object py" id="renormalizer.transport.kubo.TransportKubo">
-<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">renormalizer.transport.kubo.</span></span><span class="sig-name descname"><span class="pre">TransportKubo</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">model</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference internal" href="model.html#renormalizer.model.Model" title="renormalizer.model.model.Model"><span class="pre">Model</span></a></span></em>, <em class="sig-param"><span class="n"><span class="pre">temperature</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">Quantity</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">distance_matrix</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference external" href="https://docs.python.org/3/library/typing.html#typing.Optional" title="(in Python v3.14)"><span class="pre">Optional</span></a><span class="p"><span class="pre">[</span></span><span class="pre">ndarray</span><span class="p"><span class="pre">]</span></span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">insteps</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference external" href="https://docs.python.org/3/library/functions.html#int" title="(in Python v3.14)"><span class="pre">int</span></a></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">1</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">ievolve_config</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">compress_config</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">evolve_config</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">dump_dir</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference external" href="https://docs.python.org/3/library/typing.html#typing.Optional" title="(in Python v3.14)"><span class="pre">Optional</span></a><span class="p"><span class="pre">[</span></span><a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.14)"><span class="pre">str</span></a><span class="p"><span class="pre">]</span></span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">job_name</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference external" href="https://docs.python.org/3/library/typing.html#typing.Optional" title="(in Python v3.14)"><span class="pre">Optional</span></a><span class="p"><span class="pre">[</span></span><a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.14)"><span class="pre">str</span></a><span class="p"><span class="pre">]</span></span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">thermal_dump_path</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference external" href="https://docs.python.org/3/library/typing.html#typing.Optional" title="(in Python v3.14)"><span class="pre">Optional</span></a><span class="p"><span class="pre">[</span></span><a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.14)"><span class="pre">str</span></a><span class="p"><span class="pre">]</span></span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">properties</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference external" href="https://docs.python.org/3/library/typing.html#typing.Optional" title="(in Python v3.14)"><span class="pre">Optional</span></a><span class="p"><span class="pre">[</span></span><span class="pre">Property</span><span class="p"><span class="pre">]</span></span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/renormalizer/transport/kubo.html#TransportKubo"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#renormalizer.transport.kubo.TransportKubo" title="Permalink to this definition">#</a></dt>
+<span class="property"><span class="k"><span class="pre">class</span></span><span class="w"> </span></span><span class="sig-prename descclassname"><span class="pre">renormalizer.transport.kubo.</span></span><span class="sig-name descname"><span class="pre">TransportKubo</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">model</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference internal" href="model.html#renormalizer.model.Model" title="renormalizer.model.model.Model"><span class="pre">Model</span></a></span></em>, <em class="sig-param"><span class="n"><span class="pre">temperature</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">Quantity</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">distance_matrix</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">ndarray</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">insteps</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference external" href="https://docs.python.org/3/builtins/functions.html#int" title="(in Python v3.15)"><span class="pre">int</span></a></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">1</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">ievolve_config</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">compress_config</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">evolve_config</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">dump_dir</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference external" href="https://docs.python.org/3/builtins/stdtypes.html#str" title="(in Python v3.15)"><span class="pre">str</span></a></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">job_name</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference external" href="https://docs.python.org/3/builtins/stdtypes.html#str" title="(in Python v3.15)"><span class="pre">str</span></a></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">thermal_dump_path</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference external" href="https://docs.python.org/3/builtins/stdtypes.html#str" title="(in Python v3.15)"><span class="pre">str</span></a></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">properties</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">Property</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/renormalizer/transport/kubo.html#TransportKubo"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#renormalizer.transport.kubo.TransportKubo" title="Link to this definition">¶</a></dt>
 <dd><p>Calculate mobility via Green-Kubo formula:</p>
 <blockquote>
 <div><div class="math-wrapper docutils container">
@@ -307,16 +347,16 @@ and the rightmost site is <span class="math notranslate nohighlight">\(\pm R\)</
 rather than <span class="math notranslate nohighlight">\(\pm (N-1)R\)</span> where <span class="math notranslate nohighlight">\(N\)</span> is the total number of electronic degrees of freedom.</p>
 </div>
 </p></li>
-<li><p><strong>insteps</strong> (<a class="reference external" href="https://docs.python.org/3/library/functions.html#int" title="(in Python v3.14)"><em>int</em></a>) – steps for imaginary time propagation.</p></li>
+<li><p><strong>insteps</strong> (<a class="reference external" href="https://docs.python.org/3/builtins/functions.html#int" title="(in Python v3.15)"><em>int</em></a>) – steps for imaginary time propagation.</p></li>
 <li><p><strong>ievolve_config</strong> (<a class="reference internal" href="configs.html#renormalizer.utils.configs.EvolveConfig" title="renormalizer.utils.configs.EvolveConfig"><code class="xref py py-class docutils literal notranslate"><span class="pre">EvolveConfig</span></code></a>) – config when carrying out imaginary time propagation.</p></li>
 <li><p><strong>compress_config</strong> (<a class="reference internal" href="configs.html#renormalizer.utils.configs.CompressConfig" title="renormalizer.utils.configs.CompressConfig"><code class="xref py py-class docutils literal notranslate"><span class="pre">CompressConfig</span></code></a>) – config when compressing MPS.
 Note that if TDVP based methods are chosen for time evolution, compression is necessary
 when <span class="math notranslate nohighlight">\(\hat j\)</span> is applied on <span class="math notranslate nohighlight">\(e^{-\beta \hat H / 2}\)</span> but no compression is carried out
 for <span class="math notranslate nohighlight">\(e^{-\beta \hat H / 2} e^{i \hat H t}\)</span>.</p></li>
 <li><p><strong>evolve_config</strong> (<a class="reference internal" href="configs.html#renormalizer.utils.configs.EvolveConfig" title="renormalizer.utils.configs.EvolveConfig"><code class="xref py py-class docutils literal notranslate"><span class="pre">EvolveConfig</span></code></a>) – config when carrying out real time propagation.</p></li>
-<li><p><strong>dump_dir</strong> (<a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.14)"><em>str</em></a>) – the directory for logging and numerical result output.</p></li>
-<li><p><strong>job_name</strong> (<a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.14)"><em>str</em></a>) – the name of the calculation job which determines the file name of the logging and numerical result output.</p></li>
-<li><p><strong>thermal_dump_path</strong> (<a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.14)"><em>str</em></a>) – the path to load previously thermal propagated initial state if it exists or the path
+<li><p><strong>dump_dir</strong> (<a class="reference external" href="https://docs.python.org/3/builtins/stdtypes.html#str" title="(in Python v3.15)"><em>str</em></a>) – the directory for logging and numerical result output.</p></li>
+<li><p><strong>job_name</strong> (<a class="reference external" href="https://docs.python.org/3/builtins/stdtypes.html#str" title="(in Python v3.15)"><em>str</em></a>) – the name of the calculation job which determines the file name of the logging and numerical result output.</p></li>
+<li><p><strong>thermal_dump_path</strong> (<a class="reference external" href="https://docs.python.org/3/builtins/stdtypes.html#str" title="(in Python v3.15)"><em>str</em></a>) – the path to load previously thermal propagated initial state if it exists or the path
 to dump the thermal state if it does not exist. The default value is determined by appending <code class="docutils literal notranslate"><span class="pre">&quot;_impdm.npz&quot;</span></code>
 to the path joined by <code class="docutils literal notranslate"><span class="pre">dump_dir</span></code> and <code class="docutils literal notranslate"><span class="pre">job_name</span></code>.</p></li>
 <li><p><strong>properties</strong> (<code class="xref py py-class docutils literal notranslate"><span class="pre">Property</span></code>) – other properties to calculate during real time evolution.
@@ -326,7 +366,7 @@ Currently only supports Holstein model.</p></li>
 </dl>
 <dl class="py property">
 <dt class="sig sig-object py" id="renormalizer.transport.kubo.TransportKubo.auto_corr">
-<em class="property"><span class="pre">property</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">auto_corr</span></span><em class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="pre">ndarray</span></em><a class="headerlink" href="#renormalizer.transport.kubo.TransportKubo.auto_corr" title="Permalink to this definition">#</a></dt>
+<span class="property"><span class="k"><span class="pre">property</span></span><span class="w"> </span></span><span class="sig-name descname"><span class="pre">auto_corr</span></span><span class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="pre">ndarray</span></span><a class="headerlink" href="#renormalizer.transport.kubo.TransportKubo.auto_corr" title="Link to this definition">¶</a></dt>
 <dd><p>Correlation function <span class="math notranslate nohighlight">\(C(t)\)</span>.</p>
 <dl class="field-list simple">
 <dt class="field-odd">Returns<span class="colon">:</span></dt>
@@ -337,7 +377,7 @@ Currently only supports Holstein model.</p></li>
 
 <dl class="py property">
 <dt class="sig sig-object py" id="renormalizer.transport.kubo.TransportKubo.auto_corr_decomposition">
-<em class="property"><span class="pre">property</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">auto_corr_decomposition</span></span><em class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="pre">ndarray</span></em><a class="headerlink" href="#renormalizer.transport.kubo.TransportKubo.auto_corr_decomposition" title="Permalink to this definition">#</a></dt>
+<span class="property"><span class="k"><span class="pre">property</span></span><span class="w"> </span></span><span class="sig-name descname"><span class="pre">auto_corr_decomposition</span></span><span class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="pre">ndarray</span></span><a class="headerlink" href="#renormalizer.transport.kubo.TransportKubo.auto_corr_decomposition" title="Link to this definition">¶</a></dt>
 <dd><p>Correlation function <span class="math notranslate nohighlight">\(C(t)\)</span> decomposed into contributions from different parts
 of the current operator. Generally, the current operator can be split into two parts:
 current without phonon assistance and current with phonon assistance.
@@ -380,12 +420,12 @@ where <span class="math notranslate nohighlight">\(n\)</span> is the number of t
 
 <dl class="py method">
 <dt class="sig sig-object py" id="renormalizer.transport.kubo.TransportKubo.calc_mobility">
-<span class="sig-name descname"><span class="pre">calc_mobility</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="_modules/renormalizer/transport/kubo.html#TransportKubo.calc_mobility"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#renormalizer.transport.kubo.TransportKubo.calc_mobility" title="Permalink to this definition">#</a></dt>
+<span class="sig-name descname"><span class="pre">calc_mobility</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="_modules/renormalizer/transport/kubo.html#TransportKubo.calc_mobility"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#renormalizer.transport.kubo.TransportKubo.calc_mobility" title="Link to this definition">¶</a></dt>
 <dd></dd></dl>
 
 <dl class="py method">
 <dt class="sig sig-object py" id="renormalizer.transport.kubo.TransportKubo.evolve_single_step">
-<span class="sig-name descname"><span class="pre">evolve_single_step</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">evolve_dt</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/renormalizer/transport/kubo.html#TransportKubo.evolve_single_step"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#renormalizer.transport.kubo.TransportKubo.evolve_single_step" title="Permalink to this definition">#</a></dt>
+<span class="sig-name descname"><span class="pre">evolve_single_step</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">evolve_dt</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/renormalizer/transport/kubo.html#TransportKubo.evolve_single_step"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#renormalizer.transport.kubo.TransportKubo.evolve_single_step" title="Link to this definition">¶</a></dt>
 <dd><p>Evolve the mps for a single step with step size <code class="docutils literal notranslate"><span class="pre">evolve_dt</span></code>.</p>
 <dl class="field-list simple">
 <dt class="field-odd">Returns<span class="colon">:</span></dt>
@@ -396,7 +436,7 @@ where <span class="math notranslate nohighlight">\(n\)</span> is the number of t
 
 <dl class="py method">
 <dt class="sig sig-object py" id="renormalizer.transport.kubo.TransportKubo.get_dump_dict">
-<span class="sig-name descname"><span class="pre">get_dump_dict</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="_modules/renormalizer/transport/kubo.html#TransportKubo.get_dump_dict"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#renormalizer.transport.kubo.TransportKubo.get_dump_dict" title="Permalink to this definition">#</a></dt>
+<span class="sig-name descname"><span class="pre">get_dump_dict</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="_modules/renormalizer/transport/kubo.html#TransportKubo.get_dump_dict"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#renormalizer.transport.kubo.TransportKubo.get_dump_dict" title="Link to this definition">¶</a></dt>
 <dd><p>Obtain calculated properties to dump in <code class="docutils literal notranslate"><span class="pre">dict</span></code> type.</p>
 <dl class="field-list simple">
 <dt class="field-odd">Returns<span class="colon">:</span></dt>
@@ -407,7 +447,7 @@ where <span class="math notranslate nohighlight">\(n\)</span> is the number of t
 
 <dl class="py method">
 <dt class="sig sig-object py" id="renormalizer.transport.kubo.TransportKubo.init_mps">
-<span class="sig-name descname"><span class="pre">init_mps</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="_modules/renormalizer/transport/kubo.html#TransportKubo.init_mps"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#renormalizer.transport.kubo.TransportKubo.init_mps" title="Permalink to this definition">#</a></dt>
+<span class="sig-name descname"><span class="pre">init_mps</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="_modules/renormalizer/transport/kubo.html#TransportKubo.init_mps"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#renormalizer.transport.kubo.TransportKubo.init_mps" title="Link to this definition">¶</a></dt>
 <dd><dl class="field-list simple">
 <dt class="field-odd">Returns<span class="colon">:</span></dt>
 <dd class="field-odd"><p>initial mps of the system</p>
@@ -417,7 +457,7 @@ where <span class="math notranslate nohighlight">\(n\)</span> is the number of t
 
 <dl class="py method">
 <dt class="sig sig-object py" id="renormalizer.transport.kubo.TransportKubo.process_mps">
-<span class="sig-name descname"><span class="pre">process_mps</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">mps</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/renormalizer/transport/kubo.html#TransportKubo.process_mps"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#renormalizer.transport.kubo.TransportKubo.process_mps" title="Permalink to this definition">#</a></dt>
+<span class="sig-name descname"><span class="pre">process_mps</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">mps</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/renormalizer/transport/kubo.html#TransportKubo.process_mps"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#renormalizer.transport.kubo.TransportKubo.process_mps" title="Link to this definition">¶</a></dt>
 <dd><p>Process the newly evolved the mps. Primarily for the calculation of properties.
 Note that currently <code class="docutils literal notranslate"><span class="pre">self.latest_mps</span></code> has not been updated.</p>
 <dl class="field-list simple">
@@ -429,17 +469,17 @@ Note that currently <code class="docutils literal notranslate"><span class="pre"
 
 <dl class="py method">
 <dt class="sig sig-object py" id="renormalizer.transport.kubo.TransportKubo.stop_evolve_criteria">
-<span class="sig-name descname"><span class="pre">stop_evolve_criteria</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="_modules/renormalizer/transport/kubo.html#TransportKubo.stop_evolve_criteria"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#renormalizer.transport.kubo.TransportKubo.stop_evolve_criteria" title="Permalink to this definition">#</a></dt>
+<span class="sig-name descname"><span class="pre">stop_evolve_criteria</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="_modules/renormalizer/transport/kubo.html#TransportKubo.stop_evolve_criteria"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#renormalizer.transport.kubo.TransportKubo.stop_evolve_criteria" title="Link to this definition">¶</a></dt>
 <dd></dd></dl>
 
 </dd></dl>
 
 </section>
 <section id="module-renormalizer.transport.dynamics">
-<span id="charge-diffusion-dynamics-simulation"></span><h2>Charge Diffusion Dynamics Simulation<a class="headerlink" href="#module-renormalizer.transport.dynamics" title="Permalink to this heading">#</a></h2>
+<span id="charge-diffusion-dynamics-simulation"></span><h2>Charge Diffusion Dynamics Simulation<a class="headerlink" href="#module-renormalizer.transport.dynamics" title="Link to this heading">¶</a></h2>
 <dl class="py class">
 <dt class="sig sig-object py" id="renormalizer.transport.dynamics.ChargeDiffusionDynamics">
-<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">renormalizer.transport.dynamics.</span></span><span class="sig-name descname"><span class="pre">ChargeDiffusionDynamics</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">model</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference internal" href="model.html#renormalizer.model.HolsteinModel" title="renormalizer.model.model.HolsteinModel"><span class="pre">HolsteinModel</span></a></span></em>, <em class="sig-param"><span class="n"><span class="pre">temperature</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">Quantity</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">Quantity(0.0,</span> <span class="pre">'K')</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">compress_config</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference external" href="https://docs.python.org/3/library/typing.html#typing.Optional" title="(in Python v3.14)"><span class="pre">Optional</span></a><span class="p"><span class="pre">[</span></span><a class="reference internal" href="configs.html#renormalizer.utils.configs.CompressConfig" title="renormalizer.utils.configs.CompressConfig"><span class="pre">CompressConfig</span></a><span class="p"><span class="pre">]</span></span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">evolve_config</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference external" href="https://docs.python.org/3/library/typing.html#typing.Optional" title="(in Python v3.14)"><span class="pre">Optional</span></a><span class="p"><span class="pre">[</span></span><a class="reference internal" href="configs.html#renormalizer.utils.configs.EvolveConfig" title="renormalizer.utils.configs.EvolveConfig"><span class="pre">EvolveConfig</span></a><span class="p"><span class="pre">]</span></span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">stop_at_edge</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference external" href="https://docs.python.org/3/library/functions.html#bool" title="(in Python v3.14)"><span class="pre">bool</span></a></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">True</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">init_electron</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">InitElectron.relaxed</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">rdm</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference external" href="https://docs.python.org/3/library/functions.html#bool" title="(in Python v3.14)"><span class="pre">bool</span></a></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">False</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">dump_dir</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference external" href="https://docs.python.org/3/library/typing.html#typing.Optional" title="(in Python v3.14)"><span class="pre">Optional</span></a><span class="p"><span class="pre">[</span></span><a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.14)"><span class="pre">str</span></a><span class="p"><span class="pre">]</span></span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">job_name</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference external" href="https://docs.python.org/3/library/typing.html#typing.Optional" title="(in Python v3.14)"><span class="pre">Optional</span></a><span class="p"><span class="pre">[</span></span><a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.14)"><span class="pre">str</span></a><span class="p"><span class="pre">]</span></span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/renormalizer/transport/dynamics.html#ChargeDiffusionDynamics"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#renormalizer.transport.dynamics.ChargeDiffusionDynamics" title="Permalink to this definition">#</a></dt>
+<span class="property"><span class="k"><span class="pre">class</span></span><span class="w"> </span></span><span class="sig-prename descclassname"><span class="pre">renormalizer.transport.dynamics.</span></span><span class="sig-name descname"><span class="pre">ChargeDiffusionDynamics</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">model</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference internal" href="model.html#renormalizer.model.HolsteinModel" title="renormalizer.model.model.HolsteinModel"><span class="pre">HolsteinModel</span></a></span></em>, <em class="sig-param"><span class="n"><span class="pre">temperature</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">Quantity</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">Quantity(0.0,</span> <span class="pre">'K')</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">compress_config</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference internal" href="configs.html#renormalizer.utils.configs.CompressConfig" title="renormalizer.utils.configs.CompressConfig"><span class="pre">CompressConfig</span></a></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">evolve_config</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference internal" href="configs.html#renormalizer.utils.configs.EvolveConfig" title="renormalizer.utils.configs.EvolveConfig"><span class="pre">EvolveConfig</span></a></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">stop_at_edge</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference external" href="https://docs.python.org/3/builtins/functions.html#bool" title="(in Python v3.15)"><span class="pre">bool</span></a></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">True</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">init_electron</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">InitElectron.relaxed</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">rdm</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference external" href="https://docs.python.org/3/builtins/functions.html#bool" title="(in Python v3.15)"><span class="pre">bool</span></a></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">False</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">dump_dir</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference external" href="https://docs.python.org/3/builtins/stdtypes.html#str" title="(in Python v3.15)"><span class="pre">str</span></a></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">job_name</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference external" href="https://docs.python.org/3/builtins/stdtypes.html#str" title="(in Python v3.15)"><span class="pre">str</span></a></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/renormalizer/transport/dynamics.html#ChargeDiffusionDynamics"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#renormalizer.transport.dynamics.ChargeDiffusionDynamics" title="Link to this definition">¶</a></dt>
 <dd><p>Simulate charge diffusion dynamics by TD-DMRG. It is possible to obtain mobility from the simulation,
 but care must be taken to ensure that mean square displacement grows linearly with time.</p>
 <dl class="field-list simple">
@@ -454,21 +494,21 @@ See the documentation of <a class="reference internal" href="#renormalizer.trans
 for more details.</p></li>
 <li><p><strong>compress_config</strong> (<a class="reference internal" href="configs.html#renormalizer.utils.configs.CompressConfig" title="renormalizer.utils.configs.CompressConfig"><code class="xref py py-class docutils literal notranslate"><span class="pre">CompressConfig</span></code></a>) – config when compressing MPS.</p></li>
 <li><p><strong>evolve_config</strong> (<a class="reference internal" href="configs.html#renormalizer.utils.configs.EvolveConfig" title="renormalizer.utils.configs.EvolveConfig"><code class="xref py py-class docutils literal notranslate"><span class="pre">EvolveConfig</span></code></a>) – config when evolving MPS.</p></li>
-<li><p><strong>stop_at_edge</strong> (<a class="reference external" href="https://docs.python.org/3/library/functions.html#bool" title="(in Python v3.14)"><em>bool</em></a>) – whether stop when charge has diffused to the boundary of the system. Default is <code class="docutils literal notranslate"><span class="pre">True</span></code>.</p></li>
+<li><p><strong>stop_at_edge</strong> (<a class="reference external" href="https://docs.python.org/3/builtins/functions.html#bool" title="(in Python v3.15)"><em>bool</em></a>) – whether stop when charge has diffused to the boundary of the system. Default is <code class="docutils literal notranslate"><span class="pre">True</span></code>.</p></li>
 <li><p><strong>init_electron</strong> (<code class="xref py py-class docutils literal notranslate"><span class="pre">InitElectron</span></code>) – the method to prepare the initial state.</p></li>
-<li><p><strong>rdm</strong> (<a class="reference external" href="https://docs.python.org/3/library/functions.html#bool" title="(in Python v3.14)"><em>bool</em></a>) – whether calculate reduced density matrix and k-space representation for the electron.
+<li><p><strong>rdm</strong> (<a class="reference external" href="https://docs.python.org/3/builtins/functions.html#bool" title="(in Python v3.15)"><em>bool</em></a>) – whether calculate reduced density matrix and k-space representation for the electron.
 Default is <code class="docutils literal notranslate"><span class="pre">False</span></code> because usually the calculation is time consuming.
 Using scheme 4 might partly solve the problem.</p></li>
-<li><p><strong>dump_dir</strong> (<a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.14)"><em>str</em></a>) – the directory for logging and numerical result output.
+<li><p><strong>dump_dir</strong> (<a class="reference external" href="https://docs.python.org/3/builtins/stdtypes.html#str" title="(in Python v3.15)"><em>str</em></a>) – the directory for logging and numerical result output.
 Also the directory from which to load previous thermal propagated initial state (if exists).</p></li>
-<li><p><strong>job_name</strong> (<a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.14)"><em>str</em></a>) – the name of the calculation job which determines the file name of the logging and numerical result output.
+<li><p><strong>job_name</strong> (<a class="reference external" href="https://docs.python.org/3/builtins/stdtypes.html#str" title="(in Python v3.15)"><em>str</em></a>) – the name of the calculation job which determines the file name of the logging and numerical result output.
 For thermal propagated initial state input/output the file name is appended with <code class="docutils literal notranslate"><span class="pre">&quot;_impdm.npz&quot;</span></code>.</p></li>
 </ul>
 </dd>
 </dl>
 <dl class="py attribute">
 <dt class="sig sig-object py" id="renormalizer.transport.dynamics.ChargeDiffusionDynamics.energies">
-<span class="sig-name descname"><span class="pre">energies</span></span><a class="headerlink" href="#renormalizer.transport.dynamics.ChargeDiffusionDynamics.energies" title="Permalink to this definition">#</a></dt>
+<span class="sig-name descname"><span class="pre">energies</span></span><a class="headerlink" href="#renormalizer.transport.dynamics.ChargeDiffusionDynamics.energies" title="Link to this definition">¶</a></dt>
 <dd><p>calculated energy of the states during the time evolution.
 Without dissipation or TD-Hartree the value should remain unchanged and to some extent
 can be used to measure the error during time evolution.</p>
@@ -481,7 +521,7 @@ can be used to measure the error during time evolution.</p>
 
 <dl class="py attribute">
 <dt class="sig sig-object py" id="renormalizer.transport.dynamics.ChargeDiffusionDynamics.r_square_array">
-<span class="sig-name descname"><span class="pre">r_square_array</span></span><a class="headerlink" href="#renormalizer.transport.dynamics.ChargeDiffusionDynamics.r_square_array" title="Permalink to this definition">#</a></dt>
+<span class="sig-name descname"><span class="pre">r_square_array</span></span><a class="headerlink" href="#renormalizer.transport.dynamics.ChargeDiffusionDynamics.r_square_array" title="Link to this definition">¶</a></dt>
 <dd><p>calculated mean square displacement
 <span class="math notranslate nohighlight">\(\langle \psi | \hat r^2 | \psi \rangle - \langle \psi | \hat r | \psi \rangle^2\)</span>
 at each evolution time step.</p>
@@ -494,7 +534,7 @@ at each evolution time step.</p>
 
 <dl class="py attribute">
 <dt class="sig sig-object py" id="renormalizer.transport.dynamics.ChargeDiffusionDynamics.e_occupations_array">
-<span class="sig-name descname"><span class="pre">e_occupations_array</span></span><a class="headerlink" href="#renormalizer.transport.dynamics.ChargeDiffusionDynamics.e_occupations_array" title="Permalink to this definition">#</a></dt>
+<span class="sig-name descname"><span class="pre">e_occupations_array</span></span><a class="headerlink" href="#renormalizer.transport.dynamics.ChargeDiffusionDynamics.e_occupations_array" title="Link to this definition">¶</a></dt>
 <dd><p>calculated electron occupations in real space on each site for each evolution time step.</p>
 <dl class="field-list simple">
 <dt class="field-odd">Type<span class="colon">:</span></dt>
@@ -505,7 +545,7 @@ at each evolution time step.</p>
 
 <dl class="py attribute">
 <dt class="sig sig-object py" id="renormalizer.transport.dynamics.ChargeDiffusionDynamics.ph_occupations_array">
-<span class="sig-name descname"><span class="pre">ph_occupations_array</span></span><a class="headerlink" href="#renormalizer.transport.dynamics.ChargeDiffusionDynamics.ph_occupations_array" title="Permalink to this definition">#</a></dt>
+<span class="sig-name descname"><span class="pre">ph_occupations_array</span></span><a class="headerlink" href="#renormalizer.transport.dynamics.ChargeDiffusionDynamics.ph_occupations_array" title="Link to this definition">¶</a></dt>
 <dd><p>calculated phonon occupations on each site for each evolution time step.</p>
 <dl class="field-list simple">
 <dt class="field-odd">Type<span class="colon">:</span></dt>
@@ -516,19 +556,19 @@ at each evolution time step.</p>
 
 <dl class="py attribute">
 <dt class="sig sig-object py" id="renormalizer.transport.dynamics.ChargeDiffusionDynamics.reduced_density_matrices">
-<span class="sig-name descname"><span class="pre">reduced_density_matrices</span></span><a class="headerlink" href="#renormalizer.transport.dynamics.ChargeDiffusionDynamics.reduced_density_matrices" title="Permalink to this definition">#</a></dt>
+<span class="sig-name descname"><span class="pre">reduced_density_matrices</span></span><a class="headerlink" href="#renormalizer.transport.dynamics.ChargeDiffusionDynamics.reduced_density_matrices" title="Link to this definition">¶</a></dt>
 <dd><p>calculated reduced density matrices of the electron for each evolution time step.
 Only available when <code class="docutils literal notranslate"><span class="pre">rdm</span></code> is set to <code class="docutils literal notranslate"><span class="pre">True</span></code>.</p>
 <dl class="field-list simple">
 <dt class="field-odd">Type<span class="colon">:</span></dt>
-<dd class="field-odd"><p><a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#list" title="(in Python v3.14)">list</a></p>
+<dd class="field-odd"><p><a class="reference external" href="https://docs.python.org/3/builtins/stdtypes.html#list" title="(in Python v3.15)">list</a></p>
 </dd>
 </dl>
 </dd></dl>
 
 <dl class="py attribute">
 <dt class="sig sig-object py" id="renormalizer.transport.dynamics.ChargeDiffusionDynamics.k_occupations_array">
-<span class="sig-name descname"><span class="pre">k_occupations_array</span></span><a class="headerlink" href="#renormalizer.transport.dynamics.ChargeDiffusionDynamics.k_occupations_array" title="Permalink to this definition">#</a></dt>
+<span class="sig-name descname"><span class="pre">k_occupations_array</span></span><a class="headerlink" href="#renormalizer.transport.dynamics.ChargeDiffusionDynamics.k_occupations_array" title="Link to this definition">¶</a></dt>
 <dd><p>calculated electron occupations in momentum (k) space
 on each site for each evolution time step. Only available when <code class="docutils literal notranslate"><span class="pre">rdm</span></code> is set to <code class="docutils literal notranslate"><span class="pre">True</span></code>.
 The basis transformation is based on:</p>
@@ -547,7 +587,7 @@ The basis transformation is based on:</p>
 
 <dl class="py attribute">
 <dt class="sig sig-object py" id="renormalizer.transport.dynamics.ChargeDiffusionDynamics.coherent_length_array">
-<span class="sig-name descname"><span class="pre">coherent_length_array</span></span><a class="headerlink" href="#renormalizer.transport.dynamics.ChargeDiffusionDynamics.coherent_length_array" title="Permalink to this definition">#</a></dt>
+<span class="sig-name descname"><span class="pre">coherent_length_array</span></span><a class="headerlink" href="#renormalizer.transport.dynamics.ChargeDiffusionDynamics.coherent_length_array" title="Link to this definition">¶</a></dt>
 <dd><p>coherent length <span class="math notranslate nohighlight">\(L\)</span> calculated for each evolution time step.</p>
 <div class="math-wrapper docutils container">
 <div class="math notranslate nohighlight">
@@ -564,22 +604,22 @@ The basis transformation is based on:</p>
 
 <dl class="py method">
 <dt class="sig sig-object py" id="renormalizer.transport.dynamics.ChargeDiffusionDynamics.create_electron">
-<span class="sig-name descname"><span class="pre">create_electron</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">gs_mp</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/renormalizer/transport/dynamics.html#ChargeDiffusionDynamics.create_electron"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#renormalizer.transport.dynamics.ChargeDiffusionDynamics.create_electron" title="Permalink to this definition">#</a></dt>
+<span class="sig-name descname"><span class="pre">create_electron</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">gs_mp</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/renormalizer/transport/dynamics.html#ChargeDiffusionDynamics.create_electron"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#renormalizer.transport.dynamics.ChargeDiffusionDynamics.create_electron" title="Link to this definition">¶</a></dt>
 <dd></dd></dl>
 
 <dl class="py method">
 <dt class="sig sig-object py" id="renormalizer.transport.dynamics.ChargeDiffusionDynamics.create_electron_fc">
-<span class="sig-name descname"><span class="pre">create_electron_fc</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">gs_mp</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/renormalizer/transport/dynamics.html#ChargeDiffusionDynamics.create_electron_fc"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#renormalizer.transport.dynamics.ChargeDiffusionDynamics.create_electron_fc" title="Permalink to this definition">#</a></dt>
+<span class="sig-name descname"><span class="pre">create_electron_fc</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">gs_mp</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/renormalizer/transport/dynamics.html#ChargeDiffusionDynamics.create_electron_fc"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#renormalizer.transport.dynamics.ChargeDiffusionDynamics.create_electron_fc" title="Link to this definition">¶</a></dt>
 <dd></dd></dl>
 
 <dl class="py method">
 <dt class="sig sig-object py" id="renormalizer.transport.dynamics.ChargeDiffusionDynamics.create_electron_relaxed">
-<span class="sig-name descname"><span class="pre">create_electron_relaxed</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">gs_mp</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/renormalizer/transport/dynamics.html#ChargeDiffusionDynamics.create_electron_relaxed"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#renormalizer.transport.dynamics.ChargeDiffusionDynamics.create_electron_relaxed" title="Permalink to this definition">#</a></dt>
+<span class="sig-name descname"><span class="pre">create_electron_relaxed</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">gs_mp</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/renormalizer/transport/dynamics.html#ChargeDiffusionDynamics.create_electron_relaxed"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#renormalizer.transport.dynamics.ChargeDiffusionDynamics.create_electron_relaxed" title="Link to this definition">¶</a></dt>
 <dd></dd></dl>
 
 <dl class="py method">
 <dt class="sig sig-object py" id="renormalizer.transport.dynamics.ChargeDiffusionDynamics.evolve_single_step">
-<span class="sig-name descname"><span class="pre">evolve_single_step</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">evolve_dt</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/renormalizer/transport/dynamics.html#ChargeDiffusionDynamics.evolve_single_step"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#renormalizer.transport.dynamics.ChargeDiffusionDynamics.evolve_single_step" title="Permalink to this definition">#</a></dt>
+<span class="sig-name descname"><span class="pre">evolve_single_step</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">evolve_dt</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/renormalizer/transport/dynamics.html#ChargeDiffusionDynamics.evolve_single_step"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#renormalizer.transport.dynamics.ChargeDiffusionDynamics.evolve_single_step" title="Link to this definition">¶</a></dt>
 <dd><p>Evolve the mps for a single step with step size <code class="docutils literal notranslate"><span class="pre">evolve_dt</span></code>.</p>
 <dl class="field-list simple">
 <dt class="field-odd">Returns<span class="colon">:</span></dt>
@@ -590,7 +630,7 @@ The basis transformation is based on:</p>
 
 <dl class="py method">
 <dt class="sig sig-object py" id="renormalizer.transport.dynamics.ChargeDiffusionDynamics.get_dump_dict">
-<span class="sig-name descname"><span class="pre">get_dump_dict</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="_modules/renormalizer/transport/dynamics.html#ChargeDiffusionDynamics.get_dump_dict"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#renormalizer.transport.dynamics.ChargeDiffusionDynamics.get_dump_dict" title="Permalink to this definition">#</a></dt>
+<span class="sig-name descname"><span class="pre">get_dump_dict</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="_modules/renormalizer/transport/dynamics.html#ChargeDiffusionDynamics.get_dump_dict"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#renormalizer.transport.dynamics.ChargeDiffusionDynamics.get_dump_dict" title="Link to this definition">¶</a></dt>
 <dd><p>Obtain calculated properties to dump in <code class="docutils literal notranslate"><span class="pre">dict</span></code> type.</p>
 <dl class="field-list simple">
 <dt class="field-odd">Returns<span class="colon">:</span></dt>
@@ -601,7 +641,7 @@ The basis transformation is based on:</p>
 
 <dl class="py method">
 <dt class="sig sig-object py" id="renormalizer.transport.dynamics.ChargeDiffusionDynamics.init_mps">
-<span class="sig-name descname"><span class="pre">init_mps</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="_modules/renormalizer/transport/dynamics.html#ChargeDiffusionDynamics.init_mps"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#renormalizer.transport.dynamics.ChargeDiffusionDynamics.init_mps" title="Permalink to this definition">#</a></dt>
+<span class="sig-name descname"><span class="pre">init_mps</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="_modules/renormalizer/transport/dynamics.html#ChargeDiffusionDynamics.init_mps"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#renormalizer.transport.dynamics.ChargeDiffusionDynamics.init_mps" title="Link to this definition">¶</a></dt>
 <dd><dl class="field-list simple">
 <dt class="field-odd">Returns<span class="colon">:</span></dt>
 <dd class="field-odd"><p>initial mps of the system</p>
@@ -611,17 +651,17 @@ The basis transformation is based on:</p>
 
 <dl class="py method">
 <dt class="sig sig-object py" id="renormalizer.transport.dynamics.ChargeDiffusionDynamics.is_similar">
-<span class="sig-name descname"><span class="pre">is_similar</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">other</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference internal" href="#renormalizer.transport.dynamics.ChargeDiffusionDynamics" title="renormalizer.transport.dynamics.ChargeDiffusionDynamics"><span class="pre">ChargeDiffusionDynamics</span></a></span></em>, <em class="sig-param"><span class="n"><span class="pre">rtol</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">0.001</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/renormalizer/transport/dynamics.html#ChargeDiffusionDynamics.is_similar"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#renormalizer.transport.dynamics.ChargeDiffusionDynamics.is_similar" title="Permalink to this definition">#</a></dt>
+<span class="sig-name descname"><span class="pre">is_similar</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">other</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference internal" href="#renormalizer.transport.dynamics.ChargeDiffusionDynamics" title="renormalizer.transport.dynamics.ChargeDiffusionDynamics"><span class="pre">ChargeDiffusionDynamics</span></a></span></em>, <em class="sig-param"><span class="n"><span class="pre">rtol</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">0.001</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/renormalizer/transport/dynamics.html#ChargeDiffusionDynamics.is_similar"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#renormalizer.transport.dynamics.ChargeDiffusionDynamics.is_similar" title="Link to this definition">¶</a></dt>
 <dd></dd></dl>
 
 <dl class="py property">
 <dt class="sig sig-object py" id="renormalizer.transport.dynamics.ChargeDiffusionDynamics.mol_num">
-<em class="property"><span class="pre">property</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">mol_num</span></span><a class="headerlink" href="#renormalizer.transport.dynamics.ChargeDiffusionDynamics.mol_num" title="Permalink to this definition">#</a></dt>
+<span class="property"><span class="k"><span class="pre">property</span></span><span class="w"> </span></span><span class="sig-name descname"><span class="pre">mol_num</span></span><a class="headerlink" href="#renormalizer.transport.dynamics.ChargeDiffusionDynamics.mol_num" title="Link to this definition">¶</a></dt>
 <dd></dd></dl>
 
 <dl class="py method">
 <dt class="sig sig-object py" id="renormalizer.transport.dynamics.ChargeDiffusionDynamics.process_mps">
-<span class="sig-name descname"><span class="pre">process_mps</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">mps</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/renormalizer/transport/dynamics.html#ChargeDiffusionDynamics.process_mps"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#renormalizer.transport.dynamics.ChargeDiffusionDynamics.process_mps" title="Permalink to this definition">#</a></dt>
+<span class="sig-name descname"><span class="pre">process_mps</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">mps</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/renormalizer/transport/dynamics.html#ChargeDiffusionDynamics.process_mps"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#renormalizer.transport.dynamics.ChargeDiffusionDynamics.process_mps" title="Link to this definition">¶</a></dt>
 <dd><p>Process the newly evolved the mps. Primarily for the calculation of properties.
 Note that currently <code class="docutils literal notranslate"><span class="pre">self.latest_mps</span></code> has not been updated.</p>
 <dl class="field-list simple">
@@ -633,38 +673,38 @@ Note that currently <code class="docutils literal notranslate"><span class="pre"
 
 <dl class="py method">
 <dt class="sig sig-object py" id="renormalizer.transport.dynamics.ChargeDiffusionDynamics.stop_evolve_criteria">
-<span class="sig-name descname"><span class="pre">stop_evolve_criteria</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="_modules/renormalizer/transport/dynamics.html#ChargeDiffusionDynamics.stop_evolve_criteria"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#renormalizer.transport.dynamics.ChargeDiffusionDynamics.stop_evolve_criteria" title="Permalink to this definition">#</a></dt>
+<span class="sig-name descname"><span class="pre">stop_evolve_criteria</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="_modules/renormalizer/transport/dynamics.html#ChargeDiffusionDynamics.stop_evolve_criteria"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#renormalizer.transport.dynamics.ChargeDiffusionDynamics.stop_evolve_criteria" title="Link to this definition">¶</a></dt>
 <dd></dd></dl>
 
 </dd></dl>
 
 <dl class="py class">
 <dt class="sig sig-object py" id="renormalizer.transport.dynamics.InitElectron">
-<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">renormalizer.transport.dynamics.</span></span><span class="sig-name descname"><span class="pre">InitElectron</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">value</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/renormalizer/transport/dynamics.html#InitElectron"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#renormalizer.transport.dynamics.InitElectron" title="Permalink to this definition">#</a></dt>
+<span class="property"><span class="k"><span class="pre">class</span></span><span class="w"> </span></span><span class="sig-prename descclassname"><span class="pre">renormalizer.transport.dynamics.</span></span><span class="sig-name descname"><span class="pre">InitElectron</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">value</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/renormalizer/transport/dynamics.html#InitElectron"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#renormalizer.transport.dynamics.InitElectron" title="Link to this definition">¶</a></dt>
 <dd><p>Available methods to prepare initial state of charge diffusion</p>
 <dl class="py attribute">
 <dt class="sig sig-object py" id="renormalizer.transport.dynamics.InitElectron.fc">
-<span class="sig-name descname"><span class="pre">fc</span></span><em class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">'franck-condon</span> <span class="pre">excitation'</span></em><a class="headerlink" href="#renormalizer.transport.dynamics.InitElectron.fc" title="Permalink to this definition">#</a></dt>
+<span class="sig-name descname"><span class="pre">fc</span></span><span class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">'franck-condon</span> <span class="pre">excitation'</span></span><a class="headerlink" href="#renormalizer.transport.dynamics.InitElectron.fc" title="Link to this definition">¶</a></dt>
 <dd></dd></dl>
 
 <dl class="py attribute">
 <dt class="sig sig-object py" id="renormalizer.transport.dynamics.InitElectron.relaxed">
-<span class="sig-name descname"><span class="pre">relaxed</span></span><em class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">'analytically</span> <span class="pre">relaxed</span> <span class="pre">phonon(s)'</span></em><a class="headerlink" href="#renormalizer.transport.dynamics.InitElectron.relaxed" title="Permalink to this definition">#</a></dt>
+<span class="sig-name descname"><span class="pre">relaxed</span></span><span class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">'analytically</span> <span class="pre">relaxed</span> <span class="pre">phonon(s)'</span></span><a class="headerlink" href="#renormalizer.transport.dynamics.InitElectron.relaxed" title="Link to this definition">¶</a></dt>
 <dd></dd></dl>
 
 </dd></dl>
 
 <dl class="py function">
 <dt class="sig sig-object py" id="renormalizer.transport.dynamics.calc_r_square">
-<span class="sig-prename descclassname"><span class="pre">renormalizer.transport.dynamics.</span></span><span class="sig-name descname"><span class="pre">calc_r_square</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">e_occupations</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/renormalizer/transport/dynamics.html#calc_r_square"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#renormalizer.transport.dynamics.calc_r_square" title="Permalink to this definition">#</a></dt>
+<span class="sig-prename descclassname"><span class="pre">renormalizer.transport.dynamics.</span></span><span class="sig-name descname"><span class="pre">calc_r_square</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">e_occupations</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/renormalizer/transport/dynamics.html#calc_r_square"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#renormalizer.transport.dynamics.calc_r_square" title="Link to this definition">¶</a></dt>
 <dd></dd></dl>
 
 </section>
 <section id="module-renormalizer.transport.spectral_function">
-<span id="one-particle-spectral-function"></span><h2>One-Particle Spectral Function<a class="headerlink" href="#module-renormalizer.transport.spectral_function" title="Permalink to this heading">#</a></h2>
+<span id="one-particle-spectral-function"></span><h2>One-Particle Spectral Function<a class="headerlink" href="#module-renormalizer.transport.spectral_function" title="Link to this heading">¶</a></h2>
 <dl class="py class">
 <dt class="sig sig-object py" id="renormalizer.transport.spectral_function.SpectralFunctionZT">
-<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">renormalizer.transport.spectral_function.</span></span><span class="sig-name descname"><span class="pre">SpectralFunctionZT</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">model</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference internal" href="model.html#renormalizer.model.TI1DModel" title="renormalizer.model.model.TI1DModel"><span class="pre">TI1DModel</span></a></span></em>, <em class="sig-param"><span class="n"><span class="pre">compress_config</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference external" href="https://docs.python.org/3/library/typing.html#typing.Optional" title="(in Python v3.14)"><span class="pre">Optional</span></a><span class="p"><span class="pre">[</span></span><a class="reference internal" href="configs.html#renormalizer.utils.configs.CompressConfig" title="renormalizer.utils.configs.CompressConfig"><span class="pre">CompressConfig</span></a><span class="p"><span class="pre">]</span></span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">evolve_config</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference external" href="https://docs.python.org/3/library/typing.html#typing.Optional" title="(in Python v3.14)"><span class="pre">Optional</span></a><span class="p"><span class="pre">[</span></span><a class="reference internal" href="configs.html#renormalizer.utils.configs.EvolveConfig" title="renormalizer.utils.configs.EvolveConfig"><span class="pre">EvolveConfig</span></a><span class="p"><span class="pre">]</span></span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">dump_dir</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference external" href="https://docs.python.org/3/library/typing.html#typing.Optional" title="(in Python v3.14)"><span class="pre">Optional</span></a><span class="p"><span class="pre">[</span></span><a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.14)"><span class="pre">str</span></a><span class="p"><span class="pre">]</span></span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">job_name</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference external" href="https://docs.python.org/3/library/typing.html#typing.Optional" title="(in Python v3.14)"><span class="pre">Optional</span></a><span class="p"><span class="pre">[</span></span><a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.14)"><span class="pre">str</span></a><span class="p"><span class="pre">]</span></span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/renormalizer/transport/spectral_function.html#SpectralFunctionZT"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#renormalizer.transport.spectral_function.SpectralFunctionZT" title="Permalink to this definition">#</a></dt>
+<span class="property"><span class="k"><span class="pre">class</span></span><span class="w"> </span></span><span class="sig-prename descclassname"><span class="pre">renormalizer.transport.spectral_function.</span></span><span class="sig-name descname"><span class="pre">SpectralFunctionZT</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">model</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference internal" href="model.html#renormalizer.model.TI1DModel" title="renormalizer.model.model.TI1DModel"><span class="pre">TI1DModel</span></a></span></em>, <em class="sig-param"><span class="n"><span class="pre">compress_config</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference internal" href="configs.html#renormalizer.utils.configs.CompressConfig" title="renormalizer.utils.configs.CompressConfig"><span class="pre">CompressConfig</span></a></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">evolve_config</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference internal" href="configs.html#renormalizer.utils.configs.EvolveConfig" title="renormalizer.utils.configs.EvolveConfig"><span class="pre">EvolveConfig</span></a></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">dump_dir</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference external" href="https://docs.python.org/3/builtins/stdtypes.html#str" title="(in Python v3.15)"><span class="pre">str</span></a></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">job_name</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference external" href="https://docs.python.org/3/builtins/stdtypes.html#str" title="(in Python v3.15)"><span class="pre">str</span></a></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/renormalizer/transport/spectral_function.html#SpectralFunctionZT"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#renormalizer.transport.spectral_function.SpectralFunctionZT" title="Link to this definition">¶</a></dt>
 <dd><p>Calculate one-particle retarded Green’s function at zero temperature for translational invariant one-dimensional model:</p>
 <div class="math-wrapper docutils container">
 <div class="math notranslate nohighlight">
@@ -701,14 +741,14 @@ It is recommended to set the number of the electronic DoFs to be an even number
 so that the <span class="math notranslate nohighlight">\(k=\pi\)</span> point is well defined.</p></li>
 <li><p><strong>compress_config</strong> (<a class="reference internal" href="configs.html#renormalizer.utils.configs.CompressConfig" title="renormalizer.utils.configs.CompressConfig"><code class="xref py py-class docutils literal notranslate"><span class="pre">CompressConfig</span></code></a>) – config when compressing MPS.</p></li>
 <li><p><strong>evolve_config</strong> (<a class="reference internal" href="configs.html#renormalizer.utils.configs.EvolveConfig" title="renormalizer.utils.configs.EvolveConfig"><code class="xref py py-class docutils literal notranslate"><span class="pre">EvolveConfig</span></code></a>) – config when carrying out real time propagation.</p></li>
-<li><p><strong>dump_dir</strong> (<a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.14)"><em>str</em></a>) – the directory for logging and numerical result output.</p></li>
-<li><p><strong>job_name</strong> (<a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.14)"><em>str</em></a>) – the name of the calculation job which determines the file name of the logging and numerical result output.</p></li>
+<li><p><strong>dump_dir</strong> (<a class="reference external" href="https://docs.python.org/3/builtins/stdtypes.html#str" title="(in Python v3.15)"><em>str</em></a>) – the directory for logging and numerical result output.</p></li>
+<li><p><strong>job_name</strong> (<a class="reference external" href="https://docs.python.org/3/builtins/stdtypes.html#str" title="(in Python v3.15)"><em>str</em></a>) – the name of the calculation job which determines the file name of the logging and numerical result output.</p></li>
 </ul>
 </dd>
 </dl>
 <dl class="py property">
 <dt class="sig sig-object py" id="renormalizer.transport.spectral_function.SpectralFunctionZT.G_array">
-<em class="property"><span class="pre">property</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">G_array</span></span><a class="headerlink" href="#renormalizer.transport.spectral_function.SpectralFunctionZT.G_array" title="Permalink to this definition">#</a></dt>
+<span class="property"><span class="k"><span class="pre">property</span></span><span class="w"> </span></span><span class="sig-name descname"><span class="pre">G_array</span></span><a class="headerlink" href="#renormalizer.transport.spectral_function.SpectralFunctionZT.G_array" title="Link to this definition">¶</a></dt>
 <dd><p><span class="math notranslate nohighlight">\(G_{ij}(t)\)</span> as a two dimensional array.
 The first dimension is <span class="math notranslate nohighlight">\(t\)</span> and the second dimension is <span class="math notranslate nohighlight">\(|i-j|\)</span>.</p>
 <dl class="field-list simple">
@@ -723,7 +763,7 @@ The first dimension is <span class="math notranslate nohighlight">\(t\)</span> a
 
 <dl class="py method">
 <dt class="sig sig-object py" id="renormalizer.transport.spectral_function.SpectralFunctionZT.evolve_single_step">
-<span class="sig-name descname"><span class="pre">evolve_single_step</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">evolve_dt</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/renormalizer/transport/spectral_function.html#SpectralFunctionZT.evolve_single_step"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#renormalizer.transport.spectral_function.SpectralFunctionZT.evolve_single_step" title="Permalink to this definition">#</a></dt>
+<span class="sig-name descname"><span class="pre">evolve_single_step</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">evolve_dt</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/renormalizer/transport/spectral_function.html#SpectralFunctionZT.evolve_single_step"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#renormalizer.transport.spectral_function.SpectralFunctionZT.evolve_single_step" title="Link to this definition">¶</a></dt>
 <dd><p>Evolve the mps for a single step with step size <code class="docutils literal notranslate"><span class="pre">evolve_dt</span></code>.</p>
 <dl class="field-list simple">
 <dt class="field-odd">Returns<span class="colon">:</span></dt>
@@ -734,7 +774,7 @@ The first dimension is <span class="math notranslate nohighlight">\(t\)</span> a
 
 <dl class="py method">
 <dt class="sig sig-object py" id="renormalizer.transport.spectral_function.SpectralFunctionZT.get_dump_dict">
-<span class="sig-name descname"><span class="pre">get_dump_dict</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="_modules/renormalizer/transport/spectral_function.html#SpectralFunctionZT.get_dump_dict"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#renormalizer.transport.spectral_function.SpectralFunctionZT.get_dump_dict" title="Permalink to this definition">#</a></dt>
+<span class="sig-name descname"><span class="pre">get_dump_dict</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="_modules/renormalizer/transport/spectral_function.html#SpectralFunctionZT.get_dump_dict"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#renormalizer.transport.spectral_function.SpectralFunctionZT.get_dump_dict" title="Link to this definition">¶</a></dt>
 <dd><p>Obtain calculated properties to dump in <code class="docutils literal notranslate"><span class="pre">dict</span></code> type.</p>
 <dl class="field-list simple">
 <dt class="field-odd">Returns<span class="colon">:</span></dt>
@@ -745,7 +785,7 @@ The first dimension is <span class="math notranslate nohighlight">\(t\)</span> a
 
 <dl class="py method">
 <dt class="sig sig-object py" id="renormalizer.transport.spectral_function.SpectralFunctionZT.init_mps">
-<span class="sig-name descname"><span class="pre">init_mps</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="_modules/renormalizer/transport/spectral_function.html#SpectralFunctionZT.init_mps"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#renormalizer.transport.spectral_function.SpectralFunctionZT.init_mps" title="Permalink to this definition">#</a></dt>
+<span class="sig-name descname"><span class="pre">init_mps</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="_modules/renormalizer/transport/spectral_function.html#SpectralFunctionZT.init_mps"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#renormalizer.transport.spectral_function.SpectralFunctionZT.init_mps" title="Link to this definition">¶</a></dt>
 <dd><dl class="field-list simple">
 <dt class="field-odd">Returns<span class="colon">:</span></dt>
 <dd class="field-odd"><p>initial mps of the system</p>
@@ -755,7 +795,7 @@ The first dimension is <span class="math notranslate nohighlight">\(t\)</span> a
 
 <dl class="py method">
 <dt class="sig sig-object py" id="renormalizer.transport.spectral_function.SpectralFunctionZT.process_mps">
-<span class="sig-name descname"><span class="pre">process_mps</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">mps</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/renormalizer/transport/spectral_function.html#SpectralFunctionZT.process_mps"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#renormalizer.transport.spectral_function.SpectralFunctionZT.process_mps" title="Permalink to this definition">#</a></dt>
+<span class="sig-name descname"><span class="pre">process_mps</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">mps</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/renormalizer/transport/spectral_function.html#SpectralFunctionZT.process_mps"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#renormalizer.transport.spectral_function.SpectralFunctionZT.process_mps" title="Link to this definition">¶</a></dt>
 <dd><p>Process the newly evolved the mps. Primarily for the calculation of properties.
 Note that currently <code class="docutils literal notranslate"><span class="pre">self.latest_mps</span></code> has not been updated.</p>
 <dl class="field-list simple">
@@ -807,9 +847,7 @@ Note that currently <code class="docutils literal notranslate"><span class="pre"
             
           </div>
           <div class="right-details">
-            <div class="icons">
-              
-            </div>
+            
           </div>
         </div>
         
@@ -893,15 +931,12 @@ Note that currently <code class="docutils literal notranslate"><span class="pre"
       
     </aside>
   </div>
-</div><script data-url_root="./" id="documentation_options" src="_static/documentation_options.js"></script>
-    <script src="_static/jquery.js"></script>
-    <script src="_static/underscore.js"></script>
-    <script src="_static/_sphinx_javascript_frameworks_compat.js"></script>
-    <script src="_static/doctools.js"></script>
-    <script src="_static/sphinx_highlight.js"></script>
-    <script src="_static/scripts/furo.js"></script>
+</div><script src="_static/documentation_options.js?v=01f34227"></script>
+    <script src="_static/doctools.js?v=fd6eb6e6"></script>
+    <script src="_static/sphinx_highlight.js?v=6ffebe34"></script>
+    <script src="_static/scripts/furo.js?v=46bd48cc"></script>
     <script crossorigin="anonymous" integrity="sha256-Ae2Vz/4ePdIu6ZyI/5ZGsYnb+m0JlOmKPjt6XZ9JJkA=" src="https://cdnjs.cloudflare.com/ajax/libs/require.js/2.3.4/require.min.js"></script>
     <script>window.MathJax = {"tex": {"inlineMath": [["$", "$"], ["\\(", "\\)"]], "processEscapes": true}, "options": {"ignoreHtmlClass": "tex2jax_ignore|mathjax_ignore|document", "processHtmlClass": "tex2jax_process|mathjax_process|math|output_area"}}</script>
-    <script defer="defer" src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-mml-chtml.js"></script>
+    <script defer="defer" src="https://cdn.jsdelivr.net/npm/mathjax@4/tex-mml-chtml.js"></script>
     </body>
 </html>

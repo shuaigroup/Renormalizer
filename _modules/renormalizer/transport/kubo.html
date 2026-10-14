@@ -1,7 +1,7 @@
 <!doctype html>
-<html class="no-js" lang="en">
-  <head><meta charset="utf-8"/>
-    <meta name="viewport" content="width=device-width,initial-scale=1"/>
+<html class="no-js" lang="en" data-content_root="../../../">
+  <head><meta charset="utf-8">
+    <meta name="viewport" content="width=device-width,initial-scale=1">
     <meta name="color-scheme" content="light dark">
     <!-- Google tag (gtag.js) -->
     <script async src="https://www.googletagmanager.com/gtag/js?id=G-3HTENNM8CV"></script>
@@ -11,13 +11,13 @@
         gtag('js', new Date());
         gtag('config', 'G-3HTENNM8CV');
     </script>
-    <link rel="index" title="Index" href="../../../genindex.html" /><link rel="search" title="Search" href="../../../search.html" />
+    <link rel="index" title="Index" href="../../../genindex.html"><link rel="search" title="Search" href="../../../search.html">
 
-    <meta name="generator" content="sphinx-5.3.0, furo 2022.09.29"/>
+    <!-- Generated with Sphinx 9.0.4 and Furo 2025.12.19 -->
         <title>renormalizer.transport.kubo - Renormalizer 0.1.0 documentation</title>
-      <link rel="stylesheet" type="text/css" href="../../../_static/pygments.css" />
-    <link rel="stylesheet" type="text/css" href="../../../_static/styles/furo.css?digest=d81277517bee4d6b0349d71bb2661d4890b5617c" />
-    <link rel="stylesheet" type="text/css" href="../../../_static/styles/furo-extensions.css?digest=30d1aed668e5c3a91c3e3bf6a60b675221979f0e" />
+      <link rel="stylesheet" type="text/css" href="../../../_static/pygments.css?v=03e43079" />
+    <link rel="stylesheet" type="text/css" href="../../../_static/styles/furo.css?v=7bdb33bb" />
+    <link rel="stylesheet" type="text/css" href="../../../_static/styles/furo-extensions.css?v=8dab3a3b" />
     
     
 
@@ -76,7 +76,7 @@
   <symbol id="svg-sun" viewBox="0 0 24 24">
     <title>Light mode</title>
     <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor"
-      stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" class="feather-sun">
+      stroke-width="1" stroke-linecap="round" stroke-linejoin="round" class="feather-sun">
       <circle cx="12" cy="12" r="5"></circle>
       <line x1="12" y1="1" x2="12" y2="3"></line>
       <line x1="12" y1="21" x2="12" y2="23"></line>
@@ -91,34 +91,73 @@
   <symbol id="svg-moon" viewBox="0 0 24 24">
     <title>Dark mode</title>
     <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor"
-      stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" class="icon-tabler-moon">
+      stroke-width="1" stroke-linecap="round" stroke-linejoin="round" class="icon-tabler-moon">
       <path stroke="none" d="M0 0h24v24H0z" fill="none" />
       <path d="M12 3c.132 0 .263 0 .393 0a7.5 7.5 0 0 0 7.92 12.446a9 9 0 1 1 -8.313 -12.454z" />
     </svg>
   </symbol>
-  <symbol id="svg-sun-half" viewBox="0 0 24 24">
-    <title>Auto light/dark mode</title>
+  <symbol id="svg-sun-with-moon" viewBox="0 0 24 24">
+    <title>Auto light/dark, in light mode</title>
     <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor"
-      stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" class="icon-tabler-shadow">
-      <path stroke="none" d="M0 0h24v24H0z" fill="none"/>
-      <circle cx="12" cy="12" r="9" />
-      <path d="M13 12h5" />
-      <path d="M13 15h4" />
-      <path d="M13 18h1" />
-      <path d="M13 9h4" />
-      <path d="M13 6h1" />
+      stroke-width="1" stroke-linecap="round" stroke-linejoin="round"
+      class="icon-custom-derived-from-feather-sun-and-tabler-moon">
+      <path style="opacity: 50%" d="M 5.411 14.504 C 5.471 14.504 5.532 14.504 5.591 14.504 C 3.639 16.319 4.383 19.569 6.931 20.352 C 7.693 20.586 8.512 20.551 9.25 20.252 C 8.023 23.207 4.056 23.725 2.11 21.184 C 0.166 18.642 1.702 14.949 4.874 14.536 C 5.051 14.512 5.231 14.5 5.411 14.5 L 5.411 14.504 Z"/>
+      <line x1="14.5" y1="3.25" x2="14.5" y2="1.25"/>
+      <line x1="14.5" y1="15.85" x2="14.5" y2="17.85"/>
+      <line x1="10.044" y1="5.094" x2="8.63" y2="3.68"/>
+      <line x1="19" y1="14.05" x2="20.414" y2="15.464"/>
+      <line x1="8.2" y1="9.55" x2="6.2" y2="9.55"/>
+      <line x1="20.8" y1="9.55" x2="22.8" y2="9.55"/>
+      <line x1="10.044" y1="14.006" x2="8.63" y2="15.42"/>
+      <line x1="19" y1="5.05" x2="20.414" y2="3.636"/>
+      <circle cx="14.5" cy="9.55" r="3.6"/>
+    </svg>
+  </symbol>
+  <symbol id="svg-moon-with-sun" viewBox="0 0 24 24">
+    <title>Auto light/dark, in dark mode</title>
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+      stroke-width="1" stroke-linecap="round" stroke-linejoin="round"
+      class="icon-custom-derived-from-feather-sun-and-tabler-moon">
+      <path d="M 8.282 7.007 C 8.385 7.007 8.494 7.007 8.595 7.007 C 5.18 10.184 6.481 15.869 10.942 17.24 C 12.275 17.648 13.706 17.589 15 17.066 C 12.851 22.236 5.91 23.143 2.505 18.696 C -0.897 14.249 1.791 7.786 7.342 7.063 C 7.652 7.021 7.965 7 8.282 7 L 8.282 7.007 Z"/>
+      <line style="opacity: 50%" x1="18" y1="3.705" x2="18" y2="2.5"/>
+      <line style="opacity: 50%" x1="18" y1="11.295" x2="18" y2="12.5"/>
+      <line style="opacity: 50%" x1="15.316" y1="4.816" x2="14.464" y2="3.964"/>
+      <line style="opacity: 50%" x1="20.711" y1="10.212" x2="21.563" y2="11.063"/>
+      <line style="opacity: 50%" x1="14.205" y1="7.5" x2="13.001" y2="7.5"/>
+      <line style="opacity: 50%" x1="21.795" y1="7.5" x2="23" y2="7.5"/>
+      <line style="opacity: 50%" x1="15.316" y1="10.184" x2="14.464" y2="11.036"/>
+      <line style="opacity: 50%" x1="20.711" y1="4.789" x2="21.563" y2="3.937"/>
+      <circle style="opacity: 50%" cx="18" cy="7.5" r="2.169"/>
+    </svg>
+  </symbol>
+  <symbol id="svg-pencil" viewBox="0 0 24 24">
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+      stroke-width="1" stroke-linecap="round" stroke-linejoin="round" class="icon-tabler-pencil-code">
+      <path d="M4 20h4l10.5 -10.5a2.828 2.828 0 1 0 -4 -4l-10.5 10.5v4" />
+      <path d="M13.5 6.5l4 4" />
+      <path d="M20 21l2 -2l-2 -2" />
+      <path d="M17 17l-2 2l2 2" />
+    </svg>
+  </symbol>
+  <symbol id="svg-eye" viewBox="0 0 24 24">
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+      stroke-width="1" stroke-linecap="round" stroke-linejoin="round" class="icon-tabler-eye-code">
+      <path stroke="none" d="M0 0h24v24H0z" fill="none" />
+      <path d="M10 12a2 2 0 1 0 4 0a2 2 0 0 0 -4 0" />
+      <path
+        d="M11.11 17.958c-3.209 -.307 -5.91 -2.293 -8.11 -5.958c2.4 -4 5.4 -6 9 -6c3.6 0 6.6 2 9 6c-.21 .352 -.427 .688 -.647 1.008" />
+      <path d="M20 21l2 -2l-2 -2" />
+      <path d="M17 17l-2 2l2 2" />
     </svg>
   </symbol>
 </svg>
 
-<input type="checkbox" class="sidebar-toggle" name="__navigation" id="__navigation">
-<input type="checkbox" class="sidebar-toggle" name="__toc" id="__toc">
-<label class="overlay sidebar-overlay" for="__navigation">
-  <div class="visually-hidden">Hide navigation sidebar</div>
-</label>
-<label class="overlay toc-overlay" for="__toc">
-  <div class="visually-hidden">Hide table of contents sidebar</div>
-</label>
+<input type="checkbox" class="sidebar-toggle" name="__navigation" id="__navigation" aria-label="Toggle site navigation sidebar">
+<input type="checkbox" class="sidebar-toggle" name="__toc" id="__toc" aria-label="Toggle table of contents sidebar">
+<label class="overlay sidebar-overlay" for="__navigation"></label>
+<label class="overlay toc-overlay" for="__toc"></label>
+
+<a class="skip-to-content muted-link" href="#furo-main-content">Skip to content</a>
 
 
 
@@ -126,8 +165,7 @@
   <header class="mobile-header">
     <div class="header-left">
       <label class="nav-overlay-icon" for="__navigation">
-        <div class="visually-hidden">Toggle site navigation sidebar</div>
-        <i class="icon"><svg><use href="#svg-menu"></use></svg></i>
+        <span class="icon"><svg><use href="#svg-menu"></use></svg></span>
       </label>
     </div>
     <div class="header-center">
@@ -135,16 +173,15 @@
     </div>
     <div class="header-right">
       <div class="theme-toggle-container theme-toggle-header">
-        <button class="theme-toggle">
-          <div class="visually-hidden">Toggle Light / Dark / Auto color theme</div>
-          <svg class="theme-icon-when-auto"><use href="#svg-sun-half"></use></svg>
+        <button class="theme-toggle" aria-label="Toggle Light / Dark / Auto color theme">
+          <svg class="theme-icon-when-auto-light"><use href="#svg-sun-with-moon"></use></svg>
+          <svg class="theme-icon-when-auto-dark"><use href="#svg-moon-with-sun"></use></svg>
           <svg class="theme-icon-when-dark"><use href="#svg-moon"></use></svg>
           <svg class="theme-icon-when-light"><use href="#svg-sun"></use></svg>
         </button>
       </div>
       <label class="toc-overlay-icon toc-header-icon no-toc" for="__toc">
-        <div class="visually-hidden">Toggle table of contents sidebar</div>
-        <i class="icon"><svg><use href="#svg-toc"></use></svg></i>
+        <span class="icon"><svg><use href="#svg-toc"></use></svg></span>
       </label>
     </div>
   </header>
@@ -153,18 +190,17 @@
       
       <div class="sidebar-sticky"><a class="sidebar-brand" href="../../../index.html">
   
-  
   <span class="sidebar-brand-text">Renormalizer 0.1.0 documentation</span>
   
 </a><form class="sidebar-search-container" method="get" action="../../../search.html" role="search">
-  <input class="sidebar-search" placeholder=Search name="q" aria-label="Search">
+  <input class="sidebar-search" placeholder="Search" name="q" aria-label="Search">
   <input type="hidden" name="check_keywords" value="yes">
   <input type="hidden" name="area" value="default">
 </form>
 <div id="searchbox"></div><div class="sidebar-scroll"><div class="sidebar-tree">
   <ul>
 <li class="toctree-l1"><a class="reference internal" href="../../../install.html">Installation guide</a></li>
-<li class="toctree-l1 has-children"><a class="reference internal" href="../../../tutorial.html">Basic Tutorials</a><input class="toctree-checkbox" id="toctree-checkbox-1" name="toctree-checkbox-1" role="switch" type="checkbox"/><label for="toctree-checkbox-1"><div class="visually-hidden">Toggle child pages in navigation</div><i class="icon"><svg><use href="#svg-arrow-right"></use></svg></i></label><ul>
+<li class="toctree-l1 has-children"><a class="reference internal" href="../../../tutorial.html">Basic Tutorials</a><input aria-label="Toggle navigation of Basic Tutorials" class="toctree-checkbox" id="toctree-checkbox-1" name="toctree-checkbox-1" role="switch" type="checkbox"/><label for="toctree-checkbox-1"><span class="icon"><svg><use href="#svg-arrow-right"></use></svg></span></label><ul>
 <li class="toctree-l2"><a class="reference internal" href="../../../tutorials/define_model.html">Define Your Model</a></li>
 <li class="toctree-l2"><a class="reference internal" href="../../../tutorials/mps_mpo.html">MPS and MPO</a></li>
 <li class="toctree-l2"><a class="reference internal" href="../../../tutorials/nuclear_basis.html">Nuclear Basis Set</a></li>
@@ -174,11 +210,11 @@
 <li class="toctree-l2"><a class="reference internal" href="../../../tutorials/ttn_basic.html">Basics of Tree Tensor Networks</a></li>
 </ul>
 </li>
-<li class="toctree-l1 has-children"><a class="reference internal" href="../../../applications.html">Application Tutorials</a><input class="toctree-checkbox" id="toctree-checkbox-2" name="toctree-checkbox-2" role="switch" type="checkbox"/><label for="toctree-checkbox-2"><div class="visually-hidden">Toggle child pages in navigation</div><i class="icon"><svg><use href="#svg-arrow-right"></use></svg></i></label><ul>
+<li class="toctree-l1 has-children"><a class="reference internal" href="../../../applications.html">Application Tutorials</a><input aria-label="Toggle navigation of Application Tutorials" class="toctree-checkbox" id="toctree-checkbox-2" name="toctree-checkbox-2" role="switch" type="checkbox"/><label for="toctree-checkbox-2"><span class="icon"><svg><use href="#svg-arrow-right"></use></svg></span></label><ul>
 <li class="toctree-l2"><a class="reference internal" href="../../../tutorials/1D-Heisenberg.html">Ground state of the Heisenberg model</a></li>
 </ul>
 </li>
-<li class="toctree-l1 has-children"><a class="reference internal" href="../../../api.html">API Reference</a><input class="toctree-checkbox" id="toctree-checkbox-3" name="toctree-checkbox-3" role="switch" type="checkbox"/><label for="toctree-checkbox-3"><div class="visually-hidden">Toggle child pages in navigation</div><i class="icon"><svg><use href="#svg-arrow-right"></use></svg></i></label><ul>
+<li class="toctree-l1 has-children"><a class="reference internal" href="../../../api.html">API Reference</a><input aria-label="Toggle navigation of API Reference" class="toctree-checkbox" id="toctree-checkbox-3" name="toctree-checkbox-3" role="switch" type="checkbox"/><label for="toctree-checkbox-3"><span class="icon"><svg><use href="#svg-arrow-right"></use></svg></span></label><ul>
 <li class="toctree-l2"><a class="reference internal" href="../../../model.html">Model</a></li>
 <li class="toctree-l2"><a class="reference internal" href="../../../mps.html">Low Level Data Structure and Algorithms</a></li>
 <li class="toctree-l2"><a class="reference internal" href="../../../static.html">Static Eigenstate Method</a></li>
@@ -213,19 +249,18 @@
         </a>
         <div class="content-icon-container">
           <div class="theme-toggle-container theme-toggle-content">
-            <button class="theme-toggle">
-              <div class="visually-hidden">Toggle Light / Dark / Auto color theme</div>
-              <svg class="theme-icon-when-auto"><use href="#svg-sun-half"></use></svg>
+            <button class="theme-toggle" aria-label="Toggle Light / Dark / Auto color theme">
+              <svg class="theme-icon-when-auto-light"><use href="#svg-sun-with-moon"></use></svg>
+              <svg class="theme-icon-when-auto-dark"><use href="#svg-moon-with-sun"></use></svg>
               <svg class="theme-icon-when-dark"><use href="#svg-moon"></use></svg>
               <svg class="theme-icon-when-light"><use href="#svg-sun"></use></svg>
             </button>
           </div>
           <label class="toc-overlay-icon toc-content-icon no-toc" for="__toc">
-            <div class="visually-hidden">Toggle table of contents sidebar</div>
-            <i class="icon"><svg><use href="#svg-toc"></use></svg></i>
+            <span class="icon"><svg><use href="#svg-toc"></use></svg></span>
           </label>
         </div>
-        <article role="main">
+        <article role="main" id="furo-main-content">
           <h1>Source code for renormalizer.transport.kubo</h1><div class="highlight"><pre>
 <span></span><span class="c1"># -*- coding: utf-8 -*-</span>
 
@@ -244,8 +279,10 @@
 <span class="n">logger</span> <span class="o">=</span> <span class="n">logging</span><span class="o">.</span><span class="n">getLogger</span><span class="p">(</span><span class="vm">__name__</span><span class="p">)</span>
 
 
-<div class="viewcode-block" id="TransportKubo"><a class="viewcode-back" href="../../../ct.html#renormalizer.transport.kubo.TransportKubo">[docs]</a><span class="k">class</span><span class="w"> </span><span class="nc">TransportKubo</span><span class="p">(</span><span class="n">TdMpsJob</span><span class="p">):</span>
-<span class="w">    </span><span class="sa">r</span><span class="sd">&quot;&quot;&quot;</span>
+<div class="viewcode-block" id="TransportKubo">
+<a class="viewcode-back" href="../../../ct.html#renormalizer.transport.kubo.TransportKubo">[docs]</a>
+<span class="k">class</span><span class="w"> </span><span class="nc">TransportKubo</span><span class="p">(</span><span class="n">TdMpsJob</span><span class="p">):</span>
+<span class="w">    </span><span class="sa">r</span><span class="sd">"""</span>
 <span class="sd">    Calculate mobility via Green-Kubo formula:</span>
 
 <span class="sd">        .. math::</span>
@@ -317,11 +354,11 @@
 <span class="sd">        dump_dir (str): the directory for logging and numerical result output.</span>
 <span class="sd">        job_name (str): the name of the calculation job which determines the file name of the logging and numerical result output.</span>
 <span class="sd">        thermal_dump_path (str): the path to load previously thermal propagated initial state if it exists or the path</span>
-<span class="sd">            to dump the thermal state if it does not exist. The default value is determined by appending ``&quot;_impdm.npz&quot;``</span>
+<span class="sd">            to dump the thermal state if it does not exist. The default value is determined by appending ``"_impdm.npz"``</span>
 <span class="sd">            to the path joined by ``dump_dir`` and ``job_name``.</span>
 <span class="sd">        properties (:class:`~renormalizer.property.property.Property`): other properties to calculate during real time evolution.</span>
 <span class="sd">            Currently only supports Holstein model.</span>
-<span class="sd">    &quot;&quot;&quot;</span>
+<span class="sd">    """</span>
     <span class="k">def</span><span class="w"> </span><span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">model</span><span class="p">:</span> <span class="n">Model</span><span class="p">,</span> <span class="n">temperature</span><span class="p">:</span> <span class="n">Quantity</span><span class="p">,</span> <span class="n">distance_matrix</span><span class="p">:</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
                  <span class="n">insteps</span><span class="p">:</span> <span class="nb">int</span><span class="o">=</span><span class="mi">1</span><span class="p">,</span> <span class="n">ievolve_config</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">compress_config</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
                  <span class="n">evolve_config</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">dump_dir</span><span class="p">:</span> <span class="nb">str</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">job_name</span><span class="p">:</span> <span class="nb">str</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
@@ -329,10 +366,10 @@
         <span class="bp">self</span><span class="o">.</span><span class="n">model</span> <span class="o">=</span> <span class="n">model</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">distance_matrix</span> <span class="o">=</span> <span class="n">distance_matrix</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">h_mpo</span> <span class="o">=</span> <span class="n">Mpo</span><span class="p">(</span><span class="n">model</span><span class="p">)</span>
-        <span class="n">logger</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Bond dim of h_mpo: </span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">h_mpo</span><span class="o">.</span><span class="n">bond_dims</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+        <span class="n">logger</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="sa">f</span><span class="s2">"Bond dim of h_mpo: </span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">h_mpo</span><span class="o">.</span><span class="n">bond_dims</span><span class="si">}</span><span class="s2">"</span><span class="p">)</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">_construct_current_operator</span><span class="p">()</span>
         <span class="k">if</span> <span class="n">temperature</span> <span class="o">==</span> <span class="mi">0</span><span class="p">:</span>
-            <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s2">&quot;Can&#39;t set temperature to 0.&quot;</span><span class="p">)</span>
+            <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s2">"Can't set temperature to 0."</span><span class="p">)</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">temperature</span> <span class="o">=</span> <span class="n">temperature</span>
 
         <span class="c1"># imaginary time evolution config</span>
@@ -348,7 +385,7 @@
         <span class="bp">self</span><span class="o">.</span><span class="n">insteps</span> <span class="o">=</span> <span class="n">insteps</span>
 
         <span class="k">if</span> <span class="n">compress_config</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
-            <span class="n">logger</span><span class="o">.</span><span class="n">debug</span><span class="p">(</span><span class="s2">&quot;using default compress config&quot;</span><span class="p">)</span>
+            <span class="n">logger</span><span class="o">.</span><span class="n">debug</span><span class="p">(</span><span class="s2">"using default compress config"</span><span class="p">)</span>
             <span class="bp">self</span><span class="o">.</span><span class="n">compress_config</span> <span class="o">=</span> <span class="n">CompressConfig</span><span class="p">()</span>
         <span class="k">else</span><span class="p">:</span>
             <span class="bp">self</span><span class="o">.</span><span class="n">compress_config</span> <span class="o">=</span> <span class="n">compress_config</span>
@@ -356,7 +393,7 @@
         <span class="k">if</span> <span class="n">thermal_dump_path</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
             <span class="bp">self</span><span class="o">.</span><span class="n">thermal_dump_path</span> <span class="o">=</span> <span class="n">thermal_dump_path</span>
         <span class="k">elif</span> <span class="n">dump_dir</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span> <span class="ow">and</span> <span class="n">job_name</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
-            <span class="bp">self</span><span class="o">.</span><span class="n">thermal_dump_path</span> <span class="o">=</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">dump_dir</span><span class="p">,</span> <span class="n">job_name</span> <span class="o">+</span> <span class="s1">&#39;_impdm.npz&#39;</span><span class="p">)</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">thermal_dump_path</span> <span class="o">=</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">dump_dir</span><span class="p">,</span> <span class="n">job_name</span> <span class="o">+</span> <span class="s1">'_impdm.npz'</span><span class="p">)</span>
         <span class="k">else</span><span class="p">:</span>
             <span class="bp">self</span><span class="o">.</span><span class="n">thermal_dump_path</span> <span class="o">=</span> <span class="kc">None</span>
 
@@ -368,13 +405,13 @@
 
     <span class="k">def</span><span class="w"> </span><span class="nf">_construct_current_operator</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
         <span class="c1"># Construct current operator. The operator is taken to be real as an optimization.</span>
-        <span class="n">logger</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="s2">&quot;constructing current operator &quot;</span><span class="p">)</span>
+        <span class="n">logger</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="s2">"constructing current operator "</span><span class="p">)</span>
 
         <span class="n">mol_num</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">model</span><span class="o">.</span><span class="n">n_edofs</span>
         <span class="n">ham_terms</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">model</span><span class="o">.</span><span class="n">ham_terms</span>
 
         <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">distance_matrix</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
-            <span class="n">logger</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="s2">&quot;Constructing distance matrix based on a periodic one-dimension chain.&quot;</span><span class="p">)</span>
+            <span class="n">logger</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="s2">"Constructing distance matrix based on a periodic one-dimension chain."</span><span class="p">)</span>
             <span class="bp">self</span><span class="o">.</span><span class="n">distance_matrix</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">arange</span><span class="p">(</span><span class="n">mol_num</span><span class="p">)</span><span class="o">.</span><span class="n">reshape</span><span class="p">(</span><span class="o">-</span><span class="mi">1</span><span class="p">,</span> <span class="mi">1</span><span class="p">)</span> <span class="o">-</span> <span class="n">np</span><span class="o">.</span><span class="n">arange</span><span class="p">(</span><span class="n">mol_num</span><span class="p">)</span><span class="o">.</span><span class="n">reshape</span><span class="p">(</span><span class="mi">1</span><span class="p">,</span> <span class="o">-</span><span class="mi">1</span><span class="p">)</span>
             <span class="bp">self</span><span class="o">.</span><span class="n">distance_matrix</span><span class="p">[</span><span class="mi">0</span><span class="p">][</span><span class="o">-</span><span class="mi">1</span><span class="p">]</span> <span class="o">=</span> <span class="mi">1</span>
             <span class="bp">self</span><span class="o">.</span><span class="n">distance_matrix</span><span class="p">[</span><span class="o">-</span><span class="mi">1</span><span class="p">][</span><span class="mi">0</span><span class="p">]</span> <span class="o">=</span> <span class="o">-</span><span class="mi">1</span>
@@ -399,7 +436,7 @@
                         <span class="n">dof_op_idx2</span> <span class="o">=</span> <span class="n">dof_idx</span>
                         <span class="n">e_idx2</span> <span class="o">=</span> <span class="n">e_idx</span>
                     <span class="k">else</span><span class="p">:</span>
-                        <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;The model contains three-electron (or more complex) operator </span><span class="si">{</span><span class="n">ham_op</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+                        <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="sa">f</span><span class="s2">"The model contains three-electron (or more complex) operator </span><span class="si">{</span><span class="n">ham_op</span><span class="si">}</span><span class="s2">"</span><span class="p">)</span>
                 <span class="k">del</span> <span class="n">dof_idx</span><span class="p">,</span> <span class="n">dof_name</span>
             <span class="c1"># two electron operators not found. Not relevant to the current operator</span>
             <span class="k">if</span> <span class="n">dof_op_idx1</span> <span class="ow">is</span> <span class="kc">None</span> <span class="ow">or</span> <span class="n">dof_op_idx2</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
@@ -411,19 +448,19 @@
             <span class="c1"># perform a bunch of sanity check</span>
             <span class="c1"># at most 3 dofs are involved. More complex cases are probably supported but not tested</span>
             <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">ham_op</span><span class="o">.</span><span class="n">dofs</span><span class="p">)</span> <span class="ow">not</span> <span class="ow">in</span> <span class="p">(</span><span class="mi">2</span><span class="p">,</span> <span class="mi">3</span><span class="p">):</span>
-                <span class="k">raise</span> <span class="ne">NotImplementedError</span><span class="p">(</span><span class="s2">&quot;Complex vibration potential not implemented&quot;</span><span class="p">)</span>
+                <span class="k">raise</span> <span class="ne">NotImplementedError</span><span class="p">(</span><span class="s2">"Complex vibration potential not implemented"</span><span class="p">)</span>
 
             <span class="c1"># check linear coupling. More complex cases are probably supported but not tested.</span>
             <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">ham_op</span><span class="o">.</span><span class="n">dofs</span><span class="p">)</span> <span class="o">==</span> <span class="mi">3</span><span class="p">:</span>
                 <span class="c1"># total term idx should be 0 + 1 + 2 = 3</span>
                 <span class="n">phonon_dof_idx</span> <span class="o">=</span> <span class="mi">3</span> <span class="o">-</span> <span class="n">dof_op_idx1</span> <span class="o">-</span> <span class="n">dof_op_idx2</span>
-                <span class="k">assert</span> <span class="n">ham_op</span><span class="o">.</span><span class="n">split_symbol</span><span class="p">[</span><span class="n">phonon_dof_idx</span><span class="p">]</span> <span class="ow">in</span> <span class="p">(</span><span class="sa">r</span><span class="s2">&quot;b^\dagger+b&quot;</span><span class="p">,</span> <span class="s2">&quot;x&quot;</span><span class="p">)</span>
+                <span class="k">assert</span> <span class="n">ham_op</span><span class="o">.</span><span class="n">split_symbol</span><span class="p">[</span><span class="n">phonon_dof_idx</span><span class="p">]</span> <span class="ow">in</span> <span class="p">(</span><span class="sa">r</span><span class="s2">"b^\dagger+b"</span><span class="p">,</span> <span class="s2">"x"</span><span class="p">)</span>
             <span class="n">symbol1</span><span class="p">,</span> <span class="n">symbol2</span> <span class="o">=</span> <span class="n">ham_op</span><span class="o">.</span><span class="n">split_symbol</span><span class="p">[</span><span class="n">dof_op_idx1</span><span class="p">],</span> <span class="n">ham_op</span><span class="o">.</span><span class="n">split_symbol</span><span class="p">[</span><span class="n">dof_op_idx2</span><span class="p">]</span>
-            <span class="k">if</span> <span class="ow">not</span> <span class="p">{</span><span class="n">symbol1</span><span class="p">,</span> <span class="n">symbol2</span><span class="p">}</span> <span class="o">==</span> <span class="p">{</span><span class="sa">r</span><span class="s2">&quot;a^\dagger&quot;</span><span class="p">,</span> <span class="s2">&quot;a&quot;</span><span class="p">}:</span>
-                <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Unknown symbol: </span><span class="si">{</span><span class="n">symbol1</span><span class="si">}</span><span class="s2">, </span><span class="si">{</span><span class="n">symbol2</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+            <span class="k">if</span> <span class="ow">not</span> <span class="p">{</span><span class="n">symbol1</span><span class="p">,</span> <span class="n">symbol2</span><span class="p">}</span> <span class="o">==</span> <span class="p">{</span><span class="sa">r</span><span class="s2">"a^\dagger"</span><span class="p">,</span> <span class="s2">"a"</span><span class="p">}:</span>
+                <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="sa">f</span><span class="s2">"Unknown symbol: </span><span class="si">{</span><span class="n">symbol1</span><span class="si">}</span><span class="s2">, </span><span class="si">{</span><span class="n">symbol2</span><span class="si">}</span><span class="s2">"</span><span class="p">)</span>
 
             <span class="c1"># translate the term in the Hamiltonian into the term in the current operator</span>
-            <span class="k">if</span> <span class="n">symbol1</span> <span class="o">==</span> <span class="sa">r</span><span class="s2">&quot;a^\dagger&quot;</span><span class="p">:</span>
+            <span class="k">if</span> <span class="n">symbol1</span> <span class="o">==</span> <span class="sa">r</span><span class="s2">"a^\dagger"</span><span class="p">:</span>
                 <span class="n">factor</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">distance_matrix</span><span class="p">[</span><span class="n">e_idx1</span><span class="p">][</span><span class="n">e_idx2</span><span class="p">]</span>
             <span class="k">else</span><span class="p">:</span>
                 <span class="n">factor</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">distance_matrix</span><span class="p">[</span><span class="n">e_idx2</span><span class="p">][</span><span class="n">e_idx1</span><span class="p">]</span>
@@ -437,14 +474,16 @@
                 <span class="n">peierls_current_terms</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">current_op</span><span class="p">)</span>
 
         <span class="bp">self</span><span class="o">.</span><span class="n">j_oper</span> <span class="o">=</span> <span class="n">Mpo</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">model</span><span class="p">,</span> <span class="n">holstein_current_terms</span><span class="p">)</span>
-        <span class="n">logger</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;current operator bond dim: </span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">j_oper</span><span class="o">.</span><span class="n">bond_dims</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+        <span class="n">logger</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="sa">f</span><span class="s2">"current operator bond dim: </span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">j_oper</span><span class="o">.</span><span class="n">bond_dims</span><span class="si">}</span><span class="s2">"</span><span class="p">)</span>
         <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">peierls_current_terms</span><span class="p">)</span> <span class="o">!=</span> <span class="mi">0</span><span class="p">:</span>
             <span class="bp">self</span><span class="o">.</span><span class="n">j_oper2</span>  <span class="o">=</span> <span class="n">Mpo</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">model</span><span class="p">,</span> <span class="n">peierls_current_terms</span><span class="p">)</span>
-            <span class="n">logger</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Peierls coupling induced current operator bond dim: </span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">j_oper2</span><span class="o">.</span><span class="n">bond_dims</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+            <span class="n">logger</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="sa">f</span><span class="s2">"Peierls coupling induced current operator bond dim: </span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">j_oper2</span><span class="o">.</span><span class="n">bond_dims</span><span class="si">}</span><span class="s2">"</span><span class="p">)</span>
         <span class="k">else</span><span class="p">:</span>
             <span class="bp">self</span><span class="o">.</span><span class="n">j_oper2</span> <span class="o">=</span> <span class="kc">None</span>
 
-<div class="viewcode-block" id="TransportKubo.init_mps"><a class="viewcode-back" href="../../../ct.html#renormalizer.transport.kubo.TransportKubo.init_mps">[docs]</a>    <span class="k">def</span><span class="w"> </span><span class="nf">init_mps</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+<div class="viewcode-block" id="TransportKubo.init_mps">
+<a class="viewcode-back" href="../../../ct.html#renormalizer.transport.kubo.TransportKubo.init_mps">[docs]</a>
+    <span class="k">def</span><span class="w"> </span><span class="nf">init_mps</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
         <span class="c1"># first try to load</span>
         <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">thermal_dump_path</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
             <span class="n">mpdm</span> <span class="o">=</span> <span class="n">load_thermal_state</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">model</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">thermal_dump_path</span><span class="p">)</span>
@@ -457,7 +496,7 @@
             <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">job_name</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
                 <span class="n">job_name</span> <span class="o">=</span> <span class="kc">None</span>
             <span class="k">else</span><span class="p">:</span>
-                <span class="n">job_name</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">job_name</span> <span class="o">+</span> <span class="s2">&quot;_thermal_prop&quot;</span>
+                <span class="n">job_name</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">job_name</span> <span class="o">+</span> <span class="s2">"_thermal_prop"</span>
             <span class="n">tp</span> <span class="o">=</span> <span class="n">ThermalProp</span><span class="p">(</span><span class="n">i_mpdm</span><span class="p">,</span> <span class="n">evolve_config</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">ievolve_config</span><span class="p">,</span> <span class="n">dump_dir</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">dump_dir</span><span class="p">,</span> <span class="n">job_name</span><span class="o">=</span><span class="n">job_name</span><span class="p">)</span>
             <span class="c1"># only propagate half beta</span>
             <span class="n">tp</span><span class="o">.</span><span class="n">evolve</span><span class="p">(</span><span class="kc">None</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">insteps</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">temperature</span><span class="o">.</span><span class="n">to_beta</span><span class="p">()</span> <span class="o">/</span> <span class="mi">2</span><span class="n">j</span><span class="p">)</span>
@@ -468,17 +507,20 @@
         <span class="n">e</span> <span class="o">=</span> <span class="n">mpdm</span><span class="o">.</span><span class="n">expectation</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">h_mpo</span><span class="p">)</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">h_mpo</span> <span class="o">=</span> <span class="n">Mpo</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">model</span><span class="p">,</span> <span class="n">offset</span><span class="o">=</span><span class="n">Quantity</span><span class="p">(</span><span class="n">e</span><span class="p">))</span>
         <span class="n">mpdm</span><span class="o">.</span><span class="n">evolve_config</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">evolve_config</span>
-        <span class="n">logger</span><span class="o">.</span><span class="n">debug</span><span class="p">(</span><span class="s2">&quot;Applying current operator&quot;</span><span class="p">)</span>
-        <span class="n">ket_mpdm</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">j_oper</span><span class="o">.</span><span class="n">contract</span><span class="p">(</span><span class="n">mpdm</span><span class="p">)</span><span class="o">.</span><span class="n">normalize</span><span class="p">(</span><span class="s2">&quot;mps_norm_to_coeff&quot;</span><span class="p">)</span>
+        <span class="n">logger</span><span class="o">.</span><span class="n">debug</span><span class="p">(</span><span class="s2">"Applying current operator"</span><span class="p">)</span>
+        <span class="n">ket_mpdm</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">j_oper</span><span class="o">.</span><span class="n">contract</span><span class="p">(</span><span class="n">mpdm</span><span class="p">)</span><span class="o">.</span><span class="n">normalize</span><span class="p">(</span><span class="s2">"mps_norm_to_coeff"</span><span class="p">)</span>
         <span class="n">bra_mpdm</span> <span class="o">=</span> <span class="n">mpdm</span><span class="o">.</span><span class="n">copy</span><span class="p">()</span>
         <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">j_oper2</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
             <span class="k">return</span> <span class="n">BraKetPair</span><span class="p">(</span><span class="n">bra_mpdm</span><span class="p">,</span> <span class="n">ket_mpdm</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">j_oper</span><span class="p">)</span>
         <span class="k">else</span><span class="p">:</span>
-            <span class="n">logger</span><span class="o">.</span><span class="n">debug</span><span class="p">(</span><span class="s2">&quot;Applying the second current operator&quot;</span><span class="p">)</span>
-            <span class="n">ket_mpdm2</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">j_oper2</span><span class="o">.</span><span class="n">contract</span><span class="p">(</span><span class="n">mpdm</span><span class="p">)</span><span class="o">.</span><span class="n">normalize</span><span class="p">(</span><span class="s2">&quot;mps_norm_to_coeff&quot;</span><span class="p">)</span>
+            <span class="n">logger</span><span class="o">.</span><span class="n">debug</span><span class="p">(</span><span class="s2">"Applying the second current operator"</span><span class="p">)</span>
+            <span class="n">ket_mpdm2</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">j_oper2</span><span class="o">.</span><span class="n">contract</span><span class="p">(</span><span class="n">mpdm</span><span class="p">)</span><span class="o">.</span><span class="n">normalize</span><span class="p">(</span><span class="s2">"mps_norm_to_coeff"</span><span class="p">)</span>
             <span class="k">return</span> <span class="n">BraKetPair</span><span class="p">(</span><span class="n">bra_mpdm</span><span class="p">,</span> <span class="n">ket_mpdm</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">j_oper</span><span class="p">),</span> <span class="n">BraKetPair</span><span class="p">(</span><span class="n">bra_mpdm</span><span class="p">,</span> <span class="n">ket_mpdm2</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">j_oper2</span><span class="p">)</span></div>
 
-<div class="viewcode-block" id="TransportKubo.process_mps"><a class="viewcode-back" href="../../../ct.html#renormalizer.transport.kubo.TransportKubo.process_mps">[docs]</a>    <span class="k">def</span><span class="w"> </span><span class="nf">process_mps</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">mps</span><span class="p">):</span>
+
+<div class="viewcode-block" id="TransportKubo.process_mps">
+<a class="viewcode-back" href="../../../ct.html#renormalizer.transport.kubo.TransportKubo.process_mps">[docs]</a>
+    <span class="k">def</span><span class="w"> </span><span class="nf">process_mps</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">mps</span><span class="p">):</span>
         <span class="c1"># add the negative sign because `self.j_oper` is taken to be real</span>
         <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">j_oper2</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
             <span class="bp">self</span><span class="o">.</span><span class="n">_auto_corr</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="o">-</span><span class="n">mps</span><span class="o">.</span><span class="n">ft</span><span class="p">)</span>
@@ -498,7 +540,10 @@
             <span class="bp">self</span><span class="o">.</span><span class="n">_auto_corr</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">ft1</span> <span class="o">+</span> <span class="n">ft2</span> <span class="o">+</span> <span class="n">ft3</span> <span class="o">+</span> <span class="n">ft4</span><span class="p">)</span>
             <span class="bp">self</span><span class="o">.</span><span class="n">_auto_corr_deomposition</span><span class="o">.</span><span class="n">append</span><span class="p">([</span><span class="n">ft1</span><span class="p">,</span> <span class="n">ft2</span><span class="p">,</span> <span class="n">ft3</span><span class="p">,</span> <span class="n">ft4</span><span class="p">])</span></div>
 
-<div class="viewcode-block" id="TransportKubo.evolve_single_step"><a class="viewcode-back" href="../../../ct.html#renormalizer.transport.kubo.TransportKubo.evolve_single_step">[docs]</a>    <span class="k">def</span><span class="w"> </span><span class="nf">evolve_single_step</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">evolve_dt</span><span class="p">):</span>
+
+<div class="viewcode-block" id="TransportKubo.evolve_single_step">
+<a class="viewcode-back" href="../../../ct.html#renormalizer.transport.kubo.TransportKubo.evolve_single_step">[docs]</a>
+    <span class="k">def</span><span class="w"> </span><span class="nf">evolve_single_step</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">evolve_dt</span><span class="p">):</span>
         <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">j_oper2</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
             <span class="n">prev_bra_mpdm</span><span class="p">,</span> <span class="n">prev_ket_mpdm</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">latest_mps</span>
             <span class="n">prev_ket_mpdm2</span> <span class="o">=</span> <span class="kc">None</span>
@@ -514,7 +559,10 @@
             <span class="k">return</span> <span class="n">BraKetPair</span><span class="p">(</span><span class="n">latest_bra_mpdm</span><span class="p">,</span> <span class="n">latest_ket_mpdm</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">j_oper</span><span class="p">),</span> \
                    <span class="n">BraKetPair</span><span class="p">(</span><span class="n">latest_bra_mpdm</span><span class="p">,</span> <span class="n">latest_ket_mpdm2</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">j_oper2</span><span class="p">)</span></div>
 
-<div class="viewcode-block" id="TransportKubo.stop_evolve_criteria"><a class="viewcode-back" href="../../../ct.html#renormalizer.transport.kubo.TransportKubo.stop_evolve_criteria">[docs]</a>    <span class="k">def</span><span class="w"> </span><span class="nf">stop_evolve_criteria</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+
+<div class="viewcode-block" id="TransportKubo.stop_evolve_criteria">
+<a class="viewcode-back" href="../../../ct.html#renormalizer.transport.kubo.TransportKubo.stop_evolve_criteria">[docs]</a>
+    <span class="k">def</span><span class="w"> </span><span class="nf">stop_evolve_criteria</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
         <span class="n">corr</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">auto_corr</span>
         <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">corr</span><span class="p">)</span> <span class="o">&lt;</span> <span class="mi">10</span><span class="p">:</span>
             <span class="k">return</span> <span class="kc">False</span>
@@ -522,18 +570,19 @@
         <span class="n">first_corr</span> <span class="o">=</span> <span class="n">corr</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span>
         <span class="k">return</span> <span class="n">np</span><span class="o">.</span><span class="n">abs</span><span class="p">(</span><span class="n">last_corr</span><span class="o">.</span><span class="n">mean</span><span class="p">())</span> <span class="o">&lt;</span> <span class="mf">1e-5</span> <span class="o">*</span> <span class="n">np</span><span class="o">.</span><span class="n">abs</span><span class="p">(</span><span class="n">first_corr</span><span class="p">)</span> <span class="ow">and</span> <span class="n">last_corr</span><span class="o">.</span><span class="n">std</span><span class="p">()</span> <span class="o">&lt;</span> <span class="mf">1e-5</span> <span class="o">*</span> <span class="n">np</span><span class="o">.</span><span class="n">abs</span><span class="p">(</span><span class="n">first_corr</span><span class="p">)</span></div>
 
+
     <span class="nd">@property</span>
     <span class="k">def</span><span class="w"> </span><span class="nf">auto_corr</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">:</span>
-<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="w">        </span><span class="sd">"""</span>
 <span class="sd">        Correlation function :math:`C(t)`.</span>
 
 <span class="sd">        :returns: 1-d numpy array containing the correlation function evaluated at each time step.</span>
-<span class="sd">        &quot;&quot;&quot;</span>
+<span class="sd">        """</span>
         <span class="k">return</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_auto_corr</span><span class="p">)</span>
 
     <span class="nd">@property</span>
     <span class="k">def</span><span class="w"> </span><span class="nf">auto_corr_decomposition</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">:</span>
-<span class="w">        </span><span class="sa">r</span><span class="sd">&quot;&quot;&quot;</span>
+<span class="w">        </span><span class="sa">r</span><span class="sd">"""</span>
 <span class="sd">        Correlation function :math:`C(t)` decomposed into contributions from different parts</span>
 <span class="sd">        of the current operator. Generally, the current operator can be split into two parts:</span>
 <span class="sd">        current without phonon assistance and current with phonon assistance.</span>
@@ -568,30 +617,39 @@
 
 <span class="sd">        :return: :math:`n \times 4` array for the decomposed correlation function defined as above</span>
 <span class="sd">            where :math:`n` is the number of time steps.</span>
-<span class="sd">        &quot;&quot;&quot;</span>
+<span class="sd">        """</span>
         <span class="k">return</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_auto_corr_deomposition</span><span class="p">)</span>
 
-<div class="viewcode-block" id="TransportKubo.get_dump_dict"><a class="viewcode-back" href="../../../ct.html#renormalizer.transport.kubo.TransportKubo.get_dump_dict">[docs]</a>    <span class="k">def</span><span class="w"> </span><span class="nf">get_dump_dict</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+<div class="viewcode-block" id="TransportKubo.get_dump_dict">
+<a class="viewcode-back" href="../../../ct.html#renormalizer.transport.kubo.TransportKubo.get_dump_dict">[docs]</a>
+    <span class="k">def</span><span class="w"> </span><span class="nf">get_dump_dict</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
         <span class="n">dump_dict</span> <span class="o">=</span> <span class="nb">dict</span><span class="p">()</span>
-        <span class="n">dump_dict</span><span class="p">[</span><span class="s2">&quot;mol list&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">model</span><span class="o">.</span><span class="n">to_dict</span><span class="p">()</span>
-        <span class="n">dump_dict</span><span class="p">[</span><span class="s2">&quot;temperature&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">temperature</span><span class="o">.</span><span class="n">as_au</span><span class="p">()</span>
-        <span class="n">dump_dict</span><span class="p">[</span><span class="s2">&quot;time series&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">evolve_times</span>
-        <span class="n">dump_dict</span><span class="p">[</span><span class="s2">&quot;auto correlation&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">auto_corr</span>
-        <span class="n">dump_dict</span><span class="p">[</span><span class="s2">&quot;auto correlation decomposition&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">auto_corr_decomposition</span>
-        <span class="n">dump_dict</span><span class="p">[</span><span class="s2">&quot;mobility&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">calc_mobility</span><span class="p">()[</span><span class="mi">1</span><span class="p">]</span>
+        <span class="n">dump_dict</span><span class="p">[</span><span class="s2">"mol list"</span><span class="p">]</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">model</span><span class="o">.</span><span class="n">to_dict</span><span class="p">()</span>
+        <span class="n">dump_dict</span><span class="p">[</span><span class="s2">"temperature"</span><span class="p">]</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">temperature</span><span class="o">.</span><span class="n">as_au</span><span class="p">()</span>
+        <span class="n">dump_dict</span><span class="p">[</span><span class="s2">"time series"</span><span class="p">]</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">evolve_times</span>
+        <span class="n">dump_dict</span><span class="p">[</span><span class="s2">"auto correlation"</span><span class="p">]</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">auto_corr</span>
+        <span class="n">dump_dict</span><span class="p">[</span><span class="s2">"auto correlation decomposition"</span><span class="p">]</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">auto_corr_decomposition</span>
+        <span class="n">dump_dict</span><span class="p">[</span><span class="s2">"mobility"</span><span class="p">]</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">calc_mobility</span><span class="p">()[</span><span class="mi">1</span><span class="p">]</span>
         <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">properties</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
             <span class="k">for</span> <span class="n">prop_str</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">properties</span><span class="o">.</span><span class="n">prop_res</span><span class="o">.</span><span class="n">keys</span><span class="p">():</span>
                 <span class="n">dump_dict</span><span class="p">[</span><span class="n">prop_str</span><span class="p">]</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">properties</span><span class="o">.</span><span class="n">prop_res</span><span class="p">[</span><span class="n">prop_str</span><span class="p">]</span>
 
         <span class="k">return</span> <span class="n">dump_dict</span></div>
 
-<div class="viewcode-block" id="TransportKubo.calc_mobility"><a class="viewcode-back" href="../../../ct.html#renormalizer.transport.kubo.TransportKubo.calc_mobility">[docs]</a>    <span class="k">def</span><span class="w"> </span><span class="nf">calc_mobility</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+
+<div class="viewcode-block" id="TransportKubo.calc_mobility">
+<a class="viewcode-back" href="../../../ct.html#renormalizer.transport.kubo.TransportKubo.calc_mobility">[docs]</a>
+    <span class="k">def</span><span class="w"> </span><span class="nf">calc_mobility</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
         <span class="n">time_series</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">evolve_times</span>
         <span class="n">corr_real</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">auto_corr</span><span class="o">.</span><span class="n">real</span>
-        <span class="n">inte</span> <span class="o">=</span> <span class="n">scipy</span><span class="o">.</span><span class="n">integrate</span><span class="o">.</span><span class="n">trapz</span><span class="p">(</span><span class="n">corr_real</span><span class="p">,</span> <span class="n">time_series</span><span class="p">)</span>
+        <span class="c1"># SciPy removed the trapz alias; trapezoid preserves the same sampled</span>
+        <span class="c1"># integral, including nonuniform time spacing and the real correlation.</span>
+        <span class="n">inte</span> <span class="o">=</span> <span class="n">scipy</span><span class="o">.</span><span class="n">integrate</span><span class="o">.</span><span class="n">trapezoid</span><span class="p">(</span><span class="n">corr_real</span><span class="p">,</span> <span class="n">time_series</span><span class="p">)</span>
         <span class="n">mobility_in_au</span> <span class="o">=</span> <span class="n">inte</span> <span class="o">/</span> <span class="bp">self</span><span class="o">.</span><span class="n">temperature</span><span class="o">.</span><span class="n">as_au</span><span class="p">()</span>
         <span class="n">mobility</span> <span class="o">=</span> <span class="n">mobility_in_au</span> <span class="o">/</span> <span class="n">mobility2au</span>
-        <span class="k">return</span> <span class="n">mobility_in_au</span><span class="p">,</span> <span class="n">mobility</span></div></div>
+        <span class="k">return</span> <span class="n">mobility_in_au</span><span class="p">,</span> <span class="n">mobility</span></div>
+</div>
+
 </pre></div>
         </article>
       </div>
@@ -612,9 +670,7 @@
             
           </div>
           <div class="right-details">
-            <div class="icons">
-              
-            </div>
+            
           </div>
         </div>
         
@@ -626,13 +682,10 @@
       
     </aside>
   </div>
-</div><script data-url_root="../../../" id="documentation_options" src="../../../_static/documentation_options.js"></script>
-    <script src="../../../_static/jquery.js"></script>
-    <script src="../../../_static/underscore.js"></script>
-    <script src="../../../_static/_sphinx_javascript_frameworks_compat.js"></script>
-    <script src="../../../_static/doctools.js"></script>
-    <script src="../../../_static/sphinx_highlight.js"></script>
-    <script src="../../../_static/scripts/furo.js"></script>
+</div><script src="../../../_static/documentation_options.js?v=01f34227"></script>
+    <script src="../../../_static/doctools.js?v=fd6eb6e6"></script>
+    <script src="../../../_static/sphinx_highlight.js?v=6ffebe34"></script>
+    <script src="../../../_static/scripts/furo.js?v=46bd48cc"></script>
     <script crossorigin="anonymous" integrity="sha256-Ae2Vz/4ePdIu6ZyI/5ZGsYnb+m0JlOmKPjt6XZ9JJkA=" src="https://cdnjs.cloudflare.com/ajax/libs/require.js/2.3.4/require.min.js"></script>
     </body>
 </html>

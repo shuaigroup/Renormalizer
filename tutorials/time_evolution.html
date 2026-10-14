@@ -1,8 +1,8 @@
 <!doctype html>
-<html class="no-js" lang="en">
-  <head><meta charset="utf-8"/>
-    <meta name="viewport" content="width=device-width,initial-scale=1"/>
-    <meta name="color-scheme" content="light dark"><meta name="generator" content="Docutils 0.19: https://docutils.sourceforge.io/" />
+<html class="no-js" lang="en" data-content_root="../">
+  <head><meta charset="utf-8">
+    <meta name="viewport" content="width=device-width,initial-scale=1">
+    <meta name="color-scheme" content="light dark"><meta name="viewport" content="width=device-width, initial-scale=1" />
 
     <!-- Google tag (gtag.js) -->
     <script async src="https://www.googletagmanager.com/gtag/js?id=G-3HTENNM8CV"></script>
@@ -12,13 +12,14 @@
         gtag('js', new Date());
         gtag('config', 'G-3HTENNM8CV');
     </script>
-    <link rel="index" title="Index" href="../genindex.html" /><link rel="search" title="Search" href="../search.html" /><link rel="next" title="Basics of Tree Tensor Networks" href="ttn_basic.html" /><link rel="prev" title="Compressing MPS" href="compress_mps.html" />
+    <link rel="index" title="Index" href="../genindex.html"><link rel="search" title="Search" href="../search.html"><link rel="next" title="Basics of Tree Tensor Networks" href="ttn_basic.html"><link rel="prev" title="Compressing MPS" href="compress_mps.html">
 
-    <meta name="generator" content="sphinx-5.3.0, furo 2022.09.29"/>
+    <!-- Generated with Sphinx 9.0.4 and Furo 2025.12.19 -->
         <title>Time Evolution using Renormalizer - Renormalizer 0.1.0 documentation</title>
-      <link rel="stylesheet" type="text/css" href="../_static/pygments.css" />
-    <link rel="stylesheet" type="text/css" href="../_static/styles/furo.css?digest=d81277517bee4d6b0349d71bb2661d4890b5617c" />
-    <link rel="stylesheet" type="text/css" href="../_static/styles/furo-extensions.css?digest=30d1aed668e5c3a91c3e3bf6a60b675221979f0e" />
+      <link rel="stylesheet" type="text/css" href="../_static/pygments.css?v=03e43079" />
+    <link rel="stylesheet" type="text/css" href="../_static/styles/furo.css?v=7bdb33bb" />
+    <link rel="stylesheet" type="text/css" href="../_static/nbsphinx-code-cells.css?v=2aa19091" />
+    <link rel="stylesheet" type="text/css" href="../_static/styles/furo-extensions.css?v=8dab3a3b" />
     
     
 
@@ -77,7 +78,7 @@
   <symbol id="svg-sun" viewBox="0 0 24 24">
     <title>Light mode</title>
     <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor"
-      stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" class="feather-sun">
+      stroke-width="1" stroke-linecap="round" stroke-linejoin="round" class="feather-sun">
       <circle cx="12" cy="12" r="5"></circle>
       <line x1="12" y1="1" x2="12" y2="3"></line>
       <line x1="12" y1="21" x2="12" y2="23"></line>
@@ -92,34 +93,73 @@
   <symbol id="svg-moon" viewBox="0 0 24 24">
     <title>Dark mode</title>
     <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor"
-      stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" class="icon-tabler-moon">
+      stroke-width="1" stroke-linecap="round" stroke-linejoin="round" class="icon-tabler-moon">
       <path stroke="none" d="M0 0h24v24H0z" fill="none" />
       <path d="M12 3c.132 0 .263 0 .393 0a7.5 7.5 0 0 0 7.92 12.446a9 9 0 1 1 -8.313 -12.454z" />
     </svg>
   </symbol>
-  <symbol id="svg-sun-half" viewBox="0 0 24 24">
-    <title>Auto light/dark mode</title>
+  <symbol id="svg-sun-with-moon" viewBox="0 0 24 24">
+    <title>Auto light/dark, in light mode</title>
     <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor"
-      stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" class="icon-tabler-shadow">
-      <path stroke="none" d="M0 0h24v24H0z" fill="none"/>
-      <circle cx="12" cy="12" r="9" />
-      <path d="M13 12h5" />
-      <path d="M13 15h4" />
-      <path d="M13 18h1" />
-      <path d="M13 9h4" />
-      <path d="M13 6h1" />
+      stroke-width="1" stroke-linecap="round" stroke-linejoin="round"
+      class="icon-custom-derived-from-feather-sun-and-tabler-moon">
+      <path style="opacity: 50%" d="M 5.411 14.504 C 5.471 14.504 5.532 14.504 5.591 14.504 C 3.639 16.319 4.383 19.569 6.931 20.352 C 7.693 20.586 8.512 20.551 9.25 20.252 C 8.023 23.207 4.056 23.725 2.11 21.184 C 0.166 18.642 1.702 14.949 4.874 14.536 C 5.051 14.512 5.231 14.5 5.411 14.5 L 5.411 14.504 Z"/>
+      <line x1="14.5" y1="3.25" x2="14.5" y2="1.25"/>
+      <line x1="14.5" y1="15.85" x2="14.5" y2="17.85"/>
+      <line x1="10.044" y1="5.094" x2="8.63" y2="3.68"/>
+      <line x1="19" y1="14.05" x2="20.414" y2="15.464"/>
+      <line x1="8.2" y1="9.55" x2="6.2" y2="9.55"/>
+      <line x1="20.8" y1="9.55" x2="22.8" y2="9.55"/>
+      <line x1="10.044" y1="14.006" x2="8.63" y2="15.42"/>
+      <line x1="19" y1="5.05" x2="20.414" y2="3.636"/>
+      <circle cx="14.5" cy="9.55" r="3.6"/>
+    </svg>
+  </symbol>
+  <symbol id="svg-moon-with-sun" viewBox="0 0 24 24">
+    <title>Auto light/dark, in dark mode</title>
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+      stroke-width="1" stroke-linecap="round" stroke-linejoin="round"
+      class="icon-custom-derived-from-feather-sun-and-tabler-moon">
+      <path d="M 8.282 7.007 C 8.385 7.007 8.494 7.007 8.595 7.007 C 5.18 10.184 6.481 15.869 10.942 17.24 C 12.275 17.648 13.706 17.589 15 17.066 C 12.851 22.236 5.91 23.143 2.505 18.696 C -0.897 14.249 1.791 7.786 7.342 7.063 C 7.652 7.021 7.965 7 8.282 7 L 8.282 7.007 Z"/>
+      <line style="opacity: 50%" x1="18" y1="3.705" x2="18" y2="2.5"/>
+      <line style="opacity: 50%" x1="18" y1="11.295" x2="18" y2="12.5"/>
+      <line style="opacity: 50%" x1="15.316" y1="4.816" x2="14.464" y2="3.964"/>
+      <line style="opacity: 50%" x1="20.711" y1="10.212" x2="21.563" y2="11.063"/>
+      <line style="opacity: 50%" x1="14.205" y1="7.5" x2="13.001" y2="7.5"/>
+      <line style="opacity: 50%" x1="21.795" y1="7.5" x2="23" y2="7.5"/>
+      <line style="opacity: 50%" x1="15.316" y1="10.184" x2="14.464" y2="11.036"/>
+      <line style="opacity: 50%" x1="20.711" y1="4.789" x2="21.563" y2="3.937"/>
+      <circle style="opacity: 50%" cx="18" cy="7.5" r="2.169"/>
+    </svg>
+  </symbol>
+  <symbol id="svg-pencil" viewBox="0 0 24 24">
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+      stroke-width="1" stroke-linecap="round" stroke-linejoin="round" class="icon-tabler-pencil-code">
+      <path d="M4 20h4l10.5 -10.5a2.828 2.828 0 1 0 -4 -4l-10.5 10.5v4" />
+      <path d="M13.5 6.5l4 4" />
+      <path d="M20 21l2 -2l-2 -2" />
+      <path d="M17 17l-2 2l2 2" />
+    </svg>
+  </symbol>
+  <symbol id="svg-eye" viewBox="0 0 24 24">
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+      stroke-width="1" stroke-linecap="round" stroke-linejoin="round" class="icon-tabler-eye-code">
+      <path stroke="none" d="M0 0h24v24H0z" fill="none" />
+      <path d="M10 12a2 2 0 1 0 4 0a2 2 0 0 0 -4 0" />
+      <path
+        d="M11.11 17.958c-3.209 -.307 -5.91 -2.293 -8.11 -5.958c2.4 -4 5.4 -6 9 -6c3.6 0 6.6 2 9 6c-.21 .352 -.427 .688 -.647 1.008" />
+      <path d="M20 21l2 -2l-2 -2" />
+      <path d="M17 17l-2 2l2 2" />
     </svg>
   </symbol>
 </svg>
 
-<input type="checkbox" class="sidebar-toggle" name="__navigation" id="__navigation">
-<input type="checkbox" class="sidebar-toggle" name="__toc" id="__toc">
-<label class="overlay sidebar-overlay" for="__navigation">
-  <div class="visually-hidden">Hide navigation sidebar</div>
-</label>
-<label class="overlay toc-overlay" for="__toc">
-  <div class="visually-hidden">Hide table of contents sidebar</div>
-</label>
+<input type="checkbox" class="sidebar-toggle" name="__navigation" id="__navigation" aria-label="Toggle site navigation sidebar">
+<input type="checkbox" class="sidebar-toggle" name="__toc" id="__toc" aria-label="Toggle table of contents sidebar">
+<label class="overlay sidebar-overlay" for="__navigation"></label>
+<label class="overlay toc-overlay" for="__toc"></label>
+
+<a class="skip-to-content muted-link" href="#furo-main-content">Skip to content</a>
 
 
 
@@ -127,8 +167,7 @@
   <header class="mobile-header">
     <div class="header-left">
       <label class="nav-overlay-icon" for="__navigation">
-        <div class="visually-hidden">Toggle site navigation sidebar</div>
-        <i class="icon"><svg><use href="#svg-menu"></use></svg></i>
+        <span class="icon"><svg><use href="#svg-menu"></use></svg></span>
       </label>
     </div>
     <div class="header-center">
@@ -136,16 +175,15 @@
     </div>
     <div class="header-right">
       <div class="theme-toggle-container theme-toggle-header">
-        <button class="theme-toggle">
-          <div class="visually-hidden">Toggle Light / Dark / Auto color theme</div>
-          <svg class="theme-icon-when-auto"><use href="#svg-sun-half"></use></svg>
+        <button class="theme-toggle" aria-label="Toggle Light / Dark / Auto color theme">
+          <svg class="theme-icon-when-auto-light"><use href="#svg-sun-with-moon"></use></svg>
+          <svg class="theme-icon-when-auto-dark"><use href="#svg-moon-with-sun"></use></svg>
           <svg class="theme-icon-when-dark"><use href="#svg-moon"></use></svg>
           <svg class="theme-icon-when-light"><use href="#svg-sun"></use></svg>
         </button>
       </div>
       <label class="toc-overlay-icon toc-header-icon" for="__toc">
-        <div class="visually-hidden">Toggle table of contents sidebar</div>
-        <i class="icon"><svg><use href="#svg-toc"></use></svg></i>
+        <span class="icon"><svg><use href="#svg-toc"></use></svg></span>
       </label>
     </div>
   </header>
@@ -154,18 +192,17 @@
       
       <div class="sidebar-sticky"><a class="sidebar-brand" href="../index.html">
   
-  
   <span class="sidebar-brand-text">Renormalizer 0.1.0 documentation</span>
   
 </a><form class="sidebar-search-container" method="get" action="../search.html" role="search">
-  <input class="sidebar-search" placeholder=Search name="q" aria-label="Search">
+  <input class="sidebar-search" placeholder="Search" name="q" aria-label="Search">
   <input type="hidden" name="check_keywords" value="yes">
   <input type="hidden" name="area" value="default">
 </form>
 <div id="searchbox"></div><div class="sidebar-scroll"><div class="sidebar-tree">
   <ul class="current">
 <li class="toctree-l1"><a class="reference internal" href="../install.html">Installation guide</a></li>
-<li class="toctree-l1 current has-children"><a class="reference internal" href="../tutorial.html">Basic Tutorials</a><input checked="" class="toctree-checkbox" id="toctree-checkbox-1" name="toctree-checkbox-1" role="switch" type="checkbox"/><label for="toctree-checkbox-1"><div class="visually-hidden">Toggle child pages in navigation</div><i class="icon"><svg><use href="#svg-arrow-right"></use></svg></i></label><ul class="current">
+<li class="toctree-l1 current has-children"><a class="reference internal" href="../tutorial.html">Basic Tutorials</a><input aria-label="Toggle navigation of Basic Tutorials" checked="" class="toctree-checkbox" id="toctree-checkbox-1" name="toctree-checkbox-1" role="switch" type="checkbox"/><label for="toctree-checkbox-1"><span class="icon"><svg><use href="#svg-arrow-right"></use></svg></span></label><ul class="current">
 <li class="toctree-l2"><a class="reference internal" href="define_model.html">Define Your Model</a></li>
 <li class="toctree-l2"><a class="reference internal" href="mps_mpo.html">MPS and MPO</a></li>
 <li class="toctree-l2"><a class="reference internal" href="nuclear_basis.html">Nuclear Basis Set</a></li>
@@ -175,11 +212,11 @@
 <li class="toctree-l2"><a class="reference internal" href="ttn_basic.html">Basics of Tree Tensor Networks</a></li>
 </ul>
 </li>
-<li class="toctree-l1 has-children"><a class="reference internal" href="../applications.html">Application Tutorials</a><input class="toctree-checkbox" id="toctree-checkbox-2" name="toctree-checkbox-2" role="switch" type="checkbox"/><label for="toctree-checkbox-2"><div class="visually-hidden">Toggle child pages in navigation</div><i class="icon"><svg><use href="#svg-arrow-right"></use></svg></i></label><ul>
+<li class="toctree-l1 has-children"><a class="reference internal" href="../applications.html">Application Tutorials</a><input aria-label="Toggle navigation of Application Tutorials" class="toctree-checkbox" id="toctree-checkbox-2" name="toctree-checkbox-2" role="switch" type="checkbox"/><label for="toctree-checkbox-2"><span class="icon"><svg><use href="#svg-arrow-right"></use></svg></span></label><ul>
 <li class="toctree-l2"><a class="reference internal" href="1D-Heisenberg.html">Ground state of the Heisenberg model</a></li>
 </ul>
 </li>
-<li class="toctree-l1 has-children"><a class="reference internal" href="../api.html">API Reference</a><input class="toctree-checkbox" id="toctree-checkbox-3" name="toctree-checkbox-3" role="switch" type="checkbox"/><label for="toctree-checkbox-3"><div class="visually-hidden">Toggle child pages in navigation</div><i class="icon"><svg><use href="#svg-arrow-right"></use></svg></i></label><ul>
+<li class="toctree-l1 has-children"><a class="reference internal" href="../api.html">API Reference</a><input aria-label="Toggle navigation of API Reference" class="toctree-checkbox" id="toctree-checkbox-3" name="toctree-checkbox-3" role="switch" type="checkbox"/><label for="toctree-checkbox-3"><span class="icon"><svg><use href="#svg-arrow-right"></use></svg></span></label><ul>
 <li class="toctree-l2"><a class="reference internal" href="../model.html">Model</a></li>
 <li class="toctree-l2"><a class="reference internal" href="../mps.html">Low Level Data Structure and Algorithms</a></li>
 <li class="toctree-l2"><a class="reference internal" href="../static.html">Static Eigenstate Method</a></li>
@@ -213,282 +250,29 @@
           <span>Back to top</span>
         </a>
         <div class="content-icon-container">
-          
+          <div class="view-this-page">
+  <a class="muted-link" href="../_sources/tutorials/time_evolution.ipynb.txt" title="View this page">
+    <svg><use href="#svg-eye"></use></svg>
+    <span class="visually-hidden">View this page</span>
+  </a>
+</div>
 <div class="theme-toggle-container theme-toggle-content">
-            <button class="theme-toggle">
-              <div class="visually-hidden">Toggle Light / Dark / Auto color theme</div>
-              <svg class="theme-icon-when-auto"><use href="#svg-sun-half"></use></svg>
+            <button class="theme-toggle" aria-label="Toggle Light / Dark / Auto color theme">
+              <svg class="theme-icon-when-auto-light"><use href="#svg-sun-with-moon"></use></svg>
+              <svg class="theme-icon-when-auto-dark"><use href="#svg-moon-with-sun"></use></svg>
               <svg class="theme-icon-when-dark"><use href="#svg-moon"></use></svg>
               <svg class="theme-icon-when-light"><use href="#svg-sun"></use></svg>
             </button>
           </div>
           <label class="toc-overlay-icon toc-content-icon" for="__toc">
-            <div class="visually-hidden">Toggle table of contents sidebar</div>
-            <i class="icon"><svg><use href="#svg-toc"></use></svg></i>
+            <span class="icon"><svg><use href="#svg-toc"></use></svg></span>
           </label>
         </div>
-        <article role="main">
-          
-<style>
-/* CSS for nbsphinx extension */
-
-/* remove conflicting styling from Sphinx themes */
-div.nbinput.container div.prompt *,
-div.nboutput.container div.prompt *,
-div.nbinput.container div.input_area pre,
-div.nboutput.container div.output_area pre,
-div.nbinput.container div.input_area .highlight,
-div.nboutput.container div.output_area .highlight {
-    border: none;
-    padding: 0;
-    margin: 0;
-    box-shadow: none;
-}
-
-div.nbinput.container > div[class*=highlight],
-div.nboutput.container > div[class*=highlight] {
-    margin: 0;
-}
-
-div.nbinput.container div.prompt *,
-div.nboutput.container div.prompt * {
-    background: none;
-}
-
-div.nboutput.container div.output_area .highlight,
-div.nboutput.container div.output_area pre {
-    background: unset;
-}
-
-div.nboutput.container div.output_area div.highlight {
-    color: unset;  /* override Pygments text color */
-}
-
-/* avoid gaps between output lines */
-div.nboutput.container div[class*=highlight] pre {
-    line-height: normal;
-}
-
-/* input/output containers */
-div.nbinput.container,
-div.nboutput.container {
-    display: -webkit-flex;
-    display: flex;
-    align-items: flex-start;
-    margin: 0;
-    width: 100%;
-}
-@media (max-width: 540px) {
-    div.nbinput.container,
-    div.nboutput.container {
-        flex-direction: column;
-    }
-}
-
-/* input container */
-div.nbinput.container {
-    padding-top: 5px;
-}
-
-/* last container */
-div.nblast.container {
-    padding-bottom: 5px;
-}
-
-/* input prompt */
-div.nbinput.container div.prompt pre {
-    color: #307FC1;
-}
-
-/* output prompt */
-div.nboutput.container div.prompt pre {
-    color: #BF5B3D;
-}
-
-/* all prompts */
-div.nbinput.container div.prompt,
-div.nboutput.container div.prompt {
-    width: 4.5ex;
-    padding-top: 5px;
-    position: relative;
-    user-select: none;
-}
-
-div.nbinput.container div.prompt > div,
-div.nboutput.container div.prompt > div {
-    position: absolute;
-    right: 0;
-    margin-right: 0.3ex;
-}
-
-@media (max-width: 540px) {
-    div.nbinput.container div.prompt,
-    div.nboutput.container div.prompt {
-        width: unset;
-        text-align: left;
-        padding: 0.4em;
-    }
-    div.nboutput.container div.prompt.empty {
-        padding: 0;
-    }
-
-    div.nbinput.container div.prompt > div,
-    div.nboutput.container div.prompt > div {
-        position: unset;
-    }
-}
-
-/* disable scrollbars and line breaks on prompts */
-div.nbinput.container div.prompt pre,
-div.nboutput.container div.prompt pre {
-    overflow: hidden;
-    white-space: pre;
-}
-
-/* input/output area */
-div.nbinput.container div.input_area,
-div.nboutput.container div.output_area {
-    -webkit-flex: 1;
-    flex: 1;
-    overflow: auto;
-}
-@media (max-width: 540px) {
-    div.nbinput.container div.input_area,
-    div.nboutput.container div.output_area {
-        width: 100%;
-    }
-}
-
-/* input area */
-div.nbinput.container div.input_area {
-    border: 1px solid #e0e0e0;
-    border-radius: 2px;
-    /*background: #f5f5f5;*/
-}
-
-/* override MathJax center alignment in output cells */
-div.nboutput.container div[class*=MathJax] {
-    text-align: left !important;
-}
-
-/* override sphinx.ext.imgmath center alignment in output cells */
-div.nboutput.container div.math p {
-    text-align: left;
-}
-
-/* standard error */
-div.nboutput.container div.output_area.stderr {
-    background: #fdd;
-}
-
-/* ANSI colors */
-.ansi-black-fg { color: #3E424D; }
-.ansi-black-bg { background-color: #3E424D; }
-.ansi-black-intense-fg { color: #282C36; }
-.ansi-black-intense-bg { background-color: #282C36; }
-.ansi-red-fg { color: #E75C58; }
-.ansi-red-bg { background-color: #E75C58; }
-.ansi-red-intense-fg { color: #B22B31; }
-.ansi-red-intense-bg { background-color: #B22B31; }
-.ansi-green-fg { color: #00A250; }
-.ansi-green-bg { background-color: #00A250; }
-.ansi-green-intense-fg { color: #007427; }
-.ansi-green-intense-bg { background-color: #007427; }
-.ansi-yellow-fg { color: #DDB62B; }
-.ansi-yellow-bg { background-color: #DDB62B; }
-.ansi-yellow-intense-fg { color: #B27D12; }
-.ansi-yellow-intense-bg { background-color: #B27D12; }
-.ansi-blue-fg { color: #208FFB; }
-.ansi-blue-bg { background-color: #208FFB; }
-.ansi-blue-intense-fg { color: #0065CA; }
-.ansi-blue-intense-bg { background-color: #0065CA; }
-.ansi-magenta-fg { color: #D160C4; }
-.ansi-magenta-bg { background-color: #D160C4; }
-.ansi-magenta-intense-fg { color: #A03196; }
-.ansi-magenta-intense-bg { background-color: #A03196; }
-.ansi-cyan-fg { color: #60C6C8; }
-.ansi-cyan-bg { background-color: #60C6C8; }
-.ansi-cyan-intense-fg { color: #258F8F; }
-.ansi-cyan-intense-bg { background-color: #258F8F; }
-.ansi-white-fg { color: #C5C1B4; }
-.ansi-white-bg { background-color: #C5C1B4; }
-.ansi-white-intense-fg { color: #A1A6B2; }
-.ansi-white-intense-bg { background-color: #A1A6B2; }
-
-.ansi-default-inverse-fg { color: #FFFFFF; }
-.ansi-default-inverse-bg { background-color: #000000; }
-
-.ansi-bold { font-weight: bold; }
-.ansi-underline { text-decoration: underline; }
-
-
-div.nbinput.container div.input_area div[class*=highlight] > pre,
-div.nboutput.container div.output_area div[class*=highlight] > pre,
-div.nboutput.container div.output_area div[class*=highlight].math,
-div.nboutput.container div.output_area.rendered_html,
-div.nboutput.container div.output_area > div.output_javascript,
-div.nboutput.container div.output_area:not(.rendered_html) > img{
-    padding: 5px;
-    margin: 0;
-}
-
-/* fix copybtn overflow problem in chromium (needed for 'sphinx_copybutton') */
-div.nbinput.container div.input_area > div[class^='highlight'],
-div.nboutput.container div.output_area > div[class^='highlight']{
-    overflow-y: hidden;
-}
-
-/* hide copybtn icon on prompts (needed for 'sphinx_copybutton') */
-.prompt .copybtn {
-    display: none;
-}
-
-/* Some additional styling taken form the Jupyter notebook CSS */
-.jp-RenderedHTMLCommon table,
-div.rendered_html table {
-  border: none;
-  border-collapse: collapse;
-  border-spacing: 0;
-  color: black;
-  font-size: 12px;
-  table-layout: fixed;
-}
-.jp-RenderedHTMLCommon thead,
-div.rendered_html thead {
-  border-bottom: 1px solid black;
-  vertical-align: bottom;
-}
-.jp-RenderedHTMLCommon tr,
-.jp-RenderedHTMLCommon th,
-.jp-RenderedHTMLCommon td,
-div.rendered_html tr,
-div.rendered_html th,
-div.rendered_html td {
-  text-align: right;
-  vertical-align: middle;
-  padding: 0.5em 0.5em;
-  line-height: normal;
-  white-space: normal;
-  max-width: none;
-  border: none;
-}
-.jp-RenderedHTMLCommon th,
-div.rendered_html th {
-  font-weight: bold;
-}
-.jp-RenderedHTMLCommon tbody tr:nth-child(odd),
-div.rendered_html tbody tr:nth-child(odd) {
-  background: #f5f5f5;
-}
-.jp-RenderedHTMLCommon tbody tr:hover,
-div.rendered_html tbody tr:hover {
-  background: rgba(66, 165, 245, 0.2);
-}
-</style>
-<section id="Time-Evolution-using-Renormalizer">
-<h1>Time Evolution using Renormalizer<a class="headerlink" href="#Time-Evolution-using-Renormalizer" title="Permalink to this heading">#</a></h1>
+        <article role="main" id="furo-main-content">
+          <section id="Time-Evolution-using-Renormalizer">
+<h1>Time Evolution using Renormalizer<a class="headerlink" href="#Time-Evolution-using-Renormalizer" title="Link to this heading">¶</a></h1>
 <section id="Overview">
-<h2>Overview<a class="headerlink" href="#Overview" title="Permalink to this heading">#</a></h2>
+<h2>Overview<a class="headerlink" href="#Overview" title="Link to this heading">¶</a></h2>
 <p>In this notebook we will simulate the charge transfer between two molecules using the Marcus model</p>
 <div class="math-wrapper docutils container">
 <div class="math notranslate nohighlight">
@@ -498,7 +282,7 @@ div.rendered_html tbody tr:hover {
 <p>We will first show how to use Renormalizer to simulation the time evolution at <span class="math notranslate nohighlight">\(\Delta G = 0\)</span>. Then, we will show that, by decreasing the reaction Gibbs free energy change <span class="math notranslate nohighlight">\(\Delta G\)</span>, the reaction rate will first increase and then decrease, as predicted by the Marcus theory.</p>
 </section>
 <section id="Preparation:-Setting-Up-Logger">
-<h2>Preparation: Setting Up Logger<a class="headerlink" href="#Preparation:-Setting-Up-Logger" title="Permalink to this heading">#</a></h2>
+<h2>Preparation: Setting Up Logger<a class="headerlink" href="#Preparation:-Setting-Up-Logger" title="Link to this heading">¶</a></h2>
 <div class="nbinput docutils container">
 <div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[1]:
 </pre></div>
@@ -512,18 +296,18 @@ div.rendered_html tbody tr:hover {
 </div>
 <div class="output_area stderr docutils container">
 <div class="highlight"><pre>
-2026-05-20 02:56:51,273[INFO] Use NumPy as backend
-2026-05-20 02:56:51,274[INFO] numpy random seed is 9012
-2026-05-20 02:56:51,275[INFO] random seed is 1092
-2026-05-20 02:56:51,284[INFO] Git Commit Hash: 956ad15b6be989049c1a009a0050334f3d774d43
-2026-05-20 02:56:51,285[INFO] use 64 bits
+2026-10-14 01:46:28,593[INFO] Use numpy as backend
+2026-10-14 01:46:28,594[INFO] numpy random seed is 9012
+2026-10-14 01:46:28,594[INFO] backend random seed is 2019
+2026-10-14 01:46:28,595[INFO] random seed is 1092
+2026-10-14 01:46:28,603[INFO] Git Commit Hash: 3507afde83fd6f408c1c2198aad4dfe455d88312
 </pre></div></div>
 </div>
 <div class="nbinput docutils container">
 <div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[2]:
 </pre></div>
 </div>
-<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">logger</span><span class="o">.</span><span class="n">debug</span><span class="p">(</span><span class="s2">&quot;logger output&quot;</span><span class="p">)</span>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">logger</span><span class="o">.</span><span class="n">debug</span><span class="p">(</span><span class="s2">"logger output"</span><span class="p">)</span>
 </pre></div>
 </div>
 </div>
@@ -532,7 +316,7 @@ div.rendered_html tbody tr:hover {
 </div>
 <div class="output_area stderr docutils container">
 <div class="highlight"><pre>
-2026-05-20 02:56:51,325[DEBUG] logger output
+2026-10-14 01:46:29,374[DEBUG] logger output
 </pre></div></div>
 </div>
 <div class="nbinput nblast docutils container">
@@ -556,7 +340,7 @@ div.rendered_html tbody tr:hover {
 <div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[5]:
 </pre></div>
 </div>
-<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">logger</span><span class="o">.</span><span class="n">debug</span><span class="p">(</span><span class="s2">&quot;This message will not be shown&quot;</span><span class="p">)</span>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">logger</span><span class="o">.</span><span class="n">debug</span><span class="p">(</span><span class="s2">"This message will not be shown"</span><span class="p">)</span>
 </pre></div>
 </div>
 </div>
@@ -564,7 +348,7 @@ div.rendered_html tbody tr:hover {
 <div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[6]:
 </pre></div>
 </div>
-<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">logger</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="s2">&quot;Logger output&quot;</span><span class="p">)</span>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">logger</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="s2">"Logger output"</span><span class="p">)</span>
 </pre></div>
 </div>
 </div>
@@ -573,12 +357,12 @@ div.rendered_html tbody tr:hover {
 </div>
 <div class="output_area stderr docutils container">
 <div class="highlight"><pre>
-2026-05-20 02:56:51,344[INFO] Logger output
+2026-10-14 01:46:29,392[INFO] Logger output
 </pre></div></div>
 </div>
 </section>
 <section id="Define-the-Model-and-Initial-State">
-<h2>Define the Model and Initial State<a class="headerlink" href="#Define-the-Model-and-Initial-State" title="Permalink to this heading">#</a></h2>
+<h2>Define the Model and Initial State<a class="headerlink" href="#Define-the-Model-and-Initial-State" title="Link to this heading">¶</a></h2>
 <div class="nbinput nblast docutils container">
 <div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[7]:
 </pre></div>
@@ -604,12 +388,12 @@ div.rendered_html tbody tr:hover {
 </pre></div>
 </div>
 <div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="k">def</span><span class="w"> </span><span class="nf">get_model</span><span class="p">(</span><span class="n">delta_g</span><span class="p">):</span>
-    <span class="n">ham_terms</span> <span class="o">=</span> <span class="n">v</span> <span class="o">*</span> <span class="n">Op</span><span class="p">(</span><span class="sa">r</span><span class="s2">&quot;a^\dagger a&quot;</span><span class="p">,</span> <span class="p">[</span><span class="s2">&quot;e0&quot;</span><span class="p">,</span> <span class="s2">&quot;e1&quot;</span><span class="p">])</span> <span class="o">+</span> <span class="n">v</span> <span class="o">*</span> <span class="n">Op</span><span class="p">(</span><span class="sa">r</span><span class="s2">&quot;a^\dagger a&quot;</span><span class="p">,</span> <span class="p">[</span><span class="s2">&quot;e1&quot;</span><span class="p">,</span> <span class="s2">&quot;e0&quot;</span><span class="p">])</span>
-    <span class="n">ham_terms</span> <span class="o">+=</span> <span class="n">delta_g</span> <span class="o">*</span> <span class="n">Op</span><span class="p">(</span><span class="sa">r</span><span class="s2">&quot;a^\dagger a&quot;</span><span class="p">,</span> <span class="s2">&quot;e1&quot;</span><span class="p">)</span>
+    <span class="n">ham_terms</span> <span class="o">=</span> <span class="n">v</span> <span class="o">*</span> <span class="n">Op</span><span class="p">(</span><span class="sa">r</span><span class="s2">"a^\dagger a"</span><span class="p">,</span> <span class="p">[</span><span class="s2">"e0"</span><span class="p">,</span> <span class="s2">"e1"</span><span class="p">])</span> <span class="o">+</span> <span class="n">v</span> <span class="o">*</span> <span class="n">Op</span><span class="p">(</span><span class="sa">r</span><span class="s2">"a^\dagger a"</span><span class="p">,</span> <span class="p">[</span><span class="s2">"e1"</span><span class="p">,</span> <span class="s2">"e0"</span><span class="p">])</span>
+    <span class="n">ham_terms</span> <span class="o">+=</span> <span class="n">delta_g</span> <span class="o">*</span> <span class="n">Op</span><span class="p">(</span><span class="sa">r</span><span class="s2">"a^\dagger a"</span><span class="p">,</span> <span class="s2">"e1"</span><span class="p">)</span>
     <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="mi">2</span><span class="p">):</span>
-        <span class="n">ham_terms</span> <span class="o">+=</span> <span class="n">omega</span> <span class="o">*</span> <span class="n">Op</span><span class="p">(</span><span class="sa">r</span><span class="s2">&quot;b^\dagger b&quot;</span><span class="p">,</span> <span class="sa">f</span><span class="s2">&quot;v</span><span class="si">{</span><span class="n">i</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
-        <span class="n">ham_terms</span> <span class="o">+=</span> <span class="n">g</span> <span class="o">*</span> <span class="n">omega</span> <span class="o">*</span> <span class="n">Op</span><span class="p">(</span><span class="sa">r</span><span class="s2">&quot;a^\dagger a&quot;</span><span class="p">,</span> <span class="sa">f</span><span class="s2">&quot;e</span><span class="si">{</span><span class="n">i</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span> <span class="o">*</span> <span class="n">Op</span><span class="p">(</span><span class="sa">r</span><span class="s2">&quot;b^\dagger+b&quot;</span><span class="p">,</span> <span class="sa">f</span><span class="s2">&quot;v</span><span class="si">{</span><span class="n">i</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
-    <span class="n">basis</span> <span class="o">=</span> <span class="p">[</span><span class="n">BasisMultiElectron</span><span class="p">([</span><span class="s2">&quot;e0&quot;</span><span class="p">,</span> <span class="s2">&quot;e1&quot;</span><span class="p">],</span> <span class="p">[</span><span class="mi">0</span><span class="p">,</span> <span class="mi">0</span><span class="p">]),</span> <span class="n">BasisSHO</span><span class="p">(</span><span class="s2">&quot;v0&quot;</span><span class="p">,</span> <span class="n">omega</span><span class="p">,</span> <span class="n">nbas</span><span class="p">),</span> <span class="n">BasisSHO</span><span class="p">(</span><span class="s2">&quot;v1&quot;</span><span class="p">,</span> <span class="n">omega</span><span class="p">,</span> <span class="n">nbas</span><span class="p">)]</span>
+        <span class="n">ham_terms</span> <span class="o">+=</span> <span class="n">omega</span> <span class="o">*</span> <span class="n">Op</span><span class="p">(</span><span class="sa">r</span><span class="s2">"b^\dagger b"</span><span class="p">,</span> <span class="sa">f</span><span class="s2">"v</span><span class="si">{</span><span class="n">i</span><span class="si">}</span><span class="s2">"</span><span class="p">)</span>
+        <span class="n">ham_terms</span> <span class="o">+=</span> <span class="n">g</span> <span class="o">*</span> <span class="n">omega</span> <span class="o">*</span> <span class="n">Op</span><span class="p">(</span><span class="sa">r</span><span class="s2">"a^\dagger a"</span><span class="p">,</span> <span class="sa">f</span><span class="s2">"e</span><span class="si">{</span><span class="n">i</span><span class="si">}</span><span class="s2">"</span><span class="p">)</span> <span class="o">*</span> <span class="n">Op</span><span class="p">(</span><span class="sa">r</span><span class="s2">"b^\dagger+b"</span><span class="p">,</span> <span class="sa">f</span><span class="s2">"v</span><span class="si">{</span><span class="n">i</span><span class="si">}</span><span class="s2">"</span><span class="p">)</span>
+    <span class="n">basis</span> <span class="o">=</span> <span class="p">[</span><span class="n">BasisMultiElectron</span><span class="p">([</span><span class="s2">"e0"</span><span class="p">,</span> <span class="s2">"e1"</span><span class="p">],</span> <span class="p">[</span><span class="mi">0</span><span class="p">,</span> <span class="mi">0</span><span class="p">]),</span> <span class="n">BasisSHO</span><span class="p">(</span><span class="s2">"v0"</span><span class="p">,</span> <span class="n">omega</span><span class="p">,</span> <span class="n">nbas</span><span class="p">),</span> <span class="n">BasisSHO</span><span class="p">(</span><span class="s2">"v1"</span><span class="p">,</span> <span class="n">omega</span><span class="p">,</span> <span class="n">nbas</span><span class="p">)]</span>
     <span class="k">return</span> <span class="n">Model</span><span class="p">(</span><span class="n">basis</span><span class="p">,</span> <span class="n">ham_terms</span><span class="p">)</span>
 </pre></div>
 </div>
@@ -621,15 +405,15 @@ div.rendered_html tbody tr:hover {
 <div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="c1"># using a relaxed initial state</span>
 <span class="k">def</span><span class="w"> </span><span class="nf">get_init_condition</span><span class="p">():</span>
     <span class="n">basis</span> <span class="o">=</span> <span class="n">BasisSHO</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="n">omega</span><span class="p">,</span> <span class="n">nbas</span><span class="p">)</span>
-    <span class="n">state</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">linalg</span><span class="o">.</span><span class="n">eigh</span><span class="p">(</span><span class="n">basis</span><span class="o">.</span><span class="n">op_mat</span><span class="p">(</span><span class="sa">r</span><span class="s2">&quot;b^\dagger b&quot;</span><span class="p">)</span> <span class="o">+</span> <span class="n">g</span> <span class="o">*</span> <span class="n">basis</span><span class="o">.</span><span class="n">op_mat</span><span class="p">(</span><span class="sa">r</span><span class="s2">&quot;b^\dagger+b&quot;</span><span class="p">))[</span><span class="mi">1</span><span class="p">][:,</span> <span class="mi">0</span><span class="p">]</span>
-    <span class="k">return</span> <span class="p">{</span><span class="s2">&quot;v0&quot;</span><span class="p">:</span> <span class="n">state</span><span class="p">}</span>
+    <span class="n">state</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">linalg</span><span class="o">.</span><span class="n">eigh</span><span class="p">(</span><span class="n">basis</span><span class="o">.</span><span class="n">op_mat</span><span class="p">(</span><span class="sa">r</span><span class="s2">"b^\dagger b"</span><span class="p">)</span> <span class="o">+</span> <span class="n">g</span> <span class="o">*</span> <span class="n">basis</span><span class="o">.</span><span class="n">op_mat</span><span class="p">(</span><span class="sa">r</span><span class="s2">"b^\dagger+b"</span><span class="p">))[</span><span class="mi">1</span><span class="p">][:,</span> <span class="mi">0</span><span class="p">]</span>
+    <span class="k">return</span> <span class="p">{</span><span class="s2">"v0"</span><span class="p">:</span> <span class="n">state</span><span class="p">}</span>
 <span class="n">init_condition</span> <span class="o">=</span> <span class="n">get_init_condition</span><span class="p">()</span>
 </pre></div>
 </div>
 </div>
 </section>
 <section id="Time-Evolution-with-the-Default-Configuration">
-<h2>Time Evolution with the Default Configuration<a class="headerlink" href="#Time-Evolution-with-the-Default-Configuration" title="Permalink to this heading">#</a></h2>
+<h2>Time Evolution with the Default Configuration<a class="headerlink" href="#Time-Evolution-with-the-Default-Configuration" title="Link to this heading">¶</a></h2>
 <p>Next, we run the simulation using the <code class="docutils literal notranslate"><span class="pre">evolve</span></code> method in the <code class="docutils literal notranslate"><span class="pre">Mps</span></code> class. At this phase, we keep <span class="math notranslate nohighlight">\(\Delta G = 0\)</span>.</p>
 <div class="nbinput nblast docutils container">
 <div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[11]:
@@ -655,7 +439,7 @@ div.rendered_html tbody tr:hover {
 <div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="c1"># Hamiltonian MPO</span>
 <span class="n">mpo</span> <span class="o">=</span> <span class="n">Mpo</span><span class="p">(</span><span class="n">model</span><span class="p">)</span>
 <span class="c1"># The occupation of e0</span>
-<span class="n">n_op</span> <span class="o">=</span> <span class="n">Mpo</span><span class="p">(</span><span class="n">model</span><span class="p">,</span> <span class="n">Op</span><span class="p">(</span><span class="sa">r</span><span class="s2">&quot;a^\dagger a&quot;</span><span class="p">,</span> <span class="s2">&quot;e0&quot;</span><span class="p">))</span>
+<span class="n">n_op</span> <span class="o">=</span> <span class="n">Mpo</span><span class="p">(</span><span class="n">model</span><span class="p">,</span> <span class="n">Op</span><span class="p">(</span><span class="sa">r</span><span class="s2">"a^\dagger a"</span><span class="p">,</span> <span class="s2">"e0"</span><span class="p">))</span>
 </pre></div>
 </div>
 </div>
@@ -671,7 +455,7 @@ div.rendered_html tbody tr:hover {
 <span class="n">n_list</span> <span class="o">=</span> <span class="p">[]</span>
 <span class="k">for</span> <span class="n">i_step</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="mi">50</span><span class="p">):</span>
     <span class="n">n</span> <span class="o">=</span> <span class="n">mps</span><span class="o">.</span><span class="n">expectation</span><span class="p">(</span><span class="n">n_op</span><span class="p">)</span>
-    <span class="n">logger</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Step </span><span class="si">{</span><span class="n">i_step</span><span class="si">}</span><span class="s2">. Time </span><span class="si">{</span><span class="n">i_step</span><span class="w"> </span><span class="o">*</span><span class="w"> </span><span class="n">dt</span><span class="si">:</span><span class="s2">.2f</span><span class="si">}</span><span class="s2">. $n$ </span><span class="si">{</span><span class="n">n</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+    <span class="n">logger</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="sa">f</span><span class="s2">"Step </span><span class="si">{</span><span class="n">i_step</span><span class="si">}</span><span class="s2">. Time </span><span class="si">{</span><span class="n">i_step</span><span class="w"> </span><span class="o">*</span><span class="w"> </span><span class="n">dt</span><span class="si">:</span><span class="s2">.2f</span><span class="si">}</span><span class="s2">. $n$ </span><span class="si">{</span><span class="n">n</span><span class="si">}</span><span class="s2">"</span><span class="p">)</span>
     <span class="c1"># perform time evolution. Note that the evolution is not in-place.</span>
     <span class="n">mps</span> <span class="o">=</span> <span class="n">mps</span><span class="o">.</span><span class="n">evolve</span><span class="p">(</span><span class="n">mpo</span><span class="p">,</span> <span class="n">dt</span><span class="p">)</span>
     <span class="n">n_list</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">n</span><span class="p">)</span>
@@ -683,56 +467,56 @@ div.rendered_html tbody tr:hover {
 </div>
 <div class="output_area stderr docutils container">
 <div class="highlight"><pre>
-2026-05-20 02:56:51,396[INFO] Step 0. Time 0.00. $n$ 0.9999999999999998
-2026-05-20 02:56:51,410[INFO] Step 1. Time 0.20. $n$ 0.9996030537865594
-2026-05-20 02:56:51,421[INFO] Step 2. Time 0.40. $n$ 0.9984313966561619
-2026-05-20 02:56:51,435[INFO] Step 3. Time 0.60. $n$ 0.9965532876450579
-2026-05-20 02:56:51,451[INFO] Step 4. Time 0.80. $n$ 0.9940731362639054
-2026-05-20 02:56:51,466[INFO] Step 5. Time 1.00. $n$ 0.991116186884249
-2026-05-20 02:56:51,482[INFO] Step 6. Time 1.20. $n$ 0.9878132450238745
-2026-05-20 02:56:51,498[INFO] Step 7. Time 1.40. $n$ 0.9842873078294339
-2026-05-20 02:56:51,514[INFO] Step 8. Time 1.60. $n$ 0.9806441927926954
-2026-05-20 02:56:51,530[INFO] Step 9. Time 1.80. $n$ 0.976967746624379
-2026-05-20 02:56:51,546[INFO] Step 10. Time 2.00. $n$ 0.9733182226560808
-2026-05-20 02:56:51,564[INFO] Step 11. Time 2.20. $n$ 0.9697373081106376
-2026-05-20 02:56:51,580[INFO] Step 12. Time 2.40. $n$ 0.9662497016753405
-2026-05-20 02:56:51,596[INFO] Step 13. Time 2.60. $n$ 0.962867160945706
-2026-05-20 02:56:51,612[INFO] Step 14. Time 2.80. $n$ 0.9595919026133962
-2026-05-20 02:56:51,629[INFO] Step 15. Time 3.00. $n$ 0.9564197521679629
-2026-05-20 02:56:51,645[INFO] Step 16. Time 3.20. $n$ 0.9533423734970324
-2026-05-20 02:56:51,661[INFO] Step 17. Time 3.40. $n$ 0.9503492089387038
-2026-05-20 02:56:51,677[INFO] Step 18. Time 3.60. $n$ 0.9474287391824951
-2026-05-20 02:56:51,695[INFO] Step 19. Time 3.80. $n$ 0.9445692798814911
-2026-05-20 02:56:51,712[INFO] Step 20. Time 4.00. $n$ 0.9417594196434944
-2026-05-20 02:56:51,728[INFO] Step 21. Time 4.20. $n$ 0.938988314016884
-2026-05-20 02:56:51,744[INFO] Step 22. Time 4.40. $n$ 0.9362456942950407
-2026-05-20 02:56:51,761[INFO] Step 23. Time 4.60. $n$ 0.9335221984937243
-2026-05-20 02:56:51,777[INFO] Step 24. Time 4.80. $n$ 0.9308095732941701
-2026-05-20 02:56:51,793[INFO] Step 25. Time 5.00. $n$ 0.9281008849250422
-2026-05-20 02:56:51,809[INFO] Step 26. Time 5.20. $n$ 0.9253906107085342
-2026-05-20 02:56:51,826[INFO] Step 27. Time 5.40. $n$ 0.9226738471654728
-2026-05-20 02:56:51,842[INFO] Step 28. Time 5.60. $n$ 0.9199478805518423
-2026-05-20 02:56:51,858[INFO] Step 29. Time 5.80. $n$ 0.9172094618331406
-2026-05-20 02:56:51,874[INFO] Step 30. Time 6.00. $n$ 0.9144551950424458
-2026-05-20 02:56:51,891[INFO] Step 31. Time 6.20. $n$ 0.9116816732036942
-2026-05-20 02:56:51,907[INFO] Step 32. Time 6.40. $n$ 0.9088859026726781
-2026-05-20 02:56:51,923[INFO] Step 33. Time 6.60. $n$ 0.9060659656334908
-2026-05-20 02:56:51,940[INFO] Step 34. Time 6.80. $n$ 0.90322101218372
-2026-05-20 02:56:51,956[INFO] Step 35. Time 7.00. $n$ 0.9003515623906606
-2026-05-20 02:56:51,973[INFO] Step 36. Time 7.20. $n$ 0.8974590790192766
-2026-05-20 02:56:51,990[INFO] Step 37. Time 7.40. $n$ 0.8945453849965326
-2026-05-20 02:56:52,006[INFO] Step 38. Time 7.60. $n$ 0.8916120979060871
-2026-05-20 02:56:52,023[INFO] Step 39. Time 7.80. $n$ 0.8886602437062094
-2026-05-20 02:56:52,039[INFO] Step 40. Time 8.00. $n$ 0.8856902107426247
-2026-05-20 02:56:52,056[INFO] Step 41. Time 8.20. $n$ 0.8827020259679245
-2026-05-20 02:56:52,073[INFO] Step 42. Time 8.40. $n$ 0.8796958667524065
-2026-05-20 02:56:52,089[INFO] Step 43. Time 8.60. $n$ 0.876672673739856
-2026-05-20 02:56:52,105[INFO] Step 44. Time 8.80. $n$ 0.8736347299848458
-2026-05-20 02:56:52,122[INFO] Step 45. Time 9.00. $n$ 0.8705861034366976
-2026-05-20 02:56:52,139[INFO] Step 46. Time 9.20. $n$ 0.8675328737556515
-2026-05-20 02:56:52,155[INFO] Step 47. Time 9.40. $n$ 0.8644830817098144
-2026-05-20 02:56:52,172[INFO] Step 48. Time 9.60. $n$ 0.8614463370235248
-2026-05-20 02:56:52,188[INFO] Step 49. Time 9.80. $n$ 0.8584330043902285
+2026-10-14 01:46:29,437[INFO] Step 0. Time 0.00. $n$ 0.9999999999999997
+2026-10-14 01:46:29,448[INFO] Step 1. Time 0.20. $n$ 0.9996030537865599
+2026-10-14 01:46:29,458[INFO] Step 2. Time 0.40. $n$ 0.9984313966561627
+2026-10-14 01:46:29,468[INFO] Step 3. Time 0.60. $n$ 0.9965532876450582
+2026-10-14 01:46:29,478[INFO] Step 4. Time 0.80. $n$ 0.9940731362639054
+2026-10-14 01:46:29,488[INFO] Step 5. Time 1.00. $n$ 0.9911161868842484
+2026-10-14 01:46:29,498[INFO] Step 6. Time 1.20. $n$ 0.9878132450238745
+2026-10-14 01:46:29,508[INFO] Step 7. Time 1.40. $n$ 0.9842873078294339
+2026-10-14 01:46:29,518[INFO] Step 8. Time 1.60. $n$ 0.9806441927926957
+2026-10-14 01:46:29,528[INFO] Step 9. Time 1.80. $n$ 0.9769677466243794
+2026-10-14 01:46:29,538[INFO] Step 10. Time 2.00. $n$ 0.9733182226560815
+2026-10-14 01:46:29,548[INFO] Step 11. Time 2.20. $n$ 0.9697373081106375
+2026-10-14 01:46:29,558[INFO] Step 12. Time 2.40. $n$ 0.9662497016753411
+2026-10-14 01:46:29,568[INFO] Step 13. Time 2.60. $n$ 0.9628671609457058
+2026-10-14 01:46:29,578[INFO] Step 14. Time 2.80. $n$ 0.9595919026133976
+2026-10-14 01:46:29,588[INFO] Step 15. Time 3.00. $n$ 0.956419752167962
+2026-10-14 01:46:29,598[INFO] Step 16. Time 3.20. $n$ 0.9533423734970332
+2026-10-14 01:46:29,609[INFO] Step 17. Time 3.40. $n$ 0.9503492089387037
+2026-10-14 01:46:29,619[INFO] Step 18. Time 3.60. $n$ 0.9474287391824951
+2026-10-14 01:46:29,628[INFO] Step 19. Time 3.80. $n$ 0.9445692798814911
+2026-10-14 01:46:29,639[INFO] Step 20. Time 4.00. $n$ 0.9417594196434944
+2026-10-14 01:46:29,651[INFO] Step 21. Time 4.20. $n$ 0.9389883140168832
+2026-10-14 01:46:29,661[INFO] Step 22. Time 4.40. $n$ 0.9362456942950406
+2026-10-14 01:46:29,671[INFO] Step 23. Time 4.60. $n$ 0.9335221984937241
+2026-10-14 01:46:29,681[INFO] Step 24. Time 4.80. $n$ 0.9308095732941706
+2026-10-14 01:46:29,692[INFO] Step 25. Time 5.00. $n$ 0.9281008849250421
+2026-10-14 01:46:29,702[INFO] Step 26. Time 5.20. $n$ 0.9253906107085335
+2026-10-14 01:46:29,712[INFO] Step 27. Time 5.40. $n$ 0.922673847165473
+2026-10-14 01:46:29,723[INFO] Step 28. Time 5.60. $n$ 0.9199478805518423
+2026-10-14 01:46:29,733[INFO] Step 29. Time 5.80. $n$ 0.9172094618331411
+2026-10-14 01:46:29,743[INFO] Step 30. Time 6.00. $n$ 0.9144551950424464
+2026-10-14 01:46:29,753[INFO] Step 31. Time 6.20. $n$ 0.9116816732036945
+2026-10-14 01:46:29,763[INFO] Step 32. Time 6.40. $n$ 0.9088859026726788
+2026-10-14 01:46:29,773[INFO] Step 33. Time 6.60. $n$ 0.9060659656334908
+2026-10-14 01:46:29,784[INFO] Step 34. Time 6.80. $n$ 0.9032210121837201
+2026-10-14 01:46:29,795[INFO] Step 35. Time 7.00. $n$ 0.9003515623906608
+2026-10-14 01:46:29,805[INFO] Step 36. Time 7.20. $n$ 0.8974590790192777
+2026-10-14 01:46:29,816[INFO] Step 37. Time 7.40. $n$ 0.8945453849965332
+2026-10-14 01:46:29,826[INFO] Step 38. Time 7.60. $n$ 0.8916120979060874
+2026-10-14 01:46:29,837[INFO] Step 39. Time 7.80. $n$ 0.8886602437062088
+2026-10-14 01:46:29,847[INFO] Step 40. Time 8.00. $n$ 0.8856902107426251
+2026-10-14 01:46:29,858[INFO] Step 41. Time 8.20. $n$ 0.8827020259679251
+2026-10-14 01:46:29,868[INFO] Step 42. Time 8.40. $n$ 0.8796958667524071
+2026-10-14 01:46:29,879[INFO] Step 43. Time 8.60. $n$ 0.8766726737398555
+2026-10-14 01:46:29,889[INFO] Step 44. Time 8.80. $n$ 0.8736347299848457
+2026-10-14 01:46:29,899[INFO] Step 45. Time 9.00. $n$ 0.8705861034366988
+2026-10-14 01:46:29,910[INFO] Step 46. Time 9.20. $n$ 0.867532873755651
+2026-10-14 01:46:29,920[INFO] Step 47. Time 9.40. $n$ 0.8644830817098138
+2026-10-14 01:46:29,931[INFO] Step 48. Time 9.60. $n$ 0.8614463370235246
+2026-10-14 01:46:29,941[INFO] Step 49. Time 9.80. $n$ 0.858433004390228
 </pre></div></div>
 </div>
 <div class="nbinput docutils container">
@@ -741,11 +525,11 @@ div.rendered_html tbody tr:hover {
 </div>
 <div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="c1"># plotting the occupation</span>
 <span class="kn">from</span><span class="w"> </span><span class="nn">matplotlib</span><span class="w"> </span><span class="kn">import</span> <span class="n">pyplot</span> <span class="k">as</span> <span class="n">plt</span>
-<span class="n">plt</span><span class="o">.</span><span class="n">style</span><span class="o">.</span><span class="n">use</span><span class="p">(</span><span class="s2">&quot;mm.mplstyle&quot;</span><span class="p">)</span>
+<span class="n">plt</span><span class="o">.</span><span class="n">style</span><span class="o">.</span><span class="n">use</span><span class="p">(</span><span class="s2">"mm.mplstyle"</span><span class="p">)</span>
 
-<span class="n">plt</span><span class="o">.</span><span class="n">plot</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">arange</span><span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="n">n_list</span><span class="p">))</span> <span class="o">*</span> <span class="n">dt</span><span class="p">,</span> <span class="n">n_list</span><span class="p">,</span> <span class="n">label</span><span class="o">=</span><span class="s2">&quot;Default&quot;</span><span class="p">)</span>
-<span class="n">plt</span><span class="o">.</span><span class="n">xlabel</span><span class="p">(</span><span class="s2">&quot;$t$&quot;</span><span class="p">)</span>
-<span class="n">plt</span><span class="o">.</span><span class="n">ylabel</span><span class="p">(</span><span class="sa">r</span><span class="s2">&quot;Occupation $\langle a^\dagger_0 a_0 \rangle$&quot;</span><span class="p">)</span>
+<span class="n">plt</span><span class="o">.</span><span class="n">plot</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">arange</span><span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="n">n_list</span><span class="p">))</span> <span class="o">*</span> <span class="n">dt</span><span class="p">,</span> <span class="n">n_list</span><span class="p">,</span> <span class="n">label</span><span class="o">=</span><span class="s2">"Default"</span><span class="p">)</span>
+<span class="n">plt</span><span class="o">.</span><span class="n">xlabel</span><span class="p">(</span><span class="s2">"$t$"</span><span class="p">)</span>
+<span class="n">plt</span><span class="o">.</span><span class="n">ylabel</span><span class="p">(</span><span class="sa">r</span><span class="s2">"Occupation $\langle a^\dagger_0 a_0 \rangle$"</span><span class="p">)</span>
 <span class="n">plt</span><span class="o">.</span><span class="n">legend</span><span class="p">()</span>
 <span class="n">plt</span><span class="o">.</span><span class="n">show</span><span class="p">()</span>
 </pre></div>
@@ -818,7 +602,7 @@ div.rendered_html tbody tr:hover {
 </div>
 </section>
 <section id="Configuring-Time-Evolution">
-<h2>Configuring Time Evolution<a class="headerlink" href="#Configuring-Time-Evolution" title="Permalink to this heading">#</a></h2>
+<h2>Configuring Time Evolution<a class="headerlink" href="#Configuring-Time-Evolution" title="Link to this heading">¶</a></h2>
 <p>In order to configure the time evolution, you should update the <code class="docutils literal notranslate"><span class="pre">evolve_config</span></code> and <code class="docutils literal notranslate"><span class="pre">compress_config</span></code> attributes of an MPS instance. These attributes are instances of the <code class="docutils literal notranslate"><span class="pre">EvolveConfig</span></code> class and the <code class="docutils literal notranslate"><span class="pre">CompressConfig</span></code> class. Please see the API referece for full options of the configuration classes.</p>
 <div class="nbinput nblast docutils container">
 <div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[19]:
@@ -917,7 +701,7 @@ div.rendered_html tbody tr:hover {
 </div>
 </section>
 <section id="Observing-Marcus-Inverted-Region">
-<h2>Observing Marcus Inverted Region<a class="headerlink" href="#Observing-Marcus-Inverted-Region" title="Permalink to this heading">#</a></h2>
+<h2>Observing Marcus Inverted Region<a class="headerlink" href="#Observing-Marcus-Inverted-Region" title="Link to this heading">¶</a></h2>
 <p>Next, we put everything together and perform time evolution with different <span class="math notranslate nohighlight">\(\Delta G\)</span> using TDVP-PS. Since the initial state of time evolution is a Hartree product state, we must expand the bond dimension before performing the time evolution.</p>
 <div class="nbinput docutils container">
 <div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[26]:
@@ -928,7 +712,7 @@ div.rendered_html tbody tr:hover {
 
 <span class="c1"># initialize the MPS in the Hartree product state</span>
 <span class="n">init_mps</span> <span class="o">=</span> <span class="n">Mps</span><span class="o">.</span><span class="n">hartree_product_state</span><span class="p">(</span><span class="n">model</span><span class="p">,</span> <span class="n">condition</span><span class="o">=</span><span class="n">init_condition</span><span class="p">)</span>
-<span class="n">logger</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Initial MPS bond dimension: </span><span class="si">{</span><span class="n">init_mps</span><span class="o">.</span><span class="n">bond_dims</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+<span class="n">logger</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="sa">f</span><span class="s2">"Initial MPS bond dimension: </span><span class="si">{</span><span class="n">init_mps</span><span class="o">.</span><span class="n">bond_dims</span><span class="si">}</span><span class="s2">"</span><span class="p">)</span>
 <span class="c1"># setup compression configuration</span>
 <span class="n">init_mps</span><span class="o">.</span><span class="n">compress_config</span> <span class="o">=</span> <span class="n">CompressConfig</span><span class="p">(</span><span class="n">CompressCriteria</span><span class="o">.</span><span class="n">fixed</span><span class="p">,</span> <span class="n">max_bonddim</span><span class="o">=</span><span class="mi">8</span><span class="p">)</span>
 <span class="c1"># setup time evolution configuration</span>
@@ -946,11 +730,11 @@ div.rendered_html tbody tr:hover {
     <span class="c1"># since using TDVP-PS, expand the bond dimension to target value.</span>
     <span class="c1"># otherwise the time evolution is limited to the Hartree product state.</span>
     <span class="n">mps</span> <span class="o">=</span> <span class="n">init_mps</span><span class="o">.</span><span class="n">expand_bond_dimension</span><span class="p">(</span><span class="n">mpo</span><span class="p">,</span> <span class="n">include_ex</span><span class="o">=</span><span class="kc">False</span><span class="p">)</span>
-    <span class="n">logger</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;MPS bond dimension after expanding: </span><span class="si">{</span><span class="n">mps</span><span class="o">.</span><span class="n">bond_dims</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+    <span class="n">logger</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="sa">f</span><span class="s2">"MPS bond dimension after expanding: </span><span class="si">{</span><span class="n">mps</span><span class="o">.</span><span class="n">bond_dims</span><span class="si">}</span><span class="s2">"</span><span class="p">)</span>
     <span class="n">n_list</span> <span class="o">=</span> <span class="p">[]</span>
     <span class="k">for</span> <span class="n">i_step</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="mi">20</span><span class="p">):</span>
         <span class="n">n</span> <span class="o">=</span> <span class="n">mps</span><span class="o">.</span><span class="n">expectation</span><span class="p">(</span><span class="n">n_op</span><span class="p">)</span>
-        <span class="n">logger</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Step </span><span class="si">{</span><span class="n">i_step</span><span class="si">}</span><span class="s2">. Time </span><span class="si">{</span><span class="n">i_step</span><span class="w"> </span><span class="o">*</span><span class="w"> </span><span class="n">dt</span><span class="si">:</span><span class="s2">.2f</span><span class="si">}</span><span class="s2">. $n$ </span><span class="si">{</span><span class="n">n</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+        <span class="n">logger</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="sa">f</span><span class="s2">"Step </span><span class="si">{</span><span class="n">i_step</span><span class="si">}</span><span class="s2">. Time </span><span class="si">{</span><span class="n">i_step</span><span class="w"> </span><span class="o">*</span><span class="w"> </span><span class="n">dt</span><span class="si">:</span><span class="s2">.2f</span><span class="si">}</span><span class="s2">. $n$ </span><span class="si">{</span><span class="n">n</span><span class="si">}</span><span class="s2">"</span><span class="p">)</span>
         <span class="c1"># perform time evolution. Note that the evolution is not in-place.</span>
         <span class="n">mps</span> <span class="o">=</span> <span class="n">mps</span><span class="o">.</span><span class="n">evolve</span><span class="p">(</span><span class="n">mpo</span><span class="p">,</span> <span class="n">dt</span><span class="p">)</span>
         <span class="n">n_list</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">n</span><span class="p">)</span>
@@ -963,112 +747,112 @@ div.rendered_html tbody tr:hover {
 </div>
 <div class="output_area stderr docutils container">
 <div class="highlight"><pre>
-2026-05-20 02:56:54,662[INFO] Initial MPS bond dimension: [1, 1, 1, 1]
-2026-05-20 02:56:54,684[INFO] MPS bond dimension after expanding: [1, 2, 8, 1]
-2026-05-20 02:56:54,686[INFO] Step 0. Time 0.00. $n$ 1.0
-2026-05-20 02:56:54,712[INFO] Step 1. Time 0.50. $n$ 0.997577678849608
-2026-05-20 02:56:54,737[INFO] Step 2. Time 1.00. $n$ 0.9911341778211981
-2026-05-20 02:56:54,762[INFO] Step 3. Time 1.50. $n$ 0.9824981838275654
-2026-05-20 02:56:54,788[INFO] Step 4. Time 2.00. $n$ 0.9733283418283656
-2026-05-20 02:56:54,813[INFO] Step 5. Time 2.50. $n$ 0.9645218516469742
-2026-05-20 02:56:54,838[INFO] Step 6. Time 3.00. $n$ 0.9563382368492208
-2026-05-20 02:56:54,863[INFO] Step 7. Time 3.50. $n$ 0.9487304333892206
-2026-05-20 02:56:54,889[INFO] Step 8. Time 4.00. $n$ 0.9415533981894383
-2026-05-20 02:56:54,914[INFO] Step 9. Time 4.50. $n$ 0.9346400325046184
-2026-05-20 02:56:54,939[INFO] Step 10. Time 5.00. $n$ 0.9278351842220711
-2026-05-20 02:56:54,965[INFO] Step 11. Time 5.50. $n$ 0.9210298996164081
-2026-05-20 02:56:54,990[INFO] Step 12. Time 6.00. $n$ 0.9141749831330701
-2026-05-20 02:56:55,015[INFO] Step 13. Time 6.50. $n$ 0.9072563582422932
-2026-05-20 02:56:55,041[INFO] Step 14. Time 7.00. $n$ 0.900259128610462
-2026-05-20 02:56:55,066[INFO] Step 15. Time 7.50. $n$ 0.893152108534242
-2026-05-20 02:56:55,092[INFO] Step 16. Time 8.00. $n$ 0.8858943878575136
-2026-05-20 02:56:55,118[INFO] Step 17. Time 8.50. $n$ 0.8784553598367519
-2026-05-20 02:56:55,142[INFO] Step 18. Time 9.00. $n$ 0.8708472420517182
-2026-05-20 02:56:55,167[INFO] Step 19. Time 9.50. $n$ 0.8631616549410941
-2026-05-20 02:56:55,211[INFO] MPS bond dimension after expanding: [1, 2, 8, 1]
-2026-05-20 02:56:55,212[INFO] Step 0. Time 0.00. $n$ 1.0000000000000002
-2026-05-20 02:56:55,237[INFO] Step 1. Time 0.50. $n$ 0.9975401925879036
-2026-05-20 02:56:55,262[INFO] Step 2. Time 1.00. $n$ 0.9906013628490239
-2026-05-20 02:56:55,287[INFO] Step 3. Time 1.50. $n$ 0.980248885864029
-2026-05-20 02:56:55,311[INFO] Step 4. Time 2.00. $n$ 0.9676593608104573
-2026-05-20 02:56:55,336[INFO] Step 5. Time 2.50. $n$ 0.9537696503060077
-2026-05-20 02:56:55,361[INFO] Step 6. Time 3.00. $n$ 0.9392072948520958
-2026-05-20 02:56:55,386[INFO] Step 7. Time 3.50. $n$ 0.92435861042602
-2026-05-20 02:56:55,411[INFO] Step 8. Time 4.00. $n$ 0.9094397848359166
-2026-05-20 02:56:55,436[INFO] Step 9. Time 4.50. $n$ 0.8945511232283816
-2026-05-20 02:56:55,461[INFO] Step 10. Time 5.00. $n$ 0.8797430038665832
-2026-05-20 02:56:55,487[INFO] Step 11. Time 5.50. $n$ 0.86507977982476
-2026-05-20 02:56:55,511[INFO] Step 12. Time 6.00. $n$ 0.8506519218071078
-2026-05-20 02:56:55,537[INFO] Step 13. Time 6.50. $n$ 0.8365374567180586
-2026-05-20 02:56:55,561[INFO] Step 14. Time 7.00. $n$ 0.822768823962594
-2026-05-20 02:56:55,586[INFO] Step 15. Time 7.50. $n$ 0.8093300617593495
-2026-05-20 02:56:55,610[INFO] Step 16. Time 8.00. $n$ 0.7961632960693853
-2026-05-20 02:56:55,635[INFO] Step 17. Time 8.50. $n$ 0.7831685752085126
-2026-05-20 02:56:55,660[INFO] Step 18. Time 9.00. $n$ 0.7702000677823148
-2026-05-20 02:56:55,685[INFO] Step 19. Time 9.50. $n$ 0.7570646850987605
-2026-05-20 02:56:55,730[INFO] MPS bond dimension after expanding: [1, 2, 8, 1]
-2026-05-20 02:56:55,731[INFO] Step 0. Time 0.00. $n$ 1.0
-2026-05-20 02:56:55,756[INFO] Step 1. Time 0.50. $n$ 0.9975277339592458
-2026-05-20 02:56:55,781[INFO] Step 2. Time 1.00. $n$ 0.990426183975138
-2026-05-20 02:56:55,805[INFO] Step 3. Time 1.50. $n$ 0.979526804706868
-2026-05-20 02:56:55,830[INFO] Step 4. Time 2.00. $n$ 0.965917044906082
-2026-05-20 02:56:55,854[INFO] Step 5. Time 2.50. $n$ 0.950685008940619
-2026-05-20 02:56:55,879[INFO] Step 6. Time 3.00. $n$ 0.9347455146607793
-2026-05-20 02:56:55,903[INFO] Step 7. Time 3.50. $n$ 0.9187422726641736
-2026-05-20 02:56:55,928[INFO] Step 8. Time 4.00. $n$ 0.9030158921696054
-2026-05-20 02:56:55,953[INFO] Step 9. Time 4.50. $n$ 0.8876520609099666
-2026-05-20 02:56:55,978[INFO] Step 10. Time 5.00. $n$ 0.8725982798020393
-2026-05-20 02:56:56,002[INFO] Step 11. Time 5.50. $n$ 0.8577742342547106
-2026-05-20 02:56:56,027[INFO] Step 12. Time 6.00. $n$ 0.8431151893155991
-2026-05-20 02:56:56,052[INFO] Step 13. Time 6.50. $n$ 0.8285809886892007
-2026-05-20 02:56:56,077[INFO] Step 14. Time 7.00. $n$ 0.8141772509631175
-2026-05-20 02:56:56,101[INFO] Step 15. Time 7.50. $n$ 0.7999687732355235
-2026-05-20 02:56:56,127[INFO] Step 16. Time 8.00. $n$ 0.7860556760297732
-2026-05-20 02:56:56,151[INFO] Step 17. Time 8.50. $n$ 0.7725203376680703
-2026-05-20 02:56:56,176[INFO] Step 18. Time 9.00. $n$ 0.7593659426880218
-2026-05-20 02:56:56,201[INFO] Step 19. Time 9.50. $n$ 0.7464615604976049
-2026-05-20 02:56:56,245[INFO] MPS bond dimension after expanding: [1, 2, 8, 1]
-2026-05-20 02:56:56,246[INFO] Step 0. Time 0.00. $n$ 1.0
-2026-05-20 02:56:56,271[INFO] Step 1. Time 0.50. $n$ 0.9975406090105959
-2026-05-20 02:56:56,296[INFO] Step 2. Time 1.00. $n$ 0.9906249611406748
-2026-05-20 02:56:56,320[INFO] Step 3. Time 1.50. $n$ 0.9804700824710465
-2026-05-20 02:56:56,345[INFO] Step 4. Time 2.00. $n$ 0.9686190882357235
-2026-05-20 02:56:56,369[INFO] Step 5. Time 2.50. $n$ 0.9564506630039297
-2026-05-20 02:56:56,394[INFO] Step 6. Time 3.00. $n$ 0.9448244017405041
-2026-05-20 02:56:56,419[INFO] Step 7. Time 3.50. $n$ 0.9339798618065536
-2026-05-20 02:56:56,444[INFO] Step 8. Time 4.00. $n$ 0.9236970054402215
-2026-05-20 02:56:56,468[INFO] Step 9. Time 4.50. $n$ 0.9136118419963752
-2026-05-20 02:56:56,493[INFO] Step 10. Time 5.00. $n$ 0.9034945341198822
-2026-05-20 02:56:56,518[INFO] Step 11. Time 5.50. $n$ 0.8933290940558765
-2026-05-20 02:56:56,542[INFO] Step 12. Time 6.00. $n$ 0.8832123669566802
-2026-05-20 02:56:56,567[INFO] Step 13. Time 6.50. $n$ 0.8732206640791118
-2026-05-20 02:56:56,592[INFO] Step 14. Time 7.00. $n$ 0.8633414313596104
-2026-05-20 02:56:56,616[INFO] Step 15. Time 7.50. $n$ 0.8534881635602461
-2026-05-20 02:56:56,641[INFO] Step 16. Time 8.00. $n$ 0.8435889215796821
-2026-05-20 02:56:56,665[INFO] Step 17. Time 8.50. $n$ 0.8336922458093314
-2026-05-20 02:56:56,690[INFO] Step 18. Time 9.00. $n$ 0.8239993933201377
-2026-05-20 02:56:56,715[INFO] Step 19. Time 9.50. $n$ 0.8147658344265765
-2026-05-20 02:56:56,759[INFO] MPS bond dimension after expanding: [1, 2, 8, 1]
-2026-05-20 02:56:56,760[INFO] Step 0. Time 0.00. $n$ 1.0000000000000002
-2026-05-20 02:56:56,785[INFO] Step 1. Time 0.50. $n$ 0.9975784978846653
-2026-05-20 02:56:56,809[INFO] Step 2. Time 1.00. $n$ 0.9911783314788783
-2026-05-20 02:56:56,834[INFO] Step 3. Time 1.50. $n$ 0.9828793267407638
-2026-05-20 02:56:56,858[INFO] Step 4. Time 2.00. $n$ 0.9748047375106139
-2026-05-20 02:56:56,883[INFO] Step 5. Time 2.50. $n$ 0.9681008008243933
-2026-05-20 02:56:56,907[INFO] Step 6. Time 3.00. $n$ 0.9626946118364346
-2026-05-20 02:56:56,932[INFO] Step 7. Time 3.50. $n$ 0.9578334887382827
-2026-05-20 02:56:56,957[INFO] Step 8. Time 4.00. $n$ 0.9528636883612412
-2026-05-20 02:56:56,981[INFO] Step 9. Time 4.50. $n$ 0.9476402488995223
-2026-05-20 02:56:57,006[INFO] Step 10. Time 5.00. $n$ 0.9423714783197245
-2026-05-20 02:56:57,031[INFO] Step 11. Time 5.50. $n$ 0.9372226613912149
-2026-05-20 02:56:57,056[INFO] Step 12. Time 6.00. $n$ 0.932143487391272
-2026-05-20 02:56:57,080[INFO] Step 13. Time 6.50. $n$ 0.9270168710222628
-2026-05-20 02:56:57,105[INFO] Step 14. Time 7.00. $n$ 0.9218472771188868
-2026-05-20 02:56:57,130[INFO] Step 15. Time 7.50. $n$ 0.9167421622570106
-2026-05-20 02:56:57,154[INFO] Step 16. Time 8.00. $n$ 0.9117276598161894
-2026-05-20 02:56:57,179[INFO] Step 17. Time 8.50. $n$ 0.9066479717963576
-2026-05-20 02:56:57,204[INFO] Step 18. Time 9.00. $n$ 0.9013355144433673
-2026-05-20 02:56:57,229[INFO] Step 19. Time 9.50. $n$ 0.8959335401185677
+2026-10-14 01:46:31,952[INFO] Initial MPS bond dimension: [1, 1, 1, 1]
+2026-10-14 01:46:31,967[INFO] MPS bond dimension after expanding: [1, 2, 8, 1]
+2026-10-14 01:46:31,968[INFO] Step 0. Time 0.00. $n$ 1.0
+2026-10-14 01:46:31,983[INFO] Step 1. Time 0.50. $n$ 0.9975776788496071
+2026-10-14 01:46:31,997[INFO] Step 2. Time 1.00. $n$ 0.9911341778211986
+2026-10-14 01:46:32,011[INFO] Step 3. Time 1.50. $n$ 0.982498183827564
+2026-10-14 01:46:32,025[INFO] Step 4. Time 2.00. $n$ 0.9733283418283689
+2026-10-14 01:46:32,038[INFO] Step 5. Time 2.50. $n$ 0.9645218516469468
+2026-10-14 01:46:32,051[INFO] Step 6. Time 3.00. $n$ 0.9563382368491798
+2026-10-14 01:46:32,065[INFO] Step 7. Time 3.50. $n$ 0.9487304333892244
+2026-10-14 01:46:32,079[INFO] Step 8. Time 4.00. $n$ 0.9415533981895283
+2026-10-14 01:46:32,092[INFO] Step 9. Time 4.50. $n$ 0.9346400325048942
+2026-10-14 01:46:32,105[INFO] Step 10. Time 5.00. $n$ 0.9278351842224875
+2026-10-14 01:46:32,118[INFO] Step 11. Time 5.50. $n$ 0.921029899617328
+2026-10-14 01:46:32,132[INFO] Step 12. Time 6.00. $n$ 0.9141749831328395
+2026-10-14 01:46:32,145[INFO] Step 13. Time 6.50. $n$ 0.9072563582335615
+2026-10-14 01:46:32,158[INFO] Step 14. Time 7.00. $n$ 0.9002591285942482
+2026-10-14 01:46:32,171[INFO] Step 15. Time 7.50. $n$ 0.893152108533183
+2026-10-14 01:46:32,184[INFO] Step 16. Time 8.00. $n$ 0.8858943878858218
+2026-10-14 01:46:32,198[INFO] Step 17. Time 8.50. $n$ 0.87845535986051
+2026-10-14 01:46:32,211[INFO] Step 18. Time 9.00. $n$ 0.8708472420376305
+2026-10-14 01:46:32,224[INFO] Step 19. Time 9.50. $n$ 0.863161654921283
+2026-10-14 01:46:32,249[INFO] MPS bond dimension after expanding: [1, 2, 8, 1]
+2026-10-14 01:46:32,250[INFO] Step 0. Time 0.00. $n$ 0.9999999999999999
+2026-10-14 01:46:32,263[INFO] Step 1. Time 0.50. $n$ 0.9975401925879047
+2026-10-14 01:46:32,277[INFO] Step 2. Time 1.00. $n$ 0.9906013628490247
+2026-10-14 01:46:32,290[INFO] Step 3. Time 1.50. $n$ 0.9802488858640304
+2026-10-14 01:46:32,303[INFO] Step 4. Time 2.00. $n$ 0.9676593608104599
+2026-10-14 01:46:32,317[INFO] Step 5. Time 2.50. $n$ 0.9537696503059964
+2026-10-14 01:46:32,330[INFO] Step 6. Time 3.00. $n$ 0.9392072948520427
+2026-10-14 01:46:32,343[INFO] Step 7. Time 3.50. $n$ 0.9243586104259068
+2026-10-14 01:46:32,357[INFO] Step 8. Time 4.00. $n$ 0.9094397848357549
+2026-10-14 01:46:32,370[INFO] Step 9. Time 4.50. $n$ 0.8945511232281894
+2026-10-14 01:46:32,383[INFO] Step 10. Time 5.00. $n$ 0.8797430038663074
+2026-10-14 01:46:32,397[INFO] Step 11. Time 5.50. $n$ 0.8650797798242396
+2026-10-14 01:46:32,410[INFO] Step 12. Time 6.00. $n$ 0.8506519218061608
+2026-10-14 01:46:32,423[INFO] Step 13. Time 6.50. $n$ 0.8365374567167934
+2026-10-14 01:46:32,436[INFO] Step 14. Time 7.00. $n$ 0.8227688239626167
+2026-10-14 01:46:32,449[INFO] Step 15. Time 7.50. $n$ 0.8093300617625527
+2026-10-14 01:46:32,463[INFO] Step 16. Time 8.00. $n$ 0.7961632960751635
+2026-10-14 01:46:32,476[INFO] Step 17. Time 8.50. $n$ 0.7831685752127828
+2026-10-14 01:46:32,489[INFO] Step 18. Time 9.00. $n$ 0.7702000677808496
+2026-10-14 01:46:32,503[INFO] Step 19. Time 9.50. $n$ 0.7570646850942878
+2026-10-14 01:46:32,528[INFO] MPS bond dimension after expanding: [1, 2, 8, 1]
+2026-10-14 01:46:32,529[INFO] Step 0. Time 0.00. $n$ 1.0
+2026-10-14 01:46:32,544[INFO] Step 1. Time 0.50. $n$ 0.9975277339592459
+2026-10-14 01:46:32,557[INFO] Step 2. Time 1.00. $n$ 0.9904261839751389
+2026-10-14 01:46:32,570[INFO] Step 3. Time 1.50. $n$ 0.9795268047068697
+2026-10-14 01:46:32,583[INFO] Step 4. Time 2.00. $n$ 0.9659170449060868
+2026-10-14 01:46:32,598[INFO] Step 5. Time 2.50. $n$ 0.9506850089406372
+2026-10-14 01:46:32,612[INFO] Step 6. Time 3.00. $n$ 0.9347455146608092
+2026-10-14 01:46:32,625[INFO] Step 7. Time 3.50. $n$ 0.918742272664204
+2026-10-14 01:46:32,642[INFO] Step 8. Time 4.00. $n$ 0.9030158921696358
+2026-10-14 01:46:32,656[INFO] Step 9. Time 4.50. $n$ 0.8876520609099995
+2026-10-14 01:46:32,669[INFO] Step 10. Time 5.00. $n$ 0.8725982798020762
+2026-10-14 01:46:32,682[INFO] Step 11. Time 5.50. $n$ 0.8577742342545667
+2026-10-14 01:46:32,696[INFO] Step 12. Time 6.00. $n$ 0.8431151893145141
+2026-10-14 01:46:32,710[INFO] Step 13. Time 6.50. $n$ 0.8285809886858968
+2026-10-14 01:46:32,723[INFO] Step 14. Time 7.00. $n$ 0.8141772509580619
+2026-10-14 01:46:32,737[INFO] Step 15. Time 7.50. $n$ 0.7999687732324235
+2026-10-14 01:46:32,750[INFO] Step 16. Time 8.00. $n$ 0.7860556760300724
+2026-10-14 01:46:32,766[INFO] Step 17. Time 8.50. $n$ 0.7725203376735785
+2026-10-14 01:46:32,779[INFO] Step 18. Time 9.00. $n$ 0.7593659426994879
+2026-10-14 01:46:32,792[INFO] Step 19. Time 9.50. $n$ 0.746461560509593
+2026-10-14 01:46:32,819[INFO] MPS bond dimension after expanding: [1, 2, 8, 1]
+2026-10-14 01:46:32,820[INFO] Step 0. Time 0.00. $n$ 1.0
+2026-10-14 01:46:32,834[INFO] Step 1. Time 0.50. $n$ 0.9975406090105956
+2026-10-14 01:46:32,849[INFO] Step 2. Time 1.00. $n$ 0.9906249611406759
+2026-10-14 01:46:32,863[INFO] Step 3. Time 1.50. $n$ 0.9804700824710505
+2026-10-14 01:46:32,877[INFO] Step 4. Time 2.00. $n$ 0.9686190882357345
+2026-10-14 01:46:32,891[INFO] Step 5. Time 2.50. $n$ 0.9564506630039392
+2026-10-14 01:46:32,905[INFO] Step 6. Time 3.00. $n$ 0.9448244017405336
+2026-10-14 01:46:32,919[INFO] Step 7. Time 3.50. $n$ 0.9339798618067823
+2026-10-14 01:46:32,932[INFO] Step 8. Time 4.00. $n$ 0.9236970054408269
+2026-10-14 01:46:32,946[INFO] Step 9. Time 4.50. $n$ 0.9136118419975218
+2026-10-14 01:46:32,960[INFO] Step 10. Time 5.00. $n$ 0.9034945341226438
+2026-10-14 01:46:32,973[INFO] Step 11. Time 5.50. $n$ 0.8933290940569689
+2026-10-14 01:46:32,987[INFO] Step 12. Time 6.00. $n$ 0.8832123669504437
+2026-10-14 01:46:33,001[INFO] Step 13. Time 6.50. $n$ 0.8732206640594663
+2026-10-14 01:46:33,014[INFO] Step 14. Time 7.00. $n$ 0.8633414313841793
+2026-10-14 01:46:33,029[INFO] Step 15. Time 7.50. $n$ 0.8534881636839358
+2026-10-14 01:46:33,043[INFO] Step 16. Time 8.00. $n$ 0.8435889218011109
+2026-10-14 01:46:33,057[INFO] Step 17. Time 8.50. $n$ 0.8336922461638034
+2026-10-14 01:46:33,070[INFO] Step 18. Time 9.00. $n$ 0.8239993937768332
+2026-10-14 01:46:33,084[INFO] Step 19. Time 9.50. $n$ 0.8147658347612909
+2026-10-14 01:46:33,109[INFO] MPS bond dimension after expanding: [1, 2, 8, 1]
+2026-10-14 01:46:33,110[INFO] Step 0. Time 0.00. $n$ 0.9999999999999999
+2026-10-14 01:46:33,124[INFO] Step 1. Time 0.50. $n$ 0.9975784978846652
+2026-10-14 01:46:33,137[INFO] Step 2. Time 1.00. $n$ 0.9911783314788788
+2026-10-14 01:46:33,151[INFO] Step 3. Time 1.50. $n$ 0.9828793267407698
+2026-10-14 01:46:33,164[INFO] Step 4. Time 2.00. $n$ 0.974804737510624
+2026-10-14 01:46:33,177[INFO] Step 5. Time 2.50. $n$ 0.9681008008243928
+2026-10-14 01:46:33,190[INFO] Step 6. Time 3.00. $n$ 0.9626946118364176
+2026-10-14 01:46:33,203[INFO] Step 7. Time 3.50. $n$ 0.9578334887382711
+2026-10-14 01:46:33,216[INFO] Step 8. Time 4.00. $n$ 0.9528636883612388
+2026-10-14 01:46:33,230[INFO] Step 9. Time 4.50. $n$ 0.9476402488995558
+2026-10-14 01:46:33,243[INFO] Step 10. Time 5.00. $n$ 0.9423714783197507
+2026-10-14 01:46:33,256[INFO] Step 11. Time 5.50. $n$ 0.9372226613902708
+2026-10-14 01:46:33,270[INFO] Step 12. Time 6.00. $n$ 0.932143487387623
+2026-10-14 01:46:33,283[INFO] Step 13. Time 6.50. $n$ 0.9270168710144905
+2026-10-14 01:46:33,296[INFO] Step 14. Time 7.00. $n$ 0.9218472771077
+2026-10-14 01:46:33,309[INFO] Step 15. Time 7.50. $n$ 0.9167421622551066
+2026-10-14 01:46:33,323[INFO] Step 16. Time 8.00. $n$ 0.911727659809429
+2026-10-14 01:46:33,336[INFO] Step 17. Time 8.50. $n$ 0.906647971798646
+2026-10-14 01:46:33,349[INFO] Step 18. Time 9.00. $n$ 0.9013355144296522
+2026-10-14 01:46:33,363[INFO] Step 19. Time 9.50. $n$ 0.8959335401053742
 </pre></div></div>
 </div>
 <p>By plotting the figure, we see that when <span class="math notranslate nohighlight">\(\Delta G=-1\)</span>, the charge transfer rate is highest.</p>
@@ -1078,10 +862,10 @@ div.rendered_html tbody tr:hover {
 </div>
 <div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">t</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">arange</span><span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="n">n_list_list</span><span class="p">[</span><span class="mi">0</span><span class="p">]))</span> <span class="o">*</span> <span class="n">dt</span>
 <span class="k">for</span> <span class="n">i</span><span class="p">,</span> <span class="n">n_list</span> <span class="ow">in</span> <span class="nb">enumerate</span><span class="p">(</span><span class="n">n_list_list</span><span class="p">):</span>
-    <span class="n">label</span> <span class="o">=</span> <span class="sa">r</span><span class="s2">&quot;$\Delta G =&quot;</span> <span class="o">+</span> <span class="nb">str</span><span class="p">(</span><span class="n">delta_g_list</span><span class="p">[</span><span class="n">i</span><span class="p">])</span> <span class="o">+</span> <span class="s2">&quot;$&quot;</span>
-    <span class="n">plt</span><span class="o">.</span><span class="n">plot</span><span class="p">(</span><span class="n">t</span><span class="p">,</span> <span class="n">n_list</span><span class="p">,</span> <span class="n">label</span><span class="o">=</span><span class="n">label</span><span class="p">,</span> <span class="n">linestyle</span><span class="o">=</span><span class="s2">&quot;--&quot;</span><span class="p">)</span>
-<span class="n">plt</span><span class="o">.</span><span class="n">xlabel</span><span class="p">(</span><span class="s2">&quot;$t$&quot;</span><span class="p">)</span>
-<span class="n">plt</span><span class="o">.</span><span class="n">ylabel</span><span class="p">(</span><span class="sa">r</span><span class="s2">&quot;Occupation $\langle a^\dagger_0 a_0 \rangle$&quot;</span><span class="p">)</span>
+    <span class="n">label</span> <span class="o">=</span> <span class="sa">r</span><span class="s2">"$\Delta G ="</span> <span class="o">+</span> <span class="nb">str</span><span class="p">(</span><span class="n">delta_g_list</span><span class="p">[</span><span class="n">i</span><span class="p">])</span> <span class="o">+</span> <span class="s2">"$"</span>
+    <span class="n">plt</span><span class="o">.</span><span class="n">plot</span><span class="p">(</span><span class="n">t</span><span class="p">,</span> <span class="n">n_list</span><span class="p">,</span> <span class="n">label</span><span class="o">=</span><span class="n">label</span><span class="p">,</span> <span class="n">linestyle</span><span class="o">=</span><span class="s2">"--"</span><span class="p">)</span>
+<span class="n">plt</span><span class="o">.</span><span class="n">xlabel</span><span class="p">(</span><span class="s2">"$t$"</span><span class="p">)</span>
+<span class="n">plt</span><span class="o">.</span><span class="n">ylabel</span><span class="p">(</span><span class="sa">r</span><span class="s2">"Occupation $\langle a^\dagger_0 a_0 \rangle$"</span><span class="p">)</span>
 <span class="n">plt</span><span class="o">.</span><span class="n">legend</span><span class="p">()</span>
 </pre></div>
 </div>
@@ -1092,7 +876,7 @@ div.rendered_html tbody tr:hover {
 </div>
 <div class="output_area docutils container">
 <div class="highlight"><pre>
-&lt;matplotlib.legend.Legend at 0x7f7099e59ee0&gt;
+&lt;matplotlib.legend.Legend at 0x7f1b96ed5250&gt;
 </pre></div></div>
 </div>
 <div class="nboutput nblast docutils container">
@@ -1110,8 +894,14 @@ div.rendered_html tbody tr:hover {
 <p>Here <span class="math notranslate nohighlight">\(\lambda = 2g^2\omega = 1\)</span> is the reorganization energy.</p>
 </section>
 <section id="Features-of-Time-Evolution-Schemes">
-<h2>Features of Time Evolution Schemes<a class="headerlink" href="#Features-of-Time-Evolution-Schemes" title="Permalink to this heading">#</a></h2>
-<p>Renormalizer has a lot of different time evolution schemes, the most commonly used ones are 1. Propagation and Compression: <code class="docutils literal notranslate"><span class="pre">EvolveMethod.prop_and_compress</span></code> 2. Single-site TDVP-PS: <code class="docutils literal notranslate"><span class="pre">EvolveMethod.tdvp_ps</span></code> 3. Two-site TDVP-PS: <code class="docutils literal notranslate"><span class="pre">EvolveMethod.tdvp_ps2</span></code> 4. TDVP with varianble mean field (VMF): <code class="docutils literal notranslate"><span class="pre">EvolveMethod.tdvp_vmf</span></code></p>
+<h2>Features of Time Evolution Schemes<a class="headerlink" href="#Features-of-Time-Evolution-Schemes" title="Link to this heading">¶</a></h2>
+<p>Renormalizer has a lot of different time evolution schemes, the most commonly used ones are</p>
+<ol class="arabic simple">
+<li><p>Propagation and Compression: <code class="docutils literal notranslate"><span class="pre">EvolveMethod.prop_and_compress</span></code></p></li>
+<li><p>Single-site TDVP-PS: <code class="docutils literal notranslate"><span class="pre">EvolveMethod.tdvp_ps</span></code></p></li>
+<li><p>Two-site TDVP-PS: <code class="docutils literal notranslate"><span class="pre">EvolveMethod.tdvp_ps2</span></code></p></li>
+<li><p>TDVP with varianble mean field (VMF): <code class="docutils literal notranslate"><span class="pre">EvolveMethod.tdvp_vmf</span></code></p></li>
+</ol>
 <p>The features of these methods are as follows</p>
 <div class="table-wrapper docutils container">
 <table class="docutils align-default">
@@ -1209,9 +999,7 @@ step sizes.</p>
             
           </div>
           <div class="right-details">
-            <div class="icons">
-              
-            </div>
+            
           </div>
         </div>
         
@@ -1248,15 +1036,12 @@ step sizes.</p>
       
     </aside>
   </div>
-</div><script data-url_root="../" id="documentation_options" src="../_static/documentation_options.js"></script>
-    <script src="../_static/jquery.js"></script>
-    <script src="../_static/underscore.js"></script>
-    <script src="../_static/_sphinx_javascript_frameworks_compat.js"></script>
-    <script src="../_static/doctools.js"></script>
-    <script src="../_static/sphinx_highlight.js"></script>
-    <script src="../_static/scripts/furo.js"></script>
+</div><script src="../_static/documentation_options.js?v=01f34227"></script>
+    <script src="../_static/doctools.js?v=fd6eb6e6"></script>
+    <script src="../_static/sphinx_highlight.js?v=6ffebe34"></script>
+    <script src="../_static/scripts/furo.js?v=46bd48cc"></script>
     <script crossorigin="anonymous" integrity="sha256-Ae2Vz/4ePdIu6ZyI/5ZGsYnb+m0JlOmKPjt6XZ9JJkA=" src="https://cdnjs.cloudflare.com/ajax/libs/require.js/2.3.4/require.min.js"></script>
     <script>window.MathJax = {"tex": {"inlineMath": [["$", "$"], ["\\(", "\\)"]], "processEscapes": true}, "options": {"ignoreHtmlClass": "tex2jax_ignore|mathjax_ignore|document", "processHtmlClass": "tex2jax_process|mathjax_process|math|output_area"}}</script>
-    <script defer="defer" src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-mml-chtml.js"></script>
+    <script defer="defer" src="https://cdn.jsdelivr.net/npm/mathjax@4/tex-mml-chtml.js"></script>
     </body>
 </html>

@@ -1,8 +1,8 @@
 <!doctype html>
-<html class="no-js" lang="en">
-  <head><meta charset="utf-8"/>
-    <meta name="viewport" content="width=device-width,initial-scale=1"/>
-    <meta name="color-scheme" content="light dark"><meta name="generator" content="Docutils 0.19: https://docutils.sourceforge.io/" />
+<html class="no-js" lang="en" data-content_root="../">
+  <head><meta charset="utf-8">
+    <meta name="viewport" content="width=device-width,initial-scale=1">
+    <meta name="color-scheme" content="light dark"><meta name="viewport" content="width=device-width, initial-scale=1" />
 
     <!-- Google tag (gtag.js) -->
     <script async src="https://www.googletagmanager.com/gtag/js?id=G-3HTENNM8CV"></script>
@@ -12,13 +12,14 @@
         gtag('js', new Date());
         gtag('config', 'G-3HTENNM8CV');
     </script>
-    <link rel="index" title="Index" href="../genindex.html" /><link rel="search" title="Search" href="../search.html" /><link rel="next" title="API Reference" href="../api.html" /><link rel="prev" title="Application Tutorials" href="../applications.html" />
+    <link rel="index" title="Index" href="../genindex.html"><link rel="search" title="Search" href="../search.html"><link rel="next" title="API Reference" href="../api.html"><link rel="prev" title="Application Tutorials" href="../applications.html">
 
-    <meta name="generator" content="sphinx-5.3.0, furo 2022.09.29"/>
+    <!-- Generated with Sphinx 9.0.4 and Furo 2025.12.19 -->
         <title>Ground state of the Heisenberg model - Renormalizer 0.1.0 documentation</title>
-      <link rel="stylesheet" type="text/css" href="../_static/pygments.css" />
-    <link rel="stylesheet" type="text/css" href="../_static/styles/furo.css?digest=d81277517bee4d6b0349d71bb2661d4890b5617c" />
-    <link rel="stylesheet" type="text/css" href="../_static/styles/furo-extensions.css?digest=30d1aed668e5c3a91c3e3bf6a60b675221979f0e" />
+      <link rel="stylesheet" type="text/css" href="../_static/pygments.css?v=03e43079" />
+    <link rel="stylesheet" type="text/css" href="../_static/styles/furo.css?v=7bdb33bb" />
+    <link rel="stylesheet" type="text/css" href="../_static/nbsphinx-code-cells.css?v=2aa19091" />
+    <link rel="stylesheet" type="text/css" href="../_static/styles/furo-extensions.css?v=8dab3a3b" />
     
     
 
@@ -77,7 +78,7 @@
   <symbol id="svg-sun" viewBox="0 0 24 24">
     <title>Light mode</title>
     <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor"
-      stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" class="feather-sun">
+      stroke-width="1" stroke-linecap="round" stroke-linejoin="round" class="feather-sun">
       <circle cx="12" cy="12" r="5"></circle>
       <line x1="12" y1="1" x2="12" y2="3"></line>
       <line x1="12" y1="21" x2="12" y2="23"></line>
@@ -92,34 +93,73 @@
   <symbol id="svg-moon" viewBox="0 0 24 24">
     <title>Dark mode</title>
     <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor"
-      stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" class="icon-tabler-moon">
+      stroke-width="1" stroke-linecap="round" stroke-linejoin="round" class="icon-tabler-moon">
       <path stroke="none" d="M0 0h24v24H0z" fill="none" />
       <path d="M12 3c.132 0 .263 0 .393 0a7.5 7.5 0 0 0 7.92 12.446a9 9 0 1 1 -8.313 -12.454z" />
     </svg>
   </symbol>
-  <symbol id="svg-sun-half" viewBox="0 0 24 24">
-    <title>Auto light/dark mode</title>
+  <symbol id="svg-sun-with-moon" viewBox="0 0 24 24">
+    <title>Auto light/dark, in light mode</title>
     <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor"
-      stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" class="icon-tabler-shadow">
-      <path stroke="none" d="M0 0h24v24H0z" fill="none"/>
-      <circle cx="12" cy="12" r="9" />
-      <path d="M13 12h5" />
-      <path d="M13 15h4" />
-      <path d="M13 18h1" />
-      <path d="M13 9h4" />
-      <path d="M13 6h1" />
+      stroke-width="1" stroke-linecap="round" stroke-linejoin="round"
+      class="icon-custom-derived-from-feather-sun-and-tabler-moon">
+      <path style="opacity: 50%" d="M 5.411 14.504 C 5.471 14.504 5.532 14.504 5.591 14.504 C 3.639 16.319 4.383 19.569 6.931 20.352 C 7.693 20.586 8.512 20.551 9.25 20.252 C 8.023 23.207 4.056 23.725 2.11 21.184 C 0.166 18.642 1.702 14.949 4.874 14.536 C 5.051 14.512 5.231 14.5 5.411 14.5 L 5.411 14.504 Z"/>
+      <line x1="14.5" y1="3.25" x2="14.5" y2="1.25"/>
+      <line x1="14.5" y1="15.85" x2="14.5" y2="17.85"/>
+      <line x1="10.044" y1="5.094" x2="8.63" y2="3.68"/>
+      <line x1="19" y1="14.05" x2="20.414" y2="15.464"/>
+      <line x1="8.2" y1="9.55" x2="6.2" y2="9.55"/>
+      <line x1="20.8" y1="9.55" x2="22.8" y2="9.55"/>
+      <line x1="10.044" y1="14.006" x2="8.63" y2="15.42"/>
+      <line x1="19" y1="5.05" x2="20.414" y2="3.636"/>
+      <circle cx="14.5" cy="9.55" r="3.6"/>
+    </svg>
+  </symbol>
+  <symbol id="svg-moon-with-sun" viewBox="0 0 24 24">
+    <title>Auto light/dark, in dark mode</title>
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+      stroke-width="1" stroke-linecap="round" stroke-linejoin="round"
+      class="icon-custom-derived-from-feather-sun-and-tabler-moon">
+      <path d="M 8.282 7.007 C 8.385 7.007 8.494 7.007 8.595 7.007 C 5.18 10.184 6.481 15.869 10.942 17.24 C 12.275 17.648 13.706 17.589 15 17.066 C 12.851 22.236 5.91 23.143 2.505 18.696 C -0.897 14.249 1.791 7.786 7.342 7.063 C 7.652 7.021 7.965 7 8.282 7 L 8.282 7.007 Z"/>
+      <line style="opacity: 50%" x1="18" y1="3.705" x2="18" y2="2.5"/>
+      <line style="opacity: 50%" x1="18" y1="11.295" x2="18" y2="12.5"/>
+      <line style="opacity: 50%" x1="15.316" y1="4.816" x2="14.464" y2="3.964"/>
+      <line style="opacity: 50%" x1="20.711" y1="10.212" x2="21.563" y2="11.063"/>
+      <line style="opacity: 50%" x1="14.205" y1="7.5" x2="13.001" y2="7.5"/>
+      <line style="opacity: 50%" x1="21.795" y1="7.5" x2="23" y2="7.5"/>
+      <line style="opacity: 50%" x1="15.316" y1="10.184" x2="14.464" y2="11.036"/>
+      <line style="opacity: 50%" x1="20.711" y1="4.789" x2="21.563" y2="3.937"/>
+      <circle style="opacity: 50%" cx="18" cy="7.5" r="2.169"/>
+    </svg>
+  </symbol>
+  <symbol id="svg-pencil" viewBox="0 0 24 24">
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+      stroke-width="1" stroke-linecap="round" stroke-linejoin="round" class="icon-tabler-pencil-code">
+      <path d="M4 20h4l10.5 -10.5a2.828 2.828 0 1 0 -4 -4l-10.5 10.5v4" />
+      <path d="M13.5 6.5l4 4" />
+      <path d="M20 21l2 -2l-2 -2" />
+      <path d="M17 17l-2 2l2 2" />
+    </svg>
+  </symbol>
+  <symbol id="svg-eye" viewBox="0 0 24 24">
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+      stroke-width="1" stroke-linecap="round" stroke-linejoin="round" class="icon-tabler-eye-code">
+      <path stroke="none" d="M0 0h24v24H0z" fill="none" />
+      <path d="M10 12a2 2 0 1 0 4 0a2 2 0 0 0 -4 0" />
+      <path
+        d="M11.11 17.958c-3.209 -.307 -5.91 -2.293 -8.11 -5.958c2.4 -4 5.4 -6 9 -6c3.6 0 6.6 2 9 6c-.21 .352 -.427 .688 -.647 1.008" />
+      <path d="M20 21l2 -2l-2 -2" />
+      <path d="M17 17l-2 2l2 2" />
     </svg>
   </symbol>
 </svg>
 
-<input type="checkbox" class="sidebar-toggle" name="__navigation" id="__navigation">
-<input type="checkbox" class="sidebar-toggle" name="__toc" id="__toc">
-<label class="overlay sidebar-overlay" for="__navigation">
-  <div class="visually-hidden">Hide navigation sidebar</div>
-</label>
-<label class="overlay toc-overlay" for="__toc">
-  <div class="visually-hidden">Hide table of contents sidebar</div>
-</label>
+<input type="checkbox" class="sidebar-toggle" name="__navigation" id="__navigation" aria-label="Toggle site navigation sidebar">
+<input type="checkbox" class="sidebar-toggle" name="__toc" id="__toc" aria-label="Toggle table of contents sidebar">
+<label class="overlay sidebar-overlay" for="__navigation"></label>
+<label class="overlay toc-overlay" for="__toc"></label>
+
+<a class="skip-to-content muted-link" href="#furo-main-content">Skip to content</a>
 
 
 
@@ -127,8 +167,7 @@
   <header class="mobile-header">
     <div class="header-left">
       <label class="nav-overlay-icon" for="__navigation">
-        <div class="visually-hidden">Toggle site navigation sidebar</div>
-        <i class="icon"><svg><use href="#svg-menu"></use></svg></i>
+        <span class="icon"><svg><use href="#svg-menu"></use></svg></span>
       </label>
     </div>
     <div class="header-center">
@@ -136,16 +175,15 @@
     </div>
     <div class="header-right">
       <div class="theme-toggle-container theme-toggle-header">
-        <button class="theme-toggle">
-          <div class="visually-hidden">Toggle Light / Dark / Auto color theme</div>
-          <svg class="theme-icon-when-auto"><use href="#svg-sun-half"></use></svg>
+        <button class="theme-toggle" aria-label="Toggle Light / Dark / Auto color theme">
+          <svg class="theme-icon-when-auto-light"><use href="#svg-sun-with-moon"></use></svg>
+          <svg class="theme-icon-when-auto-dark"><use href="#svg-moon-with-sun"></use></svg>
           <svg class="theme-icon-when-dark"><use href="#svg-moon"></use></svg>
           <svg class="theme-icon-when-light"><use href="#svg-sun"></use></svg>
         </button>
       </div>
       <label class="toc-overlay-icon toc-header-icon" for="__toc">
-        <div class="visually-hidden">Toggle table of contents sidebar</div>
-        <i class="icon"><svg><use href="#svg-toc"></use></svg></i>
+        <span class="icon"><svg><use href="#svg-toc"></use></svg></span>
       </label>
     </div>
   </header>
@@ -154,18 +192,17 @@
       
       <div class="sidebar-sticky"><a class="sidebar-brand" href="../index.html">
   
-  
   <span class="sidebar-brand-text">Renormalizer 0.1.0 documentation</span>
   
 </a><form class="sidebar-search-container" method="get" action="../search.html" role="search">
-  <input class="sidebar-search" placeholder=Search name="q" aria-label="Search">
+  <input class="sidebar-search" placeholder="Search" name="q" aria-label="Search">
   <input type="hidden" name="check_keywords" value="yes">
   <input type="hidden" name="area" value="default">
 </form>
 <div id="searchbox"></div><div class="sidebar-scroll"><div class="sidebar-tree">
   <ul class="current">
 <li class="toctree-l1"><a class="reference internal" href="../install.html">Installation guide</a></li>
-<li class="toctree-l1 has-children"><a class="reference internal" href="../tutorial.html">Basic Tutorials</a><input class="toctree-checkbox" id="toctree-checkbox-1" name="toctree-checkbox-1" role="switch" type="checkbox"/><label for="toctree-checkbox-1"><div class="visually-hidden">Toggle child pages in navigation</div><i class="icon"><svg><use href="#svg-arrow-right"></use></svg></i></label><ul>
+<li class="toctree-l1 has-children"><a class="reference internal" href="../tutorial.html">Basic Tutorials</a><input aria-label="Toggle navigation of Basic Tutorials" class="toctree-checkbox" id="toctree-checkbox-1" name="toctree-checkbox-1" role="switch" type="checkbox"/><label for="toctree-checkbox-1"><span class="icon"><svg><use href="#svg-arrow-right"></use></svg></span></label><ul>
 <li class="toctree-l2"><a class="reference internal" href="define_model.html">Define Your Model</a></li>
 <li class="toctree-l2"><a class="reference internal" href="mps_mpo.html">MPS and MPO</a></li>
 <li class="toctree-l2"><a class="reference internal" href="nuclear_basis.html">Nuclear Basis Set</a></li>
@@ -175,11 +212,11 @@
 <li class="toctree-l2"><a class="reference internal" href="ttn_basic.html">Basics of Tree Tensor Networks</a></li>
 </ul>
 </li>
-<li class="toctree-l1 current has-children"><a class="reference internal" href="../applications.html">Application Tutorials</a><input checked="" class="toctree-checkbox" id="toctree-checkbox-2" name="toctree-checkbox-2" role="switch" type="checkbox"/><label for="toctree-checkbox-2"><div class="visually-hidden">Toggle child pages in navigation</div><i class="icon"><svg><use href="#svg-arrow-right"></use></svg></i></label><ul class="current">
+<li class="toctree-l1 current has-children"><a class="reference internal" href="../applications.html">Application Tutorials</a><input aria-label="Toggle navigation of Application Tutorials" checked="" class="toctree-checkbox" id="toctree-checkbox-2" name="toctree-checkbox-2" role="switch" type="checkbox"/><label for="toctree-checkbox-2"><span class="icon"><svg><use href="#svg-arrow-right"></use></svg></span></label><ul class="current">
 <li class="toctree-l2 current current-page"><a class="current reference internal" href="#">Ground state of the Heisenberg model</a></li>
 </ul>
 </li>
-<li class="toctree-l1 has-children"><a class="reference internal" href="../api.html">API Reference</a><input class="toctree-checkbox" id="toctree-checkbox-3" name="toctree-checkbox-3" role="switch" type="checkbox"/><label for="toctree-checkbox-3"><div class="visually-hidden">Toggle child pages in navigation</div><i class="icon"><svg><use href="#svg-arrow-right"></use></svg></i></label><ul>
+<li class="toctree-l1 has-children"><a class="reference internal" href="../api.html">API Reference</a><input aria-label="Toggle navigation of API Reference" class="toctree-checkbox" id="toctree-checkbox-3" name="toctree-checkbox-3" role="switch" type="checkbox"/><label for="toctree-checkbox-3"><span class="icon"><svg><use href="#svg-arrow-right"></use></svg></span></label><ul>
 <li class="toctree-l2"><a class="reference internal" href="../model.html">Model</a></li>
 <li class="toctree-l2"><a class="reference internal" href="../mps.html">Low Level Data Structure and Algorithms</a></li>
 <li class="toctree-l2"><a class="reference internal" href="../static.html">Static Eigenstate Method</a></li>
@@ -213,282 +250,29 @@
           <span>Back to top</span>
         </a>
         <div class="content-icon-container">
-          
+          <div class="view-this-page">
+  <a class="muted-link" href="../_sources/tutorials/1D-Heisenberg.ipynb.txt" title="View this page">
+    <svg><use href="#svg-eye"></use></svg>
+    <span class="visually-hidden">View this page</span>
+  </a>
+</div>
 <div class="theme-toggle-container theme-toggle-content">
-            <button class="theme-toggle">
-              <div class="visually-hidden">Toggle Light / Dark / Auto color theme</div>
-              <svg class="theme-icon-when-auto"><use href="#svg-sun-half"></use></svg>
+            <button class="theme-toggle" aria-label="Toggle Light / Dark / Auto color theme">
+              <svg class="theme-icon-when-auto-light"><use href="#svg-sun-with-moon"></use></svg>
+              <svg class="theme-icon-when-auto-dark"><use href="#svg-moon-with-sun"></use></svg>
               <svg class="theme-icon-when-dark"><use href="#svg-moon"></use></svg>
               <svg class="theme-icon-when-light"><use href="#svg-sun"></use></svg>
             </button>
           </div>
           <label class="toc-overlay-icon toc-content-icon" for="__toc">
-            <div class="visually-hidden">Toggle table of contents sidebar</div>
-            <i class="icon"><svg><use href="#svg-toc"></use></svg></i>
+            <span class="icon"><svg><use href="#svg-toc"></use></svg></span>
           </label>
         </div>
-        <article role="main">
-          
-<style>
-/* CSS for nbsphinx extension */
-
-/* remove conflicting styling from Sphinx themes */
-div.nbinput.container div.prompt *,
-div.nboutput.container div.prompt *,
-div.nbinput.container div.input_area pre,
-div.nboutput.container div.output_area pre,
-div.nbinput.container div.input_area .highlight,
-div.nboutput.container div.output_area .highlight {
-    border: none;
-    padding: 0;
-    margin: 0;
-    box-shadow: none;
-}
-
-div.nbinput.container > div[class*=highlight],
-div.nboutput.container > div[class*=highlight] {
-    margin: 0;
-}
-
-div.nbinput.container div.prompt *,
-div.nboutput.container div.prompt * {
-    background: none;
-}
-
-div.nboutput.container div.output_area .highlight,
-div.nboutput.container div.output_area pre {
-    background: unset;
-}
-
-div.nboutput.container div.output_area div.highlight {
-    color: unset;  /* override Pygments text color */
-}
-
-/* avoid gaps between output lines */
-div.nboutput.container div[class*=highlight] pre {
-    line-height: normal;
-}
-
-/* input/output containers */
-div.nbinput.container,
-div.nboutput.container {
-    display: -webkit-flex;
-    display: flex;
-    align-items: flex-start;
-    margin: 0;
-    width: 100%;
-}
-@media (max-width: 540px) {
-    div.nbinput.container,
-    div.nboutput.container {
-        flex-direction: column;
-    }
-}
-
-/* input container */
-div.nbinput.container {
-    padding-top: 5px;
-}
-
-/* last container */
-div.nblast.container {
-    padding-bottom: 5px;
-}
-
-/* input prompt */
-div.nbinput.container div.prompt pre {
-    color: #307FC1;
-}
-
-/* output prompt */
-div.nboutput.container div.prompt pre {
-    color: #BF5B3D;
-}
-
-/* all prompts */
-div.nbinput.container div.prompt,
-div.nboutput.container div.prompt {
-    width: 4.5ex;
-    padding-top: 5px;
-    position: relative;
-    user-select: none;
-}
-
-div.nbinput.container div.prompt > div,
-div.nboutput.container div.prompt > div {
-    position: absolute;
-    right: 0;
-    margin-right: 0.3ex;
-}
-
-@media (max-width: 540px) {
-    div.nbinput.container div.prompt,
-    div.nboutput.container div.prompt {
-        width: unset;
-        text-align: left;
-        padding: 0.4em;
-    }
-    div.nboutput.container div.prompt.empty {
-        padding: 0;
-    }
-
-    div.nbinput.container div.prompt > div,
-    div.nboutput.container div.prompt > div {
-        position: unset;
-    }
-}
-
-/* disable scrollbars and line breaks on prompts */
-div.nbinput.container div.prompt pre,
-div.nboutput.container div.prompt pre {
-    overflow: hidden;
-    white-space: pre;
-}
-
-/* input/output area */
-div.nbinput.container div.input_area,
-div.nboutput.container div.output_area {
-    -webkit-flex: 1;
-    flex: 1;
-    overflow: auto;
-}
-@media (max-width: 540px) {
-    div.nbinput.container div.input_area,
-    div.nboutput.container div.output_area {
-        width: 100%;
-    }
-}
-
-/* input area */
-div.nbinput.container div.input_area {
-    border: 1px solid #e0e0e0;
-    border-radius: 2px;
-    /*background: #f5f5f5;*/
-}
-
-/* override MathJax center alignment in output cells */
-div.nboutput.container div[class*=MathJax] {
-    text-align: left !important;
-}
-
-/* override sphinx.ext.imgmath center alignment in output cells */
-div.nboutput.container div.math p {
-    text-align: left;
-}
-
-/* standard error */
-div.nboutput.container div.output_area.stderr {
-    background: #fdd;
-}
-
-/* ANSI colors */
-.ansi-black-fg { color: #3E424D; }
-.ansi-black-bg { background-color: #3E424D; }
-.ansi-black-intense-fg { color: #282C36; }
-.ansi-black-intense-bg { background-color: #282C36; }
-.ansi-red-fg { color: #E75C58; }
-.ansi-red-bg { background-color: #E75C58; }
-.ansi-red-intense-fg { color: #B22B31; }
-.ansi-red-intense-bg { background-color: #B22B31; }
-.ansi-green-fg { color: #00A250; }
-.ansi-green-bg { background-color: #00A250; }
-.ansi-green-intense-fg { color: #007427; }
-.ansi-green-intense-bg { background-color: #007427; }
-.ansi-yellow-fg { color: #DDB62B; }
-.ansi-yellow-bg { background-color: #DDB62B; }
-.ansi-yellow-intense-fg { color: #B27D12; }
-.ansi-yellow-intense-bg { background-color: #B27D12; }
-.ansi-blue-fg { color: #208FFB; }
-.ansi-blue-bg { background-color: #208FFB; }
-.ansi-blue-intense-fg { color: #0065CA; }
-.ansi-blue-intense-bg { background-color: #0065CA; }
-.ansi-magenta-fg { color: #D160C4; }
-.ansi-magenta-bg { background-color: #D160C4; }
-.ansi-magenta-intense-fg { color: #A03196; }
-.ansi-magenta-intense-bg { background-color: #A03196; }
-.ansi-cyan-fg { color: #60C6C8; }
-.ansi-cyan-bg { background-color: #60C6C8; }
-.ansi-cyan-intense-fg { color: #258F8F; }
-.ansi-cyan-intense-bg { background-color: #258F8F; }
-.ansi-white-fg { color: #C5C1B4; }
-.ansi-white-bg { background-color: #C5C1B4; }
-.ansi-white-intense-fg { color: #A1A6B2; }
-.ansi-white-intense-bg { background-color: #A1A6B2; }
-
-.ansi-default-inverse-fg { color: #FFFFFF; }
-.ansi-default-inverse-bg { background-color: #000000; }
-
-.ansi-bold { font-weight: bold; }
-.ansi-underline { text-decoration: underline; }
-
-
-div.nbinput.container div.input_area div[class*=highlight] > pre,
-div.nboutput.container div.output_area div[class*=highlight] > pre,
-div.nboutput.container div.output_area div[class*=highlight].math,
-div.nboutput.container div.output_area.rendered_html,
-div.nboutput.container div.output_area > div.output_javascript,
-div.nboutput.container div.output_area:not(.rendered_html) > img{
-    padding: 5px;
-    margin: 0;
-}
-
-/* fix copybtn overflow problem in chromium (needed for 'sphinx_copybutton') */
-div.nbinput.container div.input_area > div[class^='highlight'],
-div.nboutput.container div.output_area > div[class^='highlight']{
-    overflow-y: hidden;
-}
-
-/* hide copybtn icon on prompts (needed for 'sphinx_copybutton') */
-.prompt .copybtn {
-    display: none;
-}
-
-/* Some additional styling taken form the Jupyter notebook CSS */
-.jp-RenderedHTMLCommon table,
-div.rendered_html table {
-  border: none;
-  border-collapse: collapse;
-  border-spacing: 0;
-  color: black;
-  font-size: 12px;
-  table-layout: fixed;
-}
-.jp-RenderedHTMLCommon thead,
-div.rendered_html thead {
-  border-bottom: 1px solid black;
-  vertical-align: bottom;
-}
-.jp-RenderedHTMLCommon tr,
-.jp-RenderedHTMLCommon th,
-.jp-RenderedHTMLCommon td,
-div.rendered_html tr,
-div.rendered_html th,
-div.rendered_html td {
-  text-align: right;
-  vertical-align: middle;
-  padding: 0.5em 0.5em;
-  line-height: normal;
-  white-space: normal;
-  max-width: none;
-  border: none;
-}
-.jp-RenderedHTMLCommon th,
-div.rendered_html th {
-  font-weight: bold;
-}
-.jp-RenderedHTMLCommon tbody tr:nth-child(odd),
-div.rendered_html tbody tr:nth-child(odd) {
-  background: #f5f5f5;
-}
-.jp-RenderedHTMLCommon tbody tr:hover,
-div.rendered_html tbody tr:hover {
-  background: rgba(66, 165, 245, 0.2);
-}
-</style>
-<section id="Ground-state-of-the-Heisenberg-model">
-<h1>Ground state of the Heisenberg model<a class="headerlink" href="#Ground-state-of-the-Heisenberg-model" title="Permalink to this heading">#</a></h1>
+        <article role="main" id="furo-main-content">
+          <section id="Ground-state-of-the-Heisenberg-model">
+<h1>Ground state of the Heisenberg model<a class="headerlink" href="#Ground-state-of-the-Heisenberg-model" title="Link to this heading">¶</a></h1>
 <section id="Overview">
-<h2>Overview<a class="headerlink" href="#Overview" title="Permalink to this heading">#</a></h2>
+<h2>Overview<a class="headerlink" href="#Overview" title="Link to this heading">¶</a></h2>
 <p>This notebook will give an example how to use Renormalizer to calculate the ground state energy of the open boundary spin 1/2 1-D Heisenberg model.</p>
 <div class="math-wrapper docutils container">
 <div class="math notranslate nohighlight">
@@ -523,7 +307,7 @@ div.rendered_html tbody tr:hover {
 </div>
 </section>
 <section id="Setup">
-<h2>Setup<a class="headerlink" href="#Setup" title="Permalink to this heading">#</a></h2>
+<h2>Setup<a class="headerlink" href="#Setup" title="Link to this heading">¶</a></h2>
 <div class="nbinput docutils container">
 <div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[1]:
 </pre></div>
@@ -537,16 +321,16 @@ div.rendered_html tbody tr:hover {
 </div>
 <div class="output_area stderr docutils container">
 <div class="highlight"><pre>
-2026-05-20 02:56:09,042[INFO] Use NumPy as backend
-2026-05-20 02:56:09,043[INFO] numpy random seed is 9012
-2026-05-20 02:56:09,044[INFO] random seed is 1092
-2026-05-20 02:56:09,053[INFO] Git Commit Hash: 956ad15b6be989049c1a009a0050334f3d774d43
-2026-05-20 02:56:09,054[INFO] use 64 bits
+2026-10-14 01:45:52,085[INFO] Use numpy as backend
+2026-10-14 01:45:52,085[INFO] numpy random seed is 9012
+2026-10-14 01:45:52,086[INFO] backend random seed is 2019
+2026-10-14 01:45:52,086[INFO] random seed is 1092
+2026-10-14 01:45:52,091[INFO] Git Commit Hash: 3507afde83fd6f408c1c2198aad4dfe455d88312
 </pre></div></div>
 </div>
 </section>
 <section id="Define-the-Model">
-<h2>Define the Model<a class="headerlink" href="#Define-the-Model" title="Permalink to this heading">#</a></h2>
+<h2>Define the Model<a class="headerlink" href="#Define-the-Model" title="Link to this heading">¶</a></h2>
 <p>In Renormalizer, models are defined by the Hamiltonian terms and the a list of basis sets. The basis also defines the ordering in DMRG.</p>
 <p>The spin operators can be represented by Pauli operators</p>
 <div class="math-wrapper docutils container">
@@ -572,9 +356,9 @@ div.rendered_html tbody tr:hover {
 
 <span class="n">ham_terms</span> <span class="o">=</span> <span class="p">[]</span>
 <span class="k">for</span> <span class="n">ispin</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="n">nspin</span><span class="o">-</span><span class="mi">1</span><span class="p">):</span>
-    <span class="n">op1</span> <span class="o">=</span> <span class="n">Op</span><span class="p">(</span><span class="s2">&quot;sigma_z sigma_z&quot;</span><span class="p">,</span> <span class="p">[</span><span class="n">ispin</span><span class="p">,</span> <span class="n">ispin</span><span class="o">+</span><span class="mi">1</span><span class="p">],</span> <span class="mf">1.0</span><span class="o">/</span><span class="mi">4</span><span class="p">)</span>
-    <span class="n">op2</span> <span class="o">=</span> <span class="n">Op</span><span class="p">(</span><span class="s2">&quot;sigma_+ sigma_-&quot;</span><span class="p">,</span> <span class="p">[</span><span class="n">ispin</span><span class="p">,</span> <span class="n">ispin</span><span class="o">+</span><span class="mi">1</span><span class="p">],</span> <span class="mf">1.0</span><span class="o">/</span><span class="mi">2</span><span class="p">)</span>
-    <span class="n">op3</span> <span class="o">=</span> <span class="n">Op</span><span class="p">(</span><span class="s2">&quot;sigma_- sigma_+&quot;</span><span class="p">,</span> <span class="p">[</span><span class="n">ispin</span><span class="p">,</span> <span class="n">ispin</span><span class="o">+</span><span class="mi">1</span><span class="p">],</span> <span class="mf">1.0</span><span class="o">/</span><span class="mi">2</span><span class="p">)</span>
+    <span class="n">op1</span> <span class="o">=</span> <span class="n">Op</span><span class="p">(</span><span class="s2">"sigma_z sigma_z"</span><span class="p">,</span> <span class="p">[</span><span class="n">ispin</span><span class="p">,</span> <span class="n">ispin</span><span class="o">+</span><span class="mi">1</span><span class="p">],</span> <span class="mf">1.0</span><span class="o">/</span><span class="mi">4</span><span class="p">)</span>
+    <span class="n">op2</span> <span class="o">=</span> <span class="n">Op</span><span class="p">(</span><span class="s2">"sigma_+ sigma_-"</span><span class="p">,</span> <span class="p">[</span><span class="n">ispin</span><span class="p">,</span> <span class="n">ispin</span><span class="o">+</span><span class="mi">1</span><span class="p">],</span> <span class="mf">1.0</span><span class="o">/</span><span class="mi">2</span><span class="p">)</span>
+    <span class="n">op3</span> <span class="o">=</span> <span class="n">Op</span><span class="p">(</span><span class="s2">"sigma_- sigma_+"</span><span class="p">,</span> <span class="p">[</span><span class="n">ispin</span><span class="p">,</span> <span class="n">ispin</span><span class="o">+</span><span class="mi">1</span><span class="p">],</span> <span class="mf">1.0</span><span class="o">/</span><span class="mi">2</span><span class="p">)</span>
     <span class="n">ham_terms</span><span class="o">.</span><span class="n">extend</span><span class="p">([</span><span class="n">op1</span><span class="p">,</span> <span class="n">op2</span><span class="p">,</span> <span class="n">op3</span><span class="p">])</span>
 
 <span class="c1"># set the spin order and local basis</span>
@@ -582,7 +366,7 @@ div.rendered_html tbody tr:hover {
 <span class="c1"># construct Hamiltonian MPO</span>
 <span class="n">model</span> <span class="o">=</span> <span class="n">Model</span><span class="p">(</span><span class="n">basis</span><span class="p">,</span> <span class="n">ham_terms</span><span class="p">)</span>
 <span class="n">mpo</span> <span class="o">=</span> <span class="n">Mpo</span><span class="p">(</span><span class="n">model</span><span class="p">)</span>
-<span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;mpo_bond_dims:</span><span class="si">{</span><span class="n">mpo</span><span class="o">.</span><span class="n">bond_dims</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+<span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">"mpo_bond_dims:</span><span class="si">{</span><span class="n">mpo</span><span class="o">.</span><span class="n">bond_dims</span><span class="si">}</span><span class="s2">"</span><span class="p">)</span>
 </pre></div>
 </div>
 </div>
@@ -591,10 +375,10 @@ div.rendered_html tbody tr:hover {
 </div>
 <div class="output_area stderr docutils container">
 <div class="highlight"><pre>
-2026-05-20 02:56:09,166[DEBUG] # of operator terms: 93
-2026-05-20 02:56:09,167[DEBUG] Input operator terms: 93
-2026-05-20 02:56:09,169[DEBUG] After combination of the same terms: 93
-2026-05-20 02:56:09,169[DEBUG] symbolic mpo algorithm: qr
+2026-10-14 01:45:53,040[DEBUG] # of operator terms: 93
+2026-10-14 01:45:53,041[DEBUG] Input operator terms: 93
+2026-10-14 01:45:53,043[DEBUG] After combination of the same terms: 93
+2026-10-14 01:45:53,043[DEBUG] symbolic mpo algorithm: qr
 </pre></div></div>
 </div>
 <div class="nboutput nblast docutils container">
@@ -607,7 +391,7 @@ mpo_bond_dims:[1, 4, 5, 5, 5, 5, 5, 5, 5, 5, 5, 5, 5, 5, 5, 5, 5, 5, 5, 5, 5, 5,
 </div>
 </section>
 <section id="DMRG-Sweeps">
-<h2>DMRG Sweeps<a class="headerlink" href="#DMRG-Sweeps" title="Permalink to this heading">#</a></h2>
+<h2>DMRG Sweeps<a class="headerlink" href="#DMRG-Sweeps" title="Link to this heading">¶</a></h2>
 <div class="nbinput docutils container">
 <div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[3]:
 </pre></div>
@@ -625,11 +409,11 @@ mpo_bond_dims:[1, 4, 5, 5, 5, 5, 5, 5, 5, 5, 5, 5, 5, 5, 5, 5, 5, 5, 5, 5, 5, 5,
 <span class="n">mps</span> <span class="o">=</span> <span class="n">Mps</span><span class="o">.</span><span class="n">random</span><span class="p">(</span><span class="n">model</span><span class="p">,</span> <span class="n">qntot</span><span class="p">,</span> <span class="n">M</span><span class="p">)</span>
 
 <span class="n">mps</span><span class="o">.</span><span class="n">optimize_config</span><span class="o">.</span><span class="n">procedure</span> <span class="o">=</span> <span class="n">procedure</span>
-<span class="n">mps</span><span class="o">.</span><span class="n">optimize_config</span><span class="o">.</span><span class="n">method</span> <span class="o">=</span> <span class="s2">&quot;2site&quot;</span>
+<span class="n">mps</span><span class="o">.</span><span class="n">optimize_config</span><span class="o">.</span><span class="n">method</span> <span class="o">=</span> <span class="s2">"2site"</span>
 
 <span class="c1"># optimize MPS</span>
 <span class="n">energies</span><span class="p">,</span> <span class="n">_</span> <span class="o">=</span> <span class="n">optimize_mps</span><span class="p">(</span><span class="n">mps</span><span class="o">.</span><span class="n">copy</span><span class="p">(),</span> <span class="n">mpo</span><span class="p">)</span>
-<span class="nb">print</span><span class="p">(</span><span class="s2">&quot;gs energy:&quot;</span><span class="p">,</span> <span class="nb">min</span><span class="p">(</span><span class="n">energies</span><span class="p">))</span>
+<span class="nb">print</span><span class="p">(</span><span class="s2">"gs energy:"</span><span class="p">,</span> <span class="nb">min</span><span class="p">(</span><span class="n">energies</span><span class="p">))</span>
 </pre></div>
 </div>
 </div>
@@ -638,303 +422,303 @@ mpo_bond_dims:[1, 4, 5, 5, 5, 5, 5, 5, 5, 5, 5, 5, 5, 5, 5, 5, 5, 5, 5, 5, 5, 5,
 </div>
 <div class="output_area stderr docutils container">
 <div class="highlight"><pre>
-2026-05-20 02:56:09,239[INFO] optimization method: 2site
-2026-05-20 02:56:09,240[INFO] e_rtol: 1e-06
-2026-05-20 02:56:09,241[INFO] e_atol: 1e-08
-2026-05-20 02:56:09,241[INFO] procedure: [[30, 0.2], [30, 0], [30, 0], [30, 0], [30, 0]]
-2026-05-20 02:56:09,268[DEBUG] isweep: 0
-2026-05-20 02:56:09,268[DEBUG] compress config in current loop: 30, percent: 0.2
-2026-05-20 02:56:09,270[DEBUG] mps current size: 329.7KiB, Matrix product bond dim:[1, 2, 4, 8, 16, 30, 30, 30, 30, 30, 30, 30, 30, 30, 30, 30, 30, 30, 30, 30, 30, 30, 30, 30, 30, 30, 30, 30, 16, 8, 4, 2, 1]
-2026-05-20 02:56:09,271[DEBUG] optimize site: [0, 1]
-2026-05-20 02:56:09,272[DEBUG] use direct eigensolver
-2026-05-20 02:56:09,275[DEBUG] energy: -0.927999022689833
-2026-05-20 02:56:09,277[DEBUG] optimize site: [1, 2]
-2026-05-20 02:56:09,277[DEBUG] use direct eigensolver
-2026-05-20 02:56:09,281[DEBUG] energy: -1.284089573410534
-2026-05-20 02:56:09,283[DEBUG] optimize site: [2, 3]
-2026-05-20 02:56:09,284[DEBUG] use direct eigensolver
-2026-05-20 02:56:09,297[DEBUG] energy: -2.08574526474992
-2026-05-20 02:56:09,299[DEBUG] optimize site: [3, 4]
-2026-05-20 02:56:09,300[DEBUG] use direct eigensolver
-2026-05-20 02:56:09,510[DEBUG] energy: -2.815889527237408
-2026-05-20 02:56:09,512[DEBUG] optimize site: [4, 5]
-2026-05-20 02:56:09,543[DEBUG] use davidson, HC hops: 34
-2026-05-20 02:56:09,545[DEBUG] energy: -3.293367315585801
-2026-05-20 02:56:09,547[DEBUG] optimize site: [5, 6]
-2026-05-20 02:56:09,595[DEBUG] use davidson, HC hops: 42
-2026-05-20 02:56:09,597[DEBUG] energy: -3.744986750307196
-2026-05-20 02:56:09,600[DEBUG] optimize site: [6, 7]
-2026-05-20 02:56:09,649[DEBUG] use davidson, HC hops: 42
-2026-05-20 02:56:09,649[DEBUG] energy: -4.176385575496487
-2026-05-20 02:56:09,652[DEBUG] optimize site: [7, 8]
-2026-05-20 02:56:09,702[DEBUG] use davidson, HC hops: 44
-2026-05-20 02:56:09,703[DEBUG] energy: -4.583593477927382
-2026-05-20 02:56:09,707[DEBUG] optimize site: [8, 9]
-2026-05-20 02:56:09,767[DEBUG] use davidson, HC hops: 55
-2026-05-20 02:56:09,768[DEBUG] energy: -4.968031845671196
-2026-05-20 02:56:09,772[DEBUG] optimize site: [9, 10]
-2026-05-20 02:56:09,844[DEBUG] use davidson, HC hops: 68
-2026-05-20 02:56:09,846[DEBUG] energy: -5.4147063608339785
-2026-05-20 02:56:09,849[DEBUG] optimize site: [10, 11]
-2026-05-20 02:56:09,927[DEBUG] use davidson, HC hops: 72
-2026-05-20 02:56:09,929[DEBUG] energy: -5.856529754520464
-2026-05-20 02:56:09,933[DEBUG] optimize site: [11, 12]
-2026-05-20 02:56:10,039[DEBUG] use davidson, HC hops: 100
-2026-05-20 02:56:10,040[DEBUG] energy: -6.279022467295797
-2026-05-20 02:56:10,045[DEBUG] optimize site: [12, 13]
-2026-05-20 02:56:10,102[DEBUG] use davidson, HC hops: 52
-2026-05-20 02:56:10,104[DEBUG] energy: -6.857389012204739
-2026-05-20 02:56:10,107[DEBUG] optimize site: [13, 14]
-2026-05-20 02:56:10,213[DEBUG] use davidson, HC hops: 100
-2026-05-20 02:56:10,215[DEBUG] energy: -7.114588022005757
-2026-05-20 02:56:10,218[DEBUG] optimize site: [14, 15]
-2026-05-20 02:56:10,270[DEBUG] use davidson, HC hops: 47
-2026-05-20 02:56:10,272[DEBUG] energy: -7.641631783835388
-2026-05-20 02:56:10,275[DEBUG] optimize site: [15, 16]
-2026-05-20 02:56:10,331[DEBUG] use davidson, HC hops: 51
-2026-05-20 02:56:10,332[DEBUG] energy: -8.118395338420026
-2026-05-20 02:56:10,335[DEBUG] optimize site: [16, 17]
-2026-05-20 02:56:10,397[DEBUG] use davidson, HC hops: 57
-2026-05-20 02:56:10,397[DEBUG] energy: -8.579533430762844
-2026-05-20 02:56:10,400[DEBUG] optimize site: [17, 18]
-2026-05-20 02:56:10,472[DEBUG] use davidson, HC hops: 66
-2026-05-20 02:56:10,473[DEBUG] energy: -8.983113190158438
-2026-05-20 02:56:10,477[DEBUG] optimize site: [18, 19]
-2026-05-20 02:56:10,544[DEBUG] use davidson, HC hops: 62
-2026-05-20 02:56:10,545[DEBUG] energy: -9.422205404607638
-2026-05-20 02:56:10,548[DEBUG] optimize site: [19, 20]
-2026-05-20 02:56:10,616[DEBUG] use davidson, HC hops: 62
-2026-05-20 02:56:10,617[DEBUG] energy: -9.903693680914373
-2026-05-20 02:56:10,620[DEBUG] optimize site: [20, 21]
-2026-05-20 02:56:10,706[DEBUG] use davidson, HC hops: 81
-2026-05-20 02:56:10,707[DEBUG] energy: -10.398530611697943
-2026-05-20 02:56:10,711[DEBUG] optimize site: [21, 22]
-2026-05-20 02:56:10,792[DEBUG] use davidson, HC hops: 76
-2026-05-20 02:56:10,793[DEBUG] energy: -10.834489434421654
-2026-05-20 02:56:10,796[DEBUG] optimize site: [22, 23]
-2026-05-20 02:56:10,858[DEBUG] use davidson, HC hops: 58
-2026-05-20 02:56:10,859[DEBUG] energy: -11.415128707126794
-2026-05-20 02:56:10,863[DEBUG] optimize site: [23, 24]
-2026-05-20 02:56:10,920[DEBUG] use davidson, HC hops: 52
-2026-05-20 02:56:10,921[DEBUG] energy: -12.12279587974504
-2026-05-20 02:56:10,925[DEBUG] optimize site: [24, 25]
-2026-05-20 02:56:11,001[DEBUG] use davidson, HC hops: 71
-2026-05-20 02:56:11,003[DEBUG] energy: -12.812234874023469
-2026-05-20 02:56:11,006[DEBUG] optimize site: [25, 26]
-2026-05-20 02:56:11,070[DEBUG] use davidson, HC hops: 58
-2026-05-20 02:56:11,071[DEBUG] energy: -13.774582804126652
-2026-05-20 02:56:11,075[DEBUG] optimize site: [26, 27]
-2026-05-20 02:56:11,123[DEBUG] use davidson, HC hops: 47
-2026-05-20 02:56:11,125[DEBUG] energy: -13.99683265581308
-2026-05-20 02:56:11,128[DEBUG] optimize site: [27, 28]
-2026-05-20 02:56:11,130[DEBUG] use direct eigensolver
-2026-05-20 02:56:11,352[DEBUG] energy: -13.996832655534009
-2026-05-20 02:56:11,355[DEBUG] optimize site: [28, 29]
-2026-05-20 02:56:11,358[DEBUG] use direct eigensolver
-2026-05-20 02:56:11,401[DEBUG] energy: -13.996832655534003
-2026-05-20 02:56:11,403[DEBUG] optimize site: [29, 30]
-2026-05-20 02:56:11,404[DEBUG] use direct eigensolver
-2026-05-20 02:56:11,411[DEBUG] energy: -13.99683265553401
-2026-05-20 02:56:11,413[DEBUG] optimize site: [30, 31]
-2026-05-20 02:56:11,415[DEBUG] use direct eigensolver
-2026-05-20 02:56:11,418[DEBUG] energy: -13.996832655534003
-2026-05-20 02:56:11,420[DEBUG] 1 sweeps are finished, lowest energy = -13.99683265581308
-2026-05-20 02:56:11,422[DEBUG] isweep: 1
-2026-05-20 02:56:11,422[DEBUG] compress config in current loop: 30, percent: 0
-2026-05-20 02:56:11,424[DEBUG] mps current size: 343.7KiB, Matrix product bond dim:[1, 2, 4, 8, 16, 30, 30, 30, 30, 30, 30, 30, 30, 30, 30, 30, 30, 30, 30, 30, 30, 30, 30, 30, 30, 30, 30, 30, 30, 16, 8, 4, 1]
-2026-05-20 02:56:11,425[DEBUG] optimize site: [30, 31]
-2026-05-20 02:56:11,426[DEBUG] use direct eigensolver
-2026-05-20 02:56:11,429[DEBUG] energy: -13.996832655534003
-2026-05-20 02:56:11,432[DEBUG] optimize site: [29, 30]
-2026-05-20 02:56:11,434[DEBUG] use direct eigensolver
-2026-05-20 02:56:11,439[DEBUG] energy: -13.996832655534014
-2026-05-20 02:56:11,442[DEBUG] optimize site: [28, 29]
-2026-05-20 02:56:11,444[DEBUG] use direct eigensolver
-2026-05-20 02:56:11,485[DEBUG] energy: -13.99683265553399
-2026-05-20 02:56:11,488[DEBUG] optimize site: [27, 28]
-2026-05-20 02:56:11,490[DEBUG] use direct eigensolver
-2026-05-20 02:56:11,709[DEBUG] energy: -13.996832655534003
-2026-05-20 02:56:11,713[DEBUG] optimize site: [26, 27]
-2026-05-20 02:56:11,719[DEBUG] use davidson, HC hops: 4
-2026-05-20 02:56:11,721[DEBUG] energy: -13.996832655813623
-2026-05-20 02:56:11,725[DEBUG] optimize site: [25, 26]
-2026-05-20 02:56:11,751[DEBUG] use davidson, HC hops: 22
-2026-05-20 02:56:11,753[DEBUG] energy: -13.996844945038351
-2026-05-20 02:56:11,756[DEBUG] optimize site: [24, 25]
-2026-05-20 02:56:11,788[DEBUG] use davidson, HC hops: 28
-2026-05-20 02:56:11,790[DEBUG] energy: -13.997067101658748
-2026-05-20 02:56:11,792[DEBUG] optimize site: [23, 24]
-2026-05-20 02:56:11,822[DEBUG] use davidson, HC hops: 25
-2026-05-20 02:56:11,824[DEBUG] energy: -13.9971016847175
-2026-05-20 02:56:11,827[DEBUG] optimize site: [22, 23]
-2026-05-20 02:56:11,854[DEBUG] use davidson, HC hops: 23
-2026-05-20 02:56:11,855[DEBUG] energy: -13.997106608213704
-2026-05-20 02:56:11,859[DEBUG] optimize site: [21, 22]
-2026-05-20 02:56:11,886[DEBUG] use davidson, HC hops: 23
-2026-05-20 02:56:11,887[DEBUG] energy: -13.997113698271137
-2026-05-20 02:56:11,891[DEBUG] optimize site: [20, 21]
-2026-05-20 02:56:11,921[DEBUG] use davidson, HC hops: 26
-2026-05-20 02:56:11,922[DEBUG] energy: -13.997162638323548
-2026-05-20 02:56:11,926[DEBUG] optimize site: [19, 20]
-2026-05-20 02:56:11,953[DEBUG] use davidson, HC hops: 23
-2026-05-20 02:56:11,955[DEBUG] energy: -13.997170144965555
-2026-05-20 02:56:11,958[DEBUG] optimize site: [18, 19]
-2026-05-20 02:56:11,989[DEBUG] use davidson, HC hops: 26
-2026-05-20 02:56:11,990[DEBUG] energy: -13.997199975427405
-2026-05-20 02:56:11,994[DEBUG] optimize site: [17, 18]
-2026-05-20 02:56:12,020[DEBUG] use davidson, HC hops: 22
-2026-05-20 02:56:12,021[DEBUG] energy: -13.997204392621608
-2026-05-20 02:56:12,025[DEBUG] optimize site: [16, 17]
-2026-05-20 02:56:12,054[DEBUG] use davidson, HC hops: 25
-2026-05-20 02:56:12,056[DEBUG] energy: -13.997225037523815
-2026-05-20 02:56:12,058[DEBUG] optimize site: [15, 16]
-2026-05-20 02:56:12,090[DEBUG] use davidson, HC hops: 26
-2026-05-20 02:56:12,090[DEBUG] energy: -13.997284918121167
-2026-05-20 02:56:12,095[DEBUG] optimize site: [14, 15]
-2026-05-20 02:56:12,121[DEBUG] use davidson, HC hops: 22
-2026-05-20 02:56:12,121[DEBUG] energy: -13.997290859971228
-2026-05-20 02:56:12,126[DEBUG] optimize site: [13, 14]
-2026-05-20 02:56:12,150[DEBUG] use davidson, HC hops: 20
-2026-05-20 02:56:12,152[DEBUG] energy: -13.997293257653773
-2026-05-20 02:56:12,155[DEBUG] optimize site: [12, 13]
-2026-05-20 02:56:12,182[DEBUG] use davidson, HC hops: 23
-2026-05-20 02:56:12,184[DEBUG] energy: -13.997306225086646
-2026-05-20 02:56:12,187[DEBUG] optimize site: [11, 12]
-2026-05-20 02:56:12,212[DEBUG] use davidson, HC hops: 21
-2026-05-20 02:56:12,214[DEBUG] energy: -13.997311145595594
-2026-05-20 02:56:12,217[DEBUG] optimize site: [10, 11]
-2026-05-20 02:56:12,240[DEBUG] use davidson, HC hops: 20
-2026-05-20 02:56:12,240[DEBUG] energy: -13.997313132707486
-2026-05-20 02:56:12,245[DEBUG] optimize site: [9, 10]
-2026-05-20 02:56:12,265[DEBUG] use davidson, HC hops: 17
-2026-05-20 02:56:12,267[DEBUG] energy: -13.997314428626355
-2026-05-20 02:56:12,270[DEBUG] optimize site: [8, 9]
-2026-05-20 02:56:12,285[DEBUG] use davidson, HC hops: 11
-2026-05-20 02:56:12,286[DEBUG] energy: -13.997314715468686
-2026-05-20 02:56:12,290[DEBUG] optimize site: [7, 8]
-2026-05-20 02:56:12,300[DEBUG] use davidson, HC hops: 7
-2026-05-20 02:56:12,300[DEBUG] energy: -13.997314712669796
-2026-05-20 02:56:12,305[DEBUG] optimize site: [6, 7]
-2026-05-20 02:56:12,320[DEBUG] use davidson, HC hops: 12
-2026-05-20 02:56:12,320[DEBUG] energy: -13.99731499975004
-2026-05-20 02:56:12,325[DEBUG] optimize site: [5, 6]
-2026-05-20 02:56:12,335[DEBUG] use davidson, HC hops: 7
-2026-05-20 02:56:12,336[DEBUG] energy: -13.997315003811472
-2026-05-20 02:56:12,340[DEBUG] optimize site: [4, 5]
-2026-05-20 02:56:12,347[DEBUG] use davidson, HC hops: 5
-2026-05-20 02:56:12,347[DEBUG] energy: -13.997315004767806
-2026-05-20 02:56:12,350[DEBUG] optimize site: [3, 4]
-2026-05-20 02:56:12,353[DEBUG] use direct eigensolver
-2026-05-20 02:56:12,591[DEBUG] energy: -13.997315004467106
-2026-05-20 02:56:12,595[DEBUG] optimize site: [2, 3]
-2026-05-20 02:56:12,597[DEBUG] use direct eigensolver
-2026-05-20 02:56:12,638[DEBUG] energy: -13.997315004467104
-2026-05-20 02:56:12,641[DEBUG] optimize site: [1, 2]
-2026-05-20 02:56:12,642[DEBUG] use direct eigensolver
-2026-05-20 02:56:12,648[DEBUG] energy: -13.997315004467112
-2026-05-20 02:56:12,650[DEBUG] optimize site: [0, 1]
-2026-05-20 02:56:12,652[DEBUG] use direct eigensolver
-2026-05-20 02:56:12,656[DEBUG] energy: -13.997315004467112
-2026-05-20 02:56:12,658[DEBUG] 2 sweeps are finished, lowest energy = -13.997315004767806
-2026-05-20 02:56:12,660[DEBUG] isweep: 2
-2026-05-20 02:56:12,662[DEBUG] compress config in current loop: 30, percent: 0
-2026-05-20 02:56:12,662[DEBUG] mps current size: 343.7KiB, Matrix product bond dim:[1, 4, 8, 16, 30, 30, 30, 30, 30, 30, 30, 30, 30, 30, 30, 30, 30, 30, 30, 30, 30, 30, 30, 30, 30, 30, 30, 30, 16, 8, 4, 2, 1]
-2026-05-20 02:56:12,664[DEBUG] optimize site: [0, 1]
-2026-05-20 02:56:12,665[DEBUG] use direct eigensolver
-2026-05-20 02:56:12,669[DEBUG] energy: -13.997315004467112
-2026-05-20 02:56:12,670[DEBUG] optimize site: [1, 2]
-2026-05-20 02:56:12,673[DEBUG] use direct eigensolver
-2026-05-20 02:56:12,679[DEBUG] energy: -13.997315004467094
-2026-05-20 02:56:12,680[DEBUG] optimize site: [2, 3]
-2026-05-20 02:56:12,683[DEBUG] use direct eigensolver
-2026-05-20 02:56:12,721[DEBUG] energy: -13.997315004467106
-2026-05-20 02:56:12,722[DEBUG] optimize site: [3, 4]
-2026-05-20 02:56:12,725[DEBUG] use direct eigensolver
-2026-05-20 02:56:12,939[DEBUG] energy: -13.997315004467128
-2026-05-20 02:56:12,942[DEBUG] optimize site: [4, 5]
-2026-05-20 02:56:12,948[DEBUG] use davidson, HC hops: 4
-2026-05-20 02:56:12,948[DEBUG] energy: -13.997315004767872
-2026-05-20 02:56:12,951[DEBUG] optimize site: [5, 6]
-2026-05-20 02:56:12,958[DEBUG] use davidson, HC hops: 4
-2026-05-20 02:56:12,959[DEBUG] energy: -13.997315004667778
-2026-05-20 02:56:12,961[DEBUG] optimize site: [6, 7]
-2026-05-20 02:56:12,970[DEBUG] use davidson, HC hops: 6
-2026-05-20 02:56:12,970[DEBUG] energy: -13.997315012470661
-2026-05-20 02:56:12,973[DEBUG] optimize site: [7, 8]
-2026-05-20 02:56:12,981[DEBUG] use davidson, HC hops: 5
-2026-05-20 02:56:12,981[DEBUG] energy: -13.997315006066657
-2026-05-20 02:56:12,985[DEBUG] optimize site: [8, 9]
-2026-05-20 02:56:12,995[DEBUG] use davidson, HC hops: 7
-2026-05-20 02:56:12,995[DEBUG] energy: -13.997315033374523
-2026-05-20 02:56:12,999[DEBUG] optimize site: [9, 10]
-2026-05-20 02:56:13,007[DEBUG] use davidson, HC hops: 6
-2026-05-20 02:56:13,008[DEBUG] energy: -13.997315010121959
-2026-05-20 02:56:13,011[DEBUG] optimize site: [10, 11]
-2026-05-20 02:56:13,021[DEBUG] use davidson, HC hops: 8
-2026-05-20 02:56:13,022[DEBUG] energy: -13.997315055776896
-2026-05-20 02:56:13,024[DEBUG] optimize site: [11, 12]
-2026-05-20 02:56:13,034[DEBUG] use davidson, HC hops: 7
-2026-05-20 02:56:13,035[DEBUG] energy: -13.997315015890461
-2026-05-20 02:56:13,038[DEBUG] optimize site: [12, 13]
-2026-05-20 02:56:13,049[DEBUG] use davidson, HC hops: 8
-2026-05-20 02:56:13,049[DEBUG] energy: -13.997315076759374
-2026-05-20 02:56:13,052[DEBUG] optimize site: [13, 14]
-2026-05-20 02:56:13,062[DEBUG] use davidson, HC hops: 7
-2026-05-20 02:56:13,062[DEBUG] energy: -13.99731502106373
-2026-05-20 02:56:13,067[DEBUG] optimize site: [14, 15]
-2026-05-20 02:56:13,078[DEBUG] use davidson, HC hops: 8
-2026-05-20 02:56:13,078[DEBUG] energy: -13.997315089163447
-2026-05-20 02:56:13,083[DEBUG] optimize site: [15, 16]
-2026-05-20 02:56:13,094[DEBUG] use davidson, HC hops: 8
-2026-05-20 02:56:13,094[DEBUG] energy: -13.997315023237693
-2026-05-20 02:56:13,098[DEBUG] optimize site: [16, 17]
-2026-05-20 02:56:13,111[DEBUG] use davidson, HC hops: 9
-2026-05-20 02:56:13,111[DEBUG] energy: -13.9973150902116
-2026-05-20 02:56:13,116[DEBUG] optimize site: [17, 18]
-2026-05-20 02:56:13,127[DEBUG] use davidson, HC hops: 8
-2026-05-20 02:56:13,127[DEBUG] energy: -13.997315022014211
-2026-05-20 02:56:13,132[DEBUG] optimize site: [18, 19]
-2026-05-20 02:56:13,142[DEBUG] use davidson, HC hops: 8
-2026-05-20 02:56:13,144[DEBUG] energy: -13.997315079212514
-2026-05-20 02:56:13,147[DEBUG] optimize site: [19, 20]
-2026-05-20 02:56:13,157[DEBUG] use davidson, HC hops: 7
-2026-05-20 02:56:13,158[DEBUG] energy: -13.997315018389642
-2026-05-20 02:56:13,162[DEBUG] optimize site: [20, 21]
-2026-05-20 02:56:13,173[DEBUG] use davidson, HC hops: 8
-2026-05-20 02:56:13,175[DEBUG] energy: -13.99731506047155
-2026-05-20 02:56:13,178[DEBUG] optimize site: [21, 22]
-2026-05-20 02:56:13,187[DEBUG] use davidson, HC hops: 6
-2026-05-20 02:56:13,189[DEBUG] energy: -13.997315014222956
-2026-05-20 02:56:13,192[DEBUG] optimize site: [22, 23]
-2026-05-20 02:56:13,204[DEBUG] use davidson, HC hops: 8
-2026-05-20 02:56:13,206[DEBUG] energy: -13.997315036380726
-2026-05-20 02:56:13,209[DEBUG] optimize site: [23, 24]
-2026-05-20 02:56:13,218[DEBUG] use davidson, HC hops: 6
-2026-05-20 02:56:13,220[DEBUG] energy: -13.997315009063295
-2026-05-20 02:56:13,223[DEBUG] optimize site: [24, 25]
-2026-05-20 02:56:13,232[DEBUG] use davidson, HC hops: 6
-2026-05-20 02:56:13,234[DEBUG] energy: -13.997315015431777
-2026-05-20 02:56:13,237[DEBUG] optimize site: [25, 26]
-2026-05-20 02:56:13,245[DEBUG] use davidson, HC hops: 5
-2026-05-20 02:56:13,246[DEBUG] energy: -13.997315007630469
-2026-05-20 02:56:13,250[DEBUG] optimize site: [26, 27]
-2026-05-20 02:56:13,256[DEBUG] use davidson, HC hops: 4
-2026-05-20 02:56:13,258[DEBUG] energy: -13.997315007727428
-2026-05-20 02:56:13,260[DEBUG] optimize site: [27, 28]
-2026-05-20 02:56:13,262[DEBUG] use direct eigensolver
-2026-05-20 02:56:13,480[DEBUG] energy: -13.997315007427376
-2026-05-20 02:56:13,484[DEBUG] optimize site: [28, 29]
-2026-05-20 02:56:13,486[DEBUG] use direct eigensolver
-2026-05-20 02:56:13,528[DEBUG] energy: -13.997315007427368
-2026-05-20 02:56:13,531[DEBUG] optimize site: [29, 30]
-2026-05-20 02:56:13,533[DEBUG] use direct eigensolver
-2026-05-20 02:56:13,538[DEBUG] energy: -13.997315007427371
-2026-05-20 02:56:13,541[DEBUG] optimize site: [30, 31]
-2026-05-20 02:56:13,543[DEBUG] use direct eigensolver
-2026-05-20 02:56:13,545[DEBUG] energy: -13.99731500742738
-2026-05-20 02:56:13,547[DEBUG] 3 sweeps are finished, lowest energy = -13.9973150902116
-2026-05-20 02:56:13,549[INFO] DMRG has converged!
-2026-05-20 02:56:13,586[INFO] mps current size: 329.7KiB, Matrix product bond dim:[1, 2, 4, 8, 16, 30, 30, 30, 30, 30, 30, 30, 30, 30, 30, 30, 30, 30, 30, 30, 30, 30, 30, 30, 30, 30, 30, 30, 16, 8, 4, 2, 1]
+2026-10-14 01:45:53,095[INFO] optimization method: 2site
+2026-10-14 01:45:53,095[INFO] e_rtol: 1e-06
+2026-10-14 01:45:53,096[INFO] e_atol: 1e-08
+2026-10-14 01:45:53,096[INFO] procedure: [[30, 0.2], [30, 0], [30, 0], [30, 0], [30, 0]]
+2026-10-14 01:45:53,109[DEBUG] isweep: 0
+2026-10-14 01:45:53,110[DEBUG] compress config in current loop: 30, percent: 0.2
+2026-10-14 01:45:53,110[DEBUG] mps current size: 329.7KiB, Matrix product bond dim:[1, 2, 4, 8, 16, 30, 30, 30, 30, 30, 30, 30, 30, 30, 30, 30, 30, 30, 30, 30, 30, 30, 30, 30, 30, 30, 30, 30, 16, 8, 4, 2, 1]
+2026-10-14 01:45:53,111[DEBUG] optimize site: [0, 1]
+2026-10-14 01:45:53,112[DEBUG] use direct eigensolver
+2026-10-14 01:45:53,114[DEBUG] energy: -0.7419708960759466
+2026-10-14 01:45:53,115[DEBUG] optimize site: [1, 2]
+2026-10-14 01:45:53,115[DEBUG] use direct eigensolver
+2026-10-14 01:45:53,118[DEBUG] energy: -1.1765589509187797
+2026-10-14 01:45:53,119[DEBUG] optimize site: [2, 3]
+2026-10-14 01:45:53,120[DEBUG] use direct eigensolver
+2026-10-14 01:45:53,130[DEBUG] energy: -2.0265583076241604
+2026-10-14 01:45:53,132[DEBUG] optimize site: [3, 4]
+2026-10-14 01:45:53,132[DEBUG] use direct eigensolver
+2026-10-14 01:45:53,407[DEBUG] energy: -2.78409298882414
+2026-10-14 01:45:53,409[DEBUG] optimize site: [4, 5]
+2026-10-14 01:45:53,452[DEBUG] use davidson, HC hops: 77
+2026-10-14 01:45:53,453[DEBUG] energy: -3.1146514070589655
+2026-10-14 01:45:53,454[DEBUG] optimize site: [5, 6]
+2026-10-14 01:45:53,517[DEBUG] use davidson, HC hops: 50
+2026-10-14 01:45:53,518[DEBUG] energy: -3.6072464331202507
+2026-10-14 01:45:53,591[DEBUG] optimize site: [6, 7]
+2026-10-14 01:45:53,657[DEBUG] use davidson, HC hops: 58
+2026-10-14 01:45:53,658[DEBUG] energy: -4.057368283084417
+2026-10-14 01:45:53,689[DEBUG] optimize site: [7, 8]
+2026-10-14 01:45:53,751[DEBUG] use davidson, HC hops: 60
+2026-10-14 01:45:53,751[DEBUG] energy: -4.5236827616409085
+2026-10-14 01:45:53,753[DEBUG] optimize site: [8, 9]
+2026-10-14 01:45:53,807[DEBUG] use davidson, HC hops: 70
+2026-10-14 01:45:53,808[DEBUG] energy: -4.885042109147768
+2026-10-14 01:45:53,844[DEBUG] optimize site: [9, 10]
+2026-10-14 01:45:53,877[DEBUG] use davidson, HC hops: 47
+2026-10-14 01:45:53,877[DEBUG] energy: -5.472137392733305
+2026-10-14 01:45:53,914[DEBUG] optimize site: [10, 11]
+2026-10-14 01:45:53,984[DEBUG] use davidson, HC hops: 53
+2026-10-14 01:45:53,984[DEBUG] energy: -5.8240656001561275
+2026-10-14 01:45:54,048[DEBUG] optimize site: [11, 12]
+2026-10-14 01:45:54,081[DEBUG] use davidson, HC hops: 46
+2026-10-14 01:45:54,082[DEBUG] energy: -6.318572420045687
+2026-10-14 01:45:54,085[DEBUG] optimize site: [12, 13]
+2026-10-14 01:45:54,172[DEBUG] use davidson, HC hops: 69
+2026-10-14 01:45:54,173[DEBUG] energy: -6.652741256503262
+2026-10-14 01:45:54,178[DEBUG] optimize site: [13, 14]
+2026-10-14 01:45:54,251[DEBUG] use davidson, HC hops: 55
+2026-10-14 01:45:54,252[DEBUG] energy: -7.1345335634625435
+2026-10-14 01:45:54,255[DEBUG] optimize site: [14, 15]
+2026-10-14 01:45:54,333[DEBUG] use davidson, HC hops: 64
+2026-10-14 01:45:54,335[DEBUG] energy: -7.5615524611621145
+2026-10-14 01:45:54,366[DEBUG] optimize site: [15, 16]
+2026-10-14 01:45:54,416[DEBUG] use davidson, HC hops: 71
+2026-10-14 01:45:54,417[DEBUG] energy: -7.950669189151139
+2026-10-14 01:45:54,425[DEBUG] optimize site: [16, 17]
+2026-10-14 01:45:54,490[DEBUG] use davidson, HC hops: 71
+2026-10-14 01:45:54,491[DEBUG] energy: -8.441251888323036
+2026-10-14 01:45:54,527[DEBUG] optimize site: [17, 18]
+2026-10-14 01:45:54,578[DEBUG] use davidson, HC hops: 54
+2026-10-14 01:45:54,579[DEBUG] energy: -8.88006669416675
+2026-10-14 01:45:54,582[DEBUG] optimize site: [18, 19]
+2026-10-14 01:45:54,618[DEBUG] use davidson, HC hops: 51
+2026-10-14 01:45:54,619[DEBUG] energy: -9.30409924871295
+2026-10-14 01:45:54,657[DEBUG] optimize site: [19, 20]
+2026-10-14 01:45:54,752[DEBUG] use davidson, HC hops: 86
+2026-10-14 01:45:54,754[DEBUG] energy: -9.781285321391415
+2026-10-14 01:45:54,756[DEBUG] optimize site: [20, 21]
+2026-10-14 01:45:54,809[DEBUG] use davidson, HC hops: 46
+2026-10-14 01:45:54,810[DEBUG] energy: -10.367535781502296
+2026-10-14 01:45:54,833[DEBUG] optimize site: [21, 22]
+2026-10-14 01:45:54,910[DEBUG] use davidson, HC hops: 67
+2026-10-14 01:45:54,912[DEBUG] energy: -10.841587553418124
+2026-10-14 01:45:54,926[DEBUG] optimize site: [22, 23]
+2026-10-14 01:45:54,977[DEBUG] use davidson, HC hops: 70
+2026-10-14 01:45:54,979[DEBUG] energy: -11.370021793697031
+2026-10-14 01:45:55,019[DEBUG] optimize site: [23, 24]
+2026-10-14 01:45:55,068[DEBUG] use davidson, HC hops: 56
+2026-10-14 01:45:55,069[DEBUG] energy: -11.969644315602897
+2026-10-14 01:45:55,072[DEBUG] optimize site: [24, 25]
+2026-10-14 01:45:55,133[DEBUG] use davidson, HC hops: 48
+2026-10-14 01:45:55,134[DEBUG] energy: -12.940445176287557
+2026-10-14 01:45:55,137[DEBUG] optimize site: [25, 26]
+2026-10-14 01:45:55,182[DEBUG] use davidson, HC hops: 57
+2026-10-14 01:45:55,184[DEBUG] energy: -13.951015333969082
+2026-10-14 01:45:55,186[DEBUG] optimize site: [26, 27]
+2026-10-14 01:45:55,210[DEBUG] use davidson, HC hops: 41
+2026-10-14 01:45:55,210[DEBUG] energy: -13.997018110633658
+2026-10-14 01:45:55,213[DEBUG] optimize site: [27, 28]
+2026-10-14 01:45:55,215[DEBUG] use direct eigensolver
+2026-10-14 01:45:55,516[DEBUG] energy: -13.997018110366577
+2026-10-14 01:45:55,519[DEBUG] optimize site: [28, 29]
+2026-10-14 01:45:55,519[DEBUG] use direct eigensolver
+2026-10-14 01:45:55,663[DEBUG] energy: -13.997018110366568
+2026-10-14 01:45:55,666[DEBUG] optimize site: [29, 30]
+2026-10-14 01:45:55,667[DEBUG] use direct eigensolver
+2026-10-14 01:45:55,672[DEBUG] energy: -13.997018110366561
+2026-10-14 01:45:55,673[DEBUG] optimize site: [30, 31]
+2026-10-14 01:45:55,675[DEBUG] use direct eigensolver
+2026-10-14 01:45:55,676[DEBUG] energy: -13.997018110366602
+2026-10-14 01:45:55,678[DEBUG] 1 sweeps are finished, lowest energy = -13.997018110633658
+2026-10-14 01:45:55,679[DEBUG] isweep: 1
+2026-10-14 01:45:55,680[DEBUG] compress config in current loop: 30, percent: 0
+2026-10-14 01:45:55,681[DEBUG] mps current size: 343.7KiB, Matrix product bond dim:[1, 2, 4, 8, 16, 30, 30, 30, 30, 30, 30, 30, 30, 30, 30, 30, 30, 30, 30, 30, 30, 30, 30, 30, 30, 30, 30, 30, 30, 16, 8, 4, 1]
+2026-10-14 01:45:55,682[DEBUG] optimize site: [30, 31]
+2026-10-14 01:45:55,683[DEBUG] use direct eigensolver
+2026-10-14 01:45:55,684[DEBUG] energy: -13.997018110366602
+2026-10-14 01:45:55,685[DEBUG] optimize site: [29, 30]
+2026-10-14 01:45:55,687[DEBUG] use direct eigensolver
+2026-10-14 01:45:55,692[DEBUG] energy: -13.997018110366579
+2026-10-14 01:45:55,694[DEBUG] optimize site: [28, 29]
+2026-10-14 01:45:55,695[DEBUG] use direct eigensolver
+2026-10-14 01:45:55,774[DEBUG] energy: -13.997018110366557
+2026-10-14 01:45:55,776[DEBUG] optimize site: [27, 28]
+2026-10-14 01:45:55,778[DEBUG] use direct eigensolver
+2026-10-14 01:45:56,063[DEBUG] energy: -13.99701811036657
+2026-10-14 01:45:56,065[DEBUG] optimize site: [26, 27]
+2026-10-14 01:45:56,069[DEBUG] use davidson, HC hops: 4
+2026-10-14 01:45:56,070[DEBUG] energy: -13.997018110634604
+2026-10-14 01:45:56,074[DEBUG] optimize site: [25, 26]
+2026-10-14 01:45:56,098[DEBUG] use davidson, HC hops: 18
+2026-10-14 01:45:56,099[DEBUG] energy: -13.997019894830892
+2026-10-14 01:45:56,102[DEBUG] optimize site: [24, 25]
+2026-10-14 01:45:56,138[DEBUG] use davidson, HC hops: 25
+2026-10-14 01:45:56,139[DEBUG] energy: -13.997050707130187
+2026-10-14 01:45:56,142[DEBUG] optimize site: [23, 24]
+2026-10-14 01:45:56,175[DEBUG] use davidson, HC hops: 26
+2026-10-14 01:45:56,176[DEBUG] energy: -13.997150789973483
+2026-10-14 01:45:56,178[DEBUG] optimize site: [22, 23]
+2026-10-14 01:45:56,209[DEBUG] use davidson, HC hops: 22
+2026-10-14 01:45:56,210[DEBUG] energy: -13.997156828470148
+2026-10-14 01:45:56,212[DEBUG] optimize site: [21, 22]
+2026-10-14 01:45:56,245[DEBUG] use davidson, HC hops: 25
+2026-10-14 01:45:56,247[DEBUG] energy: -13.997176682683591
+2026-10-14 01:45:56,248[DEBUG] optimize site: [20, 21]
+2026-10-14 01:45:56,273[DEBUG] use davidson, HC hops: 24
+2026-10-14 01:45:56,274[DEBUG] energy: -13.997196066510229
+2026-10-14 01:45:56,311[DEBUG] optimize site: [19, 20]
+2026-10-14 01:45:56,338[DEBUG] use davidson, HC hops: 24
+2026-10-14 01:45:56,341[DEBUG] energy: -13.997208542046101
+2026-10-14 01:45:56,386[DEBUG] optimize site: [18, 19]
+2026-10-14 01:45:56,403[DEBUG] use davidson, HC hops: 23
+2026-10-14 01:45:56,404[DEBUG] energy: -13.997218539454606
+2026-10-14 01:45:56,440[DEBUG] optimize site: [17, 18]
+2026-10-14 01:45:56,458[DEBUG] use davidson, HC hops: 24
+2026-10-14 01:45:56,460[DEBUG] energy: -13.997232982851381
+2026-10-14 01:45:56,498[DEBUG] optimize site: [16, 17]
+2026-10-14 01:45:56,529[DEBUG] use davidson, HC hops: 26
+2026-10-14 01:45:56,530[DEBUG] energy: -13.997286667727456
+2026-10-14 01:45:56,610[DEBUG] optimize site: [15, 16]
+2026-10-14 01:45:56,636[DEBUG] use davidson, HC hops: 21
+2026-10-14 01:45:56,638[DEBUG] energy: -13.997289976542227
+2026-10-14 01:45:56,676[DEBUG] optimize site: [14, 15]
+2026-10-14 01:45:56,690[DEBUG] use davidson, HC hops: 19
+2026-10-14 01:45:56,691[DEBUG] energy: -13.997290766927081
+2026-10-14 01:45:56,725[DEBUG] optimize site: [13, 14]
+2026-10-14 01:45:56,757[DEBUG] use davidson, HC hops: 23
+2026-10-14 01:45:56,759[DEBUG] energy: -13.997301691530419
+2026-10-14 01:45:56,831[DEBUG] optimize site: [12, 13]
+2026-10-14 01:45:56,857[DEBUG] use davidson, HC hops: 17
+2026-10-14 01:45:56,860[DEBUG] energy: -13.997302673880075
+2026-10-14 01:45:56,931[DEBUG] optimize site: [11, 12]
+2026-10-14 01:45:56,959[DEBUG] use davidson, HC hops: 20
+2026-10-14 01:45:56,962[DEBUG] energy: -13.997305253744722
+2026-10-14 01:45:56,996[DEBUG] optimize site: [10, 11]
+2026-10-14 01:45:57,018[DEBUG] use davidson, HC hops: 21
+2026-10-14 01:45:57,020[DEBUG] energy: -13.997309261458039
+2026-10-14 01:45:57,093[DEBUG] optimize site: [9, 10]
+2026-10-14 01:45:57,121[DEBUG] use davidson, HC hops: 19
+2026-10-14 01:45:57,122[DEBUG] energy: -13.99731297794233
+2026-10-14 01:45:57,195[DEBUG] optimize site: [8, 9]
+2026-10-14 01:45:57,222[DEBUG] use davidson, HC hops: 17
+2026-10-14 01:45:57,224[DEBUG] energy: -13.997314066392395
+2026-10-14 01:45:57,294[DEBUG] optimize site: [7, 8]
+2026-10-14 01:45:57,306[DEBUG] use davidson, HC hops: 14
+2026-10-14 01:45:57,308[DEBUG] energy: -13.997314835104113
+2026-10-14 01:45:57,347[DEBUG] optimize site: [6, 7]
+2026-10-14 01:45:57,355[DEBUG] use davidson, HC hops: 10
+2026-10-14 01:45:57,357[DEBUG] energy: -13.997315008587139
+2026-10-14 01:45:57,394[DEBUG] optimize site: [5, 6]
+2026-10-14 01:45:57,400[DEBUG] use davidson, HC hops: 6
+2026-10-14 01:45:57,401[DEBUG] energy: -13.99731500699081
+2026-10-14 01:45:57,437[DEBUG] optimize site: [4, 5]
+2026-10-14 01:45:57,441[DEBUG] use davidson, HC hops: 5
+2026-10-14 01:45:57,442[DEBUG] energy: -13.997315007843703
+2026-10-14 01:45:57,444[DEBUG] optimize site: [3, 4]
+2026-10-14 01:45:57,446[DEBUG] use direct eigensolver
+2026-10-14 01:45:57,753[DEBUG] energy: -13.997315007543614
+2026-10-14 01:45:57,755[DEBUG] optimize site: [2, 3]
+2026-10-14 01:45:57,756[DEBUG] use direct eigensolver
+2026-10-14 01:45:57,885[DEBUG] energy: -13.997315007543609
+2026-10-14 01:45:57,886[DEBUG] optimize site: [1, 2]
+2026-10-14 01:45:57,889[DEBUG] use direct eigensolver
+2026-10-14 01:45:57,893[DEBUG] energy: -13.997315007543602
+2026-10-14 01:45:57,895[DEBUG] optimize site: [0, 1]
+2026-10-14 01:45:57,896[DEBUG] use direct eigensolver
+2026-10-14 01:45:57,898[DEBUG] energy: -13.997315007543616
+2026-10-14 01:45:57,900[DEBUG] 2 sweeps are finished, lowest energy = -13.997315008587139
+2026-10-14 01:45:57,901[DEBUG] isweep: 2
+2026-10-14 01:45:57,903[DEBUG] compress config in current loop: 30, percent: 0
+2026-10-14 01:45:57,903[DEBUG] mps current size: 343.7KiB, Matrix product bond dim:[1, 4, 8, 16, 30, 30, 30, 30, 30, 30, 30, 30, 30, 30, 30, 30, 30, 30, 30, 30, 30, 30, 30, 30, 30, 30, 30, 30, 16, 8, 4, 2, 1]
+2026-10-14 01:45:57,904[DEBUG] optimize site: [0, 1]
+2026-10-14 01:45:57,905[DEBUG] use direct eigensolver
+2026-10-14 01:45:57,907[DEBUG] energy: -13.997315007543616
+2026-10-14 01:45:57,909[DEBUG] optimize site: [1, 2]
+2026-10-14 01:45:57,910[DEBUG] use direct eigensolver
+2026-10-14 01:45:57,914[DEBUG] energy: -13.997315007543618
+2026-10-14 01:45:57,916[DEBUG] optimize site: [2, 3]
+2026-10-14 01:45:57,917[DEBUG] use direct eigensolver
+2026-10-14 01:45:58,063[DEBUG] energy: -13.997315007543634
+2026-10-14 01:45:58,065[DEBUG] optimize site: [3, 4]
+2026-10-14 01:45:58,067[DEBUG] use direct eigensolver
+2026-10-14 01:45:58,368[DEBUG] energy: -13.997315007543644
+2026-10-14 01:45:58,371[DEBUG] optimize site: [4, 5]
+2026-10-14 01:45:58,375[DEBUG] use davidson, HC hops: 4
+2026-10-14 01:45:58,376[DEBUG] energy: -13.997315007843829
+2026-10-14 01:45:58,378[DEBUG] optimize site: [5, 6]
+2026-10-14 01:45:58,383[DEBUG] use davidson, HC hops: 4
+2026-10-14 01:45:58,384[DEBUG] energy: -13.997315007741673
+2026-10-14 01:45:58,388[DEBUG] optimize site: [6, 7]
+2026-10-14 01:45:58,397[DEBUG] use davidson, HC hops: 6
+2026-10-14 01:45:58,398[DEBUG] energy: -13.997315015505741
+2026-10-14 01:45:58,402[DEBUG] optimize site: [7, 8]
+2026-10-14 01:45:58,411[DEBUG] use davidson, HC hops: 5
+2026-10-14 01:45:58,411[DEBUG] energy: -13.997315009163298
+2026-10-14 01:45:58,413[DEBUG] optimize site: [8, 9]
+2026-10-14 01:45:58,423[DEBUG] use davidson, HC hops: 7
+2026-10-14 01:45:58,423[DEBUG] energy: -13.997315036233706
+2026-10-14 01:45:58,426[DEBUG] optimize site: [9, 10]
+2026-10-14 01:45:58,435[DEBUG] use davidson, HC hops: 6
+2026-10-14 01:45:58,436[DEBUG] energy: -13.99731501301861
+2026-10-14 01:45:58,439[DEBUG] optimize site: [10, 11]
+2026-10-14 01:45:58,451[DEBUG] use davidson, HC hops: 8
+2026-10-14 01:45:58,452[DEBUG] energy: -13.99731505882256
+2026-10-14 01:45:58,454[DEBUG] optimize site: [11, 12]
+2026-10-14 01:45:58,464[DEBUG] use davidson, HC hops: 7
+2026-10-14 01:45:58,465[DEBUG] energy: -13.997315018800052
+2026-10-14 01:45:58,467[DEBUG] optimize site: [12, 13]
+2026-10-14 01:45:58,477[DEBUG] use davidson, HC hops: 8
+2026-10-14 01:45:58,477[DEBUG] energy: -13.997315079671974
+2026-10-14 01:45:58,483[DEBUG] optimize site: [13, 14]
+2026-10-14 01:45:58,493[DEBUG] use davidson, HC hops: 7
+2026-10-14 01:45:58,495[DEBUG] energy: -13.997315023824868
+2026-10-14 01:45:58,497[DEBUG] optimize site: [14, 15]
+2026-10-14 01:45:58,510[DEBUG] use davidson, HC hops: 8
+2026-10-14 01:45:58,511[DEBUG] energy: -13.997315092179461
+2026-10-14 01:45:58,514[DEBUG] optimize site: [15, 16]
+2026-10-14 01:45:58,523[DEBUG] use davidson, HC hops: 7
+2026-10-14 01:45:58,523[DEBUG] energy: -13.997315025959809
+2026-10-14 01:45:58,525[DEBUG] optimize site: [16, 17]
+2026-10-14 01:45:58,536[DEBUG] use davidson, HC hops: 8
+2026-10-14 01:45:58,536[DEBUG] energy: -13.997315092248568
+2026-10-14 01:45:58,538[DEBUG] optimize site: [17, 18]
+2026-10-14 01:45:58,548[DEBUG] use davidson, HC hops: 8
+2026-10-14 01:45:58,549[DEBUG] energy: -13.997315024706637
+2026-10-14 01:45:58,551[DEBUG] optimize site: [18, 19]
+2026-10-14 01:45:58,564[DEBUG] use davidson, HC hops: 8
+2026-10-14 01:45:58,565[DEBUG] energy: -13.997315081031338
+2026-10-14 01:45:58,568[DEBUG] optimize site: [19, 20]
+2026-10-14 01:45:58,577[DEBUG] use davidson, HC hops: 7
+2026-10-14 01:45:58,579[DEBUG] energy: -13.997315020612412
+2026-10-14 01:45:58,580[DEBUG] optimize site: [20, 21]
+2026-10-14 01:45:58,594[DEBUG] use davidson, HC hops: 8
+2026-10-14 01:45:58,595[DEBUG] energy: -13.997315061147274
+2026-10-14 01:45:58,597[DEBUG] optimize site: [21, 22]
+2026-10-14 01:45:58,606[DEBUG] use davidson, HC hops: 6
+2026-10-14 01:45:58,607[DEBUG] energy: -13.997315015215642
+2026-10-14 01:45:58,609[DEBUG] optimize site: [22, 23]
+2026-10-14 01:45:58,638[DEBUG] use davidson, HC hops: 8
+2026-10-14 01:45:58,640[DEBUG] energy: -13.997315036589523
+2026-10-14 01:45:58,704[DEBUG] optimize site: [23, 24]
+2026-10-14 01:45:58,742[DEBUG] use davidson, HC hops: 5
+2026-10-14 01:45:58,742[DEBUG] energy: -13.9973150092667
+2026-10-14 01:45:58,745[DEBUG] optimize site: [24, 25]
+2026-10-14 01:45:58,754[DEBUG] use davidson, HC hops: 6
+2026-10-14 01:45:58,755[DEBUG] energy: -13.997315015667919
+2026-10-14 01:45:58,757[DEBUG] optimize site: [25, 26]
+2026-10-14 01:45:58,762[DEBUG] use davidson, HC hops: 5
+2026-10-14 01:45:58,763[DEBUG] energy: -13.997315007871357
+2026-10-14 01:45:58,764[DEBUG] optimize site: [26, 27]
+2026-10-14 01:45:58,768[DEBUG] use davidson, HC hops: 4
+2026-10-14 01:45:58,768[DEBUG] energy: -13.99731500796935
+2026-10-14 01:45:58,769[DEBUG] optimize site: [27, 28]
+2026-10-14 01:45:58,770[DEBUG] use direct eigensolver
+2026-10-14 01:45:59,077[DEBUG] energy: -13.997315007669455
+2026-10-14 01:45:59,079[DEBUG] optimize site: [28, 29]
+2026-10-14 01:45:59,080[DEBUG] use direct eigensolver
+2026-10-14 01:45:59,208[DEBUG] energy: -13.99731500766946
+2026-10-14 01:45:59,209[DEBUG] optimize site: [29, 30]
+2026-10-14 01:45:59,210[DEBUG] use direct eigensolver
+2026-10-14 01:45:59,213[DEBUG] energy: -13.997315007669485
+2026-10-14 01:45:59,214[DEBUG] optimize site: [30, 31]
+2026-10-14 01:45:59,215[DEBUG] use direct eigensolver
+2026-10-14 01:45:59,216[DEBUG] energy: -13.997315007669489
+2026-10-14 01:45:59,217[DEBUG] 3 sweeps are finished, lowest energy = -13.997315092248568
+2026-10-14 01:45:59,218[INFO] DMRG has converged!
+2026-10-14 01:45:59,242[INFO] mps current size: 329.7KiB, Matrix product bond dim:[1, 2, 4, 8, 16, 30, 30, 30, 30, 30, 30, 30, 30, 30, 30, 30, 30, 30, 30, 30, 30, 30, 30, 30, 30, 30, 30, 30, 16, 8, 4, 2, 1]
 </pre></div></div>
 </div>
 <div class="nboutput nblast docutils container">
@@ -942,7 +726,7 @@ mpo_bond_dims:[1, 4, 5, 5, 5, 5, 5, 5, 5, 5, 5, 5, 5, 5, 5, 5, 5, 5, 5, 5, 5, 5,
 </div>
 <div class="output_area docutils container">
 <div class="highlight"><pre>
-gs energy: -13.9973150902116
+gs energy: -13.997315092248568
 </pre></div></div>
 </div>
 <div class="nbinput nblast docutils container">
@@ -993,9 +777,7 @@ gs energy: -13.9973150902116
             
           </div>
           <div class="right-details">
-            <div class="icons">
-              
-            </div>
+            
           </div>
         </div>
         
@@ -1029,15 +811,12 @@ gs energy: -13.9973150902116
       
     </aside>
   </div>
-</div><script data-url_root="../" id="documentation_options" src="../_static/documentation_options.js"></script>
-    <script src="../_static/jquery.js"></script>
-    <script src="../_static/underscore.js"></script>
-    <script src="../_static/_sphinx_javascript_frameworks_compat.js"></script>
-    <script src="../_static/doctools.js"></script>
-    <script src="../_static/sphinx_highlight.js"></script>
-    <script src="../_static/scripts/furo.js"></script>
+</div><script src="../_static/documentation_options.js?v=01f34227"></script>
+    <script src="../_static/doctools.js?v=fd6eb6e6"></script>
+    <script src="../_static/sphinx_highlight.js?v=6ffebe34"></script>
+    <script src="../_static/scripts/furo.js?v=46bd48cc"></script>
     <script crossorigin="anonymous" integrity="sha256-Ae2Vz/4ePdIu6ZyI/5ZGsYnb+m0JlOmKPjt6XZ9JJkA=" src="https://cdnjs.cloudflare.com/ajax/libs/require.js/2.3.4/require.min.js"></script>
     <script>window.MathJax = {"tex": {"inlineMath": [["$", "$"], ["\\(", "\\)"]], "processEscapes": true}, "options": {"ignoreHtmlClass": "tex2jax_ignore|mathjax_ignore|document", "processHtmlClass": "tex2jax_process|mathjax_process|math|output_area"}}</script>
-    <script defer="defer" src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-mml-chtml.js"></script>
+    <script defer="defer" src="https://cdn.jsdelivr.net/npm/mathjax@4/tex-mml-chtml.js"></script>
     </body>
 </html>
