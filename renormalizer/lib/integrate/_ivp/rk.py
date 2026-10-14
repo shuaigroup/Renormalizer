@@ -8,7 +8,8 @@ from .common import (
     validate_first_step,
 )
 
-from renormalizer.mps.backend import np, xp, backend
+from renormalizer.mps.backend import np
+from renormalizer.backend.context import internal_backend as xp, internal_backend as backend
 
 # Multiply steps computed from asymptotic behaviour of errors by this.
 SAFETY = 0.9
@@ -63,24 +64,29 @@ def rk_step(fun, t, y, f, h, A, B, C, E, K):
         Derivative ``fun(t + h, y_new)``.
     error : ndarray, shape (n,)
         Error estimate of a less accurate method.
+    K : ndarray, shape (n_stages + 1, n)
+        Updated exclusively owned stage workspace. Retain this return value:
+        immutable backends return a new array; mutable backends reuse storage.
 
     References
     ----------
     .. [1] E. Hairer, S. P. Norsett G. Wanner, "Solving Ordinary Differential
            Equations I: Nonstiff Problems", Sec. II.4.
     """
-    K[0] = f
+    # K is exclusively owned by this solver. Mutable adapters reuse it;
+    # immutable adapters return a replacement retained through dense output.
+    K = xp.write_owned(K, 0, f)
     for s, (a, c) in enumerate(zip(A, C)):
         dy = xp.dot(K[: s + 1].T, a) * h
-        K[s + 1] = fun(t + c * h, y + dy)
+        K = xp.write_owned(K, s + 1, fun(t + c * h, y + dy))
 
     y_new = y + h * xp.dot(K[:-1].T, B)
     f_new = fun(t + h, y_new)
 
-    K[-1] = f_new
+    K = xp.write_owned(K, -1, f_new)
     error = xp.dot(K.T, E) * h
 
-    return y_new, f_new, error
+    return y_new, f_new, error, K
 
 
 class RungeKutta(OdeSolver):
@@ -111,6 +117,12 @@ class RungeKutta(OdeSolver):
         super(RungeKutta, self).__init__(
             fun, t0, y0, t_bound, vectorized, support_complex=True
         )
+        # State combinations use native coefficients; C only advances host
+        # time and stays on the host to avoid a scalar download per stage.
+        self.C = np.array(self.C, dtype=np.float64, copy=True)
+        self.A = [xp.asarray(a, dtype=backend.real_dtype) for a in self.A]
+        for name in ('B', 'E', 'P'):
+            setattr(self, name, xp.asarray(getattr(self, name), dtype=backend.real_dtype))
         self.y_old = None
         self.max_step = validate_max_step(max_step)
         self.rtol, self.atol = validate_tol(rtol, atol, self.n)
@@ -138,7 +150,9 @@ class RungeKutta(OdeSolver):
         rtol = self.rtol
         atol = self.atol
 
-        min_step = 10 * xp.abs(xp.nextafter(t, self.direction * xp.inf) - t)
+        # Time/step control is host scalar arithmetic, independent of where
+        # the solution vector lives; nextafter must not dispatch a GPU tensor.
+        min_step = 10 * np.abs(np.nextafter(t, self.direction * np.inf) - t)
 
         if self.h_abs > max_step:
             h_abs = max_step
@@ -163,7 +177,7 @@ class RungeKutta(OdeSolver):
             h = t_new - t
             h_abs = np.abs(h)
 
-            y_new, f_new, error = rk_step(
+            y_new, f_new, error, self.K = rk_step(
                 self.fun, t, y, self.f, h, self.A, self.B, self.C, self.E, self.K
             )
             scale = atol + xp.maximum(xp.abs(y), xp.abs(y_new)) * rtol
@@ -194,11 +208,15 @@ class RungeKutta(OdeSolver):
         return True, None
 
     def _dense_output_impl(self):
-        Q = self.K.T.dot(self.P)
+        # Tensor.dot has different rank rules across libraries. The adapter
+        # performs native matrix multiplication and real/complex promotion.
+        Q = xp.dot(self.K.T, self.P)
         return RkDenseOutput(self.t_old, self.t, self.y_old, Q)
 
 
-dtype = backend.real_dtype
+# Host templates avoid binding a device or truncating precision at import.
+# Each solver places the state-combination coefficients on its own backend.
+dtype = np.float64
 
 
 class RK23(RungeKutta):
@@ -280,11 +298,11 @@ class RK23(RungeKutta):
 
     order = 2
     n_stages = 3
-    C = xp.array([1 / 2, 3 / 4], dtype=dtype)
-    A = [xp.array([1 / 2], dtype=dtype), xp.array([0, 3 / 4], dtype=dtype)]
-    B = xp.array([2 / 9, 1 / 3, 4 / 9], dtype=dtype)
-    E = xp.array([5 / 72, -1 / 12, -1 / 9, 1 / 8], dtype=dtype)
-    P = xp.array(
+    C = np.array([1 / 2, 3 / 4], dtype=dtype)
+    A = [np.array([1 / 2], dtype=dtype), np.array([0, 3 / 4], dtype=dtype)]
+    B = np.array([2 / 9, 1 / 3, 4 / 9], dtype=dtype)
+    E = np.array([5 / 72, -1 / 12, -1 / 9, 1 / 8], dtype=dtype)
+    P = np.array(
         [[1, -4 / 3, 5 / 9], [0, 1, -2 / 3], [0, 4 / 3, -8 / 9], [0, -1, 1]],
         dtype=dtype,
     )
@@ -372,25 +390,25 @@ class RK45(RungeKutta):
 
     order = 4
     n_stages = 6
-    C = xp.array([1 / 5, 3 / 10, 4 / 5, 8 / 9, 1], dtype=dtype)
+    C = np.array([1 / 5, 3 / 10, 4 / 5, 8 / 9, 1], dtype=dtype)
     A = [
-        xp.array([1 / 5], dtype=dtype),
-        xp.array([3 / 40, 9 / 40], dtype=dtype),
-        xp.array([44 / 45, -56 / 15, 32 / 9], dtype=dtype),
-        xp.array([19372 / 6561, -25360 / 2187, 64448 / 6561, -212 / 729], dtype=dtype),
-        xp.array(
+        np.array([1 / 5], dtype=dtype),
+        np.array([3 / 40, 9 / 40], dtype=dtype),
+        np.array([44 / 45, -56 / 15, 32 / 9], dtype=dtype),
+        np.array([19372 / 6561, -25360 / 2187, 64448 / 6561, -212 / 729], dtype=dtype),
+        np.array(
             [9017 / 3168, -355 / 33, 46732 / 5247, 49 / 176, -5103 / 18656], dtype=dtype
         ),
     ]
-    B = xp.array(
+    B = np.array(
         [35 / 384, 0, 500 / 1113, 125 / 192, -2187 / 6784, 11 / 84], dtype=dtype
     )
-    E = xp.array(
+    E = np.array(
         [-71 / 57600, 0, 71 / 16695, -71 / 1920, 17253 / 339200, -22 / 525, 1 / 40],
         dtype=dtype,
     )
     # Corresponds to the optimum value of c_6 from [2]_.
-    P = xp.array(
+    P = np.array(
         [
             [
                 1,
@@ -438,14 +456,16 @@ class RkDenseOutput(DenseOutput):
         self.y_old = y_old
 
     def _call_impl(self, t):
+        # Query times arrive as host metadata. Build polynomial weights here,
+        # then explicitly upload them; the large Q and solution remain native.
         x = (t - self.t_old) / self.h
         if t.ndim == 0:
-            p = xp.tile(x, self.order + 1)
-            p = xp.cumprod(p)
+            p = np.tile(x, self.order + 1)
+            p = np.cumprod(p)
         else:
-            p = xp.tile(x, (self.order + 1, 1))
-            p = xp.cumprod(p, axis=0)
-        y = self.h * xp.dot(self.Q, p)
+            p = np.tile(x, (self.order + 1, 1))
+            p = np.cumprod(p, axis=0)
+        y = self.h * xp.dot(self.Q, xp.asarray(p, dtype=backend.real_dtype))
         if y.ndim == 2:
             y += self.y_old[:, None]
         else:

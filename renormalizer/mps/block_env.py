@@ -12,7 +12,7 @@ from typing import Any, Dict, Optional, Set, Tuple
 
 import numpy as np
 
-from renormalizer.mps.backend import USE_GPU
+from renormalizer.backend.context import current_backend
 from renormalizer.mps.matrix import asnumpy
 
 
@@ -329,7 +329,9 @@ def dense_to_block_env(environ, bra_qn, mpo_qn, ket_qn, threshold=1e-14):
 
 
 def supports_block_env(ms, mo) -> bool:
-    return (not USE_GPU) and _arr(ms).ndim == 3 and _arr(mo).ndim == 4
+    # These kernels use NumPy directly. Respect per-call backend capture rather
+    # than the legacy import-time GPU flag, and reject before host conversion.
+    return current_backend().name == "numpy" and _arr(ms).ndim == 3 and _arr(mo).ndim == 4
 
 
 def _contract_l(eblock, ablock, oblock, kblock):

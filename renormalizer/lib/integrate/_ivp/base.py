@@ -1,6 +1,7 @@
+from math import prod
 import numpy as np
 
-from renormalizer.mps.backend import xp
+from renormalizer.backend.context import internal_backend as xp
 
 
 def check_arguments(fun, y0, support_complex):
@@ -132,9 +133,11 @@ class OdeSolver(object):
             fun_single = self._fun
 
             def fun_vectorized(t, y):
-                f = xp.empty_like(y)
+                # This temporary belongs only to this wrapper. Retaining each
+                # write supports JAX without copying mutable backend storage.
+                f = xp.empty(y.shape, dtype=y.dtype)
                 for i, yi in enumerate(y.T):
-                    f[:, i] = self._fun(t, yi)
+                    f = xp.write_owned(f, (slice(None), i), self._fun(t, yi))
                 return f
 
         def fun(t, y):
@@ -146,7 +149,9 @@ class OdeSolver(object):
         self.fun_vectorized = fun_vectorized
 
         self.direction = np.sign(t_bound - t0) if t_bound != t0 else 1
-        self.n = self.y.size
+        # Tensor.size is a method in Torch; shape is host metadata everywhere.
+        # Multiplying dimensions neither reads nor transfers state values.
+        self.n = prod(self.y.shape)
         self.status = "running"
 
         self.nfev = 0
@@ -232,6 +237,9 @@ class DenseOutput(object):
     """
 
     def __init__(self, t_old, t):
+        # Interpolants may outlive the solve's capture scope. Retain their
+        # creating adapter so later global selection cannot move evaluation.
+        self._backend = xp.current
         self.t_old = t_old
         self.t = t
         self.t_min = min(t, t_old)
@@ -254,7 +262,9 @@ class DenseOutput(object):
         t = np.asarray(t)
         if t.ndim > 1:
             raise ValueError("`t` must be float or 1-d array.")
-        return self._call_impl(t)
+        from renormalizer.backend.context import capture_backend
+        with capture_backend(self._backend):
+            return self._call_impl(t)
 
     def _call_impl(self, t):
         raise NotImplementedError
@@ -275,6 +285,7 @@ class ConstantDenseOutput(DenseOutput):
         if t.ndim == 0:
             return self.value
         else:
-            ret = np.empty((self.value.shape[0], t.shape[0]))
-            ret[:] = self.value[:, None]
-            return ret
+            # Broadcast on the creating backend, then materialize an independent
+            # output without arithmetic (which can alter complex infinities).
+            view = xp.broadcast_to(self.value[:, None], (self.value.shape[0], t.shape[0]))
+            return xp.array(view, dtype=self.value.dtype, copy=True)

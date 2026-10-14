@@ -1,3 +1,4 @@
+from renormalizer.backend.execution import bind_backend
 # -*- coding: utf-8 -*-
 """
 
@@ -18,7 +19,8 @@ import scipy
 from renormalizer.lib import davidson
 from renormalizer.model.h_qc import qc_model, int_to_h, generate_ladder_operator, simplify_op
 from renormalizer.model import Model, Op
-from renormalizer.mps.backend import xp, OE_BACKEND, primme, IMPORT_PRIMME_EXCEPTION
+from renormalizer.mps.backend import primme, IMPORT_PRIMME_EXCEPTION
+from renormalizer.backend.context import internal_backend as backend, internal_backend as xp
 from renormalizer.mps.matrix import multi_tensor_contract, tensordot, asnumpy, asxp
 from renormalizer.mps.hop_expr import  hop_expr
 from renormalizer.mps.svd_qn import get_qn_mask
@@ -52,6 +54,8 @@ def construct_mps_mpo(model, mmax, nexciton, offset=Quantity(0)):
     return mps, mpo
 
 
+# multibackend: runs with the backend chosen at entry, or the one passed as backend_context=.
+@bind_backend
 def optimize_mps(mps: Mps, mpo: Union[Mpo, StackedMpo], omega: float = None) -> Tuple[List, Mps]:
     r"""DMRG ground state algorithm and state-averaged excited states algorithm
 
@@ -363,7 +367,7 @@ def get_ham_direct(
             ham = oe_contract(
                 "abc,bdef,lfk->adlcek",
                 ltensor, cmo[0], rtensor,
-                backend=OE_BACKEND
+                backend=backend.opt_einsum_name
             )
             ham = ham[:, :, :, qn_mask][qn_mask, :]
         else:
@@ -375,7 +379,7 @@ def get_ham_direct(
             ham = oe_contract(
                 "abc,bdef,fghj,ljk->adglcehk",
                 ltensor, cmo[0], cmo[1], rtensor,
-                backend=OE_BACKEND,
+                backend=backend.opt_einsum_name,
             )
             ham = ham[:, :, :, :, qn_mask][qn_mask, :]
     else:
@@ -388,7 +392,7 @@ def get_ham_direct(
             ham = oe_contract(
                 "abcd, befg, cfhi, jgik -> aejdhk",
                 ltensor, cmo[0], cmo[0], rtensor,
-                backend=OE_BACKEND,
+                backend=backend.opt_einsum_name,
             )
             ham = ham[:, :, :, qn_mask][qn_mask, :]
         else:
@@ -400,7 +404,7 @@ def get_ham_direct(
             ham = oe_contract(
                 "abcd, befg, cfhi, gjkl, ikmn, olnp -> aejodhmp",
                 ltensor, cmo[0], cmo[0], cmo[1], cmo[1], rtensor,
-                backend=OE_BACKEND,
+                backend=backend.opt_einsum_name,
             )
             ham = ham[:, :, :, :, qn_mask][qn_mask, :]
 
@@ -482,9 +486,12 @@ def get_ham_iterative(
         )
     else:
         if isinstance(ltensor, BlockEnvData):
-            ltensor = asxp(ltensor.to_dense())
+            ltensor = ltensor.to_dense()
         if isinstance(rtensor, BlockEnvData):
-            rtensor = asxp(rtensor.to_dense())
+            rtensor = rtensor.to_dense()
+        # Sparse dispatch may decline and leave raw host environments.
+        ltensor = asxp(ltensor)
+        rtensor = asxp(rtensor)
 
     if not use_block_hop and omega is None:
         tmp_ltensor = xp.einsum("aba -> ba", ltensor)
@@ -519,7 +526,7 @@ def get_ham_iterative(
             hdiag = oe_contract(
                 "abca, bdef, cedg, hfgh -> adh",
                 ltensor, cmo[0], cmo[0], rtensor,
-                backend=OE_BACKEND,
+                backend=backend.opt_einsum_name,
             )
         else:
             #   S-a d   h l-S
@@ -530,7 +537,7 @@ def get_ham_iterative(
             hdiag = oe_contract(
                 "abca, bdef, cedg, fhij, gihk, ljkl -> adhl",
                 ltensor, cmo[0], cmo[0], cmo[1], cmo[1], rtensor,
-                backend=OE_BACKEND,
+                backend=backend.opt_einsum_name,
             )
 
     hdiag = asnumpy(hdiag[qn_mask] * inverse)
@@ -640,8 +647,9 @@ def eigh_iterative(
             raise IMPORT_PRIMME_EXCEPTION
         h_dim = np.sum(qn_mask)
         precond = lambda x: scipy.sparse.diags(1 / (hdiag + 1e-4)) @ x
-        A = scipy.sparse.linalg.LinearOperator((h_dim, h_dim), matvec=hop, matmat=hop)
-        M = scipy.sparse.linalg.LinearOperator((h_dim, h_dim), matvec=precond, matmat=hop)
+        # dtype given so scipy does not call hop once just to infer it.
+        A = scipy.sparse.linalg.LinearOperator((h_dim, h_dim), matvec=hop, matmat=hop, dtype=np.result_type(hdiag, np.asarray(cguess)))
+        M = scipy.sparse.linalg.LinearOperator((h_dim, h_dim), matvec=precond, matmat=hop, dtype=np.result_type(hdiag, np.asarray(cguess)))
         e, c = primme.eigsh(
             A,
             k=min(nroots, h_dim),

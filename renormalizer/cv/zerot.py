@@ -2,7 +2,8 @@
 # Author: Tong Jiang <tongjiang1000@gmail.com>
 # zero temperature absorption/emission spectrum based on DDMRG
 from renormalizer.cv.spectra_cv import SpectraCv
-from renormalizer.mps.backend import np, xp, USE_GPU
+from renormalizer.mps.backend import np
+from renormalizer.backend.context import internal_backend as xp
 from renormalizer.mps.lib import cvec2cmat
 from renormalizer.mps import Mpo, Mps, gs
 from renormalizer.mps.svd_qn import get_qn_mask
@@ -15,6 +16,7 @@ from renormalizer.mps.matrix import (
 from renormalizer.mps.oe_contract_wrap import oe_contract_expression
 from renormalizer.utils import OptimizeConfig
 import logging
+import inspect
 import scipy
 
 import opt_einsum as oe
@@ -259,10 +261,8 @@ class SpectraZtCV(SpectraCv):
                 # ax1 = oe_contract("abcd, befh, cfgi, hjkn, iklo, mnop, dglp -> aejm",
                 #        first_L, a_oper_isite2, a_oper_isite2, a_oper_isite1,
                 #        a_oper_isite1, first_R, xstruct)
-                if USE_GPU:
-                    oe_backend = "cupy"
-                else:
-                    oe_backend = "numpy"
+                # multibackend: replaces the USE_GPU switch between cupy and numpy.
+                oe_backend = xp.opt_einsum_name
                 ax1 = expr(xstruct, backend=oe_backend)   
                 #print(oe_contract_path("abcd, befh, cfgi, hjkn, iklo, mnop, dglp -> aejm",
                 #        first_L, a_oper_isite2, a_oper_isite2, a_oper_isite1,
@@ -285,9 +285,12 @@ class SpectraZtCV(SpectraCv):
         mat_a = scipy.sparse.linalg.LinearOperator((nonzeros, nonzeros),
                                                    matvec=hop)
 
-        x, info = scipy.sparse.linalg.cg(mat_a, asnumpy(vec_b), tol=1.e-5,
+        # scipy 1.10 uses 'tol', scipy >=1.12 uses 'rtol'
+        _cg_params = inspect.signature(scipy.sparse.linalg.cg).parameters
+        _tol_kw = {'rtol': 1.e-5} if 'rtol' in _cg_params else {'tol': 1.e-5}
+        x, info = scipy.sparse.linalg.cg(mat_a, asnumpy(vec_b),
                                          x0=asnumpy(guess),
-                                         M=pre_M, atol=0)
+                                         M=pre_M, atol=0, **_tol_kw)
 
         self.hop_time.append(count)
         if info != 0:

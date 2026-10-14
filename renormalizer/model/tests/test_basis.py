@@ -112,8 +112,11 @@ def test_SineDVR(op):
         if deri == 0:
             return psi(x,j) * x**moment * psi(x, k)
         else:
-            return psi(x,j) * x**moment * scipy.misc.derivative(psi, x, dx=1e-3,
-                    n=deri, args=(k,))  # accuracy is very sensitive to dx
+            # Differentiate the reference sine analytically: this avoids the
+            # removed scipy.misc.derivative without reusing the tested matrix.
+            return psi(x,j) * x**moment * ((k * np.pi / (x1-x0)) ** deri
+                    * np.sin(k*np.pi*(x-x0)/(x1-x0) + deri*np.pi/2)
+                    * np.sqrt(2 / (x1-x0)))  # exact derivative oracle
 
     std = np.zeros((nbas,nbas))
     for j in range(1,nbas+1):

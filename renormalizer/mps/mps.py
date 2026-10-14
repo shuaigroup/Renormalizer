@@ -1,3 +1,4 @@
+from renormalizer.backend.execution import bind_backend
 # -*- encoding: utf-8 -*-
 
 import logging
@@ -14,7 +15,8 @@ from renormalizer.lib import solve_ivp, expm_krylov
 from renormalizer.model import Model, Op, OpSum, basis as ba
 from renormalizer.mps import svd_qn
 from renormalizer.mps.svd_qn import add_outer, get_qn_mask
-from renormalizer.mps.backend import backend, np, xp
+from renormalizer.mps.backend import np
+from renormalizer.backend.context import internal_backend as backend, internal_backend as xp
 from renormalizer.mps.lib import (
     Environ,
     select_basis,
@@ -173,7 +175,8 @@ class Mps(MatrixProduct):
         # set elements with wrong qn to zero
         qnmat = add_outer(mps.qn[-2], model.basis[-1].sigmaqn)
         qnmask = get_qn_mask(qnmat, qntot)
-        last_mt[~qnmask] = 0
+        # multibackend: write through the adapter; JAX arrays are immutable.
+        last_mt = xp.write_owned(last_mt, asxp(~qnmask), 0)
         # normalize the mt so that the whole mps is normalized
         last_mt /= xp.linalg.norm(last_mt.flatten())
         mps.append(last_mt)
@@ -500,7 +503,8 @@ class Mps(MatrixProduct):
             - Op: Single symbolic operator
             - OpSum: Sum of symbolic operators
         self_conj : :class:`~renormalizer.mps.Mps`, optional
-            Legacy alias for ``bra``. If not provided, uses the conjugate of ``self``.
+            Legacy preconjugated MPS. Unlike ``bra``, its tensors are used as
+            supplied. If neither is provided, uses the conjugate of ``self``.
         bra : :class:`~renormalizer.mps.Mps`, optional
             The MPS for the bra vector. ``bra`` and ``self_conj`` cannot both be provided.
 
@@ -527,7 +531,10 @@ class Mps(MatrixProduct):
         if bra is not None:
             if self_conj is not None:
                 raise ValueError("Provide only one of `bra` or legacy `self_conj`.")
-            self_conj = bra
+            # The public bra is a ket representing phi; contractions consume
+            # its conjugate. Keep legacy self_conj preconjugated to avoid
+            # changing callers that already prepared conjugate tensors.
+            self_conj = bra._expectation_conj()
         # Convert Op/OpSum to MPO if needed
         if isinstance(mpo, (Op, OpSum)):
             mpo = Mpo(self.model, mpo)
@@ -538,8 +545,9 @@ class Mps(MatrixProduct):
         r = environ.read("R", 1)
         path = self._expectation_path()
         val = multi_tensor_contract(path, l, self[0], mpo[0], self_conj[0], r)
-        if np.isclose(float(val.imag), 0):
-            return float(val.real)
+        # multibackend: xp.imag / xp.real also accept backend scalars.
+        if np.isclose(float(xp.imag(val)), 0):
+            return float(xp.real(val))
         else:
             return complex(val)
         # This is time and memory consuming
@@ -552,7 +560,10 @@ class Mps(MatrixProduct):
         if bra is not None:
             if self_conj is not None:
                 raise ValueError("Provide only one of `bra` or legacy `self_conj`.")
-            self_conj = bra
+            # The public bra is a ket representing phi; contractions consume
+            # its conjugate. Keep legacy self_conj preconjugated to avoid
+            # changing callers that already prepared conjugate tensors.
+            self_conj = bra._expectation_conj()
 
         new_mpos = []
         for mpo in mpos:
@@ -564,7 +575,8 @@ class Mps(MatrixProduct):
 
         if not opt:
             # the naive way, slow and time consuming. Yet predictable and reliable
-            return np.array([self.expectation(mpo, bra=self_conj) for mpo in mpos])
+            # self_conj is already conjugated here, so pass it as the legacy argument.
+            return np.array([self.expectation(mpo, self_conj=self_conj) for mpo in mpos])
 
         # optimized way, cache for intermediates
         # hash is used as indices of the matrices.
@@ -595,7 +607,8 @@ class Mps(MatrixProduct):
             r_environ, r_idx = _get_freq_environ(r_environ_dict, mpo, "R", len(mpo)-l_idx-1)
             for i in range(l_idx+1, r_idx):
                 l_environ = contract_one_site(l_environ, self[i], mpo[i], "L", self_conj[i])
-            results.append(complex(l_environ.flatten() @ r_environ.flatten()))  # cast to python type
+            # multibackend: dot through the adapter.
+            results.append(complex(xp.dot(asxp(l_environ).flatten(), asxp(r_environ).flatten())))  # cast to python type
 
         results = np.array(results)
         if np.allclose(results.imag, 0):
@@ -670,6 +683,8 @@ class Mps(MatrixProduct):
         return expand_bond_dimension(self, hint_mpo, coef, include_ex)
 
 
+    # multibackend: runs with the backend chosen at entry, or the one passed as backend_context=.
+    @bind_backend
     def evolve(self, mpo, evolve_dt, normalize=True) -> "Mps":
 
         method = {
@@ -1023,8 +1038,9 @@ class Mps(MatrixProduct):
                             coef, ovlp_inv1=S_L_inv_list[imps+1],
                             ovlp_inv0=S_L_inv_list[imps], ovlp0=S_L_list[imps])
 
-                    hop_y[position[imps]:position[imps+1]] = func(0,
-                            mps[imps].array.ravel()).reshape(mps[imps].shape)[qn_mask_list[imps]]
+                    # multibackend: write through the adapter; JAX arrays are immutable.
+                    hop_y = xp.write_owned(hop_y, slice(position[imps], position[imps+1]),
+                            func(0, asxp(mps[imps].array.ravel())).reshape(mps[imps].shape)[asxp(qn_mask_list[imps])])
 
                     continue
 
@@ -1046,7 +1062,8 @@ class Mps(MatrixProduct):
                     regular_s = _mu_regularize(s, epsilon=self.evolve_config.reg_epsilon)
 
                     u = asxp(u)
-                    us = u.dot(xp.diag(s))
+                    # multibackend: matrix products through the adapter (not every array has .dot).
+                    us = xp.dot(u, xp.diag(asxp(s)))
 
                     rtensor = xp.tensordot(rtensor, us, axes=(-1, -1))
 
@@ -1054,7 +1071,8 @@ class Mps(MatrixProduct):
                     environ_mps.qn[imps + 1] = qnrset
                     environ_mps.qnidx = imps
 
-                    S_inv = u.conj().dot(xp.diag(1.0 / regular_s)).T
+                    # multibackend: as above.
+                    S_inv = xp.dot(u.conj(), xp.diag(asxp(1.0 / regular_s))).T
 
                 elif self.evolve_config.method == EvolveMethod.tdvp_vmf:
                     rtensor = environ.GetLR(
@@ -1074,7 +1092,8 @@ class Mps(MatrixProduct):
 
                     u = asxp(u)
                     # S_inv is (#.conj, #)
-                    S_inv = u.dot(xp.diag(1.0 / w)).dot(u.T.conj()).T
+                    # multibackend: as above.
+                    S_inv = xp.dot(xp.dot(u, xp.diag(asxp(1.0 / w))), u.T.conj()).T
 
                 hop = hop_expr(ltensor, rtensor, [asxp(mpo[imps])], shape)
 
@@ -1082,8 +1101,9 @@ class Mps(MatrixProduct):
                         coef, ovlp_inv1=S_L_inv_list[imps+1],
                         ovlp_inv0=S_L_inv_list[imps], ovlp0=S_L_list[imps])
 
-                hop_y[position[imps]:position[imps+1]] = func(0,
-                        asxp(mps[imps].array.ravel())).reshape(mps[imps].shape)[qn_mask_list[imps]]
+                # multibackend: write through the adapter; JAX arrays are immutable.
+                hop_y = xp.write_owned(hop_y, slice(position[imps], position[imps+1]),
+                        func(0, asxp(mps[imps].array.ravel())).reshape(mps[imps].shape)[asxp(qn_mask_list[imps])])
 
             return hop_y
 
@@ -1311,7 +1331,9 @@ class Mps(MatrixProduct):
 
         # construct the environment matrix
         # almost half is not used. Not a big deal.
-        environ = Environ(mps, mpo)
+        # Starting from a chain end, the side behind the sweep is rebuilt before
+        # it is read, so only the side ahead is constructed.
+        environ = Environ(mps, mpo, _sweep_environ_domain(mps))
 
         # statistics for debug output
         local_steps = []
@@ -1450,7 +1472,9 @@ class Mps(MatrixProduct):
 
         # construct the environment matrix
         # almost half is not used. Not a big deal.
-        environ = Environ(mps, mpo)
+        # Starting from a chain end, the side behind the sweep is rebuilt before
+        # it is read, so only the side ahead is constructed.
+        environ = Environ(mps, mpo, _sweep_environ_domain(mps))
 
         # statistics for debug output
         local_steps = []
@@ -1519,13 +1543,15 @@ class Mps(MatrixProduct):
                 if self.evolve_config.ivp_solver == "krylov":
                     mps_t, j = expm_krylov(
                         lambda y: hop(y.reshape(ms1.shape)).ravel(),
-                        1j * evolve_dt / 2, ms1.ravel()
+                        # multibackend: the solver works on backend arrays.
+                        1j * evolve_dt / 2, asxp(ms1).ravel()
                     )
                 else:
                     sol = solve_ivp(
                         lambda t, y: hop(y.reshape(ms1.shape)).ravel() / -coef,
                         (0, evolve_dt/2),
-                        ms1.ravel(),
+                        # multibackend: the solver works on backend arrays.
+                        asxp(ms1).ravel(),
                         method=self.evolve_config.ivp_solver,
                         rtol=self.evolve_config.ivp_rtol,
                         atol=self.evolve_config.ivp_atol,
@@ -1622,7 +1648,8 @@ class Mps(MatrixProduct):
             else:
                 tensor = tensordot(tensor, ms, ([0,-1,-2],[0,-1,-2]))
             assert xp.allclose(tensor, tensor.T.conj())
-            rdm[ims] = asnumpy(tensor)
+            # Contractions above leave the bra index first; expose |psi><psi|.
+            rdm[ims] = asnumpy(tensor.T)
 
         return rdm
     
@@ -1653,7 +1680,8 @@ class Mps(MatrixProduct):
                 tensor = tensordot(tensor, ms, ([0],[0]))
             elif ms.ndim == 4:
                 tensor = tensordot(tensor, ms, ([0,2],[0,2]))
-            L_component.append(tensor.transpose((0,2,1,3)))
+            # multibackend: transpose through the adapter.
+            L_component.append(xp.transpose(tensor, (0,2,1,3)))
             
             rtensor = environ_R.GetLR("R", ims+1, self, identity,
                     itensor=None, method="Enviro")
@@ -1663,7 +1691,8 @@ class Mps(MatrixProduct):
                 tensor = tensordot(tensor, ms, ([-1],[-1]))
             elif ms.ndim == 4:
                 tensor = tensordot(tensor, ms, ([2,-1],[2,-1]))
-            R_component.append(tensor.transpose((0,2,1,3)))
+            # multibackend: transpose through the adapter.
+            R_component.append(xp.transpose(tensor, (0,2,1,3)))
         
         # merge two 1-site environment together
         for ims in range(self.site_num):
@@ -1678,8 +1707,9 @@ class Mps(MatrixProduct):
                         tensor = tensordot(tensor, self[kms], ([2,3,4],[0,1,2]))
                 
                 rtensor = R_component[jms]
-                res = tensordot(tensor, rtensor,
-                        ([2,3],[0,1])).transpose(0,2,1,3)
+                # Group ket indices first, then bra indices, matching |psi><psi|.
+                res = xp.transpose(tensordot(tensor, rtensor,
+                        ([2,3],[0,1])), (1,3,0,2))
                 rdm[(ims, jms)] = asnumpy(res.reshape(res.shape[0]*res.shape[1],-1))
         return rdm
     
@@ -2115,6 +2145,22 @@ class BraKetPair:
 
     def __iter__(self):
         return iter((self.bra_mps, self.ket_mps))
+
+
+def _sweep_environ_domain(mps):
+    """Environment side a projector-splitting sweep from ``mps.qnidx`` reads.
+
+    Starting at a chain end, the first sweep reads only the environments ahead
+    of it and rewrites the ones behind before they are read; the second sweep
+    reads those rewritten ones. So only one side needs building (``None``:
+    both, when starting mid-chain). A wrong choice fails loudly: reading an
+    environment that was never written raises KeyError.
+    """
+    if mps.to_right and mps.qnidx == 0:
+        return "R"
+    if not mps.to_right and mps.qnidx == len(mps) - 1:
+        return "L"
+    return None
 
 
 def min_abs(t1, t2):

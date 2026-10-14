@@ -20,13 +20,14 @@ jobs:
       - name: Set up Python
         uses: actions/setup-python@v4
         with:
-          python-version: 3.8
+          python-version: '3.11'
           cache: "pip"
+          cache-dependency-path: pyproject.toml
 
       - name: install dependencies
         run: |
           python -m pip install --upgrade pip
-          pip install --no-cache-dir -r requirements.txt
+          python -m pip install --no-cache-dir '.[dev]'
           pip install nbconvert matplotlib
           pip install --upgrade pip ipython ipykernel
           ipython kernel install --name "python3" --user

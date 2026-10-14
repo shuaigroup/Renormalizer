@@ -5,7 +5,9 @@ import weakref
 import logging
 from typing import List, Union
 
-from renormalizer.mps.backend import np, backend, xp, USE_GPU
+from renormalizer.mps.backend import np
+from renormalizer.backend.context import current_backend, internal_backend as backend, internal_backend as xp
+from renormalizer.backend.execution import to_backend, to_host
 
 logger = logging.getLogger(__name__)
 
@@ -15,18 +17,24 @@ class Matrix:
     def __init__(self, array, dtype=None):
         assert array is not None
         array = asnumpy(array)
-        if dtype == backend.real_dtype:
+        # Matrix construction is among the most frequent calls in a sweep;
+        # resolve the adapter once rather than per attribute.
+        adapter = current_backend()
+        if dtype == adapter.real_dtype:
             # forbid unchecked casting
             assert not np.iscomplexobj(array)
         if dtype is None:
             if np.iscomplexobj(array):
-                dtype = backend.complex_dtype
+                dtype = adapter.complex_dtype
             else:
-                dtype = backend.real_dtype
+                dtype = adapter.real_dtype
         self.array: np.ndarray = np.asarray(array, dtype=dtype)
+        # Persistent host tensors support in-place updates after native conversion.
+        if not self.array.flags.writeable:
+            self.array = self.array.copy()
         self.original_shape = self.array.shape
         self.sigmaqn = None
-        backend.running = True
+        pass  # backend.running removed
 
     def __getattr__(self, item):
         # use this way to obtain ``array`` to prevent infinite recursion during multi-processing
@@ -53,7 +61,8 @@ class Matrix:
         return self.array.dtype
 
     def astype(self, dtype):
-        assert not (self.dtype == backend.complex_dtype and dtype == backend.real_dtype)
+        adapter = current_backend()
+        assert not (self.dtype == adapter.complex_dtype and dtype == adapter.real_dtype)
         self.array = np.asarray(self.array, dtype=dtype)
         return self
 
@@ -94,25 +103,27 @@ class Matrix:
         """
         check L-orthogonal
         """
+        adapter = current_backend()
         if atol is None:
-            atol = backend.canonical_atol
+            atol = adapter.canonical_atol
         if rtol is None:
-            rtol = backend.canonical_rtol
+            rtol = adapter.canonical_rtol
         tensm = asxp(self.array.reshape([np.prod(self.shape[:-1]), self.shape[-1]]))
         s = tensm.T.conj() @ tensm
-        return xp.allclose(s, xp.eye(s.shape[0]), rtol=rtol, atol=atol)
+        return adapter.allclose(s, adapter.eye(s.shape[0]), rtol=rtol, atol=atol)
 
     def check_rortho(self, rtol: float = None, atol: float = None):
         """
         check R-orthogonal
         """
+        adapter = current_backend()
         if atol is None:
-            atol = backend.canonical_atol
+            atol = adapter.canonical_atol
         if rtol is None:
-            rtol = backend.canonical_rtol
+            rtol = adapter.canonical_rtol
         tensm = asxp(self.array.reshape([self.shape[0], np.prod(self.shape[1:])]))
         s = tensm @ tensm.T.conj()
-        return xp.allclose(s, xp.eye(s.shape[0]), rtol=rtol, atol=atol)
+        return adapter.allclose(s, adapter.eye(s.shape[0]), rtol=rtol, atol=atol)
 
     def to_complex(self):
         # `xp.array` always creates new array, so to_complex means copy, which is
@@ -208,7 +219,8 @@ def einsum(subscripts, *operands):
 
 
 def tensordot(a: Union[Matrix, np.ndarray], b: Union[Matrix, np.ndarray, xp.ndarray], axes) -> xp.ndarray:
-    return xp.tensordot(asxp(a), asxp(b), axes)
+    # multibackend: tensordot of the bound backend (NumPy: cached plan, same result).
+    return current_backend().tensordot(asxp(a), asxp(b), axes)
 
 
 def moveaxis(a: Matrix, source, destination):
@@ -295,31 +307,34 @@ def pair_tensor_contract(
     return tensordot(view_left, view_right, axes=(left_pos, right_pos))
 
 
-def asnumpy(array: Union[np.ndarray, xp.ndarray, Matrix, List]) -> np.ndarray:
+def asnumpy(array):
+    # Host ndarrays are the common case and to_host returns them unchanged.
+    if type(array) is np.ndarray:
+        return array
     if array is None:
         return None
     if isinstance(array, Matrix):
         return array.array
-    if isinstance(array, List):
+    if isinstance(array, list):
         return np.array(array)
-    if not USE_GPU:
-        assert isinstance(array, np.ndarray)
-        return array
-    if isinstance(array, np.ndarray):
-        return array
-    stream = xp.cuda.get_current_stream()
-    return xp.asnumpy(array, stream=stream)
+    return to_host(array)
 
 
-def asxp(array: Union[np.ndarray, xp.ndarray, Matrix]) -> xp.ndarray:
+def asxp(array):
     if array is None:
         return None
     if isinstance(array, Matrix):
         array = array.array
-    if not USE_GPU:
-        assert isinstance(array, np.ndarray)
-        return array
-    return xp.asarray(array)
+    return to_backend(array)
+
+
+def asworkspace(array):
+    """Storage for workspace tensors kept across algorithm steps (environments).
+
+    Native arrays when the backend keeps such workspaces native, which spares an
+    upload on every later read; host ndarrays otherwise.
+    """
+    return asxp(array) if xp.native_workspace_storage else asnumpy(array)
 
 
 def asxp_oe_args(oe_args):

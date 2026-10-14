@@ -5,6 +5,7 @@ If you are familiar with Python and not concerned with the development of the pa
 ```bash
 pip install renormalizer
 ```
+Renormalizer requires Python 3.10 or higher and works with NumPy 1.26+ and NumPy 2.
 
 Optionally, install `primme` for high-performance static DMRG
 ```
@@ -15,6 +16,23 @@ If any error occurs during the installation, see the [primme official document](
 Optionally, install `CuPy` for GPU backend. Please see the [CuPy official document](https://docs.cupy.dev/en/stable/install.html) for details.
 `renormalizer` auto-detects whether `CuPy` is installed during its import.
 If `CuPy` is installed, then `renormalzier` will automatically use GPU to accelerate tensor contractions.
+From a source checkout, `pip install '.[cupy]'` installs CuPy for CUDA 12. Set `RENO_GPU` to choose the GPU (default 0).
+
+### Threads and BLAS
+NumPy and SciPy installed by `pip` each bundle their own OpenBLAS, i.e. two separate thread pools. Renormalizer alternates
+NumPy and SciPy calls, so with more than one thread the two pools compete for the same cores and runs can get slower.
+NumPy and SciPy from conda-forge share one BLAS library. For multi-threaded runs, create the environment from conda-forge,
+for example with [pixi](https://pixi.sh) and the configuration shipped in `pyproject.toml`:
+```bash
+pixi install
+pixi run python my_script.py
+```
+In any case, limit the number of threads before Python starts (see also the notice in the README):
+```bash
+export RENO_NUM_THREADS=1
+export OPENBLAS_NUM_THREADS=1
+```
+`RENO_NUM_THREADS` does not cover the OpenBLAS bundled with pip-installed NumPy and SciPy, hence `OPENBLAS_NUM_THREADS`.
 
 If you are not familiar with python or wish to setup a local development environment, continue reading.
 
@@ -38,7 +56,7 @@ Another common issue about Python is that its environment screws up quite freque
 
 Anaconda has lots of other cool features, you'll learn more while you're using it.
 
-If you find the installation of Anaconda annoying and you already have Python 3.8, in theory, you can skip the installation and use your Python directly. But if something went wrong and your Python couldn't work anymore, you'll probably feel that using Anaconda is a good idea.
+If you find the installation of Anaconda annoying and you already have Python 3.10 or higher, in theory, you can skip the installation and use your Python directly. But if something went wrong and your Python couldn't work anymore, you'll probably feel that using Anaconda is a good idea.
 
 #### Install Anaconda
 You can skip this step if you already have access to Anaconda (which means you can use `conda` command in your command line). For Linux users, don't worry if you don't have the root privilege -- installing Anaconda doesn't require root.
@@ -67,13 +85,13 @@ conda config --set show_channel_urls yes
 to let Anaconda know it can download resources from *tuna*.
 
 In this step, we're going to create a Python environment for Renormalizer using Anaconda. Two things must be taken into consideration while creating a Python environment:
-* Python version. **Python version higher than Python 3.5 is required for Renormalizer**. We recommend using Python 3.8 or higher. 
+* Python version. **Python 3.10 or higher is required for Renormalizer**. We recommend using Python 3.11. 
     > Renormalizer uses *type annotation* like `a: int = 3` or `b: float = 3.0` which helps to make code clearer but requires Python 3.6 or higher. For more info about *type annotation*, see the [typing module](https://docs.python.org/3/library/typing.html) or [PEP484](https://www.python.org/dev/peps/pep-0484/).
 * Name of the environment. Choose anything you like. **In this guide we are going to use `Reno` as it is the nickname of the project**.
 
 With Python version and name of the environment determined, create the environment using the following command (Note the environment name `Reno`)
 ```
-conda create -n Reno python=3.8 -y
+conda create -n Reno python=3.11 -y
 ```
 This might take 1 to 20 minutes depending on network conditions. After the process finished, you'll have a Python environment named `Reno` managed by Anaconda.
 
@@ -83,7 +101,7 @@ To use this environment:
 
 In most cases the name of the environment will appear in the command line interface. 
 
-To verify the environment is activated, use `python --version` to ensure that you're using Python 3.8. You can also use `which python` (for Linux) or `where python` (for Windows) to see where the Python program locates. It should locate under a directory like `~/anaconda/envs/Reno/bin/` (Note the environment name `Reno` in the path).
+To verify the environment is activated, use `python --version` to ensure that you're using Python 3.11. You can also use `which python` (for Linux) or `where python` (for Windows) to see where the Python program locates. It should locate under a directory like `~/anaconda/envs/Reno/bin/` (Note the environment name `Reno` in the path).
 
 ### Download Renormalizer and run tests
 #### Download Renormalizer
@@ -100,12 +118,13 @@ pip config set global.index-url https://pypi.tuna.tsinghua.edu.cn/simple
 to let `pip` download from *tuna*. 
 
 Now, to install the required packages:
-1. Enter the `Renormalizer` directory. You should be able to find a `requirements.txt` file.
+1. Enter the `Renormalizer` directory. You should be able to find a `pyproject.toml` file.
 2. Double check again you're using the correct Python environment
-3. install dependencies with:
+3. install Renormalizer and its dependencies (including `pytest`) with:
     ```
-    pip install -r requirements.txt
+    pip install -e '.[dev]'
     ```
+    > `requirements.txt` pins older versions used by the old CI; dependencies are now defined in `pyproject.toml`.
 4. (Optional) For high-performance ground state DMRG, `primme` should also be installed with:
     ```
     pip install primme==3.2.*
@@ -121,7 +140,7 @@ This tool will collect tests in Renormalizer and run them. The tests should run 
 
 > Although the source code of the tests can help you understand how the code works, it is not recommended to start your scientific project by modifying the tests because they are designed for testing and not scientific research. You can firstly read the (test) code and grasp some basic idea on what happens, then write programs using modules in `renormalizer.mps` rather than `renormalizer.spectra` or `renormalizer.transport`. Only use the tests directly when you completely understand each line of the test code.
 
-Finally, to make Python find Renormalizer, add Renormalizer directory to `PYTHONPATH`. For example, if
+`pip install -e` already makes Renormalizer importable. Alternatively, to make Python find Renormalizer without installing it, add Renormalizer directory to `PYTHONPATH`. For example, if
 Renormalizer is installed in `/opt`, you can add the following path to
 your `~/.bashrc` and then `source ~/.bashrc`.
 ```
@@ -155,6 +174,10 @@ Install CUDA following the [official document](https://docs.nvidia.com/cuda/cuda
 ### Install cupy
 After CUDA is installed and verified, you can install `CuPy` using the following commands. Remember when you install something you have to make sure you're in the correct Python environment!
 ```
+(For CUDA 12.x, current)
+$ pip install cupy-cuda12x
+
+(Older CUDA versions, kept for reference)
 (For CUDA 8.0)
 $ pip install cupy-cuda80
 

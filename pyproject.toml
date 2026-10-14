@@ -17,34 +17,90 @@ maintainers = [{ name = "Weitang Li", email = "liwt31@gmail.com" }]
 
 license = "Apache-2.0" 
 readme = "README.md"
-requires-python = ">=3.6"
+requires-python = ">=3.10,<3.14"
 
 dependencies = [
-    "numpy==1.24.*",
-    "scipy==1.10.*",
-    "h5py==3.1.*",
-    "opt_einsum==3.3.*",
-    "sympy==1.11.*",
-    "print-tree2==0.9.10",
-    "PyYAML==5.4.*",
-    "qutip==4.6.*"
+    "numpy>=1.26,<3",
+    "scipy>=1.13,<2",
+    "h5py>=3.1",
+    "opt_einsum>=3.4",
+    "sympy>=1.11",
+    "print-tree2",
+    "PyYAML",
+    "qutip>=5,<6",
 ]
 
 [project.optional-dependencies]
+# One developer environment includes tests, formatting and documentation.
+# Keep backend runtimes optional: building docs must not require a GPU wheel.
 dev = [
-    "pytest==6.2.*",
+    "pytest>=7",  # collection_path in pytest_ignore_collect requires pytest 7.
     "black>=23.0,<24.0",
     "flake8>=6.0,<7.0",
-    "recommonmark==0.7.*",
-    "furo==2022.9.*",
-    "nbsphinx==0.8.*",
-    "sphinxcontrib-googleanalytics==0.4"
+    "recommonmark",
+    "furo",
+    "nbsphinx",
+    "sphinxcontrib-googleanalytics",
 ]
+cupy = ["cupy-cuda12x>=13,<14"]
+# Optional solvers, listed for information; nothing requires them and no
+# version is imposed. primme: iterative eigensolver for DMRG / TDA (algo="primme").
+# pyscf: electron-structure integrals and the DmrgFCISolver interface (h2o-type cases).
+primme = ["primme"]
+pyscf = ["pyscf"]
+# Standard PyPI metadata describes the dependency, not an accelerator index.
+# A compatible preinstalled Torch CPU/CUDA build satisfies this extra; see the
+# installation guide for optional CPU-only or specific CUDA build selection.
+torch = ["torch>=2,<3"]
+jax = ["jax>=0.5,<1", "jaxlib>=0.5,<1"]
+# JAX's CUDA extra installs its plugin/runtime dependencies. NVIDIA drivers
+# remain a host prerequisite; doc/source/install.md verifies actual execution.
+jax-cuda12 = ["jax[cuda12]>=0.5,<1"]
 
 [project.urls]
 homepage = "https://github.com/shuaigroup/Renormalizer"
 documentation = "https://shuaigroup.github.io/Renormalizer/"
 
 [build-system]
-requires = ["setuptools>=77.0.0", "wheel", "build"]
+requires = ["setuptools>=77.0.0"]
 build-backend = "setuptools.build_meta"
+
+[tool.setuptools.packages.find]
+# Publish the numerical library, not the generic top-level development tools
+# package. Keep its Python subpackages; accelerator wheels remain dependencies.
+include = ["renormalizer*"]
+namespaces = false
+
+# Optional pixi workspace: `pixi install` builds a conda-forge environment in
+# one step. pip/uv users are unaffected; [project] stays the source of truth.
+[tool.pixi.workspace]
+channels = ["conda-forge"]
+platforms = ["linux-64", "osx-arm64"]
+
+[tool.pixi.dependencies]
+# NumPy and SciPy from conda-forge share one BLAS library and thread pool.
+# PyPI wheels each bundle a private OpenBLAS, and those two pools contend when
+# NumPy and SciPy calls alternate.
+python = ">=3.10,<3.14"
+numpy = ">=1.26,<3"
+scipy = ">=1.13,<2"
+libblas = { version = "*", build = "*openblas" }
+
+[tool.pixi.pypi-dependencies]
+renormalizer = { path = ".", editable = true }
+
+# Each [project.optional-dependencies] group is a pixi feature of the same name.
+[tool.pixi.feature.ci.dependencies]
+# CI: the Python the optional pyscf/primme pins have wheels for, and the
+# pytest plugins from conda-forge.
+python = "3.11.*"
+pytest-xdist = "*"
+pytest-cov = "*"
+# conda-forge Python ships without pip; CI installs the optional solvers with it.
+pip = "*"
+
+[tool.pixi.environments]
+default = { features = ["dev"], solve-group = "default" }
+ci = { features = ["dev", "ci"] }
+torch = { features = ["dev", "torch"] }
+jax = { features = ["dev", "jax"] }

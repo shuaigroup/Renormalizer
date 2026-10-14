@@ -7,7 +7,8 @@ import shutil
 from typing import List, Union
 
 from renormalizer.model import Model, HolsteinModel
-from renormalizer.mps.backend import np, xp
+from renormalizer.mps.backend import np
+from renormalizer.backend.context import internal_backend as xp
 from renormalizer.mps import svd_qn
 from renormalizer.mps.svd_qn import add_outer, get_qn_mask
 from renormalizer.mps.matrix import (
@@ -620,7 +621,8 @@ class MatrixProduct:
                 hop = hop_expr(ltensor, rtensor, cmo, cms.shape)
                 cout = hop(cms)
                 # clean up the elements which do not meet the qn requirements
-                cout[~qn_mask] = 0
+                # multibackend: write through the adapter; JAX arrays are immutable.
+                cout = xp.write_owned(cout, asxp(~qn_mask), 0)
                 mps._update_mps(cout, cidx, qnbigl, qnbigr, percent)
                 if mps.compress_config.ofs is not None:
                     # need to swap the original MPS. Tedious to implement and probably not useful.
@@ -967,14 +969,15 @@ class MatrixProduct:
 
         e0 = xp.eye(self[0].shape[0])
         tmp = xp.eye(other[0].shape[0])
-        e0 = tensordot(e0, tmp, 0).transpose(0,2,1,3)
+        # xp.transpose with an axes tuple: Torch tensors have no multi-axis .transpose.
+        e0 = xp.transpose(tensordot(e0, tmp, 0), (0, 2, 1, 3))
 
         for mt1, mt2 in zip(self, other):
             e0 = tensordot(e0, mt2.array, 1)
             if mt1.ndim == 3:
-                e0 = tensordot(e0, mt1.array, ([2, 3], [0, 1])).transpose(0,1,3,2)
+                e0 = xp.transpose(tensordot(e0, mt1.array, ([2, 3], [0, 1])), (0, 1, 3, 2))
             elif mt1.ndim == 4:
-                e0 = tensordot(e0, mt1.array, ([2, 3, 4], [0, 1, 2])).transpose(0,1,3,2)
+                e0 = xp.transpose(tensordot(e0, mt1.array, ([2, 3, 4], [0, 1, 2])), (0, 1, 3, 2))
             else:
                 assert False
 
@@ -1037,7 +1040,8 @@ class MatrixProduct:
         new._mp = [None] * len(self)
         new.dtype = self.dtype
         # With OFS, `model` is a mutable object
-        new.model = self.model.copy()
+        # shallow_copy instead of copy: same result, much cheaper per step; Model.copy is unchanged.
+        new.model = self.model.shallow_copy()
         # need to deep copy compress_config because threshold might change dynamically
         new.compress_config = self.compress_config.copy()
         new.qn = [qn.copy() for qn in self.qn]

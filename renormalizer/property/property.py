@@ -42,7 +42,10 @@ class Property():
                 self.prop_res[prop_str].append(res)
             else:
                 # <bra |op|ket>
-                self.prop_res[prop_str].append(ket.expectation(mpo, bra))
+                # BraKetPair stores a physical ket representing the bra state.
+                # The positional legacy argument expects preconjugated tensors;
+                # using the explicit bra API conjugates complex phases once.
+                self.prop_res[prop_str].append(ket.expectation(mpo, bra=bra))
 
 
     def calc_properties(self, mps: Union[Mps, MpDm], 

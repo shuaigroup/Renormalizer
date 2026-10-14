@@ -4,7 +4,7 @@ import logging
 
 import numpy as np
 
-from renormalizer.mps.backend import xp
+from renormalizer.backend.context import internal_backend as xp
 from renormalizer.mps.matrix import tensordot
 from renormalizer.mps.svd_qn import add_outer
 from renormalizer.mps import Mpo, Mps

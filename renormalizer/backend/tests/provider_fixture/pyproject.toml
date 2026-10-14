@@ -1,0 +1,13 @@
+[build-system]
+requires = ["setuptools>=61"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "reno-test-operators"
+version = "0.1.0"
+
+[project.entry-points."renormalizer.operator_providers"]
+test_numpy = "reno_test_operators:provider"
+
+[tool.setuptools]
+py-modules = ["reno_test_operators"]

@@ -8,7 +8,7 @@ from renormalizer.mps import Mpo, Mps
 from renormalizer.mps.gs import construct_mps_mpo, optimize_mps
 from renormalizer.mps.hop_expr import hop_expr
 from renormalizer.mps.lib import Environ
-from renormalizer.mps.matrix import asxp, tensordot
+from renormalizer.mps.matrix import asxp, asnumpy, tensordot
 from renormalizer.mps.block_env import (
     _arr,
     _mpo_lr_blocks,
@@ -26,16 +26,30 @@ from renormalizer.utils import CompressConfig
 from renormalizer.utils.configs import OFS
 
 
+
+@pytest.fixture
+def numpy_block_kernels(request):
+    """These private sparse kernels are intentionally NumPy-only.
+
+    Optimization fallback tests below keep the caller-selected backend; only
+    direct block-kernel tests enter this explicitly labelled host scope.
+    """
+    from renormalizer.backend.context import capture_backend, make_context
+    request.node.user_properties.append(("execution_scope", "numpy-only block kernel"))
+    with capture_backend(make_context("numpy").adapter):
+        yield
+
+
 def _max_env_diff(env1, env2, mps, mpo):
     diffs = []
     for idx in range(len(mps) - 1):
         a = env1.GetLR("L", idx, mps, mpo, method="Enviro")
         b = env2.GetLR("L", idx, mps, mpo, method="Enviro")
-        diffs.append(np.max(np.abs(a - b)))
+        diffs.append(np.max(np.abs(asnumpy(a) - asnumpy(b))))
     for idx in range(1, len(mps)):
         a = env1.GetLR("R", idx, mps, mpo, method="Enviro")
         b = env2.GetLR("R", idx, mps, mpo, method="Enviro")
-        diffs.append(np.max(np.abs(a - b)))
+        diffs.append(np.max(np.abs(asnumpy(a) - asnumpy(b))))
     return max(diffs)
 
 
@@ -138,7 +152,7 @@ def test_symbolic_mpo_keys_reproduce_numeric_mpo_blocks():
                 assert np.max(np.abs(block1 - block2)) < 1e-14
 
 
-def test_block_hop_two_site_matches_dense_hop():
+def test_block_hop_two_site_matches_dense_hop(numpy_block_kernels):
     mps, mpo = _toy_qc_mps_mpo(bond_dim=16)
     mps.ensure_left_canonical()
     mps.move_qnidx(1)
@@ -172,12 +186,12 @@ def test_block_hop_two_site_matches_dense_hop():
     assert np.max(np.abs(packed_out - block_expr(center)[qn_mask])) < 1e-12
 
 
-def test_center_block_layout_roundtrip():
+def test_center_block_layout_roundtrip(numpy_block_kernels):
     mps, mpo = _toy_qc_mps_mpo(bond_dim=16)
     mps.ensure_left_canonical()
     mps.move_qnidx(1)
     cidx = [1, 2]
-    center = np.asarray(tensordot(mps[cidx[0]], mps[cidx[1]], axes=1))
+    center = asnumpy(tensordot(mps[cidx[0]], mps[cidx[1]], axes=1))
     _qnbigl, _qnbigr, qnmat = mps._get_big_qn(cidx)
     qn_mask = (qnmat == mps.qntot).all(axis=-1)
     block_expr = block_hop_expr_two_site(
@@ -199,7 +213,7 @@ def test_center_block_layout_roundtrip():
     assert np.max(np.abs(unpacked[qn_mask] - center[qn_mask])) < 1e-14
 
 
-def test_block_hdiag_two_site_matches_dense():
+def test_block_hdiag_two_site_matches_dense(numpy_block_kernels):
     mps, mpo = _toy_qc_mps_mpo(bond_dim=16)
     mps.ensure_left_canonical()
     mps.move_qnidx(1)

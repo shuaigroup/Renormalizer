@@ -3,7 +3,7 @@ import numpy as np
 import scipy
 import logging
 
-from renormalizer.mps.backend import xp, OE_BACKEND
+from renormalizer.backend.context import internal_backend as backend, internal_backend as xp
 from renormalizer.mps.lib import Environ, cvec2cmat
 from renormalizer.mps import Mpo, Mps
 from renormalizer.mps.svd_qn import get_qn_mask
@@ -87,7 +87,7 @@ class Vscf():
                 ham = oe_contract(
                     "abc,bdef,lfk->adlcek",
                     ltensor, cmo[0], rtensor,
-                    backend=OE_BACKEND
+                    backend=backend.opt_einsum_name
                 )
                 ham = ham[:, :, :, qn_mask][qn_mask, :]
                 

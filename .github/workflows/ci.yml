@@ -4,43 +4,84 @@ jobs:
   test:
     runs-on: ubuntu-latest
     name: test
+    env:
+      # Four xdist workers already fill the runner's cores: one BLAS thread each.
+      # Steps that run a single process override this below.
+      RENO_NUM_THREADS: 1
+      OPENBLAS_NUM_THREADS: 1
     steps:
-      - name: install openblas
-        run: |
-            sudo apt-get update
-            sudo apt-get -y install libblas-dev liblapack-dev
-      - uses: actions/checkout@v2
-      - name: Set up Python
-        uses: actions/setup-python@v4
+      - uses: actions/checkout@v4
+      # NumPy and SciPy from conda-forge share one OpenBLAS (the pixi
+      # environment in pyproject.toml). With pip wheels each brings its own
+      # thread pool and the two contend, so multi-threaded runs stall.
+      - uses: prefix-dev/setup-pixi@v0.8.1
         with:
-          python-version: 3.8
-          cache: "pip"
-      - name: install dependencies
-        run: |
-          python -m pip install --upgrade pip
-          pip install --no-cache-dir -r requirements.txt
+          environments: ci
+          # pixi.lock is not committed; solve from pyproject.toml.
+          locked: false
+          cache: false
       - name: run tests
         run: |
-          pip install pytest-xdist pytest-cov
-          export RENO_NUM_THREADS=1
-          pytest -n 4 --durations=0 --cov=renormalizer renormalizer
+          pixi run -e ci pytest -n 4 --durations=0 --cov=renormalizer renormalizer tools/backend_validation/tests
+      # Installed after the main run, as before: the main run keeps skipping the
+      # primme/pyscf tests, which then run on their own below.
       - name: run optional tests
         run: |
-          pip install primme==3.2.* pyscf==2.4.0
-          pytest --durations=0 renormalizer/mps/tests/test_gs.py::test_multistate --cov=renormalizer --cov-append
-          pytest --durations=0 renormalizer/mps/tests/test_gs.py::test_pyscf_solver --cov=renormalizer --cov-append
+          pixi run -e ci python -m pip install primme==3.2.* pyscf==2.4.0
+          pixi run -e ci pytest --durations=0 renormalizer/mps/tests/test_gs.py::test_multistate --cov=renormalizer --cov-append
+          pixi run -e ci pytest --durations=0 renormalizer/mps/tests/test_gs.py::test_pyscf_solver --cov=renormalizer --cov-append
       - name: run examples
+        env:
+          # One process at a time: with a single BLAS it can use the cores.
+          RENO_NUM_THREADS: 4
+          OPENBLAS_NUM_THREADS: 4
         run: |
-            cd example; bash run.sh
-            cd ..
+          pixi run -e ci bash -c "cd example && bash run.sh"
       - name: install pandoc
         run:
-            sudo apt-get install pandoc
+            sudo apt-get update && sudo apt-get install -y pandoc
       - name: test build doc
         run: |
-          cd doc
-          make html
+          pixi run -e ci bash -c "cd doc && make html"
       - name: Upload coverage to Codecov
         uses: codecov/codecov-action@v4
         env:
           CODECOV_TOKEN: ${{ secrets.CODECOV_TOKEN }}
+
+  backend:
+    # Optional array backends on CPU. Without this job every jax/torch test is
+    # skipped, so their adapters would have no automated coverage.
+    runs-on: ubuntu-latest
+    name: backend (${{ matrix.backend }})
+    strategy:
+      fail-fast: false
+      matrix:
+        backend: [torch, jax]
+    env:
+      RENO_TEST_BACKEND: ${{ matrix.backend }}
+      RENO_TEST_DEVICE: cpu
+      RENO_NUM_THREADS: 1
+      OPENBLAS_NUM_THREADS: 1
+    steps:
+      - uses: actions/checkout@v2
+      - name: Set up Python
+        uses: actions/setup-python@v4
+        with:
+          python-version: "3.11"
+          cache: "pip"
+      - name: install dependencies
+        run: |
+          python -m pip install --upgrade pip
+          # The CPU wheel index keeps the torch job from downloading CUDA wheels.
+          extra=""
+          if [ "${{ matrix.backend }}" = torch ]; then
+            extra="--extra-index-url https://download.pytorch.org/whl/cpu"
+          fi
+          pip install --no-cache-dir -e ".[dev,${{ matrix.backend }}]" $extra
+      - name: run backend tests
+        run: |
+          pytest --durations=20 \
+            renormalizer/backend/tests \
+            renormalizer/mps/tests/test_multibackend_spin.py \
+            renormalizer/tn/tests/test_multibackend_spin.py \
+            renormalizer/property/tests/test_transition_and_mobility.py

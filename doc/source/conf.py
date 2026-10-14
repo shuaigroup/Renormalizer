@@ -173,8 +173,10 @@ texinfo_documents = [
 
 
 
-# Example configuration for intersphinx: refer to the Python standard library.
-intersphinx_mapping = {'https://docs.python.org/': None}
+# Current Sphinx requires a named inventory with (base URL, inventory path).
+# The old URL-as-key/None form prevents the combined dev/docs environment from
+# building at all; None inside the tuple still selects the default inventory.
+intersphinx_mapping = {'python': ('https://docs.python.org/3/', None)}
 
 # The reST default role (used for this markup: `text`) to use for all
 # documents.

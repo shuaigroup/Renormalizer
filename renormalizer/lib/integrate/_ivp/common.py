@@ -1,20 +1,31 @@
 from __future__ import division, print_function, absolute_import
+from math import prod
 from itertools import groupby
 from warnings import warn
+import numpy as np
 
 from scipy.sparse import find, coo_matrix
 
-from renormalizer.mps.backend import xp
+from renormalizer.backend.context import internal_backend as xp
 
 
-EPS = xp.finfo(float).eps
+# multibackend: a host constant; no backend needed at import.
+EPS = np.finfo(float).eps
+
+
+def host_time_array(value):
+    """Materialize only time/event metadata; numerical states stay native."""
+    if xp.current.is_array(value):
+        value = xp.numpy(value)
+    return np.asarray(value)
 
 
 def validate_first_step(first_step, t0, t_bound):
     """Assert that first_step is valid and return it."""
     if first_step <= 0:
         raise ValueError("`first_step` must be positive.")
-    if first_step > xp.abs(t_bound - t0):
+    # Time bounds are host scalars, even when the state lives on a device.
+    if first_step > abs(t_bound - t0):
         raise ValueError("`first_step` exceeds bounds.")
     return first_step
 
@@ -66,7 +77,9 @@ def norm(x):
     """Compute RMS norm."""
     # this step looks like a bottleneck in some benchmarks.
     # This is because GPU and CPU have to sync in this function
-    return float(xp.linalg.norm(x)) / x.size ** 0.5
+    # Shape is portable host metadata (Torch.size is a method); only the
+    # reduced norm crosses to the host for the adaptive step decision.
+    return float(xp.linalg.norm(x)) / prod(x.shape) ** 0.5
 
 
 def select_initial_step(fun, t0, y0, f0, direction, order, rtol, atol):
@@ -103,7 +116,8 @@ def select_initial_step(fun, t0, y0, f0, direction, order, rtol, atol):
     .. [1] E. Hairer, S. P. Norsett G. Wanner, "Solving Ordinary Differential
            Equations I: Nonstiff Problems", Sec. II.4.
     """
-    if y0.size == 0:
+    # Shape is portable host metadata (see norm above).
+    if prod(y0.shape) == 0:
         return xp.inf
 
     scale = atol + xp.abs(y0) * rtol
@@ -157,10 +171,12 @@ class OdeSolution(object):
     """
 
     def __init__(self, ts, interpolants):
-        ts = xp.asarray(ts)
-        d = xp.diff(ts)
+        # Evaluate later on the backend the solution was created with; times stay on the host.
+        self._backend = xp.current
+        ts = host_time_array(ts)
+        d = np.diff(ts)
         # The first case covers integration on zero segment.
-        if not ((ts.size == 2 and ts[0] == ts[-1]) or xp.all(d > 0) or xp.all(d < 0)):
+        if not ((ts.size == 2 and ts[0] == ts[-1]) or np.all(d > 0) or np.all(d < 0)):
             raise ValueError("`ts` must be strictly increasing or decreasing.")
 
         self.n_segments = len(interpolants)
@@ -184,9 +200,9 @@ class OdeSolution(object):
         # Here we preserve a certain symmetry that when t is in self.ts,
         # then we prioritize a segment with a lower index.
         if self.ascending:
-            ind = xp.searchsorted(self.ts_sorted, t, side="left")
+            ind = np.searchsorted(self.ts_sorted, t, side="left")
         else:
-            ind = xp.searchsorted(self.ts_sorted, t, side="right")
+            ind = np.searchsorted(self.ts_sorted, t, side="right")
 
         segment = min(max(ind - 1, 0), self.n_segments - 1)
         if not self.ascending:
@@ -208,21 +224,26 @@ class OdeSolution(object):
             Computed values. Shape depends on whether `t` is a scalar or a
             1-d array.
         """
-        t = xp.asarray(t)
+        from renormalizer.backend.context import capture_backend
+        with capture_backend(self._backend):
+            return self._call_impl(t)
+
+    def _call_impl(self, t):
+        t = host_time_array(t)
 
         if t.ndim == 0:
             return self._call_single(t)
 
-        order = xp.argsort(t)
-        reverse = xp.empty_like(order)
-        reverse[order] = xp.arange(order.shape[0])
+        order = np.argsort(t)
+        # argsort of a permutation is its inverse; same result as the indexed write.
+        reverse = np.argsort(order)
         t_sorted = t[order]
 
         # See comment in self._call_single.
         if self.ascending:
-            segments = xp.searchsorted(self.ts_sorted, t_sorted, side="left")
+            segments = np.searchsorted(self.ts_sorted, t_sorted, side="left")
         else:
-            segments = xp.searchsorted(self.ts_sorted, t_sorted, side="right")
+            segments = np.searchsorted(self.ts_sorted, t_sorted, side="right")
         segments -= 1
         segments[segments < 0] = 0
         segments[segments > self.n_segments - 1] = self.n_segments - 1
@@ -302,12 +323,14 @@ def num_jac(fun, t, y, f, threshold, factor, sparsity=None):
     if factor is None:
         factor = xp.full(n, EPS ** 0.5)
     else:
-        factor = factor.copy()
+        # multibackend: copy through the adapter.
+        factor = xp.array(factor, copy=True)
 
     # Direct the step as ODE dictates, hoping that such a step won't lead to
     # a problematic region. For complex ODEs it makes sense to use the real
     # part of f as we use steps along real axis.
-    f_sign = 2 * (xp.real(f) >= 0).astype(float) - 1
+    # multibackend: cast through the adapter in the backend's real dtype.
+    f_sign = 2 * xp.asarray(xp.real(f) >= 0, dtype=xp.real_dtype) - 1
     y_scale = f_sign * xp.maximum(threshold, xp.abs(y))
     h = (y + factor * y_scale) - y
 
@@ -315,8 +338,9 @@ def num_jac(fun, t, y, f, threshold, factor, sparsity=None):
     # executed often.
     for i in xp.nonzero(h == 0)[0]:
         while h[i] == 0:
-            factor[i] *= 10
-            h[i] = (y[i] + factor[i] * y_scale[i]) - y[i]
+            # multibackend: writes go through the adapter; JAX arrays are immutable.
+            factor = xp.write_owned(factor, i, factor[i] * 10)
+            h = xp.write_owned(h, i, (y[i] + factor[i] * y_scale[i]) - y[i])
 
     if sparsity is None:
         return _dense_num_jac(fun, t, y, f, h, factor, y_scale)
@@ -340,7 +364,8 @@ def _dense_num_jac(fun, t, y, f, h, factor, y_scale):
         ind, = xp.nonzero(diff_too_small)
         new_factor = NUM_JAC_FACTOR_INCREASE * factor[ind]
         h_new = (y[ind] + new_factor * y_scale[ind]) - y[ind]
-        h_vecs[ind, ind] = h_new
+        # multibackend: writes go through the adapter; JAX arrays are immutable.
+        h_vecs = xp.write_owned(h_vecs, (ind, ind), h_new)
         f_new = fun(t, y[:, None] + h_vecs[:, ind])
         diff_new = f_new - f[:, None]
         max_ind = xp.argmax(xp.abs(diff_new), axis=0)
@@ -352,85 +377,78 @@ def _dense_num_jac(fun, t, y, f, h, factor, y_scale):
         if xp.any(update):
             update, = xp.nonzero(update)
             update_ind = ind[update]
-            factor[update_ind] = new_factor[update]
-            h[update_ind] = h_new[update]
-            diff[:, update_ind] = diff_new[:, update]
-            scale[update_ind] = scale_new[update]
-            max_diff[update_ind] = max_diff_new[update]
+            # multibackend: as above.
+            factor = xp.write_owned(factor, update_ind, new_factor[update])
+            h = xp.write_owned(h, update_ind, h_new[update])
+            diff = xp.write_owned(diff, (slice(None), update_ind), diff_new[:, update])
+            scale = xp.write_owned(scale, update_ind, scale_new[update])
+            max_diff = xp.write_owned(max_diff, update_ind, max_diff_new[update])
 
-    diff /= h
+    # Out of place: JAX arrays are immutable.
+    diff = diff / h
 
-    factor[max_diff < NUM_JAC_DIFF_SMALL * scale] *= NUM_JAC_FACTOR_INCREASE
-    factor[max_diff > NUM_JAC_DIFF_BIG * scale] *= NUM_JAC_FACTOR_DECREASE
+    # xp.where instead of masked in-place multiplication; same values.
+    factor = xp.where(max_diff < NUM_JAC_DIFF_SMALL * scale, factor * NUM_JAC_FACTOR_INCREASE, factor)
+    factor = xp.where(max_diff > NUM_JAC_DIFF_BIG * scale, factor * NUM_JAC_FACTOR_DECREASE, factor)
     factor = xp.maximum(factor, NUM_JAC_MIN_FACTOR)
 
     return diff, factor
 
 
 def _sparse_num_jac(fun, t, y, f, h, factor, y_scale, structure, groups):
+    # SciPy owns sparse storage and sparsity metadata. Only gathered derivative
+    # entries cross that boundary; perturbations and RHS evaluation stay native.
     n = y.shape[0]
-    n_groups = xp.max(groups) + 1
-    h_vecs = xp.empty((n_groups, n))
-    for group in range(n_groups):
-        e = xp.equal(group, groups)
-        h_vecs[group] = h * e
-    h_vecs = h_vecs.T
-
+    groups = np.asarray(xp.numpy(groups) if xp.current.is_array(groups) else groups, dtype=int)
+    n_groups = int(np.max(groups)) + 1
+    h_vecs = xp.stack([h * xp.asarray(groups == group) for group in range(n_groups)]).T
     f_new = fun(t, y[:, None] + h_vecs)
     df = f_new - f[:, None]
-
     i, j, _ = find(structure)
-    diff = coo_matrix((df[i, groups[j]], (i, j)), shape=(n, n)).tocsc()
-    max_ind = xp.array(abs(diff).argmax(axis=0)).ravel()
+    entries = xp.numpy(df[xp.asarray(i), xp.asarray(groups[j])])
+    diff = coo_matrix((entries, (i, j)), shape=(n, n)).tocsc()
+    max_ind_host = np.asarray(abs(diff).argmax(axis=0)).ravel()
+    max_ind = xp.asarray(max_ind_host)
     r = xp.arange(n)
-    max_diff = xp.asarray(xp.abs(diff[max_ind, r])).ravel()
-    scale = xp.maximum(xp.abs(f[max_ind]), xp.abs(f_new[max_ind, groups[r]]))
+    max_diff = xp.asarray(np.asarray(abs(diff[max_ind_host, np.arange(n)])).ravel())
+    scale = xp.maximum(xp.abs(f[max_ind]), xp.abs(f_new[max_ind, xp.asarray(groups)]))
 
     diff_too_small = max_diff < NUM_JAC_DIFF_REJECT * scale
     if xp.any(diff_too_small):
         ind, = xp.nonzero(diff_too_small)
+        ind_host = np.asarray(xp.numpy(ind))
         new_factor = NUM_JAC_FACTOR_INCREASE * factor[ind]
         h_new = (y[ind] + new_factor * y_scale[ind]) - y[ind]
-        h_new_all = xp.zeros(n)
-        h_new_all[ind] = h_new
-
-        groups_unique = xp.unique(groups[ind])
-        groups_map = xp.empty(n_groups, dtype=int)
-        h_vecs = xp.empty((groups_unique.shape[0], n))
+        h_new_all = xp.zeros(n, dtype=h.dtype)
+        h_new_all = xp.write_owned(h_new_all, ind, h_new)
+        groups_unique = np.unique(groups[ind_host])
+        groups_map = np.empty(n_groups, dtype=int)
         for k, group in enumerate(groups_unique):
-            e = xp.equal(group, groups)
-            h_vecs[k] = h_new_all * e
             groups_map[group] = k
-        h_vecs = h_vecs.T
-
+        h_vecs = xp.stack([h_new_all * xp.asarray(groups == group) for group in groups_unique]).T
         f_new = fun(t, y[:, None] + h_vecs)
         df = f_new - f[:, None]
-        i, j, _ = find(structure[:, ind])
-        diff_new = coo_matrix(
-            (df[i, groups_map[groups[ind[j]]]], (i, j)), shape=(n, ind.shape[0])
-        ).tocsc()
-
-        max_ind_new = xp.array(abs(diff_new).argmax(axis=0)).ravel()
-        r = xp.arange(ind.shape[0])
-        max_diff_new = xp.asarray(xp.abs(diff_new[max_ind_new, r])).ravel()
-        scale_new = xp.maximum(
-            xp.abs(f[max_ind_new]), xp.abs(f_new[max_ind_new, groups_map[groups[ind]]])
-        )
-
+        i, j, _ = find(structure[:, ind_host])
+        entries = xp.numpy(df[xp.asarray(i), xp.asarray(groups_map[groups[ind_host[j]]])])
+        diff_new = coo_matrix((entries, (i, j)), shape=(n, len(ind_host))).tocsc()
+        max_ind_new_host = np.asarray(abs(diff_new).argmax(axis=0)).ravel()
+        max_ind_new = xp.asarray(max_ind_new_host)
+        max_diff_new = xp.asarray(np.asarray(abs(diff_new[max_ind_new_host, np.arange(len(ind_host))])).ravel())
+        scale_new = xp.maximum(xp.abs(f[max_ind_new]),
+                               xp.abs(f_new[max_ind_new, xp.asarray(groups_map[groups[ind_host]])]))
         update = max_diff[ind] * scale_new < max_diff_new * scale[ind]
         if xp.any(update):
             update, = xp.nonzero(update)
             update_ind = ind[update]
-            factor[update_ind] = new_factor[update]
-            h[update_ind] = h_new[update]
-            diff[:, update_ind] = diff_new[:, update]
-            scale[update_ind] = scale_new[update]
-            max_diff[update_ind] = max_diff_new[update]
+            # multibackend: as above.
+            factor = xp.write_owned(factor, update_ind, new_factor[update])
+            h = xp.write_owned(h, update_ind, h_new[update])
+            diff[:, np.asarray(xp.numpy(update_ind))] = diff_new[:, np.asarray(xp.numpy(update))]
+            scale = xp.write_owned(scale, update_ind, scale_new[update])
+            max_diff = xp.write_owned(max_diff, update_ind, max_diff_new[update])
 
-    diff.data /= xp.repeat(h, xp.diff(diff.indptr))
-
-    factor[max_diff < NUM_JAC_DIFF_SMALL * scale] *= NUM_JAC_FACTOR_INCREASE
-    factor[max_diff > NUM_JAC_DIFF_BIG * scale] *= NUM_JAC_FACTOR_DECREASE
-    factor = xp.maximum(factor, NUM_JAC_MIN_FACTOR)
-
-    return diff, factor
+    # diff is SciPy sparse (host) storage; h is brought to the host for it.
+    diff.data /= np.repeat(np.asarray(xp.numpy(h)), np.diff(diff.indptr))
+    factor = xp.where(max_diff < NUM_JAC_DIFF_SMALL * scale, factor * NUM_JAC_FACTOR_INCREASE, factor)
+    factor = xp.where(max_diff > NUM_JAC_DIFF_BIG * scale, factor * NUM_JAC_FACTOR_DECREASE, factor)
+    return diff, xp.maximum(factor, NUM_JAC_MIN_FACTOR)

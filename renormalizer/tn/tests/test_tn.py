@@ -1,4 +1,5 @@
 import pytest
+from renormalizer.mps.matrix import asnumpy
 
 from renormalizer import BasisHalfSpin, Model, Mpo, Mps, Op
 from renormalizer import optimize_mps
@@ -291,7 +292,7 @@ def test_rdm_entropy_holstein():
     ttns_rdm_dict = ttns.calc_1dof_rdm()
     for i in range(len(mps)):
         dof = model.basis[i].dof
-        np.testing.assert_allclose(mps_rdm_dict[i], ttns_rdm_dict[dof], atol=1e-3)
+        np.testing.assert_allclose(asnumpy(mps_rdm_dict[i]), asnumpy(ttns_rdm_dict[dof]), atol=1e-3)
 
     mps_mutual_info = mps.calc_2site_mutual_entropy()
     mps_idx1, mps_idx2 = 1, 3
@@ -329,11 +330,11 @@ def test_2dof_rdm(basis_tree, dofs):
 
     # Z0Z1
     op1 = np.diag([1, -1, -1, 1])
-    np.testing.assert_allclose(np.trace(rdm1 @ op1), np.trace(rdm2 @ op1), atol=1e-7)
+    np.testing.assert_allclose(np.trace(asnumpy(rdm1) @ op1), np.trace(asnumpy(rdm2) @ op1), atol=1e-7)
 
     # +0-1 + +1-0
     op2 = np.array([[0, 0, 0, 0], [0, 1, 0, 0], [0, 0, 1, 0], [0, 0, 0, 0]])
-    np.testing.assert_allclose(np.trace(rdm1 @ op2), np.trace(rdm2 @ op2), atol=1e-7)
+    np.testing.assert_allclose(np.trace(asnumpy(rdm1) @ op2), np.trace(asnumpy(rdm2) @ op2), atol=1e-7)
 
 
 @pytest.mark.parametrize("basis", [basis_binary, basis_multi_basis])

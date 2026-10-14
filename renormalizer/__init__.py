@@ -32,6 +32,8 @@ log_level = int(os.environ.get("RENO_LOG_LEVEL", logging.DEBUG))
 init_log(log_level)
 
 del os, log_level, init_log
+ 
+from renormalizer.cons import backend, get_backend, runtime_backend, set_backend
 
 
 # user interfaces

@@ -212,6 +212,26 @@ class Model:
         model.mpos = self.mpos.copy()
         return model
 
+    def shallow_copy(self):
+        """
+        A cheaper equivalent of :meth:`copy` for internal per-step copies such as
+        ``metacopy``. The constructor is skipped: the result shares the validated
+        Hamiltonian terms and lookup tables, which are never mutated in place
+        (OFS rebinds ``model`` instead). Like :meth:`copy`, ``basis`` and ``mpos``
+        are copied and the result is a plain :class:`Model`. Subclasses that
+        override :meth:`copy` keep their own copy semantics.
+        """
+        if type(self).copy is not Model.copy:
+            return self.copy()
+        return self._shallow_copy_as(Model)
+
+    def _shallow_copy_as(self, cls):
+        model = cls.__new__(cls)
+        model.__dict__.update(self.__dict__)
+        model.basis = self.basis.copy()
+        model.mpos = self.mpos.copy()
+        return model
+
     def to_dict(self) -> Dict:
         """
         Convert the object into a dict that contains only objects of
@@ -398,6 +418,12 @@ class HolsteinModel(Model):
         model = HolsteinModel(self.mol_list, self.j_matrix, self.scheme)
         model.mpos = self.mpos.copy()
         return model
+
+    def shallow_copy(self):
+        # Same as Model.shallow_copy, keeping the HolsteinModel class.
+        if type(self).copy is not HolsteinModel.copy:
+            return self.copy()
+        return self._shallow_copy_as(HolsteinModel)
 
     def __getitem__(self, item):
         return self.mol_list[item]

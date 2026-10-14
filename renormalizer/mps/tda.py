@@ -7,7 +7,8 @@ import numpy as np
 import scipy
 
 from renormalizer.mps.matrix import tensordot, multi_tensor_contract, asnumpy, asxp
-from renormalizer.mps.backend import xp, USE_GPU, primme, IMPORT_PRIMME_EXCEPTION
+from renormalizer.mps.backend import primme, IMPORT_PRIMME_EXCEPTION
+from renormalizer.backend.context import internal_backend as backend, internal_backend as xp
 from renormalizer.mps import Mps
 from renormalizer.mps.lib import Environ, compressed_sum
 from renormalizer.mps.oe_contract_wrap import oe_contract
@@ -112,7 +113,8 @@ class TDA(object):
                 
                 vt = xp.einsum("i, ij -> ij", asxp(s), asxp(vt))
                 if ims == site_num-1:
-                    assert vt.size == 1 and xp.allclose(vt, 1)
+                    # np.prod(shape): not every backend's arrays have .size.
+                    assert np.prod(vt.shape) == 1 and xp.allclose(vt, 1)
                 else:
                     mps[ims+1] = asnumpy(tensordot(vt, mps[ims+1], ([-1],[0])))
                 
@@ -143,12 +145,10 @@ class TDA(object):
                 xsize += np.prod(xshape[-1])
         
         logger.debug(f"DMRG-TDA H dimension: {xsize}")
-        
-        if USE_GPU:
-            oe_backend = "cupy"
-        else:
-            oe_backend = "numpy"
-        
+
+        # multibackend: replaces the USE_GPU switch between cupy and numpy.
+        oe_backend = backend.opt_einsum_name
+
         mps_tangent = mps_r_cano.copy()
         environ = Environ(mps_tangent, mpo, "R")
         hdiag = []
@@ -284,10 +284,13 @@ class TDA(object):
                     return np.einsum("i, ij -> ij", 1/(hdiag+1e-4), x)
                 else:
                     assert False
+            # dtype given (that of H applied to the state, as hdiag): without it
+            # scipy probes hop with an int8 vector, and hop accumulates floats
+            # into zeros_like(int8) and fails.
             A = scipy.sparse.linalg.LinearOperator((xsize,xsize),
-                    matvec=multi_hop, matmat=multi_hop)
+                    matvec=multi_hop, matmat=multi_hop, dtype=hdiag.dtype)
             M = scipy.sparse.linalg.LinearOperator((xsize,xsize),
-                    matvec=precond, matmat=precond)
+                    matvec=precond, matmat=precond, dtype=hdiag.dtype)
             e, c = primme.eigsh(A, k=min(nroots,xsize), which="SA", 
                     v0=cguess,
                     OPinv=M,
@@ -477,7 +480,8 @@ class TDA(object):
                 for mps_tangent in mps_tangent_list:
                     sentinel = xp.ones((1,1))
                     for ims, ms in enumerate(mps_tangent):
-                        sentinel = sentinel.dot(asxp(ms[:,config[ims],:]))
+                        # multibackend: dot through the adapter; not every array type has .dot.
+                        sentinel = xp.dot(sentinel, asxp(ms[:,config[ims],:]))
                     ci_coeff_list.append(float(sentinel[0,0]))
                 ci_coeff = np.sum(ci_coeff_list)
                 coeff_square_sum += ci_coeff**2

@@ -38,7 +38,7 @@ def test_symbolic_mpo(nsites, nterms, algo):
     mpo = Mpo(model, algo=algo)
     dense_mpo = mpo.todense()
     qutip_ham = get_spin_hamiltonian(ham_terms)
-    assert np.allclose(dense_mpo, qutip_ham.data.todense())
+    assert np.allclose(dense_mpo, qutip_ham.full())
 
 
 @pytest.mark.parametrize("algo", ["qr", "Hopcroft-Karp"])

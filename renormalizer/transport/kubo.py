@@ -359,7 +359,9 @@ class TransportKubo(TdMpsJob):
     def calc_mobility(self):
         time_series = self.evolve_times
         corr_real = self.auto_corr.real
-        inte = scipy.integrate.trapz(corr_real, time_series)
+        # SciPy removed the trapz alias; trapezoid preserves the same sampled
+        # integral, including nonuniform time spacing and the real correlation.
+        inte = scipy.integrate.trapezoid(corr_real, time_series)
         mobility_in_au = inte / self.temperature.as_au()
         mobility = mobility_in_au / mobility2au
         return mobility_in_au, mobility

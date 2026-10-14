@@ -8,7 +8,7 @@ import scipy
 import scipy.sparse
 
 from renormalizer.model import Model, HolsteinModel
-from renormalizer.mps.backend import xp
+from renormalizer.backend.context import internal_backend as xp
 from renormalizer.mps.matrix import moveaxis, tensordot
 from renormalizer.mps.mp import MatrixProduct
 from renormalizer.mps.svd_qn import add_outer

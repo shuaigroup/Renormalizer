@@ -4,6 +4,14 @@ import numpy as np
 import pytest
 import qutip
 
+
+def principal_submatrix(operator, indices):
+    """Ordered principal block replacing QuTiP's removed extract_states."""
+    indices = np.asarray(indices, dtype=int)
+    # These finite reduced-space references do not use tensor-factor metadata.
+    # Retain CSR storage so correlation solvers do not become dense ODE jobs.
+    return qutip.Qobj(operator.full()[np.ix_(indices, indices)]).to("csr")
+
 from renormalizer.model import Phonon, Mol, HolsteinModel, Model
 from renormalizer.model.basis import BasisSimpleElectron, BasisSHO
 from renormalizer.model.op import Op
@@ -45,14 +53,14 @@ def get_qutip_holstein_kubo(model, temperature, time_series):
     blist = get_blist(nsites, ph_levels)
 
     qn_idx = get_qnidx(ph_levels, nsites)
-    H = get_holstein_hamiltonian(nsites, J, omega, g, clist, blist).extract_states(qn_idx)
+    H = principal_submatrix(get_holstein_hamiltonian(nsites, J, omega, g, clist, blist), qn_idx)
     init_state = (-temperature.to_beta() * H).expm().unit()
 
     terms = []
     for i in range(nsites - 1):
         terms.append(J * clist[i].dag() * clist[i + 1])
         terms.append(-J * clist[i] * clist[i + 1].dag())
-    j_oper = sum(terms).extract_states(qn_idx)
+    j_oper = principal_submatrix(sum(terms), qn_idx)
 
     # Add the negative sign because j is taken to be real
     return -qutip.correlation_2op_2t(H, init_state, [0], time_series, [], j_oper, j_oper)[0]
@@ -114,7 +122,7 @@ def get_qutip_peierls_kubo(J, nsites, ph_levels, omega, g, temperature, time_ser
     blist = get_blist(nsites, ph_levels)
 
     qn_idx = get_qnidx(ph_levels, nsites)
-    H = get_peierls_hamiltonian(nsites, J, omega, g, clist, blist).extract_states(qn_idx)
+    H = principal_submatrix(get_peierls_hamiltonian(nsites, J, omega, g, clist, blist), qn_idx)
     init_state = (-temperature.to_beta() * H).expm().unit()
 
     holstein_terms = []
@@ -125,8 +133,8 @@ def get_qutip_peierls_kubo(J, nsites, ph_levels, omega, g, temperature, time_ser
         holstein_terms.append(-J * clist[i] * clist[next_i].dag())
         peierls_terms.append( g * omega * clist[i].dag() * clist[next_i] * (blist[i].dag() + blist[i]))
         peierls_terms.append(-g * omega * clist[i] * clist[next_i].dag() * (blist[i].dag() + blist[i]))
-    j_oper1 = sum(holstein_terms).extract_states(qn_idx)
-    j_oper2 = sum(peierls_terms).extract_states(qn_idx)
+    j_oper1 = principal_submatrix(sum(holstein_terms), qn_idx)
+    j_oper2 = principal_submatrix(sum(peierls_terms), qn_idx)
 
     # Add negative signs because j is taken to be real
     corr1 = -qutip.correlation_2op_2t(H, init_state, [0], time_series, [], j_oper1, j_oper1)[0]

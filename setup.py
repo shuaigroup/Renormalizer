@@ -1,29 +1,9 @@
-import setuptools
+"""Compatibility shim; project metadata lives only in pyproject.toml.
 
-with open("README.md", "rb") as fin:
-    long_description = fin.read().decode("utf-8")
+Keeping a second dependency/Python-version list here made legacy and modern
+build entry points disagree. Setuptools reads the same PEP 621 metadata for
+both; release builds should use ``python -m build``.
+"""
+from setuptools import setup
 
-req = ["numpy",
-       "scipy",
-       "h5py",
-       "opt_einsum",
-       "sympy",
-       "print-tree2"
-       ]
-
-setuptools.setup(
-    name="renormalizer",
-    version="0.0.11",
-    packages=setuptools.find_packages(),
-    long_description=long_description,
-    long_description_content_type="text/markdown",
-    url="https://github.com/shuaigroup/Renormalizer",
-    python_requires='>=3.6',
-    install_requires=req,
-    license="Apache",
-)
-
-
-# How to publish the library to pypi
-# python setup.py sdist
-# twine upload -s dist/*
+setup()

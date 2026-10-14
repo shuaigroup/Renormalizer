@@ -1,3 +1,4 @@
+from renormalizer.backend.execution import bind_backend
 from typing import List, Dict, Tuple, Union, Callable, Any
 import logging
 
@@ -5,8 +6,9 @@ import scipy
 
 from renormalizer import Op, Mps, Model, OpSum
 from renormalizer.model.basis import BasisSet, BasisDummy
-from renormalizer.mps.backend import np, backend, xp
-from renormalizer.mps.matrix import asnumpy, asxp_oe_args, tensordot
+from renormalizer.mps.backend import np
+from renormalizer.backend.context import internal_backend as backend, internal_backend as xp
+from renormalizer.mps.matrix import asnumpy, asworkspace, asxp_oe_args, tensordot
 from renormalizer.mps.svd_qn import add_outer, svd_qn, blockrecover, get_qn_mask
 from renormalizer.mps.lib import select_basis
 from renormalizer.mps.mps import normalize
@@ -410,6 +412,8 @@ class TTNS(TTNBase):
         -------
         The new TTNS
         """
+        # multibackend: tensors may arrive as native arrays; TTNS stores host arrays.
+        tensors = asnumpy(tensors)
         ttns = template.metacopy()
         cursor = 0
         for node, tnode in zip(ttns.node_list, template.node_list):
@@ -862,8 +866,9 @@ class TTNS(TTNBase):
         args.extend(ttno.to_contract_args("up", "down"))
         val = oe_contract(*asxp_oe_args(args), optimize="greedy").ravel()[0]
 
-        if np.isclose(float(val.imag), 0):
-            return float(val.real)
+        # multibackend: xp.imag / xp.real also accept backend scalars.
+        if np.isclose(float(xp.imag(val)), 0):
+            return float(xp.real(val))
         else:
             return complex(val)
 
@@ -915,6 +920,9 @@ class TTNS(TTNBase):
         if isinstance(ttno, (Op, OpSum)):
             ttno = TTNO(self.basis, ttno)
 
+        # Sharing the ket as bra needs only one temporary root attachment.
+        if bra is self:
+            bra = None
         basis_node = TreeNodeBasis([BasisDummy("expectation dummy")])
         basis_node_ttns = basis_node
         if bra is not None:
@@ -929,29 +937,33 @@ class TTNS(TTNBase):
         if bra is not None:
             basis_tree_bra = BasisTree(basis_node_bra)
         basis_tree_ttno = BasisTree(basis_node_ttno)
-        snode = TreeNodeTensor(np.ones((1, 1, 1)), qn=np.zeros((1, basis_tree_ttns.qn_size)))
-        snode.add_child(self.root)
+        nodes = [self.root, ttno.root]
         if bra is not None:
-            bnode = TreeNodeTensor(np.ones((1, 1, 1)), qn=np.zeros((1, basis_tree_bra.qn_size)))
-            bnode.add_child(bra.root)
-        onode = TreeNodeTensor(np.ones((1, 1, 1, 1)), qn=np.zeros((1, basis_tree_ttno.qn_size)))
-        onode.add_child(ttno.root)
+            nodes.append(bra.root)
+        original_parents = [(node, node.parent) for node in nodes]
+        try:
+            snode = TreeNodeTensor(np.ones((1, 1, 1)), qn=np.zeros((1, basis_tree_ttns.qn_size)))
+            snode.add_child(self.root)
+            if bra is not None:
+                bnode = TreeNodeTensor(np.ones((1, 1, 1)), qn=np.zeros((1, basis_tree_bra.qn_size)))
+                bnode.add_child(bra.root)
+            onode = TreeNodeTensor(np.ones((1, 1, 1, 1)), qn=np.zeros((1, basis_tree_ttno.qn_size)))
+            onode.add_child(ttno.root)
 
-        ttns_extended = TTNS(basis_tree_ttns, root=snode)
-        if bra is not None:
-            bra_extended = TTNS(basis_tree_bra, root=bnode)
-        else:
-            bra_extended = None
-        ttno_extended = TTNO(basis_tree_ttno, [], root=onode)
-        environ = TTNEnviron(ttns_extended, ttno_extended, build_environ=False, bra=bra_extended)
-        environ.build_children_environ(ttns_extended, ttno_extended, bra=bra_extended)
-        val = environ.root.environ_children[0].ravel()[0]
-
-        nodes = [self.basis.root, self.root, ttno.root]
-        if bra is not None:
-            nodes.extend([bra.basis.root, bra.root])
-        for node in nodes:
-            node.parent = None
+            ttns_extended = TTNS(basis_tree_ttns, root=snode)
+            if bra is not None:
+                bra_extended = TTNS(basis_tree_bra, root=bnode)
+            else:
+                bra_extended = None
+            ttno_extended = TTNO(basis_tree_ttno, [], root=onode)
+            environ = TTNEnviron(ttns_extended, ttno_extended, build_environ=False, bra=bra_extended)
+            environ.build_children_environ(ttns_extended, ttno_extended, bra=bra_extended)
+            val = environ.root.environ_children[0].ravel()[0]
+        finally:
+            # A construction or contraction failure must not poison the input
+            # trees. Basis roots above are copies and need no restoration.
+            for node, parent in original_parents:
+                node.parent = parent
 
         if np.isclose(float(val.imag), 0):
             return float(val.real)
@@ -1063,7 +1075,8 @@ class TTNS(TTNBase):
             The 1-site entanglement entropy. The key is the index of the site in ``self.node_list``.
         """
         rdm = self.calc_1site_rdm(idx)
-        entropy = {key: calc_vn_entropy_dm(dm) for key, dm in rdm.items()}
+        # multibackend: rdm may hold native arrays; the entropy is computed on the host.
+        entropy = {key: calc_vn_entropy_dm(asnumpy(dm)) for key, dm in rdm.items()}
         return entropy
 
     def calc_1dof_rdm(self, dof: Union[Any, List[Any]]=None) -> Dict[Any, np.ndarray]:
@@ -1109,7 +1122,8 @@ class TTNS(TTNBase):
 
     def calc_1dof_entropy(self, dof: Union[Any, List[Any]]=None) -> Dict[Any, float]:
         rdm = self.calc_1dof_rdm(dof)
-        return {key: calc_vn_entropy_dm(dm) for key, dm in rdm.items()}
+        # multibackend: rdm may hold native arrays; the entropy is computed on the host.
+        return {key: calc_vn_entropy_dm(asnumpy(dm)) for key, dm in rdm.items()}
 
     def calc_2site_rdm(self, idxs: Union[Tuple[int, int], List[Tuple[int, int]]]=None) -> Dict[Tuple[int, int], np.ndarray]:
         r""" Calculate 2-site reduced density matrix
@@ -1215,7 +1229,8 @@ class TTNS(TTNBase):
             assert isinstance(idxs, list)
 
         rdm = self.calc_2site_rdm(idxs)
-        entropy = {key: calc_vn_entropy_dm(dm) for key, dm in rdm.items()}
+        # multibackend: rdm may hold native arrays; the entropy is computed on the host.
+        entropy = {key: calc_vn_entropy_dm(asnumpy(dm)) for key, dm in rdm.items()}
         return entropy
 
     def calc_2dof_rdm(self, dofs: Union[Tuple[Any, Any], List[Tuple[Any, Any]]]) -> Dict[Tuple[Any, Any], np.ndarray]:
@@ -1280,7 +1295,8 @@ class TTNS(TTNBase):
         if rdm is None:
             rdm = self.calc_2dof_rdm(dofs)
         
-        entropy = {key: calc_vn_entropy_dm(dm) for key, dm in rdm.items()}
+        # multibackend: rdm may hold native arrays; the entropy is computed on the host.
+        entropy = {key: calc_vn_entropy_dm(asnumpy(dm)) for key, dm in rdm.items()}
         return entropy
 
     def calc_2dof_mutual_info(self, dofs: Union[Tuple[Any, Any], List[Tuple[Any, Any]]], rdm_2dof: Dict[Any, np.ndarray]=None) -> Dict[Tuple[Any, Any], float]:
@@ -1421,6 +1437,8 @@ class TTNS(TTNBase):
 
         return normalize(self, kind)
 
+    # multibackend: runs with the backend chosen at entry, or the one passed as backend_context=.
+    @bind_backend
     def evolve(self, ttno: TTNO, tau: Union[complex, float], normalize: bool = True):
         imag_time = np.iscomplex(tau)
         # trick to avoid complex algebra
@@ -1550,7 +1568,8 @@ class TTNS(TTNBase):
         ichild = parent.children.index(node)
         del shape[ichild]
         shape = [-1] + shape
-        parent.tensor = np.moveaxis(m_parent.reshape(shape), 0, ichild)
+        # multibackend: node tensors are host arrays.
+        parent.tensor = np.moveaxis(asnumpy(m_parent).reshape(shape), 0, ichild)
 
     @property
     def norm(self):
@@ -1714,11 +1733,13 @@ class TTNEnviron(Tree):
         res = oe_contract(*asxp_oe_args(args))
         if len(enode.parent.environ_children) != len(enode.parent.children):
             # first run
-            enode.parent.environ_children.append(asnumpy(res))
+            # multibackend: environment storage follows the backend (asworkspace), as for MPS.
+            enode.parent.environ_children.append(asworkspace(res))
         else:
             # updating
             ichild = snode.parent.children.index(snode)
-            enode.parent.environ_children[ichild] = asnumpy(res)
+            # multibackend: as above.
+            enode.parent.environ_children[ichild] = asworkspace(res)
 
     def build_parent_environ_node(self, snode: TreeNodeTensor, ichild: int, ttns: TTNS, ttno: TTNO, bra: TTNS = None):
         if bra is None:
@@ -1753,7 +1774,8 @@ class TTNEnviron(Tree):
 
         args.append(indices)
         res = oe_contract(*asxp_oe_args(args))
-        enode.children[ichild].environ_parent = asnumpy(res)
+        # multibackend: as above.
+        enode.children[ichild].environ_parent = asworkspace(res)
 
     def get_child_indices(self, enode, i, ttns, ttno, bra=None):
         if bra is None:

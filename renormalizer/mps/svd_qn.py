@@ -4,7 +4,8 @@ import logging
 
 import scipy.linalg
 
-from renormalizer.mps.backend import np, backend
+from renormalizer.mps.backend import np
+from renormalizer.backend.context import internal_backend as backend
 
 logger = logging.getLogger(__name__)
 

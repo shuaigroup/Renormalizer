@@ -1,12 +1,13 @@
 import inspect
+import numpy as np
 
 
 from .rk import RK23, RK45
 from scipy.optimize import OptimizeResult
-from .common import EPS, OdeSolution
+from .common import EPS, OdeSolution, host_time_array
 from .base import OdeSolver
 
-from renormalizer.mps.backend import xp
+from renormalizer.backend.context import internal_backend as xp
 
 METHODS = {"RK23": RK23, "RK45": RK45}
 
@@ -27,8 +28,9 @@ def prepare_events(events):
         events = (events,)
 
     if events is not None:
-        is_terminal = xp.empty(len(events), dtype=bool)
-        direction = xp.empty(len(events))
+        # multibackend: event bookkeeping is host metadata, so NumPy rather than xp.
+        is_terminal = np.empty(len(events), dtype=bool)
+        direction = np.empty(len(events))
         for i, event in enumerate(events):
             try:
                 is_terminal[i] = event.terminal
@@ -105,16 +107,17 @@ def handle_events(sol, events, active_events, is_terminal, t_old, t):
     for event_index in active_events:
         roots.append(solve_event_equation(events[event_index], sol, t_old, t))
 
-    roots = xp.asarray(roots)
+    # multibackend: event roots are host scalars (NumPy rather than xp).
+    roots = np.asarray(roots)
 
-    if xp.any(is_terminal[active_events]):
+    if np.any(is_terminal[active_events]):
         if t > t_old:
-            order = xp.argsort(roots)
+            order = np.argsort(roots)
         else:
-            order = xp.argsort(-roots)
+            order = np.argsort(-roots)
         active_events = active_events[order]
         roots = roots[order]
-        t = xp.nonzero(is_terminal[active_events])[0][0]
+        t = np.nonzero(is_terminal[active_events])[0][0]
         active_events = active_events[: t + 1]
         roots = roots[: t + 1]
         terminate = True
@@ -139,13 +142,14 @@ def find_active_events(g, g_new, direction):
     active_events : ndarray
         Indices of events which occurred during the step.
     """
-    g, g_new = xp.asarray(g), xp.asarray(g_new)
+    # Event values are scalar control metadata, like the brentq return.
+    g, g_new = np.asarray([float(v) for v in g]), np.asarray([float(v) for v in g_new])
     up = (g <= 0) & (g_new >= 0)
     down = (g >= 0) & (g_new <= 0)
     either = up | down
     mask = up & (direction > 0) | down & (direction < 0) | either & (direction == 0)
 
-    return xp.nonzero(mask)[0]
+    return np.nonzero(mask)[0]
 
 
 def solve_ivp(
@@ -390,15 +394,16 @@ def solve_ivp(
     t0, tf = float(t_span[0]), float(t_span[1])
 
     if t_eval is not None:
-        t_eval = xp.asarray(t_eval)
+        # multibackend: evaluation times stay on the host.
+        t_eval = host_time_array(t_eval)
         if t_eval.ndim != 1:
             raise ValueError("`t_eval` must be 1-dimensional.")
 
-        if xp.any(t_eval < min(t0, tf)) or xp.any(t_eval > max(t0, tf)):
+        if np.any(t_eval < min(t0, tf)) or np.any(t_eval > max(t0, tf)):
             raise ValueError("Values in `t_eval` are not within `t_span`.")
 
-        d = xp.diff(t_eval)
-        if tf > t0 and xp.any(d <= 0) or tf < t0 and xp.any(d >= 0):
+        d = np.diff(t_eval)
+        if tf > t0 and np.any(d <= 0) or tf < t0 and np.any(d >= 0):
             raise ValueError("Values in `t_eval` are not properly sorted.")
 
         if tf > t0:
@@ -482,10 +487,10 @@ def solve_ivp(
         else:
             # The value in t_eval equal to t will be included.
             if solver.direction > 0:
-                t_eval_i_new = xp.searchsorted(t_eval, t, side="right")
+                t_eval_i_new = np.searchsorted(t_eval, t, side="right")
                 t_eval_step = t_eval[t_eval_i:t_eval_i_new]
             else:
-                t_eval_i_new = xp.searchsorted(t_eval, t, side="left")
+                t_eval_i_new = np.searchsorted(t_eval, t, side="left")
                 # It has to be done with two slice operations, because
                 # you can't slice to 0-th element inclusive using backward
                 # slicing.
@@ -510,7 +515,8 @@ def solve_ivp(
         ts = xp.array(ts)
         ys = xp.vstack(ys).T
     else:
-        ts = xp.hstack(ts)
+        # multibackend: times are collected on the host, then returned as a backend array.
+        ts = xp.asarray(np.hstack(ts))
         ys = xp.hstack(ys)
 
     if dense_output:
